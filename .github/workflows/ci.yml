@@ -13,7 +13,39 @@ permissions:
 
 jobs:
   differential:
-    name: Against the reference
+    name: Against the reference (${{ matrix.name }})
+    runs-on: ${{ matrix.os }}
+    timeout-minutes: 10
+    # The port has no dependencies and no native library, so it runs wherever
+    # Go does -- but "should work on Windows" is a claim, and developers work
+    # on Windows machines of both architectures. The differential run is the
+    # same on every platform because the expectations are committed, so proving
+    # it costs one job per target and nothing else.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: linux/amd64
+            os: ubuntu-latest
+          - name: linux/arm64
+            os: ubuntu-24.04-arm
+          - name: macos/arm64
+            os: macos-latest
+          - name: windows/amd64
+            os: windows-latest
+          - name: windows/arm64
+            os: windows-11-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - name: differential run
+        run: go test ./... -v
+
+  coverage-and-lint:
+    name: Coverage floor and lint
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -21,9 +53,6 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
-      - run: go vet ./...
-      - name: differential run, with the coverage floor
-        run: go test ./... -v 2>&1 | grep -E "reference|neutral|tsql|postgres|duckdb|databricks|PASS|FAIL|ok|divergence" | head -40; go test ./...
       - name: test coverage floor
         run: |
           go test ./... -coverpkg=./sqlglot/ -coverprofile=cover.out >/dev/null
