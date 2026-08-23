@@ -82,6 +82,12 @@ type ParserTables struct {
 	StrictStringConcat  bool
 	// JoinsHaveEqualPrecedence makes a comma join an explicit CROSS join.
 	JoinsHaveEqualPrecedence bool
+	// BareJoinIsOnTrue: a JOIN written with no ON. Databricks records it
+	// as `ON TRUE` explicitly; every other dialect leaves the slot empty
+	// and writes the comma form. Same relation either way, different
+	// tree and different SQL -- so the two executors would send the
+	// engine different statements. PROBED, like the rest.
+	BareJoinIsOnTrue bool
 	// DefaultTypeParams are the parameters a BARE type gains in this
 	// dialect. DuckDB reads `numeric` as DECIMAL(18, 3) at parse time --
 	// sqlglot calls these TYPE_CONVERTERS -- so a port that left the type
@@ -2766,6 +2772,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
+		BareJoinIsOnTrue:         false,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
 		ModifiersAttachedToSetOp: true,
@@ -5576,6 +5583,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
+		BareJoinIsOnTrue:         false,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
 		ModifiersAttachedToSetOp: true,
@@ -8388,6 +8396,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
+		BareJoinIsOnTrue:         false,
 		IsNotNullWrapsInNot:      false,
 		NullOrdering:             "nulls_are_large",
 		ModifiersAttachedToSetOp: true,
@@ -11177,6 +11186,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
+		BareJoinIsOnTrue:         false,
 		DefaultTypeParams: map[string][]string{
 			"DECIMAL": {"18", "3"},
 		},
@@ -14015,6 +14025,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: true,
+		BareJoinIsOnTrue:         true,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
 		ModifiersAttachedToSetOp: true,

@@ -345,6 +345,19 @@ def funcmap(name: str, funcs) -> str:
     return f"\t\t{name}: map[string]FuncSpec{{\n{''.join(lines)}\t\t}},\n"
 
 
+def bare_join_is_on_true(dialect: str) -> bool:
+    """Whether `JOIN u` with no ON records `ON TRUE`.
+
+    Probed rather than read: the rule lives in a dialect's parser override,
+    and the two shapes produce different SQL from the same relation.
+    """
+    import sqlglot
+
+    tree = sqlglot.parse_one("SELECT a FROM t JOIN u", dialect=dialect or None)
+    joins = tree.args.get("joins") or []
+    return bool(joins) and joins[0].args.get("on") is not None
+
+
 def default_type_params(dialect: str) -> dict[str, list[str]]:
     """Parameters a bare type gains in this dialect, recovered by parsing one.
 
@@ -481,6 +494,12 @@ def main() -> int:
         "\tStrictStringConcat  bool\n",
         "\t// JoinsHaveEqualPrecedence makes a comma join an explicit CROSS join.\n",
         "\tJoinsHaveEqualPrecedence bool\n",
+        "\t// BareJoinIsOnTrue: a JOIN written with no ON. Databricks records it\n",
+        "\t// as `ON TRUE` explicitly; every other dialect leaves the slot empty\n",
+        "\t// and writes the comma form. Same relation either way, different\n",
+        "\t// tree and different SQL -- so the two executors would send the\n",
+        "\t// engine different statements. PROBED, like the rest.\n",
+        "\tBareJoinIsOnTrue bool\n",
         "\t// DefaultTypeParams are the parameters a BARE type gains in this\n",
         "\t// dialect. DuckDB reads `numeric` as DECIMAL(18, 3) at parse time --\n",
         "\t// sqlglot calls these TYPE_CONVERTERS -- so a port that left the type\n",
@@ -624,6 +643,9 @@ def main() -> int:
             ("JoinsHaveEqualPrecedence", P.JOINS_HAVE_EQUAL_PRECEDENCE),
         ):
             out.append(f"\t\t{field}: {str(bool(value)).lower()},\n")
+        out.append(
+            f"\t\tBareJoinIsOnTrue: {str(bare_join_is_on_true(name)).lower()},\n"
+        )
         defaults = default_type_params(name)
         if defaults:
             out.append("\t\tDefaultTypeParams: map[string][]string{\n")

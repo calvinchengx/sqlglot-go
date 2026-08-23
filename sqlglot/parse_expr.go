@@ -24,6 +24,17 @@ var specialConstruction = map[string]bool{
 	"Div":     true,
 	"DPipe":   true,
 	"Collate": true,
+	// Databricks' `a:b` reads the right-hand side as a JSON PATH, not as the
+	// column the generic rule produces. The port modelled neither the path
+	// node nor its grammar, and built JSONExtract(a, Column(b)) anyway -- a
+	// tree the reference never makes, and one the generator could not write
+	// back at all. A construct this port cannot read is a refusal; building
+	// something plausible instead is the one thing it must not do.
+	//
+	// Found by the fuzzed differential: the largest divergence cluster it
+	// reported. Porting JSONPath properly is Tier 2 work.
+	"JSONExtract":       true,
+	"JSONExtractScalar": true,
 }
 
 func (p *parser) parseExpression() (*Expression, error) { return p.parseAssignment() }

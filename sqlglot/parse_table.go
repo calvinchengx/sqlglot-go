@@ -100,6 +100,12 @@ func (p *parser) parseJoin() (*Expression, error) {
 		join.Set("on", on)
 	case p.at(TokUSING):
 		return nil, p.unsupported("USING")
+	case p.tables.BareJoinIsOnTrue:
+		// Databricks records a bare JOIN as `ON TRUE` rather than leaving the
+		// slot empty and writing the comma form. The same relation either way,
+		// but a different tree and a different statement to the engine -- so
+		// the two executors would not be sending the same SQL.
+		join.Set("on", New("Boolean", Arg{"this", true}))
 	}
 	join.Set("pivots", nil)
 	return join, nil

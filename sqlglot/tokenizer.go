@@ -187,7 +187,7 @@ func (t *Tokenizer) peekStr() string {
 	return string(t.peek)
 }
 
-func (t *Tokenizer) charIsSpace() bool { return t.charSet && unicode.IsSpace(t.char) }
+func (t *Tokenizer) charIsSpace() bool { return t.charSet && isPythonSpace(t.char) }
 
 // at emulates Python's sequence indexing, negative wrap included: the
 // reference relies on it when it backs up over a numeric literal's suffix.
@@ -334,7 +334,7 @@ func (t *Tokenizer) scanKeywords() {
 			if _, ok := t.cfg.SingleTokens[string(char)]; ok {
 				singleToken = true
 			}
-			isSp := unicode.IsSpace(char)
+			isSp := isPythonSpace(char)
 			if !isSp || !prevSpace {
 				if isSp {
 					char = ' '
@@ -493,7 +493,7 @@ func (t *Tokenizer) scanNumber() {
 		case t.peekSet && isIdentifierChar(t.peek):
 			numberText = t.text()
 
-			for t.peekSet && !unicode.IsSpace(t.peek) {
+			for t.peekSet && !isPythonSpace(t.peek) {
 				if _, ok := t.cfg.SingleTokens[string(t.peek)]; ok {
 					break
 				}
@@ -640,7 +640,7 @@ func (t *Tokenizer) scanIdentifier(identifierEnd string) {
 }
 
 func (t *Tokenizer) scanVar() {
-	for t.peekSet && !unicode.IsSpace(t.peek) {
+	for t.peekSet && !isPythonSpace(t.peek) {
 		p := string(t.peek)
 		if _, isVarSingle := t.cfg.VarSingleTokens[p]; !isVarSingle {
 			if _, isSingle := t.cfg.SingleTokens[p]; isSingle {
@@ -813,7 +813,7 @@ func allDigits(s string) bool {
 	return true
 }
 
-func hasSpace(s string) bool { return strings.IndexFunc(s, unicode.IsSpace) >= 0 }
+func hasSpace(s string) bool { return strings.IndexFunc(s, isPythonSpace) >= 0 }
 
 // pyBound clamps an index the way a Python slice bound does.
 func pyBound(i, n int) int {
@@ -924,4 +924,23 @@ func countRuneRange(s []rune, r rune, from, to int) int {
 		}
 	}
 	return n
+}
+
+// isPythonSpace is Python's `str.isspace()`, which the reference's tokenizer
+// splits words on and which Go's unicode.IsSpace is NOT.
+//
+// The two agree everywhere except the four ASCII separators 0x1C-0x1F -- file,
+// group, record and unit separator -- which Python calls whitespace and Go does
+// not. So `a\x1db` lexed as two tokens in the reference and one in the port,
+// and every statement containing one parsed into a different tree.
+//
+// The same class of bug as reading offsets in bytes where the reference counts
+// runes: a table can be generated, but the LANGUAGE's own semantics have to be
+// ported by hand, and they are invisible until something exercises them. The
+// fuzzed differential did.
+func isPythonSpace(r rune) bool {
+	if r >= 0x1C && r <= 0x1F {
+		return true
+	}
+	return unicode.IsSpace(r)
 }
