@@ -9,10 +9,11 @@ what a read-only SQL guard needs. Every construct in a parsed statement is a
 visible node; a construct the port does not know is a parse error, never a
 silent pass.
 
-**What it is not:** sqlglot in Go. No transpiler, no optimizer, no DML/DDL
-parsing beyond recognising a statement well enough to refuse it, and four
-dialects (T-SQL/Fabric, PostgreSQL, DuckDB, Databricks) rather than 35. The
-scope is deliberate — see `docs/17-sqlglot-go.md` in
+**What it does not cover yet:** transpiler, optimizer, DML/DDL parsing beyond
+recognising a statement well enough to refuse it, and 31 of the 35 dialects —
+today it speaks four (T-SQL/Fabric, PostgreSQL, DuckDB, Databricks). A full
+port is the destination; the order is driven by the first consumer's needs, not
+by the library's table of contents. See `docs/17-sqlglot-go.md` in
 [data-agent-service](https://github.com/calvinchengx/data-agent-service),
 whose Go executor is the first consumer.
 
