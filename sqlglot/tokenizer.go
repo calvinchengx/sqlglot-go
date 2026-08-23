@@ -296,7 +296,7 @@ func (t *Tokenizer) add(tt TokenType, text string, hasText bool) {
 	n := len(t.tokens)
 	t.scan(true)
 	t.tokens = t.tokens[:n]
-	payload := strings.TrimSpace(string(t.sql[start:t.current]))
+	payload := trimPythonSpace(string(t.sql[start:t.current]))
 	if payload != "" {
 		t.add(TokSTRING, payload, true)
 	}
@@ -560,7 +560,7 @@ func (t *Tokenizer) scanHex() {
 
 func (t *Tokenizer) extractValue() string {
 	for {
-		c := strings.TrimSpace(t.peekStr())
+		c := trimPythonSpace(t.peekStr())
 		if c == "" {
 			break
 		}
@@ -943,4 +943,12 @@ func isPythonSpace(r rune) bool {
 		return true
 	}
 	return unicode.IsSpace(r)
+}
+
+// trimPythonSpace is Python's `str.strip()`, which the reference calls to
+// decide where a value ends. strings.TrimSpace is Go's definition and stops
+// four characters short -- see isPythonSpace. `0X<RS>` kept the separator
+// inside the token here and dropped it there.
+func trimPythonSpace(s string) string {
+	return strings.TrimFunc(s, isPythonSpace)
 }
