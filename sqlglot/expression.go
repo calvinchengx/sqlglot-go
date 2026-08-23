@@ -52,13 +52,25 @@ func New(class string, args ...Arg) *Expression {
 }
 
 // Set assigns one arg, adopting any child expressions.
+//
+// A typed nil child is normalised to an absent one. The reference stores None
+// there, and an absent arg produces no dump record at all -- so a *Expression
+// that happens to be nil must not become a leaf record holding "null", which is
+// what a naive store would do and what the differential would then report as a
+// mismatch on every optional clause.
 func (e *Expression) Set(key string, value any) {
 	switch v := value.(type) {
 	case *Expression:
-		if v != nil {
-			v.Parent = e
+		if v == nil {
+			value = nil
+			break
 		}
+		v.Parent = e
 	case []*Expression:
+		if len(v) == 0 {
+			value = nil
+			break
+		}
 		for _, c := range v {
 			if c != nil {
 				c.Parent = e

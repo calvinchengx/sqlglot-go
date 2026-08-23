@@ -2,6 +2,7 @@ package sqlglot
 
 import (
 	"encoding/json"
+	"errors"
 	"strings"
 	"testing"
 )
@@ -164,11 +165,28 @@ func sameDump(t *testing.T, got, want []map[string]any) bool {
 	return string(x) == string(y)
 }
 
-func TestParseOneIsStillAGap(t *testing.T) {
-	// Until the parser lands, every statement is an honest gap rather than a
-	// wrong answer -- the harness counts it as unparsed, never as a match.
-	if _, err := ParseOne("SELECT 1", ""); err == nil {
-		t.Fatal("ParseOne should report ErrUnsupported until the parser exists")
+func TestUnsupportedIsAGapNotAGuess(t *testing.T) {
+	// Anything outside the grammar is refused with ErrUnsupported, which the
+	// harness counts as a gap. It must never come back as a tree that merely
+	// looks plausible -- the guard above this parser would reason about
+	// something the engine will not run.
+	for _, sql := range []string{
+		"DELETE FROM t",
+		"SELECT f(1)",
+		"SELECT * FROM a, b",
+		"SELECT * FROM a JOIN b ON a.x = b.x",
+		"SELECT * FROM (SELECT 1)",
+		"WITH c AS (SELECT 1) SELECT * FROM c",
+		"SELECT 1 UNION SELECT 2",
+	} {
+		tree, err := ParseOne(sql, "")
+		if err == nil {
+			t.Errorf("ParseOne(%q) returned a tree instead of refusing:\n%s", sql, tree.DumpJSON())
+			continue
+		}
+		if !errors.Is(err, ErrUnsupported) {
+			t.Errorf("ParseOne(%q) failed with %v, want ErrUnsupported", sql, err)
+		}
 	}
 }
 
@@ -176,5 +194,17 @@ func TestDumpJSONIsReadable(t *testing.T) {
 	got := string(New("Star").DumpJSON())
 	if !strings.Contains(got, "sqlglot.expressions.core.Star") || !strings.Contains(got, "\n") {
 		t.Errorf("DumpJSON should be indented JSON naming the class, got %s", got)
+	}
+}
+
+func TestEmptyListIsAnAbsentArg(t *testing.T) {
+	// An empty list dumps as nothing in the reference, so it must here too --
+	// but the key still reserves its position for a later assignment.
+	e := New("Select", Arg{"expressions", []*Expression{}}, Arg{"from_", New("Table")})
+	if got := len(e.Dump()); got != 2 {
+		t.Errorf("an empty list produced %d records, want the node and its one real child", got)
+	}
+	if e.Keys[0] != "expressions" {
+		t.Errorf("the empty list did not reserve its slot: %v", e.Keys)
 	}
 }

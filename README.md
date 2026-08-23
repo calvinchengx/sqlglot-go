@@ -22,11 +22,11 @@ whose Go executor is the first consumer.
 <!-- coverage:start -->
 | Dialect | Tokens | Trees matched | Of | Unparsed | Mismatched |
 |---|---|---|---|---|---|
-| neutral | 997/997 | 0 | 997 | 997 | 0 |
-| tsql | 233/233 | 0 | 233 | 233 | 0 |
-| postgres | 398/398 | 0 | 398 | 398 | 0 |
-| duckdb | 392/392 | 0 | 392 | 392 | 0 |
-| databricks | 151/151 | 0 | 151 | 151 | 0 |
+| neutral | 997/997 | 87 | 997 | 910 | 0 |
+| tsql | 233/233 | 8 | 233 | 225 | 0 |
+| postgres | 398/398 | 4 | 398 | 394 | 0 |
+| duckdb | 392/392 | 7 | 392 | 385 | 0 |
+| databricks | 151/151 | 3 | 151 | 148 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number
@@ -37,7 +37,10 @@ The tokenizer is complete and has no gap tier: every statement the reference
 lexes, the port lexes into the same tokens — same types, same text, same line,
 column and offsets, same attached comments. A tokenizer has nowhere to
 legitimately give up, because the parser above it cannot see what it drops.
-The parser is next; until it lands every statement is an honest unparsed.
+The parser is being built outward from `SELECT`. It refuses everything outside
+the grammar it has: a construct it does not understand is an `ErrUnsupported`
+that counts as unparsed, never a tree that merely looks plausible. That is why
+**mismatched is zero at every step** and is the number to watch.
 
 ## How it is verified
 
