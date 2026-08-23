@@ -28,14 +28,23 @@ it is deliberately a different question from the one below.
 <!-- service:start -->
 | Category | Parsed | Of |
 |---|---|---|
+| `must_name_the_statement` | 13 | 13 |
 | `must_parse` | 105 | 105 |
-| `must_parse_to_refuse` | 26 | 26 |
-| `must_name_the_statement` | 12 | 12 |
-| `may_refuse_unparsed` | 1 | 1 |
+| `must_parse_to_refuse` | 29 | 29 |
 <!-- service:end -->
 
 **Every category is complete**, which is the condition for rewriting the Go
 guard over a parse tree rather than over a token scan.
+
+`may_refuse_unparsed` no longer appears: the single statement in it is
+`SELECT * FRO dbo.x`, which the reference rejects too, so there is nothing for
+the port to be held to. The category is still extracted and counted -- it is
+absent from this table, not from the corpus.
+
+These figures are copied here from `testdata/service/coverage.json` by hand and
+nothing checks the copy, which is the same shape of defect the corpus itself
+just had. Regenerate with `make service && make coverage` before trusting
+them.
 
 `must_parse` is SQL the guard permits: a gap there is a question the agent
 answers today and would stop answering. `must_parse_to_refuse` is SQL the guard

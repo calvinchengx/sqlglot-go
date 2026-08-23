@@ -208,6 +208,13 @@ func writeServiceCoverage(t *testing.T, corpus ServiceCorpus, byCategory, byDial
 // assertServiceFloor refuses a regression against the service's own SQL. This
 // floor is the one that matters most: it only ever goes up, and when the
 // must_parse categories reach their totals the guard can be rewritten.
+//
+// `may_refuse_unparsed` is deliberately ABSENT from floor.json. That category
+// means "any refusal is right", so a floor on it ratchets a guarantee nobody
+// wants: when the corpus grew, the statement in that bucket became
+// `SELECT * FRO dbo.x`, which the REFERENCE rejects too -- and the ratchet
+// called matching the reference a regression. A floor belongs only on
+// categories where parsing is required.
 func assertServiceFloor(t *testing.T, byCategory map[string]*tally) {
 	t.Helper()
 	raw, err := os.ReadFile(filepath.Join("..", "testdata", "service", "floor.json"))

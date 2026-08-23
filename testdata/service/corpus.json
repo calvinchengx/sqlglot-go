@@ -1,101 +1,13 @@
 {
- "service": "4f36db9b66421883ee48d907d01023e9cf0d108b",
+ "service": "ca604888a29b6aa928e85c9e1df2058249a45213",
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
  "cases": [
-  {
-   "sql": "EXEC xp_cmdshell 'dir'",
-   "dialect": "tsql",
-   "category": "may_refuse_unparsed",
-   "reason": "",
-   "from": "test_sqlguard.py:DENIED",
-   "tree": [
-    {
-     "c": "sqlglot.expressions.ddl.Execute"
-    },
-    {
-     "i": 0,
-     "k": "this",
-     "c": "sqlglot.expressions.query.Table"
-    },
-    {
-     "i": 1,
-     "k": "this",
-     "c": "sqlglot.expressions.core.Identifier",
-     "m": {
-      "line": 1,
-      "col": 16,
-      "start": 5,
-      "end": 15
-     }
-    },
-    {
-     "i": 2,
-     "k": "this",
-     "v": "xp_cmdshell"
-    },
-    {
-     "i": 2,
-     "k": "quoted",
-     "v": false
-    },
-    {
-     "i": 0,
-     "k": "expressions",
-     "a": true,
-     "c": "sqlglot.expressions.core.Literal",
-     "m": {
-      "line": 1,
-      "col": 22,
-      "start": 17,
-      "end": 21
-     }
-    },
-    {
-     "i": 5,
-     "k": "this",
-     "v": "dir"
-    },
-    {
-     "i": 5,
-     "k": "is_string",
-     "v": true
-    }
-   ],
-   "tokens": [
-    {
-     "t": "EXECUTE",
-     "x": "EXEC",
-     "l": 1,
-     "c": 4,
-     "s": 0,
-     "e": 3
-    },
-    {
-     "t": "VAR",
-     "x": "xp_cmdshell",
-     "l": 1,
-     "c": 16,
-     "s": 5,
-     "e": 15
-    },
-    {
-     "t": "STRING",
-     "x": "dir",
-     "l": 1,
-     "c": 22,
-     "s": 17,
-     "e": 21
-    }
-   ],
-   "rendered": "EXECUTE xp_cmdshell 'dir'",
-   "reference_parsed": true
-  },
   {
    "sql": "SELECT * FRO dbo.x",
    "dialect": "tsql",
    "category": "may_refuse_unparsed",
    "reason": "parse",
-   "from": "test_sqlguard.py:DENIED, run.py:REFUSED",
+   "from": "guard_corpus.json:parse",
    "reference_parsed": false
   },
   {
@@ -103,7 +15,7 @@
    "dialect": "duckdb",
    "category": "must_name_the_statement",
    "reason": "read-only",
-   "from": "test_sqlguard.py:DUCKDB_DENIED",
+   "from": "guard_corpus.json:read-only",
    "tree": [
     {
      "c": "sqlglot.expressions.dml.Delete"
@@ -216,7 +128,7 @@
    "dialect": "duckdb",
    "category": "must_name_the_statement",
    "reason": "read-only",
-   "from": "test_sqlguard.py:DUCKDB_DENIED",
+   "from": "guard_corpus.json:read-only",
    "tree": [
     {
      "c": "sqlglot.expressions.ddl.Drop"
@@ -380,7 +292,7 @@
    "dialect": "duckdb",
    "category": "must_name_the_statement",
    "reason": "read-only",
-   "from": "test_sqlguard.py:DUCKDB_DENIED",
+   "from": "guard_corpus.json:read-only",
    "tree": [
     {
      "c": "sqlglot.expressions.dml.Insert"
@@ -598,7 +510,7 @@
    "dialect": "duckdb",
    "category": "must_name_the_statement",
    "reason": "one statement",
-   "from": "test_sqlguard.py:DUCKDB_DENIED",
+   "from": "guard_corpus.json:one statement",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Block"
@@ -820,7 +732,7 @@
    "dialect": "duckdb",
    "category": "must_name_the_statement",
    "reason": "read-only",
-   "from": "test_sqlguard.py:DUCKDB_DENIED",
+   "from": "guard_corpus.json:read-only",
    "tree": [
     {
      "c": "sqlglot.expressions.dml.Update"
@@ -1000,7 +912,7 @@
    "dialect": "tsql",
    "category": "must_name_the_statement",
    "reason": "read-only",
-   "from": "test_sqlguard.py:DENIED, run.py:REFUSED",
+   "from": "guard_corpus.json:read-only",
    "tree": [
     {
      "c": "sqlglot.expressions.dml.Delete"
@@ -1113,7 +1025,7 @@
    "dialect": "tsql",
    "category": "must_name_the_statement",
    "reason": "read-only",
-   "from": "test_sqlguard.py:DENIED, run.py:REFUSED",
+   "from": "guard_corpus.json:read-only",
    "tree": [
     {
      "c": "sqlglot.expressions.ddl.Drop"
@@ -1273,11 +1185,99 @@
    "reference_parsed": true
   },
   {
+   "sql": "EXEC xp_cmdshell 'dir'",
+   "dialect": "tsql",
+   "category": "must_name_the_statement",
+   "reason": "read-only",
+   "from": "guard_corpus.json:read-only",
+   "tree": [
+    {
+     "c": "sqlglot.expressions.ddl.Execute"
+    },
+    {
+     "i": 0,
+     "k": "this",
+     "c": "sqlglot.expressions.query.Table"
+    },
+    {
+     "i": 1,
+     "k": "this",
+     "c": "sqlglot.expressions.core.Identifier",
+     "m": {
+      "line": 1,
+      "col": 16,
+      "start": 5,
+      "end": 15
+     }
+    },
+    {
+     "i": 2,
+     "k": "this",
+     "v": "xp_cmdshell"
+    },
+    {
+     "i": 2,
+     "k": "quoted",
+     "v": false
+    },
+    {
+     "i": 0,
+     "k": "expressions",
+     "a": true,
+     "c": "sqlglot.expressions.core.Literal",
+     "m": {
+      "line": 1,
+      "col": 22,
+      "start": 17,
+      "end": 21
+     }
+    },
+    {
+     "i": 5,
+     "k": "this",
+     "v": "dir"
+    },
+    {
+     "i": 5,
+     "k": "is_string",
+     "v": true
+    }
+   ],
+   "tokens": [
+    {
+     "t": "EXECUTE",
+     "x": "EXEC",
+     "l": 1,
+     "c": 4,
+     "s": 0,
+     "e": 3
+    },
+    {
+     "t": "VAR",
+     "x": "xp_cmdshell",
+     "l": 1,
+     "c": 16,
+     "s": 5,
+     "e": 15
+    },
+    {
+     "t": "STRING",
+     "x": "dir",
+     "l": 1,
+     "c": 22,
+     "s": 17,
+     "e": 21
+    }
+   ],
+   "rendered": "EXECUTE xp_cmdshell 'dir'",
+   "reference_parsed": true
+  },
+  {
    "sql": "INSERT INTO dbo.fct_sales VALUES (1)",
    "dialect": "tsql",
    "category": "must_name_the_statement",
    "reason": "read-only",
-   "from": "test_sqlguard.py:DENIED, run.py:REFUSED",
+   "from": "guard_corpus.json:read-only",
    "tree": [
     {
      "c": "sqlglot.expressions.dml.Insert"
@@ -1495,7 +1495,7 @@
    "dialect": "tsql",
    "category": "must_name_the_statement",
    "reason": "read-only",
-   "from": "test_sqlguard.py:DENIED, run.py:REFUSED",
+   "from": "guard_corpus.json:read-only",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -1717,7 +1717,7 @@
    "dialect": "tsql",
    "category": "must_name_the_statement",
    "reason": "one statement",
-   "from": "test_sqlguard.py:DENIED, run.py:REFUSED",
+   "from": "guard_corpus.json:one statement",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Block"
@@ -1939,7 +1939,7 @@
    "dialect": "tsql",
    "category": "must_name_the_statement",
    "reason": "read-only",
-   "from": "test_sqlguard.py:DENIED, run.py:REFUSED",
+   "from": "guard_corpus.json:read-only",
    "tree": [
     {
      "c": "sqlglot.expressions.ddl.TruncateTable"
@@ -2053,7 +2053,7 @@
    "dialect": "tsql",
    "category": "must_name_the_statement",
    "reason": "read-only",
-   "from": "test_sqlguard.py:DENIED, run.py:REFUSED",
+   "from": "guard_corpus.json:read-only",
    "tree": [
     {
      "c": "sqlglot.expressions.dml.Update"
@@ -2232,7 +2232,8 @@
    "sql": "SELECT * FROM main.tickets ORDER BY minutes LIMIT 10",
    "dialect": "duckdb",
    "category": "must_parse",
-   "from": "test_sqlguard.py:DUCKDB_ALLOWED",
+   "reason": "",
+   "from": "guard_corpus.json:permitted",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -2459,7 +2460,8 @@
    "sql": "SELECT t.team FROM main.tickets t JOIN main.agents a ON a.team = t.team",
    "dialect": "duckdb",
    "category": "must_parse",
-   "from": "test_sqlguard.py:DUCKDB_ALLOWED",
+   "reason": "",
+   "from": "guard_corpus.json:permitted",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -2954,7 +2956,8 @@
    "sql": "SELECT team, COUNT(*) AS n FROM main.tickets GROUP BY team",
    "dialect": "duckdb",
    "category": "must_parse",
-   "from": "test_sqlguard.py:DUCKDB_ALLOWED",
+   "reason": "",
+   "from": "guard_corpus.json:permitted",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -3254,7 +3257,8 @@
    "sql": "WITH x AS (SELECT * FROM main.tickets) SELECT COUNT(*) FROM x",
    "dialect": "duckdb",
    "category": "must_parse",
-   "from": "test_sqlguard.py:DUCKDB_ALLOWED",
+   "reason": "",
+   "from": "guard_corpus.json:permitted",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -36445,7 +36449,8 @@
    "sql": "SELECT * FROM contoso_warehouse.dbo.dim_country",
    "dialect": "tsql",
    "category": "must_parse",
-   "from": "test_sqlguard.py:ALLOWED, sqlguard_test.go:TestAllowed",
+   "reason": "",
+   "from": "guard_corpus.json:permitted, sqlguard_test.go:TestAllowed",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -36609,7 +36614,8 @@
    "sql": "SELECT * FROM dbo.fct_sales CROSS APPLY (SELECT product_id FROM dbo.dim_product) t",
    "dialect": "tsql",
    "category": "must_parse",
-   "from": "test_sqlguard.py:test_apply_over_a_subquery_is_still_allowed",
+   "reason": "",
+   "from": "guard_corpus.json:permitted",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -36955,7 +36961,8 @@
    "sql": "SELECT * FROM dbo.fct_sales OUTER APPLY (SELECT product_id FROM dbo.dim_product) t",
    "dialect": "tsql",
    "category": "must_parse",
-   "from": "test_sqlguard.py:test_apply_over_a_subquery_is_still_allowed",
+   "reason": "",
+   "from": "guard_corpus.json:permitted",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -39089,7 +39096,8 @@
    "sql": "SELECT COUNT(*) AS n FROM dbo.fct_revenue_summary",
    "dialect": "tsql",
    "category": "must_parse",
-   "from": "run.py:ALLOWED",
+   "reason": "",
+   "from": "guard_corpus.json:permitted",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -45079,7 +45087,8 @@
    "sql": "SELECT TOP 10 * FROM dbo.dim_product ORDER BY list_price_usd DESC",
    "dialect": "tsql",
    "category": "must_parse",
-   "from": "test_sqlguard.py:ALLOWED, sqlguard_test.go:TestAllowed",
+   "reason": "",
+   "from": "guard_corpus.json:permitted, sqlguard_test.go:TestAllowed",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -45742,7 +45751,8 @@
    "sql": "SELECT TOP 5 product_name FROM dbo.dim_product ORDER BY list_price_usd DESC",
    "dialect": "tsql",
    "category": "must_parse",
-   "from": "run.py:ALLOWED",
+   "reason": "",
+   "from": "guard_corpus.json:permitted",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -45997,7 +46007,8 @@
    "sql": "SELECT a.country FROM dbo.dim_country a UNION SELECT b.country FROM dbo.dim_customer b",
    "dialect": "tsql",
    "category": "must_parse",
-   "from": "test_sqlguard.py:ALLOWED, sqlguard_test.go:TestAllowed",
+   "reason": "",
+   "from": "guard_corpus.json:permitted, sqlguard_test.go:TestAllowed",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Union"
@@ -48206,7 +48217,8 @@
    "sql": "SELECT country, SUM(revenue_usd) AS r FROM dbo.fct_revenue_summary GROUP BY country",
    "dialect": "tsql",
    "category": "must_parse",
-   "from": "run.py:ALLOWED",
+   "reason": "",
+   "from": "guard_corpus.json:permitted",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -55592,7 +55604,8 @@
    "sql": "SELECT fiscal_year_label, SUM(revenue_usd) FROM dbo.fct_revenue_summary GROUP BY fiscal_year_label",
    "dialect": "tsql",
    "category": "must_parse",
-   "from": "test_sqlguard.py:ALLOWED, sqlguard_test.go:TestAllowed",
+   "reason": "",
+   "from": "guard_corpus.json:permitted, sqlguard_test.go:TestAllowed",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -57183,7 +57196,8 @@
    "sql": "SELECT s.amount_usd FROM dbo.fct_sales s JOIN dbo.dim_product p ON p.product_id = s.product_id",
    "dialect": "tsql",
    "category": "must_parse",
-   "from": "test_sqlguard.py:ALLOWED, run.py:ALLOWED, sqlguard_test.go:TestAllowed",
+   "reason": "",
+   "from": "guard_corpus.json:permitted, sqlguard_test.go:TestAllowed",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -57678,7 +57692,8 @@
    "sql": "WITH x AS (SELECT * FROM dbo.fct_sales) SELECT COUNT(*) FROM x",
    "dialect": "tsql",
    "category": "must_parse",
-   "from": "test_sqlguard.py:ALLOWED, run.py:ALLOWED, sqlguard_test.go:TestAllowed",
+   "reason": "",
+   "from": "guard_corpus.json:permitted, sqlguard_test.go:TestAllowed",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -58002,7 +58017,8 @@
    "sql": "SELECT * FROM main.glob('/**')",
    "dialect": "duckdb",
    "category": "must_parse_to_refuse",
-   "from": "test_sqlguard.py:test_a_file_reading_function_is_not_a_table",
+   "reason": "table function",
+   "from": "guard_corpus.json:table function",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -58170,7 +58186,8 @@
    "sql": "SELECT * FROM main.read_csv_auto('/etc/passwd')",
    "dialect": "duckdb",
    "category": "must_parse_to_refuse",
-   "from": "test_sqlguard.py:test_a_file_reading_function_is_not_a_table",
+   "reason": "table function",
+   "from": "guard_corpus.json:table function",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -58338,7 +58355,8 @@
    "sql": "SELECT * FROM main.read_parquet('s3://other/secrets.parquet')",
    "dialect": "duckdb",
    "category": "must_parse_to_refuse",
-   "from": "test_sqlguard.py:test_a_file_reading_function_is_not_a_table",
+   "reason": "table function",
+   "from": "guard_corpus.json:table function",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -58501,7 +58519,8 @@
    "sql": "SELECT * FROM main.tickets, main.read_csv_auto('/etc/passwd')",
    "dialect": "duckdb",
    "category": "must_parse_to_refuse",
-   "from": "test_sqlguard.py:test_a_file_reading_function_is_not_a_table",
+   "reason": "table function",
+   "from": "guard_corpus.json:table function",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -58754,7 +58773,8 @@
    "sql": "SELECT * FROM read_csv_auto('/etc/passwd')",
    "dialect": "duckdb",
    "category": "must_parse_to_refuse",
-   "from": "test_sqlguard.py:test_a_file_reading_function_is_not_a_table",
+   "reason": "table function",
+   "from": "guard_corpus.json:table function",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -58886,7 +58906,7 @@
    "dialect": "duckdb",
    "category": "must_parse_to_refuse",
    "reason": "not queryable",
-   "from": "test_sqlguard.py:DUCKDB_DENIED",
+   "from": "guard_corpus.json:not queryable",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -59014,7 +59034,7 @@
    "dialect": "duckdb",
    "category": "must_parse_to_refuse",
    "reason": "schema-qualified",
-   "from": "test_sqlguard.py:DUCKDB_DENIED",
+   "from": "guard_corpus.json:schema-qualified",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -59105,7 +59125,7 @@
    "dialect": "duckdb",
    "category": "must_parse_to_refuse",
    "reason": "reads no table",
-   "from": "test_sqlguard.py:DUCKDB_DENIED",
+   "from": "guard_corpus.json:reads no table",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -59155,11 +59175,150 @@
    "reference_parsed": true
   },
   {
+   "sql": "SELECT 1 JOIN main.tickets",
+   "dialect": "duckdb",
+   "category": "must_parse_to_refuse",
+   "reason": "JOIN with no FROM",
+   "from": "guard_corpus.json:JOIN with no FROM",
+   "tree": [
+    {
+     "c": "sqlglot.expressions.query.Select"
+    },
+    {
+     "i": 0,
+     "k": "expressions",
+     "a": true,
+     "c": "sqlglot.expressions.core.Literal",
+     "m": {
+      "line": 1,
+      "col": 8,
+      "start": 7,
+      "end": 7
+     }
+    },
+    {
+     "i": 1,
+     "k": "this",
+     "v": "1"
+    },
+    {
+     "i": 1,
+     "k": "is_string",
+     "v": false
+    },
+    {
+     "i": 0,
+     "k": "joins",
+     "a": true,
+     "c": "sqlglot.expressions.query.Join"
+    },
+    {
+     "i": 4,
+     "k": "this",
+     "c": "sqlglot.expressions.query.Table"
+    },
+    {
+     "i": 5,
+     "k": "this",
+     "c": "sqlglot.expressions.core.Identifier",
+     "m": {
+      "line": 1,
+      "col": 26,
+      "start": 19,
+      "end": 25
+     }
+    },
+    {
+     "i": 6,
+     "k": "this",
+     "v": "tickets"
+    },
+    {
+     "i": 6,
+     "k": "quoted",
+     "v": false
+    },
+    {
+     "i": 5,
+     "k": "db",
+     "c": "sqlglot.expressions.core.Identifier",
+     "m": {
+      "line": 1,
+      "col": 18,
+      "start": 14,
+      "end": 17
+     }
+    },
+    {
+     "i": 9,
+     "k": "this",
+     "v": "main"
+    },
+    {
+     "i": 9,
+     "k": "quoted",
+     "v": false
+    }
+   ],
+   "tokens": [
+    {
+     "t": "SELECT",
+     "x": "SELECT",
+     "l": 1,
+     "c": 6,
+     "s": 0,
+     "e": 5
+    },
+    {
+     "t": "NUMBER",
+     "x": "1",
+     "l": 1,
+     "c": 8,
+     "s": 7,
+     "e": 7
+    },
+    {
+     "t": "JOIN",
+     "x": "JOIN",
+     "l": 1,
+     "c": 13,
+     "s": 9,
+     "e": 12
+    },
+    {
+     "t": "VAR",
+     "x": "main",
+     "l": 1,
+     "c": 18,
+     "s": 14,
+     "e": 17
+    },
+    {
+     "t": "DOT",
+     "x": ".",
+     "l": 1,
+     "c": 19,
+     "s": 18,
+     "e": 18
+    },
+    {
+     "t": "VAR",
+     "x": "tickets",
+     "l": 1,
+     "c": 26,
+     "s": 19,
+     "e": 25
+    }
+   ],
+   "rendered": "SELECT 1, main.tickets",
+   "reference_parsed": true
+  },
+  {
    "sql": "SELECT * FROM OPENROWSET('SQLNCLI','...','SELECT 1')",
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
    "reason": "not allowed",
-   "from": "test_sqlguard.py:DENIED",
+   "from": "guard_corpus.json:not allowed",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -59367,7 +59526,7 @@
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
    "reason": "not allowed",
-   "from": "run.py:REFUSED",
+   "from": "guard_corpus.json:not allowed",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -59574,7 +59733,8 @@
    "sql": "SELECT * FROM dbo.fct_sales CROSS APPLY dbo.f(1)",
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
-   "from": "test_sqlguard.py:test_apply_over_a_function_is_not_a_table",
+   "reason": "function used as a table",
+   "from": "guard_corpus.json:function used as a table",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -59850,7 +60010,8 @@
    "sql": "SELECT * FROM dbo.fct_sales CROSS APPLY other.f(1)",
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
-   "from": "test_sqlguard.py:test_apply_over_a_function_is_not_a_table, run.py:REFUSED",
+   "reason": "function used as a table",
+   "from": "guard_corpus.json:function used as a table",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -60126,7 +60287,8 @@
    "sql": "SELECT * FROM dbo.fct_sales OUTER APPLY other.g(1)",
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
-   "from": "test_sqlguard.py:test_apply_over_a_function_is_not_a_table",
+   "reason": "function used as a table",
+   "from": "guard_corpus.json:function used as a table",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -60403,7 +60565,7 @@
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
    "reason": "table function",
-   "from": "run.py:REFUSED",
+   "from": "guard_corpus.json:table function",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -60657,7 +60819,7 @@
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
    "reason": "cross-database",
-   "from": "run.py:REFUSED",
+   "from": "guard_corpus.json:cross-database",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -60907,7 +61069,7 @@
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
    "reason": "not queryable",
-   "from": "run.py:REFUSED",
+   "from": "guard_corpus.json:not queryable",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -61120,7 +61282,7 @@
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
    "reason": "schema-qualified",
-   "from": "run.py:REFUSED",
+   "from": "guard_corpus.json:schema-qualified",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -61296,7 +61458,7 @@
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
    "reason": "table function",
-   "from": "run.py:REFUSED",
+   "from": "guard_corpus.json:table function",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -61465,7 +61627,7 @@
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
    "reason": "schema-qualified",
-   "from": "test_sqlguard.py:DENIED, run.py:REFUSED",
+   "from": "guard_corpus.json:schema-qualified",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -61556,7 +61718,7 @@
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
    "reason": "cross-database",
-   "from": "run.py:REFUSED",
+   "from": "guard_corpus.json:cross-database",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -61721,7 +61883,7 @@
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
    "reason": "not queryable",
-   "from": "test_sqlguard.py:DENIED",
+   "from": "guard_corpus.json:not queryable",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -61849,7 +62011,7 @@
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
    "reason": "not queryable",
-   "from": "run.py:REFUSED",
+   "from": "guard_corpus.json:not queryable",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -61977,7 +62139,7 @@
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
    "reason": "cross-database",
-   "from": "test_sqlguard.py:DENIED",
+   "from": "guard_corpus.json:cross-database",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -62142,7 +62304,7 @@
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
    "reason": "reads no table",
-   "from": "test_sqlguard.py:DENIED, run.py:REFUSED",
+   "from": "guard_corpus.json:reads no table",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -62192,10 +62354,293 @@
    "reference_parsed": true
   },
   {
+   "sql": "SELECT 1 JOIN dbo.fct_sales",
+   "dialect": "tsql",
+   "category": "must_parse_to_refuse",
+   "reason": "JOIN with no FROM",
+   "from": "guard_corpus.json:JOIN with no FROM",
+   "tree": [
+    {
+     "c": "sqlglot.expressions.query.Select"
+    },
+    {
+     "i": 0,
+     "k": "expressions",
+     "a": true,
+     "c": "sqlglot.expressions.core.Literal",
+     "m": {
+      "line": 1,
+      "col": 8,
+      "start": 7,
+      "end": 7
+     }
+    },
+    {
+     "i": 1,
+     "k": "this",
+     "v": "1"
+    },
+    {
+     "i": 1,
+     "k": "is_string",
+     "v": false
+    },
+    {
+     "i": 0,
+     "k": "joins",
+     "a": true,
+     "c": "sqlglot.expressions.query.Join"
+    },
+    {
+     "i": 4,
+     "k": "this",
+     "c": "sqlglot.expressions.query.Table"
+    },
+    {
+     "i": 5,
+     "k": "this",
+     "c": "sqlglot.expressions.core.Identifier",
+     "m": {
+      "line": 1,
+      "col": 27,
+      "start": 18,
+      "end": 26
+     }
+    },
+    {
+     "i": 6,
+     "k": "this",
+     "v": "fct_sales"
+    },
+    {
+     "i": 6,
+     "k": "quoted",
+     "v": false
+    },
+    {
+     "i": 5,
+     "k": "db",
+     "c": "sqlglot.expressions.core.Identifier",
+     "m": {
+      "line": 1,
+      "col": 17,
+      "start": 14,
+      "end": 16
+     }
+    },
+    {
+     "i": 9,
+     "k": "this",
+     "v": "dbo"
+    },
+    {
+     "i": 9,
+     "k": "quoted",
+     "v": false
+    }
+   ],
+   "tokens": [
+    {
+     "t": "SELECT",
+     "x": "SELECT",
+     "l": 1,
+     "c": 6,
+     "s": 0,
+     "e": 5
+    },
+    {
+     "t": "NUMBER",
+     "x": "1",
+     "l": 1,
+     "c": 8,
+     "s": 7,
+     "e": 7
+    },
+    {
+     "t": "JOIN",
+     "x": "JOIN",
+     "l": 1,
+     "c": 13,
+     "s": 9,
+     "e": 12
+    },
+    {
+     "t": "VAR",
+     "x": "dbo",
+     "l": 1,
+     "c": 17,
+     "s": 14,
+     "e": 16
+    },
+    {
+     "t": "DOT",
+     "x": ".",
+     "l": 1,
+     "c": 18,
+     "s": 17,
+     "e": 17
+    },
+    {
+     "t": "VAR",
+     "x": "fct_sales",
+     "l": 1,
+     "c": 27,
+     "s": 18,
+     "e": 26
+    }
+   ],
+   "rendered": "SELECT 1, dbo.fct_sales",
+   "reference_parsed": true
+  },
+  {
+   "sql": "SELECT PERCENT FROM dbo.fct_sales",
+   "dialect": "tsql",
+   "category": "must_parse_to_refuse",
+   "reason": "changing what the statement means",
+   "from": "guard_corpus.json:changing what the statement means",
+   "tree": [
+    {
+     "c": "sqlglot.expressions.query.Select"
+    },
+    {
+     "i": 0,
+     "k": "expressions",
+     "a": true,
+     "c": "sqlglot.expressions.core.Column"
+    },
+    {
+     "i": 1,
+     "k": "this",
+     "c": "sqlglot.expressions.core.Identifier",
+     "m": {
+      "line": 1,
+      "col": 14,
+      "start": 7,
+      "end": 13
+     }
+    },
+    {
+     "i": 2,
+     "k": "this",
+     "v": "PERCENT"
+    },
+    {
+     "i": 2,
+     "k": "quoted",
+     "v": false
+    },
+    {
+     "i": 0,
+     "k": "from_",
+     "c": "sqlglot.expressions.query.From"
+    },
+    {
+     "i": 5,
+     "k": "this",
+     "c": "sqlglot.expressions.query.Table"
+    },
+    {
+     "i": 6,
+     "k": "this",
+     "c": "sqlglot.expressions.core.Identifier",
+     "m": {
+      "line": 1,
+      "col": 33,
+      "start": 24,
+      "end": 32
+     }
+    },
+    {
+     "i": 7,
+     "k": "this",
+     "v": "fct_sales"
+    },
+    {
+     "i": 7,
+     "k": "quoted",
+     "v": false
+    },
+    {
+     "i": 6,
+     "k": "db",
+     "c": "sqlglot.expressions.core.Identifier",
+     "m": {
+      "line": 1,
+      "col": 23,
+      "start": 20,
+      "end": 22
+     }
+    },
+    {
+     "i": 10,
+     "k": "this",
+     "v": "dbo"
+    },
+    {
+     "i": 10,
+     "k": "quoted",
+     "v": false
+    }
+   ],
+   "tokens": [
+    {
+     "t": "SELECT",
+     "x": "SELECT",
+     "l": 1,
+     "c": 6,
+     "s": 0,
+     "e": 5
+    },
+    {
+     "t": "PERCENT",
+     "x": "PERCENT",
+     "l": 1,
+     "c": 14,
+     "s": 7,
+     "e": 13
+    },
+    {
+     "t": "FROM",
+     "x": "FROM",
+     "l": 1,
+     "c": 19,
+     "s": 15,
+     "e": 18
+    },
+    {
+     "t": "VAR",
+     "x": "dbo",
+     "l": 1,
+     "c": 23,
+     "s": 20,
+     "e": 22
+    },
+    {
+     "t": "DOT",
+     "x": ".",
+     "l": 1,
+     "c": 24,
+     "s": 23,
+     "e": 23
+    },
+    {
+     "t": "VAR",
+     "x": "fct_sales",
+     "l": 1,
+     "c": 33,
+     "s": 24,
+     "e": 32
+    }
+   ],
+   "rendered": "SELECT PERCENT FROM dbo.fct_sales",
+   "reference_parsed": true
+  },
+  {
    "sql": "SELECT TOP 100 PERCENT * FROM dbo.fct_sales",
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
-   "from": "test_sqlguard.py:test_a_percentage_is_not_a_row_ceiling, run.py:REFUSED",
+   "reason": "proportion",
+   "from": "guard_corpus.json:proportion",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"
@@ -62392,7 +62837,8 @@
    "sql": "SELECT TOP 50 PERCENT * FROM dbo.fct_sales",
    "dialect": "tsql",
    "category": "must_parse_to_refuse",
-   "from": "test_sqlguard.py:test_a_percentage_is_not_a_row_ceiling",
+   "reason": "proportion",
+   "from": "guard_corpus.json:proportion",
    "tree": [
     {
      "c": "sqlglot.expressions.query.Select"

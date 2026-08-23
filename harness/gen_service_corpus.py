@@ -133,6 +133,35 @@ def categorise(reason: str) -> str:
     return MUST_PARSE_TO_REFUSE
 
 
+def from_guard_corpus(path: pathlib.Path) -> list[dict]:
+    """The recorded guard corpus, which is where these statements now live.
+
+    They used to be literals inside `tests/test_sqlguard.py`, scraped out of
+    its AST. Phase B moved them into this JSON so one file feeds the Python
+    guard, the Go guard and the conformance suite -- and the scraper went on
+    reading the test module, which still exists and still passes, but no
+    longer holds a single statement. The count fell from 144 to 96 and three
+    whole categories went to zero, silently, because a source that yields
+    nothing looks exactly like a source with nothing to say.
+    """
+    if not path.exists():
+        return []
+    cases = json.loads(path.read_text())["cases"]
+    out: list[dict] = []
+    for case in cases:
+        refused = case.get("expect") == "refused"
+        out.append(
+            {
+                "sql": case["sql"],
+                "dialect": case.get("dialect", "tsql"),
+                "category": categorise(case.get("fragment", "")) if refused else MUST_PARSE,
+                "reason": case.get("fragment", ""),
+                "from": f"{path.name}:{case.get('fragment') or 'permitted'}",
+            }
+        )
+    return out
+
+
 def from_python_guard_tests(path: pathlib.Path, default_dialect: str) -> list[dict]:
     """Read a guard test module without importing it.
 
@@ -267,12 +296,34 @@ def main() -> int:
         raise SystemExit(f"reference is at {actual[:12]} but NOTICE pins {pinned[:12]}")
 
     dialects = dialects_by_source(service)
-    cases = (
-        from_evals(service, dialects)
-        + from_python_guard_tests(service / "tests" / "test_sqlguard.py", "tsql")
-        + from_python_guard_tests(service / "services" / "conformance" / "run.py", "tsql")
-        + from_go_guard_tests(service / "services" / "warehouse-query-go" / "sqlguard_test.go", "tsql")
-    )
+
+    # Named, so a source that goes quiet is a failure rather than a smaller
+    # number. `tests/test_sqlguard.py` emptied itself when the corpus moved to
+    # JSON and this script kept reading it for hours, reporting 96 statements
+    # where there were 144 and zero in three categories -- while the README
+    # went on showing the old figures, because they are only rewritten when
+    # someone runs this. A measurement that quietly covers less is the failure
+    # mode this whole harness exists to prevent.
+    sources = {
+        "evals": from_evals(service, dialects),
+        "guard corpus": from_guard_corpus(service / "services" / "contract" / "guard_corpus.json"),
+        # `services/conformance/run.py` is NOT read: it now derives its own
+        # ALLOWED and REFUSED from the corpus above, so scraping it would
+        # count the same statements twice. It was in this list until the
+        # fail-closed check above reported it empty.
+        "go guard tests": from_go_guard_tests(
+            service / "services" / "warehouse-query-go" / "sqlguard_test.go", "tsql"
+        ),
+    }
+    empty = [name for name, found in sources.items() if not found]
+    if empty:
+        raise SystemExit(
+            "these sources yielded no statements: "
+            + ", ".join(empty)
+            + "\nEither the service moved them or this script stopped finding them. "
+            "Fix the source rather than the number."
+        )
+    cases = [case for found in sources.values() for case in found]
 
     # The same statement appears in several suites by design -- the guard
     # corpus is deliberately duplicated across implementations. Count it once,
