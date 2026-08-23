@@ -92,6 +92,33 @@ make cover      # test coverage of the port
 make oracle     # regenerate expectations and generated tables from the pinned reference
 ```
 
+## Working on Windows
+
+The port is pure Go with no dependencies, and the tests need nothing but the Go
+toolchain -- the expectations are committed, so there is no Python to install,
+no native library, nothing to fetch. CI runs the full differential on **Linux,
+macOS and Windows, amd64 and arm64**, and it invokes `go` directly rather than
+`make`, so all five platforms are proven by the same commands you would type:
+
+```powershell
+go test ./...
+go vet ./...
+go test ./... -coverpkg=./sqlglot/ -coverprofile=cover.out
+go test ./harness/ -run TestGapReport -v
+```
+
+**The `Makefile` is convenience, not the build.** Its targets assume GNU make
+and a POSIX shell, so on Windows they want WSL or Git Bash. Nothing is lost by
+skipping it: `make test` is `go test ./...`, and `make gaps` is the last command
+above with the file-and-line prefix stripped.
+
+The remaining targets -- `oracle`, `service`, `lint` -- regenerate the committed
+expectations and the generated tables, or lint in a container. Those need
+Python, a checkout of the pinned sqlglot, and Docker. The asymmetry is
+deliberate: **contributing to the port needs a Go toolchain; maintaining the
+oracle needs more.** A contributor on Windows is held to exactly the same
+differential as everyone else without installing any of it.
+
 ## License
 
 Apache 2.0. The tokenizer design, expression model, parser architecture and
