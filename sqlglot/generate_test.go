@@ -221,3 +221,29 @@ func TestGenerateUnknownDataType(t *testing.T) {
 		t.Errorf("the error should name the type: %v", err)
 	}
 }
+
+func TestFunctionName(t *testing.T) {
+	for _, c := range []struct {
+		name, sql, dialect, want string
+		isFunc                   bool
+	}{
+		{"anonymous keeps its spelling", "openrowset(1)", "", "openrowset", true},
+		{"a named function reports its keyword", "COUNT(a)", "", "COUNT", true},
+		{"the keyword can depend on a flag", "COUNT_BIG(a)", "tsql", "COUNT_BIG", true},
+		{"a column is not a function", "a", "", "", false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			tree := parse(t, c.sql, c.dialect)
+			got, isFunc := FunctionName(tree, c.dialect)
+			if got != c.want || isFunc != c.isFunc {
+				t.Errorf("FunctionName(%q) = %q, %v; want %q, %v", c.sql, got, isFunc, c.want, c.isFunc)
+			}
+		})
+	}
+	if _, ok := FunctionName(nil, ""); ok {
+		t.Error("nil is not a function")
+	}
+	if _, ok := FunctionName(New("Count"), "oracle"); ok {
+		t.Error("an unknown dialect has no function names")
+	}
+}

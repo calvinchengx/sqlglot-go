@@ -195,3 +195,30 @@ var predicates = map[string]bool{
 	"Is": true, "In": true, "Between": true, "Like": true, "ILike": true,
 	"RegexpLike": true, "Glob": true, "SimilarTo": true, "Exists": true, "Paren": true,
 }
+
+// FunctionName is the name a function node is written with in a dialect, and
+// whether the node is a function at all.
+//
+// It exists for the layer above: a guard denying OPENROWSET or xp_cmdshell has
+// to ask what a node is called, and the answer is not on the node -- a Count
+// does not remember that it was written COUNT, and in T-SQL with big_int set
+// it is written COUNT_BIG.
+func FunctionName(e *Expression, dialect string) (string, bool) {
+	if e == nil {
+		return "", false
+	}
+	if e.Class == "Anonymous" {
+		name, _ := e.Args["this"].(string)
+		return name, name != ""
+	}
+	cfg, ok := ConfigFor(dialect)
+	if !ok {
+		return "", false
+	}
+	g := &generator{cfg: cfg, tables: cfg.Tables, dialect: dialect}
+	spec, ok := g.functionSpelling(e)
+	if !ok {
+		return "", false
+	}
+	return spec.Name, true
+}
