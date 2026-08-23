@@ -376,9 +376,16 @@ func (g *generator) writeDataType(e *Expression) string {
 func (g *generator) writeAnonymous(e *Expression) string { return g.anonymous(e, true) }
 
 func (g *generator) anonymous(e *Expression, upper bool) string {
-	name, _ := e.Args["this"].(string)
+	name, quoted := anonymousName(e)
 	if upper {
 		name = strings.ToUpper(name)
+	}
+	if quoted {
+		// The reference uppercases the name and THEN quotes it, brackets in
+		// T-SQL and double quotes elsewhere: `"myfunc"()` comes back as
+		// `[MYFUNC]()`. Dropping the quotes wrote a different identifier.
+		open, close := g.tables.IdentifierStart, g.tables.IdentifierEnd
+		name = open + strings.ReplaceAll(name, close, close+close) + close
 	}
 	return name + "(" + g.list(e, "expressions", ", ") + ")"
 }

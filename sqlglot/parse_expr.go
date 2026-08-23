@@ -591,6 +591,7 @@ func (p *parser) parseCase() (*Expression, error) {
 // until its node is ported. The list is generated, not guessed.
 func (p *parser) parseFunction() (*Expression, error) {
 	name := p.curr().Text
+	quotedName := p.curr().Type == TokIDENTIFIER
 	upper := strings.ToUpper(name)
 	if upper == "CAST" || upper == "TRY_CAST" {
 		return p.parseCast(upper == "TRY_CAST")
@@ -628,7 +629,14 @@ func (p *parser) parseFunction() (*Expression, error) {
 	if named {
 		return buildFunction(spec, args), nil
 	}
-	return New("Anonymous", Arg{"this", name}, Arg{"expressions", args}), nil
+	// A quoted name is an Identifier node in the reference and a bare string
+	// otherwise; the two are different trees, and writing the string for both
+	// lost the quoting on the way out.
+	var this any = name
+	if quotedName {
+		this = New("Identifier", Arg{"this", name}, Arg{"quoted", true})
+	}
+	return New("Anonymous", Arg{"this", this}, Arg{"expressions", args}), nil
 }
 
 // buildFunction fills a function node's arguments from the call's, following

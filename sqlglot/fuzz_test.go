@@ -33,15 +33,27 @@ func FuzzParseOneNeverPanics(f *testing.F) {
 	})
 }
 
-// KNOWN OPEN, found by this target and not yet fixed: `~ *` in T-SQL is
-// written `~*`, which lexes back as the single `~*` operator. `unary` already
-// spaces `- -5`, but only when the operand starts with the operator's own last
-// character; the general rule is "space it if joining would form a longer
-// token", which needs the keyword trie rather than a character comparison.
-// This target is therefore NOT in CI yet -- a fuzz session will find it in
-// seconds. Fix that and it can be.
-//
 // Whatever the generator writes, the parser must at least be able to READ.
+//
+// A DISCOVERY INSTRUMENT, not a regression gate, and deliberately not in CI.
+// It found four real bugs -- Databricks quote escaping, TOP without its
+// parentheses, parseTop refusing the TOP it writes, and `~ *` fusing into the
+// `~*` operator -- and it will keep finding them. But it cannot be made green,
+// because the property is STRONGER THAN THE REFERENCE'S OWN. Three times now a
+// failure turned out to be sqlglot doing the same thing:
+//
+//	`SELECT 1 JOIN a` -> `SELECT 1, a`   the joined table moves into the
+//	                                     select list; sqlglot writes it too
+//	`SELECTa0000(0)A00`                  the name is uppercased on the way
+//	                                     out, so the tree differs; likewise
+//	`+Do` -> `Do`                        the unary plus is dropped by both,
+//	                                     and a bare `Do` is a Command, not a
+//	                                     column, in the reference as well
+//
+// Which is the argument for Tier 1.5's batched differential: only the oracle
+// can say whether a divergence is this port's or sqlglot's, and a fuzzer
+// cannot call it per input. Run this by hand, adjudicate each finding against
+// the reference, and promote the real ones into the fixture corpus.
 // Weaker than tree equality on purpose -- see above -- but not weaker than it
 // looks: the guard emits this text to an engine, and output the port itself
 // cannot re-read is output nobody has checked the meaning of.

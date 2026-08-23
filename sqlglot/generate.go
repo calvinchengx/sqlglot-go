@@ -110,11 +110,40 @@ func (g *generator) binary(e *Expression, op string) string {
 // reference's generator writes them, and the probe read it back verbatim.
 func (g *generator) unary(e *Expression, word string) string {
 	this := g.child(e, "this")
-	// `- -5` needs the space: without it the two operators would lex as one.
-	if !strings.HasSuffix(word, " ") && this != "" && strings.HasPrefix(this, word[len(word)-1:]) {
+	if g.wouldFuse(word, this) {
 		return word + " " + this
 	}
 	return word + this
+}
+
+// wouldFuse reports whether writing an operator straight against its operand
+// would lex as something other than that operator.
+//
+// Asked of the TOKENIZER rather than of the characters. The character version
+// -- space it when the operand starts with the operator's own last character
+// -- covers `- -5`, where `--5` opens a comment and swallows the rest of the
+// line, and misses `~ *`, where `~*` is a single operator in its own right.
+// Those are the same bug, and only the trie knows the whole list.
+//
+// Found by fuzzing the generator's output back through the parser: `~ *` came
+// out as `~*` and read back as one token, which is a different statement.
+func (g *generator) wouldFuse(word, operand string) bool {
+	if strings.HasSuffix(word, " ") || operand == "" {
+		return false
+	}
+	first := []rune(operand)[0]
+	tk, err := NewTokenizer(g.dialect)
+	if err != nil {
+		// No tokenizer to ask; keep the old, narrower rule rather than guess.
+		return strings.HasPrefix(operand, word[len(word)-1:])
+	}
+	toks, err := tk.Tokenize(word + string(first))
+	if err != nil || len(toks) == 0 {
+		// Unlexable joined -- `--` opens a comment and eats the operand. A
+		// space is the fix in every such case.
+		return true
+	}
+	return toks[0].Text != word
 }
 
 // functionSpelling picks how this node is written. A class can be written more
@@ -208,7 +237,7 @@ func FunctionName(e *Expression, dialect string) (string, bool) {
 		return "", false
 	}
 	if e.Class == "Anonymous" {
-		name, _ := e.Args["this"].(string)
+		name, _ := anonymousName(e)
 		return name, name != ""
 	}
 	cfg, ok := ConfigFor(dialect)
@@ -221,4 +250,26 @@ func FunctionName(e *Expression, dialect string) (string, bool) {
 		return "", false
 	}
 	return spec.Name, true
+}
+
+// anonymousName is the name of a call, and whether it was written quoted.
+//
+// The reference stores an UNQUOTED name as a plain string and a quoted one as
+// an Identifier node, and the two are different trees. Every reader of that
+// arg goes through here, because there are three of them and the one that
+// matters is the guard's: FunctionName feeds the denied-call check, so a
+// reader that understood only the string form would stop seeing
+// `[xp_cmdshell]()` the moment the parser started recording the quoting.
+func anonymousName(e *Expression) (name string, quoted bool) {
+	switch v := e.Args["this"].(type) {
+	case string:
+		return v, false
+	case *Expression:
+		if v != nil && v.Class == "Identifier" {
+			s, _ := v.Args["this"].(string)
+			q, _ := v.Args["quoted"].(bool)
+			return s, q
+		}
+	}
+	return "", false
 }
