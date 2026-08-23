@@ -64,11 +64,11 @@ Regenerate with `make service`; nothing in it is authored here.
 <!-- coverage:start -->
 | Dialect | Tokens | Trees matched | Of | Unparsed | Mismatched |
 |---|---|---|---|---|---|
-| neutral | 997/997 | 376 | 997 | 621 | 0 |
-| tsql | 597/597 | 192 | 597 | 405 | 0 |
+| neutral | 997/997 | 391 | 997 | 606 | 0 |
+| tsql | 597/597 | 194 | 597 | 403 | 0 |
 | postgres | 857/857 | 220 | 857 | 637 | 0 |
-| duckdb | 1631/1631 | 548 | 1631 | 1083 | 0 |
-| databricks | 424/424 | 129 | 424 | 295 | 0 |
+| duckdb | 1631/1631 | 582 | 1631 | 1049 | 0 |
+| databricks | 424/424 | 141 | 424 | 283 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number
@@ -76,8 +76,8 @@ that matters** and must be zero: it counts statements the port parsed into a
 *different* tree than the reference. Unparsed is the honest size of the gap.
 
 The port also writes SQL back out, and is held to the reference's own output
-string for string: **1,378 of the statements it parses are written back
-identically and none is written wrongly**, with 67 refused, and the guard's own rewrite -- inject a row ceiling, emit --
+string for string: **1,438 of the statements it parses are written back
+identically and none is written wrongly**, with 70 refused, and the guard's own rewrite -- inject a row ceiling, emit --
 lands as `TOP 500` in T-SQL and `LIMIT 500` in DuckDB from the same edit to the
 same node. Where a dialect would transform a statement in a way the port does
 not perform, the generator **refuses** rather than emit something close: an
@@ -112,7 +112,18 @@ by dialect. Harvesting those took the corpus from 2,171 to 4,506 and found
 **31 statements the port parsed into a different tree**, including two —
 `IS [NOT] DISTINCT FROM` and typed division — that had been found the
 expensive way, by fuzzing, while sitting in the reference's own tests all
-along. `go
+along.
+
+The function catalogue is probed, not transcribed: each builder is run and the
+node it returns is read back. That probe is only as good as the arguments it
+runs the builder with, and a builder that INSPECTS what it was handed yields a
+spec that is right for a plain column and wrong for real SQL — DuckDB's
+`DATE_TRUNC` builds a `DateTrunc` over a DATE cast and a `TimestampTrunc`
+otherwise, and `LOWER(HEX(x))` is a `LowerHex`, not a `Lower`. So every spec is
+put to a cast, a nested call, a string, a number and a subquery, and kept only
+if it survives all of them. A name whose spec does not survive is **refused**,
+because a plausible tree the reference never builds is the one thing this port
+must not produce. `go
 test ./...` runs every one through the port and diffs both. The expectations
 are committed, so the Go tests need no Python; regenerating them (`make
 oracle`) refuses to run against any commit other than the one `NOTICE` pins.

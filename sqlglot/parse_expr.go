@@ -725,6 +725,21 @@ func (p *parser) parseFunction() (*Expression, error) {
 				return nil, p.unsupported("string argument to " + name)
 			}
 		}
+		// The argument's own CLASS can change what is built: LOWER(HEX(x)) is
+		// a LowerHex, LOWER(x) is a Lower. The spec was probed with a
+		// placeholder column and describes only the second, so a call that
+		// nests one of the listed classes is refused rather than built as the
+		// tree the reference never makes.
+		for _, t := range p.tables.ClassSensitiveArgs[strings.ToUpper(name)] {
+			if t.Index >= len(args) || args[t.Index] == nil {
+				continue
+			}
+			for _, c := range t.Classes {
+				if args[t.Index].Class == c {
+					return nil, p.unsupported(c + " argument to " + name)
+				}
+			}
+		}
 		return buildFunction(spec, args), nil
 	}
 	// A quoted name is an Identifier node in the reference and a bare string
@@ -773,6 +788,16 @@ func buildFunction(spec FuncSpec, args []*Expression) *Expression {
 	node := New(spec.Class)
 	for _, a := range spec.Args {
 		switch {
+		case a.Wrap != "":
+			// Built FROM the argument, not holding it: DATEADD's unit is
+			// Var(args[i].name upper-cased), and the argument node itself does
+			// not appear in the result at all.
+			if a.Index < len(args) {
+				node.Set(a.Key, New(a.Wrap,
+					Arg{"this", strings.ToUpper(args[a.Index].Name())}))
+			} else {
+				node.Set(a.Key, nil)
+			}
 		case a.VarLen:
 			rest := []*Expression{}
 			if a.Index < len(args) {

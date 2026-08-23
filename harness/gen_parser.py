@@ -44,7 +44,43 @@ def strset(name: str, names) -> str:
     return f"\t\t{name}: map[string]struct{{}}{{\n{body}\t\t}},\n"
 
 
-def probe_functions(P, exp):
+def probe_substitutions(exp):
+    """Argument kinds a builder might branch on, beyond a plain column.
+
+    Each is a shape a caller can actually write, and each is one the reference
+    is known to inspect: a cast (DuckDB reads a DATE cast differently), a
+    nested call (LOWER over HEX becomes LowerHex), a string literal
+    (REGEXP_REPLACE reads a trailing string as flags), a subquery (which has no
+    name to wrap), and a number.
+    """
+    return [
+        exp.cast(exp.column("__sub"), "DATE"),
+        exp.cast(exp.column("__sub"), "DOUBLE"),
+        exp.Hex(this=exp.column("__sub")),
+        exp.Literal.string("__sub"),
+        exp.Literal.number(1),
+        exp.Subquery(this=exp.select("1")),
+    ]
+
+
+def call_builder(builder, args, dialect):
+    """Run one of sqlglot's function builders.
+
+    Some builders take `(args, dialect)` rather than `(args)` -- 36 of the 772
+    names across the five dialects the executor configures, including ARRAY,
+    ARRAY_AGG and CONCAT_WS. The probe used to call `builder(args)` only, so
+    every one of them raised, yielded no spec, and the port REFUSED the name
+    outright: ordinary SQL, unread, because the probe called the builder wrong.
+    """
+    from sqlglot.dialects.dialect import Dialect
+
+    try:
+        return builder(list(args))
+    except TypeError:
+        return builder(list(args), Dialect.get_or_raise(dialect or None))
+
+
+def probe_functions(P, exp, dialect=""):
     """Work out what each function name builds, by asking the reference.
 
     A function name does not simply become a node of the same shape: COUNT
@@ -88,6 +124,21 @@ def probe_functions(P, exp):
                     return None
             elif value is None or isinstance(value, (bool, str, int)):
                 out.append((key, {"const": value}))
+            elif isinstance(value, exp.Expr):
+                # A node built FROM an argument rather than holding it:
+                # DATEADD sets unit=Var(args[0].name.upper()). The argument
+                # itself is nowhere in the tree -- only its NAME is -- so the
+                # placeholder test above misses it and the whole builder used
+                # to be rejected. 28 names in the catalogue do exactly this.
+                inner = value.args.get("this")
+                if not isinstance(inner, str) or len(value.args) != 1:
+                    return None
+                for i, a in enumerate(args):
+                    if inner == a.name.upper():
+                        out.append((key, {"wrap": type(value).__name__, "index": i}))
+                        break
+                else:
+                    return None
             else:
                 return None
         return out
@@ -95,7 +146,14 @@ def probe_functions(P, exp):
     def rebuild(spec, args):
         out = {}
         for key, how in spec:
-            if "index" in how:
+            if "wrap" in how:
+                i = how["index"]
+                out[key] = (
+                    getattr(exp, how["wrap"])(this=args[i].name.upper())
+                    if i < len(args)
+                    else None
+                )
+            elif "index" in how:
                 out[key] = args[how["index"]] if how["index"] < len(args) else None
             elif "varlen" in how:
                 out[key] = args[how["varlen"] :]
@@ -122,6 +180,11 @@ def probe_functions(P, exp):
             elif value is None or isinstance(value, (bool, str, int)):
                 if actual is not value and actual != value:
                     return False
+            elif isinstance(value, exp.Expr) and isinstance(actual, exp.Expr):
+                # A wrapped node is rebuilt, not carried, so identity is the
+                # wrong test -- compare what it is instead.
+                if type(value) is not type(actual) or value.args != actual.args:
+                    return False
             elif value is not actual:
                 return False
         return True
@@ -138,7 +201,7 @@ def probe_functions(P, exp):
         for width in range(12, -1, -1):
             args = placeholders(width)
             try:
-                node = builder(list(args))
+                node = call_builder(builder, args, dialect)
             except Exception:  # noqa: BLE001 -- too many arguments for this name; try fewer
                 node = None
                 continue
@@ -150,12 +213,34 @@ def probe_functions(P, exp):
         spec = describe(node, args)
         if spec is None:
             continue
-        # The same spec must explain a call with fewer arguments.
+        # The same spec must explain a call whose arguments are not all plain
+        # columns. A builder that inspects what it was handed -- DuckDB's
+        # DATE_TRUNC builds a DateTrunc for a DATE cast and a TimestampTrunc
+        # otherwise, LOWER builds a LowerHex over a Hex -- yields a spec that
+        # is right for placeholders and quietly WRONG for real SQL. Probing
+        # with one kind of argument cannot see that, so the spec is put to
+        # several kinds and kept only if it survives all of them.
         ok = True
-        for n in range(len(args)):
+        for kind in probe_substitutions(exp):
+            for i in range(len(args)):
+                subst = list(args)
+                subst[i] = kind.copy()
+                try:
+                    other = call_builder(builder, subst, dialect)
+                except Exception:  # noqa: BLE001 -- this argument is invalid here
+                    continue
+                if not isinstance(other, exp.Expr) or other.__class__ is not node.__class__:
+                    ok = False
+                    break
+                if not same(rebuild(spec, subst), other, subst):
+                    ok = False
+                    break
+            if not ok:
+                break
+        for n in range(len(args)) if ok else ():
             fewer = placeholders(n)
             try:
-                other = builder(list(fewer))
+                other = call_builder(builder, fewer, dialect)
             except Exception:  # noqa: BLE001 -- fewer arguments may be invalid for this name
                 continue
             if not isinstance(other, exp.Expr) or other.__class__ is not node.__class__:
@@ -194,7 +279,7 @@ def writes_boolean_literal(dialect: str, exp) -> bool:
     )
 
 
-def string_sensitive_args(P, exp, funcs):
+def string_sensitive_args(P, exp, funcs, dialect=""):
     """Argument positions where a STRING LITERAL makes the builder do something
     else entirely.
 
@@ -240,7 +325,7 @@ def string_sensitive_args(P, exp, funcs):
 
     def build(builder, args):
         try:
-            node = builder(list(args))
+            node = call_builder(builder, args, dialect)
         except Exception:  # noqa: BLE001 -- this arity or argument is invalid for this name
             return None
         return node if isinstance(node, exp.Expr) else None
@@ -293,7 +378,7 @@ def cast_sensitive_args(P, exp, dialect, funcs):
         for width in range(1, 6):
             plain = [exp.column(f"__probe_{i}") for i in range(width)]
             try:
-                base = builder(list(plain))
+                base = call_builder(builder, plain, dialect)
                 base_sql = base.sql(dialect=dialect or None)
             except Exception:  # noqa: BLE001 -- invalid arity or unrenderable for this name
                 continue
@@ -303,7 +388,7 @@ def cast_sensitive_args(P, exp, dialect, funcs):
                     cast_sql = cast.sql(dialect=dialect or None)
                     swapped = list(plain)
                     swapped[i] = cast
-                    got = builder(list(swapped)).sql(dialect=dialect or None)
+                    got = call_builder(builder, swapped, dialect).sql(dialect=dialect or None)
                 except Exception:  # noqa: BLE001 -- a cast may be invalid here
                     sensitive.setdefault(name, []).append(i)
                     continue
@@ -319,6 +404,60 @@ def cast_sensitive_args(P, exp, dialect, funcs):
                     sensitive.setdefault(name, []).append(i)
     _ = probe
     return {k: sorted(set(v)) for k, v in sensitive.items()}
+
+
+def class_sensitive_args(P, exp, dialect, funcs):
+    """Argument positions where the argument's own CLASS changes what is built.
+
+    DuckDB's LOWER is `LowerHex(this=arg.this)` when the argument is a Hex and
+    `Lower(this=arg)` otherwise -- so `LOWER(HEX(x))` is a different node from
+    `LOWER(x)`, and a spec probed with a placeholder column describes only the
+    second. The port built `Lower` for both, which is a tree the reference never
+    makes.
+
+    Neither of the other sensitivity probes finds it: one substitutes a string
+    literal, the other a cast, and Hex is neither. So this one substitutes every
+    class that ANY builder in this dialect's own catalogue produces for a
+    one-argument call -- the space of nested calls a caller could actually
+    write -- and flags a position whose returned class moves. The candidate set
+    comes from the reference, so a builder added upstream that branches on some
+    new class is found without anyone noticing it was added.
+    """
+    candidates: dict[str, object] = {}
+    for builder in P.FUNCTIONS.values():
+        try:
+            node = call_builder(builder, [exp.column("__inner")], dialect)
+        except Exception:  # noqa: BLE001 -- not a one-argument name
+            continue
+        if isinstance(node, exp.Expr):
+            candidates.setdefault(type(node).__name__, node)
+
+    out: dict[str, dict[int, list[str]]] = {}
+    for name in funcs:
+        builder = P.FUNCTIONS.get(name)
+        if builder is None:
+            continue
+        for width in range(1, 4):
+            plain = [exp.column(f"__probe_{i}") for i in range(width)]
+            try:
+                base = call_builder(builder, plain, dialect)
+            except Exception:  # noqa: BLE001 -- invalid arity for this name
+                continue
+            if not isinstance(base, exp.Expr):
+                continue
+            for i in range(width):
+                for cname, cnode in candidates.items():
+                    swapped = list(plain)
+                    swapped[i] = cnode.copy()
+                    try:
+                        got = call_builder(builder, swapped, dialect)
+                    except Exception:  # noqa: BLE001 -- invalid argument here
+                        continue
+                    if isinstance(got, exp.Expr) and type(got) is not type(base):
+                        out.setdefault(name, {}).setdefault(i, [])
+                        if cname not in out[name][i]:
+                            out[name][i].append(cname)
+    return {n: {i: sorted(c) for i, c in sorted(d.items())} for n, d in out.items()}
 
 
 def render_functions(P, exp, dialect, funcs):
@@ -486,12 +625,18 @@ def funcmap(name: str, funcs) -> str:
         cls, spec = funcs[fn]
         parts = []
         for key, how in spec:
-            if "index" in how:
-                parts.append(f"{{{gostr(key)}, {how['index']}, false, nil}}")
+            if "wrap" in how:
+                parts.append(
+                    f"{{{gostr(key)}, {how['index']}, false, nil, {gostr(how['wrap'])}}}"
+                )
+            elif "index" in how:
+                parts.append(f"{{{gostr(key)}, {how['index']}, false, nil, \"\"}}")
             elif "varlen" in how:
-                parts.append(f"{{{gostr(key)}, {how['varlen']}, true, nil}}")
+                parts.append(f"{{{gostr(key)}, {how['varlen']}, true, nil, \"\"}}")
             else:
-                parts.append(f"{{{gostr(key)}, -1, false, {goconst(how['const'])}}}")
+                parts.append(
+                    f"{{{gostr(key)}, -1, false, {goconst(how['const'])}, \"\"}}"
+                )
         body = ", ".join(parts)
         lines.append(f"\t\t\t{gostr(fn)}: {{{gostr(cls)}, []FuncArg{{{body}}}}},\n")
     return f"\t\t{name}: map[string]FuncSpec{{\n{''.join(lines)}\t\t}},\n"
@@ -736,6 +881,13 @@ def main() -> int:
         "\t// either way -- only the SQL differs -- so this is probed by\n",
         "\t// RENDERING, and a call that would need it is refused rather than\n",
         "\t// written without the coercion the engine needs. PROBED.\n",
+        "\t// ClassSensitiveArgs are argument positions where the CLASS of the\n",
+        "\t// argument itself changes what the builder makes: LOWER(HEX(x)) is a\n",
+        "\t// LowerHex, LOWER(x) is a Lower. A spec probed with a placeholder\n",
+        "\t// column describes only the second, so the call is refused when the\n",
+        "\t// argument is one of the listed classes. PROBED against every class\n",
+        "\t// this catalogue can itself produce.\n",
+        "\tClassSensitiveArgs map[string][]ClassTrigger\n",
         "\tCastSensitiveArgs map[string][]int\n",
         "\tStringSensitiveArgs map[string][]int\n",
         "\t// WritesBooleanLiteral: whether TRUE and FALSE are written as\n",
@@ -812,11 +964,24 @@ def main() -> int:
         "\tKey   string\n",
         "\tValue any\n",
         "}\n\n",
+        "// ClassTrigger names the classes that, at Index, make a builder produce\n",
+        "// something other than what the probe recorded.\n",
+        "type ClassTrigger struct {\n",
+        "\tIndex   int\n",
+        "\tClasses []string\n",
+        "}\n",
+        "\n",
         "type FuncArg struct {\n",
         "\tKey    string\n",
         "\tIndex  int\n",
         "\tVarLen bool\n",
         "\tConst  any\n",
+        "\t// Wrap names a class to build FROM the argument rather than to hold\n",
+        "\t// it: DATEADD records unit=Var(args[Index].name upper-cased), and the\n",
+        "\t// argument itself appears nowhere in the result. 28 names do this,\n",
+        "\t// and every one of them used to be refused outright.\n",
+        "\tWrap   string\n",
+
         "}\n\n",
         "var parserTables = map[string]*ParserTables{\n",
     ]
@@ -829,8 +994,18 @@ def main() -> int:
         out.append(strset("NamedFunctions", named))
         out.append(ttset("NoParenFunctions", P.NO_PAREN_FUNCTIONS))
         out.append(opmap("NoParenFunctionClasses", P.NO_PAREN_FUNCTIONS))
-        funcs = probe_functions(P, exp)
+        funcs = probe_functions(P, exp, name)
         out.append(funcmap("Functions", funcs))
+        classes = class_sensitive_args(P, exp, name, funcs)
+        if classes:
+            out.append("\t\tClassSensitiveArgs: map[string][]ClassTrigger{\n")
+            for fname, byindex in sorted(classes.items()):
+                triggers = ", ".join(
+                    "{%d, []string{%s}}" % (i, ", ".join(gostr(c) for c in cs))
+                    for i, cs in sorted(byindex.items())
+                )
+                out.append(f"\t\t\t{gostr(fname)}: {{{triggers}}},\n")
+            out.append("\t\t},\n")
         casts = cast_sensitive_args(P, exp, name, funcs)
         if casts:
             out.append("\t\tCastSensitiveArgs: map[string][]int{\n")
@@ -838,7 +1013,7 @@ def main() -> int:
                 joined = ", ".join(str(i) for i in indexes)
                 out.append(f"\t\t\t{gostr(fname)}: {{{joined}}},\n")
             out.append("\t\t},\n")
-        sensitive = string_sensitive_args(P, exp, funcs)
+        sensitive = string_sensitive_args(P, exp, funcs, name)
         if sensitive:
             out.append("\t\tStringSensitiveArgs: map[string][]int{\n")
             for fname, indexes in sorted(sensitive.items()):
