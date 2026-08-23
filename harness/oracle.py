@@ -215,6 +215,12 @@ def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--sqlglot", required=True, type=pathlib.Path)
     ap.add_argument("--out", default="testdata/expected", type=pathlib.Path)
+    ap.add_argument(
+        "--candidates",
+        type=pathlib.Path,
+        help="build expectations for these statements (dialect<TAB>sql per line) "
+        "instead of the reference corpus, for judging a fuzz session",
+    )
     a = ap.parse_args()
 
     repo = pathlib.Path(__file__).resolve().parent.parent
@@ -227,10 +233,25 @@ def main() -> int:
             "commit the regenerated expectations with it."
         )
 
-    corpus = corpus_identity(a.sqlglot)
-    for d in DIALECTS:
-        corpus += corpus_dialect(a.sqlglot, d)
-    corpus += [(d, sql) for d, sql in EDGE_CORPUS]
+    if a.candidates:
+        # A fuzz session's statements rather than the reference corpus. The
+        # expectations land in a temp directory and the existing differential
+        # is pointed at them; nothing about the committed corpus changes.
+        # split("\n") rather than splitlines(): a fuzzer emits \v, \f and
+        # \u2028 inside statements, and Python breaks lines on all of them.
+        corpus = []
+        for line in a.candidates.read_text().split("\n"):
+            if not line.strip():
+                continue
+            dialect, tab, sql = line.partition("\t")
+            if not tab:
+                raise SystemExit(f"malformed candidate (want dialect<TAB>sql): {line!r}")
+            corpus.append((dialect, sql))
+    else:
+        corpus = corpus_identity(a.sqlglot)
+        for d in DIALECTS:
+            corpus += corpus_dialect(a.sqlglot, d)
+        corpus += [(d, sql) for d, sql in EDGE_CORPUS]
 
     a.out.mkdir(parents=True, exist_ok=True)
     for f in a.out.glob("*.json"):

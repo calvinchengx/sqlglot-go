@@ -345,6 +345,27 @@ def funcmap(name: str, funcs) -> str:
     return f"\t\t{name}: map[string]FuncSpec{{\n{''.join(lines)}\t\t}},\n"
 
 
+def default_type_params(dialect: str) -> dict[str, list[str]]:
+    """Parameters a bare type gains in this dialect, recovered by parsing one.
+
+    sqlglot applies these through TYPE_CONVERTERS, a map of closures. The
+    constants inside cannot be read, so the only honest way to record them is
+    to parse `CAST(x AS <TYPE>)` and see what came back.
+    """
+    import sqlglot
+    from sqlglot.dialects.dialect import Dialect
+
+    parser = Dialect.get_or_raise(dialect or None).parser_class
+    out: dict[str, list[str]] = {}
+    for kind in getattr(parser, "TYPE_CONVERTERS", {}) or {}:
+        name = kind.value
+        parsed = sqlglot.parse_one(f"CAST(x AS {name})", dialect=dialect or None).to
+        params = [str(e.this.this) for e in parsed.args.get("expressions") or []]
+        if params:
+            out[name] = params
+    return out
+
+
 def is_not_null_wraps_in_not(dialect: str) -> bool:
     """Whether `x IS NOT NULL` comes back as a Not wrapping an Is.
 
@@ -460,6 +481,14 @@ def main() -> int:
         "\tStrictStringConcat  bool\n",
         "\t// JoinsHaveEqualPrecedence makes a comma join an explicit CROSS join.\n",
         "\tJoinsHaveEqualPrecedence bool\n",
+        "\t// DefaultTypeParams are the parameters a BARE type gains in this\n",
+        "\t// dialect. DuckDB reads `numeric` as DECIMAL(18, 3) at parse time --\n",
+        "\t// sqlglot calls these TYPE_CONVERTERS -- so a port that left the type\n",
+        "\t// unparameterised sent a different CAST to the engine than the Python\n",
+        "\t// executor did, and on a division that is a different NUMBER.\n",
+        "\t// PROBED: the converters are closures, so the constants cannot be\n",
+        "\t// read out; they are recovered by parsing a bare type and looking.\n",
+        "\tDefaultTypeParams map[string][]string\n",
         "\t// IsNotNullWrapsInNot says how `x IS NOT NULL` is SHAPED. Every\n",
         "\t// dialect but PostgreSQL builds Not(Is(x, NULL)) and writes it back\n",
         "\t// as `NOT x IS NULL`; PostgreSQL records the negation on the Is\n",
@@ -595,6 +624,13 @@ def main() -> int:
             ("JoinsHaveEqualPrecedence", P.JOINS_HAVE_EQUAL_PRECEDENCE),
         ):
             out.append(f"\t\t{field}: {str(bool(value)).lower()},\n")
+        defaults = default_type_params(name)
+        if defaults:
+            out.append("\t\tDefaultTypeParams: map[string][]string{\n")
+            for typ, params in sorted(defaults.items()):
+                joined = ", ".join(gostr(v) for v in params)
+                out.append(f"\t\t\t{gostr(typ)}: {{{joined}}},\n")
+            out.append("\t\t},\n")
         out.append(
             f"\t\tIsNotNullWrapsInNot: "
             f"{str(is_not_null_wraps_in_not(name)).lower()},\n"

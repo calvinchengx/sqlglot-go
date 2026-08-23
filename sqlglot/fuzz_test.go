@@ -192,3 +192,73 @@ func serviceSeeds() []string {
 	}
 	return out
 }
+
+// FuzzParsedStatementsForTheDifferential collects statements the port PARSES,
+// so the reference can be asked whether it parsed them the SAME WAY.
+//
+// This is the port's central claim -- `mismatched: 0`, that it never reads a
+// statement into a different tree than sqlglot does -- and until now it was
+// verified only against a fixed corpus of 2,171. A construct no fixture
+// contains has never been compared at all, which is precisely where the
+// `IS NOT NULL` divergence was hiding.
+//
+// It asserts nothing on its own; it cannot, because the oracle is a Python
+// process. It writes candidates, `harness/oracle.py --candidates` builds
+// expectations for them, and the existing differential does the comparing:
+//
+//	DAS_FUZZ_COLLECT=/tmp/parsed.txt \
+//	  go test ./sqlglot/ -run=XXX -fuzz=FuzzParsedStatementsForTheDifferential -fuzztime=30s
+//	python3 harness/oracle.py --sqlglot ~/opensource/sqlglot \
+//	  --candidates /tmp/parsed.txt --out /tmp/exp
+//	SQLGLOT_GO_EXPECTED=/tmp/exp go test ./harness/ -run TestAgainstReference
+//
+// Capped, because a fuzzer parses millions of statements a minute and the
+// oracle is the slow half: a hundred thousand candidates would take longer to
+// judge than to find. `make fuzz-differential` runs the three steps.
+func FuzzParsedStatementsForTheDifferential(f *testing.F) {
+	for _, s := range seeds {
+		f.Add(s)
+	}
+	for _, s := range serviceSeeds() {
+		f.Add(s)
+	}
+	f.Fuzz(func(t *testing.T, sql string) {
+		for _, dialect := range []string{"tsql", "postgres", "duckdb", "databricks"} {
+			if _, err := ParseOne(sql, dialect); err != nil {
+				continue // a refusal is a gap, and gaps are already counted
+			}
+			collectParsed(dialect, sql)
+		}
+	})
+}
+
+const parsedCandidateCap = 4000
+
+var parsedCollected int
+
+// collectParsed writes a parsed statement out for the oracle to judge, up to a
+// cap. Silently doing nothing without DAS_FUZZ_COLLECT is deliberate: this
+// target is a collector, and a plain `go test` run should neither write files
+// nor fail.
+func collectParsed(dialect, sql string) {
+	path := os.Getenv("DAS_FUZZ_COLLECT")
+	if path == "" {
+		return
+	}
+	if strings.ContainsAny(sql, "\n\r\t") || !utf8.ValidString(sql) {
+		return // see collect: unwritable as a line, or unreadable by the oracle
+	}
+	collectMu.Lock()
+	defer collectMu.Unlock()
+	if parsedCollected >= parsedCandidateCap {
+		return
+	}
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		return
+	}
+	defer func() { _ = f.Close() }()
+	if _, err := fmt.Fprintf(f, "%s\t%s\n", dialect, sql); err == nil {
+		parsedCollected++
+	}
+}

@@ -23,7 +23,15 @@ import (
 // It also fails if coverage REGRESSES below the committed floor, so the
 // number only moves up.
 func TestAgainstReference(t *testing.T) {
-	idx, cases, err := Load("../testdata/expected")
+	// An alternate expectation directory, so the same comparison can be run
+	// over statements a fuzz session found rather than only the committed
+	// corpus. The committed corpus is the default and what CI measures; a
+	// fuzz run is exploratory and writes its expectations to a temp dir.
+	dir := os.Getenv("SQLGLOT_GO_EXPECTED")
+	if dir == "" {
+		dir = "../testdata/expected"
+	}
+	idx, cases, err := Load(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -56,8 +64,17 @@ func TestAgainstReference(t *testing.T) {
 		cov.ByDialect[name] = dc
 	}
 
-	if err := cov.Write("../testdata/coverage.json"); err != nil {
-		t.Fatal(err)
+	// Only a run over the COMMITTED corpus records coverage or is held to the
+	// floor. An exploratory run over a fuzz session's statements measures a
+	// different population entirely: it would overwrite the recorded numbers
+	// with figures nobody can reproduce, and trip a floor for dialects its
+	// candidates happen not to include. Divergences still fail, which is the
+	// whole reason to run it.
+	exploratory := os.Getenv("SQLGLOT_GO_EXPECTED") != ""
+	if !exploratory {
+		if err := cov.Write("../testdata/coverage.json"); err != nil {
+			t.Fatal(err)
+		}
 	}
 	t.Logf("reference %s", idx.Reference[:12])
 	for _, d := range cov.Dialects() {
@@ -72,7 +89,10 @@ func TestAgainstReference(t *testing.T) {
 	if len(divergences) > 0 {
 		t.Fatalf("%d divergence(s): the port parsed these into a DIFFERENT tree than the reference", len(divergences))
 	}
-	assertNoRegression(t, cov)
+	// The floor describes the committed corpus, not a fuzz session's.
+	if !exploratory {
+		assertNoRegression(t, cov)
+	}
 }
 
 // assertNoRegression refuses a drop below the floor committed in

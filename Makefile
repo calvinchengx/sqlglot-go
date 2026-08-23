@@ -56,6 +56,17 @@ fuzz: ## Fuzz the generator and let the reference judge what it finds (SECONDS=4
 		echo "the generator wrote nothing the parser could not read back"; \
 	fi
 
+fuzz-differential: ## Fuzz for statements the port parses, and diff every tree against the reference
+	@rm -f /tmp/sqlglot-go-parsed.txt
+	@DAS_FUZZ_COLLECT=/tmp/sqlglot-go-parsed.txt \
+		go test ./sqlglot/ -run=XXX -fuzz=FuzzParsedStatementsForTheDifferential \
+		-fuzztime=$${SECONDS:-30}s
+	@sort -u /tmp/sqlglot-go-parsed.txt -o /tmp/sqlglot-go-parsed.txt
+	@$(PYTHON) harness/oracle.py --sqlglot $(SQLGLOT) \
+		--candidates /tmp/sqlglot-go-parsed.txt --out /tmp/sqlglot-go-expected
+	@SQLGLOT_GO_EXPECTED=/tmp/sqlglot-go-expected \
+		go test ./harness/ -run TestAgainstReference
+
 gaps: ## Why the port refuses what it refuses, most common first
 	@go test ./harness/ -run TestGapReport -v 2>&1 | sed -n 's/^ *gaps_test.go:[0-9]*: //p'
 

@@ -82,6 +82,14 @@ type ParserTables struct {
 	StrictStringConcat  bool
 	// JoinsHaveEqualPrecedence makes a comma join an explicit CROSS join.
 	JoinsHaveEqualPrecedence bool
+	// DefaultTypeParams are the parameters a BARE type gains in this
+	// dialect. DuckDB reads `numeric` as DECIMAL(18, 3) at parse time --
+	// sqlglot calls these TYPE_CONVERTERS -- so a port that left the type
+	// unparameterised sent a different CAST to the engine than the Python
+	// executor did, and on a division that is a different NUMBER.
+	// PROBED: the converters are closures, so the constants cannot be
+	// read out; they are recovered by parsing a bare type and looking.
+	DefaultTypeParams map[string][]string
 	// IsNotNullWrapsInNot says how `x IS NOT NULL` is SHAPED. Every
 	// dialect but PostgreSQL builds Not(Is(x, NULL)) and writes it back
 	// as `NOT x IS NULL`; PostgreSQL records the negation on the Is
@@ -11169,6 +11177,9 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
+		DefaultTypeParams: map[string][]string{
+			"DECIMAL": {"18", "3"},
+		},
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_last",
 		ModifiersAttachedToSetOp: true,

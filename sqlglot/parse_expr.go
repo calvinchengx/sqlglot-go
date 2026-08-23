@@ -542,6 +542,17 @@ func (p *parser) parseDataType() (*Expression, error) {
 			return nil, p.unsupported("unclosed type parameters")
 		}
 		dt.Set("expressions", params)
+	} else if defaults := p.tables.DefaultTypeParams[kind]; len(defaults) > 0 {
+		// A bare type that this dialect reads as parameterised. DuckDB's
+		// `numeric` is DECIMAL(18, 3), and leaving it bare sent the engine a
+		// different CAST from the one the Python executor sends -- on a
+		// division, a different number rather than a different spelling.
+		params := make([]*Expression, 0, len(defaults))
+		for _, v := range defaults {
+			params = append(params, New("DataTypeParam",
+				Arg{"this", New("Literal", Arg{"this", v}, Arg{"is_string", false})}))
+		}
+		dt.Set("expressions", params)
 	}
 	dt.Set("nested", false)
 	return dt, nil
