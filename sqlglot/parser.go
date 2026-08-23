@@ -3,6 +3,7 @@ package sqlglot
 import (
 	"errors"
 	"fmt"
+	"strings"
 )
 
 // ErrUnsupported reports a statement the port cannot parse yet.
@@ -12,6 +13,20 @@ import (
 // coverage -- never as a match. A construct the port does not understand must
 // never become a tree that merely looks plausible.
 var ErrUnsupported = errors.New("sqlglot-go: unsupported statement")
+
+// ErrNotAQuery reports a statement the port recognises but does not parse:
+// DDL and DML, which a read-only guard refuses on sight.
+//
+// It is deliberately distinct from ErrUnsupported. The guard above this parser
+// has to refuse `DROP TABLE t` for being a write, not for being unreadable --
+// the conformance suite checks the reason -- and naming the statement is all
+// that takes. Building the tree would be work with no consumer: nothing here
+// will ever execute one.
+var ErrNotAQuery = errors.New("sqlglot-go: not a query")
+
+// ErrMultipleStatements reports more than one statement in the input. A guard
+// that permitted the first and ignored the rest would be no guard at all.
+var ErrMultipleStatements = errors.New("sqlglot-go: more than one statement")
 
 // ParseOne parses a single statement in a dialect and returns its tree.
 func ParseOne(sql, dialect string) (*Expression, error) {
@@ -106,7 +121,9 @@ func (p *parser) parseOne() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	p.match(TokSEMICOLON)
+	if p.match(TokSEMICOLON) && p.curr() != nil {
+		return nil, fmt.Errorf("%w: %s", ErrMultipleStatements, p.curr().Text)
+	}
 	if p.curr() != nil {
 		return nil, p.unsupported("trailing tokens")
 	}
@@ -124,7 +141,7 @@ func (p *parser) parseStatement() (*Expression, error) {
 	}
 	if c := p.curr(); c != nil {
 		if _, isStatement := p.tables.StatementTokens[c.Type]; isStatement {
-			return nil, p.unsupported("statement")
+			return nil, fmt.Errorf("%w: %s", ErrNotAQuery, strings.ToUpper(c.Text))
 		}
 	}
 	e, err := p.parseExpression()

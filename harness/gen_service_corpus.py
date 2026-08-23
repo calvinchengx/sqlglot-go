@@ -26,15 +26,19 @@ Three categories, because "refused" is not one outcome:
 
   must_parse_to_refuse
       Statements the guard refuses for a REASON that depends on the tree --
-      "table function", "not queryable", "read-only". If the parser cannot
-      read them, they are still refused, but for the wrong reason, and the
-      conformance suite checks the reason. This category is why the port must
-      recognise DDL and DML far enough to name them, even though it will never
-      execute either.
+      "table function", "not queryable", "cross-database". If the parser
+      cannot read them, they are still refused, but for the wrong reason, and
+      the conformance suite checks the reason.
+
+  must_name_the_statement
+      Statements refused for a reason that depends only on WHAT KIND of
+      statement it is: a write, or more than one. The parser has to name them,
+      not parse them -- which is what Tier 1 means by recognising DDL and DML
+      "only far enough to refuse".
 
   may_refuse_unparsed
-      Statements whose refusal reason IS that they do not parse. Here a parse
-      failure is the correct answer, not a gap.
+      Statements where any refusal is the right answer: the statement does not
+      parse and that IS the reason, or the suite asserts no reason at all.
 """
 
 from __future__ import annotations
@@ -49,11 +53,20 @@ import sys
 
 MUST_PARSE = "must_parse"
 MUST_PARSE_TO_REFUSE = "must_parse_to_refuse"
+MUST_NAME_THE_STATEMENT = "must_name_the_statement"
 MAY_REFUSE_UNPARSED = "may_refuse_unparsed"
 
-# A refusal reason that means "this is not SQL" -- the only case where the
-# parser failing is the right answer rather than a gap.
-UNPARSEABLE_REASONS = {"parse", "empty"}
+# Reasons where a refusal is correct however it comes about: the statement is
+# malformed, or the suite asserts no particular reason for refusing it. The
+# empty string is the second case -- a test that only requires a refusal must
+# not outrank another suite that requires a specific one.
+UNPARSEABLE_REASONS = {"parse", "empty", ""}
+
+# Reasons that depend on WHAT KIND of statement it is, not on its tree. A
+# read-only guard refuses a DROP on sight; naming the statement is enough, and
+# building a tree for it would be work with no consumer. This is what Tier 1
+# means by recognising DDL and DML "only far enough to refuse".
+STATEMENT_KIND_REASONS = {"read-only", "one statement"}
 
 
 def dialects_by_source(service: pathlib.Path) -> dict[str, str]:
@@ -112,7 +125,12 @@ def pairs_in(node: ast.AST) -> list[tuple[str, str]]:
 
 
 def categorise(reason: str) -> str:
-    return MAY_REFUSE_UNPARSED if reason.strip().lower() in UNPARSEABLE_REASONS else MUST_PARSE_TO_REFUSE
+    r = reason.strip().lower()
+    if r in UNPARSEABLE_REASONS:
+        return MAY_REFUSE_UNPARSED
+    if r in STATEMENT_KIND_REASONS:
+        return MUST_NAME_THE_STATEMENT
+    return MUST_PARSE_TO_REFUSE
 
 
 def from_python_guard_tests(path: pathlib.Path, default_dialect: str) -> list[dict]:
@@ -259,7 +277,12 @@ def main() -> int:
     # The same statement appears in several suites by design -- the guard
     # corpus is deliberately duplicated across implementations. Count it once,
     # keeping the strongest category it was filed under.
-    strength = {MAY_REFUSE_UNPARSED: 0, MUST_PARSE_TO_REFUSE: 1, MUST_PARSE: 2}
+    strength = {
+        MAY_REFUSE_UNPARSED: 0,
+        MUST_NAME_THE_STATEMENT: 1,
+        MUST_PARSE_TO_REFUSE: 2,
+        MUST_PARSE: 3,
+    }
     merged: dict[tuple[str, str], dict] = {}
     for case in cases:
         if not case["sql"].strip():
@@ -302,7 +325,7 @@ def main() -> int:
     for case in ordered:
         by_category[case["category"]] = by_category.get(case["category"], 0) + 1
     print(f"data agent service {head[:12]}: {len(ordered)} statements")
-    for category in (MUST_PARSE, MUST_PARSE_TO_REFUSE, MAY_REFUSE_UNPARSED):
+    for category in (MUST_PARSE, MUST_PARSE_TO_REFUSE, MUST_NAME_THE_STATEMENT, MAY_REFUSE_UNPARSED):
         print(f"  {category:24} {by_category.get(category, 0)}")
     if unreadable:
         print(f"  {unreadable} that the REFERENCE cannot parse either (recorded, not hidden)")

@@ -28,15 +28,23 @@ it is deliberately a different question from the one below.
 <!-- service:start -->
 | Category | Parsed | Of |
 |---|---|---|
-| `must_parse` | 103 | 105 |
-| `must_parse_to_refuse` | 14 | 39 |
+| `must_parse` | 105 | 105 |
+| `must_parse_to_refuse` | 26 | 26 |
+| `must_name_the_statement` | 12 | 12 |
+| `may_refuse_unparsed` | 1 | 1 |
 <!-- service:end -->
+
+**Every category is complete**, which is the condition for rewriting the Go
+guard over a parse tree rather than over a token scan.
 
 `must_parse` is SQL the guard permits: a gap there is a question the agent
 answers today and would stop answering. `must_parse_to_refuse` is SQL the guard
 refuses for a reason that depends on the tree -- "table function", "not
-queryable", "read-only" -- where failing to parse still refuses the statement,
-but for the wrong reason, and the conformance suite checks the reason.
+queryable", "cross-database" -- where failing to parse still refuses the
+statement, but for the wrong reason, and the conformance suite checks the
+reason. `must_name_the_statement` is refused for what the statement IS, a write
+or two statements, which takes naming rather than parsing. In
+`may_refuse_unparsed` any refusal is right.
 
 Regenerate with `make service`; nothing in it is authored here.
 
@@ -45,10 +53,10 @@ Regenerate with `make service`; nothing in it is authored here.
 <!-- coverage:start -->
 | Dialect | Tokens | Trees matched | Of | Unparsed | Mismatched |
 |---|---|---|---|---|---|
-| neutral | 997/997 | 374 | 997 | 623 | 0 |
-| tsql | 233/233 | 42 | 233 | 191 | 0 |
+| neutral | 997/997 | 376 | 997 | 621 | 0 |
+| tsql | 233/233 | 43 | 233 | 190 | 0 |
 | postgres | 398/398 | 63 | 398 | 335 | 0 |
-| duckdb | 392/392 | 105 | 392 | 287 | 0 |
+| duckdb | 392/392 | 107 | 392 | 285 | 0 |
 | databricks | 151/151 | 31 | 151 | 120 | 0 |
 <!-- coverage:end -->
 

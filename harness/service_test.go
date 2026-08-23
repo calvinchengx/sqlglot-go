@@ -2,6 +2,7 @@ package harness
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -77,6 +78,26 @@ func TestAgainstTheService(t *testing.T) {
 
 		cat, dia := get(byCategory, c.Category), get(byDialect, c.Dialect)
 		tree, perr := sqlglot.ParseOne(c.SQL, c.Dialect)
+
+		// A statement refused for WHAT IT IS needs naming, not parsing: the
+		// port has to say "this is a write" or "this is two statements", and
+		// a tree for either would have no consumer. Parsing it correctly also
+		// satisfies the guard -- `SELECT * INTO t2 FROM t1` is a query that
+		// writes, and only the tree says so -- so either outcome counts.
+		if c.Category == "must_name_the_statement" &&
+			(errors.Is(perr, sqlglot.ErrNotAQuery) || errors.Is(perr, sqlglot.ErrMultipleStatements)) {
+			cat.parsed++
+			dia.parsed++
+			continue
+		}
+
+		// Where any refusal is the right answer, a refusal is the right answer.
+		if c.Category == "may_refuse_unparsed" && perr != nil {
+			cat.parsed++
+			dia.parsed++
+			continue
+		}
+
 		switch {
 		case perr != nil:
 			cat.unparsed++

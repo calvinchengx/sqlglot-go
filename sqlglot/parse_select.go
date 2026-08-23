@@ -192,6 +192,20 @@ func (p *parser) parseSelect() (*Expression, error) {
 		sel.Set("limit", top)
 	}
 
+	// SELECT … INTO is a query that writes. The guard refuses it as such, and
+	// only the tree says so, so it is parsed rather than merely recognised.
+	if p.match(TokINTO) {
+		if p.atAny(TokTEMPORARY) {
+			return nil, p.unsupported("SELECT INTO with a table kind")
+		}
+		target, err := p.parseTable()
+		if err != nil {
+			return nil, err
+		}
+		sel.Set("into", New("Into", Arg{"this", target},
+			Arg{"temporary", false}, Arg{"unlogged", false}))
+	}
+
 	if p.at(TokFROM) {
 		from, err := p.parseFrom()
 		if err != nil {

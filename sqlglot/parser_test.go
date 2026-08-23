@@ -103,7 +103,6 @@ func TestClauseOrderFollowsTheSource(t *testing.T) {
 
 func TestRefusals(t *testing.T) {
 	for _, c := range []struct{ name, sql, dialect string }{
-		{"a statement that is not a SELECT", "DELETE FROM t", ""},
 		{"function with a custom argument shape", "SELECT TIMESTAMP_TRUNC(t, MONTH)", ""},
 		{"no-paren function named, not tokenized", "CURDATE", "databricks"},
 		{"DISTINCT inside a call", "SELECT f(DISTINCT a)", ""},
@@ -134,8 +133,6 @@ func TestRefusals(t *testing.T) {
 		{"GROUP BY ROLLUP", "SELECT a FROM t GROUP BY ROLLUP (a)", ""},
 		{"STREAM table", "SELECT * FROM STREAM t", "databricks"},
 		{"qualified function call", "SELECT a.f(1)", ""},
-		{"table function", "SELECT * FROM read_csv('x')", ""},
-		{"cross apply", "SELECT * FROM a CROSS APPLY f(1)", "tsql"},
 		{"parenthesised table", "SELECT 1 FROM (t)", ""},
 		{"natural join", "SELECT 1 FROM a NATURAL JOIN b", ""},
 		{"USING", "SELECT 1 FROM a JOIN b USING (x)", ""},
@@ -176,6 +173,16 @@ func TestRefusals(t *testing.T) {
 		{"dangling JOIN", "SELECT 1 FROM a JOIN", ""},
 		{"dangling ON", "SELECT 1 FROM a JOIN b ON", ""},
 		{"dangling comma join", "SELECT 1 FROM a,", ""},
+		{"APPLY over a column", "SELECT * FROM a CROSS APPLY b", "tsql"},
+		{"APPLY over a literal", "SELECT * FROM a CROSS APPLY 1", "tsql"},
+		{"LEFT APPLY", "SELECT * FROM a LEFT OUTER APPLY (SELECT 1) t", "tsql"},
+		{"SELECT INTO a temporary table", "SELECT * INTO TEMPORARY t2 FROM t1", "postgres"},
+		{"over-qualified table function", "SELECT * FROM a.b.c.f()", ""},
+		{"APPLY over an unclosed subquery", "SELECT * FROM a CROSS APPLY (SELECT 1", "tsql"},
+		{"APPLY over a function the port cannot build", "SELECT * FROM a CROSS APPLY TRIM(1)", "tsql"},
+		{"APPLY over a qualified name that is not a call", "SELECT * FROM a CROSS APPLY b.c", "tsql"},
+		{"APPLY over a qualifier followed by a number", "SELECT * FROM a CROSS APPLY dbo.1", "tsql"},
+		{"SELECT INTO nothing", "SELECT * INTO FROM t1", "tsql"},
 		{"recursive CTE", "WITH RECURSIVE a AS (SELECT 1) SELECT 2", ""},
 		{"CTE with a column list", "WITH a (x) AS (SELECT 1) SELECT 2", ""},
 		{"CTE without AS", "WITH a (SELECT 1) SELECT 2", ""},
@@ -547,5 +554,110 @@ func TestCountKeepsItsFlag(t *testing.T) {
 	}
 	if c2 := parse(t, "COUNT(a, b)", ""); len(c2.Args["expressions"].([]*Expression)) != 1 {
 		t.Errorf("COUNT(a, b) did not collect its tail: %v", c2.Args["expressions"])
+	}
+}
+
+// A write is refused for being a write, not for being unreadable. The guard
+// above this parser reports "read-only" on the strength of that distinction,
+// and the service's conformance suite checks the wording.
+func TestWritesAreNamedNotParsed(t *testing.T) {
+	for _, c := range []struct{ sql, kind string }{
+		{"DROP TABLE dbo.fct_sales", "DROP"},
+		{"DELETE FROM dbo.fct_sales", "DELETE"},
+		{"UPDATE dbo.fct_sales SET amount_usd = 0", "UPDATE"},
+		{"INSERT INTO dbo.fct_sales VALUES (1)", "INSERT"},
+		{"TRUNCATE TABLE dbo.fct_sales", "TRUNCATE"},
+		{"CREATE TABLE t (a INT)", "CREATE"},
+		{"EXEC xp_cmdshell 'dir'", "EXEC"},
+	} {
+		_, err := ParseOne(c.sql, "tsql")
+		if !errors.Is(err, ErrNotAQuery) {
+			t.Errorf("ParseOne(%q) failed with %v, want ErrNotAQuery", c.sql, err)
+			continue
+		}
+		if !strings.Contains(err.Error(), c.kind) {
+			t.Errorf("ParseOne(%q) did not name the statement: %v", c.sql, err)
+		}
+	}
+}
+
+// Two statements is its own refusal: a guard that permitted the first and
+// ignored the rest would be no guard at all.
+func TestMoreThanOneStatement(t *testing.T) {
+	_, err := ParseOne("SELECT 1; DROP TABLE dbo.fct_sales", "tsql")
+	if !errors.Is(err, ErrMultipleStatements) {
+		t.Errorf("failed with %v, want ErrMultipleStatements", err)
+	}
+	// One statement with a trailing semicolon is still one statement.
+	if _, err := ParseOne("SELECT 1;", ""); err != nil {
+		t.Errorf("a trailing semicolon should be fine: %v", err)
+	}
+}
+
+// A callable in a FROM clause is a relation the schema check would never see
+// if the parser dropped it. `main.read_csv_auto('/etc/passwd')` reads a local
+// file through a SELECT; the guard can only refuse what it can see.
+func TestTableFunctionsAreVisible(t *testing.T) {
+	for _, c := range []struct{ name, sql, dialect string }{
+		{"unqualified", "SELECT * FROM read_csv_auto('/etc/passwd')", "duckdb"},
+		{"schema-qualified", "SELECT * FROM main.read_csv_auto('/etc/passwd')", "duckdb"},
+		{"named by an operator word", "SELECT * FROM main.glob('/**')", "duckdb"},
+		{"beside a real table", "SELECT * FROM main.tickets, main.read_csv_auto('/etc/passwd')", "duckdb"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			tree := parse(t, c.sql, c.dialect)
+			found := false
+			for _, tbl := range tree.FindAll("Table") {
+				if this := tbl.This(); this != nil && this.Class != "Identifier" {
+					found = true
+				}
+			}
+			if !found {
+				t.Errorf("no table function in the tree for %q:\n%s", c.sql, tree.DumpJSON())
+			}
+		})
+	}
+}
+
+func TestApply(t *testing.T) {
+	// Over a subquery: the legitimate form, and the alias belongs to the
+	// Lateral rather than to the subquery inside it.
+	tree := parse(t, "SELECT * FROM a CROSS APPLY (SELECT 1) t", "tsql")
+	joins := tree.FindAll("Join")
+	if len(joins) != 1 {
+		t.Fatalf("%d joins, want 1", len(joins))
+	}
+	lat := joins[0].This()
+	if lat == nil || lat.Class != "Lateral" {
+		t.Fatalf("APPLY produced %v, want a Lateral", lat)
+	}
+	if lat.Args["cross_apply"] != true {
+		t.Error("CROSS APPLY was not flagged cross_apply")
+	}
+	if lat.Args["alias"] == nil {
+		t.Error("the alias did not land on the Lateral")
+	}
+	if out := parse(t, "SELECT * FROM a OUTER APPLY (SELECT 1) t", "tsql").
+		FindAll("Lateral")[0]; out.Args["cross_apply"] != false {
+		t.Error("OUTER APPLY should not be flagged cross_apply")
+	}
+
+	// Over a function: the form that has been used to get past the guard.
+	// It has to parse for the guard to say "function used as a table".
+	fn := parse(t, "SELECT * FROM a CROSS APPLY other.f(1)", "tsql")
+	if n := len(fn.FindAll("Anonymous")); n != 1 {
+		t.Errorf("the applied function is not in the tree: %s", fn.DumpJSON())
+	}
+}
+
+// SELECT … INTO is a query that writes, and only the tree says so.
+func TestSelectInto(t *testing.T) {
+	tree := parse(t, "SELECT * INTO dbo.copy FROM dbo.fct_sales", "tsql")
+	into, _ := tree.Args["into"].(*Expression)
+	if into == nil || into.Class != "Into" {
+		t.Fatalf("no INTO clause: %v", tree.Args["into"])
+	}
+	if got := into.This().Name(); got != "copy" {
+		t.Errorf("INTO target is %q, want copy", got)
 	}
 }

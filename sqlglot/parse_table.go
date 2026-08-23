@@ -65,10 +65,13 @@ func (p *parser) parseJoin() (*Expression, error) {
 		}
 	}
 
-	// CROSS APPLY and OUTER APPLY look like a join with a kind but are a
-	// different node, and one the guard has been bypassed through before.
-	if p.at(TokAPPLY) {
-		return nil, p.unsupported("APPLY")
+	// CROSS APPLY and OUTER APPLY read as a join with a kind but build a
+	// Lateral instead, and the kind is recorded on the Lateral rather than on
+	// the Join. Both forms are parsed: the guard has been bypassed through
+	// APPLY over a function before, and it can only refuse what it can see.
+	if p.at(TokAPPLY) && kind != nil && (kind.Type == TokCROSS || kind.Type == TokOUTER) && side == nil {
+		p.advance()
+		return p.parseApply(kind.Type == TokCROSS)
 	}
 	if !p.match(TokJOIN) {
 		if side != nil || kind != nil {
@@ -102,6 +105,71 @@ func (p *parser) parseJoin() (*Expression, error) {
 	return join, nil
 }
 
+// parseApply builds the Lateral that CROSS APPLY and OUTER APPLY produce.
+func (p *parser) parseApply(cross bool) (*Expression, error) {
+	lateral := New("Lateral")
+	switch {
+	case p.at(TokL_PAREN):
+		sub, err := p.parseSubqueryTable()
+		if err != nil {
+			return nil, err
+		}
+		// The alias belongs to the Lateral, not to the subquery inside it.
+		alias, _ := sub.Args["alias"].(*Expression)
+		sub.Set("alias", nil)
+		lateral.Set("this", sub)
+		lateral.Set("view", nil)
+		lateral.Set("outer", nil)
+		lateral.Set("alias", alias)
+		lateral.Set("cross_apply", cross)
+		lateral.Set("ordinality", nil)
+	case p.namesAFunctionCall() || p.atIdentifier():
+		target, err := p.parseQualifiedCall()
+		if err != nil {
+			return nil, err
+		}
+		lateral.Set("this", target)
+		lateral.Set("view", nil)
+		lateral.Set("outer", nil)
+		lateral.Set("alias", nil)
+		lateral.Set("cross_apply", cross)
+		lateral.Set("ordinality", false)
+	default:
+		return nil, p.unsupported("APPLY over something the port cannot read")
+	}
+	return New("Join", Arg{"this", lateral}, Arg{"pivots", nil}), nil
+}
+
+// parseQualifiedCall reads `f(…)` or `schema.f(…)`, which the reference
+// represents as a chain of Dots ending in the call.
+func (p *parser) parseQualifiedCall() (*Expression, error) {
+	var this *Expression
+	for {
+		if p.namesAFunctionCall() {
+			fn, err := p.parseFunction()
+			if err != nil {
+				return nil, err
+			}
+			if this == nil {
+				return fn, nil
+			}
+			return New("Dot", Arg{"this", this}, Arg{"expression", fn}), nil
+		}
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		if this == nil {
+			this = id
+		} else {
+			this = New("Dot", Arg{"this", this}, Arg{"expression", id})
+		}
+		if !p.match(TokDOT) {
+			return nil, p.unsupported("APPLY over something that is not a call")
+		}
+	}
+}
+
 func (p *parser) parseTable() (*Expression, error) {
 	if p.at(TokL_PAREN) {
 		return p.parseSubqueryTable()
@@ -114,28 +182,57 @@ func (p *parser) parseTable() (*Expression, error) {
 	}
 
 	parts := []*Expression{}
+	var fn *Expression
 	for {
+		// A callable in a FROM clause is a table function, not a table. The
+		// port builds it rather than refusing: the guard has to SEE that the
+		// relation is a function to say so, and a statement it could not read
+		// would be refused for the wrong reason. Reading a local file through
+		// `main.read_csv_auto('/etc/passwd')` is a real bypass, and the audit
+		// line has to name it.
+		if p.namesAFunctionCall() {
+			f, err := p.parseFunction()
+			if err != nil {
+				return nil, err
+			}
+			fn = f
+			break
+		}
 		id, err := p.parseIdentifier()
 		if err != nil {
 			return nil, err
-		}
-		if p.at(TokL_PAREN) {
-			return nil, p.unsupported("table function")
 		}
 		parts = append(parts, id)
 		if !p.match(TokDOT) {
 			break
 		}
 	}
-	if len(parts) > 3 {
-		return nil, p.unsupported("over-qualified table")
-	}
 
-	// this is the table; the parts before it are db then catalog.
-	table := New("Table", Arg{"this", parts[len(parts)-1]})
+	var table *Expression
 	names := []string{"db", "catalog"}
-	for i := len(parts) - 2; i >= 0; i-- {
-		table.Set(names[len(parts)-2-i], parts[i])
+	if fn != nil {
+		if len(parts) > 2 {
+			return nil, p.unsupported("over-qualified table function")
+		}
+		// A table function always carries both qualifier slots, filled or not.
+		table = New("Table", Arg{"this", fn})
+		for i := len(parts) - 1; i >= 0; i-- {
+			table.Set(names[len(parts)-1-i], parts[i])
+		}
+		for _, n := range names {
+			if _, ok := table.Args[n]; !ok {
+				table.Set(n, nil)
+			}
+		}
+	} else {
+		if len(parts) > 3 {
+			return nil, p.unsupported("over-qualified table")
+		}
+		// this is the table; the parts before it are db then catalog.
+		table = New("Table", Arg{"this", parts[len(parts)-1]})
+		for i := len(parts) - 2; i >= 0; i-- {
+			table.Set(names[len(parts)-2-i], parts[i])
+		}
 	}
 
 	alias, err := p.parseTableAlias()
@@ -173,6 +270,23 @@ func (p *parser) parseSubqueryTable() (*Expression, error) {
 	sub.Set("alias", alias)
 	sub.Set("sample", nil)
 	return sub, nil
+}
+
+// namesAFunctionCall reports whether the current token opens a call. It is
+// wider than atIdentifier on purpose: DuckDB's `glob` is an operator token
+// everywhere else, and `main.glob('/**')` reads the filesystem, so the guard
+// has to see the call rather than the parser lose it.
+func (p *parser) namesAFunctionCall() bool {
+	// A next token implies a current one, so curr is safe below.
+	n := p.next()
+	if n == nil || n.Type != TokL_PAREN {
+		return false
+	}
+	if p.atIdentifier() {
+		return true
+	}
+	_, ok := p.tables.FuncTokens[p.curr().Type]
+	return ok
 }
 
 func (p *parser) parseTableAlias() (*Expression, error) {
