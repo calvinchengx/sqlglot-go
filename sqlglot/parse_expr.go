@@ -816,7 +816,17 @@ func (p *parser) parseFunction() (*Expression, error) {
 			if p.atAny(TokDISTINCT, TokORDER_BY, TokALL) {
 				return nil, p.unsupported("modifier inside a function call")
 			}
-			arg, err := p.parseExpression()
+			// `x -> x > 1` is a lambda ONLY here, in argument position. The
+			// same `->` between two ordinary expressions is JSON extraction,
+			// and reading `data -> '$.value'` as a lambda made a Lambda out of
+			// a JSON path.
+			var arg *Expression
+			var err error
+			if p.atLambda() {
+				arg, err = p.parseLambda()
+			} else {
+				arg, err = p.parseExpression()
+			}
 			if err != nil {
 				return nil, err
 			}

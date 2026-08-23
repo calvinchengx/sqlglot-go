@@ -62,6 +62,7 @@ func init() {
 		"Array":         (*generator).writeArray,
 		"Window":        (*generator).writeWindow,
 		"Interval":      (*generator).writeInterval,
+		"Lambda":        (*generator).writeLambda,
 		"IntervalSpan":  (*generator).writeIntervalSpan,
 		"Var":           (*generator).writeVar,
 		"WindowSpec":    (*generator).writeWindowSpec,
@@ -696,4 +697,19 @@ func (g *generator) writeInterval(e *Expression) string {
 
 func (g *generator) writeIntervalSpan(e *Expression) string {
 	return g.child(e, "this") + " TO " + g.child(e, "expression")
+}
+
+// writeLambda: one parameter is written bare, more than one parenthesised --
+// `x -> x > 1` and `(x, y) -> x > y`.
+func (g *generator) writeLambda(e *Expression) string {
+	params, _ := e.Args["expressions"].([]*Expression)
+	rendered := make([]string, 0, len(params))
+	for _, prm := range params {
+		rendered = append(rendered, g.node(prm))
+	}
+	head := strings.Join(rendered, ", ")
+	if len(params) != 1 {
+		head = "(" + head + ")"
+	}
+	return head + " -> " + g.child(e, "this")
 }
