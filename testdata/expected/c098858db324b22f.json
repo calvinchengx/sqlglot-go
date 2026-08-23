@@ -1,0 +1,45 @@
+{
+ "dialect": "duckdb",
+ "rendered": "SELECT e'Hello\\nworld'",
+ "sql": "SELECT e'Hello\nworld'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 6,
+   "e": 20,
+   "l": 2,
+   "s": 7,
+   "t": "BYTE_STRING",
+   "x": "Hello\nworld"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ByteString",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 6,
+    "end": 20,
+    "line": 2,
+    "start": 7
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "Hello\nworld"
+  }
+ ]
+}

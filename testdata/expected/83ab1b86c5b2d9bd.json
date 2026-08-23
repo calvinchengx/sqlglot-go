@@ -1,0 +1,767 @@
+{
+ "dialect": "tsql",
+ "rendered": "SELECT e.employee_id FROM employees AS e LEFT JOIN employee_positions AS ep ON e.employee_id = ep.employee_id ORDER BY CASE WHEN e.employee_id IS NULL THEN 1 ELSE 0 END, e.employee_id",
+ "sql": "SELECT e.employee_id FROM employees AS e LEFT JOIN employee_positions AS ep ON e.employee_id = ep.employee_id ORDER BY CASE WHEN e.employee_id IS NULL THEN 1 ELSE 0 END, e.employee_id",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "e"
+  },
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 8,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 9,
+   "t": "VAR",
+   "x": "employee_id"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 21,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "employees"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 36,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "VAR",
+   "x": "e"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 41,
+   "t": "LEFT",
+   "x": "LEFT"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 46,
+   "t": "JOIN",
+   "x": "JOIN"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 51,
+   "t": "VAR",
+   "x": "employee_positions"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 70,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 73,
+   "t": "VAR",
+   "x": "ep"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 76,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 79,
+   "t": "VAR",
+   "x": "e"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 80,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 81,
+   "t": "VAR",
+   "x": "employee_id"
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 93,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 97,
+   "e": 96,
+   "l": 1,
+   "s": 95,
+   "t": "VAR",
+   "x": "ep"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 97,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 109,
+   "e": 108,
+   "l": 1,
+   "s": 98,
+   "t": "VAR",
+   "x": "employee_id"
+  },
+  {
+   "c": 118,
+   "e": 117,
+   "l": 1,
+   "s": 110,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 119,
+   "t": "CASE",
+   "x": "CASE"
+  },
+  {
+   "c": 128,
+   "e": 127,
+   "l": 1,
+   "s": 124,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 129,
+   "t": "VAR",
+   "x": "e"
+  },
+  {
+   "c": 131,
+   "e": 130,
+   "l": 1,
+   "s": 130,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 142,
+   "e": 141,
+   "l": 1,
+   "s": 131,
+   "t": "VAR",
+   "x": "employee_id"
+  },
+  {
+   "c": 145,
+   "e": 144,
+   "l": 1,
+   "s": 143,
+   "t": "IS",
+   "x": "IS"
+  },
+  {
+   "c": 150,
+   "e": 149,
+   "l": 1,
+   "s": 146,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 155,
+   "e": 154,
+   "l": 1,
+   "s": 151,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 157,
+   "e": 156,
+   "l": 1,
+   "s": 156,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 162,
+   "e": 161,
+   "l": 1,
+   "s": 158,
+   "t": "ELSE",
+   "x": "ELSE"
+  },
+  {
+   "c": 164,
+   "e": 163,
+   "l": 1,
+   "s": 163,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 168,
+   "e": 167,
+   "l": 1,
+   "s": 165,
+   "t": "END",
+   "x": "END"
+  },
+  {
+   "c": 169,
+   "e": 168,
+   "l": 1,
+   "s": 168,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 171,
+   "e": 170,
+   "l": 1,
+   "s": 170,
+   "t": "VAR",
+   "x": "e"
+  },
+  {
+   "c": 172,
+   "e": 171,
+   "l": 1,
+   "s": 171,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 183,
+   "e": 182,
+   "l": 1,
+   "s": 172,
+   "t": "VAR",
+   "x": "employee_id"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 9
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "employee_id"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "table",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "e"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "employees"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 9,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "e"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 0,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "employee_positions"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 18,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 75,
+    "end": 74,
+    "line": 1,
+    "start": 73
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "ep"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 17,
+   "k": "side",
+   "v": "LEFT"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 17,
+   "k": "on"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 92,
+    "end": 91,
+    "line": 1,
+    "start": 81
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "employee_id"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "table",
+   "m": {
+    "col": 80,
+    "end": 79,
+    "line": 1,
+    "start": 79
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "e"
+  },
+  {
+   "i": 32,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 27,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 35,
+   "k": "this",
+   "m": {
+    "col": 109,
+    "end": 108,
+    "line": 1,
+    "start": 98
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "employee_id"
+  },
+  {
+   "i": 36,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 35,
+   "k": "table",
+   "m": {
+    "col": 97,
+    "end": 96,
+    "line": 1,
+    "start": 95
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "ep"
+  },
+  {
+   "i": 39,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 0,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 42,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Case",
+   "i": 43,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 44,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 45,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 46,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 47,
+   "k": "this",
+   "m": {
+    "col": 142,
+    "end": 141,
+    "line": 1,
+    "start": 131
+   }
+  },
+  {
+   "i": 48,
+   "k": "this",
+   "v": "employee_id"
+  },
+  {
+   "i": 48,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 47,
+   "k": "table",
+   "m": {
+    "col": 130,
+    "end": 129,
+    "line": 1,
+    "start": 129
+   }
+  },
+  {
+   "i": 51,
+   "k": "this",
+   "v": "e"
+  },
+  {
+   "i": 51,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 46,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 45,
+   "k": "true",
+   "m": {
+    "col": 157,
+    "end": 156,
+    "line": 1,
+    "start": 156
+   }
+  },
+  {
+   "i": 55,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 55,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 44,
+   "k": "default",
+   "m": {
+    "col": 164,
+    "end": 163,
+    "line": 1,
+    "start": 163
+   }
+  },
+  {
+   "i": 58,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 58,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 43,
+   "k": "nulls_first",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 42,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 62,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 63,
+   "k": "this",
+   "m": {
+    "col": 183,
+    "end": 182,
+    "line": 1,
+    "start": 172
+   }
+  },
+  {
+   "i": 64,
+   "k": "this",
+   "v": "employee_id"
+  },
+  {
+   "i": 64,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 63,
+   "k": "table",
+   "m": {
+    "col": 171,
+    "end": 170,
+    "line": 1,
+    "start": 170
+   }
+  },
+  {
+   "i": 67,
+   "k": "this",
+   "v": "e"
+  },
+  {
+   "i": 67,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 62,
+   "k": "nulls_first",
+   "v": true
+  }
+ ]
+}

@@ -1,0 +1,790 @@
+{
+ "dialect": "duckdb",
+ "rendered": "SELECT CAST(CASE WHEN LAST_DAY(CAST('2023-01-31' AS DATE)) = CAST('2023-01-31' AS DATE) THEN LAST_DAY(CAST('2023-01-31' AS DATE) + INTERVAL '1' MONTH) ELSE CAST('2023-01-31' AS DATE) + INTERVAL '1' MONTH END AS DATE)",
+ "sql": "SELECT CAST(CASE WHEN LAST_DAY(CAST('2023-01-31' AS DATE)) = CAST('2023-01-31' AS DATE) THEN LAST_DAY(CAST('2023-01-31' AS DATE) + INTERVAL 1 MONTH) ELSE CAST('2023-01-31' AS DATE) + INTERVAL 1 MONTH END AS DATE)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 12,
+   "t": "CASE",
+   "x": "CASE"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 17,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 22,
+   "t": "VAR",
+   "x": "LAST_DAY"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 31,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 36,
+   "t": "STRING",
+   "x": "2023-01-31"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 49,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 52,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 57,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 59,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 61,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 65,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 66,
+   "t": "STRING",
+   "x": "2023-01-31"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 79,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 82,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 86,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 88,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 93,
+   "t": "VAR",
+   "x": "LAST_DAY"
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 101,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 102,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 106,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 119,
+   "e": 118,
+   "l": 1,
+   "s": 107,
+   "t": "STRING",
+   "x": "2023-01-31"
+  },
+  {
+   "c": 122,
+   "e": 121,
+   "l": 1,
+   "s": 120,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 127,
+   "e": 126,
+   "l": 1,
+   "s": 123,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 128,
+   "e": 127,
+   "l": 1,
+   "s": 127,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 129,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 139,
+   "e": 138,
+   "l": 1,
+   "s": 131,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 141,
+   "e": 140,
+   "l": 1,
+   "s": 140,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 147,
+   "e": 146,
+   "l": 1,
+   "s": 142,
+   "t": "VAR",
+   "x": "MONTH"
+  },
+  {
+   "c": 148,
+   "e": 147,
+   "l": 1,
+   "s": 147,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 153,
+   "e": 152,
+   "l": 1,
+   "s": 149,
+   "t": "ELSE",
+   "x": "ELSE"
+  },
+  {
+   "c": 158,
+   "e": 157,
+   "l": 1,
+   "s": 154,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 159,
+   "e": 158,
+   "l": 1,
+   "s": 158,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 171,
+   "e": 170,
+   "l": 1,
+   "s": 159,
+   "t": "STRING",
+   "x": "2023-01-31"
+  },
+  {
+   "c": 174,
+   "e": 173,
+   "l": 1,
+   "s": 172,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 179,
+   "e": 178,
+   "l": 1,
+   "s": 175,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 180,
+   "e": 179,
+   "l": 1,
+   "s": 179,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 182,
+   "e": 181,
+   "l": 1,
+   "s": 181,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 191,
+   "e": 190,
+   "l": 1,
+   "s": 183,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 193,
+   "e": 192,
+   "l": 1,
+   "s": 192,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 199,
+   "e": 198,
+   "l": 1,
+   "s": 194,
+   "t": "VAR",
+   "x": "MONTH"
+  },
+  {
+   "c": 203,
+   "e": 202,
+   "l": 1,
+   "s": 200,
+   "t": "END",
+   "x": "END"
+  },
+  {
+   "c": 206,
+   "e": 205,
+   "l": 1,
+   "s": 204,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 211,
+   "e": 210,
+   "l": 1,
+   "s": 207,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 212,
+   "e": 211,
+   "l": 1,
+   "s": 211,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.functions.Case",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 2,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.LastDay",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 5,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "2023-01-31"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 4,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 78,
+    "end": 77,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "2023-01-31"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 13,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 17,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 17,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.temporal.LastDay",
+   "i": 3,
+   "k": "true",
+   "m": {
+    "col": 101,
+    "end": 100,
+    "line": 1,
+    "start": 93
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 20,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 21,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 119,
+    "end": 118,
+    "line": 1,
+    "start": 107
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "2023-01-31"
+  },
+  {
+   "i": 23,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 22,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 26,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 26,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 21,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 29,
+   "k": "this"
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 30,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 29,
+   "k": "unit"
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "MONTH"
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 2,
+   "k": "default"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 35,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 36,
+   "k": "this",
+   "m": {
+    "col": 171,
+    "end": 170,
+    "line": 1,
+    "start": 159
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "2023-01-31"
+  },
+  {
+   "i": 37,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 36,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 40,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 40,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 35,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 43,
+   "k": "this"
+  },
+  {
+   "i": 44,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 44,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 43,
+   "k": "unit"
+  },
+  {
+   "i": 47,
+   "k": "this",
+   "v": "MONTH"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 49,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 49,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

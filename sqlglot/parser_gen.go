@@ -102,7 +102,48 @@ type ParserTables struct {
 	// node instead. PROBED, not transcribed -- sqlglot has no flag for
 	// it, the rule lives in a dialect override, and a port that assumed
 	// one shape diverged on one of the commonest predicates in SQL.
-	IsNotNullWrapsInNot bool
+	// DropsTypeParams are types whose PARAMETERS this dialect discards.
+	// The mirror of DefaultTypeParams, out of the same TYPE_CONVERTERS:
+	// DuckDB reads every text type as TEXT and drops the length, so
+	// `VARCHAR(5)` is a bare TEXT and a port that kept the 5 sent the
+	// engine a different CAST. PROBED, for the same reason.
+	DropsTypeParams map[string]bool
+	// LimitAllMeansNoLimit: `LIMIT ALL` is PostgreSQL for "no limit",
+	// and DuckDB and Databricks follow. T-SQL and the neutral dialect
+	// read ALL as a column of that name instead. PROBED: the difference
+	// lands on the one clause the guard rewrites.
+	LimitAllMeansNoLimit bool
+	// StringSensitiveArgs are argument positions where a STRING
+	// LITERAL makes the reference build something structurally
+	// different: PostgreSQL reads a string step to GENERATE_SERIES as
+	// an Interval, and a trailing string to REGEXP_REPLACE as
+	// `modifiers`, shifting the arguments after it. The function probe
+	// uses placeholder COLUMNS, so neither rule fires and the recorded
+	// signature is right for columns and wrong for strings. A call that
+	// puts a string in one of these slots is REFUSED: the port cannot
+	// tell which slot was meant, and a plausible tree is the one thing
+	// it must not build. PROBED.
+	// CastSensitiveArgs are argument positions where an explicitly
+	// CAST argument changes how the CALL itself is written: DuckDB
+	// wraps BIT_OR over a non-integer in a round-and-cast, PostgreSQL
+	// casts a double before a two-argument ROUND. The tree is the same
+	// either way -- only the SQL differs -- so this is probed by
+	// RENDERING, and a call that would need it is refused rather than
+	// written without the coercion the engine needs. PROBED.
+	CastSensitiveArgs   map[string][]int
+	StringSensitiveArgs map[string][]int
+	// WritesBooleanLiteral: whether TRUE and FALSE are written as
+	// themselves. T-SQL has no boolean literal -- the reference
+	// rewrites them to 1 and 0, and to `1 = 1` in a condition. That is
+	// a transform, not a spelling, and it is not ported; writing TRUE
+	// anyway sent an engine SQL it rejects. PROBED.
+	// ReservedKeywords must be QUOTED when written as an identifier
+	// even though the caller wrote them bare. DuckDB reserves `all`, so
+	// `SELECT 1 AS all` is written `AS "all"`; bare it is a syntax
+	// error on the engine.
+	ReservedKeywords     map[string]bool
+	WritesBooleanLiteral bool
+	IsNotNullWrapsInNot  bool
 	// NullOrdering decides where NULLs sort when nobody says, and so
 	// what nulls_first records on an Ordered node. It differs per
 	// dialect and is not derivable from ASC or DESC alone.
@@ -1942,6 +1983,9 @@ var parserTables = map[string]*ParserTables{
 			"YEAR_OF_WEEK_ISO":                {"YearOfWeekIso", []FuncArg{{"this", 0, false, nil}}},
 			"ZIPF":                            {"Zipf", []FuncArg{{"this", 0, false, nil}, {"elementcount", 1, false, nil}, {"gen", 2, false, nil}}},
 		},
+		CastSensitiveArgs: map[string][]int{
+			"TO_NUMBER": {0},
+		},
 		FunctionSQL: map[string][]FuncSQL{
 			"AIAgg":                      {{"AI_AGG", []string{}, []FuncConst{{"this", nil}, {"expression", nil}}, false}, {"AI_AGG", []string{"this"}, []FuncConst{{"expression", nil}}, false}, {"AI_AGG", []string{"this", "expression"}, []FuncConst{}, false}},
 			"AIClassify":                 {{"AI_CLASSIFY", []string{}, []FuncConst{{"this", nil}, {"categories", nil}, {"config", nil}}, false}, {"AI_CLASSIFY", []string{"this"}, []FuncConst{{"categories", nil}, {"config", nil}}, false}, {"AI_CLASSIFY", []string{"this", "categories"}, []FuncConst{{"config", nil}}, false}, {"AI_CLASSIFY", []string{"this", "categories", "config"}, []FuncConst{}, false}},
@@ -2773,6 +2817,8 @@ var parserTables = map[string]*ParserTables{
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
 		BareJoinIsOnTrue:         false,
+		LimitAllMeansNoLimit:     false,
+		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
 		ModifiersAttachedToSetOp: true,
@@ -4775,6 +4821,10 @@ var parserTables = map[string]*ParserTables{
 			"YEAR_OF_WEEK_ISO":                {"YearOfWeekIso", []FuncArg{{"this", 0, false, nil}}},
 			"ZIPF":                            {"Zipf", []FuncArg{{"this", 0, false, nil}, {"elementcount", 1, false, nil}, {"gen", 2, false, nil}}},
 		},
+		CastSensitiveArgs: map[string][]int{
+			"SAFE_DIVIDE": {0},
+			"TO_NUMBER":   {0},
+		},
 		FunctionSQL: map[string][]FuncSQL{
 			"AIAgg":                      {{"AI_AGG", []string{}, []FuncConst{{"this", nil}, {"expression", nil}}, false}, {"AI_AGG", []string{"this"}, []FuncConst{{"expression", nil}}, false}, {"AI_AGG", []string{"this", "expression"}, []FuncConst{}, false}},
 			"AIClassify":                 {{"AI_CLASSIFY", []string{}, []FuncConst{{"this", nil}, {"categories", nil}, {"config", nil}}, false}, {"AI_CLASSIFY", []string{"this"}, []FuncConst{{"categories", nil}, {"config", nil}}, false}, {"AI_CLASSIFY", []string{"this", "categories"}, []FuncConst{{"config", nil}}, false}, {"AI_CLASSIFY", []string{"this", "categories", "config"}, []FuncConst{}, false}},
@@ -5584,6 +5634,8 @@ var parserTables = map[string]*ParserTables{
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
 		BareJoinIsOnTrue:         false,
+		LimitAllMeansNoLimit:     false,
+		WritesBooleanLiteral:     false,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
 		ModifiersAttachedToSetOp: true,
@@ -7592,6 +7644,16 @@ var parserTables = map[string]*ParserTables{
 			"YEAR_OF_WEEK_ISO":                {"YearOfWeekIso", []FuncArg{{"this", 0, false, nil}}},
 			"ZIPF":                            {"Zipf", []FuncArg{{"this", 0, false, nil}, {"elementcount", 1, false, nil}, {"gen", 2, false, nil}}},
 		},
+		CastSensitiveArgs: map[string][]int{
+			"ROUND":        {0},
+			"SAFE_DIVIDE":  {0},
+			"TO_NUMBER":    {0},
+			"UNIX_TO_TIME": {0},
+		},
+		StringSensitiveArgs: map[string][]int{
+			"GENERATE_SERIES": {2},
+			"REGEXP_REPLACE":  {3, 4, 5, 6, 7, 8, 9, 10, 11},
+		},
 		FunctionSQL: map[string][]FuncSQL{
 			"AIAgg":                      {{"AI_AGG", []string{}, []FuncConst{{"this", nil}, {"expression", nil}}, false}, {"AI_AGG", []string{"this"}, []FuncConst{{"expression", nil}}, false}, {"AI_AGG", []string{"this", "expression"}, []FuncConst{}, false}},
 			"AIClassify":                 {{"AI_CLASSIFY", []string{}, []FuncConst{{"this", nil}, {"categories", nil}, {"config", nil}}, false}, {"AI_CLASSIFY", []string{"this"}, []FuncConst{{"categories", nil}, {"config", nil}}, false}, {"AI_CLASSIFY", []string{"this", "categories"}, []FuncConst{{"config", nil}}, false}, {"AI_CLASSIFY", []string{"this", "categories", "config"}, []FuncConst{}, false}},
@@ -8397,6 +8459,8 @@ var parserTables = map[string]*ParserTables{
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
 		BareJoinIsOnTrue:         false,
+		LimitAllMeansNoLimit:     true,
+		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      false,
 		NullOrdering:             "nulls_are_large",
 		ModifiersAttachedToSetOp: true,
@@ -10458,6 +10522,36 @@ var parserTables = map[string]*ParserTables{
 			"YEAR_OF_WEEK_ISO":                {"YearOfWeekIso", []FuncArg{{"this", 0, false, nil}}},
 			"ZIPF":                            {"Zipf", []FuncArg{{"this", 0, false, nil}, {"elementcount", 1, false, nil}, {"gen", 2, false, nil}}},
 		},
+		CastSensitiveArgs: map[string][]int{
+			"ADD_MONTHS":              {1},
+			"BITWISE_AND_AGG":         {0},
+			"BITWISE_OR_AGG":          {0},
+			"BITWISE_XOR_AGG":         {0},
+			"BIT_AND":                 {0},
+			"BIT_OR":                  {0},
+			"BIT_XOR":                 {0},
+			"DATE_FROM_UNIX_DATE":     {0},
+			"GEN_RANDOM_UUID":         {0},
+			"JAROWINKLER_SIMILARITY":  {0, 1},
+			"JARO_WINKLER_SIMILARITY": {0, 1},
+			"LCASE":                   {0},
+			"LOWER":                   {0},
+			"LTRIM":                   {0, 1},
+			"REPLACE":                 {0, 1, 2},
+			"REVERSE":                 {0},
+			"RTRIM":                   {0, 1},
+			"RTRIMMED_LENGTH":         {0},
+			"SHA":                     {0},
+			"SHA1":                    {0},
+			"SHA2":                    {0},
+			"STARTSWITH":              {0, 1},
+			"STARTS_WITH":             {0, 1},
+			"S_H_A1_DIGEST":           {0},
+			"S_H_A2_DIGEST":           {0},
+			"TO_NUMBER":               {0},
+			"UCASE":                   {0},
+			"UPPER":                   {0},
+		},
 		FunctionSQL: map[string][]FuncSQL{
 			"AIAgg":                      {{"AI_AGG", []string{}, []FuncConst{{"this", nil}, {"expression", nil}}, false}, {"AI_AGG", []string{"this"}, []FuncConst{{"expression", nil}}, false}, {"AI_AGG", []string{"this", "expression"}, []FuncConst{}, false}},
 			"AIClassify":                 {{"AI_CLASSIFY", []string{}, []FuncConst{{"this", nil}, {"categories", nil}, {"config", nil}}, false}, {"AI_CLASSIFY", []string{"this"}, []FuncConst{{"categories", nil}, {"config", nil}}, false}, {"AI_CLASSIFY", []string{"this", "categories"}, []FuncConst{{"config", nil}}, false}, {"AI_CLASSIFY", []string{"this", "categories", "config"}, []FuncConst{}, false}},
@@ -11190,6 +11284,90 @@ var parserTables = map[string]*ParserTables{
 		DefaultTypeParams: map[string][]string{
 			"DECIMAL": {"18", "3"},
 		},
+		DropsTypeParams: map[string]bool{
+			"TEXT": true,
+		},
+		LimitAllMeansNoLimit: true,
+		ReservedKeywords: map[string]bool{
+			"ALL":               true,
+			"ANALYSE":           true,
+			"ANALYZE":           true,
+			"AND":               true,
+			"ANY":               true,
+			"ARRAY":             true,
+			"AS":                true,
+			"ASC_P":             true,
+			"ASYMMETRIC":        true,
+			"BOTH":              true,
+			"CASE":              true,
+			"CAST":              true,
+			"CHECK_P":           true,
+			"COLLATE":           true,
+			"COLUMN":            true,
+			"CONSTRAINT":        true,
+			"CREATE_P":          true,
+			"CURRENT_CATALOG":   true,
+			"CURRENT_DATE":      true,
+			"CURRENT_ROLE":      true,
+			"CURRENT_TIME":      true,
+			"CURRENT_TIMESTAMP": true,
+			"CURRENT_USER":      true,
+			"DEFAULT":           true,
+			"DEFERRABLE":        true,
+			"DESC_P":            true,
+			"DISTINCT":          true,
+			"DO":                true,
+			"ELSE":              true,
+			"END_P":             true,
+			"EXCEPT":            true,
+			"FALSE_P":           true,
+			"FETCH":             true,
+			"FOR":               true,
+			"FOREIGN":           true,
+			"FROM":              true,
+			"GRANT":             true,
+			"GROUP_P":           true,
+			"HAVING":            true,
+			"INITIALLY":         true,
+			"INTERSECT":         true,
+			"INTO":              true,
+			"IN_P":              true,
+			"LATERAL_P":         true,
+			"LEADING":           true,
+			"LIMIT":             true,
+			"LOCALTIME":         true,
+			"LOCALTIMESTAMP":    true,
+			"NOT":               true,
+			"NULL_P":            true,
+			"OFFSET":            true,
+			"ON":                true,
+			"ONLY":              true,
+			"OR":                true,
+			"ORDER":             true,
+			"PLACING":           true,
+			"PRIMARY":           true,
+			"REFERENCES":        true,
+			"RETURNING":         true,
+			"SELECT":            true,
+			"SESSION_USER":      true,
+			"SOME":              true,
+			"SYMMETRIC":         true,
+			"TABLE":             true,
+			"THEN":              true,
+			"TO":                true,
+			"TRAILING":          true,
+			"TRUE_P":            true,
+			"UNION":             true,
+			"UNIQUE":            true,
+			"USER":              true,
+			"USING":             true,
+			"VARIADIC":          true,
+			"WHEN":              true,
+			"WHERE":             true,
+			"WINDOW":            true,
+			"WITH":              true,
+		},
+		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_last",
 		ModifiersAttachedToSetOp: true,
@@ -13232,6 +13410,9 @@ var parserTables = map[string]*ParserTables{
 			"YEAR_OF_WEEK_ISO":                {"YearOfWeekIso", []FuncArg{{"this", 0, false, nil}}},
 			"ZIPF":                            {"Zipf", []FuncArg{{"this", 0, false, nil}, {"elementcount", 1, false, nil}, {"gen", 2, false, nil}}},
 		},
+		CastSensitiveArgs: map[string][]int{
+			"TO_NUMBER": {0},
+		},
 		FunctionSQL: map[string][]FuncSQL{
 			"AIAgg":                      {{"AI_AGG", []string{}, []FuncConst{{"this", nil}, {"expression", nil}}, false}, {"AI_AGG", []string{"this"}, []FuncConst{{"expression", nil}}, false}, {"AI_AGG", []string{"this", "expression"}, []FuncConst{}, false}},
 			"AIClassify":                 {{"AI_CLASSIFY", []string{}, []FuncConst{{"this", nil}, {"categories", nil}, {"config", nil}}, false}, {"AI_CLASSIFY", []string{"this"}, []FuncConst{{"categories", nil}, {"config", nil}}, false}, {"AI_CLASSIFY", []string{"this", "categories"}, []FuncConst{{"config", nil}}, false}, {"AI_CLASSIFY", []string{"this", "categories", "config"}, []FuncConst{}, false}},
@@ -14026,6 +14207,8 @@ var parserTables = map[string]*ParserTables{
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: true,
 		BareJoinIsOnTrue:         true,
+		LimitAllMeansNoLimit:     true,
+		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
 		ModifiersAttachedToSetOp: true,

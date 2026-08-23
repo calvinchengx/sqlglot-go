@@ -1,0 +1,331 @@
+{
+ "dialect": "postgres",
+ "rendered": "SELECT FIRST_VALUE(col1) OVER (ORDER BY col2 NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) FROM table1",
+ "sql": "SELECT FIRST_VALUE(col1) OVER (ORDER BY col2 NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) FROM table1",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "FIRST_VALUE"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "col1"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 25,
+   "t": "OVER",
+   "x": "OVER"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 31,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "col2"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 45,
+   "t": "VAR",
+   "x": "NULLS"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 51,
+   "t": "FIRST",
+   "x": "FIRST"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 57,
+   "t": "ROWS",
+   "x": "ROWS"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 62,
+   "t": "BETWEEN",
+   "x": "BETWEEN"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 70,
+   "t": "VAR",
+   "x": "UNBOUNDED"
+  },
+  {
+   "c": 89,
+   "e": 88,
+   "l": 1,
+   "s": 80,
+   "t": "VAR",
+   "x": "PRECEDING"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 90,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 94,
+   "t": "VAR",
+   "x": "UNBOUNDED"
+  },
+  {
+   "c": 113,
+   "e": 112,
+   "l": 1,
+   "s": 104,
+   "t": "VAR",
+   "x": "FOLLOWING"
+  },
+  {
+   "c": 114,
+   "e": 113,
+   "l": 1,
+   "s": 113,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 119,
+   "e": 118,
+   "l": 1,
+   "s": 115,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 126,
+   "e": 125,
+   "l": 1,
+   "s": 120,
+   "t": "VAR",
+   "x": "table1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Window",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.FirstValue",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "col1"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 1,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "col2"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 8,
+   "k": "nulls_first",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.WindowSpec",
+   "i": 1,
+   "k": "spec"
+  },
+  {
+   "i": 14,
+   "k": "kind",
+   "v": "ROWS"
+  },
+  {
+   "i": 14,
+   "k": "start",
+   "v": "UNBOUNDED"
+  },
+  {
+   "i": 14,
+   "k": "start_side",
+   "v": "PRECEDING"
+  },
+  {
+   "i": 14,
+   "k": "end",
+   "v": "UNBOUNDED"
+  },
+  {
+   "i": 14,
+   "k": "end_side",
+   "v": "FOLLOWING"
+  },
+  {
+   "i": 1,
+   "k": "over",
+   "v": "OVER"
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 126,
+    "end": 125,
+    "line": 1,
+    "start": 120
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "table1"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

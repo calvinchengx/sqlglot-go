@@ -1,0 +1,2415 @@
+{
+ "dialect": "duckdb",
+ "rendered": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL OR 1 IS NULL OR 1 IS NULL OR 0 IS NULL OR 'im' IS NULL THEN NULL WHEN '(?im)' || pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(subject, '(?im)' || pattern)) < 1 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STR_SPLIT_REGEX(subject, '(?im)' || pattern)[1:1], x -> LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(subject, '(?im)' || pattern)[1:1 - 1], x -> LENGTH(x))), 0) + 0 END",
+ "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL OR 1 IS NULL OR 1 IS NULL OR 0 IS NULL OR 'im' IS NULL THEN NULL WHEN '(?im)' || pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(subject, '(?im)' || pattern)) < 1 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(subject, '(?im)' || pattern)[1:1], x -> LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(subject, '(?im)' || pattern)[1:1 - 1], x -> LENGTH(x))), 0) + 0 END",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "CASE",
+   "x": "CASE"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 12,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "subject"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 25,
+   "t": "IS",
+   "x": "IS"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 28,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 33,
+   "t": "OR",
+   "x": "OR"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 36,
+   "t": "VAR",
+   "x": "pattern"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 44,
+   "t": "IS",
+   "x": "IS"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 47,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 52,
+   "t": "OR",
+   "x": "OR"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 57,
+   "t": "IS",
+   "x": "IS"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 60,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 65,
+   "t": "OR",
+   "x": "OR"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 68,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 70,
+   "t": "IS",
+   "x": "IS"
+  },
+  {
+   "c": 77,
+   "e": 76,
+   "l": 1,
+   "s": 73,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 78,
+   "t": "OR",
+   "x": "OR"
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 81,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 83,
+   "t": "IS",
+   "x": "IS"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 86,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 91,
+   "t": "OR",
+   "x": "OR"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 94,
+   "t": "STRING",
+   "x": "im"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 99,
+   "t": "IS",
+   "x": "IS"
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 102,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 111,
+   "e": 110,
+   "l": 1,
+   "s": 107,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 116,
+   "e": 115,
+   "l": 1,
+   "s": 112,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 121,
+   "e": 120,
+   "l": 1,
+   "s": 117,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 129,
+   "e": 128,
+   "l": 1,
+   "s": 122,
+   "t": "STRING",
+   "x": "(?im)"
+  },
+  {
+   "c": 132,
+   "e": 131,
+   "l": 1,
+   "s": 130,
+   "t": "DPIPE",
+   "x": "||"
+  },
+  {
+   "c": 140,
+   "e": 139,
+   "l": 1,
+   "s": 133,
+   "t": "VAR",
+   "x": "pattern"
+  },
+  {
+   "c": 142,
+   "e": 141,
+   "l": 1,
+   "s": 141,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 145,
+   "e": 144,
+   "l": 1,
+   "s": 143,
+   "t": "STRING",
+   "x": ""
+  },
+  {
+   "c": 150,
+   "e": 149,
+   "l": 1,
+   "s": 146,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 152,
+   "e": 151,
+   "l": 1,
+   "s": 151,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 157,
+   "e": 156,
+   "l": 1,
+   "s": 153,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 164,
+   "e": 163,
+   "l": 1,
+   "s": 158,
+   "t": "VAR",
+   "x": "LENGTH"
+  },
+  {
+   "c": 165,
+   "e": 164,
+   "l": 1,
+   "s": 164,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 183,
+   "e": 182,
+   "l": 1,
+   "s": 165,
+   "t": "VAR",
+   "x": "REGEXP_EXTRACT_ALL"
+  },
+  {
+   "c": 184,
+   "e": 183,
+   "l": 1,
+   "s": 183,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 191,
+   "e": 190,
+   "l": 1,
+   "s": 184,
+   "t": "VAR",
+   "x": "subject"
+  },
+  {
+   "c": 192,
+   "e": 191,
+   "l": 1,
+   "s": 191,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 200,
+   "e": 199,
+   "l": 1,
+   "s": 193,
+   "t": "STRING",
+   "x": "(?im)"
+  },
+  {
+   "c": 203,
+   "e": 202,
+   "l": 1,
+   "s": 201,
+   "t": "DPIPE",
+   "x": "||"
+  },
+  {
+   "c": 211,
+   "e": 210,
+   "l": 1,
+   "s": 204,
+   "t": "VAR",
+   "x": "pattern"
+  },
+  {
+   "c": 212,
+   "e": 211,
+   "l": 1,
+   "s": 211,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 213,
+   "e": 212,
+   "l": 1,
+   "s": 212,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 215,
+   "e": 214,
+   "l": 1,
+   "s": 214,
+   "t": "LT",
+   "x": "<"
+  },
+  {
+   "c": 217,
+   "e": 216,
+   "l": 1,
+   "s": 216,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 222,
+   "e": 221,
+   "l": 1,
+   "s": 218,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 224,
+   "e": 223,
+   "l": 1,
+   "s": 223,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 229,
+   "e": 228,
+   "l": 1,
+   "s": 225,
+   "t": "ELSE",
+   "x": "ELSE"
+  },
+  {
+   "c": 231,
+   "e": 230,
+   "l": 1,
+   "s": 230,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 233,
+   "e": 232,
+   "l": 1,
+   "s": 232,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 242,
+   "e": 241,
+   "l": 1,
+   "s": 234,
+   "t": "VAR",
+   "x": "COALESCE"
+  },
+  {
+   "c": 243,
+   "e": 242,
+   "l": 1,
+   "s": 242,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 251,
+   "e": 250,
+   "l": 1,
+   "s": 243,
+   "t": "VAR",
+   "x": "LIST_SUM"
+  },
+  {
+   "c": 252,
+   "e": 251,
+   "l": 1,
+   "s": 251,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 266,
+   "e": 265,
+   "l": 1,
+   "s": 252,
+   "t": "VAR",
+   "x": "LIST_TRANSFORM"
+  },
+  {
+   "c": 267,
+   "e": 266,
+   "l": 1,
+   "s": 266,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 285,
+   "e": 284,
+   "l": 1,
+   "s": 267,
+   "t": "VAR",
+   "x": "STRING_SPLIT_REGEX"
+  },
+  {
+   "c": 286,
+   "e": 285,
+   "l": 1,
+   "s": 285,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 293,
+   "e": 292,
+   "l": 1,
+   "s": 286,
+   "t": "VAR",
+   "x": "subject"
+  },
+  {
+   "c": 294,
+   "e": 293,
+   "l": 1,
+   "s": 293,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 302,
+   "e": 301,
+   "l": 1,
+   "s": 295,
+   "t": "STRING",
+   "x": "(?im)"
+  },
+  {
+   "c": 305,
+   "e": 304,
+   "l": 1,
+   "s": 303,
+   "t": "DPIPE",
+   "x": "||"
+  },
+  {
+   "c": 313,
+   "e": 312,
+   "l": 1,
+   "s": 306,
+   "t": "VAR",
+   "x": "pattern"
+  },
+  {
+   "c": 314,
+   "e": 313,
+   "l": 1,
+   "s": 313,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 315,
+   "e": 314,
+   "l": 1,
+   "s": 314,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 316,
+   "e": 315,
+   "l": 1,
+   "s": 315,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 317,
+   "e": 316,
+   "l": 1,
+   "s": 316,
+   "t": "COLON",
+   "x": ":"
+  },
+  {
+   "c": 318,
+   "e": 317,
+   "l": 1,
+   "s": 317,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 319,
+   "e": 318,
+   "l": 1,
+   "s": 318,
+   "t": "R_BRACKET",
+   "x": "]"
+  },
+  {
+   "c": 320,
+   "e": 319,
+   "l": 1,
+   "s": 319,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 322,
+   "e": 321,
+   "l": 1,
+   "s": 321,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 325,
+   "e": 324,
+   "l": 1,
+   "s": 323,
+   "t": "ARROW",
+   "x": "->"
+  },
+  {
+   "c": 332,
+   "e": 331,
+   "l": 1,
+   "s": 326,
+   "t": "VAR",
+   "x": "LENGTH"
+  },
+  {
+   "c": 333,
+   "e": 332,
+   "l": 1,
+   "s": 332,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 334,
+   "e": 333,
+   "l": 1,
+   "s": 333,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 335,
+   "e": 334,
+   "l": 1,
+   "s": 334,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 336,
+   "e": 335,
+   "l": 1,
+   "s": 335,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 337,
+   "e": 336,
+   "l": 1,
+   "s": 336,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 338,
+   "e": 337,
+   "l": 1,
+   "s": 337,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 340,
+   "e": 339,
+   "l": 1,
+   "s": 339,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 341,
+   "e": 340,
+   "l": 1,
+   "s": 340,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 343,
+   "e": 342,
+   "l": 1,
+   "s": 342,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 352,
+   "e": 351,
+   "l": 1,
+   "s": 344,
+   "t": "VAR",
+   "x": "COALESCE"
+  },
+  {
+   "c": 353,
+   "e": 352,
+   "l": 1,
+   "s": 352,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 361,
+   "e": 360,
+   "l": 1,
+   "s": 353,
+   "t": "VAR",
+   "x": "LIST_SUM"
+  },
+  {
+   "c": 362,
+   "e": 361,
+   "l": 1,
+   "s": 361,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 376,
+   "e": 375,
+   "l": 1,
+   "s": 362,
+   "t": "VAR",
+   "x": "LIST_TRANSFORM"
+  },
+  {
+   "c": 377,
+   "e": 376,
+   "l": 1,
+   "s": 376,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 395,
+   "e": 394,
+   "l": 1,
+   "s": 377,
+   "t": "VAR",
+   "x": "REGEXP_EXTRACT_ALL"
+  },
+  {
+   "c": 396,
+   "e": 395,
+   "l": 1,
+   "s": 395,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 403,
+   "e": 402,
+   "l": 1,
+   "s": 396,
+   "t": "VAR",
+   "x": "subject"
+  },
+  {
+   "c": 404,
+   "e": 403,
+   "l": 1,
+   "s": 403,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 412,
+   "e": 411,
+   "l": 1,
+   "s": 405,
+   "t": "STRING",
+   "x": "(?im)"
+  },
+  {
+   "c": 415,
+   "e": 414,
+   "l": 1,
+   "s": 413,
+   "t": "DPIPE",
+   "x": "||"
+  },
+  {
+   "c": 423,
+   "e": 422,
+   "l": 1,
+   "s": 416,
+   "t": "VAR",
+   "x": "pattern"
+  },
+  {
+   "c": 424,
+   "e": 423,
+   "l": 1,
+   "s": 423,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 425,
+   "e": 424,
+   "l": 1,
+   "s": 424,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 426,
+   "e": 425,
+   "l": 1,
+   "s": 425,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 427,
+   "e": 426,
+   "l": 1,
+   "s": 426,
+   "t": "COLON",
+   "x": ":"
+  },
+  {
+   "c": 428,
+   "e": 427,
+   "l": 1,
+   "s": 427,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 430,
+   "e": 429,
+   "l": 1,
+   "s": 429,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 432,
+   "e": 431,
+   "l": 1,
+   "s": 431,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 433,
+   "e": 432,
+   "l": 1,
+   "s": 432,
+   "t": "R_BRACKET",
+   "x": "]"
+  },
+  {
+   "c": 434,
+   "e": 433,
+   "l": 1,
+   "s": 433,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 436,
+   "e": 435,
+   "l": 1,
+   "s": 435,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 439,
+   "e": 438,
+   "l": 1,
+   "s": 437,
+   "t": "ARROW",
+   "x": "->"
+  },
+  {
+   "c": 446,
+   "e": 445,
+   "l": 1,
+   "s": 440,
+   "t": "VAR",
+   "x": "LENGTH"
+  },
+  {
+   "c": 447,
+   "e": 446,
+   "l": 1,
+   "s": 446,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 448,
+   "e": 447,
+   "l": 1,
+   "s": 447,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 449,
+   "e": 448,
+   "l": 1,
+   "s": 448,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 450,
+   "e": 449,
+   "l": 1,
+   "s": 449,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 451,
+   "e": 450,
+   "l": 1,
+   "s": 450,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 452,
+   "e": 451,
+   "l": 1,
+   "s": 451,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 454,
+   "e": 453,
+   "l": 1,
+   "s": 453,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 455,
+   "e": 454,
+   "l": 1,
+   "s": 454,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 457,
+   "e": 456,
+   "l": 1,
+   "s": 456,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 459,
+   "e": 458,
+   "l": 1,
+   "s": 458,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 463,
+   "e": 462,
+   "l": 1,
+   "s": 460,
+   "t": "END",
+   "x": "END"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Case",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 1,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.Or",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Or",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Or",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Or",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Or",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "subject"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 8,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 7,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "pattern"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 14,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 6,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 20,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 5,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 68
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 26,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 25,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 4,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 30,
+   "k": "this",
+   "m": {
+    "col": 82,
+    "end": 81,
+    "line": 1,
+    "start": 81
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 31,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 30,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 3,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 35,
+   "k": "this",
+   "m": {
+    "col": 98,
+    "end": 97,
+    "line": 1,
+    "start": 94
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "im"
+  },
+  {
+   "i": 36,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 35,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 2,
+   "k": "true"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 1,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 41,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.DPipe",
+   "i": 42,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 43,
+   "k": "this",
+   "m": {
+    "col": 129,
+    "end": 128,
+    "line": 1,
+    "start": 122
+   }
+  },
+  {
+   "i": 44,
+   "k": "this",
+   "v": "(?im)"
+  },
+  {
+   "i": 44,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 43,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 47,
+   "k": "this",
+   "m": {
+    "col": 140,
+    "end": 139,
+    "line": 1,
+    "start": 133
+   }
+  },
+  {
+   "i": 48,
+   "k": "this",
+   "v": "pattern"
+  },
+  {
+   "i": 48,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 43,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 42,
+   "k": "expression",
+   "m": {
+    "col": 145,
+    "end": 144,
+    "line": 1,
+    "start": 143
+   }
+  },
+  {
+   "i": 52,
+   "k": "this",
+   "v": ""
+  },
+  {
+   "i": 52,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 41,
+   "k": "true",
+   "m": {
+    "col": 152,
+    "end": 151,
+    "line": 1,
+    "start": 151
+   }
+  },
+  {
+   "i": 55,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 55,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 1,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.LT",
+   "i": 58,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.string.Length",
+   "i": 59,
+   "k": "this",
+   "m": {
+    "col": 164,
+    "end": 163,
+    "line": 1,
+    "start": 158
+   }
+  },
+  {
+   "c": "sqlglot.expressions.string.RegexpExtractAll",
+   "i": 60,
+   "k": "this",
+   "m": {
+    "col": 183,
+    "end": 182,
+    "line": 1,
+    "start": 165
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 61,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 62,
+   "k": "this",
+   "m": {
+    "col": 191,
+    "end": 190,
+    "line": 1,
+    "start": 184
+   }
+  },
+  {
+   "i": 63,
+   "k": "this",
+   "v": "subject"
+  },
+  {
+   "i": 63,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.DPipe",
+   "i": 61,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 66,
+   "k": "this",
+   "m": {
+    "col": 200,
+    "end": 199,
+    "line": 1,
+    "start": 193
+   }
+  },
+  {
+   "i": 67,
+   "k": "this",
+   "v": "(?im)"
+  },
+  {
+   "i": 67,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 66,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 70,
+   "k": "this",
+   "m": {
+    "col": 211,
+    "end": 210,
+    "line": 1,
+    "start": 204
+   }
+  },
+  {
+   "i": 71,
+   "k": "this",
+   "v": "pattern"
+  },
+  {
+   "i": 71,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 66,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 61,
+   "k": "group"
+  },
+  {
+   "i": 75,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 75,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 59,
+   "k": "expression",
+   "m": {
+    "col": 217,
+    "end": 216,
+    "line": 1,
+    "start": 216
+   }
+  },
+  {
+   "i": 78,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 78,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 58,
+   "k": "true",
+   "m": {
+    "col": 224,
+    "end": 223,
+    "line": 1,
+    "start": 223
+   }
+  },
+  {
+   "i": 81,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 81,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 1,
+   "k": "default"
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 84,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 85,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 86,
+   "k": "this",
+   "m": {
+    "col": 231,
+    "end": 230,
+    "line": 1,
+    "start": 230
+   }
+  },
+  {
+   "i": 87,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 87,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.functions.Coalesce",
+   "i": 86,
+   "k": "expression",
+   "m": {
+    "col": 242,
+    "end": 241,
+    "line": 1,
+    "start": 234
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 90,
+   "k": "this",
+   "m": {
+    "col": 251,
+    "end": 250,
+    "line": 1,
+    "start": 243
+   }
+  },
+  {
+   "i": 91,
+   "k": "this",
+   "v": "LIST_SUM"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.array.Transform",
+   "i": 91,
+   "k": "expressions",
+   "m": {
+    "col": 266,
+    "end": 265,
+    "line": 1,
+    "start": 252
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Bracket",
+   "i": 93,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.string.RegexpSplit",
+   "i": 94,
+   "k": "this",
+   "m": {
+    "col": 285,
+    "end": 284,
+    "line": 1,
+    "start": 267
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 95,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 96,
+   "k": "this",
+   "m": {
+    "col": 293,
+    "end": 292,
+    "line": 1,
+    "start": 286
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "i": 97,
+   "k": "this",
+   "v": "subject"
+  },
+  {
+   "i": 97,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.DPipe",
+   "i": 95,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 100,
+   "k": "this",
+   "m": {
+    "col": 302,
+    "end": 301,
+    "line": 1,
+    "nonnull": true,
+    "start": 295
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    }
+   ]
+  },
+  {
+   "i": 101,
+   "k": "this",
+   "v": "(?im)"
+  },
+  {
+   "i": 101,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 100,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 104,
+   "k": "this",
+   "m": {
+    "col": 313,
+    "end": 312,
+    "line": 1,
+    "start": 306
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "i": 105,
+   "k": "this",
+   "v": "pattern"
+  },
+  {
+   "i": 105,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 100,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Slice",
+   "i": 94,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 109,
+   "k": "this",
+   "m": {
+    "col": 316,
+    "end": 315,
+    "line": 1,
+    "nonnull": true,
+    "start": 315
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    }
+   ]
+  },
+  {
+   "i": 110,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 110,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 109,
+   "k": "expression",
+   "m": {
+    "col": 318,
+    "end": 317,
+    "line": 1,
+    "nonnull": true,
+    "start": 317
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    }
+   ]
+  },
+  {
+   "i": 113,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 113,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Lambda",
+   "i": 93,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.string.Length",
+   "i": 116,
+   "k": "this",
+   "m": {
+    "col": 332,
+    "end": 331,
+    "line": 1,
+    "start": 326
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 117,
+   "k": "this",
+   "m": {
+    "col": 334,
+    "end": 333,
+    "line": 1,
+    "start": 333
+   }
+  },
+  {
+   "i": 118,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 118,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 116,
+   "k": "expressions",
+   "m": {
+    "col": 322,
+    "end": 321,
+    "line": 1,
+    "start": 321
+   }
+  },
+  {
+   "i": 121,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 121,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 90,
+   "k": "expressions",
+   "m": {
+    "col": 340,
+    "end": 339,
+    "line": 1,
+    "start": 339
+   }
+  },
+  {
+   "i": 124,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 124,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.functions.Coalesce",
+   "i": 85,
+   "k": "expression",
+   "m": {
+    "col": 352,
+    "end": 351,
+    "line": 1,
+    "start": 344
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 127,
+   "k": "this",
+   "m": {
+    "col": 361,
+    "end": 360,
+    "line": 1,
+    "start": 353
+   }
+  },
+  {
+   "i": 128,
+   "k": "this",
+   "v": "LIST_SUM"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.array.Transform",
+   "i": 128,
+   "k": "expressions",
+   "m": {
+    "col": 376,
+    "end": 375,
+    "line": 1,
+    "start": 362
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Bracket",
+   "i": 130,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.string.RegexpExtractAll",
+   "i": 131,
+   "k": "this",
+   "m": {
+    "col": 395,
+    "end": 394,
+    "line": 1,
+    "start": 377
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 132,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 133,
+   "k": "this",
+   "m": {
+    "col": 403,
+    "end": 402,
+    "line": 1,
+    "start": 396
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "i": 134,
+   "k": "this",
+   "v": "subject"
+  },
+  {
+   "i": 134,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.DPipe",
+   "i": 132,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 137,
+   "k": "this",
+   "m": {
+    "col": 412,
+    "end": 411,
+    "line": 1,
+    "nonnull": true,
+    "start": 405
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    }
+   ]
+  },
+  {
+   "i": 138,
+   "k": "this",
+   "v": "(?im)"
+  },
+  {
+   "i": 138,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 137,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 141,
+   "k": "this",
+   "m": {
+    "col": 423,
+    "end": 422,
+    "line": 1,
+    "start": 416
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "i": 142,
+   "k": "this",
+   "v": "pattern"
+  },
+  {
+   "i": 142,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 137,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 132,
+   "k": "group",
+   "m": {
+    "nonnull": true
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    }
+   ]
+  },
+  {
+   "i": 146,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 146,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Slice",
+   "i": 131,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 149,
+   "k": "this",
+   "m": {
+    "col": 426,
+    "end": 425,
+    "line": 1,
+    "nonnull": true,
+    "start": 425
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    }
+   ]
+  },
+  {
+   "i": 150,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 150,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 149,
+   "k": "expression",
+   "m": {
+    "nonnull": true
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 153,
+   "k": "this",
+   "m": {
+    "col": 428,
+    "end": 427,
+    "line": 1,
+    "nonnull": true,
+    "start": 427
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    }
+   ]
+  },
+  {
+   "i": 154,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 154,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 153,
+   "k": "expression",
+   "m": {
+    "col": 432,
+    "end": 431,
+    "line": 1,
+    "nonnull": true,
+    "start": 431
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    }
+   ]
+  },
+  {
+   "i": 157,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 157,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Lambda",
+   "i": 130,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.string.Length",
+   "i": 160,
+   "k": "this",
+   "m": {
+    "col": 446,
+    "end": 445,
+    "line": 1,
+    "start": 440
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 161,
+   "k": "this",
+   "m": {
+    "col": 448,
+    "end": 447,
+    "line": 1,
+    "start": 447
+   }
+  },
+  {
+   "i": 162,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 162,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 160,
+   "k": "expressions",
+   "m": {
+    "col": 436,
+    "end": 435,
+    "line": 1,
+    "start": 435
+   }
+  },
+  {
+   "i": 165,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 165,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 127,
+   "k": "expressions",
+   "m": {
+    "col": 454,
+    "end": 453,
+    "line": 1,
+    "start": 453
+   }
+  },
+  {
+   "i": 168,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 168,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 84,
+   "k": "expression",
+   "m": {
+    "col": 459,
+    "end": 458,
+    "line": 1,
+    "start": 458
+   }
+  },
+  {
+   "i": 171,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 171,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

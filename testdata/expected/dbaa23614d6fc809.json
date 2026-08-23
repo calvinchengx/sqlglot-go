@@ -1,0 +1,100 @@
+{
+ "dialect": "duckdb",
+ "rendered": "'{\"farm\": [\"a\", \"b\", \"c\"]}' ->> '$.farm[0]'",
+ "sql": "'{\"farm\": [\"a\", \"b\", \"c\"]}' ->> '$.farm[0]'",
+ "tokens": [
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 0,
+   "t": "STRING",
+   "x": "{\"farm\": [\"a\", \"b\", \"c\"]}"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 28,
+   "t": "DARROW",
+   "x": "->>"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 32,
+   "t": "STRING",
+   "x": "$.farm[0]"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.json.JSONExtractScalar"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "{\"farm\": [\"a\", \"b\", \"c\"]}"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "farm"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathSubscript",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": 0
+  },
+  {
+   "i": 0,
+   "k": "only_json_types",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "scalar_only",
+   "v": false
+  }
+ ]
+}

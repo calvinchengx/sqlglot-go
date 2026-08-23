@@ -1,0 +1,93 @@
+{
+ "dialect": "postgres",
+ "rendered": "SELECT CURRENT_TIMESTAMP + INTERVAL '-3 MONTH'",
+ "sql": "SELECT CURRENT_TIMESTAMP + INTERVAL '-3 MONTH'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 7,
+   "t": "CURRENT_TIMESTAMP",
+   "x": "CURRENT_TIMESTAMP"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 27,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 36,
+   "t": "STRING",
+   "x": "-3 MONTH"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Add",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentTimestamp",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "-3"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 3,
+   "k": "unit"
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "MONTH"
+  }
+ ]
+}

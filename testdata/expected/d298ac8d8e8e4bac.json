@@ -1,0 +1,78 @@
+{
+ "dialect": "postgres",
+ "rendered": "CURRENT_DATE AT TIME ZONE 'UTC'",
+ "sql": "CURRENT_DATE AT TIME ZONE 'UTC'",
+ "tokens": [
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 0,
+   "t": "CURRENT_DATE",
+   "x": "CURRENT_DATE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "AT"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 16,
+   "t": "TIME",
+   "x": "TIME"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 21,
+   "t": "VAR",
+   "x": "ZONE"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 26,
+   "t": "STRING",
+   "x": "UTC"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.AtTimeZone"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentDate",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "zone",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "UTC"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

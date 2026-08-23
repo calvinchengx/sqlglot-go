@@ -1,0 +1,83 @@
+{
+ "dialect": "databricks",
+ "rendered": "foo ILIKE 'pattern'",
+ "sql": "foo ILIKE 'pattern'",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 4,
+   "t": "ILIKE",
+   "x": "ILIKE"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 10,
+   "t": "STRING",
+   "x": "pattern"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.ILike"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 3,
+    "end": 2,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 10
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "pattern"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

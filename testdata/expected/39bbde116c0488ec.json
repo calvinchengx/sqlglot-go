@@ -1,0 +1,93 @@
+{
+ "dialect": "duckdb",
+ "rendered": "TRUE OR NULL AS \"foo\"",
+ "sql": "TRUE OR NULL AS \"foo\"",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "TRUE",
+   "x": "TRUE"
+  },
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 5,
+   "t": "OR",
+   "x": "OR"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 8,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 13,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 16,
+   "t": "IDENTIFIER",
+   "x": "foo"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Or",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 0,
+   "k": "alias",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": true
+  }
+ ]
+}

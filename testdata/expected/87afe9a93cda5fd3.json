@@ -1,0 +1,556 @@
+{
+ "dialect": "tsql",
+ "rendered": "CREATE FUNCTION udfProductInYear(@model_year INTEGER) RETURNS TABLE AS RETURN SELECT product_name, model_year, list_price FROM production.products WHERE model_year = @model_year",
+ "sql": "\n            CREATE FUNCTION udfProductInYear (\n                @model_year INT\n            )\n            RETURNS TABLE\n            AS\n            RETURN\n                SELECT\n                    product_name,\n                    model_year,\n                    list_price\n                FROM\n                    production.products\n                WHERE\n                    model_year = @model_year\n            ",
+ "tokens": [
+  {
+   "c": 18,
+   "e": 18,
+   "l": 2,
+   "s": 13,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 27,
+   "e": 27,
+   "l": 2,
+   "s": 20,
+   "t": "FUNCTION",
+   "x": "FUNCTION"
+  },
+  {
+   "c": 44,
+   "e": 44,
+   "l": 2,
+   "s": 29,
+   "t": "VAR",
+   "x": "udfProductInYear"
+  },
+  {
+   "c": 46,
+   "e": 46,
+   "l": 2,
+   "s": 46,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 17,
+   "e": 64,
+   "l": 3,
+   "s": 64,
+   "t": "PARAMETER",
+   "x": "@"
+  },
+  {
+   "c": 27,
+   "e": 74,
+   "l": 3,
+   "s": 65,
+   "t": "VAR",
+   "x": "model_year"
+  },
+  {
+   "c": 31,
+   "e": 78,
+   "l": 3,
+   "s": 76,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 13,
+   "e": 92,
+   "l": 4,
+   "s": 92,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 19,
+   "e": 112,
+   "l": 5,
+   "s": 106,
+   "t": "VAR",
+   "x": "RETURNS"
+  },
+  {
+   "c": 25,
+   "e": 118,
+   "l": 5,
+   "s": 114,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 14,
+   "e": 133,
+   "l": 6,
+   "s": 132,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 18,
+   "e": 152,
+   "l": 7,
+   "s": 147,
+   "t": "VAR",
+   "x": "RETURN"
+  },
+  {
+   "c": 22,
+   "e": 175,
+   "l": 8,
+   "s": 170,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 32,
+   "e": 208,
+   "l": 9,
+   "s": 197,
+   "t": "VAR",
+   "x": "product_name"
+  },
+  {
+   "c": 33,
+   "e": 209,
+   "l": 9,
+   "s": 209,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 30,
+   "e": 240,
+   "l": 10,
+   "s": 231,
+   "t": "VAR",
+   "x": "model_year"
+  },
+  {
+   "c": 31,
+   "e": 241,
+   "l": 10,
+   "s": 241,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 30,
+   "e": 272,
+   "l": 11,
+   "s": 263,
+   "t": "VAR",
+   "x": "list_price"
+  },
+  {
+   "c": 20,
+   "e": 293,
+   "l": 12,
+   "s": 290,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 30,
+   "e": 324,
+   "l": 13,
+   "s": 315,
+   "t": "VAR",
+   "x": "production"
+  },
+  {
+   "c": 31,
+   "e": 325,
+   "l": 13,
+   "s": 325,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 39,
+   "e": 333,
+   "l": 13,
+   "s": 326,
+   "t": "VAR",
+   "x": "products"
+  },
+  {
+   "c": 21,
+   "e": 355,
+   "l": 14,
+   "s": 351,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 30,
+   "e": 386,
+   "l": 15,
+   "s": 377,
+   "t": "VAR",
+   "x": "model_year"
+  },
+  {
+   "c": 32,
+   "e": 388,
+   "l": 15,
+   "s": 388,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 34,
+   "e": 390,
+   "l": 15,
+   "s": 390,
+   "t": "PARAMETER",
+   "x": "@"
+  },
+  {
+   "c": 44,
+   "e": 400,
+   "l": 15,
+   "s": 391,
+   "t": "VAR",
+   "x": "model_year"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.ddl.UserDefinedFunction",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 44,
+    "line": 2,
+    "start": 29
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "udfProductInYear"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "model_year"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "wrapped",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "FUNCTION"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Return",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 19,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 208,
+    "line": 9,
+    "start": 197
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "product_name"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 19,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 240,
+    "line": 10,
+    "start": 231
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "model_year"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 19,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 272,
+    "line": 11,
+    "start": 263
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "list_price"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 19,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 32,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 333,
+    "line": 13,
+    "start": 326
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "products"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "db",
+   "m": {
+    "col": 30,
+    "end": 324,
+    "line": 13,
+    "start": 315
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "production"
+  },
+  {
+   "i": 37,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 19,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 40,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 41,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 42,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 386,
+    "line": 15,
+    "start": 377
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "model_year"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 41,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 46,
+   "k": "this"
+  },
+  {
+   "i": 47,
+   "k": "this",
+   "v": "model_year"
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.ReturnsProperty",
+   "i": 50,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 51,
+   "k": "this"
+  },
+  {
+   "i": 52,
+   "k": "this",
+   "v": "TABLE"
+  },
+  {
+   "i": 51,
+   "k": "is_table",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "begin",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

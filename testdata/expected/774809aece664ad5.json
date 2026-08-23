@@ -1,0 +1,122 @@
+{
+ "dialect": "databricks",
+ "rendered": "SELECT CONVERT_TIMEZONE('America/New_York', '2024-08-06 09:10:00.000')",
+ "sql": "SELECT CONVERT_TIMEZONE('America/New_York', '2024-08-06 09:10:00.000')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CONVERT_TIMEZONE"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 24,
+   "t": "STRING",
+   "x": "America/New_York"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 44,
+   "t": "STRING",
+   "x": "2024-08-06 09:10:00.000"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 69,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.ConvertTimezone",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "target_tz",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "America/New_York"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "timestamp",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "2024-08-06 09:10:00.000"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

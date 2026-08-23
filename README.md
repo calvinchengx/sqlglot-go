@@ -65,10 +65,10 @@ Regenerate with `make service`; nothing in it is authored here.
 | Dialect | Tokens | Trees matched | Of | Unparsed | Mismatched |
 |---|---|---|---|---|---|
 | neutral | 997/997 | 376 | 997 | 621 | 0 |
-| tsql | 234/234 | 45 | 234 | 189 | 0 |
-| postgres | 400/400 | 65 | 400 | 335 | 0 |
-| duckdb | 393/393 | 108 | 393 | 285 | 0 |
-| databricks | 153/153 | 33 | 153 | 120 | 0 |
+| tsql | 597/597 | 192 | 597 | 405 | 0 |
+| postgres | 857/857 | 220 | 857 | 637 | 0 |
+| duckdb | 1631/1631 | 548 | 1631 | 1083 | 0 |
+| databricks | 424/424 | 129 | 424 | 295 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number
@@ -76,8 +76,8 @@ that matters** and must be zero: it counts statements the port parsed into a
 *different* tree than the reference. Unparsed is the honest size of the gap.
 
 The port also writes SQL back out, and is held to the reference's own output
-string for string: **600 of the statements it parses are written back
-identically**, and the guard's own rewrite -- inject a row ceiling, emit --
+string for string: **1,378 of the statements it parses are written back
+identically and none is written wrongly**, with 67 refused, and the guard's own rewrite -- inject a row ceiling, emit --
 lands as `TOP 500` in T-SQL and `LIMIT 500` in DuckDB from the same edit to the
 same node. Where a dialect would transform a statement in a way the port does
 not perform, the generator **refuses** rather than emit something close: an
@@ -95,9 +95,24 @@ that counts as unparsed, never a tree that merely looks plausible. That is why
 
 ## How it is verified
 
-`testdata/expected/` holds 2,171 statements — sqlglot's own `identity.sql`,
-the four dialect suites, and a set chosen to reach the lexical corners those
-miss — each with the token stream and the tree the reference produced. `go
+`testdata/expected/` holds 4,506 statements — sqlglot's own `identity.sql`, its
+**whole** dialect suite, and a set chosen to reach the lexical corners those
+miss — each with the token stream and the tree the reference produced.
+
+"Whole" is the part worth stating. sqlglot pins a dialect's behaviour two ways:
+`validate_identity("…")`, a statement that round-trips, and
+`validate_all(…, read={"duckdb": "…"}, write={"tsql": "…"})`, one concept and
+how each dialect spells it. Reading only `validate_identity` out of
+`test_<dialect>.py` — which is what this harness did at first — missed both the
+second form and every file not named after one of our dialects. That was most
+of it: the largest single source of DuckDB statements is
+`tests/dialects/test_snowflake.py`, and the largest overall is
+`tests/dialects/test_dialect.py`, 5,448 lines organised by CONCEPT rather than
+by dialect. Harvesting those took the corpus from 2,171 to 4,506 and found
+**31 statements the port parsed into a different tree**, including two —
+`IS [NOT] DISTINCT FROM` and typed division — that had been found the
+expensive way, by fuzzing, while sitting in the reference's own tests all
+along. `go
 test ./...` runs every one through the port and diffs both. The expectations
 are committed, so the Go tests need no Python; regenerating them (`make
 oracle`) refuses to run against any commit other than the one `NOTICE` pins.

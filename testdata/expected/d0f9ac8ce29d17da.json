@@ -1,0 +1,999 @@
+{
+ "dialect": "duckdb",
+ "rendered": "SELECT CASE WHEN UPPER(CAST('T' AS TEXT)) = 'ON' THEN TRUE WHEN UPPER(CAST('T' AS TEXT)) = 'OFF' THEN FALSE WHEN ISNAN(TRY_CAST('T' AS REAL)) OR ISINF(TRY_CAST('T' AS REAL)) THEN ERROR('TO_BOOLEAN: Non-numeric values NaN and INF are not supported') ELSE CAST('T' AS BOOLEAN) END",
+ "sql": "SELECT CASE WHEN UPPER(CAST('T' AS TEXT)) = 'ON' THEN TRUE WHEN UPPER(CAST('T' AS TEXT)) = 'OFF' THEN FALSE WHEN ISNAN(TRY_CAST('T' AS REAL)) OR ISINF(TRY_CAST('T' AS REAL)) THEN ERROR('TO_BOOLEAN: Non-numeric values NaN and INF are not supported') ELSE CAST('T' AS BOOLEAN) END",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "CASE",
+   "x": "CASE"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 12,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "UPPER"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 28,
+   "t": "STRING",
+   "x": "T"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 32,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 35,
+   "t": "TEXT",
+   "x": "TEXT"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 44,
+   "t": "STRING",
+   "x": "ON"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 49,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 54,
+   "t": "TRUE",
+   "x": "TRUE"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 59,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 64,
+   "t": "VAR",
+   "x": "UPPER"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 69,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 70,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 74,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 75,
+   "t": "STRING",
+   "x": "T"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 79,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 82,
+   "t": "TEXT",
+   "x": "TEXT"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 86,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 88,
+   "e": 87,
+   "l": 1,
+   "s": 87,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 89,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 91,
+   "t": "STRING",
+   "x": "OFF"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 97,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 102,
+   "t": "FALSE",
+   "x": "FALSE"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 108,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 118,
+   "e": 117,
+   "l": 1,
+   "s": 113,
+   "t": "VAR",
+   "x": "ISNAN"
+  },
+  {
+   "c": 119,
+   "e": 118,
+   "l": 1,
+   "s": 118,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 127,
+   "e": 126,
+   "l": 1,
+   "s": 119,
+   "t": "VAR",
+   "x": "TRY_CAST"
+  },
+  {
+   "c": 128,
+   "e": 127,
+   "l": 1,
+   "s": 127,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 131,
+   "e": 130,
+   "l": 1,
+   "s": 128,
+   "t": "STRING",
+   "x": "T"
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 132,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 139,
+   "e": 138,
+   "l": 1,
+   "s": 135,
+   "t": "FLOAT",
+   "x": "REAL"
+  },
+  {
+   "c": 140,
+   "e": 139,
+   "l": 1,
+   "s": 139,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 141,
+   "e": 140,
+   "l": 1,
+   "s": 140,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 144,
+   "e": 143,
+   "l": 1,
+   "s": 142,
+   "t": "OR",
+   "x": "OR"
+  },
+  {
+   "c": 150,
+   "e": 149,
+   "l": 1,
+   "s": 145,
+   "t": "VAR",
+   "x": "ISINF"
+  },
+  {
+   "c": 151,
+   "e": 150,
+   "l": 1,
+   "s": 150,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 159,
+   "e": 158,
+   "l": 1,
+   "s": 151,
+   "t": "VAR",
+   "x": "TRY_CAST"
+  },
+  {
+   "c": 160,
+   "e": 159,
+   "l": 1,
+   "s": 159,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 163,
+   "e": 162,
+   "l": 1,
+   "s": 160,
+   "t": "STRING",
+   "x": "T"
+  },
+  {
+   "c": 166,
+   "e": 165,
+   "l": 1,
+   "s": 164,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 171,
+   "e": 170,
+   "l": 1,
+   "s": 167,
+   "t": "FLOAT",
+   "x": "REAL"
+  },
+  {
+   "c": 172,
+   "e": 171,
+   "l": 1,
+   "s": 171,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 173,
+   "e": 172,
+   "l": 1,
+   "s": 172,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 178,
+   "e": 177,
+   "l": 1,
+   "s": 174,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 184,
+   "e": 183,
+   "l": 1,
+   "s": 179,
+   "t": "VAR",
+   "x": "ERROR"
+  },
+  {
+   "c": 185,
+   "e": 184,
+   "l": 1,
+   "s": 184,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 247,
+   "e": 246,
+   "l": 1,
+   "s": 185,
+   "t": "STRING",
+   "x": "TO_BOOLEAN: Non-numeric values NaN and INF are not supported"
+  },
+  {
+   "c": 248,
+   "e": 247,
+   "l": 1,
+   "s": 247,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 253,
+   "e": 252,
+   "l": 1,
+   "s": 249,
+   "t": "ELSE",
+   "x": "ELSE"
+  },
+  {
+   "c": 258,
+   "e": 257,
+   "l": 1,
+   "s": 254,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 259,
+   "e": 258,
+   "l": 1,
+   "s": 258,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 262,
+   "e": 261,
+   "l": 1,
+   "s": 259,
+   "t": "STRING",
+   "x": "T"
+  },
+  {
+   "c": 265,
+   "e": 264,
+   "l": 1,
+   "s": 263,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 273,
+   "e": 272,
+   "l": 1,
+   "s": 266,
+   "t": "BOOLEAN",
+   "x": "BOOLEAN"
+  },
+  {
+   "c": 274,
+   "e": 273,
+   "l": 1,
+   "s": 273,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 278,
+   "e": 277,
+   "l": 1,
+   "s": 275,
+   "t": "END",
+   "x": "END"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Case",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 1,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.string.Upper",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 4,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TEXT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "T"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 5,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 9,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 9,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expression",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "ON"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 2,
+   "k": "true"
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 1,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.string.Upper",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 64
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 19,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TEXT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 78,
+    "end": 77,
+    "line": 1,
+    "start": 75
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "T"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 20,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 24,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 24,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 18,
+   "k": "expression",
+   "m": {
+    "col": 96,
+    "end": 95,
+    "line": 1,
+    "start": 91
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "OFF"
+  },
+  {
+   "i": 27,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 17,
+   "k": "true"
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 1,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.Or",
+   "i": 32,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.math.IsNan",
+   "i": 33,
+   "k": "this",
+   "m": {
+    "col": 118,
+    "end": 117,
+    "line": 1,
+    "start": 113
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.TryCast",
+   "i": 34,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "FLOAT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 35,
+   "k": "this",
+   "m": {
+    "col": 131,
+    "end": 130,
+    "line": 1,
+    "start": 128
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "T"
+  },
+  {
+   "i": 36,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 35,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 39,
+   "k": "this",
+   "v": "FLOAT"
+  },
+  {
+   "i": 39,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 35,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.math.IsInf",
+   "i": 33,
+   "k": "expression",
+   "m": {
+    "col": 150,
+    "end": 149,
+    "line": 1,
+    "start": 145
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.TryCast",
+   "i": 43,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "FLOAT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 44,
+   "k": "this",
+   "m": {
+    "col": 163,
+    "end": 162,
+    "line": 1,
+    "start": 160
+   }
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "T"
+  },
+  {
+   "i": 45,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 44,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 48,
+   "k": "this",
+   "v": "FLOAT"
+  },
+  {
+   "i": 48,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 44,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 32,
+   "k": "true",
+   "m": {
+    "col": 184,
+    "end": 183,
+    "line": 1,
+    "start": 179
+   }
+  },
+  {
+   "i": 52,
+   "k": "this",
+   "v": "ERROR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 52,
+   "k": "expressions",
+   "m": {
+    "col": 247,
+    "end": 246,
+    "line": 1,
+    "start": 185
+   }
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "TO_BOOLEAN: Non-numeric values NaN and INF are not supported"
+  },
+  {
+   "i": 54,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "default",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "BOOLEAN"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 57,
+   "k": "this",
+   "m": {
+    "col": 262,
+    "end": 261,
+    "line": 1,
+    "start": 259
+   }
+  },
+  {
+   "i": 58,
+   "k": "this",
+   "v": "T"
+  },
+  {
+   "i": 58,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 57,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 61,
+   "k": "this",
+   "v": "BOOLEAN"
+  },
+  {
+   "i": 61,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

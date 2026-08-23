@@ -1,0 +1,752 @@
+{
+ "dialect": "duckdb",
+ "rendered": "WITH sample AS (SELECT ts FROM UNNEST([CAST('2024-03-15 14:35:46' AS TIMESTAMPTZ), CAST('2024-03-16 01:12:03' AS TIMESTAMPTZ)]) AS _t0(ts)) SELECT ts, DATE_TRUNC('DAY', ts) AS truncated_ts FROM sample",
+ "sql": "WITH sample AS (SELECT ts FROM UNNEST([CAST('2024-03-15 14:35:46' AS TIMESTAMPTZ), CAST('2024-03-16 01:12:03' AS TIMESTAMPTZ)]) AS _t0(ts)) SELECT ts, DATE_TRUNC('DAY', ts) AS truncated_ts FROM sample",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "sample"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 12,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 16,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "ts"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 26,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 31,
+   "t": "UNNEST",
+   "x": "UNNEST"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 38,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 39,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 44,
+   "t": "STRING",
+   "x": "2024-03-15 14:35:46"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 66,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 69,
+   "t": "TIMESTAMPTZ",
+   "x": "TIMESTAMPTZ"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 80,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 81,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 83,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 88,
+   "e": 87,
+   "l": 1,
+   "s": 87,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 109,
+   "e": 108,
+   "l": 1,
+   "s": 88,
+   "t": "STRING",
+   "x": "2024-03-16 01:12:03"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 110,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 113,
+   "t": "TIMESTAMPTZ",
+   "x": "TIMESTAMPTZ"
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 124,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 126,
+   "e": 125,
+   "l": 1,
+   "s": 125,
+   "t": "R_BRACKET",
+   "x": "]"
+  },
+  {
+   "c": 127,
+   "e": 126,
+   "l": 1,
+   "s": 126,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 128,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 131,
+   "t": "VAR",
+   "x": "_t0"
+  },
+  {
+   "c": 135,
+   "e": 134,
+   "l": 1,
+   "s": 134,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 137,
+   "e": 136,
+   "l": 1,
+   "s": 135,
+   "t": "VAR",
+   "x": "ts"
+  },
+  {
+   "c": 138,
+   "e": 137,
+   "l": 1,
+   "s": 137,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 139,
+   "e": 138,
+   "l": 1,
+   "s": 138,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 146,
+   "e": 145,
+   "l": 1,
+   "s": 140,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 149,
+   "e": 148,
+   "l": 1,
+   "s": 147,
+   "t": "VAR",
+   "x": "ts"
+  },
+  {
+   "c": 150,
+   "e": 149,
+   "l": 1,
+   "s": 149,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 161,
+   "e": 160,
+   "l": 1,
+   "s": 151,
+   "t": "VAR",
+   "x": "DATE_TRUNC"
+  },
+  {
+   "c": 162,
+   "e": 161,
+   "l": 1,
+   "s": 161,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 167,
+   "e": 166,
+   "l": 1,
+   "s": 162,
+   "t": "STRING",
+   "x": "DAY"
+  },
+  {
+   "c": 168,
+   "e": 167,
+   "l": 1,
+   "s": 167,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 171,
+   "e": 170,
+   "l": 1,
+   "s": 169,
+   "t": "VAR",
+   "x": "ts"
+  },
+  {
+   "c": 172,
+   "e": 171,
+   "l": 1,
+   "s": 171,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 175,
+   "e": 174,
+   "l": 1,
+   "s": 173,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 188,
+   "e": 187,
+   "l": 1,
+   "s": 176,
+   "t": "VAR",
+   "x": "truncated_ts"
+  },
+  {
+   "c": 193,
+   "e": 192,
+   "l": 1,
+   "s": 189,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 200,
+   "e": 199,
+   "l": 1,
+   "s": 194,
+   "t": "VAR",
+   "x": "sample"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 149,
+    "end": 148,
+    "line": 1,
+    "start": 147
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "ts"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TimestampTrunc",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 161,
+    "end": 160,
+    "line": 1,
+    "start": 151
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 171,
+    "end": 170,
+    "line": 1,
+    "start": 169
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "ts"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 6,
+   "k": "unit"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "DAY"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "alias",
+   "m": {
+    "col": 188,
+    "end": 187,
+    "line": 1,
+    "start": 176
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "truncated_ts"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 200,
+    "end": 199,
+    "line": 1,
+    "start": 194
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "sample"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.With",
+   "i": 0,
+   "k": "with_"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.CTE",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 23,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "ts"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 23,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.array.Unnest",
+   "i": 28,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.array.Array",
+   "i": 29,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 30,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMPTZ"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 31,
+   "k": "this",
+   "m": {
+    "col": 65,
+    "end": 64,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "2024-03-15 14:35:46"
+  },
+  {
+   "i": 32,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 31,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 35,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  },
+  {
+   "i": 35,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 30,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMPTZ"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 38,
+   "k": "this",
+   "m": {
+    "col": 109,
+    "end": 108,
+    "line": 1,
+    "start": 88
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "2024-03-16 01:12:03"
+  },
+  {
+   "i": 39,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 38,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 42,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  },
+  {
+   "i": 42,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 29,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 45,
+   "k": "this",
+   "m": {
+    "col": 134,
+    "end": 133,
+    "line": 1,
+    "start": 131
+   }
+  },
+  {
+   "i": 46,
+   "k": "this",
+   "v": "_t0"
+  },
+  {
+   "i": 46,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 45,
+   "k": "columns",
+   "m": {
+    "col": 137,
+    "end": 136,
+    "line": 1,
+    "start": 135
+   }
+  },
+  {
+   "i": 49,
+   "k": "this",
+   "v": "ts"
+  },
+  {
+   "i": 49,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 29,
+   "k": "offset",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 22,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 53,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "sample"
+  },
+  {
+   "i": 54,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

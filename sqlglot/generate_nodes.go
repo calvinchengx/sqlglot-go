@@ -85,7 +85,7 @@ func (g *generator) writeSelect(e *Expression) string {
 		add(g.writeLimitWord(limit, "TOP "))
 	}
 
-	add(g.list(e, "expressions", ", "))
+	add(g.list(e))
 	add(g.child(e, "into"))
 	add(g.child(e, "from_"))
 
@@ -138,7 +138,7 @@ func (g *generator) writeSetOperation(e *Expression) string {
 }
 
 func (g *generator) writeWith(e *Expression) string {
-	return "WITH " + g.list(e, "expressions", ", ")
+	return "WITH " + g.list(e)
 }
 
 func (g *generator) writeCTE(e *Expression) string {
@@ -213,11 +213,16 @@ func (g *generator) writeHaving(e *Expression) string { return "HAVING " + g.chi
 func (g *generator) writeInto(e *Expression) string   { return "INTO " + g.child(e, "this") }
 
 func (g *generator) writeGroup(e *Expression) string {
-	return "GROUP BY " + g.list(e, "expressions", ", ")
+	// `GROUP BY ALL` is carried as a flag, so the expression list is empty and
+	// writing it alone produced a bare "GROUP BY".
+	if all, _ := e.Args["all"].(bool); all {
+		return "GROUP BY ALL"
+	}
+	return "GROUP BY " + g.list(e)
 }
 
 func (g *generator) writeOrder(e *Expression) string {
-	return "ORDER BY " + g.list(e, "expressions", ", ")
+	return "ORDER BY " + g.list(e)
 }
 
 func (g *generator) writeOrdered(e *Expression) string {
@@ -275,7 +280,13 @@ func (g *generator) writeColumn(e *Expression) string {
 
 func (g *generator) writeIdentifier(e *Expression) string {
 	name, _ := e.Args["this"].(string)
-	if e.Args["quoted"] == true {
+	// A reserved word must be quoted even when the caller wrote it bare:
+	// DuckDB reserves `all`, and `SELECT 1 AS all` is a syntax error unquoted.
+	quoted := e.Args["quoted"] == true
+	if !quoted && g.tables.ReservedKeywords[strings.ToUpper(name)] {
+		quoted = true
+	}
+	if quoted {
 		// The delimiters the dialect WRITES, which are not always the ones it
 		// reads: T-SQL accepts "x" and writes [x]. A closing delimiter inside
 		// the name is doubled, or the name would end early.
@@ -323,6 +334,14 @@ func escapeStringBody(text string, escapes set) string {
 }
 
 func (g *generator) writeBoolean(e *Expression) string {
+	// T-SQL has no boolean literal. The reference rewrites TRUE to 1 where a
+	// value is wanted and to `1 = 1` where a condition is, and `a IS TRUE` to
+	// `a = 1` -- a transform over the tree that depends on where the literal
+	// sits. None of that is ported, and writing TRUE anyway handed the engine
+	// a statement it rejects, from a query the Python executor ran fine.
+	if !g.tables.WritesBooleanLiteral {
+		return g.fail("Boolean")
+	}
 	if e.Args["this"] == true {
 		return "TRUE"
 	}
@@ -340,8 +359,19 @@ func (g *generator) writeCase(e *Expression) string {
 	if subject := g.child(e, "this"); subject != "" {
 		out += " " + subject
 	}
-	if ifs := g.list(e, "ifs", " "); ifs != "" {
-		out += " " + ifs
+	// The branches are rendered HERE rather than through the node dispatch:
+	// exp.If is both a CASE branch and the standalone IF(a, b, c) function,
+	// and the two are written nothing alike.
+	branches, _ := e.Args["ifs"].([]*Expression)
+	parts := make([]string, 0, len(branches))
+	for _, b := range branches {
+		if b == nil || b.Class != "If" {
+			return g.fail("CASE branch")
+		}
+		parts = append(parts, "WHEN "+g.child(b, "this")+" THEN "+g.child(b, "true"))
+	}
+	if len(parts) > 0 {
+		out += " " + strings.Join(parts, " ")
 	}
 	if deflt := g.child(e, "default"); deflt != "" {
 		out += " ELSE " + deflt
@@ -349,8 +379,14 @@ func (g *generator) writeCase(e *Expression) string {
 	return out + " END"
 }
 
+// writeIf is reached only for a STANDALONE If -- CASE renders its own
+// branches. The reference writes this one three different ways: T-SQL as
+// IIF with the condition coerced to a comparison, Databricks as IF, and
+// PostgreSQL and DuckDB as a CASE expression. None of that is ported, and
+// writing the branch form here produced `SELECT WHEN x > 0 THEN 'positive'`,
+// which is not SQL. Refused until the dialect rules are ported.
 func (g *generator) writeIf(e *Expression) string {
-	return "WHEN " + g.child(e, "this") + " THEN " + g.child(e, "true")
+	return g.fail("If")
 }
 
 func (g *generator) writeCast(e *Expression) string {
@@ -367,7 +403,7 @@ func (g *generator) writeDataType(e *Expression) string {
 	if !ok {
 		return g.fail("DataType." + string(kind))
 	}
-	if params := g.list(e, "expressions", ", "); params != "" {
+	if params := g.list(e); params != "" {
 		out += "(" + params + ")"
 	}
 	return out
@@ -387,11 +423,11 @@ func (g *generator) anonymous(e *Expression, upper bool) string {
 		open, close := g.tables.IdentifierStart, g.tables.IdentifierEnd
 		name = open + strings.ReplaceAll(name, close, close+close) + close
 	}
-	return name + "(" + g.list(e, "expressions", ", ") + ")"
+	return name + "(" + g.list(e) + ")"
 }
 
 func (g *generator) writeIn(e *Expression) string {
-	return g.child(e, "this") + " IN (" + g.list(e, "expressions", ", ") + ")"
+	return g.child(e, "this") + " IN (" + g.list(e) + ")"
 }
 
 func (g *generator) writeBetween(e *Expression) string {

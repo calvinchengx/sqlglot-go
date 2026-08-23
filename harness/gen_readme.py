@@ -107,10 +107,11 @@ def prose_claims(text: str, cov: dict) -> None:
     )
     if not floor:
         raise SystemExit("could not find `const floor` in harness/generate_test.go")
-    claimed = re.search(r"\*\*(\d+) of the statements it parses are written back", text)
+    # The README writes the number with thousands separators; the floor does not.
+    claimed = re.search(r"\*\*([\d,]+) of the statements it parses are written back", text)
     if not claimed:
         raise Stale("the README no longer states how many statements are written back identically")
-    if claimed.group(1) != floor.group(1):
+    if claimed.group(1).replace(",", "") != floor.group(1):
         raise Stale(
             f"the README says {claimed.group(1)} statements are written back identically, "
             f"generate_test.go's floor is {floor.group(1)}"

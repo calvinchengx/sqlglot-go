@@ -1,0 +1,541 @@
+{
+ "dialect": "tsql",
+ "rendered": "IF NOT EXISTS(SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'baz' AND TABLE_SCHEMA = 'bar' AND TABLE_CATALOG = 'foo') AS EXEC BEGIN ('CREATE TABLE foo.bar.baz (a INTEGER)')",
+ "sql": "IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'baz' AND TABLE_SCHEMA = 'bar' AND TABLE_CATALOG = 'foo') EXEC('CREATE TABLE foo.bar.baz (a INTEGER)')",
+ "tokens": [
+  {
+   "c": 2,
+   "e": 1,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "IF"
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 3,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 7,
+   "t": "EXISTS",
+   "x": "EXISTS"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 15,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 24,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "INFORMATION_SCHEMA"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 47,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 48,
+   "t": "VAR",
+   "x": "TABLES"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 55,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 61,
+   "t": "VAR",
+   "x": "TABLE_NAME"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 72,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 74,
+   "t": "STRING",
+   "x": "baz"
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 80,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 84,
+   "t": "VAR",
+   "x": "TABLE_SCHEMA"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 97,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 99,
+   "t": "STRING",
+   "x": "bar"
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 105,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 122,
+   "e": 121,
+   "l": 1,
+   "s": 109,
+   "t": "VAR",
+   "x": "TABLE_CATALOG"
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 123,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 125,
+   "t": "STRING",
+   "x": "foo"
+  },
+  {
+   "c": 131,
+   "e": 130,
+   "l": 1,
+   "s": 130,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 136,
+   "e": 135,
+   "l": 1,
+   "s": 132,
+   "t": "EXECUTE",
+   "x": "EXEC"
+  },
+  {
+   "c": 137,
+   "e": 136,
+   "l": 1,
+   "s": 136,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 175,
+   "e": 174,
+   "l": 1,
+   "s": 137,
+   "t": "STRING",
+   "x": "CREATE TABLE foo.bar.baz (a INTEGER)"
+  },
+  {
+   "c": 176,
+   "e": 175,
+   "l": 1,
+   "s": 175,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.IfBlock"
+  },
+  {
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Not",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Exists",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 4,
+   "k": "expressions",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 4,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "TABLES"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "db",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "INFORMATION_SCHEMA"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 4,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.And",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.And",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 71,
+    "end": 70,
+    "line": 1,
+    "start": 61
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "TABLE_NAME"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expression",
+   "m": {
+    "col": 79,
+    "end": 78,
+    "line": 1,
+    "start": 74
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "baz"
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 16,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 25,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 96,
+    "end": 95,
+    "line": 1,
+    "start": 84
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "TABLE_SCHEMA"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 25,
+   "k": "expression",
+   "m": {
+    "col": 104,
+    "end": 103,
+    "line": 1,
+    "start": 99
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "bar"
+  },
+  {
+   "i": 30,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 15,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 33,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "this",
+   "m": {
+    "col": 122,
+    "end": 121,
+    "line": 1,
+    "start": 109
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "TABLE_CATALOG"
+  },
+  {
+   "i": 35,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 33,
+   "k": "expression",
+   "m": {
+    "col": 130,
+    "end": 129,
+    "line": 1,
+    "start": 125
+   }
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 38,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 136,
+    "end": 135,
+    "line": 1,
+    "start": 132
+   }
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "EXEC"
+  },
+  {
+   "i": 41,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Block",
+   "i": 0,
+   "k": "true"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 44,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 45,
+   "k": "this",
+   "m": {
+    "col": 175,
+    "end": 174,
+    "line": 1,
+    "start": 137
+   }
+  },
+  {
+   "i": 46,
+   "k": "this",
+   "v": "CREATE TABLE foo.bar.baz (a INTEGER)"
+  },
+  {
+   "i": 46,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "false",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,577 @@
+{
+ "dialect": "duckdb",
+ "rendered": "SELECT CASE WHEN ARRAY_LENGTH(col) <> LIST_COUNT(col) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER(col, _u -> NOT _u IS NULL)), NULL) ELSE LIST_DISTINCT(col) END",
+ "sql": "SELECT CASE WHEN ARRAY_LENGTH(col) <> LIST_COUNT(col) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER(col, _u -> NOT _u IS NULL)), NULL) ELSE LIST_DISTINCT(col) END",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "CASE",
+   "x": "CASE"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 12,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "ARRAY_LENGTH"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 30,
+   "t": "VAR",
+   "x": "col"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 35,
+   "t": "NEQ",
+   "x": "<>"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 38,
+   "t": "VAR",
+   "x": "LIST_COUNT"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 48,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 49,
+   "t": "VAR",
+   "x": "col"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 54,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 59,
+   "t": "VAR",
+   "x": "LIST_APPEND"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 70,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 71,
+   "t": "VAR",
+   "x": "LIST_DISTINCT"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 84,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 85,
+   "t": "VAR",
+   "x": "LIST_FILTER"
+  },
+  {
+   "c": 97,
+   "e": 96,
+   "l": 1,
+   "s": 96,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 100,
+   "e": 99,
+   "l": 1,
+   "s": 97,
+   "t": "VAR",
+   "x": "col"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 100,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 102,
+   "t": "VAR",
+   "x": "_u"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 105,
+   "t": "ARROW",
+   "x": "->"
+  },
+  {
+   "c": 111,
+   "e": 110,
+   "l": 1,
+   "s": 108,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 114,
+   "e": 113,
+   "l": 1,
+   "s": 112,
+   "t": "VAR",
+   "x": "_u"
+  },
+  {
+   "c": 117,
+   "e": 116,
+   "l": 1,
+   "s": 115,
+   "t": "IS",
+   "x": "IS"
+  },
+  {
+   "c": 122,
+   "e": 121,
+   "l": 1,
+   "s": 118,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 122,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 123,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 124,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 126,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 131,
+   "e": 130,
+   "l": 1,
+   "s": 130,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 136,
+   "e": 135,
+   "l": 1,
+   "s": 132,
+   "t": "ELSE",
+   "x": "ELSE"
+  },
+  {
+   "c": 150,
+   "e": 149,
+   "l": 1,
+   "s": 137,
+   "t": "VAR",
+   "x": "LIST_DISTINCT"
+  },
+  {
+   "c": 151,
+   "e": 150,
+   "l": 1,
+   "s": 150,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 154,
+   "e": 153,
+   "l": 1,
+   "s": 151,
+   "t": "VAR",
+   "x": "col"
+  },
+  {
+   "c": 155,
+   "e": 154,
+   "l": 1,
+   "s": 154,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 159,
+   "e": 158,
+   "l": 1,
+   "s": 156,
+   "t": "END",
+   "x": "END"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Case",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 1,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.NEQ",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.array.ArraySize",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 3,
+   "k": "expression",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "LIST_COUNT"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 49
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.array.ArrayAppend",
+   "i": 2,
+   "k": "true",
+   "m": {
+    "col": 70,
+    "end": 69,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "c": "sqlglot.expressions.array.ArrayDistinct",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 84,
+    "end": 83,
+    "line": 1,
+    "start": 71
+   }
+  },
+  {
+   "c": "sqlglot.expressions.array.ArrayFilter",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 96,
+    "end": 95,
+    "line": 1,
+    "start": 85
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 100,
+    "end": 99,
+    "line": 1,
+    "start": 97
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Lambda",
+   "i": 17,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Not",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 23,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 114,
+    "end": 113,
+    "line": 1,
+    "start": 112
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "_u"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 24,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "expressions",
+   "m": {
+    "col": 104,
+    "end": 103,
+    "line": 1,
+    "start": 102
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "_u"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 15,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.array.ArrayDistinct",
+   "i": 1,
+   "k": "default",
+   "m": {
+    "col": 150,
+    "end": 149,
+    "line": 1,
+    "start": 137
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 33,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "this",
+   "m": {
+    "col": 154,
+    "end": 153,
+    "line": 1,
+    "start": 151
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 35,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

@@ -29,10 +29,6 @@ import sys
 # dialect-specific statements; identity.sql supplies the dialect-neutral core.
 DIALECTS = ("tsql", "postgres", "duckdb", "databricks")
 
-# Statements from sqlglot's own tests that exercise one dialect. Extracted from
-# the `validate_identity` calls in tests/dialects/test_<dialect>.py -- the same
-# strings sqlglot holds itself to.
-IDENTITY_CALL = "validate_identity("
 
 
 # Statements chosen to reach the lexical corners sqlglot's own identity corpus
@@ -136,32 +132,82 @@ def corpus_identity(sqlglot_dir: pathlib.Path) -> list[tuple[str, str]]:
     return out
 
 
-def corpus_dialect(sqlglot_dir: pathlib.Path, dialect: str) -> list[tuple[str, str]]:
-    """Statements a dialect's own suite round-trips.
+def corpus_dialect(sqlglot_dir: pathlib.Path, dialects: tuple[str, ...]) -> list[tuple[str, str]]:
+    """Every statement sqlglot pins for the dialects the executor configures.
 
-    Read from the test source rather than executed: the point is the strings,
-    and importing the test module would pull in unittest scaffolding for
-    nothing. A `validate_identity("…")` whose first argument is a plain string
-    literal on one line is taken; anything fancier is skipped and counted, so
-    the coverage number stays honest about what was sampled.
+    Read from the test sources rather than executed: the point is the strings,
+    and importing the test modules would pull in unittest scaffolding for
+    nothing.
+
+    Two shapes are harvested, and the second is most of the corpus:
+
+    * `validate_identity("...")` -- a statement the dialect round-trips. Only
+      taken from that dialect's OWN file, since the call is implicitly about
+      `self.dialect`.
+    * `validate_all(..., read={"duckdb": "..."}, write={"tsql": "..."})` --
+      how one concept is spelled in each dialect, keyed BY dialect and so
+      readable from any file. Most DuckDB statements live in
+      tests/dialects/test_snowflake.py, not test_duckdb.py, and the largest
+      single source is tests/dialects/test_dialect.py -- 5,448 lines organised
+      by concept (`test_cast`, `test_typeddiv`, `test_nullsafe_eq`) rather
+      than by dialect. Reading only test_<dialect>.py missed all of it.
+
+    A key like "duckdb, version=1.2" is SKIPPED: it pins behaviour that
+    differs between engine versions, and the port has no version concept, so
+    mapping it onto plain "duckdb" would ask the oracle a different question
+    than the test does. Skipped statements are counted, not hidden, so the
+    coverage number stays honest about what was sampled.
+
+    These strings only decide WHICH statements get asked about. The
+    expectation is always whatever the reference answers.
     """
     import ast
 
-    path = sqlglot_dir / f"tests/dialects/test_{dialect}.py"
-    if not path.exists():
-        return []
-    tree = ast.parse(path.read_text())
+    wanted = set(dialects)
     out: list[tuple[str, str]] = []
-    for node in ast.walk(tree):
-        if not isinstance(node, ast.Call):
-            continue
-        fn = node.func
-        name = fn.attr if isinstance(fn, ast.Attribute) else getattr(fn, "id", "")
-        if name != "validate_identity" or not node.args:
-            continue
-        first = node.args[0]
-        if isinstance(first, ast.Constant) and isinstance(first.value, str):
-            out.append((dialect, first.value))
+    seen: set[tuple[str, str]] = set()
+    skipped_versioned = 0
+
+    def take(dialect: str, sql: str) -> None:
+        if (dialect, sql) not in seen:
+            seen.add((dialect, sql))
+            out.append((dialect, sql))
+
+    for path in sorted((sqlglot_dir / "tests/dialects").glob("test_*.py")):
+        own = path.stem.removeprefix("test_")
+        tree = ast.parse(path.read_text())
+        for node in ast.walk(tree):
+            if not isinstance(node, ast.Call):
+                continue
+            fn = node.func
+            name = fn.attr if isinstance(fn, ast.Attribute) else getattr(fn, "id", "")
+            if name not in ("validate_identity", "validate_all"):
+                continue
+
+            # The positional argument is written in the file's own dialect,
+            # so it is only ours when the file is one of ours.
+            if own in wanted and node.args:
+                first = node.args[0]
+                if isinstance(first, ast.Constant) and isinstance(first.value, str):
+                    take(own, first.value)
+
+            # read=/write= entries name their own dialect and travel.
+            for kw in node.keywords:
+                if kw.arg not in ("read", "write") or not isinstance(kw.value, ast.Dict):
+                    continue
+                for k, v in zip(kw.value.keys, kw.value.values):
+                    if not isinstance(k, ast.Constant) or not isinstance(v, ast.Constant):
+                        continue
+                    if not isinstance(k.value, str) or not isinstance(v.value, str):
+                        continue
+                    if "version=" in k.value:
+                        skipped_versioned += 1
+                        continue
+                    if k.value in wanted:
+                        take(k.value, v.value)
+
+    if skipped_versioned:
+        print(f"  {skipped_versioned} version-pinned statement(s) skipped (the port has no versions)")
     return out
 
 
@@ -249,8 +295,7 @@ def main() -> int:
             corpus.append((dialect, sql))
     else:
         corpus = corpus_identity(a.sqlglot)
-        for d in DIALECTS:
-            corpus += corpus_dialect(a.sqlglot, d)
+        corpus += corpus_dialect(a.sqlglot, DIALECTS)
         corpus += [(d, sql) for d, sql in EDGE_CORPUS]
 
     a.out.mkdir(parents=True, exist_ok=True)

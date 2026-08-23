@@ -1,0 +1,85 @@
+{
+ "dialect": "tsql",
+ "rendered": "NOT a = 0",
+ "sql": "a IS NOT FALSE",
+ "tokens": [
+  {
+   "c": 1,
+   "e": 0,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 2,
+   "t": "IS",
+   "x": "IS"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 5,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 9,
+   "t": "FALSE",
+   "x": "FALSE"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Not"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 1,
+    "end": 0,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": false
+  }
+ ]
+}

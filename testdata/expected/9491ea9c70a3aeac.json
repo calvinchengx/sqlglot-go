@@ -1,0 +1,78 @@
+{
+ "dialect": "duckdb",
+ "rendered": "CURRENT_TIMESTAMP AT TIME ZONE 'UTC'",
+ "sql": "CURRENT_TIMESTAMP AT TIME ZONE 'UTC'",
+ "tokens": [
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 0,
+   "t": "CURRENT_TIMESTAMP",
+   "x": "CURRENT_TIMESTAMP"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "AT"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 21,
+   "t": "TIME",
+   "x": "TIME"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "ZONE"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 31,
+   "t": "STRING",
+   "x": "UTC"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.AtTimeZone"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentTimestamp",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "zone",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "UTC"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

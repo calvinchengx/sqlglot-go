@@ -1,0 +1,93 @@
+{
+ "dialect": "duckdb",
+ "rendered": "CURRENT_DATE + INTERVAL '-1' DAY",
+ "sql": "CURRENT_DATE + INTERVAL '-1' DAY",
+ "tokens": [
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 0,
+   "t": "CURRENT_DATE",
+   "x": "CURRENT_DATE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 15,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 24,
+   "t": "STRING",
+   "x": "-1"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "DAY"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Add"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentDate",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "-1"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 2,
+   "k": "unit"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "DAY"
+  }
+ ]
+}

@@ -1,0 +1,141 @@
+{
+ "dialect": "postgres",
+ "rendered": "JSON_EXTRACT_PATH_TEXT('{\"farm\": [\"a\", \"b\", \"c\"]}', 'farm', '0')",
+ "sql": "JSON_EXTRACT_PATH_TEXT('{\"farm\": [\"a\", \"b\", \"c\"]}', 'farm', '0')",
+ "tokens": [
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "JSON_EXTRACT_PATH_TEXT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 23,
+   "t": "STRING",
+   "x": "{\"farm\": [\"a\", \"b\", \"c\"]}"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 52,
+   "t": "STRING",
+   "x": "farm"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 60,
+   "t": "STRING",
+   "x": "0"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 63,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.json.JSONExtractScalar",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "{\"farm\": [\"a\", \"b\", \"c\"]}"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "farm"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathSubscript",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": 0
+  },
+  {
+   "i": 0,
+   "k": "only_json_types",
+   "v": false
+  }
+ ]
+}

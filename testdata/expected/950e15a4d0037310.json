@@ -1,0 +1,88 @@
+{
+ "dialect": "postgres",
+ "rendered": "JUSTIFY_HOURS(INTERVAL '1 HOUR')",
+ "sql": "JUSTIFY_HOURS(INTERVAL '1 HOUR')",
+ "tokens": [
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "JUSTIFY_HOURS"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 14,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 23,
+   "t": "STRING",
+   "x": "1 HOUR"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.JustifyHours",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "unit"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "HOUR"
+  }
+ ]
+}

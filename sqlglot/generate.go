@@ -91,14 +91,16 @@ func (g *generator) child(e *Expression, key string) string {
 	return g.node(c)
 }
 
-// list renders a repeated arg.
-func (g *generator) list(e *Expression, key, sep string) string {
-	items, _ := e.Args[key].([]*Expression)
+// list renders the `expressions` arg, the only repeated arg rendered this way
+// -- CASE renders its own branches, because exp.If is written one way as a
+// branch and another as a standalone call.
+func (g *generator) list(e *Expression) string {
+	items, _ := e.Args["expressions"].([]*Expression)
 	parts := make([]string, 0, len(items))
 	for _, item := range items {
 		parts = append(parts, g.node(item))
 	}
-	return strings.Join(parts, sep)
+	return strings.Join(parts, ", ")
 }
 
 func (g *generator) binary(e *Expression, op string) string {
@@ -205,7 +207,54 @@ func (g *generator) namedFunction(e *Expression, spec FuncSQL) string {
 			}
 		}
 	}
+	// Some names are written differently when an argument's type is VISIBLE:
+	// DuckDB's BIT_OR over an explicitly non-integer argument becomes
+	// `BIT_OR(CAST(ROUND(CAST(x AS REAL)) AS INT))`. The coercion is what makes
+	// the statement mean the same thing on the engine, and the port does not
+	// have it, so a call that would need it is refused rather than written
+	// without it. A bare column is left alone -- the reference cannot type
+	// that one either.
+	if indexes, ok := g.tables.CastSensitiveArgs[strings.ToUpper(spec.Name)]; ok {
+		for _, i := range indexes {
+			if i < len(argNodes(e, spec)) && isCastToNonInteger(argNodes(e, spec)[i]) {
+				return g.fail("cast argument to " + spec.Name)
+			}
+		}
+	}
 	return spec.Name + "(" + strings.Join(parts, ", ") + ")"
+}
+
+// argNodes flattens a call's arguments in the order they are written, so an
+// index from CastSensitiveArgs lines up with the argument the caller passed.
+func argNodes(e *Expression, spec FuncSQL) []*Expression {
+	out := []*Expression{}
+	for _, key := range spec.Keys {
+		switch v := e.Args[key].(type) {
+		case *Expression:
+			out = append(out, v)
+		case []*Expression:
+			out = append(out, v...)
+		}
+	}
+	return out
+}
+
+// isCastToNonInteger reports whether an argument asserts a type that is not an
+// integer -- the trigger the reference itself uses.
+func isCastToNonInteger(e *Expression) bool {
+	if e == nil || (e.Class != "Cast" && e.Class != "TryCast") {
+		return false
+	}
+	to, _ := e.Args["to"].(*Expression)
+	if to == nil {
+		return false
+	}
+	kind, _ := to.Args["this"].(DataTypeKind)
+	switch kind {
+	case "INT", "BIGINT", "SMALLINT", "TINYINT", "UINT", "UBIGINT", "USMALLINT", "UTINYINT", "INT128", "INT256":
+		return false
+	}
+	return true
 }
 
 // requireCondition stops the generator where the dialect would rewrite a value

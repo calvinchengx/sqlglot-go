@@ -1,0 +1,1252 @@
+{
+ "dialect": "duckdb",
+ "rendered": "SELECT (SELECT LISTAGG(SUBSTRING('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 1 + CAST(FLOOR(random_value * 62) AS INT), 1), '') FROM (SELECT (ABS(HASH(i + CAST(-9.223372036854776E+18 + RANDOM() * (9.223372036854776e+18 - -9.223372036854776E+18) AS BIGINT))) % 1000) / 1000.0 AS random_value FROM RANGE(0, 10) AS t(i)))",
+ "sql": "SELECT (SELECT LISTAGG(SUBSTRING('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz', 1 + CAST(FLOOR(random_value * 62) AS INT), 1), '') FROM (SELECT (ABS(HASH(i + CAST(-9.223372036854776E+18 + RANDOM() * (9.223372036854776e+18 - -9.223372036854776E+18) AS BIGINT))) % 1000) / 1000.0 AS random_value FROM RANGE(10) AS t(i)))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 8,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "LISTAGG"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "SUBSTRING"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 97,
+   "e": 96,
+   "l": 1,
+   "s": 33,
+   "t": "STRING",
+   "x": "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 97,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 100,
+   "e": 99,
+   "l": 1,
+   "s": 99,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 101,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 103,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 107,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 113,
+   "e": 112,
+   "l": 1,
+   "s": 108,
+   "t": "VAR",
+   "x": "FLOOR"
+  },
+  {
+   "c": 114,
+   "e": 113,
+   "l": 1,
+   "s": 113,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 126,
+   "e": 125,
+   "l": 1,
+   "s": 114,
+   "t": "VAR",
+   "x": "random_value"
+  },
+  {
+   "c": 128,
+   "e": 127,
+   "l": 1,
+   "s": 127,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 131,
+   "e": 130,
+   "l": 1,
+   "s": 129,
+   "t": "NUMBER",
+   "x": "62"
+  },
+  {
+   "c": 132,
+   "e": 131,
+   "l": 1,
+   "s": 131,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 135,
+   "e": 134,
+   "l": 1,
+   "s": 133,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 139,
+   "e": 138,
+   "l": 1,
+   "s": 136,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 140,
+   "e": 139,
+   "l": 1,
+   "s": 139,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 141,
+   "e": 140,
+   "l": 1,
+   "s": 140,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 143,
+   "e": 142,
+   "l": 1,
+   "s": 142,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 144,
+   "e": 143,
+   "l": 1,
+   "s": 143,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 145,
+   "e": 144,
+   "l": 1,
+   "s": 144,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 148,
+   "e": 147,
+   "l": 1,
+   "s": 146,
+   "t": "STRING",
+   "x": ""
+  },
+  {
+   "c": 149,
+   "e": 148,
+   "l": 1,
+   "s": 148,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 154,
+   "e": 153,
+   "l": 1,
+   "s": 150,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 156,
+   "e": 155,
+   "l": 1,
+   "s": 155,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 162,
+   "e": 161,
+   "l": 1,
+   "s": 156,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 164,
+   "e": 163,
+   "l": 1,
+   "s": 163,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 167,
+   "e": 166,
+   "l": 1,
+   "s": 164,
+   "t": "VAR",
+   "x": "ABS"
+  },
+  {
+   "c": 168,
+   "e": 167,
+   "l": 1,
+   "s": 167,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 172,
+   "e": 171,
+   "l": 1,
+   "s": 168,
+   "t": "VAR",
+   "x": "HASH"
+  },
+  {
+   "c": 173,
+   "e": 172,
+   "l": 1,
+   "s": 172,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 174,
+   "e": 173,
+   "l": 1,
+   "s": 173,
+   "t": "VAR",
+   "x": "i"
+  },
+  {
+   "c": 176,
+   "e": 175,
+   "l": 1,
+   "s": 175,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 181,
+   "e": 180,
+   "l": 1,
+   "s": 177,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 182,
+   "e": 181,
+   "l": 1,
+   "s": 181,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 183,
+   "e": 182,
+   "l": 1,
+   "s": 182,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 204,
+   "e": 203,
+   "l": 1,
+   "s": 183,
+   "t": "NUMBER",
+   "x": "9.223372036854776E+18"
+  },
+  {
+   "c": 206,
+   "e": 205,
+   "l": 1,
+   "s": 205,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 213,
+   "e": 212,
+   "l": 1,
+   "s": 207,
+   "t": "VAR",
+   "x": "RANDOM"
+  },
+  {
+   "c": 214,
+   "e": 213,
+   "l": 1,
+   "s": 213,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 215,
+   "e": 214,
+   "l": 1,
+   "s": 214,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 217,
+   "e": 216,
+   "l": 1,
+   "s": 216,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 219,
+   "e": 218,
+   "l": 1,
+   "s": 218,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 240,
+   "e": 239,
+   "l": 1,
+   "s": 219,
+   "t": "NUMBER",
+   "x": "9.223372036854776e+18"
+  },
+  {
+   "c": 242,
+   "e": 241,
+   "l": 1,
+   "s": 241,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 244,
+   "e": 243,
+   "l": 1,
+   "s": 243,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 265,
+   "e": 264,
+   "l": 1,
+   "s": 244,
+   "t": "NUMBER",
+   "x": "9.223372036854776E+18"
+  },
+  {
+   "c": 266,
+   "e": 265,
+   "l": 1,
+   "s": 265,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 269,
+   "e": 268,
+   "l": 1,
+   "s": 267,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 276,
+   "e": 275,
+   "l": 1,
+   "s": 270,
+   "t": "BIGINT",
+   "x": "BIGINT"
+  },
+  {
+   "c": 277,
+   "e": 276,
+   "l": 1,
+   "s": 276,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 278,
+   "e": 277,
+   "l": 1,
+   "s": 277,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 279,
+   "e": 278,
+   "l": 1,
+   "s": 278,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 281,
+   "e": 280,
+   "l": 1,
+   "s": 280,
+   "t": "MOD",
+   "x": "%"
+  },
+  {
+   "c": 286,
+   "e": 285,
+   "l": 1,
+   "s": 282,
+   "t": "NUMBER",
+   "x": "1000"
+  },
+  {
+   "c": 287,
+   "e": 286,
+   "l": 1,
+   "s": 286,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 289,
+   "e": 288,
+   "l": 1,
+   "s": 288,
+   "t": "SLASH",
+   "x": "/"
+  },
+  {
+   "c": 296,
+   "e": 295,
+   "l": 1,
+   "s": 290,
+   "t": "NUMBER",
+   "x": "1000.0"
+  },
+  {
+   "c": 299,
+   "e": 298,
+   "l": 1,
+   "s": 297,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 312,
+   "e": 311,
+   "l": 1,
+   "s": 300,
+   "t": "VAR",
+   "x": "random_value"
+  },
+  {
+   "c": 317,
+   "e": 316,
+   "l": 1,
+   "s": 313,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 323,
+   "e": 322,
+   "l": 1,
+   "s": 318,
+   "t": "RANGE",
+   "x": "RANGE"
+  },
+  {
+   "c": 324,
+   "e": 323,
+   "l": 1,
+   "s": 323,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 326,
+   "e": 325,
+   "l": 1,
+   "s": 324,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 327,
+   "e": 326,
+   "l": 1,
+   "s": 326,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 330,
+   "e": 329,
+   "l": 1,
+   "s": 328,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 332,
+   "e": 331,
+   "l": 1,
+   "s": 331,
+   "t": "VAR",
+   "x": "t"
+  },
+  {
+   "c": 333,
+   "e": 332,
+   "l": 1,
+   "s": 332,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 334,
+   "e": 333,
+   "l": 1,
+   "s": 333,
+   "t": "VAR",
+   "x": "i"
+  },
+  {
+   "c": 335,
+   "e": 334,
+   "l": 1,
+   "s": 334,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 336,
+   "e": 335,
+   "l": 1,
+   "s": 335,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 337,
+   "e": 336,
+   "l": 1,
+   "s": 336,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.GroupConcat",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.string.Substring",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 97,
+    "end": 96,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 4,
+   "k": "start"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 100,
+    "end": 99,
+    "line": 1,
+    "start": 99
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 8,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.math.Floor",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Mul",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 126,
+    "end": 125,
+    "line": 1,
+    "start": 114
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "random_value"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 14,
+   "k": "expression",
+   "m": {
+    "col": 131,
+    "end": 130,
+    "line": 1,
+    "start": 129
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "62"
+  },
+  {
+   "i": 19,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 12,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 22,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 22,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "length",
+   "m": {
+    "col": 143,
+    "end": 142,
+    "line": 1,
+    "start": 142
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 25,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "separator",
+   "m": {
+    "col": 148,
+    "end": 147,
+    "line": 1,
+    "start": 146
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": ""
+  },
+  {
+   "i": 28,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 2,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 31,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 32,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 33,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Div",
+   "i": 34,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 35,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Mod",
+   "i": 36,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.math.Abs",
+   "i": 37,
+   "k": "this",
+   "m": {
+    "col": 167,
+    "end": 166,
+    "line": 1,
+    "start": 164
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 38,
+   "k": "this",
+   "m": {
+    "col": 172,
+    "end": 171,
+    "line": 1,
+    "start": 168
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "HASH"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Add",
+   "i": 39,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 41,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 42,
+   "k": "this",
+   "m": {
+    "col": 174,
+    "end": 173,
+    "line": 1,
+    "start": 173
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "i"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 41,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "BIGINT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 46,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Neg",
+   "i": 47,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 48,
+   "k": "this",
+   "m": {
+    "col": 204,
+    "end": 203,
+    "line": 1,
+    "start": 183
+   }
+  },
+  {
+   "i": 49,
+   "k": "this",
+   "v": "9.223372036854776E+18"
+  },
+  {
+   "i": 49,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Mul",
+   "i": 47,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Rand",
+   "i": 52,
+   "k": "this",
+   "m": {
+    "col": 213,
+    "end": 212,
+    "line": 1,
+    "start": 207
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 52,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 54,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 55,
+   "k": "this",
+   "m": {
+    "col": 240,
+    "end": 239,
+    "line": 1,
+    "start": 219
+   }
+  },
+  {
+   "i": 56,
+   "k": "this",
+   "v": "9.223372036854776e+18"
+  },
+  {
+   "i": 56,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Neg",
+   "i": 55,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 59,
+   "k": "this",
+   "m": {
+    "col": 265,
+    "end": 264,
+    "line": 1,
+    "start": 244
+   }
+  },
+  {
+   "i": 60,
+   "k": "this",
+   "v": "9.223372036854776E+18"
+  },
+  {
+   "i": 60,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 46,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 63,
+   "k": "this",
+   "v": "BIGINT"
+  },
+  {
+   "i": 63,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 37,
+   "k": "expression",
+   "m": {
+    "col": 286,
+    "end": 285,
+    "line": 1,
+    "start": 282
+   }
+  },
+  {
+   "i": 66,
+   "k": "this",
+   "v": "1000"
+  },
+  {
+   "i": 66,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 35,
+   "k": "expression",
+   "m": {
+    "col": 296,
+    "end": 295,
+    "line": 1,
+    "start": 290
+   }
+  },
+  {
+   "i": 69,
+   "k": "this",
+   "v": "1000.0"
+  },
+  {
+   "i": 69,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 35,
+   "k": "typed",
+   "v": false
+  },
+  {
+   "i": 35,
+   "k": "safe",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "alias",
+   "m": {
+    "col": 312,
+    "end": 311,
+    "line": 1,
+    "start": 300
+   }
+  },
+  {
+   "i": 74,
+   "k": "this",
+   "v": "random_value"
+  },
+  {
+   "i": 74,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 33,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 77,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.array.GenerateSeries",
+   "i": 78,
+   "k": "this",
+   "m": {
+    "col": 323,
+    "end": 322,
+    "line": 1,
+    "start": 318
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 79,
+   "k": "start"
+  },
+  {
+   "i": 80,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 80,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 79,
+   "k": "end",
+   "m": {
+    "col": 326,
+    "end": 325,
+    "line": 1,
+    "start": 324
+   }
+  },
+  {
+   "i": 83,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 83,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 79,
+   "k": "is_end_exclusive",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 78,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 87,
+   "k": "this",
+   "m": {
+    "col": 332,
+    "end": 331,
+    "line": 1,
+    "start": 331
+   }
+  },
+  {
+   "i": 88,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 88,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 87,
+   "k": "columns",
+   "m": {
+    "col": 334,
+    "end": 333,
+    "line": 1,
+    "start": 333
+   }
+  },
+  {
+   "i": 91,
+   "k": "this",
+   "v": "i"
+  },
+  {
+   "i": 91,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,471 @@
+{
+ "dialect": "duckdb",
+ "rendered": "SELECT (DATE_TRUNC('WEEK', CAST('2008-11-10 14:30:00+00' AS TIMESTAMPTZ) AT TIME ZONE 'America/New_York' + INTERVAL '1' DAY) + INTERVAL '-1' DAY) AT TIME ZONE 'America/New_York'",
+ "sql": "SELECT (DATE_TRUNC('WEEK', CAST('2008-11-10 14:30:00+00' AS TIMESTAMPTZ) AT TIME ZONE 'America/New_York' + INTERVAL '1' DAY) + INTERVAL '-1' DAY) AT TIME ZONE 'America/New_York'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "DATE_TRUNC"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 19,
+   "t": "STRING",
+   "x": "WEEK"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 32,
+   "t": "STRING",
+   "x": "2008-11-10 14:30:00+00"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 57,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 60,
+   "t": "TIMESTAMPTZ",
+   "x": "TIMESTAMPTZ"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 71,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 73,
+   "t": "VAR",
+   "x": "AT"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 76,
+   "t": "TIME",
+   "x": "TIME"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 81,
+   "t": "VAR",
+   "x": "ZONE"
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 86,
+   "t": "STRING",
+   "x": "America/New_York"
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 105,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 115,
+   "e": 114,
+   "l": 1,
+   "s": 107,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 119,
+   "e": 118,
+   "l": 1,
+   "s": 116,
+   "t": "STRING",
+   "x": "1"
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 120,
+   "t": "VAR",
+   "x": "DAY"
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 123,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 126,
+   "e": 125,
+   "l": 1,
+   "s": 125,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 135,
+   "e": 134,
+   "l": 1,
+   "s": 127,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 140,
+   "e": 139,
+   "l": 1,
+   "s": 136,
+   "t": "STRING",
+   "x": "-1"
+  },
+  {
+   "c": 144,
+   "e": 143,
+   "l": 1,
+   "s": 141,
+   "t": "VAR",
+   "x": "DAY"
+  },
+  {
+   "c": 145,
+   "e": 144,
+   "l": 1,
+   "s": 144,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 148,
+   "e": 147,
+   "l": 1,
+   "s": 146,
+   "t": "VAR",
+   "x": "AT"
+  },
+  {
+   "c": 153,
+   "e": 152,
+   "l": 1,
+   "s": 149,
+   "t": "TIME",
+   "x": "TIME"
+  },
+  {
+   "c": 158,
+   "e": 157,
+   "l": 1,
+   "s": 154,
+   "t": "VAR",
+   "x": "ZONE"
+  },
+  {
+   "c": 177,
+   "e": 176,
+   "l": 1,
+   "s": 159,
+   "t": "STRING",
+   "x": "America/New_York"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.AtTimeZone",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TimestampTrunc",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.AtTimeZone",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 6,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMPTZ"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "2008-11-10 14:30:00+00"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 7,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 11,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  },
+  {
+   "i": 11,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "zone",
+   "m": {
+    "col": 104,
+    "end": 103,
+    "line": 1,
+    "start": 86
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "America/New_York"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 5,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 119,
+    "end": 118,
+    "line": 1,
+    "start": 116
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 17,
+   "k": "unit"
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "DAY"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 4,
+   "k": "unit"
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "WEEK"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 3,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 140,
+    "end": 139,
+    "line": 1,
+    "start": 136
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "-1"
+  },
+  {
+   "i": 26,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 25,
+   "k": "unit"
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "DAY"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "zone",
+   "m": {
+    "col": 177,
+    "end": 176,
+    "line": 1,
+    "start": 159
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "America/New_York"
+  },
+  {
+   "i": 31,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

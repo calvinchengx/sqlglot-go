@@ -1,0 +1,379 @@
+{
+ "dialect": "duckdb",
+ "rendered": "SELECT NTH_VALUE(is_deleted, 2) OVER (PARTITION BY id ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS nth_is_deleted FROM my_table",
+ "sql": "SELECT NTH_VALUE(is_deleted, 2) OVER (PARTITION BY id ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS nth_is_deleted FROM my_table",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "NTH_VALUE"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "is_deleted"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "NUMBER",
+   "x": "2"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 32,
+   "t": "OVER",
+   "x": "OVER"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 38,
+   "t": "PARTITION_BY",
+   "x": "PARTITION BY"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 51,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 54,
+   "t": "ROWS",
+   "x": "ROWS"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 59,
+   "t": "BETWEEN",
+   "x": "BETWEEN"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 67,
+   "t": "VAR",
+   "x": "UNBOUNDED"
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 77,
+   "t": "VAR",
+   "x": "PRECEDING"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 87,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 100,
+   "e": 99,
+   "l": 1,
+   "s": 91,
+   "t": "VAR",
+   "x": "UNBOUNDED"
+  },
+  {
+   "c": 110,
+   "e": 109,
+   "l": 1,
+   "s": 101,
+   "t": "VAR",
+   "x": "FOLLOWING"
+  },
+  {
+   "c": 111,
+   "e": 110,
+   "l": 1,
+   "s": 110,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 114,
+   "e": 113,
+   "l": 1,
+   "s": 112,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 129,
+   "e": 128,
+   "l": 1,
+   "s": 115,
+   "t": "VAR",
+   "x": "nth_is_deleted"
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 130,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 143,
+   "e": 142,
+   "l": 1,
+   "s": 135,
+   "t": "VAR",
+   "x": "my_table"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Window",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.NthValue",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "is_deleted"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "offset",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "partition_by"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.WindowSpec",
+   "i": 2,
+   "k": "spec"
+  },
+  {
+   "i": 15,
+   "k": "kind",
+   "v": "ROWS"
+  },
+  {
+   "i": 15,
+   "k": "start",
+   "v": "UNBOUNDED"
+  },
+  {
+   "i": 15,
+   "k": "start_side",
+   "v": "PRECEDING"
+  },
+  {
+   "i": 15,
+   "k": "end",
+   "v": "UNBOUNDED"
+  },
+  {
+   "i": 15,
+   "k": "end_side",
+   "v": "FOLLOWING"
+  },
+  {
+   "i": 2,
+   "k": "over",
+   "v": "OVER"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 129,
+    "end": 128,
+    "line": 1,
+    "start": 115
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "nth_is_deleted"
+  },
+  {
+   "i": 22,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 25,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 143,
+    "end": 142,
+    "line": 1,
+    "start": 135
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "my_table"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

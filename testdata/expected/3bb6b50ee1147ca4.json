@@ -1,0 +1,571 @@
+{
+ "dialect": "duckdb",
+ "rendered": "SELECT purchases, LAST_VALUE(item) OVER item_window AS most_popular FROM Produce WINDOW item_window AS (PARTITION BY purchases ORDER BY purchases NULLS FIRST ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING)",
+ "sql": "SELECT purchases, LAST_VALUE(item) OVER item_window AS most_popular FROM Produce WINDOW item_window AS (PARTITION BY purchases ORDER BY purchases NULLS FIRST ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "purchases"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "LAST_VALUE"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "item"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 35,
+   "t": "OVER",
+   "x": "OVER"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "item_window"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 52,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 55,
+   "t": "VAR",
+   "x": "most_popular"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 68,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 73,
+   "t": "VAR",
+   "x": "Produce"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 81,
+   "t": "WINDOW",
+   "x": "WINDOW"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 88,
+   "t": "VAR",
+   "x": "item_window"
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 100,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 103,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 116,
+   "e": 115,
+   "l": 1,
+   "s": 104,
+   "t": "PARTITION_BY",
+   "x": "PARTITION BY"
+  },
+  {
+   "c": 126,
+   "e": 125,
+   "l": 1,
+   "s": 117,
+   "t": "VAR",
+   "x": "purchases"
+  },
+  {
+   "c": 135,
+   "e": 134,
+   "l": 1,
+   "s": 127,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 145,
+   "e": 144,
+   "l": 1,
+   "s": 136,
+   "t": "VAR",
+   "x": "purchases"
+  },
+  {
+   "c": 151,
+   "e": 150,
+   "l": 1,
+   "s": 146,
+   "t": "VAR",
+   "x": "NULLS"
+  },
+  {
+   "c": 157,
+   "e": 156,
+   "l": 1,
+   "s": 152,
+   "t": "FIRST",
+   "x": "FIRST"
+  },
+  {
+   "c": 162,
+   "e": 161,
+   "l": 1,
+   "s": 158,
+   "t": "ROWS",
+   "x": "ROWS"
+  },
+  {
+   "c": 170,
+   "e": 169,
+   "l": 1,
+   "s": 163,
+   "t": "BETWEEN",
+   "x": "BETWEEN"
+  },
+  {
+   "c": 172,
+   "e": 171,
+   "l": 1,
+   "s": 171,
+   "t": "NUMBER",
+   "x": "2"
+  },
+  {
+   "c": 182,
+   "e": 181,
+   "l": 1,
+   "s": 173,
+   "t": "VAR",
+   "x": "PRECEDING"
+  },
+  {
+   "c": 186,
+   "e": 185,
+   "l": 1,
+   "s": 183,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 188,
+   "e": 187,
+   "l": 1,
+   "s": 187,
+   "t": "NUMBER",
+   "x": "2"
+  },
+  {
+   "c": 198,
+   "e": 197,
+   "l": 1,
+   "s": 189,
+   "t": "VAR",
+   "x": "FOLLOWING"
+  },
+  {
+   "c": 199,
+   "e": 198,
+   "l": 1,
+   "s": 198,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "purchases"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Window",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.LastValue",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "item"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "alias",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "item_window"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 6,
+   "k": "over",
+   "v": "OVER"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "alias",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "most_popular"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 80,
+    "end": 79,
+    "line": 1,
+    "start": 73
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "Produce"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Window",
+   "i": 0,
+   "k": "windows"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 99,
+    "end": 98,
+    "line": 1,
+    "start": 88
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "item_window"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 24,
+   "k": "partition_by"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 126,
+    "end": 125,
+    "line": 1,
+    "start": 117
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "purchases"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 24,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 32,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 33,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "this",
+   "m": {
+    "col": 145,
+    "end": 144,
+    "line": 1,
+    "start": 136
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "purchases"
+  },
+  {
+   "i": 35,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 33,
+   "k": "nulls_first",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.WindowSpec",
+   "i": 24,
+   "k": "spec"
+  },
+  {
+   "i": 39,
+   "k": "kind",
+   "v": "ROWS"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 39,
+   "k": "start",
+   "m": {
+    "col": 172,
+    "end": 171,
+    "line": 1,
+    "start": 171
+   }
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 41,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 39,
+   "k": "start_side",
+   "v": "PRECEDING"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 39,
+   "k": "end",
+   "m": {
+    "col": 188,
+    "end": 187,
+    "line": 1,
+    "start": 187
+   }
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 45,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 39,
+   "k": "end_side",
+   "v": "FOLLOWING"
+  }
+ ]
+}

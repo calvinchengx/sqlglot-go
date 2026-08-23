@@ -1,0 +1,293 @@
+{
+ "dialect": "tsql",
+ "rendered": "IF NOT OBJECT_ID('tempdb.dbo.#TempTableName') IS NULL BEGIN DROP TABLE #TempTableName; END",
+ "sql": "IF OBJECT_ID('tempdb.dbo.#TempTableName') IS NOT NULL BEGIN DROP TABLE #TempTableName; END",
+ "tokens": [
+  {
+   "c": 2,
+   "e": 1,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "IF"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 3,
+   "t": "VAR",
+   "x": "OBJECT_ID"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 13,
+   "t": "STRING",
+   "x": "tempdb.dbo.#TempTableName"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 42,
+   "t": "IS",
+   "x": "IS"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 45,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 49,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 54,
+   "t": "BEGIN",
+   "x": "BEGIN"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 60,
+   "t": "DROP",
+   "x": "DROP"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 65,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 71,
+   "t": "HASH",
+   "x": "#"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 72,
+   "t": "VAR",
+   "x": "TempTableName"
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 85,
+   "t": "SEMICOLON",
+   "x": ";"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 87,
+   "t": "END",
+   "x": "END"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.IfBlock"
+  },
+  {
+   "c": "sqlglot.expressions.core.Not",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.json.ObjectId",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 3
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "tempdb.dbo.#TempTableName"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 2,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.query.Block",
+   "i": 0,
+   "k": "true"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.Drop",
+   "i": 8,
+   "k": "expressions"
+  },
+  {
+   "i": 9,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 9,
+   "k": "tables"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 85,
+    "end": 84,
+    "line": 1,
+    "start": 72
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "TempTableName"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 12,
+   "k": "temporary",
+   "v": true
+  },
+  {
+   "i": 9,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 9,
+   "k": "temporary",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "materialized",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "cascade",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "restrict",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "constraints",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "purge",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "concurrently",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "sync",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "iceberg",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "force",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.EndStatement",
+   "i": 8,
+   "k": "expressions"
+  },
+  {
+   "i": 0,
+   "k": "false",
+   "v": false
+  }
+ ]
+}

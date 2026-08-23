@@ -18,6 +18,16 @@ func (p *parser) parseQuery() (*Expression, error) {
 		return nil, err
 	}
 
+	// parseSelect's precondition -- the SELECT token is current -- is checked
+	// by parseStatement, but a WITH clause reaches here having consumed only
+	// the CTEs. DuckDB allows the SELECT to be left out entirely
+	// (`WITH t AS (...) FROM t` means `SELECT * FROM t`), and without this
+	// check parseSelect advanced PAST the FROM and read the table name as the
+	// selected expression: `SELECT t`, a different query that names no table
+	// at all. The bare form was already refused; only the WITH path was not.
+	if !p.at(TokSELECT) {
+		return nil, p.unsupported("query without SELECT")
+	}
 	this, err := p.parseSelect()
 	if err != nil {
 		return nil, err
@@ -367,6 +377,17 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			if p.atAny(TokCUBE, TokROLLUP, TokGROUPING_SETS) {
 				return p.unsupported("GROUP BY " + p.curr().Text)
 			}
+			// `GROUP BY ALL` is a flag on Group, not a column named "all".
+			// Parsing it as an expression built a Group over a Column, which
+			// is a different tree for a statement the engine reads as
+			// "group by every non-aggregated column".
+			if p.at(TokALL) {
+				p.advance()
+				if err := p.setOnce(sel, "group", New("Group", Arg{"all", true})); err != nil {
+					return err
+				}
+				continue
+			}
 			es, err := p.parseExpressionList()
 			if err != nil {
 				return err
@@ -394,6 +415,14 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			}
 		case p.at(TokLIMIT):
 			p.advance()
+			// `LIMIT ALL` is PostgreSQL for "no limit", and the reference
+			// records it by setting no limit at all rather than by a node
+			// meaning "unlimited". Parsing ALL as an expression built a Limit
+			// over a column named "all" -- a limit where the reference has
+			// none, on the one clause this service rewrites.
+			if p.tables.LimitAllMeansNoLimit && p.match(TokALL) {
+				continue
+			}
 			e, err := p.parseExpression()
 			if err != nil {
 				return err

@@ -1,0 +1,50 @@
+{
+ "dialect": "postgres",
+ "rendered": "SELECT U&'Hello winter \\2603 !'",
+ "sql": "SELECT U&'Hello winter \\2603 !'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 7,
+   "t": "UNICODE_STRING",
+   "x": "Hello winter \\2603 !"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.UnicodeString",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "Hello winter \\2603 !"
+  },
+  {
+   "i": 1,
+   "k": "escape",
+   "v": false
+  }
+ ]
+}

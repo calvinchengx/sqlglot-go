@@ -183,7 +183,10 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 	}
 
 	var expression *Expression
-	if p.match(TokNULL) {
+	// `x IS UNKNOWN` is `x IS NULL`: the reference gives UNKNOWN no node of its
+	// own after IS, it simply builds a Null. The negated form then picks up the
+	// dialect's NOT shape below, exactly as `IS NOT NULL` does.
+	if p.match(TokNULL) || p.match(TokUNKNOWN) {
 		expression = New("Null")
 	} else {
 		var err error
@@ -236,6 +239,26 @@ func (p *parser) parseIn(this *Expression) (*Expression, error) {
 }
 
 func (p *parser) parseBetween(this *Expression) (*Expression, error) {
+	// PostgreSQL's SYMMETRIC swaps the bounds when they arrive the wrong way
+	// round, so `BETWEEN SYMMETRIC 10 AND 2` matches where the plain form
+	// matches nothing. Neither word is a keyword token -- the reference
+	// matches them by text -- and reading them as the lower bound turned the
+	// whole predicate into an And over two comparisons.
+	// PostgreSQL's SYMMETRIC swaps the bounds when they arrive the wrong way
+	// round, so `BETWEEN SYMMETRIC 10 AND 2` matches where the plain form
+	// matches nothing. Reading the word as the lower bound turned the whole
+	// predicate into an And over two comparisons -- a silently different
+	// question. Only PostgreSQL WRITES the keyword back; every other dialect
+	// expands it to an OR of two BETWEENs, a transform this port does not
+	// have, so the construct is refused rather than half-supported.
+	//
+	// TokVAR only: `SELECT a BETWEEN "symmetric" AND b` is a column with that
+	// name, and matching on text alone read the caller's own identifier as a
+	// keyword.
+	if c := p.curr(); c != nil && c.Type == TokVAR &&
+		(strings.EqualFold(c.Text, "SYMMETRIC") || strings.EqualFold(c.Text, "ASYMMETRIC")) {
+		return nil, p.unsupported("BETWEEN " + strings.ToUpper(c.Text))
+	}
 	low, err := p.parseBitwise()
 	if err != nil {
 		return nil, err
@@ -552,7 +575,12 @@ func (p *parser) parseDataType() (*Expression, error) {
 		if !p.match(TokR_PAREN) {
 			return nil, p.unsupported("unclosed type parameters")
 		}
-		dt.Set("expressions", params)
+		// A dialect may discard them: DuckDB reads every text type as TEXT
+		// and drops the length, so `VARCHAR(5)` is a bare TEXT. Keeping the 5
+		// sent the engine a different CAST than the Python executor sent.
+		if !p.tables.DropsTypeParams[kind] {
+			dt.Set("expressions", params)
+		}
 	} else if defaults := p.tables.DefaultTypeParams[kind]; len(defaults) > 0 {
 		// A bare type that this dialect reads as parameterised. DuckDB's
 		// `numeric` is DECIMAL(18, 3), and leaving it bare sent the engine a
@@ -677,6 +705,26 @@ func (p *parser) parseFunction() (*Expression, error) {
 		return nil, p.unsupported("unclosed function argument list")
 	}
 	if named {
+		// More arguments than the recorded signature consumes means the
+		// reference's builder is doing something the probe could not see --
+		// Databricks' FIRST(c, TRUE) wraps the call in IgnoreNulls, and the
+		// builder only reveals that when argument 1 is literally TRUE. The
+		// probe runs builders with placeholders, so it recorded a signature
+		// that quietly DROPS the flag. Dropping an argument changes what the
+		// statement means, so this is a refusal.
+		if n, bounded := spec.consumes(); bounded && len(args) > n {
+			return nil, p.unsupported("extra arguments to " + name)
+		}
+		// A string literal in one of these slots makes the reference build
+		// something else -- an Interval step, a `modifiers` argument that
+		// shifts the rest. The recorded signature was probed with columns and
+		// does not describe that, so the call is refused rather than filled in
+		// with the argument in the wrong slot.
+		for _, i := range p.tables.StringSensitiveArgs[strings.ToUpper(name)] {
+			if i < len(args) && isStringLiteral(args[i]) {
+				return nil, p.unsupported("string argument to " + name)
+			}
+		}
 		return buildFunction(spec, args), nil
 	}
 	// A quoted name is an Identifier node in the reference and a bare string
@@ -696,6 +744,31 @@ func (p *parser) parseFunction() (*Expression, error) {
 //
 // A call with fewer arguments than keys leaves the rest unset, as the
 // reference's zip does.
+// isStringLiteral reports whether an argument is a quoted string, which is
+// what StringSensitiveArgs is about.
+func isStringLiteral(e *Expression) bool {
+	if e == nil || e.Class != "Literal" {
+		return false
+	}
+	b, _ := e.Args["is_string"].(bool)
+	return b
+}
+
+// consumes reports how many positional arguments the spec reads, and whether
+// that count is a bound at all -- a variadic tail swallows everything after it.
+func (spec FuncSpec) consumes() (int, bool) {
+	n := 0
+	for _, a := range spec.Args {
+		if a.VarLen {
+			return 0, false
+		}
+		if a.Index >= n {
+			n = a.Index + 1
+		}
+	}
+	return n, true
+}
+
 func buildFunction(spec FuncSpec, args []*Expression) *Expression {
 	node := New(spec.Class)
 	for _, a := range spec.Args {

@@ -1,0 +1,83 @@
+{
+ "dialect": "duckdb",
+ "rendered": "x ILIKE '%y'",
+ "sql": "x ILIKE '%y'",
+ "tokens": [
+  {
+   "c": 1,
+   "e": 0,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 2,
+   "t": "ILIKE",
+   "x": "ILIKE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 8,
+   "t": "STRING",
+   "x": "%y"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.ILike"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 1,
+    "end": 0,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "%y"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

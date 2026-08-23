@@ -1,0 +1,125 @@
+{
+ "dialect": "databricks",
+ "rendered": "foo LIKE 'pattern' ESCAPE '!'",
+ "sql": "foo LIKE 'pattern' ESCAPE '!'",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 4,
+   "t": "LIKE",
+   "x": "LIKE"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 9,
+   "t": "STRING",
+   "x": "pattern"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 19,
+   "t": "ESCAPE",
+   "x": "ESCAPE"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 26,
+   "t": "STRING",
+   "x": "!"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Escape"
+  },
+  {
+   "c": "sqlglot.expressions.core.Like",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 3,
+    "end": 2,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 9
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "pattern"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "!"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

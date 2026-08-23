@@ -169,6 +169,158 @@ def probe_functions(P, exp):
     return out
 
 
+def reserved_keywords(dialect: str, Dialect) -> list[str]:
+    """Words this dialect must QUOTE even when the caller did not.
+
+    DuckDB reserves `all`, so `SELECT 1 AS all` is written `AS "all"`. Leaving
+    it bare is a syntax error on the engine, from a statement the reference
+    round-trips.
+    """
+    g = Dialect.get_or_raise(dialect or None).generator_class
+    return sorted(str(w).upper() for w in (getattr(g, "RESERVED_KEYWORDS", None) or ()))
+
+
+def writes_boolean_literal(dialect: str, exp) -> bool:
+    """Whether this dialect writes TRUE and FALSE as themselves.
+
+    T-SQL has no boolean literal: the reference rewrites `TRUE` to `1` where a
+    value is wanted, to `1 = 1` where a condition is, and `a IS TRUE` to
+    `a = 1`. That is a transform over the tree, not a spelling, and the port
+    does not have it -- so it must not write `TRUE` to an engine that would
+    reject it. PROBED rather than assumed: ask the reference what it writes.
+    """
+    return exp.true().sql(dialect=dialect or None) == "TRUE" and (
+        exp.false().sql(dialect=dialect or None) == "FALSE"
+    )
+
+
+def string_sensitive_args(P, exp, funcs):
+    """Argument positions where a STRING LITERAL makes the builder do something
+    else entirely.
+
+    probe_functions runs each builder with placeholder COLUMNS, so it can only
+    see what a builder does structurally. Some builders read their arguments
+    instead: PostgreSQL's GENERATE_SERIES turns a string step into an Interval,
+    and REGEXP_REPLACE routes its LAST argument to `modifiers` and drops it out
+    of the positional run. Given placeholders neither rule fires, so the
+    recorded spec is right for columns and quietly WRONG for strings -- it
+    built a plausible tree with the argument in the wrong slot.
+
+    Every arity is probed, not just the widest the builder accepts: "the last
+    argument" is a different index in a four-argument call than in a twelve-
+    argument one, and probing one arity left every real call mis-built.
+
+    A content-blind builder puts the literal in exactly the slot the
+    placeholder occupied. Any other difference -- a wrapper node, a different
+    key, a shifted tail -- means the builder inspects contents, and the port
+    refuses that call rather than guessing which slot was meant.
+    """
+
+    def shape(node, args):
+        by_id = {id(a): i for i, a in enumerate(args)}
+        out = {}
+        for key, value in node.args.items():
+            if value is None or value == []:
+                continue
+            if id(value) in by_id:
+                # The TYPE counts, not just the position. PostgreSQL's
+                # REGEXP_REPLACE runs sqlglot's type ANNOTATOR over its last
+                # argument to decide whether it is flags or a number, and
+                # stamps the result on the node. The annotator is the
+                # optimizer, which this port does not have -- so a call that
+                # depends on it is one the port cannot reproduce.
+                out[key] = ("arg", by_id[id(value)], str(getattr(value, "type", None)))
+            elif isinstance(value, list):
+                out[key] = ("list", tuple(by_id.get(id(v), type(v).__name__) for v in value))
+            elif isinstance(value, exp.Expr):
+                out[key] = ("node", type(value).__name__, str(getattr(value, "type", None)))
+            else:
+                out[key] = ("const", value)
+        return out
+
+    def build(builder, args):
+        try:
+            node = builder(list(args))
+        except Exception:  # noqa: BLE001 -- this arity or argument is invalid for this name
+            return None
+        return node if isinstance(node, exp.Expr) else None
+
+    sensitive: dict[str, list[int]] = {}
+    for name in funcs:
+        builder = P.FUNCTIONS.get(name)
+        if builder is None:
+            continue
+        for width in range(13):
+            plain = [exp.column(f"__probe_{i}") for i in range(width)]
+            base = build(builder, plain)
+            if base is None:
+                continue
+            base_shape = shape(base, plain)
+            for i in range(width):
+                swapped = list(plain)
+                swapped[i] = exp.Literal.string("__probe_str")
+                other = build(builder, swapped)
+                if other is None or type(other) is not type(base):
+                    sensitive.setdefault(name, []).append(i)
+                elif shape(other, swapped) != base_shape:
+                    sensitive.setdefault(name, []).append(i)
+    return {k: sorted(set(v)) for k, v in sensitive.items()}
+
+
+def cast_sensitive_args(P, exp, dialect, funcs):
+    """Argument positions where an explicitly CAST argument changes the call's
+    own rendering.
+
+    DuckDB's BIT_OR over a non-integer becomes
+    `BIT_OR(CAST(ROUND(CAST(x AS REAL)) AS INT))`, and PostgreSQL's two-argument
+    ROUND over a double gains a CAST to DECIMAL. Both fire only when the
+    argument's type is VISIBLE -- a bare column is left alone, because the
+    reference cannot type it either -- so the trigger is an explicit cast to a
+    non-integer type, which a port CAN see.
+
+    This is a rendering rule, not a parse rule: the tree is identical either
+    way, and only the SQL differs. So it is probed by rendering. A call whose
+    scaffolding changes when an argument is cast is refused, because the port
+    would otherwise hand the engine a different statement than the Python
+    executor does.
+    """
+    probe = exp.column("__probe_0")
+    sensitive: dict[str, list[int]] = {}
+    for name in funcs:
+        builder = P.FUNCTIONS.get(name)
+        if builder is None:
+            continue
+        for width in range(1, 6):
+            plain = [exp.column(f"__probe_{i}") for i in range(width)]
+            try:
+                base = builder(list(plain))
+                base_sql = base.sql(dialect=dialect or None)
+            except Exception:  # noqa: BLE001 -- invalid arity or unrenderable for this name
+                continue
+            for i in range(width):
+                cast = exp.cast(exp.column(f"__probe_{i}"), "DOUBLE")
+                try:
+                    cast_sql = cast.sql(dialect=dialect or None)
+                    swapped = list(plain)
+                    swapped[i] = cast
+                    got = builder(list(swapped)).sql(dialect=dialect or None)
+                except Exception:  # noqa: BLE001 -- a cast may be invalid here
+                    sensitive.setdefault(name, []).append(i)
+                    continue
+                # Only meaningful when the argument is rendered verbatim and
+                # once: a name that reorders, repeats or rewrites its arguments
+                # fails this substitution for reasons that have nothing to do
+                # with the cast, and flagging those would refuse most of the
+                # function catalogue.
+                token = f"__probe_{i}"
+                if base_sql.count(token) != 1 or got.count(cast_sql) != 1:
+                    continue
+                if got != base_sql.replace(token, cast_sql, 1):
+                    sensitive.setdefault(name, []).append(i)
+    _ = probe
+    return {k: sorted(set(v)) for k, v in sensitive.items()}
+
+
 def render_functions(P, exp, dialect, funcs):
     """How the reference WRITES each function node, for the generator.
 
@@ -379,6 +531,48 @@ def default_type_params(dialect: str) -> dict[str, list[str]]:
     return out
 
 
+def drops_type_params(dialect: str) -> list[str]:
+    """Types whose parameters this dialect DISCARDS at parse time.
+
+    The mirror of default_type_params, through the same TYPE_CONVERTERS map.
+    DuckDB reads every text type as TEXT and drops the length: `VARCHAR(5)`
+    parses to a bare TEXT, so a port that kept the 5 sent the engine a
+    different CAST than the Python executor sent.
+
+    Probed the same way and for the same reason -- the converters are
+    closures, so what they discard cannot be read out, only observed.
+    """
+    import sqlglot
+    from sqlglot.dialects.dialect import Dialect
+
+    parser = Dialect.get_or_raise(dialect or None).parser_class
+    out: list[str] = []
+    for kind in getattr(parser, "TYPE_CONVERTERS", {}) or {}:
+        name = kind.value
+        try:
+            parsed = sqlglot.parse_one(f"CAST(x AS {name}(5))", dialect=dialect or None).to
+        except Exception:  # noqa: BLE001 -- a type that takes no parameters simply is not one
+            continue
+        if not (parsed.args.get("expressions") or []):
+            out.append(name)
+    return sorted(out)
+
+
+def limit_all_means_no_limit(dialect: str) -> bool:
+    """Whether `LIMIT ALL` is this dialect's way of saying "no limit".
+
+    PostgreSQL, DuckDB and Databricks read it that way and the reference
+    records it by setting NO limit; T-SQL and the neutral dialect read ALL as
+    an ordinary column called "all". Same five characters, and the difference
+    is the one clause this service rewrites -- so it is asked of the
+    reference, not assumed either way.
+    """
+    import sqlglot
+
+    tree = sqlglot.parse_one("SELECT 1 FROM t LIMIT ALL", dialect=dialect or None)
+    return tree.args.get("limit") is None
+
+
 def is_not_null_wraps_in_not(dialect: str) -> bool:
     """Whether `x IS NOT NULL` comes back as a Not wrapping an Is.
 
@@ -514,6 +708,47 @@ def main() -> int:
         "\t// node instead. PROBED, not transcribed -- sqlglot has no flag for\n",
         "\t// it, the rule lives in a dialect override, and a port that assumed\n",
         "\t// one shape diverged on one of the commonest predicates in SQL.\n",
+        "\t// DropsTypeParams are types whose PARAMETERS this dialect discards.\n",
+        "\t// The mirror of DefaultTypeParams, out of the same TYPE_CONVERTERS:\n",
+        "\t// DuckDB reads every text type as TEXT and drops the length, so\n",
+        "\t// `VARCHAR(5)` is a bare TEXT and a port that kept the 5 sent the\n",
+        "\t// engine a different CAST. PROBED, for the same reason.\n",
+        "\tDropsTypeParams map[string]bool\n",
+        "\t// LimitAllMeansNoLimit: `LIMIT ALL` is PostgreSQL for \"no limit\",\n",
+        "\t// and DuckDB and Databricks follow. T-SQL and the neutral dialect\n",
+        "\t// read ALL as a column of that name instead. PROBED: the difference\n",
+        "\t// lands on the one clause the guard rewrites.\n",
+        "\tLimitAllMeansNoLimit bool\n",
+        "\t// StringSensitiveArgs are argument positions where a STRING\n",
+        "\t// LITERAL makes the reference build something structurally\n",
+        "\t// different: PostgreSQL reads a string step to GENERATE_SERIES as\n",
+        "\t// an Interval, and a trailing string to REGEXP_REPLACE as\n",
+        "\t// `modifiers`, shifting the arguments after it. The function probe\n",
+        "\t// uses placeholder COLUMNS, so neither rule fires and the recorded\n",
+        "\t// signature is right for columns and wrong for strings. A call that\n",
+        "\t// puts a string in one of these slots is REFUSED: the port cannot\n",
+        "\t// tell which slot was meant, and a plausible tree is the one thing\n",
+        "\t// it must not build. PROBED.\n",
+        "\t// CastSensitiveArgs are argument positions where an explicitly\n",
+        "\t// CAST argument changes how the CALL itself is written: DuckDB\n",
+        "\t// wraps BIT_OR over a non-integer in a round-and-cast, PostgreSQL\n",
+        "\t// casts a double before a two-argument ROUND. The tree is the same\n",
+        "\t// either way -- only the SQL differs -- so this is probed by\n",
+        "\t// RENDERING, and a call that would need it is refused rather than\n",
+        "\t// written without the coercion the engine needs. PROBED.\n",
+        "\tCastSensitiveArgs map[string][]int\n",
+        "\tStringSensitiveArgs map[string][]int\n",
+        "\t// WritesBooleanLiteral: whether TRUE and FALSE are written as\n",
+        "\t// themselves. T-SQL has no boolean literal -- the reference\n",
+        "\t// rewrites them to 1 and 0, and to `1 = 1` in a condition. That is\n",
+        "\t// a transform, not a spelling, and it is not ported; writing TRUE\n",
+        "\t// anyway sent an engine SQL it rejects. PROBED.\n",
+        "\t// ReservedKeywords must be QUOTED when written as an identifier\n",
+        "\t// even though the caller wrote them bare. DuckDB reserves `all`, so\n",
+        '\t// `SELECT 1 AS all` is written `AS "all"`; bare it is a syntax\n',
+        "\t// error on the engine.\n",
+        "\tReservedKeywords map[string]bool\n",
+        "\tWritesBooleanLiteral bool\n",
         "\tIsNotNullWrapsInNot bool\n",
         "\t// NullOrdering decides where NULLs sort when nobody says, and so\n",
         "\t// what nulls_first records on an Ordered node. It differs per\n",
@@ -596,6 +831,20 @@ def main() -> int:
         out.append(opmap("NoParenFunctionClasses", P.NO_PAREN_FUNCTIONS))
         funcs = probe_functions(P, exp)
         out.append(funcmap("Functions", funcs))
+        casts = cast_sensitive_args(P, exp, name, funcs)
+        if casts:
+            out.append("\t\tCastSensitiveArgs: map[string][]int{\n")
+            for fname, indexes in sorted(casts.items()):
+                joined = ", ".join(str(i) for i in indexes)
+                out.append(f"\t\t\t{gostr(fname)}: {{{joined}}},\n")
+            out.append("\t\t},\n")
+        sensitive = string_sensitive_args(P, exp, funcs)
+        if sensitive:
+            out.append("\t\tStringSensitiveArgs: map[string][]int{\n")
+            for fname, indexes in sorted(sensitive.items()):
+                joined = ", ".join(str(i) for i in indexes)
+                out.append(f"\t\t\t{gostr(fname)}: {{{joined}}},\n")
+            out.append("\t\t},\n")
         out.append(sqlmap("FunctionSQL", render_functions(P, exp, name, funcs)))
         binary, unary = render_operators(P, exp, Dialect, name)
         out.append(strstrmap("BinarySQL", binary))
@@ -653,6 +902,24 @@ def main() -> int:
                 joined = ", ".join(gostr(v) for v in params)
                 out.append(f"\t\t\t{gostr(typ)}: {{{joined}}},\n")
             out.append("\t\t},\n")
+        drops = drops_type_params(name)
+        if drops:
+            out.append("\t\tDropsTypeParams: map[string]bool{\n")
+            for typ in drops:
+                out.append(f"\t\t\t{gostr(typ)}: true,\n")
+            out.append("\t\t},\n")
+        out.append(
+            f"\t\tLimitAllMeansNoLimit: {str(limit_all_means_no_limit(name)).lower()},\n"
+        )
+        reserved = reserved_keywords(name, Dialect)
+        if reserved:
+            out.append("\t\tReservedKeywords: map[string]bool{\n")
+            for w in reserved:
+                out.append(f"\t\t\t{gostr(w)}: true,\n")
+            out.append("\t\t},\n")
+        out.append(
+            f"\t\tWritesBooleanLiteral: {str(writes_boolean_literal(name, exp)).lower()},\n"
+        )
         out.append(
             f"\t\tIsNotNullWrapsInNot: "
             f"{str(is_not_null_wraps_in_not(name)).lower()},\n"

@@ -1,0 +1,773 @@
+{
+ "dialect": "tsql",
+ "rendered": "SELECT * FROM OPENJSON(@json) WITH (Number VARCHAR(200) '$.Order.Number', Date DATETIME '$.Order.Date', Customer VARCHAR(200) '$.AccountNumber', Quantity INTEGER '$.Item.Quantity', [Order] NVARCHAR(MAX) AS JSON)",
+ "sql": "\n            SELECT *\n            FROM OPENJSON ( @json )\n            WITH (\n                          Number   VARCHAR(200)   '$.Order.Number',\n                          Date     DATETIME       '$.Order.Date',\n                          Customer VARCHAR(200)   '$.AccountNumber',\n                          Quantity INT            '$.Item.Quantity',\n                          [Order]  NVARCHAR(MAX)  AS JSON\n             )\n            ",
+ "tokens": [
+  {
+   "c": 18,
+   "e": 18,
+   "l": 2,
+   "s": 13,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 20,
+   "e": 20,
+   "l": 2,
+   "s": 20,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 16,
+   "e": 37,
+   "l": 3,
+   "s": 34,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 25,
+   "e": 46,
+   "l": 3,
+   "s": 39,
+   "t": "VAR",
+   "x": "OPENJSON"
+  },
+  {
+   "c": 27,
+   "e": 48,
+   "l": 3,
+   "s": 48,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 29,
+   "e": 50,
+   "l": 3,
+   "s": 50,
+   "t": "PARAMETER",
+   "x": "@"
+  },
+  {
+   "c": 33,
+   "e": 54,
+   "l": 3,
+   "s": 51,
+   "t": "VAR",
+   "x": "json"
+  },
+  {
+   "c": 35,
+   "e": 56,
+   "l": 3,
+   "s": 56,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 16,
+   "e": 73,
+   "l": 4,
+   "s": 70,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 18,
+   "e": 75,
+   "l": 4,
+   "s": 75,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 32,
+   "e": 108,
+   "l": 5,
+   "s": 103,
+   "t": "DECIMAL",
+   "x": "Number"
+  },
+  {
+   "c": 42,
+   "e": 118,
+   "l": 5,
+   "s": 112,
+   "t": "VARCHAR",
+   "x": "VARCHAR"
+  },
+  {
+   "c": 43,
+   "e": 119,
+   "l": 5,
+   "s": 119,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 46,
+   "e": 122,
+   "l": 5,
+   "s": 120,
+   "t": "NUMBER",
+   "x": "200"
+  },
+  {
+   "c": 47,
+   "e": 123,
+   "l": 5,
+   "s": 123,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 66,
+   "e": 142,
+   "l": 5,
+   "s": 127,
+   "t": "STRING",
+   "x": "$.Order.Number"
+  },
+  {
+   "c": 67,
+   "e": 143,
+   "l": 5,
+   "s": 143,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 30,
+   "e": 174,
+   "l": 6,
+   "s": 171,
+   "t": "DATE",
+   "x": "Date"
+  },
+  {
+   "c": 43,
+   "e": 187,
+   "l": 6,
+   "s": 180,
+   "t": "DATETIME",
+   "x": "DATETIME"
+  },
+  {
+   "c": 64,
+   "e": 208,
+   "l": 6,
+   "s": 195,
+   "t": "STRING",
+   "x": "$.Order.Date"
+  },
+  {
+   "c": 65,
+   "e": 209,
+   "l": 6,
+   "s": 209,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 34,
+   "e": 244,
+   "l": 7,
+   "s": 237,
+   "t": "VAR",
+   "x": "Customer"
+  },
+  {
+   "c": 42,
+   "e": 252,
+   "l": 7,
+   "s": 246,
+   "t": "VARCHAR",
+   "x": "VARCHAR"
+  },
+  {
+   "c": 43,
+   "e": 253,
+   "l": 7,
+   "s": 253,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 46,
+   "e": 256,
+   "l": 7,
+   "s": 254,
+   "t": "NUMBER",
+   "x": "200"
+  },
+  {
+   "c": 47,
+   "e": 257,
+   "l": 7,
+   "s": 257,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 67,
+   "e": 277,
+   "l": 7,
+   "s": 261,
+   "t": "STRING",
+   "x": "$.AccountNumber"
+  },
+  {
+   "c": 68,
+   "e": 278,
+   "l": 7,
+   "s": 278,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 34,
+   "e": 313,
+   "l": 8,
+   "s": 306,
+   "t": "VAR",
+   "x": "Quantity"
+  },
+  {
+   "c": 38,
+   "e": 317,
+   "l": 8,
+   "s": 315,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 67,
+   "e": 346,
+   "l": 8,
+   "s": 330,
+   "t": "STRING",
+   "x": "$.Item.Quantity"
+  },
+  {
+   "c": 68,
+   "e": 347,
+   "l": 8,
+   "s": 347,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 33,
+   "e": 381,
+   "l": 9,
+   "s": 375,
+   "t": "IDENTIFIER",
+   "x": "Order"
+  },
+  {
+   "c": 43,
+   "e": 391,
+   "l": 9,
+   "s": 384,
+   "t": "NVARCHAR",
+   "x": "NVARCHAR"
+  },
+  {
+   "c": 44,
+   "e": 392,
+   "l": 9,
+   "s": 392,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 47,
+   "e": 395,
+   "l": 9,
+   "s": 393,
+   "t": "VAR",
+   "x": "MAX"
+  },
+  {
+   "c": 48,
+   "e": 396,
+   "l": 9,
+   "s": 396,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 52,
+   "e": 400,
+   "l": 9,
+   "s": 399,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 57,
+   "e": 405,
+   "l": 9,
+   "s": 402,
+   "t": "JSON",
+   "x": "JSON"
+  },
+  {
+   "c": 14,
+   "e": 420,
+   "l": 10,
+   "s": 420,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 20,
+    "end": 20,
+    "line": 2,
+    "start": 20
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.json.OpenJSON",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "json"
+  },
+  {
+   "i": 4,
+   "k": "path",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.OpenJSONColumnDef",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 108,
+    "line": 5,
+    "start": 103
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "Number"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 9,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 13,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 13,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 46,
+    "end": 122,
+    "line": 5,
+    "start": 120
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "200"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 13,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "path",
+   "m": {
+    "col": 66,
+    "end": 142,
+    "line": 5,
+    "start": 127
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "$.Order.Number"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 9,
+   "k": "as_json",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.OpenJSONColumnDef",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 174,
+    "line": 6,
+    "start": 171
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "Date"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 24,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 28,
+   "k": "this",
+   "v": "DATETIME"
+  },
+  {
+   "i": 28,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 24,
+   "k": "path",
+   "m": {
+    "col": 64,
+    "end": 208,
+    "line": 6,
+    "start": 195
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "$.Order.Date"
+  },
+  {
+   "i": 31,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 24,
+   "k": "as_json",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.OpenJSONColumnDef",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 35,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 244,
+    "line": 7,
+    "start": 237
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "Customer"
+  },
+  {
+   "i": 36,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 35,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 39,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 39,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 41,
+   "k": "this",
+   "m": {
+    "col": 46,
+    "end": 256,
+    "line": 7,
+    "start": 254
+   }
+  },
+  {
+   "i": 42,
+   "k": "this",
+   "v": "200"
+  },
+  {
+   "i": 42,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 39,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 35,
+   "k": "path",
+   "m": {
+    "col": 67,
+    "end": 277,
+    "line": 7,
+    "start": 261
+   }
+  },
+  {
+   "i": 46,
+   "k": "this",
+   "v": "$.AccountNumber"
+  },
+  {
+   "i": 46,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 35,
+   "k": "as_json",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.OpenJSONColumnDef",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 50,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 313,
+    "line": 8,
+    "start": 306
+   }
+  },
+  {
+   "i": 51,
+   "k": "this",
+   "v": "Quantity"
+  },
+  {
+   "i": 51,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 50,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 54,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 54,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 50,
+   "k": "path",
+   "m": {
+    "col": 67,
+    "end": 346,
+    "line": 8,
+    "start": 330
+   }
+  },
+  {
+   "i": 57,
+   "k": "this",
+   "v": "$.Item.Quantity"
+  },
+  {
+   "i": 57,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 50,
+   "k": "as_json",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.OpenJSONColumnDef",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 61,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 381,
+    "line": 9,
+    "start": 375
+   }
+  },
+  {
+   "i": 62,
+   "k": "this",
+   "v": "Order"
+  },
+  {
+   "i": 62,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 61,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 65,
+   "k": "this",
+   "v": "NVARCHAR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 65,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 67,
+   "k": "this"
+  },
+  {
+   "i": 68,
+   "k": "this",
+   "v": "MAX"
+  },
+  {
+   "i": 65,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 61,
+   "k": "as_json",
+   "v": true
+  }
+ ]
+}

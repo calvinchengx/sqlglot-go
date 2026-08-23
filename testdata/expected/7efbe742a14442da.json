@@ -1,0 +1,79 @@
+{
+ "dialect": "postgres",
+ "rendered": "CURRENT_DATE - INTERVAL '1 DAY'",
+ "sql": "CURRENT_DATE - INTERVAL '1 DAY'",
+ "tokens": [
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 0,
+   "t": "CURRENT_DATE",
+   "x": "CURRENT_DATE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 15,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 24,
+   "t": "STRING",
+   "x": "1 DAY"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Sub"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentDate",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 2,
+   "k": "unit"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "DAY"
+  }
+ ]
+}
