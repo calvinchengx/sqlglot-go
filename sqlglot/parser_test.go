@@ -57,6 +57,13 @@ func TestParseShapes(t *testing.T) {
 		{"limit and offset", "SELECT a FROM t LIMIT 1 OFFSET 2",
 			"Select Column Identifier Limit Literal From Table Identifier Offset Literal"},
 		{"trailing semicolon", "SELECT 1;", "Select Literal"},
+		{"anonymous call", "SELECT my_func(a, 1)", "Select Anonymous Column Identifier Literal"},
+		{"anonymous call with no arguments", "SELECT my_func()", "Select Anonymous"},
+		{"named function", "SELECT ABS(a)", "Select Abs Column Identifier"},
+		{"variadic named function", "SELECT ARRAYS_ZIP(a, b, c)",
+			"Select ArraysZip Column Identifier Column Identifier Column Identifier"},
+		{"keyword as a column name", "SELECT update", "Select Column Identifier"},
+		{"keyword as a table name", "SELECT * FROM update", "Select Star From Table Identifier"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			if got := classes(parse(t, c.sql, "")); got != c.want {
@@ -69,6 +76,21 @@ func TestParseShapes(t *testing.T) {
 // Clause order is the order the clauses appear in, because that is the order
 // the reference assigns them -- and the dump follows assignment order, so a
 // port that normalised them would mismatch on every statement.
+// Most of sqlglot's own fixture corpus is expressions rather than whole
+// statements, and the reference parses them as such.
+func TestBareExpressionsAtTheTopLevel(t *testing.T) {
+	for _, c := range []struct{ sql, want string }{
+		{"1", "Literal"},
+		{"a + 1", "Add Column Identifier Literal"},
+		{"my_func(a)", "Anonymous Column Identifier"},
+		{"a AND b", "And Column Identifier Column Identifier"},
+	} {
+		if got := classes(parse(t, c.sql, "")); got != c.want {
+			t.Errorf("ParseOne(%q)\n  want %s\n  got  %s", c.sql, c.want, got)
+		}
+	}
+}
+
 func TestClauseOrderFollowsTheSource(t *testing.T) {
 	tree := parse(t, "SELECT a FROM t WHERE a ORDER BY a LIMIT 1", "")
 	// limit sits in the slot Select reserves for it at construction, before
@@ -82,7 +104,14 @@ func TestClauseOrderFollowsTheSource(t *testing.T) {
 func TestRefusals(t *testing.T) {
 	for _, c := range []struct{ name, sql, dialect string }{
 		{"a statement that is not a SELECT", "DELETE FROM t", ""},
-		{"function call", "SELECT f(1)", ""},
+		{"function with a builder of its own", "SELECT COUNT(*)", ""},
+		{"function with a custom argument shape", "SELECT TIMESTAMP_TRUNC(t, MONTH)", ""},
+		{"no-paren function", "SELECT CURRENT_DATE", "duckdb"},
+		{"no-paren function named, not tokenized", "CURDATE", "databricks"},
+		{"DISTINCT inside a call", "SELECT f(DISTINCT a)", ""},
+		{"INTERVAL", "INTERVAL '1' DAY", ""},
+		{"GROUP BY ROLLUP", "SELECT a FROM t GROUP BY ROLLUP (a)", ""},
+		{"STREAM table", "SELECT * FROM STREAM t", "databricks"},
 		{"qualified function call", "SELECT a.f(1)", ""},
 		{"table function", "SELECT * FROM read_csv('x')", ""},
 		{"comma join", "SELECT * FROM a, b", ""},
@@ -115,6 +144,8 @@ func TestRefusals(t *testing.T) {
 		{"dangling negation", "SELECT -", ""},
 		{"dangling qualifier", "SELECT a.", ""},
 		{"dangling alias", "SELECT * FROM t AS", ""},
+		{"dangling FROM", "SELECT * FROM", ""},
+		{"dangling ORDER BY", "SELECT a FROM t ORDER BY", ""},
 		{"over-qualified star", "SELECT a.b.c.d.*", ""},
 	} {
 		t.Run(c.name, func(t *testing.T) {

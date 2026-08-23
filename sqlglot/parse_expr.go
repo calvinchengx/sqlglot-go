@@ -169,6 +169,8 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	case TokSTAR:
 		p.advance()
 		return newStar(), nil
+	case TokINTERVAL:
+		return nil, p.unsupported("INTERVAL")
 	case TokL_PAREN:
 		p.advance()
 		inner, err := p.parseExpression()
@@ -179,7 +181,17 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			return nil, p.unsupported("unclosed parenthesis")
 		}
 		return New("Paren", Arg{"this", inner}), nil
-	case TokVAR, TokIDENTIFIER:
+	}
+	if p.atIdentifier() {
+		if _, noParen := p.tables.NoParenFunctionNames[strings.ToUpper(c.Text)]; noParen {
+			return nil, p.unsupported("no-paren function " + strings.ToUpper(c.Text))
+		}
+		if n := p.peek(1); n != nil && n.Type == TokL_PAREN {
+			if _, canName := p.tables.FuncTokens[c.Type]; !canName {
+				return nil, p.unsupported("call named by a token that cannot name one")
+			}
+			return p.parseFunction()
+		}
 		return p.parseColumn()
 	}
 	return nil, p.unsupported("expression")
@@ -192,17 +204,90 @@ func newStar() *Expression {
 	return New("Star", Arg{"ilike", nil}, Arg{"except_", nil}, Arg{"replace", nil}, Arg{"rename", nil})
 }
 
+// parseFunction reads a call with an argument list.
+//
+// Only the Anonymous form is built. The reference gives hundreds of names a
+// node class of their own -- COUNT is a Count with a big_int flag, not a call
+// named "COUNT" -- and each has its own argument shape. Producing Anonymous for
+// one of those would be a divergence, so a name the reference knows is refused
+// until its node is ported. The list is generated, not guessed.
+func (p *parser) parseFunction() (*Expression, error) {
+	name := p.curr().Text
+	upper := strings.ToUpper(name)
+	spec, named := p.tables.Functions[upper]
+	if !named {
+		if _, custom := p.tables.NamedFunctions[upper]; custom {
+			return nil, p.unsupported("function " + upper + " with a builder of its own")
+		}
+	}
+	p.advance()
+	p.advance() // the opening parenthesis
+
+	var args []*Expression
+	if !p.at(TokR_PAREN) {
+		for {
+			// DISTINCT, ORDER BY and named arguments inside a call all change
+			// the node the reference builds; none is handled here.
+			if p.atAny(TokDISTINCT, TokORDER_BY, TokALL) {
+				return nil, p.unsupported("modifier inside a function call")
+			}
+			arg, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, arg)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed function argument list")
+	}
+	if named {
+		return buildFunction(spec, args), nil
+	}
+	return New("Anonymous", Arg{"this", name}, Arg{"expressions", args}), nil
+}
+
+// buildFunction maps positional arguments onto a function node's declared
+// argument keys, which is what the reference's Func.from_arg_list does: keys
+// and arguments are zipped, so a call with fewer arguments than keys simply
+// leaves the rest unset. With a variadic last key, everything past the fixed
+// keys collects into it.
+func buildFunction(spec FuncSpec, args []*Expression) *Expression {
+	node := New(spec.Class)
+	keys := spec.Keys
+	if spec.VarLen {
+		fixed := keys[:len(keys)-1]
+		for i, k := range fixed {
+			if i >= len(args) {
+				break
+			}
+			node.Set(k, args[i])
+		}
+		rest := []*Expression{}
+		if len(args) > len(fixed) {
+			rest = args[len(fixed):]
+		}
+		node.Set(keys[len(keys)-1], rest)
+		return node
+	}
+	for i, k := range keys {
+		if i >= len(args) {
+			break
+		}
+		node.Set(k, args[i])
+	}
+	return node
+}
+
 // parseColumn reads a possibly-qualified column reference: name, table.name,
 // db.table.name, catalog.db.table.name, and the `t.*` form.
 func (p *parser) parseColumn() (*Expression, error) {
 	first, err := p.parseIdentifier()
 	if err != nil {
 		return nil, err
-	}
-
-	// A function call is a different construct; refuse rather than mis-read it.
-	if p.at(TokL_PAREN) {
-		return nil, p.unsupported("function call")
 	}
 
 	parts := []*Expression{first}
@@ -255,22 +340,42 @@ func (p *parser) parseColumn() (*Expression, error) {
 }
 
 func (p *parser) parseIdentifier() (*Expression, error) {
-	c := p.curr()
-	if c == nil {
+	if !p.atIdentifier() {
 		return nil, p.unsupported("identifier")
 	}
+	c := p.curr()
 	// T-SQL strips a leading # from some identifiers and not others -- the
 	// temp-table rule. Refuse rather than reproduce half of it.
 	if p.dialect == "tsql" && strings.Contains(c.Text, "#") {
 		return nil, p.unsupported("T-SQL temp-table identifier")
 	}
-	switch c.Type {
-	case TokVAR:
-		p.advance()
-		return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", false}), nil
-	case TokIDENTIFIER:
+	if c.Type == TokIDENTIFIER {
 		p.advance()
 		return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true}), nil
 	}
-	return nil, p.unsupported("identifier")
+	p.advance()
+	// The token's text, not its upper-cased keyword spelling: a keyword used
+	// as a name keeps the case it was written in, and the tokenizer only
+	// upper-cases the keywords it finds through the trie.
+	return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", false}), nil
+}
+
+// atIdentifier reports whether the current token can stand in for a name --
+// a plain word, a quoted identifier, or one of the many keywords the reference
+// still allows as an identifier.
+func (p *parser) atIdentifier() bool {
+	c := p.curr()
+	if c == nil {
+		return false
+	}
+	if c.Type == TokVAR || c.Type == TokIDENTIFIER {
+		return true
+	}
+	// A no-paren function -- CURRENT_DATE and friends -- is a call, not a
+	// name, even though it looks like a bare word.
+	if _, isFunc := p.tables.NoParenFunctions[c.Type]; isFunc {
+		return false
+	}
+	_, ok := p.tables.IDVarTokens[c.Type]
+	return ok
 }

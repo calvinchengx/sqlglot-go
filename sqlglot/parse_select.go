@@ -128,6 +128,11 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			}
 		case p.at(TokGROUP_BY):
 			p.advance()
+			// CUBE, ROLLUP and GROUPING SETS look like calls but land on
+			// their own args of Group, not in its expression list.
+			if p.atAny(TokCUBE, TokROLLUP, TokGROUPING_SETS) {
+				return p.unsupported("GROUP BY " + p.curr().Text)
+			}
 			es, err := p.parseExpressionList()
 			if err != nil {
 				return err

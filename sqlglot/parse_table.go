@@ -26,6 +26,12 @@ func (p *parser) parseTable() (*Expression, error) {
 		return nil, p.unsupported("subquery or parenthesised table")
 	}
 
+	// STREAM t reads a table as a stream in some dialects; it is a different
+	// node, not a table called STREAM.
+	if p.at(TokSTREAM) {
+		return nil, p.unsupported("STREAM table")
+	}
+
 	parts := []*Expression{}
 	for {
 		id, err := p.parseIdentifier()

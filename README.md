@@ -22,11 +22,11 @@ whose Go executor is the first consumer.
 <!-- coverage:start -->
 | Dialect | Tokens | Trees matched | Of | Unparsed | Mismatched |
 |---|---|---|---|---|---|
-| neutral | 997/997 | 87 | 997 | 910 | 0 |
-| tsql | 233/233 | 8 | 233 | 225 | 0 |
-| postgres | 398/398 | 4 | 398 | 394 | 0 |
-| duckdb | 392/392 | 7 | 392 | 385 | 0 |
-| databricks | 151/151 | 3 | 151 | 148 | 0 |
+| neutral | 997/997 | 245 | 997 | 752 | 0 |
+| tsql | 233/233 | 19 | 233 | 214 | 0 |
+| postgres | 398/398 | 22 | 398 | 376 | 0 |
+| duckdb | 392/392 | 51 | 392 | 341 | 0 |
+| databricks | 151/151 | 29 | 151 | 122 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number

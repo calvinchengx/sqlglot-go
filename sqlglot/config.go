@@ -44,6 +44,9 @@ type Config struct {
 	IdentifiersCanStartWithDigit     bool
 	UnescapedSequences               map[string]string
 
+	// Tables is the parser's vocabulary for this dialect.
+	Tables *ParserTables
+
 	trie *trieNode
 }
 
@@ -56,6 +59,9 @@ func ConfigFor(dialect string) (*Config, bool) {
 	}
 	if c.trie == nil {
 		c.trie = c.buildTrie()
+	}
+	if c.Tables == nil {
+		c.Tables = parserTables[dialect]
 	}
 	return c, true
 }

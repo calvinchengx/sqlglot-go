@@ -23,7 +23,8 @@ func ParseOne(sql, dialect string) (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	p := &parser{tokens: toks, cfg: tk.Config(), dialect: dialect}
+	cfg := tk.Config()
+	p := &parser{tokens: toks, cfg: cfg, tables: cfg.Tables, dialect: dialect}
 	return p.parseOne()
 }
 
@@ -34,6 +35,7 @@ type parser struct {
 	tokens  []Token
 	index   int
 	cfg     *Config
+	tables  *ParserTables
 	dialect string
 }
 
@@ -105,9 +107,22 @@ func (p *parser) parseOne() (*Expression, error) {
 }
 
 // parseStatement returns a tree or an error, never (nil, nil).
+//
+// Anything that is not a query and does not begin a statement of its own is a
+// bare expression, as in the reference -- most of sqlglot's own fixture corpus
+// is expressions rather than whole statements.
 func (p *parser) parseStatement() (*Expression, error) {
 	if p.at(TokSELECT) {
 		return p.parseSelect()
 	}
-	return nil, p.unsupported("statement")
+	if c := p.curr(); c != nil {
+		if _, isStatement := p.tables.StatementTokens[c.Type]; isStatement {
+			return nil, p.unsupported("statement")
+		}
+	}
+	e, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	return p.parseAlias(e)
 }

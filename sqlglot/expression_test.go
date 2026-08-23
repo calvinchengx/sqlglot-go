@@ -172,7 +172,7 @@ func TestUnsupportedIsAGapNotAGuess(t *testing.T) {
 	// something the engine will not run.
 	for _, sql := range []string{
 		"DELETE FROM t",
-		"SELECT f(1)",
+		"SELECT COUNT(*)",
 		"SELECT * FROM a, b",
 		"SELECT * FROM a JOIN b ON a.x = b.x",
 		"SELECT * FROM (SELECT 1)",
