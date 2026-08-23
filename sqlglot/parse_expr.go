@@ -1,6 +1,9 @@
 package sqlglot
 
-import "strings"
+import (
+	"errors"
+	"strings"
+)
 
 // The expression grammar: precedence climbing, in the reference's shapes.
 //
@@ -25,6 +28,12 @@ var specialConstruction = map[string]bool{
 	"DPipe":   true,
 	"Collate": true,
 	// Databricks' `a:b` reads the right-hand side as a JSON PATH, not as the
+	// column the generic operator rule produces. `->` and `->>` are handled
+	// directly in parsePostfix and never reach here; the colon form has its
+	// own grammar which is not ported, so it stays refused.
+	"JSONExtract":       true,
+	"JSONExtractScalar": true,
+	// Databricks' `a:b` reads the right-hand side as a JSON PATH, not as the
 	// column the generic rule produces. The port modelled neither the path
 	// node nor its grammar, and built JSONExtract(a, Column(b)) anyway -- a
 	// tree the reference never makes, and one the generator could not write
@@ -33,8 +42,6 @@ var specialConstruction = map[string]bool{
 	//
 	// Found by the fuzzed differential: the largest divergence cluster it
 	// reported. Porting JSONPath properly is Tier 2 work.
-	"JSONExtract":       true,
-	"JSONExtractScalar": true,
 }
 
 func (p *parser) parseExpression() (*Expression, error) { return p.parseAssignment() }
@@ -417,6 +424,30 @@ func (p *parser) parsePostfix() (*Expression, error) {
 		return nil, err
 	}
 	for {
+		// `j -> '$.a'` and `j ->> '$.a'` are COLUMN OPERATORS in the
+		// reference, not binary operators: the right-hand side is a path
+		// string, parsed into a JSONPath rather than into an expression.
+		if p.at(TokARROW) || p.at(TokDARROW) {
+			class := "JSONExtract"
+			if p.at(TokDARROW) {
+				class = "JSONExtractScalar"
+			}
+			p.advance()
+			path, err := p.parseJSONPathOperand()
+			if err != nil {
+				return nil, err
+			}
+			args := []Arg{{"this", this}, {"expression", path},
+				{"only_json_types", p.tables.JSONArrowOnlyJSONTypes}}
+			if class == "JSONExtractScalar" && p.tables.JSONArrowSetsScalarOnly {
+				// PostgreSQL leaves this arg OFF the node; the others set it
+				// false. An arg present-but-false is a different tree from an
+				// arg absent, so whether to set it is probed, not the value.
+				args = append(args, Arg{"scalar_only", false})
+			}
+			this = New(class, args...)
+			continue
+		}
 		if p.match(TokDCOLON) {
 			to, err := p.parseDataType()
 			if err != nil {
@@ -1077,4 +1108,28 @@ func (p *parser) afterComparison() bool {
 		return true
 	}
 	return prev == TokLIKE || prev == TokILIKE
+}
+
+// parseJSONPathOperand reads the right-hand side of `->`. It must be a string
+// literal: that is the only form the path grammar can read, and a column or
+// expression there is a construct the port does not model.
+func (p *parser) parseJSONPathOperand() (*Expression, error) {
+	c := p.curr()
+	if c == nil || c.Type != TokSTRING {
+		return nil, p.unsupported("JSON path that is not a literal")
+	}
+	p.advance()
+	if !p.tables.JSONPathIsParsed {
+		// PostgreSQL keeps the whole string as one key.
+		return New("JSONPath", Arg{"expressions", []*Expression{
+			New("JSONPathRoot"),
+			New("JSONPathKey", Arg{"this", c.Text}),
+		}}), nil
+	}
+	path, err := parseJSONPath(c.Text)
+	if errors.Is(err, errNotAJSONPath) {
+		// Not a path at all: the reference hands the literal straight back.
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
+	}
+	return path, err
 }

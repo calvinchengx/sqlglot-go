@@ -163,9 +163,18 @@ type ParserTables struct {
 	// with the unit inside the quantity; everyone else writes
 	// INTERVAL ‘1’ DAY. PROBED.
 	IntervalUnitInsideString bool
-	BracketIsRewritten       bool
-	WritesBooleanLiteral     bool
-	IsNotNullWrapsInNot      bool
+	// JSONArrowOnlyJSONTypes and JSONArrowScalarOnly are stamped on
+	// the node `->` and `->>` build. PROBED.
+	JSONArrowOnlyJSONTypes bool
+	// JSONArrowSetsScalarOnly says whether the arg is PRESENT on the
+	// node at all; PostgreSQL leaves it off and the others set false.
+	JSONArrowSetsScalarOnly bool
+	// JSONPathIsParsed: PostgreSQL keeps the string after `->` whole
+	// as a single key; everyone else parses it into path parts.
+	JSONPathIsParsed     bool
+	BracketIsRewritten   bool
+	WritesBooleanLiteral bool
+	IsNotNullWrapsInNot  bool
 	// NullOrdering decides where NULLs sort when nobody says, and so
 	// what nulls_first records on an Ordered node. It differs per
 	// dialect and is not derivable from ASC or DESC alone.
@@ -2879,6 +2888,9 @@ var parserTables = map[string]*ParserTables{
 		JoinsHaveEqualPrecedence: false,
 		BareJoinIsOnTrue:         false,
 		LimitAllMeansNoLimit:     false,
+		JSONArrowOnlyJSONTypes:   false,
+		JSONArrowSetsScalarOnly:  true,
+		JSONPathIsParsed:         true,
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
 		ArrayClose:               ")",
@@ -5724,6 +5736,9 @@ var parserTables = map[string]*ParserTables{
 		JoinsHaveEqualPrecedence: false,
 		BareJoinIsOnTrue:         false,
 		LimitAllMeansNoLimit:     false,
+		JSONArrowOnlyJSONTypes:   false,
+		JSONArrowSetsScalarOnly:  true,
+		JSONPathIsParsed:         true,
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
 		ArrayClose:               ")",
@@ -8575,6 +8590,9 @@ var parserTables = map[string]*ParserTables{
 		JoinsHaveEqualPrecedence: false,
 		BareJoinIsOnTrue:         false,
 		LimitAllMeansNoLimit:     true,
+		JSONArrowOnlyJSONTypes:   true,
+		JSONArrowSetsScalarOnly:  false,
+		JSONPathIsParsed:         false,
 		IntervalUnitInsideString: true,
 		ArrayOpen:                "ARRAY[",
 		ArrayClose:               "]",
@@ -11516,6 +11534,9 @@ var parserTables = map[string]*ParserTables{
 			"WINDOW":            true,
 			"WITH":              true,
 		},
+		JSONArrowOnlyJSONTypes:   false,
+		JSONArrowSetsScalarOnly:  true,
+		JSONPathIsParsed:         true,
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "[",
 		ArrayClose:               "]",
@@ -14385,6 +14406,9 @@ var parserTables = map[string]*ParserTables{
 		JoinsHaveEqualPrecedence: true,
 		BareJoinIsOnTrue:         true,
 		LimitAllMeansNoLimit:     true,
+		JSONArrowOnlyJSONTypes:   false,
+		JSONArrowSetsScalarOnly:  true,
+		JSONPathIsParsed:         true,
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
 		ArrayClose:               ")",

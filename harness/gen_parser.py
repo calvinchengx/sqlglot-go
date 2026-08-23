@@ -308,6 +308,43 @@ def interval_unit_inside_string(dialect: str, exp) -> bool:
     return "'1 DAY'" in node.sql(dialect=dialect or None)
 
 
+def json_arrow_flags(dialect: str) -> tuple[bool, bool]:
+    """What `->` and `->>` stamp on the node they build.
+
+    PostgreSQL sets only_json_types. And PostgreSQL alone leaves scalar_only
+    OFF the node, where the others set it to False -- so the second value here
+    says whether the arg is PRESENT, not what it is.
+    """
+    from sqlglot.dialects.dialect import Dialect
+
+    import sqlglot
+
+    d = Dialect.get_or_raise(dialect or None)
+    # scalar_only is read off the TREE, not off the flag. Every dialect has the
+    # flag and every one of them has it False, yet PostgreSQL leaves the arg
+    # off the node entirely while the others set it to False -- and an arg
+    # present-but-false is a different tree from an arg absent. The flag could
+    # not have told us that; the node could.
+    node = sqlglot.parse_one("SELECT x ->> 'y'", dialect=dialect or None).selects[0]
+    return (
+        bool(getattr(d.parser_class, "JSON_ARROWS_REQUIRE_JSON_TYPE", False)),
+        "scalar_only" in node.args,
+    )
+
+
+def json_path_is_parsed(dialect: str) -> bool:
+    """Whether the string after `->` is PARSED as a path or kept whole.
+
+    PostgreSQL keeps it: `j -> '$.a.b'` is one key whose name is the entire
+    string. Everyone else splits it into root, key, key. Same operator, two
+    trees, so it is probed.
+    """
+    import sqlglot
+
+    e = sqlglot.parse_one("SELECT j -> '$.a.b'", dialect=dialect or None).selects[0]
+    return len(e.args["expression"].args["expressions"]) > 2
+
+
 def bracket_is_rewritten(dialect: str) -> bool:
     """Whether `a[1]` comes back as something other than a plain subscript.
 
@@ -983,6 +1020,15 @@ def main() -> int:
         "\t// with the unit inside the quantity; everyone else writes\n",
         "\t// INTERVAL \u20181\u2019 DAY. PROBED.\n",
         "\tIntervalUnitInsideString bool\n",
+        "\t// JSONArrowOnlyJSONTypes and JSONArrowScalarOnly are stamped on\n",
+        "\t// the node `->` and `->>` build. PROBED.\n",
+        "\tJSONArrowOnlyJSONTypes bool\n",
+        "\t// JSONArrowSetsScalarOnly says whether the arg is PRESENT on the\n",
+        "\t// node at all; PostgreSQL leaves it off and the others set false.\n",
+        "\tJSONArrowSetsScalarOnly bool\n",
+        "\t// JSONPathIsParsed: PostgreSQL keeps the string after `->` whole\n",
+        "\t// as a single key; everyone else parses it into path parts.\n",
+        "\tJSONPathIsParsed bool\n",
         "\tBracketIsRewritten bool\n",
         "\tWritesBooleanLiteral bool\n",
         "\tIsNotNullWrapsInNot bool\n",
@@ -1176,6 +1222,12 @@ def main() -> int:
             for w in reserved:
                 out.append(f"\t\t\t{gostr(w)}: true,\n")
             out.append("\t\t},\n")
+        _oj, _so = json_arrow_flags(name)
+        out.append(f"\t\tJSONArrowOnlyJSONTypes: {str(_oj).lower()},\n")
+        out.append(f"\t\tJSONArrowSetsScalarOnly: {str(_so).lower()},\n")
+        out.append(
+            f"\t\tJSONPathIsParsed: {str(json_path_is_parsed(name)).lower()},\n"
+        )
         out.append(
             f"\t\tIntervalUnitInsideString: {str(interval_unit_inside_string(name, exp)).lower()},\n"
         )

@@ -1,0 +1,117 @@
+package sqlglot
+
+import (
+	"strconv"
+	"strings"
+)
+
+// parseJSONPath turns the string on the right of `->` into the JSONPath tree
+// the reference builds. Only the three parts the corpus actually contains are
+// supported -- root, key and subscript -- and anything else is refused rather
+// than approximated: wildcards, recursive descent, slices, unions, filters and
+// scripts all exist in sqlglot and none of them is here.
+//
+// The path always starts with a root, whether or not the string says `$`: the
+// reference canonicalises `'a'` to `'$.a'`, which is why a bare name still
+// produces two parts.
+func parseJSONPath(path string) (*Expression, error) {
+	parts := []*Expression{New("JSONPathRoot")}
+	i := 0
+	if strings.HasPrefix(path, "$") {
+		i = 1
+	}
+	for i < len(path) {
+		switch path[i] {
+		case '.':
+			if strings.HasPrefix(path[i:], "..") {
+				return nil, errUnsupportedJSONPath("recursive descent")
+			}
+			i++
+			key, next, err := readJSONPathKey(path, i)
+			if err != nil {
+				return nil, err
+			}
+			parts = append(parts, New("JSONPathKey", Arg{"this", key}))
+			i = next
+		case '[':
+			node, next, err := readJSONPathBracket(path, i+1)
+			if err != nil {
+				return nil, err
+			}
+			parts = append(parts, node)
+			i = next
+		default:
+			// A bare leading name, as in `'a'`.
+			key, next, err := readJSONPathKey(path, i)
+			if err != nil {
+				return nil, err
+			}
+			if next == i {
+				return nil, errUnsupportedJSONPath("path segment")
+			}
+			parts = append(parts, New("JSONPathKey", Arg{"this", key}))
+			i = next
+		}
+	}
+	return New("JSONPath", Arg{"expressions", parts}), nil
+}
+
+// readJSONPathKey reads a key: a double-quoted name, or a bare run up to the
+// next separator. A `*` is a wildcard, which is not supported.
+func readJSONPathKey(path string, i int) (string, int, error) {
+	if i < len(path) && path[i] == '"' {
+		end := strings.IndexByte(path[i+1:], '"')
+		if end < 0 {
+			return "", 0, errUnsupportedJSONPath("unterminated quoted key")
+		}
+		return path[i+1 : i+1+end], i + end + 2, nil
+	}
+	start := i
+	for i < len(path) && path[i] != '.' && path[i] != '[' {
+		switch {
+		case path[i] == '*' || path[i] == '?' || path[i] == '(' || path[i] == '@':
+			return "", 0, errUnsupportedJSONPath("path expression")
+		case !isJSONPathVarByte(path[i]):
+			return "", 0, errNotAJSONPath
+		}
+		i++
+	}
+	return path[start:i], i, nil
+}
+
+func readJSONPathBracket(path string, i int) (*Expression, int, error) {
+	end := strings.IndexByte(path[i:], ']')
+	if end < 0 {
+		return nil, 0, errUnsupportedJSONPath("unclosed subscript")
+	}
+	body := path[i : i+end]
+	next := i + end + 1
+	if len(body) >= 2 && body[0] == '"' && body[len(body)-1] == '"' {
+		return New("JSONPathKey", Arg{"this", body[1 : len(body)-1]}), next, nil
+	}
+	n, err := strconv.Atoi(body)
+	if err != nil {
+		// Slices, unions, wildcards and filters all land here.
+		return nil, 0, errUnsupportedJSONPath("subscript " + body)
+	}
+	return New("JSONPathSubscript", Arg{"this", n}), next, nil
+}
+
+func errUnsupportedJSONPath(what string) error {
+	return &UnsupportedError{Construct: "JSON path: " + what}
+}
+
+// errNotAJSONPath means the string is not a path at all. The reference's
+// tokenizer fails on it and to_json_path hands the original literal back
+// untouched, so `'/duck/0'` stays a string rather than becoming a path or a
+// refusal. That is a different outcome from a path this port cannot READ,
+// which stays a refusal.
+var errNotAJSONPath = &UnsupportedError{Construct: "not a JSON path"}
+
+// isJSONPathVarByte reports whether a byte can appear in a bare key. The
+// reference tokenizes anything else as its own token and then has nowhere to
+// put it -- which is how `/duck/0` and `en-US` end up as plain literals.
+func isJSONPathVarByte(b byte) bool {
+	return b == '_' || b == ' ' ||
+		(b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9')
+}
