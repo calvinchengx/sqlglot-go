@@ -172,9 +172,7 @@ func TestUnsupportedIsAGapNotAGuess(t *testing.T) {
 	// something the engine will not run.
 	for _, sql := range []string{
 		"DELETE FROM t",
-		"SELECT COUNT(*)",
-		"WITH c AS (SELECT 1) SELECT * FROM c",
-		"SELECT 1 UNION SELECT 2",
+		"SELECT * FROM a CROSS APPLY f(1)",
 	} {
 		tree, err := ParseOne(sql, "")
 		if err == nil {

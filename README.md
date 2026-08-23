@@ -28,8 +28,8 @@ it is deliberately a different question from the one below.
 <!-- service:start -->
 | Category | Parsed | Of |
 |---|---|---|
-| `must_parse` | 75 | 105 |
-| `must_parse_to_refuse` | 12 | 39 |
+| `must_parse` | 103 | 105 |
+| `must_parse_to_refuse` | 14 | 39 |
 <!-- service:end -->
 
 `must_parse` is SQL the guard permits: a gap there is a question the agent
@@ -45,10 +45,10 @@ Regenerate with `make service`; nothing in it is authored here.
 <!-- coverage:start -->
 | Dialect | Tokens | Trees matched | Of | Unparsed | Mismatched |
 |---|---|---|---|---|---|
-| neutral | 997/997 | 331 | 997 | 666 | 0 |
-| tsql | 233/233 | 33 | 233 | 200 | 0 |
-| postgres | 398/398 | 58 | 398 | 340 | 0 |
-| duckdb | 392/392 | 100 | 392 | 292 | 0 |
+| neutral | 997/997 | 374 | 997 | 623 | 0 |
+| tsql | 233/233 | 42 | 233 | 191 | 0 |
+| postgres | 398/398 | 63 | 398 | 335 | 0 |
+| duckdb | 392/392 | 105 | 392 | 287 | 0 |
 | databricks | 151/151 | 31 | 151 | 120 | 0 |
 <!-- coverage:end -->
 

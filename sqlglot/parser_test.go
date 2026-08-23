@@ -104,7 +104,6 @@ func TestClauseOrderFollowsTheSource(t *testing.T) {
 func TestRefusals(t *testing.T) {
 	for _, c := range []struct{ name, sql, dialect string }{
 		{"a statement that is not a SELECT", "DELETE FROM t", ""},
-		{"function with a builder of its own", "SELECT COUNT(*)", ""},
 		{"function with a custom argument shape", "SELECT TIMESTAMP_TRUNC(t, MONTH)", ""},
 		{"no-paren function named, not tokenized", "CURDATE", "databricks"},
 		{"DISTINCT inside a call", "SELECT f(DISTINCT a)", ""},
@@ -144,8 +143,6 @@ func TestRefusals(t *testing.T) {
 		{"unclosed subquery", "SELECT 1 FROM (SELECT 1", ""},
 		{"assignment", "SELECT 1 FROM t WHERE a := 1", ""},
 		{"COLLATE", "SELECT a COLLATE utf8 FROM t", ""},
-		{"CTE", "WITH c AS (SELECT 1) SELECT * FROM c", ""},
-		{"set operation", "SELECT 1 UNION SELECT 2", ""},
 		{"SELECT ALL", "SELECT ALL a FROM t", ""},
 		{"DISTINCT ON", "SELECT DISTINCT ON (a) a FROM t", ""},
 		{"hint", "SELECT /*+ x */ 1 FROM t", ""},
@@ -179,6 +176,19 @@ func TestRefusals(t *testing.T) {
 		{"dangling JOIN", "SELECT 1 FROM a JOIN", ""},
 		{"dangling ON", "SELECT 1 FROM a JOIN b ON", ""},
 		{"dangling comma join", "SELECT 1 FROM a,", ""},
+		{"recursive CTE", "WITH RECURSIVE a AS (SELECT 1) SELECT 2", ""},
+		{"CTE with a column list", "WITH a (x) AS (SELECT 1) SELECT 2", ""},
+		{"CTE without AS", "WITH a (SELECT 1) SELECT 2", ""},
+		{"CTE without a query", "WITH a AS SELECT 1", ""},
+		{"unclosed CTE", "WITH a AS (SELECT 1 SELECT 2", ""},
+		{"set operation over a value", "SELECT 1 UNION 2", ""},
+		{"UNION BY NAME", "SELECT 1 UNION BY NAME SELECT 2", "duckdb"},
+		{"TOP without a count", "SELECT TOP a FROM t", "tsql"},
+		{"IN over a subquery in parentheses", "a IN ((SELECT 1))", ""},
+		{"a call named by a word that cannot name one", "SELECT asc(1)", ""},
+		{"unclosed scalar subquery", "SELECT (SELECT 1", ""},
+		{"a scalar subquery that does not parse", "SELECT (SELECT)", ""},
+		{"CTE named by nothing", "WITH AS (SELECT 1) SELECT 2", ""},
 		{"dangling subquery alias", "SELECT 1 FROM (SELECT 1) AS", ""},
 		{"over-qualified star", "SELECT a.b.c.d.*", ""},
 	} {
@@ -425,5 +435,117 @@ func TestCasts(t *testing.T) {
 func TestNoParenFunctions(t *testing.T) {
 	if got := classes(parse(t, "CURRENT_DATE", "duckdb")); got != "CurrentDate" {
 		t.Errorf("CURRENT_DATE parsed as %s", got)
+	}
+}
+
+func TestTopIsARowLimit(t *testing.T) {
+	tree := parse(t, "SELECT TOP 10 a FROM t", "tsql")
+	limit, _ := tree.Args["limit"].(*Expression)
+	if limit == nil || limit.Class != "Limit" {
+		t.Fatalf("TOP did not produce a Limit: %v", tree.Args["limit"])
+	}
+	if got := limit.Args["expression"].(*Expression).Name(); got != "10" {
+		t.Errorf("TOP 10 recorded %q", got)
+	}
+	// The guard has to SEE a percentage to say that a proportion is not a row
+	// ceiling. Refusing to parse it would refuse the statement for the wrong
+	// reason, and the conformance suite checks the reason.
+	pct := parse(t, "SELECT TOP 100 PERCENT a FROM t", "tsql")
+	opts, _ := pct.Args["limit"].(*Expression).Args["limit_options"].(*Expression)
+	if opts == nil || opts.Args["percent"] != true {
+		t.Errorf("TOP 100 PERCENT did not record the percentage: %v", opts)
+	}
+}
+
+func TestCommonTableExpressions(t *testing.T) {
+	tree := parse(t, "WITH x AS (SELECT a FROM t) SELECT * FROM x", "")
+	with, _ := tree.Args["with_"].(*Expression)
+	if with == nil || with.Class != "With" {
+		t.Fatalf("no WITH clause on the query: %v", tree.Args["with_"])
+	}
+	if n := len(with.Args["expressions"].([]*Expression)); n != 1 {
+		t.Errorf("%d CTEs, want 1", n)
+	}
+	// The guard walks the tree for table references; the one inside the CTE
+	// has to be reachable or a CTE would hide a table from it.
+	names := []string{}
+	for _, tbl := range tree.FindAll("Table") {
+		names = append(names, tbl.Name())
+	}
+	if strings.Join(names, ",") != "x,t" {
+		t.Errorf("tables reachable from the query: %v, want both x and t", names)
+	}
+
+	if n := len(parse(t, "WITH a AS (SELECT 1), b AS (SELECT 2) SELECT 3", "").
+		Args["with_"].(*Expression).Args["expressions"].([]*Expression)); n != 2 {
+		t.Errorf("%d CTEs, want 2", n)
+	}
+}
+
+func TestSetOperations(t *testing.T) {
+	for _, c := range []struct {
+		name, sql, class string
+		distinct         bool
+	}{
+		{"union", "SELECT 1 UNION SELECT 2", "Union", true},
+		{"union all", "SELECT 1 UNION ALL SELECT 2", "Union", false},
+		{"except", "SELECT 1 EXCEPT SELECT 2", "Except", true},
+		{"intersect", "SELECT 1 INTERSECT SELECT 2", "Intersect", true},
+		{"union distinct", "SELECT 1 UNION DISTINCT SELECT 2", "Union", true},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			tree := parse(t, c.sql, "")
+			if tree.Class != c.class {
+				t.Errorf("ParseOne(%q) = %s, want %s", c.sql, tree.Class, c.class)
+			}
+			if tree.Args["distinct"] != c.distinct {
+				t.Errorf("distinct = %v, want %v", tree.Args["distinct"], c.distinct)
+			}
+		})
+	}
+
+	// A trailing LIMIT belongs to the union, not to the query on its right.
+	u := parse(t, "SELECT x FROM t1 UNION ALL SELECT x FROM t2 LIMIT 1", "")
+	if u.Args["limit"] == nil {
+		t.Error("the union did not take the trailing LIMIT")
+	}
+	if right := u.Args["expression"].(*Expression); right.Args["limit"] != nil {
+		t.Error("the right-hand query kept the LIMIT")
+	}
+
+	// A WITH clause in front of a set operation belongs to the whole thing.
+	w := parse(t, "WITH a AS (SELECT 1) SELECT 1 UNION SELECT 2", "")
+	if w.Class != "Union" || w.Args["with_"] == nil {
+		t.Errorf("WITH before a union landed on %s (with_=%v)", w.Class, w.Args["with_"])
+	}
+}
+
+func TestScalarSubquery(t *testing.T) {
+	tree := parse(t, "SELECT (SELECT 1) AS x", "")
+	if got := classes(tree); got != "Select Alias Subquery Select Literal Identifier" {
+		t.Errorf("got %s", got)
+	}
+}
+
+// A name after a dot is a name, even when the word is otherwise a value.
+func TestKeywordAfterADot(t *testing.T) {
+	for _, sql := range []string{"t.null", "t.true", "t.false"} {
+		tree := parse(t, sql, "")
+		if got := classes(tree); got != "Column Identifier Identifier" {
+			t.Errorf("ParseOne(%q) = %s", sql, got)
+		}
+	}
+}
+
+func TestCountKeepsItsFlag(t *testing.T) {
+	// COUNT is not a call named COUNT: the reference builds a Count that is
+	// always flagged big_int, whatever it was called with. The spec for that
+	// comes from running the reference's own builder, not from transcription.
+	c := parse(t, "COUNT(a)", "")
+	if c.Class != "Count" || c.Args["big_int"] != true {
+		t.Errorf("COUNT(a) = %s, big_int=%v", c.Class, c.Args["big_int"])
+	}
+	if c2 := parse(t, "COUNT(a, b)", ""); len(c2.Args["expressions"].([]*Expression)) != 1 {
+		t.Errorf("COUNT(a, b) did not collect its tail: %v", c2.Args["expressions"])
 	}
 }

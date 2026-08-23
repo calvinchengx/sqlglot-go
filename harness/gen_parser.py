@@ -44,48 +44,155 @@ def strset(name: str, names) -> str:
     return f"\t\t{name}: map[string]struct{{}}{{\n{body}\t\t}},\n"
 
 
-def default_built_functions(P, exp):
-    """Names the reference builds with the class's own from_arg_list.
+def probe_functions(P, exp):
+    """Work out what each function name builds, by asking the reference.
 
-    That builder maps positional arguments onto the class's declared argument
-    keys in order, which is a rule a port can follow exactly. The ~50 names
-    with a hand-written builder, and the ~30 with a dedicated parser, do
-    something else per name; those are reported so the port can refuse them
-    rather than approximate them.
+    A function name does not simply become a node of the same shape: COUNT
+    becomes a Count whose first argument is `this`, whose remaining arguments
+    collect into `expressions`, and which is always flagged `big_int`. About
+    fifty names have a builder written by hand like that, and transcribing
+    fifty lambdas is fifty chances to be subtly wrong.
+
+    So the builders are run instead, with placeholder arguments, and the node
+    they return is read back: each argument key is either one of the
+    placeholders (a positional argument), a list of them (a variadic tail), or
+    a constant the builder always sets. A name whose builder does anything
+    else -- wraps its arguments, inspects their contents, parses its own
+    syntax -- yields no spec and is refused by the port rather than guessed at.
+
+    The spec derived from three arguments is then checked against one and two,
+    so a builder that changes shape with its argument count is rejected too.
     """
+
+    def placeholders(n):
+        return [exp.column(f"__probe_{i}") for i in range(n)]
+
+    def describe(node, args):
+        """Map each of the node's args to a placeholder position or a constant."""
+        by_id = {id(a): i for i, a in enumerate(args)}
+        out = []
+        for key, value in node.args.items():
+            if id(value) in by_id:
+                out.append((key, {"index": by_id[id(value)]}))
+            elif isinstance(value, list):
+                indexes = [by_id.get(id(v)) for v in value]
+                if not value:
+                    # An empty tail is ambiguous from this probe alone; the
+                    # verification pass below settles it.
+                    out.append((key, {"varlen": len(args)}))
+                elif all(i is not None for i in indexes) and indexes == list(
+                    range(indexes[0], indexes[0] + len(indexes))
+                ):
+                    out.append((key, {"varlen": indexes[0]}))
+                else:
+                    return None
+            elif value is None or isinstance(value, (bool, str, int)):
+                out.append((key, {"const": value}))
+            else:
+                return None
+        return out
+
+    def rebuild(spec, args):
+        out = {}
+        for key, how in spec:
+            if "index" in how:
+                out[key] = args[how["index"]] if how["index"] < len(args) else None
+            elif "varlen" in how:
+                out[key] = args[how["varlen"] :]
+            else:
+                out[key] = how["const"]
+        return out
+
+    def same(built, node, args):
+        # A key set to None is indistinguishable from an absent one: the
+        # reference's zip simply stops, and neither form dumps anything. So
+        # compare only the keys that actually carry a value.
+        def carried(d):
+            return [(k, v) for k, v in d.items() if v is not None and v != []]
+
+        if [k for k, _ in carried(built)] != [k for k, _ in carried(node.args)]:
+            return False
+        for key, value in carried(built):
+            actual = node.args[key]
+            if isinstance(value, list) or isinstance(actual, list):
+                if not isinstance(value, list) or not isinstance(actual, list):
+                    return False
+                if [id(v) for v in value] != [id(v) for v in actual]:
+                    return False
+            elif value is None or isinstance(value, (bool, str, int)):
+                if actual is not value and actual != value:
+                    return False
+            elif value is not actual:
+                return False
+        return True
+
     out = {}
     for name, builder in P.FUNCTIONS.items():
-        cls = getattr(builder, "__self__", None)
-        if cls is None:
-            continue
-        own = getattr(cls, "from_arg_list", None)
-        if own is None or own.__func__ is not builder.__func__:
-            continue
-        # The builder must be Func's own, not an override inherited from an
-        # intermediate base -- some of those reinterpret an argument (a date
-        # part becomes a Var, not a Column) and a positional mapping would
-        # quietly produce the wrong node.
-        if own.__func__ is not exp.Func.from_arg_list.__func__:
-            continue
-        # A class with its own __init__ reinterprets what it was handed --
-        # TimeUnit turns a date part into a Var rather than leaving the Column
-        # the argument parser produced. Positional mapping alone would be wrong.
-        if cls.__init__ is not exp.Expr.__init__:
-            continue
         if name in P.FUNCTION_PARSERS:
             continue
-        out[name] = (cls.__name__, list(cls.arg_types), bool(cls.is_var_len_args))
+        # Probe with as many arguments as the builder will take: a key beyond
+        # the widest probe would be invisible, and the function would be built
+        # missing it. Twelve covers the widest signature in the reference.
+        node = None
+        args: list = []
+        for width in range(12, -1, -1):
+            args = placeholders(width)
+            try:
+                node = builder(list(args))
+            except Exception:  # noqa: BLE001 -- too many arguments for this name; try fewer
+                node = None
+                continue
+            break
+        if node is None:
+            continue
+        if not isinstance(node, exp.Expr):
+            continue
+        spec = describe(node, args)
+        if spec is None:
+            continue
+        # The same spec must explain a call with fewer arguments.
+        ok = True
+        for n in range(len(args)):
+            fewer = placeholders(n)
+            try:
+                other = builder(list(fewer))
+            except Exception:  # noqa: BLE001 -- fewer arguments may be invalid for this name
+                continue
+            if not isinstance(other, exp.Expr) or other.__class__ is not node.__class__:
+                ok = False
+                break
+            if not same(rebuild(spec, fewer), other, fewer):
+                ok = False
+                break
+        if ok:
+            out[name] = (node.__class__.__name__, spec)
     return out
+
+
+def goconst(v) -> str:
+    if v is None:
+        return "nil"
+    if isinstance(v, bool):
+        return str(v).lower()
+    if isinstance(v, int):
+        return str(v)
+    return gostr(v)
 
 
 def funcmap(name: str, funcs) -> str:
     lines = []
     for fn in sorted(funcs):
-        cls, keys, var_len = funcs[fn]
-        arg_keys = ", ".join(gostr(k) for k in keys)
-        lines.append(
-            f"\t\t\t{gostr(fn)}: {{{gostr(cls)}, []string{{{arg_keys}}}, {str(var_len).lower()}}},\n"
-        )
+        cls, spec = funcs[fn]
+        parts = []
+        for key, how in spec:
+            if "index" in how:
+                parts.append(f"{{{gostr(key)}, {how['index']}, false, nil}}")
+            elif "varlen" in how:
+                parts.append(f"{{{gostr(key)}, {how['varlen']}, true, nil}}")
+            else:
+                parts.append(f"{{{gostr(key)}, -1, false, {goconst(how['const'])}}}")
+        body = ", ".join(parts)
+        lines.append(f"\t\t\t{gostr(fn)}: {{{gostr(cls)}, []FuncArg{{{body}}}}},\n")
     return f"\t\t{name}: map[string]FuncSpec{{\n{''.join(lines)}\t\t}},\n"
 
 
@@ -133,10 +240,10 @@ def main() -> int:
         "\t// NoParenFunctionClasses is the node each of those builds, with no\n",
         "\t// arguments at all.\n",
         "\tNoParenFunctionClasses map[TokenType]string\n",
-        "\t// Functions are the named functions whose node the reference builds by\n",
-        "\t// mapping positional arguments onto declared argument keys in order.\n",
-        "\t// A name in NamedFunctions but absent here has a hand-written builder\n",
-        "\t// of its own and is refused rather than approximated.\n",
+        "\t// Functions is what each named function builds, worked out by running\n",
+        "\t// the reference's own builder. A name in NamedFunctions but absent here\n",
+        "\t// builds something no fixed mapping describes, and is refused rather\n",
+        "\t// than approximated.\n",
         "\tFunctions map[string]FuncSpec\n",
         "\t// StatementTokens begin a statement that is not a query -- CREATE,\n",
         "\t// DELETE, INSERT and the rest. Anything else at the top level is\n",
@@ -163,6 +270,12 @@ def main() -> int:
         "\t// what nulls_first records on an Ordered node. It differs per\n",
         "\t// dialect and is not derivable from ASC or DESC alone.\n",
         "\tNullOrdering string\n",
+        "\t// A trailing ORDER BY, LIMIT or OFFSET after a set operation belongs to\n",
+        "\t// the set operation, not to the query on its right. The reference\n",
+        "\t// parses it onto the right-hand query and then moves it up; which of\n",
+        "\t// the three move differs per dialect.\n",
+        "\tModifiersAttachedToSetOp bool\n",
+        "\tSetOpModifiers           []string\n",
         "\t// The precedence chain, level by level, token to node class. These are\n",
         "\t// per dialect and not interchangeable: DuckDB reads ^ as Pow where the\n",
         "\t// default reads it as BitwiseXor.\n",
@@ -190,13 +303,20 @@ def main() -> int:
         "\t// which refuses them rather than inventing one.\n",
         "\tTypeTokens map[TokenType]string\n",
         "}\n\n",
-        "// FuncSpec is how one function name becomes a node: the class, the\n",
-        "// argument keys positional arguments fill in order, and whether the last\n",
-        "// key collects everything that is left.\n",
+        "// FuncSpec is how one function name becomes a node: the class, and what\n",
+        "// fills each of its argument keys.\n",
         "type FuncSpec struct {\n",
-        "\tClass  string\n",
-        "\tKeys   []string\n",
+        "\tClass string\n",
+        "\tArgs  []FuncArg\n",
+        "}\n\n",
+        "// FuncArg fills one key: a positional argument, a variadic tail that\n",
+        "// collects everything from Index onward, or a constant the builder always\n",
+        "// sets -- COUNT is always big_int, whatever it was called with.\n",
+        "type FuncArg struct {\n",
+        "\tKey    string\n",
+        "\tIndex  int\n",
         "\tVarLen bool\n",
+        "\tConst  any\n",
         "}\n\n",
         "var parserTables = map[string]*ParserTables{\n",
     ]
@@ -209,7 +329,7 @@ def main() -> int:
         out.append(strset("NamedFunctions", named))
         out.append(ttset("NoParenFunctions", P.NO_PAREN_FUNCTIONS))
         out.append(opmap("NoParenFunctionClasses", P.NO_PAREN_FUNCTIONS))
-        out.append(funcmap("Functions", default_built_functions(P, exp)))
+        out.append(funcmap("Functions", probe_functions(P, exp)))
         tk = Dialect.get_or_raise(name or None).tokenizer_class
         out.append(ttset("StatementTokens", set(P.STATEMENT_PARSERS) | set(tk.COMMANDS)))
         out.append(ttset("FuncTokens", P.FUNC_TOKENS))
@@ -224,6 +344,11 @@ def main() -> int:
         ):
             out.append(f"\t\t{field}: {str(bool(value)).lower()},\n")
         out.append(f"\t\tNullOrdering: {gostr(d.NULL_ORDERING)},\n")
+        out.append(
+            f"\t\tModifiersAttachedToSetOp: {str(bool(P.MODIFIERS_ATTACHED_TO_SET_OP)).lower()},\n"
+        )
+        mods = "".join(f"{gostr(m)}, " for m in sorted(P.SET_OP_MODIFIERS))
+        out.append(f"\t\tSetOpModifiers: []string{{{mods}}},\n")
         for field, table in (
             ("Disjunction", P.DISJUNCTION),
             ("Conjunction", P.CONJUNCTION),

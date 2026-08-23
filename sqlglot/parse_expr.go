@@ -188,6 +188,11 @@ func (p *parser) parseIn(this *Expression) (*Expression, error) {
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed IN list")
 	}
+	// A single query inside the parentheses is an IN over a subquery, which
+	// the reference records under `query` rather than in the expression list.
+	if len(items) == 1 && items[0].Class == "Subquery" {
+		return nil, p.unsupported("IN with a subquery")
+	}
 	return New("In", Arg{"this", this}, Arg{"expressions", items}), nil
 }
 
@@ -392,6 +397,9 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	case TokINTERVAL:
 		return nil, p.unsupported("INTERVAL")
 	case TokL_PAREN:
+		if n := p.next(); n != nil && (n.Type == TokSELECT || n.Type == TokWITH) {
+			return p.parseScalarSubquery()
+		}
 		p.advance()
 		inner, err := p.parseExpression()
 		if err != nil {
@@ -406,7 +414,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		if _, noParen := p.tables.NoParenFunctionNames[strings.ToUpper(c.Text)]; noParen && c.Type != TokCASE {
 			return nil, p.unsupported("no-paren function " + strings.ToUpper(c.Text))
 		}
-		if n := p.peek(1); n != nil && n.Type == TokL_PAREN {
+		if n := p.next(); n != nil && n.Type == TokL_PAREN {
 			if _, canName := p.tables.FuncTokens[c.Type]; !canName {
 				return nil, p.unsupported("call named by a token that cannot name one")
 			}
@@ -511,6 +519,22 @@ func (p *parser) parseDataType() (*Expression, error) {
 	return dt, nil
 }
 
+// parseScalarSubquery reads a parenthesised query used where a value goes.
+// It keeps a `pivots` slot the FROM-clause form does not, which is the
+// reference's shape rather than a simplification of it.
+func (p *parser) parseScalarSubquery() (*Expression, error) {
+	p.advance() // the opening parenthesis
+	inner, err := p.parseQuery()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed subquery")
+	}
+	return New("Subquery", Arg{"this", inner}, Arg{"pivots", nil},
+		Arg{"alias", nil}, Arg{"sample", nil}), nil
+}
+
 // parseCase reads a CASE expression, in both its forms: with a subject before
 // the first WHEN, and without.
 func (p *parser) parseCase() (*Expression, error) {
@@ -607,34 +631,32 @@ func (p *parser) parseFunction() (*Expression, error) {
 	return New("Anonymous", Arg{"this", name}, Arg{"expressions", args}), nil
 }
 
-// buildFunction maps positional arguments onto a function node's declared
-// argument keys, which is what the reference's Func.from_arg_list does: keys
-// and arguments are zipped, so a call with fewer arguments than keys simply
-// leaves the rest unset. With a variadic last key, everything past the fixed
-// keys collects into it.
+// buildFunction fills a function node's arguments from the call's, following
+// the spec the reference's own builder produced: a positional argument, a
+// variadic tail, or a constant the builder always sets -- COUNT is a Count
+// flagged big_int whatever it was called with.
+//
+// A call with fewer arguments than keys leaves the rest unset, as the
+// reference's zip does.
 func buildFunction(spec FuncSpec, args []*Expression) *Expression {
 	node := New(spec.Class)
-	keys := spec.Keys
-	if spec.VarLen {
-		fixed := keys[:len(keys)-1]
-		for i, k := range fixed {
-			if i >= len(args) {
-				break
+	for _, a := range spec.Args {
+		switch {
+		case a.VarLen:
+			rest := []*Expression{}
+			if a.Index < len(args) {
+				rest = args[a.Index:]
 			}
-			node.Set(k, args[i])
+			node.Set(a.Key, rest)
+		case a.Index >= 0:
+			if a.Index < len(args) {
+				node.Set(a.Key, args[a.Index])
+			} else {
+				node.Set(a.Key, nil)
+			}
+		default:
+			node.Set(a.Key, a.Const)
 		}
-		rest := []*Expression{}
-		if len(args) > len(fixed) {
-			rest = args[len(fixed):]
-		}
-		node.Set(keys[len(keys)-1], rest)
-		return node
-	}
-	for i, k := range keys {
-		if i >= len(args) {
-			break
-		}
-		node.Set(k, args[i])
 	}
 	return node
 }
@@ -653,6 +675,14 @@ func (p *parser) parseColumn() (*Expression, error) {
 		if p.match(TokSTAR) {
 			star = true
 			break
+		}
+		// After a dot, `null` and `true` are names, not values -- and the
+		// reference builds a bare Identifier for them, with no `quoted` arg
+		// at all rather than one set false.
+		if c := p.curr(); c != nil && (c.Type == TokNULL || c.Type == TokTRUE || c.Type == TokFALSE) {
+			p.advance()
+			parts = append(parts, New("Identifier", Arg{"this", c.Text}))
+			continue
 		}
 		id, err := p.parseIdentifier()
 		if err != nil {

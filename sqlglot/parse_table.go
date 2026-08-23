@@ -155,10 +155,10 @@ func (p *parser) parseTable() (*Expression, error) {
 // guessing between them is not worth the statements it would buy.
 func (p *parser) parseSubqueryTable() (*Expression, error) {
 	p.advance() // the opening parenthesis
-	if !p.at(TokSELECT) {
+	if !p.at(TokSELECT) && !p.at(TokWITH) {
 		return nil, p.unsupported("parenthesised table")
 	}
-	inner, err := p.parseSelect()
+	inner, err := p.parseQuery()
 	if err != nil {
 		return nil, err
 	}

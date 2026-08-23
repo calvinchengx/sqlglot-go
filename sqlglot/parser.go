@@ -46,8 +46,9 @@ func (p *parser) curr() *Token {
 	return nil
 }
 
-func (p *parser) peek(n int) *Token {
-	if i := p.index + n; i >= 0 && i < len(p.tokens) {
+// next is the token after the current one.
+func (p *parser) next() *Token {
+	if i := p.index + 1; i < len(p.tokens) {
 		return &p.tokens[i]
 	}
 	return nil
@@ -76,7 +77,7 @@ func (p *parser) atAny(tts ...TokenType) bool {
 // match consumes the current token when it has this type.
 // atPair reports whether the current and next tokens have these types.
 func (p *parser) atPair(a, b TokenType) bool {
-	n := p.peek(1)
+	n := p.next()
 	return p.at(a) && n != nil && n.Type == b
 }
 
@@ -118,8 +119,8 @@ func (p *parser) parseOne() (*Expression, error) {
 // bare expression, as in the reference -- most of sqlglot's own fixture corpus
 // is expressions rather than whole statements.
 func (p *parser) parseStatement() (*Expression, error) {
-	if p.at(TokSELECT) {
-		return p.parseSelect()
+	if p.at(TokSELECT) || p.at(TokWITH) {
+		return p.parseQuery()
 	}
 	if c := p.curr(); c != nil {
 		if _, isStatement := p.tables.StatementTokens[c.Type]; isStatement {

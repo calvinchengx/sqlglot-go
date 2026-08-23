@@ -117,3 +117,31 @@ func TestDoublePipeIsNotAlwaysConcatenation(t *testing.T) {
 		t.Errorf("with || not a concatenation the statement should not parse, got %s", tree.Class)
 	}
 }
+
+// Not every dialect lifts a trailing LIMIT onto a set operation, and all five
+// configured here do -- so the branch that leaves it where it was parsed would
+// otherwise never run.
+func TestSetOpModifiersAreNotAlwaysLifted(t *testing.T) {
+	base, ok := ConfigFor("")
+	if !ok {
+		t.Fatal("no neutral config")
+	}
+	tables := *base.Tables
+	tables.ModifiersAttachedToSetOp = false
+
+	toks, err := Tokenize("SELECT x FROM t1 UNION ALL SELECT x FROM t2 LIMIT 1", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := &parser{tokens: toks, cfg: base, tables: &tables}
+	tree, err := p.parseOne()
+	if err != nil {
+		t.Fatalf("parse: %v", err)
+	}
+	if tree.Args["limit"] != nil {
+		t.Error("the union took the LIMIT even though this dialect does not lift it")
+	}
+	if right := tree.Args["expression"].(*Expression); right.Args["limit"] == nil {
+		t.Error("the LIMIT should have stayed on the query it was written after")
+	}
+}
