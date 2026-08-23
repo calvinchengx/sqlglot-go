@@ -1,0 +1,114 @@
+{
+ "dialect": "",
+ "sql": "CASE WHEN (x > 1) THEN 1 ELSE 0 END",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.functions.Case"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 0,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.GT",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expression",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "true",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "default",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

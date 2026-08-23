@@ -1,0 +1,255 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT * FROM t PIVOT(FIRST(t) AS t, FOR quarter IN ('Q1', 'Q2'))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Pivot",
+   "i": 3,
+   "k": "pivots"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.First",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "alias",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.In",
+   "i": 7,
+   "k": "fields"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 41
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "quarter"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expressions",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "Q1"
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expressions",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "Q2"
+  },
+  {
+   "i": 25,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 7,
+   "k": "unpivot",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "default_on_null",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "columns"
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "Q1_t"
+  },
+  {
+   "i": 30,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "columns"
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "Q2_t"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "identify_pivot_strings",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "prefixed_pivot_columns",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "pivot_column_naming",
+   "v": "agg_name_if_aliased_or_multiple"
+  }
+ ]
+}

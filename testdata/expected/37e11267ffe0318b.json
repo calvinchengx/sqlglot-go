@@ -1,0 +1,168 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT col FROM t WHERE JSON_EXTRACT_STRING(col, '$.id') NOT IN ('b')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.Not",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.In",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.json.JSONExtractScalar",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 13,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 13,
+   "k": "scalar_only",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 12,
+   "k": "expressions",
+   "m": {
+    "col": 68,
+    "end": 67,
+    "line": 1,
+    "start": 65
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 23,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

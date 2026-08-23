@@ -1,0 +1,103 @@
+{
+ "dialect": "databricks",
+ "sql": "ANALYZE TABLE ctlg.db.tbl COMPUTE DELTA STATISTICS NOSCAN",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Analyze"
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "tables"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "tbl"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "db",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "db"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "catalog",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "ctlg"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.AnalyzeStatistics",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "i": 12,
+   "k": "kind",
+   "v": "COMPUTE"
+  },
+  {
+   "i": 12,
+   "k": "option",
+   "v": "DELTA"
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "NOSCAN"
+  }
+ ]
+}

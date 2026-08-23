@@ -1,0 +1,47 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT LENGTH(foo)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.Length",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

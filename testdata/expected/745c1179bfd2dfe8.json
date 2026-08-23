@@ -1,0 +1,266 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT COALESCE(*COLUMNS(['a', 'b', 'c'])) AS result FROM (SELECT NULL AS a, 42 AS b, TRUE AS c)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Coalesce",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Columns",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "expressions",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "expressions",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "expressions",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 3,
+   "k": "unpack",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "result"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 20,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "alias",
+   "m": {
+    "col": 75,
+    "end": 74,
+    "line": 1,
+    "start": 74
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 20,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 79,
+    "end": 78,
+    "line": 1,
+    "start": 77
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "42"
+  },
+  {
+   "i": 27,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "alias",
+   "m": {
+    "col": 84,
+    "end": 83,
+    "line": 1,
+    "start": 83
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 30,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 20,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 33,
+   "k": "this"
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "alias",
+   "m": {
+    "col": 95,
+    "end": 94,
+    "line": 1,
+    "start": 94
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 36,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

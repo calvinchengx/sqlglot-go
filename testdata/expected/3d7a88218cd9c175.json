@@ -1,0 +1,126 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT JSON_EXTRACT_PATH_TEXT(x, k1, 'k2') FROM t",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExtractScalar",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "k1"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "k2"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

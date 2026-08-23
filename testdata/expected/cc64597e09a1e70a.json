@@ -1,0 +1,107 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT * FROM ROWS FROM (FUNC1(col1, col2))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 3,
+   "k": "rows_from"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "FUNC1"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "col1"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "col2"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

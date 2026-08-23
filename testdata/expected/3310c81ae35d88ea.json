@@ -1,0 +1,485 @@
+{
+ "dialect": "tsql",
+ "sql": "COPY INTO test_1 FROM 'path' WITH (FORMAT_NAME = test, FILE_TYPE = 'CSV', CREDENTIAL = (IDENTITY='Shared Access Signature', SECRET='token'), FIELDTERMINATOR = ';', ROWTERMINATOR = '0X0A', ENCODING = 'UTF8', DATEFORMAT = 'ymd', MAXERRORS = 10, ERRORFILE = 'errorsfolder', IDENTITY_INSERT = 'ON')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Copy"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 10
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "test_1"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.dml.Credentials",
+   "i": 0,
+   "k": "credentials"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "files",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "path"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "FORMAT_NAME"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 10,
+   "k": "expression"
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "FILE_TYPE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 15,
+   "k": "expression",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 67
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "CSV"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "CREDENTIAL"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 24,
+   "k": "this"
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "IDENTITY"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 24,
+   "k": "value",
+   "m": {
+    "col": 122,
+    "end": 121,
+    "line": 1,
+    "start": 97
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "Shared Access Signature"
+  },
+  {
+   "i": 27,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.SequenceProperties",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 31,
+   "k": "this"
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "SECRET"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 31,
+   "k": "value",
+   "m": {
+    "col": 138,
+    "end": 137,
+    "line": 1,
+    "start": 131
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "token"
+  },
+  {
+   "i": 34,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 37,
+   "k": "this"
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "FIELDTERMINATOR"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 37,
+   "k": "expression",
+   "m": {
+    "col": 162,
+    "end": 161,
+    "line": 1,
+    "start": 159
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": ";"
+  },
+  {
+   "i": 40,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 43,
+   "k": "this"
+  },
+  {
+   "i": 44,
+   "k": "this",
+   "v": "ROWTERMINATOR"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 43,
+   "k": "expression",
+   "m": {
+    "col": 186,
+    "end": 185,
+    "line": 1,
+    "start": 180
+   }
+  },
+  {
+   "i": 46,
+   "k": "this",
+   "v": "0X0A"
+  },
+  {
+   "i": 46,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 49,
+   "k": "this"
+  },
+  {
+   "i": 50,
+   "k": "this",
+   "v": "ENCODING"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 49,
+   "k": "expression",
+   "m": {
+    "col": 205,
+    "end": 204,
+    "line": 1,
+    "start": 199
+   }
+  },
+  {
+   "i": 52,
+   "k": "this",
+   "v": "UTF8"
+  },
+  {
+   "i": 52,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 55,
+   "k": "this"
+  },
+  {
+   "i": 56,
+   "k": "this",
+   "v": "DATEFORMAT"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 55,
+   "k": "expression",
+   "m": {
+    "col": 225,
+    "end": 224,
+    "line": 1,
+    "start": 220
+   }
+  },
+  {
+   "i": 58,
+   "k": "this",
+   "v": "ymd"
+  },
+  {
+   "i": 58,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 61,
+   "k": "this"
+  },
+  {
+   "i": 62,
+   "k": "this",
+   "v": "MAXERRORS"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 61,
+   "k": "expression",
+   "m": {
+    "col": 241,
+    "end": 240,
+    "line": 1,
+    "start": 239
+   }
+  },
+  {
+   "i": 64,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 64,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 67,
+   "k": "this"
+  },
+  {
+   "i": 68,
+   "k": "this",
+   "v": "ERRORFILE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 67,
+   "k": "expression",
+   "m": {
+    "col": 269,
+    "end": 268,
+    "line": 1,
+    "start": 255
+   }
+  },
+  {
+   "i": 70,
+   "k": "this",
+   "v": "errorsfolder"
+  },
+  {
+   "i": 70,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 73,
+   "k": "this"
+  },
+  {
+   "i": 74,
+   "k": "this",
+   "v": "IDENTITY_INSERT"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 73,
+   "k": "expression",
+   "m": {
+    "col": 293,
+    "end": 292,
+    "line": 1,
+    "start": 289
+   }
+  },
+  {
+   "i": 76,
+   "k": "this",
+   "v": "ON"
+  },
+  {
+   "i": 76,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

@@ -1,0 +1,62 @@
+{
+ "dialect": "duckdb",
+ "sql": "SUMMARIZE SELECT * FROM tbl",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Summarize"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 1,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "tbl"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "table",
+   "v": false
+  }
+ ]
+}

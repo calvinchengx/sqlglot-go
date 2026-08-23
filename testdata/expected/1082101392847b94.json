@@ -1,0 +1,89 @@
+{
+ "dialect": "",
+ "sql": "SELECT * FROM test LIMIT (SELECT 1)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.Limit",
+   "i": 0,
+   "k": "limit"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 2,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "expressions",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

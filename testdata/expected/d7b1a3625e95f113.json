@@ -1,0 +1,120 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT LIST_SORT(x, 'DESC', 'NULLS' || ' FIRST')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.array.SortArray",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "asc",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "DESC"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.DPipe",
+   "i": 1,
+   "k": "nulls_first"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "NULLS"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "expression",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": " FIRST"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 9,
+   "k": "safe",
+   "v": true
+  }
+ ]
+}

@@ -1,0 +1,88 @@
+{
+ "dialect": "postgres",
+ "sql": "'{\"a\":[1,2,3],\"b\":[4,5,6]}'::json#>>'{a,2}'",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.json.JSONBExtractScalar"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "JSON"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "{\"a\":[1,2,3],\"b\":[4,5,6]}"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 5,
+   "k": "this",
+   "v": "JSON"
+  },
+  {
+   "i": 5,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "{a,2}"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

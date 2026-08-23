@@ -1,0 +1,212 @@
+{
+ "dialect": "",
+ "sql": "REGEXP_REPLACE('new york', '(\\w)(\\w*)', x -> UPPER(x[1]) || LOWER(x[2]))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.string.RegexpReplace",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "new york"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "(\\w)(\\w*)"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Lambda",
+   "i": 0,
+   "k": "replacement"
+  },
+  {
+   "c": "sqlglot.expressions.core.DPipe",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.string.Upper",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Bracket",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 10,
+   "k": "expressions",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.string.Lower",
+   "i": 8,
+   "k": "expression",
+   "m": {
+    "col": 65,
+    "end": 64,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Bracket",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 18,
+   "k": "expressions",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 68
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 8,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "expressions",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 26,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

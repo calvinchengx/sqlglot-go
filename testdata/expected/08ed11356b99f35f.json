@@ -1,0 +1,218 @@
+{
+ "dialect": "tsql",
+ "sql": "SELECT x FROM @MyTableVar AS m JOIN Employee ON m.EmployeeID = Employee.EmployeeID",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "MyTableVar"
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 6,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "m"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 0,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "Employee"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 14,
+   "k": "on"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 50
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "EmployeeID"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "table",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "m"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 19,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "this",
+   "m": {
+    "col": 82,
+    "end": 81,
+    "line": 1,
+    "start": 72
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "EmployeeID"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "table",
+   "m": {
+    "col": 71,
+    "end": 70,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "Employee"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

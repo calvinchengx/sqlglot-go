@@ -1,0 +1,170 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT * FROM t WHERE some_column >= CURRENT_DATE + INTERVAL '1 day 1 hour' AND some_another_column IS TRUE",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.And",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.GTE",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "some_column"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 9,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentDate",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 14,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 75,
+    "end": 74,
+    "line": 1,
+    "start": 61
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "1 day 1 hour"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 8,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 20,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "this",
+   "m": {
+    "col": 99,
+    "end": 98,
+    "line": 1,
+    "start": 80
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "some_another_column"
+  },
+  {
+   "i": 22,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 20,
+   "k": "expression"
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": true
+  }
+ ]
+}

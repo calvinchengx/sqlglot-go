@@ -1,0 +1,578 @@
+{
+ "dialect": "postgres",
+ "sql": "CREATE TABLE products (product_no INT UNIQUE, name TEXT, price DECIMAL CHECK (price > 0), discounted_price DECIMAL CONSTRAINT positive_discount CHECK (discounted_price > 0), CHECK (product_no > 1), CONSTRAINT valid_discount CHECK (price > discounted_price))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "products"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "product_no"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 6,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.UniqueColumnConstraint",
+   "i": 13,
+   "k": "kind"
+  },
+  {
+   "i": 14,
+   "k": "nulls",
+   "v": false
+  },
+  {
+   "i": 14,
+   "k": "index_type",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "name"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 17,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 21,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 21,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "price"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 24,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 28,
+   "k": "this",
+   "v": "DECIMAL"
+  },
+  {
+   "i": 28,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 24,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.CheckColumnConstraint",
+   "i": 31,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.GT",
+   "i": 32,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 33,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "this",
+   "m": {
+    "col": 83,
+    "end": 82,
+    "line": 1,
+    "start": 78
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "price"
+  },
+  {
+   "i": 35,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 33,
+   "k": "expression",
+   "m": {
+    "col": 87,
+    "end": 86,
+    "line": 1,
+    "start": 86
+   }
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 38,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 32,
+   "k": "enforced",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 42,
+   "k": "this",
+   "m": {
+    "col": 106,
+    "end": 105,
+    "line": 1,
+    "start": 90
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "discounted_price"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 42,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 46,
+   "k": "this",
+   "v": "DECIMAL"
+  },
+  {
+   "i": 46,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 42,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 49,
+   "k": "this",
+   "m": {
+    "col": 143,
+    "end": 142,
+    "line": 1,
+    "start": 126
+   }
+  },
+  {
+   "i": 50,
+   "k": "this",
+   "v": "positive_discount"
+  },
+  {
+   "i": 50,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.constraints.CheckColumnConstraint",
+   "i": 49,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.GT",
+   "i": 53,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 54,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 55,
+   "k": "this",
+   "m": {
+    "col": 167,
+    "end": 166,
+    "line": 1,
+    "start": 151
+   }
+  },
+  {
+   "i": 56,
+   "k": "this",
+   "v": "discounted_price"
+  },
+  {
+   "i": 56,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 54,
+   "k": "expression",
+   "m": {
+    "col": 171,
+    "end": 170,
+    "line": 1,
+    "start": 170
+   }
+  },
+  {
+   "i": 59,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 59,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 53,
+   "k": "enforced",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.CheckColumnConstraint",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.GT",
+   "i": 63,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 64,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 65,
+   "k": "this",
+   "m": {
+    "col": 191,
+    "end": 190,
+    "line": 1,
+    "start": 181
+   }
+  },
+  {
+   "i": 66,
+   "k": "this",
+   "v": "product_no"
+  },
+  {
+   "i": 66,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 64,
+   "k": "expression",
+   "m": {
+    "col": 195,
+    "end": 194,
+    "line": 1,
+    "start": 194
+   }
+  },
+  {
+   "i": 69,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 69,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 63,
+   "k": "enforced",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.Constraint",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 73,
+   "k": "this",
+   "m": {
+    "col": 223,
+    "end": 222,
+    "line": 1,
+    "start": 209
+   }
+  },
+  {
+   "i": 74,
+   "k": "this",
+   "v": "valid_discount"
+  },
+  {
+   "i": 74,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.CheckColumnConstraint",
+   "i": 73,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.GT",
+   "i": 77,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 78,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 79,
+   "k": "this",
+   "m": {
+    "col": 236,
+    "end": 235,
+    "line": 1,
+    "start": 231
+   }
+  },
+  {
+   "i": 80,
+   "k": "this",
+   "v": "price"
+  },
+  {
+   "i": 80,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 78,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 83,
+   "k": "this",
+   "m": {
+    "col": 255,
+    "end": 254,
+    "line": 1,
+    "start": 239
+   }
+  },
+  {
+   "i": 84,
+   "k": "this",
+   "v": "discounted_price"
+  },
+  {
+   "i": 84,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 77,
+   "k": "enforced",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

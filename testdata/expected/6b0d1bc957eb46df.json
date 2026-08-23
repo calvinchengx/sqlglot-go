@@ -1,0 +1,19 @@
+{
+ "dialect": "tsql",
+ "sql": "DECLARE @MyTableVar TABLE (EmpID INT NOT NULL, PRIMARY KEY CLUSTERED (EmpID), UNIQUE NONCLUSTERED (EmpID), INDEX CustomNonClusteredIndex NONCLUSTERED (EmpID))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "DECLARE"
+  },
+  {
+   "i": 0,
+   "k": "expression",
+   "v": " @MyTableVar TABLE (EmpID INT NOT NULL, PRIMARY KEY CLUSTERED (EmpID), UNIQUE NONCLUSTERED (EmpID), INDEX CustomNonClusteredIndex NONCLUSTERED (EmpID))"
+  }
+ ]
+}

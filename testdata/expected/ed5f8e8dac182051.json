@@ -1,0 +1,135 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT ARRAY[1, 2, 3] <@ ARRAY[1, 2]",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.array.ArrayContainedBy",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 12,
+   "k": "expressions",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 12,
+   "k": "expressions",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,130 @@
+{
+ "dialect": "postgres",
+ "sql": "x::JSON -> 'duration' ->> -1",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.json.JSONExtractScalar"
+  },
+  {
+   "c": "sqlglot.expressions.json.JSONExtract",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "JSON"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 1,
+    "end": 0,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 7,
+   "k": "this",
+   "v": "JSON"
+  },
+  {
+   "i": 7,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "duration"
+  },
+  {
+   "i": 1,
+   "k": "only_json_types",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Neg",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

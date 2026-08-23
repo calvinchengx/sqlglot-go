@@ -1,0 +1,146 @@
+{
+ "dialect": "tsql",
+ "sql": "CREATE PROCEDURE foo WITH EXECUTE AS 'username' AS SELECT 1",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.StoredProcedure",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "PROCEDURE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Block",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Select",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "expressions",
+   "m": {
+    "col": 59,
+    "end": 58,
+    "line": 1,
+    "start": 58
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.WithProcedureOptions",
+   "i": 16,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.ExecuteAsProperty",
+   "i": 17,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "username"
+  },
+  {
+   "i": 19,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "begin",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

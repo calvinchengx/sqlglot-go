@@ -1,0 +1,265 @@
+{
+ "dialect": "duckdb",
+ "sql": "UNPIVOT monthly_sales ON jan, feb, mar, apr, may, jun INTO NAME month VALUE sales",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Pivot"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "monthly_sales"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "jan"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "feb"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "mar"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "apr"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "this",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "may"
+  },
+  {
+   "i": 22,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 50
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "jun"
+  },
+  {
+   "i": 26,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "using",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unpivot",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.UnpivotColumns",
+   "i": 0,
+   "k": "into"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 31,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 64
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "month"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 31,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 36,
+   "k": "this",
+   "m": {
+    "col": 81,
+    "end": 80,
+    "line": 1,
+    "start": 76
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "sales"
+  },
+  {
+   "i": 37,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

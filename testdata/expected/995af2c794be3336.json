@@ -1,0 +1,275 @@
+{
+ "dialect": "tsql",
+ "sql": "CREATE PROCEDURE foo @a INTEGER, @b INTEGER AS SELECT @a = SUM(bla) FROM baz AS bar",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.StoredProcedure",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 13,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 17,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 17,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "PROCEDURE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Block",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Select",
+   "i": 24,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 25,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 26,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 26,
+   "k": "expression",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 30,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 31,
+   "k": "this",
+   "m": {
+    "col": 66,
+    "end": 65,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "bla"
+  },
+  {
+   "i": 32,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 25,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 35,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 36,
+   "k": "this",
+   "m": {
+    "col": 76,
+    "end": 75,
+    "line": 1,
+    "start": 73
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "baz"
+  },
+  {
+   "i": 37,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 36,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 40,
+   "k": "this",
+   "m": {
+    "col": 83,
+    "end": 82,
+    "line": 1,
+    "start": 80
+   }
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "bar"
+  },
+  {
+   "i": 41,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "begin",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,98 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT * FROM t LIMIT 10 PERCENT",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.Limit",
+   "i": 0,
+   "k": "limit"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.LimitOptions",
+   "i": 2,
+   "k": "limit_options"
+  },
+  {
+   "i": 6,
+   "k": "percent",
+   "v": true
+  },
+  {
+   "i": 6,
+   "k": "rows",
+   "v": false
+  },
+  {
+   "i": 6,
+   "k": "with_ties",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

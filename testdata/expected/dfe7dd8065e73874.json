@@ -1,0 +1,61 @@
+{
+ "dialect": "",
+ "sql": "CASE WHEN TRUE THEN INTERVAL '15' DAYS END",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.functions.Case"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 0,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 1,
+   "k": "true"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "15"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 4,
+   "k": "unit"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "DAYS"
+  }
+ ]
+}

@@ -1,0 +1,219 @@
+{
+ "dialect": "databricks",
+ "sql": "INSERT INTO target REPLACE USING (c1, c2) SELECT c1, c2 FROM source",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Insert"
+  },
+  {
+   "i": 0,
+   "k": "is_function",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "target"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "stored",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "by_name",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 0,
+   "k": "using",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 0,
+   "k": "using",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "c2"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "partition",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "settings",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "default",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 49
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "c2"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 18,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 61
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "source"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "overwrite",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "ignore",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "source",
+   "v": false
+  }
+ ]
+}

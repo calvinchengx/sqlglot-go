@@ -1,0 +1,57 @@
+{
+ "dialect": "tsql",
+ "sql": "SELECT FORMAT('01-01-1991', 'd.mm.yyyy')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.TimeToStr",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "01-01-1991"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "format"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "%-d.%M.%Y"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

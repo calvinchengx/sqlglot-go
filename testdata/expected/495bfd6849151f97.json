@@ -1,0 +1,386 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT id, name FROM xml_data AS t, XMLTABLE('/root/user' PASSING t.xml COLUMNS id INT PATH '@id', name TEXT PATH 'name/text()') AS x",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 9,
+    "end": 8,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "name"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "xml_data"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 10,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 0,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.XMLTable",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "/root/user"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 20,
+   "k": "passing"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 71,
+    "end": 70,
+    "line": 1,
+    "start": 68
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "xml"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "table",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 20,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 31,
+   "k": "this",
+   "m": {
+    "col": 82,
+    "end": 81,
+    "line": 1,
+    "start": 80
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 32,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 31,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 35,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 35,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 31,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.PathColumnConstraint",
+   "i": 38,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 39,
+   "k": "this",
+   "m": {
+    "col": 97,
+    "end": 96,
+    "line": 1,
+    "start": 92
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "@id"
+  },
+  {
+   "i": 40,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 20,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 43,
+   "k": "this",
+   "m": {
+    "col": 103,
+    "end": 102,
+    "line": 1,
+    "start": 99
+   }
+  },
+  {
+   "i": 44,
+   "k": "this",
+   "v": "name"
+  },
+  {
+   "i": 44,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 43,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 47,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 47,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 43,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.PathColumnConstraint",
+   "i": 50,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 51,
+   "k": "this",
+   "m": {
+    "col": 127,
+    "end": 126,
+    "line": 1,
+    "start": 114
+   }
+  },
+  {
+   "i": 52,
+   "k": "this",
+   "v": "name/text()"
+  },
+  {
+   "i": 52,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 20,
+   "k": "by_ref",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 19,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 56,
+   "k": "this",
+   "m": {
+    "col": 133,
+    "end": 132,
+    "line": 1,
+    "start": 132
+   }
+  },
+  {
+   "i": 57,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 57,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

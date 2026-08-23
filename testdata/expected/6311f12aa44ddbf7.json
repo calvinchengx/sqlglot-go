@@ -1,0 +1,295 @@
+{
+ "dialect": "postgres",
+ "sql": "CREATE TABLE cities_ab PARTITION OF cities (CONSTRAINT city_id_nonzero CHECK (city_id <> 0)) FOR VALUES IN ('a', 'b') PARTITION BY RANGE(population)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "cities_ab"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionedOfProperty",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "cities"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.Constraint",
+   "i": 12,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 70,
+    "end": 69,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "city_id_nonzero"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.CheckColumnConstraint",
+   "i": 17,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.NEQ",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 85,
+    "end": 84,
+    "line": 1,
+    "start": 78
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "city_id"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 22,
+   "k": "expression",
+   "m": {
+    "col": 90,
+    "end": 89,
+    "line": 1,
+    "start": 89
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 27,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 21,
+   "k": "enforced",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.PartitionBoundSpec",
+   "i": 11,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 31,
+   "k": "this",
+   "m": {
+    "col": 111,
+    "end": 110,
+    "line": 1,
+    "start": 108
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 32,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 31,
+   "k": "this",
+   "m": {
+    "col": 116,
+    "end": 115,
+    "line": 1,
+    "start": 113
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 35,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionedByProperty",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 38,
+   "k": "this",
+   "m": {
+    "col": 136,
+    "end": 135,
+    "line": 1,
+    "start": 131
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "RANGE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 39,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 41,
+   "k": "this",
+   "m": {
+    "col": 147,
+    "end": 146,
+    "line": 1,
+    "start": 137
+   }
+  },
+  {
+   "i": 42,
+   "k": "this",
+   "v": "population"
+  },
+  {
+   "i": 42,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

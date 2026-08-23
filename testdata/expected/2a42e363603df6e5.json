@@ -1,0 +1,240 @@
+{
+ "dialect": "",
+ "sql": "UPDATE db.tbl_name SET foo = 123, foo_1 = 234 WHERE tbl_name.bar = 234",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Update"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 10
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "tbl_name"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "db",
+   "m": {
+    "col": 9,
+    "end": 8,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "db"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "expression",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "123"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "foo_1"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "expression",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "234"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 24,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 25,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 64,
+    "end": 63,
+    "line": 1,
+    "start": 61
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "bar"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "table",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "tbl_name"
+  },
+  {
+   "i": 30,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 25,
+   "k": "expression",
+   "m": {
+    "col": 70,
+    "end": 69,
+    "line": 1,
+    "start": 67
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "234"
+  },
+  {
+   "i": 33,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

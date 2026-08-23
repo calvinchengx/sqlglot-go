@@ -1,0 +1,238 @@
+{
+ "dialect": "",
+ "sql": "ALTER TABLE \"schema\".\"tablename\" ADD CONSTRAINT \"CHK_Name\" CHECK (NOT \"IdDwh\" IS NULL AND \"IdDwh\" <> (0))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Alter"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "tablename"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "db",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "schema"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.AddConstraint",
+   "i": 0,
+   "k": "actions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.Constraint",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "CHK_Name"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.CheckColumnConstraint",
+   "i": 11,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.And",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Not",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 77,
+    "end": 76,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "IdDwh"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 18,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.NEQ",
+   "i": 16,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 24,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 97,
+    "end": 96,
+    "line": 1,
+    "start": 90
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "IdDwh"
+  },
+  {
+   "i": 26,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 24,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 29,
+   "k": "this",
+   "m": {
+    "col": 103,
+    "end": 102,
+    "line": 1,
+    "start": 102
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 30,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 15,
+   "k": "enforced",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "only",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "not_valid",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "check",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cascade",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,72 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT (@-1) + 1",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Add",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.math.Abs",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Neg",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 10
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

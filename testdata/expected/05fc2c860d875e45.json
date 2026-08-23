@@ -1,0 +1,82 @@
+{
+ "dialect": "",
+ "sql": "x ILIKE '%y%' ESCAPE '\\'",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Escape"
+  },
+  {
+   "c": "sqlglot.expressions.core.ILike",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 1,
+    "end": 0,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "%y%"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "\\"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

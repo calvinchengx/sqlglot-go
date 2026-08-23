@@ -1,0 +1,109 @@
+{
+ "dialect": "",
+ "sql": "REVOKE SELECT, INSERT ON FUNCTION tbl FROM user",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Revoke"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.GrantPrivilege",
+   "i": 0,
+   "k": "privileges"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "SELECT"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.GrantPrivilege",
+   "i": 0,
+   "k": "privileges"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "INSERT"
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "FUNCTION"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "securable"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "tbl"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.GrantPrincipal",
+   "i": 0,
+   "k": "principals"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "user"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 12,
+   "k": "kind",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "grant_option",
+   "v": false
+  }
+ ]
+}

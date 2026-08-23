@@ -1,0 +1,106 @@
+{
+ "dialect": "databricks",
+ "sql": "SELECT CAST('23:00:00' AS INTERVAL MINUTE TO SECOND)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "sqlglot.expressions.datatypes.Interval",
+     "i": 0,
+     "k": "this"
+    },
+    {
+     "c": "sqlglot.expressions.datatypes.IntervalSpan",
+     "i": 1,
+     "k": "unit"
+    },
+    {
+     "c": "sqlglot.expressions.core.Var",
+     "i": 2,
+     "k": "this"
+    },
+    {
+     "i": 3,
+     "k": "this",
+     "v": "MINUTE"
+    },
+    {
+     "c": "sqlglot.expressions.core.Var",
+     "i": 2,
+     "k": "expression"
+    },
+    {
+     "i": 5,
+     "k": "this",
+     "v": "SECOND"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "23:00:00"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.IntervalSpan",
+   "i": 6,
+   "k": "unit"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "MINUTE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 7,
+   "k": "expression"
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "SECOND"
+  }
+ ]
+}

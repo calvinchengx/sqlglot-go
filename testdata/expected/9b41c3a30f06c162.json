@@ -1,0 +1,88 @@
+{
+ "dialect": "tsql",
+ "sql": "GRANT EXECUTE ON TestProc TO TesterRole WITH GRANT OPTION",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Grant"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.GrantPrivilege",
+   "i": 0,
+   "k": "privileges"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "EXECUTE"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "securable"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "TestProc"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.GrantPrincipal",
+   "i": 0,
+   "k": "principals"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "TesterRole"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 8,
+   "k": "kind",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "grant_option",
+   "v": true
+  }
+ ]
+}

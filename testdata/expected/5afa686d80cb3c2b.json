@@ -1,0 +1,129 @@
+{
+ "dialect": "duckdb",
+ "sql": "ARG_MAX(keyword_name, keyword_category, 3 ORDER BY keyword_name DESC)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.aggregate.ArgMax"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "keyword_name"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "keyword_category"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 0,
+   "k": "count"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "keyword_name"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 13,
+   "k": "desc",
+   "v": true
+  },
+  {
+   "i": 13,
+   "k": "nulls_first",
+   "v": false
+  }
+ ]
+}

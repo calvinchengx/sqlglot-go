@@ -1,0 +1,177 @@
+{
+ "dialect": "tsql",
+ "sql": "declare @X int = (select col from table where id = 1)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Declare"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.DeclareItem",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "X"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 5,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 5,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 1,
+   "k": "default"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 9,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "table"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 9,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 20,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "this",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 22,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 20,
+   "k": "expression",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 25,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  }
+ ]
+}

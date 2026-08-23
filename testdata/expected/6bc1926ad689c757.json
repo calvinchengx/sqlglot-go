@@ -1,0 +1,195 @@
+{
+ "dialect": "postgres",
+ "sql": "CREATE TABLE measurement_ym_y2016m11 PARTITION OF measurement_year_month FOR VALUES FROM (2016, 11) TO (2016, 12)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "measurement_ym_y2016m11"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionedOfProperty",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 50
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "measurement_year_month"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.PartitionBoundSpec",
+   "i": 11,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "from_expressions",
+   "m": {
+    "col": 94,
+    "end": 93,
+    "line": 1,
+    "start": 90
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "2016"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "from_expressions",
+   "m": {
+    "col": 98,
+    "end": 97,
+    "line": 1,
+    "start": 96
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "11"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "to_expressions",
+   "m": {
+    "col": 108,
+    "end": 107,
+    "line": 1,
+    "start": 104
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "2016"
+  },
+  {
+   "i": 23,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "to_expressions",
+   "m": {
+    "col": 112,
+    "end": 111,
+    "line": 1,
+    "start": 110
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "12"
+  },
+  {
+   "i": 26,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

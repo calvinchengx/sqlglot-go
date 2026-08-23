@@ -1,0 +1,202 @@
+{
+ "dialect": "",
+ "sql": "ALTER TABLE baa ADD CONSTRAINT boo FOREIGN KEY (x, y) REFERENCES persons ON UPDATE NO ACTION ON DELETE NO ACTION MATCH FULL",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Alter"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "baa"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.AddConstraint",
+   "i": 0,
+   "k": "actions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.Constraint",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "boo"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ForeignKey",
+   "i": 8,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "expressions",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "expressions",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.constraints.Reference",
+   "i": 12,
+   "k": "reference"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 65
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "persons"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "i": 19,
+   "k": "options",
+   "v": "ON UPDATE NO ACTION"
+  },
+  {
+   "a": true,
+   "i": 19,
+   "k": "options",
+   "v": "ON DELETE NO ACTION"
+  },
+  {
+   "a": true,
+   "i": 19,
+   "k": "options",
+   "v": "MATCH FULL"
+  },
+  {
+   "i": 0,
+   "k": "only",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "not_valid",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "check",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cascade",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  }
+ ]
+}

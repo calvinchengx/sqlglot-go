@@ -1,0 +1,216 @@
+{
+ "dialect": "postgres",
+ "sql": "UPDATE \"x\" SET \"y\" = CAST('0 days 60.000000 seconds' AS INTERVAL) WHERE \"x\".\"id\" IN (2, 3)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Update"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 5,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INTERVAL"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "0 days 60.000000 seconds"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 10,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 14,
+   "k": "this",
+   "v": "INTERVAL"
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.In",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 80,
+    "end": 79,
+    "line": 1,
+    "start": 76
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "table",
+   "m": {
+    "col": 75,
+    "end": 74,
+    "line": 1,
+    "start": 72
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 22,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expressions",
+   "m": {
+    "col": 86,
+    "end": 85,
+    "line": 1,
+    "start": 85
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 25,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expressions",
+   "m": {
+    "col": 89,
+    "end": 88,
+    "line": 1,
+    "start": 88
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 28,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

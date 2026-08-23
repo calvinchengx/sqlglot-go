@@ -1,0 +1,74 @@
+{
+ "dialect": "",
+ "sql": "TIMESTAMP_TRUNC(COALESCE(time_field, CURRENT_TIMESTAMP()), DAY)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.TimestampTrunc",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Coalesce",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "time_field"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.CurrentTimestamp",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 0,
+   "k": "unit"
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "DAY"
+  }
+ ]
+}

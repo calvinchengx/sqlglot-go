@@ -1,0 +1,244 @@
+{
+ "dialect": "tsql",
+ "sql": "INSERT INTO foo.bar WITH cte AS (SELECT 1 AS one) SELECT * FROM cte",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Insert"
+  },
+  {
+   "i": 0,
+   "k": "is_function",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "bar"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "db",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "stored",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "by_name",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "partition",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "settings",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "default",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 15,
+   "k": "expressions",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 15,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 64
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "cte"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.With",
+   "i": 15,
+   "k": "with_"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.CTE",
+   "i": 22,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 23,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 24,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 26,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 25,
+   "k": "alias",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "one"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 23,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "cte"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "overwrite",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "ignore",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "source",
+   "v": false
+  }
+ ]
+}

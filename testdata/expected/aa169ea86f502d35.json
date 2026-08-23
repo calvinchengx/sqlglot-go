@@ -1,0 +1,1094 @@
+{
+ "dialect": "postgres",
+ "sql": "\n            CREATE INDEX index_ci_builds_on_commit_id_and_artifacts_expireatandidpartial\n            ON public.ci_builds\n            USING btree (commit_id, artifacts_expire_at, id)\n            WHERE (\n                ((type)::text = 'Ci::Build'::text)\n                AND ((retried = false) OR (retried IS NULL))\n                AND ((name)::text = ANY (ARRAY[\n                    ('sast'::character varying)::text,\n                    ('dependency_scanning'::character varying)::text,\n                    ('sast:container'::character varying)::text,\n                    ('container_scanning'::character varying)::text,\n                    ('dast'::character varying)::text\n                ]))\n            )\n            ",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Index",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 88,
+    "end": 88,
+    "line": 2,
+    "start": 26
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "index_ci_builds_on_commit_id_and_artifacts_expireatandidpartial"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "table"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 120,
+    "line": 3,
+    "start": 112
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "ci_builds"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "db",
+   "m": {
+    "col": 21,
+    "end": 110,
+    "line": 3,
+    "start": 105
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "public"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.constraints.IndexParameters",
+   "i": 1,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 12,
+   "k": "using"
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "btree"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 12,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 155,
+    "line": 4,
+    "start": 147
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "commit_id"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 15,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 12,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 55,
+    "end": 176,
+    "line": 4,
+    "start": 158
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "artifacts_expire_at"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 21,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 12,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 59,
+    "end": 180,
+    "line": 4,
+    "start": 179
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 27,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 12,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 33,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.And",
+   "i": 34,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.And",
+   "i": 35,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 36,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 37,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 38,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TEXT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 39,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 40,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 41,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 224,
+    "line": 6,
+    "start": 221
+   }
+  },
+  {
+   "i": 42,
+   "k": "this",
+   "v": "type"
+  },
+  {
+   "i": 42,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 39,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 45,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 45,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 38,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TEXT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 48,
+   "k": "this",
+   "m": {
+    "col": 43,
+    "end": 245,
+    "line": 6,
+    "start": 235
+   }
+  },
+  {
+   "i": 49,
+   "k": "this",
+   "v": "Ci::Build"
+  },
+  {
+   "i": 49,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 48,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 52,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 52,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 36,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Or",
+   "i": 55,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 56,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 57,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 58,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 59,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 282,
+    "line": 7,
+    "start": 276
+   }
+  },
+  {
+   "i": 60,
+   "k": "this",
+   "v": "retried"
+  },
+  {
+   "i": 60,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 58,
+   "k": "expression"
+  },
+  {
+   "i": 63,
+   "k": "this",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 56,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 65,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 66,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 67,
+   "k": "this",
+   "m": {
+    "col": 50,
+    "end": 303,
+    "line": 7,
+    "start": 297
+   }
+  },
+  {
+   "i": 68,
+   "k": "this",
+   "v": "retried"
+  },
+  {
+   "i": 68,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 66,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 35,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 72,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 73,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TEXT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 74,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 75,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 76,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 340,
+    "line": 8,
+    "start": 337
+   }
+  },
+  {
+   "i": 77,
+   "k": "this",
+   "v": "name"
+  },
+  {
+   "i": 77,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 74,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 80,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 80,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Any",
+   "i": 73,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 83,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 84,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 85,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TEXT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 86,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 87,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 88,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 389,
+    "line": 9,
+    "start": 384
+   }
+  },
+  {
+   "i": 89,
+   "k": "this",
+   "v": "sast"
+  },
+  {
+   "i": 89,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 88,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 92,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "i": 92,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 86,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 95,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 95,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 85,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TEXT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 98,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 99,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 100,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 459,
+    "line": 10,
+    "start": 439
+   }
+  },
+  {
+   "i": 101,
+   "k": "this",
+   "v": "dependency_scanning"
+  },
+  {
+   "i": 101,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 100,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 104,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "i": 104,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 98,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 107,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 107,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 85,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TEXT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 110,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 111,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 112,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 524,
+    "line": 11,
+    "start": 509
+   }
+  },
+  {
+   "i": 113,
+   "k": "this",
+   "v": "sast:container"
+  },
+  {
+   "i": 113,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 112,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 116,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "i": 116,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 110,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 119,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 119,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 85,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TEXT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 122,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 123,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 124,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 593,
+    "line": 12,
+    "start": 574
+   }
+  },
+  {
+   "i": 125,
+   "k": "this",
+   "v": "container_scanning"
+  },
+  {
+   "i": 125,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 124,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 128,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "i": 128,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 122,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 131,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 131,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 85,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TEXT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 134,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 135,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 136,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 648,
+    "line": 13,
+    "start": 643
+   }
+  },
+  {
+   "i": 137,
+   "k": "this",
+   "v": "dast"
+  },
+  {
+   "i": 137,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 136,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 140,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "i": 140,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 134,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 143,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 143,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 12,
+   "k": "with_storage",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "INDEX"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

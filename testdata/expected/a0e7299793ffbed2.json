@@ -1,0 +1,138 @@
+{
+ "dialect": "",
+ "sql": "INSERT INTO x (SELECT * FROM y)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Insert"
+  },
+  {
+   "i": 0,
+   "k": "is_function",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "stored",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "by_name",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "partition",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "settings",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "default",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 13,
+   "k": "expressions",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 13,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "overwrite",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "ignore",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "source",
+   "v": false
+  }
+ ]
+}

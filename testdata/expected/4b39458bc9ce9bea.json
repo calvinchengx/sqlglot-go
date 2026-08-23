@@ -1,0 +1,191 @@
+{
+ "dialect": "databricks",
+ "sql": "SELECT c1:item[1].price FROM VALUES ('{ \"item\": [ { \"model\" : \"basic\", \"price\" : 6.12 }, { \"model\" : \"medium\", \"price\" : 9.24 } ] }') AS T(c1)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExtract",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 9,
+    "end": 8,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "item"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathSubscript",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": 1
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "price"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "variant_extract",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "requires_json",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Values",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 19,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 20,
+   "k": "expressions",
+   "m": {
+    "col": 132,
+    "end": 131,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "{ \"item\": [ { \"model\" : \"basic\", \"price\" : 6.12 }, { \"model\" : \"medium\", \"price\" : 9.24 } ] }"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 19,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 138,
+    "end": 137,
+    "line": 1,
+    "start": 137
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "T"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "columns",
+   "m": {
+    "col": 141,
+    "end": 140,
+    "line": 1,
+    "start": 139
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

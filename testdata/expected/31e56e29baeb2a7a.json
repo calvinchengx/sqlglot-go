@@ -1,0 +1,70 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT TRY_STRPTIME('2013-04-28T20:57:01.123456789+07:00', '%Y-%m-%dT%H:%M:%S.%n%z')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "TRY_STRPTIME"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "2013-04-28T20:57:01.123456789+07:00"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 83,
+    "end": 82,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "%Y-%m-%dT%H:%M:%S.%n%z"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

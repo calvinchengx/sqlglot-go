@@ -1,0 +1,132 @@
+{
+ "dialect": "duckdb",
+ "sql": "PIVOT Cities ON Year USING SUM(Population) GROUP BY Country",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Pivot"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 6
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "Cities"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "Year"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 0,
+   "k": "using",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "Population"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Group",
+   "i": 0,
+   "k": "group"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 14,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 59,
+    "end": 58,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "Country"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

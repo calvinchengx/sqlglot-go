@@ -1,0 +1,193 @@
+{
+ "dialect": "",
+ "sql": "SELECT * FROM x WHERE y IN ((SELECT 1) UNION (SELECT 2) OFFSET 2)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.In",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 8,
+   "k": "query"
+  },
+  {
+   "c": "sqlglot.expressions.query.Union",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "expressions",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 14,
+   "k": "distinct",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 14,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 22,
+   "k": "expressions",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 23,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Offset",
+   "i": 14,
+   "k": "offset"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 26,
+   "k": "expression",
+   "m": {
+    "col": 64,
+    "end": 63,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 27,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,147 @@
+{
+ "dialect": "",
+ "sql": "SELECT COUNT(DISTINCT \"foo bar\") FROM (SELECT 1 AS \"foo bar\") AS t",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.Count",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Distinct",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "foo bar"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "big_int",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "alias",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "foo bar"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 9,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 66,
+    "end": 65,
+    "line": 1,
+    "start": 65
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

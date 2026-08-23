@@ -1,0 +1,153 @@
+{
+ "dialect": "",
+ "sql": "SELECT * FROM x WHERE name LIKE ANY XXX('a', 'b')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.Like",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "name"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Any",
+   "i": 8,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "XXX"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 14,
+   "k": "expressions",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 14,
+   "k": "expressions",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 19,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

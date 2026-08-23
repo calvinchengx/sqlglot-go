@@ -1,0 +1,171 @@
+{
+ "dialect": "postgres",
+ "sql": "ALTER TABLE t1 SET (fillfactor = 5, autovacuum_enabled = TRUE)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Alter"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "t1"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.AlterSet",
+   "i": 0,
+   "k": "actions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "fillfactor"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "expression",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "5"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "autovacuum_enabled"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 16,
+   "k": "expression"
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "only",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "not_valid",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "check",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cascade",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  }
+ ]
+}

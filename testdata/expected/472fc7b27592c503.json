@@ -1,0 +1,261 @@
+{
+ "dialect": "duckdb",
+ "sql": "COPY (SELECT * FROM \"input.parquet\" USING SAMPLE RESERVOIR (5000 ROWS)) TO 'output.parquet' WITH (FORMAT PARQUET, KV_METADATA {'origin': 'Dagster', 'dagster_run_id': '98c85a11-d05c-4935-bfa2-198214c2204'})",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Copy"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 2,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "input.parquet"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableSample",
+   "i": 2,
+   "k": "sample"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 9,
+   "k": "method"
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "RESERVOIR"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "size",
+   "m": {
+    "col": 64,
+    "end": 63,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "5000"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.Credentials",
+   "i": 0,
+   "k": "credentials"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "files",
+   "m": {
+    "col": 91,
+    "end": 90,
+    "line": 1,
+    "start": 75
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "output.parquet"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 20,
+   "k": "this"
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "FORMAT"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 20,
+   "k": "expression"
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "PARQUET"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 25,
+   "k": "this"
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "KV_METADATA"
+  },
+  {
+   "c": "sqlglot.expressions.array.Struct",
+   "i": 25,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PropertyEQ",
+   "i": 28,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 29,
+   "k": "this"
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "origin"
+  },
+  {
+   "i": 30,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 29,
+   "k": "expression",
+   "m": {
+    "col": 146,
+    "end": 145,
+    "line": 1,
+    "start": 137
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "Dagster"
+  },
+  {
+   "i": 33,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PropertyEQ",
+   "i": 28,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 36,
+   "k": "this"
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "dagster_run_id"
+  },
+  {
+   "i": 37,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 36,
+   "k": "expression",
+   "m": {
+    "col": 203,
+    "end": 202,
+    "line": 1,
+    "start": 166
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "98c85a11-d05c-4935-bfa2-198214c2204"
+  },
+  {
+   "i": 40,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

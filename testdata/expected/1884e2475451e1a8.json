@@ -1,0 +1,110 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT REPLACE('apple pie', 'pie', 'cobbler') AS result",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.string.Replace",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "apple pie"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "pie"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "replacement",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "cobbler"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 49
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "result"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

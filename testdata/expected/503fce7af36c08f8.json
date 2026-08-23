@@ -1,0 +1,173 @@
+{
+ "dialect": "postgres",
+ "sql": "CREATE TABLE measurement_ym_older PARTITION OF measurement_year_month FOR VALUES FROM (MINVALUE, MINVALUE) TO (2016, 11)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "measurement_ym_older"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionedOfProperty",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "measurement_year_month"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.PartitionBoundSpec",
+   "i": 11,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Var",
+   "i": 16,
+   "k": "from_expressions"
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "MINVALUE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Var",
+   "i": 16,
+   "k": "from_expressions"
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "MINVALUE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "to_expressions",
+   "m": {
+    "col": 115,
+    "end": 114,
+    "line": 1,
+    "start": 111
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "2016"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "to_expressions",
+   "m": {
+    "col": 119,
+    "end": 118,
+    "line": 1,
+    "start": 117
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "11"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

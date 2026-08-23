@@ -1,0 +1,207 @@
+{
+ "dialect": "tsql",
+ "sql": "CREATE INDEX [x] ON [y]([z] ASC) WITH (allow_page_locks=on) ON X([y])",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Index",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "table"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.constraints.IndexParameters",
+   "i": 1,
+   "k": "params"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 9,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "z"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 10,
+   "k": "desc",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "nulls_first",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 9,
+   "k": "with_storage"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "allow_page_locks"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 17,
+   "k": "value"
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "on"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 9,
+   "k": "on",
+   "m": {
+    "col": 64,
+    "end": 63,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "X"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 22,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 68,
+    "end": 67,
+    "line": 1,
+    "start": 65
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "INDEX"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

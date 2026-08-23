@@ -1,0 +1,181 @@
+{
+ "dialect": "",
+ "sql": "LOAD DATA LOCAL INPATH 'x' INTO TABLE y PARTITION(ds = 'yyyy') INPUTFORMAT 'y' SERDE 'z'",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.LoadData"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "local",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "overwrite",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "temp",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "inpath",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "files",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 0,
+   "k": "partition"
+  },
+  {
+   "i": 12,
+   "k": "subpartition",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 12,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 50
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "ds"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 14,
+   "k": "expression",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "yyyy"
+  },
+  {
+   "i": 19,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "input_format",
+   "m": {
+    "col": 78,
+    "end": 77,
+    "line": 1,
+    "start": 75
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "serde",
+   "m": {
+    "col": 88,
+    "end": 87,
+    "line": 1,
+    "start": 85
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "z"
+  },
+  {
+   "i": 25,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

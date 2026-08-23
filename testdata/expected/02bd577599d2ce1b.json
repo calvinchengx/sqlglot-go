@@ -1,0 +1,240 @@
+{
+ "dialect": "postgres",
+ "sql": "CREATE FUNCTION foo(OUT result INT, IN input INT DEFAULT 10)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.ddl.UserDefinedFunction",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "result"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.InOutColumnConstraint",
+   "i": 6,
+   "k": "constraints"
+  },
+  {
+   "i": 13,
+   "k": "input_",
+   "v": false
+  },
+  {
+   "i": 13,
+   "k": "output",
+   "v": true
+  },
+  {
+   "i": 13,
+   "k": "variadic",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "input"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 17,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 21,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 21,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.InOutColumnConstraint",
+   "i": 17,
+   "k": "constraints"
+  },
+  {
+   "i": 24,
+   "k": "input_",
+   "v": true
+  },
+  {
+   "i": 24,
+   "k": "output",
+   "v": false
+  },
+  {
+   "i": 24,
+   "k": "variadic",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 17,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.DefaultColumnConstraint",
+   "i": 28,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 29,
+   "k": "this",
+   "m": {
+    "col": 59,
+    "end": 58,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 30,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "wrapped",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "FUNCTION"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "begin",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

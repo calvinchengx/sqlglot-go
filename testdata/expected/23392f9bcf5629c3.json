@@ -1,0 +1,130 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT MODE() WITHIN GROUP (ORDER BY status DESC) AS most_common FROM orders",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.WithinGroup",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Mode",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 2,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "status"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 5,
+   "k": "desc",
+   "v": true
+  },
+  {
+   "i": 5,
+   "k": "nulls_first",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 64,
+    "end": 63,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "most_common"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 76,
+    "end": 75,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "orders"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,89 @@
+{
+ "dialect": "tsql",
+ "sql": "SELECT FORMAT(EndOfDayRate, 'N', 'en-us')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.NumberToStr",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "EndOfDayRate"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "format",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "N"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "culture",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "en-us"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

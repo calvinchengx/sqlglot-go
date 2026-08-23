@@ -1,0 +1,83 @@
+{
+ "dialect": "",
+ "sql": "INTERVAL '-31' CAST(GETDATE() AS DATE)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.datatypes.Interval"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 9
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "-31"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "unit",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "GETDATE"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 4,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 7,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 7,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

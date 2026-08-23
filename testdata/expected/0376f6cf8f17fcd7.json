@@ -1,0 +1,395 @@
+{
+ "dialect": "tsql",
+ "sql": "CREATE TABLE tbl (a AS (x + 1) PERSISTED, b AS (y + 2), c AS (y / 3) PERSISTED NOT NULL)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "tbl"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 6,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.ComputedColumnConstraint",
+   "i": 10,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expression",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 11,
+   "k": "persisted",
+   "v": true
+  },
+  {
+   "i": 11,
+   "k": "not_null",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 23,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.ComputedColumnConstraint",
+   "i": 27,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 28,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 29,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 30,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 31,
+   "k": "this",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 32,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 30,
+   "k": "expression",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 35,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 28,
+   "k": "persisted",
+   "v": false
+  },
+  {
+   "i": 28,
+   "k": "not_null",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 40,
+   "k": "this",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 56
+   }
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 41,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 40,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.ComputedColumnConstraint",
+   "i": 44,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 45,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Div",
+   "i": 46,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 47,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 48,
+   "k": "this",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 62
+   }
+  },
+  {
+   "i": 49,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 49,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 47,
+   "k": "expression",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "i": 52,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 52,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 47,
+   "k": "typed",
+   "v": true
+  },
+  {
+   "i": 47,
+   "k": "safe",
+   "v": false
+  },
+  {
+   "i": 45,
+   "k": "persisted",
+   "v": true
+  },
+  {
+   "i": 45,
+   "k": "not_null",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

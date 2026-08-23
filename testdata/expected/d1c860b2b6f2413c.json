@@ -1,0 +1,286 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT SUM(x) OVER a, SUM(y) OVER b FROM c WINDOW a AS (PARTITION BY d), b AS (PARTITION BY e)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Window",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "over",
+   "v": "OVER"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Window",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "alias",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 11,
+   "k": "over",
+   "v": "OVER"
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 41
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Window",
+   "i": 0,
+   "k": "windows"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 50
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 26,
+   "k": "partition_by"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "this",
+   "m": {
+    "col": 70,
+    "end": 69,
+    "line": 1,
+    "start": 69
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "d"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Window",
+   "i": 0,
+   "k": "windows"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "this",
+   "m": {
+    "col": 74,
+    "end": 73,
+    "line": 1,
+    "start": 73
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 35,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 34,
+   "k": "partition_by"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 38,
+   "k": "this",
+   "m": {
+    "col": 93,
+    "end": 92,
+    "line": 1,
+    "start": 92
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "e"
+  },
+  {
+   "i": 39,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

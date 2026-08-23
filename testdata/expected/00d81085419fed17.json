@@ -1,0 +1,116 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT CASE WHEN SUBSTRING('abcdefg') IN ('ab') THEN 1 ELSE 0 END",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Case",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 1,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.In",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.string.Substring",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "abcdefg"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expressions",
+   "m": {
+    "col": 46,
+    "end": 45,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "ab"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "true",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "default",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

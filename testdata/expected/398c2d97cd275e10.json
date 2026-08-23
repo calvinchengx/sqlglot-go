@@ -1,0 +1,133 @@
+{
+ "dialect": "",
+ "sql": "ALTER TABLE table1 RENAME COLUMN IF EXISTS c1 TO c2",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Alter"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "table1"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.RenameColumn",
+   "i": 0,
+   "k": "actions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 7,
+   "k": "to"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 49
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "c2"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "exists",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "only",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "not_valid",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "check",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cascade",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  }
+ ]
+}

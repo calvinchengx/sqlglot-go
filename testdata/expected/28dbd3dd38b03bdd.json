@@ -1,0 +1,96 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT JSON_EXTRACT_STRING('{ \"family\": \"anatidae\", \"species\": [ \"duck\", \"goose\", \"swan\", null ] }', ['$.family', '$.species'])",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExtractScalar",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 99,
+    "end": 98,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "{ \"family\": \"anatidae\", \"species\": [ \"duck\", \"goose\", \"swan\", null ] }"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "expressions",
+   "m": {
+    "col": 112,
+    "end": 111,
+    "line": 1,
+    "start": 102
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "$.family"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "expressions",
+   "m": {
+    "col": 125,
+    "end": 124,
+    "line": 1,
+    "start": 114
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "$.species"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "scalar_only",
+   "v": false
+  }
+ ]
+}

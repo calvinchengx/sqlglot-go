@@ -1,0 +1,313 @@
+{
+ "dialect": "",
+ "sql": "SELECT a FROM (SELECT a, b FROM test) PIVOT(SUM(x) FOR y IN ('z', 'q'))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 7,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Pivot",
+   "i": 6,
+   "k": "pivots"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 21,
+   "k": "expressions",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.In",
+   "i": 21,
+   "k": "fields"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 27,
+   "k": "expressions",
+   "m": {
+    "col": 64,
+    "end": 63,
+    "line": 1,
+    "start": 61
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "z"
+  },
+  {
+   "i": 32,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 27,
+   "k": "expressions",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "q"
+  },
+  {
+   "i": 35,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 21,
+   "k": "unpivot",
+   "v": false
+  },
+  {
+   "i": 21,
+   "k": "default_on_null",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "columns"
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "z"
+  },
+  {
+   "i": 40,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "columns"
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "q"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 21,
+   "k": "identify_pivot_strings",
+   "v": false
+  },
+  {
+   "i": 21,
+   "k": "prefixed_pivot_columns",
+   "v": false
+  },
+  {
+   "i": 21,
+   "k": "pivot_column_naming",
+   "v": "agg_name_if_aliased"
+  }
+ ]
+}

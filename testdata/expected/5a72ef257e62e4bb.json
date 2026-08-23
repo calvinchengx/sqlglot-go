@@ -1,0 +1,278 @@
+{
+ "dialect": "",
+ "sql": "SELECT tf.* FROM (SELECT 0) AS t LATERAL VIEW STACK(1, 2) tf AS col0, col1, col2",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Star",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 10
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "table",
+   "m": {
+    "col": 9,
+    "end": 8,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "tf"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "expressions",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 7,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Lateral",
+   "i": 0,
+   "k": "laterals"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "STACK"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expressions",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 19,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expressions",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 16,
+   "k": "view",
+   "v": true
+  },
+  {
+   "i": 16,
+   "k": "outer",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 16,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "this",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 58
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "tf"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "columns",
+   "m": {
+    "col": 68,
+    "end": 67,
+    "line": 1,
+    "start": 64
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "col0"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "columns",
+   "m": {
+    "col": 74,
+    "end": 73,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "col1"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "columns",
+   "m": {
+    "col": 80,
+    "end": 79,
+    "line": 1,
+    "start": 76
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "col2"
+  },
+  {
+   "i": 37,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

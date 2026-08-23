@@ -1,0 +1,218 @@
+{
+ "dialect": "",
+ "sql": "SELECT SUM(x) OVER (PARTITION BY a ORDER BY b RANGE BETWEEN INTERVAL '1' DAY PRECEDING AND INTERVAL '2' DAYS FOLLOWING)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Window",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "partition_by"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 1,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 11,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 12,
+   "k": "nulls_first",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.WindowSpec",
+   "i": 1,
+   "k": "spec"
+  },
+  {
+   "i": 18,
+   "k": "kind",
+   "v": "RANGE"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 18,
+   "k": "start"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 69
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 20,
+   "k": "unit"
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "DAY"
+  },
+  {
+   "i": 18,
+   "k": "start_side",
+   "v": "PRECEDING"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 18,
+   "k": "end"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 27,
+   "k": "this",
+   "m": {
+    "col": 103,
+    "end": 102,
+    "line": 1,
+    "start": 100
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 28,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 27,
+   "k": "unit"
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "DAYS"
+  },
+  {
+   "i": 18,
+   "k": "end_side",
+   "v": "FOLLOWING"
+  },
+  {
+   "i": 1,
+   "k": "over",
+   "v": "OVER"
+  }
+ ]
+}

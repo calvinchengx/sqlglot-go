@@ -1,0 +1,129 @@
+{
+ "dialect": "tsql",
+ "sql": "SELECT [x] FROM [a].[b] FOR SYSTEM_TIME ALL AS alias",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "db",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Version",
+   "i": 6,
+   "k": "version"
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "i": 13,
+   "k": "kind",
+   "v": "ALL"
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 6,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "alias"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

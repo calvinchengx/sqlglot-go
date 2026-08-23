@@ -1,0 +1,1876 @@
+{
+ "dialect": "tsql",
+ "sql": "INSERT INTO Production.UpdatedInventory SELECT ProductID, LocationID, NewQty, PreviousQty FROM (MERGE INTO Production.ProductInventory AS pi USING (SELECT ProductID, SUM(OrderQty) FROM Sales.SalesOrderDetail AS sod INNER JOIN Sales.SalesOrderHeader AS soh ON sod.SalesOrderID = soh.SalesOrderID AND soh.OrderDate BETWEEN '20030701' AND '20030731' GROUP BY ProductID) AS src(ProductID, OrderQty) ON pi.ProductID = src.ProductID WHEN MATCHED AND pi.Quantity - src.OrderQty >= 0 THEN UPDATE SET pi.Quantity = pi.Quantity - src.OrderQty WHEN MATCHED AND pi.Quantity - src.OrderQty <= 0 THEN DELETE OUTPUT $action, Inserted.ProductID, Inserted.LocationID, Inserted.Quantity AS NewQty, Deleted.Quantity AS PreviousQty) AS Changes(Action, ProductID, LocationID, NewQty, PreviousQty) WHERE Action = 'UPDATE'",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Insert"
+  },
+  {
+   "i": 0,
+   "k": "is_function",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "UpdatedInventory"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "db",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "Production"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "stored",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "by_name",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "partition",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "settings",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "default",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 15,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "ProductID"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 15,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 68,
+    "end": 67,
+    "line": 1,
+    "start": 58
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "LocationID"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 15,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 76,
+    "end": 75,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "NewQty"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 15,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 89,
+    "end": 88,
+    "line": 1,
+    "start": 78
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "PreviousQty"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 15,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 32,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.dml.Merge",
+   "i": 33,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 34,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 35,
+   "k": "this",
+   "m": {
+    "col": 134,
+    "end": 133,
+    "line": 1,
+    "start": 118
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "ProductInventory"
+  },
+  {
+   "i": 36,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 35,
+   "k": "db",
+   "m": {
+    "col": 117,
+    "end": 116,
+    "line": 1,
+    "start": 107
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "Production"
+  },
+  {
+   "i": 39,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 35,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 42,
+   "k": "this",
+   "m": {
+    "col": 140,
+    "end": 139,
+    "line": 1,
+    "start": 138
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "pi"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 34,
+   "k": "using"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 46,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 47,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 48,
+   "k": "this",
+   "m": {
+    "col": 164,
+    "end": 163,
+    "line": 1,
+    "start": 155
+   }
+  },
+  {
+   "i": 49,
+   "k": "this",
+   "v": "ProductID"
+  },
+  {
+   "i": 49,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 47,
+   "k": "expressions",
+   "m": {
+    "col": 169,
+    "end": 168,
+    "line": 1,
+    "start": 166
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 52,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 53,
+   "k": "this",
+   "m": {
+    "col": 178,
+    "end": 177,
+    "line": 1,
+    "start": 170
+   }
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "OrderQty"
+  },
+  {
+   "i": 54,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 47,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 57,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 58,
+   "k": "this",
+   "m": {
+    "col": 207,
+    "end": 206,
+    "line": 1,
+    "start": 191
+   }
+  },
+  {
+   "i": 59,
+   "k": "this",
+   "v": "SalesOrderDetail"
+  },
+  {
+   "i": 59,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 58,
+   "k": "db",
+   "m": {
+    "col": 190,
+    "end": 189,
+    "line": 1,
+    "start": 185
+   }
+  },
+  {
+   "i": 62,
+   "k": "this",
+   "v": "Sales"
+  },
+  {
+   "i": 62,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 58,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 65,
+   "k": "this",
+   "m": {
+    "col": 214,
+    "end": 213,
+    "line": 1,
+    "start": 211
+   }
+  },
+  {
+   "i": 66,
+   "k": "this",
+   "v": "sod"
+  },
+  {
+   "i": 66,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 47,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 69,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 70,
+   "k": "this",
+   "m": {
+    "col": 248,
+    "end": 247,
+    "line": 1,
+    "start": 232
+   }
+  },
+  {
+   "i": 71,
+   "k": "this",
+   "v": "SalesOrderHeader"
+  },
+  {
+   "i": 71,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 70,
+   "k": "db",
+   "m": {
+    "col": 231,
+    "end": 230,
+    "line": 1,
+    "start": 226
+   }
+  },
+  {
+   "i": 74,
+   "k": "this",
+   "v": "Sales"
+  },
+  {
+   "i": 74,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 70,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 77,
+   "k": "this",
+   "m": {
+    "col": 255,
+    "end": 254,
+    "line": 1,
+    "start": 252
+   }
+  },
+  {
+   "i": 78,
+   "k": "this",
+   "v": "soh"
+  },
+  {
+   "i": 78,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 69,
+   "k": "kind",
+   "v": "INNER"
+  },
+  {
+   "c": "sqlglot.expressions.core.And",
+   "i": 69,
+   "k": "on"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 82,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 83,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 84,
+   "k": "this",
+   "m": {
+    "col": 275,
+    "end": 274,
+    "line": 1,
+    "start": 263
+   }
+  },
+  {
+   "i": 85,
+   "k": "this",
+   "v": "SalesOrderID"
+  },
+  {
+   "i": 85,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 84,
+   "k": "table",
+   "m": {
+    "col": 262,
+    "end": 261,
+    "line": 1,
+    "start": 259
+   }
+  },
+  {
+   "i": 88,
+   "k": "this",
+   "v": "sod"
+  },
+  {
+   "i": 88,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 83,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 91,
+   "k": "this",
+   "m": {
+    "col": 294,
+    "end": 293,
+    "line": 1,
+    "start": 282
+   }
+  },
+  {
+   "i": 92,
+   "k": "this",
+   "v": "SalesOrderID"
+  },
+  {
+   "i": 92,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 91,
+   "k": "table",
+   "m": {
+    "col": 281,
+    "end": 280,
+    "line": 1,
+    "start": 278
+   }
+  },
+  {
+   "i": 95,
+   "k": "this",
+   "v": "soh"
+  },
+  {
+   "i": 95,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Between",
+   "i": 82,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 98,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 99,
+   "k": "this",
+   "m": {
+    "col": 312,
+    "end": 311,
+    "line": 1,
+    "start": 303
+   }
+  },
+  {
+   "i": 100,
+   "k": "this",
+   "v": "OrderDate"
+  },
+  {
+   "i": 100,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 99,
+   "k": "table",
+   "m": {
+    "col": 302,
+    "end": 301,
+    "line": 1,
+    "start": 299
+   }
+  },
+  {
+   "i": 103,
+   "k": "this",
+   "v": "soh"
+  },
+  {
+   "i": 103,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 98,
+   "k": "low",
+   "m": {
+    "col": 331,
+    "end": 330,
+    "line": 1,
+    "start": 321
+   }
+  },
+  {
+   "i": 106,
+   "k": "this",
+   "v": "20030701"
+  },
+  {
+   "i": 106,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 98,
+   "k": "high",
+   "m": {
+    "col": 346,
+    "end": 345,
+    "line": 1,
+    "start": 336
+   }
+  },
+  {
+   "i": 109,
+   "k": "this",
+   "v": "20030731"
+  },
+  {
+   "i": 109,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Group",
+   "i": 47,
+   "k": "group"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 112,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 113,
+   "k": "this",
+   "m": {
+    "col": 365,
+    "end": 364,
+    "line": 1,
+    "start": 356
+   }
+  },
+  {
+   "i": 114,
+   "k": "this",
+   "v": "ProductID"
+  },
+  {
+   "i": 114,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 46,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 117,
+   "k": "this",
+   "m": {
+    "col": 373,
+    "end": 372,
+    "line": 1,
+    "start": 370
+   }
+  },
+  {
+   "i": 118,
+   "k": "this",
+   "v": "src"
+  },
+  {
+   "i": 118,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 117,
+   "k": "columns",
+   "m": {
+    "col": 383,
+    "end": 382,
+    "line": 1,
+    "start": 374
+   }
+  },
+  {
+   "i": 121,
+   "k": "this",
+   "v": "ProductID"
+  },
+  {
+   "i": 121,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 117,
+   "k": "columns",
+   "m": {
+    "col": 393,
+    "end": 392,
+    "line": 1,
+    "start": 385
+   }
+  },
+  {
+   "i": 124,
+   "k": "this",
+   "v": "OrderQty"
+  },
+  {
+   "i": 124,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 34,
+   "k": "on"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 127,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 128,
+   "k": "this",
+   "m": {
+    "col": 410,
+    "end": 409,
+    "line": 1,
+    "start": 401
+   }
+  },
+  {
+   "i": 129,
+   "k": "this",
+   "v": "ProductID"
+  },
+  {
+   "i": 129,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 128,
+   "k": "table",
+   "m": {
+    "col": 400,
+    "end": 399,
+    "line": 1,
+    "start": 398
+   }
+  },
+  {
+   "i": 132,
+   "k": "this",
+   "v": "pi"
+  },
+  {
+   "i": 132,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 127,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 135,
+   "k": "this",
+   "m": {
+    "col": 426,
+    "end": 425,
+    "line": 1,
+    "start": 417
+   }
+  },
+  {
+   "i": 136,
+   "k": "this",
+   "v": "ProductID"
+  },
+  {
+   "i": 136,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 135,
+   "k": "table",
+   "m": {
+    "col": 416,
+    "end": 415,
+    "line": 1,
+    "start": 413
+   }
+  },
+  {
+   "i": 139,
+   "k": "this",
+   "v": "src"
+  },
+  {
+   "i": 139,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 34,
+   "k": "using_cond",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.Whens",
+   "i": 34,
+   "k": "whens"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.When",
+   "i": 143,
+   "k": "expressions"
+  },
+  {
+   "i": 144,
+   "k": "matched",
+   "v": true
+  },
+  {
+   "i": 144,
+   "k": "source",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.GTE",
+   "i": 144,
+   "k": "condition"
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 147,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 148,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 149,
+   "k": "this",
+   "m": {
+    "col": 455,
+    "end": 454,
+    "line": 1,
+    "start": 447
+   }
+  },
+  {
+   "i": 150,
+   "k": "this",
+   "v": "Quantity"
+  },
+  {
+   "i": 150,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 149,
+   "k": "table",
+   "m": {
+    "col": 446,
+    "end": 445,
+    "line": 1,
+    "start": 444
+   }
+  },
+  {
+   "i": 153,
+   "k": "this",
+   "v": "pi"
+  },
+  {
+   "i": 153,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 148,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 156,
+   "k": "this",
+   "m": {
+    "col": 470,
+    "end": 469,
+    "line": 1,
+    "start": 462
+   }
+  },
+  {
+   "i": 157,
+   "k": "this",
+   "v": "OrderQty"
+  },
+  {
+   "i": 157,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 156,
+   "k": "table",
+   "m": {
+    "col": 461,
+    "end": 460,
+    "line": 1,
+    "start": 458
+   }
+  },
+  {
+   "i": 160,
+   "k": "this",
+   "v": "src"
+  },
+  {
+   "i": 160,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 147,
+   "k": "expression",
+   "m": {
+    "col": 475,
+    "end": 474,
+    "line": 1,
+    "start": 474
+   }
+  },
+  {
+   "i": 163,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 163,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.Update",
+   "i": 144,
+   "k": "then"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 166,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 167,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 168,
+   "k": "this",
+   "m": {
+    "col": 503,
+    "end": 502,
+    "line": 1,
+    "start": 495
+   }
+  },
+  {
+   "i": 169,
+   "k": "this",
+   "v": "Quantity"
+  },
+  {
+   "i": 169,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 168,
+   "k": "table",
+   "m": {
+    "col": 494,
+    "end": 493,
+    "line": 1,
+    "start": 492
+   }
+  },
+  {
+   "i": 172,
+   "k": "this",
+   "v": "pi"
+  },
+  {
+   "i": 172,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 167,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 175,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 176,
+   "k": "this",
+   "m": {
+    "col": 517,
+    "end": 516,
+    "line": 1,
+    "start": 509
+   }
+  },
+  {
+   "i": 177,
+   "k": "this",
+   "v": "Quantity"
+  },
+  {
+   "i": 177,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 176,
+   "k": "table",
+   "m": {
+    "col": 508,
+    "end": 507,
+    "line": 1,
+    "start": 506
+   }
+  },
+  {
+   "i": 180,
+   "k": "this",
+   "v": "pi"
+  },
+  {
+   "i": 180,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 175,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 183,
+   "k": "this",
+   "m": {
+    "col": 532,
+    "end": 531,
+    "line": 1,
+    "start": 524
+   }
+  },
+  {
+   "i": 184,
+   "k": "this",
+   "v": "OrderQty"
+  },
+  {
+   "i": 184,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 183,
+   "k": "table",
+   "m": {
+    "col": 523,
+    "end": 522,
+    "line": 1,
+    "start": 520
+   }
+  },
+  {
+   "i": 187,
+   "k": "this",
+   "v": "src"
+  },
+  {
+   "i": 187,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.When",
+   "i": 143,
+   "k": "expressions"
+  },
+  {
+   "i": 190,
+   "k": "matched",
+   "v": true
+  },
+  {
+   "i": 190,
+   "k": "source",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.LTE",
+   "i": 190,
+   "k": "condition"
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 193,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 194,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 195,
+   "k": "this",
+   "m": {
+    "col": 561,
+    "end": 560,
+    "line": 1,
+    "start": 553
+   }
+  },
+  {
+   "i": 196,
+   "k": "this",
+   "v": "Quantity"
+  },
+  {
+   "i": 196,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 195,
+   "k": "table",
+   "m": {
+    "col": 552,
+    "end": 551,
+    "line": 1,
+    "start": 550
+   }
+  },
+  {
+   "i": 199,
+   "k": "this",
+   "v": "pi"
+  },
+  {
+   "i": 199,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 194,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 202,
+   "k": "this",
+   "m": {
+    "col": 576,
+    "end": 575,
+    "line": 1,
+    "start": 568
+   }
+  },
+  {
+   "i": 203,
+   "k": "this",
+   "v": "OrderQty"
+  },
+  {
+   "i": 203,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 202,
+   "k": "table",
+   "m": {
+    "col": 567,
+    "end": 566,
+    "line": 1,
+    "start": 564
+   }
+  },
+  {
+   "i": 206,
+   "k": "this",
+   "v": "src"
+  },
+  {
+   "i": 206,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 193,
+   "k": "expression",
+   "m": {
+    "col": 581,
+    "end": 580,
+    "line": 1,
+    "start": 580
+   }
+  },
+  {
+   "i": 209,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 209,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 190,
+   "k": "then"
+  },
+  {
+   "i": 212,
+   "k": "this",
+   "v": "DELETE"
+  },
+  {
+   "c": "sqlglot.expressions.dml.Returning",
+   "i": 34,
+   "k": "returning"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 214,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 215,
+   "k": "this",
+   "m": {
+    "col": 608,
+    "end": 607,
+    "line": 1,
+    "start": 601
+   }
+  },
+  {
+   "i": 216,
+   "k": "this",
+   "v": "$action"
+  },
+  {
+   "i": 216,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 214,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 219,
+   "k": "this",
+   "m": {
+    "col": 628,
+    "end": 627,
+    "line": 1,
+    "start": 619
+   }
+  },
+  {
+   "i": 220,
+   "k": "this",
+   "v": "ProductID"
+  },
+  {
+   "i": 220,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 219,
+   "k": "table",
+   "m": {
+    "col": 618,
+    "end": 617,
+    "line": 1,
+    "start": 610
+   }
+  },
+  {
+   "i": 223,
+   "k": "this",
+   "v": "Inserted"
+  },
+  {
+   "i": 223,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 214,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 226,
+   "k": "this",
+   "m": {
+    "col": 649,
+    "end": 648,
+    "line": 1,
+    "start": 639
+   }
+  },
+  {
+   "i": 227,
+   "k": "this",
+   "v": "LocationID"
+  },
+  {
+   "i": 227,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 226,
+   "k": "table",
+   "m": {
+    "col": 638,
+    "end": 637,
+    "line": 1,
+    "start": 630
+   }
+  },
+  {
+   "i": 230,
+   "k": "this",
+   "v": "Inserted"
+  },
+  {
+   "i": 230,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 214,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 233,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 234,
+   "k": "this",
+   "m": {
+    "col": 668,
+    "end": 667,
+    "line": 1,
+    "start": 660
+   }
+  },
+  {
+   "i": 235,
+   "k": "this",
+   "v": "Quantity"
+  },
+  {
+   "i": 235,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 234,
+   "k": "table",
+   "m": {
+    "col": 659,
+    "end": 658,
+    "line": 1,
+    "start": 651
+   }
+  },
+  {
+   "i": 238,
+   "k": "this",
+   "v": "Inserted"
+  },
+  {
+   "i": 238,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 233,
+   "k": "alias",
+   "m": {
+    "col": 678,
+    "end": 677,
+    "line": 1,
+    "start": 672
+   }
+  },
+  {
+   "i": 241,
+   "k": "this",
+   "v": "NewQty"
+  },
+  {
+   "i": 241,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 214,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 244,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 245,
+   "k": "this",
+   "m": {
+    "col": 696,
+    "end": 695,
+    "line": 1,
+    "start": 688
+   }
+  },
+  {
+   "i": 246,
+   "k": "this",
+   "v": "Quantity"
+  },
+  {
+   "i": 246,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 245,
+   "k": "table",
+   "m": {
+    "col": 687,
+    "end": 686,
+    "line": 1,
+    "start": 680
+   }
+  },
+  {
+   "i": 249,
+   "k": "this",
+   "v": "Deleted"
+  },
+  {
+   "i": 249,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 244,
+   "k": "alias",
+   "m": {
+    "col": 711,
+    "end": 710,
+    "line": 1,
+    "start": 700
+   }
+  },
+  {
+   "i": 252,
+   "k": "this",
+   "v": "PreviousQty"
+  },
+  {
+   "i": 252,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 214,
+   "k": "into",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 33,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 256,
+   "k": "this",
+   "m": {
+    "col": 723,
+    "end": 722,
+    "line": 1,
+    "start": 716
+   }
+  },
+  {
+   "i": 257,
+   "k": "this",
+   "v": "Changes"
+  },
+  {
+   "i": 257,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 256,
+   "k": "columns",
+   "m": {
+    "col": 730,
+    "end": 729,
+    "line": 1,
+    "start": 724
+   }
+  },
+  {
+   "i": 260,
+   "k": "this",
+   "v": "Action"
+  },
+  {
+   "i": 260,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 256,
+   "k": "columns",
+   "m": {
+    "col": 741,
+    "end": 740,
+    "line": 1,
+    "start": 732
+   }
+  },
+  {
+   "i": 263,
+   "k": "this",
+   "v": "ProductID"
+  },
+  {
+   "i": 263,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 256,
+   "k": "columns",
+   "m": {
+    "col": 753,
+    "end": 752,
+    "line": 1,
+    "start": 743
+   }
+  },
+  {
+   "i": 266,
+   "k": "this",
+   "v": "LocationID"
+  },
+  {
+   "i": 266,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 256,
+   "k": "columns",
+   "m": {
+    "col": 761,
+    "end": 760,
+    "line": 1,
+    "start": 755
+   }
+  },
+  {
+   "i": 269,
+   "k": "this",
+   "v": "NewQty"
+  },
+  {
+   "i": 269,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 256,
+   "k": "columns",
+   "m": {
+    "col": 774,
+    "end": 773,
+    "line": 1,
+    "start": 763
+   }
+  },
+  {
+   "i": 272,
+   "k": "this",
+   "v": "PreviousQty"
+  },
+  {
+   "i": 272,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 15,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 275,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 276,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 277,
+   "k": "this",
+   "m": {
+    "col": 788,
+    "end": 787,
+    "line": 1,
+    "start": 782
+   }
+  },
+  {
+   "i": 278,
+   "k": "this",
+   "v": "Action"
+  },
+  {
+   "i": 278,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 276,
+   "k": "expression",
+   "m": {
+    "col": 799,
+    "end": 798,
+    "line": 1,
+    "start": 791
+   }
+  },
+  {
+   "i": 281,
+   "k": "this",
+   "v": "UPDATE"
+  },
+  {
+   "i": 281,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "overwrite",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "ignore",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "source",
+   "v": false
+  }
+ ]
+}

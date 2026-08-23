@@ -1,0 +1,62 @@
+{
+ "dialect": "databricks",
+ "sql": "DATE_DIFF(day, created_at, current_date())",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.DateDiff",
+   "m": {
+    "col": 9,
+    "end": 8,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentDate",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "created_at"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 0,
+   "k": "unit"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "DAY"
+  }
+ ]
+}

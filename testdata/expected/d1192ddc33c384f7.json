@@ -1,0 +1,257 @@
+{
+ "dialect": "databricks",
+ "sql": "SELECT FROM_JSON(c1:item[*].price, 'ARRAY<DOUBLE>')[0] FROM VALUES ('{ \"item\": [ { \"model\" : \"basic\", \"price\" : 6.12 }, { \"model\" : \"medium\", \"price\" : 9.24 } ] }') AS T(c1)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Bracket",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "FROM_JSON"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExtract",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 4,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "item"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathSubscript",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPathWildcard",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "price"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 4,
+   "k": "variant_extract",
+   "v": true
+  },
+  {
+   "i": 4,
+   "k": "requires_json",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "ARRAY<DOUBLE>"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Values",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 28,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 29,
+   "k": "expressions",
+   "m": {
+    "col": 163,
+    "end": 162,
+    "line": 1,
+    "start": 68
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "{ \"item\": [ { \"model\" : \"basic\", \"price\" : 6.12 }, { \"model\" : \"medium\", \"price\" : 9.24 } ] }"
+  },
+  {
+   "i": 30,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 28,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "this",
+   "m": {
+    "col": 169,
+    "end": 168,
+    "line": 1,
+    "start": 168
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "T"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "columns",
+   "m": {
+    "col": 172,
+    "end": 171,
+    "line": 1,
+    "start": 170
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 37,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

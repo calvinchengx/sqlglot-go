@@ -1,0 +1,62 @@
+{
+ "dialect": "tsql",
+ "sql": "DELETE FROM start WITH (ROWLOCK)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Delete"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "start"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.WithTableHint",
+   "i": 1,
+   "k": "hints"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Var",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "ROWLOCK"
+  },
+  {
+   "i": 0,
+   "k": "using",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cluster",
+   "v": false
+  }
+ ]
+}

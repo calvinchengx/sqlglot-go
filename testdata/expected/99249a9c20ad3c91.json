@@ -1,0 +1,73 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT U&'can''t !0061' UESCAPE '!' AS label",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.UnicodeString",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "can't !0061"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "escape",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "!"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "label"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,147 @@
+{
+ "dialect": "",
+ "sql": "SELECT * FROM ((SELECT 1) UNION (SELECT 2) UNION (SELECT 3))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Union",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Union",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "expressions",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 5,
+   "k": "distinct",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 5,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expressions",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 4,
+   "k": "distinct",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 4,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 19,
+   "k": "expressions",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

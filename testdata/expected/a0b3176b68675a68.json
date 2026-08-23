@@ -1,0 +1,89 @@
+{
+ "dialect": "",
+ "sql": "SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.WithinGroup",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.PercentileCont",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "0.5"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "nulls_first",
+   "v": true
+  }
+ ]
+}

@@ -1,0 +1,298 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT * FROM table1, ROWS FROM (FUNC1(col1) AS alias1(\"col1\" TEXT)) WITH ORDINALITY AS alias3(\"col3\" INT, \"col4\" TEXT)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "table1"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 0,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 8,
+   "k": "rows_from"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "FUNC1"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "col1"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 9,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "alias1"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 16,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "col1"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 20,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 24,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 24,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 8,
+   "k": "ordinality",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 8,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 94,
+    "end": 93,
+    "line": 1,
+    "start": 88
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "alias3"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 28,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 101,
+    "end": 100,
+    "line": 1,
+    "start": 95
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "col3"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 32,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 36,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 36,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 28,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 39,
+   "k": "this",
+   "m": {
+    "col": 113,
+    "end": 112,
+    "line": 1,
+    "start": 107
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "col4"
+  },
+  {
+   "i": 40,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 39,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 43,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 43,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

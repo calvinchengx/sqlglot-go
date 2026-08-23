@@ -1,0 +1,154 @@
+{
+ "dialect": "",
+ "sql": "ALTER TABLE mydataset.mytable DELETE WHERE x = 1",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Alter"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "mytable"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "db",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "mydataset"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.Delete",
+   "i": 0,
+   "k": "actions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 10,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 12,
+   "k": "expression",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "only",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "not_valid",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "check",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cascade",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  }
+ ]
+}

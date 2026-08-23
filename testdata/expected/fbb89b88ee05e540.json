@@ -1,0 +1,187 @@
+{
+ "dialect": "",
+ "sql": "SPLIT(SPLIT(referrer, 'utm_source=')[OFFSET(1)], \"&\")[OFFSET(0)]",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Bracket"
+  },
+  {
+   "c": "sqlglot.expressions.string.Split",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 5,
+    "end": 4,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Bracket",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.string.Split",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 6
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "referrer"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expression",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "utm_source="
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "OFFSET"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "expressions",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 49
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "&"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 54
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "OFFSET"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 20,
+   "k": "expressions",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 61
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

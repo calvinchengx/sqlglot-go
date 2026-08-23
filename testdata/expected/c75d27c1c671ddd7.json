@@ -1,0 +1,163 @@
+{
+ "dialect": "",
+ "sql": "ALTER TABLE persons ADD CONSTRAINT persons_pk PRIMARY KEY (first_name, last_name)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Alter"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "persons"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.AddConstraint",
+   "i": 0,
+   "k": "actions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.Constraint",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "persons_pk"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.PrimaryKey",
+   "i": 8,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "expressions",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "first_name"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "expressions",
+   "m": {
+    "col": 80,
+    "end": 79,
+    "line": 1,
+    "start": 71
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "last_name"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.constraints.IndexParameters",
+   "i": 12,
+   "k": "include"
+  },
+  {
+   "i": 19,
+   "k": "with_storage",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "only",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "not_valid",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "check",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cascade",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  }
+ ]
+}

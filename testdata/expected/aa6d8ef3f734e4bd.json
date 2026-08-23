@@ -1,0 +1,268 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT CAST(TRIM(CAST(CAST('***apple***' AS BLOB) AS TEXT), CAST(CAST('*' AS BLOB) AS TEXT)) AS BLOB) AS result",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARBINARY"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.string.Trim",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 3,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TEXT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 4,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARBINARY"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "***apple***"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 5,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 9,
+   "k": "this",
+   "v": "VARBINARY"
+  },
+  {
+   "i": 9,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 4,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 12,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 12,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 3,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TEXT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 15,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARBINARY"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 73,
+    "end": 72,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "*"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 16,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 20,
+   "k": "this",
+   "v": "VARBINARY"
+  },
+  {
+   "i": 20,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 15,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 23,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 23,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 26,
+   "k": "this",
+   "v": "VARBINARY"
+  },
+  {
+   "i": 26,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 111,
+    "end": 110,
+    "line": 1,
+    "start": 105
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "result"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

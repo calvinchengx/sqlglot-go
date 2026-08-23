@@ -1,0 +1,103 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT CONCAT('abcde', 2, NULL, 22)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.Concat",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "abcde"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Null",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "22"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "coalesce",
+   "v": true
+  }
+ ]
+}

@@ -1,0 +1,89 @@
+{
+ "dialect": "databricks",
+ "sql": "SELECT SUBSTR(ENCODE('Spark SQL', 'utf-8'), 5)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.Substring",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.string.Encode",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "Spark SQL"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "charset",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "utf-8"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "start",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "5"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

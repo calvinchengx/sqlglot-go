@@ -1,0 +1,72 @@
+{
+ "dialect": "",
+ "sql": "SELECT :hello, ? FROM x LIMIT :my_limit",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Placeholder",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "hello"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Placeholder",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Limit",
+   "i": 0,
+   "k": "limit"
+  },
+  {
+   "c": "sqlglot.expressions.core.Placeholder",
+   "i": 4,
+   "k": "expression"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "my_limit"
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

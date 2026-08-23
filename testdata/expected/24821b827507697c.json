@@ -1,0 +1,270 @@
+{
+ "dialect": "databricks",
+ "sql": "CREATE TABLE t (customer_id INT NOT NULL, ts TIMESTAMP NOT NULL, CONSTRAINT customer_features_pk PRIMARY KEY (customer_id, ts TIMESERIES))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "customer_id"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 6,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.NotNullColumnConstraint",
+   "i": 13,
+   "k": "kind"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "ts"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 15,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 19,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  },
+  {
+   "i": 19,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 15,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.NotNullColumnConstraint",
+   "i": 22,
+   "k": "kind"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.Constraint",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 96,
+    "end": 95,
+    "line": 1,
+    "start": 76
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "customer_features_pk"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.PrimaryKey",
+   "i": 24,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "expressions",
+   "m": {
+    "col": 121,
+    "end": 120,
+    "line": 1,
+    "start": 110
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "customer_id"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.TimeseriesKey",
+   "i": 28,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 125,
+    "end": 124,
+    "line": 1,
+    "start": 123
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "ts"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.constraints.IndexParameters",
+   "i": 28,
+   "k": "include"
+  },
+  {
+   "i": 36,
+   "k": "with_storage",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

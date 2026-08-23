@@ -1,0 +1,184 @@
+{
+ "dialect": "databricks",
+ "sql": "SELECT test, LISTAGG(email, '') AS Email FROM organizations GROUP BY test",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.GroupConcat",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "email"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "separator",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": ""
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "alias",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "Email"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 59,
+    "end": 58,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "organizations"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Group",
+   "i": 0,
+   "k": "group"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 22,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 73,
+    "end": 72,
+    "line": 1,
+    "start": 69
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

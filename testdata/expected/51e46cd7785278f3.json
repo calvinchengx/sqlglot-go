@@ -1,0 +1,156 @@
+{
+ "dialect": "postgres",
+ "sql": "select count() OVER(partition by a order by a range offset preceding exclude current row)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Window",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Count",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "big_int",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "partition_by"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 1,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 8,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.WindowSpec",
+   "i": 1,
+   "k": "spec"
+  },
+  {
+   "i": 15,
+   "k": "kind",
+   "v": "range"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 15,
+   "k": "start"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "offset"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 15,
+   "k": "start_side",
+   "v": "preceding"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 15,
+   "k": "exclude"
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "CURRENT ROW"
+  },
+  {
+   "i": 1,
+   "k": "over",
+   "v": "OVER"
+  }
+ ]
+}

@@ -1,0 +1,220 @@
+{
+ "dialect": "databricks",
+ "sql": "SELECT DATE_FORMAT(CAST(FROM_UTC_TIMESTAMP(foo, 'America/Los_Angeles') AS TIMESTAMP), 'yyyy-MM-dd HH:mm:ss') AS foo FROM t",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TimeToStr",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TimeStrToTime",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 3,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMPTZ"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.AtTimeZone",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 5,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMP"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 46,
+    "end": 45,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 11,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "zone",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "America/Los_Angeles"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 4,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 16,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  },
+  {
+   "i": 16,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "format"
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "%Y-%mstrict-%dstrict %Hstrict:%Mstrict:%Sstrict"
+  },
+  {
+   "i": 19,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 115,
+    "end": 114,
+    "line": 1,
+    "start": 112
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 22,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 25,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 122,
+    "end": 121,
+    "line": 1,
+    "start": 121
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,29 @@
+{
+ "dialect": "tsql",
+ "sql": "COMMIT TRANSACTION @tran_name_variable WITH (DELAYED_DURABILITY = ON)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Commit"
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "tran_name_variable"
+  },
+  {
+   "i": 0,
+   "k": "durability",
+   "v": true
+  }
+ ]
+}

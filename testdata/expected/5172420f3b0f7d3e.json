@@ -1,0 +1,126 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT COLUMNS(c -> c LIKE '%num%') FROM numbers",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Columns",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.Lambda",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Like",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expression",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "%num%"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 41
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "numbers"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

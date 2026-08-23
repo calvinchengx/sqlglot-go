@@ -1,0 +1,73 @@
+{
+ "dialect": "postgres",
+ "sql": "TO_TIMESTAMP(123::DOUBLE PRECISION)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.UnixToTime",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DOUBLE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "123"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 5,
+   "k": "this",
+   "v": "DOUBLE"
+  },
+  {
+   "i": 5,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

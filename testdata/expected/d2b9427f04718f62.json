@@ -1,0 +1,332 @@
+{
+ "dialect": "postgres",
+ "sql": "CREATE FUNCTION foo(a INT, OUT b INT, INOUT c VARCHAR, VARIADIC d INT[])",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.ddl.UserDefinedFunction",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 13,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 17,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 17,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.InOutColumnConstraint",
+   "i": 13,
+   "k": "constraints"
+  },
+  {
+   "i": 20,
+   "k": "input_",
+   "v": false
+  },
+  {
+   "i": 20,
+   "k": "output",
+   "v": true
+  },
+  {
+   "i": 20,
+   "k": "variadic",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 24,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 28,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "i": 28,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.InOutColumnConstraint",
+   "i": 24,
+   "k": "constraints"
+  },
+  {
+   "i": 31,
+   "k": "input_",
+   "v": true
+  },
+  {
+   "i": 31,
+   "k": "output",
+   "v": true
+  },
+  {
+   "i": 31,
+   "k": "variadic",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 35,
+   "k": "this",
+   "m": {
+    "col": 65,
+    "end": 64,
+    "line": 1,
+    "start": 64
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "d"
+  },
+  {
+   "i": 36,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 35,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 39,
+   "k": "this",
+   "v": "ARRAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 39,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 41,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 41,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 39,
+   "k": "nested",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.InOutColumnConstraint",
+   "i": 35,
+   "k": "constraints"
+  },
+  {
+   "i": 45,
+   "k": "input_",
+   "v": false
+  },
+  {
+   "i": 45,
+   "k": "output",
+   "v": false
+  },
+  {
+   "i": 45,
+   "k": "variadic",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "wrapped",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "FUNCTION"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "begin",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

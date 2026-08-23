@@ -1,0 +1,283 @@
+{
+ "dialect": "duckdb",
+ "sql": "COPY lineitem FROM 'lineitem.ndjson' WITH (FORMAT JSON, DELIMITER ',', AUTO_DETECT TRUE, COMPRESSION SNAPPY, CODEC ZSTD, FORCE_NOT_NULL (col1, col2))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Copy"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "lineitem"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.dml.Credentials",
+   "i": 0,
+   "k": "credentials"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "files",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "lineitem.ndjson"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "FORMAT"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 10,
+   "k": "expression"
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "JSON"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "DELIMITER"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 15,
+   "k": "expression",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": ","
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "AUTO_DETECT"
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 21,
+   "k": "expression"
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 26,
+   "k": "this"
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "COMPRESSION"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 26,
+   "k": "expression"
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "SNAPPY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 31,
+   "k": "this"
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "CODEC"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 31,
+   "k": "expression"
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "ZSTD"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 36,
+   "k": "this"
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "FORCE_NOT_NULL"
+  },
+  {
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 36,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 39,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 40,
+   "k": "this",
+   "m": {
+    "col": 141,
+    "end": 140,
+    "line": 1,
+    "start": 137
+   }
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "col1"
+  },
+  {
+   "i": 41,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 39,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 44,
+   "k": "this",
+   "m": {
+    "col": 147,
+    "end": 146,
+    "line": 1,
+    "start": 143
+   }
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "col2"
+  },
+  {
+   "i": 45,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,78 @@
+{
+ "dialect": "tsql",
+ "sql": "SELECT DATEDIFF_BIG(HOUR, 1.5, '2021-01-01')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.DateDiff",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "2021-01-01"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "1.5"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "unit"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "HOUR"
+  },
+  {
+   "i": 1,
+   "k": "big_int",
+   "v": true
+  }
+ ]
+}

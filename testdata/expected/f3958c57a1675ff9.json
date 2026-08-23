@@ -1,0 +1,444 @@
+{
+ "dialect": "",
+ "sql": "SELECT zoo, animals FROM UNNEST(ARRAY(STRUCT('oakland' AS zoo, ARRAY('a', 'b') AS animals), STRUCT('sf' AS zoo, ARRAY('b', 'c') AS animals))) AS t(zoo, animals)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "zoo"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "animals"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.array.Unnest",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.array.Array",
+   "i": 10,
+   "k": "expressions",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.array.Struct",
+   "i": 11,
+   "k": "expressions",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PropertyEQ",
+   "i": 12,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 58
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "zoo"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expression",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "oakland"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PropertyEQ",
+   "i": 12,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 89,
+    "end": 88,
+    "line": 1,
+    "start": 82
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "animals"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 20,
+   "k": "expression",
+   "m": {
+    "col": 68,
+    "end": 67,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 24,
+   "k": "expressions",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 69
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 25,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 24,
+   "k": "expressions",
+   "m": {
+    "col": 77,
+    "end": 76,
+    "line": 1,
+    "start": 74
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 28,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.array.Struct",
+   "i": 11,
+   "k": "expressions",
+   "m": {
+    "col": 98,
+    "end": 97,
+    "line": 1,
+    "start": 92
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PropertyEQ",
+   "i": 31,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 110,
+    "end": 109,
+    "line": 1,
+    "start": 107
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "zoo"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 32,
+   "k": "expression",
+   "m": {
+    "col": 103,
+    "end": 102,
+    "line": 1,
+    "start": 99
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "sf"
+  },
+  {
+   "i": 36,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PropertyEQ",
+   "i": 31,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 39,
+   "k": "this",
+   "m": {
+    "col": 138,
+    "end": 137,
+    "line": 1,
+    "start": 131
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "animals"
+  },
+  {
+   "i": 40,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 39,
+   "k": "expression",
+   "m": {
+    "col": 117,
+    "end": 116,
+    "line": 1,
+    "start": 112
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 43,
+   "k": "expressions",
+   "m": {
+    "col": 121,
+    "end": 120,
+    "line": 1,
+    "start": 118
+   }
+  },
+  {
+   "i": 44,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 44,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 43,
+   "k": "expressions",
+   "m": {
+    "col": 126,
+    "end": 125,
+    "line": 1,
+    "start": 123
+   }
+  },
+  {
+   "i": 47,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 47,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 10,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 50,
+   "k": "this",
+   "m": {
+    "col": 146,
+    "end": 145,
+    "line": 1,
+    "start": 145
+   }
+  },
+  {
+   "i": 51,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 51,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 50,
+   "k": "columns",
+   "m": {
+    "col": 150,
+    "end": 149,
+    "line": 1,
+    "start": 147
+   }
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "zoo"
+  },
+  {
+   "i": 54,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 50,
+   "k": "columns",
+   "m": {
+    "col": 159,
+    "end": 158,
+    "line": 1,
+    "start": 152
+   }
+  },
+  {
+   "i": 57,
+   "k": "this",
+   "v": "animals"
+  },
+  {
+   "i": 57,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "offset",
+   "v": false
+  }
+ ]
+}

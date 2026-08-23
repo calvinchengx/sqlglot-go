@@ -1,0 +1,42 @@
+{
+ "dialect": "tsql",
+ "sql": "SELECT COMPRESS('Hello World')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.Compress",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "Hello World"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

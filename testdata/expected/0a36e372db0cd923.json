@@ -1,0 +1,82 @@
+{
+ "dialect": "",
+ "sql": "SELECT * FROM test FETCH FIRST ROWS ONLY",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.Fetch",
+   "i": 0,
+   "k": "limit"
+  },
+  {
+   "i": 2,
+   "k": "direction",
+   "v": "FIRST"
+  },
+  {
+   "c": "sqlglot.expressions.query.LimitOptions",
+   "i": 2,
+   "k": "limit_options"
+  },
+  {
+   "i": 4,
+   "k": "percent",
+   "v": false
+  },
+  {
+   "i": 4,
+   "k": "rows",
+   "v": true
+  },
+  {
+   "i": 4,
+   "k": "with_ties",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

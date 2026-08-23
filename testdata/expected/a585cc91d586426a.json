@@ -1,0 +1,440 @@
+{
+ "dialect": "postgres",
+ "sql": "INSERT INTO book (isbn, title) VALUES ($1, $2) ON CONFLICT(isbn) WHERE deleted_at IS NULL DO UPDATE SET title = EXCLUDED.title RETURNING id, isbn",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Insert"
+  },
+  {
+   "i": 0,
+   "k": "is_function",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "book"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "isbn"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "title"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "stored",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "by_name",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "partition",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "settings",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "default",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Values",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 19,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 20,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 21,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 20,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 26,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.OnConflict",
+   "i": 0,
+   "k": "conflict"
+  },
+  {
+   "i": 29,
+   "k": "duplicate",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 29,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 31,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 109,
+    "end": 108,
+    "line": 1,
+    "start": 104
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "title"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 31,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 36,
+   "k": "this",
+   "m": {
+    "col": 126,
+    "end": 125,
+    "line": 1,
+    "start": 121
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "title"
+  },
+  {
+   "i": 37,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 36,
+   "k": "table",
+   "m": {
+    "col": 120,
+    "end": 119,
+    "line": 1,
+    "start": 112
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "EXCLUDED"
+  },
+  {
+   "i": 40,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 29,
+   "k": "action"
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "DO UPDATE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 29,
+   "k": "conflict_keys"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 45,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 46,
+   "k": "this",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "i": 47,
+   "k": "this",
+   "v": "isbn"
+  },
+  {
+   "i": 47,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 45,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 29,
+   "k": "index_predicate"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 51,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 52,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 53,
+   "k": "this",
+   "m": {
+    "col": 81,
+    "end": 80,
+    "line": 1,
+    "start": 71
+   }
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "deleted_at"
+  },
+  {
+   "i": 54,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 52,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.dml.Returning",
+   "i": 0,
+   "k": "returning"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 58,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 59,
+   "k": "this",
+   "m": {
+    "col": 139,
+    "end": 138,
+    "line": 1,
+    "start": 137
+   }
+  },
+  {
+   "i": 60,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 60,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 58,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 63,
+   "k": "this",
+   "m": {
+    "col": 145,
+    "end": 144,
+    "line": 1,
+    "start": 141
+   }
+  },
+  {
+   "i": 64,
+   "k": "this",
+   "v": "isbn"
+  },
+  {
+   "i": 64,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 58,
+   "k": "into",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "overwrite",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "ignore",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "source",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,366 @@
+{
+ "dialect": "databricks",
+ "sql": "COPY INTO target FROM `s3://link` FILEFORMAT = AVRO VALIDATE = ALL FILES = ('file1', 'file2') FORMAT_OPTIONS ('opt1'='true', 'opt2'='test') COPY_OPTIONS ('mergeSchema'='true')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Copy"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 10
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "target"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.dml.Credentials",
+   "i": 0,
+   "k": "credentials"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 0,
+   "k": "files",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "s3://link"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "FILEFORMAT"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 10,
+   "k": "expression"
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "AVRO"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "VALIDATE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 15,
+   "k": "expression"
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "ALL"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 20,
+   "k": "this"
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "FILES"
+  },
+  {
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 20,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 23,
+   "k": "expressions",
+   "m": {
+    "col": 83,
+    "end": 82,
+    "line": 1,
+    "start": 76
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "file1"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 23,
+   "k": "expressions",
+   "m": {
+    "col": 92,
+    "end": 91,
+    "line": 1,
+    "start": 85
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "file2"
+  },
+  {
+   "i": 27,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 30,
+   "k": "this"
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "FORMAT_OPTIONS"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 30,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 33,
+   "k": "this",
+   "m": {
+    "col": 116,
+    "end": 115,
+    "line": 1,
+    "start": 110
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "opt1"
+  },
+  {
+   "i": 34,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 33,
+   "k": "value",
+   "m": {
+    "col": 123,
+    "end": 122,
+    "line": 1,
+    "start": 117
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "true"
+  },
+  {
+   "i": 37,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.SequenceProperties",
+   "i": 30,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 30,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 41,
+   "k": "this",
+   "m": {
+    "col": 131,
+    "end": 130,
+    "line": 1,
+    "start": 125
+   }
+  },
+  {
+   "i": 42,
+   "k": "this",
+   "v": "opt2"
+  },
+  {
+   "i": 42,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 41,
+   "k": "value",
+   "m": {
+    "col": 138,
+    "end": 137,
+    "line": 1,
+    "start": 132
+   }
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 45,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 48,
+   "k": "this"
+  },
+  {
+   "i": 49,
+   "k": "this",
+   "v": "COPY_OPTIONS"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 48,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 51,
+   "k": "this",
+   "m": {
+    "col": 167,
+    "end": 166,
+    "line": 1,
+    "start": 154
+   }
+  },
+  {
+   "i": 52,
+   "k": "this",
+   "v": "mergeSchema"
+  },
+  {
+   "i": 52,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 51,
+   "k": "value",
+   "m": {
+    "col": 174,
+    "end": 173,
+    "line": 1,
+    "start": 168
+   }
+  },
+  {
+   "i": 55,
+   "k": "this",
+   "v": "true"
+  },
+  {
+   "i": 55,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

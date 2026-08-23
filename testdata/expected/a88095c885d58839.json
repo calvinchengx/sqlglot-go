@@ -1,0 +1,93 @@
+{
+ "dialect": "",
+ "sql": "REVOKE SELECT ON TABLE tbl FROM user",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Revoke"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.GrantPrivilege",
+   "i": 0,
+   "k": "privileges"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "SELECT"
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "securable"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "tbl"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.GrantPrincipal",
+   "i": 0,
+   "k": "principals"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "user"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "kind",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "grant_option",
+   "v": false
+  }
+ ]
+}

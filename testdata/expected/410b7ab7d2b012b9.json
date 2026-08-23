@@ -1,0 +1,62 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT date_add(current_date, interval '7' day)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.DateAdd",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentDate",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "7"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 3,
+   "k": "unit"
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "DAY"
+  }
+ ]
+}

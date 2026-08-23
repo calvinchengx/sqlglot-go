@@ -1,0 +1,299 @@
+{
+ "dialect": "postgres",
+ "sql": "INSERT INTO x VALUES (1, 'a', 2.0) ON CONFLICT ON CONSTRAINT pkey DO UPDATE SET x.id = 1 RETURNING *",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Insert"
+  },
+  {
+   "i": 0,
+   "k": "is_function",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "stored",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "by_name",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "partition",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "settings",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "default",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Values",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 12,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expressions",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expressions",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expressions",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "2.0"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.OnConflict",
+   "i": 0,
+   "k": "conflict"
+  },
+  {
+   "i": 23,
+   "k": "duplicate",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 23,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 25,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 84,
+    "end": 83,
+    "line": 1,
+    "start": 82
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "table",
+   "m": {
+    "col": 81,
+    "end": 80,
+    "line": 1,
+    "start": 80
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 30,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 25,
+   "k": "expression",
+   "m": {
+    "col": 88,
+    "end": 87,
+    "line": 1,
+    "start": 87
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 33,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 23,
+   "k": "action"
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "DO UPDATE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "constraint",
+   "m": {
+    "col": 65,
+    "end": 64,
+    "line": 1,
+    "start": 61
+   }
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "pkey"
+  },
+  {
+   "i": 38,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.Returning",
+   "i": 0,
+   "k": "returning"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 41,
+   "k": "expressions",
+   "m": {
+    "col": 100,
+    "end": 99,
+    "line": 1,
+    "start": 99
+   }
+  },
+  {
+   "i": 41,
+   "k": "into",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "overwrite",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "ignore",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "source",
+   "v": false
+  }
+ ]
+}

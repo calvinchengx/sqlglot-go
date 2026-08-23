@@ -1,0 +1,230 @@
+{
+ "dialect": "postgres",
+ "sql": "CREATE FUNCTION add(integer, integer) RETURNS INT LANGUAGE SQL IMMUTABLE RETURNS NULL ON NULL INPUT AS 'select $1 + $2;'",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.ddl.UserDefinedFunction",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "add"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "integer"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "integer"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "wrapped",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "FUNCTION"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 120,
+    "end": 119,
+    "line": 1,
+    "start": 103
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "select $1 + $2;"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.ReturnsProperty",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 23,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 23,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 22,
+   "k": "is_table",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.LanguageProperty",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "SQL"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.StabilityProperty",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 30,
+   "k": "this"
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "IMMUTABLE"
+  },
+  {
+   "i": 31,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.ReturnsProperty",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "i": 34,
+   "k": "is_table",
+   "v": false
+  },
+  {
+   "i": 34,
+   "k": "null",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "begin",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

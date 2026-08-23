@@ -1,0 +1,114 @@
+{
+ "dialect": "databricks",
+ "sql": "SELECT MODE(price, TRUE) AS deterministic_mode FROM products",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Mode",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "price"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 2,
+   "k": "deterministic"
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 46,
+    "end": 45,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "deterministic_mode"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "products"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,294 @@
+{
+ "dialect": "",
+ "sql": "SELECT (ROW_NUMBER() OVER (PARTITION BY user ORDER BY date ASC) - ROW_NUMBER() OVER (PARTITION BY user, segment ORDER BY date ASC)) AS group_id FROM example_table",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Window",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.RowNumber",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "partition_by"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "user"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 4,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 54
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "date"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 11,
+   "k": "desc",
+   "v": false
+  },
+  {
+   "i": 11,
+   "k": "nulls_first",
+   "v": true
+  },
+  {
+   "i": 4,
+   "k": "over",
+   "v": "OVER"
+  },
+  {
+   "c": "sqlglot.expressions.query.Window",
+   "i": 3,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.RowNumber",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 76,
+    "end": 75,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 19,
+   "k": "partition_by"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "this",
+   "m": {
+    "col": 102,
+    "end": 101,
+    "line": 1,
+    "start": 98
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "user"
+  },
+  {
+   "i": 22,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 19,
+   "k": "partition_by"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 111,
+    "end": 110,
+    "line": 1,
+    "start": 104
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "segment"
+  },
+  {
+   "i": 26,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 19,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 29,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 30,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 31,
+   "k": "this",
+   "m": {
+    "col": 125,
+    "end": 124,
+    "line": 1,
+    "start": 121
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "date"
+  },
+  {
+   "i": 32,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 30,
+   "k": "desc",
+   "v": false
+  },
+  {
+   "i": 30,
+   "k": "nulls_first",
+   "v": true
+  },
+  {
+   "i": 19,
+   "k": "over",
+   "v": "OVER"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 143,
+    "end": 142,
+    "line": 1,
+    "start": 135
+   }
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "group_id"
+  },
+  {
+   "i": 38,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 41,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 42,
+   "k": "this",
+   "m": {
+    "col": 162,
+    "end": 161,
+    "line": 1,
+    "start": 149
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "example_table"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

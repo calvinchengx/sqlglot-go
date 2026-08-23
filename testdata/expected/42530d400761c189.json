@@ -1,0 +1,199 @@
+{
+ "dialect": "",
+ "sql": "COUNT(DISTINCT CASE WHEN DATE_TRUNC('ISOWEEK', DATE(time_field)) = DATE_TRUNC('ISOWEEK', DATE(time_field2)) THEN report_id ELSE NULL END)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.aggregate.Count",
+   "m": {
+    "col": 5,
+    "end": 4,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Distinct",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Case",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 2,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.DateTrunc",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "unit"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "ISOWEEK"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.temporal.Date",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "time_field"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.temporal.DateTrunc",
+   "i": 4,
+   "k": "expression",
+   "m": {
+    "col": 77,
+    "end": 76,
+    "line": 1,
+    "start": 67
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 14,
+   "k": "unit"
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "ISOWEEK"
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.temporal.Date",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 93,
+    "end": 92,
+    "line": 1,
+    "start": 89
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 105,
+    "end": 104,
+    "line": 1,
+    "start": 94
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "time_field2"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 3,
+   "k": "true"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 122,
+    "end": 121,
+    "line": 1,
+    "start": 113
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "report_id"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 2,
+   "k": "default"
+  },
+  {
+   "i": 0,
+   "k": "big_int",
+   "v": true
+  }
+ ]
+}

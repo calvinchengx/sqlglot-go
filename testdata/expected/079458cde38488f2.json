@@ -1,0 +1,67 @@
+{
+ "dialect": "duckdb",
+ "sql": "CAST(x AS BYTEA)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARBINARY"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 6,
+    "end": 5,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 0,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 5,
+   "k": "this",
+   "v": "VARBINARY"
+  },
+  {
+   "i": 5,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

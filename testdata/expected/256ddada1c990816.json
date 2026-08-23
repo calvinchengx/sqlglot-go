@@ -1,0 +1,334 @@
+{
+ "dialect": "postgres",
+ "sql": "CREATE TABLE t (i INT, PRIMARY KEY (i), EXCLUDE USING gist(col varchar_pattern_ops DESC NULLS LAST WITH &&) WITH (sp1=1, sp2=2))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "i"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.PrimaryKey",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "expressions",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "i"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.constraints.IndexParameters",
+   "i": 13,
+   "k": "include"
+  },
+  {
+   "i": 17,
+   "k": "with_storage",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ExcludeColumnConstraint",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.IndexParameters",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 20,
+   "k": "using"
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "gist"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.WithOperator",
+   "i": 20,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 23,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Opclass",
+   "i": 24,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 25,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 25,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "this",
+   "m": {
+    "col": 82,
+    "end": 81,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "varchar_pattern_ops"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 24,
+   "k": "desc",
+   "v": true
+  },
+  {
+   "i": 24,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 23,
+   "k": "op"
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "&&"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 20,
+   "k": "with_storage"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 38,
+   "k": "this"
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "sp1"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 38,
+   "k": "value",
+   "m": {
+    "col": 119,
+    "end": 118,
+    "line": 1,
+    "start": 118
+   }
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 41,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 20,
+   "k": "with_storage"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 44,
+   "k": "this"
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "sp2"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 44,
+   "k": "value",
+   "m": {
+    "col": 126,
+    "end": 125,
+    "line": 1,
+    "start": 125
+   }
+  },
+  {
+   "i": 47,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 47,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,113 @@
+{
+ "dialect": "tsql",
+ "sql": "EXEC @RC = dbo.MyProc @id = 7",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Execute"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "MyProc"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "db",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "dbo"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "expression",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "7"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 0,
+   "k": "return_status"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "RC"
+  }
+ ]
+}

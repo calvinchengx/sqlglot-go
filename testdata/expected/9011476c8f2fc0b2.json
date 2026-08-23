@@ -1,0 +1,115 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT MAKE_DATE(DATE_PART(['year', 'month', 'day'], CURRENT_DATE))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.DateFromParts",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 1,
+   "k": "year",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "DATE_PART"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.array.Array",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "expressions",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "year"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "expressions",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "month"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "expressions",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "day"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.CurrentDate",
+   "i": 2,
+   "k": "expressions"
+  }
+ ]
+}

@@ -1,0 +1,131 @@
+{
+ "dialect": "",
+ "sql": "MONTHS_BETWEEN(CAST('2019-03-15' AS DATE), CAST('2019-02-15' AS DATE))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.MonthsBetween",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "2019-03-15"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 5,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 5,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "2019-02-15"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 8,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 12,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 12,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

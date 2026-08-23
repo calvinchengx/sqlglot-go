@@ -1,0 +1,713 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT c.oid, n.nspname, c.relname FROM pg_catalog.pg_class AS c LEFT JOIN pg_catalog.pg_namespace AS n ON n.oid = c.relnamespace WHERE c.relname OPERATOR(pg_catalog.~) '^(courses)$' COLLATE pg_catalog.default AND pg_catalog.PG_TABLE_IS_VISIBLE(c.oid) ORDER BY 2, 3",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 9
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "oid"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "table",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "nspname"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "table",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "n"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "relname"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "table",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 59,
+    "end": 58,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "pg_class"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "db",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "pg_catalog"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 23,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "this",
+   "m": {
+    "col": 64,
+    "end": 63,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 0,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 34,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 35,
+   "k": "this",
+   "m": {
+    "col": 98,
+    "end": 97,
+    "line": 1,
+    "start": 86
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "pg_namespace"
+  },
+  {
+   "i": 36,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 35,
+   "k": "db",
+   "m": {
+    "col": 85,
+    "end": 84,
+    "line": 1,
+    "start": 75
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "pg_catalog"
+  },
+  {
+   "i": 39,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 35,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 42,
+   "k": "this",
+   "m": {
+    "col": 103,
+    "end": 102,
+    "line": 1,
+    "start": 102
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "n"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 34,
+   "k": "side",
+   "v": "LEFT"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 34,
+   "k": "on"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 47,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 48,
+   "k": "this",
+   "m": {
+    "col": 112,
+    "end": 111,
+    "line": 1,
+    "start": 109
+   }
+  },
+  {
+   "i": 49,
+   "k": "this",
+   "v": "oid"
+  },
+  {
+   "i": 49,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 48,
+   "k": "table",
+   "m": {
+    "col": 108,
+    "end": 107,
+    "line": 1,
+    "start": 107
+   }
+  },
+  {
+   "i": 52,
+   "k": "this",
+   "v": "n"
+  },
+  {
+   "i": 52,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 47,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 55,
+   "k": "this",
+   "m": {
+    "col": 129,
+    "end": 128,
+    "line": 1,
+    "start": 117
+   }
+  },
+  {
+   "i": 56,
+   "k": "this",
+   "v": "relnamespace"
+  },
+  {
+   "i": 56,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 55,
+   "k": "table",
+   "m": {
+    "col": 116,
+    "end": 115,
+    "line": 1,
+    "start": 115
+   }
+  },
+  {
+   "i": 59,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 59,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.And",
+   "i": 62,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Operator",
+   "i": 63,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 64,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 65,
+   "k": "this",
+   "m": {
+    "col": 145,
+    "end": 144,
+    "line": 1,
+    "start": 138
+   }
+  },
+  {
+   "i": 66,
+   "k": "this",
+   "v": "relname"
+  },
+  {
+   "i": 66,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 65,
+   "k": "table",
+   "m": {
+    "col": 137,
+    "end": 136,
+    "line": 1,
+    "start": 136
+   }
+  },
+  {
+   "i": 69,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 69,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 64,
+   "k": "operator",
+   "v": "pg_catalog.~"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Collate",
+   "i": 64,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 73,
+   "k": "this",
+   "m": {
+    "col": 182,
+    "end": 181,
+    "line": 1,
+    "start": 169
+   }
+  },
+  {
+   "i": 74,
+   "k": "this",
+   "v": "^(courses)$"
+  },
+  {
+   "i": 74,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 73,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 77,
+   "k": "this",
+   "m": {
+    "col": 209,
+    "end": 208,
+    "line": 1,
+    "start": 202
+   }
+  },
+  {
+   "i": 78,
+   "k": "this",
+   "v": "default"
+  },
+  {
+   "i": 78,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 77,
+   "k": "table",
+   "m": {
+    "col": 201,
+    "end": 200,
+    "line": 1,
+    "start": 191
+   }
+  },
+  {
+   "i": 81,
+   "k": "this",
+   "v": "pg_catalog"
+  },
+  {
+   "i": 81,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Dot",
+   "i": 63,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 84,
+   "k": "this",
+   "m": {
+    "col": 224,
+    "end": 223,
+    "line": 1,
+    "start": 214
+   }
+  },
+  {
+   "i": 85,
+   "k": "this",
+   "v": "pg_catalog"
+  },
+  {
+   "i": 85,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 84,
+   "k": "expression",
+   "m": {
+    "col": 244,
+    "end": 243,
+    "line": 1,
+    "start": 225
+   }
+  },
+  {
+   "i": 88,
+   "k": "this",
+   "v": "PG_TABLE_IS_VISIBLE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 88,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 90,
+   "k": "this",
+   "m": {
+    "col": 250,
+    "end": 249,
+    "line": 1,
+    "start": 247
+   }
+  },
+  {
+   "i": 91,
+   "k": "this",
+   "v": "oid"
+  },
+  {
+   "i": 91,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 90,
+   "k": "table",
+   "m": {
+    "col": 246,
+    "end": 245,
+    "line": 1,
+    "start": 245
+   }
+  },
+  {
+   "i": 94,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 94,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 0,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 97,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 98,
+   "k": "this",
+   "m": {
+    "col": 262,
+    "end": 261,
+    "line": 1,
+    "start": 261
+   }
+  },
+  {
+   "i": 99,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 99,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 98,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 97,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 103,
+   "k": "this",
+   "m": {
+    "col": 265,
+    "end": 264,
+    "line": 1,
+    "start": 264
+   }
+  },
+  {
+   "i": 104,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 104,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 103,
+   "k": "nulls_first",
+   "v": false
+  }
+ ]
+}

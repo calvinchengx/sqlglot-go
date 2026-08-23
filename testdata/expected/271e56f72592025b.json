@@ -1,0 +1,327 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT schema_name, function_name, ROW_NUMBER() OVER my_window AS function_rank FROM DUCKDB_FUNCTIONS() WINDOW my_window AS (PARTITION BY schema_name ORDER BY function_name) QUALIFY ROW_NUMBER() OVER my_window < 3",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "schema_name"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "function_name"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Window",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.RowNumber",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "alias",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "my_window"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "over",
+   "v": "OVER"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "alias",
+   "m": {
+    "col": 79,
+    "end": 78,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "function_rank"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 101,
+    "end": 100,
+    "line": 1,
+    "start": 85
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "DUCKDB_FUNCTIONS"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Window",
+   "i": 0,
+   "k": "windows"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 120,
+    "end": 119,
+    "line": 1,
+    "start": 111
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "my_window"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 23,
+   "k": "partition_by"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "this",
+   "m": {
+    "col": 149,
+    "end": 148,
+    "line": 1,
+    "start": 138
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "schema_name"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 23,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 31,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 32,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "this",
+   "m": {
+    "col": 172,
+    "end": 171,
+    "line": 1,
+    "start": 159
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "function_name"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 32,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Qualify",
+   "i": 0,
+   "k": "qualify"
+  },
+  {
+   "c": "sqlglot.expressions.core.LT",
+   "i": 38,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Window",
+   "i": 39,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.RowNumber",
+   "i": 40,
+   "k": "this",
+   "m": {
+    "col": 192,
+    "end": 191,
+    "line": 1,
+    "start": 182
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 40,
+   "k": "alias",
+   "m": {
+    "col": 209,
+    "end": 208,
+    "line": 1,
+    "start": 200
+   }
+  },
+  {
+   "i": 42,
+   "k": "this",
+   "v": "my_window"
+  },
+  {
+   "i": 42,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 40,
+   "k": "over",
+   "v": "OVER"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 39,
+   "k": "expression",
+   "m": {
+    "col": 213,
+    "end": 212,
+    "line": 1,
+    "start": 212
+   }
+  },
+  {
+   "i": 46,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 46,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

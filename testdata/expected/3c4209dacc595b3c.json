@@ -1,0 +1,223 @@
+{
+ "dialect": "databricks",
+ "sql": "SET VARIABLE v = (SELECT MAX(c1) FROM VALUES (1), (2) AS T(c1))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Set"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.SetItem",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "v"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 2,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.Max",
+   "i": 8,
+   "k": "expressions",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 8,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Values",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 15,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "expressions",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 15,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 20,
+   "k": "expressions",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 15,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "T"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "columns",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "kind",
+   "v": "VARIABLE"
+  },
+  {
+   "i": 0,
+   "k": "unset",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "tag",
+   "v": false
+  }
+ ]
+}

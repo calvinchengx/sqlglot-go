@@ -1,0 +1,78 @@
+{
+ "dialect": "tsql",
+ "sql": "SELECT * FROM t TABLESAMPLE (10 PERCENT)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableSample",
+   "i": 3,
+   "k": "sample"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "percent",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

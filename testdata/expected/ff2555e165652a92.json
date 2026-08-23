@@ -1,0 +1,256 @@
+{
+ "dialect": "postgres",
+ "sql": "CREATE CONSTRAINT TRIGGER my_trigger AFTER INSERT OR DELETE OR UPDATE OF col_a, col_b ON public.my_table DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION DO_STH()",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "my_trigger"
+  },
+  {
+   "i": 1,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TRIGGER"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.TriggerProperties",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 10,
+   "k": "table"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 104,
+    "end": 103,
+    "line": 1,
+    "start": 96
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "my_table"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "db",
+   "m": {
+    "col": 95,
+    "end": 94,
+    "line": 1,
+    "start": 89
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "public"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "timing",
+   "v": "AFTER"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.TriggerEvent",
+   "i": 10,
+   "k": "events"
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "INSERT"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.TriggerEvent",
+   "i": 10,
+   "k": "events"
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "DELETE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.TriggerEvent",
+   "i": 10,
+   "k": "events"
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "UPDATE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 23,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 78,
+    "end": 77,
+    "line": 1,
+    "start": 73
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "col_a"
+  },
+  {
+   "i": 26,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 23,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 29,
+   "k": "this",
+   "m": {
+    "col": 85,
+    "end": 84,
+    "line": 1,
+    "start": 80
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "col_b"
+  },
+  {
+   "i": 30,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.ddl.TriggerExecute",
+   "i": 10,
+   "k": "execute"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 33,
+   "k": "this",
+   "m": {
+    "col": 171,
+    "end": 170,
+    "line": 1,
+    "start": 165
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "DO_STH"
+  },
+  {
+   "i": 10,
+   "k": "constraint",
+   "v": true
+  },
+  {
+   "i": 10,
+   "k": "deferrable",
+   "v": "DEFERRABLE"
+  },
+  {
+   "i": 10,
+   "k": "initially",
+   "v": "DEFERRED"
+  },
+  {
+   "i": 10,
+   "k": "for_each",
+   "v": "ROW"
+  },
+  {
+   "i": 10,
+   "k": "when",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

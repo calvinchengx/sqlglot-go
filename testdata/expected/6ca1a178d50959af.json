@@ -1,0 +1,180 @@
+{
+ "dialect": "duckdb",
+ "sql": "UNPIVOT monthly_sales ON COLUMNS(* EXCLUDE (empid, dept)) INTO NAME month VALUE sales",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Pivot"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "monthly_sales"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Columns",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Star",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 6,
+   "k": "except_"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "empid"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 6,
+   "k": "except_"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "dept"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "using",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unpivot",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.UnpivotColumns",
+   "i": 0,
+   "k": "into"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 73,
+    "end": 72,
+    "line": 1,
+    "start": 68
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "month"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 17,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 85,
+    "end": 84,
+    "line": 1,
+    "start": 80
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "sales"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

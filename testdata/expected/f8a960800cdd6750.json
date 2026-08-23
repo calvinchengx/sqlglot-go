@@ -1,0 +1,95 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT JSON_EXTRACT(c, '$.k1') = 'v1'",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.json.JSONExtract",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 2,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "k1"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "v1"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

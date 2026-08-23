@@ -1,0 +1,186 @@
+{
+ "dialect": "duckdb",
+ "sql": "PIVOT (FROM tbl_1 LEFT JOIN tbl_2 USING (id) SELECT *) ON col_1 USING SUM(col_2)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Pivot"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 2,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "tbl_1"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 5,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "tbl_2"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "side",
+   "v": "LEFT"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "using",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 41
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 58
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "col_1"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 0,
+   "k": "using",
+   "m": {
+    "col": 73,
+    "end": 72,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 79,
+    "end": 78,
+    "line": 1,
+    "start": 74
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "col_2"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

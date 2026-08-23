@@ -1,0 +1,184 @@
+{
+ "dialect": "tsql",
+ "sql": "SELECT CAST(SUBSTRING('ABCD~1234', CHARINDEX('~', 'ABCD~1234') + 1, LEN('ABCD~1234')) AS BIGINT)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "BIGINT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.string.Substring",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "ABCD~1234"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 2,
+   "k": "start"
+  },
+  {
+   "c": "sqlglot.expressions.string.StrPosition",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 50
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "ABCD~1234"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "substr",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "~"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "expression",
+   "m": {
+    "col": 66,
+    "end": 65,
+    "line": 1,
+    "start": 65
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.string.Length",
+   "i": 2,
+   "k": "length",
+   "m": {
+    "col": 71,
+    "end": 70,
+    "line": 1,
+    "start": 68
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 83,
+    "end": 82,
+    "line": 1,
+    "start": 72
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "ABCD~1234"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 21,
+   "k": "this",
+   "v": "BIGINT"
+  },
+  {
+   "i": 21,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

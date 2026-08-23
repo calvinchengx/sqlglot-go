@@ -1,0 +1,84 @@
+{
+ "dialect": "duckdb",
+ "sql": "ARRAY((SELECT id FROM t))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "m": {
+    "col": 5,
+    "end": 4,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 2,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

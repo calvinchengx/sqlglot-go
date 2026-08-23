@@ -1,0 +1,119 @@
+{
+ "dialect": "",
+ "sql": "SELECT DISTINCT TIMESTAMP_TRUNC(time_field, MONTH) AS time_value FROM \"table\"",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "c": "sqlglot.expressions.core.Distinct",
+   "i": 0,
+   "k": "distinct"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TimestampTrunc",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "time_field"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 3,
+   "k": "unit"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "MONTH"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "alias",
+   "m": {
+    "col": 64,
+    "end": 63,
+    "line": 1,
+    "start": 54
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "time_value"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 77,
+    "end": 76,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "table"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": true
+  }
+ ]
+}

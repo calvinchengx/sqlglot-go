@@ -1,0 +1,99 @@
+{
+ "dialect": "",
+ "sql": "SUM(ROW() OVER (PARTITION BY x AND y))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "m": {
+    "col": 3,
+    "end": 2,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.Window",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 7,
+    "end": 6,
+    "line": 1,
+    "start": 4
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "ROW"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.And",
+   "i": 1,
+   "k": "partition_by"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "over",
+   "v": "OVER"
+  }
+ ]
+}

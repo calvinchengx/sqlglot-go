@@ -1,0 +1,196 @@
+{
+ "dialect": "",
+ "sql": "SELECT CASE 1 WHEN 1 THEN MAP('a', 'b') ELSE MAP('b', 'c') END['a']",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Bracket",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Case",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 2,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.array.Map",
+   "i": 6,
+   "k": "true",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 10,
+   "k": "keys",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 10,
+   "k": "values",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.array.Map",
+   "i": 2,
+   "k": "default",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "keys",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 49
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "values",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 54
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 66,
+    "end": 65,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

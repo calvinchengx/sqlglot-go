@@ -1,0 +1,88 @@
+{
+ "dialect": "",
+ "sql": "CAST('2025-11-20 00:00:00+00' AS TIMESTAMP) AT TIME ZONE 'Africa/Cairo'",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.AtTimeZone"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMP"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "2025-11-20 00:00:00+00"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 5,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "i": 5,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "zone",
+   "m": {
+    "col": 71,
+    "end": 70,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "Africa/Cairo"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

@@ -1,0 +1,291 @@
+{
+ "dialect": "postgres",
+ "sql": "ALTER TABLE foo ADD COLUMN id BIGINT NOT NULL PRIMARY KEY DEFAULT 1, ADD CONSTRAINT fk_orders_user FOREIGN KEY (id) REFERENCES foo (id)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Alter"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 0,
+   "k": "actions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 7,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 11,
+   "k": "this",
+   "v": "BIGINT"
+  },
+  {
+   "i": 11,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 7,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.NotNullColumnConstraint",
+   "i": 14,
+   "k": "kind"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 7,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.PrimaryKeyColumnConstraint",
+   "i": 16,
+   "k": "kind"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 7,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.DefaultColumnConstraint",
+   "i": 18,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.AddConstraint",
+   "i": 0,
+   "k": "actions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.Constraint",
+   "i": 24,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 98,
+    "end": 97,
+    "line": 1,
+    "start": 84
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "fk_orders_user"
+  },
+  {
+   "i": 26,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ForeignKey",
+   "i": 25,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 29,
+   "k": "expressions",
+   "m": {
+    "col": 114,
+    "end": 113,
+    "line": 1,
+    "start": 112
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 30,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.constraints.Reference",
+   "i": 29,
+   "k": "reference"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 33,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 34,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 35,
+   "k": "this",
+   "m": {
+    "col": 130,
+    "end": 129,
+    "line": 1,
+    "start": 127
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 36,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "expressions",
+   "m": {
+    "col": 134,
+    "end": 133,
+    "line": 1,
+    "start": 132
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 39,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "only",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "not_valid",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "check",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cascade",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  }
+ ]
+}

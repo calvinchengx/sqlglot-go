@@ -1,0 +1,115 @@
+{
+ "dialect": "databricks",
+ "sql": "ANALYZE TABLE tbl COMPUTE DELTA STATISTICS FOR COLUMNS foo, bar",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Analyze"
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "tables"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "tbl"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.AnalyzeStatistics",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "i": 6,
+   "k": "kind",
+   "v": "COMPUTE"
+  },
+  {
+   "i": 6,
+   "k": "option",
+   "v": "DELTA"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "FOR COLUMNS"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "bar"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

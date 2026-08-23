@@ -1,0 +1,421 @@
+{
+ "dialect": "duckdb",
+ "sql": "WITH cities(country, name, year, population) AS (SELECT 'NL', 'Amsterdam', 2000, 1005 UNION ALL SELECT 'US', 'Seattle', 2020, 738) PIVOT cities ON year USING SUM(population)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Pivot"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 143,
+    "end": 142,
+    "line": 1,
+    "start": 137
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "cities"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 151,
+    "end": 150,
+    "line": 1,
+    "start": 147
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "year"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 0,
+   "k": "using",
+   "m": {
+    "col": 161,
+    "end": 160,
+    "line": 1,
+    "start": 158
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 172,
+    "end": 171,
+    "line": 1,
+    "start": 162
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "population"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.With",
+   "i": 0,
+   "k": "with_"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.CTE",
+   "i": 14,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Union",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expressions",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 56
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "NL"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expressions",
+   "m": {
+    "col": 73,
+    "end": 72,
+    "line": 1,
+    "start": 62
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "Amsterdam"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expressions",
+   "m": {
+    "col": 79,
+    "end": 78,
+    "line": 1,
+    "start": 75
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "2000"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expressions",
+   "m": {
+    "col": 85,
+    "end": 84,
+    "line": 1,
+    "start": 81
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "1005"
+  },
+  {
+   "i": 27,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 16,
+   "k": "distinct",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 16,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 31,
+   "k": "expressions",
+   "m": {
+    "col": 107,
+    "end": 106,
+    "line": 1,
+    "start": 103
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "US"
+  },
+  {
+   "i": 32,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 31,
+   "k": "expressions",
+   "m": {
+    "col": 118,
+    "end": 117,
+    "line": 1,
+    "start": 109
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "Seattle"
+  },
+  {
+   "i": 35,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 31,
+   "k": "expressions",
+   "m": {
+    "col": 124,
+    "end": 123,
+    "line": 1,
+    "start": 120
+   }
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "2020"
+  },
+  {
+   "i": 38,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 31,
+   "k": "expressions",
+   "m": {
+    "col": 129,
+    "end": 128,
+    "line": 1,
+    "start": 126
+   }
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "738"
+  },
+  {
+   "i": 41,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 15,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 44,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "cities"
+  },
+  {
+   "i": 45,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 44,
+   "k": "columns",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 48,
+   "k": "this",
+   "v": "country"
+  },
+  {
+   "i": 48,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 44,
+   "k": "columns",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 51,
+   "k": "this",
+   "v": "name"
+  },
+  {
+   "i": 51,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 44,
+   "k": "columns",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "year"
+  },
+  {
+   "i": 54,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 44,
+   "k": "columns",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 57,
+   "k": "this",
+   "v": "population"
+  },
+  {
+   "i": 57,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,105 @@
+{
+ "dialect": "tsql",
+ "sql": "DECLARE @DWH_DateCreated AS DATETIME2 = CONVERT(DATETIME2, GETDATE(), 104)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Declare"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.DeclareItem",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "DWH_DateCreated"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 5,
+   "k": "this",
+   "v": "DATETIME2"
+  },
+  {
+   "i": 5,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.functions.Convert",
+   "i": 1,
+   "k": "default"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 9,
+   "k": "this",
+   "v": "DATETIME2"
+  },
+  {
+   "i": 9,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentTimestamp",
+   "i": 8,
+   "k": "expression",
+   "m": {
+    "col": 66,
+    "end": 65,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "style",
+   "m": {
+    "col": 73,
+    "end": 72,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "104"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,215 @@
+{
+ "dialect": "databricks",
+ "sql": "TRUNCATE TABLE t1 PARTITION(age = 10, name = 'test', city LIKE 'LA')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.TruncateTable"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "t1"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "is_database",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 0,
+   "k": "partition"
+  },
+  {
+   "i": 7,
+   "k": "subpartition",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "age"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "expression",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "name"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expression",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Like",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 25,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "city"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 25,
+   "k": "expression",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "LA"
+  },
+  {
+   "i": 30,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

@@ -1,0 +1,68 @@
+{
+ "dialect": "",
+ "sql": "SELECT /*+ REBALANCE */ * FROM foo",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "c": "sqlglot.expressions.core.Hint",
+   "i": 0,
+   "k": "hint"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "REBALANCE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

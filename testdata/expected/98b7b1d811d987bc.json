@@ -1,0 +1,476 @@
+{
+ "dialect": "tsql",
+ "sql": "SELECT TOP 10 s.RECORDID, n.c.VALUE('(/*:FORM_ROOT/*:SOME_TAG)[1]', 'float') AS SOME_TAG_VALUE FROM source_table.dbo.source_data AS s(nolock) CROSS APPLY FormContent.nodes('/*:FORM_ROOT') AS N(C)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "RECORDID"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "table",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "s"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Dot",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Dot",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "n"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "expression",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 9,
+   "k": "expression",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "VALUE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expressions",
+   "m": {
+    "col": 66,
+    "end": 65,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "(/*:FORM_ROOT/*:SOME_TAG)[1]"
+  },
+  {
+   "i": 19,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expressions",
+   "m": {
+    "col": 75,
+    "end": 74,
+    "line": 1,
+    "start": 68
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "float"
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "alias",
+   "m": {
+    "col": 94,
+    "end": 93,
+    "line": 1,
+    "start": 80
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "SOME_TAG_VALUE"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Limit",
+   "i": 0,
+   "k": "limit"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 28,
+   "k": "expression",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 29,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 32,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "this",
+   "m": {
+    "col": 128,
+    "end": 127,
+    "line": 1,
+    "start": 117
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "source_data"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "db",
+   "m": {
+    "col": 116,
+    "end": 115,
+    "line": 1,
+    "start": 113
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "dbo"
+  },
+  {
+   "i": 37,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "catalog",
+   "m": {
+    "col": 112,
+    "end": 111,
+    "line": 1,
+    "start": 100
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "source_table"
+  },
+  {
+   "i": 40,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 33,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 43,
+   "k": "this",
+   "m": {
+    "col": 133,
+    "end": 132,
+    "line": 1,
+    "start": 132
+   }
+  },
+  {
+   "i": 44,
+   "k": "this",
+   "v": "s"
+  },
+  {
+   "i": 44,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 43,
+   "k": "columns",
+   "m": {
+    "col": 140,
+    "end": 139,
+    "line": 1,
+    "start": 134
+   }
+  },
+  {
+   "i": 47,
+   "k": "this",
+   "v": "nolock"
+  },
+  {
+   "i": 47,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 0,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.query.Lateral",
+   "i": 50,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Dot",
+   "i": 51,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 52,
+   "k": "this",
+   "m": {
+    "col": 165,
+    "end": 164,
+    "line": 1,
+    "start": 154
+   }
+  },
+  {
+   "i": 53,
+   "k": "this",
+   "v": "FormContent"
+  },
+  {
+   "i": 53,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 52,
+   "k": "expression",
+   "m": {
+    "col": 171,
+    "end": 170,
+    "line": 1,
+    "start": 166
+   }
+  },
+  {
+   "i": 56,
+   "k": "this",
+   "v": "nodes"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 56,
+   "k": "expressions",
+   "m": {
+    "col": 186,
+    "end": 185,
+    "line": 1,
+    "start": 172
+   }
+  },
+  {
+   "i": 58,
+   "k": "this",
+   "v": "/*:FORM_ROOT"
+  },
+  {
+   "i": 58,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 51,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 61,
+   "k": "this",
+   "m": {
+    "col": 192,
+    "end": 191,
+    "line": 1,
+    "start": 191
+   }
+  },
+  {
+   "i": 62,
+   "k": "this",
+   "v": "N"
+  },
+  {
+   "i": 62,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 61,
+   "k": "columns",
+   "m": {
+    "col": 194,
+    "end": 193,
+    "line": 1,
+    "start": 193
+   }
+  },
+  {
+   "i": 65,
+   "k": "this",
+   "v": "C"
+  },
+  {
+   "i": 65,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 51,
+   "k": "cross_apply",
+   "v": true
+  },
+  {
+   "i": 51,
+   "k": "ordinality",
+   "v": false
+  }
+ ]
+}

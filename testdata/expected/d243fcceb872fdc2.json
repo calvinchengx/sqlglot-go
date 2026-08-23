@@ -1,0 +1,118 @@
+{
+ "dialect": "",
+ "sql": "LOAD DATA INPATH 'x' INTO TABLE y INPUTFORMAT 'y' SERDE 'z'",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.LoadData"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "local",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "overwrite",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "temp",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "inpath",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "files",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "input_format",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "serde",
+   "m": {
+    "col": 59,
+    "end": 58,
+    "line": 1,
+    "start": 56
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "z"
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

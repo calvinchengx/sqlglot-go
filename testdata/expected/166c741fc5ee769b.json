@@ -1,0 +1,78 @@
+{
+ "dialect": "databricks",
+ "sql": "PARSE_URL('https://example.com/path', 'QUERY', 'param')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.string.ParseUrl",
+   "m": {
+    "col": 9,
+    "end": 8,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 10
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "https://example.com/path"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "part_to_extract",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "QUERY"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "key",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "param"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

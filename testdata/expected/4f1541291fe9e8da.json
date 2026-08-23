@@ -1,0 +1,124 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT (U&'\\FE01' || 'Test literal') AS label FROM data",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.DPipe",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.UnicodeString",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "\\FE01"
+  },
+  {
+   "i": 4,
+   "k": "escape",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expression",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "Test literal"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 3,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "label"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "data"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

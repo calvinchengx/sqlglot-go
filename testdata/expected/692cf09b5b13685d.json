@@ -1,0 +1,148 @@
+{
+ "dialect": "databricks",
+ "sql": "SET VARIABLE (v1, v2) = (SELECT 1, 2)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Set"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.SetItem",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 3,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "v1"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 3,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "v2"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 2,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expressions",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expressions",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "kind",
+   "v": "VARIABLE"
+  },
+  {
+   "i": 0,
+   "k": "unset",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "tag",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,109 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT * FROM tbl USING SAMPLE 10% (system, 377)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "tbl"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableSample",
+   "i": 0,
+   "k": "sample"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 7,
+   "k": "method"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "SYSTEM"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "percent",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "seed",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "377"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

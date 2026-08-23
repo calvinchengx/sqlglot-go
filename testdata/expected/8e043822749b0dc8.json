@@ -1,0 +1,115 @@
+{
+ "dialect": "postgres",
+ "sql": "GRANT EXECUTE ON FUNCTION calculate_bonus(integer) TO analyst",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Grant"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.GrantPrivilege",
+   "i": 0,
+   "k": "privileges"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "EXECUTE"
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "FUNCTION"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "securable"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "calculate_bonus"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "integer"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.GrantPrincipal",
+   "i": 0,
+   "k": "principals"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 54
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "analyst"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 12,
+   "k": "kind",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "grant_option",
+   "v": false
+  }
+ ]
+}

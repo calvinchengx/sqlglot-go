@@ -1,0 +1,78 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT SUBSTRING('Thomas' FOR 3 FROM 2)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.Substring",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "Thomas"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "start",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "length",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

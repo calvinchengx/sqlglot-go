@@ -1,0 +1,61 @@
+{
+ "dialect": "postgres",
+ "sql": "x !~* 'y'",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Not"
+  },
+  {
+   "c": "sqlglot.expressions.string.RegexpILike",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 1,
+    "end": 0,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 9,
+    "end": 8,
+    "line": 1,
+    "start": 6
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

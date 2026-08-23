@@ -1,0 +1,174 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT * FROM t PIVOT(SUM(y) FOR foo IN y_enum)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Pivot",
+   "i": 3,
+   "k": "pivots"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 7,
+   "k": "expressions",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.In",
+   "i": 7,
+   "k": "fields"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "field",
+   "m": {
+    "col": 46,
+    "end": 45,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "y_enum"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "unpivot",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "default_on_null",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "identify_pivot_strings",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "prefixed_pivot_columns",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "pivot_column_naming",
+   "v": "agg_name_if_aliased_or_multiple"
+  }
+ ]
+}

@@ -1,0 +1,180 @@
+{
+ "dialect": "databricks",
+ "sql": "SELECT * FROM sales UNPIVOT INCLUDE NULLS (sales FOR quarter IN (q1 AS `Jan-Mar`))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "sales"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Pivot",
+   "i": 3,
+   "k": "pivots"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "expressions",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "sales"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.In",
+   "i": 7,
+   "k": "fields"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "quarter"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PivotAlias",
+   "i": 11,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 65
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "q1"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "alias",
+   "m": {
+    "col": 80,
+    "end": 79,
+    "line": 1,
+    "start": 71
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "Jan-Mar"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 7,
+   "k": "unpivot",
+   "v": true
+  },
+  {
+   "i": 7,
+   "k": "include_nulls",
+   "v": true
+  },
+  {
+   "i": 7,
+   "k": "default_on_null",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "value_columns_first",
+   "v": false
+  }
+ ]
+}

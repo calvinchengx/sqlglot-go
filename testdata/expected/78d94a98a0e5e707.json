@@ -1,0 +1,427 @@
+{
+ "dialect": "postgres",
+ "sql": "\n            WITH\n              json_data AS (SELECT '{\"field_id\": [1, 2, 3]}'::JSON AS data),\n              field_ids AS (SELECT 'field_id' AS field_id)\n\n            SELECT\n                JSON_ARRAY_ELEMENTS(json_data.data -> field_ids.field_id) AS element\n            FROM json_data, field_ids\n            ",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 208,
+    "line": 7,
+    "start": 190
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "JSON_ARRAY_ELEMENTS"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExtract",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 50,
+    "end": 223,
+    "line": 7,
+    "start": 220
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "data"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "table",
+   "m": {
+    "col": 45,
+    "end": 218,
+    "line": 7,
+    "start": 210
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "json_data"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 72,
+    "end": 245,
+    "line": 7,
+    "start": 238
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "field_id"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "table",
+   "m": {
+    "col": 63,
+    "end": 236,
+    "line": 7,
+    "start": 228
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "field_ids"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 84,
+    "end": 257,
+    "line": 7,
+    "start": 251
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "element"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 284,
+    "line": 8,
+    "start": 276
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "json_data"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 0,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 295,
+    "line": 8,
+    "start": 287
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "field_ids"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.With",
+   "i": 0,
+   "k": "with_"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.CTE",
+   "i": 32,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 33,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 34,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 35,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "JSON"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 36,
+   "k": "this",
+   "m": {
+    "col": 60,
+    "end": 77,
+    "line": 3,
+    "start": 53
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "{\"field_id\": [1, 2, 3]}"
+  },
+  {
+   "i": 37,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 36,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 40,
+   "k": "this",
+   "v": "JSON"
+  },
+  {
+   "i": 40,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 35,
+   "k": "alias",
+   "m": {
+    "col": 74,
+    "end": 91,
+    "line": 3,
+    "start": 88
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "data"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 33,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 46,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 40,
+    "line": 3,
+    "start": 32
+   }
+  },
+  {
+   "i": 47,
+   "k": "this",
+   "v": "json_data"
+  },
+  {
+   "i": 47,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.CTE",
+   "i": 32,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 50,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 51,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 52,
+   "k": "this",
+   "m": {
+    "col": 45,
+    "end": 139,
+    "line": 4,
+    "start": 130
+   }
+  },
+  {
+   "i": 53,
+   "k": "this",
+   "v": "field_id"
+  },
+  {
+   "i": 53,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 52,
+   "k": "alias",
+   "m": {
+    "col": 57,
+    "end": 151,
+    "line": 4,
+    "start": 144
+   }
+  },
+  {
+   "i": 56,
+   "k": "this",
+   "v": "field_id"
+  },
+  {
+   "i": 56,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 50,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 59,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 117,
+    "line": 4,
+    "start": 109
+   }
+  },
+  {
+   "i": 60,
+   "k": "this",
+   "v": "field_ids"
+  },
+  {
+   "i": 60,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

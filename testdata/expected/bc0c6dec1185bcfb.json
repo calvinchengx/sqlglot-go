@@ -1,0 +1,222 @@
+{
+ "dialect": "duckdb",
+ "sql": "PIVOT Cities ON Year USING SUM(Population) AS total, MAX(Population) AS max GROUP BY Country",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Pivot"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 6
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "Cities"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "Year"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "using"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "Population"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "alias",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "total"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "using"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Max",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "Population"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "alias",
+   "m": {
+    "col": 75,
+    "end": 74,
+    "line": 1,
+    "start": 72
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "max"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Group",
+   "i": 0,
+   "k": "group"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 27,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 92,
+    "end": 91,
+    "line": 1,
+    "start": 85
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "Country"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

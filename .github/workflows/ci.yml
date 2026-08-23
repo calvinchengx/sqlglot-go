@@ -1,0 +1,52 @@
+# The port is measured against the Python reference on every push. The
+# expectations are committed, so no job needs Python or sqlglot: a Go toolchain
+# alone reproduces the differential run.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  differential:
+    name: Against the reference
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - run: go vet ./...
+      - name: differential run, with the coverage floor
+        run: go test ./... -v 2>&1 | grep -E "reference|neutral|tsql|postgres|duckdb|databricks|PASS|FAIL|ok|divergence" | head -40; go test ./...
+      - uses: golangci/golangci-lint-action@v7
+        with:
+          version: v2.13.1
+          working-directory: .
+
+  # The committed expectations must be exactly what the pinned reference
+  # produces. Regenerate and diff; a difference means someone edited an
+  # expectation by hand, or regenerated against a commit NOTICE does not name.
+  oracle-is-pinned:
+    name: Expectations match the pinned reference
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: check out the pinned reference
+        run: |
+          ref=$(grep -oE 'commit [0-9a-f]{40}' NOTICE | head -1 | cut -d' ' -f2)
+          git clone -q https://github.com/tobymao/sqlglot /tmp/sqlglot
+          git -C /tmp/sqlglot checkout -q "$ref"
+      - name: regenerate and diff
+        run: |
+          python3 harness/oracle.py --sqlglot /tmp/sqlglot --out /tmp/expected
+          diff -rq testdata/expected /tmp/expected && echo "expectations are exactly the pinned reference's"

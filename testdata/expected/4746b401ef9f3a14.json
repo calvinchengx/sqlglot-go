@@ -1,0 +1,62 @@
+{
+ "dialect": "tsql",
+ "sql": "SELECT TRIM('     test    ') AS Result",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.string.Trim",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "     test    "
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "Result"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

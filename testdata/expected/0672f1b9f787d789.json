@@ -1,0 +1,460 @@
+{
+ "dialect": "tsql",
+ "sql": "CREATE TABLE test ([data] CHAR(7), [valid_from] DATETIME2(2) GENERATED ALWAYS AS ROW START NOT NULL, [valid_to] DATETIME2(2) GENERATED ALWAYS AS ROW END NOT NULL, PERIOD FOR SYSTEM_TIME ([valid_from], [valid_to])) WITH(SYSTEM_VERSIONING=ON(HISTORY_TABLE=[dbo].[benchmark_history]))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "data"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "CHAR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "7"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "valid_from"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 17,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 21,
+   "k": "this",
+   "v": "DATETIME2"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 59,
+    "end": 58,
+    "line": 1,
+    "start": 58
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 21,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 17,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.GeneratedAsRowColumnConstraint",
+   "i": 28,
+   "k": "kind"
+  },
+  {
+   "i": 29,
+   "k": "start",
+   "v": true
+  },
+  {
+   "i": 29,
+   "k": "hidden",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 17,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.NotNullColumnConstraint",
+   "i": 32,
+   "k": "kind"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "this",
+   "m": {
+    "col": 111,
+    "end": 110,
+    "line": 1,
+    "start": 101
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "valid_to"
+  },
+  {
+   "i": 35,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 34,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 38,
+   "k": "this",
+   "v": "DATETIME2"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 38,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 40,
+   "k": "this",
+   "m": {
+    "col": 123,
+    "end": 122,
+    "line": 1,
+    "start": 122
+   }
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 41,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 38,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 34,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.GeneratedAsRowColumnConstraint",
+   "i": 45,
+   "k": "kind"
+  },
+  {
+   "i": 46,
+   "k": "start",
+   "v": false
+  },
+  {
+   "i": 46,
+   "k": "hidden",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 34,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.NotNullColumnConstraint",
+   "i": 49,
+   "k": "kind"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.PeriodForSystemTimeConstraint",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 51,
+   "k": "this",
+   "m": {
+    "col": 199,
+    "end": 198,
+    "line": 1,
+    "start": 187
+   }
+  },
+  {
+   "i": 52,
+   "k": "this",
+   "v": "valid_from"
+  },
+  {
+   "i": 52,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 51,
+   "k": "expression",
+   "m": {
+    "col": 211,
+    "end": 210,
+    "line": 1,
+    "start": 201
+   }
+  },
+  {
+   "i": 55,
+   "k": "this",
+   "v": "valid_to"
+  },
+  {
+   "i": 55,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.WithSystemVersioningProperty",
+   "i": 63,
+   "k": "expressions"
+  },
+  {
+   "i": 64,
+   "k": "on",
+   "v": true
+  },
+  {
+   "i": 64,
+   "k": "with_",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 64,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 67,
+   "k": "this",
+   "m": {
+    "col": 279,
+    "end": 278,
+    "line": 1,
+    "start": 260
+   }
+  },
+  {
+   "i": 68,
+   "k": "this",
+   "v": "benchmark_history"
+  },
+  {
+   "i": 68,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 67,
+   "k": "db",
+   "m": {
+    "col": 259,
+    "end": 258,
+    "line": 1,
+    "start": 254
+   }
+  },
+  {
+   "i": 71,
+   "k": "this",
+   "v": "dbo"
+  },
+  {
+   "i": 71,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

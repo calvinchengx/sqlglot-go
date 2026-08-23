@@ -1,0 +1,101 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT XMLELEMENT(NAME \"foo$bar\", XMLATTRIBUTES('xyz' AS \"a&b\"))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.XMLElement",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "foo$bar"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "XMLATTRIBUTES"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "xyz"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "alias",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "a&b"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": true
+  }
+ ]
+}

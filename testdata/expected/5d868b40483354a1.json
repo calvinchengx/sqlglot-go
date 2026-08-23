@@ -1,0 +1,149 @@
+{
+ "dialect": "postgres",
+ "sql": "CREATE TRIGGER proc_trigger BEFORE INSERT ON users FOR EACH ROW EXECUTE PROCEDURE LOG_CHANGES()",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "proc_trigger"
+  },
+  {
+   "i": 1,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TRIGGER"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.TriggerProperties",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 10,
+   "k": "table"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "users"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "timing",
+   "v": "BEFORE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.TriggerEvent",
+   "i": 10,
+   "k": "events"
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "INSERT"
+  },
+  {
+   "c": "sqlglot.expressions.ddl.TriggerExecute",
+   "i": 10,
+   "k": "execute"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 93,
+    "end": 92,
+    "line": 1,
+    "start": 82
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "LOG_CHANGES"
+  },
+  {
+   "i": 10,
+   "k": "constraint",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "for_each",
+   "v": "ROW"
+  },
+  {
+   "i": 10,
+   "k": "when",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

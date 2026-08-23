@@ -1,0 +1,109 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT ST_DISTANCE(gg1, gg2, FALSE) AS sphere_dist",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.array.StDistance",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "gg1"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "gg2"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 2,
+   "k": "use_spheroid"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "sphere_dist"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

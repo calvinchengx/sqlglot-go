@@ -1,0 +1,225 @@
+{
+ "dialect": "databricks",
+ "sql": "SELECT INLINE(FROM_JSON(c1:item[*], 'ARRAY<STRUCT<model STRING, price DOUBLE>>')) FROM VALUES ('{ \"item\": [ { \"model\" : \"basic\", \"price\" : 6.12 }, { \"model\" : \"medium\", \"price\" : 9.24 } ] }') AS T(c1)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.array.Inline",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "FROM_JSON"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExtract",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 4,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "item"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathSubscript",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPathWildcard",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "i": 4,
+   "k": "variant_extract",
+   "v": true
+  },
+  {
+   "i": 4,
+   "k": "requires_json",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 79,
+    "end": 78,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "ARRAY<STRUCT<model STRING, price DOUBLE>>"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Values",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 22,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 23,
+   "k": "expressions",
+   "m": {
+    "col": 190,
+    "end": 189,
+    "line": 1,
+    "start": 95
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "{ \"item\": [ { \"model\" : \"basic\", \"price\" : 6.12 }, { \"model\" : \"medium\", \"price\" : 9.24 } ] }"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 22,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "this",
+   "m": {
+    "col": 196,
+    "end": 195,
+    "line": 1,
+    "start": 195
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "T"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "columns",
+   "m": {
+    "col": 199,
+    "end": 198,
+    "line": 1,
+    "start": 197
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

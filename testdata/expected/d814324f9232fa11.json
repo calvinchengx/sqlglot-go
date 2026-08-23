@@ -1,0 +1,93 @@
+{
+ "dialect": "databricks",
+ "sql": "REVOKE ALL PRIVILEGES ON TABLE forecasts FROM finance",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Revoke"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.GrantPrivilege",
+   "i": 0,
+   "k": "privileges"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "ALL PRIVILEGES"
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "securable"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "forecasts"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.GrantPrincipal",
+   "i": 0,
+   "k": "principals"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "finance"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "kind",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "grant_option",
+   "v": false
+  }
+ ]
+}

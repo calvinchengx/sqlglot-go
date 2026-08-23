@@ -1,0 +1,180 @@
+{
+ "dialect": "tsql",
+ "sql": "declare @X TABLE (Id INT NOT NULL, constraint PK_Id primary key (Id))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Declare"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.DeclareItem",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "X"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 1,
+   "k": "kind"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "Id"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 6,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.NotNullColumnConstraint",
+   "i": 13,
+   "k": "kind"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.Constraint",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "PK_Id"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.PrimaryKey",
+   "i": 15,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 19,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 20,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "this",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 65
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "Id"
+  },
+  {
+   "i": 22,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 20,
+   "k": "nulls_first",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.constraints.IndexParameters",
+   "i": 19,
+   "k": "include"
+  },
+  {
+   "i": 26,
+   "k": "with_storage",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "default",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  }
+ ]
+}

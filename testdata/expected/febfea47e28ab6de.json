@@ -1,0 +1,296 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT js, js IS JSON ARRAY WITH UNIQUE KEYS AS \"array w. UK?\", js IS JSON ARRAY WITHOUT UNIQUE KEYS AS \"array w/o UK?\", js IS JSON ARRAY UNIQUE KEYS AS \"array w UK 2?\" FROM t",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 9,
+    "end": 8,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "js"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "js"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSON",
+   "i": 6,
+   "k": "expression"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "ARRAY"
+  },
+  {
+   "i": 11,
+   "k": "with_",
+   "v": true
+  },
+  {
+   "i": 11,
+   "k": "unique",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "alias",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "array w. UK?"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 66,
+    "end": 65,
+    "line": 1,
+    "start": 64
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "js"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSON",
+   "i": 19,
+   "k": "expression"
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "ARRAY"
+  },
+  {
+   "i": 24,
+   "k": "with_",
+   "v": false
+  },
+  {
+   "i": 24,
+   "k": "unique",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "alias",
+   "m": {
+    "col": 119,
+    "end": 118,
+    "line": 1,
+    "start": 104
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "array w/o UK?"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 31,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 32,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "this",
+   "m": {
+    "col": 123,
+    "end": 122,
+    "line": 1,
+    "start": 121
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "js"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSON",
+   "i": 32,
+   "k": "expression"
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "ARRAY"
+  },
+  {
+   "i": 37,
+   "k": "unique",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 31,
+   "k": "alias",
+   "m": {
+    "col": 168,
+    "end": 167,
+    "line": 1,
+    "start": 153
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "array w UK 2?"
+  },
+  {
+   "i": 40,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 43,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 44,
+   "k": "this",
+   "m": {
+    "col": 175,
+    "end": 174,
+    "line": 1,
+    "start": 174
+   }
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 45,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

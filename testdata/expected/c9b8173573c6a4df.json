@@ -1,0 +1,172 @@
+{
+ "dialect": "postgres",
+ "sql": "COPY (SELECT * FROM t) TO 'file' WITH (FORMAT format, HEADER MATCH, FREEZE TRUE)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Copy"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 2,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.Credentials",
+   "i": 0,
+   "k": "credentials"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "files",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "file"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "FORMAT"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 14,
+   "k": "expression"
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "format"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "HEADER"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 19,
+   "k": "expression"
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "MATCH"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 24,
+   "k": "this"
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "FREEZE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 24,
+   "k": "expression"
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": true
+  }
+ ]
+}

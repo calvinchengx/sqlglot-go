@@ -1,0 +1,152 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT * FROM x WHERE SUBSTRING('Thomas' FROM '%#\"o_a#\"_' FOR '#') IN ('mas')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.In",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.string.Substring",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "Thomas"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "start",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "%#\"o_a#\"_"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "length",
+   "m": {
+    "col": 65,
+    "end": 64,
+    "line": 1,
+    "start": 62
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "#"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "expressions",
+   "m": {
+    "col": 76,
+    "end": 75,
+    "line": 1,
+    "start": 71
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "mas"
+  },
+  {
+   "i": 19,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

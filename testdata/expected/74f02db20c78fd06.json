@@ -1,0 +1,143 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT id, STRUCT_PACK(*COLUMNS('m\\d')) AS measurements FROM many_measurements",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 9,
+    "end": 8,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.array.Struct",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Columns",
+   "i": 6,
+   "k": "expressions",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "m\\d"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 7,
+   "k": "unpack",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "alias",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "measurements"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 78,
+    "end": 77,
+    "line": 1,
+    "start": 61
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "many_measurements"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

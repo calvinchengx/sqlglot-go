@@ -1,0 +1,323 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT SUM(x) OVER (PARTITION BY y ORDER BY interval ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) - SUM(x) OVER (PARTITION BY y ORDER BY interval ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW) AS total",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Window",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 3,
+   "k": "partition_by"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 3,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 13,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "interval"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 14,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.WindowSpec",
+   "i": 3,
+   "k": "spec"
+  },
+  {
+   "i": 20,
+   "k": "kind",
+   "v": "ROWS"
+  },
+  {
+   "i": 20,
+   "k": "start",
+   "v": "UNBOUNDED"
+  },
+  {
+   "i": 20,
+   "k": "start_side",
+   "v": "PRECEDING"
+  },
+  {
+   "i": 20,
+   "k": "end",
+   "v": "CURRENT ROW"
+  },
+  {
+   "i": 3,
+   "k": "over",
+   "v": "OVER"
+  },
+  {
+   "c": "sqlglot.expressions.query.Window",
+   "i": 2,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 108,
+    "end": 107,
+    "line": 1,
+    "start": 105
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 110,
+    "end": 109,
+    "line": 1,
+    "start": 109
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 26,
+   "k": "partition_by"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 132,
+    "end": 131,
+    "line": 1,
+    "start": 131
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 26,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 36,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 37,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 38,
+   "k": "this",
+   "m": {
+    "col": 150,
+    "end": 149,
+    "line": 1,
+    "start": 142
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "interval"
+  },
+  {
+   "i": 39,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 37,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.WindowSpec",
+   "i": 26,
+   "k": "spec"
+  },
+  {
+   "i": 43,
+   "k": "kind",
+   "v": "ROWS"
+  },
+  {
+   "i": 43,
+   "k": "start",
+   "v": "UNBOUNDED"
+  },
+  {
+   "i": 43,
+   "k": "start_side",
+   "v": "PRECEDING"
+  },
+  {
+   "i": 43,
+   "k": "end",
+   "v": "CURRENT ROW"
+  },
+  {
+   "i": 26,
+   "k": "over",
+   "v": "OVER"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 209,
+    "end": 208,
+    "line": 1,
+    "start": 204
+   }
+  },
+  {
+   "i": 49,
+   "k": "this",
+   "v": "total"
+  },
+  {
+   "i": 49,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

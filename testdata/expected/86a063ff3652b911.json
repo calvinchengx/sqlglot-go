@@ -1,0 +1,136 @@
+{
+ "dialect": "tsql",
+ "sql": "SELECT * FROM t FOR JSON PATH, ROOT('Root'), INCLUDE_NULL_VALUES",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.ForClause",
+   "i": 0,
+   "k": "for_"
+  },
+  {
+   "i": 7,
+   "k": "kind",
+   "v": "JSON"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.QueryOption",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "PATH"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.QueryOption",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.XMLKeyValueOption",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "ROOT"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expression",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "Root"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.QueryOption",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "INCLUDE_NULL_VALUES"
+  }
+ ]
+}

@@ -1,0 +1,78 @@
+{
+ "dialect": "postgres",
+ "sql": "STRING_TO_ARRAY('xx~^~yy~^~zz', '~^~', 'yy')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.array.StringToArray",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "xx~^~yy~^~zz"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "~^~"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "null",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "yy"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

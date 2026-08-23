@@ -1,0 +1,77 @@
+{
+ "dialect": "duckdb",
+ "sql": "ATTACH 'file.db' AS db_alias (READ_ONLY)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Attach"
+  },
+  {
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "file.db"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "db_alias"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.AttachOption",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "READ_ONLY"
+  }
+ ]
+}

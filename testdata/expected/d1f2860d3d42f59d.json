@@ -1,0 +1,158 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT CASE WHEN SUBSTRING('abcdefg' FROM 1 FOR 2) IN ('ab') THEN 1 ELSE 0 END",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Case",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 1,
+   "k": "ifs"
+  },
+  {
+   "c": "sqlglot.expressions.core.In",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.string.Substring",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "abcdefg"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "start",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "length",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expressions",
+   "m": {
+    "col": 59,
+    "end": 58,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "ab"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "true",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "default",
+   "m": {
+    "col": 74,
+    "end": 73,
+    "line": 1,
+    "start": 73
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

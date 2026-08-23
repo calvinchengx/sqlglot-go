@@ -1,0 +1,142 @@
+{
+ "dialect": "databricks",
+ "sql": "SELECT OVERLAY(ENCODE('Spark SQL', 'utf-8') PLACING ENCODE('_', 'utf-8') FROM 6)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.Overlay",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.string.Encode",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "Spark SQL"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "charset",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "utf-8"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.string.Encode",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "_"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "charset",
+   "m": {
+    "col": 71,
+    "end": 70,
+    "line": 1,
+    "start": 64
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "utf-8"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "from_",
+   "m": {
+    "col": 79,
+    "end": 78,
+    "line": 1,
+    "start": 78
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "6"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

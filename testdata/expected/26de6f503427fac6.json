@@ -1,0 +1,56 @@
+{
+ "dialect": "tsql",
+ "sql": "SELECT * FROM OPENJSON(@json)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.json.OpenJSON",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "json"
+  },
+  {
+   "i": 4,
+   "k": "path",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,425 @@
+{
+ "dialect": "tsql",
+ "sql": "MERGE INTO mytable WITH (HOLDLOCK) AS T USING mytable_merge AS S ON (T.user_id = S.user_id) WHEN NOT MATCHED THEN INSERT (c1, c2) VALUES (S.c1, S.c2)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Merge"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "mytable"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.WithTableHint",
+   "i": 1,
+   "k": "hints"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Var",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "HOLDLOCK"
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 1,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "T"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "using"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 59,
+    "end": 58,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "mytable_merge"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 12,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 64,
+    "end": 63,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "S"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 0,
+   "k": "on"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 20,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 78,
+    "end": 77,
+    "line": 1,
+    "start": 71
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "user_id"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "table",
+   "m": {
+    "col": 70,
+    "end": 69,
+    "line": 1,
+    "start": 69
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "T"
+  },
+  {
+   "i": 26,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 21,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 29,
+   "k": "this",
+   "m": {
+    "col": 90,
+    "end": 89,
+    "line": 1,
+    "start": 83
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "user_id"
+  },
+  {
+   "i": 30,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 29,
+   "k": "table",
+   "m": {
+    "col": 82,
+    "end": 81,
+    "line": 1,
+    "start": 81
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "S"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "using_cond",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.Whens",
+   "i": 0,
+   "k": "whens"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.When",
+   "i": 37,
+   "k": "expressions"
+  },
+  {
+   "i": 38,
+   "k": "matched",
+   "v": false
+  },
+  {
+   "i": 38,
+   "k": "source",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.Insert",
+   "i": 38,
+   "k": "then"
+  },
+  {
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 41,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 42,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 43,
+   "k": "this",
+   "m": {
+    "col": 124,
+    "end": 123,
+    "line": 1,
+    "start": 122
+   }
+  },
+  {
+   "i": 44,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 44,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 42,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 47,
+   "k": "this",
+   "m": {
+    "col": 128,
+    "end": 127,
+    "line": 1,
+    "start": 126
+   }
+  },
+  {
+   "i": 48,
+   "k": "this",
+   "v": "c2"
+  },
+  {
+   "i": 48,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 41,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 51,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 52,
+   "k": "this",
+   "m": {
+    "col": 142,
+    "end": 141,
+    "line": 1,
+    "start": 140
+   }
+  },
+  {
+   "i": 53,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 53,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 52,
+   "k": "table",
+   "m": {
+    "col": 139,
+    "end": 138,
+    "line": 1,
+    "start": 138
+   }
+  },
+  {
+   "i": 56,
+   "k": "this",
+   "v": "S"
+  },
+  {
+   "i": 56,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 51,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 59,
+   "k": "this",
+   "m": {
+    "col": 148,
+    "end": 147,
+    "line": 1,
+    "start": 146
+   }
+  },
+  {
+   "i": 60,
+   "k": "this",
+   "v": "c2"
+  },
+  {
+   "i": 60,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 59,
+   "k": "table",
+   "m": {
+    "col": 145,
+    "end": 144,
+    "line": 1,
+    "start": 144
+   }
+  },
+  {
+   "i": 63,
+   "k": "this",
+   "v": "S"
+  },
+  {
+   "i": 63,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

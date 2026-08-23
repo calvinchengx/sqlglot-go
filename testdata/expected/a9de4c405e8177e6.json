@@ -1,0 +1,166 @@
+{
+ "dialect": "postgres",
+ "sql": "CAST(1 AS DECIMAL) / CAST(2 AS DECIMAL) * -100",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Mul"
+  },
+  {
+   "c": "sqlglot.expressions.core.Div",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DECIMAL"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 6,
+    "end": 5,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 6,
+   "k": "this",
+   "v": "DECIMAL"
+  },
+  {
+   "i": 6,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DECIMAL"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 9,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 13,
+   "k": "this",
+   "v": "DECIMAL"
+  },
+  {
+   "i": 13,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "typed",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "safe",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Neg",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 46,
+    "end": 45,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "100"
+  },
+  {
+   "i": 19,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

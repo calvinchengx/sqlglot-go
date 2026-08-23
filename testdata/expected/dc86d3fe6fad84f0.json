@@ -1,0 +1,299 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT * FROM cities PIVOT(SUM(population) FOR year IN (2000, 2010, 2020) GROUP BY country)",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "cities"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Pivot",
+   "i": 3,
+   "k": "pivots"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 7,
+   "k": "expressions",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "population"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.In",
+   "i": 7,
+   "k": "fields"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "year"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expressions",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 56
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "2000"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expressions",
+   "m": {
+    "col": 66,
+    "end": 65,
+    "line": 1,
+    "start": 62
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "2010"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expressions",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 68
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "2020"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "unpivot",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "default_on_null",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Group",
+   "i": 7,
+   "k": "group"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 29,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "this",
+   "m": {
+    "col": 90,
+    "end": 89,
+    "line": 1,
+    "start": 83
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "country"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "columns"
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "2000"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "columns"
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "2010"
+  },
+  {
+   "i": 37,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "columns"
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "2020"
+  },
+  {
+   "i": 40,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 7,
+   "k": "identify_pivot_strings",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "prefixed_pivot_columns",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "pivot_column_naming",
+   "v": "agg_name_if_aliased_or_multiple"
+  }
+ ]
+}

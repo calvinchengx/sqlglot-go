@@ -1,0 +1,100 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT 'testa 1' NOT LIKE ANY(ARRAY['testa%', 'testb%'])",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Like",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "testa 1"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Any",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "expressions",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "testa%"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "expressions",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "testb%"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "negate",
+   "v": true
+  }
+ ]
+}

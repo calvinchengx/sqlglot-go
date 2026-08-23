@@ -1,0 +1,751 @@
+{
+ "dialect": "duckdb",
+ "sql": "\n            SELECT\n                l_returnflag,\n                l_linestatus,\n                sum_qty:        sum(l_quantity),\n                sum_base_price: sum(l_extendedprice),\n                sum_disc_price: sum(l_extendedprice * (1-l_discount)),\n                sum_charge:     sum(l_extendedprice * (1-l_discount) * (1+l_tax)),\n                avg_qty:        avg(l_quantity),\n                avg_price:      avg(l_extendedprice),\n                avg_disc:       avg(l_discount),\n                count_order:    count(*)\n            ",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 47,
+    "line": 3,
+    "start": 36
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "l_returnflag"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 77,
+    "line": 4,
+    "start": 66
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "l_linestatus"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 114,
+    "line": 5,
+    "start": 112
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 46,
+    "end": 125,
+    "line": 5,
+    "start": 116
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "l_quantity"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "alias",
+   "m": {
+    "col": 23,
+    "end": 102,
+    "line": 5,
+    "start": 96
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "sum_qty"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 163,
+    "line": 6,
+    "start": 161
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 179,
+    "line": 6,
+    "start": 165
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "l_extendedprice"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "alias",
+   "m": {
+    "col": 30,
+    "end": 158,
+    "line": 6,
+    "start": 145
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "sum_base_price"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 27,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 217,
+    "line": 7,
+    "start": 215
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Mul",
+   "i": 28,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 29,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 233,
+    "line": 7,
+    "start": 219
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "l_extendedprice"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 29,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 34,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 35,
+   "k": "this",
+   "m": {
+    "col": 56,
+    "end": 238,
+    "line": 7,
+    "start": 238
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 36,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 35,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 39,
+   "k": "this",
+   "m": {
+    "col": 67,
+    "end": 249,
+    "line": 7,
+    "start": 240
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "l_discount"
+  },
+  {
+   "i": 40,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "alias",
+   "m": {
+    "col": 30,
+    "end": 212,
+    "line": 7,
+    "start": 199
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "sum_disc_price"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 46,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 288,
+    "line": 8,
+    "start": 286
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Mul",
+   "i": 47,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Mul",
+   "i": 48,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 49,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 50,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 304,
+    "line": 8,
+    "start": 290
+   }
+  },
+  {
+   "i": 51,
+   "k": "this",
+   "v": "l_extendedprice"
+  },
+  {
+   "i": 51,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 49,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 54,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 55,
+   "k": "this",
+   "m": {
+    "col": 56,
+    "end": 309,
+    "line": 8,
+    "start": 309
+   }
+  },
+  {
+   "i": 56,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 56,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 55,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 59,
+   "k": "this",
+   "m": {
+    "col": 67,
+    "end": 320,
+    "line": 8,
+    "start": 311
+   }
+  },
+  {
+   "i": 60,
+   "k": "this",
+   "v": "l_discount"
+  },
+  {
+   "i": 60,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 48,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 63,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 64,
+   "k": "this",
+   "m": {
+    "col": 73,
+    "end": 326,
+    "line": 8,
+    "start": 326
+   }
+  },
+  {
+   "i": 65,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 65,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 64,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 68,
+   "k": "this",
+   "m": {
+    "col": 79,
+    "end": 332,
+    "line": 8,
+    "start": 328
+   }
+  },
+  {
+   "i": 69,
+   "k": "this",
+   "v": "l_tax"
+  },
+  {
+   "i": 69,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 46,
+   "k": "alias",
+   "m": {
+    "col": 26,
+    "end": 279,
+    "line": 8,
+    "start": 270
+   }
+  },
+  {
+   "i": 72,
+   "k": "this",
+   "v": "sum_charge"
+  },
+  {
+   "i": 72,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Avg",
+   "i": 75,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 371,
+    "line": 9,
+    "start": 369
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 76,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 77,
+   "k": "this",
+   "m": {
+    "col": 46,
+    "end": 382,
+    "line": 9,
+    "start": 373
+   }
+  },
+  {
+   "i": 78,
+   "k": "this",
+   "v": "l_quantity"
+  },
+  {
+   "i": 78,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 75,
+   "k": "alias",
+   "m": {
+    "col": 23,
+    "end": 359,
+    "line": 9,
+    "start": 353
+   }
+  },
+  {
+   "i": 81,
+   "k": "this",
+   "v": "avg_qty"
+  },
+  {
+   "i": 81,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Avg",
+   "i": 84,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 420,
+    "line": 10,
+    "start": 418
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 85,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 86,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 436,
+    "line": 10,
+    "start": 422
+   }
+  },
+  {
+   "i": 87,
+   "k": "this",
+   "v": "l_extendedprice"
+  },
+  {
+   "i": 87,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 84,
+   "k": "alias",
+   "m": {
+    "col": 25,
+    "end": 410,
+    "line": 10,
+    "start": 402
+   }
+  },
+  {
+   "i": 90,
+   "k": "this",
+   "v": "avg_price"
+  },
+  {
+   "i": 90,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Avg",
+   "i": 93,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 474,
+    "line": 11,
+    "start": 472
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 94,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 95,
+   "k": "this",
+   "m": {
+    "col": 46,
+    "end": 485,
+    "line": 11,
+    "start": 476
+   }
+  },
+  {
+   "i": 96,
+   "k": "this",
+   "v": "l_discount"
+  },
+  {
+   "i": 96,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 93,
+   "k": "alias",
+   "m": {
+    "col": 24,
+    "end": 463,
+    "line": 11,
+    "start": 456
+   }
+  },
+  {
+   "i": 99,
+   "k": "this",
+   "v": "avg_disc"
+  },
+  {
+   "i": 99,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Count",
+   "i": 102,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 525,
+    "line": 12,
+    "start": 521
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Star",
+   "i": 103,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 527,
+    "line": 12,
+    "start": 527
+   }
+  },
+  {
+   "i": 103,
+   "k": "big_int",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 102,
+   "k": "alias",
+   "m": {
+    "col": 27,
+    "end": 515,
+    "line": 12,
+    "start": 505
+   }
+  },
+  {
+   "i": 106,
+   "k": "this",
+   "v": "count_order"
+  },
+  {
+   "i": 106,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

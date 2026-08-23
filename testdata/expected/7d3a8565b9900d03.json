@@ -1,0 +1,279 @@
+{
+ "dialect": "duckdb",
+ "sql": "SELECT CAST(ROW(1, 2) AS ROW(a INTEGER, b INTEGER))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "STRUCT"
+    },
+    {
+     "a": true,
+     "c": "sqlglot.expressions.query.ColumnDef",
+     "i": 0,
+     "k": "expressions"
+    },
+    {
+     "c": "sqlglot.expressions.core.Identifier",
+     "i": 2,
+     "k": "this",
+     "m": {
+      "col": 30,
+      "end": 29,
+      "line": 1,
+      "start": 29
+     }
+    },
+    {
+     "i": 3,
+     "k": "this",
+     "v": "a"
+    },
+    {
+     "i": 3,
+     "k": "quoted",
+     "v": false
+    },
+    {
+     "c": "sqlglot.expressions.datatypes.DataType",
+     "i": 2,
+     "k": "kind"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 6,
+     "k": "this",
+     "v": "INT"
+    },
+    {
+     "i": 6,
+     "k": "nested",
+     "v": false
+    },
+    {
+     "a": true,
+     "c": "sqlglot.expressions.query.ColumnDef",
+     "i": 0,
+     "k": "expressions"
+    },
+    {
+     "c": "sqlglot.expressions.core.Identifier",
+     "i": 9,
+     "k": "this",
+     "m": {
+      "col": 41,
+      "end": 40,
+      "line": 1,
+      "start": 40
+     }
+    },
+    {
+     "i": 10,
+     "k": "this",
+     "v": "b"
+    },
+    {
+     "i": 10,
+     "k": "quoted",
+     "v": false
+    },
+    {
+     "c": "sqlglot.expressions.datatypes.DataType",
+     "i": 9,
+     "k": "kind"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 13,
+     "k": "this",
+     "v": "INT"
+    },
+    {
+     "i": 13,
+     "k": "nested",
+     "v": false
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": true
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "ROW"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "STRUCT"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 12,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 16,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 16,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 19,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 23,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 23,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": true
+  }
+ ]
+}

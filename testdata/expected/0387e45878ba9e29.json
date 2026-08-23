@@ -1,0 +1,67 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT TRIM(TRAILING ' XXX ' COLLATE \"de_DE\")",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.Trim",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Collate",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": " XXX "
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "de_DE"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "position",
+   "v": "TRAILING"
+  }
+ ]
+}

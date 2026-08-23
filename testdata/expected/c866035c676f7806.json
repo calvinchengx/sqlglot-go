@@ -1,0 +1,354 @@
+{
+ "dialect": "databricks",
+ "sql": "CREATE OR REFRESH STREAMING TABLE csv_data (id INT, ts TIMESTAMP, event STRING) AS SELECT * FROM STREAM READ_FILES('s3://bucket/path', format => 'csv', schema => 'id int, ts timestamp, event string')",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "csv_data"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 46,
+    "end": 45,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "ts"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 13,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 17,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  },
+  {
+   "i": 17,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 71,
+    "end": 70,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "event"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 20,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 24,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 24,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 31,
+   "k": "expressions",
+   "m": {
+    "col": 91,
+    "end": 90,
+    "line": 1,
+    "start": 90
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 31,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Stream",
+   "i": 33,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 34,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 35,
+   "k": "this",
+   "m": {
+    "col": 114,
+    "end": 113,
+    "line": 1,
+    "start": 104
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "READ_FILES"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 36,
+   "k": "expressions",
+   "m": {
+    "col": 133,
+    "end": 132,
+    "line": 1,
+    "start": 115
+   }
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "s3://bucket/path"
+  },
+  {
+   "i": 38,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 36,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 41,
+   "k": "this"
+  },
+  {
+   "i": 42,
+   "k": "this",
+   "v": "format"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 41,
+   "k": "expression",
+   "m": {
+    "col": 150,
+    "end": 149,
+    "line": 1,
+    "start": 145
+   }
+  },
+  {
+   "i": 44,
+   "k": "this",
+   "v": "csv"
+  },
+  {
+   "i": 44,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 36,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 47,
+   "k": "this"
+  },
+  {
+   "i": 48,
+   "k": "this",
+   "v": "schema"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 47,
+   "k": "expression",
+   "m": {
+    "col": 198,
+    "end": 197,
+    "line": 1,
+    "start": 162
+   }
+  },
+  {
+   "i": 50,
+   "k": "this",
+   "v": "id int, ts timestamp, event string"
+  },
+  {
+   "i": 50,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.StreamingTableProperty",
+   "i": 54,
+   "k": "expressions"
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

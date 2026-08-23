@@ -1,0 +1,117 @@
+{
+ "dialect": "databricks",
+ "sql": "SELECT GET_JSON_OBJECT(col, CONCAT('$.', field_name))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExtractScalar",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.string.Concat",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "expressions",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "$."
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 41
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "field_name"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 6,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "i": 6,
+   "k": "coalesce",
+   "v": false
+  }
+ ]
+}

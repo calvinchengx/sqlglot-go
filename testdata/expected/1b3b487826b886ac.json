@@ -1,0 +1,204 @@
+{
+ "dialect": "postgres",
+ "sql": "SELECT XMLELEMENT(NAME foo, XMLATTRIBUTES('xyz' AS bar), XMLELEMENT(NAME abc), XMLCOMMENT('test'), XMLELEMENT(NAME xyz))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.XMLElement",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "XMLATTRIBUTES"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "xyz"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "alias",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "bar"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.XMLElement",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 76,
+    "end": 75,
+    "line": 1,
+    "start": 73
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "abc"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 14,
+   "k": "expressions",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 89,
+    "end": 88,
+    "line": 1,
+    "start": 79
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "XMLCOMMENT"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 19,
+   "k": "expressions",
+   "m": {
+    "col": 96,
+    "end": 95,
+    "line": 1,
+    "start": 90
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.XMLElement",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 118,
+    "end": 117,
+    "line": 1,
+    "start": 115
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "xyz"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 24,
+   "k": "expressions",
+   "v": false
+  }
+ ]
+}

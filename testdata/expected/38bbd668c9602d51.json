@@ -1,0 +1,92 @@
+{
+ "dialect": "postgres",
+ "sql": "COMMENT ON MATERIALIZED VIEW foo.my_view IS 'x'",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Comment"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "my_view"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "db",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "VIEW"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "materialized",
+   "v": true
+  }
+ ]
+}

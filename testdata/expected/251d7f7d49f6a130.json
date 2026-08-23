@@ -1,0 +1,51 @@
+{
+ "dialect": "databricks",
+ "sql": "ANALYZE TABLES FROM db COMPUTE STATISTICS",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Analyze"
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLES FROM"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "tables"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "db",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "db"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.AnalyzeStatistics",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "i": 6,
+   "k": "kind",
+   "v": "COMPUTE"
+  }
+ ]
+}

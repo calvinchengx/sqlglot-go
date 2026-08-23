@@ -1,0 +1,287 @@
+{
+ "dialect": "postgres",
+ "sql": "MERGE INTO target_table USING source_table AS source ON target.id = source.id WHEN MATCHED THEN DO NOTHING WHEN NOT MATCHED THEN DO NOTHING RETURNING MERGE_ACTION(), *",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Merge"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "target_table"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "using"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "source_table"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 5,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "source"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 0,
+   "k": "on"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 65,
+    "end": 64,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "table",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 56
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "target"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 13,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "this",
+   "m": {
+    "col": 77,
+    "end": 76,
+    "line": 1,
+    "start": 75
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 22,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "table",
+   "m": {
+    "col": 74,
+    "end": 73,
+    "line": 1,
+    "start": 68
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "source"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "using_cond",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.Whens",
+   "i": 0,
+   "k": "whens"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.When",
+   "i": 29,
+   "k": "expressions"
+  },
+  {
+   "i": 30,
+   "k": "matched",
+   "v": true
+  },
+  {
+   "i": 30,
+   "k": "source",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 30,
+   "k": "then"
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "DO NOTHING"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.When",
+   "i": 29,
+   "k": "expressions"
+  },
+  {
+   "i": 35,
+   "k": "matched",
+   "v": false
+  },
+  {
+   "i": 35,
+   "k": "source",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 35,
+   "k": "then"
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "DO NOTHING"
+  },
+  {
+   "c": "sqlglot.expressions.dml.Returning",
+   "i": 0,
+   "k": "returning"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 40,
+   "k": "expressions",
+   "m": {
+    "col": 162,
+    "end": 161,
+    "line": 1,
+    "start": 150
+   }
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "MERGE_ACTION"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 40,
+   "k": "expressions",
+   "m": {
+    "col": 167,
+    "end": 166,
+    "line": 1,
+    "start": 166
+   }
+  },
+  {
+   "i": 40,
+   "k": "into",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,175 @@
+{
+ "dialect": "duckdb",
+ "sql": "PIVOT duckdb_functions() ON schema_name USING AVG(LENGTH(function_name))::INTEGER GROUP BY schema_name",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Pivot"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 6
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "duckdb_functions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "schema_name"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "using",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Avg",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "c": "sqlglot.expressions.string.Length",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 50
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 70,
+    "end": 69,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "function_name"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 8,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 15,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 15,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Group",
+   "i": 0,
+   "k": "group"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 102,
+    "end": 101,
+    "line": 1,
+    "start": 91
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "schema_name"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

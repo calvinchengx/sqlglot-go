@@ -1,0 +1,158 @@
+{
+ "dialect": "tsql",
+ "sql": "JSON_QUERY(REPLACE(REPLACE(x , '''', '\"'), '\"\"', '\"'))",
+ "tree": [
+  {
+   "c": "sqlglot.expressions.json.JSONExtract",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.string.Replace",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "c": "sqlglot.expressions.string.Replace",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "'"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "replacement",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "\""
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "\"\""
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "replacement",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 49
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "\""
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 19,
+   "k": "expressions"
+  }
+ ]
+}
