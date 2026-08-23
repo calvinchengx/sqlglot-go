@@ -64,11 +64,11 @@ Regenerate with `make service`; nothing in it is authored here.
 <!-- coverage:start -->
 | Dialect | Tokens | Trees matched | Of | Unparsed | Mismatched |
 |---|---|---|---|---|---|
-| neutral | 997/997 | 411 | 997 | 586 | 0 |
-| tsql | 597/597 | 194 | 597 | 403 | 0 |
-| postgres | 857/857 | 236 | 857 | 621 | 0 |
-| duckdb | 1631/1631 | 627 | 1631 | 1004 | 0 |
-| databricks | 424/424 | 144 | 424 | 280 | 0 |
+| neutral | 997/997 | 447 | 997 | 550 | 0 |
+| tsql | 597/597 | 197 | 597 | 400 | 0 |
+| postgres | 857/857 | 245 | 857 | 612 | 0 |
+| duckdb | 1631/1631 | 641 | 1631 | 990 | 0 |
+| databricks | 424/424 | 146 | 424 | 278 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number
@@ -76,7 +76,7 @@ that matters** and must be zero: it counts statements the port parsed into a
 *different* tree than the reference. Unparsed is the honest size of the gap.
 
 The port also writes SQL back out, and is held to the reference's own output
-string for string: **1,506 of the statements it parses are written back
+string for string: **1,570 of the statements it parses are written back
 identically and none is written wrongly**, with 86 refused, and the guard's own rewrite -- inject a row ceiling, emit --
 lands as `TOP 500` in T-SQL and `LIMIT 500` in DuckDB from the same edit to the
 same node. Where a dialect would transform a statement in a way the port does

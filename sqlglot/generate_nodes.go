@@ -60,6 +60,8 @@ func init() {
 		"Dot":           (*generator).writeDot,
 		"Distinct":      (*generator).writeDistinct,
 		"Array":         (*generator).writeArray,
+		"Window":        (*generator).writeWindow,
+		"WindowSpec":    (*generator).writeWindowSpec,
 		"Bracket":       (*generator).writeBracket,
 		"Slice":         (*generator).writeSlice,
 		"All":           (*generator).writeQuantifier,
@@ -608,3 +610,60 @@ func (g *generator) writeSlice(e *Expression) string {
 // than emit a statement spaced differently from the one the Python executor
 // sends.
 func (g *generator) writeQuantifier(*Expression) string { return g.fail("quantifier") }
+
+// writeWindow writes the OVER clause. A named window (`OVER w`) carries an
+// alias instead of a body.
+func (g *generator) writeWindow(e *Expression) string {
+	out := g.child(e, "this") + " OVER "
+	if alias := g.child(e, "alias"); alias != "" {
+		return out + alias
+	}
+	parts := []string{}
+	if items, _ := e.Args["partition_by"].([]*Expression); len(items) > 0 {
+		rendered := make([]string, 0, len(items))
+		for _, item := range items {
+			rendered = append(rendered, g.node(item))
+		}
+		parts = append(parts, "PARTITION BY "+strings.Join(rendered, ", "))
+	}
+	if order := g.child(e, "order"); order != "" {
+		parts = append(parts, order)
+	}
+	if spec := g.child(e, "spec"); spec != "" {
+		parts = append(parts, spec)
+	}
+	return out + "(" + strings.Join(parts, " ") + ")"
+}
+
+// writeWindowSpec writes the frame. A single bound is written back in the
+// BETWEEN form with CURRENT ROW supplied, which is what the reference does:
+// `ROWS 3 PRECEDING` comes back as `ROWS BETWEEN 3 PRECEDING AND CURRENT ROW`.
+func (g *generator) writeWindowSpec(e *Expression) string {
+	kind, _ := e.Args["kind"].(string)
+	start := g.frameBound(e, "start", "start_side")
+	end := g.frameBound(e, "end", "end_side")
+	if end == "" {
+		end = "CURRENT ROW"
+	}
+	if start == "" {
+		return g.fail("WindowSpec without a start")
+	}
+	return kind + " BETWEEN " + start + " AND " + end
+}
+
+func (g *generator) frameBound(e *Expression, key, sideKey string) string {
+	var text string
+	switch v := e.Args[key].(type) {
+	case string:
+		text = v
+	case *Expression:
+		text = g.node(v)
+	}
+	if text == "" {
+		return ""
+	}
+	if side, _ := e.Args[sideKey].(string); side != "" {
+		return text + " " + side
+	}
+	return text
+}

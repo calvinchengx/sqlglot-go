@@ -431,6 +431,15 @@ func (p *parser) parsePostfix() (*Expression, error) {
 		// In T-SQL `[` opens a quoted identifier and the tokenizer has already
 		// consumed it, so this branch is unreachable there -- which is why it
 		// needs no dialect flag.
+		// `f(x) OVER (...)` wraps the call in a Window.
+		if p.at(TokOVER) {
+			w, err := p.parseWindow(this)
+			if err != nil {
+				return nil, err
+			}
+			this = w
+			continue
+		}
 		if p.at(TokL_BRACKET) {
 			p.advance()
 			items, err := p.parseBracketItems()

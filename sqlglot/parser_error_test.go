@@ -49,12 +49,15 @@ func TestTheUnsupportedMessageIsUnchanged(t *testing.T) {
 }
 
 // Label narrows the construct with the token when, and only when, the token is
-// dialect vocabulary. Without this a window function and a PIVOT are both
+// dialect vocabulary. Without this a TABLESAMPLE and a PIVOT are both
 // "trailing tokens", which tells whoever is deciding what to build next
 // nothing at all.
+//
+// The window function this used to name was the original example, and it now
+// parses -- which is the point of counting them.
 func TestLabelNamesTheKeywordThatStoppedIt(t *testing.T) {
 	for _, tc := range []struct{ sql, want string }{
-		{"SELECT ROW_NUMBER() OVER (ORDER BY a) FROM t", "trailing tokens at OVER"},
+		{"SELECT a FROM t TABLESAMPLE (10 PERCENT)", "trailing tokens at TABLESAMPLE"},
 		{"SELECT a FROM t PIVOT (SUM(b) FOR c IN ('x'))", "trailing tokens at PIVOT"},
 	} {
 		_, err := ParseOne(tc.sql, "tsql")
