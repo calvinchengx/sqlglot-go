@@ -148,7 +148,18 @@ type ParserTables struct {
 	// even though the caller wrote them bare. DuckDB reserves `all`, so
 	// `SELECT 1 AS all` is written `AS "all"`; bare it is a syntax
 	// error on the engine.
-	ReservedKeywords     map[string]bool
+	ReservedKeywords map[string]bool
+	// BracketIsRewritten: DuckDB and PostgreSQL shift a subscript to
+	// sqlglot’s 0-based Bracket, annotate it, and run the shift
+	// through the SIMPLIFIER. That is the optimizer, which is not
+	// ported, so where this is set the subscript is REFUSED rather
+	// than built plainly. PROBED.
+	// ArrayOpen and ArrayClose are the text around an array literal:
+	// `[`/`]` in DuckDB, `ARRAY[`/`]` in PostgreSQL, `ARRAY(`/`)`
+	// elsewhere. PROBED.
+	ArrayOpen            string
+	ArrayClose           string
+	BracketIsRewritten   bool
 	WritesBooleanLiteral bool
 	IsNotNullWrapsInNot  bool
 	// NullOrdering decides where NULLs sort when nobody says, and so
@@ -2864,6 +2875,9 @@ var parserTables = map[string]*ParserTables{
 		JoinsHaveEqualPrecedence: false,
 		BareJoinIsOnTrue:         false,
 		LimitAllMeansNoLimit:     false,
+		ArrayOpen:                "ARRAY(",
+		ArrayClose:               ")",
+		BracketIsRewritten:       false,
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
@@ -5705,6 +5719,9 @@ var parserTables = map[string]*ParserTables{
 		JoinsHaveEqualPrecedence: false,
 		BareJoinIsOnTrue:         false,
 		LimitAllMeansNoLimit:     false,
+		ArrayOpen:                "ARRAY(",
+		ArrayClose:               ")",
+		BracketIsRewritten:       false,
 		WritesBooleanLiteral:     false,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
@@ -8552,6 +8569,9 @@ var parserTables = map[string]*ParserTables{
 		JoinsHaveEqualPrecedence: false,
 		BareJoinIsOnTrue:         false,
 		LimitAllMeansNoLimit:     true,
+		ArrayOpen:                "ARRAY[",
+		ArrayClose:               "]",
+		BracketIsRewritten:       true,
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      false,
 		NullOrdering:             "nulls_are_large",
@@ -11489,6 +11509,9 @@ var parserTables = map[string]*ParserTables{
 			"WINDOW":            true,
 			"WITH":              true,
 		},
+		ArrayOpen:                "[",
+		ArrayClose:               "]",
+		BracketIsRewritten:       true,
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_last",
@@ -14354,6 +14377,9 @@ var parserTables = map[string]*ParserTables{
 		JoinsHaveEqualPrecedence: true,
 		BareJoinIsOnTrue:         true,
 		LimitAllMeansNoLimit:     true,
+		ArrayOpen:                "ARRAY(",
+		ArrayClose:               ")",
+		BracketIsRewritten:       false,
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",

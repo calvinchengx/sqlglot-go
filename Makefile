@@ -77,7 +77,13 @@ coverage: test ## Per-dialect coverage, against the reference and against the se
 	@$(PYTHON) -c 'import json; c=json.load(open("testdata/service/coverage.json")); print("data agent service:"); [print("  %-24s %3d/%d" % (k, v["parsed"], v["total"])) for k, v in sorted(c["by_category"].items())]'
 	@$(PYTHON) -c 'import json; c=json.load(open("testdata/coverage.json")); print("reference %s  %d/%d" % (c["reference"][:12], c["matched"], c["total"])); [print("  %-10s %4d/%-4d unparsed %4d mismatched %d" % (d, v["matched"], v["total"], v["unparsed"], v["mismatched"])) for d, v in sorted(c["by_dialect"].items())]'
 
-lint: ## vet and golangci-lint, in a container
+lint: ## gofmt, vet and golangci-lint, in a container
+	@unformatted=$$(gofmt -l .); \
+	if [ -n "$$unformatted" ]; then \
+	  echo "not gofmt'd:"; echo "$$unformatted"; \
+	  echo "CI regenerates and diffs, so it fails there instead; run gofmt -w"; \
+	  exit 1; \
+	fi
 	go vet ./...
 	docker run --rm -v "$$(pwd):/src" -w /src $(GOLANGCI) golangci-lint run ./...
 

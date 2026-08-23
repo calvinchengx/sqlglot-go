@@ -416,21 +416,128 @@ func (p *parser) parsePostfix() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	for p.match(TokDCOLON) {
-		to, err := p.parseDataType()
-		if err != nil {
-			return nil, err
+	for {
+		if p.match(TokDCOLON) {
+			to, err := p.parseDataType()
+			if err != nil {
+				return nil, err
+			}
+			cast := New("Cast", Arg{"this", this}, Arg{"to", to})
+			cast.Type = to
+			this = cast
+			continue
 		}
-		cast := New("Cast", Arg{"this", this}, Arg{"to", to})
-		cast.Type = to
-		this = cast
+		// `x[1]`, `x[1:2]` and `x[1][2]` are Brackets over what precedes them.
+		// In T-SQL `[` opens a quoted identifier and the tokenizer has already
+		// consumed it, so this branch is unreachable there -- which is why it
+		// needs no dialect flag.
+		if p.at(TokL_BRACKET) {
+			p.advance()
+			items, err := p.parseBracketItems()
+			if err != nil {
+				return nil, err
+			}
+			if p.tables.BracketIsRewritten {
+				return nil, p.unsupported("subscript")
+			}
+			this = New("Bracket", Arg{"this", this}, Arg{"expressions", items},
+				Arg{"offset", nil}, Arg{"safe", nil}, Arg{"returns_null_on_error", nil})
+			continue
+		}
+		return this, nil
 	}
-	return this, nil
+}
+
+// parseBracketItems reads what sits between `[` and `]`: a comma-separated
+// list where any item may be a slice. `x[:]` is a Slice with neither bound,
+// which is why an empty side is a missing arg rather than an error.
+func (p *parser) parseBracketItems() ([]*Expression, error) {
+	var items []*Expression
+	for !p.at(TokR_BRACKET) {
+		var low *Expression
+		if !p.at(TokCOLON) {
+			e, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			low = e
+		}
+		if p.match(TokCOLON) {
+			var high *Expression
+			if !p.at(TokR_BRACKET) && !p.at(TokCOMMA) {
+				e, err := p.parseExpression()
+				if err != nil {
+					return nil, err
+				}
+				high = e
+			}
+			items = append(items, New("Slice", Arg{"this", low}, Arg{"expression", high}))
+		} else {
+			if low == nil {
+				return nil, p.unsupported("empty subscript")
+			}
+			items = append(items, low)
+		}
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_BRACKET) {
+		return nil, p.unsupported("unclosed subscript")
+	}
+	return items, nil
 }
 
 // parsePrimary is entered with a token current; parseUnary checked.
 func (p *parser) parsePrimary() (*Expression, error) {
 	c := p.curr()
+
+	// `x LIKE ALL (...)` and `x = ANY (...)` are QUANTIFIERS over what follows,
+	// not calls to functions named ALL and ANY -- which is what the generic
+	// call rule made of them, since both are followed by a parenthesis.
+	if (p.at(TokALL) || p.at(TokANY)) && p.next() != nil && p.next().Type == TokL_PAREN &&
+		p.afterComparison() {
+		class := "All"
+		if p.at(TokANY) {
+			class = "Any"
+		}
+		p.advance()
+		inner, err := p.parsePrimary()
+		if err != nil {
+			return nil, err
+		}
+		// Over a QUERY the reference disagrees with itself across dialects --
+		// some keep the Subquery, some carry the Select straight -- so that
+		// form is refused rather than guessed at.
+		if inner != nil && (inner.Class == "Subquery" || inner.Class == "Select") {
+			return nil, p.unsupported("quantifier over a subquery")
+		}
+		return New(class, Arg{"this", inner}), nil
+	}
+
+	// `ARRAY[1, 2]` is an Array too -- the keyword is part of the literal, not
+	// a column being subscripted, which is what the postfix rule would make of
+	// it.
+	if p.atPair(TokARRAY, TokL_BRACKET) {
+		p.advance()
+		p.advance()
+		items, err := p.parseBracketItems()
+		if err != nil {
+			return nil, err
+		}
+		return New("Array", Arg{"expressions", items}), nil
+	}
+
+	// `[1, 2, 3]` is an Array literal. Same token as the subscript above; the
+	// difference is position, and only this one begins an expression.
+	if c.Type == TokL_BRACKET {
+		p.advance()
+		items, err := p.parseBracketItems()
+		if err != nil {
+			return nil, err
+		}
+		return New("Array", Arg{"expressions", items}), nil
+	}
 
 	// CURRENT_DATE and friends are calls with no argument list.
 	if class, ok := p.tables.NoParenFunctionClasses[c.Type]; ok {
@@ -684,10 +791,15 @@ func (p *parser) parseFunction() (*Expression, error) {
 	p.advance() // the opening parenthesis
 
 	var args []*Expression
+	// `COUNT(DISTINCT a)` is a Count over a Distinct, not a Count of two
+	// things: the reference collects everything after DISTINCT into one
+	// Distinct node and passes that as the call's single argument. Refusing
+	// it turned away one of the commonest aggregates a data agent writes.
+	distinct := p.match(TokDISTINCT)
 	if !p.at(TokR_PAREN) {
 		for {
-			// DISTINCT, ORDER BY and named arguments inside a call all change
-			// the node the reference builds; none is handled here.
+			// ORDER BY and named arguments inside a call also change the node
+			// the reference builds; neither is handled here.
 			if p.atAny(TokDISTINCT, TokORDER_BY, TokALL) {
 				return nil, p.unsupported("modifier inside a function call")
 			}
@@ -703,6 +815,9 @@ func (p *parser) parseFunction() (*Expression, error) {
 	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed function argument list")
+	}
+	if distinct {
+		args = []*Expression{New("Distinct", Arg{"expressions", args}, Arg{"on", nil})}
 	}
 	if named {
 		// More arguments than the recorded signature consumes means the
@@ -921,4 +1036,22 @@ func (p *parser) atIdentifier() bool {
 	}
 	_, ok := p.tables.IDVarTokens[c.Type]
 	return ok
+}
+
+// afterComparison reports whether the token just consumed was a comparison or
+// a LIKE. `ALL` and `ANY` are quantifiers only THERE: in a select list,
+// `ALL (age >= 30) AS every` is an ordinary call to a function named ALL, and
+// reading it as a quantifier built a node the reference never makes.
+func (p *parser) afterComparison() bool {
+	if p.index == 0 {
+		return false
+	}
+	prev := p.tokens[p.index-1].Type
+	if _, ok := p.tables.Comparison[prev]; ok {
+		return true
+	}
+	if _, ok := p.tables.Equality[prev]; ok {
+		return true
+	}
+	return prev == TokLIKE || prev == TokILIKE
 }

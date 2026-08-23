@@ -173,6 +173,29 @@ func (g *generator) functionSpelling(e *Expression) (FuncSQL, bool) {
 				break
 			}
 		}
+		// Every key the candidate names must be PRESENT. The spelling was
+		// recorded for exactly this arity: Databricks writes a bare
+		// GroupConcat as `LISTAGG(x, ',')`, supplying a separator the tree
+		// does not carry, so no spelling was recorded for the one-argument
+		// form. Applying the two-argument spelling anyway silently wrote
+		// `LISTAGG(x)` -- a shorter call than the reference emits.
+		for _, key := range candidate.Keys {
+			switch v := e.Args[key].(type) {
+			case nil:
+				matches = false
+			case *Expression:
+				if v == nil {
+					matches = false
+				}
+			case []*Expression:
+				if len(v) == 0 {
+					matches = false
+				}
+			}
+			if !matches {
+				break
+			}
+		}
 		if matches {
 			return candidate, true
 		}

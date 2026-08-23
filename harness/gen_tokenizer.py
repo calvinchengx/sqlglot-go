@@ -45,6 +45,23 @@ def gostr(s: str) -> str:
     return "".join(out)
 
 
+def gofmt(*paths):
+    """Format what was just generated, here rather than in the caller.
+
+    `make oracle` ran gofmt after each generator, so running a generator
+    directly produced a file that was never formatted -- and golangci-lint does
+    not check formatting, so nothing local complained. CI regenerates, formats,
+    and diffs, so it failed there instead. A step you have to remember is a step
+    that gets skipped; this one belongs to generation.
+    """
+    import shutil
+    import subprocess
+
+    if shutil.which("gofmt") is None:
+        raise SystemExit("gofmt is not on PATH; the generated tables must be formatted")
+    subprocess.run(["gofmt", "-w", *[str(p) for p in paths]], check=True)
+
+
 def gen_tokentypes(TokenType) -> str:
     members = sorted(TokenType, key=lambda m: m.value)
     lines = [
@@ -192,6 +209,7 @@ def main() -> int:
 
     (a.out / "tokentype_gen.go").write_text(gen_tokentypes(TokenType))
     (a.out / "dialects_gen.go").write_text(gen_dialects(Dialect))
+    gofmt(a.out / "tokentype_gen.go", a.out / "dialects_gen.go")
     print(f"reference {actual[:12]}: wrote {a.out}/tokentype_gen.go and {a.out}/dialects_gen.go")
     return 0
 

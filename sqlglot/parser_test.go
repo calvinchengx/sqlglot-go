@@ -105,7 +105,7 @@ func TestRefusals(t *testing.T) {
 	for _, c := range []struct{ name, sql, dialect string }{
 		{"function with a custom argument shape", "SELECT TIMESTAMP_TRUNC(t, MONTH)", ""},
 		{"no-paren function named, not tokenized", "CURDATE", "databricks"},
-		{"DISTINCT inside a call", "SELECT f(DISTINCT a)", ""},
+		{"ORDER BY inside a call", "SELECT f(a ORDER BY b)", ""},
 		{"INTERVAL", "INTERVAL '1' DAY", ""},
 		{"INTERVAL as a type", "'45 days'::INTERVAL DAY", "postgres"},
 		{"non-numeric type parameter", "a::VARCHAR(MAX)", "tsql"},

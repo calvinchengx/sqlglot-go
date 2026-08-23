@@ -63,6 +63,23 @@ def probe_substitutions(exp):
     ]
 
 
+def gofmt(*paths):
+    """Format what was just generated, here rather than in the caller.
+
+    `make oracle` ran gofmt after each generator, so running a generator
+    directly produced a file that was never formatted -- and golangci-lint does
+    not check formatting, so nothing local complained. CI regenerates, formats,
+    and diffs, so it failed there instead. A step you have to remember is a step
+    that gets skipped; this one belongs to generation.
+    """
+    import shutil
+    import subprocess
+
+    if shutil.which("gofmt") is None:
+        raise SystemExit("gofmt is not on PATH; the generated tables must be formatted")
+    subprocess.run(["gofmt", "-w", *[str(p) for p in paths]], check=True)
+
+
 def call_builder(builder, args, dialect):
     """Run one of sqlglot's function builders.
 
@@ -263,6 +280,46 @@ def reserved_keywords(dialect: str, Dialect) -> list[str]:
     """
     g = Dialect.get_or_raise(dialect or None).generator_class
     return sorted(str(w).upper() for w in (getattr(g, "RESERVED_KEYWORDS", None) or ()))
+
+
+def array_delimiters(dialect: str, exp) -> tuple[str, str]:
+    """How this dialect writes an array literal, as the text around its items.
+
+    DuckDB writes `[1, 2]`, PostgreSQL `ARRAY[1, 2]`, and everyone else
+    `ARRAY(1, 2)`. Read off the reference rather than transcribed, so a dialect
+    that spells it some fourth way needs no change here.
+    """
+    node = exp.Array(expressions=[exp.column("__probe_0"), exp.column("__probe_1")])
+    text = node.sql(dialect=dialect or None)
+    head, _, rest = text.partition("__probe_0")
+    _, _, tail = rest.partition("__probe_1")
+    return head, tail
+
+
+def bracket_is_rewritten(dialect: str) -> bool:
+    """Whether `a[1]` comes back as something other than a plain subscript.
+
+    DuckDB and PostgreSQL rewrite it: the index is shifted to sqlglot's 0-based
+    Bracket, the base and the index are annotated with a type, and the shift
+    goes through the SIMPLIFIER -- `a[1 + 1]` arrives as `Literal(1)` and
+    `a[-1]` as `Neg(2)`. All of that is the optimizer, which is not ported.
+    Databricks and the neutral dialect leave the subscript alone.
+
+    So this is not a flag to emulate but a flag to REFUSE on: where the
+    reference rewrites, the port cannot follow, and a Bracket built plainly
+    would be a tree the reference never produces. PROBED.
+    """
+    import sqlglot
+
+    e = sqlglot.parse_one("SELECT a[1]", dialect=dialect or None).selects[0]
+    if type(e).__name__ != "Bracket":
+        # T-SQL opens a quoted identifier with `[`, so the subscript grammar is
+        # unreachable there and the flag is moot either way.
+        return False
+    index = (e.args.get("expressions") or [None])[0]
+    if index is None:
+        return True
+    return e.args["this"].type is not None or index.this != "1"
 
 
 def writes_boolean_literal(dialect: str, exp) -> bool:
@@ -900,6 +957,17 @@ def main() -> int:
         '\t// `SELECT 1 AS all` is written `AS "all"`; bare it is a syntax\n',
         "\t// error on the engine.\n",
         "\tReservedKeywords map[string]bool\n",
+        "\t// BracketIsRewritten: DuckDB and PostgreSQL shift a subscript to\n",
+        "\t// sqlglot\u2019s 0-based Bracket, annotate it, and run the shift\n",
+        "\t// through the SIMPLIFIER. That is the optimizer, which is not\n",
+        "\t// ported, so where this is set the subscript is REFUSED rather\n",
+        "\t// than built plainly. PROBED.\n",
+        "\t// ArrayOpen and ArrayClose are the text around an array literal:\n",
+        "\t// `[`/`]` in DuckDB, `ARRAY[`/`]` in PostgreSQL, `ARRAY(`/`)`\n",
+        "\t// elsewhere. PROBED.\n",
+        "\tArrayOpen  string\n",
+        "\tArrayClose string\n",
+        "\tBracketIsRewritten bool\n",
         "\tWritesBooleanLiteral bool\n",
         "\tIsNotNullWrapsInNot bool\n",
         "\t// NullOrdering decides where NULLs sort when nobody says, and so\n",
@@ -1092,6 +1160,12 @@ def main() -> int:
             for w in reserved:
                 out.append(f"\t\t\t{gostr(w)}: true,\n")
             out.append("\t\t},\n")
+        _ao, _ac = array_delimiters(name, exp)
+        out.append(f"\t\tArrayOpen: {gostr(_ao)},\n")
+        out.append(f"\t\tArrayClose: {gostr(_ac)},\n")
+        out.append(
+            f"\t\tBracketIsRewritten: {str(bracket_is_rewritten(name)).lower()},\n"
+        )
         out.append(
             f"\t\tWritesBooleanLiteral: {str(writes_boolean_literal(name, exp)).lower()},\n"
         )
@@ -1130,6 +1204,7 @@ def main() -> int:
     out.append("}\n")
 
     a.out.write_text("".join(out))
+    gofmt(a.out)
     print(f"reference {actual[:12]}: wrote {a.out}")
     return 0
 

@@ -59,6 +59,11 @@ func init() {
 		"Between":       (*generator).writeBetween,
 		"Dot":           (*generator).writeDot,
 		"Distinct":      (*generator).writeDistinct,
+		"Array":         (*generator).writeArray,
+		"Bracket":       (*generator).writeBracket,
+		"Slice":         (*generator).writeSlice,
+		"All":           (*generator).writeQuantifier,
+		"Any":           (*generator).writeQuantifier,
 		"Like":          (*generator).writeLike,
 		"ILike":         (*generator).writeLike,
 		"Is":            (*generator).writeIs,
@@ -264,9 +269,17 @@ func (g *generator) writeOffset(e *Expression) string {
 	return "OFFSET " + g.child(e, "expression")
 }
 
-func (g *generator) writeStar(*Expression) string     { return "*" }
-func (g *generator) writeNull(*Expression) string     { return "NULL" }
-func (g *generator) writeDistinct(*Expression) string { return "DISTINCT" }
+func (g *generator) writeStar(*Expression) string { return "*" }
+func (g *generator) writeNull(*Expression) string { return "NULL" }
+
+// writeDistinct serves both `SELECT DISTINCT`, where the node is bare, and
+// `COUNT(DISTINCT a)`, where it carries the arguments it distinguishes.
+func (g *generator) writeDistinct(e *Expression) string {
+	if items := g.list(e); items != "" {
+		return "DISTINCT " + items
+	}
+	return "DISTINCT"
+}
 
 func (g *generator) writeColumn(e *Expression) string {
 	parts := []string{}
@@ -548,3 +561,50 @@ func isPlainName(s string) bool {
 	}
 	return true
 }
+
+// writeArray uses the dialect's own delimiters: `[1, 2]` in DuckDB,
+// `ARRAY[1, 2]` in PostgreSQL, `ARRAY(1, 2)` elsewhere.
+func (g *generator) writeArray(e *Expression) string {
+	// The delimiters are for a literal list. Over a QUERY, DuckDB writes
+	// `ARRAY((SELECT ...))` rather than `[(SELECT ...)]` -- a different
+	// spelling for a different thing -- so that form is refused.
+	items, _ := e.Args["expressions"].([]*Expression)
+	for _, item := range items {
+		if holdsAQuery(item) {
+			return g.fail("array over a query")
+		}
+	}
+	return g.tables.ArrayOpen + g.list(e) + g.tables.ArrayClose
+}
+
+func holdsAQuery(e *Expression) bool {
+	if e == nil {
+		return false
+	}
+	switch e.Class {
+	case "Select", "Subquery", "Union", "Except", "Intersect":
+		return true
+	case "Paren":
+		inner, _ := e.Args["this"].(*Expression)
+		return holdsAQuery(inner)
+	}
+	return false
+}
+
+// writeBracket is reached only where the dialect does NOT rewrite a subscript;
+// the parser refuses it where it does, so nothing here has to shift an index.
+func (g *generator) writeBracket(e *Expression) string {
+	return g.child(e, "this") + "[" + g.list(e) + "]"
+}
+
+func (g *generator) writeSlice(e *Expression) string {
+	return g.child(e, "this") + ":" + g.child(e, "expression")
+}
+
+// writeQuantifier refuses: how the reference spaces one depends on the
+// operator ABOVE it -- `x = ANY(ARRAY[1])` is written tight and
+// `x LIKE ALL (ARRAY[1])` is not, from the same Paren underneath. That rule is
+// not ported, so the port reads the quantifier and declines to write it rather
+// than emit a statement spaced differently from the one the Python executor
+// sends.
+func (g *generator) writeQuantifier(*Expression) string { return g.fail("quantifier") }
