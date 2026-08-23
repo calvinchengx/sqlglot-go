@@ -55,3 +55,39 @@ func TestTheGuardStillSeesAQuotedCallByName(t *testing.T) {
 		}
 	}
 }
+
+// `x IS NOT NULL` has two shapes and the dialect chooses, which the port did
+// not know: it used PostgreSQL's everywhere, so the Go guard and the Python
+// guard saw different trees for a predicate that appears in almost every real
+// query. Semantically identical, and precisely the divergence this port exists
+// to prevent.
+//
+// Found by promoting a fuzz candidate into the expectation corpus — the
+// statement was not in 2,171 reference fixtures.
+func TestIsNotNullShapeIsPerDialect(t *testing.T) {
+	for _, tc := range []struct{ dialect, want, writes string }{
+		{"", "Not", "SELECT * FROM t WHERE NOT a IS NULL"},
+		{"tsql", "Not", "SELECT * FROM t WHERE NOT a IS NULL"},
+		{"duckdb", "Not", "SELECT * FROM t WHERE NOT a IS NULL"},
+		{"databricks", "Not", "SELECT * FROM t WHERE NOT a IS NULL"},
+		{"postgres", "Is", "SELECT * FROM t WHERE a IS NOT NULL"},
+	} {
+		tree, err := ParseOne("SELECT * FROM t WHERE a IS NOT NULL", tc.dialect)
+		if err != nil {
+			t.Errorf("%s: %v", tc.dialect, err)
+			continue
+		}
+		where, _ := tree.Args["where"].(*Expression)
+		if where == nil {
+			t.Errorf("%s: no WHERE clause", tc.dialect)
+			continue
+		}
+		if got, _ := where.Args["this"].(*Expression); got == nil || got.Class != tc.want {
+			t.Errorf("%s: predicate is %v, want %s", tc.dialect, got, tc.want)
+		}
+		out, err := Generate(tree, tc.dialect)
+		if err != nil || out != tc.writes {
+			t.Errorf("%s: wrote %q (%v), want %q", tc.dialect, out, err, tc.writes)
+		}
+	}
+}

@@ -148,6 +148,29 @@ func negateRange(this *Expression) *Expression {
 
 func (p *parser) parseIs(this *Expression) (*Expression, error) {
 	negate := p.match(TokNOT)
+
+	// `a IS DISTINCT FROM b` and its negation are null-safe comparisons, not
+	// an Is over a DISTINCT: the reference builds NullSafeNEQ and NullSafeEQ.
+	// Databricks spells the negated form `<=>`, which the generator already
+	// wrote as `IS NOT DISTINCT FROM` -- and then could not read back, in any
+	// dialect. Found by the batched differential, which reduced 96,096 fuzz
+	// findings to this one cause.
+	if p.at(TokDISTINCT) {
+		p.advance()
+		if !p.match(TokFROM) {
+			return nil, p.unsupported("IS DISTINCT without FROM")
+		}
+		other, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		class := "NullSafeNEQ"
+		if negate {
+			class = "NullSafeEQ"
+		}
+		return New(class, Arg{"this", this}, Arg{"expression", other}), nil
+	}
+
 	var expression *Expression
 	if p.match(TokNULL) {
 		expression = New("Null")
@@ -158,9 +181,14 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 			return nil, err
 		}
 	}
-	// IS NOT NULL records the negation on the Is node; every other negated IS
-	// wraps in a Not.
-	if negate && expression.Class == "Null" {
+	// `x IS NOT NULL` has two shapes and the dialect picks. PostgreSQL records
+	// the negation on the Is node; everywhere else the reference wraps the Is
+	// in a Not and writes it back as `NOT x IS NULL`. The port used the
+	// PostgreSQL shape everywhere, so the Go guard saw a different tree from
+	// the Python one for one of the commonest predicates in SQL -- semantically
+	// the same, and exactly the divergence this port exists to prevent. The
+	// flag is probed from the reference; see harness/gen_parser.py.
+	if negate && expression.Class == "Null" && !p.tables.IsNotNullWrapsInNot {
 		return New("Is", Arg{"this", this}, Arg{"expression", expression}, Arg{"negate", true}), nil
 	}
 	is := New("Is", Arg{"this", this}, Arg{"expression", expression})

@@ -51,6 +51,17 @@ EDGE_CORPUS: tuple[tuple[str, str], ...] = (
     ("", "SELECT 1.5, .5, 1e5, 1E-5, 1e+5 FROM t"),
     ("", "SELECT a.b.c FROM x.y.z"),
     ("", "SELECT * FROM t WHERE a <=> b"),
+    # Null-safe comparison, promoted from a fuzz session by
+    # harness/adjudicate.py. The neutral entry above did not reach it: `<=>`
+    # is Databricks' spelling, and the form every dialect writes --
+    # `IS [NOT] DISTINCT FROM` -- the port emitted and could not read back.
+    # 96,096 findings, one cause.
+    ("databricks", "SELECT * FROM t WHERE a <=> b"),
+    ("databricks", "SELECT * FROM t WHERE a IS NOT DISTINCT FROM b"),
+    ("postgres", "SELECT * FROM t WHERE a IS DISTINCT FROM b"),
+    ("postgres", "SELECT * FROM t WHERE a IS NOT DISTINCT FROM b"),
+    ("duckdb", "SELECT * FROM t WHERE a IS DISTINCT FROM b"),
+    ("tsql", "SELECT * FROM t WHERE a IS NOT NULL"),
     ("", "SELECT * FROM t -- one\n-- two\nWHERE a = 1"),
     ("", "SELECT 1; SELECT 2"),
     ("", 'SELECT "\u00e9l\u00e8ve" FROM "caf\u00e9"'),

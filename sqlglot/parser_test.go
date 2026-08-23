@@ -360,7 +360,12 @@ func TestSubqueryInFrom(t *testing.T) {
 func TestRangeOperators(t *testing.T) {
 	for _, c := range []struct{ name, sql, want string }{
 		{"is null", "a IS NULL", "Is Column Identifier Null"},
-		{"is not null", "a IS NOT NULL", "Is Column Identifier Null"},
+		// Not(Is(...)), which is what the reference builds in every dialect but
+		// PostgreSQL. This case previously asserted the Is-with-negate shape --
+		// the port's own behaviour rather than the reference's -- so it passed
+		// while the two disagreed about one of the commonest predicates there
+		// is. The PostgreSQL half is pinned in TestIsNotNullShapeIsPerDialect.
+		{"is not null", "a IS NOT NULL", "Not Is Column Identifier Null"},
 		{"in", "a IN (1, 2)", "In Column Identifier Literal Literal"},
 		{"not in", "a NOT IN (1)", "Not In Column Identifier Literal"},
 		{"between", "a BETWEEN 1 AND 2", "Between Column Identifier Literal Literal"},
@@ -380,10 +385,14 @@ func TestRangeOperators(t *testing.T) {
 		})
 	}
 
-	// IS NOT NULL flags the Is node; NOT LIKE flags the Like node; NOT IN
-	// wraps in a Not. The reference distinguishes all three and so must this.
-	if got := parse(t, "a IS NOT NULL", "").Args["negate"]; got != true {
-		t.Errorf("IS NOT NULL did not set negate: %v", got)
+	// IS NOT NULL flags the Is node IN POSTGRESQL and wraps in a Not
+	// everywhere else; NOT LIKE flags the Like node; NOT IN wraps in a Not.
+	// The reference distinguishes all of these and so must this.
+	if got := parse(t, "a IS NOT NULL", "postgres").Args["negate"]; got != true {
+		t.Errorf("IS NOT NULL did not set negate in postgres: %v", got)
+	}
+	if got := parse(t, "a IS NOT NULL", "").Class; got != "Not" {
+		t.Errorf("IS NOT NULL outside postgres should wrap in a Not, got %v", got)
 	}
 	if got := parse(t, "a NOT LIKE 'x'", "").Args["negate"]; got != true {
 		t.Errorf("NOT LIKE did not set negate: %v", got)

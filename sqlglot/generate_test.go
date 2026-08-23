@@ -38,8 +38,9 @@ func TestGenerateShapes(t *testing.T) {
 		{"cast", "select cast(a as varchar(10))", "", "SELECT CAST(a AS VARCHAR(10))"},
 		{"negated like", "select * from t where a not like 'x'", "",
 			"SELECT * FROM t WHERE a NOT LIKE 'x'"},
+		// `NOT a IS NULL`, the reference's own spelling outside PostgreSQL.
 		{"is not null", "select * from t where a is not null", "",
-			"SELECT * FROM t WHERE a IS NOT NULL"},
+			"SELECT * FROM t WHERE NOT a IS NULL"},
 		{"quoted string", "select 'it''s'", "", "SELECT 'it''s'"},
 		{"double negation", "select - -5", "", "SELECT - -5"},
 		{"explicit ascending", "select a from t order by a asc", "", "SELECT a FROM t ORDER BY a ASC"},

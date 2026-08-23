@@ -82,6 +82,13 @@ type ParserTables struct {
 	StrictStringConcat  bool
 	// JoinsHaveEqualPrecedence makes a comma join an explicit CROSS join.
 	JoinsHaveEqualPrecedence bool
+	// IsNotNullWrapsInNot says how `x IS NOT NULL` is SHAPED. Every
+	// dialect but PostgreSQL builds Not(Is(x, NULL)) and writes it back
+	// as `NOT x IS NULL`; PostgreSQL records the negation on the Is
+	// node instead. PROBED, not transcribed -- sqlglot has no flag for
+	// it, the rule lives in a dialect override, and a port that assumed
+	// one shape diverged on one of the commonest predicates in SQL.
+	IsNotNullWrapsInNot bool
 	// NullOrdering decides where NULLs sort when nobody says, and so
 	// what nulls_first records on an Ordered node. It differs per
 	// dialect and is not derivable from ASC or DESC alone.
@@ -2751,6 +2758,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
+		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
 		ModifiersAttachedToSetOp: true,
 		SetOpModifiers:           []string{"limit", "offset", "order"},
@@ -5560,6 +5568,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
+		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
 		ModifiersAttachedToSetOp: true,
 		SetOpModifiers:           []string{"offset"},
@@ -8371,6 +8380,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
+		IsNotNullWrapsInNot:      false,
 		NullOrdering:             "nulls_are_large",
 		ModifiersAttachedToSetOp: true,
 		SetOpModifiers:           []string{"limit", "offset", "order"},
@@ -11159,6 +11169,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
+		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_last",
 		ModifiersAttachedToSetOp: true,
 		SetOpModifiers:           []string{"limit", "offset", "order"},
@@ -13993,6 +14004,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: true,
+		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
 		ModifiersAttachedToSetOp: true,
 		SetOpModifiers:           []string{"limit", "offset", "order"},

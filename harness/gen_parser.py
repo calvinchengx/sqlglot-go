@@ -345,6 +345,19 @@ def funcmap(name: str, funcs) -> str:
     return f"\t\t{name}: map[string]FuncSpec{{\n{''.join(lines)}\t\t}},\n"
 
 
+def is_not_null_wraps_in_not(dialect: str) -> bool:
+    """Whether `x IS NOT NULL` comes back as a Not wrapping an Is.
+
+    Asked of the reference rather than read out of it: there is no flag to
+    read. sqlglot decides this in a dialect override, so the only honest way
+    to record it is to parse the statement and look at what came back.
+    """
+    import sqlglot
+
+    tree = sqlglot.parse_one("SELECT 1 FROM t WHERE x IS NOT NULL", dialect=dialect or None)
+    return type(tree.args["where"].this).__name__ == "Not"
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--sqlglot", required=True, type=pathlib.Path)
@@ -447,6 +460,13 @@ def main() -> int:
         "\tStrictStringConcat  bool\n",
         "\t// JoinsHaveEqualPrecedence makes a comma join an explicit CROSS join.\n",
         "\tJoinsHaveEqualPrecedence bool\n",
+        "\t// IsNotNullWrapsInNot says how `x IS NOT NULL` is SHAPED. Every\n",
+        "\t// dialect but PostgreSQL builds Not(Is(x, NULL)) and writes it back\n",
+        "\t// as `NOT x IS NULL`; PostgreSQL records the negation on the Is\n",
+        "\t// node instead. PROBED, not transcribed -- sqlglot has no flag for\n",
+        "\t// it, the rule lives in a dialect override, and a port that assumed\n",
+        "\t// one shape diverged on one of the commonest predicates in SQL.\n",
+        "\tIsNotNullWrapsInNot bool\n",
         "\t// NullOrdering decides where NULLs sort when nobody says, and so\n",
         "\t// what nulls_first records on an Ordered node. It differs per\n",
         "\t// dialect and is not derivable from ASC or DESC alone.\n",
@@ -575,6 +595,10 @@ def main() -> int:
             ("JoinsHaveEqualPrecedence", P.JOINS_HAVE_EQUAL_PRECEDENCE),
         ):
             out.append(f"\t\t{field}: {str(bool(value)).lower()},\n")
+        out.append(
+            f"\t\tIsNotNullWrapsInNot: "
+            f"{str(is_not_null_wraps_in_not(name)).lower()},\n"
+        )
         out.append(f"\t\tNullOrdering: {gostr(d.NULL_ORDERING)},\n")
         out.append(
             f"\t\tModifiersAttachedToSetOp: {str(bool(P.MODIFIERS_ATTACHED_TO_SET_OP)).lower()},\n"

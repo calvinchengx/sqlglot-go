@@ -1,6 +1,13 @@
 package sqlglot
 
-import "testing"
+import (
+	"fmt"
+	"os"
+	"strings"
+	"sync"
+	"testing"
+	"unicode/utf8"
+)
 
 // Two properties that hold regardless of what the reference does, which is
 // what makes them worth fuzzing here.
@@ -72,6 +79,9 @@ func FuzzGeneratedSQLCanBeReadBack(f *testing.F) {
 				continue // declining to write is documented behaviour
 			}
 			if _, err := ParseOne(out, dialect); err != nil {
+				if collect(dialect, err, sql) {
+					continue // collecting, not asserting; see collect
+				}
 				t.Fatalf("%s: wrote %q from %q and cannot read it back: %v",
 					dialect, out, sql, err)
 			}
@@ -89,3 +99,53 @@ var seeds = []string{
 	"SELECT 1 JOIN a", "SELECT a FROM t LIMIT 5", "SELECT DISTINCT a FROM t",
 	"SET x = 1", "DROP TABLE t", "SELECT a[1:2]", "SELECT N'abc'", "((((",
 }
+
+// collect appends a failing input to the file named by DAS_FUZZ_COLLECT and
+// reports that it did, so the run keeps going instead of stopping at the first
+// finding.
+//
+// This is the cheap half of the batched differential. The expensive half --
+// deciding whether a finding is this port's bug or the reference's behaviour --
+// needs Python, and cannot run per input at a hundred thousand executions a
+// second. So the fuzzer collects and `harness/adjudicate.py` judges, in bulk,
+// afterwards. Without it a session stops on its first finding and every one
+// after it stays hidden.
+//
+//	DAS_FUZZ_COLLECT=/tmp/candidates.txt \
+//	  go test ./sqlglot/ -run=XXX -fuzz=FuzzGeneratedSQLCanBeReadBack -fuzztime=60s
+//	python3 harness/adjudicate.py --sqlglot ~/opensource/sqlglot \
+//	  --candidates /tmp/candidates.txt
+func collect(dialect string, cause error, sql string) bool {
+	path := os.Getenv("DAS_FUZZ_COLLECT")
+	if path == "" {
+		return false
+	}
+	collectMu.Lock()
+	defer collectMu.Unlock()
+	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
+	if err != nil {
+		return false // cannot collect, so fail loudly instead of silently
+	}
+	defer func() { _ = f.Close() }()
+	// One line per candidate, and a statement with a newline in it would
+	// forge a second: those are dropped rather than written wrong.
+	if strings.ContainsAny(sql, "\n\r\t") {
+		return true
+	}
+	// The adjudicator hands this to sqlglot, whose parser takes a str. An
+	// input that is not valid UTF-8 cannot be given to the oracle faithfully,
+	// so it cannot be judged -- and a candidate nobody can judge is noise in
+	// the file. The fuzzer generates a great many of them.
+	if !utf8.ValidString(sql) {
+		return true
+	}
+	// The port's own error travels with the candidate. Without it the
+	// adjudicator can say which findings are the port's but not how many
+	// DISTINCT bugs they are, and a fuzz session produces hundreds of
+	// variations of a handful of causes.
+	why := strings.NewReplacer("\t", " ", "\n", " ", "\r", " ").Replace(cause.Error())
+	_, _ = fmt.Fprintf(f, "%s\t%s\t%s\n", dialect, why, sql)
+	return true
+}
+
+var collectMu sync.Mutex
