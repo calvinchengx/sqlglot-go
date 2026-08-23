@@ -288,9 +288,15 @@ func (p *parser) namesAFunctionCall() bool {
 	if n == nil || n.Type != TokL_PAREN {
 		return false
 	}
-	if p.atIdentifier() {
-		return true
-	}
+	// FuncTokens ALONE, which is the reference's own rule -- and it already
+	// contains VAR and IDENTIFIER, so the extra atIdentifier() branch that
+	// used to be here bought nothing and cost correctness: it accepted
+	// keywords usable as identifiers, and `FROM SET('a','b')` became a call
+	// where the reference reads a table named SET with an alias column list.
+	//
+	// Not cosmetic. The guard refuses a function used as a table by name, so
+	// the two executors were refusing the same statement for DIFFERENT
+	// reasons -- and the conformance suite checks the reason.
 	_, ok := p.tables.FuncTokens[p.curr().Type]
 	return ok
 }
