@@ -106,7 +106,6 @@ func TestRefusals(t *testing.T) {
 		{"function with a custom argument shape", "SELECT TIMESTAMP_TRUNC(t, MONTH)", ""},
 		{"no-paren function named, not tokenized", "CURDATE", "databricks"},
 		{"ORDER BY inside a call", "SELECT f(a ORDER BY b)", ""},
-		{"INTERVAL", "INTERVAL '1' DAY", ""},
 		{"INTERVAL as a type", "'45 days'::INTERVAL DAY", "postgres"},
 		{"non-numeric type parameter", "a::VARCHAR(MAX)", "tsql"},
 		{"composite type", "CAST(a AS ARRAY<INT>)", "databricks"},

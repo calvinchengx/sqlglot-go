@@ -501,6 +501,10 @@ func (p *parser) parseBracketItems() ([]*Expression, error) {
 func (p *parser) parsePrimary() (*Expression, error) {
 	c := p.curr()
 
+	if c.Type == TokINTERVAL {
+		return p.parseInterval()
+	}
+
 	// `x LIKE ALL (...)` and `x = ANY (...)` are QUANTIFIERS over what follows,
 	// not calls to functions named ALL and ANY -- which is what the generic
 	// call rule made of them, since both are followed by a parenthesis.

@@ -157,11 +157,15 @@ type ParserTables struct {
 	// ArrayOpen and ArrayClose are the text around an array literal:
 	// `[`/`]` in DuckDB, `ARRAY[`/`]` in PostgreSQL, `ARRAY(`/`)`
 	// elsewhere. PROBED.
-	ArrayOpen            string
-	ArrayClose           string
-	BracketIsRewritten   bool
-	WritesBooleanLiteral bool
-	IsNotNullWrapsInNot  bool
+	ArrayOpen  string
+	ArrayClose string
+	// IntervalUnitInsideString: PostgreSQL writes INTERVAL ‘1 DAY’
+	// with the unit inside the quantity; everyone else writes
+	// INTERVAL ‘1’ DAY. PROBED.
+	IntervalUnitInsideString bool
+	BracketIsRewritten       bool
+	WritesBooleanLiteral     bool
+	IsNotNullWrapsInNot      bool
 	// NullOrdering decides where NULLs sort when nobody says, and so
 	// what nulls_first records on an Ordered node. It differs per
 	// dialect and is not derivable from ASC or DESC alone.
@@ -2875,6 +2879,7 @@ var parserTables = map[string]*ParserTables{
 		JoinsHaveEqualPrecedence: false,
 		BareJoinIsOnTrue:         false,
 		LimitAllMeansNoLimit:     false,
+		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
 		ArrayClose:               ")",
 		BracketIsRewritten:       false,
@@ -5719,6 +5724,7 @@ var parserTables = map[string]*ParserTables{
 		JoinsHaveEqualPrecedence: false,
 		BareJoinIsOnTrue:         false,
 		LimitAllMeansNoLimit:     false,
+		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
 		ArrayClose:               ")",
 		BracketIsRewritten:       false,
@@ -8569,6 +8575,7 @@ var parserTables = map[string]*ParserTables{
 		JoinsHaveEqualPrecedence: false,
 		BareJoinIsOnTrue:         false,
 		LimitAllMeansNoLimit:     true,
+		IntervalUnitInsideString: true,
 		ArrayOpen:                "ARRAY[",
 		ArrayClose:               "]",
 		BracketIsRewritten:       true,
@@ -11509,6 +11516,7 @@ var parserTables = map[string]*ParserTables{
 			"WINDOW":            true,
 			"WITH":              true,
 		},
+		IntervalUnitInsideString: false,
 		ArrayOpen:                "[",
 		ArrayClose:               "]",
 		BracketIsRewritten:       true,
@@ -14377,6 +14385,7 @@ var parserTables = map[string]*ParserTables{
 		JoinsHaveEqualPrecedence: true,
 		BareJoinIsOnTrue:         true,
 		LimitAllMeansNoLimit:     true,
+		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
 		ArrayClose:               ")",
 		BracketIsRewritten:       false,

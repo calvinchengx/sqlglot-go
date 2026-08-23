@@ -61,6 +61,9 @@ func init() {
 		"Distinct":      (*generator).writeDistinct,
 		"Array":         (*generator).writeArray,
 		"Window":        (*generator).writeWindow,
+		"Interval":      (*generator).writeInterval,
+		"IntervalSpan":  (*generator).writeIntervalSpan,
+		"Var":           (*generator).writeVar,
 		"WindowSpec":    (*generator).writeWindowSpec,
 		"Bracket":       (*generator).writeBracket,
 		"Slice":         (*generator).writeSlice,
@@ -666,4 +669,31 @@ func (g *generator) frameBound(e *Expression, key, sideKey string) string {
 		return text + " " + side
 	}
 	return text
+}
+
+func (g *generator) writeVar(e *Expression) string {
+	name, _ := e.Args["this"].(string)
+	return name
+}
+
+// writeInterval puts the unit where the dialect puts it: PostgreSQL writes
+// `INTERVAL '1 DAY'`, everyone else `INTERVAL '1' DAY`. A span (HOUR TO
+// SECOND) is never folded into the string.
+func (g *generator) writeInterval(e *Expression) string {
+	this, _ := e.Args["this"].(*Expression)
+	unit, _ := e.Args["unit"].(*Expression)
+	if unit == nil {
+		return "INTERVAL " + g.node(this)
+	}
+	if g.tables.IntervalUnitInsideString && unit.Class == "Var" &&
+		this != nil && this.Class == "Literal" && this.Args["is_string"] == true {
+		text, _ := this.Args["this"].(string)
+		return "INTERVAL '" + escapeStringBody(text, g.cfg.StringEscapes) +
+			" " + g.node(unit) + "'"
+	}
+	return "INTERVAL " + g.node(this) + " " + g.node(unit)
+}
+
+func (g *generator) writeIntervalSpan(e *Expression) string {
+	return g.child(e, "this") + " TO " + g.child(e, "expression")
 }

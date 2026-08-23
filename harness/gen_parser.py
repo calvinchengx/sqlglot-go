@@ -296,6 +296,18 @@ def array_delimiters(dialect: str, exp) -> tuple[str, str]:
     return head, tail
 
 
+def interval_unit_inside_string(dialect: str, exp) -> bool:
+    """Whether the unit is written INSIDE the quantity string.
+
+    PostgreSQL writes `INTERVAL '1 DAY'`; everyone else writes
+    `INTERVAL '1' DAY`. Same tree, two spellings, and sending the wrong one is
+    sending the engine a different statement than the Python executor sends.
+    PROBED.
+    """
+    node = exp.Interval(this=exp.Literal.string("1"), unit=exp.Var(this="DAY"))
+    return "'1 DAY'" in node.sql(dialect=dialect or None)
+
+
 def bracket_is_rewritten(dialect: str) -> bool:
     """Whether `a[1]` comes back as something other than a plain subscript.
 
@@ -967,6 +979,10 @@ def main() -> int:
         "\t// elsewhere. PROBED.\n",
         "\tArrayOpen  string\n",
         "\tArrayClose string\n",
+        "\t// IntervalUnitInsideString: PostgreSQL writes INTERVAL \u20181 DAY\u2019\n",
+        "\t// with the unit inside the quantity; everyone else writes\n",
+        "\t// INTERVAL \u20181\u2019 DAY. PROBED.\n",
+        "\tIntervalUnitInsideString bool\n",
         "\tBracketIsRewritten bool\n",
         "\tWritesBooleanLiteral bool\n",
         "\tIsNotNullWrapsInNot bool\n",
@@ -1160,6 +1176,9 @@ def main() -> int:
             for w in reserved:
                 out.append(f"\t\t\t{gostr(w)}: true,\n")
             out.append("\t\t},\n")
+        out.append(
+            f"\t\tIntervalUnitInsideString: {str(interval_unit_inside_string(name, exp)).lower()},\n"
+        )
         _ao, _ac = array_delimiters(name, exp)
         out.append(f"\t\tArrayOpen: {gostr(_ao)},\n")
         out.append(f"\t\tArrayClose: {gostr(_ac)},\n")
