@@ -1,6 +1,160 @@
 {
  "dialect": "postgres",
  "sql": "CREATE FUNCTION add(integer, integer) RETURNS integer AS 'select $1 + $2;' LANGUAGE SQL IMMUTABLE CALLED ON NULL INPUT",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "FUNCTION",
+   "x": "FUNCTION"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "add"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 20,
+   "t": "INT",
+   "x": "integer"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 29,
+   "t": "INT",
+   "x": "integer"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 38,
+   "t": "VAR",
+   "x": "RETURNS"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 46,
+   "t": "INT",
+   "x": "integer"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 54,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 57,
+   "t": "STRING",
+   "x": "select $1 + $2;"
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 75,
+   "t": "VAR",
+   "x": "LANGUAGE"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 84,
+   "t": "VAR",
+   "x": "SQL"
+  },
+  {
+   "c": 97,
+   "e": 96,
+   "l": 1,
+   "s": 88,
+   "t": "VAR",
+   "x": "IMMUTABLE"
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 98,
+   "t": "VAR",
+   "x": "CALLED"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 105,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 108,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 118,
+   "e": 117,
+   "l": 1,
+   "s": 113,
+   "t": "VAR",
+   "x": "INPUT"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.ddl.Create"

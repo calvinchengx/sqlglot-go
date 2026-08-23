@@ -1,6 +1,136 @@
 {
  "dialect": "tsql",
  "sql": "CREATE PROCEDURE foo AS BEGIN DELETE FROM bla WHERE foo < CURRENT_TIMESTAMP - 7; END",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 7,
+   "t": "PROCEDURE",
+   "x": "PROCEDURE"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 21,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 24,
+   "t": "BEGIN",
+   "x": "BEGIN"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 30,
+   "t": "DELETE",
+   "x": "DELETE"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 37,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 42,
+   "t": "VAR",
+   "x": "bla"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 46,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 52,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "LT",
+   "x": "<"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 58,
+   "t": "CURRENT_TIMESTAMP",
+   "x": "CURRENT_TIMESTAMP"
+  },
+  {
+   "c": 77,
+   "e": 76,
+   "l": 1,
+   "s": 76,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 78,
+   "t": "NUMBER",
+   "x": "7"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 79,
+   "t": "SEMICOLON",
+   "x": ";"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 81,
+   "t": "END",
+   "x": "END"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.ddl.Create"

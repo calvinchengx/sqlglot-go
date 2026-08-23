@@ -30,27 +30,27 @@ func TestTheHarnessCanTellRightFromWrong(t *testing.T) {
 	}
 
 	// 1. Built by hand to the reference's shape: Select{expressions=[Literal{this="1", is_string=false}]}
-	lit := sqlglot.New("Literal", nil)
+	lit := sqlglot.New("Literal")
 	lit.Set("this", "1")
 	lit.Set("is_string", false)
-	sel := sqlglot.New("Select", nil)
+	sel := sqlglot.New("Select")
 	sel.Set("expressions", []*sqlglot.Expression{lit})
 	if d := Diff(want, Normalise(sel.Dump())); d != "" {
 		t.Fatalf("a correct tree was reported as divergent:\n%s", d)
 	}
 
 	// 2. One wrong leaf.
-	bad := sqlglot.New("Literal", nil)
+	bad := sqlglot.New("Literal")
 	bad.Set("this", "2")
 	bad.Set("is_string", false)
-	sel2 := sqlglot.New("Select", nil)
+	sel2 := sqlglot.New("Select")
 	sel2.Set("expressions", []*sqlglot.Expression{bad})
 	if d := Diff(want, Normalise(sel2.Dump())); d == "" {
 		t.Fatal("a wrong literal was reported as a match")
 	}
 
 	// 3. A missing node.
-	sel3 := sqlglot.New("Select", nil)
+	sel3 := sqlglot.New("Select")
 	if d := Diff(want, Normalise(sel3.Dump())); d == "" {
 		t.Fatal("a tree missing a node was reported as a match")
 	}

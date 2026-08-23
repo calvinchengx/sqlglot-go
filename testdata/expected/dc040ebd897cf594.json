@@ -1,6 +1,32 @@
 {
  "dialect": "postgres",
  "sql": "doc @? '$.a[*] ? (@ > 2)'",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "doc"
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 4,
+   "t": "AT_QMARK",
+   "x": "@?"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 7,
+   "t": "STRING",
+   "x": "$.a[*] ? (@ > 2)"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.json.JSONBPathExists"

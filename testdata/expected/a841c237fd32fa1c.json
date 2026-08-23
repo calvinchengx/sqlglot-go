@@ -1,6 +1,88 @@
 {
  "dialect": "tsql",
  "sql": "CREATE PROCEDURE foo WITH EXECUTE AS 'username' AS SELECT 1",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 7,
+   "t": "PROCEDURE",
+   "x": "PROCEDURE"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 21,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 26,
+   "t": "EXECUTE",
+   "x": "EXECUTE"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 34,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 37,
+   "t": "STRING",
+   "x": "username"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 48,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 51,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "NUMBER",
+   "x": "1"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.ddl.Create"

@@ -1,6 +1,72 @@
 {
  "dialect": "postgres",
  "sql": "SELECT date_col - INTERVAL '30' DAY FROM t",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "date_col"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 18,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 27,
+   "t": "STRING",
+   "x": "30"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 32,
+   "t": "VAR",
+   "x": "DAY"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 36,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "VAR",
+   "x": "t"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

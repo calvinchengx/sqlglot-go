@@ -1,6 +1,248 @@
 {
  "dialect": "tsql",
  "sql": "CREATE TRIGGER ddl_trig ON DATABASE FOR CREATE_TABLE AS BEGIN INSERT INTO schema_changes (event_type, event_time, login_name) VALUES ('CREATE_TABLE', GETDATE(), SYSTEM_USER) END",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 7,
+   "t": "TRIGGER",
+   "x": "TRIGGER"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "ddl_trig"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 24,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 27,
+   "t": "DATABASE",
+   "x": "DATABASE"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 36,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "CREATE_TABLE"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 53,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 56,
+   "t": "BEGIN",
+   "x": "BEGIN"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 62,
+   "t": "INSERT",
+   "x": "INSERT"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 69,
+   "t": "INTO",
+   "x": "INTO"
+  },
+  {
+   "c": 88,
+   "e": 87,
+   "l": 1,
+   "s": 74,
+   "t": "VAR",
+   "x": "schema_changes"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 89,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 100,
+   "e": 99,
+   "l": 1,
+   "s": 90,
+   "t": "VAR",
+   "x": "event_type"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 100,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 102,
+   "t": "VAR",
+   "x": "event_time"
+  },
+  {
+   "c": 113,
+   "e": 112,
+   "l": 1,
+   "s": 112,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 114,
+   "t": "VAR",
+   "x": "login_name"
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 124,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 132,
+   "e": 131,
+   "l": 1,
+   "s": 126,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 133,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 148,
+   "e": 147,
+   "l": 1,
+   "s": 134,
+   "t": "STRING",
+   "x": "CREATE_TABLE"
+  },
+  {
+   "c": 149,
+   "e": 148,
+   "l": 1,
+   "s": 148,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 157,
+   "e": 156,
+   "l": 1,
+   "s": 150,
+   "t": "VAR",
+   "x": "GETDATE"
+  },
+  {
+   "c": 158,
+   "e": 157,
+   "l": 1,
+   "s": 157,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 159,
+   "e": 158,
+   "l": 1,
+   "s": 158,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 160,
+   "e": 159,
+   "l": 1,
+   "s": 159,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 172,
+   "e": 171,
+   "l": 1,
+   "s": 161,
+   "t": "CURRENT_USER",
+   "x": "SYSTEM_USER"
+  },
+  {
+   "c": 173,
+   "e": 172,
+   "l": 1,
+   "s": 172,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 177,
+   "e": 176,
+   "l": 1,
+   "s": 174,
+   "t": "END",
+   "x": "END"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.ddl.Command"

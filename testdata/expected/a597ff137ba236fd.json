@@ -1,6 +1,112 @@
 {
  "dialect": "",
  "sql": "SELECT * FROM x OFFSET @skip FETCH NEXT @take ROWS ONLY",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 16,
+   "t": "OFFSET",
+   "x": "OFFSET"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "PARAMETER",
+   "x": "@"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "skip"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 29,
+   "t": "FETCH",
+   "x": "FETCH"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 35,
+   "t": "NEXT",
+   "x": "NEXT"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "PARAMETER",
+   "x": "@"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 41,
+   "t": "VAR",
+   "x": "take"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 46,
+   "t": "ROWS",
+   "x": "ROWS"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 51,
+   "t": "VAR",
+   "x": "ONLY"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

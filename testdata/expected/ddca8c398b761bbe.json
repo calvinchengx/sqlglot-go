@@ -1,6 +1,168 @@
 {
  "dialect": "",
  "sql": "SELECT COUNT(DISTINCT a) OVER (PARTITION BY c ORDER BY d ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "COUNT"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 13,
+   "t": "DISTINCT",
+   "x": "DISTINCT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 25,
+   "t": "OVER",
+   "x": "OVER"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 31,
+   "t": "PARTITION_BY",
+   "x": "PARTITION BY"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "c"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 46,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "VAR",
+   "x": "d"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 57,
+   "t": "ROWS",
+   "x": "ROWS"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 62,
+   "t": "BETWEEN",
+   "x": "BETWEEN"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 70,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 72,
+   "t": "VAR",
+   "x": "PRECEDING"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 82,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 86,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 97,
+   "e": 96,
+   "l": 1,
+   "s": 88,
+   "t": "VAR",
+   "x": "FOLLOWING"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 97,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

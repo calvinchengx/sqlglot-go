@@ -20,35 +20,48 @@ whose Go executor is the first consumer.
 ## Coverage against the reference
 
 <!-- coverage:start -->
-| Dialect | Matched | Of | Unparsed | Mismatched |
-|---|---|---|---|---|
-| neutral | 0 | 980 | 980 | 0 |
-| tsql | 0 | 224 | 224 | 0 |
-| postgres | 0 | 385 | 385 | 0 |
-| duckdb | 0 | 384 | 384 | 0 |
-| databricks | 0 | 144 | 144 | 0 |
+| Dialect | Tokens | Trees matched | Of | Unparsed | Mismatched |
+|---|---|---|---|---|---|
+| neutral | 997/997 | 0 | 997 | 997 | 0 |
+| tsql | 233/233 | 0 | 233 | 233 | 0 |
+| postgres | 398/398 | 0 | 398 | 398 | 0 |
+| duckdb | 392/392 | 0 | 392 | 392 | 0 |
+| databricks | 151/151 | 0 | 151 | 151 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number
 that matters** and must be zero: it counts statements the port parsed into a
 *different* tree than the reference. Unparsed is the honest size of the gap.
 
+The tokenizer is complete and has no gap tier: every statement the reference
+lexes, the port lexes into the same tokens — same types, same text, same line,
+column and offsets, same attached comments. A tokenizer has nowhere to
+legitimately give up, because the parser above it cannot see what it drops.
+The parser is next; until it lands every statement is an honest unparsed.
+
 ## How it is verified
 
-`testdata/expected/` holds 2,117 statements — sqlglot's own `identity.sql`
-and the four dialect suites — each with the tree the reference produced, in
-`serde.dump()` format. `go test ./...` parses every one with the port, dumps
-it the same way, and diffs. The expectations are committed, so the Go tests
-need no Python; regenerating them (`make oracle`) refuses to run against any
-commit other than the one `NOTICE` pins.
+`testdata/expected/` holds 2,171 statements — sqlglot's own `identity.sql`,
+the four dialect suites, and a set chosen to reach the lexical corners those
+miss — each with the token stream and the tree the reference produced. `go
+test ./...` runs every one through the port and diffs both. The expectations
+are committed, so the Go tests need no Python; regenerating them (`make
+oracle`) refuses to run against any commit other than the one `NOTICE` pins.
+
+The keyword and dialect tables the tokenizer reads are generated from the same
+pin rather than transcribed, and CI regenerates and diffs them, because a
+hand-edited table is a divergence the port has no logic to catch.
 
 A divergence fails the build. A coverage regression below `testdata/floor.json`
-fails the build. The harness proves it can fail (`TestTheHarnessCanTellRightFromWrong`).
+fails the build. Test coverage below 95% fails the build; it currently stands
+at 100% of statements. The harness proves it can fail
+(`TestTheHarnessCanTellRightFromWrong`).
 
 ```sh
 make test       # the differential run
-make coverage   # per-dialect numbers
-make oracle     # regenerate expectations from the pinned reference
+make coverage   # per-dialect numbers against the reference
+make cover      # test coverage of the port
+make oracle     # regenerate expectations and generated tables from the pinned reference
 ```
 
 ## License

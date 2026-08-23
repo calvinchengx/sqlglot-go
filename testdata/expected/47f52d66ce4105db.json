@@ -1,6 +1,136 @@
 {
  "dialect": "postgres",
  "sql": "CREATE FUNCTION pymax(a INT, b INT) RETURNS INT LANGUAGE plpython3u AS $$\n  if a > b:\n    return a\n  return b\n$$",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "FUNCTION",
+   "x": "FUNCTION"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "pymax"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 24,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "b"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 31,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 34,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 36,
+   "t": "VAR",
+   "x": "RETURNS"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 44,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 48,
+   "t": "VAR",
+   "x": "LANGUAGE"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 57,
+   "t": "VAR",
+   "x": "plpython3u"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 68,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 2,
+   "e": 111,
+   "l": 5,
+   "s": 71,
+   "t": "HEREDOC_STRING",
+   "x": "\n  if a > b:\n    return a\n  return b\n"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.ddl.Create"

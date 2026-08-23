@@ -1,6 +1,80 @@
 {
  "dialect": "postgres",
  "sql": "ANALYZE VERBOSE SKIP_LOCKED TBL(col1, col2)",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "ANALYZE",
+   "x": "ANALYZE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "VERBOSE"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "SKIP_LOCKED"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "TBL"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 32,
+   "t": "VAR",
+   "x": "col1"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 38,
+   "t": "VAR",
+   "x": "col2"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Analyze"

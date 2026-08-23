@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 2117,
+ "count": 2171,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -10586,6 +10586,276 @@
    "key": "466a595eb41e2bc4",
    "dialect": "databricks",
    "sql": "WITH t AS (SELECT '{\"x-y\": \"z\"}' AS c) SELECT get_json_object(c, '$.x-y') FROM t"
+  },
+  {
+   "key": "304e7dcdd9666194",
+   "dialect": "",
+   "sql": "SELECT 1 -- trailing\nFROM t"
+  },
+  {
+   "key": "34add920d0e8e08a",
+   "dialect": "",
+   "sql": "SELECT /* leading */ 1 FROM t"
+  },
+  {
+   "key": "46d4f6b29f2b7ecd",
+   "dialect": "",
+   "sql": "SELECT /*+ HINT(t) */ 1 FROM t"
+  },
+  {
+   "key": "b1db8a2e47ccc824",
+   "dialect": "",
+   "sql": "SELECT 1\r\nFROM t\r\nWHERE x = 2"
+  },
+  {
+   "key": "2ae78fba67624583",
+   "dialect": "",
+   "sql": "SELECT 'it''s' FROM t"
+  },
+  {
+   "key": "9a93cad7b503e3c7",
+   "dialect": "",
+   "sql": "SELECT 'a\\nb' FROM t"
+  },
+  {
+   "key": "bd9655c0de8ed176",
+   "dialect": "",
+   "sql": "SELECT \"a \"\"quoted\"\" id\" FROM t"
+  },
+  {
+   "key": "70d206b911895508",
+   "dialect": "",
+   "sql": "SELECT 1.5, .5, 1e5, 1E-5, 1e+5 FROM t"
+  },
+  {
+   "key": "83b4f69852414393",
+   "dialect": "",
+   "sql": "SELECT a.b.c FROM x.y.z"
+  },
+  {
+   "key": "62115a5a871fb4df",
+   "dialect": "",
+   "sql": "SELECT * FROM t WHERE a <=> b"
+  },
+  {
+   "key": "4b402235a65e1d0e",
+   "dialect": "",
+   "sql": "SELECT * FROM t -- one\n-- two\nWHERE a = 1"
+  },
+  {
+   "key": "8fbfab4e58f45b9e",
+   "dialect": "",
+   "sql": "SELECT 1; SELECT 2"
+  },
+  {
+   "key": "ee3b8f880560b772",
+   "dialect": "",
+   "sql": "SELECT \"\u00e9l\u00e8ve\" FROM \"caf\u00e9\""
+  },
+  {
+   "key": "6d40e92009a8e4dc",
+   "dialect": "",
+   "sql": "SELECT COUNT(*) FROM t /* multi\nline */ WHERE x"
+  },
+  {
+   "key": "b847b9d25f4ac233",
+   "dialect": "postgres",
+   "sql": "SELECT $$a heredoc$$"
+  },
+  {
+   "key": "696c58237a37b214",
+   "dialect": "postgres",
+   "sql": "SELECT $tag$a tagged heredoc$tag$"
+  },
+  {
+   "key": "79f32a13a6a923bc",
+   "dialect": "postgres",
+   "sql": "SELECT x'01af'"
+  },
+  {
+   "key": "af87d2f7c493b7cc",
+   "dialect": "postgres",
+   "sql": "SELECT b'0101'"
+  },
+  {
+   "key": "d42ded77eefec4c6",
+   "dialect": "postgres",
+   "sql": "SELECT a::TEXT FROM t"
+  },
+  {
+   "key": "9984063e0d28f113",
+   "dialect": "postgres",
+   "sql": "SELECT x -> 'a' ->> 'b' FROM t"
+  },
+  {
+   "key": "d960a4f6594d24db",
+   "dialect": "postgres",
+   "sql": "SELECT /* outer /* inner */ still outer */ 1"
+  },
+  {
+   "key": "c101039c9d315a80",
+   "dialect": "postgres",
+   "sql": "SELECT E'a\\nb'"
+  },
+  {
+   "key": "25b3c5d7c03e6bb5",
+   "dialect": "",
+   "sql": "SELECT 'a\nb'"
+  },
+  {
+   "key": "6f1159b65ba19f11",
+   "dialect": "",
+   "sql": "SELECT 1 -- c\n; SELECT 2"
+  },
+  {
+   "key": "d5e7cba835de4f0c",
+   "dialect": "",
+   "sql": "SELECT 1 /* c */ ; SELECT 2"
+  },
+  {
+   "key": "98c9e2fac1b9f4b3",
+   "dialect": "postgres",
+   "sql": "SELECT E'a\\tb'"
+  },
+  {
+   "key": "4643b59e571ae258",
+   "dialect": "postgres",
+   "sql": "SELECT $1"
+  },
+  {
+   "key": "951a367f11790504",
+   "dialect": "duckdb",
+   "sql": "SELECT $1"
+  },
+  {
+   "key": "f8fbb4ebab3e04df",
+   "dialect": "duckdb",
+   "sql": "SELECT 'a\\nb'"
+  },
+  {
+   "key": "d1a2a454b21d828d",
+   "dialect": "duckdb",
+   "sql": "SELECT * FROM t WHERE x LIKE 'a\\_b'"
+  },
+  {
+   "key": "ef7596999469ab70",
+   "dialect": "databricks",
+   "sql": "SELECT 1abc"
+  },
+  {
+   "key": "ee1486b15458548a",
+   "dialect": "databricks",
+   "sql": "SELECT r'a\\nb'"
+  },
+  {
+   "key": "4beec01069ae2785",
+   "dialect": "databricks",
+   "sql": "SELECT r\"a\\nb\""
+  },
+  {
+   "key": "ce8bad16a5750b63",
+   "dialect": "tsql",
+   "sql": "SELECT @p.x"
+  },
+  {
+   "key": "137c1d085ed48c44",
+   "dialect": "tsql",
+   "sql": "SELECT 0x1F, 1"
+  },
+  {
+   "key": "36df34f914f283bf",
+   "dialect": "tsql",
+   "sql": "SELECT 0x1F"
+  },
+  {
+   "key": "0c1a8b56a06ee691",
+   "dialect": "tsql",
+   "sql": "SELECT 0xZZ"
+  },
+  {
+   "key": "ad8612b7001e046a",
+   "dialect": "postgres",
+   "sql": "SELECT 0b1010"
+  },
+  {
+   "key": "56d1dfbdf35bc3ca",
+   "dialect": "postgres",
+   "sql": "SELECT 0b12"
+  },
+  {
+   "key": "05e3e85603874195",
+   "dialect": "postgres",
+   "sql": "SELECT 0x1_F"
+  },
+  {
+   "key": "3d9038e7b41cf8e0",
+   "dialect": "databricks",
+   "sql": "SELECT 0xFF"
+  },
+  {
+   "key": "96b01381ba6a725a",
+   "dialect": "duckdb",
+   "sql": "SELECT 100_000"
+  },
+  {
+   "key": "f5623f5c1b998d11",
+   "dialect": "duckdb",
+   "sql": "SELECT 0x1F"
+  },
+  {
+   "key": "e4bc9af88eec58e7",
+   "dialect": "duckdb",
+   "sql": "SELECT 0b1010"
+  },
+  {
+   "key": "05cd8fb1ccca6b41",
+   "dialect": "duckdb",
+   "sql": "SELECT 'a' || 'b'"
+  },
+  {
+   "key": "4e4679fa0869f193",
+   "dialect": "duckdb",
+   "sql": "SELECT * FROM read_csv_auto('x.csv')"
+  },
+  {
+   "key": "6e2ee804db8ed56d",
+   "dialect": "tsql",
+   "sql": "SELECT TOP 10 PERCENT a FROM t"
+  },
+  {
+   "key": "dfec052c1c43d671",
+   "dialect": "tsql",
+   "sql": "SELECT [a b], [c]] d] FROM [my table]"
+  },
+  {
+   "key": "ca3e27b9a72a34c9",
+   "dialect": "tsql",
+   "sql": "SELECT N'unicode' FROM t"
+  },
+  {
+   "key": "51ad7c392f9d49bf",
+   "dialect": "tsql",
+   "sql": "SELECT @p FROM t"
+  },
+  {
+   "key": "c0093d68c503b0cb",
+   "dialect": "tsql",
+   "sql": "SELECT 1 FROM t CROSS APPLY f(1)"
+  },
+  {
+   "key": "7de7741516156105",
+   "dialect": "databricks",
+   "sql": "SELECT 1L, 2S, 3Y, 4BD, 5D, 6F"
+  },
+  {
+   "key": "1e2ae552799958e3",
+   "dialect": "databricks",
+   "sql": "SELECT `a b` FROM `c d`"
+  },
+  {
+   "key": "f27ed677f7b9ba59",
+   "dialect": "databricks",
+   "sql": "SELECT * FROM t /* nested /* comment */ here */"
   }
  ]
 }

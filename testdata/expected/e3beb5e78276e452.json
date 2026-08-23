@@ -1,6 +1,40 @@
 {
  "dialect": "postgres",
  "sql": "SELECT a <<->> b",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 9,
+   "t": "LLRR_ARROW",
+   "x": "<<->>"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "b"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

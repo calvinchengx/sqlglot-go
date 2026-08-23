@@ -1,6 +1,35 @@
 {
  "dialect": "",
  "sql": "SELECT /*+ SOME_HINT(foo) */ 1",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "o": [
+    " SOME_HINT(foo) "
+   ],
+   "s": 7,
+   "t": "HINT",
+   "x": "/*+ SOME_HINT(foo) */"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "NUMBER",
+   "x": "1"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

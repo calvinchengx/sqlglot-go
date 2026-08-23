@@ -1,6 +1,32 @@
 {
  "dialect": "postgres",
  "sql": "x ~~ 'y'",
+ "tokens": [
+  {
+   "c": 1,
+   "e": 0,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 2,
+   "t": "LIKE",
+   "x": "~~"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 5,
+   "t": "STRING",
+   "x": "y"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.core.Like"

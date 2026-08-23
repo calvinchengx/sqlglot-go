@@ -1,6 +1,43 @@
 {
  "dialect": "duckdb",
  "sql": "SELECT \"foo\": /* bla */ 1",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "IDENTIFIER",
+   "x": "foo"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "o": [
+    " bla "
+   ],
+   "s": 12,
+   "t": "COLON",
+   "x": ":"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "NUMBER",
+   "x": "1"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

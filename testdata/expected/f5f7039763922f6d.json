@@ -1,6 +1,208 @@
 {
  "dialect": "postgres",
  "sql": "ALTER TABLE foo ADD COLUMN id BIGINT NOT NULL PRIMARY KEY DEFAULT 1, ADD CONSTRAINT fk_orders_user FOREIGN KEY (id) REFERENCES foo (id)",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "ALTER",
+   "x": "ALTER"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 6,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "ADD"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 20,
+   "t": "COLUMN",
+   "x": "COLUMN"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 30,
+   "t": "BIGINT",
+   "x": "BIGINT"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 37,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 41,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 46,
+   "t": "PRIMARY_KEY",
+   "x": "PRIMARY KEY"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 58,
+   "t": "DEFAULT",
+   "x": "DEFAULT"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 66,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 67,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 69,
+   "t": "VAR",
+   "x": "ADD"
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 73,
+   "t": "CONSTRAINT",
+   "x": "CONSTRAINT"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 84,
+   "t": "VAR",
+   "x": "fk_orders_user"
+  },
+  {
+   "c": 110,
+   "e": 109,
+   "l": 1,
+   "s": 99,
+   "t": "FOREIGN_KEY",
+   "x": "FOREIGN KEY"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 111,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 114,
+   "e": 113,
+   "l": 1,
+   "s": 112,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 115,
+   "e": 114,
+   "l": 1,
+   "s": 114,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 126,
+   "e": 125,
+   "l": 1,
+   "s": 116,
+   "t": "REFERENCES",
+   "x": "REFERENCES"
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 127,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 132,
+   "e": 131,
+   "l": 1,
+   "s": 131,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 132,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 135,
+   "e": 134,
+   "l": 1,
+   "s": 134,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.ddl.Alter"

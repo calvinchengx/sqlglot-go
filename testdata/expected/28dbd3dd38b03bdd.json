@@ -1,6 +1,96 @@
 {
  "dialect": "duckdb",
  "sql": "SELECT JSON_EXTRACT_STRING('{ \"family\": \"anatidae\", \"species\": [ \"duck\", \"goose\", \"swan\", null ] }', ['$.family', '$.species'])",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "JSON_EXTRACT_STRING"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 27,
+   "t": "STRING",
+   "x": "{ \"family\": \"anatidae\", \"species\": [ \"duck\", \"goose\", \"swan\", null ] }"
+  },
+  {
+   "c": 100,
+   "e": 99,
+   "l": 1,
+   "s": 99,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 101,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 102,
+   "t": "STRING",
+   "x": "$.family"
+  },
+  {
+   "c": 113,
+   "e": 112,
+   "l": 1,
+   "s": 112,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 114,
+   "t": "STRING",
+   "x": "$.species"
+  },
+  {
+   "c": 126,
+   "e": 125,
+   "l": 1,
+   "s": 125,
+   "t": "R_BRACKET",
+   "x": "]"
+  },
+  {
+   "c": 127,
+   "e": 126,
+   "l": 1,
+   "s": 126,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

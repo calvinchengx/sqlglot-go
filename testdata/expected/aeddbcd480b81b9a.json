@@ -1,6 +1,72 @@
 {
  "dialect": "postgres",
  "sql": "STRING_TO_ARRAY('xx~^~yy~^~zz', '~^~', 'yy')",
+ "tokens": [
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "STRING_TO_ARRAY"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 16,
+   "t": "STRING",
+   "x": "xx~^~yy~^~zz"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 32,
+   "t": "STRING",
+   "x": "~^~"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 39,
+   "t": "STRING",
+   "x": "yy"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.array.StringToArray",

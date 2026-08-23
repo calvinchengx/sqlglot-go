@@ -1,6 +1,51 @@
 {
  "dialect": "",
  "sql": "SELECT /*+ REBALANCE */ * FROM foo",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "o": [
+    " REBALANCE "
+   ],
+   "s": 7,
+   "t": "HINT",
+   "x": "/*+ REBALANCE */"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 26,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 31,
+   "t": "VAR",
+   "x": "foo"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

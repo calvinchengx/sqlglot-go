@@ -1,6 +1,112 @@
 {
  "dialect": "postgres",
  "sql": "SELECT JSON_ARRAY_ELEMENTS((foo->'sections')::JSON) AS sections",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "JSON_ARRAY_ELEMENTS"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 31,
+   "t": "ARROW",
+   "x": "->"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 33,
+   "t": "STRING",
+   "x": "sections"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 44,
+   "t": "DCOLON",
+   "x": "::"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 46,
+   "t": "JSON",
+   "x": "JSON"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 52,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 55,
+   "t": "VAR",
+   "x": "sections"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

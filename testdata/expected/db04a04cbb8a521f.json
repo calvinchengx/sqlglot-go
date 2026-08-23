@@ -1,6 +1,144 @@
 {
  "dialect": "",
  "sql": "SELECT SUM(x) OVER (PARTITION BY a RANGE BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "SUM"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 14,
+   "t": "OVER",
+   "x": "OVER"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 20,
+   "t": "PARTITION_BY",
+   "x": "PARTITION BY"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 35,
+   "t": "RANGE",
+   "x": "RANGE"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 41,
+   "t": "BETWEEN",
+   "x": "BETWEEN"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 49,
+   "t": "VAR",
+   "x": "UNBOUNDED"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 59,
+   "t": "VAR",
+   "x": "PRECEDING"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 69,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 73,
+   "t": "VAR",
+   "x": "CURRENT"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 81,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 84,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

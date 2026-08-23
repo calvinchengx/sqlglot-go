@@ -1,6 +1,72 @@
 {
  "dialect": "duckdb",
  "sql": "SELECT '{ \"family\": \"anatidae\", \"species\": [ \"duck\", \"goose\", \"swan\", null ] }' ->> ['$.family', '$.species']",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 7,
+   "t": "STRING",
+   "x": "{ \"family\": \"anatidae\", \"species\": [ \"duck\", \"goose\", \"swan\", null ] }"
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 80,
+   "t": "DARROW",
+   "x": "->>"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 84,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 85,
+   "t": "STRING",
+   "x": "$.family"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 95,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 97,
+   "t": "STRING",
+   "x": "$.species"
+  },
+  {
+   "c": 109,
+   "e": 108,
+   "l": 1,
+   "s": 108,
+   "t": "R_BRACKET",
+   "x": "]"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

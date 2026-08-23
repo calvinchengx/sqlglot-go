@@ -1,6 +1,56 @@
 {
  "dialect": "postgres",
  "sql": "SELECT '%' SIMILAR TO '^%' ESCAPE '^'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 7,
+   "t": "STRING",
+   "x": "%"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 11,
+   "t": "SIMILAR_TO",
+   "x": "SIMILAR TO"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 22,
+   "t": "STRING",
+   "x": "^%"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 27,
+   "t": "ESCAPE",
+   "x": "ESCAPE"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 34,
+   "t": "STRING",
+   "x": "^"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

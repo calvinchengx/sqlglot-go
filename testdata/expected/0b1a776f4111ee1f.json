@@ -1,6 +1,24 @@
 {
  "dialect": "postgres",
  "sql": "SELECT U&'a''b''c'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 7,
+   "t": "UNICODE_STRING",
+   "x": "a'b'c"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

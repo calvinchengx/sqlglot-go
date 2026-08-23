@@ -1,6 +1,24 @@
 {
  "dialect": "duckdb",
  "sql": "SELECT $tag$foo$tag$",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 7,
+   "t": "HEREDOC_STRING",
+   "x": "foo"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

@@ -1,6 +1,128 @@
 {
  "dialect": "databricks",
  "sql": "SELECT test, LISTAGG(email, '') AS Email FROM organizations GROUP BY test",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "test"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "LISTAGG"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 21,
+   "t": "VAR",
+   "x": "email"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 28,
+   "t": "STRING",
+   "x": ""
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 32,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 35,
+   "t": "VAR",
+   "x": "Email"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 41,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 46,
+   "t": "VAR",
+   "x": "organizations"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 60,
+   "t": "GROUP_BY",
+   "x": "GROUP BY"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 69,
+   "t": "VAR",
+   "x": "test"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

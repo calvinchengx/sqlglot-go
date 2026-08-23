@@ -1,6 +1,56 @@
 {
  "dialect": "postgres",
  "sql": "SELECT '[\"a\", {\"b\":1}]'::jsonb #- '{1,b}'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 7,
+   "t": "STRING",
+   "x": "[\"a\", {\"b\":1}]"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 23,
+   "t": "DCOLON",
+   "x": "::"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 25,
+   "t": "JSONB",
+   "x": "jsonb"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 31,
+   "t": "HASH_DASH",
+   "x": "#-"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 34,
+   "t": "STRING",
+   "x": "{1,b}"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

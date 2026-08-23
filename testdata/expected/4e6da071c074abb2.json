@@ -1,6 +1,160 @@
 {
  "dialect": "",
  "sql": "SELECT SUM(x) OVER (PARTITION BY a ORDER BY b ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "SUM"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 14,
+   "t": "OVER",
+   "x": "OVER"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 20,
+   "t": "PARTITION_BY",
+   "x": "PARTITION BY"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 35,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "b"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 46,
+   "t": "ROWS",
+   "x": "ROWS"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 51,
+   "t": "BETWEEN",
+   "x": "BETWEEN"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 59,
+   "t": "VAR",
+   "x": "UNBOUNDED"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 69,
+   "t": "VAR",
+   "x": "PRECEDING"
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 79,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 83,
+   "t": "VAR",
+   "x": "CURRENT"
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 91,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 94,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

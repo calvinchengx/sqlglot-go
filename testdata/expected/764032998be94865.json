@@ -1,6 +1,83 @@
 {
  "dialect": "",
  "sql": "SELECT CAST(x AS INT) /* comment */ FROM foo",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 14,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 17,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "o": [
+    " comment "
+   ],
+   "s": 20,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 36,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 41,
+   "t": "VAR",
+   "x": "foo"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

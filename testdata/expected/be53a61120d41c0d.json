@@ -1,6 +1,112 @@
 {
  "dialect": "tsql",
  "sql": "SELECT [x] FROM [a].[b] FOR SYSTEM_TIME AS OF 'foo' AS alias",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 7,
+   "t": "IDENTIFIER",
+   "x": "x"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 11,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 16,
+   "t": "IDENTIFIER",
+   "x": "a"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 20,
+   "t": "IDENTIFIER",
+   "x": "b"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 24,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "SYSTEM_TIME"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 40,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 43,
+   "t": "VAR",
+   "x": "OF"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 46,
+   "t": "STRING",
+   "x": "foo"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 52,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 55,
+   "t": "VAR",
+   "x": "alias"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

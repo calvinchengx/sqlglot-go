@@ -1,0 +1,187 @@
+{
+ "dialect": "",
+ "sql": "SELECT * FROM t -- one\n-- two\nWHERE a = 1",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "o": [
+    " one"
+   ],
+   "s": 14,
+   "t": "VAR",
+   "x": "t"
+  },
+  {
+   "c": 5,
+   "e": 34,
+   "l": 3,
+   "o": [
+    " two"
+   ],
+   "s": 30,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 7,
+   "e": 36,
+   "l": 3,
+   "s": 36,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 9,
+   "e": 38,
+   "l": 3,
+   "s": 38,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 11,
+   "e": 40,
+   "l": 3,
+   "s": 40,
+   "t": "NUMBER",
+   "x": "1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this",
+   "o": [
+    " one"
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where",
+   "o": [
+    " two"
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 7,
+    "end": 36,
+    "line": 3,
+    "start": 36
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "expression",
+   "m": {
+    "col": 11,
+    "end": 40,
+    "line": 3,
+    "start": 40
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

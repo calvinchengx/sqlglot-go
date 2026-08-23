@@ -1,6 +1,136 @@
 {
  "dialect": "",
  "sql": "SELECT LAST_VALUE(CASE WHEN interval <> 'foo' THEN interval END) IGNORE NULLS FROM t",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "LAST_VALUE"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 18,
+   "t": "CASE",
+   "x": "CASE"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 23,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 28,
+   "t": "INTERVAL",
+   "x": "interval"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 37,
+   "t": "NEQ",
+   "x": "<>"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 40,
+   "t": "STRING",
+   "x": "foo"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 46,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 51,
+   "t": "INTERVAL",
+   "x": "interval"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 60,
+   "t": "END",
+   "x": "END"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 63,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 65,
+   "t": "VAR",
+   "x": "IGNORE"
+  },
+  {
+   "c": 77,
+   "e": 76,
+   "l": 1,
+   "s": 72,
+   "t": "VAR",
+   "x": "NULLS"
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 78,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 83,
+   "t": "VAR",
+   "x": "t"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

@@ -1,6 +1,64 @@
 {
  "dialect": "postgres",
  "sql": "SELECT date_col - INTERVAL '1' AS one_second_later",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "date_col"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 18,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 27,
+   "t": "STRING",
+   "x": "1"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 31,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 34,
+   "t": "VAR",
+   "x": "one_second_later"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

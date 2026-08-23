@@ -35,6 +35,69 @@ DIALECTS = ("tsql", "postgres", "duckdb", "databricks")
 IDENTITY_CALL = "validate_identity("
 
 
+# Statements chosen to reach the lexical corners sqlglot's own identity corpus
+# does not: heredocs, bit and hex strings, numeric literal suffixes, nested and
+# hinted comments, escape handling, \r\n line endings, non-ASCII identifiers.
+# The reference still supplies the expectations -- these only decide WHICH
+# statements get asked about, never what the right answer is.
+EDGE_CORPUS: tuple[tuple[str, str], ...] = (
+    ("", "SELECT 1 -- trailing\nFROM t"),
+    ("", "SELECT /* leading */ 1 FROM t"),
+    ("", "SELECT /*+ HINT(t) */ 1 FROM t"),
+    ("", "SELECT 1\r\nFROM t\r\nWHERE x = 2"),
+    ("", "SELECT 'it''s' FROM t"),
+    ("", "SELECT 'a\\nb' FROM t"),
+    ("", 'SELECT "a ""quoted"" id" FROM t'),
+    ("", "SELECT 1.5, .5, 1e5, 1E-5, 1e+5 FROM t"),
+    ("", "SELECT a.b.c FROM x.y.z"),
+    ("", "SELECT * FROM t WHERE a <=> b"),
+    ("", "SELECT * FROM t -- one\n-- two\nWHERE a = 1"),
+    ("", "SELECT 1; SELECT 2"),
+    ("", 'SELECT "\u00e9l\u00e8ve" FROM "caf\u00e9"'),
+    ("", "SELECT COUNT(*) FROM t /* multi\nline */ WHERE x"),
+    ("postgres", "SELECT $$a heredoc$$"),
+    ("postgres", "SELECT $tag$a tagged heredoc$tag$"),
+    ("postgres", "SELECT x'01af'"),
+    ("postgres", "SELECT b'0101'"),
+    ("postgres", "SELECT a::TEXT FROM t"),
+    ("postgres", "SELECT x -> 'a' ->> 'b' FROM t"),
+    ("postgres", "SELECT /* outer /* inner */ still outer */ 1"),
+    ("postgres", "SELECT E'a\\nb'"),
+    ("", "SELECT 'a\nb'"),
+    ("", "SELECT 1 -- c\n; SELECT 2"),
+    ("", "SELECT 1 /* c */ ; SELECT 2"),
+    ("postgres", "SELECT E'a\\tb'"),
+    ("postgres", "SELECT $1"),
+    ("duckdb", "SELECT $1"),
+    ("duckdb", "SELECT 'a\\nb'"),
+    ("duckdb", "SELECT * FROM t WHERE x LIKE 'a\\_b'"),
+    ("databricks", "SELECT 1abc"),
+    ("databricks", "SELECT r'a\\nb'"),
+    ("databricks", 'SELECT r"a\\nb"'),
+    ("tsql", "SELECT @p.x"),
+    ("tsql", "SELECT 0x1F, 1"),
+    ("tsql", "SELECT 0x1F"),
+    ("tsql", "SELECT 0xZZ"),
+    ("postgres", "SELECT 0b1010"),
+    ("postgres", "SELECT 0b12"),
+    ("postgres", "SELECT 0x1_F"),
+    ("databricks", "SELECT 0xFF"),
+    ("duckdb", "SELECT 100_000"),
+    ("duckdb", "SELECT 0x1F"),
+    ("duckdb", "SELECT 0b1010"),
+    ("duckdb", "SELECT 'a' || 'b'"),
+    ("duckdb", "SELECT * FROM read_csv_auto('x.csv')"),
+    ("tsql", "SELECT TOP 10 PERCENT a FROM t"),
+    ("tsql", "SELECT [a b], [c]] d] FROM [my table]"),
+    ("tsql", "SELECT N'unicode' FROM t"),
+    ("tsql", "SELECT @p FROM t"),
+    ("tsql", "SELECT 1 FROM t CROSS APPLY f(1)"),
+    ("databricks", "SELECT 1L, 2S, 3Y, 4BD, 5D, 6F"),
+    ("databricks", "SELECT `a b` FROM `c d`"),
+    ("databricks", "SELECT * FROM t /* nested /* comment */ here */"),
+)
+
+
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
     out = subprocess.run(
         ["git", "-C", str(sqlglot_dir), "rev-parse", "HEAD"],
@@ -98,6 +161,32 @@ def dump(sql: str, dialect: str):
     return tree.dump()
 
 
+def dump_tokens(sql: str, dialect: str):
+    """The reference's token stream, field for field.
+
+    Positions are part of the contract, not incidental: the parser reports
+    errors by them, and a port that gets the tokens right but the offsets wrong
+    would pass a looser check and fail a user. So line, col, start, end and the
+    attached comments are all recorded and all compared.
+    """
+    from sqlglot.dialects.dialect import Dialect
+
+    d = Dialect.get_or_raise(dialect or None)
+    tokens = d.tokenizer_class(d).tokenize(sql)
+    return [
+        {
+            "t": tok.token_type.name,
+            "x": tok.text,
+            "l": tok.line,
+            "c": tok.col,
+            "s": tok.start,
+            "e": tok.end,
+            **({"o": list(tok.comments)} if tok.comments else {}),
+        }
+        for tok in tokens
+    ]
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--sqlglot", required=True, type=pathlib.Path)
@@ -117,6 +206,7 @@ def main() -> int:
     corpus = corpus_identity(a.sqlglot)
     for d in DIALECTS:
         corpus += corpus_dialect(a.sqlglot, d)
+    corpus += [(d, sql) for d, sql in EDGE_CORPUS]
 
     a.out.mkdir(parents=True, exist_ok=True)
     for f in a.out.glob("*.json"):
@@ -127,11 +217,16 @@ def main() -> int:
         key = hashlib.sha1(f"{dialect}\x00{sql}".encode()).hexdigest()[:16]
         try:
             tree = dump(sql, dialect)
+            tokens = dump_tokens(sql, dialect)
         except Exception as e:  # noqa: BLE001 -- the reference's own failures are recorded, not hidden
             failed.append((dialect, sql, f"{type(e).__name__}: {e}"[:120]))
             continue
         (a.out / f"{key}.json").write_text(
-            json.dumps({"dialect": dialect, "sql": sql, "tree": tree}, indent=1, sort_keys=True)
+            json.dumps(
+                {"dialect": dialect, "sql": sql, "tokens": tokens, "tree": tree},
+                indent=1,
+                sort_keys=True,
+            )
         )
         index.append({"key": key, "dialect": dialect, "sql": sql})
         written += 1

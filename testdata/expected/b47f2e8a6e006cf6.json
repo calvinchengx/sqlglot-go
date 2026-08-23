@@ -1,6 +1,88 @@
 {
  "dialect": "postgres",
  "sql": "CREATE FUNCTION foo(INOUT y VARCHAR DEFAULT 'test')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "FUNCTION",
+   "x": "FUNCTION"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 20,
+   "t": "INOUT",
+   "x": "INOUT"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "y"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 28,
+   "t": "VARCHAR",
+   "x": "VARCHAR"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 36,
+   "t": "DEFAULT",
+   "x": "DEFAULT"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 44,
+   "t": "STRING",
+   "x": "test"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.ddl.Create"

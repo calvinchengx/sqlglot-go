@@ -1,6 +1,88 @@
 {
  "dialect": "postgres",
  "sql": "SELECT (U&'\\FE01' || 'Test literal') AS label FROM data",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 8,
+   "t": "UNICODE_STRING",
+   "x": "\\FE01"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 18,
+   "t": "DPIPE",
+   "x": "||"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 21,
+   "t": "STRING",
+   "x": "Test literal"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 37,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "label"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 46,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 51,
+   "t": "VAR",
+   "x": "data"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

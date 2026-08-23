@@ -1,6 +1,168 @@
 {
  "dialect": "postgres",
  "sql": "CREATE FUNCTION add(integer, integer) RETURNS INT LANGUAGE SQL IMMUTABLE RETURNS NULL ON NULL INPUT AS 'select $1 + $2;'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "FUNCTION",
+   "x": "FUNCTION"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "add"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 20,
+   "t": "INT",
+   "x": "integer"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 29,
+   "t": "INT",
+   "x": "integer"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 38,
+   "t": "VAR",
+   "x": "RETURNS"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 46,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 50,
+   "t": "VAR",
+   "x": "LANGUAGE"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 59,
+   "t": "VAR",
+   "x": "SQL"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 63,
+   "t": "VAR",
+   "x": "IMMUTABLE"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 73,
+   "t": "VAR",
+   "x": "RETURNS"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 81,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 88,
+   "e": 87,
+   "l": 1,
+   "s": 86,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 89,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 94,
+   "t": "VAR",
+   "x": "INPUT"
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 100,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 120,
+   "e": 119,
+   "l": 1,
+   "s": 103,
+   "t": "STRING",
+   "x": "select $1 + $2;"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.ddl.Create"

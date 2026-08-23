@@ -20,11 +20,32 @@ import (
 	"sort"
 )
 
-// Expectation is one reference statement and its tree.
+// RefToken is one token as the reference produced it. The short field names
+// are the oracle's, kept short because there are a few hundred thousand of them.
+type RefToken struct {
+	Type     string   `json:"t"`
+	Text     string   `json:"x"`
+	Line     int      `json:"l"`
+	Col      int      `json:"c"`
+	Start    int      `json:"s"`
+	End      int      `json:"e"`
+	Comments []string `json:"o,omitempty"`
+}
+
+func (t RefToken) String() string {
+	s := fmt.Sprintf("%s(%q) @%d:%d [%d..%d]", t.Type, t.Text, t.Line, t.Col, t.Start, t.End)
+	if len(t.Comments) > 0 {
+		s += fmt.Sprintf(" comments=%q", t.Comments)
+	}
+	return s
+}
+
+// Expectation is one reference statement, its token stream and its tree.
 type Expectation struct {
 	Key     string           `json:"-"`
 	Dialect string           `json:"dialect"`
 	SQL     string           `json:"sql"`
+	Tokens  []RefToken       `json:"tokens"`
 	Tree    []map[string]any `json:"tree"`
 }
 

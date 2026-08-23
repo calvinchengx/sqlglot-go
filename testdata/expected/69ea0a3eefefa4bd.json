@@ -1,6 +1,208 @@
 {
  "dialect": "tsql",
  "sql": "SELECT DISTINCT DepartmentName, PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY BaseRate) OVER (PARTITION BY DepartmentName) AS MedianCont FROM dbo.DimEmployee",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "DISTINCT",
+   "x": "DISTINCT"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "DepartmentName"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 32,
+   "t": "VAR",
+   "x": "PERCENTILE_CONT"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 47,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 48,
+   "t": "NUMBER",
+   "x": "0.5"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 51,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 53,
+   "t": "VAR",
+   "x": "WITHIN"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 60,
+   "t": "VAR",
+   "x": "GROUP"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 66,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 67,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 76,
+   "t": "VAR",
+   "x": "BaseRate"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 84,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 86,
+   "t": "OVER",
+   "x": "OVER"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 91,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 92,
+   "t": "PARTITION_BY",
+   "x": "PARTITION BY"
+  },
+  {
+   "c": 119,
+   "e": 118,
+   "l": 1,
+   "s": 105,
+   "t": "VAR",
+   "x": "DepartmentName"
+  },
+  {
+   "c": 120,
+   "e": 119,
+   "l": 1,
+   "s": 119,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 121,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 124,
+   "t": "VAR",
+   "x": "MedianCont"
+  },
+  {
+   "c": 139,
+   "e": 138,
+   "l": 1,
+   "s": 135,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 143,
+   "e": 142,
+   "l": 1,
+   "s": 140,
+   "t": "VAR",
+   "x": "dbo"
+  },
+  {
+   "c": 144,
+   "e": 143,
+   "l": 1,
+   "s": 143,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 155,
+   "e": 154,
+   "l": 1,
+   "s": 144,
+   "t": "VAR",
+   "x": "DimEmployee"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

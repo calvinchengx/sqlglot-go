@@ -1,6 +1,40 @@
 {
  "dialect": "duckdb",
  "sql": "SELECT '{\"duck\": [1, 2, 3]}' -> '$.duck[#-1]'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 7,
+   "t": "STRING",
+   "x": "{\"duck\": [1, 2, 3]}"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 29,
+   "t": "ARROW",
+   "x": "->"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 32,
+   "t": "STRING",
+   "x": "$.duck[#-1]"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

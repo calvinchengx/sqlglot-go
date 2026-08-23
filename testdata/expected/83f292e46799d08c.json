@@ -1,6 +1,168 @@
 {
  "dialect": "duckdb",
  "sql": "WITH pivot_alias AS (PIVOT Cities ON Year USING SUM(Population) GROUP BY Country) SELECT * FROM pivot_alias",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "pivot_alias"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 17,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 21,
+   "t": "PIVOT",
+   "x": "PIVOT"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "Cities"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 34,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 37,
+   "t": "VAR",
+   "x": "Year"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 42,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 48,
+   "t": "VAR",
+   "x": "SUM"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 51,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 52,
+   "t": "VAR",
+   "x": "Population"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 62,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 64,
+   "t": "GROUP_BY",
+   "x": "GROUP BY"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 73,
+   "t": "VAR",
+   "x": "Country"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 80,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 88,
+   "e": 87,
+   "l": 1,
+   "s": 82,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 89,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 91,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 96,
+   "t": "VAR",
+   "x": "pivot_alias"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

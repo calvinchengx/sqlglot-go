@@ -1,6 +1,240 @@
 {
  "dialect": "postgres",
  "sql": "CREATE CONSTRAINT TRIGGER my_trigger AFTER INSERT OR DELETE OR UPDATE OF col_a, col_b ON public.my_table DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION DO_STH()",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 7,
+   "t": "CONSTRAINT",
+   "x": "CONSTRAINT"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 18,
+   "t": "TRIGGER",
+   "x": "TRIGGER"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "my_trigger"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 37,
+   "t": "VAR",
+   "x": "AFTER"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 43,
+   "t": "INSERT",
+   "x": "INSERT"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 50,
+   "t": "OR",
+   "x": "OR"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 53,
+   "t": "DELETE",
+   "x": "DELETE"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 60,
+   "t": "OR",
+   "x": "OR"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 63,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 70,
+   "t": "VAR",
+   "x": "OF"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 73,
+   "t": "VAR",
+   "x": "col_a"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 78,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 80,
+   "t": "VAR",
+   "x": "col_b"
+  },
+  {
+   "c": 88,
+   "e": 87,
+   "l": 1,
+   "s": 86,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 89,
+   "t": "VAR",
+   "x": "public"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 95,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 96,
+   "t": "VAR",
+   "x": "my_table"
+  },
+  {
+   "c": 115,
+   "e": 114,
+   "l": 1,
+   "s": 105,
+   "t": "VAR",
+   "x": "DEFERRABLE"
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 116,
+   "t": "VAR",
+   "x": "INITIALLY"
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 126,
+   "t": "VAR",
+   "x": "DEFERRED"
+  },
+  {
+   "c": 138,
+   "e": 137,
+   "l": 1,
+   "s": 135,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 143,
+   "e": 142,
+   "l": 1,
+   "s": 139,
+   "t": "VAR",
+   "x": "EACH"
+  },
+  {
+   "c": 147,
+   "e": 146,
+   "l": 1,
+   "s": 144,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 155,
+   "e": 154,
+   "l": 1,
+   "s": 148,
+   "t": "EXECUTE",
+   "x": "EXECUTE"
+  },
+  {
+   "c": 164,
+   "e": 163,
+   "l": 1,
+   "s": 156,
+   "t": "FUNCTION",
+   "x": "FUNCTION"
+  },
+  {
+   "c": 171,
+   "e": 170,
+   "l": 1,
+   "s": 165,
+   "t": "VAR",
+   "x": "DO_STH"
+  },
+  {
+   "c": 172,
+   "e": 171,
+   "l": 1,
+   "s": 171,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 173,
+   "e": 172,
+   "l": 1,
+   "s": 172,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.ddl.Create"

@@ -1,6 +1,48 @@
 {
  "dialect": "postgres",
  "sql": "'[1,2,3]'::json->2",
+ "tokens": [
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 0,
+   "t": "STRING",
+   "x": "[1,2,3]"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 9,
+   "t": "DCOLON",
+   "x": "::"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 11,
+   "t": "JSON",
+   "x": "json"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 15,
+   "t": "ARROW",
+   "x": "->"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "NUMBER",
+   "x": "2"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.json.JSONExtract"

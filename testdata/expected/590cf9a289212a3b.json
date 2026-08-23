@@ -1,6 +1,49 @@
 {
  "dialect": "",
  "sql": "SELECT a /* x */ /* y */ /* z */, b /* k */ /* m */",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "o": [
+    " x ",
+    " y ",
+    " z "
+   ],
+   "s": 7,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "o": [
+    " k ",
+    " m "
+   ],
+   "s": 34,
+   "t": "VAR",
+   "x": "b"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

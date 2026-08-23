@@ -1,6 +1,112 @@
 {
  "dialect": "databricks",
  "sql": "CREATE STREAMING TABLE raw_data AS SELECT * FROM STREAM READ_FILES('abfss://container@storageAccount.dfs.core.windows.net/base/path')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "STREAMING"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 17,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "raw_data"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 32,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 35,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 44,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 49,
+   "t": "STREAM",
+   "x": "STREAM"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 56,
+   "t": "VAR",
+   "x": "READ_FILES"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 66,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 132,
+   "e": 131,
+   "l": 1,
+   "s": 67,
+   "t": "STRING",
+   "x": "abfss://container@storageAccount.dfs.core.windows.net/base/path"
+  },
+  {
+   "c": 133,
+   "e": 132,
+   "l": 1,
+   "s": 132,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.ddl.Create"

@@ -1,6 +1,40 @@
 {
  "dialect": "postgres",
  "sql": "SELECT $$The price is $9.95$$ AS msg",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 7,
+   "t": "HEREDOC_STRING",
+   "x": "The price is $9.95"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 30,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 33,
+   "t": "VAR",
+   "x": "msg"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

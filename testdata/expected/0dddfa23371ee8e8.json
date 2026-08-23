@@ -1,6 +1,72 @@
 {
  "dialect": "postgres",
  "sql": "SELECT TRIM(LEADING ' XXX ' COLLATE \"de_DE\")",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "TRIM"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "LEADING"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 20,
+   "t": "STRING",
+   "x": " XXX "
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 28,
+   "t": "COLLATE",
+   "x": "COLLATE"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 36,
+   "t": "IDENTIFIER",
+   "x": "de_DE"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

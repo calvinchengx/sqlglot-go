@@ -1,6 +1,120 @@
 {
  "dialect": "tsql",
  "sql": "CREATE FUNCTION foo(@bar INTEGER) RETURNS TABLE AS RETURN SELECT 1",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "FUNCTION",
+   "x": "FUNCTION"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "PARAMETER",
+   "x": "@"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 21,
+   "t": "VAR",
+   "x": "bar"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 25,
+   "t": "INT",
+   "x": "INTEGER"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 34,
+   "t": "VAR",
+   "x": "RETURNS"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 42,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 48,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 51,
+   "t": "VAR",
+   "x": "RETURN"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 58,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 65,
+   "t": "NUMBER",
+   "x": "1"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.ddl.Create"

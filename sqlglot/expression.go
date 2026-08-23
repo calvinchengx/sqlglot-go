@@ -31,11 +31,22 @@ type Expression struct {
 	Parent *Expression
 }
 
+// Arg is one named argument of a node, in the order it was given.
+type Arg struct {
+	Key   string
+	Value any
+}
+
 // New builds a node and wires its children's Parent pointers.
-func New(class string, args map[string]any) *Expression {
+//
+// Arguments are variadic pairs rather than a map because the reference's dump
+// order follows arg declaration order, and Go map iteration is randomised --
+// a map here would make the dump differ run to run and the differential
+// comparison flap.
+func New(class string, args ...Arg) *Expression {
 	e := &Expression{Class: class, Args: map[string]any{}}
-	for k, v := range args {
-		e.Set(k, v)
+	for _, a := range args {
+		e.Set(a.Key, a.Value)
 	}
 	return e
 }

@@ -1,6 +1,128 @@
 {
  "dialect": "",
  "sql": "SELECT student, score FROM tests LATERAL VIEW EXPLODE(scores) t AS score",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "student"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "score"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 22,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "tests"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 33,
+   "t": "LATERAL",
+   "x": "LATERAL"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 41,
+   "t": "VIEW",
+   "x": "VIEW"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 46,
+   "t": "VAR",
+   "x": "EXPLODE"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 54,
+   "t": "VAR",
+   "x": "scores"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 60,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 62,
+   "t": "VAR",
+   "x": "t"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 64,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 67,
+   "t": "VAR",
+   "x": "score"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Select"

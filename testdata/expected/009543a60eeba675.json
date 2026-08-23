@@ -1,6 +1,64 @@
 {
  "dialect": "duckdb",
  "sql": "FROM  x SELECT x UNION SELECT 1",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 6,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 8,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 17,
+   "t": "UNION",
+   "x": "UNION"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 23,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "NUMBER",
+   "x": "1"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.query.Union"

@@ -1,6 +1,144 @@
 {
  "dialect": "postgres",
  "sql": "DELETE FROM event USING sales AS s WHERE event.eventid = s.eventid RETURNING a",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "DELETE",
+   "x": "DELETE"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "event"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 18,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "sales"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 30,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "VAR",
+   "x": "s"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 35,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 41,
+   "t": "VAR",
+   "x": "event"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 46,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 47,
+   "t": "VAR",
+   "x": "eventid"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 57,
+   "t": "VAR",
+   "x": "s"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 59,
+   "t": "VAR",
+   "x": "eventid"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 67,
+   "t": "RETURNING",
+   "x": "RETURNING"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 77,
+   "t": "VAR",
+   "x": "a"
+  }
+ ],
  "tree": [
   {
    "c": "sqlglot.expressions.dml.Delete"
