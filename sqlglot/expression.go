@@ -27,6 +27,11 @@ type Expression struct {
 	// it and so the comparison does too.
 	Args map[string]any
 	Keys []string
+	// Type is the node's type annotation. Most nodes have none, but a cast
+	// carries the type it casts to, and the reference dumps it as its own
+	// nested record list under "t" -- so a port that ignored it would mismatch
+	// on every cast.
+	Type *Expression
 	// Parent is set by the parser; never serialised.
 	Parent *Expression
 }
@@ -195,6 +200,9 @@ func (e *Expression) Dump() []map[string]any {
 		switch n := f.node.(type) {
 		case *Expression:
 			rec["c"] = qualifiedClass(n.Class)
+			if n.Type != nil && n.Type != n {
+				rec["t"] = n.Type.Dump()
+			}
 			for idx := len(n.Keys) - 1; idx >= 0; idx-- {
 				k := n.Keys[idx]
 				switch v := n.Args[k].(type) {

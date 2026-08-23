@@ -106,10 +106,32 @@ func TestRefusals(t *testing.T) {
 		{"a statement that is not a SELECT", "DELETE FROM t", ""},
 		{"function with a builder of its own", "SELECT COUNT(*)", ""},
 		{"function with a custom argument shape", "SELECT TIMESTAMP_TRUNC(t, MONTH)", ""},
-		{"no-paren function", "SELECT CURRENT_DATE", "duckdb"},
 		{"no-paren function named, not tokenized", "CURDATE", "databricks"},
 		{"DISTINCT inside a call", "SELECT f(DISTINCT a)", ""},
 		{"INTERVAL", "INTERVAL '1' DAY", ""},
+		{"INTERVAL as a type", "'45 days'::INTERVAL DAY", "postgres"},
+		{"non-numeric type parameter", "a::VARCHAR(MAX)", "tsql"},
+		{"composite type", "CAST(a AS ARRAY<INT>)", "databricks"},
+		{"unknown type", "CAST(a AS wat)", ""},
+		{"CAST without AS", "CAST(a INT)", ""},
+		{"unclosed CAST", "CAST(a AS INT", ""},
+		{"unclosed type parameters", "CAST(a AS VARCHAR(10)", ""},
+		{"CASE without WHEN", "CASE a END", ""},
+		{"WHEN without THEN", "CASE WHEN a END", ""},
+		{"CASE without END", "CASE WHEN a THEN 1", ""},
+		{"dangling CASE subject", "CASE", ""},
+		{"IN with a subquery", "a IN (SELECT 1)", ""},
+		{"IN without parentheses", "a IN b", ""},
+		{"unclosed IN list", "a IN (1", ""},
+		{"ESCAPE", "a LIKE 'x' ESCAPE 'y'", ""},
+		{"OVERLAPS", "a OVERLAPS b", ""},
+		{"dangling IS", "a IS", ""},
+		{"dangling BETWEEN", "a BETWEEN", ""},
+		{"dangling type", "a::", ""},
+		{"dangling NOT at the range level", "a NOT", ""},
+		{"NOT that introduces nothing", "a NOT b", ""},
+		{"dangling BETWEEN bound", "a BETWEEN 1 AND", ""},
+		{"unclosed type parameters", "a::VARCHAR(10", ""},
 		{"GROUP BY ROLLUP", "SELECT a FROM t GROUP BY ROLLUP (a)", ""},
 		{"STREAM table", "SELECT * FROM STREAM t", "databricks"},
 		{"qualified function call", "SELECT a.f(1)", ""},
@@ -139,8 +161,6 @@ func TestRefusals(t *testing.T) {
 		{"T-SQL temp table as a column", "SELECT [#a]", "tsql"},
 		{"T-SQL hash inside a name", "SELECT a#b", "tsql"},
 		{"dangling HAVING", "SELECT a FROM t HAVING", ""},
-		{"IN list", "SELECT 1 WHERE a IN (1, 2)", ""},
-		{"CAST", "SELECT CAST(a AS INT)", ""},
 		{"dangling conjunction", "SELECT 1 WHERE a AND", ""},
 		{"dangling disjunction", "SELECT 1 WHERE a OR", ""},
 		{"dangling comparison", "SELECT 1 WHERE a >", ""},
@@ -317,5 +337,93 @@ func TestSubqueryInFrom(t *testing.T) {
 	// tree for table references depends on.
 	if n := len(tree.FindAll("Table")); n != 1 {
 		t.Errorf("found %d tables inside the subquery, want 1", n)
+	}
+}
+
+func TestRangeOperators(t *testing.T) {
+	for _, c := range []struct{ name, sql, want string }{
+		{"is null", "a IS NULL", "Is Column Identifier Null"},
+		{"is not null", "a IS NOT NULL", "Is Column Identifier Null"},
+		{"in", "a IN (1, 2)", "In Column Identifier Literal Literal"},
+		{"not in", "a NOT IN (1)", "Not In Column Identifier Literal"},
+		{"between", "a BETWEEN 1 AND 2", "Between Column Identifier Literal Literal"},
+		{"like", "a LIKE 'x'", "Like Column Identifier Literal"},
+		{"ilike", "a ILIKE 'x'", "ILike Column Identifier Literal"},
+		{"rlike", "a RLIKE 'x'", "RegexpLike Column Identifier Literal"},
+		{"is not a value", "a IS NOT b", "Not Is Column Identifier Column Identifier"},
+		// A negated range followed by another is parenthesised, so the two
+		// cannot re-associate into something the reference never meant.
+		{"negated range then another", "a NOT LIKE 'x' NOT LIKE 'y'",
+			"Like Paren Like Column Identifier Literal Literal"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if got := classes(parse(t, c.sql, "")); got != c.want {
+				t.Errorf("ParseOne(%q)\n  want %s\n  got  %s", c.sql, c.want, got)
+			}
+		})
+	}
+
+	// IS NOT NULL flags the Is node; NOT LIKE flags the Like node; NOT IN
+	// wraps in a Not. The reference distinguishes all three and so must this.
+	if got := parse(t, "a IS NOT NULL", "").Args["negate"]; got != true {
+		t.Errorf("IS NOT NULL did not set negate: %v", got)
+	}
+	if got := parse(t, "a NOT LIKE 'x'", "").Args["negate"]; got != true {
+		t.Errorf("NOT LIKE did not set negate: %v", got)
+	}
+	if got := parse(t, "a NOT IN (1)", "").Class; got != "Not" {
+		t.Errorf("NOT IN produced %s, want a Not wrapping the In", got)
+	}
+}
+
+func TestCase(t *testing.T) {
+	for _, c := range []struct{ name, sql, want string }{
+		{"searched", "CASE WHEN a THEN 1 END", "Case If Column Identifier Literal"},
+		{"with a subject", "CASE a WHEN 1 THEN 2 END", "Case Column Identifier If Literal Literal"},
+		{"with an else", "CASE WHEN a THEN 1 ELSE 2 END", "Case If Column Identifier Literal Literal"},
+		{"several whens", "CASE WHEN a THEN 1 WHEN b THEN 2 END",
+			"Case If Column Identifier Literal If Column Identifier Literal"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if got := classes(parse(t, c.sql, "")); got != c.want {
+				t.Errorf("ParseOne(%q)\n  want %s\n  got  %s", c.sql, c.want, got)
+			}
+		})
+	}
+}
+
+func TestCasts(t *testing.T) {
+	for _, c := range []struct{ name, sql, want string }{
+		{"cast", "CAST(a AS INT)", "Cast Column Identifier DataType"},
+		{"try cast", "TRY_CAST(a AS INT)", "TryCast Column Identifier DataType"},
+		{"double colon", "a::INT", "Cast Column Identifier DataType"},
+		{"sized type", "CAST(a AS VARCHAR(10))", "Cast Column Identifier DataType DataTypeParam Literal"},
+		{"two parameters", "CAST(a AS DECIMAL(10, 2))",
+			"Cast Column Identifier DataType DataTypeParam Literal DataTypeParam Literal"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if got := classes(parse(t, c.sql, "")); got != c.want {
+				t.Errorf("ParseOne(%q)\n  want %s\n  got  %s", c.sql, c.want, got)
+			}
+		})
+	}
+
+	// A cast reports the type it casts to, which the reference dumps as a
+	// nested record list of its own. Omitting it mismatches on every cast.
+	cast := parse(t, "CAST(a AS INT)", "")
+	if cast.Type == nil || cast.Type.Class != "DataType" {
+		t.Fatalf("cast has no type annotation: %v", cast.Type)
+	}
+	if !strings.Contains(string(cast.DumpJSON()), `"t"`) {
+		t.Error("the type annotation did not reach the dump")
+	}
+	if parse(t, "TRY_CAST(a AS INT)", "").Args["safe"] != true {
+		t.Error("TRY_CAST should be flagged safe")
+	}
+}
+
+func TestNoParenFunctions(t *testing.T) {
+	if got := classes(parse(t, "CURRENT_DATE", "duckdb")); got != "CurrentDate" {
+		t.Errorf("CURRENT_DATE parsed as %s", got)
 	}
 }

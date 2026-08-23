@@ -130,6 +130,9 @@ def main() -> int:
         "\t// NoParenFunctions are names that are a function call without an\n",
         "\t// argument list at all, e.g. CURRENT_DATE.\n",
         "\tNoParenFunctions map[TokenType]struct{}\n",
+        "\t// NoParenFunctionClasses is the node each of those builds, with no\n",
+        "\t// arguments at all.\n",
+        "\tNoParenFunctionClasses map[TokenType]string\n",
         "\t// Functions are the named functions whose node the reference builds by\n",
         "\t// mapping positional arguments onto declared argument keys in order.\n",
         "\t// A name in NamedFunctions but absent here has a hand-written builder\n",
@@ -173,6 +176,15 @@ def main() -> int:
         "\tJoinSides   map[TokenType]struct{}\n",
         "\tJoinKinds   map[TokenType]struct{}\n",
         "\tJoinMethods map[TokenType]struct{}\n",
+        "\t// RangeTokens are the operators the reference handles at the range\n",
+        "\t// level -- IS, IN, BETWEEN, the LIKE family and a dozen operators\n",
+        "\t// specific to one dialect. The ones not handled are refused here\n",
+        "\t// rather than left to look like the end of the expression.\n",
+        "\tRangeTokens map[TokenType]struct{}\n",
+        "\t// TypeTokens maps a type keyword to the DataType.Type member the\n",
+        "\t// reference records. A few type tokens have no member and are absent,\n",
+        "\t// which refuses them rather than inventing one.\n",
+        "\tTypeTokens map[TokenType]string\n",
         "}\n\n",
         "// FuncSpec is how one function name becomes a node: the class, the\n",
         "// argument keys positional arguments fill in order, and whether the last\n",
@@ -192,6 +204,7 @@ def main() -> int:
         out.append(ttset("TableAliasTokens", P.TABLE_ALIAS_TOKENS))
         out.append(strset("NamedFunctions", named))
         out.append(ttset("NoParenFunctions", P.NO_PAREN_FUNCTIONS))
+        out.append(opmap("NoParenFunctionClasses", P.NO_PAREN_FUNCTIONS))
         out.append(funcmap("Functions", default_built_functions(P, exp)))
         tk = Dialect.get_or_raise(name or None).tokenizer_class
         out.append(ttset("StatementTokens", set(P.STATEMENT_PARSERS) | set(tk.COMMANDS)))
@@ -220,6 +233,13 @@ def main() -> int:
         out.append(ttset("JoinSides", P.JOIN_SIDES))
         out.append(ttset("JoinKinds", P.JOIN_KINDS))
         out.append(ttset("JoinMethods", P.JOIN_METHODS))
+        out.append(ttset("RangeTokens", P.RANGE_PARSERS))
+        types = {t: exp.DType[t.name] for t in P.TYPE_TOKENS if t.name in exp.DType.__members__}
+        body = "".join(
+            f"\t\t\tTok{t.name}: {gostr(v.value)},\n"
+            for t, v in sorted(types.items(), key=lambda kv: kv[0].value)
+        )
+        out.append(f"\t\tTypeTokens: map[TokenType]string{{\n{body}\t\t}},\n")
         out.append("\t},\n")
     out.append("}\n")
 

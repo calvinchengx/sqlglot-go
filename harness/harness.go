@@ -98,9 +98,48 @@ func Normalise(tree []map[string]any) []map[string]any {
 			if k == "m" || k == "o" {
 				continue
 			}
+			// A type annotation is its own nested record list, and carries
+			// positions of its own; they are metadata there too.
+			if k == "t" {
+				n[k] = normaliseNested(v)
+				continue
+			}
 			n[k] = v
 		}
 		out[i] = n
+	}
+	return out
+}
+
+func normaliseNested(v any) any {
+	var records []any
+	switch t := v.(type) {
+	case []any:
+		records = t
+	case []map[string]any:
+		// The port's own dump is typed; the reference's arrives from JSON.
+		records = make([]any, len(t))
+		for i, r := range t {
+			records[i] = r
+		}
+	default:
+		return v
+	}
+	out := make([]any, 0, len(records))
+	for _, r := range records {
+		rec, ok := r.(map[string]any)
+		if !ok {
+			out = append(out, r)
+			continue
+		}
+		n := map[string]any{}
+		for k, val := range rec {
+			if k == "m" || k == "o" {
+				continue
+			}
+			n[k] = val
+		}
+		out = append(out, n)
 	}
 	return out
 }

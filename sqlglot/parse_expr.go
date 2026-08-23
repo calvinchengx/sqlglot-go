@@ -55,11 +55,155 @@ func (p *parser) parseComparison() (*Expression, error) {
 	return p.parseBinary(p.tables.Comparison, p.parseRange)
 }
 
-// parseRange is where IN, BETWEEN, LIKE and IS live in the reference. None is
-// handled yet, so the statement simply ends with tokens left over and is
-// refused -- which is the same outcome as refusing here, and one fewer place
-// for the two to disagree.
-func (p *parser) parseRange() (*Expression, error) { return p.parseBitwise() }
+// binaryRangeOps are the range operators that take a single right operand.
+var binaryRangeOps = map[TokenType]string{
+	TokLIKE:       "Like",
+	TokILIKE:      "ILike",
+	TokRLIKE:      "RegexpLike",
+	TokGLOB:       "Glob",
+	TokSIMILAR_TO: "SimilarTo",
+}
+
+// parseRange handles IS, IN, BETWEEN and the LIKE family, including their
+// negated forms.
+//
+// NOT is read here rather than at the unary level because `a NOT LIKE b` sets
+// a flag on the Like node while `a NOT IN (…)` wraps the In in a Not -- the
+// reference treats the two differently and so must this. A NOT that turns out
+// not to introduce a range is put back.
+func (p *parser) parseRange() (*Expression, error) {
+	this, err := p.parseBitwise()
+	if err != nil {
+		return nil, err
+	}
+
+	for {
+		negate := p.match(TokNOT)
+		c := p.curr()
+		if c == nil {
+			if negate {
+				p.index--
+			}
+			return this, nil
+		}
+
+		switch {
+		case c.Type == TokIS:
+			p.advance()
+			this, err = p.parseIs(this)
+		case c.Type == TokIN:
+			p.advance()
+			this, err = p.parseIn(this)
+		case c.Type == TokBETWEEN:
+			p.advance()
+			this, err = p.parseBetween(this)
+		case binaryRangeOps[c.Type] != "":
+			class := binaryRangeOps[c.Type]
+			p.advance()
+			var right *Expression
+			right, err = p.parseBitwise()
+			if err == nil {
+				this = New(class, Arg{"this", this}, Arg{"expression", right})
+			}
+		default:
+			if _, isRange := p.tables.RangeTokens[c.Type]; isRange {
+				return nil, p.unsupported("range operator " + c.Text)
+			}
+			if negate {
+				p.index--
+			}
+			return this, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+
+		if p.at(TokESCAPE) {
+			return nil, p.unsupported("ESCAPE")
+		}
+
+		if negate {
+			this = negateRange(this)
+			// A negation followed by another range operator is parenthesised,
+			// so `NOT a LIKE b LIKE c` cannot re-associate.
+			if n := p.curr(); n != nil {
+				_, isRange := p.tables.RangeTokens[n.Type]
+				if n.Type == TokNOT || isRange {
+					this = New("Paren", Arg{"this", this})
+				}
+			}
+		}
+	}
+}
+
+// negateRange flags a negated LIKE rather than wrapping it, which is what the
+// reference does and what keeps `NOT LIKE` a single node.
+func negateRange(this *Expression) *Expression {
+	if this.Class == "Like" || this.Class == "ILike" {
+		this.Set("negate", true)
+		return this
+	}
+	return New("Not", Arg{"this", this})
+}
+
+func (p *parser) parseIs(this *Expression) (*Expression, error) {
+	negate := p.match(TokNOT)
+	var expression *Expression
+	if p.match(TokNULL) {
+		expression = New("Null")
+	} else {
+		var err error
+		expression, err = p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+	}
+	// IS NOT NULL records the negation on the Is node; every other negated IS
+	// wraps in a Not.
+	if negate && expression.Class == "Null" {
+		return New("Is", Arg{"this", this}, Arg{"expression", expression}, Arg{"negate", true}), nil
+	}
+	is := New("Is", Arg{"this", this}, Arg{"expression", expression})
+	if negate {
+		return New("Not", Arg{"this", is}), nil
+	}
+	return is, nil
+}
+
+func (p *parser) parseIn(this *Expression) (*Expression, error) {
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("IN without a parenthesised list")
+	}
+	if p.at(TokSELECT) {
+		return nil, p.unsupported("IN with a subquery")
+	}
+	var items []*Expression
+	if !p.at(TokR_PAREN) {
+		var err error
+		items, err = p.parseExpressionList()
+		if err != nil {
+			return nil, err
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed IN list")
+	}
+	return New("In", Arg{"this", this}, Arg{"expressions", items}), nil
+}
+
+func (p *parser) parseBetween(this *Expression) (*Expression, error) {
+	low, err := p.parseBitwise()
+	if err != nil {
+		return nil, err
+	}
+	p.match(TokAND)
+	high, err := p.parseBitwise()
+	if err != nil {
+		return nil, err
+	}
+	return New("Between", Arg{"this", this}, Arg{"low", low}, Arg{"high", high},
+		Arg{"symmetric", nil}), nil
+}
 
 func (p *parser) parseBitwise() (*Expression, error) {
 	this, err := p.parseTerm()
@@ -195,14 +339,41 @@ func (p *parser) parseUnary() (*Expression, error) {
 		}
 		return New("Not", Arg{"this", this}), nil
 	}
-	return p.parsePrimary()
+	return p.parsePostfix()
+}
+
+// parsePostfix reads what binds tighter than any operator: the :: cast, which
+// the reference handles among the column operators.
+func (p *parser) parsePostfix() (*Expression, error) {
+	this, err := p.parsePrimary()
+	if err != nil {
+		return nil, err
+	}
+	for p.match(TokDCOLON) {
+		to, err := p.parseDataType()
+		if err != nil {
+			return nil, err
+		}
+		cast := New("Cast", Arg{"this", this}, Arg{"to", to})
+		cast.Type = to
+		this = cast
+	}
+	return this, nil
 }
 
 // parsePrimary is entered with a token current; parseUnary checked.
 func (p *parser) parsePrimary() (*Expression, error) {
 	c := p.curr()
 
+	// CURRENT_DATE and friends are calls with no argument list.
+	if class, ok := p.tables.NoParenFunctionClasses[c.Type]; ok {
+		p.advance()
+		return New(class), nil
+	}
+
 	switch c.Type {
+	case TokCASE:
+		return p.parseCase()
 	case TokNUMBER:
 		p.advance()
 		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", false}), nil
@@ -232,7 +403,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return New("Paren", Arg{"this", inner}), nil
 	}
 	if p.atIdentifier() {
-		if _, noParen := p.tables.NoParenFunctionNames[strings.ToUpper(c.Text)]; noParen {
+		if _, noParen := p.tables.NoParenFunctionNames[strings.ToUpper(c.Text)]; noParen && c.Type != TokCASE {
 			return nil, p.unsupported("no-paren function " + strings.ToUpper(c.Text))
 		}
 		if n := p.peek(1); n != nil && n.Type == TokL_PAREN {
@@ -253,6 +424,140 @@ func newStar() *Expression {
 	return New("Star", Arg{"ilike", nil}, Arg{"except_", nil}, Arg{"replace", nil}, Arg{"rename", nil})
 }
 
+// parseCast reads CAST(x AS type) and TRY_CAST(x AS type).
+//
+// The node also carries a type annotation -- the reference reports a cast's
+// type as the type it casts to -- which dumps as its own nested record list.
+func (p *parser) parseCast(try bool) (*Expression, error) {
+	p.advance() // the name
+	p.advance() // the opening parenthesis
+
+	this, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokALIAS) {
+		return nil, p.unsupported("CAST without AS")
+	}
+	to, err := p.parseDataType()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed CAST")
+	}
+
+	class := "Cast"
+	args := []Arg{
+		{"this", this}, {"to", to}, {"format", nil},
+		{"safe", nil}, {"action", nil}, {"default", nil},
+	}
+	if try {
+		// TRY_CAST is a Cast that is flagged safe, not a silent variant.
+		class = "TryCast"
+		args[3] = Arg{"safe", true}
+		args = append(args, Arg{"requires_string", nil})
+	}
+	cast := New(class, args...)
+	cast.Type = to
+	return cast, nil
+}
+
+// parseDataType reads a type name and its parameters. Only the flat forms are
+// handled: a composite type -- ARRAY<INT>, STRUCT<…> -- nests, and the
+// reference records the nesting in ways worth porting deliberately.
+func (p *parser) parseDataType() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("type")
+	}
+	kind, ok := p.tables.TypeTokens[c.Type]
+	if !ok {
+		return nil, p.unsupported("type " + c.Text)
+	}
+	// INTERVAL as a type carries a unit and is a different node entirely.
+	if c.Type == TokINTERVAL {
+		return nil, p.unsupported("INTERVAL type")
+	}
+	p.advance()
+	if p.at(TokLT) {
+		return nil, p.unsupported("parameterised composite type")
+	}
+
+	dt := New("DataType", Arg{"this", DataTypeKind(kind)})
+	if p.match(TokL_PAREN) {
+		var params []*Expression
+		for {
+			// A type parameter is a number here. A word -- VARCHAR(MAX) --
+			// becomes a Var in the reference, not the Column an expression
+			// would produce, so it is refused rather than mis-built.
+			c := p.curr()
+			if c == nil || c.Type != TokNUMBER {
+				return nil, p.unsupported("non-numeric type parameter")
+			}
+			p.advance()
+			lit := New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})
+			params = append(params, New("DataTypeParam", Arg{"this", lit}))
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed type parameters")
+		}
+		dt.Set("expressions", params)
+	}
+	dt.Set("nested", false)
+	return dt, nil
+}
+
+// parseCase reads a CASE expression, in both its forms: with a subject before
+// the first WHEN, and without.
+func (p *parser) parseCase() (*Expression, error) {
+	p.advance() // CASE
+
+	var subject *Expression
+	if !p.at(TokWHEN) {
+		var err error
+		subject, err = p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	var ifs []*Expression
+	for p.match(TokWHEN) {
+		cond, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokTHEN) {
+			return nil, p.unsupported("WHEN without THEN")
+		}
+		then, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		ifs = append(ifs, New("If", Arg{"this", cond}, Arg{"true", then}))
+	}
+	if len(ifs) == 0 {
+		return nil, p.unsupported("CASE without WHEN")
+	}
+
+	var deflt *Expression
+	if p.match(TokELSE) {
+		var err error
+		deflt, err = p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+	}
+	if !p.match(TokEND) {
+		return nil, p.unsupported("CASE without END")
+	}
+	return New("Case", Arg{"this", subject}, Arg{"ifs", ifs}, Arg{"default", deflt}), nil
+}
+
 // parseFunction reads a call with an argument list.
 //
 // Only the Anonymous form is built. The reference gives hundreds of names a
@@ -263,6 +568,9 @@ func newStar() *Expression {
 func (p *parser) parseFunction() (*Expression, error) {
 	name := p.curr().Text
 	upper := strings.ToUpper(name)
+	if upper == "CAST" || upper == "TRY_CAST" {
+		return p.parseCast(upper == "TRY_CAST")
+	}
 	spec, named := p.tables.Functions[upper]
 	if !named {
 		if _, custom := p.tables.NamedFunctions[upper]; custom {
