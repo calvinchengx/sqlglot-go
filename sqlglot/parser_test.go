@@ -575,7 +575,8 @@ func TestWritesAreNamedNotParsed(t *testing.T) {
 			t.Errorf("ParseOne(%q) failed with %v, want ErrNotAQuery", c.sql, err)
 			continue
 		}
-		if !strings.Contains(err.Error(), c.kind) {
+		var named *NotAQueryError
+		if !errors.As(err, &named) || named.Kind != c.kind {
 			t.Errorf("ParseOne(%q) did not name the statement: %v", c.sql, err)
 		}
 	}

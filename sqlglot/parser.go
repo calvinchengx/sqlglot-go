@@ -24,6 +24,16 @@ var ErrUnsupported = errors.New("sqlglot-go: unsupported statement")
 // will ever execute one.
 var ErrNotAQuery = errors.New("sqlglot-go: not a query")
 
+// NotAQueryError names the statement. The guard above reports "DROP is not
+// allowed; this endpoint is read-only", so it needs the word, not just the
+// fact -- and reading it back out of a message would be a parser of its own.
+type NotAQueryError struct{ Kind string }
+
+func (e *NotAQueryError) Error() string { return ErrNotAQuery.Error() + ": " + e.Kind }
+
+// Is makes errors.Is(err, ErrNotAQuery) hold for this error too.
+func (e *NotAQueryError) Is(target error) bool { return target == ErrNotAQuery }
+
 // ErrMultipleStatements reports more than one statement in the input. A guard
 // that permitted the first and ignored the rest would be no guard at all.
 var ErrMultipleStatements = errors.New("sqlglot-go: more than one statement")
@@ -141,7 +151,7 @@ func (p *parser) parseStatement() (*Expression, error) {
 	}
 	if c := p.curr(); c != nil {
 		if _, isStatement := p.tables.StatementTokens[c.Type]; isStatement {
-			return nil, fmt.Errorf("%w: %s", ErrNotAQuery, strings.ToUpper(c.Text))
+			return nil, &NotAQueryError{Kind: strings.ToUpper(c.Text)}
 		}
 	}
 	e, err := p.parseExpression()
