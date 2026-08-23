@@ -130,6 +130,9 @@ func collect(dialect string, cause error, sql string) bool {
 	}
 	collectMu.Lock()
 	defer collectMu.Unlock()
+	//nolint:gosec // G304: a path the developer running the fuzzer names in
+	// DAS_FUZZ_COLLECT. Nothing in a candidate reaches it, and the collector
+	// does nothing at all unless that variable is set.
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		return false // cannot collect, so fail loudly instead of silently
@@ -253,6 +256,7 @@ func collectParsed(dialect, sql string) {
 	if parsedCollected >= parsedCandidateCap {
 		return
 	}
+	//nolint:gosec // G304: as above -- DAS_FUZZ_COLLECT is the developer's own.
 	f, err := os.OpenFile(path, os.O_APPEND|os.O_CREATE|os.O_WRONLY, 0o600)
 	if err != nil {
 		return
