@@ -1,6 +1,7 @@
 package sqlglot
 
 import (
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -237,7 +238,17 @@ func (g *generator) writeLimit(e *Expression) string { return g.writeLimitWord(e
 // writeLimitWord is the same node under either spelling: TOP in front of the
 // projections, LIMIT after the query.
 func (g *generator) writeLimitWord(e *Expression, word string) string {
-	out := word + g.child(e, "expression")
+	count := g.child(e, "expression")
+	// T-SQL requires parentheses around a TOP that is not a plain literal, and
+	// the reference writes them: `SELECT TOP (A) 0`. Without them the output is
+	// not valid T-SQL and neither the reference nor this port can read it back
+	// -- a generator emitting SQL nobody can parse is worse than one that
+	// declines. Found by fuzzing the generator's output through the parser.
+	if inner, _ := e.Args["expression"].(*Expression); inner != nil &&
+		word == "TOP " && inner.Class != "Literal" {
+		count = "(" + count + ")"
+	}
+	out := word + count
 	if opts, _ := e.Args["limit_options"].(*Expression); opts != nil && opts.Args["percent"] == true {
 		out += " PERCENT"
 	}
@@ -277,9 +288,38 @@ func (g *generator) writeIdentifier(e *Expression) string {
 func (g *generator) writeLiteral(e *Expression) string {
 	text, _ := e.Args["this"].(string)
 	if e.Args["is_string"] == true {
-		return "'" + strings.ReplaceAll(text, "'", "''") + "'"
+		return "'" + escapeStringBody(text, g.cfg.StringEscapes) + "'"
 	}
 	return text
+}
+
+// escapeStringBody escapes a quote the way THIS DIALECT escapes it.
+//
+// It used to double the quote for every dialect, which is right for T-SQL,
+// PostgreSQL and DuckDB and wrong for Databricks, where the escape is a
+// backslash. A string holding a single quote came out as four quotes, and
+// Databricks reads that as two adjacent empty strings concatenated -- a
+// different value, silently. The reference writes a backslash-escaped quote.
+// Found by fuzzing what the generator writes back through the parser.
+//
+// The set it reads is the TOKENIZER's own, generated per dialect from the
+// reference, so the two halves cannot disagree about what an escape is.
+func escapeStringBody(text string, escapes set) string {
+	if _, doubles := escapes["'"]; doubles || len(escapes) == 0 {
+		return strings.ReplaceAll(text, "'", "''")
+	}
+	// One escape character, chosen deterministically: map iteration order must
+	// never decide what SQL this emits.
+	chars := make([]string, 0, len(escapes))
+	for c := range escapes {
+		chars = append(chars, c)
+	}
+	sort.Strings(chars)
+	escape := chars[0]
+	// The escape escapes itself, and must be done first, or the one written
+	// for a quote below would be escaped in turn.
+	text = strings.ReplaceAll(text, escape, escape+escape)
+	return strings.ReplaceAll(text, "'", escape+"'")
 }
 
 func (g *generator) writeBoolean(e *Expression) string {

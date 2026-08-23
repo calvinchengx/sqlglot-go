@@ -235,14 +235,31 @@ func (p *parser) parseTop() (*Expression, error) {
 	if !p.match(TokTOP) {
 		return nil, nil
 	}
-	c := p.curr()
-	if c == nil || c.Type != TokNUMBER {
+	var count *Expression
+	switch {
+	// `TOP (expr)` is how T-SQL spells a count that is not a plain number, and
+	// the reference stores the expression UNWRAPPED -- `SELECT TOP (A) 0` and
+	// `SELECT 0 LIMIT A` are the same tree. Reading only a bare number meant
+	// the port could write `TOP (A)`, which it then could not read back.
+	case p.at(TokL_PAREN):
+		p.advance()
+		inner, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed TOP count")
+		}
+		count = inner
+	case p.curr() != nil && p.curr().Type == TokNUMBER:
+		count = New("Literal", Arg{"this", p.curr().Text}, Arg{"is_string", false})
+		p.advance()
+	default:
 		return nil, p.unsupported("TOP without a count")
 	}
-	p.advance()
 	limit := New("Limit",
 		Arg{"this", nil},
-		Arg{"expression", New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})},
+		Arg{"expression", count},
 		Arg{"offset", nil},
 		Arg{"limit_options", nil},
 		Arg{"expressions", nil},

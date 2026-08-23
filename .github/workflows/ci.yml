@@ -65,6 +65,12 @@ jobs:
       # taken seconds ago rather than against whatever was committed.
       - name: the README's numbers are what was measured
         run: python3 harness/gen_readme.py --check
+      # A crash in a parser that sits under a security guard is a denial of
+      # service in front of a database, so this one runs on every build. Its
+      # sibling, FuzzGeneratedSQLCanBeReadBack, is deliberately NOT here yet:
+      # it has an open finding recorded on the target itself.
+      - name: a short fuzz for parser panics
+        run: go test ./sqlglot/ -run=XXX -fuzz=FuzzParseOneNeverPanics -fuzztime=45s
       - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.13.1
