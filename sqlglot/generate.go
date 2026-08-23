@@ -239,8 +239,9 @@ func (g *generator) namedFunction(e *Expression, spec FuncSQL) string {
 	// that one either.
 	if indexes, ok := g.tables.CastSensitiveArgs[strings.ToUpper(spec.Name)]; ok {
 		for _, i := range indexes {
-			if i < len(argNodes(e, spec)) && isCastToNonInteger(argNodes(e, spec)[i]) {
-				return g.fail("cast argument to " + spec.Name)
+			nodes := argNodes(e, spec)
+			if i < len(nodes) && (isCastToNonInteger(nodes[i]) || isNumericLiteral(nodes[i])) {
+				return g.fail("type-dependent argument to " + spec.Name)
 			}
 		}
 	}
@@ -260,6 +261,17 @@ func argNodes(e *Expression, spec FuncSQL) []*Expression {
 		}
 	}
 	return out
+}
+
+// isNumericLiteral reports whether an argument is a plain number. A number can
+// change the call as much as a cast can: DuckDB drops a zero group from
+// REGEXP_EXTRACT entirely, so writing it back is a different call.
+func isNumericLiteral(e *Expression) bool {
+	if e == nil || e.Class != "Literal" {
+		return false
+	}
+	b, _ := e.Args["is_string"].(bool)
+	return !b
 }
 
 // isCastToNonInteger reports whether an argument asserts a type that is not an

@@ -58,6 +58,13 @@ def probe_substitutions(exp):
         exp.cast(exp.column("__sub"), "DOUBLE"),
         exp.Hex(this=exp.column("__sub")),
         exp.Literal.string("__sub"),
+        # A string a builder might READ rather than carry: PostgreSQL's
+        # TO_TIMESTAMP translates 'YYYY-MM-DD' into '%Y-%m-%d', and
+        # JSON_EXTRACT_PATH turns its string arguments into a JSON path. A
+        # nonsense string passes through both untouched, so probing with one
+        # said the spec was stable when it was not.
+        exp.Literal.string("YYYY-MM-DD"),
+        exp.Literal.string("$.a"),
         exp.Literal.number(1),
         exp.Subquery(this=exp.select("1")),
     ]
@@ -78,6 +85,29 @@ def gofmt(*paths):
     if shutil.which("gofmt") is None:
         raise SystemExit("gofmt is not on PATH; the generated tables must be formatted")
     subprocess.run(["gofmt", "-w", *[str(p) for p in paths]], check=True)
+
+
+def unit_aliases(builder) -> dict:
+    """The unit spellings a builder normalises, read off its own closure.
+
+    T-SQL writes DATEADD(qq, ...) and the reference records the unit as
+    QUARTER, not QQ -- there is a 15-entry map behind it. Upper-casing the
+    word the caller wrote gives a different tree, and there is no way to see
+    that from the outside, so the map is read from the builder rather than
+    guessed at or transcribed.
+    """
+    for cell in getattr(builder, "__closure__", None) or ():
+        try:
+            value = cell.cell_contents
+        except ValueError:  # noqa: PERF203 -- an empty cell
+            continue
+        if (
+            isinstance(value, dict)
+            and value
+            and all(isinstance(k, str) and isinstance(v, str) for k, v in value.items())
+        ):
+            return {k.upper(): v.upper() for k, v in value.items()}
+    return {}
 
 
 def call_builder(builder, args, dialect):
@@ -207,6 +237,8 @@ def probe_functions(P, exp, dialect=""):
         return True
 
     out = {}
+    by_arity: dict[str, dict[int, tuple]] = {}
+    unit_maps: dict[str, dict] = {}
     for name, builder in P.FUNCTIONS.items():
         if name in P.FUNCTION_PARSERS:
             continue
@@ -254,6 +286,21 @@ def probe_functions(P, exp, dialect=""):
                     break
             if not ok:
                 break
+        # And once with EVERY argument a string at the same time. PostgreSQL's
+        # JSON_EXTRACT_PATH only builds a JSON path when all of its arguments
+        # are strings; with placeholder columns, or with one string among
+        # columns, it hands them back unchanged and looks perfectly ordinary.
+        if ok and args:
+            allstr = [exp.Literal.string(f"s{i}") for i in range(len(args))]
+            try:
+                other = call_builder(builder, allstr, dialect)
+            except Exception:  # noqa: BLE001 -- strings may be invalid for this name
+                other = None
+            if other is not None and isinstance(other, exp.Expr):
+                if other.__class__ is not node.__class__ or not same(
+                    rebuild(spec, allstr), other, allstr
+                ):
+                    ok = False
         for n in range(len(args)) if ok else ():
             fewer = placeholders(n)
             try:
@@ -268,7 +315,64 @@ def probe_functions(P, exp, dialect=""):
                 break
         if ok:
             out[name] = (node.__class__.__name__, spec)
-    return out
+            aliases = unit_aliases(builder)
+            if aliases:
+                unit_maps[name] = aliases
+            continue
+
+        # The single spec did not hold. Very often that is because the builder
+        # simply MEANS something different at a different argument count --
+        # DATEDIFF of two arguments and of three are not the same shape -- and
+        # each count on its own is perfectly describable. 271 of the 284
+        # rejected names across the five dialects are this, so they are probed
+        # again one arity at a time and kept per arity.
+        for width in range(13):
+            narrow = placeholders(width)
+            try:
+                one = call_builder(builder, narrow, dialect)
+            except Exception:  # noqa: BLE001 -- invalid arity for this name
+                continue
+            if not isinstance(one, exp.Expr):
+                continue
+            narrow_spec = describe(one, narrow)
+            if narrow_spec is None:
+                continue
+            # Held to the same substitutions as any other spec: a builder that
+            # inspects its arguments is refused at every arity.
+            fine = True
+            for kind in probe_substitutions(exp):
+                for i in range(width):
+                    subst = list(narrow)
+                    subst[i] = kind.copy()
+                    try:
+                        other = call_builder(builder, subst, dialect)
+                    except Exception:  # noqa: BLE001
+                        continue
+                    if not isinstance(other, exp.Expr) or other.__class__ is not one.__class__:
+                        fine = False
+                        break
+                    if not same(rebuild(narrow_spec, subst), other, subst):
+                        fine = False
+                        break
+                if not fine:
+                    break
+            if fine and width:
+                allstr = [exp.Literal.string(f"s{i}") for i in range(width)]
+                try:
+                    other = call_builder(builder, allstr, dialect)
+                except Exception:  # noqa: BLE001
+                    other = None
+                if other is not None and isinstance(other, exp.Expr):
+                    if other.__class__ is not one.__class__ or not same(
+                        rebuild(narrow_spec, allstr), other, allstr
+                    ):
+                        fine = False
+            if fine:
+                by_arity.setdefault(name, {})[width] = (one.__class__.__name__, narrow_spec)
+                aliases = unit_aliases(builder)
+                if aliases:
+                    unit_maps[name] = aliases
+    return out, by_arity, unit_maps
 
 
 def reserved_keywords(dialect: str, Dialect) -> list[str]:
@@ -458,6 +562,34 @@ def string_sensitive_args(P, exp, funcs, dialect=""):
     return {k: sorted(set(v)) for k, v in sensitive.items()}
 
 
+def _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive):
+    """One substitution for cast_sensitive_args. Flags position i when putting
+    `probe` there changes the call's own text beyond the argument itself."""
+    try:
+        probe_sql = probe.sql(dialect=dialect or None)
+        swapped = list(plain)
+        swapped[i] = probe
+        got = call_builder(builder, swapped, dialect).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001 -- this argument is invalid here
+        sensitive.setdefault(name, []).append(i)
+        return
+    token = f"__probeArg{chr(65 + i)}"
+    if base_sql.count(token) != 1:
+        return
+    if probe_sql not in got:
+        # The argument VANISHED: DuckDB drops a zero group from
+        # REGEXP_EXTRACT entirely. Writing it back is a different call, and
+        # its absence is the signal rather than something to skip over.
+        if i not in sensitive.setdefault(name, []):
+            sensitive[name].append(i)
+        return
+    if got.count(probe_sql) != 1:
+        return
+    if got != base_sql.replace(token, probe_sql, 1):
+        if i not in sensitive.setdefault(name, []):
+            sensitive[name].append(i)
+
+
 def cast_sensitive_args(P, exp, dialect, funcs):
     """Argument positions where an explicitly CAST argument changes the call's
     own rendering.
@@ -482,12 +614,27 @@ def cast_sensitive_args(P, exp, dialect, funcs):
         if builder is None:
             continue
         for width in range(1, 6):
-            plain = [exp.column(f"__probe_{i}") for i in range(width)]
+            # Letters, not digits: with `__probe_0` the text "0" is a substring
+            # of another argument's name, and the test for an argument that
+            # VANISHED could never fire.
+            plain = [exp.column(f"__probeArg{chr(65 + i)}") for i in range(width)]
             try:
                 base = call_builder(builder, plain, dialect)
                 base_sql = base.sql(dialect=dialect or None)
             except Exception:  # noqa: BLE001 -- invalid arity or unrenderable for this name
                 continue
+            for i in range(width):
+                # Two things can change how the CALL is written: an argument
+                # whose type is visible (a cast), and a literal ZERO, which
+                # DuckDB drops entirely from REGEXP_EXTRACT.
+                for probe in (
+                    exp.cast(exp.column(f"__probeArg{chr(65 + i)}"), "DOUBLE"),
+                    exp.Literal.number(0),
+                ):
+                    _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive)
+            continue
+
+        for _unused in ():
             for i in range(width):
                 cast = exp.cast(exp.column(f"__probe_{i}"), "DOUBLE")
                 try:
@@ -723,6 +870,20 @@ def goconst(v) -> str:
     if isinstance(v, int):
         return str(v)
     return gostr(v)
+
+
+def funcargs(spec) -> str:
+    parts = []
+    for key, how in spec:
+        if "wrap" in how:
+            parts.append(f"{{{gostr(key)}, {how['index']}, false, nil, {gostr(how['wrap'])}}}")
+        elif "index" in how:
+            parts.append(f'{{{gostr(key)}, {how["index"]}, false, nil, ""}}')
+        elif "varlen" in how:
+            parts.append(f'{{{gostr(key)}, {how["varlen"]}, true, nil, ""}}')
+        else:
+            parts.append(f'{{{gostr(key)}, -1, false, {goconst(how["const"])}, ""}}')
+    return ", ".join(parts)
 
 
 def funcmap(name: str, funcs) -> str:
@@ -993,6 +1154,15 @@ def main() -> int:
         "\t// column describes only the second, so the call is refused when the\n",
         "\t// argument is one of the listed classes. PROBED against every class\n",
         "\t// this catalogue can itself produce.\n",
+        "\t// FunctionsByArity holds names whose shape depends on HOW MANY\n",
+        "\t// arguments the call has -- DATEDIFF of two is not DATEDIFF of\n",
+        "\t// three. One spec cannot describe those, so each count gets its\n",
+        "\t// own, and a count with no entry is refused.\n",
+        "\t// UnitAliases are the unit spellings a name normalises: T-SQL\n",
+        "\t// records DATEADD(qq, ...) as QUARTER, not QQ. Read off the\n",
+        "\t// builder itself, since nothing outside it shows the mapping.\n",
+        "\tUnitAliases map[string]map[string]string\n",
+        "\tFunctionsByArity map[string]map[int]FuncSpec\n",
         "\tClassSensitiveArgs map[string][]ClassTrigger\n",
         "\tCastSensitiveArgs map[string][]int\n",
         "\tStringSensitiveArgs map[string][]int\n",
@@ -1124,9 +1294,31 @@ def main() -> int:
         out.append(strset("NamedFunctions", named))
         out.append(ttset("NoParenFunctions", P.NO_PAREN_FUNCTIONS))
         out.append(opmap("NoParenFunctionClasses", P.NO_PAREN_FUNCTIONS))
-        funcs = probe_functions(P, exp, name)
+        funcs, by_arity, unit_maps = probe_functions(P, exp, name)
+        if unit_maps:
+            out.append("\t\tUnitAliases: map[string]map[string]string{\n")
+            for fname in sorted(unit_maps):
+                pairs = "".join(
+                    f"{gostr(k)}: {gostr(v)}, " for k, v in sorted(unit_maps[fname].items())
+                )
+                out.append(f"\t\t\t{gostr(fname)}: {{{pairs}}},\n")
+            out.append("\t\t},\n")
         out.append(funcmap("Functions", funcs))
-        classes = class_sensitive_args(P, exp, name, funcs)
+        if by_arity:
+            out.append("\t\tFunctionsByArity: map[string]map[int]FuncSpec{\n")
+            for fname in sorted(by_arity):
+                out.append(f"\t\t\t{gostr(fname)}: {{\n")
+                for arity in sorted(by_arity[fname]):
+                    cls, spec = by_arity[fname][arity]
+                    out.append(f"\t\t\t\t{arity}: {{{gostr(cls)}, []FuncArg{{{funcargs(spec)}}}}},\n")
+                out.append("\t\t\t},\n")
+            out.append("\t\t},\n")
+        # The generator needs a spelling for these too; the widest arity gives
+        # it one, and render_functions probes the narrower forms itself.
+        render_input = dict(funcs)
+        for fname, variants in by_arity.items():
+            render_input.setdefault(fname, variants[max(variants)])
+        classes = class_sensitive_args(P, exp, name, render_input)
         if classes:
             out.append("\t\tClassSensitiveArgs: map[string][]ClassTrigger{\n")
             for fname, byindex in sorted(classes.items()):
@@ -1136,21 +1328,21 @@ def main() -> int:
                 )
                 out.append(f"\t\t\t{gostr(fname)}: {{{triggers}}},\n")
             out.append("\t\t},\n")
-        casts = cast_sensitive_args(P, exp, name, funcs)
+        casts = cast_sensitive_args(P, exp, name, render_input)
         if casts:
             out.append("\t\tCastSensitiveArgs: map[string][]int{\n")
             for fname, indexes in sorted(casts.items()):
                 joined = ", ".join(str(i) for i in indexes)
                 out.append(f"\t\t\t{gostr(fname)}: {{{joined}}},\n")
             out.append("\t\t},\n")
-        sensitive = string_sensitive_args(P, exp, funcs, name)
+        sensitive = string_sensitive_args(P, exp, render_input, name)
         if sensitive:
             out.append("\t\tStringSensitiveArgs: map[string][]int{\n")
             for fname, indexes in sorted(sensitive.items()):
                 joined = ", ".join(str(i) for i in indexes)
                 out.append(f"\t\t\t{gostr(fname)}: {{{joined}}},\n")
             out.append("\t\t},\n")
-        out.append(sqlmap("FunctionSQL", render_functions(P, exp, name, funcs)))
+        out.append(sqlmap("FunctionSQL", render_functions(P, exp, name, render_input)))
         binary, unary = render_operators(P, exp, Dialect, name)
         out.append(strstrmap("BinarySQL", binary))
         out.append(strstrmap("UnarySQL", unary))

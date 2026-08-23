@@ -826,7 +826,11 @@ func (p *parser) parseFunction() (*Expression, error) {
 		return p.parseCast(upper == "TRY_CAST")
 	}
 	spec, named := p.tables.Functions[upper]
-	if !named {
+	// A name whose SHAPE depends on how many arguments it is given -- DATEDIFF
+	// of two is not DATEDIFF of three -- has one spec per count instead, and
+	// which one applies cannot be known until the arguments are read.
+	variants, byArity := p.tables.FunctionsByArity[upper]
+	if !named && !byArity {
 		if _, custom := p.tables.NamedFunctions[upper]; custom {
 			return nil, p.unsupported("function " + upper + " with a builder of its own")
 		}
@@ -873,6 +877,13 @@ func (p *parser) parseFunction() (*Expression, error) {
 	if distinct {
 		args = []*Expression{New("Distinct", Arg{"expressions", args}, Arg{"on", nil})}
 	}
+	if !named && byArity {
+		byCount, ok := variants[len(args)]
+		if !ok {
+			return nil, p.unsupported("function " + upper + " with this many arguments")
+		}
+		spec, named = byCount, true
+	}
 	if named {
 		// More arguments than the recorded signature consumes means the
 		// reference's builder is doing something the probe could not see --
@@ -909,7 +920,7 @@ func (p *parser) parseFunction() (*Expression, error) {
 				}
 			}
 		}
-		return buildFunction(spec, args), nil
+		return p.buildFunction(upper, spec, args), nil
 	}
 	// A quoted name is an Identifier node in the reference and a bare string
 	// otherwise; the two are different trees, and writing the string for both
@@ -953,7 +964,7 @@ func (spec FuncSpec) consumes() (int, bool) {
 	return n, true
 }
 
-func buildFunction(spec FuncSpec, args []*Expression) *Expression {
+func (p *parser) buildFunction(name string, spec FuncSpec, args []*Expression) *Expression {
 	node := New(spec.Class)
 	for _, a := range spec.Args {
 		switch {
@@ -962,8 +973,15 @@ func buildFunction(spec FuncSpec, args []*Expression) *Expression {
 			// Var(args[i].name upper-cased), and the argument node itself does
 			// not appear in the result at all.
 			if a.Index < len(args) {
-				node.Set(a.Key, New(a.Wrap,
-					Arg{"this", strings.ToUpper(args[a.Index].Name())}))
+				word := strings.ToUpper(args[a.Index].Name())
+				// A unit spelling the name normalises: T-SQL records
+				// DATEADD(qq, ...) as QUARTER, not QQ.
+				if aliases, ok := p.tables.UnitAliases[name]; ok {
+					if full, ok := aliases[word]; ok {
+						word = full
+					}
+				}
+				node.Set(a.Key, New(a.Wrap, Arg{"this", word}))
 			} else {
 				node.Set(a.Key, nil)
 			}

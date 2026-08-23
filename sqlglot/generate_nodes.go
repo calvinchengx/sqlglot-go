@@ -600,6 +600,12 @@ func holdsAQuery(e *Expression) bool {
 // writeBracket is reached only where the dialect does NOT rewrite a subscript;
 // the parser refuses it where it does, so nothing here has to shift an index.
 func (g *generator) writeBracket(e *Expression) string {
+	// A dialect may write a subscript as a CALL: Databricks renders a Bracket
+	// as ELEMENT_AT(x, i). Its own spelling wins where it has one, or the port
+	// would emit `x[i]` for a statement the reference writes as a function.
+	if spec, ok := g.functionSpelling(e); ok {
+		return g.namedFunction(e, spec)
+	}
 	return g.child(e, "this") + "[" + g.list(e) + "]"
 }
 
