@@ -114,13 +114,64 @@ func (p *parser) match(tt TokenType) bool {
 	return false
 }
 
+// UnsupportedError names the construct the port could not read.
+//
+// The construct is the field worth recording. A consumer that wants to know
+// what to build next needs "PIVOT" or "window function", and reading that back
+// out of a formatted message would be a parser of its own -- the same reason
+// NotAQueryError carries Kind.
+//
+// Construct is SQL VOCABULARY and safe to log: the seven call sites that
+// interpolate do so with a function name, a type, a join method or a clause
+// keyword, never with a caller's identifier. Token is the opposite -- it is
+// whatever the statement said at the point of failure, which can be a table
+// or column name -- so it is available to a caller that has a reason for it
+// and is deliberately not part of what this package encourages logging.
+type UnsupportedError struct {
+	Construct string
+	Token     string
+	// TokenIsKeyword reports whether Token is dialect vocabulary rather than
+	// something the caller wrote. Only a keyword is safe to record.
+	TokenIsKeyword bool
+}
+
+// Label is the construct, named as precisely as can be done SAFELY -- the
+// string to count when deciding what to build next.
+//
+// Construct alone is not always enough. A window function and a PIVOT both
+// stop the parser at "trailing tokens", the second largest refusal bucket in
+// the fixture corpus, and the two need entirely different work. What separates
+// them is the token: OVER, PIVOT. Those are keywords -- dialect vocabulary,
+// fixed and public -- so appending one narrows the label without recording
+// anything the caller wrote. When the token is an identifier, a string or a
+// number, it is omitted, because a refusal on `WHERE email = '...'` must not
+// put that anywhere.
+func (e *UnsupportedError) Label() string {
+	if e.TokenIsKeyword && !strings.Contains(e.Construct, e.Token) {
+		return e.Construct + " at " + strings.ToUpper(e.Token)
+	}
+	return e.Construct
+}
+
+func (e *UnsupportedError) Error() string {
+	return fmt.Sprintf("%s: %s at %q", ErrUnsupported.Error(), e.Construct, e.Token)
+}
+
+// Is makes errors.Is(err, ErrUnsupported) hold for this error too.
+func (e *UnsupportedError) Is(target error) bool { return target == ErrUnsupported }
+
 func (p *parser) unsupported(what string) error {
 	c := p.curr()
 	text := "end of statement"
+	keyword := false
 	if c != nil {
 		text = c.Text
+		// Everything that is not a name, a string or a number came out of the
+		// dialect's own keyword trie.
+		keyword = c.Type != TokIDENTIFIER && c.Type != TokVAR &&
+			c.Type != TokSTRING && c.Type != TokNUMBER
 	}
-	return fmt.Errorf("%w: %s at %q", ErrUnsupported, what, text)
+	return &UnsupportedError{Construct: what, Token: text, TokenIsKeyword: keyword}
 }
 
 // parseOne parses exactly one statement and insists the whole token stream was
