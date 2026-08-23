@@ -1,5 +1,6 @@
 {
  "dialect": "duckdb",
+ "rendered": "MERGE INTO people USING (SELECT 1 AS id, 98000.0 AS salary) AS salary_updates USING (id) WHEN MATCHED THEN UPDATE",
  "sql": "MERGE INTO people USING (SELECT 1 AS id, 98000.0 AS salary) AS salary_updates USING (id) WHEN MATCHED THEN UPDATE",
  "tokens": [
   {

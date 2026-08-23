@@ -1,5 +1,6 @@
 {
  "dialect": "postgres",
+ "rendered": "INSERT INTO tbl (a, b) VALUES (1, 'x') ON CONFLICT(a, LOWER(b)) DO UPDATE SET b = excluded.b",
  "sql": "INSERT INTO tbl (a, b) VALUES (1, 'x') ON CONFLICT(a, LOWER(b)) DO UPDATE SET b = excluded.b",
  "tokens": [
   {

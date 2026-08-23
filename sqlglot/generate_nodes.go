@@ -1,0 +1,467 @@
+package sqlglot
+
+import (
+	"strconv"
+	"strings"
+)
+
+// One writer per node class the parser builds. Each is held to the reference's
+// own output by the differential, so where a shape looks arbitrary -- AS before
+// a table alias, TOP where the dialect wants TOP -- it is arbitrary in the same
+// way the reference is.
+//
+// Writers return a string and nothing else: a failure anywhere is recorded on
+// the generator and reported once, by Generate.
+
+var generators map[string]func(*generator, *Expression) string
+
+// Registered in init rather than as a literal: the writers call back into the
+// dispatcher, and Go will not let a package-level map close that loop.
+func init() {
+	generators = map[string]func(*generator, *Expression) string{
+		"Select":        (*generator).writeSelect,
+		"Union":         (*generator).writeSetOperation,
+		"Except":        (*generator).writeSetOperation,
+		"Intersect":     (*generator).writeSetOperation,
+		"With":          (*generator).writeWith,
+		"CTE":           (*generator).writeCTE,
+		"TableAlias":    (*generator).writeChildThis,
+		"From":          (*generator).writeFrom,
+		"Table":         (*generator).writeTable,
+		"Join":          (*generator).writeJoin,
+		"Lateral":       (*generator).writeLateral,
+		"Subquery":      (*generator).writeSubquery,
+		"Where":         (*generator).writeWhere,
+		"Group":         (*generator).writeGroup,
+		"Having":        (*generator).writeHaving,
+		"Order":         (*generator).writeOrder,
+		"Ordered":       (*generator).writeOrdered,
+		"Limit":         (*generator).writeLimit,
+		"Offset":        (*generator).writeOffset,
+		"Into":          (*generator).writeInto,
+		"Star":          (*generator).writeStar,
+		"Column":        (*generator).writeColumn,
+		"Identifier":    (*generator).writeIdentifier,
+		"Literal":       (*generator).writeLiteral,
+		"Boolean":       (*generator).writeBoolean,
+		"Null":          (*generator).writeNull,
+		"Alias":         (*generator).writeAlias,
+		"Paren":         (*generator).writeParen,
+		"Case":          (*generator).writeCase,
+		"If":            (*generator).writeIf,
+		"Cast":          (*generator).writeCast,
+		"TryCast":       (*generator).writeCast,
+		"DataType":      (*generator).writeDataType,
+		"DataTypeParam": (*generator).writeChildThis,
+		"Anonymous":     (*generator).writeAnonymous,
+		"In":            (*generator).writeIn,
+		"Between":       (*generator).writeBetween,
+		"Dot":           (*generator).writeDot,
+		"Distinct":      (*generator).writeDistinct,
+		"Like":          (*generator).writeLike,
+		"ILike":         (*generator).writeLike,
+		"Is":            (*generator).writeIs,
+	}
+}
+
+func (g *generator) writeChildThis(e *Expression) string { return g.child(e, "this") }
+
+func (g *generator) writeSelect(e *Expression) string {
+	parts := []string{"SELECT"}
+	add := func(s string) {
+		if s != "" {
+			parts = append(parts, s)
+		}
+	}
+
+	add(g.child(e, "distinct"))
+
+	// T-SQL says TOP here; every other dialect says LIMIT at the end. The
+	// tree is the same either way, which is the point: the guard rewrites one
+	// node and the dialect decides where it lands.
+	limit, _ := e.Args["limit"].(*Expression)
+	if limit != nil && g.tables.LimitIsTop {
+		add(g.writeLimitWord(limit, "TOP "))
+	}
+
+	add(g.list(e, "expressions", ", "))
+	add(g.child(e, "into"))
+	add(g.child(e, "from_"))
+
+	// A comma join writes its own comma, so it is appended rather than spaced:
+	// `FROM a, b`, not `FROM a , b`.
+	joins, _ := e.Args["joins"].([]*Expression)
+	for _, j := range joins {
+		s := g.node(j)
+		if strings.HasPrefix(s, ",") && len(parts) > 0 {
+			parts[len(parts)-1] += s
+			continue
+		}
+		add(s)
+	}
+
+	add(g.child(e, "where"))
+	add(g.child(e, "group"))
+	add(g.child(e, "having"))
+	add(g.child(e, "order"))
+
+	if limit != nil && !g.tables.LimitIsTop {
+		add(g.node(limit))
+	}
+	add(g.child(e, "offset"))
+
+	return g.withPrefix(e, strings.Join(parts, " "))
+}
+
+// withPrefix puts a WITH clause in front of whatever it qualifies.
+func (g *generator) withPrefix(e *Expression, body string) string {
+	with := g.child(e, "with_")
+	if with == "" {
+		return body
+	}
+	return with + " " + body
+}
+
+func (g *generator) writeSetOperation(e *Expression) string {
+	word := strings.ToUpper(e.Class)
+	if e.Args["distinct"] == false {
+		word += " ALL"
+	}
+	parts := []string{g.child(e, "this"), word, g.child(e, "expression")}
+	for _, key := range []string{"order", "limit", "offset"} {
+		if s := g.child(e, key); s != "" {
+			parts = append(parts, s)
+		}
+	}
+	return g.withPrefix(e, strings.Join(parts, " "))
+}
+
+func (g *generator) writeWith(e *Expression) string {
+	return "WITH " + g.list(e, "expressions", ", ")
+}
+
+func (g *generator) writeCTE(e *Expression) string {
+	alias := g.child(e, "alias")
+	g.qualifyDerivedOutputs(e)
+	return alias + " AS (" + g.child(e, "this") + ")"
+}
+
+func (g *generator) writeFrom(e *Expression) string { return "FROM " + g.child(e, "this") }
+
+func (g *generator) writeTable(e *Expression) string {
+	parts := []string{}
+	for _, key := range []string{"catalog", "db", "this"} {
+		if s := g.child(e, key); s != "" {
+			parts = append(parts, s)
+		}
+	}
+	out := strings.Join(parts, ".")
+	if alias := g.child(e, "alias"); alias != "" {
+		out += " AS " + alias
+	}
+	return out
+}
+
+func (g *generator) writeJoin(e *Expression) string {
+	this := g.child(e, "this")
+	// A Lateral writes its own CROSS APPLY; a comma join writes a comma.
+	if inner, _ := e.Args["this"].(*Expression); inner != nil && inner.Class == "Lateral" {
+		return this
+	}
+	words := []string{}
+	for _, key := range []string{"side", "kind"} {
+		if s, ok := e.Args[key].(string); ok && s != "" {
+			words = append(words, s)
+		}
+	}
+	if len(words) == 0 {
+		if _, hasOn := e.Args["on"].(*Expression); !hasOn {
+			return ", " + this
+		}
+	}
+	words = append(words, "JOIN", this)
+	if on := g.child(e, "on"); on != "" {
+		words = append(words, "ON", on)
+	}
+	return strings.Join(words, " ")
+}
+
+func (g *generator) writeLateral(e *Expression) string {
+	word := "OUTER APPLY "
+	if e.Args["cross_apply"] == true {
+		word = "CROSS APPLY "
+	}
+	this := g.child(e, "this")
+	if alias := g.child(e, "alias"); alias != "" {
+		return word + this + " AS " + alias
+	}
+	return word + this
+}
+
+func (g *generator) writeSubquery(e *Expression) string {
+	g.qualifyDerivedOutputs(e)
+	out := "(" + g.child(e, "this") + ")"
+	if alias := g.child(e, "alias"); alias != "" {
+		out += " AS " + alias
+	}
+	return out
+}
+
+func (g *generator) writeWhere(e *Expression) string  { return "WHERE " + g.child(e, "this") }
+func (g *generator) writeHaving(e *Expression) string { return "HAVING " + g.child(e, "this") }
+func (g *generator) writeInto(e *Expression) string   { return "INTO " + g.child(e, "this") }
+
+func (g *generator) writeGroup(e *Expression) string {
+	return "GROUP BY " + g.list(e, "expressions", ", ")
+}
+
+func (g *generator) writeOrder(e *Expression) string {
+	return "ORDER BY " + g.list(e, "expressions", ", ")
+}
+
+func (g *generator) writeOrdered(e *Expression) string {
+	this := g.child(e, "this")
+	// A direction that was written is written back; one that was not stays
+	// unwritten, so `ORDER BY x` and `ORDER BY x ASC` stay distinct.
+	switch e.Args["desc"] {
+	case true:
+		return this + " DESC"
+	case false:
+		return this + " ASC"
+	}
+	return this
+}
+
+func (g *generator) writeLimit(e *Expression) string { return g.writeLimitWord(e, "LIMIT ") }
+
+// writeLimitWord is the same node under either spelling: TOP in front of the
+// projections, LIMIT after the query.
+func (g *generator) writeLimitWord(e *Expression, word string) string {
+	out := word + g.child(e, "expression")
+	if opts, _ := e.Args["limit_options"].(*Expression); opts != nil && opts.Args["percent"] == true {
+		out += " PERCENT"
+	}
+	return out
+}
+
+func (g *generator) writeOffset(e *Expression) string {
+	return "OFFSET " + g.child(e, "expression")
+}
+
+func (g *generator) writeStar(*Expression) string     { return "*" }
+func (g *generator) writeNull(*Expression) string     { return "NULL" }
+func (g *generator) writeDistinct(*Expression) string { return "DISTINCT" }
+
+func (g *generator) writeColumn(e *Expression) string {
+	parts := []string{}
+	for _, key := range []string{"catalog", "db", "table", "this"} {
+		if s := g.child(e, key); s != "" {
+			parts = append(parts, s)
+		}
+	}
+	return strings.Join(parts, ".")
+}
+
+func (g *generator) writeIdentifier(e *Expression) string {
+	name, _ := e.Args["this"].(string)
+	if e.Args["quoted"] == true {
+		// The delimiters the dialect WRITES, which are not always the ones it
+		// reads: T-SQL accepts "x" and writes [x]. A closing delimiter inside
+		// the name is doubled, or the name would end early.
+		open, close := g.tables.IdentifierStart, g.tables.IdentifierEnd
+		return open + strings.ReplaceAll(name, close, close+close) + close
+	}
+	return name
+}
+
+func (g *generator) writeLiteral(e *Expression) string {
+	text, _ := e.Args["this"].(string)
+	if e.Args["is_string"] == true {
+		return "'" + strings.ReplaceAll(text, "'", "''") + "'"
+	}
+	return text
+}
+
+func (g *generator) writeBoolean(e *Expression) string {
+	if e.Args["this"] == true {
+		return "TRUE"
+	}
+	return "FALSE"
+}
+
+func (g *generator) writeAlias(e *Expression) string {
+	return g.child(e, "this") + " AS " + g.child(e, "alias")
+}
+
+func (g *generator) writeParen(e *Expression) string { return "(" + g.child(e, "this") + ")" }
+
+func (g *generator) writeCase(e *Expression) string {
+	out := "CASE"
+	if subject := g.child(e, "this"); subject != "" {
+		out += " " + subject
+	}
+	if ifs := g.list(e, "ifs", " "); ifs != "" {
+		out += " " + ifs
+	}
+	if deflt := g.child(e, "default"); deflt != "" {
+		out += " ELSE " + deflt
+	}
+	return out + " END"
+}
+
+func (g *generator) writeIf(e *Expression) string {
+	return "WHEN " + g.child(e, "this") + " THEN " + g.child(e, "true")
+}
+
+func (g *generator) writeCast(e *Expression) string {
+	word := "CAST"
+	if e.Class == "TryCast" {
+		word = "TRY_CAST"
+	}
+	return word + "(" + g.child(e, "this") + " AS " + g.child(e, "to") + ")"
+}
+
+func (g *generator) writeDataType(e *Expression) string {
+	kind, _ := e.Args["this"].(DataTypeKind)
+	out, ok := g.tables.TypeSQL[string(kind)]
+	if !ok {
+		return g.fail("DataType." + string(kind))
+	}
+	if params := g.list(e, "expressions", ", "); params != "" {
+		out += "(" + params + ")"
+	}
+	return out
+}
+
+func (g *generator) writeAnonymous(e *Expression) string { return g.anonymous(e, true) }
+
+func (g *generator) anonymous(e *Expression, upper bool) string {
+	name, _ := e.Args["this"].(string)
+	if upper {
+		name = strings.ToUpper(name)
+	}
+	return name + "(" + g.list(e, "expressions", ", ") + ")"
+}
+
+func (g *generator) writeIn(e *Expression) string {
+	return g.child(e, "this") + " IN (" + g.list(e, "expressions", ", ") + ")"
+}
+
+func (g *generator) writeBetween(e *Expression) string {
+	return g.child(e, "this") + " BETWEEN " + g.child(e, "low") + " AND " + g.child(e, "high")
+}
+
+// writeDot joins a qualifier to what it qualifies. A call written after a dot
+// keeps the case it was written in, where a bare one is upper-cased -- the
+// reference writes `dbo.f(1)` but `F(1)`, and the two executors have to agree
+// on which.
+func (g *generator) writeDot(e *Expression) string {
+	left := g.child(e, "this")
+	if fn, _ := e.Args["expression"].(*Expression); fn != nil && fn.Class == "Anonymous" {
+		return left + "." + g.anonymous(fn, false)
+	}
+	return left + "." + g.child(e, "expression")
+}
+
+// writeLike carries the negation on the node, as the reference does: NOT LIKE
+// is one operator, not a Not wrapping a Like.
+func (g *generator) writeLike(e *Expression) string {
+	op := g.tables.BinarySQL[e.Class]
+	if e.Args["negate"] == true {
+		op = "NOT " + op
+	}
+	return g.binary(e, op)
+}
+
+// writeIs does the same for IS NOT NULL.
+func (g *generator) writeIs(e *Expression) string {
+	op := "IS"
+	if e.Args["negate"] == true {
+		op = "IS NOT"
+	}
+	return g.binary(e, op)
+}
+
+// qualifyDerivedOutputs names the unnamed columns of a CTE or derived table,
+// where the dialect insists on it. T-SQL does; nothing else here does.
+//
+// It mutates the tree, as the reference does -- and it matters that both
+// executors do it, because a Python executor emitting `SELECT a AS a` and a Go
+// one emitting `SELECT a` would be sending the engine different statements for
+// the same question.
+func (g *generator) qualifyDerivedOutputs(e *Expression) {
+	if !g.tables.QualifiesDerivedOutputs {
+		return
+	}
+	alias, _ := e.Args["alias"].(*Expression)
+	if alias == nil || alias.Args["columns"] != nil {
+		return
+	}
+	query, _ := e.Args["this"].(*Expression)
+	if query == nil || query.Class != "Select" {
+		return
+	}
+	projections, _ := query.Args["expressions"].([]*Expression)
+	for i, projection := range projections {
+		// Already named, or a star expansion, which names nothing.
+		if projection == nil || projection.Class == "Alias" || isStarProjection(projection) {
+			continue
+		}
+		name, quoted := outputName(projection)
+		if name == "" {
+			// A positional name is a name, so it needs no quoting whatever
+			// the projection it replaced would have wanted.
+			name, quoted = "_col_"+strconv.Itoa(i), false
+		}
+		projections[i] = New("Alias",
+			Arg{"this", projection},
+			Arg{"alias", New("Identifier", Arg{"this", name}, Arg{"quoted", quoted})})
+	}
+	query.Set("expressions", projections)
+}
+
+// outputName is the name a projection already carries: a column's own name, a
+// literal's text. Anything else has none, and gets a positional one. A column
+// keeps the quoting it was written with; a synthesised name is quoted only if
+// it would not otherwise be a name.
+func outputName(e *Expression) (string, bool) {
+	switch e.Class {
+	case "Column":
+		id, _ := e.Args["this"].(*Expression)
+		return id.Name(), id != nil && id.Args["quoted"] == true
+	case "Literal":
+		name, _ := e.Args["this"].(string)
+		return name, !isPlainName(name)
+	}
+	return "", false
+}
+
+// isStarProjection reports whether a projection is `*` or `t.*`, neither of
+// which names a column to alias.
+func isStarProjection(e *Expression) bool {
+	if e.Class == "Star" {
+		return true
+	}
+	if e.Class == "Column" {
+		if this, _ := e.Args["this"].(*Expression); this != nil && this.Class == "Star" {
+			return true
+		}
+	}
+	return false
+}
+
+// isPlainName is the reference's SAFE_IDENTIFIER_RE: a name that needs no
+// quoting is a letter or underscore followed by word characters.
+func isPlainName(s string) bool {
+	if s == "" {
+		return false
+	}
+	for i, r := range s {
+		letter := r == '_' || (r >= 'a' && r <= 'z') || (r >= 'A' && r <= 'Z')
+		digit := i > 0 && r >= '0' && r <= '9'
+		if !letter && !digit {
+			return false
+		}
+	}
+	return true
+}

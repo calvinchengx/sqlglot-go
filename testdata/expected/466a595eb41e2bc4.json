@@ -1,5 +1,6 @@
 {
  "dialect": "databricks",
+ "rendered": "WITH t AS (SELECT '{\"x-y\": \"z\"}' AS c) SELECT GET_JSON_OBJECT(c, '$[\"x-y\"]') FROM t",
  "sql": "WITH t AS (SELECT '{\"x-y\": \"z\"}' AS c) SELECT get_json_object(c, '$.x-y') FROM t",
  "tokens": [
   {

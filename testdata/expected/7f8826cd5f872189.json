@@ -1,5 +1,6 @@
 {
  "dialect": "postgres",
+ "rendered": "SELECT * FROM test_data, LATERAL JSONB_ARRAY_ELEMENTS(data) WITH ORDINALITY AS elem(value, ordinality)",
  "sql": "SELECT * FROM test_data, LATERAL JSONB_ARRAY_ELEMENTS(data) WITH ORDINALITY AS elem(value, ordinality)",
  "tokens": [
   {

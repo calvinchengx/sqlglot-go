@@ -1,5 +1,6 @@
 {
  "dialect": "duckdb",
+ "rendered": "SELECT * FROM t1 WHERE NOT EXISTS(SELECT * FROM t2 WHERE t2.id = t1.id)",
  "sql": "SELECT * FROM t1 WHERE NOT EXISTS(FROM t2 WHERE t2.id = t1.id)",
  "tokens": [
   {

@@ -1,5 +1,6 @@
 {
  "dialect": "tsql",
+ "rendered": "ISNULL(JSON_QUERY(REPLACE(REPLACE(x, '''', '\"'), '\"\"', '\"'), '$'), JSON_VALUE(REPLACE(REPLACE(x, '''', '\"'), '\"\"', '\"'), '$'))",
  "sql": "JSON_QUERY(REPLACE(REPLACE(x , '''', '\"'), '\"\"', '\"'))",
  "tokens": [
   {

@@ -1,5 +1,6 @@
 {
  "dialect": "postgres",
+ "rendered": "SELECT JSON_ARRAY_ELEMENTS(CAST((foo -> 'sections') AS JSON)) AS sections",
  "sql": "SELECT JSON_ARRAY_ELEMENTS((foo->'sections')::JSON) AS sections",
  "tokens": [
   {

@@ -1,5 +1,6 @@
 {
  "dialect": "duckdb",
+ "rendered": "SELECT col FROM t WHERE NOT (col ->> '$.id') IN ('b')",
  "sql": "SELECT col FROM t WHERE JSON_EXTRACT_STRING(col, '$.id') NOT IN ('b')",
  "tokens": [
   {

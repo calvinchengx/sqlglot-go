@@ -1,5 +1,6 @@
 {
  "dialect": "postgres",
+ "rendered": "SELECT SUM(x) OVER (PARTITION BY a ORDER BY d ROWS BETWEEN 1 PRECEDING AND CURRENT ROW)",
  "sql": "SELECT SUM(x) OVER (PARTITION BY a ORDER BY d ROWS 1 PRECEDING)",
  "tokens": [
   {

@@ -1,5 +1,6 @@
 {
  "dialect": "duckdb",
+ "rendered": "SELECT SUM(x) OVER (ORDER BY x GROUPS BETWEEN 1 PRECEDING AND CURRENT ROW) FROM t",
  "sql": "SELECT SUM(x) OVER (ORDER BY x GROUPS BETWEEN 1 PRECEDING AND CURRENT ROW) FROM t",
  "tokens": [
   {

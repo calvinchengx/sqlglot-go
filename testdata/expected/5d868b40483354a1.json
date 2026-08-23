@@ -1,5 +1,6 @@
 {
  "dialect": "postgres",
+ "rendered": "CREATE TRIGGER proc_trigger BEFORE INSERT ON users FOR EACH ROW EXECUTE FUNCTION LOG_CHANGES()",
  "sql": "CREATE TRIGGER proc_trigger BEFORE INSERT ON users FOR EACH ROW EXECUTE PROCEDURE LOG_CHANGES()",
  "tokens": [
   {

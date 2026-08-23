@@ -1,5 +1,5 @@
 {
- "service": "b6c8a9bf5c46985ed7bc7272b5711333377fdfb7",
+ "service": "4f36db9b66421883ee48d907d01023e9cf0d108b",
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
  "cases": [
   {
@@ -87,6 +87,7 @@
      "e": 21
     }
    ],
+   "rendered": "EXECUTE xp_cmdshell 'dir'",
    "reference_parsed": true
   },
   {
@@ -207,6 +208,7 @@
      "e": 23
     }
    ],
+   "rendered": "DELETE FROM main.tickets",
    "reference_parsed": true
   },
   {
@@ -370,6 +372,7 @@
      "e": 22
     }
    ],
+   "rendered": "DROP TABLE main.tickets",
    "reference_parsed": true
   },
   {
@@ -587,6 +590,7 @@
      "e": 34
     }
    ],
+   "rendered": "INSERT INTO main.tickets VALUES (1)",
    "reference_parsed": true
   },
   {
@@ -808,6 +812,7 @@
      "e": 32
     }
    ],
+   "rendered": "SELECT 1; DROP TABLE main.tickets",
    "reference_parsed": true
   },
   {
@@ -987,6 +992,7 @@
      "e": 34
     }
    ],
+   "rendered": "UPDATE main.tickets SET minutes = 0",
    "reference_parsed": true
   },
   {
@@ -1099,6 +1105,7 @@
      "e": 24
     }
    ],
+   "rendered": "DELETE FROM dbo.fct_sales",
    "reference_parsed": true
   },
   {
@@ -1262,6 +1269,7 @@
      "e": 23
     }
    ],
+   "rendered": "DROP TABLE dbo.fct_sales",
    "reference_parsed": true
   },
   {
@@ -1479,6 +1487,7 @@
      "e": 35
     }
    ],
+   "rendered": "INSERT INTO dbo.fct_sales VALUES (1)",
    "reference_parsed": true
   },
   {
@@ -1700,6 +1709,7 @@
      "e": 40
     }
    ],
+   "rendered": "SELECT * INTO dbo.copy FROM dbo.fct_sales",
    "reference_parsed": true
   },
   {
@@ -1921,6 +1931,7 @@
      "e": 33
     }
    ],
+   "rendered": "SELECT 1; DROP TABLE dbo.fct_sales",
    "reference_parsed": true
   },
   {
@@ -2034,6 +2045,7 @@
      "e": 27
     }
    ],
+   "rendered": "TRUNCATE TABLE dbo.fct_sales",
    "reference_parsed": true
   },
   {
@@ -2213,6 +2225,7 @@
      "e": 38
     }
    ],
+   "rendered": "UPDATE dbo.fct_sales SET amount_usd = 0",
    "reference_parsed": true
   },
   {
@@ -2439,6 +2452,7 @@
      "e": 51
     }
    ],
+   "rendered": "SELECT * FROM main.tickets ORDER BY minutes LIMIT 10",
    "reference_parsed": true
   },
   {
@@ -2933,6 +2947,7 @@
      "e": 70
     }
    ],
+   "rendered": "SELECT t.team FROM main.tickets AS t JOIN main.agents AS a ON a.team = t.team",
    "reference_parsed": true
   },
   {
@@ -3232,6 +3247,7 @@
      "e": 57
     }
    ],
+   "rendered": "SELECT team, COUNT(*) AS n FROM main.tickets GROUP BY team",
    "reference_parsed": true
   },
   {
@@ -3555,6 +3571,7 @@
      "e": 60
     }
    ],
+   "rendered": "WITH x AS (SELECT * FROM main.tickets) SELECT COUNT(*) FROM x",
    "reference_parsed": true
   },
   {
@@ -3924,6 +3941,7 @@
      "e": 98
     }
    ],
+   "rendered": "SELECT AVG(CASE WHEN status <> 'resolved' THEN 1.0 ELSE 0.0 END) AS open_share FROM support.tickets",
    "reference_parsed": true
   },
   {
@@ -4814,6 +4832,7 @@
      "e": 202
     }
    ],
+   "rendered": "SELECT AVG(CASE WHEN t.elapsed_minutes > s.target_minutes THEN 1.0 ELSE 0.0 END) AS breach_rate_on_elapsed FROM support.tickets AS t JOIN support.sla AS s ON s.priority = t.priority WHERE t.status = 'resolved'",
    "reference_parsed": true
   },
   {
@@ -5830,6 +5849,7 @@
      "e": 209
     }
    ],
+   "rendered": "SELECT AVG(CASE WHEN t.resolution_minutes <= s.target_minutes THEN 1.0 ELSE 0.0 END) AS met FROM support.tickets AS t JOIN support.sla AS s ON s.priority = t.priority WHERE t.status = 'resolved' AND t.priority = 'P1'",
    "reference_parsed": true
   },
   {
@@ -6846,6 +6866,7 @@
      "e": 217
     }
    ],
+   "rendered": "SELECT AVG(CASE WHEN t.resolution_minutes <= s.target_minutes THEN 1.0 ELSE 0.0 END) AS within_rate FROM support.tickets AS t JOIN support.sla AS s ON s.priority = t.priority WHERE t.status = 'resolved' AND t.priority = 'P1'",
    "reference_parsed": true
   },
   {
@@ -7736,6 +7757,7 @@
      "e": 194
     }
    ],
+   "rendered": "SELECT AVG(CASE WHEN t.resolution_minutes > s.target_minutes THEN 1.0 ELSE 0.0 END) AS breach_rate FROM support.tickets AS t JOIN support.sla AS s ON s.priority = t.priority WHERE t.status = 'resolved'",
    "reference_parsed": true
   },
   {
@@ -8249,6 +8271,7 @@
      "e": 136
     }
    ],
+   "rendered": "SELECT AVG(CAST(waiting_minutes AS DECIMAL) / NULLIF(elapsed_minutes, 0)) AS waiting_share FROM support.tickets WHERE status = 'resolved'",
    "reference_parsed": true
   },
   {
@@ -8556,6 +8579,7 @@
      "e": 91
     }
    ],
+   "rendered": "SELECT AVG(resolution_minutes) AS avg_minutes FROM support.tickets WHERE status = 'resolved'",
    "reference_parsed": true
   },
   {
@@ -8973,6 +8997,7 @@
      "e": 117
     }
    ],
+   "rendered": "SELECT AVG(resolution_minutes) AS avg_minutes, COUNT(*) AS over_tickets FROM support.tickets WHERE status = 'resolved'",
    "reference_parsed": true
   },
   {
@@ -9754,6 +9779,7 @@
      "e": 170
     }
    ],
+   "rendered": "SELECT AVG(t.resolution_minutes - s.target_minutes) AS minutes_over_target FROM support.tickets AS t JOIN support.sla AS s ON s.priority = t.priority WHERE t.status = 'resolved'",
    "reference_parsed": true
   },
   {
@@ -9962,6 +9988,7 @@
      "e": 40
     }
    ],
+   "rendered": "SELECT COUNT(*) AS n FROM support.tickets",
    "reference_parsed": true
   },
   {
@@ -10259,6 +10286,7 @@
      "e": 67
     }
    ],
+   "rendered": "SELECT COUNT(*) AS n FROM support.tickets WHERE status <> 'resolved'",
    "reference_parsed": true
   },
   {
@@ -10556,6 +10584,7 @@
      "e": 66
     }
    ],
+   "rendered": "SELECT COUNT(*) AS n FROM support.tickets WHERE status = 'resolved'",
    "reference_parsed": true
   },
   {
@@ -10942,6 +10971,7 @@
      "e": 96
     }
    ],
+   "rendered": "SELECT COUNT(*) AS n FROM support.tickets WHERE status = 'resolved' AND resolution_minutes > 1440",
    "reference_parsed": true
   },
   {
@@ -11760,6 +11790,7 @@
      "e": 160
     }
    ],
+   "rendered": "SELECT COUNT(*) AS n FROM support.tickets AS t JOIN support.sla AS s ON s.priority = t.priority WHERE t.status = 'resolved' AND t.resolution_minutes > s.target_minutes",
    "reference_parsed": true
   },
   {
@@ -11972,6 +12003,7 @@
      "e": 53
     }
    ],
+   "rendered": "SELECT DISTINCT team FROM support.agents ORDER BY team",
    "reference_parsed": true
   },
   {
@@ -12279,6 +12311,7 @@
      "e": 95
     }
    ],
+   "rendered": "SELECT MAX(resolution_minutes) AS longest_minutes FROM support.tickets WHERE status = 'resolved'",
    "reference_parsed": true
   },
   {
@@ -13060,6 +13093,7 @@
      "e": 169
     }
    ],
+   "rendered": "SELECT MAX(t.resolution_minutes - s.target_minutes) AS worst_minutes_over FROM support.tickets AS t JOIN support.sla AS s ON s.priority = t.priority WHERE t.status = 'resolved'",
    "reference_parsed": true
   },
   {
@@ -13584,6 +13618,7 @@
      "e": 133
     }
    ],
+   "rendered": "SELECT CAST(SUM(resolution_minutes) AS DECIMAL) / NULLIF(SUM(elapsed_minutes), 0) AS ours_share FROM support.tickets WHERE status = 'resolved'",
    "reference_parsed": true
   },
   {
@@ -14992,6 +15027,7 @@
      "e": 293
     }
    ],
+   "rendered": "SELECT a.team, AVG(CASE WHEN t.resolution_minutes > s.target_minutes THEN 1.0 ELSE 0.0 END) AS breach_rate FROM support.tickets AS t JOIN support.agents AS a ON a.agent_id = t.agent_id JOIN support.sla AS s ON s.priority = t.priority WHERE t.status = 'resolved' GROUP BY a.team ORDER BY breach_rate DESC",
    "reference_parsed": true
   },
   {
@@ -16075,6 +16111,7 @@
      "e": 208
     }
    ],
+   "rendered": "SELECT a.team, AVG(t.resolution_minutes) AS avg_minutes FROM support.tickets AS t JOIN support.agents AS a ON a.agent_id = t.agent_id WHERE t.status = 'resolved' AND t.priority = 'P1' GROUP BY a.team ORDER BY a.team",
    "reference_parsed": true
   },
   {
@@ -17008,6 +17045,7 @@
      "e": 195
     }
    ],
+   "rendered": "SELECT a.team, AVG(t.resolution_minutes) AS avg_minutes FROM support.tickets AS t JOIN support.agents AS a ON a.agent_id = t.agent_id WHERE t.status = 'resolved' GROUP BY a.team ORDER BY avg_minutes ASC",
    "reference_parsed": true
   },
   {
@@ -17941,6 +17979,7 @@
      "e": 196
     }
    ],
+   "rendered": "SELECT a.team, AVG(t.resolution_minutes) AS avg_minutes FROM support.tickets AS t JOIN support.agents AS a ON a.agent_id = t.agent_id WHERE t.status = 'resolved' GROUP BY a.team ORDER BY avg_minutes DESC",
    "reference_parsed": true
   },
   {
@@ -18898,6 +18937,7 @@
      "e": 183
     }
    ],
+   "rendered": "SELECT a.team, AVG(t.waiting_minutes) AS avg_waiting FROM support.tickets AS t JOIN support.agents AS a ON a.agent_id = t.agent_id WHERE t.status = 'resolved' GROUP BY a.team ORDER BY a.team",
    "reference_parsed": true
   },
   {
@@ -19808,6 +19848,7 @@
      "e": 171
     }
    ],
+   "rendered": "SELECT a.team, COUNT(*) AS open_tickets FROM support.tickets AS t JOIN support.agents AS a ON a.agent_id = t.agent_id WHERE t.status <> 'resolved' GROUP BY a.team ORDER BY a.team",
    "reference_parsed": true
   },
   {
@@ -20875,6 +20916,7 @@
      "e": 208
     }
    ],
+   "rendered": "SELECT a.team, COUNT(*) AS resolved, AVG(t.resolution_minutes) AS avg_minutes FROM support.tickets AS t JOIN support.agents AS a ON a.agent_id = t.agent_id WHERE t.status = 'resolved' GROUP BY a.team ORDER BY a.team",
    "reference_parsed": true
   },
   {
@@ -22086,6 +22128,7 @@
      "e": 230
     }
    ],
+   "rendered": "SELECT a.team, CAST(SUM(t.waiting_minutes) AS DECIMAL) / NULLIF(SUM(t.elapsed_minutes), 0) AS waiting_share FROM support.tickets AS t JOIN support.agents AS a ON a.agent_id = t.agent_id WHERE t.status = 'resolved' GROUP BY a.team ORDER BY a.team",
    "reference_parsed": true
   },
   {
@@ -23179,6 +23222,7 @@
      "e": 218
     }
    ],
+   "rendered": "SELECT a.team, t.channel, AVG(t.resolution_minutes) AS avg_minutes FROM support.tickets AS t JOIN support.agents AS a ON a.agent_id = t.agent_id WHERE t.status = 'resolved' GROUP BY a.team, t.channel ORDER BY avg_minutes DESC",
    "reference_parsed": true
   },
   {
@@ -24611,6 +24655,7 @@
      "e": 301
     }
    ],
+   "rendered": "SELECT c.country, AVG(CASE WHEN t.resolution_minutes > s.target_minutes THEN 1.0 ELSE 0.0 END) AS breach_rate FROM support.tickets AS t JOIN support.sla AS s ON s.priority = t.priority JOIN support.customers AS c ON c.customer_id = t.customer_id WHERE t.status = 'resolved' GROUP BY c.country ORDER BY c.country",
    "reference_parsed": true
   },
   {
@@ -25568,6 +25613,7 @@
      "e": 204
     }
    ],
+   "rendered": "SELECT c.country, AVG(t.resolution_minutes) AS avg_minutes FROM support.tickets AS t JOIN support.customers AS c ON c.customer_id = t.customer_id WHERE t.status = 'resolved' GROUP BY c.country ORDER BY c.country",
    "reference_parsed": true
   },
   {
@@ -27000,6 +27046,7 @@
      "e": 292
     }
    ],
+   "rendered": "SELECT c.plan, AVG(CASE WHEN t.resolution_minutes > s.target_minutes THEN 1.0 ELSE 0.0 END) AS breach_rate FROM support.tickets AS t JOIN support.sla AS s ON s.priority = t.priority JOIN support.customers AS c ON c.customer_id = t.customer_id WHERE t.status = 'resolved' GROUP BY c.plan ORDER BY c.plan",
    "reference_parsed": true
   },
   {
@@ -27957,6 +28004,7 @@
      "e": 195
     }
    ],
+   "rendered": "SELECT c.plan, AVG(t.resolution_minutes) AS avg_minutes FROM support.tickets AS t JOIN support.customers AS c ON c.customer_id = t.customer_id WHERE t.status = 'resolved' GROUP BY c.plan ORDER BY c.plan",
    "reference_parsed": true
   },
   {
@@ -28717,6 +28765,7 @@
      "e": 140
     }
    ],
+   "rendered": "SELECT c.plan, COUNT(*) AS n FROM support.tickets AS t JOIN support.customers AS c ON c.customer_id = t.customer_id GROUP BY c.plan ORDER BY n DESC",
    "reference_parsed": true
   },
   {
@@ -29186,6 +29235,7 @@
      "e": 142
     }
    ],
+   "rendered": "SELECT channel, AVG(resolution_minutes) AS avg_minutes FROM support.tickets WHERE status = 'resolved' GROUP BY channel ORDER BY avg_minutes ASC",
    "reference_parsed": true
   },
   {
@@ -29642,6 +29692,7 @@
      "e": 131
     }
    ],
+   "rendered": "SELECT channel, AVG(waiting_minutes) AS avg_waiting FROM support.tickets WHERE status = 'resolved' GROUP BY channel ORDER BY channel",
    "reference_parsed": true
   },
   {
@@ -30012,6 +30063,7 @@
      "e": 82
     }
    ],
+   "rendered": "SELECT channel, COUNT(*) AS n FROM support.tickets GROUP BY channel ORDER BY n DESC",
    "reference_parsed": true
   },
   {
@@ -30458,6 +30510,7 @@
      "e": 121
     }
    ],
+   "rendered": "SELECT channel, COUNT(*) AS open_tickets FROM support.tickets WHERE status <> 'resolved' GROUP BY channel ORDER BY channel",
    "reference_parsed": true
   },
   {
@@ -30914,6 +30967,7 @@
      "e": 134
     }
    ],
+   "rendered": "SELECT priority, AVG(waiting_minutes) AS avg_waiting FROM support.tickets WHERE status = 'resolved' GROUP BY priority ORDER BY priority",
    "reference_parsed": true
   },
   {
@@ -31360,6 +31414,7 @@
      "e": 124
     }
    ],
+   "rendered": "SELECT priority, COUNT(*) AS open_tickets FROM support.tickets WHERE status <> 'resolved' GROUP BY priority ORDER BY priority",
    "reference_parsed": true
   },
   {
@@ -31602,6 +31657,7 @@
      "e": 65
     }
    ],
+   "rendered": "SELECT priority, target_minutes FROM support.sla ORDER BY priority",
    "reference_parsed": true
   },
   {
@@ -32752,6 +32808,7 @@
      "e": 243
     }
    ],
+   "rendered": "SELECT t.channel, AVG(CASE WHEN t.resolution_minutes > s.target_minutes THEN 1.0 ELSE 0.0 END) AS breach_rate FROM support.tickets AS t JOIN support.sla AS s ON s.priority = t.priority WHERE t.status = 'resolved' GROUP BY t.channel ORDER BY t.channel",
    "reference_parsed": true
   },
   {
@@ -33427,6 +33484,7 @@
      "e": 146
     }
    ],
+   "rendered": "SELECT t.channel, AVG(t.resolution_minutes) AS avg_minutes FROM support.tickets AS t WHERE t.status = 'resolved' GROUP BY t.channel ORDER BY t.channel",
    "reference_parsed": true
   },
   {
@@ -34577,6 +34635,7 @@
      "e": 247
     }
    ],
+   "rendered": "SELECT t.priority, AVG(CASE WHEN t.resolution_minutes <= s.target_minutes THEN 1.0 ELSE 0.0 END) AS within_rate FROM support.tickets AS t JOIN support.sla AS s ON s.priority = t.priority WHERE t.status = 'resolved' GROUP BY t.priority ORDER BY t.priority",
    "reference_parsed": true
   },
   {
@@ -35703,6 +35762,7 @@
      "e": 252
     }
    ],
+   "rendered": "SELECT t.priority, AVG(CASE WHEN t.resolution_minutes > s.target_minutes THEN 1.0 ELSE 0.0 END) AS breach_rate FROM support.tickets AS t JOIN support.sla AS s ON s.priority = t.priority WHERE t.status = 'resolved' GROUP BY t.priority ORDER BY breach_rate DESC",
    "reference_parsed": true
   },
   {
@@ -36378,6 +36438,7 @@
      "e": 149
     }
    ],
+   "rendered": "SELECT t.priority, AVG(t.resolution_minutes) AS avg_minutes FROM support.tickets AS t WHERE t.status = 'resolved' GROUP BY t.priority ORDER BY t.priority",
    "reference_parsed": true
   },
   {
@@ -36541,6 +36602,7 @@
      "e": 46
     }
    ],
+   "rendered": "SELECT * FROM contoso_warehouse.dbo.dim_country",
    "reference_parsed": true
   },
   {
@@ -36886,6 +36948,7 @@
      "e": 81
     }
    ],
+   "rendered": "SELECT * FROM dbo.fct_sales CROSS APPLY (SELECT product_id FROM dbo.dim_product) AS t",
    "reference_parsed": true
   },
   {
@@ -37231,6 +37294,7 @@
      "e": 81
     }
    ],
+   "rendered": "SELECT * FROM dbo.fct_sales OUTER APPLY (SELECT product_id FROM dbo.dim_product) AS t",
    "reference_parsed": true
   },
   {
@@ -37439,6 +37503,7 @@
      "e": 41
     }
    ],
+   "rendered": "SELECT COUNT(*) AS n FROM dbo.dim_customer",
    "reference_parsed": true
   },
   {
@@ -37647,6 +37712,7 @@
      "e": 38
     }
    ],
+   "rendered": "SELECT COUNT(*) AS n FROM dbo.dim_party",
    "reference_parsed": true
   },
   {
@@ -38033,6 +38099,7 @@
      "e": 70
     }
    ],
+   "rendered": "SELECT COUNT(*) AS n FROM dbo.dim_party WHERE in_pos = 1 AND in_web = 0",
    "reference_parsed": true
   },
   {
@@ -38419,6 +38486,7 @@
      "e": 70
     }
    ],
+   "rendered": "SELECT COUNT(*) AS n FROM dbo.dim_party WHERE in_pos = 1 AND in_web = 1",
    "reference_parsed": true
   },
   {
@@ -38805,6 +38873,7 @@
      "e": 70
     }
    ],
+   "rendered": "SELECT COUNT(*) AS n FROM dbo.dim_party WHERE in_web = 1 AND in_pos = 0",
    "reference_parsed": true
   },
   {
@@ -39013,6 +39082,7 @@
      "e": 40
     }
    ],
+   "rendered": "SELECT COUNT(*) AS n FROM dbo.dim_product",
    "reference_parsed": true
   },
   {
@@ -39221,6 +39291,7 @@
      "e": 48
     }
    ],
+   "rendered": "SELECT COUNT(*) AS n FROM dbo.fct_revenue_summary",
    "reference_parsed": true
   },
   {
@@ -39759,6 +39830,7 @@
      "e": 143
     }
    ],
+   "rendered": "SELECT SUM(CASE WHEN channel_system = 'WEB' THEN revenue_usd ELSE 0 END) / NULLIF(SUM(revenue_usd), 0) AS web_share FROM dbo.fct_revenue_summary",
    "reference_parsed": true
   },
   {
@@ -40297,6 +40369,7 @@
      "e": 149
     }
    ],
+   "rendered": "SELECT SUM(CASE WHEN customer_segment = 'Unsegmented' THEN revenue_usd ELSE 0 END) / NULLIF(SUM(revenue_usd), 0) AS share FROM dbo.fct_revenue_summary",
    "reference_parsed": true
   },
   {
@@ -40835,6 +40908,7 @@
      "e": 148
     }
    ],
+   "rendered": "SELECT SUM(CASE WHEN product_segment = 'Unallocated' THEN revenue_usd ELSE 0 END) / NULLIF(SUM(revenue_usd), 0) AS share FROM dbo.fct_revenue_summary",
    "reference_parsed": true
   },
   {
@@ -41224,6 +41298,7 @@
      "e": 81
     }
    ],
+   "rendered": "SELECT SUM(amount_usd) / COUNT(*) AS aov FROM dbo.fct_sales WHERE is_cancelled = 0",
    "reference_parsed": true
   },
   {
@@ -41653,6 +41728,7 @@
      "e": 123
     }
    ],
+   "rendered": "SELECT SUM(cancelled_revenue_usd) / NULLIF(SUM(revenue_usd + cancelled_revenue_usd), 0) AS rate FROM dbo.fct_revenue_summary",
    "reference_parsed": true
   },
   {
@@ -42171,6 +42247,7 @@
      "e": 152
     }
    ],
+   "rendered": "SELECT SUM(cancelled_revenue_usd) / NULLIF(SUM(revenue_usd + cancelled_revenue_usd), 0) AS rate FROM dbo.fct_revenue_summary WHERE channel_system = 'WEB'",
    "reference_parsed": true
   },
   {
@@ -42389,6 +42466,7 @@
      "e": 74
     }
    ],
+   "rendered": "SELECT SUM(revenue_at_carried_rate) AS carried FROM dbo.fct_revenue_summary",
    "reference_parsed": true
   },
   {
@@ -42654,6 +42732,7 @@
      "e": 89
     }
    ],
+   "rendered": "SELECT SUM(revenue_usd - revenue_at_carried_rate) AS same_day FROM dbo.fct_revenue_summary",
    "reference_parsed": true
   },
   {
@@ -43145,6 +43224,7 @@
      "e": 122
     }
    ],
+   "rendered": "SELECT SUM(revenue_usd) / NULLIF((SELECT COUNT(*) FROM dbo.dim_party), 0) AS revenue_per_party FROM dbo.fct_revenue_summary",
    "reference_parsed": true
   },
   {
@@ -43452,6 +43532,7 @@
      "e": 92
     }
    ],
+   "rendered": "SELECT SUM(revenue_usd) AS net FROM dbo.fct_revenue_summary WHERE customer_segment = 'lapsed'",
    "reference_parsed": true
   },
   {
@@ -43759,6 +43840,7 @@
      "e": 93
     }
    ],
+   "rendered": "SELECT SUM(revenue_usd) AS net FROM dbo.fct_revenue_summary WHERE fiscal_year_label = 'FY2026'",
    "reference_parsed": true
   },
   {
@@ -44066,6 +44148,7 @@
      "e": 89
     }
    ],
+   "rendered": "SELECT SUM(revenue_usd) AS net FROM dbo.fct_revenue_summary WHERE product_segment = 'Core'",
    "reference_parsed": true
   },
   {
@@ -44373,6 +44456,7 @@
      "e": 96
     }
    ],
+   "rendered": "SELECT SUM(revenue_usd) AS net FROM dbo.fct_revenue_summary WHERE product_segment = 'Unallocated'",
    "reference_parsed": true
   },
   {
@@ -44680,6 +44764,7 @@
      "e": 101
     }
    ],
+   "rendered": "SELECT SUM(revenue_usd) AS revenue FROM dbo.fct_revenue_summary WHERE customer_segment = 'Unsegmented'",
    "reference_parsed": true
   },
   {
@@ -44987,6 +45072,7 @@
      "e": 87
     }
    ],
+   "rendered": "SELECT SUM(revenue_usd) AS revenue FROM dbo.fct_revenue_summary WHERE fiscal_year = 2025",
    "reference_parsed": true
   },
   {
@@ -45226,6 +45312,7 @@
      "e": 64
     }
    ],
+   "rendered": "SELECT TOP 10 * FROM dbo.dim_product ORDER BY list_price_usd DESC",
    "reference_parsed": true
   },
   {
@@ -45648,6 +45735,7 @@
      "e": 122
     }
    ],
+   "rendered": "SELECT TOP 3 department, SUM(revenue_usd) AS revenue FROM dbo.fct_revenue_summary GROUP BY department ORDER BY revenue DESC",
    "reference_parsed": true
   },
   {
@@ -45902,6 +45990,7 @@
      "e": 74
     }
    ],
+   "rendered": "SELECT TOP 5 product_name FROM dbo.dim_product ORDER BY list_price_usd DESC",
    "reference_parsed": true
   },
   {
@@ -46335,6 +46424,7 @@
      "e": 85
     }
    ],
+   "rendered": "SELECT a.country FROM dbo.dim_country AS a UNION SELECT b.country FROM dbo.dim_customer AS b",
    "reference_parsed": true
   },
   {
@@ -46702,6 +46792,7 @@
      "e": 138
     }
    ],
+   "rendered": "SELECT channel_system, SUM(cancelled_revenue_usd) AS cancelled FROM dbo.fct_revenue_summary GROUP BY channel_system ORDER BY channel_system",
    "reference_parsed": true
   },
   {
@@ -47233,6 +47324,7 @@
      "e": 174
     }
    ],
+   "rendered": "SELECT channel_system, SUM(revenue_at_carried_rate) / NULLIF(SUM(revenue_usd), 0) AS carried_share FROM dbo.fct_revenue_summary GROUP BY channel_system ORDER BY channel_system",
    "reference_parsed": true
   },
   {
@@ -47600,6 +47692,7 @@
      "e": 126
     }
    ],
+   "rendered": "SELECT channel_system, SUM(revenue_usd) AS revenue FROM dbo.fct_revenue_summary GROUP BY channel_system ORDER BY channel_system",
    "reference_parsed": true
   },
   {
@@ -48106,6 +48199,7 @@
      "e": 176
     }
    ],
+   "rendered": "SELECT channel_system, customer_segment, SUM(revenue_usd) AS net FROM dbo.fct_revenue_summary GROUP BY channel_system, customer_segment ORDER BY channel_system, customer_segment",
    "reference_parsed": true
   },
   {
@@ -48415,6 +48509,7 @@
      "e": 82
     }
    ],
+   "rendered": "SELECT country, SUM(revenue_usd) AS r FROM dbo.fct_revenue_summary GROUP BY country",
    "reference_parsed": true
   },
   {
@@ -48795,6 +48890,7 @@
      "e": 110
     }
    ],
+   "rendered": "SELECT country, SUM(revenue_usd) AS revenue FROM dbo.fct_revenue_summary GROUP BY country ORDER BY revenue DESC",
    "reference_parsed": true
   },
   {
@@ -48994,6 +49090,7 @@
      "e": 61
     }
    ],
+   "rendered": "SELECT country_name FROM dbo.dim_country ORDER BY country_name",
    "reference_parsed": true
   },
   {
@@ -49361,6 +49458,7 @@
      "e": 128
     }
    ],
+   "rendered": "SELECT customer_segment, SUM(revenue_usd) AS net FROM dbo.fct_revenue_summary GROUP BY customer_segment ORDER BY customer_segment",
    "reference_parsed": true
   },
   {
@@ -49728,6 +49826,7 @@
      "e": 126
     }
    ],
+   "rendered": "SELECT department, SUM(cancelled_revenue_usd) AS cancelled FROM dbo.fct_revenue_summary GROUP BY department ORDER BY department",
    "reference_parsed": true
   },
   {
@@ -50259,6 +50358,7 @@
      "e": 162
     }
    ],
+   "rendered": "SELECT department, SUM(revenue_at_carried_rate) / NULLIF(SUM(revenue_usd), 0) AS carried_share FROM dbo.fct_revenue_summary GROUP BY department ORDER BY department",
    "reference_parsed": true
   },
   {
@@ -50626,6 +50726,7 @@
      "e": 140
     }
    ],
+   "rendered": "SELECT fiscal_quarter_label, SUM(revenue_usd) AS net FROM dbo.fct_revenue_summary GROUP BY fiscal_quarter_label ORDER BY fiscal_quarter_label",
    "reference_parsed": true
   },
   {
@@ -51006,6 +51107,7 @@
      "e": 128
     }
    ],
+   "rendered": "SELECT fiscal_quarter_label, SUM(revenue_usd) AS net FROM dbo.fct_revenue_summary GROUP BY fiscal_quarter_label ORDER BY net DESC",
    "reference_parsed": true
   },
   {
@@ -51584,6 +51686,7 @@
      "e": 209
     }
    ],
+   "rendered": "SELECT fiscal_year_label, SUM(cancelled_revenue_usd) / NULLIF(SUM(revenue_usd + cancelled_revenue_usd), 0) AS cancellation_rate FROM dbo.fct_revenue_summary GROUP BY fiscal_year_label ORDER BY fiscal_year_label",
    "reference_parsed": true
   },
   {
@@ -51951,6 +52054,7 @@
      "e": 147
     }
    ],
+   "rendered": "SELECT fiscal_year_label, SUM(cancelled_revenue_usd) AS cancelled FROM dbo.fct_revenue_summary GROUP BY fiscal_year_label ORDER BY fiscal_year_label",
    "reference_parsed": true
   },
   {
@@ -52482,6 +52586,7 @@
      "e": 175
     }
    ],
+   "rendered": "SELECT fiscal_year_label, SUM(revenue_at_carried_rate) / NULLIF(SUM(revenue_usd), 0) AS share FROM dbo.fct_revenue_summary GROUP BY fiscal_year_label ORDER BY fiscal_year_label",
    "reference_parsed": true
   },
   {
@@ -52896,6 +53001,7 @@
      "e": 157
     }
    ],
+   "rendered": "SELECT fiscal_year_label, SUM(revenue_usd + cancelled_revenue_usd) AS gross FROM dbo.fct_revenue_summary GROUP BY fiscal_year_label ORDER BY fiscal_year_label",
    "reference_parsed": true
   },
   {
@@ -53430,6 +53536,7 @@
      "e": 182
     }
    ],
+   "rendered": "SELECT fiscal_year_label, SUM(revenue_usd + cancelled_revenue_usd) AS gross, SUM(revenue_usd) AS net FROM dbo.fct_revenue_summary GROUP BY fiscal_year_label ORDER BY fiscal_year_label",
    "reference_parsed": true
   },
   {
@@ -53797,6 +53904,7 @@
      "e": 131
     }
    ],
+   "rendered": "SELECT fiscal_year_label, SUM(revenue_usd) AS net FROM dbo.fct_revenue_summary GROUP BY fiscal_year_label ORDER BY fiscal_year_label",
    "reference_parsed": true
   },
   {
@@ -54253,6 +54361,7 @@
      "e": 156
     }
    ],
+   "rendered": "SELECT fiscal_year_label, SUM(revenue_usd) AS net FROM dbo.fct_revenue_summary WHERE fiscal_quarter = 1 GROUP BY fiscal_year_label ORDER BY fiscal_year_label",
    "reference_parsed": true
   },
   {
@@ -54651,6 +54760,7 @@
      "e": 139
     }
    ],
+   "rendered": "SELECT fiscal_year_label, SUM(revenue_usd) AS net FROM dbo.fct_revenue_summary WHERE fiscal_year_label = 'FY2025' GROUP BY fiscal_year_label",
    "reference_parsed": true
   },
   {
@@ -55018,6 +55128,7 @@
      "e": 135
     }
    ],
+   "rendered": "SELECT fiscal_year_label, SUM(revenue_usd) AS revenue FROM dbo.fct_revenue_summary GROUP BY fiscal_year_label ORDER BY fiscal_year_label",
    "reference_parsed": true
   },
   {
@@ -55474,6 +55585,7 @@
      "e": 170
     }
    ],
+   "rendered": "SELECT fiscal_year_label, SUM(revenue_usd) AS revenue FROM dbo.fct_revenue_summary WHERE customer_segment = 'premium' GROUP BY fiscal_year_label ORDER BY fiscal_year_label",
    "reference_parsed": true
   },
   {
@@ -55741,6 +55853,7 @@
      "e": 97
     }
    ],
+   "rendered": "SELECT fiscal_year_label, SUM(revenue_usd) FROM dbo.fct_revenue_summary GROUP BY fiscal_year_label",
    "reference_parsed": true
   },
   {
@@ -56314,6 +56427,7 @@
      "e": 206
     }
    ],
+   "rendered": "SELECT fiscal_year_label, fiscal_quarter_label, SUM(revenue_usd) AS net FROM dbo.fct_revenue_summary WHERE fiscal_year_label = 'FY2026' AND fiscal_quarter = 1 GROUP BY fiscal_year_label, fiscal_quarter_label",
    "reference_parsed": true
   },
   {
@@ -56681,6 +56795,7 @@
      "e": 125
     }
    ],
+   "rendered": "SELECT product_segment, SUM(revenue_usd) AS net FROM dbo.fct_revenue_summary GROUP BY product_segment ORDER BY product_segment",
    "reference_parsed": true
   },
   {
@@ -57061,6 +57176,7 @@
      "e": 116
     }
    ],
+   "rendered": "SELECT product_segment, SUM(units) AS units FROM dbo.fct_revenue_summary GROUP BY product_segment ORDER BY units DESC",
    "reference_parsed": true
   },
   {
@@ -57555,6 +57671,7 @@
      "e": 93
     }
    ],
+   "rendered": "SELECT s.amount_usd FROM dbo.fct_sales AS s JOIN dbo.dim_product AS p ON p.product_id = s.product_id",
    "reference_parsed": true
   },
   {
@@ -57878,6 +57995,7 @@
      "e": 61
     }
    ],
+   "rendered": "WITH x AS (SELECT * FROM dbo.fct_sales) SELECT COUNT(*) FROM x",
    "reference_parsed": true
   },
   {
@@ -58045,6 +58163,7 @@
      "e": 29
     }
    ],
+   "rendered": "SELECT * FROM main.GLOB('/**')",
    "reference_parsed": true
   },
   {
@@ -58212,6 +58331,7 @@
      "e": 46
     }
    ],
+   "rendered": "SELECT * FROM main.READ_CSV_AUTO('/etc/passwd')",
    "reference_parsed": true
   },
   {
@@ -58374,6 +58494,7 @@
      "e": 60
     }
    ],
+   "rendered": "SELECT * FROM main.READ_PARQUET('s3://other/secrets.parquet')",
    "reference_parsed": true
   },
   {
@@ -58626,6 +58747,7 @@
      "e": 60
     }
    ],
+   "rendered": "SELECT * FROM main.tickets, main.READ_CSV_AUTO('/etc/passwd')",
    "reference_parsed": true
   },
   {
@@ -58756,6 +58878,7 @@
      "e": 41
     }
    ],
+   "rendered": "SELECT * FROM READ_CSV_AUTO('/etc/passwd')",
    "reference_parsed": true
   },
   {
@@ -58883,6 +59006,7 @@
      "e": 27
     }
    ],
+   "rendered": "SELECT * FROM secret.tickets",
    "reference_parsed": true
   },
   {
@@ -58973,6 +59097,7 @@
      "e": 20
     }
    ],
+   "rendered": "SELECT * FROM tickets",
    "reference_parsed": true
   },
   {
@@ -59026,6 +59151,7 @@
      "e": 7
     }
    ],
+   "rendered": "SELECT 1",
    "reference_parsed": true
   },
   {
@@ -59233,6 +59359,7 @@
      "e": 51
     }
    ],
+   "rendered": "SELECT * FROM OPENROWSET('SQLNCLI', '...', 'SELECT 1')",
    "reference_parsed": true
   },
   {
@@ -59440,6 +59567,7 @@
      "e": 36
     }
    ],
+   "rendered": "SELECT * FROM OPENROWSET('a', 'b', 'c')",
    "reference_parsed": true
   },
   {
@@ -59715,6 +59843,7 @@
      "e": 47
     }
    ],
+   "rendered": "SELECT * FROM dbo.fct_sales CROSS APPLY dbo.f(1)",
    "reference_parsed": true
   },
   {
@@ -59990,6 +60119,7 @@
      "e": 49
     }
    ],
+   "rendered": "SELECT * FROM dbo.fct_sales CROSS APPLY other.f(1)",
    "reference_parsed": true
   },
   {
@@ -60265,6 +60395,7 @@
      "e": 49
     }
    ],
+   "rendered": "SELECT * FROM dbo.fct_sales OUTER APPLY other.g(1)",
    "reference_parsed": true
   },
   {
@@ -60518,6 +60649,7 @@
      "e": 60
     }
    ],
+   "rendered": "SELECT * FROM dbo.fct_sales, dbo.READ_CSV_AUTO('/etc/passwd')",
    "reference_parsed": true
   },
   {
@@ -60767,6 +60899,7 @@
      "e": 51
     }
    ],
+   "rendered": "SELECT * FROM dbo.fct_sales, master.dbo.sysdatabases",
    "reference_parsed": true
   },
   {
@@ -60979,6 +61112,7 @@
      "e": 41
     }
    ],
+   "rendered": "SELECT * FROM dbo.fct_sales, other.secrets",
    "reference_parsed": true
   },
   {
@@ -61154,6 +61288,7 @@
      "e": 39
     }
    ],
+   "rendered": "SELECT * FROM dbo.fct_sales, unqualified",
    "reference_parsed": true
   },
   {
@@ -61322,6 +61457,7 @@
      "e": 45
     }
    ],
+   "rendered": "SELECT * FROM dbo.READ_CSV_AUTO('/etc/passwd')",
    "reference_parsed": true
   },
   {
@@ -61412,6 +61548,7 @@
      "e": 22
     }
    ],
+   "rendered": "SELECT * FROM fct_sales",
    "reference_parsed": true
   },
   {
@@ -61576,6 +61713,7 @@
      "e": 36
     }
    ],
+   "rendered": "SELECT * FROM master.dbo.sysdatabases",
    "reference_parsed": true
   },
   {
@@ -61703,6 +61841,7 @@
      "e": 28
     }
    ],
+   "rendered": "SELECT * FROM other.fct_sales",
    "reference_parsed": true
   },
   {
@@ -61830,6 +61969,7 @@
      "e": 33
     }
    ],
+   "rendered": "SELECT * FROM other_schema.secrets",
    "reference_parsed": true
   },
   {
@@ -61994,6 +62134,7 @@
      "e": 34
     }
    ],
+   "rendered": "SELECT * FROM otherdb.dbo.fct_sales",
    "reference_parsed": true
   },
   {
@@ -62047,6 +62188,7 @@
      "e": 7
     }
    ],
+   "rendered": "SELECT 1",
    "reference_parsed": true
   },
   {
@@ -62243,6 +62385,7 @@
      "e": 42
     }
    ],
+   "rendered": "SELECT TOP 100 PERCENT * FROM dbo.fct_sales",
    "reference_parsed": true
   },
   {
@@ -62439,6 +62582,7 @@
      "e": 41
     }
    ],
+   "rendered": "SELECT TOP 50 PERCENT * FROM dbo.fct_sales",
    "reference_parsed": true
   }
  ]

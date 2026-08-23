@@ -1,5 +1,6 @@
 {
  "dialect": "postgres",
+ "rendered": "SELECT COUNT() OVER (PARTITION BY a ORDER BY a range BETWEEN offset preceding AND CURRENT ROW EXCLUDE CURRENT ROW)",
  "sql": "select count() OVER(partition by a order by a range offset preceding exclude current row)",
  "tokens": [
   {

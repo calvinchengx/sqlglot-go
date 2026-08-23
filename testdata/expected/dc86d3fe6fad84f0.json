@@ -1,5 +1,6 @@
 {
  "dialect": "duckdb",
+ "rendered": "SELECT * FROM cities PIVOT(SUM(population) FOR year IN (2000, 2010, 2020) GROUP BY country)",
  "sql": "SELECT * FROM cities PIVOT(SUM(population) FOR year IN (2000, 2010, 2020) GROUP BY country)",
  "tokens": [
   {

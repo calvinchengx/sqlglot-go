@@ -1,5 +1,6 @@
 {
  "dialect": "postgres",
+ "rendered": "INSERT INTO x VALUES (1, 'a', 2.0) ON CONFLICT(id) DO UPDATE SET x.id = 1 RETURNING *",
  "sql": "INSERT INTO x VALUES (1, 'a', 2.0) ON CONFLICT(id) DO UPDATE SET x.id = 1 RETURNING *",
  "tokens": [
   {

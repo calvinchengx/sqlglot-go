@@ -1,5 +1,6 @@
 {
  "dialect": "tsql",
+ "rendered": "WITH cte AS (SELECT 1 AS one) INSERT INTO foo.bar SELECT * FROM cte",
  "sql": "INSERT INTO foo.bar WITH cte AS (SELECT 1 AS one) SELECT * FROM cte",
  "tokens": [
   {

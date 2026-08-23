@@ -1,5 +1,6 @@
 {
  "dialect": "duckdb",
+ "rendered": "WITH pivot_alias AS (PIVOT Cities ON Year USING SUM(Population) GROUP BY Country) SELECT * FROM pivot_alias",
  "sql": "WITH pivot_alias AS (PIVOT Cities ON Year USING SUM(Population) GROUP BY Country) SELECT * FROM pivot_alias",
  "tokens": [
   {

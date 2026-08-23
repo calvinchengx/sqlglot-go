@@ -1,5 +1,6 @@
 {
  "dialect": "duckdb",
+ "rendered": "PIVOT (SELECT * FROM tbl_1 LEFT JOIN tbl_2 USING (id)) ON col_1 USING SUM(col_2)",
  "sql": "PIVOT (FROM tbl_1 LEFT JOIN tbl_2 USING (id) SELECT *) ON col_1 USING SUM(col_2)",
  "tokens": [
   {

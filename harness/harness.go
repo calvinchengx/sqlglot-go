@@ -42,11 +42,16 @@ func (t RefToken) String() string {
 
 // Expectation is one reference statement, its token stream and its tree.
 type Expectation struct {
-	Key     string           `json:"-"`
-	Dialect string           `json:"dialect"`
-	SQL     string           `json:"sql"`
-	Tokens  []RefToken       `json:"tokens"`
-	Tree    []map[string]any `json:"tree"`
+	Key     string `json:"-"`
+	Dialect string `json:"dialect"`
+	SQL     string `json:"sql"`
+	// Rendered is what the reference writes this statement back out as. The
+	// guard rewrites a tree and hands SQL to the engine, so the port needs a
+	// generator, and it is held to this string rather than to "something that
+	// parses".
+	Rendered string           `json:"rendered"`
+	Tokens   []RefToken       `json:"tokens"`
+	Tree     []map[string]any `json:"tree"`
 }
 
 // Index lists every expectation and the reference commit they came from.

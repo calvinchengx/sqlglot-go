@@ -1,5 +1,6 @@
 {
  "dialect": "",
+ "rendered": "SELECT a FROM test PIVOT(SUM(x) FOR y IN ('z', 'q')) UNPIVOT(x FOR y IN (z, q)) AS x",
  "sql": "SELECT a FROM test PIVOT(SUM(x) FOR y IN ('z', 'q')) UNPIVOT(x FOR y IN (z, q)) AS x",
  "tokens": [
   {

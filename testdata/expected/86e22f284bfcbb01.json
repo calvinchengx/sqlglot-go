@@ -1,5 +1,6 @@
 {
  "dialect": "tsql",
+ "rendered": "CREATE TABLE test ([data] CHAR(7), [valid_from] DATETIME2(2) GENERATED ALWAYS AS ROW START NOT NULL, [valid_to] DATETIME2(2) GENERATED ALWAYS AS ROW END NOT NULL, PERIOD FOR SYSTEM_TIME ([valid_from], [valid_to])) WITH(SYSTEM_VERSIONING=ON)",
  "sql": "CREATE TABLE test (\"data\" CHAR(7), \"valid_from\" DATETIME2(2) GENERATED ALWAYS AS ROW START NOT NULL, \"valid_to\" DATETIME2(2) GENERATED ALWAYS AS ROW END NOT NULL, PERIOD FOR SYSTEM_TIME (\"valid_from\", \"valid_to\")) WITH(SYSTEM_VERSIONING=ON)",
  "tokens": [
   {

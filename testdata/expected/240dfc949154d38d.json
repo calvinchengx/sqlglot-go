@@ -1,5 +1,6 @@
 {
  "dialect": "duckdb",
+ "rendered": "PIVOT DUCKDB_FUNCTIONS() ON schema_name USING CAST(AVG(LENGTH(function_name)) AS INT) GROUP BY schema_name",
  "sql": "PIVOT duckdb_functions() ON schema_name USING AVG(LENGTH(function_name))::INTEGER GROUP BY schema_name",
  "tokens": [
   {

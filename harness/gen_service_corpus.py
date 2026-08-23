@@ -260,7 +260,7 @@ def main() -> int:
     repo = pathlib.Path(__file__).resolve().parent.parent
     sys.path.insert(0, str(a.sqlglot.expanduser()))
     sys.path.insert(0, str(repo / "harness"))
-    from oracle import dump, dump_tokens, pinned_commit, reference_commit  # noqa: PLC0415
+    from oracle import dump, dump_tokens, pinned_commit, reference_commit, render  # noqa: PLC0415
 
     actual, pinned = reference_commit(a.sqlglot.expanduser()), pinned_commit(repo)
     if actual != pinned:
@@ -305,6 +305,7 @@ def main() -> int:
         try:
             case["tree"] = dump(case["sql"], case["dialect"])
             case["tokens"] = dump_tokens(case["sql"], case["dialect"])
+            case["rendered"] = render(case["sql"], case["dialect"])
         except Exception:  # noqa: BLE001 -- a statement the reference cannot read is recorded as such
             case["reference_parsed"] = False
             unreadable += 1

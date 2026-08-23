@@ -1,5 +1,6 @@
 {
  "dialect": "duckdb",
+ "rendered": "SELECT * FROM RANGE(0, 10) AS r, (VALUES (42)) AS v, (SELECT * FROM RANGE(0, 10)) AS s",
  "sql": "SELECT * FROM r: range(10), v: (VALUES (42)), s: (FROM range(10))",
  "tokens": [
   {

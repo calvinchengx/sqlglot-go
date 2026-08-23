@@ -161,6 +161,19 @@ def dump(sql: str, dialect: str):
     return tree.dump()
 
 
+def render(sql: str, dialect: str) -> str:
+    """What the reference emits for this statement, in its own dialect.
+
+    The guard rewrites the tree -- it injects a row ceiling -- and then has to
+    hand SQL back to the engine. Which means the port needs a generator, and
+    the generator needs the same oracle as everything else: the string the
+    reference produces, not merely something that parses.
+    """
+    import sqlglot
+
+    return sqlglot.parse_one(sql, read=dialect or None).sql(dialect=dialect or None)
+
+
 def dump_tokens(sql: str, dialect: str):
     """The reference's token stream, field for field.
 
@@ -218,12 +231,19 @@ def main() -> int:
         try:
             tree = dump(sql, dialect)
             tokens = dump_tokens(sql, dialect)
+            rendered = render(sql, dialect)
         except Exception as e:  # noqa: BLE001 -- the reference's own failures are recorded, not hidden
             failed.append((dialect, sql, f"{type(e).__name__}: {e}"[:120]))
             continue
         (a.out / f"{key}.json").write_text(
             json.dumps(
-                {"dialect": dialect, "sql": sql, "tokens": tokens, "tree": tree},
+                {
+                    "dialect": dialect,
+                    "sql": sql,
+                    "rendered": rendered,
+                    "tokens": tokens,
+                    "tree": tree,
+                },
                 indent=1,
                 sort_keys=True,
             )

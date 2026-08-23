@@ -1,5 +1,6 @@
 {
  "dialect": "postgres",
+ "rendered": "WITH json_data AS (SELECT CAST('{\"field_id\": [1, 2, 3]}' AS JSON) AS data), field_ids AS (SELECT 'field_id' AS field_id) SELECT JSON_ARRAY_ELEMENTS(json_data.data -> field_ids.field_id) AS element FROM json_data, field_ids",
  "sql": "\n            WITH\n              json_data AS (SELECT '{\"field_id\": [1, 2, 3]}'::JSON AS data),\n              field_ids AS (SELECT 'field_id' AS field_id)\n\n            SELECT\n                JSON_ARRAY_ELEMENTS(json_data.data -> field_ids.field_id) AS element\n            FROM json_data, field_ids\n            ",
  "tokens": [
   {

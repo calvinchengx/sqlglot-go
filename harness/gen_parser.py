@@ -169,6 +169,155 @@ def probe_functions(P, exp):
     return out
 
 
+def render_functions(P, exp, dialect, funcs):
+    """How the reference WRITES each function node, for the generator.
+
+    The parser records no spelling for a named function -- a Count node does
+    not remember that it was written COUNT -- so the generator has to know the
+    keyword. Rather than transcribe it, render each node with placeholder
+    arguments and read the keyword back off the result.
+
+    The keyword is not a property of the class alone: in T-SQL a Count writes
+    COUNT_BIG when its big_int flag is set and COUNT when it is not, and a
+    Coalesce writes ISNULL when is_null is set. So each candidate carries the
+    constant arguments it applies to, and the generator picks the one that
+    matches the node in hand.
+
+    Only the plain `NAME(a, b, c)` shape is recorded, plus the bare `NAME` a
+    no-argument function like CURRENT_DATE writes. A function the reference
+    writes some other way -- CAST(x AS y), TRIM(x FROM y), an infix operator --
+    is left out, and the generator refuses it rather than emitting something
+    that would parse back into a different node.
+    """
+    out = {}
+    for name, (cls_name, spec) in funcs.items():
+        cls = getattr(exp, cls_name, None)
+        if cls is None:
+            continue
+        positional = [kv for kv in spec if "index" in kv[1] or "varlen" in kv[1]]
+        keys = [k for k, _ in positional]
+        args = [exp.column(f"__probe_{i}") for i in range(len(keys))]
+        kwargs = {}
+        for i, (key, how) in enumerate(positional):
+            kwargs[key] = [args[i]] if "varlen" in how else args[i]
+        consts = [(k, how["const"]) for k, how in spec if "const" in how]
+        kwargs.update(dict(consts))
+        try:
+            rendered = cls(**kwargs).sql(dialect=dialect or None)
+        except Exception:  # noqa: BLE001 -- a node that will not render is not supported
+            continue
+
+        # Probe every argument count the call can have, widest first. MAX of
+        # one argument is MAX; of two, PostgreSQL writes GREATEST. Each
+        # narrower form records the keys that must be absent for it to apply.
+        candidates = out.setdefault(cls_name, [])
+        for width in range(len(keys), -1, -1):
+            narrowed = dict(consts)
+            for i, (key, how) in enumerate(positional[:width]):
+                narrowed[key] = [args[i]] if "varlen" in how else args[i]
+            try:
+                rendered = cls(**narrowed).sql(dialect=dialect or None)
+            except Exception:  # noqa: BLE001
+                continue
+            used = keys[:width]
+            absent = consts + [(k, None) for k in keys[width:]]
+            expected = name + "(" + ", ".join(f"__probe_{i}" for i in range(width)) + ")"
+            if rendered == expected:
+                entry = (name, used, absent, False)
+            elif width == 0 and rendered == name:
+                entry = (name, [], absent, True)
+            else:
+                continue
+            if entry not in candidates:
+                candidates.append(entry)
+        if not candidates:
+            del out[cls_name]
+
+    # Most constrained first, so a node with a flag set matches the spelling
+    # that flag selects rather than the general one.
+    for candidates in out.values():
+        candidates.sort(key=lambda c: -len(c[2]))
+    return out
+
+
+def sqlmap(name: str, rendered) -> str:
+    lines = []
+    for cls in sorted(rendered):
+        entries = []
+        for keyword, keys, consts, no_parens in rendered[cls]:
+            arg_keys = ", ".join(gostr(k) for k in keys)
+            const_parts = ", ".join(f"{{{gostr(k)}, {goconst(v)}}}" for k, v in consts)
+            entries.append(
+                f"{{{gostr(keyword)}, []string{{{arg_keys}}}, "
+                f"[]FuncConst{{{const_parts}}}, {str(no_parens).lower()}}}"
+            )
+        lines.append(f"\t\t\t{gostr(cls)}: {{{', '.join(entries)}}},\n")
+    return f"\t\t{name}: map[string][]FuncSQL{{\n{''.join(lines)}\t\t}},\n"
+
+
+def render_operators(P, exp, Dialect, dialect):
+    """The infix and prefix spelling of every operator node, per dialect.
+
+    Same probe as the functions: build the node with placeholders, render it,
+    and read the operator back out. DuckDB writes Pow as `a ** b` where the
+    default writes `POWER(a, b)`, and neither is derivable from the parse
+    table -- so both are read from the generator rather than assumed.
+    """
+    binary, unary = {}, {}
+    tables = (
+        P.DISJUNCTION, P.CONJUNCTION, P.EQUALITY, P.COMPARISON,
+        P.BITWISE, P.TERM, P.FACTOR, P.EXPONENT, P.RANGE_PARSERS,
+    )
+    classes = set()
+    for table in tables:
+        for value in table.values():
+            if isinstance(value, type) and issubclass(value, exp.Expr):
+                classes.add(value)
+    classes |= {
+        exp.DPipe, exp.Is, exp.Like, exp.ILike, exp.BitwiseLeftShift, exp.BitwiseRightShift,
+        exp.Glob, exp.RegexpLike, exp.SimilarTo, exp.NullSafeEQ, exp.NullSafeNEQ,
+        exp.Distance, exp.DistanceNd, exp.IntDiv, exp.Pow, exp.Collate,
+    }
+
+    # Predicates rather than bare columns: T-SQL coerces a column used as a
+    # boolean into `x <> 0`, which would be read back as part of the operator.
+    def operand(n):
+        return exp.EQ(this=exp.column(f"__probe_{n}"), expression=exp.Literal.number(n))
+
+    a, b = operand(0), operand(1)
+    left = a.sql(dialect=dialect or None)
+    right = b.sql(dialect=dialect or None)
+    d = Dialect.get_or_raise(dialect or None)
+    for cls in classes:
+        extra = {}
+        if cls is exp.Div:
+            # A Div records how the dialect divides, and renders differently
+            # without those flags -- the parser always sets them.
+            extra = {"typed": d.TYPED_DIVISION, "safe": d.SAFE_DIVISION}
+        try:
+            rendered = cls(this=a.copy(), expression=b.copy(), **extra).sql(dialect=dialect or None)
+        except Exception:  # noqa: BLE001
+            continue
+        if rendered.startswith(left + " ") and rendered.endswith(" " + right):
+            binary[cls.__name__] = rendered[len(left) + 1 : -(len(right) + 1)]
+
+    for cls in (exp.Neg, exp.BitwiseNot, exp.Not):
+        try:
+            rendered = cls(this=a.copy()).sql(dialect=dialect or None)
+        except Exception:  # noqa: BLE001
+            continue
+        if rendered.endswith(left):
+            unary[cls.__name__] = rendered[: -len(left)]
+    return binary, unary
+
+
+def strstrmap(name: str, table) -> str:
+    if not table:
+        return f"\t\t{name}: nil,\n"
+    body = "".join(f"\t\t\t{gostr(k)}: {gostr(v)},\n" for k, v in sorted(table.items()))
+    return f"\t\t{name}: map[string]string{{\n{body}\t\t}},\n"
+
+
 def goconst(v) -> str:
     if v is None:
         return "nil"
@@ -245,6 +394,38 @@ def main() -> int:
         "\t// builds something no fixed mapping describes, and is refused rather\n",
         "\t// than approximated.\n",
         "\tFunctions map[string]FuncSpec\n",
+        "\t// FunctionSQL is how the generator writes each of those nodes back\n",
+        "\t// out. A node absent here is one the reference writes in some shape\n",
+        "\t// other than NAME(a, b); the generator refuses it rather than\n",
+        "\t// emitting something that would parse back differently.\n",
+        "\tFunctionSQL map[string][]FuncSQL\n",
+        "\t// BinarySQL and UnarySQL are how each operator node is written.\n",
+        "\t// DuckDB writes Pow as ** where the default writes POWER(a, b), so\n",
+        "\t// the spelling is read from the reference's generator, not assumed.\n",
+        "\tBinarySQL map[string]string\n",
+        "\tUnarySQL  map[string]string\n",
+        "\t// LimitIsTop puts the row ceiling in front of the projections, as\n",
+        "\t// T-SQL's TOP does, rather than after the query as LIMIT does. The\n",
+        "\t// guard rewrites one node either way; the dialect decides where it\n",
+        "\t// lands, which is the whole reason the rewrite works at all.\n",
+        "\t// TypeSQL is how each data type is written in this dialect: T-SQL\n",
+        "\t// spells DataType.Type.INT as INTEGER.\n",
+        "\tTypeSQL map[string]string\n",
+        "\t// IdentifierStart and IdentifierEnd are the delimiters a quoted name\n",
+        "\t// is written with: brackets in T-SQL, backticks in Databricks.\n",
+        "\tIdentifierStart string\n",
+        "\tIdentifierEnd   string\n",
+        "\t// QualifiesDerivedOutputs names every unnamed column of a CTE or a\n",
+        "\t// derived table on the way out, because T-SQL will not accept one\n",
+        "\t// without a name. Two executors that disagreed here would send the\n",
+        "\t// engine different SQL for the same question.\n",
+        "\tQualifiesDerivedOutputs bool\n",
+        "\t// CoercesBooleans marks a dialect with no boolean type, where a value\n",
+        "\t// used as a condition is written `x <> 0`. The port does not perform\n",
+        "\t// that rewrite; it refuses, because emitting the uncoerced form would\n",
+        "\t// be a statement the engine rejects.\n",
+        "\tCoercesBooleans bool\n",
+        "\tLimitIsTop bool\n",
         "\t// StatementTokens begin a statement that is not a query -- CREATE,\n",
         "\t// DELETE, INSERT and the rest. Anything else at the top level is\n",
         "\t// parsed as a bare expression, which is what the reference does and\n",
@@ -312,6 +493,22 @@ def main() -> int:
         "// FuncArg fills one key: a positional argument, a variadic tail that\n",
         "// collects everything from Index onward, or a constant the builder always\n",
         "// sets -- COUNT is always big_int, whatever it was called with.\n",
+        "// FuncSQL is one way a function node may be written: the keyword, the\n",
+        "// argument keys that become its arguments in order, and the constant\n",
+        "// arguments that select this spelling over another. T-SQL writes a\n",
+        "// Count as COUNT_BIG when big_int is set and COUNT when it is not.\n",
+        "type FuncSQL struct {\n",
+        "\tName     string\n",
+        "\tKeys     []string\n",
+        "\tConsts   []FuncConst\n",
+        "\tNoParens bool\n",
+        "}\n\n",
+        "// FuncConst is an argument that must hold this value for the spelling\n",
+        "// beside it to apply.\n",
+        "type FuncConst struct {\n",
+        "\tKey   string\n",
+        "\tValue any\n",
+        "}\n\n",
         "type FuncArg struct {\n",
         "\tKey    string\n",
         "\tIndex  int\n",
@@ -329,7 +526,42 @@ def main() -> int:
         out.append(strset("NamedFunctions", named))
         out.append(ttset("NoParenFunctions", P.NO_PAREN_FUNCTIONS))
         out.append(opmap("NoParenFunctionClasses", P.NO_PAREN_FUNCTIONS))
-        out.append(funcmap("Functions", probe_functions(P, exp)))
+        funcs = probe_functions(P, exp)
+        out.append(funcmap("Functions", funcs))
+        out.append(sqlmap("FunctionSQL", render_functions(P, exp, name, funcs)))
+        binary, unary = render_operators(P, exp, Dialect, name)
+        out.append(strstrmap("BinarySQL", binary))
+        out.append(strstrmap("UnarySQL", unary))
+        types_sql = {}
+        for t, member in sorted(
+            {t: exp.DType[t.name] for t in P.TYPE_TOKENS if t.name in exp.DType.__members__}.items(),
+            key=lambda kv: kv[0].value,
+        ):
+            try:
+                rendered = exp.DataType(this=member).sql(dialect=name or None)
+            except Exception:  # noqa: BLE001
+                continue
+            types_sql[member.value] = rendered
+        out.append(strstrmap("TypeSQL", types_sql))
+        quoted = exp.Identifier(this="A", quoted=True).sql(dialect=name or None)
+        out.append(f"\t\tIdentifierStart: {gostr(quoted[0])},\n")
+        out.append(f"\t\tIdentifierEnd: {gostr(quoted[-1])},\n")
+        # T-SQL requires every column of a derived table to be named, and
+        # synthesises the missing aliases on the way out. Detected by asking
+        # rather than by naming the dialect.
+        import sqlglot as _sqlglot  # noqa: PLC0415
+
+        probe = _sqlglot.parse_one("SELECT * FROM (SELECT a) AS x", read=name or None)
+        qualifies = " AS a" in probe.sql(dialect=name or None)
+        out.append(f"\t\tQualifiesDerivedOutputs: {str(qualifies).lower()},\n")
+        # T-SQL has no boolean type, so a value used as a condition is written
+        # `x <> 0`. Detected by asking, not by naming the dialect.
+        coerces = exp.Not(this=exp.column("x")).sql(dialect=name or None) != "NOT x"
+        out.append(f"\t\tCoercesBooleans: {str(coerces).lower()},\n")
+        out.append(
+            "\t\tLimitIsTop: "
+            f"{str(bool(Dialect.get_or_raise(name or None).generator_class.LIMIT_IS_TOP)).lower()},\n"
+        )
         tk = Dialect.get_or_raise(name or None).tokenizer_class
         out.append(ttset("StatementTokens", set(P.STATEMENT_PARSERS) | set(tk.COMMANDS)))
         out.append(ttset("FuncTokens", P.FUNC_TOKENS))

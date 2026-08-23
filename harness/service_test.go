@@ -23,6 +23,7 @@ type ServiceCase struct {
 	Category string           `json:"category"`
 	From     string           `json:"from"`
 	RefOK    bool             `json:"reference_parsed"`
+	Rendered string           `json:"rendered"`
 	Tree     []map[string]any `json:"tree"`
 }
 
@@ -54,7 +55,7 @@ func TestAgainstTheService(t *testing.T) {
 
 	byCategory := map[string]*tally{}
 	byDialect := map[string]*tally{}
-	var divergences, gaps []string
+	var divergences, gaps, unwritable []string
 
 	get := func(m map[string]*tally, k string) *tally {
 		if m[k] == nil {
@@ -111,6 +112,15 @@ func TestAgainstTheService(t *testing.T) {
 			} else {
 				cat.parsed++
 				dia.parsed++
+				// Reading it is half the job: the guard rewrites the tree and
+				// hands SQL back, so it has to be writable too.
+				if got, gerr := sqlglot.Generate(tree, c.Dialect); gerr != nil {
+					unwritable = append(unwritable, fmt.Sprintf("  [%s] %s\n      %v", c.Dialect, c.SQL, gerr))
+				} else if got != c.Rendered {
+					divergences = append(divergences, fmt.Sprintf(
+						"[%s] %s\n  written differently from the reference\n    want %s\n    got  %s",
+						c.Dialect, c.SQL, c.Rendered, got))
+				}
 			}
 		}
 	}
@@ -134,6 +144,13 @@ func TestAgainstTheService(t *testing.T) {
 				break
 			}
 			t.Log(g)
+		}
+	}
+
+	if len(unwritable) > 0 {
+		t.Errorf("%d statement(s) the port reads but cannot write back:", len(unwritable))
+		for _, u := range unwritable {
+			t.Error(u)
 		}
 	}
 

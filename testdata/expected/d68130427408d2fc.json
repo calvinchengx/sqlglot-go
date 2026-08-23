@@ -1,5 +1,6 @@
 {
  "dialect": "postgres",
+ "rendered": "SELECT * FROM foo, LATERAL (SELECT * FROM bar WHERE bar.id = foo.bar_id) AS ss",
  "sql": "SELECT * FROM foo, LATERAL (SELECT * FROM bar WHERE bar.id = foo.bar_id) AS ss",
  "tokens": [
   {

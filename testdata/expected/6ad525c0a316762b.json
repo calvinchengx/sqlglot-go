@@ -1,5 +1,6 @@
 {
  "dialect": "duckdb",
+ "rendered": "SELECT t1.x, t2.x, t3.y FROM (SELECT * FROM a) AS t1 JOIN (SELECT * FROM b) AS t2 ON t1.x = t2.x JOIN (SELECT * FROM c) AS t3 ON t2.y = t3.y",
  "sql": "FROM (FROM a) AS t1 JOIN (FROM b) AS t2 ON t1.x = t2.x JOIN (FROM c) AS t3 ON t2.y = t3.y SELECT t1.x, t2.x, t3.y",
  "tokens": [
   {

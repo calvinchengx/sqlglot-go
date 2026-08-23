@@ -1,5 +1,6 @@
 {
  "dialect": "duckdb",
+ "rendered": "DELETE FROM t USING (VALUES (1)) AS t1(c), (VALUES (1), (2)) AS t2(c) WHERE t.c = t1.c AND t.c = t2.c",
  "sql": "DELETE FROM t USING (VALUES (1)) AS t1(c), (VALUES (1), (2)) AS t2(c) WHERE t.c = t1.c AND t.c = t2.c",
  "tokens": [
   {
