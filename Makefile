@@ -43,6 +43,19 @@ oracle: ## Regenerate expectations and generated tables from the PINNED referenc
 service: ## Re-extract the corpus of SQL data agent service is held to
 	$(PYTHON) harness/gen_service_corpus.py --service $(SERVICE) --sqlglot $(SQLGLOT)
 
+fuzz: ## Fuzz the generator and let the reference judge what it finds (SECONDS=45)
+	@rm -f /tmp/sqlglot-go-candidates.txt
+	@DAS_FUZZ_COLLECT=/tmp/sqlglot-go-candidates.txt \
+		go test ./sqlglot/ -run=XXX -fuzz=FuzzGeneratedSQLCanBeReadBack \
+		-fuzztime=$${SECONDS:-45}s
+	@if [ -s /tmp/sqlglot-go-candidates.txt ]; then \
+		sort -u /tmp/sqlglot-go-candidates.txt -o /tmp/sqlglot-go-candidates.txt; \
+		$(PYTHON) harness/adjudicate.py --sqlglot $(SQLGLOT) \
+			--candidates /tmp/sqlglot-go-candidates.txt; \
+	else \
+		echo "the generator wrote nothing the parser could not read back"; \
+	fi
+
 gaps: ## Why the port refuses what it refuses, most common first
 	@go test ./harness/ -run TestGapReport -v 2>&1 | sed -n 's/^ *gaps_test.go:[0-9]*: //p'
 

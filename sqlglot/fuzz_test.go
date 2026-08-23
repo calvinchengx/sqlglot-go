@@ -1,8 +1,10 @@
 package sqlglot
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
+	"path/filepath"
 	"strings"
 	"sync"
 	"testing"
@@ -31,6 +33,9 @@ import (
 // whether a statement is safe is a denial of service in front of a database.
 func FuzzParseOneNeverPanics(f *testing.F) {
 	for _, s := range seeds {
+		f.Add(s)
+	}
+	for _, s := range serviceSeeds() {
 		f.Add(s)
 	}
 	f.Fuzz(func(t *testing.T, sql string) {
@@ -66,6 +71,9 @@ func FuzzParseOneNeverPanics(f *testing.F) {
 // cannot re-read is output nobody has checked the meaning of.
 func FuzzGeneratedSQLCanBeReadBack(f *testing.F) {
 	for _, s := range seeds {
+		f.Add(s)
+	}
+	for _, s := range serviceSeeds() {
 		f.Add(s)
 	}
 	f.Fuzz(func(t *testing.T, sql string) {
@@ -149,3 +157,38 @@ func collect(dialect string, cause error, sql string) bool {
 }
 
 var collectMu sync.Mutex
+
+// serviceSeeds are the statements the first consumer is actually held to.
+//
+// A fuzzer mutates what it is given, so what it is given decides where it
+// looks. The hand-written seeds below are shapes; these are real queries --
+// the evaluation suites' gold answers, the guard's permitted set, the
+// adversarial corpus -- and a mutation of a real query lands somewhere a
+// mutation of `SELECT 1` does not.
+//
+// Absent or unreadable, they are simply skipped: this is a seed list, and a
+// fuzz target that refused to start because a corpus file moved would be
+// worse than one exploring a little less.
+func serviceSeeds() []string {
+	raw, err := os.ReadFile(filepath.Join("..", "testdata", "service", "corpus.json"))
+	if err != nil {
+		return nil
+	}
+	var corpus struct {
+		Cases []struct {
+			SQL string `json:"sql"`
+		} `json:"cases"`
+	}
+	if err := json.Unmarshal(raw, &corpus); err != nil {
+		return nil
+	}
+	seen := map[string]bool{}
+	out := make([]string, 0, len(corpus.Cases))
+	for _, c := range corpus.Cases {
+		if c.SQL != "" && !seen[c.SQL] {
+			seen[c.SQL] = true
+			out = append(out, c.SQL)
+		}
+	}
+	return out
+}

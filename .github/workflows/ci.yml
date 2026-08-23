@@ -103,6 +103,28 @@ jobs:
       # The tokenizer's keyword and dialect tables are generated from the same
       # pin. A hand-edited table would be a silent divergence from the
       # reference in the one place the port has no logic to catch it.
+      # The batched differential, which is the only place the read-back
+      # property can be a GATE rather than a discovery run.
+      #
+      # `FuzzGeneratedSQLCanBeReadBack` on its own cannot be one: three of its
+      # findings turned out to be sqlglot doing the same thing, and a property
+      # stronger than the oracle's reports the reference's behaviour as ours.
+      # So the fuzzer collects, the adjudicator asks the reference about each
+      # finding, and only a YOURS verdict -- the reference handles it, the port
+      # does not -- fails the build. It exits non-zero on exactly that.
+      #
+      # 45 seconds found 96,096 findings collapsing to one real cause the first
+      # time it ran. It now finds none.
+      - name: fuzz the generator, and let the reference judge what it finds
+        run: |
+          DAS_FUZZ_COLLECT=/tmp/candidates.txt \
+            go test ./sqlglot/ -run=XXX -fuzz=FuzzGeneratedSQLCanBeReadBack -fuzztime=45s
+          if [ -s /tmp/candidates.txt ]; then
+            sort -u /tmp/candidates.txt -o /tmp/candidates.txt
+            python3 harness/adjudicate.py --sqlglot /tmp/sqlglot --candidates /tmp/candidates.txt
+          else
+            echo "the generator wrote nothing the parser could not read back"
+          fi
       - name: the generated tables are the reference's
         run: |
           cp sqlglot/tokentype_gen.go sqlglot/dialects_gen.go sqlglot/parser_gen.go sqlglot/classes_gen.go /tmp/

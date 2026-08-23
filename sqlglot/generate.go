@@ -102,7 +102,18 @@ func (g *generator) list(e *Expression, key, sep string) string {
 }
 
 func (g *generator) binary(e *Expression, op string) string {
-	return g.child(e, "this") + " " + op + " " + g.child(e, "expression")
+	// Both operands, or nothing. A class can be a binary operator in one
+	// dialect and a function in another -- DuckDB writes GLOB(x), T-SQL has
+	// only the operator spelling -- so a node BUILT as a call can reach here
+	// with no left-hand side. Writing it anyway produced
+	// `SELECT * FROM main. GLOB '/**'`, which is not SQL at all, from a
+	// statement the reference simply refuses.
+	this, _ := e.Args["this"].(*Expression)
+	other, _ := e.Args["expression"].(*Expression)
+	if this == nil || other == nil {
+		return g.fail(e.Class + " written as an operator without two operands")
+	}
+	return g.node(this) + " " + op + " " + g.node(other)
 }
 
 // unary writes a prefix operator. The spelling carries its own spacing --

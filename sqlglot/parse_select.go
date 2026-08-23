@@ -232,6 +232,16 @@ func (p *parser) parseSelect() (*Expression, error) {
 // the guard has to see it to say that a proportion is not a row ceiling, and
 // a statement it cannot parse would be refused for the wrong reason.
 func (p *parser) parseTop() (*Expression, error) {
+	// `SELECT TOP = x` is T-SQL naming a column TOP, not a row limiter with a
+	// missing count. This runs before parseProjection, so without the peek the
+	// refusal blamed the count -- and the refusal REASON is what the guard
+	// records and what decides which grammar gets ported next. A label that
+	// names the wrong construct sends that decision the wrong way.
+	if p.at(TokTOP) {
+		if n := p.next(); n != nil && n.Type == TokEQ {
+			return nil, p.unsupported("T-SQL alias assignment")
+		}
+	}
 	if !p.match(TokTOP) {
 		return nil, nil
 	}
@@ -298,6 +308,15 @@ func (p *parser) parseProjection() (*Expression, error) {
 	e, err := p.parseExpression()
 	if err != nil {
 		return nil, err
+	}
+	// In T-SQL a top-level `=` in a projection is ALWAYS an alias assignment
+	// and never a comparison, so anything that parsed as one here has been
+	// read the wrong way round. The token peek above catches the plain
+	// spelling; this catches the rest -- `SELECT +TOP=A` reaches the parser
+	// as a unary plus and would otherwise become an equality the reference
+	// never meant. Refusing beats diverging.
+	if p.dialect == "tsql" && e != nil && e.Class == "EQ" {
+		return nil, p.unsupported("T-SQL alias assignment")
 	}
 	return p.parseAlias(e)
 }
