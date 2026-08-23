@@ -59,6 +59,12 @@ jobs:
           pct=$(go tool cover -func=cover.out | awk '/^total:/ {print substr($3, 1, length($3)-1)}')
           echo "coverage: $pct%"
           awk -v p="$pct" 'BEGIN { if (p+0 < 95) { print "below the 95% floor"; exit 1 } }'
+      # The README's tables are the coverage files, or they are a second copy
+      # that drifts. `go test` above rewrites testdata/**/coverage.json from
+      # the run it just did, so this compares the README against measurements
+      # taken seconds ago rather than against whatever was committed.
+      - name: the README's numbers are what was measured
+        run: python3 harness/gen_readme.py --check
       - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.13.1

@@ -41,10 +41,12 @@ guard over a parse tree rather than over a token scan.
 the port to be held to. The category is still extracted and counted -- it is
 absent from this table, not from the corpus.
 
-These figures are copied here from `testdata/service/coverage.json` by hand and
-nothing checks the copy, which is the same shape of defect the corpus itself
-just had. Regenerate with `make service && make coverage` before trusting
-them.
+These figures are written from `testdata/service/coverage.json` by
+`make readme`, and CI fails if they disagree with what the suite measured. They
+were hand-copied until the corpus generator was found reading a file the
+statements had moved out of -- reporting 96 where there were 148, while this
+table went on showing the old numbers, because a copy nobody checks is a second
+source that drifts.
 
 `must_parse` is SQL the guard permits: a gap there is a question the agent
 answers today and would stop answering. `must_parse_to_refuse` is SQL the guard
