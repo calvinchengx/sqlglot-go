@@ -9,73 +9,60 @@ import "strings"
 // wrong tree is worse than one refused, because the guard above would then
 // reason about something the engine will not execute.
 
-// binaryClass maps an operator token to the reference's node class, for the
-// levels where the mapping is one-to-one.
-var (
-	comparisonOps = map[TokenType]string{
-		TokEQ:  "EQ",
-		TokNEQ: "NEQ",
-		TokGT:  "GT",
-		TokGTE: "GTE",
-		TokLT:  "LT",
-		TokLTE: "LTE",
-	}
-	additiveOps = map[TokenType]string{
-		TokPLUS: "Add",
-		TokDASH: "Sub",
-	}
-	multiplicativeOps = map[TokenType]string{
-		TokSTAR:  "Mul",
-		TokSLASH: "Div",
-		TokMOD:   "Mod",
-	}
-)
+// The reference's precedence chain, level for level, reading the operator
+// tables off the dialect. The levels are not interchangeable: EQUALITY sits
+// above COMPARISON, so `a = b > c` is `a = (b > c)`; MOD sits with the additive
+// operators rather than the multiplicative ones, so `a % b * c` is
+// `a % (b * c)`. Nor are the tables: DuckDB reads `^` as Pow where the default
+// reads it as BitwiseXor. A port that collapsed any of these would parse most
+// statements correctly and a few silently wrong.
 
-func (p *parser) parseExpression() (*Expression, error) { return p.parseOr() }
+// specialConstruction are operator classes the reference builds with more than
+// a left and a right operand. Div and DPipe are handled; the rest are refused
+// rather than built without the arguments that give them meaning.
+var specialConstruction = map[string]bool{
+	"Div":     true,
+	"DPipe":   true,
+	"Collate": true,
+}
 
-func (p *parser) parseOr() (*Expression, error) {
-	this, err := p.parseAnd()
+func (p *parser) parseExpression() (*Expression, error) { return p.parseAssignment() }
+
+func (p *parser) parseAssignment() (*Expression, error) {
+	this, err := p.parseDisjunction()
 	if err != nil {
 		return nil, err
 	}
-	for p.match(TokOR) {
-		right, err := p.parseAnd()
-		if err != nil {
-			return nil, err
-		}
-		this = New("Or", Arg{"this", this}, Arg{"expression", right})
+	if p.at(TokCOLON_EQ) {
+		return nil, p.unsupported("assignment")
 	}
 	return this, nil
 }
 
-func (p *parser) parseAnd() (*Expression, error) {
-	this, err := p.parseNot()
-	if err != nil {
-		return nil, err
-	}
-	for p.match(TokAND) {
-		right, err := p.parseNot()
-		if err != nil {
-			return nil, err
-		}
-		this = New("And", Arg{"this", this}, Arg{"expression", right})
-	}
-	return this, nil
+func (p *parser) parseDisjunction() (*Expression, error) {
+	return p.parseBinary(p.tables.Disjunction, p.parseConjunction)
 }
 
-func (p *parser) parseNot() (*Expression, error) {
-	if p.match(TokNOT) {
-		this, err := p.parseNot()
-		if err != nil {
-			return nil, err
-		}
-		return New("Not", Arg{"this", this}), nil
-	}
-	return p.parseComparison()
+func (p *parser) parseConjunction() (*Expression, error) {
+	return p.parseBinary(p.tables.Conjunction, p.parseEquality)
+}
+
+func (p *parser) parseEquality() (*Expression, error) {
+	return p.parseBinary(p.tables.Equality, p.parseComparison)
 }
 
 func (p *parser) parseComparison() (*Expression, error) {
-	this, err := p.parseAdditive()
+	return p.parseBinary(p.tables.Comparison, p.parseRange)
+}
+
+// parseRange is where IN, BETWEEN, LIKE and IS live in the reference. None is
+// handled yet, so the statement simply ends with tokens left over and is
+// refused -- which is the same outcome as refusing here, and one fewer place
+// for the two to disagree.
+func (p *parser) parseRange() (*Expression, error) { return p.parseBitwise() }
+
+func (p *parser) parseBitwise() (*Expression, error) {
+	this, err := p.parseTerm()
 	if err != nil {
 		return nil, err
 	}
@@ -84,27 +71,63 @@ func (p *parser) parseComparison() (*Expression, error) {
 		if c == nil {
 			return this, nil
 		}
-		class, ok := comparisonOps[c.Type]
-		if !ok {
+		switch {
+		case p.tables.Bitwise[c.Type] != "":
+			class := p.tables.Bitwise[c.Type]
+			p.advance()
+			right, err := p.parseTerm()
+			if err != nil {
+				return nil, err
+			}
+			this = New(class, Arg{"this", this}, Arg{"expression", right})
+		case c.Type == TokDPIPE:
+			if !p.tables.DPipeIsStringConcat {
+				return this, nil
+			}
+			p.advance()
+			right, err := p.parseTerm()
+			if err != nil {
+				return nil, err
+			}
+			this = New("DPipe", Arg{"this", this}, Arg{"expression", right},
+				Arg{"safe", !p.tables.StrictStringConcat})
+		case p.atPair(TokLT, TokLT), p.atPair(TokGT, TokGT):
+			// The tokenizer has no << or >>; the reference matches the pair.
+			class := "BitwiseLeftShift"
+			if c.Type == TokGT {
+				class = "BitwiseRightShift"
+			}
+			p.advance()
+			p.advance()
+			right, err := p.parseTerm()
+			if err != nil {
+				return nil, err
+			}
+			this = New(class, Arg{"this", this}, Arg{"expression", right})
+		default:
 			return this, nil
 		}
-		p.advance()
-		right, err := p.parseAdditive()
-		if err != nil {
-			return nil, err
-		}
-		this = New(class, Arg{"this", this}, Arg{"expression", right})
 	}
 }
 
-func (p *parser) parseAdditive() (*Expression, error) {
-	return p.parseBinary(additiveOps, p.parseMultiplicative)
+func (p *parser) parseTerm() (*Expression, error) {
+	return p.parseBinary(p.tables.Term, p.parseFactor)
 }
 
-func (p *parser) parseMultiplicative() (*Expression, error) {
-	return p.parseBinary(multiplicativeOps, p.parseUnary)
+func (p *parser) parseFactor() (*Expression, error) {
+	return p.parseBinary(p.tables.Factor, p.parseFactorOperand)
 }
 
+// parseFactorOperand inserts the exponent level only where the dialect has
+// one, exactly as the reference does.
+func (p *parser) parseFactorOperand() (*Expression, error) {
+	if len(p.tables.Exponent) == 0 {
+		return p.parseUnary()
+	}
+	return p.parseBinary(p.tables.Exponent, p.parseUnary)
+}
+
+// parseBinary runs one left-associative precedence level.
 func (p *parser) parseBinary(ops map[TokenType]string, next func() (*Expression, error)) (*Expression, error) {
 	this, err := next()
 	if err != nil {
@@ -124,34 +147,60 @@ func (p *parser) parseBinary(ops map[TokenType]string, next func() (*Expression,
 		if err != nil {
 			return nil, err
 		}
+		if specialConstruction[class] && class != "Div" {
+			return nil, p.unsupported(class)
+		}
 		if class == "Div" {
-			// Div carries two more args, and the reference sets them false
-			// rather than leaving them absent -- so they dump, and a port that
-			// omitted them would mismatch on every division.
+			// Div records how the dialect divides; the reference reads both
+			// flags off the dialect rather than defaulting them.
 			this = New(class, Arg{"this", this}, Arg{"expression", right},
-				Arg{"typed", false}, Arg{"safe", false})
+				Arg{"typed", p.tables.TypedDivision}, Arg{"safe", p.tables.SafeDivision})
 			continue
 		}
 		this = New(class, Arg{"this", this}, Arg{"expression", right})
 	}
 }
 
+// parseUnary mirrors the reference's UNARY_PARSERS, including that NOT takes
+// an equality as its operand rather than a unary -- so `NOT a = b` negates the
+// comparison, not the column.
 func (p *parser) parseUnary() (*Expression, error) {
-	if p.match(TokDASH) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("expression")
+	}
+	switch c.Type {
+	case TokPLUS:
+		p.advance()
+		return p.parseUnary() // unary plus is a no-op in the reference too
+	case TokDASH:
+		p.advance()
 		this, err := p.parseUnary()
 		if err != nil {
 			return nil, err
 		}
 		return New("Neg", Arg{"this", this}), nil
+	case TokTILDE:
+		p.advance()
+		this, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		return New("BitwiseNot", Arg{"this", this}), nil
+	case TokNOT:
+		p.advance()
+		this, err := p.parseEquality()
+		if err != nil {
+			return nil, err
+		}
+		return New("Not", Arg{"this", this}), nil
 	}
 	return p.parsePrimary()
 }
 
+// parsePrimary is entered with a token current; parseUnary checked.
 func (p *parser) parsePrimary() (*Expression, error) {
 	c := p.curr()
-	if c == nil {
-		return nil, p.unsupported("expression")
-	}
 
 	switch c.Type {
 	case TokNUMBER:

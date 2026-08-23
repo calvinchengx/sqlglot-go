@@ -37,6 +37,33 @@ type ParserTables struct {
 	// list -- CURDATE in Databricks, CASE and IF everywhere -- and so are
 	// not available as a bare column name.
 	NoParenFunctionNames map[string]struct{}
+	// TypedDivision and SafeDivision are recorded on every Div node; the
+	// reference reads them off the dialect, so they are not always false.
+	TypedDivision bool
+	SafeDivision  bool
+	// DPipeIsStringConcat decides whether || concatenates or is a logical
+	// or; StrictStringConcat becomes the DPipe node's safe flag, inverted.
+	DPipeIsStringConcat bool
+	StrictStringConcat  bool
+	// JoinsHaveEqualPrecedence makes a comma join an explicit CROSS join.
+	JoinsHaveEqualPrecedence bool
+	// The precedence chain, level by level, token to node class. These are
+	// per dialect and not interchangeable: DuckDB reads ^ as Pow where the
+	// default reads it as BitwiseXor.
+	Disjunction map[TokenType]string
+	Conjunction map[TokenType]string
+	Equality    map[TokenType]string
+	Comparison  map[TokenType]string
+	Bitwise     map[TokenType]string
+	Term        map[TokenType]string
+	Factor      map[TokenType]string
+	Exponent    map[TokenType]string
+	// JoinSides, JoinKinds and JoinMethods are the words that may precede
+	// JOIN. A method -- NATURAL, ASOF, POSITIONAL -- changes what the join
+	// means and is refused rather than dropped.
+	JoinSides   map[TokenType]struct{}
+	JoinKinds   map[TokenType]struct{}
+	JoinMethods map[TokenType]struct{}
 }
 
 // FuncSpec is how one function name becomes a node: the class, the
@@ -2004,6 +2031,65 @@ var parserTables = map[string]*ParserTables{
 			"CASE":            {},
 			"CONNECT_BY_ROOT": {},
 			"IF":              {},
+		},
+		TypedDivision:            false,
+		SafeDivision:             false,
+		DPipeIsStringConcat:      true,
+		StrictStringConcat:       false,
+		JoinsHaveEqualPrecedence: false,
+		Disjunction: map[TokenType]string{
+			TokOR: "Or",
+		},
+		Conjunction: map[TokenType]string{
+			TokAND: "And",
+		},
+		Equality: map[TokenType]string{
+			TokEQ:          "EQ",
+			TokNEQ:         "NEQ",
+			TokNULLSAFE_EQ: "NullSafeEQ",
+		},
+		Comparison: map[TokenType]string{
+			TokLT:  "LT",
+			TokLTE: "LTE",
+			TokGT:  "GT",
+			TokGTE: "GTE",
+		},
+		Bitwise: map[TokenType]string{
+			TokAMP:   "BitwiseAnd",
+			TokPIPE:  "BitwiseOr",
+			TokCARET: "BitwiseXor",
+		},
+		Term: map[TokenType]string{
+			TokDASH:    "Sub",
+			TokPLUS:    "Add",
+			TokCOLLATE: "Collate",
+			TokMOD:     "Mod",
+		},
+		Factor: map[TokenType]string{
+			TokSTAR:       "Mul",
+			TokSLASH:      "Div",
+			TokLR_ARROW:   "Distance",
+			TokLLRR_ARROW: "DistanceNd",
+			TokDIV:        "IntDiv",
+		},
+		Exponent: nil,
+		JoinSides: map[TokenType]struct{}{
+			TokFULL:  {},
+			TokLEFT:  {},
+			TokRIGHT: {},
+		},
+		JoinKinds: map[TokenType]struct{}{
+			TokANTI:          {},
+			TokCROSS:         {},
+			TokINNER:         {},
+			TokOUTER:         {},
+			TokSEMI:          {},
+			TokSTRAIGHT_JOIN: {},
+		},
+		JoinMethods: map[TokenType]struct{}{
+			TokASOF:       {},
+			TokNATURAL:    {},
+			TokPOSITIONAL: {},
 		},
 	},
 	"tsql": {
@@ -3990,6 +4076,65 @@ var parserTables = map[string]*ParserTables{
 			"IF":              {},
 			"NEXT":            {},
 		},
+		TypedDivision:            true,
+		SafeDivision:             false,
+		DPipeIsStringConcat:      true,
+		StrictStringConcat:       false,
+		JoinsHaveEqualPrecedence: false,
+		Disjunction: map[TokenType]string{
+			TokOR: "Or",
+		},
+		Conjunction: map[TokenType]string{
+			TokAND: "And",
+		},
+		Equality: map[TokenType]string{
+			TokEQ:          "EQ",
+			TokNEQ:         "NEQ",
+			TokNULLSAFE_EQ: "NullSafeEQ",
+		},
+		Comparison: map[TokenType]string{
+			TokLT:  "LT",
+			TokLTE: "LTE",
+			TokGT:  "GT",
+			TokGTE: "GTE",
+		},
+		Bitwise: map[TokenType]string{
+			TokAMP:   "BitwiseAnd",
+			TokPIPE:  "BitwiseOr",
+			TokCARET: "BitwiseXor",
+		},
+		Term: map[TokenType]string{
+			TokDASH:    "Sub",
+			TokPLUS:    "Add",
+			TokCOLLATE: "Collate",
+			TokMOD:     "Mod",
+		},
+		Factor: map[TokenType]string{
+			TokSTAR:       "Mul",
+			TokSLASH:      "Div",
+			TokLR_ARROW:   "Distance",
+			TokLLRR_ARROW: "DistanceNd",
+			TokDIV:        "IntDiv",
+		},
+		Exponent: nil,
+		JoinSides: map[TokenType]struct{}{
+			TokFULL:  {},
+			TokLEFT:  {},
+			TokRIGHT: {},
+		},
+		JoinKinds: map[TokenType]struct{}{
+			TokANTI:          {},
+			TokCROSS:         {},
+			TokINNER:         {},
+			TokOUTER:         {},
+			TokSEMI:          {},
+			TokSTRAIGHT_JOIN: {},
+		},
+		JoinMethods: map[TokenType]struct{}{
+			TokASOF:       {},
+			TokNATURAL:    {},
+			TokPOSITIONAL: {},
+		},
 	},
 	"postgres": {
 		IDVarTokens: map[TokenType]struct{}{
@@ -5974,6 +6119,68 @@ var parserTables = map[string]*ParserTables{
 			"CONNECT_BY_ROOT": {},
 			"IF":              {},
 			"VARIADIC":        {},
+		},
+		TypedDivision:            true,
+		SafeDivision:             false,
+		DPipeIsStringConcat:      true,
+		StrictStringConcat:       false,
+		JoinsHaveEqualPrecedence: false,
+		Disjunction: map[TokenType]string{
+			TokOR: "Or",
+		},
+		Conjunction: map[TokenType]string{
+			TokAND: "And",
+		},
+		Equality: map[TokenType]string{
+			TokEQ:          "EQ",
+			TokNEQ:         "NEQ",
+			TokNULLSAFE_EQ: "NullSafeEQ",
+		},
+		Comparison: map[TokenType]string{
+			TokLT:  "LT",
+			TokLTE: "LTE",
+			TokGT:  "GT",
+			TokGTE: "GTE",
+		},
+		Bitwise: map[TokenType]string{
+			TokAMP:   "BitwiseAnd",
+			TokPIPE:  "BitwiseOr",
+			TokCARET: "BitwiseXor",
+			TokHASH:  "BitwiseXor",
+		},
+		Term: map[TokenType]string{
+			TokDASH:    "Sub",
+			TokPLUS:    "Add",
+			TokCOLLATE: "Collate",
+			TokMOD:     "Mod",
+		},
+		Factor: map[TokenType]string{
+			TokSTAR:       "Mul",
+			TokSLASH:      "Div",
+			TokLR_ARROW:   "Distance",
+			TokLLRR_ARROW: "DistanceNd",
+			TokDIV:        "IntDiv",
+		},
+		Exponent: map[TokenType]string{
+			TokCARET: "Pow",
+		},
+		JoinSides: map[TokenType]struct{}{
+			TokFULL:  {},
+			TokLEFT:  {},
+			TokRIGHT: {},
+		},
+		JoinKinds: map[TokenType]struct{}{
+			TokANTI:          {},
+			TokCROSS:         {},
+			TokINNER:         {},
+			TokOUTER:         {},
+			TokSEMI:          {},
+			TokSTRAIGHT_JOIN: {},
+		},
+		JoinMethods: map[TokenType]struct{}{
+			TokASOF:       {},
+			TokNATURAL:    {},
+			TokPOSITIONAL: {},
 		},
 	},
 	"duckdb": {
@@ -8014,6 +8221,67 @@ var parserTables = map[string]*ParserTables{
 			"IF":              {},
 			"MAP":             {},
 		},
+		TypedDivision:            false,
+		SafeDivision:             false,
+		DPipeIsStringConcat:      true,
+		StrictStringConcat:       false,
+		JoinsHaveEqualPrecedence: false,
+		Disjunction: map[TokenType]string{
+			TokOR: "Or",
+		},
+		Conjunction: map[TokenType]string{
+			TokAND: "And",
+		},
+		Equality: map[TokenType]string{
+			TokEQ:          "EQ",
+			TokNEQ:         "NEQ",
+			TokNULLSAFE_EQ: "NullSafeEQ",
+		},
+		Comparison: map[TokenType]string{
+			TokLT:  "LT",
+			TokLTE: "LTE",
+			TokGT:  "GT",
+			TokGTE: "GTE",
+		},
+		Bitwise: map[TokenType]string{
+			TokAMP:  "BitwiseAnd",
+			TokPIPE: "BitwiseOr",
+		},
+		Term: map[TokenType]string{
+			TokDASH:    "Sub",
+			TokPLUS:    "Add",
+			TokCOLLATE: "Collate",
+			TokMOD:     "Mod",
+		},
+		Factor: map[TokenType]string{
+			TokSTAR:       "Mul",
+			TokSLASH:      "Div",
+			TokLR_ARROW:   "Distance",
+			TokLLRR_ARROW: "DistanceNd",
+			TokDIV:        "IntDiv",
+		},
+		Exponent: map[TokenType]string{
+			TokCARET: "Pow",
+			TokDSTAR: "Pow",
+		},
+		JoinSides: map[TokenType]struct{}{
+			TokFULL:  {},
+			TokLEFT:  {},
+			TokRIGHT: {},
+		},
+		JoinKinds: map[TokenType]struct{}{
+			TokANTI:          {},
+			TokCROSS:         {},
+			TokINNER:         {},
+			TokOUTER:         {},
+			TokSEMI:          {},
+			TokSTRAIGHT_JOIN: {},
+		},
+		JoinMethods: map[TokenType]struct{}{
+			TokASOF:       {},
+			TokNATURAL:    {},
+			TokPOSITIONAL: {},
+		},
 	},
 	"databricks": {
 		IDVarTokens: map[TokenType]struct{}{
@@ -10034,6 +10302,66 @@ var parserTables = map[string]*ParserTables{
 			"CURDATE":         {},
 			"IF":              {},
 			"TRANSFORM":       {},
+		},
+		TypedDivision:            false,
+		SafeDivision:             false,
+		DPipeIsStringConcat:      true,
+		StrictStringConcat:       false,
+		JoinsHaveEqualPrecedence: true,
+		Disjunction: map[TokenType]string{
+			TokOR: "Or",
+		},
+		Conjunction: map[TokenType]string{
+			TokAND: "And",
+		},
+		Equality: map[TokenType]string{
+			TokEQ:          "EQ",
+			TokNEQ:         "NEQ",
+			TokNULLSAFE_EQ: "NullSafeEQ",
+		},
+		Comparison: map[TokenType]string{
+			TokLT:  "LT",
+			TokLTE: "LTE",
+			TokGT:  "GT",
+			TokGTE: "GTE",
+		},
+		Bitwise: map[TokenType]string{
+			TokAMP:   "BitwiseAnd",
+			TokPIPE:  "BitwiseOr",
+			TokCARET: "BitwiseXor",
+		},
+		Term: map[TokenType]string{
+			TokDASH:    "Sub",
+			TokPLUS:    "Add",
+			TokCOLLATE: "Collate",
+			TokMOD:     "Mod",
+		},
+		Factor: map[TokenType]string{
+			TokCOLON:      "JSONExtract",
+			TokSTAR:       "Mul",
+			TokSLASH:      "Div",
+			TokLR_ARROW:   "Distance",
+			TokLLRR_ARROW: "DistanceNd",
+			TokDIV:        "IntDiv",
+		},
+		Exponent: nil,
+		JoinSides: map[TokenType]struct{}{
+			TokFULL:  {},
+			TokLEFT:  {},
+			TokRIGHT: {},
+		},
+		JoinKinds: map[TokenType]struct{}{
+			TokANTI:          {},
+			TokCROSS:         {},
+			TokINNER:         {},
+			TokOUTER:         {},
+			TokSEMI:          {},
+			TokSTRAIGHT_JOIN: {},
+		},
+		JoinMethods: map[TokenType]struct{}{
+			TokASOF:       {},
+			TokNATURAL:    {},
+			TokPOSITIONAL: {},
 		},
 	},
 }

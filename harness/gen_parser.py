@@ -29,6 +29,16 @@ def ttset(name: str, tokens) -> str:
     return f"\t\t{name}: map[TokenType]struct{{}}{{\n{body}\t\t}},\n"
 
 
+def opmap(name: str, table) -> str:
+    if not table:
+        return f"\t\t{name}: nil,\n"
+    body = "".join(
+        f"\t\t\tTok{t.name}: {gostr(cls.__name__)},\n"
+        for t, cls in sorted(table.items(), key=lambda kv: kv[0].value)
+    )
+    return f"\t\t{name}: map[TokenType]string{{\n{body}\t\t}},\n"
+
+
 def strset(name: str, names) -> str:
     body = "".join(f"\t\t\t{gostr(n)}: {{}},\n" for n in sorted(names))
     return f"\t\t{name}: map[string]struct{{}}{{\n{body}\t\t}},\n"
@@ -136,6 +146,33 @@ def main() -> int:
         "\t// list -- CURDATE in Databricks, CASE and IF everywhere -- and so are\n",
         "\t// not available as a bare column name.\n",
         "\tNoParenFunctionNames map[string]struct{}\n",
+        "\t// TypedDivision and SafeDivision are recorded on every Div node; the\n",
+        "\t// reference reads them off the dialect, so they are not always false.\n",
+        "\tTypedDivision bool\n",
+        "\tSafeDivision  bool\n",
+        "\t// DPipeIsStringConcat decides whether || concatenates or is a logical\n",
+        "\t// or; StrictStringConcat becomes the DPipe node's safe flag, inverted.\n",
+        "\tDPipeIsStringConcat bool\n",
+        "\tStrictStringConcat  bool\n",
+        "\t// JoinsHaveEqualPrecedence makes a comma join an explicit CROSS join.\n",
+        "\tJoinsHaveEqualPrecedence bool\n",
+        "\t// The precedence chain, level by level, token to node class. These are\n",
+        "\t// per dialect and not interchangeable: DuckDB reads ^ as Pow where the\n",
+        "\t// default reads it as BitwiseXor.\n",
+        "\tDisjunction map[TokenType]string\n",
+        "\tConjunction map[TokenType]string\n",
+        "\tEquality    map[TokenType]string\n",
+        "\tComparison  map[TokenType]string\n",
+        "\tBitwise     map[TokenType]string\n",
+        "\tTerm        map[TokenType]string\n",
+        "\tFactor      map[TokenType]string\n",
+        "\tExponent    map[TokenType]string\n",
+        "\t// JoinSides, JoinKinds and JoinMethods are the words that may precede\n",
+        "\t// JOIN. A method -- NATURAL, ASOF, POSITIONAL -- changes what the join\n",
+        "\t// means and is refused rather than dropped.\n",
+        "\tJoinSides   map[TokenType]struct{}\n",
+        "\tJoinKinds   map[TokenType]struct{}\n",
+        "\tJoinMethods map[TokenType]struct{}\n",
         "}\n\n",
         "// FuncSpec is how one function name becomes a node: the class, the\n",
         "// argument keys positional arguments fill in order, and whether the last\n",
@@ -160,6 +197,29 @@ def main() -> int:
         out.append(ttset("StatementTokens", set(P.STATEMENT_PARSERS) | set(tk.COMMANDS)))
         out.append(ttset("FuncTokens", P.FUNC_TOKENS))
         out.append(strset("NoParenFunctionNames", P.NO_PAREN_FUNCTION_PARSERS))
+        d = Dialect.get_or_raise(name or None)
+        for field, value in (
+            ("TypedDivision", d.TYPED_DIVISION),
+            ("SafeDivision", d.SAFE_DIVISION),
+            ("DPipeIsStringConcat", d.DPIPE_IS_STRING_CONCAT),
+            ("StrictStringConcat", d.STRICT_STRING_CONCAT),
+            ("JoinsHaveEqualPrecedence", P.JOINS_HAVE_EQUAL_PRECEDENCE),
+        ):
+            out.append(f"\t\t{field}: {str(bool(value)).lower()},\n")
+        for field, table in (
+            ("Disjunction", P.DISJUNCTION),
+            ("Conjunction", P.CONJUNCTION),
+            ("Equality", P.EQUALITY),
+            ("Comparison", P.COMPARISON),
+            ("Bitwise", P.BITWISE),
+            ("Term", P.TERM),
+            ("Factor", P.FACTOR),
+            ("Exponent", P.EXPONENT),
+        ):
+            out.append(opmap(field, table))
+        out.append(ttset("JoinSides", P.JOIN_SIDES))
+        out.append(ttset("JoinKinds", P.JOIN_KINDS))
+        out.append(ttset("JoinMethods", P.JOIN_METHODS))
         out.append("\t},\n")
     out.append("}\n")
 

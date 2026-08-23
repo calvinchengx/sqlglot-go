@@ -51,6 +51,14 @@ func (p *parser) parseSelect() (*Expression, error) {
 		sel.Set("from_", from)
 	}
 
+	joins, err := p.parseJoins()
+	if err != nil {
+		return nil, err
+	}
+	for _, j := range joins {
+		sel.Append("joins", j)
+	}
+
 	if err := p.parseQueryModifiers(sel); err != nil {
 		return nil, err
 	}

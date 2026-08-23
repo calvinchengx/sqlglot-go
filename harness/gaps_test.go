@@ -26,7 +26,7 @@ func TestGapReport(t *testing.T) {
 	reason := regexp.MustCompile(`unsupported statement: (.*?) at "`)
 
 	counts := map[string]int{}
-	examples := map[string]string{}
+	examples := map[string][]string{}
 	total := 0
 	for _, c := range cases {
 		if _, perr := sqlglot.ParseOne(c.SQL, c.Dialect); perr == nil {
@@ -40,8 +40,8 @@ func TestGapReport(t *testing.T) {
 				key = "tokenizer refused the statement"
 			}
 			counts[key]++
-			if _, seen := examples[key]; !seen {
-				examples[key] = truncate(c.SQL, 70)
+			if len(examples[key]) < 4 {
+				examples[key] = append(examples[key], truncate(c.SQL, 62))
 			}
 		}
 	}
@@ -59,6 +59,9 @@ func TestGapReport(t *testing.T) {
 
 	t.Logf("%d statements refused, by reason:", total)
 	for _, k := range keys {
-		t.Logf("  %5d  %-34s e.g. %s", counts[k], k, examples[k])
+		t.Logf("  %5d  %s", counts[k], k)
+		for _, e := range examples[k] {
+			t.Logf("            %s", e)
+		}
 	}
 }

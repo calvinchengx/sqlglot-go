@@ -74,6 +74,12 @@ func (p *parser) atAny(tts ...TokenType) bool {
 }
 
 // match consumes the current token when it has this type.
+// atPair reports whether the current and next tokens have these types.
+func (p *parser) atPair(a, b TokenType) bool {
+	n := p.peek(1)
+	return p.at(a) && n != nil && n.Type == b
+}
+
 func (p *parser) match(tt TokenType) bool {
 	if p.at(tt) {
 		p.advance()

@@ -173,9 +173,6 @@ func TestUnsupportedIsAGapNotAGuess(t *testing.T) {
 	for _, sql := range []string{
 		"DELETE FROM t",
 		"SELECT COUNT(*)",
-		"SELECT * FROM a, b",
-		"SELECT * FROM a JOIN b ON a.x = b.x",
-		"SELECT * FROM (SELECT 1)",
 		"WITH c AS (SELECT 1) SELECT * FROM c",
 		"SELECT 1 UNION SELECT 2",
 	} {

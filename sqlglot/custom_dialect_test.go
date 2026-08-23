@@ -96,3 +96,24 @@ func TestRawStringsThatStillHonourEscapes(t *testing.T) {
 		t.Errorf("got %s", got)
 	}
 }
+
+// Not every dialect reads || as concatenation; the reference has a flag for it
+// and none of the five configured here turns it off, so the branch would ship
+// unrun otherwise.
+func TestDoublePipeIsNotAlwaysConcatenation(t *testing.T) {
+	base, ok := ConfigFor("")
+	if !ok {
+		t.Fatal("no neutral config")
+	}
+	tables := *base.Tables
+	tables.DPipeIsStringConcat = false
+
+	toks, err := Tokenize("a || b", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	p := &parser{tokens: toks, cfg: base, tables: &tables}
+	if tree, err := p.parseOne(); err == nil {
+		t.Errorf("with || not a concatenation the statement should not parse, got %s", tree.Class)
+	}
+}

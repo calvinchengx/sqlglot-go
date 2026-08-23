@@ -114,11 +114,14 @@ func TestRefusals(t *testing.T) {
 		{"STREAM table", "SELECT * FROM STREAM t", "databricks"},
 		{"qualified function call", "SELECT a.f(1)", ""},
 		{"table function", "SELECT * FROM read_csv('x')", ""},
-		{"comma join", "SELECT * FROM a, b", ""},
-		{"explicit join", "SELECT * FROM a JOIN b ON a.x = b.x", ""},
 		{"cross apply", "SELECT * FROM a CROSS APPLY f(1)", "tsql"},
-		{"subquery", "SELECT * FROM (SELECT 1)", ""},
 		{"parenthesised table", "SELECT 1 FROM (t)", ""},
+		{"natural join", "SELECT 1 FROM a NATURAL JOIN b", ""},
+		{"USING", "SELECT 1 FROM a JOIN b USING (x)", ""},
+		{"a side with no JOIN", "SELECT 1 FROM a LEFT b", ""},
+		{"unclosed subquery", "SELECT 1 FROM (SELECT 1", ""},
+		{"assignment", "SELECT 1 FROM t WHERE a := 1", ""},
+		{"COLLATE", "SELECT a COLLATE utf8 FROM t", ""},
 		{"CTE", "WITH c AS (SELECT 1) SELECT * FROM c", ""},
 		{"set operation", "SELECT 1 UNION SELECT 2", ""},
 		{"SELECT ALL", "SELECT ALL a FROM t", ""},
@@ -146,6 +149,17 @@ func TestRefusals(t *testing.T) {
 		{"dangling alias", "SELECT * FROM t AS", ""},
 		{"dangling FROM", "SELECT * FROM", ""},
 		{"dangling ORDER BY", "SELECT a FROM t ORDER BY", ""},
+		{"dangling GROUP BY", "SELECT a FROM t GROUP BY", ""},
+		{"dangling addition", "a +", ""},
+		{"dangling bitwise and", "a &", ""},
+		{"dangling concatenation", "a ||", ""},
+		{"dangling shift", "a <<", ""},
+		{"dangling bitwise not", "~", ""},
+		{"dangling NOT", "NOT", ""},
+		{"dangling JOIN", "SELECT 1 FROM a JOIN", ""},
+		{"dangling ON", "SELECT 1 FROM a JOIN b ON", ""},
+		{"dangling comma join", "SELECT 1 FROM a,", ""},
+		{"dangling subquery alias", "SELECT 1 FROM (SELECT 1) AS", ""},
 		{"over-qualified star", "SELECT a.b.c.d.*", ""},
 	} {
 		t.Run(c.name, func(t *testing.T) {
@@ -195,5 +209,113 @@ func TestParseUnknownDialect(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "oracle") {
 		t.Errorf("the error should name the dialect asked for: %s", err)
+	}
+}
+
+// Precedence is not a detail. Each of these pairs is a level the reference
+// keeps separate and a port could plausibly collapse -- and collapsing one
+// parses most statements correctly and a few silently wrong.
+func TestPrecedenceLevelsThatAreEasyToCollapse(t *testing.T) {
+	for _, c := range []struct{ name, sql, dialect, want string }{
+		// EQUALITY is looser than COMPARISON: a = (b > c), not (a = b) > c.
+		{"equality below comparison", "a = b > c", "", "EQ Column Identifier GT Column Identifier Column Identifier"},
+		// MOD is an additive operator, so a % (b * c), not (a % b) * c.
+		{"modulo binds like addition", "a % b * c", "", "Mod Column Identifier Mul Column Identifier Column Identifier"},
+		// BITWISE sits between comparison and addition.
+		{"bitwise below addition", "a & b + c", "", "BitwiseAnd Column Identifier Add Column Identifier Column Identifier"},
+		{"multiplication binds tighter", "a + b * c", "", "Add Column Identifier Mul Column Identifier Column Identifier"},
+		// NOT takes an equality, so it negates the comparison.
+		{"NOT covers the comparison", "NOT a = b", "", "Not EQ Column Identifier Column Identifier"},
+		// DuckDB reads ^ as exponentiation where the default reads xor.
+		{"caret is xor by default", "a ^ b", "", "BitwiseXor Column Identifier Column Identifier"},
+		{"caret is power in DuckDB", "a ^ b", "duckdb", "Pow Column Identifier Column Identifier"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if got := classes(parse(t, c.sql, c.dialect)); got != c.want {
+				t.Errorf("ParseOne(%q, %q)\n  want %s\n  got  %s", c.sql, c.dialect, c.want, got)
+			}
+		})
+	}
+}
+
+func TestOperators(t *testing.T) {
+	for _, c := range []struct{ name, sql, want string }{
+		{"bitwise or", "a | b", "BitwiseOr Column Identifier Column Identifier"},
+		{"left shift", "a << b", "BitwiseLeftShift Column Identifier Column Identifier"},
+		{"right shift", "a >> b", "BitwiseRightShift Column Identifier Column Identifier"},
+		{"concatenation", "a || b", "DPipe Column Identifier Column Identifier"},
+		{"bitwise not", "~a", "BitwiseNot Column Identifier"},
+		{"unary plus is a no-op", "+a", "Column Identifier"},
+		{"integer division", "a DIV b", "IntDiv Column Identifier Column Identifier"},
+		{"null-safe equality", "a <=> b", "NullSafeEQ Column Identifier Column Identifier"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if got := classes(parse(t, c.sql, "")); got != c.want {
+				t.Errorf("ParseOne(%q)\n  want %s\n  got  %s", c.sql, c.want, got)
+			}
+		})
+	}
+}
+
+// The division flags are read off the dialect, not defaulted -- T-SQL and
+// PostgreSQL divide with integer semantics and the node records it.
+func TestDivisionRecordsDialectSemantics(t *testing.T) {
+	for dialect, typed := range map[string]bool{"": false, "tsql": true, "postgres": true, "duckdb": false} {
+		div := parse(t, "a / b", dialect)
+		if got := div.Args["typed"]; got != typed {
+			t.Errorf("Div.typed for %q = %v, want %v", dialect, got, typed)
+		}
+	}
+}
+
+// A comma join is a join. Reading `FROM a, b` as `FROM a` is the bypass that
+// motivated this port: the guard saw one table and the engine read two.
+func TestCommaJoinIsAJoin(t *testing.T) {
+	tree := parse(t, "SELECT * FROM a, other.secrets", "")
+	tables := tree.FindAll("Table")
+	if len(tables) != 2 {
+		t.Fatalf("found %d tables, want 2 -- a comma join must not disappear", len(tables))
+	}
+	if got := tables[1].Name(); got != "secrets" {
+		t.Errorf("the second table is %q, want secrets", got)
+	}
+	if got := tables[1].Args["db"].(*Expression).Name(); got != "other" {
+		t.Errorf("the second table's schema is %q, want other", got)
+	}
+}
+
+func TestJoins(t *testing.T) {
+	for _, c := range []struct{ name, sql, want string }{
+		{"plain", "SELECT 1 FROM a JOIN b ON x", "Select Literal From Table Identifier Join Table Identifier Column Identifier"},
+		{"comma", "SELECT 1 FROM a, b", "Select Literal From Table Identifier Join Table Identifier"},
+		{"cross", "SELECT 1 FROM a CROSS JOIN b", "Select Literal From Table Identifier Join Table Identifier"},
+		{"several", "SELECT 1 FROM a, b, c",
+			"Select Literal From Table Identifier Join Table Identifier Join Table Identifier"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if got := classes(parse(t, c.sql, "")); got != c.want {
+				t.Errorf("ParseOne(%q)\n  want %s\n  got  %s", c.sql, c.want, got)
+			}
+		})
+	}
+
+	// The side and kind are recorded as the reference records them: upper-cased
+	// text on the Join node, not folded into one field.
+	j := parse(t, "SELECT 1 FROM a LEFT OUTER JOIN b ON x", "").FindAll("Join")[0]
+	if j.Args["side"] != "LEFT" || j.Args["kind"] != "OUTER" {
+		t.Errorf("LEFT OUTER JOIN recorded side=%v kind=%v", j.Args["side"], j.Args["kind"])
+	}
+}
+
+func TestSubqueryInFrom(t *testing.T) {
+	tree := parse(t, "SELECT a FROM (SELECT a FROM t) AS x", "")
+	want := "Select Column Identifier From Subquery Select Column Identifier From Table Identifier TableAlias Identifier"
+	if got := classes(tree); got != want {
+		t.Errorf("ParseOne\n  want %s\n  got  %s", want, got)
+	}
+	// The inner table is still reachable, which is what a guard walking the
+	// tree for table references depends on.
+	if n := len(tree.FindAll("Table")); n != 1 {
+		t.Errorf("found %d tables inside the subquery, want 1", n)
 	}
 }

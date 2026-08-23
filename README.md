@@ -22,11 +22,11 @@ whose Go executor is the first consumer.
 <!-- coverage:start -->
 | Dialect | Tokens | Trees matched | Of | Unparsed | Mismatched |
 |---|---|---|---|---|---|
-| neutral | 997/997 | 245 | 997 | 752 | 0 |
-| tsql | 233/233 | 19 | 233 | 214 | 0 |
-| postgres | 398/398 | 22 | 398 | 376 | 0 |
-| duckdb | 392/392 | 51 | 392 | 341 | 0 |
-| databricks | 151/151 | 29 | 151 | 122 | 0 |
+| neutral | 997/997 | 280 | 997 | 717 | 0 |
+| tsql | 233/233 | 22 | 233 | 211 | 0 |
+| postgres | 398/398 | 24 | 398 | 374 | 0 |
+| duckdb | 392/392 | 58 | 392 | 334 | 0 |
+| databricks | 151/151 | 30 | 151 | 121 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number
@@ -63,6 +63,7 @@ at 100% of statements. The harness proves it can fail
 ```sh
 make test       # the differential run
 make coverage   # per-dialect numbers against the reference
+make gaps       # why the port refuses what it refuses, most common first
 make cover      # test coverage of the port
 make oracle     # regenerate expectations and generated tables from the pinned reference
 ```

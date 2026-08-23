@@ -83,6 +83,14 @@ func (e *Expression) Set(key string, value any) {
 	e.Args[key] = value
 }
 
+// Append adds one child to a list-valued arg, creating it if absent -- the
+// reference's `append`. The key takes its position on first use, which is what
+// puts joins immediately after from_ in the dump.
+func (e *Expression) Append(key string, child *Expression) {
+	existing, _ := e.Args[key].([]*Expression)
+	e.Set(key, append(existing, child))
+}
+
 // This is the conventional primary child, as in the reference.
 func (e *Expression) This() *Expression {
 	if e == nil {
