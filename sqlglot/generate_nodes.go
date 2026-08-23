@@ -63,6 +63,10 @@ func init() {
 		"Window":        (*generator).writeWindow,
 		"Interval":      (*generator).writeInterval,
 		"Lambda":        (*generator).writeLambda,
+		"Extract":       (*generator).writeSyntaxFunction,
+		"Trim":          (*generator).writeSyntaxFunction,
+		"Substring":     (*generator).writeSyntaxFunction,
+		"StrPosition":   (*generator).writeSyntaxFunction,
 		"IntervalSpan":  (*generator).writeIntervalSpan,
 		"Var":           (*generator).writeVar,
 		"WindowSpec":    (*generator).writeWindowSpec,
@@ -718,4 +722,53 @@ func (g *generator) writeLambda(e *Expression) string {
 		head = "(" + head + ")"
 	}
 	return head + " -> " + g.child(e, "this")
+}
+
+// writeSyntaxFunction fills the template the reference itself produced for
+// this class, this dialect and this set of present arguments. None of these is
+// written `NAME(a, b, c)` and no two dialects agree -- DuckDB writes STRPOS,
+// T-SQL CHARINDEX, PostgreSQL POSITION(a IN b) -- so nothing here is spelled
+// out, only substituted.
+func (g *generator) writeSyntaxFunction(e *Expression) string {
+	present := map[string]bool{}
+	for key, value := range e.Args {
+		switch v := value.(type) {
+		case *Expression:
+			if v != nil {
+				present[key] = true
+			}
+		case string:
+			if v != "" {
+				present[key] = true
+			}
+		}
+	}
+	for _, candidate := range g.tables.SyntaxSQL[e.Class] {
+		if len(candidate.Keys) != len(present) {
+			continue
+		}
+		matches := true
+		for _, key := range candidate.Keys {
+			if !present[key] {
+				matches = false
+				break
+			}
+		}
+		if !matches {
+			continue
+		}
+		out := candidate.Template
+		for _, key := range candidate.Keys {
+			var text string
+			switch v := e.Args[key].(type) {
+			case *Expression:
+				text = g.node(v)
+			case string:
+				text = v
+			}
+			out = strings.ReplaceAll(out, "{"+key+"}", text)
+		}
+		return out
+	}
+	return g.fail(e.Class)
 }

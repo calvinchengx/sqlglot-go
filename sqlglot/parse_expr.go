@@ -825,6 +825,9 @@ func (p *parser) parseFunction() (*Expression, error) {
 	if upper == "CAST" || upper == "TRY_CAST" {
 		return p.parseCast(upper == "TRY_CAST")
 	}
+	if _, syntax := p.tables.SyntaxFunctions[upper]; syntax {
+		return p.parseSyntaxFunction(upper)
+	}
 	spec, named := p.tables.Functions[upper]
 	// A name whose SHAPE depends on how many arguments it is given -- DATEDIFF
 	// of two is not DATEDIFF of three -- has one spec per count instead, and

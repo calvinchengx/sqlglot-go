@@ -713,6 +713,61 @@ def class_sensitive_args(P, exp, dialect, funcs):
     return {n: {i: sorted(c) for i, c in sorted(d.items())} for n, d in out.items()}
 
 
+SYNTAX_SHAPES = {
+    "Extract": [["this", "expression"]],
+    "Trim": [["this"], ["this", "expression"], ["this", "expression", "position"]],
+    "Substring": [["this"], ["this", "start"], ["this", "start", "length"]],
+    "StrPosition": [["this", "substr"]],
+}
+
+
+def syntax_templates(exp, dialect):
+    """How the reference WRITES the nodes that have their own call syntax.
+
+    None of these is `NAME(a, b, c)`, and no two dialects agree: DuckDB writes
+    POSITION as STRPOS(b, a), T-SQL as CHARINDEX(a, b), Databricks as
+    LOCATE(a, b) and PostgreSQL as POSITION(a IN b); T-SQL writes EXTRACT as
+    DATEPART. So the shape is not described, it is RENDERED with placeholder
+    columns and the placeholders replaced by markers -- which makes the
+    template whatever the reference actually emits.
+
+    One template per set of present arguments, because an absent one changes
+    the spelling: `TRIM(s)` is not `TRIM(BOTH 'x' FROM s)` with a piece
+    removed.
+    """
+    out = {}
+    for cls_name, shapes in SYNTAX_SHAPES.items():
+        cls = getattr(exp, cls_name, None)
+        if cls is None:
+            continue
+        for keys in shapes:
+            kwargs = {}
+            for key in keys:
+                kwargs[key] = "BOTH" if key == "position" else exp.column(f"__a{key}__")
+            try:
+                text = cls(**kwargs).sql(dialect=dialect or None)
+            except Exception:  # noqa: BLE001 -- this dialect will not write that shape
+                continue
+            ok = True
+            for key in keys:
+                if key == "position":
+                    # A string arg, so it is rendered as the word itself.
+                    # PostgreSQL writes it (`TRIM(BOTH 'x' FROM s)`) and DuckDB
+                    # drops it; leaving the probe word in the template would
+                    # have written BOTH for a LEADING trim.
+                    if text.count("BOTH") == 1:
+                        text = text.replace("BOTH", "{position}")
+                    continue
+                token = f"__a{key}__"
+                if text.count(token) != 1:
+                    ok = False
+                    break
+                text = text.replace(token, "{" + key + "}")
+            if ok:
+                out.setdefault(cls_name, []).append((keys, text))
+    return out
+
+
 def render_functions(P, exp, dialect, funcs):
     """How the reference WRITES each function node, for the generator.
 
@@ -1162,6 +1217,15 @@ def main() -> int:
         "\t// records DATEADD(qq, ...) as QUARTER, not QQ. Read off the\n",
         "\t// builder itself, since nothing outside it shows the mapping.\n",
         "\tUnitAliases map[string]map[string]string\n",
+        "\t// SyntaxFunctions parse their arguments with their own grammar\n",
+        "\t// rather than as a comma-separated list. A name here that the\n",
+        "\t// port has not implemented is missing GRAMMAR, which is a\n",
+        "\t// different thing from a builder it cannot describe.\n",
+        "\tSyntaxFunctions map[string]struct{}\n",
+        "\t// SyntaxSQL is how each of those is WRITTEN, one template per set\n",
+        "\t// of present arguments, rendered from the reference.\n",
+        "\tSyntaxSQL map[string][]SyntaxTemplate\n",
+
         "\tFunctionsByArity map[string]map[int]FuncSpec\n",
         "\tClassSensitiveArgs map[string][]ClassTrigger\n",
         "\tCastSensitiveArgs map[string][]int\n",
@@ -1266,6 +1330,13 @@ def main() -> int:
         "}\n\n",
         "// ClassTrigger names the classes that, at Index, make a builder produce\n",
         "// something other than what the probe recorded.\n",
+        "// SyntaxTemplate is how one shape of a syntax function is written,\n",
+        "// with {key} where each argument goes.\n",
+        "type SyntaxTemplate struct {\n",
+        "\tKeys     []string\n",
+        "\tTemplate string\n",
+        "}\n",
+        "\n",
         "type ClassTrigger struct {\n",
         "\tIndex   int\n",
         "\tClasses []string\n",
@@ -1294,6 +1365,12 @@ def main() -> int:
         out.append(strset("NamedFunctions", named))
         out.append(ttset("NoParenFunctions", P.NO_PAREN_FUNCTIONS))
         out.append(opmap("NoParenFunctionClasses", P.NO_PAREN_FUNCTIONS))
+        # Names with their own SYNTAX, not merely their own builder:
+        # EXTRACT(unit FROM x), TRIM(BOTH ' ' FROM x), POSITION(a IN b). The
+        # port used to lump these in with unportable builders, which filed
+        # missing GRAMMAR under a label that reads as "cannot be ported" -- and
+        # that label is what decides what gets built next.
+        out.append(strset("SyntaxFunctions", sorted(P.FUNCTION_PARSERS)))
         funcs, by_arity, unit_maps = probe_functions(P, exp, name)
         if unit_maps:
             out.append("\t\tUnitAliases: map[string]map[string]string{\n")
@@ -1327,6 +1404,17 @@ def main() -> int:
                     for i, cs in sorted(byindex.items())
                 )
                 out.append(f"\t\t\t{gostr(fname)}: {{{triggers}}},\n")
+            out.append("\t\t},\n")
+        syn = syntax_templates(exp, name)
+        if syn:
+            out.append("\t\tSyntaxSQL: map[string][]SyntaxTemplate{\n")
+            for cls_name in sorted(syn):
+                entries = "".join(
+                    "{[]string{%s}, %s}, "
+                    % (", ".join(gostr(k) for k in keys), gostr(text))
+                    for keys, text in syn[cls_name]
+                )
+                out.append(f"\t\t\t{gostr(cls_name)}: {{{entries}}},\n")
             out.append("\t\t},\n")
         casts = cast_sensitive_args(P, exp, name, render_input)
         if casts:
