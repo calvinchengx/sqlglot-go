@@ -227,13 +227,30 @@ func (p *parser) parseOrder() (*Expression, error) {
 		if hasDirection {
 			o.Set("desc", desc)
 		}
-		o.Set("nulls_first", !desc)
+		o.Set("nulls_first", p.nullsFirst(hasDirection && desc))
+		o.Set("with_fill", nil)
 		ordered = append(ordered, o)
 		if !p.match(TokCOMMA) {
 			break
 		}
 	}
 	return New("Order", Arg{"this", nil}, Arg{"expressions", ordered}, Arg{"siblings", nil}), nil
+}
+
+// nullsFirst answers where NULLs sort when the statement does not say.
+//
+// It is not "the opposite of DESC": PostgreSQL sorts NULLs last ascending and
+// first descending, DuckDB always last, T-SQL the other way round. The rule is
+// the reference's, read off the dialect.
+func (p *parser) nullsFirst(desc bool) bool {
+	ordering := p.tables.NullOrdering
+	if ordering == "nulls_are_last" {
+		return false
+	}
+	if desc {
+		return ordering != "nulls_are_small"
+	}
+	return ordering == "nulls_are_small"
 }
 
 func (p *parser) parseExpressionList() ([]*Expression, error) {

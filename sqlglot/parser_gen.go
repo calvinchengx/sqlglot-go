@@ -50,6 +50,10 @@ type ParserTables struct {
 	StrictStringConcat  bool
 	// JoinsHaveEqualPrecedence makes a comma join an explicit CROSS join.
 	JoinsHaveEqualPrecedence bool
+	// NullOrdering decides where NULLs sort when nobody says, and so
+	// what nulls_first records on an Ordered node. It differs per
+	// dialect and is not derivable from ASC or DESC alone.
+	NullOrdering string
 	// The precedence chain, level by level, token to node class. These are
 	// per dialect and not interchangeable: DuckDB reads ^ as Pow where the
 	// default reads it as BitwiseXor.
@@ -2061,6 +2065,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
+		NullOrdering:             "nulls_are_small",
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},
@@ -4264,6 +4269,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
+		NullOrdering:             "nulls_are_small",
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},
@@ -6472,6 +6478,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
+		NullOrdering:             "nulls_are_large",
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},
@@ -8737,6 +8744,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
+		NullOrdering:             "nulls_are_last",
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},
@@ -10980,6 +10988,7 @@ var parserTables = map[string]*ParserTables{
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: true,
+		NullOrdering:             "nulls_are_small",
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},

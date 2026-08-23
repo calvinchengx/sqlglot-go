@@ -93,11 +93,13 @@ jobs:
       # reference in the one place the port has no logic to catch it.
       - name: the generated tables are the reference's
         run: |
-          cp sqlglot/tokentype_gen.go sqlglot/dialects_gen.go sqlglot/parser_gen.go /tmp/
+          cp sqlglot/tokentype_gen.go sqlglot/dialects_gen.go sqlglot/parser_gen.go sqlglot/classes_gen.go /tmp/
           python3 harness/gen_tokenizer.py --sqlglot /tmp/sqlglot --out sqlglot
           python3 harness/gen_parser.py --sqlglot /tmp/sqlglot
-          gofmt -w sqlglot/tokentype_gen.go sqlglot/dialects_gen.go sqlglot/parser_gen.go
+          python3 harness/gen_classes.py --sqlglot /tmp/sqlglot > sqlglot/classes_gen.go
+          gofmt -w sqlglot/tokentype_gen.go sqlglot/dialects_gen.go sqlglot/parser_gen.go sqlglot/classes_gen.go
           diff /tmp/tokentype_gen.go sqlglot/tokentype_gen.go
           diff /tmp/dialects_gen.go sqlglot/dialects_gen.go
           diff /tmp/parser_gen.go sqlglot/parser_gen.go
+          diff /tmp/classes_gen.go sqlglot/classes_gen.go
           echo "generated tables are exactly the pinned reference's"

@@ -6,9 +6,10 @@
 #   make coverage   # print per-dialect coverage against the reference
 #   make lint       # vet + golangci-lint
 SQLGLOT ?= $(HOME)/opensource/sqlglot
+SERVICE ?= $(HOME)/calvinchengx/emulators/data-agent-service
 GOLANGCI = golangci/golangci-lint:v2.13.1
 
-.PHONY: help doctor test oracle coverage cover gaps lint clean
+.PHONY: help doctor test oracle service coverage cover gaps lint clean
 
 help: ## Show the available targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN{FS=":.*?## "}{printf "  %-12s %s\n", $$1, $$2}'
@@ -22,15 +23,19 @@ test: ## Unit tests and the differential run against the reference
 
 oracle: ## Regenerate expectations and generated tables from the PINNED reference (refuses any other)
 	python3 harness/oracle.py --sqlglot $(SQLGLOT) --out testdata/expected
-	python3 harness/gen_classes.py > sqlglot/classes_gen.go && gofmt -w sqlglot/classes_gen.go
+	python3 harness/gen_classes.py --sqlglot $(SQLGLOT) > sqlglot/classes_gen.go && gofmt -w sqlglot/classes_gen.go
 	python3 harness/gen_tokenizer.py --sqlglot $(SQLGLOT) --out sqlglot && gofmt -w sqlglot/tokentype_gen.go sqlglot/dialects_gen.go
 	python3 harness/gen_parser.py --sqlglot $(SQLGLOT) && gofmt -w sqlglot/parser_gen.go
+
+service: ## Re-extract the corpus of SQL data agent service is held to
+	python3 harness/gen_service_corpus.py --service $(SERVICE) --sqlglot $(SQLGLOT)
 
 gaps: ## Why the port refuses what it refuses, most common first
 	@go test ./harness/ -run TestGapReport -v 2>&1 | sed -n 's/^ *gaps_test.go:[0-9]*: //p'
 
-coverage: test ## Per-dialect coverage against the reference
-	@python3 -c 'import json; c=json.load(open("testdata/coverage.json")); print(f"reference {c[\"reference\"][:12]}  {c[\"matched\"]}/{c[\"total\"]}"); [print(f"  {d:10} {v[\"matched\"]:4}/{v[\"total\"]:<4} unparsed {v[\"unparsed\"]:4} mismatched {v[\"mismatched\"]}") for d,v in sorted(c["by_dialect"].items())]'
+coverage: test ## Per-dialect coverage, against the reference and against the service
+	@python3 -c 'import json; c=json.load(open("testdata/service/coverage.json")); print("data agent service:"); [print("  %-24s %3d/%d" % (k, v["parsed"], v["total"])) for k, v in sorted(c["by_category"].items())]'
+	@python3 -c 'import json; c=json.load(open("testdata/coverage.json")); print("reference %s  %d/%d" % (c["reference"][:12], c["matched"], c["total"])); [print("  %-10s %4d/%-4d unparsed %4d mismatched %d" % (d, v["matched"], v["total"], v["unparsed"], v["mismatched"])) for d, v in sorted(c["by_dialect"].items())]'
 
 lint: ## vet and golangci-lint, in a container
 	go vet ./...
@@ -41,4 +46,4 @@ cover: ## Test coverage of the port
 	@go tool cover -func=/tmp/sqlglot-go-cover.out | grep -v " 100.0%$$" || echo "  every statement covered"
 
 clean: ## Remove generated coverage
-	rm -f testdata/coverage.json testdata/token_coverage.json
+	rm -f testdata/coverage.json testdata/token_coverage.json testdata/service/coverage.json

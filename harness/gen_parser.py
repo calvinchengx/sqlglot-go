@@ -159,6 +159,10 @@ def main() -> int:
         "\tStrictStringConcat  bool\n",
         "\t// JoinsHaveEqualPrecedence makes a comma join an explicit CROSS join.\n",
         "\tJoinsHaveEqualPrecedence bool\n",
+        "\t// NullOrdering decides where NULLs sort when nobody says, and so\n",
+        "\t// what nulls_first records on an Ordered node. It differs per\n",
+        "\t// dialect and is not derivable from ASC or DESC alone.\n",
+        "\tNullOrdering string\n",
         "\t// The precedence chain, level by level, token to node class. These are\n",
         "\t// per dialect and not interchangeable: DuckDB reads ^ as Pow where the\n",
         "\t// default reads it as BitwiseXor.\n",
@@ -219,6 +223,7 @@ def main() -> int:
             ("JoinsHaveEqualPrecedence", P.JOINS_HAVE_EQUAL_PRECEDENCE),
         ):
             out.append(f"\t\t{field}: {str(bool(value)).lower()},\n")
+        out.append(f"\t\tNullOrdering: {gostr(d.NULL_ORDERING)},\n")
         for field, table in (
             ("Disjunction", P.DISJUNCTION),
             ("Conjunction", P.CONJUNCTION),

@@ -17,6 +17,29 @@ by the library's table of contents. See `docs/17-sqlglot-go.md` in
 [data-agent-service](https://github.com/calvinchengx/data-agent-service),
 whose Go executor is the first consumer.
 
+## Coverage against data agent service
+
+The SQL the first consumer is actually held to -- the gold answers in its
+evaluation suites, the statements its guard permits, and the ones its
+adversarial corpus requires it to refuse for a named reason. **This is the
+number that decides when the Go guard can be rewritten over a parse tree**, and
+it is deliberately a different question from the one below.
+
+<!-- service:start -->
+| Category | Parsed | Of |
+|---|---|---|
+| `must_parse` | 75 | 105 |
+| `must_parse_to_refuse` | 12 | 39 |
+<!-- service:end -->
+
+`must_parse` is SQL the guard permits: a gap there is a question the agent
+answers today and would stop answering. `must_parse_to_refuse` is SQL the guard
+refuses for a reason that depends on the tree -- "table function", "not
+queryable", "read-only" -- where failing to parse still refuses the statement,
+but for the wrong reason, and the conformance suite checks the reason.
+
+Regenerate with `make service`; nothing in it is authored here.
+
 ## Coverage against the reference
 
 <!-- coverage:start -->
@@ -62,7 +85,8 @@ at 100% of statements. The harness proves it can fail
 
 ```sh
 make test       # the differential run
-make coverage   # per-dialect numbers against the reference
+make coverage   # both coverage numbers
+make service    # re-extract the corpus of SQL data agent service is held to
 make gaps       # why the port refuses what it refuses, most common first
 make cover      # test coverage of the port
 make oracle     # regenerate expectations and generated tables from the pinned reference
