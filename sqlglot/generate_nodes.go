@@ -653,9 +653,9 @@ func (g *generator) anonymous(e *Expression, upper bool) string {
 func (g *generator) writeIn(e *Expression) string {
 	// A subquery brings its own parentheses; a list is given them here.
 	if q, ok := e.Args["query"].(*Expression); ok && q != nil {
-		return g.child(e, "this") + " IN " + g.node(q)
+		return g.childOperand(e, "this") + " IN " + g.node(q)
 	}
-	return g.child(e, "this") + " IN (" + g.list(e) + ")"
+	return g.childOperand(e, "this") + " IN (" + g.list(e) + ")"
 }
 
 func (g *generator) writeBetween(e *Expression) string {
@@ -1136,7 +1136,15 @@ func (g *generator) writeFilter(e *Expression) string {
 // the two spell a key needing quotes differently.
 func (g *generator) writeJSONPath(e *Expression) string {
 	parts, _ := e.Args["expressions"].([]*Expression)
-	out := g.tables.JSONPath.Open
+	// A path does not render the same wherever it appears: Databricks writes
+	// the same one as `c1:item[1].price` under a JSONExtract and as
+	// `'$.item[1].price'` under a JSONExtractScalar. The owner is what says
+	// which, and only the separators change.
+	pieces := g.tables.JSONPath
+	if over, ok := g.tables.JSONPathByClass[g.pathOwner]; ok {
+		pieces.Key, pieces.Subscript, pieces.QuotedKey = over.Key, over.Subscript, over.QuotedKey
+	}
+	out := pieces.Open
 	for _, part := range parts {
 		switch part.Class {
 		case "JSONPathRoot":
@@ -1149,9 +1157,9 @@ func (g *generator) writeJSONPath(e *Expression) string {
 				if inner.Class != "JSONPathWildcard" {
 					return g.fail(inner.Class + " in a JSON path")
 				}
-				form := g.tables.JSONPath.Key
+				form := pieces.Key
 				if part.Class == "JSONPathSubscript" {
-					form = g.tables.JSONPath.Subscript
+					form = pieces.Subscript
 				}
 				form = strings.ReplaceAll(form, "{key}", "*")
 				out += strings.ReplaceAll(form, "{index}", "*")
@@ -1159,7 +1167,7 @@ func (g *generator) writeJSONPath(e *Expression) string {
 			}
 			if part.Class == "JSONPathSubscript" {
 				n, _ := part.Args["this"].(int)
-				out += strings.ReplaceAll(g.tables.JSONPath.Subscript,
+				out += strings.ReplaceAll(pieces.Subscript,
 					"{index}", strconv.Itoa(n))
 				continue
 			}
@@ -1169,9 +1177,9 @@ func (g *generator) writeJSONPath(e *Expression) string {
 			// string, which the generator fuzzer found by feeding a path made
 			// of quote characters.
 			name, _ := part.Args["this"].(string)
-			form := g.tables.JSONPath.Key
+			form := pieces.Key
 			if !isBareIdentifier(name) {
-				form = g.tables.JSONPath.QuotedKey
+				form = pieces.QuotedKey
 			}
 			out += strings.ReplaceAll(form, "{key}",
 				escapeStringBody(name, g.cfg.StringEscapes))
@@ -1179,7 +1187,7 @@ func (g *generator) writeJSONPath(e *Expression) string {
 			return g.fail(part.Class)
 		}
 	}
-	return out + g.tables.JSONPath.Close
+	return out + pieces.Close
 }
 
 // writeJSONExtractOp writes `->` and `->>` the way the dialect writes them,
@@ -1200,22 +1208,59 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 	if !ok {
 		return g.fail(e.Class)
 	}
+	// A class whose path is written with its own separators brings its own
+	// call too: the two were measured from one rendering, and mixing a form
+	// probed against the standalone pieces with corrected pieces writes the
+	// dot after the root twice.
+	if over, ok := g.tables.JSONPathByClass[e.Class]; ok && over.Form != "" {
+		form = over.Form
+	}
 	this, _ := e.Args["this"].(*Expression)
 	if !isAtomForOperator(this) {
 		return g.fail(e.Class + " over a compound expression")
 	}
 	path, _ := e.Args["expression"].(*Expression)
-	// A path the reference could not read stays the STRING it was written
-	// as, and is written back the same way: `0 -> '[""@""]'`.
-	if path != nil && path.Class == "Literal" {
+	// Anything that is not a PATH is written where the path would go, exactly
+	// as it was read. A path the reference could not read stays the string it
+	// was written as -- `0 -> '[""@""]'` -- and so does an operand that was
+	// never a path to begin with: `'{"x": 1}' -> c` keeps the column. The
+	// operand has to be an atom, because the form around it is an operator
+	// and a template substitutes text knowing no precedence.
+	if path != nil && path.Class != "JSONPath" {
+		if !isAtomForOperator(path) {
+			return g.fail(e.Class + " over a compound path")
+		}
+		// A call whose path form QUOTES its argument needs the other form
+		// here, or a column comes out as the string `'$path_col'`.
+		if over, ok := g.tables.JSONPathByClass[e.Class]; ok {
+			if over.PlainForm == "" {
+				return g.fail(e.Class + " over a path it cannot write plainly")
+			}
+			form = over.PlainForm
+		}
+		// The RIGHT operand is parenthesised where the left is not: the
+		// reference writes `a -> (b * c)` but `POWER(0, 0) -> '$'`. That is
+		// what left-associativity looks like written down -- the left side
+		// cannot re-associate and the right side can.
+		text := g.node(path)
+		if isA("Binary", path) {
+			text = "(" + text + ")"
+		}
 		out := strings.ReplaceAll(form, "{this}", g.node(this))
-		return strings.ReplaceAll(out, "{path}", g.node(path))
+		return strings.ReplaceAll(out, "{path}", text)
 	}
 	if path == nil || path.Class != "JSONPath" {
 		return g.fail(e.Class + " without a path")
 	}
 	out := strings.ReplaceAll(form, "{this}", g.node(this))
-	return strings.ReplaceAll(out, "{path}", g.node(path))
+	// The path's separators depend on the call it lands in, so the owner is
+	// set while it renders and restored after -- a chain writes one extraction
+	// inside another and the inner one must not keep the outer one's spelling.
+	saved := g.pathOwner
+	g.pathOwner = e.Class
+	text := g.node(path)
+	g.pathOwner = saved
+	return strings.ReplaceAll(out, "{path}", text)
 }
 
 // isAtomForOperator reports whether a node needs no parentheses beside an
@@ -1306,6 +1351,9 @@ func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
 	}
 	path, _ := e.Args["expression"].(*Expression)
 	if path == nil || path.Class != "JSONPath" {
+		// There are no PARTS to fold when the operand was never a path. This
+		// form exists to spread one across several operators or arguments,
+		// and it has nothing to say about a column.
 		return g.fail(e.Class + " without a path")
 	}
 	parts, _ := path.Args["expressions"].([]*Expression)
@@ -1317,7 +1365,17 @@ func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
 			// which is already `this`.
 		case "JSONPathKey":
 			name, _ := part.Args["this"].(string)
-			names = append(names, escapeStringBody(name, g.cfg.StringEscapes))
+			escaped := escapeStringBody(name, g.cfg.StringEscapes)
+			// A key holding a QUOTE is refused here rather than written. The
+			// reference does not escape it in this form -- it writes
+			// `JSON_EXTRACT_PATH(col, 'fr'uit')` and then cannot read that
+			// back, which is upstream sqlglot bug (8) -- so the two choices
+			// were to reproduce SQL that does not tokenize or to differ from
+			// the reference. Refusing is neither.
+			if escaped != name {
+				return g.fail(e.Class + " over a key holding a quote")
+			}
+			names = append(names, escaped)
 		default:
 			return g.fail(e.Class + " over a " + part.Class)
 		}

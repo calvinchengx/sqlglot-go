@@ -208,6 +208,19 @@ type ParserTables struct {
 	// JSONArrowSetsScalarOnly says whether the arg is PRESENT on the
 	// node at all; PostgreSQL leaves it off and the others set false.
 	JSONArrowSetsScalarOnly bool
+	// JSONArrowTypesWithoutPath says whether only_json_types is still
+	// set when the operand is NOT a path -- PostgreSQL's builder
+	// returns before stamping it, DuckDB's stamps it regardless.
+	JSONArrowTypesWithoutPath bool
+	// JSONExtractNeedsParens lists the extraction classes this dialect
+	// writes as an OPERATOR, which the reference parenthesises when one
+	// is an operand: `(a -> b) & c`, but Databricks' `a:b & c` plain.
+	JSONExtractNeedsParens map[string]bool
+	// JSONPathFunctions are the names that turn their arguments into a
+	// JSON PATH rather than holding them. Probed with STRING literals,
+	// because with the placeholder columns the generic probe uses they
+	// all fall back to a plain positional shape that real SQL never takes.
+	JSONPathFunctions map[string]JSONPathFunc
 	// JSONPathIsParsed: PostgreSQL keeps the string after `->` whole
 	// as a single key; everyone else parses it into path parts.
 	JSONPathIsParsed bool
@@ -219,6 +232,10 @@ type ParserTables struct {
 	// neither, and the two spell a key that needs quoting differently.
 	// PROBED by subtraction.
 	JSONPath JSONPathSQL
+	// JSONPathByClass overrides those pieces for a class that writes a
+	// path differently from the standalone rendering. Only the SEPARATORS
+	// are overridden; the wrapper comes from the call's own spelling.
+	JSONPathByClass map[string]JSONPathSQL
 	// JSONExtractSQL is how the operator wraps a path, where the
 	// dialect writes it as one. A dialect that explodes the path into
 	// arguments has no entry and is refused.
@@ -425,6 +442,13 @@ type PlaceholderSQL struct {
 
 // JSONPathSQL is the text around each piece of a JSON path.
 type JSONPathSQL struct {
+	// Form is the call around the path, for an override -- measured with
+	// the same rendering as the separators so the two agree on who
+	// writes the dot after the root.
+	Form string
+	// PlainForm is that same call with an operand that is NOT a path,
+	// which the path form would have quoted into something else.
+	PlainForm string
 	Open      string
 	Close     string
 	Key       string
@@ -3492,15 +3516,22 @@ var parserTables = map[string]*ParserTables{
 			"CONNECT_BY_ROOT": {},
 			"IF":              {},
 		},
-		TypedDivision:            false,
-		SafeDivision:             false,
-		DPipeIsStringConcat:      true,
-		StrictStringConcat:       false,
-		JoinsHaveEqualPrecedence: false,
-		BareJoinIsOnTrue:         false,
-		LimitAllMeansNoLimit:     false,
-		JSONArrowOnlyJSONTypes:   false,
-		JSONArrowSetsScalarOnly:  true,
+		TypedDivision:             false,
+		SafeDivision:              false,
+		DPipeIsStringConcat:       true,
+		StrictStringConcat:        false,
+		JoinsHaveEqualPrecedence:  false,
+		BareJoinIsOnTrue:          false,
+		LimitAllMeansNoLimit:      false,
+		JSONArrowOnlyJSONTypes:    false,
+		JSONArrowSetsScalarOnly:   true,
+		JSONArrowTypesWithoutPath: true,
+		JSONPathFunctions: map[string]JSONPathFunc{
+			"JSON_EXTRACT":           {"JSONExtract", false, []FuncConst{}, true, false, 0, false},
+			"JSON_EXTRACT_PATH_TEXT": {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
+			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
+			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
+		},
 		JSONPathIsParsed:         true,
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
@@ -6996,15 +7027,24 @@ var parserTables = map[string]*ParserTables{
 			"IF":              {},
 			"NEXT":            {},
 		},
-		TypedDivision:            true,
-		SafeDivision:             false,
-		DPipeIsStringConcat:      true,
-		StrictStringConcat:       false,
-		JoinsHaveEqualPrecedence: false,
-		BareJoinIsOnTrue:         false,
-		LimitAllMeansNoLimit:     false,
-		JSONArrowOnlyJSONTypes:   false,
-		JSONArrowSetsScalarOnly:  true,
+		TypedDivision:             true,
+		SafeDivision:              false,
+		DPipeIsStringConcat:       true,
+		StrictStringConcat:        false,
+		JoinsHaveEqualPrecedence:  false,
+		BareJoinIsOnTrue:          false,
+		LimitAllMeansNoLimit:      false,
+		JSONArrowOnlyJSONTypes:    false,
+		JSONArrowSetsScalarOnly:   true,
+		JSONArrowTypesWithoutPath: true,
+		JSONPathFunctions: map[string]JSONPathFunc{
+			"JSON_EXTRACT":           {"JSONExtract", false, []FuncConst{}, true, false, 0, false},
+			"JSON_EXTRACT_PATH_TEXT": {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
+			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
+			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
+			"JSON_QUERY":             {"JSONExtract", false, []FuncConst{}, true, false, 0, true},
+			"JSON_VALUE":             {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
+		},
 		JSONPathIsParsed:         true,
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
@@ -10563,15 +10603,23 @@ var parserTables = map[string]*ParserTables{
 			"IF":              {},
 			"VARIADIC":        {},
 		},
-		TypedDivision:            true,
-		SafeDivision:             false,
-		DPipeIsStringConcat:      true,
-		StrictStringConcat:       false,
-		JoinsHaveEqualPrecedence: false,
-		BareJoinIsOnTrue:         false,
-		LimitAllMeansNoLimit:     true,
-		JSONArrowOnlyJSONTypes:   true,
-		JSONArrowSetsScalarOnly:  false,
+		TypedDivision:             true,
+		SafeDivision:              false,
+		DPipeIsStringConcat:       true,
+		StrictStringConcat:        false,
+		JoinsHaveEqualPrecedence:  false,
+		BareJoinIsOnTrue:          false,
+		LimitAllMeansNoLimit:      true,
+		JSONArrowOnlyJSONTypes:    true,
+		JSONArrowSetsScalarOnly:   false,
+		JSONArrowTypesWithoutPath: false,
+		JSONPathFunctions: map[string]JSONPathFunc{
+			"JSON_EXTRACT":           {"JSONExtract", false, []FuncConst{}, true, false, 0, false},
+			"JSON_EXTRACT_PATH":      {"JSONExtract", true, []FuncConst{{"only_json_types", false}}, false, true, 0, true},
+			"JSON_EXTRACT_PATH_TEXT": {"JSONExtractScalar", true, []FuncConst{{"only_json_types", false}}, false, true, 0, true},
+			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
+			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
+		},
 		JSONPathIsParsed:         false,
 		IntervalUnitInsideString: true,
 		ArrayOpen:                "ARRAY[",
@@ -14326,8 +14374,21 @@ var parserTables = map[string]*ParserTables{
 			"WINDOW":            true,
 			"WITH":              true,
 		},
-		JSONArrowOnlyJSONTypes:   false,
-		JSONArrowSetsScalarOnly:  true,
+		JSONArrowOnlyJSONTypes:    false,
+		JSONArrowSetsScalarOnly:   true,
+		JSONArrowTypesWithoutPath: true,
+		JSONPathFunctions: map[string]JSONPathFunc{
+			"JSON_EXTRACT":           {"JSONExtract", false, []FuncConst{}, true, false, 0, false},
+			"JSON_EXTRACT_PATH":      {"JSONExtract", false, []FuncConst{}, true, false, 0, false},
+			"JSON_EXTRACT_PATH_TEXT": {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
+			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
+			"JSON_EXTRACT_STRING":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
+			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
+		},
+		JSONExtractNeedsParens: map[string]bool{
+			"JSONExtract":       true,
+			"JSONExtractScalar": true,
+		},
 		JSONPathIsParsed:         true,
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "[",
@@ -18071,15 +18132,23 @@ var parserTables = map[string]*ParserTables{
 			"IF":              {},
 			"TRANSFORM":       {},
 		},
-		TypedDivision:            false,
-		SafeDivision:             false,
-		DPipeIsStringConcat:      true,
-		StrictStringConcat:       false,
-		JoinsHaveEqualPrecedence: true,
-		BareJoinIsOnTrue:         true,
-		LimitAllMeansNoLimit:     true,
-		JSONArrowOnlyJSONTypes:   false,
-		JSONArrowSetsScalarOnly:  true,
+		TypedDivision:             false,
+		SafeDivision:              false,
+		DPipeIsStringConcat:       true,
+		StrictStringConcat:        false,
+		JoinsHaveEqualPrecedence:  true,
+		BareJoinIsOnTrue:          true,
+		LimitAllMeansNoLimit:      true,
+		JSONArrowOnlyJSONTypes:    false,
+		JSONArrowSetsScalarOnly:   true,
+		JSONArrowTypesWithoutPath: true,
+		JSONPathFunctions: map[string]JSONPathFunc{
+			"GET_JSON_OBJECT":        {"JSONExtractScalar", false, []FuncConst{}, false, false, 0, false},
+			"JSON_EXTRACT":           {"JSONExtract", false, []FuncConst{}, true, false, 0, false},
+			"JSON_EXTRACT_PATH_TEXT": {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
+			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
+			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
+		},
 		JSONPathIsParsed:         true,
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
@@ -18095,6 +18164,15 @@ var parserTables = map[string]*ParserTables{
 			Key:       "{key}",
 			Subscript: "[{index}]",
 			QuotedKey: "[\"{key}\"]",
+		},
+		JSONPathByClass: map[string]JSONPathSQL{
+			"JSONExtractScalar": {
+				Key:       ".{key}",
+				Subscript: "[{index}]",
+				QuotedKey: "[\"{key}\"]",
+				Form:      "GET_JSON_OBJECT({this}, '${path}')",
+				PlainForm: "GET_JSON_OBJECT({this}, {path})",
+			},
 		},
 		BracketIsRewritten:            false,
 		IndexOffset:                   0,

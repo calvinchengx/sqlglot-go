@@ -307,31 +307,9 @@ func (p *parser) parseBetween(this *Expression) (*Expression, error) {
 // The right-hand side is a path STRING parsed into a JSONPath, not an
 // expression, which is why this is not simply another binary level.
 func (p *parser) parseJSONArrow() (*Expression, error) {
-	this, err := p.parseBitwise()
-	if err != nil {
-		return nil, err
-	}
-	for p.at(TokARROW) || p.at(TokDARROW) {
-		class := "JSONExtract"
-		if p.at(TokDARROW) {
-			class = "JSONExtractScalar"
-		}
-		p.advance()
-		path, perr := p.parseJSONPathOperand()
-		if perr != nil {
-			return nil, perr
-		}
-		args := []Arg{{"this", this}, {"expression", path},
-			{"only_json_types", p.tables.JSONArrowOnlyJSONTypes}}
-		if class == "JSONExtractScalar" && p.tables.JSONArrowSetsScalarOnly {
-			// PostgreSQL leaves this arg OFF the node; the others set it
-			// false. An arg present-but-false is a different tree from an
-			// arg absent, so whether to set it is probed, not the value.
-			args = append(args, Arg{"scalar_only", false})
-		}
-		this = New(class, args...)
-	}
-	return this, nil
+	// The arrow lives INSIDE the bitwise level rather than above it -- see
+	// parseBitwise, where it is one more case in the same loop.
+	return p.parseBitwise()
 }
 
 func (p *parser) parseBitwise() (*Expression, error) {
@@ -345,6 +323,36 @@ func (p *parser) parseBitwise() (*Expression, error) {
 			return this, nil
 		}
 		switch {
+		case c.Type == TokARROW || c.Type == TokDARROW:
+			// The JSON arrow is one of these operators, not a level of its
+			// own, and the asymmetry is what proves it: `a & b -> c` reads as
+			// `(a & b) -> c` while `a -> b & c` reads as `(a -> b) & c`. Only
+			// a left-associative loop shared with the bitwise operators does
+			// both. Its right-hand side is a TERM -- arithmetic binds tighter
+			// (`a -> b + c` keeps `b + c`) and `&` does not.
+			class := "JSONExtract"
+			if c.Type == TokDARROW {
+				class = "JSONExtractScalar"
+			}
+			p.advance()
+			operand, err := p.parseTerm()
+			if err != nil {
+				return nil, err
+			}
+			path := p.jsonPathFor(operand)
+			args := []Arg{{"this", this}, {"expression", path}}
+			// The flag is stamped by the BUILDER, and PostgreSQL's returns
+			// before it gets there when the operand is not a path it can read.
+			if path == nil || path.Class == "JSONPath" || p.tables.JSONArrowTypesWithoutPath {
+				args = append(args, Arg{"only_json_types", p.tables.JSONArrowOnlyJSONTypes})
+			}
+			if class == "JSONExtractScalar" && p.tables.JSONArrowSetsScalarOnly {
+				// PostgreSQL leaves this arg OFF the node; the others set it
+				// false. An arg present-but-false is a different tree from an
+				// arg absent, so whether to set it is probed, not the value.
+				args = append(args, Arg{"scalar_only", false})
+			}
+			this = New(class, args...)
 		case p.tables.Bitwise[c.Type] != "":
 			class := p.tables.Bitwise[c.Type]
 			p.advance()
@@ -1397,12 +1405,17 @@ func (p *parser) parseFunction() (*Expression, error) {
 	if _, syntax := p.tables.SyntaxFunctions[upper]; syntax {
 		return p.parseSyntaxFunction(upper)
 	}
+	// A name that turns its arguments into a JSON PATH. The generic probe
+	// describes these from placeholder COLUMNS, where their builders take a
+	// fallback shape real SQL never produces, so every one of them was
+	// rejected outright -- which is the refusal this skips past.
+	jsonPath, isJSONPath := p.tables.JSONPathFunctions[upper]
 	spec, named := p.tables.Functions[upper]
 	// A name whose SHAPE depends on how many arguments it is given -- DATEDIFF
 	// of two is not DATEDIFF of three -- has one spec per count instead, and
 	// which one applies cannot be known until the arguments are read.
 	variants, byArity := p.tables.FunctionsByArity[upper]
-	if !named && !byArity {
+	if !named && !byArity && !isJSONPath {
 		if _, custom := p.tables.NamedFunctions[upper]; custom {
 			return nil, p.unsupported("function " + upper + " with a builder of its own")
 		}
@@ -1485,6 +1498,12 @@ func (p *parser) parseFunction() (*Expression, error) {
 		}
 		order.Set("this", args[len(args)-1])
 		args[len(args)-1] = order
+	}
+	if isJSONPath {
+		if node := p.buildJSONPathFunction(jsonPath, args); node != nil {
+			return node, nil
+		}
+		return nil, p.unsupported("function " + upper + " over these arguments")
 	}
 	// A name whose CLASS depends on the TYPE of one argument. DuckDB's
 	// DATE_TRUNC builds a DateTrunc over a DATE and a TimestampTrunc over
@@ -1794,23 +1813,49 @@ func (p *parser) afterComparison() bool {
 	return prev == TokLIKE || prev == TokILIKE
 }
 
-// parseJSONPathOperand reads the right-hand side of `->`. It must be a string
-// literal: that is the only form the path grammar can read, and a column or
-// expression there is a construct the port does not model.
-func (p *parser) parseJSONPathOperand() (*Expression, error) {
-	c := p.curr()
-	if c == nil || c.Type != TokSTRING {
-		return nil, p.unsupported("JSON path that is not a literal")
+// jsonPathFor turns an argument into whatever the reference puts in a JSON
+// extraction's `expression` slot. Probed across the dialects, not transcribed:
+//
+//	x -> 'a'    PATH[Root, Key(a)]        a path string is parsed
+//	x -> '5'    Literal '5'               an INTEGRAL string is NOT a path
+//	x -> 5      PATH[Root, Subscript(5)]  a number is a subscript
+//	x -> 1.5    Literal 1.5               a number that is not an integer is not
+//	x -> c      Column c                  a non-literal is carried through
+//
+// PostgreSQL parses no paths at all and keeps the whole string as one key --
+// that is JSONPathIsParsed, and it was already probed.
+//
+// The integral-string rule was missing and nothing caught it: the port wrote
+// `x -> '$."5"'` where the reference writes `x -> '5'`, and no corpus
+// statement happened to put an integral string on an arrow.
+func (p *parser) jsonPathFor(arg *Expression) *Expression {
+	if arg == nil || arg.Class != "Literal" {
+		// A column, a Neg, a concatenation: the reference cannot transpile a
+		// path it cannot read, so it carries the expression through untouched.
+		return arg
 	}
-	p.advance()
+	text, _ := arg.Args["this"].(string)
+	isString, _ := arg.Args["is_string"].(bool)
+	if n, ok := pythonInt(text); ok && !isString {
+		return New("JSONPath", Arg{"expressions", []*Expression{
+			New("JSONPathRoot"),
+			New("JSONPathSubscript", Arg{"this", n}),
+		}})
+	}
+	if !isString {
+		return arg
+	}
 	if !p.tables.JSONPathIsParsed {
 		// PostgreSQL keeps the whole string as one key.
 		return New("JSONPath", Arg{"expressions", []*Expression{
 			New("JSONPathRoot"),
-			New("JSONPathKey", Arg{"this", c.Text}),
-		}}), nil
+			New("JSONPathKey", Arg{"this", text}),
+		}})
 	}
-	path, err := parseJSONPath(c.Text)
+	if _, ok := pythonInt(text); ok {
+		return arg
+	}
+	path, err := parseJSONPath(text)
 	if err != nil {
 		// ANY path the reference cannot read is handed straight back as the
 		// string it was written as -- not only the ones that are obviously
@@ -1821,9 +1866,9 @@ func (p *parser) parseJSONPathOperand() (*Expression, error) {
 		// Where the REFERENCE parses a path this port cannot, the two trees
 		// differ and the differential says so; that is the check, and it is
 		// silent today.
-		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
+		return arg
 	}
-	return path, nil
+	return path
 }
 
 // isBareIdentifier reports whether a struct key could be written without
@@ -1896,4 +1941,106 @@ func (p *parser) atWords(words ...string) bool {
 		}
 	}
 	return true
+}
+
+// JSONPathFunc describes a name that turns its arguments into a JSON path.
+//
+// Nine names across these dialects do it, and the generic probe rejected every
+// one: it feeds placeholder COLUMNS, and these builders look at what they were
+// handed, so the shape they show it is not the shape real SQL takes.
+type JSONPathFunc struct {
+	Class string
+	// Fold folds every argument after the first into ONE path, a segment
+	// each -- JSON_EXTRACT_PATH(x, 'y', '0', 'z'). Otherwise a single
+	// argument is read as a path STRING.
+	Fold   bool
+	Consts []FuncConst
+	// KeepsTail says whether arguments past the path survive. Databricks
+	// DROPS them, and dropping an argument changes what the call means, so
+	// the port refuses rather than writing a call that says something else.
+	KeepsTail bool
+	// IntSubscripts: a folded key that reads as an integer is a SUBSCRIPT
+	// rather than a key of that name, shifted by IndexShift.
+	IntSubscripts bool
+	IndexShift    int
+	// RootDefault: with no path argument the whole document is meant, and
+	// the builder supplies a bare root. T-SQL's JSON_QUERY(x) does this.
+	RootDefault bool
+}
+
+// buildJSONPathFunction builds one of those calls, or returns nil to let the
+// caller refuse it.
+func (p *parser) buildJSONPathFunction(spec JSONPathFunc, args []*Expression) *Expression {
+	if len(args) == 0 {
+		return nil
+	}
+	var path *Expression
+	var tail []*Expression
+	switch {
+	case spec.Fold:
+		// Every argument has to be a string literal for the fold to happen.
+		// Handed anything else the reference cannot transpile it and lays the
+		// arguments out positionally instead -- a different tree, so the port
+		// refuses rather than folding something it was not given.
+		for _, arg := range args[1:] {
+			if !isStringLiteral(arg) {
+				return nil
+			}
+		}
+		path = p.foldJSONPath(args[1:], spec)
+	case len(args) == 1:
+		if !spec.RootDefault {
+			return nil
+		}
+		path = New("JSONPath", Arg{"expressions", []*Expression{New("JSONPathRoot")}})
+	default:
+		// These builders PARSE the path, whatever the dialect's arrow does:
+		// PostgreSQL's arrow keeps a string whole as one key, but its
+		// JSON_EXTRACT_SCALAR(a, '$') gets a bare root.
+		//
+		// A string that will not parse is REFUSED rather than kept as a
+		// literal the way the arrow keeps it. Databricks reads `$.x-y` as a
+		// key the path grammar rejects, so falling back here would build a
+		// Literal where the reference built a path -- a different tree, and
+		// the differential said so.
+		if isStringLiteral(args[1]) {
+			text, _ := args[1].Args["this"].(string)
+			parsed, err := parseJSONPath(text)
+			if err != nil {
+				return nil
+			}
+			path = parsed
+		} else {
+			path = args[1]
+		}
+		if len(args) > 2 {
+			if !spec.KeepsTail {
+				return nil
+			}
+			tail = args[2:]
+		}
+	}
+	out := []Arg{{"this", args[0]}, {"expression", path}}
+	if len(tail) > 0 {
+		out = append(out, Arg{"expressions", tail})
+	}
+	for _, c := range spec.Consts {
+		out = append(out, Arg(c))
+	}
+	return New(spec.Class, out...)
+}
+
+// foldJSONPath turns a run of string literals into one path, one segment each.
+func (p *parser) foldJSONPath(keys []*Expression, spec JSONPathFunc) *Expression {
+	segments := []*Expression{New("JSONPathRoot")}
+	for _, key := range keys {
+		text, _ := key.Args["this"].(string)
+		if n, ok := pythonInt(text); ok && spec.IntSubscripts {
+			segments = append(segments,
+				New("JSONPathSubscript", Arg{"this", n - spec.IndexShift}))
+			continue
+		}
+		segments = append(segments, New("JSONPathKey", Arg{"this", text}))
+	}
+	return New("JSONPath", Arg{"expressions", segments})
 }

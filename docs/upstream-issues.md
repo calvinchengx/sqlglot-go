@@ -135,3 +135,31 @@ The port reproduces this, on purpose. It is recorded in
 `testdata/execution.json` so the oracle does not report it every run.
 
 **Reference:** sqlglot @ ceb5111421e9.
+
+## sqlglot writes a JSON path key without escaping the quote in it
+
+`JSON_EXTRACT_PATH` folds its keys back out as separate string arguments, and
+a key holding a single quote is written into that string unescaped. The result
+does not tokenize, so the reference cannot read back what it just wrote:
+
+```
+in   SELECT JSON_EXTRACT_PATH(col, 'fr''uit')
+out  SELECT JSON_EXTRACT_PATH(col, 'fr'uit')
+back Error tokenizing 'SELECT JSON_EXTRACT_PATH(col, 'fr'uit''
+```
+
+The same key IS escaped when the path is written as one `'$...'` string, so
+this is the per-argument form alone.
+
+**This one the port does NOT reproduce**, which is a departure from the rule
+followed everywhere else here, and the reason is that both alternatives were
+worse. Reproducing it means emitting SQL that does not parse -- from a guard
+whose whole job is to hand an executor something safe to run. Escaping it
+means writing a statement the reference writes differently, which is the one
+thing the differential exists to prevent.
+
+So the port REFUSES a folded key holding a quote: `cannot generate SQL for
+JSONExtract over a key holding a quote`. It reads the statement, and declines
+to write it. Two corpus statements land here.
+
+**Reference:** sqlglot @ ceb5111421e9.

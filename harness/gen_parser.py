@@ -197,6 +197,118 @@ def _type_dispatch(exp, builder, args, index, dialect, describe, call_builder):
     return {"index": index, "default": default, "by_type": special}
 
 
+def json_path_functions(P, exp, dialect=""):
+    """The names that turn their arguments into a JSON PATH.
+
+    Five of them across these dialects, and the generic probe rejects every
+    one: it feeds placeholder COLUMNS, and these builders look at what they
+    were handed. With columns they fall back to a plain positional shape, so
+    the spec they yield is right for columns and wrong for the literals real
+    SQL contains -- which is exactly what the substitution check catches, and
+    why they were all filed under "a builder of its own".
+
+    So they are probed with STRING literals instead, and the shape is read off
+    what comes back. Two shapes exist and four arguments tell them apart:
+
+      JSON_EXTRACT(x, 'a', 'b', 'c')       PATH[Root, Key(a)]        parse one
+      JSON_EXTRACT_PATH(x, 'a', 'b', 'c')  PATH[Root, Key(a), Key(b), Key(c)]
+
+    The first parses ONE argument as a path string. The second folds all of
+    them into a path, one segment each. A probe with two arguments cannot see
+    the difference -- both give a single key -- which is why it uses four.
+    """
+    out = {}
+    for name, builder in P.FUNCTIONS.items():
+        if name in P.FUNCTION_PARSERS:
+            continue
+        args = [exp.column("__probe_0")] + [
+            exp.Literal.string("__probe_%d" % i) for i in (1, 2, 3)
+        ]
+        try:
+            node = call_builder(builder, list(args), dialect)
+        except Exception:  # noqa: BLE001 -- not a name that takes four
+            continue
+        if not isinstance(node, exp.Expr):
+            continue
+        path = node.args.get("expression")
+        if not isinstance(path, exp.JSONPath):
+            continue
+        segs = path.expressions
+        if not segs or not isinstance(segs[0], exp.JSONPathRoot):
+            continue
+        keys = [
+            seg.this
+            for seg in segs[1:]
+            if isinstance(seg, exp.JSONPathKey)
+        ]
+        if keys == ["__probe_1", "__probe_2", "__probe_3"]:
+            fold = True
+        elif keys == ["__probe_1"]:
+            fold = False
+        else:
+            continue
+        if node.args.get("this") is not args[0]:
+            continue
+        # Whatever else the builder stamps on, as a constant. only_json_types
+        # rides on all of these and json_type on some.
+        consts = [
+            (k, v)
+            for k, v in node.args.items()
+            if k not in ("this", "expression", "expressions")
+            and (v is None or isinstance(v, (bool, str, int)))
+        ]
+        # Does an argument the builder did not fold survive? DuckDB keeps the
+        # extras under `expressions`; Databricks DROPS them, and dropping an
+        # argument changes what the call means, so the port refuses instead.
+        tail = node.args.get("expressions")
+        keeps_tail = bool(tail) and not fold
+        entry = {
+            "class": type(node).__name__,
+            "fold": fold,
+            "consts": consts,
+            "keeps_tail": keeps_tail,
+        }
+        if fold:
+            entry.update(_json_fold_rules(builder, exp, dialect))
+        # With no path argument at all, does the builder still make a node?
+        # T-SQL's JSON_QUERY(x) means the whole document and gets a bare root.
+        entry["root_default"] = False
+        try:
+            lone = call_builder(builder, [exp.column("__probe_0")], dialect)
+            path = lone.args.get("expression")
+            entry["root_default"] = (
+                isinstance(path, exp.JSONPath)
+                and len(path.expressions) == 1
+                and isinstance(path.expressions[0], exp.JSONPathRoot)
+            )
+        except Exception:  # noqa: BLE001 -- this name needs its path
+            pass
+        out[name] = entry
+    return out
+
+
+def _json_fold_rules(builder, exp, dialect):
+    """Whether a folded key that reads as an integer becomes a SUBSCRIPT.
+
+    `JSON_EXTRACT_PATH(x, '0')` indexes rather than naming a key called "0",
+    and whether the index is taken as written is a flag baked into the
+    builder's closure where nothing can read it. So it is asked: hand it a
+    5 and see what number comes back.
+    """
+    rules = {"int_subscripts": False, "index_shift": 0}
+    try:
+        node = call_builder(
+            builder, [exp.column("__probe_0"), exp.Literal.string("5")], dialect
+        )
+        seg = node.args["expression"].expressions[1]
+    except Exception:  # noqa: BLE001
+        return rules
+    if isinstance(seg, exp.JSONPathSubscript):
+        rules["int_subscripts"] = True
+        rules["index_shift"] = 5 - int(seg.this)
+    return rules
+
+
 def probe_functions(P, exp, dialect=""):
     """Work out what each function name builds, by asking the reference.
 
@@ -562,12 +674,53 @@ def interval_unit_inside_string(dialect: str, exp) -> bool:
     return "'1 DAY'" in node.sql(dialect=dialect or None)
 
 
-def json_arrow_flags(dialect: str) -> tuple[bool, bool]:
+def json_extract_needs_parens(dialect: str) -> dict:
+    """Whether a JSON extraction used as an OPERAND is parenthesised.
+
+    The reference writes `(a -> b) & c` in DuckDB and `a:b & c` in Databricks,
+    for the same tree. It is the SPELLING that decides -- an arrow is an
+    operator and needs the parentheses, a function call and Databricks' colon
+    do not -- and the spelling is per dialect, so the answer is read off the
+    reference for each one rather than guessed from the template.
+
+    This became reachable when the arrow moved into the bitwise level, where
+    the reference has it. Before that a JSON extraction could never BE the
+    operand of a bitwise operator, and the port wrote `a -> b & c`.
+    """
+    import sqlglot
+    from sqlglot import exp
+
+    out = {}
+    for cls in ("JSONExtract", "JSONExtractScalar"):
+        node = getattr(exp, cls)(
+            this=exp.column("__probe_a"),
+            expression=exp.JSONPath(
+                expressions=[exp.JSONPathRoot(), exp.JSONPathKey(this="__probe_b")]
+            ),
+        )
+        try:
+            alone = node.sql(dialect=dialect or None)
+            joined = exp.BitwiseAnd(this=node.copy(), expression=exp.column("c")).sql(
+                dialect=dialect or None
+            )
+        except Exception:  # noqa: BLE001 -- a dialect that will not write it
+            continue
+        out[cls] = joined.startswith("(" + alone + ")")
+    return out
+
+
+def json_arrow_flags(dialect: str) -> tuple[bool, bool, bool]:
     """What `->` and `->>` stamp on the node they build.
 
     PostgreSQL sets only_json_types. And PostgreSQL alone leaves scalar_only
     OFF the node, where the others set it to False -- so the second value here
     says whether the arg is PRESENT, not what it is.
+
+    The third says whether only_json_types survives an operand that is NOT a
+    path. PostgreSQL's arrow runs the same builder its JSON_EXTRACT_PATH does,
+    and that builder returns EARLY when it is handed something it cannot read
+    -- before it stamps the flag on. DuckDB's stamps it either way. Reading
+    the flag alone said they agreed; the trees disagree.
     """
     from sqlglot.dialects.dialect import Dialect
 
@@ -580,9 +733,11 @@ def json_arrow_flags(dialect: str) -> tuple[bool, bool]:
     # present-but-false is a different tree from an arg absent. The flag could
     # not have told us that; the node could.
     node = sqlglot.parse_one("SELECT x ->> 'y'", dialect=dialect or None).selects[0]
+    plain = sqlglot.parse_one("SELECT x -> c", dialect=dialect or None).selects[0]
     return (
         bool(getattr(d.parser_class, "JSON_ARROWS_REQUIRE_JSON_TYPE", False)),
         "scalar_only" in node.args,
+        "only_json_types" in plain.args,
     )
 
 
@@ -798,6 +953,104 @@ def json_path_pieces(dialect: str, exp) -> dict:
         "Subscript": suffix(with_sub).replace("7", "{index}"),
         "QuotedKey": suffix(with_quoted).replace("a b", "{key}"),
     }
+
+
+def json_path_pieces_in_class(dialect: str, exp, cls_name: str) -> dict:
+    """The same pieces, as written INSIDE one extraction class.
+
+    A path does not render the same everywhere it appears. Databricks writes
+    the very same path as `c1:item[1].price` under JSONExtract and as
+    `GET_JSON_OBJECT(c1, '$.item[1].price')` under JSONExtractScalar -- a
+    different root, a different separator, a different quoting. Probing a
+    STANDALONE path caught only the first, so the second came out
+    `'$.farmbarncolor'`, with every separator missing.
+
+    The pieces are recovered the same way as before: render the four canonical
+    paths, strip whatever is common to all four -- that is the call around
+    them -- and subtract the shorter rendering from the longer.
+    """
+    cls = getattr(exp, cls_name, None)
+    if cls is None:
+        return {}
+
+    def render(parts):
+        node = cls(this=exp.column("ZZTHISZZ"), expression=exp.JSONPath(expressions=parts))
+        return node.sql(dialect=dialect or None)
+
+    root = [exp.JSONPathRoot()]
+    try:
+        texts = [
+            render(root),
+            render(root + [exp.JSONPathKey(this="KEY")]),
+            render(root + [exp.JSONPathSubscript(this=7)]),
+            render(root + [exp.JSONPathKey(this="a b")]),
+        ]
+    except Exception:  # noqa: BLE001 -- this dialect will not write that class
+        return {}
+    if any("ZZTHISZZ" not in t for t in texts):
+        return {}
+    # Whatever surrounds the path in all four is the CALL, not the path.
+    head = texts[0]
+    for t in texts[1:]:
+        while not t.startswith(head):
+            head = head[:-1]
+    tail = texts[0][len(head):]
+    for t in texts[1:]:
+        while not t.endswith(tail):
+            tail = tail[1:]
+    inner = [t[len(head): len(t) - len(tail)] for t in texts]
+    only_root, with_key, with_sub, with_quoted = inner
+
+    def suffix(longer):
+        return longer[len(only_root):] if longer.startswith(only_root) else longer
+
+    pieces = {
+        "Open": only_root,
+        "Close": "",
+        "Key": suffix(with_key).replace("KEY", "{key}"),
+        "Subscript": suffix(with_sub).replace("7", "{index}"),
+        "QuotedKey": suffix(with_quoted).replace("a b", "{key}"),
+    }
+    # The pieces have to REBUILD what the reference wrote, or they are not
+    # pieces of anything. T-SQL writes the path TWICE -- ISNULL(JSON_QUERY(x,
+    # p), JSON_VALUE(x, p)) -- and PostgreSQL writes it variadic, so
+    # subtracting one rendering from another leaves fragments of the call
+    # mixed into the separators. Those dialects decline here and keep the
+    # standalone pieces, which are right for them.
+    def rebuild(parts):
+        out = pieces["Open"]
+        for kind, value in parts:
+            if kind == "sub":
+                out += pieces["Subscript"].replace("{index}", str(value))
+            elif " " in value:
+                out += pieces["QuotedKey"].replace("{key}", value)
+            else:
+                out += pieces["Key"].replace("{key}", value)
+        return out + pieces["Close"]
+
+    wanted = [[], [("key", "KEY")], [("sub", 7)], [("key", "a b")]]
+    if any(rebuild(w) != got for w, got in zip(wanted, inner)):
+        return {}
+    # The CALL around the path comes from the same measurement, or the two
+    # disagree about who writes the separator: the form was probed against the
+    # standalone pieces and had absorbed the `$.`, so with corrected pieces the
+    # dot was written twice -- `'$..farm.barn.color'`.
+    pieces["Form"] = head.replace("ZZTHISZZ", "{this}") + "{path}" + tail
+    # And the form for an operand that is NOT a path. The reference writes
+    # `GET_JSON_OBJECT(col, path_col)` with the column bare, where the path
+    # form would have quoted it into `'$path_col'` -- a different argument.
+    pieces["PlainForm"] = ""
+    try:
+        plain = cls(this=exp.column("ZZTHISZZ"), expression=exp.column("ZZPATHZZ")).sql(
+            dialect=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return pieces
+    if plain.count("ZZTHISZZ") == 1 and plain.count("ZZPATHZZ") == 1:
+        pieces["PlainForm"] = plain.replace("ZZTHISZZ", "{this}").replace(
+            "ZZPATHZZ", "{path}"
+        )
+    return pieces
 
 
 def composite_type_sql(dialect: str) -> dict[str, str]:
@@ -2176,6 +2429,19 @@ def main() -> int:
         "\t// JSONArrowSetsScalarOnly says whether the arg is PRESENT on the\n",
         "\t// node at all; PostgreSQL leaves it off and the others set false.\n",
         "\tJSONArrowSetsScalarOnly bool\n",
+        "\t// JSONArrowTypesWithoutPath says whether only_json_types is still\n",
+        "\t// set when the operand is NOT a path -- PostgreSQL's builder\n",
+        "\t// returns before stamping it, DuckDB's stamps it regardless.\n",
+        "\tJSONArrowTypesWithoutPath bool\n",
+        "\t// JSONExtractNeedsParens lists the extraction classes this dialect\n",
+        "\t// writes as an OPERATOR, which the reference parenthesises when one\n",
+        "\t// is an operand: `(a -> b) & c`, but Databricks' `a:b & c` plain.\n",
+        "\tJSONExtractNeedsParens map[string]bool\n",
+        "\t// JSONPathFunctions are the names that turn their arguments into a\n",
+        "\t// JSON PATH rather than holding them. Probed with STRING literals,\n",
+        "\t// because with the placeholder columns the generic probe uses they\n",
+        "\t// all fall back to a plain positional shape that real SQL never takes.\n",
+        "\tJSONPathFunctions map[string]JSONPathFunc\n",
         "\t// JSONPathIsParsed: PostgreSQL keeps the string after `->` whole\n",
         "\t// as a single key; everyone else parses it into path parts.\n",
         "\tJSONPathIsParsed bool\n",
@@ -2187,6 +2453,10 @@ def main() -> int:
         "\t// neither, and the two spell a key that needs quoting differently.\n",
         "\t// PROBED by subtraction.\n",
         "\tJSONPath JSONPathSQL\n",
+        "\t// JSONPathByClass overrides those pieces for a class that writes a\n",
+        "\t// path differently from the standalone rendering. Only the SEPARATORS\n",
+        "\t// are overridden; the wrapper comes from the call\'s own spelling.\n",
+        "\tJSONPathByClass map[string]JSONPathSQL\n",
         "\t// JSONExtractSQL is how the operator wraps a path, where the\n",
         "\t// dialect writes it as one. A dialect that explodes the path into\n",
         "\t// arguments has no entry and is refused.\n",
@@ -2390,6 +2660,13 @@ def main() -> int:
         "\n",
         "// JSONPathSQL is the text around each piece of a JSON path.\n",
         "type JSONPathSQL struct {\n",
+        "\t// Form is the call around the path, for an override -- measured with\n",
+        "\t// the same rendering as the separators so the two agree on who\n",
+        "\t// writes the dot after the root.\n",
+        "\tForm string\n",
+        "\t// PlainForm is that same call with an operand that is NOT a path,\n",
+        "\t// which the path form would have quoted into something else.\n",
+        "\tPlainForm string\n",
         "\tOpen      string\n",
         "\tClose     string\n",
         "\tKey       string\n",
@@ -2626,9 +2903,38 @@ def main() -> int:
             for w in reserved:
                 out.append(f"\t\t\t{gostr(w)}: true,\n")
             out.append("\t\t},\n")
-        _oj, _so = json_arrow_flags(name)
+        _oj, _so, _ojp = json_arrow_flags(name)
         out.append(f"\t\tJSONArrowOnlyJSONTypes: {str(_oj).lower()},\n")
         out.append(f"\t\tJSONArrowSetsScalarOnly: {str(_so).lower()},\n")
+        out.append(f"\t\tJSONArrowTypesWithoutPath: {str(_ojp).lower()},\n")
+        jpf = json_path_functions(P, exp, name)
+        if jpf:
+            out.append("\t\tJSONPathFunctions: map[string]JSONPathFunc{\n")
+            for fn in sorted(jpf):
+                e = jpf[fn]
+                consts = "".join(
+                    "{%s, %s}, " % (gostr(k), goconst(v)) for k, v in e["consts"]
+                )
+                out.append(
+                    "\t\t\t%s: {%s, %s, []FuncConst{%s}, %s, %s, %d, %s},\n"
+                    % (
+                        gostr(fn),
+                        gostr(e["class"]),
+                        str(e["fold"]).lower(),
+                        consts,
+                        str(e["keeps_tail"]).lower(),
+                        str(e.get("int_subscripts", False)).lower(),
+                        e.get("index_shift", 0),
+                        str(e["root_default"]).lower(),
+                    )
+                )
+            out.append("\t\t},\n")
+        _parens = json_extract_needs_parens(name)
+        if any(_parens.values()):
+            out.append("\t\tJSONExtractNeedsParens: map[string]bool{\n")
+            for cls in sorted(k for k, v in _parens.items() if v):
+                out.append(f"\t\t\t{gostr(cls)}: true,\n")
+            out.append("\t\t},\n")
         out.append(
             f"\t\tJSONPathIsParsed: {str(json_path_is_parsed(name)).lower()},\n"
         )
@@ -2676,6 +2982,26 @@ def main() -> int:
             for k in ("Open", "Close", "Key", "Subscript", "QuotedKey"):
                 out.append(f"\t\t\t{k}: {gostr(_jp[k])},\n")
             out.append("\t\t},\n")
+            # Only where a class writes the path DIFFERENTLY from the
+            # standalone rendering. Databricks is the one: the same path is
+            # `c1:item[1].price` under JSONExtract and `'$.item[1].price'`
+            # under JSONExtractScalar.
+            overrides = {}
+            for cls_name in ("JSONExtract", "JSONExtractScalar"):
+                got = json_path_pieces_in_class(name, exp, cls_name)
+                if got and any(
+                    got[k] != _jp[k] for k in ("Key", "Subscript", "QuotedKey")
+                ):
+                    overrides[cls_name] = got
+            if overrides:
+                out.append("\t\tJSONPathByClass: map[string]JSONPathSQL{\n")
+                for cls_name in sorted(overrides):
+                    o = overrides[cls_name]
+                    out.append(f"\t\t\t{gostr(cls_name)}: {{\n")
+                    for k in ("Key", "Subscript", "QuotedKey", "Form", "PlainForm"):
+                        out.append(f"\t\t\t\t{k}: {gostr(o[k])},\n")
+                    out.append("\t\t\t},\n")
+                out.append("\t\t},\n")
         out.append(
             f"\t\tBracketIsRewritten: {str(bracket_is_rewritten(name)).lower()},\n"
         )

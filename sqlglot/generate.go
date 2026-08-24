@@ -53,6 +53,9 @@ type generator struct {
 	// T-SQL writes those `(1 = 1)` and a plain value `1`, so which one to
 	// write is a fact about the node's position rather than about the node.
 	conditions map[*Expression]bool
+	// pathOwner is the extraction class whose path is being written, because
+	// a path's separators depend on the call it appears in.
+	pathOwner string
 }
 
 // fail records the first failure. Later writers keep running and return empty
@@ -106,6 +109,13 @@ func (g *generator) child(e *Expression, key string) string {
 	return g.node(c)
 }
 
+// childOperand renders one arg as the OPERAND of an operator, parenthesised
+// where this dialect's spelling would otherwise re-associate.
+func (g *generator) childOperand(e *Expression, key string) string {
+	c, _ := e.Args[key].(*Expression)
+	return g.operand(c)
+}
+
 // list renders the `expressions` arg, the only repeated arg rendered this way
 // -- CASE renders its own branches, because exp.If is written one way as a
 // branch and another as a standalone call.
@@ -130,7 +140,19 @@ func (g *generator) binary(e *Expression, op string) string {
 	if this == nil || other == nil {
 		return g.fail(e.Class + " written as an operator without two operands")
 	}
-	return g.node(this) + " " + op + " " + g.node(other)
+	return g.operand(this) + " " + op + " " + g.operand(other)
+}
+
+// operand writes one side of a binary operator, parenthesising it if this
+// dialect spells it as an operator that would otherwise re-associate. Only the
+// JSON extractions need it so far, and only where they are written with an
+// arrow: DuckDB writes `(a -> b) & c` and Databricks `a:b & c` for the same
+// tree, so which one it is was probed rather than inferred from the template.
+func (g *generator) operand(e *Expression) string {
+	if e != nil && g.tables.JSONExtractNeedsParens[e.Class] {
+		return "(" + g.node(e) + ")"
+	}
+	return g.node(e)
 }
 
 // unary writes a prefix operator. The spelling carries its own spacing --

@@ -126,10 +126,14 @@ func TestGenerateShapes(t *testing.T) {
 			"SELECT CAST(a AS INT) -> '$.x'"},
 		{"and looser than concatenation", "SELECT a||b->'x'", "duckdb",
 			"SELECT a || b -> '$.x'"},
+		// Parenthesised as an OPERAND, which these two expectations used to
+		// deny. They were written by hand rather than read off the reference,
+		// and no corpus statement has the shape, so nothing contradicted them
+		// until the arrow moved to where the reference keeps it.
 		{"but tighter than a comparison", "SELECT 1 WHERE a->'x'=b", "duckdb",
-			"SELECT 1 WHERE a -> '$.x' = b"},
+			"SELECT 1 WHERE (a -> '$.x') = b"},
 		{"and tighter than AND", "SELECT 1 WHERE a->'x' AND b", "duckdb",
-			"SELECT 1 WHERE a -> '$.x' AND b"},
+			"SELECT 1 WHERE (a -> '$.x') AND b"},
 		{"and chains left", "SELECT a->'x'->'y'", "duckdb", "SELECT a -> '$.x' -> '$.y'"},
 		// A subquery's alias names the subquery; the joins come after it.
 		{"an alias before its joins", "SELECT 0 FROM ((A) A, A A)", "duckdb",

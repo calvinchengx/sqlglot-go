@@ -3,6 +3,7 @@ package sqlglot
 import (
 	"strconv"
 	"strings"
+	"unicode"
 )
 
 // parseJSONPath turns the string on the right of `->` into the JSONPath tree
@@ -129,4 +130,69 @@ var errNotAJSONPath = &UnsupportedError{Construct: "not a JSON path"}
 func isJSONPathVarByte(b byte) bool {
 	return b == '_' || b == ' ' ||
 		(b >= 'a' && b <= 'z') || (b >= 'A' && b <= 'Z') || (b >= '0' && b <= '9')
+}
+
+// pythonInt reads a string exactly as Python's int() does, which is the test
+// the reference applies to decide whether a JSON path segment is a subscript
+// or a key. `'00'` is 0, `'-2'` is -2, `' 5'` is 5 and `'1_0'` is 10; `'1a'`
+// and `”` are not integers at all.
+//
+// The digits are Go's unicode.IsDigit, which is category Nd -- and Nd is
+// exactly the set Python's int() accepts, checked over every code point. That
+// is NOT the same set as Python's str.isdigit(), which also takes superscripts
+// and needed a generated table; using that one here would read '²' as 2.
+func pythonInt(text string) (int, bool) {
+	runes := []rune(text)
+	i, j := 0, len(runes)
+	for i < j && isPythonSpace(runes[i]) {
+		i++
+	}
+	for j > i && isPythonSpace(runes[j-1]) {
+		j--
+	}
+	if i == j {
+		return 0, false
+	}
+	sign := 1
+	if runes[i] == '+' || runes[i] == '-' {
+		if runes[i] == '-' {
+			sign = -1
+		}
+		i++
+	}
+	// An underscore may SEPARATE digits and may not lead, trail or double up.
+	value, digits, prevUnderscore := 0, 0, false
+	for ; i < j; i++ {
+		r := runes[i]
+		if r == '_' {
+			if digits == 0 || prevUnderscore {
+				return 0, false
+			}
+			prevUnderscore = true
+			continue
+		}
+		if !unicode.IsDigit(r) {
+			return 0, false
+		}
+		prevUnderscore = false
+		digits++
+		value = value*10 + digitValue(r)
+	}
+	if digits == 0 || prevUnderscore {
+		return 0, false
+	}
+	return sign * value, true
+}
+
+// digitValue is the numeric value of a decimal digit in any script: Nd runs in
+// blocks of ten from a zero, so the offset from that zero is the value.
+func digitValue(r rune) int {
+	for zero := r; ; zero-- {
+		if !unicode.IsDigit(zero) {
+			return int(r - zero - 1)
+		}
+		if r-zero > 9 {
+			return 0
+		}
+	}
 }
