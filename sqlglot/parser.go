@@ -57,11 +57,14 @@ func ParseOne(sql, dialect string) (*Expression, error) {
 // addresses the current token, with prev and next either side, and every rule
 // is written against curr/prev the way the reference's rules are.
 type parser struct {
-	tokens  []Token
-	index   int
-	cfg     *Config
-	tables  *ParserTables
-	dialect string
+	// inCallArgs is set while reading a call's own argument list, where a
+	// trailing IGNORE NULLS belongs to the CALL rather than to the argument.
+	inCallArgs bool
+	tokens     []Token
+	index      int
+	cfg        *Config
+	tables     *ParserTables
+	dialect    string
 }
 
 func (p *parser) curr() *Token {

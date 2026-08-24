@@ -721,6 +721,33 @@ def quantifier_sql(dialect: str, exp) -> dict:
     return out
 
 
+def within_group_absorbed_by(dialect: str) -> list:
+    """Which CLASSES absorb a following WITHIN GROUP instead of being wrapped.
+
+    `STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y)` is one GroupConcat carrying
+    the order -- in every dialect -- while `PERCENTILE_CONT(0.5) WITHIN GROUP
+    (...)` is a WithinGroup wrapping the call. So the fold belongs to the
+    FUNCTION, not to the dialect; asking the question per dialect said "always"
+    and refused twenty statements that wrap perfectly well.
+    """
+    import sqlglot
+
+    absorbed = []
+    for sql in (
+        "SELECT STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y)",
+        "SELECT LISTAGG(x) WITHIN GROUP (ORDER BY y)",
+        "SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY y)",
+        "SELECT PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY y)",
+    ):
+        try:
+            e = sqlglot.parse_one(sql, dialect=dialect or None).selects[0]
+        except Exception:  # noqa: BLE001
+            continue
+        if type(e).__name__ != "WithinGroup":
+            absorbed.append(type(e).__name__)
+    return sorted(set(absorbed))
+
+
 def default_nulls_first(dialect: str) -> tuple[bool, bool]:
     """Where NULLs sort by default, ascending and descending.
 
@@ -1743,6 +1770,9 @@ def main() -> int:
         "\t// parser got Databricks wrong.\n",
         "\tDefaultNullsFirstAsc  bool\n",
         "\tDefaultNullsFirstDesc bool\n",
+        "\t// WithinGroupAbsorbedBy are the classes that FOLD a following\n",
+        "\t// WITHIN GROUP into themselves instead of being wrapped by it.\n",
+        "\tWithinGroupAbsorbedBy map[string]bool\n",
         "\tWritesNullsOrdering bool\n",
         "\tBoolean BooleanSQL\n",
         "\tWritesBooleanLiteral bool\n",
@@ -2066,6 +2096,12 @@ def main() -> int:
             out.append("\t\tQuantifierSQL: map[string]string{\n")
             for k in sorted(_q):
                 out.append(f"\t\t\t{gostr(k)}: {gostr(_q[k])},\n")
+            out.append("\t\t},\n")
+        _wg = within_group_absorbed_by(name)
+        if _wg:
+            out.append("\t\tWithinGroupAbsorbedBy: map[string]bool{\n")
+            for cls in _wg:
+                out.append(f"\t\t\t{gostr(cls)}: true,\n")
             out.append("\t\t},\n")
         _na, _nd = default_nulls_first(name)
         out.append(f"\t\tDefaultNullsFirstAsc: {str(_na).lower()},\n")

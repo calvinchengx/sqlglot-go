@@ -462,6 +462,42 @@ func (p *parser) parsePostfix() (*Expression, error) {
 		// In T-SQL `[` opens a quoted identifier and the tokenizer has already
 		// consumed it, so this branch is unreachable there -- which is why it
 		// needs no dialect flag.
+		// `f(x) IGNORE NULLS` and `f(x) WITHIN GROUP (ORDER BY y)` WRAP the
+		// call. Every word involved is a plain VAR, so all of them are matched
+		// by text.
+		// Not inside a call's own argument list: `SUM(x IGNORE NULLS)` belongs
+		// to the SUM, and letting the argument claim it built
+		// Sum(IgnoreNulls(x)) where the reference has IgnoreNulls(Sum(x)).
+		if word := p.atNullsModifier(); word != "" && !p.inCallArgs {
+			p.advance()
+			p.advance()
+			this = New(word, Arg{"this", this})
+			continue
+		}
+		if p.atWords("WITHIN", "GROUP") {
+			if this != nil && p.tables.WithinGroupAbsorbedBy[this.Class] {
+				// This class folds the clause into itself rather than being
+				// wrapped by it, and the fold is not ported.
+				return nil, p.unsupported("WITHIN GROUP folded into " + this.Class)
+			}
+			p.advance()
+			p.advance()
+			if !p.match(TokL_PAREN) {
+				return nil, p.unsupported("WITHIN GROUP without a parenthesised ORDER BY")
+			}
+			if !p.match(TokORDER_BY) {
+				return nil, p.unsupported("WITHIN GROUP without ORDER BY")
+			}
+			order, err := p.parseOrder()
+			if err != nil {
+				return nil, err
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed WITHIN GROUP")
+			}
+			this = New("WithinGroup", Arg{"this", this}, Arg{"expression", order})
+			continue
+		}
 		// `x AT TIME ZONE 'UTC'`: three words, of which only TIME is a
 		// keyword, so the phrase is matched by text.
 		if p.atAtTimeZone() {
@@ -915,6 +951,8 @@ func (p *parser) parseFunction() (*Expression, error) {
 	// Distinct node and passes that as the call's single argument. Refusing
 	// it turned away one of the commonest aggregates a data agent writes.
 	distinct := p.match(TokDISTINCT)
+	wasInCallArgs := p.inCallArgs
+	p.inCallArgs = true
 	if !p.at(TokR_PAREN) {
 		for {
 			// ORDER BY and named arguments inside a call also change the node
@@ -941,6 +979,14 @@ func (p *parser) parseFunction() (*Expression, error) {
 				break
 			}
 		}
+	}
+	p.inCallArgs = wasInCallArgs
+	// `SUM(x IGNORE NULLS)` puts the modifier INSIDE the parentheses and the
+	// reference still wraps the whole call in it.
+	inner := p.atNullsModifier()
+	if inner != "" {
+		p.advance()
+		p.advance()
 	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed function argument list")
@@ -1019,7 +1065,11 @@ func (p *parser) parseFunction() (*Expression, error) {
 				}
 			}
 		}
-		return p.buildFunction(upper, spec, args), nil
+		built := p.buildFunction(upper, spec, args)
+		if inner != "" {
+			return New(inner, Arg{"this", built}), nil
+		}
+		return built, nil
 	}
 	// A quoted name is an Identifier node in the reference and a bare string
 	// otherwise; the two are different trees, and writing the string for both
@@ -1299,4 +1349,30 @@ func (p *parser) atAtTimeZone() bool {
 	return a.Type == TokVAR && strings.EqualFold(a.Text, "AT") &&
 		b.Type == TokTIME &&
 		c.Type == TokVAR && strings.EqualFold(c.Text, "ZONE")
+}
+
+// atNullsModifier reports which class `IGNORE NULLS` or `RESPECT NULLS` builds
+// here, or "" for neither. Both words are plain VARs.
+func (p *parser) atNullsModifier() string {
+	switch {
+	case p.atWords("IGNORE", "NULLS"):
+		return "IgnoreNulls"
+	case p.atWords("RESPECT", "NULLS"):
+		return "RespectNulls"
+	}
+	return ""
+}
+
+// atWords reports whether the next tokens are these words, whatever the
+// tokenizer made of them.
+func (p *parser) atWords(words ...string) bool {
+	if p.index+len(words) > len(p.tokens) {
+		return false
+	}
+	for i, w := range words {
+		if !strings.EqualFold(p.tokens[p.index+i].Text, w) {
+			return false
+		}
+	}
+	return true
 }

@@ -232,6 +232,9 @@ type ParserTables struct {
 	// parser got Databricks wrong.
 	DefaultNullsFirstAsc  bool
 	DefaultNullsFirstDesc bool
+	// WithinGroupAbsorbedBy are the classes that FOLD a following
+	// WITHIN GROUP into themselves instead of being wrapped by it.
+	WithinGroupAbsorbedBy map[string]bool
 	WritesNullsOrdering   bool
 	Boolean               BooleanSQL
 	WritesBooleanLiteral  bool
@@ -3344,6 +3347,9 @@ var parserTables = map[string]*ParserTables{
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
 			"Any": "ANY",
+		},
+		WithinGroupAbsorbedBy: map[string]bool{
+			"GroupConcat": true,
 		},
 		DefaultNullsFirstAsc:  true,
 		DefaultNullsFirstDesc: false,
@@ -6596,6 +6602,9 @@ var parserTables = map[string]*ParserTables{
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
 			"Any": "ANY",
+		},
+		WithinGroupAbsorbedBy: map[string]bool{
+			"GroupConcat": true,
 		},
 		DefaultNullsFirstAsc:  true,
 		DefaultNullsFirstDesc: false,
@@ -9895,6 +9904,9 @@ var parserTables = map[string]*ParserTables{
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
 			"Any": "ANY",
+		},
+		WithinGroupAbsorbedBy: map[string]bool{
+			"GroupConcat": true,
 		},
 		DefaultNullsFirstAsc:  false,
 		DefaultNullsFirstDesc: true,
@@ -13348,6 +13360,9 @@ var parserTables = map[string]*ParserTables{
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
 			"Any": "ANY",
+		},
+		WithinGroupAbsorbedBy: map[string]bool{
+			"GroupConcat": true,
 		},
 		DefaultNullsFirstAsc:  false,
 		DefaultNullsFirstDesc: false,
@@ -16813,6 +16828,9 @@ var parserTables = map[string]*ParserTables{
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
 			"Any": "ANY",
+		},
+		WithinGroupAbsorbedBy: map[string]bool{
+			"GroupConcat": true,
 		},
 		DefaultNullsFirstAsc:  true,
 		DefaultNullsFirstDesc: false,
