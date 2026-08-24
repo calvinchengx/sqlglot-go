@@ -741,11 +741,24 @@ func (g *generator) writeLambda(e *Expression) string {
 // T-SQL CHARINDEX, PostgreSQL POSITION(a IN b) -- so nothing here is spelled
 // out, only substituted.
 func (g *generator) writeSyntaxFunction(e *Expression) string {
+	if out, ok := g.syntaxTemplate(e); ok {
+		return out
+	}
+	return g.fail(e.Class)
+}
+
+// syntaxTemplate fills the template recorded for this class and this set of
+// present arguments, or reports that there is none.
+func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 	present := map[string]bool{}
 	for key, value := range e.Args {
 		switch v := value.(type) {
 		case *Expression:
 			if v != nil {
+				present[key] = true
+			}
+		case []*Expression:
+			if len(v) > 0 {
 				present[key] = true
 			}
 		case string:
@@ -765,23 +778,38 @@ func (g *generator) writeSyntaxFunction(e *Expression) string {
 				break
 			}
 		}
+		// A value the template does not SHOW is a condition on it: LTRIM and
+		// RTRIM are the same class and the same argument keys, and only the
+		// position tells them apart.
+		for _, req := range candidate.Required {
+			if got, _ := e.Args[req.Key].(string); got != req.Value {
+				matches = false
+				break
+			}
+		}
 		if !matches {
 			continue
 		}
 		out := candidate.Template
-		for _, key := range candidate.Keys {
+		for _, key := range candidate.Marked {
 			var text string
 			switch v := e.Args[key].(type) {
 			case *Expression:
 				text = g.node(v)
+			case []*Expression:
+				parts := make([]string, 0, len(v))
+				for _, item := range v {
+					parts = append(parts, g.node(item))
+				}
+				text = strings.Join(parts, ", ")
 			case string:
 				text = v
 			}
 			out = strings.ReplaceAll(out, "{"+key+"}", text)
 		}
-		return out
+		return out, true
 	}
-	return g.fail(e.Class)
+	return "", false
 }
 
 // writeTableAlias writes the alias and, when it has one, the column list that

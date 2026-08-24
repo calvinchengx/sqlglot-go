@@ -82,6 +82,11 @@ func (g *generator) node(e *Expression) string {
 	if spec, ok := g.functionSpelling(e); ok {
 		return g.namedFunction(e, spec)
 	}
+	// Last: a template the reference itself produced for this class, this
+	// dialect and this set of arguments. Everything without one is refused.
+	if out, ok := g.syntaxTemplate(e); ok {
+		return out
+	}
 	return g.fail(e.Class)
 }
 

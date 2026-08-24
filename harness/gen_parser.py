@@ -21,7 +21,30 @@ DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks")
 
 
 def gostr(s: str) -> str:
-    return '"' + s.replace("\\", "\\\\").replace('"', '\\"') + '"'
+    """Quote a string as Go source.
+
+    Control characters have to be escaped, not passed through: a value with a
+    literal tab in it -- and the reference has several, ByteString among them
+    -- produced a Go file that would not parse. Escaping only the backslash and
+    the quote was enough right up until a table carried one.
+    """
+    out = []
+    for ch in s:
+        if ch == "\\":
+            out.append("\\\\")
+        elif ch == '"':
+            out.append('\\"')
+        elif ch == "\n":
+            out.append("\\n")
+        elif ch == "\r":
+            out.append("\\r")
+        elif ch == "\t":
+            out.append("\\t")
+        elif ord(ch) < 0x20 or ord(ch) == 0x7F:
+            out.append(f"\\x{ord(ch):02x}")
+        else:
+            out.append(ch)
+    return '"' + "".join(out) + '"'
 
 
 def ttset(name: str, tokens) -> str:
@@ -801,58 +824,129 @@ def class_sensitive_args(P, exp, dialect, funcs):
     return {n: {i: sorted(c) for i, c in sorted(d.items())} for n, d in out.items()}
 
 
-SYNTAX_SHAPES = {
-    "Extract": [["this", "expression"]],
-    "Trim": [["this"], ["this", "expression"], ["this", "expression", "position"]],
-    "Substring": [["this"], ["this", "start"], ["this", "start", "length"]],
-    "StrPosition": [["this", "substr"]],
+def observed_shapes(exp, dialect, repo):
+    """Which nodes the corpus actually contains, and with which arguments set.
+
+    The template probe used to work from a hand-written list of four classes.
+    Everything outside it had no spelling and was refused -- 44 statements for
+    JSONExtract alone, which four dialects write four ways. The list is now the
+    CORPUS: parse every statement with the reference and record each node's
+    class together with the arguments it actually carries, so a template is
+    probed for exactly the shapes that occur and no others.
+    """
+    import json
+
+    import sqlglot
+
+    index = repo / "testdata" / "expected" / "index.json"
+    if not index.exists():
+        return {}
+    shapes: dict[str, set] = {}
+    for entry in json.loads(index.read_text())["statements"]:
+        if (entry["dialect"] or "") != dialect:
+            continue
+        try:
+            tree = sqlglot.parse_one(entry["sql"], read=dialect or None)
+        except Exception:  # noqa: BLE001 -- the reference cannot read it either
+            continue
+        for node in tree.walk():
+            expr_keys, scalars = [], []
+            for key, value in node.args.items():
+                if value is None or value == []:
+                    continue
+                if isinstance(value, (exp.Expr, list)):
+                    expr_keys.append(key)
+                elif isinstance(value, str):
+                    scalars.append((key, value))
+            if expr_keys or scalars:
+                shapes.setdefault(type(node).__name__, set()).add(
+                    (tuple(expr_keys), tuple(scalars))
+                )
+    return shapes
+
+
+# Shapes the PORT can build that the corpus happens not to contain for every
+# dialect. The corpus is the primary source -- these are a floor under it, not
+# a replacement, and each corresponds to a form the port's own parser produces.
+EXTRA_SHAPES = {
+    "Trim": [
+        (("this",), ()),
+        (("this", "expression"), ()),
+        (("this", "expression"), (("position", "BOTH"),)),
+        (("this", "expression"), (("position", "LEADING"),)),
+        (("this", "expression"), (("position", "TRAILING"),)),
+    ],
+    "Substring": [(("this",), ()), (("this", "start"), ()), (("this", "start", "length"), ())],
+    "StrPosition": [(("this", "substr"), ())],
+    "Extract": [(("this", "expression"), ())],
 }
 
 
-def syntax_templates(exp, dialect):
-    """How the reference WRITES the nodes that have their own call syntax.
+def syntax_templates(exp, dialect, repo):
+    """How the reference WRITES each shape the corpus contains.
 
-    None of these is `NAME(a, b, c)`, and no two dialects agree: DuckDB writes
-    POSITION as STRPOS(b, a), T-SQL as CHARINDEX(a, b), Databricks as
-    LOCATE(a, b) and PostgreSQL as POSITION(a IN b); T-SQL writes EXTRACT as
-    DATEPART. So the shape is not described, it is RENDERED with placeholder
-    columns and the placeholders replaced by markers -- which makes the
-    template whatever the reference actually emits.
-
-    One template per set of present arguments, because an absent one changes
-    the spelling: `TRIM(s)` is not `TRIM(BOTH 'x' FROM s)` with a piece
-    removed.
+    Nothing here is spelled out. A node is built with placeholder columns for
+    its expression arguments and its own values for the rest, rendered by the
+    reference, and the placeholders replaced by markers -- so the template is
+    whatever it actually emits. That is how DuckDB writing POSITION as
+    STRPOS(b, a), T-SQL as CHARINDEX(a, b) and PostgreSQL as POSITION(a IN b)
+    all arrive without a line of dialect logic.
     """
     out = {}
-    for cls_name, shapes in SYNTAX_SHAPES.items():
+    shapes = observed_shapes(exp, dialect, repo)
+    for cls_name, extra in EXTRA_SHAPES.items():
+        shapes.setdefault(cls_name, set()).update(extra)
+    for cls_name, variants in sorted(shapes.items()):
         cls = getattr(exp, cls_name, None)
         if cls is None:
             continue
-        for keys in shapes:
-            kwargs = {}
-            for key in keys:
-                kwargs[key] = "BOTH" if key == "position" else exp.column(f"__a{key}__")
+        for expr_keys, scalars in sorted(variants):
+            kwargs = {k: exp.column(f"__a{k}__") for k in expr_keys}
+            kwargs.update(dict(scalars))
             try:
                 text = cls(**kwargs).sql(dialect=dialect or None)
             except Exception:  # noqa: BLE001 -- this dialect will not write that shape
                 continue
             ok = True
-            for key in keys:
-                if key == "position":
-                    # A string arg, so it is rendered as the word itself.
-                    # PostgreSQL writes it (`TRIM(BOTH 'x' FROM s)`) and DuckDB
-                    # drops it; leaving the probe word in the template would
-                    # have written BOTH for a LEADING trim.
-                    if text.count("BOTH") == 1:
-                        text = text.replace("BOTH", "{position}")
-                    continue
+            for key in expr_keys:
                 token = f"__a{key}__"
                 if text.count(token) != 1:
                     ok = False
                     break
                 text = text.replace(token, "{" + key + "}")
-            if ok:
-                out.setdefault(cls_name, []).append((keys, text))
+            if not ok:
+                continue
+            # A scalar that does not APPEAR in the text is not a marker, it
+            # is a condition: LTRIM is Trim(position='LEADING') and RTRIM is
+            # Trim(position='TRAILING'), and both render without the word. The
+            # template belongs to that value, so it is recorded as a
+            # requirement or the first one wins for both.
+            required = []
+            for key, value in scalars:
+                if text.count(value) == 1:
+                    text = text.replace(value, "{" + key + "}")
+                else:
+                    required.append((key, value))
+            marked = [k for k in expr_keys] + [
+                k for k, _ in scalars if (k, dict(scalars)[k]) not in required
+            ]
+            # Infix templates are rejected. `a #> b` needs parentheses around a
+            # child by PRECEDENCE, and a template substitutes text without
+            # knowing any -- the reference writes `a #> (n IN (1, 2))` and a
+            # template would write it flat. A template that begins with an
+            # argument is infix; the classes that need one already have a
+            # writer that knows the precedence table.
+            if text.lstrip().startswith("{"):
+                continue
+            # A CAST the probe did not ask for is a COERCION the reference
+            # applies by type: DuckDB writes BOOL_OR(CAST(x AS BOOLEAN)) only
+            # when x is not already boolean. The probe feeds plain columns, so
+            # any cast here was added, and baking it into the template wrapped
+            # an argument that already had one.
+            if "CAST(" in text and cls_name not in ("Cast", "TryCast"):
+                continue
+            keys = list(expr_keys) + [k for k, _ in scalars]
+            out.setdefault(cls_name, []).append((keys, marked, required, text))
     return out
 
 
@@ -1437,6 +1531,8 @@ def main() -> int:
         "// with {key} where each argument goes.\n",
         "type SyntaxTemplate struct {\n",
         "\tKeys     []string\n",
+        "\tMarked   []string\n",
+        "\tRequired []FuncConst\n",
         "\tTemplate string\n",
         "}\n",
         "\n",
@@ -1509,14 +1605,19 @@ def main() -> int:
                 )
                 out.append(f"\t\t\t{gostr(fname)}: {{{triggers}}},\n")
             out.append("\t\t},\n")
-        syn = syntax_templates(exp, name)
+        syn = syntax_templates(exp, name, pathlib.Path(__file__).resolve().parent.parent)
         if syn:
             out.append("\t\tSyntaxSQL: map[string][]SyntaxTemplate{\n")
             for cls_name in sorted(syn):
                 entries = "".join(
-                    "{[]string{%s}, %s}, "
-                    % (", ".join(gostr(k) for k in keys), gostr(text))
-                    for keys, text in syn[cls_name]
+                    "{[]string{%s}, []string{%s}, []FuncConst{%s}, %s}, "
+                    % (
+                        ", ".join(gostr(k) for k in keys),
+                        ", ".join(gostr(k) for k in marked),
+                        "".join("{%s, %s}, " % (gostr(k), gostr(v)) for k, v in required),
+                        gostr(text),
+                    )
+                    for keys, marked, required, text in syn[cls_name]
                 )
                 out.append(f"\t\t\t{gostr(cls_name)}: {{{entries}}},\n")
             out.append("\t\t},\n")
