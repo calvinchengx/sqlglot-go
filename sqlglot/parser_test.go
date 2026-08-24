@@ -105,7 +105,7 @@ func TestRefusals(t *testing.T) {
 	for _, c := range []struct{ name, sql, dialect string }{
 		{"STRING_AGG with an ORDER BY", "SELECT STRING_AGG(x, ',' ORDER BY y)", "duckdb"},
 		{"no-paren function named, not tokenized", "CURDATE", "databricks"},
-		{"ORDER BY inside a call", "SELECT f(a ORDER BY b)", ""},
+		{"ORDER BY with nothing to order", "SELECT RANK(ORDER BY b) OVER ()", "duckdb"},
 		{"INTERVAL as a type", "'45 days'::INTERVAL DAY", "postgres"},
 		{"non-numeric type parameter", "a::VARCHAR('x')", "tsql"},
 		{"fixed-size array where the dialect has none", "CAST(a AS INT[3])", "databricks"},

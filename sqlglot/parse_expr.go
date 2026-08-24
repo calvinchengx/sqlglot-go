@@ -1076,6 +1076,7 @@ func (p *parser) parseFunction() (*Expression, error) {
 	// Distinct node and passes that as the call's single argument. Refusing
 	// it turned away one of the commonest aggregates a data agent writes.
 	distinct := p.match(TokDISTINCT)
+	var order *Expression
 	wasInCallArgs := p.inCallArgs
 	p.inCallArgs = true
 	if !p.at(TokR_PAREN) {
@@ -1106,6 +1107,19 @@ func (p *parser) parseFunction() (*Expression, error) {
 				return nil, err
 			}
 			args = append(args, arg)
+			// `ARRAY_AGG(x ORDER BY y)`: the ORDER BY belongs to the argument
+			// it follows, and the reference wraps that argument in an Order
+			// rather than hanging the clause off the call. Where the whole
+			// list was collected into a Distinct, the Order wraps THAT, which
+			// is why it is applied below rather than here.
+			if p.at(TokORDER_BY) {
+				p.advance()
+				o, oerr := p.parseOrder()
+				if oerr != nil {
+					return nil, oerr
+				}
+				order = o
+			}
 			if !p.match(TokCOMMA) {
 				break
 			}
@@ -1124,6 +1138,13 @@ func (p *parser) parseFunction() (*Expression, error) {
 	}
 	if distinct {
 		args = []*Expression{New("Distinct", Arg{"expressions", args}, Arg{"on", nil})}
+	}
+	if order != nil {
+		if len(args) == 0 {
+			return nil, p.unsupported("ORDER BY without an argument to order")
+		}
+		order.Set("this", args[len(args)-1])
+		args[len(args)-1] = order
 	}
 	if !named && byArity {
 		byCount, ok := variants[len(args)]

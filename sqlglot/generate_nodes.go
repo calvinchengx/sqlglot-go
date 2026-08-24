@@ -287,6 +287,11 @@ func (g *generator) writeGroup(e *Expression) string {
 }
 
 func (g *generator) writeOrder(e *Expression) string {
+	// As a query clause the Order stands alone; inside a call it wraps the
+	// argument it follows, and that argument is written before the keyword.
+	if this := g.child(e, "this"); this != "" {
+		return this + " ORDER BY " + g.list(e)
+	}
 	return "ORDER BY " + g.list(e)
 }
 
