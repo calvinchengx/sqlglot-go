@@ -27,6 +27,13 @@ func parseJSONPath(path string) (*Expression, error) {
 				return nil, errUnsupportedJSONPath("recursive descent")
 			}
 			i++
+			// `$.y.*` is a wildcard KEY: every member of y.
+			if i < len(path) && path[i] == '*' {
+				parts = append(parts, New("JSONPathKey",
+					Arg{"this", New("JSONPathWildcard")}))
+				i++
+				continue
+			}
 			key, next, err := readJSONPathKey(path, i)
 			if err != nil {
 				return nil, err
@@ -86,12 +93,20 @@ func readJSONPathBracket(path string, i int) (*Expression, int, error) {
 	}
 	body := path[i : i+end]
 	next := i + end + 1
-	if len(body) >= 2 && body[0] == '"' && body[len(body)-1] == '"' {
+	// A quoted key is ONE quoted string, not merely something that starts and
+	// ends with a quote: `[""@""]` is three things and the reference keeps the
+	// whole path as a literal rather than reading a key called `"@"`.
+	if len(body) >= 2 && body[0] == '"' && body[len(body)-1] == '"' &&
+		!strings.Contains(body[1:len(body)-1], `"`) {
 		return New("JSONPathKey", Arg{"this", body[1 : len(body)-1]}), next, nil
+	}
+	// `$.y[*]` is a wildcard SUBSCRIPT: every element of y. The other bracket
+	// forms -- slices, unions, filters -- are still refused.
+	if body == "*" {
+		return New("JSONPathSubscript", Arg{"this", New("JSONPathWildcard")}), next, nil
 	}
 	n, err := strconv.Atoi(body)
 	if err != nil {
-		// Slices, unions, wildcards and filters all land here.
 		return nil, 0, errUnsupportedJSONPath("subscript " + body)
 	}
 	return New("JSONPathSubscript", Arg{"this", n}), next, nil

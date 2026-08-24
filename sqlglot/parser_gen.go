@@ -166,6 +166,12 @@ type ParserTables struct {
 	TimeMapping       map[string]string
 	TimeFormatArgs    map[string][]int
 	CastSensitiveArgs map[string]map[int][]string
+	// DropsZeroArgs are the argument keys a literal ZERO simply
+	// DISAPPEARS from -- DuckDB writes REGEXP_EXTRACT(x, p) for a
+	// zero group. A rule to FOLLOW, unlike the two below, and kept
+	// apart from them because refusing it also turned away every
+	// other literal in the same slot.
+	DropsZeroArgs map[string]map[int][]string
 	// ZeroSensitiveArgs is the same idea for a NUMBER rather than a
 	// cast: DuckDB drops a zero group from REGEXP_EXTRACT entirely.
 	// Kept apart from the cast trigger, because a call that moves for
@@ -13353,8 +13359,6 @@ var parserTables = map[string]*ParserTables{
 			"NumberToStr":            {2: {"format"}, 3: {"format"}, 4: {"format"}, 5: {"format"}},
 			"ObjectInsert":           {2: {"key"}, 3: {"key"}, 4: {"key"}, 5: {"key"}},
 			"ParseDatetime":          {4: {"default_year"}, 5: {"default_year"}},
-			"RegexpExtract":          {3: {"group"}, 4: {"group"}, 5: {"group"}},
-			"RegexpExtractAll":       {3: {"group"}, 4: {"group"}, 5: {"group"}},
 			"RegrValx":               {2: {"expression"}, 3: {"expression"}, 4: {"expression"}, 5: {"expression"}},
 			"RegrValy":               {2: {"this"}, 3: {"this"}, 4: {"this"}, 5: {"this"}},
 			"Round":                  {4: {"decimals"}, 5: {"decimals"}},
@@ -13405,6 +13409,10 @@ var parserTables = map[string]*ParserTables{
 			"TsOrDsAdd":             {2: {"expression"}, 3: {"expression"}},
 			"Upper":                 {1: {"this"}, 2: {"this"}, 3: {"this"}, 4: {"this"}, 5: {"this"}},
 			"Uuid":                  {2: {"this"}, 3: {"this"}, 4: {"this"}, 5: {"this"}},
+		},
+		DropsZeroArgs: map[string]map[int][]string{
+			"RegexpExtract":    {3: {"group"}, 4: {"group"}, 5: {"group"}},
+			"RegexpExtractAll": {3: {"group"}, 4: {"group"}, 5: {"group"}},
 		},
 		StringSensitiveArgs: map[string][]int{
 			"JSON_EXTRACT":           {1},

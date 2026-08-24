@@ -1172,7 +1172,8 @@ def _record(sensitive, name, arity, index, keyof):
         bucket.append(key)
 
 
-def _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive, keyof=None):
+def _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive, keyof=None,
+                vanished=None):
     """One substitution for cast_sensitive_args, recorded per ARITY.
 
     DuckDB's ROUND wraps its second argument in CAST(... AS INT) when the call
@@ -1192,9 +1193,12 @@ def _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive, ke
     if base_sql.count(token) != 1:
         return
     if probe_sql not in got:
-        # The argument VANISHED: DuckDB drops a zero group from
-        # REGEXP_EXTRACT entirely. Writing it back is a different call, and
-        # its absence is the signal rather than something to skip over.
+        # The argument VANISHED. DuckDB drops a zero group from REGEXP_EXTRACT
+        # entirely, and that is a rule the port can FOLLOW rather than refuse:
+        # recorded apart, and only when the rest of the call is untouched.
+        if vanished is not None and got == base_sql.replace(", " + token, "", 1):
+            _record(vanished, name, len(plain), i, keyof)
+            return
         _record(sensitive, name, len(plain), i, keyof)
         return
     if got.count(probe_sql) != 1:
@@ -1223,6 +1227,11 @@ def cast_sensitive_args(P, exp, dialect, funcs):
     probe = exp.column("__probe_0")
     sensitive: dict[str, dict[int, list[str]]] = {}
     zero_sensitive: dict[str, dict[int, list[str]]] = {}
+    # Where a literal ZERO simply DISAPPEARS and the rest of the call is
+    # untouched. That is a rule to follow, not a reason to refuse -- and
+    # refusing it also turned away every OTHER literal in the same slot,
+    # which renders perfectly.
+    drops_zero: dict[str, dict[int, list[str]]] = {}
     for name in funcs:
         builder = P.FUNCTIONS.get(name)
         if builder is None:
@@ -1267,7 +1276,7 @@ def cast_sensitive_args(P, exp, dialect, funcs):
                 )
                 _cast_probe(
                     builder, plain, base_sql, i, exp.Literal.number(0),
-                    dialect, cls_name, zero_sensitive, keyof,
+                    dialect, cls_name, zero_sensitive, keyof, drops_zero,
                 )
                 # A STRING can be coerced too: DuckDB writes
                 # DATE_DIFF('QUARTER', CAST('2009-02-13' AS DATE), ...), adding
@@ -1304,7 +1313,7 @@ def cast_sensitive_args(P, exp, dialect, funcs):
     def tidy(d):
         return {n: {a: sorted(set(v)) for a, v in by.items()} for n, by in d.items()}
 
-    return tidy(sensitive), tidy(zero_sensitive)
+    return tidy(sensitive), tidy(zero_sensitive), tidy(drops_zero)
 
 
 def class_sensitive_args(P, exp, dialect, funcs):
@@ -1981,6 +1990,12 @@ def main() -> int:
         "\tTimeMapping    map[string]string\n",
         "\tTimeFormatArgs map[string][]int\n",
         "\tCastSensitiveArgs map[string]map[int][]string\n",
+        "\t// DropsZeroArgs are the argument keys a literal ZERO simply\n",
+        "\t// DISAPPEARS from -- DuckDB writes REGEXP_EXTRACT(x, p) for a\n",
+        "\t// zero group. A rule to FOLLOW, unlike the two below, and kept\n",
+        "\t// apart from them because refusing it also turned away every\n",
+        "\t// other literal in the same slot.\n",
+        "\tDropsZeroArgs map[string]map[int][]string\n",
         "\t// ZeroSensitiveArgs is the same idea for a NUMBER rather than a\n",
         "\t// cast: DuckDB drops a zero group from REGEXP_EXTRACT entirely.\n",
         "\t// Kept apart from the cast trigger, because a call that moves for\n",
@@ -2335,8 +2350,9 @@ def main() -> int:
                 joined = ", ".join(str(i) for i in _tfa[fname])
                 out.append(f"\t\t\t{gostr(fname)}: {{{joined}}},\n")
             out.append("\t\t},\n")
-        casts, zeros = cast_sensitive_args(P, exp, name, render_input)
-        for field, table in (("ZeroSensitiveArgs", zeros), ("CastSensitiveArgs", casts)):
+        casts, zeros, drops = cast_sensitive_args(P, exp, name, render_input)
+        for field, table in (("ZeroSensitiveArgs", zeros), ("CastSensitiveArgs", casts),
+                             ("DropsZeroArgs", drops)):
             if not table:
                 continue
             out.append(f"\t\t{field}: map[string]map[int][]string{{\n")

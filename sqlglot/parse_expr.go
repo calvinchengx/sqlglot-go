@@ -1,9 +1,6 @@
 package sqlglot
 
-import (
-	"errors"
-	"strings"
-)
+import "strings"
 
 // The expression grammar: precedence climbing, in the reference's shapes.
 //
@@ -1765,11 +1762,19 @@ func (p *parser) parseJSONPathOperand() (*Expression, error) {
 		}}), nil
 	}
 	path, err := parseJSONPath(c.Text)
-	if errors.Is(err, errNotAJSONPath) {
-		// Not a path at all: the reference hands the literal straight back.
+	if err != nil {
+		// ANY path the reference cannot read is handed straight back as the
+		// string it was written as -- not only the ones that are obviously
+		// not paths. `0 -> '[""@""]'` stays that literal. Falling back on
+		// just the one error kind refused the rest, and the port then wrote
+		// SQL it could not read: the generator fuzzer found both.
+		//
+		// Where the REFERENCE parses a path this port cannot, the two trees
+		// differ and the differential says so; that is the check, and it is
+		// silent today.
 		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
 	}
-	return path, err
+	return path, nil
 }
 
 // isBareIdentifier reports whether a struct key could be written without

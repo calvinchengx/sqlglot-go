@@ -273,21 +273,20 @@ func sameConst(got, want any) bool {
 // is how a DATE_DIFF over date STRINGS came out without the casts the
 // reference adds.
 func (g *generator) refuseSensitive(e *Expression) bool {
-	arity := 0
-	for _, value := range e.Args {
-		switch v := value.(type) {
-		case *Expression:
-			if v != nil {
-				arity++
-			}
-		case []*Expression:
-			arity += len(v)
-		}
-	}
+	arity := argCount(e)
 	for _, key := range g.tables.CastSensitiveArgs[e.Class][arity] {
 		if child, _ := e.Args[key].(*Expression); isCastToNonInteger(child) {
 			g.fail("cast argument to " + e.Class)
 			return true
+		}
+	}
+	// A zero this dialect DROPS is not a refusal: it is written by leaving
+	// the argument out, which namedFunction does below. Checked before the
+	// refusals so a slot that merely drops a zero does not turn away every
+	// other literal in it.
+	for _, key := range g.tables.DropsZeroArgs[e.Class][arity] {
+		if child, _ := e.Args[key].(*Expression); isZero(child) {
+			return false
 		}
 	}
 	for _, key := range g.tables.ZeroSensitiveArgs[e.Class][arity] {
@@ -299,12 +298,48 @@ func (g *generator) refuseSensitive(e *Expression) bool {
 	return false
 }
 
+// argCount is how many arguments a call actually carries, which is what the
+// sensitivity tables are keyed by: DuckDB wraps ROUND's second argument in a
+// cast at four arguments and not at two.
+func argCount(e *Expression) int {
+	n := 0
+	for _, value := range e.Args {
+		switch v := value.(type) {
+		case *Expression:
+			if v != nil {
+				n++
+			}
+		case []*Expression:
+			n += len(v)
+		}
+	}
+	return n
+}
+
+// dropsThisZero reports whether this argument is a literal zero the dialect
+// leaves out entirely: DuckDB writes `REGEXP_EXTRACT(x, p)` for a zero group.
+func (g *generator) dropsThisZero(e *Expression, arity int, key string) bool {
+	for _, dropped := range g.tables.DropsZeroArgs[e.Class][arity] {
+		if dropped == key {
+			child, _ := e.Args[key].(*Expression)
+			return isZero(child)
+		}
+	}
+	return false
+}
+
 func (g *generator) namedFunction(e *Expression, spec FuncSQL) string {
 	if spec.NoParens {
 		return spec.Name
 	}
+	arity := argCount(e)
 	parts := []string{}
 	for _, key := range spec.Keys {
+		// A literal zero this dialect leaves out entirely: DuckDB writes
+		// `REGEXP_EXTRACT(x, p)` for a zero group. Probed, not assumed.
+		if g.dropsThisZero(e, arity, key) {
+			continue
+		}
 		switch v := e.Args[key].(type) {
 		case *Expression:
 			parts = append(parts, g.node(v))

@@ -160,6 +160,26 @@ func TestGenerateShapes(t *testing.T) {
 		{"map with parentheses too", "SELECT MAP([1], [2])", "duckdb", "SELECT MAP([1], [2])"},
 		{"an empty argument list is an anonymous call", "SELECT 1 WHERE 0 < ALL()", "tsql",
 			"SELECT 1 WHERE 0 < ALL()"},
+		// DuckDB drops a ZERO group from REGEXP_EXTRACT entirely. That is a
+		// rule to follow, not a reason to refuse -- and refusing it also
+		// turned away every other literal in the same slot.
+		{"a zero group is dropped", "SELECT REGEXP_EXTRACT(a, 'p(g)', 0)", "duckdb",
+			"SELECT REGEXP_EXTRACT(a, 'p(g)')"},
+		{"a non-zero group is kept", "SELECT REGEXP_EXTRACT(a, 'p(g)', 1)", "duckdb",
+			"SELECT REGEXP_EXTRACT(a, 'p(g)', 1)"},
+		{"and for extract-all too", "SELECT REGEXP_EXTRACT_ALL(a, 'p(g)', 0)", "duckdb",
+			"SELECT REGEXP_EXTRACT_ALL(a, 'p(g)')"},
+		// A wildcard stands where a name or an index would.
+		{"a wildcard subscript", "SELECT x -> '$.y[*]'", "duckdb", "SELECT x -> '$.y[*]'"},
+		{"a wildcard key", "SELECT x -> '$.y.*'", "duckdb", "SELECT x -> '$.y.*'"},
+		// A path the port cannot read is handed back as the string it was
+		// written as, which is what the reference does.
+		{"an unreadable path stays a string", `SELECT 0 -> '[""@""]'`, "duckdb",
+			`SELECT 0 -> '[""@""]'`},
+		// The path is written INSIDE a string literal, so a quote in a key has
+		// to be escaped for that literal or the statement ends early.
+		{"a quote in a path key is escaped", `SELECT 0 -> '"a''b"'`, "duckdb",
+			`SELECT 0 -> '$."a''b"'`},
 		{"json extract scalar", "select j ->> '$.a.b'", "duckdb", "SELECT j ->> '$.a.b'"},
 		{"json subscript", "select j -> '$[0]'", "duckdb", "SELECT j -> '$[0]'"},
 		{"json quoted key", `select j -> '$."a b"'`, "duckdb", `SELECT j -> '$."a b"'`},

@@ -1130,16 +1130,40 @@ func (g *generator) writeJSONPath(e *Expression) string {
 		switch part.Class {
 		case "JSONPathRoot":
 			// The root is already in Open.
-		case "JSONPathKey":
+		case "JSONPathKey", "JSONPathSubscript":
+			// A WILDCARD stands where a name or an index would: `$.y.*` and
+			// `$.y[*]`. It carries no text of its own, so it is written by
+			// putting the star in the slot rather than by escaping anything.
+			if inner, ok := part.Args["this"].(*Expression); ok && inner != nil {
+				if inner.Class != "JSONPathWildcard" {
+					return g.fail(inner.Class + " in a JSON path")
+				}
+				form := g.tables.JSONPath.Key
+				if part.Class == "JSONPathSubscript" {
+					form = g.tables.JSONPath.Subscript
+				}
+				form = strings.ReplaceAll(form, "{key}", "*")
+				out += strings.ReplaceAll(form, "{index}", "*")
+				continue
+			}
+			if part.Class == "JSONPathSubscript" {
+				n, _ := part.Args["this"].(int)
+				out += strings.ReplaceAll(g.tables.JSONPath.Subscript,
+					"{index}", strconv.Itoa(n))
+				continue
+			}
+			// The whole path is written INSIDE a string literal, so a quote
+			// in a key has to be escaped for that literal or the statement
+			// ends early. `j -> '"a''b"'` came out with an unterminated
+			// string, which the generator fuzzer found by feeding a path made
+			// of quote characters.
 			name, _ := part.Args["this"].(string)
 			form := g.tables.JSONPath.Key
 			if !isBareIdentifier(name) {
 				form = g.tables.JSONPath.QuotedKey
 			}
-			out += strings.ReplaceAll(form, "{key}", name)
-		case "JSONPathSubscript":
-			n, _ := part.Args["this"].(int)
-			out += strings.ReplaceAll(g.tables.JSONPath.Subscript, "{index}", strconv.Itoa(n))
+			out += strings.ReplaceAll(form, "{key}",
+				escapeStringBody(name, g.cfg.StringEscapes))
 		default:
 			return g.fail(part.Class)
 		}
@@ -1170,6 +1194,12 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 		return g.fail(e.Class + " over a compound expression")
 	}
 	path, _ := e.Args["expression"].(*Expression)
+	// A path the reference could not read stays the STRING it was written
+	// as, and is written back the same way: `0 -> '[""@""]'`.
+	if path != nil && path.Class == "Literal" {
+		out := strings.ReplaceAll(form, "{this}", g.node(this))
+		return strings.ReplaceAll(out, "{path}", g.node(path))
+	}
 	if path == nil || path.Class != "JSONPath" {
 		return g.fail(e.Class + " without a path")
 	}
