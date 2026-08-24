@@ -1,0 +1,2405 @@
+{
+ "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
+ "pairs": [
+  {
+   "dialect": "",
+   "sql": "x AND x",
+   "expected": "x AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "y OR y",
+   "expected": "y AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "x AND NOT x",
+   "expected": "NOT x AND x"
+  },
+  {
+   "dialect": "",
+   "sql": "x OR NOT x",
+   "expected": "NOT x OR x"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "'abc' ~ 'a' AND NOT 'abc' ~ 'a'",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "'abc' ~ 'a' OR NOT 'abc' ~ 'a'",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "1 AND TRUE",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "TRUE AND TRUE",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "1 AND TRUE AND 1 AND 1",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "TRUE AND FALSE",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "FALSE AND FALSE",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "FALSE AND TRUE AND TRUE",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "x > y OR FALSE",
+   "expected": "x > y"
+  },
+  {
+   "dialect": "",
+   "sql": "FALSE OR x = y",
+   "expected": "x = y"
+  },
+  {
+   "dialect": "",
+   "sql": "1 = 1",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "1.0 = 1",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST('2023-01-01' AS DATE) = CAST('2023-01-01' AS DATE)",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "'x' = 'y'",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "'x' = 'x'",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "STRUCT(NULL AS a)",
+   "expected": "STRUCT(NULL AS a)"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL AND TRUE",
+   "expected": "NULL AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL AND FALSE",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL AND NULL",
+   "expected": "NULL AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL OR TRUE",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL OR NULL",
+   "expected": "NULL AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "FALSE OR NULL",
+   "expected": "NULL AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT TRUE",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT FALSE",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT NULL",
+   "expected": "NULL AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT NOT NULL",
+   "expected": "NULL AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 OR NOT NOT NULL",
+   "expected": "NULL OR x = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND NOT NOT NULL",
+   "expected": "NULL AND x = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL = NULL",
+   "expected": "NULL = NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT (EXISTS(SELECT 1 WHERE FALSE)) AND NULL",
+   "expected": "SELECT EXISTS(SELECT 1 WHERE FALSE) AND NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT NULL AND (EXISTS(SELECT 1 WHERE FALSE))",
+   "expected": "SELECT EXISTS(SELECT 1 WHERE FALSE) AND NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "1 AND 0",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "0 AND 1",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "0 OR 1",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "0 OR NULL",
+   "expected": "NULL AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL OR 0",
+   "expected": "NULL AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "0 AND NULL",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL AND 0",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL <=> NULL",
+   "expected": "NULL IS NOT DISTINCT FROM NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "a IS NOT DISTINCT FROM a",
+   "expected": "a IS NOT DISTINCT FROM a"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL IS DISTINCT FROM NULL",
+   "expected": "NULL IS DISTINCT FROM NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT (NOT TRUE)",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "a AND (b OR b)",
+   "expected": "a AND b"
+  },
+  {
+   "dialect": "",
+   "sql": "a AND (b AND b)",
+   "expected": "a AND b"
+  },
+  {
+   "dialect": "",
+   "sql": "(x is not null) != (y is null)",
+   "expected": "(NOT x IS NULL) <> (y IS NULL)"
+  },
+  {
+   "dialect": "",
+   "sql": "TRUE AND TRUE OR TRUE AND FALSE",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "COALESCE(x, y) <> ALL (SELECT z FROM w)",
+   "expected": "COALESCE(x, y) <> ALL (SELECT z FROM w)"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT NOT (2 <> ALL (SELECT 2 UNION ALL SELECT 3))",
+   "expected": "SELECT 2 = ANY(SELECT 2 UNION ALL SELECT 3)"
+  },
+  {
+   "dialect": "",
+   "sql": "(A OR B) AND (C OR NOT A)",
+   "expected": "(A OR B) AND (C OR NOT A)"
+  },
+  {
+   "dialect": "",
+   "sql": "A AND (A OR B)",
+   "expected": "A AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "A AND D AND E AND (B OR A)",
+   "expected": "A AND D AND E"
+  },
+  {
+   "dialect": "",
+   "sql": "D AND A AND E AND (B OR A)",
+   "expected": "A AND D AND E"
+  },
+  {
+   "dialect": "",
+   "sql": "(A OR B) AND A",
+   "expected": "A AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "C AND D AND (A OR B) AND E AND F AND A",
+   "expected": "A AND C AND D AND E AND F"
+  },
+  {
+   "dialect": "",
+   "sql": "A OR (A AND B)",
+   "expected": "A AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "(A AND B) OR A",
+   "expected": "A AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "A AND (NOT A OR B)",
+   "expected": "A AND (B OR NOT A)"
+  },
+  {
+   "dialect": "",
+   "sql": "(NOT A OR B) AND A",
+   "expected": "A AND (B OR NOT A)"
+  },
+  {
+   "dialect": "",
+   "sql": "A OR (NOT A AND B)",
+   "expected": "A OR (B AND NOT A)"
+  },
+  {
+   "dialect": "",
+   "sql": "A OR ((((NOT A AND B))))",
+   "expected": "A OR (B AND NOT A)"
+  },
+  {
+   "dialect": "",
+   "sql": "x IS NULL AND (NOT (x IS NULL) OR B)",
+   "expected": "B AND x IS NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "x IS NULL OR (NOT (x IS NULL) AND B)",
+   "expected": "B OR x IS NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "x NOT LIKE 'a%' OR (y IN (1, 2) AND x LIKE 'a%')",
+   "expected": "(x LIKE 'a%' AND y IN (1, 2)) OR x NOT LIKE 'a%'"
+  },
+  {
+   "dialect": "",
+   "sql": "x NOT ILIKE 'a%' OR (y IN (1, 2) AND x ILIKE 'a%')",
+   "expected": "(x ILIKE 'a%' AND y IN (1, 2)) OR x NOT ILIKE 'a%'"
+  },
+  {
+   "dialect": "",
+   "sql": "(A OR C) AND ((A OR C) OR B)",
+   "expected": "A OR C"
+  },
+  {
+   "dialect": "",
+   "sql": "(A OR C) AND (A OR B OR C)",
+   "expected": "A OR C"
+  },
+  {
+   "dialect": "",
+   "sql": "A AND (B AND C) AND (D AND E)",
+   "expected": "A AND B AND C AND D AND E"
+  },
+  {
+   "dialect": "",
+   "sql": "A AND (A OR B) AND (A OR B OR C)",
+   "expected": "A AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "(A OR B) AND (A OR C) AND (A OR B OR C)",
+   "expected": "(A OR B) AND (A OR C)"
+  },
+  {
+   "dialect": "",
+   "sql": "(A AND B) OR (A AND NOT B)",
+   "expected": "(A AND B) OR (A AND NOT B)"
+  },
+  {
+   "dialect": "",
+   "sql": "(A AND B) OR (NOT A AND B)",
+   "expected": "(A AND B) OR (B AND NOT A)"
+  },
+  {
+   "dialect": "",
+   "sql": "(A AND NOT B) OR (A AND B)",
+   "expected": "(A AND B) OR (A AND NOT B)"
+  },
+  {
+   "dialect": "",
+   "sql": "(NOT A AND B) OR (A AND B)",
+   "expected": "(A AND B) OR (B AND NOT A)"
+  },
+  {
+   "dialect": "",
+   "sql": "(A OR B) AND (A OR NOT B)",
+   "expected": "(A OR B) AND (A OR NOT B)"
+  },
+  {
+   "dialect": "",
+   "sql": "(A OR B) AND (NOT A OR B)",
+   "expected": "(A OR B) AND (B OR NOT A)"
+  },
+  {
+   "dialect": "",
+   "sql": "(A OR NOT B) AND (A OR B)",
+   "expected": "(A OR B) AND (A OR NOT B)"
+  },
+  {
+   "dialect": "",
+   "sql": "(NOT A OR B) AND (A OR B)",
+   "expected": "(A OR B) AND (B OR NOT A)"
+  },
+  {
+   "dialect": "",
+   "sql": "(NOT A OR NOT B) AND (NOT A OR B)",
+   "expected": "(B OR NOT A) AND (NOT A OR NOT B)"
+  },
+  {
+   "dialect": "",
+   "sql": "(NOT A OR NOT B) AND (NOT A OR NOT NOT B)",
+   "expected": "(NOT A OR NOT B) AND (NOT A OR NOT NOT B)"
+  },
+  {
+   "dialect": "",
+   "sql": "E OR (A AND B) OR C OR D OR (A AND NOT B)",
+   "expected": "(A AND B) OR (A AND NOT B) OR C OR D OR E"
+  },
+  {
+   "dialect": "",
+   "sql": "(A AND B) OR (A AND NOT B) OR (A AND NOT B)",
+   "expected": "(A AND B) OR (A AND NOT B)"
+  },
+  {
+   "dialect": "",
+   "sql": "(A AND B) OR (A AND B) OR (A AND NOT B)",
+   "expected": "(A AND B) OR (A AND NOT B)"
+  },
+  {
+   "dialect": "",
+   "sql": "(A AND B) OR (A AND NOT B) OR (A AND B) OR (A AND NOT B)",
+   "expected": "(A AND B) OR (A AND NOT B)"
+  },
+  {
+   "dialect": "",
+   "sql": "(B AND x IS NULL) OR (B AND NOT (x IS NULL))",
+   "expected": "B AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "(B OR x IS NULL) AND (B OR NOT (x IS NULL))",
+   "expected": "B AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT SUM(t.x OR t.x) FROM t",
+   "expected": "SELECT SUM(t.x AND TRUE) FROM t"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT SUM(t.x AND t.x) FROM t",
+   "expected": "SELECT SUM(t.x AND TRUE) FROM t"
+  },
+  {
+   "dialect": "",
+   "sql": "(A AND B) AND C",
+   "expected": "A AND B AND C"
+  },
+  {
+   "dialect": "",
+   "sql": "A AND (B AND C)",
+   "expected": "A AND B AND C"
+  },
+  {
+   "dialect": "",
+   "sql": "(A OR B) OR C",
+   "expected": "A OR B OR C"
+  },
+  {
+   "dialect": "",
+   "sql": "A OR (B OR C)",
+   "expected": "A OR B OR C"
+  },
+  {
+   "dialect": "",
+   "sql": "((A AND B) AND C) AND D",
+   "expected": "A AND B AND C AND D"
+  },
+  {
+   "dialect": "",
+   "sql": "(((((A) AND B)) AND C)) AND D",
+   "expected": "A AND B AND C AND D"
+  },
+  {
+   "dialect": "",
+   "sql": "(x + 1) + 2",
+   "expected": "x + 3"
+  },
+  {
+   "dialect": "",
+   "sql": "x + (1 + 2)",
+   "expected": "x + 3"
+  },
+  {
+   "dialect": "",
+   "sql": "(x * 2) * 4 + (1 + 3) + 5",
+   "expected": "x * 8 + 9"
+  },
+  {
+   "dialect": "",
+   "sql": "(x - 1) - 2",
+   "expected": "(x - 1) - 2"
+  },
+  {
+   "dialect": "",
+   "sql": "x - (3 - 2)",
+   "expected": "x - 1"
+  },
+  {
+   "dialect": "",
+   "sql": "A AND D AND B AND E AND F AND G AND E AND A",
+   "expected": "A AND B AND D AND E AND F AND G"
+  },
+  {
+   "dialect": "",
+   "sql": "A OR D OR B OR E OR F OR G OR E OR A",
+   "expected": "A OR B OR D OR E OR F OR G"
+  },
+  {
+   "dialect": "",
+   "sql": "A AND NOT B AND C AND B",
+   "expected": "A AND B AND C AND NOT B"
+  },
+  {
+   "dialect": "",
+   "sql": "(a AND b AND c AND d) AND (d AND c AND b AND a)",
+   "expected": "a AND b AND c AND d"
+  },
+  {
+   "dialect": "",
+   "sql": "(c AND (a AND b)) AND ((b AND a) AND c)",
+   "expected": "a AND b AND c"
+  },
+  {
+   "dialect": "",
+   "sql": "(A AND B AND C) OR (C AND B AND A)",
+   "expected": "A AND B AND C"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT x WHERE TRUE",
+   "expected": "SELECT x"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT x FROM y JOIN z ON TRUE",
+   "expected": "SELECT x FROM y CROSS JOIN z"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT x FROM y RIGHT JOIN z ON TRUE",
+   "expected": "SELECT x FROM y CROSS JOIN z"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT x FROM y LEFT JOIN z ON TRUE",
+   "expected": "SELECT x FROM y LEFT JOIN z ON TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT x FROM y FULL OUTER JOIN z ON TRUE",
+   "expected": "SELECT x FROM y FULL OUTER JOIN z ON TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT x FROM y JOIN z USING (x)",
+   "expected": "SELECT x FROM y JOIN z USING (x)"
+  },
+  {
+   "dialect": "",
+   "sql": "(TRUE)",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "(FALSE)",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "((TRUE))",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "(FALSE OR TRUE)",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "TRUE OR (((FALSE) OR (TRUE)) OR FALSE)",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "(NOT FALSE) AND (NOT TRUE)",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "((NOT FALSE) AND (x = x)) AND (TRUE OR 1 <> 3)",
+   "expected": "x = x"
+  },
+  {
+   "dialect": "",
+   "sql": "((NOT FALSE) AND (x = x)) AND (FALSE OR 1 <> 2)",
+   "expected": "x = x"
+  },
+  {
+   "dialect": "",
+   "sql": "(('a' = 'a') AND TRUE and NOT FALSE)",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "(x = y) and z",
+   "expected": "x = y AND z"
+  },
+  {
+   "dialect": "",
+   "sql": "x * (1 - y)",
+   "expected": "x * (1 - y)"
+  },
+  {
+   "dialect": "",
+   "sql": "(((x % 20) = 0) = TRUE)",
+   "expected": "((x % 20) = 0) = TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "ANY(t.value)",
+   "expected": "ANY(t.value)"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT (ARRAY_AGG(foo))[1]",
+   "expected": "SELECT (ARRAY_AGG(foo))[1]"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT -(x.a > x.b) FROM x",
+   "expected": "SELECT -(x.a > x.b) FROM x"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT (-((x.a) IS NULL)) FROM x",
+   "expected": "SELECT -(x.a IS NULL) FROM x"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "~(a = b)",
+   "expected": "~(a = b)"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "~(a LIKE b)",
+   "expected": "~(a LIKE b)"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "~(a @> b)",
+   "expected": "~(a @> b)"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT * FROM A WHERE a - (b < c) < 0 AND a + (b > c) >= 0",
+   "expected": "SELECT * FROM A WHERE a + (b > c) >= 0 AND a - (b < c) < 0"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "NOT (a @> b)",
+   "expected": "NOT a @> b"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "NOT (a <@ b)",
+   "expected": "NOT a <@ b"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "NOT (a && b)",
+   "expected": "NOT a && b"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "(j ? 'a') AND id = 1",
+   "expected": "j ? 'a' AND id = 1"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "(j ?& ARRAY['a']) AND id = 1",
+   "expected": "j ?& ARRAY['a'] AND id = 1"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "(j ?| ARRAY['a']) AND id = 1",
+   "expected": "j ?| ARRAY['a'] AND id = 1"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "NOT (s ~ 'a')",
+   "expected": "NOT s ~ 'a'"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "NOT (s ~* 'a')",
+   "expected": "NOT s ~* 'a'"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "(r1 -|- r2) AND id = 1",
+   "expected": "r1 -|- r2 AND id = 1"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "(r1 &< r2) AND id = 1",
+   "expected": "r1 &< r2 AND id = 1"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "(r1 &> r2) AND id = 1",
+   "expected": "r1 &> r2 AND id = 1"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "(a @> b) = (c @> d)",
+   "expected": "(a @> b) = (c @> d)"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "NOT (REGEXP_MATCHES(s, 'a'))",
+   "expected": "NOT REGEXP_MATCHES(s, 'a')"
+  },
+  {
+   "dialect": "",
+   "sql": "1 + 1",
+   "expected": "2"
+  },
+  {
+   "dialect": "",
+   "sql": "0.06 + 0.01",
+   "expected": "0.07"
+  },
+  {
+   "dialect": "",
+   "sql": "0.06 + 1",
+   "expected": "1.06"
+  },
+  {
+   "dialect": "",
+   "sql": "1.2E+1 + 15E-3",
+   "expected": "12.015"
+  },
+  {
+   "dialect": "",
+   "sql": "1.2E1 + 15E-3",
+   "expected": "12.015"
+  },
+  {
+   "dialect": "",
+   "sql": "1 - 2",
+   "expected": "-1"
+  },
+  {
+   "dialect": "",
+   "sql": "-1 + 3",
+   "expected": "2"
+  },
+  {
+   "dialect": "",
+   "sql": "1 - 2 - 4",
+   "expected": "-5"
+  },
+  {
+   "dialect": "",
+   "sql": "-(-1)",
+   "expected": "1"
+  },
+  {
+   "dialect": "",
+   "sql": "- -+1",
+   "expected": "1"
+  },
+  {
+   "dialect": "",
+   "sql": "+-1",
+   "expected": "-1"
+  },
+  {
+   "dialect": "",
+   "sql": "++1",
+   "expected": "1"
+  },
+  {
+   "dialect": "",
+   "sql": "0.06 - 0.01",
+   "expected": "0.05"
+  },
+  {
+   "dialect": "",
+   "sql": "3 * 4",
+   "expected": "12"
+  },
+  {
+   "dialect": "",
+   "sql": "3.0 * 9",
+   "expected": "27.0"
+  },
+  {
+   "dialect": "",
+   "sql": "0.03 * 0.73",
+   "expected": "0.0219"
+  },
+  {
+   "dialect": "",
+   "sql": "1 / 3",
+   "expected": "1 / 3"
+  },
+  {
+   "dialect": "",
+   "sql": "1 / 3.0",
+   "expected": "0.3333333333333333333333333333"
+  },
+  {
+   "dialect": "",
+   "sql": "20.0 / 6",
+   "expected": "3.333333333333333333333333333"
+  },
+  {
+   "dialect": "",
+   "sql": "10 / 5",
+   "expected": "10 / 5"
+  },
+  {
+   "dialect": "",
+   "sql": "(1.0 * 3) * 4 - 2 * (5 / 2)",
+   "expected": "12.0 - 2 * (5 / 2)"
+  },
+  {
+   "dialect": "",
+   "sql": "a * 0.5 / 10 / (2.0 + 3)",
+   "expected": "a * 0.5 / 10 / 5.0"
+  },
+  {
+   "dialect": "",
+   "sql": "a * 0.5 - 10 - (2.0 + 3)",
+   "expected": "a * 0.5 - 10 - 5.0"
+  },
+  {
+   "dialect": "",
+   "sql": "x * (10 - 5)",
+   "expected": "x * 5"
+  },
+  {
+   "dialect": "",
+   "sql": "6 - 2 + 4 * 2 + a",
+   "expected": "12 + a"
+  },
+  {
+   "dialect": "",
+   "sql": "a + 1 + 1 + 2",
+   "expected": "a + 4"
+  },
+  {
+   "dialect": "",
+   "sql": "a + (1 + 1) + (10)",
+   "expected": "a + 12"
+  },
+  {
+   "dialect": "",
+   "sql": "a + (1 * 1) + (1 - (1 * 1))",
+   "expected": "a + 1"
+  },
+  {
+   "dialect": "",
+   "sql": "a + (b * c) + (d - (e * f))",
+   "expected": "a + b * c + (d - e * f)"
+  },
+  {
+   "dialect": "",
+   "sql": "5 + 4 * 3",
+   "expected": "17"
+  },
+  {
+   "dialect": "",
+   "sql": "1 < 2",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "2 <= 2",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "2 >= 2",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "2 > 1",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "2 > 2.5",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "3 > 2.5",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "1 > NULL",
+   "expected": "1 > NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "1 <= NULL",
+   "expected": "1 <= NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "1 IS NULL",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL IS NULL",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL IS NOT NULL",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "1 IS NOT NULL",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "NULL IS NOT NULL",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "'a' IS NOT NULL",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "r IS NULL OR r IS NOT NULL",
+   "expected": "r IS NOT NULL OR r IS NULL"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "r IS NULL AND r IS NOT NULL",
+   "expected": "r IS NOT NULL AND r IS NULL"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "r IS NOT NULL AND r > 5",
+   "expected": "r > 5 AND r IS NOT NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "date '1998-12-01' - interval x day",
+   "expected": "CAST('1998-12-01' AS DATE) - INTERVAL x DAY"
+  },
+  {
+   "dialect": "",
+   "sql": "date '1998-12-01' - interval '90' day",
+   "expected": "CAST('1998-09-02' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "date '1998-12-01' + interval '1' week",
+   "expected": "CAST('1998-12-08' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "interval '1' year + date '1998-01-01'",
+   "expected": "CAST('1999-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "interval '1' year + date '1998-01-01' + 3 * 7 * 4",
+   "expected": "CAST('1999-01-01' AS DATE) + 84"
+  },
+  {
+   "dialect": "",
+   "sql": "date '1998-12-01' - interval '90' foo",
+   "expected": "CAST('1998-12-01' AS DATE) - INTERVAL '90' FOO"
+  },
+  {
+   "dialect": "",
+   "sql": "date '1998-12-01' + interval '90' foo",
+   "expected": "CAST('1998-12-01' AS DATE) + INTERVAL '90' FOO"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(x AS DATE) + interval '1' week",
+   "expected": "CAST(x AS DATE) + INTERVAL '1' WEEK"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST('2008-11-11' AS DATETIME) + INTERVAL '5' MONTH",
+   "expected": "CAST('2009-04-11 00:00:00' AS DATETIME)"
+  },
+  {
+   "dialect": "",
+   "sql": "datetime '1998-12-01' - interval '90' day",
+   "expected": "CAST('1998-09-02 00:00:00' AS DATETIME)"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(x AS DATETIME) + interval '1' WEEK",
+   "expected": "CAST(x AS DATETIME) + INTERVAL '1' WEEK"
+  },
+  {
+   "dialect": "",
+   "sql": "TS_OR_DS_TO_DATE('1998-12-01 00:00:01') - interval '90' day",
+   "expected": "CAST('1998-09-02' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_ADD(CAST('2023-01-02' AS DATE), -2, 'MONTH')",
+   "expected": "CAST('2022-11-02' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_SUB(CAST('2023-01-02' AS DATE), 1 + 1, 'DAY')",
+   "expected": "CAST('2022-12-31' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_ADD(CAST('2023-01-02' AS DATETIME), -2, 'HOUR')",
+   "expected": "CAST('2023-01-01 22:00:00' AS DATETIME)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATETIME_ADD(CAST('2023-01-02' AS DATETIME), -2, 'HOUR')",
+   "expected": "CAST('2023-01-01 22:00:00' AS DATETIME)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATETIME_SUB(CAST('2023-01-02' AS DATETIME), 1 + 1, 'HOUR')",
+   "expected": "CAST('2023-01-01 22:00:00' AS DATETIME)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_ADD(x, 1, 'MONTH')",
+   "expected": "DATE_ADD(x, 1, 'MONTH')"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_ADD(x, 1)",
+   "expected": "DATE_ADD(x, 1, 'DAY')"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT 1 WHERE 'foo'",
+   "expected": "SELECT 1 WHERE 'foo'"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT 1 WHERE NOT 'foo'",
+   "expected": "SELECT 1 WHERE NOT 'foo'"
+  },
+  {
+   "dialect": "",
+   "sql": "x < 0 OR x > 1",
+   "expected": "x < 0 OR x > 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x < 0 OR x > 0",
+   "expected": "x < 0 OR x > 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x < 1 OR x > 0",
+   "expected": "x < 1 OR x > 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x < 1 OR x >= 0",
+   "expected": "x < 1 OR x >= 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x <= 1 OR x > 0",
+   "expected": "x <= 1 OR x > 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x <= 1 OR x >= 0",
+   "expected": "x <= 1 OR x >= 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x <= 1 AND x <= 0",
+   "expected": "x <= 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x <= 1 AND x > 0",
+   "expected": "x <= 1 AND x > 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x <= 1 OR x > 0",
+   "expected": "x <= 1 OR x > 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x <= 0 OR x < 0",
+   "expected": "x <= 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x >= 0 OR x > 0",
+   "expected": "x >= 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x >= 0 OR x > 1",
+   "expected": "x >= 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x <= 0 OR x >= 0",
+   "expected": "x <= 0 OR x >= 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x <= 0 AND x >= 0",
+   "expected": "x <= 0 AND x >= 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x < 1 AND x < 2",
+   "expected": "x < 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x < 1 OR x < 2",
+   "expected": "x < 2"
+  },
+  {
+   "dialect": "",
+   "sql": "x < 2 AND x < 1",
+   "expected": "x < 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x < 2 OR x < 1",
+   "expected": "x < 2"
+  },
+  {
+   "dialect": "",
+   "sql": "x < 1 AND x < 1",
+   "expected": "x < 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x < 1 OR x < 1",
+   "expected": "x < 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x <= 1 AND x < 1",
+   "expected": "x < 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x <= 1 OR x < 1",
+   "expected": "x <= 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x < 1 AND x <= 1",
+   "expected": "x < 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x < 1 OR x <= 1",
+   "expected": "x <= 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 1 AND x > 2",
+   "expected": "x > 2"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 1 OR x > 2",
+   "expected": "x > 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 2 AND x > 1",
+   "expected": "x > 2"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 2 OR x > 1",
+   "expected": "x > 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 1 AND x > 1",
+   "expected": "x > 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 1 OR x > 1",
+   "expected": "x > 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x >= 1 AND x > 1",
+   "expected": "x > 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x >= 1 OR x > 1",
+   "expected": "x >= 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 1 AND x >= 1",
+   "expected": "x > 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 1 OR x >= 1",
+   "expected": "x >= 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 1 AND x >= 2",
+   "expected": "x >= 2"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 1 OR x >= 2",
+   "expected": "x > 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 1 AND x >= 2 AND x > 3 AND x > 0",
+   "expected": "x > 3"
+  },
+  {
+   "dialect": "",
+   "sql": "(x > 1 AND x >= 2 AND x > 3 AND x > 0) OR x > 0",
+   "expected": "x > 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 1 AND x < 2 AND x > 3",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 1 AND x < 1",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "x < 2 AND x > 1",
+   "expected": "x < 2 AND x > 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND x < 1",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND x < 1.1",
+   "expected": "x = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND x <= 1",
+   "expected": "x = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND x <= 0.9",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND x > 0.9",
+   "expected": "x = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND x > 1",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND x >= 1",
+   "expected": "x = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND x >= 2",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND x <> 2",
+   "expected": "x = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x <> 1 AND x = 1",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "x BETWEEN 0 AND 5 AND x > 3",
+   "expected": "x <= 5 AND x > 3"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 3 AND 5 > x AND x BETWEEN 0 AND 10",
+   "expected": "x < 5 AND x > 3"
+  },
+  {
+   "dialect": "",
+   "sql": "x > 3 AND 5 < x AND x BETWEEN 9 AND 10",
+   "expected": "x <= 10 AND x >= 9"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT x BETWEEN 0 AND 1",
+   "expected": "x < 0 OR x > 1"
+  },
+  {
+   "dialect": "",
+   "sql": "1 < x AND 3 < x",
+   "expected": "x > 3"
+  },
+  {
+   "dialect": "",
+   "sql": "'a' < 'b'",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 2018 OR x <> 2018",
+   "expected": "x <> 2018 OR x = 2018"
+  },
+  {
+   "dialect": "",
+   "sql": "t0.x = t1.x AND t0.y < t1.y AND t0.y <= t1.y",
+   "expected": "t0.x = t1.x AND t0.y < t1.y AND t0.y <= t1.y"
+  },
+  {
+   "dialect": "",
+   "sql": "1 < x",
+   "expected": "x > 1"
+  },
+  {
+   "dialect": "",
+   "sql": "1 <= x",
+   "expected": "x >= 1"
+  },
+  {
+   "dialect": "",
+   "sql": "1 > x",
+   "expected": "x < 1"
+  },
+  {
+   "dialect": "",
+   "sql": "1 >= x",
+   "expected": "x <= 1"
+  },
+  {
+   "dialect": "",
+   "sql": "1 = x",
+   "expected": "x = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "1 <> x",
+   "expected": "x <> 1"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT 1 < x",
+   "expected": "x <= 1"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT 1 <= x",
+   "expected": "x < 1"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT 1 > x",
+   "expected": "x >= 1"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT 1 >= x",
+   "expected": "x > 1"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT 1 = x",
+   "expected": "x <> 1"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT 1 <> x",
+   "expected": "x = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x > CAST('2024-01-01' AS DATE) OR x > CAST('2023-12-31' AS DATE)",
+   "expected": "x > CAST('2023-12-31' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(x AS DATE) > CAST('2024-01-01' AS DATE) OR CAST(x AS DATE) > CAST('2023-12-31' AS DATE)",
+   "expected": "CAST(x AS DATE) > CAST('2023-12-31' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "FUN() > 0 OR FUN() > 1",
+   "expected": "FUN() > 0"
+  },
+  {
+   "dialect": "",
+   "sql": "RAND() > 0 OR RAND() > 1",
+   "expected": "RAND() > 0 OR RAND() > 1"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(1 AS UINT) >= 0",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(-1 AS TINYINT) <= 0",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(1 AS INT) = CAST(1 AS UINT)",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN CAST(1 AS TINYINT) = 1 THEN FALSE ELSE TRUE END",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(1 AS INT) + 1",
+   "expected": "CAST(1 AS INT) + 1"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(CAST(CAST(-1 AS INT) AS INT) AS INT) = -1",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(-1 AS UINT) <= 0",
+   "expected": "CAST(-1 AS UINT) <= 0"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(-129 AS TINYINT) <= 0",
+   "expected": "CAST(-129 AS TINYINT) <= 0"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(256 AS UINT) >= 0",
+   "expected": "CAST(256 AS UINT) >= 0"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(CAST(CAST(-1 AS INT) AS UINT) AS INT) = 1",
+   "expected": "CAST(CAST(CAST(-1 AS INT) AS UINT) AS INT) = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(x AS TINYINT) = 1",
+   "expected": "CAST(x AS TINYINT) = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(CAST(1 AS INT) AS BOOLEAN) = 1",
+   "expected": "CAST(CAST(1 AS INT) AS BOOLEAN) = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(CAST(CAST(1 AS INT) AS BOOLEAN) AS INT) = 1",
+   "expected": "CAST(CAST(CAST(1 AS INT) AS BOOLEAN) AS INT) = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x > CAST('2023-01-01' AS DATE) AND x < CAST('2023-01-01' AS DATETIME)",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(x AS INT) < 0 AND CAST(x AS INT) >= -500",
+   "expected": "CAST(x AS INT) < 0 AND CAST(x AS INT) >= -500"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(x AS INT) < -1 AND CAST(x AS INT) >= -500",
+   "expected": "CAST(x AS INT) < -1 AND CAST(x AS INT) >= -500"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(x AS INT) < -500 AND CAST(x AS INT) >= -1",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "0 > CAST(x AS INT) AND -500 <= CAST(x AS INT)",
+   "expected": "CAST(x AS INT) < 0 AND CAST(x AS INT) >= -500"
+  },
+  {
+   "dialect": "",
+   "sql": "-1 > CAST(x AS INT) AND -500 <= CAST(x AS INT)",
+   "expected": "CAST(x AS INT) < -1 AND CAST(x AS INT) >= -500"
+  },
+  {
+   "dialect": "",
+   "sql": "-500 > CAST(x AS INT) AND -1 <= CAST(x AS INT)",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(x AS INT) < 1000 AND CAST(x AS INT) >= - -500",
+   "expected": "CAST(x AS INT) < 1000 AND CAST(x AS INT) >= 500"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST(x AS INT) < 0 AND CAST(x AS INT) >= - - -500",
+   "expected": "CAST(x AS INT) < 0 AND CAST(x AS INT) >= -500"
+  },
+  {
+   "dialect": "",
+   "sql": "1000 > CAST(x AS INT) AND - -500 <= CAST(x AS INT)",
+   "expected": "CAST(x AS INT) < 1000 AND CAST(x AS INT) >= 500"
+  },
+  {
+   "dialect": "",
+   "sql": "0 > CAST(x AS INT) AND - - -500 <= CAST(x AS INT)",
+   "expected": "CAST(x AS INT) < 0 AND CAST(x AS INT) >= -500"
+  },
+  {
+   "dialect": "",
+   "sql": "COALESCE(x)",
+   "expected": "x"
+  },
+  {
+   "dialect": "",
+   "sql": "COALESCE(x, 1) = 2",
+   "expected": "NOT x IS NULL AND x = 2"
+  },
+  {
+   "dialect": "",
+   "sql": "2 = COALESCE(x, 1)",
+   "expected": "NOT x IS NULL AND x = 2"
+  },
+  {
+   "dialect": "",
+   "sql": "COALESCE(x, 1, 1) = 1 + 1",
+   "expected": "NOT x IS NULL AND x = 2"
+  },
+  {
+   "dialect": "",
+   "sql": "COALESCE(x, 1, 2) = 2",
+   "expected": "NOT x IS NULL AND x = 2"
+  },
+  {
+   "dialect": "",
+   "sql": "COALESCE(x, 3) <= 2",
+   "expected": "NOT x IS NULL AND x <= 2"
+  },
+  {
+   "dialect": "",
+   "sql": "COALESCE(x, 1) <> 2",
+   "expected": "x <> 2 OR x IS NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "COALESCE(x, 1) <= 2",
+   "expected": "x <= 2 OR x IS NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "COALESCE(x, 1) = 1",
+   "expected": "x = 1 OR x IS NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "COALESCE(x, 1) IS NULL",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "COALESCE(ROW() OVER (), 1) = 1",
+   "expected": "ROW() OVER () = 1 OR ROW() OVER () IS NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "a AND b AND COALESCE(ROW() OVER (), 1) = 1",
+   "expected": "(ROW() OVER () = 1 OR ROW() OVER () IS NULL) AND a AND b"
+  },
+  {
+   "dialect": "",
+   "sql": "COALESCE(1, 2)",
+   "expected": "1"
+  },
+  {
+   "dialect": "",
+   "sql": "COALESCE(CAST(CAST('2023-01-01' AS TIMESTAMP) AS DATE), x)",
+   "expected": "CAST(CAST('2023-01-01' AS TIMESTAMP) AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "COALESCE(CAST(NULL AS DATE), x)",
+   "expected": "COALESCE(CAST(NULL AS DATE), x)"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT COALESCE(x, 1) = 2 AND y = 3",
+   "expected": "(x <> 2 OR x IS NULL) AND y = 3"
+  },
+  {
+   "dialect": "",
+   "sql": "CONCAT(x, y)",
+   "expected": "CONCAT(x, y)"
+  },
+  {
+   "dialect": "",
+   "sql": "CONCAT_WS(sep, x, y)",
+   "expected": "CONCAT_WS(sep, x, y)"
+  },
+  {
+   "dialect": "",
+   "sql": "CONCAT(x)",
+   "expected": "CONCAT(x)"
+  },
+  {
+   "dialect": "",
+   "sql": "CONCAT('a', 'b', 'c')",
+   "expected": "'abc'"
+  },
+  {
+   "dialect": "",
+   "sql": "CONCAT('a', NULL)",
+   "expected": "CONCAT('a', NULL)"
+  },
+  {
+   "dialect": "",
+   "sql": "CONCAT_WS('-', 'a', 'b', 'c')",
+   "expected": "'a-b-c'"
+  },
+  {
+   "dialect": "",
+   "sql": "CONCAT('a', x, y, 'b', 'c')",
+   "expected": "CONCAT('a', x, y, 'bc')"
+  },
+  {
+   "dialect": "",
+   "sql": "CONCAT_WS('-', 'a', x, y, 'b', 'c')",
+   "expected": "CONCAT_WS('-', 'a', x, y, 'b-c')"
+  },
+  {
+   "dialect": "",
+   "sql": "'a' || 'b'",
+   "expected": "'ab'"
+  },
+  {
+   "dialect": "",
+   "sql": "CONCAT_WS('-', 'a')",
+   "expected": "'a'"
+  },
+  {
+   "dialect": "",
+   "sql": "CONCAT_WS('-', x, y)",
+   "expected": "CONCAT_WS('-', x, y)"
+  },
+  {
+   "dialect": "",
+   "sql": "CONCAT_WS('', x, y)",
+   "expected": "CONCAT_WS('', x, y)"
+  },
+  {
+   "dialect": "",
+   "sql": "CONCAT_WS('-', x)",
+   "expected": "CONCAT_WS('-', x)"
+  },
+  {
+   "dialect": "",
+   "sql": "CONCAT_WS(sep, 'a', 'b')",
+   "expected": "CONCAT_WS(sep, 'a', 'b')"
+  },
+  {
+   "dialect": "",
+   "sql": "'a' || 'b' || x",
+   "expected": "'ab' || x"
+  },
+  {
+   "dialect": "",
+   "sql": "CONCAT(a, b) IN (SELECT * FROM foo WHERE cond)",
+   "expected": "CONCAT(a, b) IN (SELECT * FROM foo WHERE cond)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('week', CAST('2023-12-15' AS DATE))",
+   "expected": "CAST('2023-12-11' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('week', CAST('2023-12-16' AS DATE))",
+   "expected": "CAST('2023-12-11' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('week', CAST('2023-12-11' AS DATE))",
+   "expected": "CAST('2023-12-11' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('week', x) > CAST('2023-12-11' AS DATE)",
+   "expected": "x >= CAST('2023-12-18' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('week', x) = CAST('2023-12-11' AS DATE)",
+   "expected": "x < CAST('2023-12-18' AS DATE) AND x >= CAST('2023-12-11' AS DATE)"
+  },
+  {
+   "dialect": "tsql",
+   "sql": "DATETRUNC(WEEK, CAST('2021-12-08' AS DATETIME2))",
+   "expected": "CAST('2021-12-05 00:00:00' AS DATETIME2)"
+  },
+  {
+   "dialect": "tsql",
+   "sql": "DATETRUNC(WEEK, CAST('2023-12-10' AS DATE))",
+   "expected": "CAST('2023-12-10' AS DATE)"
+  },
+  {
+   "dialect": "tsql",
+   "sql": "DATETRUNC(WEEK, x) = CAST('2023-12-10' AS DATE)",
+   "expected": "x < CAST('2023-12-17' AS DATE) AND x >= CAST('2023-12-10' AS DATE)"
+  },
+  {
+   "dialect": "tsql",
+   "sql": "DATETRUNC(WEEK, x) > CAST('2023-12-10' AS DATE)",
+   "expected": "x >= CAST('2023-12-17' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) = CAST('2021-01-01' AS DATE)",
+   "expected": "x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('quarter', x) = CAST('2021-01-01' AS DATE)",
+   "expected": "x < CAST('2021-04-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('month', x) = CAST('2021-01-01' AS DATE)",
+   "expected": "x < CAST('2021-02-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('week', x) = CAST('2021-01-04' AS DATE)",
+   "expected": "x < CAST('2021-01-11' AS DATE) AND x >= CAST('2021-01-04' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('day', x) = CAST('2021-01-01' AS DATE)",
+   "expected": "x < CAST('2021-01-02' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST('2021-01-01' AS DATE) = DATE_TRUNC('year', x)",
+   "expected": "x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('quarter', x) = CAST('2021-01-02' AS DATE)",
+   "expected": "DATE_TRUNC('QUARTER', x) = CAST('2021-01-02' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) <> CAST('2021-01-01' AS DATE)",
+   "expected": "x < CAST('2021-01-01' AS DATE) OR x >= CAST('2022-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) <> CAST('2021-01-01' AS DATE) AND y = 1",
+   "expected": "(x < CAST('2021-01-01' AS DATE) OR x >= CAST('2022-01-01' AS DATE)) AND y = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) = CAST('2021-01-01' AS DATE) OR y = 1",
+   "expected": "(x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)) OR y = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT DATE_TRUNC('year', x) = CAST('2021-01-01' AS DATE)",
+   "expected": "x < CAST('2021-01-01' AS DATE) OR x >= CAST('2022-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT DATE_TRUNC('year', x) <> CAST('2021-01-01' AS DATE)",
+   "expected": "x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) <> CAST('2021-01-02' AS DATE)",
+   "expected": "DATE_TRUNC('YEAR', x) <> CAST('2021-01-02' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) <= CAST('2021-01-01' AS DATE)",
+   "expected": "x < CAST('2022-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) <= CAST('2021-01-02' AS DATE)",
+   "expected": "x < CAST('2022-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST('2021-01-01' AS DATE) >= DATE_TRUNC('year', x)",
+   "expected": "x < CAST('2022-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) < CAST('2021-01-01' AS DATE)",
+   "expected": "x < CAST('2021-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) < CAST('2021-01-02' AS DATE)",
+   "expected": "x < CAST('2022-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) >= CAST('2021-01-01' AS DATE)",
+   "expected": "x >= CAST('2021-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) >= CAST('2021-01-02' AS DATE)",
+   "expected": "x >= CAST('2022-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) > CAST('2021-01-01' AS DATE)",
+   "expected": "x >= CAST('2022-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) > CAST('2021-01-02' AS DATE)",
+   "expected": "x >= CAST('2022-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) > TS_OR_DS_TO_DATE(TS_OR_DS_TO_DATE('2021-01-02'))",
+   "expected": "x >= CAST('2022-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) > TS_OR_DS_TO_DATE(TS_OR_DS_TO_DATE('2021-01-02', '%Y'))",
+   "expected": "DATE_TRUNC('YEAR', x) > CAST(STR_TO_TIME('2021-01-02', '%Y') AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) <> '2021-01-02'",
+   "expected": "DATE_TRUNC('YEAR', x) <> '2021-01-02'"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) IN (CAST('2021-01-01' AS DATE), CAST('2023-01-01' AS DATE))",
+   "expected": "(x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)) OR (x < CAST('2024-01-01' AS DATE) AND x >= CAST('2023-01-01' AS DATE))"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) IN (CAST('2021-01-01' AS DATE), CAST('2022-01-01' AS DATE))",
+   "expected": "x < CAST('2023-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) IN (CAST('2021-01-01' AS DATE), CAST('2022-01-02' AS DATE))",
+   "expected": "x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('year', x) IN (CAST('2021-01-01' AS DATE), CAST('2023-01-01' AS DATE)) AND y = 1",
+   "expected": "((x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)) OR (x < CAST('2024-01-01' AS DATE) AND x >= CAST('2023-01-01' AS DATE))) AND y = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT DATE_TRUNC('year', x) IN (CAST('2021-01-01' AS DATE), CAST('2023-01-01' AS DATE))",
+   "expected": "(x < CAST('2021-01-01' AS DATE) OR x >= CAST('2022-01-01' AS DATE)) AND (x < CAST('2023-01-01' AS DATE) OR x >= CAST('2024-01-01' AS DATE))"
+  },
+  {
+   "dialect": "",
+   "sql": "TIMESTAMP_TRUNC(x, YEAR) = CAST('2021-01-01' AS DATETIME)",
+   "expected": "x < CAST('2022-01-01 00:00:00' AS DATETIME) AND x >= CAST('2021-01-01 00:00:00' AS DATETIME)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('day', x) = CAST(y AS DATE)",
+   "expected": "CAST(y AS DATE) = DATE_TRUNC('DAY', x)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('day', x) = CAST(CAST('2021-01-01 01:02:03' AS DATETIME) AS DATE)",
+   "expected": "x < CAST('2021-01-02' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "TIMESTAMP_TRUNC(x, YEAR) = CAST(CAST('2021-01-01 01:02:03' AS DATE) AS DATETIME)",
+   "expected": "x < CAST('2022-01-01 00:00:00' AS DATETIME) AND x >= CAST('2021-01-01 00:00:00' AS DATETIME)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_TRUNC('day', CAST(x AS DATE)) <= CAST('2021-01-01 01:02:03' AS TIMESTAMP)",
+   "expected": "CAST(x AS DATE) < CAST('2021-01-02 00:00:00' AS TIMESTAMP)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + 1 = 3",
+   "expected": "x = 2"
+  },
+  {
+   "dialect": "",
+   "sql": "1 + x = 3",
+   "expected": "x = 2"
+  },
+  {
+   "dialect": "",
+   "sql": "3 = x + 1",
+   "expected": "x = 2"
+  },
+  {
+   "dialect": "",
+   "sql": "x - 1 = 3",
+   "expected": "x = 4"
+  },
+  {
+   "dialect": "",
+   "sql": "x + 1 > 3",
+   "expected": "x > 2"
+  },
+  {
+   "dialect": "",
+   "sql": "x + 1 >= 3",
+   "expected": "x >= 2"
+  },
+  {
+   "dialect": "",
+   "sql": "x + 1 <= 3",
+   "expected": "x <= 2"
+  },
+  {
+   "dialect": "",
+   "sql": "x + 1 <= 3",
+   "expected": "x <= 2"
+  },
+  {
+   "dialect": "",
+   "sql": "x + 1 <> 3",
+   "expected": "x <> 2"
+  },
+  {
+   "dialect": "",
+   "sql": "1 + x + 1 = 3 + 1",
+   "expected": "x = 2"
+  },
+  {
+   "dialect": "",
+   "sql": "0 - a = 1",
+   "expected": "a = -1"
+  },
+  {
+   "dialect": "",
+   "sql": "5 - x = 2",
+   "expected": "x = 3"
+  },
+  {
+   "dialect": "",
+   "sql": "5 - x > 2",
+   "expected": "x < 3"
+  },
+  {
+   "dialect": "",
+   "sql": "5 - x >= 2",
+   "expected": "x <= 3"
+  },
+  {
+   "dialect": "",
+   "sql": "5 - x < 2",
+   "expected": "x > 3"
+  },
+  {
+   "dialect": "",
+   "sql": "5 - x <= 2",
+   "expected": "x >= 3"
+  },
+  {
+   "dialect": "",
+   "sql": "5 - x <> 2",
+   "expected": "x <> 3"
+  },
+  {
+   "dialect": "",
+   "sql": "1 = 0 - a",
+   "expected": "a = -1"
+  },
+  {
+   "dialect": "",
+   "sql": "2 > 5 - x",
+   "expected": "x > 3"
+  },
+  {
+   "dialect": "",
+   "sql": "2 >= 5 - x",
+   "expected": "x >= 3"
+  },
+  {
+   "dialect": "",
+   "sql": "2 < 5 - x",
+   "expected": "x < 3"
+  },
+  {
+   "dialect": "",
+   "sql": "2 <= 5 - x",
+   "expected": "x <= 3"
+  },
+  {
+   "dialect": "",
+   "sql": "2 <> 5 - x",
+   "expected": "x <> 3"
+  },
+  {
+   "dialect": "",
+   "sql": "x - INTERVAL 1 DAY = CAST('2021-01-01' AS DATE)",
+   "expected": "x = CAST('2021-01-02' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x - INTERVAL 1 DAY = TS_OR_DS_TO_DATE('2021-01-01 00:00:01')",
+   "expected": "x = CAST('2021-01-02' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x - INTERVAL 1 HOUR > CAST('2021-01-01' AS DATETIME)",
+   "expected": "x > CAST('2021-01-01 01:00:00' AS DATETIME)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATETIME_ADD(x, 1, HOUR) < CAST('2021-01-01' AS DATETIME)",
+   "expected": "x < CAST('2020-12-31 23:00:00' AS DATETIME)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATETIME_SUB(x, 1, DAY) >= CAST('2021-01-01' AS DATETIME)",
+   "expected": "x >= CAST('2021-01-02 00:00:00' AS DATETIME)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_ADD(x, 1, DAY) <= CAST('2021-01-01' AS DATE)",
+   "expected": "x <= CAST('2020-12-31' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_SUB(x, 1, DAY) <> CAST('2021-01-01' AS DATE)",
+   "expected": "x <> CAST('2021-01-02' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_ADD(DATE_ADD(DATE_TRUNC('week', DATE_SUB(x, 1, DAY)), 1, DAY), 1, YEAR) < CAST('2021-01-08' AS DATE)",
+   "expected": "x < CAST('2020-01-14' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x - INTERVAL '1' day = CAST(y AS DATE)",
+   "expected": "CAST(y AS DATE) = x - INTERVAL '1' DAY"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 5 AND y = x",
+   "expected": "x = 5 AND y = 5"
+  },
+  {
+   "dialect": "",
+   "sql": "5 = x AND y = x",
+   "expected": "x = 5 AND y = 5"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 5 OR y = x",
+   "expected": "x = 5 OR x = y"
+  },
+  {
+   "dialect": "",
+   "sql": "(x = 5 AND y = x) OR y = 1",
+   "expected": "(x = 5 AND y = 5) OR y = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "t.x = 5 AND y = x",
+   "expected": "t.x = 5 AND x = y"
+  },
+  {
+   "dialect": "",
+   "sql": "t.x = 'a' AND y = CONCAT_WS('-', t.x, 'b')",
+   "expected": "t.x = 'a' AND y = 'a-b'"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 5 AND y = x AND y + 1 < 5",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 5 AND x = 6",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 5 AND (y = x OR z = 1)",
+   "expected": "x = 5 AND (x = y OR z = 1)"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 5 AND x + 3 = 8",
+   "expected": "x = 5"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 5 AND (SELECT x FROM t WHERE y = 1)",
+   "expected": "(SELECT x FROM t WHERE y = 1) AND x = 5"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND y > 0 AND (SELECT z = 5 FROM t WHERE y = 1)",
+   "expected": "(SELECT z = 5 FROM t WHERE y = 1) AND x = 1 AND y > 0"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND x = y AND (SELECT z FROM t WHERE a AND (b OR c))",
+   "expected": "(SELECT z FROM t WHERE a AND (b OR c)) AND x = 1 AND y = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "t1.a = 39 AND t2.b = t1.a AND t3.c = t2.b",
+   "expected": "t1.a = 39 AND t2.b = 39 AND t3.c = 39"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND CASE WHEN x = 5 THEN FALSE ELSE TRUE END",
+   "expected": "x = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND IF(x = 5, FALSE, TRUE)",
+   "expected": "x = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND CASE x WHEN 5 THEN FALSE ELSE TRUE END",
+   "expected": "x = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "x = y AND CASE WHEN x = 5 THEN FALSE ELSE TRUE END",
+   "expected": "CASE WHEN x = 5 THEN FALSE ELSE TRUE END AND x = y"
+  },
+  {
+   "dialect": "",
+   "sql": "x = 1 AND CASE WHEN y = 5 THEN x = z END",
+   "expected": "CASE WHEN y = 5 THEN z = 1 END AND x = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "IF(TRUE, x, y)",
+   "expected": "x"
+  },
+  {
+   "dialect": "",
+   "sql": "IF(FALSE, x, y)",
+   "expected": "y"
+  },
+  {
+   "dialect": "",
+   "sql": "IF(FALSE, x)",
+   "expected": "NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "IF(NULL, x, y)",
+   "expected": "y"
+  },
+  {
+   "dialect": "",
+   "sql": "IF(cond, x, y)",
+   "expected": "CASE WHEN cond THEN x ELSE y END"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN TRUE THEN x ELSE y END",
+   "expected": "x"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN FALSE THEN x ELSE y END",
+   "expected": "y"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN FALSE THEN x WHEN FALSE THEN y WHEN TRUE THEN z END",
+   "expected": "z"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE NULL WHEN NULL THEN x ELSE y END",
+   "expected": "y"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE 4 WHEN 1 THEN x WHEN 2 THEN y WHEN 3 THEN z ELSE w END",
+   "expected": "w"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE 4 WHEN 1 THEN x WHEN 2 THEN y WHEN 3 THEN z WHEN 4 THEN w END",
+   "expected": "w"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN value = 1 THEN x ELSE y END",
+   "expected": "CASE WHEN value = 1 THEN x ELSE y END"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN FALSE THEN x END",
+   "expected": "NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE 1 WHEN 1 + 1 THEN x END",
+   "expected": "NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN cond THEN x ELSE y END",
+   "expected": "CASE WHEN cond THEN x ELSE y END"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN cond THEN x END",
+   "expected": "CASE WHEN cond THEN x END"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE x WHEN y THEN z ELSE w END",
+   "expected": "CASE WHEN x = y THEN z ELSE w END"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE x WHEN y THEN z END",
+   "expected": "CASE WHEN x = y THEN z END"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE x1 + x2 WHEN x3 THEN x4 WHEN x5 + x6 THEN x7 ELSE x8 END",
+   "expected": "CASE WHEN x3 = (x1 + x2) THEN x4 WHEN (x1 + x2) = (x5 + x6) THEN x7 ELSE x8 END"
+  },
+  {
+   "dialect": "",
+   "sql": "STARTS_WITH('foo', 'f')",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "STARTS_WITH('foo', 'g')",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "STARTS_WITH('', 'f')",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "STARTS_WITH('', '')",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "STARTS_WITH('foo', '')",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "STARTS_WITH(NULL, y)",
+   "expected": "STARTS_WITH(NULL, y)"
+  },
+  {
+   "dialect": "",
+   "sql": "STARTS_WITH(x, y)",
+   "expected": "STARTS_WITH(x, y)"
+  },
+  {
+   "dialect": "",
+   "sql": "STARTS_WITH('x', y)",
+   "expected": "STARTS_WITH('x', y)"
+  },
+  {
+   "dialect": "",
+   "sql": "STARTS_WITH(x, 'y')",
+   "expected": "STARTS_WITH(x, 'y')"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT NOT(NOT(a)) FROM x",
+   "expected": "SELECT NOT NOT a FROM x"
+  },
+  {
+   "dialect": "",
+   "sql": "TRUE OR NOT TRUE",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "TRUE AND NOT TRUE",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "'a' OR NOT 'a'",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "'a' AND NOT 'a'",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "100 OR NOT 100",
+   "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "100 AND NOT 100",
+   "expected": "FALSE"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL OR NOT NULL",
+   "expected": "NULL AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL AND NOT NULL",
+   "expected": "NULL AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "NULL OR (NULL AND TRUE)",
+   "expected": "NULL AND TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT IF(NULL = NULL, 1, 100)",
+   "expected": "SELECT 100"
+  }
+ ]
+}

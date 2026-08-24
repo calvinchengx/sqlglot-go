@@ -246,3 +246,75 @@ func qualifiedClass(class string) string {
 	}
 	return "sqlglot.expressions.core." + class
 }
+
+// Copy returns a deep copy of the node.
+//
+// Simplify rewrites trees, and rewriting one in place would mutate the tree the
+// differential holds -- the parser's output is compared against the reference
+// before and after. So a rewrite builds a new tree and the original is left as
+// it was parsed.
+func (e *Expression) Copy() *Expression {
+	if e == nil {
+		return nil
+	}
+	out := &Expression{Class: e.Class, Args: map[string]any{}, Type: e.Type.Copy()}
+	for _, key := range e.Keys {
+		switch v := e.Args[key].(type) {
+		case *Expression:
+			out.Set(key, v.Copy())
+		case []*Expression:
+			kids := make([]*Expression, len(v))
+			for i, k := range v {
+				kids[i] = k.Copy()
+			}
+			out.Set(key, kids)
+		default:
+			out.Set(key, v)
+		}
+	}
+	return out
+}
+
+// Equal reports whether two nodes are the same tree.
+//
+// It compares what the DUMP compares -- class, arg keys in order, and values --
+// because that is what the reference is held to. Parent pointers are excluded;
+// they describe where a node sits, not what it is.
+func (e *Expression) Equal(other *Expression) bool {
+	if e == nil || other == nil {
+		return e == other
+	}
+	if e.Class != other.Class || len(e.Keys) != len(other.Keys) {
+		return false
+	}
+	if !e.Type.Equal(other.Type) {
+		return false
+	}
+	for i, key := range e.Keys {
+		if other.Keys[i] != key {
+			return false
+		}
+		switch v := e.Args[key].(type) {
+		case *Expression:
+			w, ok := other.Args[key].(*Expression)
+			if !ok || !v.Equal(w) {
+				return false
+			}
+		case []*Expression:
+			w, ok := other.Args[key].([]*Expression)
+			if !ok || len(v) != len(w) {
+				return false
+			}
+			for i, k := range v {
+				if !k.Equal(w[i]) {
+					return false
+				}
+			}
+		default:
+			if e.Args[key] != other.Args[key] {
+				return false
+			}
+		}
+	}
+	return true
+}

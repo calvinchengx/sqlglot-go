@@ -223,6 +223,11 @@ type ParserTables struct {
 	// becomes N of something, which is a transform, not a spelling.
 	JSONPerPartSQL     map[string]JSONPerPart
 	BracketIsRewritten bool
+	// SafeToEliminateDoubleNegation gates the optimizer's NOT NOT x
+	// -> x rule. True in every dialect this port configures, which is
+	// exactly why it is read rather than assumed: a rule that is right
+	// everywhere today is not the same as a rule with no condition.
+	SafeToEliminateDoubleNegation bool
 	// QuantifierWrapsSubquery: whether a quantifier over a QUERY
 	// keeps the Subquery wrapper. ANY does and ALL does not, in
 	// every dialect -- a per-class fact, not a per-dialect one.
@@ -3451,7 +3456,8 @@ var parserTables = map[string]*ParserTables{
 			Subscript: "[{index}]",
 			QuotedKey: "[\"{key}\"]",
 		},
-		BracketIsRewritten: false,
+		BracketIsRewritten:            false,
+		SafeToEliminateDoubleNegation: true,
 		NestedTypeKinds: map[string]bool{
 			"ARRAY":          true,
 			"LIST":           true,
@@ -3482,8 +3488,10 @@ var parserTables = map[string]*ParserTables{
 			"Any": true,
 		},
 		QuantifierQuerySQL: map[string]string{
-			"All": "ALL ({query})",
-			"Any": "ANY ({query})",
+			"All":          "ALL ({query})",
+			"AllUnwrapped": "ALL ({query})",
+			"Any":          "ANY ({query})",
+			"AnyUnwrapped": "ANY({query})",
 		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
@@ -6786,7 +6794,8 @@ var parserTables = map[string]*ParserTables{
 			Subscript: "[{index}]",
 			QuotedKey: ".\"{key}\"",
 		},
-		BracketIsRewritten: false,
+		BracketIsRewritten:            false,
+		SafeToEliminateDoubleNegation: true,
 		NestedTypeKinds: map[string]bool{
 			"ARRAY":          true,
 			"LIST":           true,
@@ -6817,8 +6826,10 @@ var parserTables = map[string]*ParserTables{
 			"Any": true,
 		},
 		QuantifierQuerySQL: map[string]string{
-			"All": "ALL ({query})",
-			"Any": "ANY ({query})",
+			"All":          "ALL ({query})",
+			"AllUnwrapped": "ALL ({query})",
+			"Any":          "ANY ({query})",
+			"AnyUnwrapped": "ANY({query})",
 		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
@@ -10182,7 +10193,8 @@ var parserTables = map[string]*ParserTables{
 			Subscript: "{index}",
 			QuotedKey: "{key}",
 		},
-		BracketIsRewritten: true,
+		BracketIsRewritten:            true,
+		SafeToEliminateDoubleNegation: true,
 		NestedTypeKinds: map[string]bool{
 			"ARRAY":          true,
 			"LIST":           true,
@@ -10213,8 +10225,10 @@ var parserTables = map[string]*ParserTables{
 			"Any": true,
 		},
 		QuantifierQuerySQL: map[string]string{
-			"All": "ALL ({query})",
-			"Any": "ANY ({query})",
+			"All":          "ALL ({query})",
+			"AllUnwrapped": "ALL ({query})",
+			"Any":          "ANY ({query})",
+			"AnyUnwrapped": "ANY({query})",
 		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
@@ -13726,7 +13740,8 @@ var parserTables = map[string]*ParserTables{
 			Subscript: "[{index}]",
 			QuotedKey: ".\"{key}\"",
 		},
-		BracketIsRewritten: true,
+		BracketIsRewritten:            true,
+		SafeToEliminateDoubleNegation: true,
 		NestedTypeKinds: map[string]bool{
 			"ARRAY":          true,
 			"LIST":           true,
@@ -13757,8 +13772,10 @@ var parserTables = map[string]*ParserTables{
 			"Any": true,
 		},
 		QuantifierQuerySQL: map[string]string{
-			"All": "ALL ({query})",
-			"Any": "ANY ({query})",
+			"All":          "ALL ({query})",
+			"AllUnwrapped": "ALL ({query})",
+			"Any":          "ANY ({query})",
+			"AnyUnwrapped": "ANY({query})",
 		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
@@ -17274,7 +17291,8 @@ var parserTables = map[string]*ParserTables{
 			Subscript: "[{index}]",
 			QuotedKey: "[\"{key}\"]",
 		},
-		BracketIsRewritten: false,
+		BracketIsRewritten:            false,
+		SafeToEliminateDoubleNegation: true,
 		NestedTypeKinds: map[string]bool{
 			"ARRAY":          true,
 			"LIST":           true,
@@ -17305,8 +17323,10 @@ var parserTables = map[string]*ParserTables{
 			"Any": true,
 		},
 		QuantifierQuerySQL: map[string]string{
-			"All": "ALL ({query})",
-			"Any": "ANY ({query})",
+			"All":          "ALL ({query})",
+			"AllUnwrapped": "ALL ({query})",
+			"Any":          "ANY ({query})",
+			"AnyUnwrapped": "ANY({query})",
 		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",

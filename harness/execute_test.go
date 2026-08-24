@@ -64,6 +64,13 @@ func TestEmitExecutionPairs(t *testing.T) {
 			} else {
 				rec["port"] = got
 			}
+			// The port's SIMPLIFIED form too. This is the first thing here
+			// that rewrites a tree rather than reproducing one, so it is the
+			// first that can be wrong in a way no string comparison sees: the
+			// SQL still parses, still runs, and returns different rows.
+			if s, serr := sqlglot.Generate(sqlglot.Simplify(tree, c.Dialect), c.Dialect); serr == nil {
+				rec["simplified"] = s
+			}
 		}
 		if err := enc.Encode(rec); err != nil {
 			t.Fatal(err)

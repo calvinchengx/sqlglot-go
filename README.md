@@ -132,6 +132,26 @@ The keyword and dialect tables the tokenizer reads are generated from the same
 pin rather than transcribed, and CI regenerates and diffs them, because a
 hand-edited table is a divergence the port has no logic to catch.
 
+### The optimizer
+
+`sqlglot.Simplify` is the first thing in the port that CHANGES a tree rather
+than reproducing one, and it is held to the reference's own contract —
+`tests/fixtures/optimizer/simplify.sql`, 480 pairs pinning what each statement
+becomes. **125 are folded exactly**; the rest the port declines to fold that
+far, which costs nothing: the statement still means what it meant.
+
+That gate deliberately does *not* try to judge whether a non-exact result is
+*wrong*. A first cut guessed — "if the output differs from the input, the fold
+must be wrong" — and reported 35 failures, of which nearly all were partial
+folds and the one real bug was buried among them. Whether a rewrite is wrong
+is a semantic question, so simplify's output is fed to the execution oracle
+below and judged there, by running it.
+
+Every rule is conservative: where a precondition cannot be established the node
+is left alone. The reference runs `annotate_types` before simplifying and
+several of its rules decide on what that leaves behind; those rules are not
+ported, and the nodes they would touch are not guessed at.
+
 ### What fidelity cannot prove
 
 Everything above compares the port against sqlglot: same tree, same string.
@@ -143,10 +163,11 @@ and still runs. It just returns different rows.
 
 So there is one more harness, and it is the only one here whose failure means
 "these two queries ask different questions" rather than "these two strings
-differ". `make oracle-exec` takes each statement as it was written and what
-the port writes back, runs **both** on a real engine, and compares the
-results. **228 statements are currently comparable** — 162 on DuckDB, which
-embeds, and 66 on PostgreSQL, which CI supplies as a service container and
+differ". `make oracle-exec` takes each statement as it was written, what
+the port writes back, and what the port *simplifies* it to, runs them **all**
+on a real engine, and compares the
+results. **297 statements are currently comparable** — 218 on DuckDB, which
+embeds, and 79 on PostgreSQL, which CI supplies as a service container and
 `make postgres` starts locally. An engine it cannot reach is skipped with a
 note, not a failure.
 
@@ -207,6 +228,7 @@ make gaps       # why the port refuses what it refuses, most common first
 make cover      # test coverage of the port
 make oracle     # regenerate expectations and generated tables from the pinned reference
 make oracle-exec # run the port's SQL through an engine and check it MEANS the same
+make test       # includes the optimizer against sqlglot's simplify contract
 make postgres   # start a PostgreSQL for it, and print the DSN to export
 ```
 

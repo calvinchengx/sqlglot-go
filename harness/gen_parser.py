@@ -805,16 +805,35 @@ def quantifier_query_sql(dialect: str) -> dict[str, str]:
     """
     import sqlglot
 
+    from sqlglot import exp
+
     out = {}
     for word, cls in (("ANY", "Any"), ("ALL", "All")):
         e = sqlglot.parse_one(
             f"SELECT x FROM t WHERE a = {word} (SELECT 1)", read=dialect or None
         )
-        written = e.sql(dialect=dialect or None)
-        tail = written[written.index("a = ") + 4 :]
-        if not tail.startswith(word) or "SELECT 1" not in tail:
-            raise SystemExit(f"{dialect}: {word} over a query rendered {tail!r}")
-        out[cls] = tail.replace("SELECT 1", "{query}", 1)
+        node = e.args["where"].this.args["expression"]
+
+        def render(n):
+            written = e.sql(dialect=dialect or None)
+            tail = written[written.index("a = ") + 4 :]
+            if not tail.startswith(word) or "SELECT 1" not in tail:
+                raise SystemExit(f"{dialect}: {word} over a query rendered {tail!r}")
+            return tail.replace("SELECT 1", "{query}", 1)
+
+        out[cls] = render(node)
+        # The SAME node written two ways. A quantifier over a Subquery keeps
+        # the parentheses the subquery already carries; over a BARE query the
+        # reference supplies its own and drops the space -- `ANY(SELECT 1)`
+        # against `ANY (SELECT 1)`. Probing only the first spelling produced a
+        # generator that was right until simplify handed it the second.
+        inner = node.this
+        if isinstance(inner, exp.Subquery):
+            node.set("this", inner.this)
+            out[cls + "Unwrapped"] = render(node)
+            node.set("this", inner)
+        else:
+            out[cls + "Unwrapped"] = out[cls]
     return out
 
 
@@ -1928,6 +1947,11 @@ def main() -> int:
 
 
         "\tBracketIsRewritten bool\n",
+        "\t// SafeToEliminateDoubleNegation gates the optimizer's NOT NOT x\n",
+        "\t// -> x rule. True in every dialect this port configures, which is\n",
+        "\t// exactly why it is read rather than assumed: a rule that is right\n",
+        "\t// everywhere today is not the same as a rule with no condition.\n",
+        "\tSafeToEliminateDoubleNegation bool\n",
         "\t// QuantifierWrapsSubquery: whether a quantifier over a QUERY\n",
         "\t// keeps the Subquery wrapper. ANY does and ALL does not, in\n",
         "\t// every dialect -- a per-class fact, not a per-dialect one.\n",
@@ -2322,6 +2346,10 @@ def main() -> int:
             out.append("\t\t},\n")
         out.append(
             f"\t\tBracketIsRewritten: {str(bracket_is_rewritten(name)).lower()},\n"
+        )
+        out.append(
+            f"\t\tSafeToEliminateDoubleNegation: "
+            f"{str(bool(d.SAFE_TO_ELIMINATE_DOUBLE_NEGATION)).lower()},\n"
         )
         nested_kinds = {
             exp.DType[t.name].value

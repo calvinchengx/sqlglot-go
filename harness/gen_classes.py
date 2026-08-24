@@ -62,6 +62,32 @@ def main() -> int:
         for cls in sorted(by_module[module]):
             print(f'\t"{cls}": "{module}",')
     print("}")
+
+    # The reference's class HIERARCHY, for the rules that dispatch on it.
+    # simplify_parens asks whether a node is a Predicate, whether its parent is
+    # a Binary, and so on -- questions about ancestry, not about a node's name.
+    # Transcribing the answers would be a table that silently rots when the
+    # reference reorganises its classes; asking issubclass keeps it honest.
+    bases = ("Predicate", "Binary", "Unary", "Condition", "Connector",
+             "SubqueryPredicate", "Expr")
+    print()
+    print("// classIsA[base][class] is true where the reference's class derives")
+    print("// from that base. Generated, because it is ancestry rather than naming:")
+    print("// a rule that asks \"is this a Predicate\" must get the reference's own")
+    print("// answer or it will fold a node the reference leaves alone.")
+    print("var classIsA = map[string]map[string]bool{")
+    for base in bases:
+        base_cls = getattr(exp, base, None)
+        if base_cls is None:
+            continue
+        print(f'\t"{base}": {{')
+        for module in sorted(by_module):
+            for cls in sorted(by_module[module]):
+                obj = getattr(exp, cls, None)
+                if obj is not None and isinstance(obj, type) and issubclass(obj, base_cls):
+                    print(f'\t\t"{cls}": true,')
+        print("\t},")
+    print("}")
     return 0
 
 

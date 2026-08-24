@@ -224,6 +224,21 @@ def run(engine: Engine, pairs, known) -> tuple[dict[str, int], list[dict[str, st
         except Exception:
             bump(who + ": nondeterministic")
             return
+        if got != first and multiset(got) != multiset(first):
+            # About to accuse. Look once more at BOTH sides first: a statement
+            # unstable enough to slip past the repeat checks above would
+            # otherwise be reported as a divergence, and a gate that cries
+            # wolf on a rerun is a gate people learn to ignore. Confirming
+            # costs two executions on the rare path and nothing on the common
+            # one.
+            try:
+                if engine.rows(src) != first or engine.rows(out) != got:
+                    bump(who + ": nondeterministic")
+                    return
+            except Exception:
+                bump(who + ": nondeterministic")
+                return
+
         if got == first:
             # Two queries that both return NOTHING agree about nothing. With
             # fixture tables in place this is the cheap way to look busy --
@@ -269,6 +284,10 @@ def run(engine: Engine, pairs, known) -> tuple[dict[str, int], list[dict[str, st
             compare("port", src, first, rec["port"])
         else:
             bump("port refused it")
+        # The port's own REWRITE, which is the only thing here that no string
+        # or tree differential can vouch for.
+        if "simplified" in rec:
+            compare("simplified", src, first, rec["simplified"])
     return tally, diverged
 
 
