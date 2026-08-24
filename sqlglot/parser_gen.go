@@ -223,6 +223,13 @@ type ParserTables struct {
 	// becomes N of something, which is a transform, not a spelling.
 	JSONPerPartSQL     map[string]JSONPerPart
 	BracketIsRewritten bool
+	// QuantifierWrapsSubquery: whether a quantifier over a QUERY
+	// keeps the Subquery wrapper. ANY does and ALL does not, in
+	// every dialect -- a per-class fact, not a per-dialect one.
+	QuantifierWrapsSubquery map[string]bool
+	// QuantifierQuerySQL is the same over a QUERY, where the
+	// spacing and the parentheses both differ from the array form.
+	QuantifierQuerySQL map[string]string
 	// NestedTypeKinds are the DataType kinds the reference marks
 	// `nested`, whether or not they were written with parameters.
 	// StructTypeKinds is the subset whose parameters are NAMED
@@ -3469,6 +3476,14 @@ var parserTables = map[string]*ParserTables{
 			StructOpen:         "<",
 			StructClose:        ">",
 			StructFieldSep:     " ",
+		},
+		QuantifierWrapsSubquery: map[string]bool{
+			"All": false,
+			"Any": true,
+		},
+		QuantifierQuerySQL: map[string]string{
+			"All": "ALL ({query})",
+			"Any": "ANY ({query})",
 		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
@@ -6796,6 +6811,14 @@ var parserTables = map[string]*ParserTables{
 			StructOpen:         "<",
 			StructClose:        ">",
 			StructFieldSep:     " ",
+		},
+		QuantifierWrapsSubquery: map[string]bool{
+			"All": false,
+			"Any": true,
+		},
+		QuantifierQuerySQL: map[string]string{
+			"All": "ALL ({query})",
+			"Any": "ANY ({query})",
 		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
@@ -10184,6 +10207,14 @@ var parserTables = map[string]*ParserTables{
 			StructOpen:         "<",
 			StructClose:        ">",
 			StructFieldSep:     " ",
+		},
+		QuantifierWrapsSubquery: map[string]bool{
+			"All": false,
+			"Any": true,
+		},
+		QuantifierQuerySQL: map[string]string{
+			"All": "ALL ({query})",
+			"Any": "ANY ({query})",
 		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
@@ -13720,6 +13751,14 @@ var parserTables = map[string]*ParserTables{
 			StructOpen:         "(",
 			StructClose:        ")",
 			StructFieldSep:     " ",
+		},
+		QuantifierWrapsSubquery: map[string]bool{
+			"All": false,
+			"Any": true,
+		},
+		QuantifierQuerySQL: map[string]string{
+			"All": "ALL ({query})",
+			"Any": "ANY ({query})",
 		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
@@ -17260,6 +17299,14 @@ var parserTables = map[string]*ParserTables{
 			StructOpen:         "<",
 			StructClose:        ">",
 			StructFieldSep:     ": ",
+		},
+		QuantifierWrapsSubquery: map[string]bool{
+			"All": false,
+			"Any": true,
+		},
+		QuantifierQuerySQL: map[string]string{
+			"All": "ALL ({query})",
+			"Any": "ANY ({query})",
 		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",

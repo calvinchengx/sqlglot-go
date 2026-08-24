@@ -537,6 +537,10 @@ func (g *generator) anonymous(e *Expression, upper bool) string {
 }
 
 func (g *generator) writeIn(e *Expression) string {
+	// A subquery brings its own parentheses; a list is given them here.
+	if q, ok := e.Args["query"].(*Expression); ok && q != nil {
+		return g.child(e, "this") + " IN " + g.node(q)
+	}
 	return g.child(e, "this") + " IN (" + g.list(e) + ")"
 }
 
@@ -719,11 +723,40 @@ func (g *generator) writeSlice(e *Expression) string {
 // not of the operator above it. Comparing an ALL against an ANY suggested
 // otherwise, and this used to refuse on the strength of that.
 func (g *generator) writeQuantifier(e *Expression) string {
+	this, _ := e.Args["this"].(*Expression)
+	if this == nil {
+		return g.fail("quantifier without an operand")
+	}
+	// Over a query the spacing and the parentheses both differ from the array
+	// form, so it takes its own template. The template supplies the
+	// parentheses, which is why a Subquery operand is unwrapped first rather
+	// than rendered -- otherwise the query arrives already parenthesised and
+	// comes out with two pairs.
+	inner := this
+	if inner.Class == "Subquery" {
+		inner, _ = inner.Args["this"].(*Expression)
+	}
+	if inner != nil && isQuery(inner) {
+		tmpl, ok := g.tables.QuantifierQuerySQL[e.Class]
+		if !ok {
+			return g.fail("quantifier over a query")
+		}
+		return strings.ReplaceAll(tmpl, "{query}", g.node(inner))
+	}
 	prefix, ok := g.tables.QuantifierSQL[e.Class]
 	if !ok {
 		return g.fail("quantifier")
 	}
 	return prefix + g.child(e, "this")
+}
+
+// isQuery reports whether a node is a query rather than a value.
+func isQuery(e *Expression) bool {
+	switch e.Class {
+	case "Select", "Union", "Intersect", "Except":
+		return true
+	}
+	return false
 }
 
 // writeWindow writes the OVER clause. A named window (`OVER w`) carries an

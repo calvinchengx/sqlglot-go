@@ -771,6 +771,53 @@ def composite_type_sql(dialect: str) -> dict[str, str]:
     return result
 
 
+def quantifier_wraps_subquery(dialect: str) -> dict[str, bool]:
+    """Whether a quantifier over a QUERY keeps the Subquery wrapper.
+
+    It does for ANY and does not for ALL -- `= ANY (SELECT 1)` arrives as
+    Any(Subquery(Select)) and `= ALL (SELECT 1)` as All(Select). The port had
+    this recorded as a DIALECT disagreement and refused both; it is neither a
+    dialect fact nor an operator fact but a per-CLASS one, so it is probed per
+    class here and comes back the same in every dialect. PROBED.
+    """
+    import sqlglot
+
+    out = {}
+    for word, cls in (("ANY", "Any"), ("ALL", "All")):
+        e = sqlglot.parse_one(
+            f"SELECT x FROM t WHERE a = {word} (SELECT 1)", read=dialect or None
+        )
+        node = e.args["where"].this.args["expression"]
+        if type(node).__name__ != cls:
+            raise SystemExit(f"{dialect}: {word} over a query is {type(node).__name__}")
+        out[cls] = type(node.this).__name__ == "Subquery"
+    return out
+
+
+def quantifier_query_sql(dialect: str) -> dict[str, str]:
+    """How a quantifier over a QUERY is written, as a template.
+
+    Not the same spacing as over an array, and not the same between the two
+    classes: ANY takes the Subquery's own parentheses (`ANY (SELECT 1)`) while
+    ALL carries a bare Select and supplies its own. Probed by rendering both
+    and cutting on the query, rather than by re-deriving the reference's
+    wrap() rules here. PROBED.
+    """
+    import sqlglot
+
+    out = {}
+    for word, cls in (("ANY", "Any"), ("ALL", "All")):
+        e = sqlglot.parse_one(
+            f"SELECT x FROM t WHERE a = {word} (SELECT 1)", read=dialect or None
+        )
+        written = e.sql(dialect=dialect or None)
+        tail = written[written.index("a = ") + 4 :]
+        if not tail.startswith(word) or "SELECT 1" not in tail:
+            raise SystemExit(f"{dialect}: {word} over a query rendered {tail!r}")
+        out[cls] = tail.replace("SELECT 1", "{query}", 1)
+    return out
+
+
 def bracket_is_rewritten(dialect: str) -> bool:
     """Whether `a[1]` comes back as something other than a plain subscript.
 
@@ -1881,6 +1928,13 @@ def main() -> int:
 
 
         "\tBracketIsRewritten bool\n",
+        "\t// QuantifierWrapsSubquery: whether a quantifier over a QUERY\n",
+        "\t// keeps the Subquery wrapper. ANY does and ALL does not, in\n",
+        "\t// every dialect -- a per-class fact, not a per-dialect one.\n",
+        "\tQuantifierWrapsSubquery map[string]bool\n",
+        "\t// QuantifierQuerySQL is the same over a QUERY, where the\n",
+        "\t// spacing and the parentheses both differ from the array form.\n",
+        "\tQuantifierQuerySQL map[string]string\n",
         "\t// NestedTypeKinds are the DataType kinds the reference marks\n",
         "\t// `nested`, whether or not they were written with parameters.\n",
         "\t// StructTypeKinds is the subset whose parameters are NAMED\n",
@@ -2292,6 +2346,16 @@ def main() -> int:
         out.append("\t\tCompositeType: CompositeTypeSQL{\n")
         for k in ("ArrayTemplate", "ArraySizedTemplate", "StructOpen", "StructClose", "StructFieldSep"):
             out.append(f"\t\t\t{k}: {gostr(_ct[k])},\n")
+        out.append("\t\t},\n")
+        _qw = quantifier_wraps_subquery(name)
+        out.append("\t\tQuantifierWrapsSubquery: map[string]bool{\n")
+        for k in sorted(_qw):
+            out.append(f"\t\t\t{gostr(k)}: {str(_qw[k]).lower()},\n")
+        out.append("\t\t},\n")
+        _qq = quantifier_query_sql(name)
+        out.append("\t\tQuantifierQuerySQL: map[string]string{\n")
+        for k in sorted(_qq):
+            out.append(f"\t\t\t{gostr(k)}: {gostr(_qq[k])},\n")
         out.append("\t\t},\n")
         _q = quantifier_sql(name, exp)
         if _q:

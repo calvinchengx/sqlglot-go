@@ -223,8 +223,19 @@ func (p *parser) parseIn(this *Expression) (*Expression, error) {
 	if !p.match(TokL_PAREN) {
 		return nil, p.unsupported("IN without a parenthesised list")
 	}
-	if p.at(TokSELECT) {
-		return nil, p.unsupported("IN with a subquery")
+	// `a IN (SELECT 1)`: the reference records the query under `query` rather
+	// than as a one-item expression list, and it DOES wrap it in a Subquery.
+	if p.at(TokSELECT) || p.at(TokWITH) {
+		inner, err := p.parseQuery()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed IN subquery")
+		}
+		sub := New("Subquery", Arg{"this", inner}, Arg{"pivots", nil},
+			Arg{"alias", nil}, Arg{"sample", nil})
+		return New("In", Arg{"this", this}, Arg{"query", sub}), nil
 	}
 	var items []*Expression
 	if !p.at(TokR_PAREN) {
@@ -237,10 +248,13 @@ func (p *parser) parseIn(this *Expression) (*Expression, error) {
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed IN list")
 	}
-	// A single query inside the parentheses is an IN over a subquery, which
-	// the reference records under `query` rather than in the expression list.
+	// `a IN ((SELECT 1))` writes the parentheses twice, and the reference
+	// records BOTH: the inner pair is a Subquery of its own and `query` wraps
+	// it in a second one. Reusing the inner node lost a level.
 	if len(items) == 1 && items[0].Class == "Subquery" {
-		return nil, p.unsupported("IN with a subquery")
+		sub := New("Subquery", Arg{"this", items[0]}, Arg{"pivots", nil},
+			Arg{"alias", nil}, Arg{"sample", nil})
+		return New("In", Arg{"this", this}, Arg{"query", sub}), nil
 	}
 	return New("In", Arg{"this", this}, Arg{"expressions", items}), nil
 }
@@ -654,11 +668,15 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		// Over a QUERY the reference disagrees with itself across dialects --
-		// some keep the Subquery, some carry the Select straight -- so that
-		// form is refused rather than guessed at.
-		if inner != nil && (inner.Class == "Subquery" || inner.Class == "Select") {
-			return nil, p.unsupported("quantifier over a subquery")
+		// Over a QUERY the two quantifiers differ from each other, and the
+		// difference is the CLASS rather than the dialect or the operator
+		// above: ANY keeps the Subquery wrapper the parentheses made, ALL
+		// carries the Select straight. Probed; see harness/gen_parser.go.
+		if inner != nil && inner.Class == "Subquery" && !p.tables.QuantifierWrapsSubquery[class] {
+			inner, _ = inner.Args["this"].(*Expression)
+			if inner == nil {
+				return nil, p.unsupported("quantifier over an empty subquery")
+			}
 		}
 		return New(class, Arg{"this", inner}), nil
 	}
@@ -1073,9 +1091,15 @@ func (p *parser) parseFunction() (*Expression, error) {
 			// a JSON path.
 			var arg *Expression
 			var err error
-			if p.atLambda() {
+			switch {
+			case p.atLambda():
 				arg, err = p.parseLambda()
-			} else {
+			case p.at(TokSELECT), p.at(TokWITH):
+				// `EXISTS(SELECT 1)`: the call's own parentheses are the
+				// subquery's, so the argument is the Select ITSELF -- there
+				// is no Subquery wrapper the way there is after `IN`.
+				arg, err = p.parseQuery()
+			default:
 				arg, err = p.parseExpression()
 			}
 			if err != nil {
