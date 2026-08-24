@@ -45,8 +45,9 @@ oracle: ## Regenerate expectations and generated tables from the PINNED referenc
 	$(PYTHON) harness/oracle.py --sqlglot $(SQLGLOT) --out testdata/expected
 	$(PYTHON) harness/gen_classes.py --sqlglot $(SQLGLOT) > sqlglot/classes_gen.go && gofmt -w sqlglot/classes_gen.go
 	$(PYTHON) harness/gen_tokenizer.py --sqlglot $(SQLGLOT) --out sqlglot && gofmt -w sqlglot/tokentype_gen.go sqlglot/dialects_gen.go
-	$(PYTHON) harness/gen_parser.py --sqlglot $(SQLGLOT)
-	$(PYTHON) harness/gen_simplify.py --sqlglot $(SQLGLOT) && gofmt -w sqlglot/parser_gen.go
+	$(PYTHON) harness/gen_parser.py --sqlglot $(SQLGLOT) && gofmt -w sqlglot/parser_gen.go
+	$(PYTHON) harness/gen_simplify.py --sqlglot $(SQLGLOT)
+	$(PYTHON) harness/gen_annotate.py --sqlglot $(SQLGLOT)
 
 oracle-exec: ## Run the port's SQL through an engine and check it MEANS the same
 	@DAS_EXEC_EMIT=$(EXEC_PAIRS) go test ./harness/ -run TestEmitExecutionPairs

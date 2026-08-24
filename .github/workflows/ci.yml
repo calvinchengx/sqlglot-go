@@ -151,14 +151,17 @@ jobs:
           python3 harness/gen_tokenizer.py --sqlglot reference --out sqlglot
           python3 harness/gen_parser.py --sqlglot reference
           python3 harness/gen_classes.py --sqlglot reference > sqlglot/classes_gen.go
-          cp testdata/simplify.json /tmp/
+          cp testdata/simplify.json testdata/annotate.json sqlglot/annotate_gen.go /tmp/
           python3 harness/gen_simplify.py --sqlglot reference
+          python3 harness/gen_annotate.py --sqlglot reference
           gofmt -w sqlglot/tokentype_gen.go sqlglot/dialects_gen.go sqlglot/parser_gen.go sqlglot/classes_gen.go
           diff /tmp/tokentype_gen.go sqlglot/tokentype_gen.go
           diff /tmp/dialects_gen.go sqlglot/dialects_gen.go
           diff /tmp/parser_gen.go sqlglot/parser_gen.go
           diff /tmp/classes_gen.go sqlglot/classes_gen.go
           diff /tmp/simplify.json testdata/simplify.json
+          diff /tmp/annotate.json testdata/annotate.json
+          diff /tmp/annotate_gen.go sqlglot/annotate_gen.go
           echo "generated tables are exactly the pinned reference's"
 
   # The one check here that can fail because two queries MEAN different
