@@ -216,8 +216,12 @@ type ParserTables struct {
 	// JSONExtractSQL is how the operator wraps a path, where the
 	// dialect writes it as one. A dialect that explodes the path into
 	// arguments has no entry and is refused.
-	JSONExtractSQL       map[string]string
-	BracketIsRewritten   bool
+	JSONExtractSQL     map[string]string
+	BracketIsRewritten bool
+	// Boolean is how TRUE and FALSE are written, and the two
+	// positions can differ: T-SQL writes 1 where a value is wanted
+	// and (1 = 1) where a condition is.
+	Boolean              BooleanSQL
 	WritesBooleanLiteral bool
 	IsNotNullWrapsInNot  bool
 	// NullOrdering decides where NULLs sort when nobody says, and so
@@ -290,6 +294,14 @@ type FuncConst struct {
 // something other than what the probe recorded.
 // SyntaxTemplate is how one shape of a syntax function is written,
 // with {key} where each argument goes.
+// BooleanSQL is how a boolean is written in each position.
+type BooleanSQL struct {
+	TrueValue      string
+	FalseValue     string
+	TrueCondition  string
+	FalseCondition string
+}
+
 // JSONPathSQL is the text around each piece of a JSON path.
 type JSONPathSQL struct {
 	Open      string
@@ -3393,7 +3405,13 @@ var parserTables = map[string]*ParserTables{
 			Subscript: "[{index}]",
 			QuotedKey: "[\"{key}\"]",
 		},
-		BracketIsRewritten:       false,
+		BracketIsRewritten: false,
+		Boolean: BooleanSQL{
+			TrueValue:      "TRUE",
+			FalseValue:     "FALSE",
+			TrueCondition:  "TRUE",
+			FalseCondition: "FALSE",
+		},
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
@@ -6704,7 +6722,13 @@ var parserTables = map[string]*ParserTables{
 			Subscript: "[{index}]",
 			QuotedKey: ".\"{key}\"",
 		},
-		BracketIsRewritten:       false,
+		BracketIsRewritten: false,
+		Boolean: BooleanSQL{
+			TrueValue:      "1",
+			FalseValue:     "0",
+			TrueCondition:  "(1 = 1)",
+			FalseCondition: "(1 = 0)",
+		},
 		WritesBooleanLiteral:     false,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
@@ -10073,7 +10097,13 @@ var parserTables = map[string]*ParserTables{
 			Subscript: "{index}",
 			QuotedKey: "{key}",
 		},
-		BracketIsRewritten:       true,
+		BracketIsRewritten: true,
+		Boolean: BooleanSQL{
+			TrueValue:      "TRUE",
+			FalseValue:     "FALSE",
+			TrueCondition:  "TRUE",
+			FalseCondition: "FALSE",
+		},
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      false,
 		NullOrdering:             "nulls_are_large",
@@ -13590,7 +13620,13 @@ var parserTables = map[string]*ParserTables{
 			Subscript: "[{index}]",
 			QuotedKey: ".\"{key}\"",
 		},
-		BracketIsRewritten:       true,
+		BracketIsRewritten: true,
+		Boolean: BooleanSQL{
+			TrueValue:      "TRUE",
+			FalseValue:     "FALSE",
+			TrueCondition:  "TRUE",
+			FalseCondition: "FALSE",
+		},
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_last",
@@ -17039,7 +17075,13 @@ var parserTables = map[string]*ParserTables{
 			Subscript: "[{index}]",
 			QuotedKey: "[\"{key}\"]",
 		},
-		BracketIsRewritten:       false,
+		BracketIsRewritten: false,
+		Boolean: BooleanSQL{
+			TrueValue:      "TRUE",
+			FalseValue:     "FALSE",
+			TrueCondition:  "TRUE",
+			FalseCondition: "FALSE",
+		},
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",

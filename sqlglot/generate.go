@@ -49,6 +49,10 @@ type generator struct {
 	tables  *ParserTables
 	dialect string
 	err     error
+	// conditions are the Boolean nodes that sit where a CONDITION is wanted.
+	// T-SQL writes those `(1 = 1)` and a plain value `1`, so which one to
+	// write is a fact about the node's position rather than about the node.
+	conditions map[*Expression]bool
 }
 
 // fail records the first failure. Later writers keep running and return empty
@@ -320,10 +324,32 @@ func (g *generator) requireCondition(e *Expression, keys ...string) {
 	}
 	for _, key := range keys {
 		child, _ := e.Args[key].(*Expression)
-		if child != nil && !predicates[child.Class] {
+		if child == nil {
+			continue
+		}
+		// A boolean HERE has a spelling -- `(1 = 1)` -- so it is marked rather
+		// than refused. Everything else still is refused: the port does not
+		// perform the coercion the dialect would.
+		if child.Class == "Boolean" {
+			g.markCondition(child)
+			continue
+		}
+		if !predicates[child.Class] {
 			g.fail(child.Class + " used as a condition in a dialect that coerces it")
 		}
 	}
+}
+
+// markCondition records that a node is being written where a condition is
+// wanted. Only booleans care, and only in a dialect that has no boolean.
+func (g *generator) markCondition(e *Expression) {
+	if e == nil || e.Class != "Boolean" {
+		return
+	}
+	if g.conditions == nil {
+		g.conditions = map[*Expression]bool{}
+	}
+	g.conditions[e] = true
 }
 
 // predicates are the nodes that are already a condition. Everything else needs

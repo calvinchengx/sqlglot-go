@@ -229,7 +229,14 @@ func (g *generator) writeSubquery(e *Expression) string {
 	return out
 }
 
-func (g *generator) writeWhere(e *Expression) string  { return "WHERE " + g.child(e, "this") }
+func (g *generator) writeWhere(e *Expression) string {
+	// The WHERE operand is a condition, which is what decides how a boolean
+	// there is written.
+	if child, _ := e.Args["this"].(*Expression); child != nil {
+		g.markCondition(child)
+	}
+	return "WHERE " + g.child(e, "this")
+}
 func (g *generator) writeHaving(e *Expression) string { return "HAVING " + g.child(e, "this") }
 
 // writeInto keeps the table KIND that sits before the name: `INTO UNLOGGED foo`.
@@ -370,19 +377,22 @@ func escapeStringBody(text string, escapes set) string {
 	return strings.ReplaceAll(text, "'", escape+"'")
 }
 
+// writeBoolean writes the spelling this dialect uses in this POSITION. T-SQL
+// has no boolean literal: it writes 1 where a value is wanted and (1 = 1)
+// where a condition is, so the answer depends on where the node sits rather
+// than on the node.
 func (g *generator) writeBoolean(e *Expression) string {
-	// T-SQL has no boolean literal. The reference rewrites TRUE to 1 where a
-	// value is wanted and to `1 = 1` where a condition is, and `a IS TRUE` to
-	// `a = 1` -- a transform over the tree that depends on where the literal
-	// sits. None of that is ported, and writing TRUE anyway handed the engine
-	// a statement it rejects, from a query the Python executor ran fine.
-	if !g.tables.WritesBooleanLiteral {
-		return g.fail("Boolean")
+	isTrue := e.Args["this"] == true
+	if g.conditions[e] {
+		if isTrue {
+			return g.tables.Boolean.TrueCondition
+		}
+		return g.tables.Boolean.FalseCondition
 	}
-	if e.Args["this"] == true {
-		return "TRUE"
+	if isTrue {
+		return g.tables.Boolean.TrueValue
 	}
-	return "FALSE"
+	return g.tables.Boolean.FalseValue
 }
 
 func (g *generator) writeAlias(e *Expression) string {
@@ -404,6 +414,9 @@ func (g *generator) writeCase(e *Expression) string {
 	for _, b := range branches {
 		if b == nil || b.Class != "If" {
 			return g.fail("CASE branch")
+		}
+		if cond, _ := b.Args["this"].(*Expression); cond != nil {
+			g.markCondition(cond)
 		}
 		parts = append(parts, "WHEN "+g.child(b, "this")+" THEN "+g.child(b, "true"))
 	}
@@ -495,6 +508,16 @@ func (g *generator) writeLike(e *Expression) string {
 
 // writeIs does the same for IS NOT NULL.
 func (g *generator) writeIs(e *Expression) string {
+	// `a IS TRUE` is not `a IS 1`: in a dialect with no boolean the reference
+	// rewrites the whole comparison to `a = 1`, which is a different NODE, not
+	// a spelling of this one.
+	if !g.tables.WritesBooleanLiteral {
+		for _, key := range []string{"this", "expression"} {
+			if child, _ := e.Args[key].(*Expression); child != nil && child.Class == "Boolean" {
+				return g.fail("IS over a boolean in a dialect that has none")
+			}
+		}
+	}
 	op := "IS"
 	if e.Args["negate"] == true {
 		op = "IS NOT"

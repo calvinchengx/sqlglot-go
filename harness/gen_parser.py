@@ -660,6 +660,28 @@ def bracket_is_rewritten(dialect: str) -> bool:
     return e.args["this"].type is not None or index.this != "1"
 
 
+def boolean_sql(dialect: str, exp) -> dict:
+    """How TRUE and FALSE are written, in a VALUE position and in a CONDITION.
+
+    T-SQL has no boolean literal and the two positions differ: `SELECT 1` where
+    a value is wanted, `WHERE (1 = 1)` where a condition is. Everywhere else
+    both are the word itself. Read off the reference in both positions rather
+    than assumed, because the difference is exactly what a port would miss.
+    """
+    import sqlglot
+
+    def cond(word):
+        rendered = sqlglot.parse_one(f"SELECT a FROM t WHERE {word}").sql(dialect=dialect or None)
+        return rendered.split("WHERE ", 1)[1]
+
+    return {
+        "TrueValue": exp.select(exp.true()).sql(dialect=dialect or None)[len("SELECT ") :],
+        "FalseValue": exp.select(exp.false()).sql(dialect=dialect or None)[len("SELECT ") :],
+        "TrueCondition": cond("TRUE"),
+        "FalseCondition": cond("FALSE"),
+    }
+
+
 def writes_boolean_literal(dialect: str, exp) -> bool:
     """Whether this dialect writes TRUE and FALSE as themselves.
 
@@ -1574,6 +1596,10 @@ def main() -> int:
         "\tJSONExtractSQL map[string]string\n",
 
         "\tBracketIsRewritten bool\n",
+        "\t// Boolean is how TRUE and FALSE are written, and the two\n",
+        "\t// positions can differ: T-SQL writes 1 where a value is wanted\n",
+        "\t// and (1 = 1) where a condition is.\n",
+        "\tBoolean BooleanSQL\n",
         "\tWritesBooleanLiteral bool\n",
         "\tIsNotNullWrapsInNot bool\n",
         "\t// NullOrdering decides where NULLs sort when nobody says, and so\n",
@@ -1642,6 +1668,14 @@ def main() -> int:
         "// something other than what the probe recorded.\n",
         "// SyntaxTemplate is how one shape of a syntax function is written,\n",
         "// with {key} where each argument goes.\n",
+        "// BooleanSQL is how a boolean is written in each position.\n",
+        "type BooleanSQL struct {\n",
+        "\tTrueValue      string\n",
+        "\tFalseValue     string\n",
+        "\tTrueCondition  string\n",
+        "\tFalseCondition string\n",
+        "}\n",
+        "\n",
         "// JSONPathSQL is the text around each piece of a JSON path.\n",
         "type JSONPathSQL struct {\n",
         "\tOpen      string\n",
@@ -1878,6 +1912,11 @@ def main() -> int:
         out.append(
             f"\t\tBracketIsRewritten: {str(bracket_is_rewritten(name)).lower()},\n"
         )
+        _bs = boolean_sql(name, exp)
+        out.append("\t\tBoolean: BooleanSQL{\n")
+        for k in ("TrueValue", "FalseValue", "TrueCondition", "FalseCondition"):
+            out.append(f"\t\t\t{k}: {gostr(_bs[k])},\n")
+        out.append("\t\t},\n")
         out.append(
             f"\t\tWritesBooleanLiteral: {str(writes_boolean_literal(name, exp)).lower()},\n"
         )
