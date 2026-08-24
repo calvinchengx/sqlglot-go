@@ -2002,6 +2002,10 @@ def main() -> int:
 
 
         "\tBracketIsRewritten bool\n",
+        "\t// IndexOffset is how far this dialect's subscripts are from\n",
+        "\t// sqlglot's 0-based Bracket: 1 in DuckDB and PostgreSQL, 0\n",
+        "\t// elsewhere. The parser subtracts it from a written index.\n",
+        "\tIndexOffset int\n",
         "\t// SafeToEliminateDoubleNegation gates the optimizer's NOT NOT x\n",
         "\t// -> x rule. True in every dialect this port configures, which is\n",
         "\t// exactly why it is read rather than assumed: a rule that is right\n",
@@ -2424,6 +2428,7 @@ def main() -> int:
         out.append(
             f"\t\tBracketIsRewritten: {str(bracket_is_rewritten(name)).lower()},\n"
         )
+        out.append(f"\t\tIndexOffset: {d.INDEX_OFFSET},\n")
         out.append(
             f"\t\tSafeToEliminateDoubleNegation: "
             f"{str(bool(d.SAFE_TO_ELIMINATE_DOUBLE_NEGATION)).lower()},\n"

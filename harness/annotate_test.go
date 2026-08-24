@@ -100,7 +100,7 @@ func TestAnnotateAgainstReference(t *testing.T) {
 
 func assertAnnotateFloor(t *testing.T, agreed int) {
 	t.Helper()
-	const floor = 40 // raised by hand as the annotator grows; never lowered here
+	const floor = 44 // raised by hand as the annotator grows; never lowered here
 	if agreed < floor {
 		t.Errorf("annotator REGRESSED: %d agreed, floor %d", agreed, floor)
 	}

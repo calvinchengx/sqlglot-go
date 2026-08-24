@@ -223,6 +223,10 @@ type ParserTables struct {
 	// becomes N of something, which is a transform, not a spelling.
 	JSONPerPartSQL     map[string]JSONPerPart
 	BracketIsRewritten bool
+	// IndexOffset is how far this dialect's subscripts are from
+	// sqlglot's 0-based Bracket: 1 in DuckDB and PostgreSQL, 0
+	// elsewhere. The parser subtracts it from a written index.
+	IndexOffset int
 	// SafeToEliminateDoubleNegation gates the optimizer's NOT NOT x
 	// -> x rule. True in every dialect this port configures, which is
 	// exactly why it is read rather than assumed: a rule that is right
@@ -3479,6 +3483,7 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: "[\"{key}\"]",
 		},
 		BracketIsRewritten:            false,
+		IndexOffset:                   0,
 		SafeToEliminateDoubleNegation: true,
 		NestedTypeKinds: map[string]bool{
 			"ARRAY":          true,
@@ -6829,6 +6834,7 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: ".\"{key}\"",
 		},
 		BracketIsRewritten:            false,
+		IndexOffset:                   0,
 		SafeToEliminateDoubleNegation: true,
 		NestedTypeKinds: map[string]bool{
 			"ARRAY":          true,
@@ -10240,6 +10246,7 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: "{key}",
 		},
 		BracketIsRewritten:            true,
+		IndexOffset:                   1,
 		SafeToEliminateDoubleNegation: true,
 		NestedTypeKinds: map[string]bool{
 			"ARRAY":          true,
@@ -13799,6 +13806,7 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: ".\"{key}\"",
 		},
 		BracketIsRewritten:            true,
+		IndexOffset:                   1,
 		SafeToEliminateDoubleNegation: true,
 		NestedTypeKinds: map[string]bool{
 			"ARRAY":          true,
@@ -17362,6 +17370,7 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: "[\"{key}\"]",
 		},
 		BracketIsRewritten:            false,
+		IndexOffset:                   0,
 		SafeToEliminateDoubleNegation: true,
 		NestedTypeKinds: map[string]bool{
 			"ARRAY":          true,

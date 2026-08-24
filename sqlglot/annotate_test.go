@@ -38,6 +38,12 @@ func TestAnnotateShapes(t *testing.T) {
 		{"promotion leaves other types alone", "SUM(CAST(1 AS DECIMAL(18, 2)))", "",
 			"DECIMAL(18, 2)"},
 		{"a function that wraps in an array", "ARRAY_AGG(1)", "", "ARRAY<INT>"},
+		// A column resolves to UNKNOWN rather than to nothing: that IS the
+		// reference's answer without a schema, and it is what lets a caller
+		// tell an honest UNKNOWN from a gap in the port.
+		{"a column without a schema", "x", "", "UNKNOWN"},
+		{"an operator over a column", "x + 1", "", "UNKNOWN"},
+		{"a function over a column", "ABS(x)", "", "UNKNOWN"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			tree, err := ParseOne(c.sql, c.dialect)
@@ -64,14 +70,10 @@ func TestAnnotateShapes(t *testing.T) {
 // caller act on it.
 func TestAnnotateDeclines(t *testing.T) {
 	for _, c := range []struct{ name, sql, dialect string }{
-		{"a column needs a schema", "x", ""},
-		{"an operator over a column", "x + 1", ""},
-		{"a function over a column", "ABS(x)", ""},
 		{"an unrecognised call", "WHATEVER(1)", ""},
 		{"a subquery with several projections", "1 + (SELECT 1, 2)", ""},
 		{"an empty array has no element type", "ARRAY()", "duckdb"},
-		{"a promoting function over a column", "SUM(x)", ""},
-		{"an array of a known and an unknown", "[1, x]", "duckdb"},
+		{"a call the port has no rule for, inside an operator", "1 + WHATEVER(1)", ""},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			tree, err := ParseOne(c.sql, c.dialect)

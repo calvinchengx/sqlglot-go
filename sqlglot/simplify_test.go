@@ -30,6 +30,13 @@ func TestSimplifyShapes(t *testing.T) {
 		{"a column's nullness is not knowable", "SELECT 1 WHERE x IS NULL", "",
 			"SELECT 1 WHERE x IS NULL"},
 		{"division by zero is left alone", "SELECT 1.0 / 0", "", "SELECT 1.0 / 0"},
+		// A Neg over a literal counts as a number, which is what lets the
+		// subscript shift fold itself back: reading a[0] gives Neg(1), and
+		// writing it asks for Neg(1) + 1.
+		{"a negative literal folds", "SELECT -1 + 1", "", "SELECT 0"},
+		{"and subtracts", "SELECT -1 - 1", "", "SELECT -2"},
+		{"and multiplies", "SELECT -2 * 3", "", "SELECT -6"},
+		{"a negative compares", "SELECT 1 WHERE -1 < 0", "", "SELECT 1 WHERE TRUE"},
 		{"is null over a constant", "SELECT 1 WHERE 1 IS NULL", "", "SELECT 1 WHERE FALSE"},
 		{"absorption", "SELECT 1 WHERE a AND (a OR b)", "", "SELECT 1 WHERE a AND TRUE"},
 		{"absorption the other way", "SELECT 1 WHERE a OR (a AND b)", "", "SELECT 1 WHERE a AND TRUE"},

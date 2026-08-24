@@ -563,8 +563,9 @@ func (p *parser) parsePostfix() (*Expression, error) {
 			if err != nil {
 				return nil, err
 			}
-			if p.tables.BracketIsRewritten {
-				return nil, p.unsupported("subscript")
+			items, err = p.applyIndexOffset(this, items)
+			if err != nil {
+				return nil, err
 			}
 			this = New("Bracket", Arg{"this", this}, Arg{"expressions", items},
 				Arg{"offset", nil}, Arg{"safe", nil}, Arg{"returns_null_on_error", nil})
@@ -572,6 +573,26 @@ func (p *parser) parsePostfix() (*Expression, error) {
 		}
 		return this, nil
 	}
+}
+
+// applyIndexOffset shifts a written subscript to sqlglot's 0-based Bracket.
+//
+// This is the reference's `apply_index_offset`, and almost all of it is
+// conditions rather than arithmetic. It fires only for a SINGLE index, only
+// where the base is UNKNOWN or an ARRAY, and only where the index is an
+// INTEGER -- so `a[x]`, `a['k']` and `a[1:2]` keep the index they were
+// written with and gain only the type annotations the reference stamps on
+// them while deciding not to shift.
+//
+// The annotations are the reason this cannot be done with arithmetic alone:
+// they are part of the tree the reference produces, and the differential
+// compares them.
+func (p *parser) applyIndexOffset(this *Expression, items []*Expression) ([]*Expression, error) {
+	out, ok := ApplyIndexOffset(this, items, -p.tables.IndexOffset, p.dialect)
+	if !ok {
+		return nil, p.unsupported("subscript the port cannot type")
+	}
+	return out, nil
 }
 
 // parseBracketItems reads what sits between `[` and `]`: a comma-separated

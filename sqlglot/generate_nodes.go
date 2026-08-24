@@ -771,7 +771,20 @@ func (g *generator) writeBracket(e *Expression) string {
 	if spec, ok := g.functionSpelling(e); ok {
 		return g.namedFunction(e, spec)
 	}
-	return g.child(e, "this") + "[" + g.list(e) + "]"
+	// Written back in the dialect's own numbering: the parser subtracted the
+	// offset, so writing adds it again. Without this the port read `a[1]`
+	// correctly and then wrote `a[0]`, which is a different element.
+	this, _ := e.Args["this"].(*Expression)
+	items, _ := e.Args["expressions"].([]*Expression)
+	shifted, ok := ApplyIndexOffset(this, items, g.tables.IndexOffset, g.dialect)
+	if !ok {
+		return g.fail("subscript the port cannot type")
+	}
+	parts := make([]string, 0, len(shifted))
+	for _, item := range shifted {
+		parts = append(parts, g.node(item))
+	}
+	return g.child(e, "this") + "[" + strings.Join(parts, ", ") + "]"
 }
 
 func (g *generator) writeSlice(e *Expression) string {

@@ -1,5 +1,7 @@
 package sqlglot
 
+import "strconv"
+
 // Annotate answers what TYPE an expression has.
 //
 // This is the reference's `annotate_types`, and it is what several of the
@@ -62,6 +64,22 @@ func annotate(e *Expression, dialect string) *Expression {
 		return dataType("BOOLEAN")
 	case "Array":
 		return annotateArray(e, dialect)
+	case "Case":
+		return annotateCase(e, dialect)
+	case "Bracket":
+		return annotateBracket(e, dialect)
+	case "Slice":
+		// A slice's own type is UNKNOWN; its BOUNDS are annotated by the walk
+		// above, which is what the reference records.
+		return dataType("UNKNOWN")
+	case "Column", "Identifier", "Star":
+		// UNKNOWN is the ANSWER here, not the absence of one. Resolving a
+		// column needs a schema and the port has none, and that is exactly
+		// what the reference reports without one too. Distinguishing this
+		// from "no rule for this node" is what lets a caller tell an honest
+		// UNKNOWN from a gap in the port -- see applyIndexOffset, which
+		// refuses on the second and proceeds on the first.
+		return dataType("UNKNOWN")
 	}
 
 	// A connector or a predicate is a BOOLEAN whatever its operands are --
@@ -105,8 +123,13 @@ func childOf(e *Expression, key string) *Expression {
 	return child
 }
 
+// dataType builds the kind of DataType the ANNOTATOR produces, which is not
+// the kind the parser produces: the reference makes this one from a bare type
+// name and it carries no `nested` arg at all, where a written type always
+// records one. Setting `nested: false` here put an extra record in the dump
+// of every annotated node -- 44 mismatches, all the same cause.
 func dataType(kind string) *Expression {
-	return New("DataType", Arg{"this", DataTypeKind(kind)}, Arg{"nested", false})
+	return New("DataType", Arg{"this", DataTypeKind(kind)})
 }
 
 func typeKind(t *Expression) string {
@@ -252,4 +275,151 @@ func annotateFunction(e *Expression, dialect string, rule funcReturn) *Expressio
 			Arg{"expressions", []*Expression{coerced}}, Arg{"nested", true})
 	}
 	return coerced
+}
+
+// AnnotateFully stamps a type on every node of a subtree and reports whether
+// every one of them had an answer.
+//
+// It MUTATES, and that is the point: the reference's annotations are part of
+// the tree it produces -- they are dumped, and the differential compares them
+// -- so a port that computed a type without recording it would agree about
+// the answer and disagree about the tree.
+//
+// Where it returns false the port met a node it has no rule for. A caller
+// that stamped UNKNOWN there would be recording its own ignorance as the
+// reference's answer, which is why the subscript rule refuses instead.
+func AnnotateFully(e *Expression, dialect string) bool {
+	if e == nil {
+		return true
+	}
+	// A DataType is a type, not an expression that HAS one. Walking into one
+	// stamped UNKNOWN on the members of `MAP(INT, TEXT)`, which the reference
+	// leaves alone -- the annotation belongs to the cast, not to the spelling
+	// of what it casts to.
+	if e.Class == "DataType" {
+		return true
+	}
+	complete := true
+	for _, key := range e.Keys {
+		switch v := e.Args[key].(type) {
+		case *Expression:
+			complete = AnnotateFully(v, dialect) && complete
+		case []*Expression:
+			for _, k := range v {
+				complete = AnnotateFully(k, dialect) && complete
+			}
+		}
+	}
+	if e.Type != nil {
+		return complete
+	}
+	t := Annotate(e, dialect)
+	if t == nil {
+		return false
+	}
+	e.Type = t
+	return complete
+}
+
+// IsIntegerType reports whether a stamped type is one the reference counts as
+// an integer -- which is what decides whether a subscript's index is shifted.
+func IsIntegerType(t *Expression) bool { return integerTypes[typeKind(t)] }
+
+var integerTypes = map[string]bool{
+	"BIGINT": true, "BIT": true, "INT": true, "INT128": true, "INT256": true,
+	"MEDIUMINT": true, "SMALLINT": true, "TINYINT": true, "UBIGINT": true,
+	"UINT": true, "UINT128": true, "UINT256": true, "UMEDIUMINT": true,
+	"USMALLINT": true, "UTINYINT": true,
+}
+
+// annotateCase types a CASE by what its BRANCHES produce -- the value of each
+// WHEN and the ELSE. The conditions are beside the point: they are all
+// booleans and none of them is the result.
+func annotateCase(e *Expression, dialect string) *Expression {
+	var result *Expression
+	branches, _ := e.Args["ifs"].([]*Expression)
+	for _, branch := range branches {
+		value := childOf(branch, "true")
+		if value == nil {
+			continue
+		}
+		t := annotate(value, dialect)
+		if t == nil {
+			return nil
+		}
+		result = coerceTypes(result, t)
+	}
+	if fallback := childOf(e, "default"); fallback != nil {
+		t := annotate(fallback, dialect)
+		if t == nil {
+			return nil
+		}
+		result = coerceTypes(result, t)
+	}
+	return result
+}
+
+// annotateBracket types a subscript. A SLICE of something is that same thing
+// -- `arr[1:2]` is still an array -- while an element of an ARRAY<T> is a T.
+// A subscript of anything else has no answer here; the reference resolves a
+// map's key to its value, which needs the map's own keys and is not ported.
+func annotateBracket(e *Expression, dialect string) *Expression {
+	items, _ := e.Args["expressions"].([]*Expression)
+	if len(items) != 1 {
+		return nil
+	}
+	base := annotate(childOf(e, "this"), dialect)
+	if base == nil {
+		return nil
+	}
+	if items[0].Class == "Slice" {
+		return base
+	}
+	if typeKind(base) != "ARRAY" {
+		return nil
+	}
+	members, _ := base.Args["expressions"].([]*Expression)
+	if len(members) != 1 {
+		return nil
+	}
+	return members[0]
+}
+
+// ApplyIndexOffset shifts a subscript between the dialect's numbering and
+// sqlglot's 0-based Bracket. The PARSER subtracts the offset and the
+// GENERATOR adds it back, which is why both call this.
+//
+// Almost all of it is conditions rather than arithmetic: it fires only for a
+// single index, only where the base is UNKNOWN or an ARRAY, and only where
+// the index is an INTEGER. So `a[x]`, `a['k']` and `a[1:2]` keep the index
+// they were written with, and gain only the type annotations the reference
+// stamps on them while deciding not to shift.
+//
+// It reports false where the port cannot type the subtree. Its annotator is
+// narrower than the reference's, and stamping UNKNOWN where the reference
+// infers a type would record the port's own ignorance as an answer.
+func ApplyIndexOffset(this *Expression, items []*Expression, offset int, dialect string) ([]*Expression, bool) {
+	if offset == 0 || len(items) != 1 || this == nil {
+		return items, true
+	}
+	if this.Type == nil && !AnnotateFully(this, dialect) {
+		return nil, false
+	}
+	switch typeKind(this.Type) {
+	case "UNKNOWN", "ARRAY":
+	default:
+		return items, true
+	}
+	index := items[0]
+	if index.Type == nil && !AnnotateFully(index, dialect) {
+		return nil, false
+	}
+	if !IsIntegerType(index.Type) {
+		return items, true
+	}
+	// The shift goes through the SIMPLIFIER, as the reference's does: reading
+	// `a[1]` gives `a[0]`, and writing that back gives `a[1]` again.
+	shifted := New("Add", Arg{"this", index},
+		Arg{"expression", New("Literal", Arg{"this", strconv.Itoa(offset)}, Arg{"is_string", false})})
+	return []*Expression{Simplify(shifted, dialect)}, true
 }

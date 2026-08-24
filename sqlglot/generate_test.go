@@ -87,6 +87,18 @@ func TestGenerateShapes(t *testing.T) {
 			"SELECT ARRAY_AGG(x ORDER BY y)"},
 		{"ORDER BY inside an aggregate, descending", "select array_agg(x order by y desc)", "duckdb",
 			"SELECT ARRAY_AGG(x ORDER BY y DESC)"},
+		// DuckDB and PostgreSQL number from 1 and sqlglot's Bracket from 0, so
+		// the parser subtracts and the writer adds back. Getting one side
+		// without the other reads a[1] and writes a[0] -- a different element,
+		// in SQL that runs.
+		{"a subscript survives the shift", "SELECT a[1]", "duckdb", "SELECT a[1]"},
+		{"and the one before it", "SELECT a[0]", "duckdb", "SELECT a[0]"},
+		{"and in postgres", "SELECT a[2]", "postgres", "SELECT a[2]"},
+		{"a dialect that numbers from 0 is untouched", "SELECT a[1]", "databricks",
+			"SELECT a[1]"},
+		{"a non-integer index is not shifted", "SELECT a['k']", "duckdb", "SELECT a['k']"},
+		{"nor is a column index", "SELECT a[i]", "duckdb", "SELECT a[i]"},
+		{"nor is a slice", "SELECT a[1:2]", "duckdb", "SELECT a[1:2]"},
 		{"json extract scalar", "select j ->> '$.a.b'", "duckdb", "SELECT j ->> '$.a.b'"},
 		{"json subscript", "select j -> '$[0]'", "duckdb", "SELECT j -> '$[0]'"},
 		{"json quoted key", `select j -> '$."a b"'`, "duckdb", `SELECT j -> '$."a b"'`},

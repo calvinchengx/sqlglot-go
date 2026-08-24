@@ -66,8 +66,8 @@ Regenerate with `make service`; nothing in it is authored here.
 |---|---|---|---|---|---|
 | neutral | 997/997 | 521 | 997 | 476 | 0 |
 | tsql | 597/597 | 275 | 597 | 322 | 0 |
-| postgres | 857/857 | 381 | 857 | 476 | 0 |
-| duckdb | 1631/1631 | 1084 | 1631 | 547 | 0 |
+| postgres | 857/857 | 383 | 857 | 474 | 0 |
+| duckdb | 1631/1631 | 1111 | 1631 | 520 | 0 |
 | databricks | 424/424 | 217 | 424 | 207 | 0 |
 <!-- coverage:end -->
 
@@ -76,7 +76,7 @@ that matters** and must be zero: it counts statements the port parsed into a
 *different* tree than the reference. Unparsed is the honest size of the gap.
 
 The port also writes SQL back out, and is held to the reference's own output
-string for string: **2,348 of the statements it parses are written back
+string for string: **2,376 of the statements it parses are written back
 identically and none is written wrongly**, with 104 refused, and the guard's own rewrite -- inject a row ceiling, emit --
 lands as `TOP 500` in T-SQL and `LIMIT 500` in DuckDB from the same edit to the
 same node. Where a dialect would transform a statement in a way the port does
@@ -137,7 +137,7 @@ hand-edited table is a divergence the port has no logic to catch.
 `sqlglot.Simplify` is the first thing in the port that CHANGES a tree rather
 than reproducing one, and it is held to the reference's own contract —
 `tests/fixtures/optimizer/simplify.sql`, 480 pairs pinning what each statement
-becomes. **177 are folded exactly**; the rest the port declines to fold that
+becomes. **179 are folded exactly**; the rest the port declines to fold that
 far, which costs nothing: the statement still means what it meant.
 
 Every rewrite must also **survive being written down**: the port writes the
@@ -176,8 +176,8 @@ So there is one more harness, and it is the only one here whose failure means
 differ". `make oracle-exec` takes each statement as it was written, what
 the port writes back, and what the port *simplifies* it to, runs them **all**
 on a real engine, and compares the
-results. **319 statements are currently comparable** — 230 on DuckDB, which
-embeds, and 89 on PostgreSQL, which CI supplies as a service container and
+results. **323 statements are currently comparable** — 236 on DuckDB, which
+embeds, and 87 on PostgreSQL, which CI supplies as a service container and
 `make postgres` starts locally. An engine it cannot reach is skipped with a
 note, not a failure.
 

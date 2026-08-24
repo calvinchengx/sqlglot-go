@@ -245,12 +245,19 @@ func evalBooleanString(class, a, b string) *Expression {
 }
 
 func numberOf(e *Expression) (float64, bool) {
+	if e.Class == "Neg" {
+		n, ok := numberOf(childOf(e, "this"))
+		return -n, ok
+	}
 	text, _ := e.Args["this"].(string)
 	n, err := strconv.ParseFloat(text, 64)
 	return n, err == nil
 }
 
 func isIntegerLiteral(e *Expression) bool {
+	if e.Class == "Neg" {
+		return isIntegerLiteral(childOf(e, "this"))
+	}
 	text, _ := e.Args["this"].(string)
 	_, err := strconv.ParseInt(text, 10, 64)
 	return err == nil
@@ -347,8 +354,18 @@ func alwaysTrue(e *Expression) bool {
 
 func alwaysFalse(e *Expression) bool { return isFalse(e) || isNull(e) || isZero(e) }
 
+// isNumberLiteral counts `-1` as a number as well as `1`. The reference does
+// -- its `is_number` is true for a Neg over one -- and without that the shift
+// could not fold itself back: reading `a[0]` gives Neg(1), and writing it
+// again asks for Neg(1) + 1, which came out as the text `-1 + 1`.
 func isNumberLiteral(e *Expression) bool {
-	if e == nil || e.Class != "Literal" {
+	if e == nil {
+		return false
+	}
+	if e.Class == "Neg" {
+		return isNumberLiteral(childOf(e, "this"))
+	}
+	if e.Class != "Literal" {
 		return false
 	}
 	str, _ := e.Args["is_string"].(bool)
