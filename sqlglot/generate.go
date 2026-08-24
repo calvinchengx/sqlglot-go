@@ -224,6 +224,39 @@ func sameConst(got, want any) bool {
 // namedFunction writes a node the parser built from a function name, using the
 // keyword and the argument keys it was built from -- so the round trip lands
 // back on the same node.
+// refuseSensitive reports whether this node must be refused because an
+// argument would change how the reference writes the call. Keyed by CLASS and
+// arg KEY, so it applies whether the node is written by its function spelling
+// or by a template -- the template writer used to skip these entirely, which
+// is how a DATE_DIFF over date STRINGS came out without the casts the
+// reference adds.
+func (g *generator) refuseSensitive(e *Expression) bool {
+	arity := 0
+	for _, value := range e.Args {
+		switch v := value.(type) {
+		case *Expression:
+			if v != nil {
+				arity++
+			}
+		case []*Expression:
+			arity += len(v)
+		}
+	}
+	for _, key := range g.tables.CastSensitiveArgs[e.Class][arity] {
+		if child, _ := e.Args[key].(*Expression); isCastToNonInteger(child) {
+			g.fail("cast argument to " + e.Class)
+			return true
+		}
+	}
+	for _, key := range g.tables.ZeroSensitiveArgs[e.Class][arity] {
+		if child, _ := e.Args[key].(*Expression); isLiteral(child) {
+			g.fail("literal argument to " + e.Class)
+			return true
+		}
+	}
+	return false
+}
+
 func (g *generator) namedFunction(e *Expression, spec FuncSQL) string {
 	if spec.NoParens {
 		return spec.Name
@@ -246,51 +279,21 @@ func (g *generator) namedFunction(e *Expression, spec FuncSQL) string {
 	// have it, so a call that would need it is refused rather than written
 	// without it. A bare column is left alone -- the reference cannot type
 	// that one either.
-	upper := strings.ToUpper(spec.Name)
-	nodes := argNodes(e, spec)
+	if out := g.refuseSensitive(e); out {
+		return ""
+	}
 	// Keyed by ARITY as well as index: DuckDB wraps ROUND's second argument in
 	// a cast when the call has four arguments and not when it has two, and
 	// applying that at every arity refused ordinary two-argument calls.
-	for _, i := range g.tables.CastSensitiveArgs[upper][len(nodes)] {
-		if i < len(nodes) && isCastToNonInteger(nodes[i]) {
-			return g.fail("cast argument to " + spec.Name)
-		}
-	}
-	// A number is a separate trigger and refuses separately: DuckDB drops a
-	// zero group from REGEXP_EXTRACT, which says nothing about what any other
-	// name does with a number.
-	for _, i := range g.tables.ZeroSensitiveArgs[upper][len(nodes)] {
-		if i < len(nodes) && isNumericLiteral(nodes[i]) {
-			return g.fail("number argument to " + spec.Name)
-		}
-	}
 	return spec.Name + "(" + strings.Join(parts, ", ") + ")"
 }
 
-// argNodes flattens a call's arguments in the order they are written, so an
-// index from CastSensitiveArgs lines up with the argument the caller passed.
-func argNodes(e *Expression, spec FuncSQL) []*Expression {
-	out := []*Expression{}
-	for _, key := range spec.Keys {
-		switch v := e.Args[key].(type) {
-		case *Expression:
-			out = append(out, v)
-		case []*Expression:
-			out = append(out, v...)
-		}
-	}
-	return out
-}
-
-// isNumericLiteral reports whether an argument is a plain number. A number can
-// change the call as much as a cast can: DuckDB drops a zero group from
-// REGEXP_EXTRACT entirely, so writing it back is a different call.
-func isNumericLiteral(e *Expression) bool {
-	if e == nil || e.Class != "Literal" {
-		return false
-	}
-	b, _ := e.Args["is_string"].(bool)
-	return !b
+// isLiteral reports whether an argument is a literal of either kind. A literal
+// can change the call as much as a cast can: DuckDB drops a zero group from
+// REGEXP_EXTRACT entirely, and wraps a date STRING in a cast the tree does not
+// carry -- both make the written call differ from the one the reference emits.
+func isLiteral(e *Expression) bool {
+	return e != nil && e.Class == "Literal"
 }
 
 // isCastToNonInteger reports whether an argument asserts a type that is not an

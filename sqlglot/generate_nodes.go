@@ -780,6 +780,9 @@ func (g *generator) writeSyntaxFunction(e *Expression) string {
 // syntaxTemplate fills the template recorded for this class and this set of
 // present arguments, or reports that there is none.
 func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
+	if g.refuseSensitive(e) {
+		return "", true
+	}
 	present := map[string]bool{}
 	for key, value := range e.Args {
 		switch v := value.(type) {

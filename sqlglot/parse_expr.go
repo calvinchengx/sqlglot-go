@@ -949,6 +949,18 @@ func (p *parser) parseFunction() (*Expression, error) {
 		if n, bounded := spec.consumes(); bounded && len(args) > n {
 			return nil, p.unsupported("extra arguments to " + name)
 		}
+		// A wrap takes the argument's NAME, so an argument with no name -- a
+		// cast, a subquery -- is one the reference does not name either: it
+		// keeps the node instead, which is a different tree. Refused here
+		// rather than built from an empty name.
+		for _, a := range spec.Args {
+			if a.Wrap == "" || a.Index >= len(args) {
+				continue
+			}
+			if args[a.Index].Name() == "" {
+				return nil, p.unsupported("unnamed argument where " + upper + " wants a word")
+			}
+		}
 		// A string literal in one of these slots makes the reference build
 		// something else -- an Interval step, a `modifiers` argument that
 		// shifts the rest. The recorded signature was probed with columns and

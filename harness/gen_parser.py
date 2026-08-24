@@ -259,6 +259,18 @@ def probe_functions(P, exp, dialect=""):
                 return False
         return True
 
+    def wrapped_indexes(spec):
+        """Positions whose NAME the builder takes, not the argument itself.
+
+        A unit slot -- the DAY in DATE_DIFF(a, b, DAY) -- holds a bare word,
+        and substituting a cast or a subquery there tests a call nobody can
+        write. The reference keeps the cast instead of naming it, so the spec
+        does not hold, and rejecting the whole arity over that turned away
+        every real DATE_DIFF there is. The substitutions skip these positions,
+        and the port refuses at parse time when the argument has no name.
+        """
+        return {how["index"] for _, how in spec if "wrap" in how}
+
     out = {}
     by_arity: dict[str, dict[int, tuple]] = {}
     unit_maps: dict[str, dict] = {}
@@ -293,8 +305,11 @@ def probe_functions(P, exp, dialect=""):
         # with one kind of argument cannot see that, so the spec is put to
         # several kinds and kept only if it survives all of them.
         ok = True
+        skip = wrapped_indexes(spec)
         for kind in probe_substitutions(exp):
             for i in range(len(args)):
+                if i in skip:
+                    continue
                 subst = list(args)
                 subst[i] = kind.copy()
                 try:
@@ -314,7 +329,10 @@ def probe_functions(P, exp, dialect=""):
         # are strings; with placeholder columns, or with one string among
         # columns, it hands them back unchanged and looks perfectly ordinary.
         if ok and args:
-            allstr = [exp.Literal.string(f"s{i}") for i in range(len(args))]
+            allstr = [
+                exp.column(f"w{i}") if i in skip else exp.Literal.string(f"s{i}")
+                for i in range(len(args))
+            ]
             try:
                 other = call_builder(builder, allstr, dialect)
             except Exception:  # noqa: BLE001 -- strings may be invalid for this name
@@ -363,8 +381,11 @@ def probe_functions(P, exp, dialect=""):
             # Held to the same substitutions as any other spec: a builder that
             # inspects its arguments is refused at every arity.
             fine = True
+            narrow_skip = wrapped_indexes(narrow_spec)
             for kind in probe_substitutions(exp):
                 for i in range(width):
+                    if i in narrow_skip:
+                        continue
                     subst = list(narrow)
                     subst[i] = kind.copy()
                     try:
@@ -380,7 +401,10 @@ def probe_functions(P, exp, dialect=""):
                 if not fine:
                     break
             if fine and width:
-                allstr = [exp.Literal.string(f"s{i}") for i in range(width)]
+                allstr = [
+                    exp.column(f"w{i}") if i in narrow_skip else exp.Literal.string(f"s{i}")
+                    for i in range(width)
+                ]
                 try:
                     other = call_builder(builder, allstr, dialect)
                 except Exception:  # noqa: BLE001
@@ -792,7 +816,23 @@ def string_sensitive_args(P, exp, funcs, dialect=""):
     return {k: sorted(set(v)) for k, v in sensitive.items()}
 
 
-def _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive):
+def _record(sensitive, name, arity, index, keyof):
+    """Record a sensitive position by the node ARG KEY it lands on.
+
+    The call's argument order and the node's key order are not the same thing:
+    DATE_DIFF(unit, a, b) puts its unit FIRST in the call and stores it last in
+    the node, so an index recorded from the call meant nothing to a generator
+    reading keys. The key is the same on both sides.
+    """
+    key = (keyof or {}).get(index)
+    if key is None:
+        return
+    bucket = sensitive.setdefault(name, {}).setdefault(arity, [])
+    if key not in bucket:
+        bucket.append(key)
+
+
+def _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive, keyof=None):
     """One substitution for cast_sensitive_args, recorded per ARITY.
 
     DuckDB's ROUND wraps its second argument in CAST(... AS INT) when the call
@@ -806,7 +846,7 @@ def _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive):
         swapped[i] = probe
         got = call_builder(builder, swapped, dialect).sql(dialect=dialect or None)
     except Exception:  # noqa: BLE001 -- this argument is invalid here
-        sensitive.setdefault(name, {}).setdefault(len(plain), []).append(i)
+        _record(sensitive, name, len(plain), i, keyof)
         return
     token = f"__probeArg{chr(65 + i)}"
     if base_sql.count(token) != 1:
@@ -815,16 +855,12 @@ def _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive):
         # The argument VANISHED: DuckDB drops a zero group from
         # REGEXP_EXTRACT entirely. Writing it back is a different call, and
         # its absence is the signal rather than something to skip over.
-        bucket = sensitive.setdefault(name, {}).setdefault(len(plain), [])
-        if i not in bucket:
-            bucket.append(i)
+        _record(sensitive, name, len(plain), i, keyof)
         return
     if got.count(probe_sql) != 1:
         return
     if got != base_sql.replace(token, probe_sql, 1):
-        bucket = sensitive.setdefault(name, {}).setdefault(len(plain), [])
-        if i not in bucket:
-            bucket.append(i)
+        _record(sensitive, name, len(plain), i, keyof)
 
 
 def cast_sensitive_args(P, exp, dialect, funcs):
@@ -845,8 +881,8 @@ def cast_sensitive_args(P, exp, dialect, funcs):
     executor does.
     """
     probe = exp.column("__probe_0")
-    sensitive: dict[str, dict[int, list[int]]] = {}
-    zero_sensitive: dict[str, dict[int, list[int]]] = {}
+    sensitive: dict[str, dict[int, list[str]]] = {}
+    zero_sensitive: dict[str, dict[int, list[str]]] = {}
     for name in funcs:
         builder = P.FUNCTIONS.get(name)
         if builder is None:
@@ -861,6 +897,20 @@ def cast_sensitive_args(P, exp, dialect, funcs):
                 base_sql = base.sql(dialect=dialect or None)
             except Exception:  # noqa: BLE001 -- invalid arity or unrenderable for this name
                 continue
+            # Which node arg key each call position landed on. The call's
+            # argument order and the node's key order are not the same thing --
+            # DATE_DIFF(unit, a, b) stores its unit LAST -- so a position taken
+            # from the call meant nothing to a generator reading keys.
+            by_id = {id(a): n for n, a in enumerate(plain)}
+            keyof: dict[int, str] = {}
+            for key, value in base.args.items():
+                if id(value) in by_id:
+                    keyof[by_id[id(value)]] = key
+                elif isinstance(value, exp.Expr):
+                    for inner in value.walk():
+                        if id(inner) in by_id:
+                            keyof[by_id[id(inner)]] = key
+                            break
             for i in range(width):
                 # Two things can change how the CALL is written: an argument
                 # whose type is visible (a cast), and a literal ZERO, which
@@ -869,14 +919,23 @@ def cast_sensitive_args(P, exp, dialect, funcs):
                 # moves for a cast says nothing about what it does with a
                 # number, and refusing on both because one was observed turned
                 # away 25 statements that render perfectly well.
+                cls_name = type(base).__name__
                 _cast_probe(
                     builder, plain, base_sql, i,
                     exp.cast(exp.column(f"__probeArg{chr(65 + i)}"), "DOUBLE"),
-                    dialect, name, sensitive,
+                    dialect, cls_name, sensitive, keyof,
                 )
                 _cast_probe(
                     builder, plain, base_sql, i, exp.Literal.number(0),
-                    dialect, name, zero_sensitive,
+                    dialect, cls_name, zero_sensitive, keyof,
+                )
+                # A STRING can be coerced too: DuckDB writes
+                # DATE_DIFF('QUARTER', CAST('2009-02-13' AS DATE), ...), adding
+                # a cast the tree does not carry. Same bucket as the number,
+                # since both are "a literal the reference wraps".
+                _cast_probe(
+                    builder, plain, base_sql, i, exp.Literal.string("2009-02-13"),
+                    dialect, cls_name, zero_sensitive, keyof,
                 )
             continue
 
@@ -1564,12 +1623,12 @@ def main() -> int:
         "\t// builder rewrites the literal on the way in.\n",
         "\tTimeMapping    map[string]string\n",
         "\tTimeFormatArgs map[string][]int\n",
-        "\tCastSensitiveArgs map[string]map[int][]int\n",
+        "\tCastSensitiveArgs map[string]map[int][]string\n",
         "\t// ZeroSensitiveArgs is the same idea for a NUMBER rather than a\n",
         "\t// cast: DuckDB drops a zero group from REGEXP_EXTRACT entirely.\n",
         "\t// Kept apart from the cast trigger, because a call that moves for\n",
         "\t// one says nothing about the other.\n",
-        "\tZeroSensitiveArgs map[string]map[int][]int\n",
+        "\tZeroSensitiveArgs map[string]map[int][]string\n",
 
         "\tStringSensitiveArgs map[string][]int\n",
         "\t// WritesBooleanLiteral: whether TRUE and FALSE are written as\n",
@@ -1821,11 +1880,11 @@ def main() -> int:
         for field, table in (("ZeroSensitiveArgs", zeros), ("CastSensitiveArgs", casts)):
             if not table:
                 continue
-            out.append(f"\t\t{field}: map[string]map[int][]int{{\n")
+            out.append(f"\t\t{field}: map[string]map[int][]string{{\n")
             for fname in sorted(table):
                 inner = "".join(
-                    "%d: {%s}, " % (arity, ", ".join(str(i) for i in idxs))
-                    for arity, idxs in sorted(table[fname].items())
+                    "%d: {%s}, " % (arity, ", ".join(gostr(k) for k in keys))
+                    for arity, keys in sorted(table[fname].items())
                 )
                 out.append(f"\t\t\t{gostr(fname)}: {{{inner}}},\n")
             out.append("\t\t},\n")
