@@ -197,6 +197,14 @@ func (p *parser) parseTable() (*Expression, error) {
 		// `main.read_csv_auto('/etc/passwd')` is a real bypass, and the audit
 		// line has to name it.
 		if p.namesAFunctionCall() {
+			// Some names are not a Table here at all: `FROM UNNEST(x)` is an
+			// Unnest in the reference. Wrapping the call in a Table writes the
+			// same SQL back and is a different tree, so it is refused.
+			if c := p.curr(); c != nil {
+				if _, isTable := p.tables.TableFunctions[strings.ToUpper(c.Text)]; isTable {
+					return nil, p.unsupported("table function " + strings.ToUpper(c.Text))
+				}
+			}
 			f, err := p.parseFunction()
 			if err != nil {
 				return nil, err
@@ -310,8 +318,34 @@ func (p *parser) parseTableAlias() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	if p.at(TokL_PAREN) {
-		return nil, p.unsupported("table alias with column list")
+	columns, err := p.parseAliasColumns()
+	if err != nil {
+		return nil, err
 	}
-	return New("TableAlias", Arg{"this", id}, Arg{"columns", nil}), nil
+	return New("TableAlias", Arg{"this", id}, Arg{"columns", columns}), nil
+}
+
+// parseAliasColumns reads the `(a, b)` that may follow an alias, naming the
+// columns of what it aliases. The same shape serves a table alias and a CTE:
+// both carry it on a TableAlias.
+func (p *parser) parseAliasColumns() ([]*Expression, error) {
+	if !p.at(TokL_PAREN) {
+		return nil, nil
+	}
+	p.advance()
+	var columns []*Expression
+	for !p.at(TokR_PAREN) {
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		columns = append(columns, id)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed alias column list")
+	}
+	return columns, nil
 }

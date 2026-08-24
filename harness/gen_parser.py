@@ -449,6 +449,40 @@ def json_path_is_parsed(dialect: str) -> bool:
     return len(e.args["expression"].args["expressions"]) > 2
 
 
+def table_functions(dialect: str, P) -> list[str]:
+    """Names that are NOT a table when they appear in a FROM clause.
+
+    `FROM UNNEST(x)` is an Unnest in the reference, not a Table wrapping a
+    call, and the port built the second -- SQL that round-trips perfectly and
+    is a different tree. Nothing about the call itself says so, so every name
+    in the catalogue is put in a FROM clause and the result looked at.
+    """
+    import sqlglot
+
+    out = []
+    for name in P.FUNCTIONS:
+        if not name.replace("_", "").isalnum():
+            continue
+        try:
+            parsed = sqlglot.parse_one(f"SELECT a FROM {name}(x)", dialect=dialect or None)
+        except Exception:  # noqa: BLE001 -- not usable in a FROM clause
+            continue
+        source = (parsed.args.get("from_") or parsed).this
+        if source is not None and type(source).__name__ != "Table":
+            out.append(name)
+    return sorted(out)
+
+
+def writes_into_unlogged(dialect: str, exp) -> bool:
+    """Whether `SELECT ... INTO UNLOGGED foo` keeps the UNLOGGED.
+
+    PostgreSQL writes it; T-SQL has no such thing and drops it. Same tree,
+    two spellings. PROBED.
+    """
+    node = exp.Into(this=exp.table_("foo"), temporary=False, unlogged=True)
+    return "UNLOGGED" in node.sql(dialect=dialect or None)
+
+
 def bracket_is_rewritten(dialect: str) -> bool:
     """Whether `a[1]` comes back as something other than a plain subscript.
 
@@ -1222,6 +1256,12 @@ def main() -> int:
         "\t// port has not implemented is missing GRAMMAR, which is a\n",
         "\t// different thing from a builder it cannot describe.\n",
         "\tSyntaxFunctions map[string]struct{}\n",
+        "\t// TableFunctions are names that are NOT a Table in a FROM clause:\n",
+        "\t// `FROM UNNEST(x)` is an Unnest. The port has no node for these,\n",
+        "\t// and wrapping the call in a Table round-trips perfectly while\n",
+        "\t// being a different tree, so they are refused. PROBED.\n",
+        "\tTableFunctions map[string]struct{}\n",
+
         "\t// SyntaxSQL is how each of those is WRITTEN, one template per set\n",
         "\t// of present arguments, rendered from the reference.\n",
         "\tSyntaxSQL map[string][]SyntaxTemplate\n",
@@ -1263,6 +1303,9 @@ def main() -> int:
         "\t// JSONPathIsParsed: PostgreSQL keeps the string after `->` whole\n",
         "\t// as a single key; everyone else parses it into path parts.\n",
         "\tJSONPathIsParsed bool\n",
+        "\t// WritesIntoUnlogged: PostgreSQL keeps UNLOGGED before the table\n",
+        "\t// in SELECT ... INTO; T-SQL has no such kind and drops it.\n",
+        "\tWritesIntoUnlogged bool\n",
         "\tBracketIsRewritten bool\n",
         "\tWritesBooleanLiteral bool\n",
         "\tIsNotNullWrapsInNot bool\n",
@@ -1371,6 +1414,7 @@ def main() -> int:
         # missing GRAMMAR under a label that reads as "cannot be ported" -- and
         # that label is what decides what gets built next.
         out.append(strset("SyntaxFunctions", sorted(P.FUNCTION_PARSERS)))
+        out.append(strset("TableFunctions", table_functions(name, P)))
         funcs, by_arity, unit_maps = probe_functions(P, exp, name)
         if unit_maps:
             out.append("\t\tUnitAliases: map[string]map[string]string{\n")
@@ -1514,6 +1558,9 @@ def main() -> int:
         _ao, _ac = array_delimiters(name, exp)
         out.append(f"\t\tArrayOpen: {gostr(_ao)},\n")
         out.append(f"\t\tArrayClose: {gostr(_ac)},\n")
+        out.append(
+            f"\t\tWritesIntoUnlogged: {str(writes_into_unlogged(name, exp)).lower()},\n"
+        )
         out.append(
             f"\t\tBracketIsRewritten: {str(bracket_is_rewritten(name)).lower()},\n"
         )

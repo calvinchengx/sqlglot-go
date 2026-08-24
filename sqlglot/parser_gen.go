@@ -149,6 +149,11 @@ type ParserTables struct {
 	// port has not implemented is missing GRAMMAR, which is a
 	// different thing from a builder it cannot describe.
 	SyntaxFunctions map[string]struct{}
+	// TableFunctions are names that are NOT a Table in a FROM clause:
+	// `FROM UNNEST(x)` is an Unnest. The port has no node for these,
+	// and wrapping the call in a Table round-trips perfectly while
+	// being a different tree, so they are refused. PROBED.
+	TableFunctions map[string]struct{}
 	// SyntaxSQL is how each of those is WRITTEN, one template per set
 	// of present arguments, rendered from the reference.
 	SyntaxSQL           map[string][]SyntaxTemplate
@@ -188,7 +193,10 @@ type ParserTables struct {
 	JSONArrowSetsScalarOnly bool
 	// JSONPathIsParsed: PostgreSQL keeps the string after `->` whole
 	// as a single key; everyone else parses it into path parts.
-	JSONPathIsParsed     bool
+	JSONPathIsParsed bool
+	// WritesIntoUnlogged: PostgreSQL keeps UNLOGGED before the table
+	// in SELECT ... INTO; T-SQL has no such kind and drops it.
+	WritesIntoUnlogged   bool
 	BracketIsRewritten   bool
 	WritesBooleanLiteral bool
 	IsNotNullWrapsInNot  bool
@@ -1512,6 +1520,9 @@ var parserTables = map[string]*ParserTables{
 			"TRY_CONVERT":    {},
 			"XMLELEMENT":     {},
 			"XMLTABLE":       {},
+		},
+		TableFunctions: map[string]struct{}{
+			"UNNEST": {},
 		},
 		Functions: map[string]FuncSpec{
 			"ABS":                             {"Abs", []FuncArg{{"this", 0, false, nil, ""}}},
@@ -3182,6 +3193,7 @@ var parserTables = map[string]*ParserTables{
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
 		ArrayClose:               ")",
+		WritesIntoUnlogged:       true,
 		BracketIsRewritten:       false,
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,
@@ -4643,6 +4655,9 @@ var parserTables = map[string]*ParserTables{
 			"TRY_CONVERT":    {},
 			"XMLELEMENT":     {},
 			"XMLTABLE":       {},
+		},
+		TableFunctions: map[string]struct{}{
+			"UNNEST": {},
 		},
 		UnitAliases: map[string]map[string]string{
 			"DATEADD": {"D": "DAY", "DAY": "DAY", "DD": "DAY", "M": "MONTH", "MM": "MONTH", "MONTH": "MONTH", "Q": "QUARTER", "QQ": "QUARTER", "QUARTER": "QUARTER", "WEEK": "WEEK", "WK": "WEEK", "WW": "WEEK", "YEAR": "YEAR", "YY": "YEAR", "YYYY": "YEAR"},
@@ -6332,6 +6347,7 @@ var parserTables = map[string]*ParserTables{
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
 		ArrayClose:               ")",
+		WritesIntoUnlogged:       false,
 		BracketIsRewritten:       false,
 		WritesBooleanLiteral:     false,
 		IsNotNullWrapsInNot:      true,
@@ -7798,6 +7814,9 @@ var parserTables = map[string]*ParserTables{
 			"TRY_CONVERT":    {},
 			"XMLELEMENT":     {},
 			"XMLTABLE":       {},
+		},
+		TableFunctions: map[string]struct{}{
+			"UNNEST": {},
 		},
 		Functions: map[string]FuncSpec{
 			"ABS":                             {"Abs", []FuncArg{{"this", 0, false, nil, ""}}},
@@ -9498,6 +9517,7 @@ var parserTables = map[string]*ParserTables{
 		IntervalUnitInsideString: true,
 		ArrayOpen:                "ARRAY[",
 		ArrayClose:               "]",
+		WritesIntoUnlogged:       true,
 		BracketIsRewritten:       true,
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      false,
@@ -11000,6 +11020,9 @@ var parserTables = map[string]*ParserTables{
 			"TRY_CONVERT":     {},
 			"XMLELEMENT":      {},
 			"XMLTABLE":        {},
+		},
+		TableFunctions: map[string]struct{}{
+			"UNNEST": {},
 		},
 		Functions: map[string]FuncSpec{
 			"ABS":                             {"Abs", []FuncArg{{"this", 0, false, nil, ""}}},
@@ -12795,6 +12818,7 @@ var parserTables = map[string]*ParserTables{
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "[",
 		ArrayClose:               "]",
+		WritesIntoUnlogged:       true,
 		BracketIsRewritten:       true,
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,
@@ -14314,6 +14338,9 @@ var parserTables = map[string]*ParserTables{
 			"TRY_CONVERT":          {},
 			"XMLELEMENT":           {},
 			"XMLTABLE":             {},
+		},
+		TableFunctions: map[string]struct{}{
+			"UNNEST": {},
 		},
 		Functions: map[string]FuncSpec{
 			"ABS":                             {"Abs", []FuncArg{{"this", 0, false, nil, ""}}},
@@ -16038,6 +16065,7 @@ var parserTables = map[string]*ParserTables{
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
 		ArrayClose:               ")",
+		WritesIntoUnlogged:       true,
 		BracketIsRewritten:       false,
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,

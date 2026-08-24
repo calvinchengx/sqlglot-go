@@ -61,8 +61,13 @@ func (p *parser) parseWith() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		var cteColumns []*Expression
 		if p.at(TokL_PAREN) && p.next() != nil && p.next().Type != TokSELECT {
-			return nil, p.unsupported("CTE with a column list")
+			cols, err := p.parseAliasColumns()
+			if err != nil {
+				return nil, err
+			}
+			cteColumns = cols
 		}
 		if !p.match(TokALIAS) {
 			return nil, p.unsupported("CTE without AS")
@@ -79,7 +84,7 @@ func (p *parser) parseWith() (*Expression, error) {
 		}
 		ctes = append(ctes, New("CTE",
 			Arg{"this", inner},
-			Arg{"alias", New("TableAlias", Arg{"this", alias}, Arg{"columns", nil})},
+			Arg{"alias", New("TableAlias", Arg{"this", alias}, Arg{"columns", cteColumns})},
 			Arg{"materialized", nil},
 			Arg{"key_expressions", nil},
 		))
@@ -208,12 +213,19 @@ func (p *parser) parseSelect() (*Expression, error) {
 		if p.atAny(TokTEMPORARY) {
 			return nil, p.unsupported("SELECT INTO with a table kind")
 		}
+		// `INTO UNLOGGED foo` names a KIND before the table. Reading it as the
+		// table name made UNLOGGED the target of the write.
+		unlogged := false
+		if c := p.curr(); c != nil && c.Type == TokVAR && strings.EqualFold(c.Text, "UNLOGGED") {
+			p.advance()
+			unlogged = true
+		}
 		target, err := p.parseTable()
 		if err != nil {
 			return nil, err
 		}
 		sel.Set("into", New("Into", Arg{"this", target},
-			Arg{"temporary", false}, Arg{"unlogged", false}))
+			Arg{"temporary", false}, Arg{"unlogged", unlogged}))
 	}
 
 	if p.at(TokFROM) {

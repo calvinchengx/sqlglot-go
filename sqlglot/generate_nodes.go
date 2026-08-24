@@ -26,7 +26,7 @@ func init() {
 		"Intersect":     (*generator).writeSetOperation,
 		"With":          (*generator).writeWith,
 		"CTE":           (*generator).writeCTE,
-		"TableAlias":    (*generator).writeChildThis,
+		"TableAlias":    (*generator).writeTableAlias,
 		"From":          (*generator).writeFrom,
 		"Table":         (*generator).writeTable,
 		"Join":          (*generator).writeJoin,
@@ -63,6 +63,9 @@ func init() {
 		"Window":        (*generator).writeWindow,
 		"Interval":      (*generator).writeInterval,
 		"Lambda":        (*generator).writeLambda,
+		"Struct":        (*generator).writeStruct,
+		"PropertyEQ":    (*generator).writePropertyEQ,
+		"Filter":        (*generator).writeFilter,
 		"Extract":       (*generator).writeSyntaxFunction,
 		"Trim":          (*generator).writeSyntaxFunction,
 		"Substring":     (*generator).writeSyntaxFunction,
@@ -225,7 +228,15 @@ func (g *generator) writeSubquery(e *Expression) string {
 
 func (g *generator) writeWhere(e *Expression) string  { return "WHERE " + g.child(e, "this") }
 func (g *generator) writeHaving(e *Expression) string { return "HAVING " + g.child(e, "this") }
-func (g *generator) writeInto(e *Expression) string   { return "INTO " + g.child(e, "this") }
+
+// writeInto keeps the table KIND that sits before the name: `INTO UNLOGGED foo`.
+func (g *generator) writeInto(e *Expression) string {
+	out := "INTO "
+	if unlogged, _ := e.Args["unlogged"].(bool); unlogged && g.tables.WritesIntoUnlogged {
+		out += "UNLOGGED "
+	}
+	return out + g.child(e, "this")
+}
 
 func (g *generator) writeGroup(e *Expression) string {
 	// `GROUP BY ALL` is carried as a flag, so the expression list is empty and
@@ -771,4 +782,36 @@ func (g *generator) writeSyntaxFunction(e *Expression) string {
 		return out
 	}
 	return g.fail(e.Class)
+}
+
+// writeTableAlias writes the alias and, when it has one, the column list that
+// names what it aliases: `x AS y(a, b)`.
+func (g *generator) writeTableAlias(e *Expression) string {
+	out := g.child(e, "this")
+	columns, _ := e.Args["columns"].([]*Expression)
+	if len(columns) == 0 {
+		return out
+	}
+	rendered := make([]string, 0, len(columns))
+	for _, c := range columns {
+		rendered = append(rendered, g.node(c))
+	}
+	return out + "(" + strings.Join(rendered, ", ") + ")"
+}
+
+func (g *generator) writeStruct(e *Expression) string { return "{" + g.list(e) + "}" }
+
+// writePropertyEQ writes a struct entry. The key is an Identifier in the tree
+// and a quoted string on the page.
+func (g *generator) writePropertyEQ(e *Expression) string {
+	key, _ := e.Args["this"].(*Expression)
+	name := ""
+	if key != nil {
+		name, _ = key.Args["this"].(string)
+	}
+	return "'" + escapeStringBody(name, g.cfg.StringEscapes) + "': " + g.child(e, "expression")
+}
+
+func (g *generator) writeFilter(e *Expression) string {
+	return g.child(e, "this") + " FILTER(" + g.child(e, "expression") + ")"
 }

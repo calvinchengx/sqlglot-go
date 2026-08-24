@@ -462,6 +462,25 @@ func (p *parser) parsePostfix() (*Expression, error) {
 		// In T-SQL `[` opens a quoted identifier and the tokenizer has already
 		// consumed it, so this branch is unreachable there -- which is why it
 		// needs no dialect flag.
+		// `SUM(x) FILTER(WHERE p)` wraps the aggregate in a Filter carrying a
+		// Where -- not a call to a function named FILTER.
+		if p.at(TokFILTER) && p.next() != nil && p.next().Type == TokL_PAREN {
+			p.advance()
+			p.advance()
+			if !p.match(TokWHERE) {
+				return nil, p.unsupported("FILTER without WHERE")
+			}
+			pred, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed FILTER")
+			}
+			this = New("Filter", Arg{"this", this},
+				Arg{"expression", New("Where", Arg{"this", pred})})
+			continue
+		}
 		// `f(x) OVER (...)` wraps the call in a Window.
 		if p.at(TokOVER) {
 			w, err := p.parseWindow(this)
@@ -534,6 +553,38 @@ func (p *parser) parsePrimary() (*Expression, error) {
 
 	if c.Type == TokINTERVAL {
 		return p.parseInterval()
+	}
+
+	// `{'a': 1, 'b': x}` is a Struct whose items are PropertyEQ: the key is an
+	// IDENTIFIER even though it is written as a string.
+	if c.Type == TokL_BRACE {
+		p.advance()
+		var items []*Expression
+		for !p.at(TokR_BRACE) {
+			key := p.curr()
+			if key == nil {
+				return nil, p.unsupported("struct key")
+			}
+			p.advance()
+			if !p.match(TokCOLON) {
+				return nil, p.unsupported("struct entry without a colon")
+			}
+			value, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			items = append(items, New("PropertyEQ",
+				Arg{"this", New("Identifier", Arg{"this", key.Text},
+					Arg{"quoted", !isBareIdentifier(key.Text)})},
+				Arg{"expression", value}))
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokR_BRACE) {
+			return nil, p.unsupported("unclosed struct")
+		}
+		return New("Struct", Arg{"expressions", items}), nil
 	}
 
 	// `x LIKE ALL (...)` and `x = ANY (...)` are QUANTIFIERS over what follows,
@@ -1153,4 +1204,27 @@ func (p *parser) parseJSONPathOperand() (*Expression, error) {
 		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
 	}
 	return path, err
+}
+
+// isBareIdentifier reports whether a struct key could be written without
+// quotes. The reference records `{'a b': 1}` with quoted=true and `{'a': 1}`
+// with quoted=false, from the same written form -- the flag describes the NAME,
+// not how it was typed.
+func isBareIdentifier(text string) bool {
+	if text == "" {
+		return false
+	}
+	for i, r := range text {
+		switch {
+		case r == '_':
+		case r >= 'a' && r <= 'z', r >= 'A' && r <= 'Z':
+		case r >= '0' && r <= '9':
+			if i == 0 {
+				return false
+			}
+		default:
+			return false
+		}
+	}
+	return true
 }
