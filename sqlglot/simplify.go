@@ -61,8 +61,8 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 		}
 	}
 	out = simplifyLiterals(out)
-	out = simplifyNot(out, dialect)
-	out = simplifyConnectors(out)
+	out = simplifyNot(out, parent, dialect)
+	out = simplifyConnectors(out, parent)
 	out = simplifyParens(out, parent)
 	out = sortComparison(out)
 	return out
@@ -99,7 +99,19 @@ func simplifyParens(e, parent *Expression) *Expression {
 		return e
 	}
 	switch {
-	case isA("Connector", this), isA("Predicate", this):
+	case parent == nil:
+		// Parentheses around the whole statement carry no precedence.
+	case isA("Connector", this):
+		// `A AND (A OR B)` is NOT `A AND A OR B`: AND binds tighter, so
+		// dropping the pair re-associates the statement into `(A AND A) OR B`
+		// and asks a different question. Only a connector nested inside the
+		// SAME connector is associative and safe to flatten.
+		if this.Class != parent.Class {
+			return e
+		}
+	case isA("Predicate", this):
+		// A comparison binds tighter than any connector and than NOT, so its
+		// parentheses are decoration.
 	case this.Class == "Boolean", this.Class == "Null", this.Class == "Paren":
 	default:
 		return e
@@ -248,6 +260,13 @@ func isIntegerLiteral(e *Expression) bool {
 // drops it, which would write a different literal than the reference for every
 // float that happens to be whole.
 func numberLit(v float64, integral bool) *Expression {
+	// A negative result is Neg(Literal) in the reference, not a Literal whose
+	// text begins with a minus -- that is what parsing `-1` produces, and the
+	// optimizer's output has to be a tree the parser could have built. Writing
+	// Literal("-1") produced SQL that read back as a different tree.
+	if v < 0 {
+		return New("Neg", Arg{"this", numberLit(-v, integral)})
+	}
 	var text string
 	if integral {
 		text = strconv.FormatInt(int64(v), 10)
@@ -389,7 +408,7 @@ func safeToEliminateDoubleNegation(dialect string) bool {
 // De Morgan over a parenthesised connector is the reference's headline case
 // here and is NOT ported yet: it rewrites structure rather than folding a
 // constant, and the nodes it would touch are left alone.
-func simplifyNot(e *Expression, dialect string) *Expression {
+func simplifyNot(e, parent *Expression, dialect string) *Expression {
 	if e.Class != "Not" {
 		return e
 	}
@@ -401,7 +420,8 @@ func simplifyNot(e *Expression, dialect string) *Expression {
 	// `NULL AND TRUE`, the same guard it applies whenever a fold would leave a
 	// value where a predicate belongs.
 	if isNull(this) {
-		return New("And", Arg{"this", New("Null")}, Arg{"expression", boolLit(true)})
+		return parenthesizeNestedConnector(
+			New("And", Arg{"this", New("Null")}, Arg{"expression", boolLit(true)}), parent)
 	}
 	if to, ok := complementComparison[this.Class]; ok {
 		left, _ := this.Args["this"].(*Expression)
@@ -441,7 +461,7 @@ func simplifyNot(e *Expression, dialect string) *Expression {
 }
 
 // simplifyConnectors folds an AND or an OR whose operands are decided.
-func simplifyConnectors(e *Expression) *Expression {
+func simplifyConnectors(e, parent *Expression) *Expression {
 	if e.Class != "And" && e.Class != "Or" {
 		return e
 	}
@@ -456,9 +476,7 @@ func simplifyConnectors(e *Expression) *Expression {
 	// comes back as `A OR (B AND NOT A)`. The ordering is not ported, so only
 	// the two-operand case is folded, where there is nothing to order.
 	if left.Equal(right) {
-		if folded := keepCondition(left); folded != nil {
-			return folded
-		}
+		return keepCondition(left, parent)
 	}
 
 	var folded *Expression
@@ -494,20 +512,38 @@ func simplifyConnectors(e *Expression) *Expression {
 	if folded == nil {
 		return e
 	}
-	if out := keepCondition(folded); out != nil {
-		return out
+	return keepCondition(folded, parent)
+}
+
+// parenthesizeNestedConnector is the reference's rule, and its comment says
+// exactly why: "The generator flattens nested connectors and relies on Paren
+// nodes for grouping." A connector under a NOT, or under a connector of a
+// different kind, needs its parentheses back -- otherwise `NOT NULL AND TRUE`
+// reads as `(NOT NULL) AND TRUE`, which is a different statement.
+//
+// Skipping this produced rewrites that parsed cleanly and meant something
+// else. Nothing that runs them could have caught it either: these are bare
+// predicates over undefined columns, so the execution oracle never sees them.
+func parenthesizeNestedConnector(e, parent *Expression) *Expression {
+	if !isA("Connector", e) {
+		return e
 	}
-	return folded
+	if parent != nil && (parent.Class == "Not" ||
+		(isA("Connector", parent) && parent.Class != e.Class)) {
+		return New("Paren", Arg{"this", e})
+	}
+	return e
 }
 
 // keepCondition puts a TRUE back when a fold would leave a VALUE where a
 // predicate belongs. Reducing `x AND TRUE` to a bare column changes a
 // condition into a column reference, so the reference writes `x AND TRUE` --
 // which is why the contract says `x AND x` becomes `x AND TRUE` and not `x`.
-func keepCondition(folded *Expression) *Expression {
+func keepCondition(folded, parent *Expression) *Expression {
 	if folded.Class == "And" || folded.Class == "Or" || folded.Class == "Boolean" ||
 		isKnownBoolean(folded) {
 		return folded
 	}
-	return New("And", Arg{"this", folded}, Arg{"expression", boolLit(true)})
+	return parenthesizeNestedConnector(
+		New("And", Arg{"this", folded}, Arg{"expression", boolLit(true)}), parent)
 }

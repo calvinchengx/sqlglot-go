@@ -137,10 +137,20 @@ hand-edited table is a divergence the port has no logic to catch.
 `sqlglot.Simplify` is the first thing in the port that CHANGES a tree rather
 than reproducing one, and it is held to the reference's own contract —
 `tests/fixtures/optimizer/simplify.sql`, 480 pairs pinning what each statement
-becomes. **164 are folded exactly**; the rest the port declines to fold that
+becomes. **168 are folded exactly**; the rest the port declines to fold that
 far, which costs nothing: the statement still means what it meant.
 
-That gate deliberately does *not* try to judge whether a non-exact result is
+Every rewrite must also **survive being written down**: the port writes the
+simplified tree, reads the SQL back, and requires the same tree — up to the
+associativity of AND/OR, which reshapes nesting without changing meaning. That
+invariant needs no engine, which matters because most of this contract is bare
+predicates over undefined columns that can never reach the execution oracle.
+It caught `A AND (A OR B)` being flattened to `A AND A OR B`, which
+re-associates to `(A AND A) OR B` and asks a different question, and it caught
+folded negatives being built as `Literal(-1)` where the reference builds
+`Neg(Literal(1))`.
+
+The gate deliberately does *not* try to judge whether a non-exact result is
 *wrong*. A first cut guessed — "if the output differs from the input, the fold
 must be wrong" — and reported 35 failures, of which nearly all were partial
 folds and the one real bug was buried among them. Whether a rewrite is wrong
