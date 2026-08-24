@@ -242,12 +242,22 @@ func (g *generator) namedFunction(e *Expression, spec FuncSQL) string {
 	// have it, so a call that would need it is refused rather than written
 	// without it. A bare column is left alone -- the reference cannot type
 	// that one either.
-	if indexes, ok := g.tables.CastSensitiveArgs[strings.ToUpper(spec.Name)]; ok {
-		for _, i := range indexes {
-			nodes := argNodes(e, spec)
-			if i < len(nodes) && (isCastToNonInteger(nodes[i]) || isNumericLiteral(nodes[i])) {
-				return g.fail("type-dependent argument to " + spec.Name)
-			}
+	upper := strings.ToUpper(spec.Name)
+	nodes := argNodes(e, spec)
+	// Keyed by ARITY as well as index: DuckDB wraps ROUND's second argument in
+	// a cast when the call has four arguments and not when it has two, and
+	// applying that at every arity refused ordinary two-argument calls.
+	for _, i := range g.tables.CastSensitiveArgs[upper][len(nodes)] {
+		if i < len(nodes) && isCastToNonInteger(nodes[i]) {
+			return g.fail("cast argument to " + spec.Name)
+		}
+	}
+	// A number is a separate trigger and refuses separately: DuckDB drops a
+	// zero group from REGEXP_EXTRACT, which says nothing about what any other
+	// name does with a number.
+	for _, i := range g.tables.ZeroSensitiveArgs[upper][len(nodes)] {
+		if i < len(nodes) && isNumericLiteral(nodes[i]) {
+			return g.fail("number argument to " + spec.Name)
 		}
 	}
 	return spec.Name + "(" + strings.Join(parts, ", ") + ")"

@@ -674,15 +674,20 @@ def string_sensitive_args(P, exp, funcs, dialect=""):
 
 
 def _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive):
-    """One substitution for cast_sensitive_args. Flags position i when putting
-    `probe` there changes the call's own text beyond the argument itself."""
+    """One substitution for cast_sensitive_args, recorded per ARITY.
+
+    DuckDB's ROUND wraps its second argument in CAST(... AS INT) when the call
+    has four arguments and not when it has two. Recording the index alone
+    refused `ROUND(x, 0)` -- an ordinary two-argument call that renders
+    perfectly -- because something was true of a four-argument one.
+    """
     try:
         probe_sql = probe.sql(dialect=dialect or None)
         swapped = list(plain)
         swapped[i] = probe
         got = call_builder(builder, swapped, dialect).sql(dialect=dialect or None)
     except Exception:  # noqa: BLE001 -- this argument is invalid here
-        sensitive.setdefault(name, []).append(i)
+        sensitive.setdefault(name, {}).setdefault(len(plain), []).append(i)
         return
     token = f"__probeArg{chr(65 + i)}"
     if base_sql.count(token) != 1:
@@ -691,14 +696,16 @@ def _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive):
         # The argument VANISHED: DuckDB drops a zero group from
         # REGEXP_EXTRACT entirely. Writing it back is a different call, and
         # its absence is the signal rather than something to skip over.
-        if i not in sensitive.setdefault(name, []):
-            sensitive[name].append(i)
+        bucket = sensitive.setdefault(name, {}).setdefault(len(plain), [])
+        if i not in bucket:
+            bucket.append(i)
         return
     if got.count(probe_sql) != 1:
         return
     if got != base_sql.replace(token, probe_sql, 1):
-        if i not in sensitive.setdefault(name, []):
-            sensitive[name].append(i)
+        bucket = sensitive.setdefault(name, {}).setdefault(len(plain), [])
+        if i not in bucket:
+            bucket.append(i)
 
 
 def cast_sensitive_args(P, exp, dialect, funcs):
@@ -719,7 +726,8 @@ def cast_sensitive_args(P, exp, dialect, funcs):
     executor does.
     """
     probe = exp.column("__probe_0")
-    sensitive: dict[str, list[int]] = {}
+    sensitive: dict[str, dict[int, list[int]]] = {}
+    zero_sensitive: dict[str, dict[int, list[int]]] = {}
     for name in funcs:
         builder = P.FUNCTIONS.get(name)
         if builder is None:
@@ -738,11 +746,19 @@ def cast_sensitive_args(P, exp, dialect, funcs):
                 # Two things can change how the CALL is written: an argument
                 # whose type is visible (a cast), and a literal ZERO, which
                 # DuckDB drops entirely from REGEXP_EXTRACT.
-                for probe in (
+                # Two DIFFERENT triggers, kept apart. A call whose rendering
+                # moves for a cast says nothing about what it does with a
+                # number, and refusing on both because one was observed turned
+                # away 25 statements that render perfectly well.
+                _cast_probe(
+                    builder, plain, base_sql, i,
                     exp.cast(exp.column(f"__probeArg{chr(65 + i)}"), "DOUBLE"),
-                    exp.Literal.number(0),
-                ):
-                    _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive)
+                    dialect, name, sensitive,
+                )
+                _cast_probe(
+                    builder, plain, base_sql, i, exp.Literal.number(0),
+                    dialect, name, zero_sensitive,
+                )
             continue
 
         for _unused in ():
@@ -767,7 +783,10 @@ def cast_sensitive_args(P, exp, dialect, funcs):
                 if got != base_sql.replace(token, cast_sql, 1):
                     sensitive.setdefault(name, []).append(i)
     _ = probe
-    return {k: sorted(set(v)) for k, v in sensitive.items()}
+    def tidy(d):
+        return {n: {a: sorted(set(v)) for a, v in by.items()} for n, by in d.items()}
+
+    return tidy(sensitive), tidy(zero_sensitive)
 
 
 def class_sensitive_args(P, exp, dialect, funcs):
@@ -1422,7 +1441,13 @@ def main() -> int:
         "\t// builder rewrites the literal on the way in.\n",
         "\tTimeMapping    map[string]string\n",
         "\tTimeFormatArgs map[string][]int\n",
-        "\tCastSensitiveArgs map[string][]int\n",
+        "\tCastSensitiveArgs map[string]map[int][]int\n",
+        "\t// ZeroSensitiveArgs is the same idea for a NUMBER rather than a\n",
+        "\t// cast: DuckDB drops a zero group from REGEXP_EXTRACT entirely.\n",
+        "\t// Kept apart from the cast trigger, because a call that moves for\n",
+        "\t// one says nothing about the other.\n",
+        "\tZeroSensitiveArgs map[string]map[int][]int\n",
+
         "\tStringSensitiveArgs map[string][]int\n",
         "\t// WritesBooleanLiteral: whether TRUE and FALSE are written as\n",
         "\t// themselves. T-SQL has no boolean literal -- the reference\n",
@@ -1635,12 +1660,17 @@ def main() -> int:
                 joined = ", ".join(str(i) for i in _tfa[fname])
                 out.append(f"\t\t\t{gostr(fname)}: {{{joined}}},\n")
             out.append("\t\t},\n")
-        casts = cast_sensitive_args(P, exp, name, render_input)
-        if casts:
-            out.append("\t\tCastSensitiveArgs: map[string][]int{\n")
-            for fname, indexes in sorted(casts.items()):
-                joined = ", ".join(str(i) for i in indexes)
-                out.append(f"\t\t\t{gostr(fname)}: {{{joined}}},\n")
+        casts, zeros = cast_sensitive_args(P, exp, name, render_input)
+        for field, table in (("ZeroSensitiveArgs", zeros), ("CastSensitiveArgs", casts)):
+            if not table:
+                continue
+            out.append(f"\t\t{field}: map[string]map[int][]int{{\n")
+            for fname in sorted(table):
+                inner = "".join(
+                    "%d: {%s}, " % (arity, ", ".join(str(i) for i in idxs))
+                    for arity, idxs in sorted(table[fname].items())
+                )
+                out.append(f"\t\t\t{gostr(fname)}: {{{inner}}},\n")
             out.append("\t\t},\n")
         sensitive = string_sensitive_args(P, exp, render_input, name)
         if sensitive:
