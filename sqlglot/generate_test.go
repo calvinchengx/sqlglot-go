@@ -180,6 +180,16 @@ func TestGenerateShapes(t *testing.T) {
 		// to be escaped for that literal or the statement ends early.
 		{"a quote in a path key is escaped", `SELECT 0 -> '"a''b"'`, "duckdb",
 			`SELECT 0 -> '$."a''b"'`},
+		// In ARGUMENT position `x -> y` is a lambda, and the parameter can be
+		// written as a number, a string or a quoted name. Outside a call the
+		// same tokens are a JSON extraction, which is why this only matters
+		// here. A string parameter comes back QUOTED.
+		{"a string names a lambda parameter", "SELECT A('abc' -> x)", "databricks",
+			"SELECT A(`abc` -> x)"},
+		{"an empty one too", "SELECT ``(\"\" -> \"\")", "databricks",
+			"SELECT ``(`` -> '')"},
+		{"and a quoted one reads back", "SELECT A(`abc` -> x)", "databricks",
+			"SELECT A(`abc` -> x)"},
 		{"json extract scalar", "select j ->> '$.a.b'", "duckdb", "SELECT j ->> '$.a.b'"},
 		{"json subscript", "select j -> '$[0]'", "duckdb", "SELECT j -> '$[0]'"},
 		{"json quoted key", `select j -> '$."a b"'`, "duckdb", `SELECT j -> '$."a b"'`},

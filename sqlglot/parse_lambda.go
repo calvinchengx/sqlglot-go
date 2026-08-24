@@ -15,7 +15,17 @@ func (p *parser) atLambda() bool {
 	// lambda over a parameter called `0`, not as a JSON extraction. The port
 	// built a JSONExtract there -- a tree the reference never makes -- which
 	// the generator fuzzer found by writing it back as `A(0:)`.
-	if c.Type == TokVAR || c.Type == TokNUMBER {
+	// A NUMBER or a STRING can name a lambda parameter. The reference reads
+	// `A(0 -> x)` as a lambda over a parameter called `0`, and `A('abc' -> x)`
+	// as one called `abc` -- QUOTED, since it was written that way. Outside a
+	// call the same tokens are a JSON extraction, which is why this only
+	// matters here, in argument position. The port built a JSONExtract and
+	// wrote it back as `A('':)`, which is not SQL.
+	// TokIDENTIFIER too: the port WRITES a string parameter back as a quoted
+	// identifier -- `A('abc' -> x)` becomes ``A(`abc` -> x)`` -- so it has to
+	// be able to read that.
+	if c.Type == TokVAR || c.Type == TokNUMBER || c.Type == TokSTRING ||
+		c.Type == TokIDENTIFIER {
 		return p.next() != nil && p.next().Type == TokARROW
 	}
 	if c.Type != TokL_PAREN {
@@ -53,6 +63,10 @@ func (p *parser) parseLambda() (*Expression, error) {
 		if !p.match(TokR_PAREN) {
 			return nil, p.unsupported("unclosed lambda parameter list")
 		}
+	} else if c := p.curr(); c != nil && c.Type == TokSTRING {
+		// A string that names a parameter becomes a QUOTED identifier.
+		p.advance()
+		params = append(params, New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true}))
 	} else {
 		id, err := p.parseIdentifier()
 		if err != nil {
