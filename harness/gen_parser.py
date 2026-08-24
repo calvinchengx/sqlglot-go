@@ -483,6 +483,60 @@ def writes_into_unlogged(dialect: str, exp) -> bool:
     return "UNLOGGED" in node.sql(dialect=dialect or None)
 
 
+def time_format_args(dialect: str, P, exp, funcs) -> dict:
+    """Argument positions that hold a TIME FORMAT, and so are translated.
+
+    `STRPTIME(x, '%Y-%m-%d')` in DuckDB and `FORMAT(d, 'yyyy')` in T-SQL both
+    reach a builder that rewrites the format string through the dialect's
+    TIME_MAPPING before storing it. The probe could not describe that -- the
+    builder returns a NEW literal even where the mapping is empty and the text
+    unchanged -- so every one of these names was refused.
+
+    Flagged two ways, because the evidence differs: where the dialect has a
+    mapping, substitute one of its keys and see the value come back
+    translated; where it has none, translation is the identity, so a literal
+    rebuilt with the same text is the signal instead.
+    """
+    from sqlglot.dialects.dialect import Dialect
+
+    mapping = getattr(Dialect.get_or_raise(dialect or None), "TIME_MAPPING", None) or {}
+    probe_key = next(iter(sorted(mapping)), "%Y")
+    want = mapping.get(probe_key, probe_key)
+
+    out: dict[str, list[int]] = {}
+    for name in funcs:
+        builder = P.FUNCTIONS.get(name)
+        if builder is None:
+            continue
+        for width in range(1, 5):
+            plain = [exp.column(f"__probeArg{chr(65 + i)}") for i in range(width)]
+            try:
+                base = call_builder(builder, plain, dialect)
+            except Exception:  # noqa: BLE001 -- invalid arity
+                continue
+            if not isinstance(base, exp.Expr):
+                continue
+            for i in range(width):
+                literal = exp.Literal.string(probe_key)
+                swapped = list(plain)
+                swapped[i] = literal
+                try:
+                    got = call_builder(builder, swapped, dialect)
+                except Exception:  # noqa: BLE001
+                    continue
+                if not isinstance(got, exp.Expr):
+                    continue
+                for value in got.args.values():
+                    if not isinstance(value, exp.Literal) or value is literal:
+                        continue
+                    if value.name == want and (mapping or value.name == probe_key):
+                        out.setdefault(name, [])
+                        if i not in out[name]:
+                            out[name].append(i)
+                        break
+    return {k: sorted(v) for k, v in out.items()}
+
+
 def bracket_is_rewritten(dialect: str) -> bool:
     """Whether `a[1]` comes back as something other than a plain subscript.
 
@@ -1268,6 +1322,12 @@ def main() -> int:
 
         "\tFunctionsByArity map[string]map[int]FuncSpec\n",
         "\tClassSensitiveArgs map[string][]ClassTrigger\n",
+        "\t// TimeMapping is the dialect\u2019s time-format spelling, and\n",
+        "\t// TimeFormatArgs the argument positions it applies to. T-SQL\n",
+        "\t// writes yyyy-MM-dd where the reference stores %Y-%m-%d, and the\n",
+        "\t// builder rewrites the literal on the way in.\n",
+        "\tTimeMapping    map[string]string\n",
+        "\tTimeFormatArgs map[string][]int\n",
         "\tCastSensitiveArgs map[string][]int\n",
         "\tStringSensitiveArgs map[string][]int\n",
         "\t// WritesBooleanLiteral: whether TRUE and FALSE are written as\n",
@@ -1459,6 +1519,20 @@ def main() -> int:
                     for keys, text in syn[cls_name]
                 )
                 out.append(f"\t\t\t{gostr(cls_name)}: {{{entries}}},\n")
+            out.append("\t\t},\n")
+        from sqlglot.dialects.dialect import Dialect as _D
+        _tm = getattr(_D.get_or_raise(name or None), "TIME_MAPPING", None) or {}
+        if _tm:
+            out.append("\t\tTimeMapping: map[string]string{\n")
+            for k in sorted(_tm):
+                out.append(f"\t\t\t{gostr(k)}: {gostr(_tm[k])},\n")
+            out.append("\t\t},\n")
+        _tfa = time_format_args(name, P, exp, render_input)
+        if _tfa:
+            out.append("\t\tTimeFormatArgs: map[string][]int{\n")
+            for fname in sorted(_tfa):
+                joined = ", ".join(str(i) for i in _tfa[fname])
+                out.append(f"\t\t\t{gostr(fname)}: {{{joined}}},\n")
             out.append("\t\t},\n")
         casts = cast_sensitive_args(P, exp, name, render_input)
         if casts:

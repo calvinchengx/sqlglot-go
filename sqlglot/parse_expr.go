@@ -954,7 +954,23 @@ func (p *parser) parseFunction() (*Expression, error) {
 		// shifts the rest. The recorded signature was probed with columns and
 		// does not describe that, so the call is refused rather than filled in
 		// with the argument in the wrong slot.
+		// A time FORMAT is rewritten into the reference's spelling rather than
+		// refused: T-SQL writes `yyyy-MM-dd` where the tree stores `%Y-%m-%d`.
+		// This runs before the string-sensitivity check below, which is what
+		// used to turn every one of these calls away.
+		formatArgs := p.tables.TimeFormatArgs[upper]
+		for _, i := range formatArgs {
+			if i < len(args) && isStringLiteral(args[i]) {
+				text, _ := args[i].Args["this"].(string)
+				args[i] = New("Literal",
+					Arg{"this", formatTime(text, p.tables.TimeMapping)},
+					Arg{"is_string", true})
+			}
+		}
 		for _, i := range p.tables.StringSensitiveArgs[strings.ToUpper(name)] {
+			if isTimeFormatArg(formatArgs, i) {
+				continue
+			}
 			if i < len(args) && isStringLiteral(args[i]) {
 				return nil, p.unsupported("string argument to " + name)
 			}
@@ -1227,4 +1243,15 @@ func isBareIdentifier(text string) bool {
 		}
 	}
 	return true
+}
+
+// isTimeFormatArg reports whether index i is one the time mapping already
+// handled, so the string-sensitivity check does not refuse it afterwards.
+func isTimeFormatArg(indexes []int, i int) bool {
+	for _, x := range indexes {
+		if x == i {
+			return true
+		}
+	}
+	return false
 }
