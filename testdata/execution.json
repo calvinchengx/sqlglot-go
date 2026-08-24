@@ -52,6 +52,14 @@
    "written": "SELECT CURRENT_DATE + INTERVAL '7 DAY'",
    "why": "[(datetime.datetime(2026, 8, 31, 0, 0, tzinfo=dateti != [(datetime.datetime(2026, 8, 31, 0, 0),)]",
    "note": "date_add returns timestamptz; the + rewrite returns timestamp. Different behaviour across a zone boundary. See docs/upstream-issues.md. NOT worked around: the port reproduces the reference on purpose."
+  },
+  {
+   "engine": "postgres",
+   "sql": "WITH t AS (SELECT ARRAY[1, 2, 3] AS col) SELECT * FROM t WHERE 1 <= ANY(col) AND 2 = ANY(col)",
+   "who": "simplified",
+   "written": "WITH t AS (SELECT ARRAY[1, 2, 3] AS col) SELECT * FROM t WHERE FALSE",
+   "why": "[([1, 2, 3],)] != []",
+   "note": "sqlglot's range rule reads `1 <= ANY(col)` as `column OP constant` and concludes two satisfiable comparisons contradict. The reference folds this identically. See docs/upstream-issues.md. NOT worked around."
   }
  ]
 }

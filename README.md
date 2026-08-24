@@ -137,7 +137,7 @@ hand-edited table is a divergence the port has no logic to catch.
 `sqlglot.Simplify` is the first thing in the port that CHANGES a tree rather
 than reproducing one, and it is held to the reference's own contract —
 `tests/fixtures/optimizer/simplify.sql`, 480 pairs pinning what each statement
-becomes. **179 are folded exactly**; the rest the port declines to fold that
+becomes. **210 are folded exactly**; the rest the port declines to fold that
 far, which costs nothing: the statement still means what it meant.
 
 Every rewrite must also **survive being written down**: the port writes the

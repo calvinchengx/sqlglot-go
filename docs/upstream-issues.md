@@ -104,3 +104,34 @@ Same instant in the session's zone, different type — and therefore different
 behaviour once the result crosses a zone boundary.
 
 **Reference:** sqlglot @ ceb5111421e9.
+
+---
+
+## sqlglot folds two satisfiable comparisons over ANY(...) into FALSE
+
+**Found by:** the execution oracle, on the port's own simplify output — and
+then confirmed against the reference, which does the same.
+
+```
+in   ... WHERE 1 <= ANY(col) AND 2 = ANY(col)   -> the row
+out  ... WHERE FALSE                            -> nothing
+```
+
+With `col` = `ARRAY[1, 2, 3]` both predicates are TRUE in PostgreSQL, so the
+row qualifies.
+
+The range rule reasons about two comparisons that share an operand: `x > 1
+AND x < 1` really is FALSE. It reads each comparison as `column OP constant`,
+which `sort_comparison` normally arranges — but `sort_comparison` explicitly
+leaves a SubqueryPredicate on the right, and `ANY(col)` is one. So the two
+comparisons arrive as `1 <= X` and `2 = X`, the rule compares the constants
+in the wrong orientation, and concludes they contradict.
+
+They do not contradict even under that reading: `X >= 1 AND X = 2` is
+satisfied at 2. And `ANY` is not a single value at all, which is the deeper
+reason the rule should not fire here.
+
+The port reproduces this, on purpose. It is recorded in
+`testdata/execution.json` so the oracle does not report it every run.
+
+**Reference:** sqlglot @ ceb5111421e9.

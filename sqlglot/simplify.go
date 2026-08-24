@@ -528,6 +528,11 @@ func simplifyConnectors(e, parent *Expression) *Expression {
 		}
 	}
 	if folded == nil {
+		// Two comparisons of the SAME column can decide each other:
+		// `x > 1 AND x < 1` is FALSE whatever x is.
+		folded = simplifyComparison(e, left, right, e.Class == "Or")
+	}
+	if folded == nil {
 		return e
 	}
 	return keepCondition(folded, parent)
@@ -642,4 +647,189 @@ func keepCondition(folded, parent *Expression) *Expression {
 	}
 	return parenthesizeNestedConnector(
 		New("And", Arg{"this", folded}, Arg{"expression", boolLit(true)}), parent)
+}
+
+// comparisons are the operators simplifyComparison reasons about.
+var comparisons = map[string]bool{
+	"EQ": true, "NEQ": true, "GT": true, "GTE": true, "LT": true, "LTE": true, "Is": true,
+}
+
+var ltLTE = map[string]bool{"LT": true, "LTE": true}
+var gtGTE = map[string]bool{"GT": true, "GTE": true}
+
+// nondeterministic calls cannot stand in for each other even when they are
+// written identically: two RANDs are two different numbers.
+var nondeterministic = map[string]bool{"Rand": true, "Randn": true}
+
+// simplifyComparison folds two comparisons that share an operand.
+//
+// `x > 1 AND x < 1` is FALSE, `x = 1 AND x >= 2` is FALSE, `x < 1 AND x < 2`
+// is `x < 1`. The shared operand does not have to be a column -- it has to be
+// something that is the SAME on both sides and not a constant, so that the
+// two comparisons are talking about one value.
+//
+// Never TRUE, only FALSE or one of the two: the shared operand may be NULL,
+// and `x > 1 OR x <= 1` is NULL rather than TRUE when it is.
+//
+// Dates are not handled. Comparing them means parsing calendar literals, and
+// a port that got that subtly wrong would fold a range into the wrong answer.
+func simplifyComparison(e, left, right *Expression, or bool) *Expression {
+	if !comparisons[left.Class] || !comparisons[right.Class] {
+		return nil
+	}
+	// A negated IS does not behave like the others under this reasoning.
+	for _, side := range []*Expression{left, right} {
+		if negate, _ := side.Args["negate"].(bool); side.Class == "Is" && negate {
+			return nil
+		}
+	}
+
+	lArgs := []*Expression{childOf(left, "this"), childOf(left, "expression")}
+	rArgs := []*Expression{childOf(right, "this"), childOf(right, "expression")}
+	for _, a := range append(append([]*Expression{}, lArgs...), rArgs...) {
+		if a == nil {
+			return nil
+		}
+	}
+
+	// The operand both sides share, and which is not itself a constant.
+	var shared *Expression
+	for _, a := range lArgs {
+		for _, b := range rArgs {
+			if a.Equal(b) && !isConstant(a) && !hasNondeterministic(a) {
+				shared = a
+			}
+		}
+	}
+	if shared == nil {
+		return nil
+	}
+
+	lOther := otherThan(lArgs, shared)
+	rOther := otherThan(rArgs, shared)
+	if lOther == nil || rOther == nil {
+		return e
+	}
+
+	cmp, ok := compareConstants(lOther, rOther)
+	if !ok {
+		return nil
+	}
+
+	// Both orderings, as the reference tries both permutations.
+	for _, pair := range [][2]*Expression{{left, right}, {right, left}} {
+		a, b := pair[0], pair[1]
+		av := cmp
+		if a == right {
+			av = -cmp
+		}
+		if out := foldComparisonPair(a, b, av, or, left, right); out != nil {
+			return out
+		}
+	}
+	return nil
+}
+
+// foldComparisonPair applies the reference's table for one ordering. `av` is
+// the sign of a's constant against b's: negative when a's is smaller.
+func foldComparisonPair(a, b *Expression, av int, or bool, left, right *Expression) *Expression {
+	switch {
+	case ltLTE[a.Class] && ltLTE[b.Class]:
+		// The tighter bound wins under AND, the looser under OR.
+		if or {
+			return pick(av > 0, left, right)
+		}
+		return pick(av <= 0, left, right)
+	case gtGTE[a.Class] && gtGTE[b.Class]:
+		if or {
+			return pick(av < 0, left, right)
+		}
+		return pick(av >= 0, left, right)
+	}
+	if or {
+		// Never TRUE: the shared operand could be NULL.
+		return nil
+	}
+	switch {
+	case a.Class == "LT" && gtGTE[b.Class] && av <= 0:
+		return boolLit(false)
+	case a.Class == "GT" && ltLTE[b.Class] && av >= 0:
+		return boolLit(false)
+	case a.Class == "EQ":
+		switch b.Class {
+		case "LT":
+			return pick(av >= 0, boolLit(false), a)
+		case "LTE":
+			return pick(av > 0, boolLit(false), a)
+		case "GT":
+			return pick(av <= 0, boolLit(false), a)
+		case "GTE":
+			return pick(av < 0, boolLit(false), a)
+		case "NEQ":
+			return pick(av == 0, boolLit(false), a)
+		}
+	}
+	return nil
+}
+
+func pick(cond bool, whenTrue, whenFalse *Expression) *Expression {
+	if cond {
+		return whenTrue
+	}
+	return whenFalse
+}
+
+func otherThan(args []*Expression, shared *Expression) *Expression {
+	for _, a := range args {
+		if !a.Equal(shared) {
+			return a
+		}
+	}
+	return nil
+}
+
+func hasNondeterministic(e *Expression) bool {
+	found := false
+	e.Walk(func(n *Expression) bool {
+		if nondeterministic[n.Class] {
+			found = true
+		}
+		return true
+	})
+	return found
+}
+
+// compareConstants orders two constants, reporting false where they are not
+// both numbers or both strings. Dates fall here on purpose.
+func compareConstants(a, b *Expression) (int, bool) {
+	if isNumberLiteral(a) && isNumberLiteral(b) {
+		x, okA := numberOf(a)
+		y, okB := numberOf(b)
+		if !okA || !okB {
+			return 0, false
+		}
+		return sign(x, y), true
+	}
+	if isStringLiteral(a) && isStringLiteral(b) {
+		x, _ := a.Args["this"].(string)
+		y, _ := b.Args["this"].(string)
+		switch {
+		case x < y:
+			return -1, true
+		case x > y:
+			return 1, true
+		}
+		return 0, true
+	}
+	return 0, false
+}
+
+func sign(x, y float64) int {
+	switch {
+	case x < y:
+		return -1
+	case x > y:
+		return 1
+	}
+	return 0
 }
