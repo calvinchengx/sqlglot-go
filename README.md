@@ -137,7 +137,7 @@ hand-edited table is a divergence the port has no logic to catch.
 `sqlglot.Simplify` is the first thing in the port that CHANGES a tree rather
 than reproducing one, and it is held to the reference's own contract —
 `tests/fixtures/optimizer/simplify.sql`, 480 pairs pinning what each statement
-becomes. **125 are folded exactly**; the rest the port declines to fold that
+becomes. **164 are folded exactly**; the rest the port declines to fold that
 far, which costs nothing: the statement still means what it meant.
 
 That gate deliberately does *not* try to judge whether a non-exact result is
@@ -166,8 +166,8 @@ So there is one more harness, and it is the only one here whose failure means
 differ". `make oracle-exec` takes each statement as it was written, what
 the port writes back, and what the port *simplifies* it to, runs them **all**
 on a real engine, and compares the
-results. **297 statements are currently comparable** — 218 on DuckDB, which
-embeds, and 79 on PostgreSQL, which CI supplies as a service container and
+results. **319 statements are currently comparable** — 230 on DuckDB, which
+embeds, and 89 on PostgreSQL, which CI supplies as a service container and
 `make postgres` starts locally. An engine it cannot reach is skipped with a
 note, not a failure.
 

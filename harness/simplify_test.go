@@ -95,7 +95,7 @@ func TestSimplifyAgainstReference(t *testing.T) {
 
 func assertSimplifyFloor(t *testing.T, simplified int) {
 	t.Helper()
-	const floor = 120 // raised by hand as the optimizer grows; never lowered here
+	const floor = 160 // raised by hand as the optimizer grows; never lowered here
 	if simplified < floor {
 		t.Errorf("simplify REGRESSED: %d exact, floor %d", simplified, floor)
 	}

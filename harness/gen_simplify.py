@@ -58,6 +58,23 @@ def main() -> int:
     # repository root has to come first or `import sqlglot` finds the wrong one.
     sys.path.insert(0, str(sqlglot_dir / "tests"))
     sys.path.insert(0, str(sqlglot_dir))
+
+    # The reference imports dateutil LAZILY, inside the interval arithmetic,
+    # and simplify's own `catch` decorator swallows the ImportError. So
+    # without it the date folds simply do not happen and the reference gives a
+    # different, quieter answer -- no warning, no traceback. The contract
+    # written here would then depend on what happens to be installed, which is
+    # the one thing a PINNED artifact must not do. It cost a red build:
+    # generated locally with dateutil present, regenerated in CI without it,
+    # and 20 date pairs went missing.
+    try:
+        import dateutil  # noqa: F401
+    except ModuleNotFoundError:
+        raise SystemExit(
+            "the reference needs python-dateutil to fold dates, and fails\n"
+            "SILENTLY without it -- the contract would be missing every date\n"
+            "pair. Install it:  pip install python-dateutil"
+        ) from None
     from helpers import load_sql_fixture_pairs  # noqa: E402
     from sqlglot import parse_one  # noqa: E402
     from sqlglot.optimizer.annotate_types import annotate_types  # noqa: E402

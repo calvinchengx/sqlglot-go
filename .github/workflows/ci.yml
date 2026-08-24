@@ -94,6 +94,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      # The reference's own optional dependency. Its optimizer folds dates
+      # through dateutil, imported lazily and behind a decorator that catches
+      # the ImportError -- so without this the reference is not the reference,
+      # it is a quieter version of it, and the generated contract silently
+      # loses every date fold.
+      - run: pip install python-dateutil
       - name: the commit NOTICE pins
         id: pin
         run: echo "ref=$(grep -oE 'commit [0-9a-f]{40}' NOTICE | head -1 | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"

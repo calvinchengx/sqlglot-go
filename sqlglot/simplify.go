@@ -1,6 +1,9 @@
 package sqlglot
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // Simplify rewrites a tree the way the reference's optimizer does.
 //
@@ -57,6 +60,7 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 			out.Set(key, kids)
 		}
 	}
+	out = simplifyLiterals(out)
 	out = simplifyNot(out, dialect)
 	out = simplifyConnectors(out)
 	out = simplifyParens(out, parent)
@@ -101,6 +105,159 @@ func simplifyParens(e, parent *Expression) *Expression {
 		return e
 	}
 	return this
+}
+
+// nullOK are the comparisons that TOLERATE a null operand, so folding one
+// away would change what they answer.
+var nullOK = map[string]bool{"NullSafeEQ": true, "NullSafeNEQ": true, "PropertyEQ": true}
+
+// simplifyLiterals folds an operator whose operands are both constants:
+// `1 + 1` to `2`, `2 > 2.5` to FALSE, `1 IS NULL` to FALSE.
+//
+// Dates and intervals are the reference's other half of this rule and are not
+// here: folding them means doing calendar arithmetic, and a port that got that
+// subtly wrong would return the wrong rows rather than the wrong spelling.
+func simplifyLiterals(e *Expression) *Expression {
+	if !isA("Binary", e) || isA("Connector", e) || nullOK[e.Class] {
+		return e
+	}
+	a, _ := e.Args["this"].(*Expression)
+	b, _ := e.Args["expression"].(*Expression)
+	if a == nil || b == nil || len(e.Keys) < 2 {
+		return e
+	}
+
+	if e.Class == "Is" {
+		return simplifyIs(e, a, b)
+	}
+	if isNumberLiteral(a) && isNumberLiteral(b) {
+		if out := foldNumbers(e, a, b); out != nil {
+			return out
+		}
+		return e
+	}
+	if isStringLiteral(a) && isStringLiteral(b) {
+		x, _ := a.Args["this"].(string)
+		y, _ := b.Args["this"].(string)
+		if out := evalBooleanString(e.Class, x, y); out != nil {
+			return out
+		}
+	}
+	return e
+}
+
+// simplifyIs folds `<constant> IS [NOT] NULL`. Nothing else: whether a COLUMN
+// is null is not knowable here.
+func simplifyIs(e, a, b *Expression) *Expression {
+	not := false
+	c := b
+	if b.Class == "Not" {
+		c, _ = b.Args["this"].(*Expression)
+		not = true
+	}
+	if negate, _ := e.Args["negate"].(bool); negate {
+		not = !not
+	}
+	if c == nil || !isNull(c) {
+		return e
+	}
+	switch {
+	case a.Class == "Literal", a.Class == "Boolean":
+		return boolLit(not)
+	case isNull(a):
+		return boolLit(!not)
+	}
+	return e
+}
+
+func foldNumbers(e, a, b *Expression) *Expression {
+	x, okA := numberOf(a)
+	y, okB := numberOf(b)
+	if !okA || !okB {
+		return nil
+	}
+	bothInt := isIntegerLiteral(a) && isIntegerLiteral(b)
+	switch e.Class {
+	case "Add":
+		return numberLit(x+y, bothInt)
+	case "Mul":
+		return numberLit(x*y, bothInt)
+	case "Sub":
+		return numberLit(x-y, bothInt)
+	case "Div":
+		// Integer division differs between engines, so the reference declines
+		// to fold it rather than pick one engine's answer.
+		if bothInt || y == 0 {
+			return nil
+		}
+		return numberLit(x/y, false)
+	}
+	return evalBooleanNumber(e.Class, x, y)
+}
+
+func evalBooleanNumber(class string, a, b float64) *Expression {
+	switch class {
+	case "EQ":
+		return boolLit(a == b)
+	case "NEQ":
+		return boolLit(a != b)
+	case "GT":
+		return boolLit(a > b)
+	case "GTE":
+		return boolLit(a >= b)
+	case "LT":
+		return boolLit(a < b)
+	case "LTE":
+		return boolLit(a <= b)
+	}
+	return nil
+}
+
+func evalBooleanString(class, a, b string) *Expression {
+	switch class {
+	case "EQ":
+		return boolLit(a == b)
+	case "NEQ":
+		return boolLit(a != b)
+	case "GT":
+		return boolLit(a > b)
+	case "GTE":
+		return boolLit(a >= b)
+	case "LT":
+		return boolLit(a < b)
+	case "LTE":
+		return boolLit(a <= b)
+	}
+	return nil
+}
+
+func numberOf(e *Expression) (float64, bool) {
+	text, _ := e.Args["this"].(string)
+	n, err := strconv.ParseFloat(text, 64)
+	return n, err == nil
+}
+
+func isIntegerLiteral(e *Expression) bool {
+	text, _ := e.Args["this"].(string)
+	_, err := strconv.ParseInt(text, 10, 64)
+	return err == nil
+}
+
+// numberLit writes a folded number the way the reference does. Python's str()
+// keeps a float's point -- 2.0 stays "2.0" -- and Go's shortest formatting
+// drops it, which would write a different literal than the reference for every
+// float that happens to be whole.
+func numberLit(v float64, integral bool) *Expression {
+	var text string
+	if integral {
+		text = strconv.FormatInt(int64(v), 10)
+	} else {
+		text = strconv.FormatFloat(v, 'g', -1, 64)
+		if !strings.ContainsAny(text, ".eE") {
+			text += ".0"
+		}
+	}
+	return New("Literal", Arg{"this", text}, Arg{"is_string", false})
 }
 
 // inverseComparison is what swapping a comparison's operands does to it.
@@ -240,6 +397,12 @@ func simplifyNot(e *Expression, dialect string) *Expression {
 	if this == nil {
 		return e
 	}
+	// `NOT NULL` is not NULL: the reference keeps it a CONDITION by writing
+	// `NULL AND TRUE`, the same guard it applies whenever a fold would leave a
+	// value where a predicate belongs.
+	if isNull(this) {
+		return New("And", Arg{"this", New("Null")}, Arg{"expression", boolLit(true)})
+	}
 	if to, ok := complementComparison[this.Class]; ok {
 		left, _ := this.Args["this"].(*Expression)
 		right, _ := this.Args["expression"].(*Expression)
@@ -288,6 +451,16 @@ func simplifyConnectors(e *Expression) *Expression {
 		return e
 	}
 
+	// `x AND x` is `x`. This is the safe corner of the reference's uniq_sort,
+	// which also SORTS a flattened chain of operands -- `A OR (NOT A AND B)`
+	// comes back as `A OR (B AND NOT A)`. The ordering is not ported, so only
+	// the two-operand case is folded, where there is nothing to order.
+	if left.Equal(right) {
+		if folded := keepCondition(left); folded != nil {
+			return folded
+		}
+	}
+
 	var folded *Expression
 	if e.Class == "And" {
 		switch {
@@ -321,13 +494,20 @@ func simplifyConnectors(e *Expression) *Expression {
 	if folded == nil {
 		return e
 	}
-	// Reducing a connector to a single operand can turn a CONDITION into a
-	// value -- `x AND TRUE` down to a bare column `x`. The reference keeps it
-	// a condition by putting the TRUE back, which is why the contract says
-	// `x AND x` becomes `x AND TRUE` rather than `x`.
-	if folded.Class != "And" && folded.Class != "Or" && folded.Class != "Boolean" &&
-		!isKnownBoolean(folded) {
-		return New("And", Arg{"this", folded}, Arg{"expression", boolLit(true)})
+	if out := keepCondition(folded); out != nil {
+		return out
 	}
 	return folded
+}
+
+// keepCondition puts a TRUE back when a fold would leave a VALUE where a
+// predicate belongs. Reducing `x AND TRUE` to a bare column changes a
+// condition into a column reference, so the reference writes `x AND TRUE` --
+// which is why the contract says `x AND x` becomes `x AND TRUE` and not `x`.
+func keepCondition(folded *Expression) *Expression {
+	if folded.Class == "And" || folded.Class == "Or" || folded.Class == "Boolean" ||
+		isKnownBoolean(folded) {
+		return folded
+	}
+	return New("And", Arg{"this", folded}, Arg{"expression", boolLit(true)})
 }
