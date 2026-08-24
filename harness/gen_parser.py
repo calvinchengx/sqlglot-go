@@ -201,11 +201,23 @@ def probe_functions(P, exp, dialect=""):
                 # placeholder test above misses it and the whole builder used
                 # to be rejected. 28 names in the catalogue do exactly this.
                 inner = value.args.get("this")
-                if not isinstance(inner, str) or len(value.args) != 1:
+                # The wrapper may carry more than `this`: a Literal always has
+                # is_string as well, which is why the neutral DATE_TRUNC --
+                # whose unit is a STRING literal rather than a Var -- was
+                # rejected outright by a check for exactly one argument. The
+                # extras are recorded so they can be rebuilt.
+                extras = [
+                    (k, v)
+                    for k, v in value.args.items()
+                    if k != "this" and (v is None or isinstance(v, (bool, str, int)))
+                ]
+                if not isinstance(inner, str) or len(extras) != len(value.args) - 1:
                     return None
                 for i, a in enumerate(args):
                     if inner == a.name.upper():
-                        out.append((key, {"wrap": type(value).__name__, "index": i}))
+                        out.append(
+                            (key, {"wrap": type(value).__name__, "index": i, "extras": extras})
+                        )
                         break
                 else:
                     return None
@@ -219,7 +231,9 @@ def probe_functions(P, exp, dialect=""):
             if "wrap" in how:
                 i = how["index"]
                 out[key] = (
-                    getattr(exp, how["wrap"])(this=args[i].name.upper())
+                    getattr(exp, how["wrap"])(
+                        this=args[i].name.upper(), **dict(how.get("extras") or [])
+                    )
                     if i < len(args)
                     else None
                 )
@@ -1146,6 +1160,11 @@ def syntax_templates(exp, dialect, repo):
             # an argument that already had one.
             if "CAST(" in text and cls_name not in ("Cast", "TryCast"):
                 continue
+            # A marker inside QUOTES is kept, not rejected: the template is
+            # quoting the argument itself, so what belongs there is the
+            # argument's NAME rather than its rendered SQL. Substituting the
+            # rendering wrote ''ISOWEEK''; the writer looks at the quote and
+            # substitutes the name instead.
             keys = list(expr_keys) + [k for k, _ in scalars]
             out.setdefault(cls_name, []).append((keys, marked, required, text))
     return out
@@ -1314,36 +1333,28 @@ def funcargs(spec) -> str:
     parts = []
     for key, how in spec:
         if "wrap" in how:
-            parts.append(f"{{{gostr(key)}, {how['index']}, false, nil, {gostr(how['wrap'])}}}")
+            extras = "".join(
+                "{%s, %s}, " % (gostr(k), goconst(v)) for k, v in (how.get("extras") or [])
+            )
+            parts.append(
+                f"{{{gostr(key)}, {how['index']}, false, nil, {gostr(how['wrap'])}, "
+                f"[]FuncConst{{{extras}}}}}"
+            )
         elif "index" in how:
-            parts.append(f'{{{gostr(key)}, {how["index"]}, false, nil, ""}}')
+            parts.append(f'{{{gostr(key)}, {how["index"]}, false, nil, "", nil}}')
         elif "varlen" in how:
-            parts.append(f'{{{gostr(key)}, {how["varlen"]}, true, nil, ""}}')
+            parts.append(f'{{{gostr(key)}, {how["varlen"]}, true, nil, "", nil}}')
         else:
-            parts.append(f'{{{gostr(key)}, -1, false, {goconst(how["const"])}, ""}}')
+            parts.append(f'{{{gostr(key)}, -1, false, {goconst(how["const"])}, "", nil}}')
     return ", ".join(parts)
 
 
 def funcmap(name: str, funcs) -> str:
+    """One spec per name, sharing funcargs so the two tables cannot drift."""
     lines = []
     for fn in sorted(funcs):
         cls, spec = funcs[fn]
-        parts = []
-        for key, how in spec:
-            if "wrap" in how:
-                parts.append(
-                    f"{{{gostr(key)}, {how['index']}, false, nil, {gostr(how['wrap'])}}}"
-                )
-            elif "index" in how:
-                parts.append(f"{{{gostr(key)}, {how['index']}, false, nil, \"\"}}")
-            elif "varlen" in how:
-                parts.append(f"{{{gostr(key)}, {how['varlen']}, true, nil, \"\"}}")
-            else:
-                parts.append(
-                    f"{{{gostr(key)}, -1, false, {goconst(how['const'])}, \"\"}}"
-                )
-        body = ", ".join(parts)
-        lines.append(f"\t\t\t{gostr(fn)}: {{{gostr(cls)}, []FuncArg{{{body}}}}},\n")
+        lines.append(f"\t\t\t{gostr(fn)}: {{{gostr(cls)}, []FuncArg{{{funcargs(spec)}}}}},\n")
     return f"\t\t{name}: map[string]FuncSpec{{\n{''.join(lines)}\t\t}},\n"
 
 
@@ -1792,6 +1803,10 @@ def main() -> int:
         "\t// argument itself appears nowhere in the result. 28 names do this,\n",
         "\t// and every one of them used to be refused outright.\n",
         "\tWrap   string\n",
+        "\t// WrapArgs are the wrapper\u2019s other arguments -- a Literal always\n",
+        "\t// carries is_string, and a check for exactly one argument rejected\n",
+        "\t// every builder whose wrapper was a Literal rather than a Var.\n",
+        "\tWrapArgs []FuncConst\n",
 
         "}\n\n",
         "var parserTables = map[string]*ParserTables{\n",

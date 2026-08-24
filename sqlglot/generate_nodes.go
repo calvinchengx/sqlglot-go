@@ -826,6 +826,17 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 		}
 		out := candidate.Template
 		for _, key := range candidate.Marked {
+			marker := "{" + key + "}"
+			// A marker the template QUOTES wants the argument's name, not its
+			// rendering: `DATE_TRUNC('{unit}', x)` around a string literal
+			// would otherwise write ''ISOWEEK''.
+			if quoted := strings.Contains(out, "'"+marker+"'"); quoted {
+				if child, _ := e.Args[key].(*Expression); child != nil {
+					out = strings.ReplaceAll(out, marker,
+						escapeStringBody(child.Name(), g.cfg.StringEscapes))
+					continue
+				}
+			}
 			var text string
 			switch v := e.Args[key].(type) {
 			case *Expression:

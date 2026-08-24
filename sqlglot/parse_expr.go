@@ -1063,7 +1063,11 @@ func (p *parser) buildFunction(name string, spec FuncSpec, args []*Expression) *
 						word = full
 					}
 				}
-				node.Set(a.Key, New(a.Wrap, Arg{"this", word}))
+				wrapArgs := []Arg{{"this", word}}
+				for _, extra := range a.WrapArgs {
+					wrapArgs = append(wrapArgs, Arg(extra))
+				}
+				node.Set(a.Key, New(a.Wrap, wrapArgs...))
 			} else {
 				node.Set(a.Key, nil)
 			}
