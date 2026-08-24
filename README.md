@@ -132,8 +132,41 @@ The keyword and dialect tables the tokenizer reads are generated from the same
 pin rather than transcribed, and CI regenerates and diffs them, because a
 hand-edited table is a divergence the port has no logic to catch.
 
+### What fidelity cannot prove
+
+Everything above compares the port against sqlglot: same tree, same string.
+That proves the two agree; it cannot prove either is *right*. The distinction
+does not matter while the port only reads and writes — a wrong tree shows up
+as a different tree — but it stops holding the moment anything **rewrites** a
+tree. A rewrite that is wrong but plausible still parses, still round-trips,
+and still runs. It just returns different rows.
+
+So there is one more harness, and it is the only one here whose failure means
+"these two queries ask different questions" rather than "these two strings
+differ". `make oracle-exec` takes each statement as it was written and what
+the port writes back, runs **both** on DuckDB, and compares the results. 128
+statements are currently comparable; the rest either will not run without a
+schema, or are non-deterministic — which the harness *detects*, by running a
+statement twice and seeing whether it agrees with itself, rather than being
+handed a list of keywords like `RANDOM` to avoid.
+
+The reference's own output is checked alongside the port's, for a reason worth
+stating: the port reproduces sqlglot byte for byte on most of the corpus, so a
+semantic bug in sqlglot's round trip is one the port inherits *silently*, and
+no differential against sqlglot can ever see it. The first run found one —
+sqlglot rewrites DuckDB's reversing slice `[:-:-1]` into `[:-1:-1]`, turning a
+reversed list into its last element. It is recorded in
+`docs/upstream-issues.md` and **not** worked around; reproducing the reference
+is the point of the port.
+
+The engine lives on the Python side because DuckDB in Go means cgo, and the
+differential above proves the port on five platforms with a Go toolchain and
+nothing else — including Windows on arm64, where no such library exists. The
+Go side emits the pairs; Python runs them.
+
 A divergence fails the build. A coverage regression below `testdata/floor.json`
-fails the build. Test coverage below 95% fails the build; it currently stands
+fails the build. An unexplained execution divergence, or a drop below the
+comparable floor in `testdata/execution.json`, fails the build. Test coverage below 95% fails the build; it currently stands
 at 100% of statements. The harness proves it can fail
 (`TestTheHarnessCanTellRightFromWrong`).
 
@@ -144,6 +177,7 @@ make service    # re-extract the corpus of SQL data agent service is held to
 make gaps       # why the port refuses what it refuses, most common first
 make cover      # test coverage of the port
 make oracle     # regenerate expectations and generated tables from the pinned reference
+make oracle-exec # run the port's SQL through DuckDB and check it MEANS the same
 ```
 
 ## Working on Windows

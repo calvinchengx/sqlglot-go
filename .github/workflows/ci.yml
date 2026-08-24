@@ -69,8 +69,14 @@ jobs:
       # service in front of a database, so this one runs on every build. Its
       # sibling, FuzzGeneratedSQLCanBeReadBack, is deliberately NOT here yet:
       # it has an open finding recorded on the target itself.
+      # -fuzztime bounds the SEARCH; -timeout bounds the whole test binary. On
+      # a loaded runner the two collided: the search hit its deadline while a
+      # worker was mid-execution, and the step failed with "context deadline
+      # exceeded" and NO failing input written -- a shutdown race, not a hang.
+      # Confirmed by 37.8M local executions with no finding. A generous
+      # -timeout leaves room for the last execution to finish and report.
       - name: a short fuzz for parser panics
-        run: go test ./sqlglot/ -run=XXX -fuzz=FuzzParseOneNeverPanics -fuzztime=45s
+        run: go test ./sqlglot/ -run=XXX -fuzz=FuzzParseOneNeverPanics -fuzztime=45s -timeout=10m
       - uses: golangci/golangci-lint-action@v7
         with:
           version: v2.13.1
@@ -137,3 +143,28 @@ jobs:
           diff /tmp/parser_gen.go sqlglot/parser_gen.go
           diff /tmp/classes_gen.go sqlglot/classes_gen.go
           echo "generated tables are exactly the pinned reference's"
+
+  # The one check here that can fail because two queries MEAN different
+  # things rather than because two strings differ. Every other harness
+  # compares trees or text against sqlglot, which proves the port agrees with
+  # the reference and never that either is right.
+  #
+  # It is a separate job because it needs an engine. DuckDB in Go means cgo,
+  # and the differential job above proves the port on five platforms with a
+  # Go toolchain alone -- including Windows on arm64, where no such library
+  # exists. So the engine stays on the Python side, as the reference does.
+  execution-oracle:
+    name: The port's SQL means what it was given
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install duckdb
+      - name: run it through DuckDB and compare the rows
+        run: make oracle-exec

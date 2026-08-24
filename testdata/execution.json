@@ -1,0 +1,13 @@
+{
+ "_comment": "Gate for harness/execute.py. The floor sits a little under the observed 129 on purpose: non-determinism is DETECTED by running a statement twice and seeing whether it agrees with itself, which is sampling, so a statement near the edge lands in 'nondeterministic' on one run and 'agree' on the next. Observed flutter is +/-1. A real regression is a cliff, not a wobble.",
+ "comparable_floor": 125,
+ "known_divergences": [
+  {
+   "sql": "SELECT ([1,2,3])[:-:-1]",
+   "who": "reference",
+   "written": "SELECT ([1, 2, 3])[:-1:-1]",
+   "why": "[([3, 2, 1],)] != [([3],)]",
+   "note": "sqlglot reads DuckDB's omitted slice bound as -1, turning a reversal into a one-element slice. See docs/upstream-issues.md. NOT worked around: the port reproduces the reference on purpose."
+  }
+ ]
+}

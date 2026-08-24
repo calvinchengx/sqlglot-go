@@ -20,8 +20,10 @@ GOLANGCI = golangci/golangci-lint:v2.13.1
 # Windows spells it `python`; POSIX distributions increasingly only ship
 # `python3`. Override rather than edit.
 PYTHON ?= python3
+# Where the Go side hands the execution oracle its pairs; see harness/execute.py.
+EXEC_PAIRS ?= $(shell echo $${TMPDIR:-/tmp})/sqlglot-go-exec-pairs.jsonl
 
-.PHONY: help doctor test oracle service coverage cover gaps lint clean
+.PHONY: help doctor test oracle oracle-exec service coverage cover gaps lint clean
 
 help: ## Show the available targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN{FS=":.*?## "}{printf "  %-12s %s\n", $$1, $$2}'
@@ -30,6 +32,7 @@ doctor: ## Check the toolchain
 	@go version
 	@$(PYTHON) --version || echo "$(PYTHON) NOT found (only needed for make oracle and make service)"
 	@test -d $(SQLGLOT) && echo "reference: $(SQLGLOT) @ $$(git -C $(SQLGLOT) rev-parse --short HEAD)" || echo "reference NOT found at $(SQLGLOT) (only needed for make oracle)"
+	@$(PYTHON) -c 'import duckdb; print("duckdb:", duckdb.__version__)' 2>/dev/null || echo "duckdb NOT found (only needed for make oracle-exec)"
 
 test: ## Unit tests and the differential run against the reference
 	go test ./...
@@ -39,6 +42,10 @@ oracle: ## Regenerate expectations and generated tables from the PINNED referenc
 	$(PYTHON) harness/gen_classes.py --sqlglot $(SQLGLOT) > sqlglot/classes_gen.go && gofmt -w sqlglot/classes_gen.go
 	$(PYTHON) harness/gen_tokenizer.py --sqlglot $(SQLGLOT) --out sqlglot && gofmt -w sqlglot/tokentype_gen.go sqlglot/dialects_gen.go
 	$(PYTHON) harness/gen_parser.py --sqlglot $(SQLGLOT) && gofmt -w sqlglot/parser_gen.go
+
+oracle-exec: ## Run the port's SQL through DuckDB and check it MEANS the same (needs duckdb)
+	@DAS_EXEC_EMIT=$(EXEC_PAIRS) go test ./harness/ -run TestEmitExecutionPairs
+	@$(PYTHON) harness/execute.py --pairs $(EXEC_PAIRS)
 
 service: ## Re-extract the corpus of SQL data agent service is held to
 	$(PYTHON) harness/gen_service_corpus.py --service $(SERVICE) --sqlglot $(SQLGLOT)
