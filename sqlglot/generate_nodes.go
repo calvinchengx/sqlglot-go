@@ -967,6 +967,11 @@ func (g *generator) writeJSONPath(e *Expression) string {
 // a template substitutes text knowing none, so anything that could need
 // brackets is refused rather than written flat.
 func (g *generator) writeJSONExtractOp(e *Expression) string {
+	// A dialect with no single path literal writes one operator -- or one
+	// argument -- PER PART, so the node has to be folded rather than spelled.
+	if per, ok := g.tables.JSONPerPartSQL[e.Class]; ok {
+		return g.writeJSONPerPart(e, per)
+	}
 	form, ok := g.tables.JSONExtractSQL[e.Class]
 	if !ok {
 		return g.fail(e.Class)
@@ -985,12 +990,17 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 
 // isAtomForOperator reports whether a node needs no parentheses beside an
 // operator, whatever the precedence table says.
+//
+// A JSON extract counts: `j -> 'a' -> 'b'` nests to the left and the reference
+// writes it flat, so refusing a chain because its left side is not a leaf
+// turned away the very form this writer exists to produce.
 func isAtomForOperator(e *Expression) bool {
 	if e == nil {
 		return false
 	}
 	switch e.Class {
-	case "Column", "Literal", "Identifier", "Paren", "Star", "Null", "Boolean":
+	case "Column", "Literal", "Identifier", "Paren", "Star", "Null", "Boolean",
+		"JSONExtract", "JSONExtractScalar":
 		return true
 	}
 	return false
@@ -1037,4 +1047,52 @@ func isSafeLeadingOperand(g *generator, e *Expression) bool {
 		return false
 	}
 	return true
+}
+
+// writeJSONPerPart folds a path into one operator per part -- `j -> 'a' -> 'b'`
+// -- or into one argument per part when the node is not restricted to JSON
+// types: `JSON_EXTRACT_PATH(j, 'a', 'b')`. Which of the two is decided by the
+// same flag the parser read off the reference.
+func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
+	this, _ := e.Args["this"].(*Expression)
+	if !isAtomForOperator(this) {
+		return g.fail(e.Class + " over a compound expression")
+	}
+	path, _ := e.Args["expression"].(*Expression)
+	if path == nil || path.Class != "JSONPath" {
+		return g.fail(e.Class + " without a path")
+	}
+	parts, _ := path.Args["expressions"].([]*Expression)
+	names := make([]string, 0, len(parts))
+	for _, part := range parts {
+		switch part.Class {
+		case "JSONPathRoot":
+			// The root is not a part here: it names the value being indexed,
+			// which is already `this`.
+		case "JSONPathKey":
+			name, _ := part.Args["this"].(string)
+			names = append(names, escapeStringBody(name, g.cfg.StringEscapes))
+		default:
+			return g.fail(e.Class + " over a " + part.Class)
+		}
+	}
+	if len(names) == 0 {
+		return g.fail(e.Class + " with an empty path")
+	}
+	onlyJSON, _ := e.Args["only_json_types"].(bool)
+	if !onlyJSON {
+		// The function form takes every part as an argument.
+		out := strings.ReplaceAll(per.Call, "{this}", g.node(this))
+		head, tail, found := strings.Cut(out, "'{part}'")
+		if !found {
+			return g.fail(e.Class)
+		}
+		return head + "'" + strings.Join(names, "', '") + "'" + tail
+	}
+	out := g.node(this)
+	for _, name := range names {
+		step := strings.ReplaceAll(per.Chain, "{this}", out)
+		out = strings.ReplaceAll(step, "{part}", name)
+	}
+	return out
 }

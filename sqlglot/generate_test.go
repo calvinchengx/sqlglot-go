@@ -41,6 +41,8 @@ func TestGenerateShapes(t *testing.T) {
 		{"table alias columns", "select * from t as x(a, b)", "", "SELECT * FROM t AS x(a, b)"},
 		{"struct literal", "select {'a': 1, 'b': x}", "duckdb", "SELECT {'a': 1, 'b': x}"},
 		{"json extract", "select j -> '$.a'", "duckdb", "SELECT j -> '$.a'"},
+		{"postgres folds a path into operators", "select j -> 'a' -> 'b'", "postgres",
+			"SELECT j -> 'a' -> 'b'"},
 		{"date add tsql reorders", "select dateadd(day, 1, d)", "tsql", "SELECT DATEADD(DAY, 1, d)"},
 		{"quantifier all is spaced", "select x like all (array['a'])", "postgres",
 			`SELECT x LIKE ALL (ARRAY['a'])`},

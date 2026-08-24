@@ -216,7 +216,12 @@ type ParserTables struct {
 	// JSONExtractSQL is how the operator wraps a path, where the
 	// dialect writes it as one. A dialect that explodes the path into
 	// arguments has no entry and is refused.
-	JSONExtractSQL     map[string]string
+	JSONExtractSQL map[string]string
+	// JSONPerPartSQL is for dialects with no single path literal:
+	// PostgreSQL writes one operator per part, or one ARGUMENT per
+	// part when the node is not restricted to JSON types. One node
+	// becomes N of something, which is a transform, not a spelling.
+	JSONPerPartSQL     map[string]JSONPerPart
 	BracketIsRewritten bool
 	// Boolean is how TRUE and FALSE are written, and the two
 	// positions can differ: T-SQL writes 1 where a value is wanted
@@ -315,6 +320,13 @@ type BooleanSQL struct {
 	FalseValue     string
 	TrueCondition  string
 	FalseCondition string
+}
+
+// JSONPerPart is how one path part is written, folded left over the
+// parts: Chain for the operator form, Call for the function form.
+type JSONPerPart struct {
+	Chain string
+	Call  string
 }
 
 // JSONPathSQL is the text around each piece of a JSON path.
@@ -10063,6 +10075,10 @@ var parserTables = map[string]*ParserTables{
 		ArrayOpen:                "ARRAY[",
 		ArrayClose:               "]",
 		WritesIntoUnlogged:       true,
+		JSONPerPartSQL: map[string]JSONPerPart{
+			"JSONExtract":       {"{this} -> '{part}'", "JSON_EXTRACT_PATH({this}, '{part}')"},
+			"JSONExtractScalar": {"{this} ->> '{part}'", "JSON_EXTRACT_PATH_TEXT({this}, '{part}')"},
+		},
 		JSONPath: JSONPathSQL{
 			Open:      "'",
 			Close:     "'",

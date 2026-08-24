@@ -598,6 +598,45 @@ def time_format_args(dialect: str, P, exp, funcs) -> dict:
     return {k: sorted(v) for k, v in out.items()}
 
 
+def json_extract_chained(dialect: str, exp) -> dict:
+    """How a dialect writes a MULTI-PART path, when it does not write it whole.
+
+    PostgreSQL has no single path literal: it emits one operator per part --
+    `j -> 'a' -> 'b'` -- or, when the node is not restricted to JSON types, one
+    ARGUMENT per part: `JSON_EXTRACT_PATH(j, 'a', 'b')`. Either way the single
+    node becomes N of something, which is a transform rather than a spelling,
+    so both forms are read off the reference and folded here.
+
+    Returns, per class, the per-part template and the function form.
+    """
+
+    def path(*parts):
+        ps = [exp.JSONPathRoot()]
+        for part in parts:
+            ps.append(exp.JSONPathKey(this=part))
+        return exp.JSONPath(expressions=ps)
+
+    out = {}
+    for cls_name in ("JSONExtract", "JSONExtractScalar"):
+        cls = getattr(exp, cls_name)
+        forms = {}
+        for flag, key in ((True, "Chain"), (False, "Call")):
+            one = cls(this=exp.column("THIS"), expression=path("KEYA"), only_json_types=flag)
+            two = cls(
+                this=exp.column("THIS"), expression=path("KEYA", "KEYB"), only_json_types=flag
+            )
+            try:
+                a, b = one.sql(dialect=dialect or None), two.sql(dialect=dialect or None)
+            except Exception:  # noqa: BLE001
+                continue
+            if "KEYA" not in a or "KEYB" not in b:
+                continue
+            forms[key] = (a.replace("THIS", "{this}").replace("KEYA", "{part}"), b)
+        if forms:
+            out[cls_name] = forms
+    return out
+
+
 def json_extract_sql(dialect: str, exp) -> dict:
     """How `->` and `->>` are WRITTEN, when they are written as an operator.
 
@@ -1774,6 +1813,12 @@ def main() -> int:
         "\t// dialect writes it as one. A dialect that explodes the path into\n",
         "\t// arguments has no entry and is refused.\n",
         "\tJSONExtractSQL map[string]string\n",
+        "\t// JSONPerPartSQL is for dialects with no single path literal:\n",
+        "\t// PostgreSQL writes one operator per part, or one ARGUMENT per\n",
+        "\t// part when the node is not restricted to JSON types. One node\n",
+        "\t// becomes N of something, which is a transform, not a spelling.\n",
+        "\tJSONPerPartSQL map[string]JSONPerPart\n",
+
 
         "\tBracketIsRewritten bool\n",
         "\t// Boolean is how TRUE and FALSE are written, and the two\n",
@@ -1869,6 +1914,13 @@ def main() -> int:
         "\tFalseValue     string\n",
         "\tTrueCondition  string\n",
         "\tFalseCondition string\n",
+        "}\n",
+        "\n",
+        "// JSONPerPart is how one path part is written, folded left over the\n",
+        "// parts: Chain for the operator form, Call for the function form.\n",
+        "type JSONPerPart struct {\n",
+        "\tChain string\n",
+        "\tCall  string\n",
         "}\n",
         "\n",
         "// JSONPathSQL is the text around each piece of a JSON path.\n",
@@ -2096,6 +2148,29 @@ def main() -> int:
         out.append(
             f"\t\tWritesIntoUnlogged: {str(writes_into_unlogged(name, exp)).lower()},\n"
         )
+        _jc = json_extract_chained(name, exp)
+        # Only where the dialect writes one operator or argument PER PART. A
+        # dialect that puts the whole path in one operator needs no fold and
+        # gets no entry.
+        _folded = {
+            cls: forms
+            for cls, forms in _jc.items()
+            if forms.get("Chain") and forms["Chain"][1].count("KEYA") == 1
+            and "KEYB" in forms["Chain"][1]
+            and forms["Chain"][1] != forms["Chain"][0].replace("{this}", "THIS").replace(
+                "{part}", "KEYA"
+            )
+            and forms["Chain"][1].count(forms["Chain"][0].split("{part}")[0].split("{this}")[1]) > 1
+        }
+        if _folded:
+            out.append("\t\tJSONPerPartSQL: map[string]JSONPerPart{\n")
+            for cls in sorted(_folded):
+                chain = _folded[cls]["Chain"][0]
+                call = _folded[cls].get("Call", ("", ""))[0]
+                out.append(
+                    f"\t\t\t{gostr(cls)}: {{{gostr(chain)}, {gostr(call)}}},\n"
+                )
+            out.append("\t\t},\n")
         _je = json_extract_sql(name, exp)
         if _je:
             out.append("\t\tJSONExtractSQL: map[string]string{\n")
