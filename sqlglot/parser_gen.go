@@ -207,7 +207,16 @@ type ParserTables struct {
 	JSONPathIsParsed bool
 	// WritesIntoUnlogged: PostgreSQL keeps UNLOGGED before the table
 	// in SELECT ... INTO; T-SQL has no such kind and drops it.
-	WritesIntoUnlogged   bool
+	WritesIntoUnlogged bool
+	// JSONPath is how this dialect writes a path, in pieces: DuckDB
+	// quotes the whole thing and keeps the $ root, Databricks does
+	// neither, and the two spell a key that needs quoting differently.
+	// PROBED by subtraction.
+	JSONPath JSONPathSQL
+	// JSONExtractSQL is how the operator wraps a path, where the
+	// dialect writes it as one. A dialect that explodes the path into
+	// arguments has no entry and is refused.
+	JSONExtractSQL       map[string]string
 	BracketIsRewritten   bool
 	WritesBooleanLiteral bool
 	IsNotNullWrapsInNot  bool
@@ -281,6 +290,15 @@ type FuncConst struct {
 // something other than what the probe recorded.
 // SyntaxTemplate is how one shape of a syntax function is written,
 // with {key} where each argument goes.
+// JSONPathSQL is the text around each piece of a JSON path.
+type JSONPathSQL struct {
+	Open      string
+	Close     string
+	Key       string
+	Subscript string
+	QuotedKey string
+}
+
 type SyntaxTemplate struct {
 	Keys     []string
 	Marked   []string
@@ -3360,6 +3378,17 @@ var parserTables = map[string]*ParserTables{
 		ArrayOpen:                "ARRAY(",
 		ArrayClose:               ")",
 		WritesIntoUnlogged:       true,
+		JSONExtractSQL: map[string]string{
+			"JSONExtract":       "JSON_EXTRACT({this}, {path})",
+			"JSONExtractScalar": "JSON_EXTRACT_SCALAR({this}, {path})",
+		},
+		JSONPath: JSONPathSQL{
+			Open:      "'$",
+			Close:     "'",
+			Key:       ".{key}",
+			Subscript: "[{index}]",
+			QuotedKey: "[\"{key}\"]",
+		},
 		BracketIsRewritten:       false,
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,
@@ -6661,6 +6690,13 @@ var parserTables = map[string]*ParserTables{
 		ArrayOpen:                "ARRAY(",
 		ArrayClose:               ")",
 		WritesIntoUnlogged:       false,
+		JSONPath: JSONPathSQL{
+			Open:      "'$",
+			Close:     "'",
+			Key:       ".{key}",
+			Subscript: "[{index}]",
+			QuotedKey: ".\"{key}\"",
+		},
 		BracketIsRewritten:       false,
 		WritesBooleanLiteral:     false,
 		IsNotNullWrapsInNot:      true,
@@ -10022,6 +10058,13 @@ var parserTables = map[string]*ParserTables{
 		ArrayOpen:                "ARRAY[",
 		ArrayClose:               "]",
 		WritesIntoUnlogged:       true,
+		JSONPath: JSONPathSQL{
+			Open:      "'",
+			Close:     "'",
+			Key:       "{key}",
+			Subscript: "{index}",
+			QuotedKey: "{key}",
+		},
 		BracketIsRewritten:       true,
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      false,
@@ -13525,6 +13568,17 @@ var parserTables = map[string]*ParserTables{
 		ArrayOpen:                "[",
 		ArrayClose:               "]",
 		WritesIntoUnlogged:       true,
+		JSONExtractSQL: map[string]string{
+			"JSONExtract":       "{this} -> {path}",
+			"JSONExtractScalar": "{this} ->> {path}",
+		},
+		JSONPath: JSONPathSQL{
+			Open:      "'$",
+			Close:     "'",
+			Key:       ".{key}",
+			Subscript: "[{index}]",
+			QuotedKey: ".\"{key}\"",
+		},
 		BracketIsRewritten:       true,
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,
@@ -16957,6 +17011,17 @@ var parserTables = map[string]*ParserTables{
 		ArrayOpen:                "ARRAY(",
 		ArrayClose:               ")",
 		WritesIntoUnlogged:       true,
+		JSONExtractSQL: map[string]string{
+			"JSONExtract":       "{this}:{path}",
+			"JSONExtractScalar": "GET_JSON_OBJECT({this}, '$.{path}')",
+		},
+		JSONPath: JSONPathSQL{
+			Open:      "",
+			Close:     "",
+			Key:       "{key}",
+			Subscript: "[{index}]",
+			QuotedKey: "[\"{key}\"]",
+		},
 		BracketIsRewritten:       false,
 		WritesBooleanLiteral:     true,
 		IsNotNullWrapsInNot:      true,

@@ -560,6 +560,80 @@ def time_format_args(dialect: str, P, exp, funcs) -> dict:
     return {k: sorted(v) for k, v in out.items()}
 
 
+def json_extract_sql(dialect: str, exp) -> dict:
+    """How `->` and `->>` are WRITTEN, when they are written as an operator.
+
+    DuckDB writes `j -> '$.a'` and Databricks `j:a`. PostgreSQL writes
+    `JSON_EXTRACT_PATH(j, 'a', 'b')` -- the path EXPLODED into one argument per
+    part -- and T-SQL duplicates the whole expression into
+    `ISNULL(JSON_QUERY(...), JSON_VALUE(...))`. Neither of those is the path
+    rendered in place, so the substitution below simply fails for them and they
+    stay refused, which is the right answer rather than a special case.
+    """
+    out = {}
+    path = exp.JSONPath(
+        expressions=[exp.JSONPathRoot(), exp.JSONPathKey(this="KEYA"), exp.JSONPathKey(this="KEYB")]
+    )
+    try:
+        rendered_path = path.sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return out
+    for cls_name in ("JSONExtract", "JSONExtractScalar"):
+        cls = getattr(exp, cls_name)
+        node = cls(this=exp.column("THISCOL"), expression=path.copy(), only_json_types=False)
+        try:
+            text = node.sql(dialect=dialect or None)
+        except Exception:  # noqa: BLE001
+            continue
+        if text.count("THISCOL") != 1 or rendered_path not in text:
+            continue
+        out[cls_name] = text.replace("THISCOL", "{this}").replace(rendered_path, "{path}")
+    return out
+
+
+def json_path_pieces(dialect: str, exp) -> dict:
+    """How this dialect writes a JSON path, taken apart into its pieces.
+
+    A path renders standalone and brings its own quoting, so the pieces can be
+    recovered by rendering canonical paths and subtracting: DuckDB writes
+    `'$.a[0]."b c"'` and Databricks `a[0]["b c"]` -- different root, different
+    quoting, different way of spelling a key that needs quotes. Nothing here is
+    transcribed; each piece is what the reference emitted minus what the
+    shorter path emitted.
+    """
+    def render(parts):
+        return exp.JSONPath(expressions=parts).sql(dialect=dialect or None)
+
+    root = [exp.JSONPathRoot()]
+    try:
+        only_root = render(root)
+        with_key = render(root + [exp.JSONPathKey(this="KEY")])
+        with_sub = render(root + [exp.JSONPathSubscript(this=7)])
+        with_quoted = render(root + [exp.JSONPathKey(this="a b")])
+    except Exception:  # noqa: BLE001 -- this dialect will not render a bare path
+        return {}
+
+    # The outer wrapper is whatever surrounds every rendering.
+    open_, close_ = "", ""
+    if only_root.startswith("'") and only_root.endswith("'"):
+        open_, close_ = "'", "'"
+        only_root = only_root[1:-1]
+        with_key = with_key[1:-1]
+        with_sub = with_sub[1:-1]
+        with_quoted = with_quoted[1:-1]
+
+    def suffix(longer):
+        return longer[len(only_root):] if longer.startswith(only_root) else longer
+
+    return {
+        "Open": open_ + only_root,
+        "Close": close_,
+        "Key": suffix(with_key).replace("KEY", "{key}"),
+        "Subscript": suffix(with_sub).replace("7", "{index}"),
+        "QuotedKey": suffix(with_quoted).replace("a b", "{key}"),
+    }
+
+
 def bracket_is_rewritten(dialect: str) -> bool:
     """Whether `a[1]` comes back as something other than a plain subscript.
 
@@ -1485,6 +1559,16 @@ def main() -> int:
         "\t// WritesIntoUnlogged: PostgreSQL keeps UNLOGGED before the table\n",
         "\t// in SELECT ... INTO; T-SQL has no such kind and drops it.\n",
         "\tWritesIntoUnlogged bool\n",
+        "\t// JSONPath is how this dialect writes a path, in pieces: DuckDB\n",
+        "\t// quotes the whole thing and keeps the $ root, Databricks does\n",
+        "\t// neither, and the two spell a key that needs quoting differently.\n",
+        "\t// PROBED by subtraction.\n",
+        "\tJSONPath JSONPathSQL\n",
+        "\t// JSONExtractSQL is how the operator wraps a path, where the\n",
+        "\t// dialect writes it as one. A dialect that explodes the path into\n",
+        "\t// arguments has no entry and is refused.\n",
+        "\tJSONExtractSQL map[string]string\n",
+
         "\tBracketIsRewritten bool\n",
         "\tWritesBooleanLiteral bool\n",
         "\tIsNotNullWrapsInNot bool\n",
@@ -1554,6 +1638,15 @@ def main() -> int:
         "// something other than what the probe recorded.\n",
         "// SyntaxTemplate is how one shape of a syntax function is written,\n",
         "// with {key} where each argument goes.\n",
+        "// JSONPathSQL is the text around each piece of a JSON path.\n",
+        "type JSONPathSQL struct {\n",
+        "\tOpen      string\n",
+        "\tClose     string\n",
+        "\tKey       string\n",
+        "\tSubscript string\n",
+        "\tQuotedKey string\n",
+        "}\n",
+        "\n",
         "type SyntaxTemplate struct {\n",
         "\tKeys     []string\n",
         "\tMarked   []string\n",
@@ -1766,6 +1859,18 @@ def main() -> int:
         out.append(
             f"\t\tWritesIntoUnlogged: {str(writes_into_unlogged(name, exp)).lower()},\n"
         )
+        _je = json_extract_sql(name, exp)
+        if _je:
+            out.append("\t\tJSONExtractSQL: map[string]string{\n")
+            for k in sorted(_je):
+                out.append(f"\t\t\t{gostr(k)}: {gostr(_je[k])},\n")
+            out.append("\t\t},\n")
+        _jp = json_path_pieces(name, exp)
+        if _jp:
+            out.append("\t\tJSONPath: JSONPathSQL{\n")
+            for k in ("Open", "Close", "Key", "Subscript", "QuotedKey"):
+                out.append(f"\t\t\t{k}: {gostr(_jp[k])},\n")
+            out.append("\t\t},\n")
         out.append(
             f"\t\tBracketIsRewritten: {str(bracket_is_rewritten(name)).lower()},\n"
         )

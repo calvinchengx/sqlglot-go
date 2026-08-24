@@ -20,66 +20,69 @@ var generators map[string]func(*generator, *Expression) string
 // dispatcher, and Go will not let a package-level map close that loop.
 func init() {
 	generators = map[string]func(*generator, *Expression) string{
-		"Select":        (*generator).writeSelect,
-		"Union":         (*generator).writeSetOperation,
-		"Except":        (*generator).writeSetOperation,
-		"Intersect":     (*generator).writeSetOperation,
-		"With":          (*generator).writeWith,
-		"CTE":           (*generator).writeCTE,
-		"TableAlias":    (*generator).writeTableAlias,
-		"From":          (*generator).writeFrom,
-		"Table":         (*generator).writeTable,
-		"Join":          (*generator).writeJoin,
-		"Lateral":       (*generator).writeLateral,
-		"Subquery":      (*generator).writeSubquery,
-		"Where":         (*generator).writeWhere,
-		"Group":         (*generator).writeGroup,
-		"Having":        (*generator).writeHaving,
-		"Order":         (*generator).writeOrder,
-		"Ordered":       (*generator).writeOrdered,
-		"Limit":         (*generator).writeLimit,
-		"Offset":        (*generator).writeOffset,
-		"Into":          (*generator).writeInto,
-		"Star":          (*generator).writeStar,
-		"Column":        (*generator).writeColumn,
-		"Identifier":    (*generator).writeIdentifier,
-		"Literal":       (*generator).writeLiteral,
-		"Boolean":       (*generator).writeBoolean,
-		"Null":          (*generator).writeNull,
-		"Alias":         (*generator).writeAlias,
-		"Paren":         (*generator).writeParen,
-		"Case":          (*generator).writeCase,
-		"If":            (*generator).writeIf,
-		"Cast":          (*generator).writeCast,
-		"TryCast":       (*generator).writeCast,
-		"DataType":      (*generator).writeDataType,
-		"DataTypeParam": (*generator).writeChildThis,
-		"Anonymous":     (*generator).writeAnonymous,
-		"In":            (*generator).writeIn,
-		"Between":       (*generator).writeBetween,
-		"Dot":           (*generator).writeDot,
-		"Distinct":      (*generator).writeDistinct,
-		"Array":         (*generator).writeArray,
-		"Window":        (*generator).writeWindow,
-		"Interval":      (*generator).writeInterval,
-		"Lambda":        (*generator).writeLambda,
-		"Struct":        (*generator).writeStruct,
-		"PropertyEQ":    (*generator).writePropertyEQ,
-		"Filter":        (*generator).writeFilter,
-		"Extract":       (*generator).writeSyntaxFunction,
-		"Trim":          (*generator).writeSyntaxFunction,
-		"Substring":     (*generator).writeSyntaxFunction,
-		"StrPosition":   (*generator).writeSyntaxFunction,
-		"IntervalSpan":  (*generator).writeIntervalSpan,
-		"Var":           (*generator).writeVar,
-		"WindowSpec":    (*generator).writeWindowSpec,
-		"Bracket":       (*generator).writeBracket,
-		"Slice":         (*generator).writeSlice,
-		"All":           (*generator).writeQuantifier,
-		"Any":           (*generator).writeQuantifier,
-		"Like":          (*generator).writeLike,
-		"ILike":         (*generator).writeLike,
-		"Is":            (*generator).writeIs,
+		"Select":            (*generator).writeSelect,
+		"Union":             (*generator).writeSetOperation,
+		"Except":            (*generator).writeSetOperation,
+		"Intersect":         (*generator).writeSetOperation,
+		"With":              (*generator).writeWith,
+		"CTE":               (*generator).writeCTE,
+		"TableAlias":        (*generator).writeTableAlias,
+		"From":              (*generator).writeFrom,
+		"Table":             (*generator).writeTable,
+		"Join":              (*generator).writeJoin,
+		"Lateral":           (*generator).writeLateral,
+		"Subquery":          (*generator).writeSubquery,
+		"Where":             (*generator).writeWhere,
+		"Group":             (*generator).writeGroup,
+		"Having":            (*generator).writeHaving,
+		"Order":             (*generator).writeOrder,
+		"Ordered":           (*generator).writeOrdered,
+		"Limit":             (*generator).writeLimit,
+		"Offset":            (*generator).writeOffset,
+		"Into":              (*generator).writeInto,
+		"Star":              (*generator).writeStar,
+		"Column":            (*generator).writeColumn,
+		"Identifier":        (*generator).writeIdentifier,
+		"Literal":           (*generator).writeLiteral,
+		"Boolean":           (*generator).writeBoolean,
+		"Null":              (*generator).writeNull,
+		"Alias":             (*generator).writeAlias,
+		"Paren":             (*generator).writeParen,
+		"Case":              (*generator).writeCase,
+		"If":                (*generator).writeIf,
+		"Cast":              (*generator).writeCast,
+		"TryCast":           (*generator).writeCast,
+		"DataType":          (*generator).writeDataType,
+		"DataTypeParam":     (*generator).writeChildThis,
+		"Anonymous":         (*generator).writeAnonymous,
+		"In":                (*generator).writeIn,
+		"Between":           (*generator).writeBetween,
+		"Dot":               (*generator).writeDot,
+		"Distinct":          (*generator).writeDistinct,
+		"Array":             (*generator).writeArray,
+		"Window":            (*generator).writeWindow,
+		"Interval":          (*generator).writeInterval,
+		"Lambda":            (*generator).writeLambda,
+		"Struct":            (*generator).writeStruct,
+		"JSONPath":          (*generator).writeJSONPath,
+		"JSONExtract":       (*generator).writeJSONExtractOp,
+		"JSONExtractScalar": (*generator).writeJSONExtractOp,
+		"PropertyEQ":        (*generator).writePropertyEQ,
+		"Filter":            (*generator).writeFilter,
+		"Extract":           (*generator).writeSyntaxFunction,
+		"Trim":              (*generator).writeSyntaxFunction,
+		"Substring":         (*generator).writeSyntaxFunction,
+		"StrPosition":       (*generator).writeSyntaxFunction,
+		"IntervalSpan":      (*generator).writeIntervalSpan,
+		"Var":               (*generator).writeVar,
+		"WindowSpec":        (*generator).writeWindowSpec,
+		"Bracket":           (*generator).writeBracket,
+		"Slice":             (*generator).writeSlice,
+		"All":               (*generator).writeQuantifier,
+		"Any":               (*generator).writeQuantifier,
+		"Like":              (*generator).writeLike,
+		"ILike":             (*generator).writeLike,
+		"Is":                (*generator).writeIs,
 	}
 }
 
@@ -842,4 +845,69 @@ func (g *generator) writePropertyEQ(e *Expression) string {
 
 func (g *generator) writeFilter(e *Expression) string {
 	return g.child(e, "this") + " FILTER(" + g.child(e, "expression") + ")"
+}
+
+// writeJSONPath assembles a path from the pieces the dialect uses. DuckDB
+// quotes the whole thing and keeps the $ root; Databricks does neither, and
+// the two spell a key needing quotes differently.
+func (g *generator) writeJSONPath(e *Expression) string {
+	parts, _ := e.Args["expressions"].([]*Expression)
+	out := g.tables.JSONPath.Open
+	for _, part := range parts {
+		switch part.Class {
+		case "JSONPathRoot":
+			// The root is already in Open.
+		case "JSONPathKey":
+			name, _ := part.Args["this"].(string)
+			form := g.tables.JSONPath.Key
+			if !isBareIdentifier(name) {
+				form = g.tables.JSONPath.QuotedKey
+			}
+			out += strings.ReplaceAll(form, "{key}", name)
+		case "JSONPathSubscript":
+			n, _ := part.Args["this"].(int)
+			out += strings.ReplaceAll(g.tables.JSONPath.Subscript, "{index}", strconv.Itoa(n))
+		default:
+			return g.fail(part.Class)
+		}
+	}
+	return out + g.tables.JSONPath.Close
+}
+
+// writeJSONExtractOp writes `->` and `->>` the way the dialect writes them,
+// where it writes them as an operator at all. PostgreSQL explodes the path
+// into one argument per part and T-SQL duplicates the whole expression into
+// ISNULL(JSON_QUERY, JSON_VALUE); neither has a template, so both refuse.
+//
+// The left side must be an ATOM. The reference parenthesises by precedence and
+// a template substitutes text knowing none, so anything that could need
+// brackets is refused rather than written flat.
+func (g *generator) writeJSONExtractOp(e *Expression) string {
+	form, ok := g.tables.JSONExtractSQL[e.Class]
+	if !ok {
+		return g.fail(e.Class)
+	}
+	this, _ := e.Args["this"].(*Expression)
+	if !isAtomForOperator(this) {
+		return g.fail(e.Class + " over a compound expression")
+	}
+	path, _ := e.Args["expression"].(*Expression)
+	if path == nil || path.Class != "JSONPath" {
+		return g.fail(e.Class + " without a path")
+	}
+	out := strings.ReplaceAll(form, "{this}", g.node(this))
+	return strings.ReplaceAll(out, "{path}", g.node(path))
+}
+
+// isAtomForOperator reports whether a node needs no parentheses beside an
+// operator, whatever the precedence table says.
+func isAtomForOperator(e *Expression) bool {
+	if e == nil {
+		return false
+	}
+	switch e.Class {
+	case "Column", "Literal", "Identifier", "Paren", "Star", "Null", "Boolean":
+		return true
+	}
+	return false
 }
