@@ -88,7 +88,16 @@ def reference_round_trip(sql: str, dialect: str) -> tuple[str, str]:
         second = sqlglot.parse_one(written, read=dialect or None)
     except Exception as e:
         return REFERENCE, f"reference cannot read back its own {written!r}: {type(e).__name__}"
-    if repr(first) != repr(second):
+    # The COMPARISON can fail too. A fuzzer reaches nesting depths a hand-
+    # written statement never does, and repr() of a deep tree exhausts
+    # Python's stack -- which crashed this script and took the whole gate
+    # with it. A reference that cannot compare its own trees has not shown
+    # the port to be wrong.
+    try:
+        differs = repr(first) != repr(second)
+    except Exception as e:  # noqa: BLE001 -- RecursionError included
+        return REFUSED, f"reference cannot compare its own trees: {type(e).__name__}"
+    if differs:
         return REFERENCE, f"reference round-trips {sql!r} -> {written!r} into a different tree"
     return PORT, f"reference is stable: {sql!r} -> {written!r}"
 

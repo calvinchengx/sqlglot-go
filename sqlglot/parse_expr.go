@@ -81,7 +81,7 @@ func (p *parser) parseComparison() (*Expression, error) {
 // reference treats the two differently and so must this. A NOT that turns out
 // not to introduce a range is put back.
 func (p *parser) parseRange() (*Expression, error) {
-	this, err := p.parseBitwise()
+	this, err := p.parseJSONArrow()
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +115,7 @@ func (p *parser) parseRange() (*Expression, error) {
 			class := p.tables.BinaryRangeOps[c.Type]
 			p.advance()
 			var right *Expression
-			right, err = p.parseBitwise()
+			right, err = p.parseJSONArrow()
 			if err == nil {
 				this = New(class, Arg{"this", this}, Arg{"expression", right})
 			}
@@ -289,6 +289,46 @@ func (p *parser) parseBetween(this *Expression) (*Expression, error) {
 		Arg{"symmetric", nil}), nil
 }
 
+// parseJSONArrow reads `j -> '$.a'` and `j ->> '$.a'`.
+//
+// These sit between the range operators and the bitwise ones: LOOSER than
+// arithmetic, a cast or a unary minus, and TIGHTER than a comparison, IS,
+// LIKE or AND. The port had them at the tightest level of all, with the
+// postfix operators, which read `0 ^ 0 -> ”` as `0 ^ (0 -> ”)` where the
+// reference reads `(0 ^ 0) -> ”`. Same tokens, different question, and no
+// corpus statement happened to contain the combination -- the generator
+// fuzzer found it.
+//
+// The right-hand side is a path STRING parsed into a JSONPath, not an
+// expression, which is why this is not simply another binary level.
+func (p *parser) parseJSONArrow() (*Expression, error) {
+	this, err := p.parseBitwise()
+	if err != nil {
+		return nil, err
+	}
+	for p.at(TokARROW) || p.at(TokDARROW) {
+		class := "JSONExtract"
+		if p.at(TokDARROW) {
+			class = "JSONExtractScalar"
+		}
+		p.advance()
+		path, perr := p.parseJSONPathOperand()
+		if perr != nil {
+			return nil, perr
+		}
+		args := []Arg{{"this", this}, {"expression", path},
+			{"only_json_types", p.tables.JSONArrowOnlyJSONTypes}}
+		if class == "JSONExtractScalar" && p.tables.JSONArrowSetsScalarOnly {
+			// PostgreSQL leaves this arg OFF the node; the others set it
+			// false. An arg present-but-false is a different tree from an
+			// arg absent, so whether to set it is probed, not the value.
+			args = append(args, Arg{"scalar_only", false})
+		}
+		this = New(class, args...)
+	}
+	return this, nil
+}
+
 func (p *parser) parseBitwise() (*Expression, error) {
 	this, err := p.parseTerm()
 	if err != nil {
@@ -434,30 +474,6 @@ func (p *parser) parsePostfix() (*Expression, error) {
 		return nil, err
 	}
 	for {
-		// `j -> '$.a'` and `j ->> '$.a'` are COLUMN OPERATORS in the
-		// reference, not binary operators: the right-hand side is a path
-		// string, parsed into a JSONPath rather than into an expression.
-		if p.at(TokARROW) || p.at(TokDARROW) {
-			class := "JSONExtract"
-			if p.at(TokDARROW) {
-				class = "JSONExtractScalar"
-			}
-			p.advance()
-			path, err := p.parseJSONPathOperand()
-			if err != nil {
-				return nil, err
-			}
-			args := []Arg{{"this", this}, {"expression", path},
-				{"only_json_types", p.tables.JSONArrowOnlyJSONTypes}}
-			if class == "JSONExtractScalar" && p.tables.JSONArrowSetsScalarOnly {
-				// PostgreSQL leaves this arg OFF the node; the others set it
-				// false. An arg present-but-false is a different tree from an
-				// arg absent, so whether to set it is probed, not the value.
-				args = append(args, Arg{"scalar_only", false})
-			}
-			this = New(class, args...)
-			continue
-		}
 		if p.match(TokDCOLON) {
 			to, err := p.parseDataType()
 			if err != nil {
@@ -605,8 +621,13 @@ func (p *parser) atSliceStart() bool {
 	if !p.at(TokCOLON) {
 		return false
 	}
+	// A plain word only. A KEYWORD after the colon is the start of the bound,
+	// not the name of a parameter: `[:NOT x]` is a slice up to NOT x, and
+	// reading NOT as a name left the rest of the expression trailing. The
+	// `$WHERE` form still takes keywords -- that is a different token and a
+	// different rule.
 	n := p.next()
-	return !isParameterName(n) || n.Type == TokNUMBER
+	return n == nil || n.Type != TokVAR
 }
 
 // parseBracketItems reads what sits between `[` and `]`: a comma-separated
@@ -911,13 +932,22 @@ func newStar() *Expression {
 func (p *parser) dotted(this *Expression) *Expression {
 	for p.at(TokDOT) {
 		n := p.next()
-		if !isParameterName(n) || n.Type == TokNUMBER {
+		var right *Expression
+		switch {
+		case n == nil:
+			return this
+		case n.Type == TokSTRING:
+			// A STRING after the dot stays a string: `$0.'AS'` is a Dot over a
+			// Literal, not over an identifier called AS.
+			right = New("Literal", Arg{"this", n.Text}, Arg{"is_string", true})
+		case isParameterName(n) && n.Type != TokNUMBER:
+			right = New("Identifier", Arg{"this", n.Text}, Arg{"quoted", false})
+		default:
 			return this
 		}
 		p.advance()
 		p.advance()
-		id := New("Identifier", Arg{"this", n.Text}, Arg{"quoted", false})
-		this = New("Dot", Arg{"this", this}, Arg{"expression", id})
+		this = New("Dot", Arg{"this", this}, Arg{"expression", right})
 	}
 	return this
 }

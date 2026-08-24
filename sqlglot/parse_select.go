@@ -178,7 +178,11 @@ func (p *parser) parseSelect() (*Expression, error) {
 	if distinct && p.at(TokON) {
 		return nil, p.unsupported("DISTINCT ON")
 	}
-	if p.at(TokALL) {
+	// `SELECT ALL x` is the quantifier, which this port does not carry. But
+	// `SELECT All` with nothing after it is a COLUMN called All, and the
+	// reference reads it that way -- so the refusal has to look at what
+	// follows, or the port cannot read back its own `SELECT All`.
+	if p.at(TokALL) && !endsSelectExpression(p.next()) {
 		return nil, p.unsupported("SELECT ALL")
 	}
 
@@ -555,4 +559,17 @@ func (p *parser) parseExpressionList() ([]*Expression, error) {
 		}
 	}
 	return out, nil
+}
+
+// endsSelectExpression reports whether a token cannot continue a select item,
+// which is how a bare `ALL` is told from the `ALL` quantifier in front of one.
+func endsSelectExpression(t *Token) bool {
+	if t == nil {
+		return true // nothing follows at all: a bare column called ALL
+	}
+	switch t.Type {
+	case TokFROM, TokWHERE, TokCOMMA, TokR_PAREN, TokSEMICOLON, TokUNION:
+		return true
+	}
+	return false
 }

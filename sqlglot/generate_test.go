@@ -116,6 +116,29 @@ func TestGenerateShapes(t *testing.T) {
 		{"a colon in an array literal is a parameter", "SELECT [:a]", "databricks",
 			"SELECT ARRAY(:a)"},
 		{"a colon in a subscript is a slice", "SELECT x[:2]", "duckdb", "SELECT x[:2]"},
+		// `->` binds LOOSER than arithmetic, a cast or a unary minus, and
+		// TIGHTER than a comparison, IS, LIKE or AND. Having it at the tightest
+		// level read `0 ^ 0 -> ''` as `0 ^ (0 -> '')`: same tokens, different
+		// question, and no corpus statement had the combination.
+		{"the arrow binds looser than power", "SELECT 0^0->''", "duckdb",
+			"SELECT POWER(0, 0) -> '$'"},
+		{"and looser than a cast", "SELECT a::INT->'x'", "duckdb",
+			"SELECT CAST(a AS INT) -> '$.x'"},
+		{"and looser than concatenation", "SELECT a||b->'x'", "duckdb",
+			"SELECT a || b -> '$.x'"},
+		{"but tighter than a comparison", "SELECT 1 WHERE a->'x'=b", "duckdb",
+			"SELECT 1 WHERE a -> '$.x' = b"},
+		{"and tighter than AND", "SELECT 1 WHERE a->'x' AND b", "duckdb",
+			"SELECT 1 WHERE a -> '$.x' AND b"},
+		{"and chains left", "SELECT a->'x'->'y'", "duckdb", "SELECT a -> '$.x' -> '$.y'"},
+		// A subquery's alias names the subquery; the joins come after it.
+		{"an alias before its joins", "SELECT 0 FROM ((A) A, A A)", "duckdb",
+			"SELECT 0 FROM ((A) AS A, A AS A)"},
+		// A bare ALL is a column; the quantifier needs something to quantify.
+		{"a column called All", "SELECT All", "databricks", "SELECT All"},
+		{"a dotted parameter", "SELECT :A.a", "databricks", "SELECT :A.a"},
+		{"a string after the dot stays a string", "SELECT $0.'AS'", "duckdb",
+			"SELECT $0.'AS'"},
 		{"json extract scalar", "select j ->> '$.a.b'", "duckdb", "SELECT j ->> '$.a.b'"},
 		{"json subscript", "select j -> '$[0]'", "duckdb", "SELECT j -> '$[0]'"},
 		{"json quoted key", `select j -> '$."a b"'`, "duckdb", `SELECT j -> '$."a b"'`},

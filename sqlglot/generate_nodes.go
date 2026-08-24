@@ -253,11 +253,15 @@ func (g *generator) writeSubquery(e *Expression) string {
 	g.qualifyDerivedOutputs(e)
 	// The parentheses wrap what the subquery IS; a join hanging off it comes
 	// after them, the same way it comes after a table.
-	out := "(" + g.child(e, "this") + ")" + g.joins(e)
+	out := "(" + g.child(e, "this") + ")"
+	// The ALIAS names the subquery and the joins come after it, exactly as
+	// they do for a table. Writing the joins first produced
+	// `((A), A AS A AS A)` from `((A) A, A A)` -- the alias pushed past the
+	// comma onto the joined table, which already had one.
 	if alias := g.child(e, "alias"); alias != "" {
 		out += " AS " + alias
 	}
-	return out
+	return out + g.joins(e)
 }
 
 func (g *generator) writeWhere(e *Expression) string {
@@ -1149,7 +1153,23 @@ func isAtomForOperator(e *Expression) bool {
 		"JSONExtract", "JSONExtractScalar":
 		return true
 	}
-	return false
+	// Anything that binds TIGHTER than the arrow needs no parentheses in front
+	// of it: `POWER(0, 0) -> '$'` is what the reference writes for `0^0->''`.
+	// This list used to be the safe one for the arrow at the tightest level of
+	// all; now that it sits where the reference puts it -- looser than
+	// arithmetic, a cast or a unary minus -- those operands are atoms too.
+	//
+	// What is still refused is an operand that binds LOOSER: a comparison, an
+	// IS, a connector. Those can only get here already parenthesised, and a
+	// Paren is an atom above.
+	if isA("Binary", e) && !isA("Connector", e) && !isA("Predicate", e) {
+		return true
+	}
+	switch e.Class {
+	case "Cast", "TryCast", "Neg", "BitwiseNot", "Anonymous", "Bracket":
+		return true
+	}
+	return isA("Unary", e) && e.Class != "Not"
 }
 
 // writeUnnest writes the call and then its alias. The function spelling comes

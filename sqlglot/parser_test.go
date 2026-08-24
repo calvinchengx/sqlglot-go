@@ -113,6 +113,7 @@ func TestRefusals(t *testing.T) {
 		// WRITE a node whose only spelling is that call. See
 		// generator.parserWouldRefuse.
 		{"a builder that inspects its arguments", "HASHBYTES('SHA1', x)", "tsql"},
+		{"the ALL quantifier, which the port does not carry", "SELECT ALL x", "databricks"},
 		{"fixed-size array where the dialect has none", "CAST(a AS INT[3])", "databricks"},
 		{"unknown type", "CAST(a AS wat)", ""},
 		{"CAST without AS", "CAST(a INT)", ""},
