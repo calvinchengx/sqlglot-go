@@ -143,6 +143,14 @@ func simplifyLiterals(e *Expression) *Expression {
 	if e.Class == "Is" {
 		return simplifyIs(e, a, b)
 	}
+	// A comparison sees THROUGH a widening cast of a small integer:
+	// `CAST(1 AS UINT) >= 0` is `1 >= 0`, which then folds to TRUE. Only
+	// byte-sized values, and only widening -- a narrowing cast can overflow,
+	// and what an engine does then is its own business.
+	if comparisons[e.Class] {
+		a = withoutWideningCast(a)
+		b = withoutWideningCast(b)
+	}
 	if isNumberLiteral(a) && isNumberLiteral(b) {
 		if out := foldNumbers(e, a, b); out != nil {
 			return out
@@ -832,4 +840,52 @@ func sign(x, y float64) int {
 		return 1
 	}
 	return 0
+}
+
+// Byte-sized bounds. A literal inside them cannot overflow ANY integer type,
+// which is what makes dropping the cast side-effect free.
+const (
+	tinyintMin  = -128
+	tinyintMax  = 127
+	utinyintMin = 0
+	utinyintMax = 255
+)
+
+var signedIntegerTypes = map[string]bool{
+	"BIGINT": true, "INT": true, "INT128": true, "INT256": true,
+	"MEDIUMINT": true, "SMALLINT": true, "TINYINT": true,
+}
+
+var unsignedIntegerTypes = map[string]bool{
+	"UBIGINT": true, "UINT": true, "UINT128": true, "UINT256": true,
+	"UMEDIUMINT": true, "USMALLINT": true, "UTINYINT": true,
+}
+
+// withoutWideningCast strips a cast that cannot change the value.
+//
+// Nested casts are unwrapped from the inside out, so
+// `CAST(CAST(CAST(-1 AS INT) AS INT) AS INT)` comes back as `-1`.
+func withoutWideningCast(e *Expression) *Expression {
+	if e == nil || e.Class != "Cast" {
+		return e
+	}
+	inner := childOf(e, "this")
+	if inner != nil && inner.Class == "Cast" {
+		inner = withoutWideningCast(inner)
+	}
+	if !isIntegerLiteral(inner) {
+		return e
+	}
+	n, ok := numberOf(inner)
+	if !ok {
+		return e
+	}
+	to := typeKind(childOf(e, "to"))
+	switch {
+	case n >= tinyintMin && n <= tinyintMax && signedIntegerTypes[to]:
+		return inner
+	case n >= utinyintMin && n <= utinyintMax && unsignedIntegerTypes[to]:
+		return inner
+	}
+	return e
 }

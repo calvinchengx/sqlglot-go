@@ -53,6 +53,22 @@ func TestSimplifyShapes(t *testing.T) {
 			"SELECT 1 WHERE x > 1 OR x <= 1"},
 		{"two different columns decide nothing", "SELECT 1 WHERE x > 1 AND y < 1", "",
 			"SELECT 1 WHERE x > 1 AND y < 1"},
+		// A widening cast of a byte-sized integer cannot change the value, so
+		// a comparison sees through it.
+		{"a widening cast is transparent", "SELECT 1 WHERE CAST(1 AS BIGINT) >= 0", "",
+			"SELECT 1 WHERE TRUE"},
+		{"including unsigned", "SELECT 1 WHERE CAST(1 AS UINT) >= 0", "", "SELECT 1 WHERE TRUE"},
+		{"and nested casts", "SELECT 1 WHERE CAST(CAST(-1 AS INT) AS INT) = -1", "",
+			"SELECT 1 WHERE TRUE"},
+		// A negative does not fit an unsigned type, so that cast stays.
+		{"a negative into unsigned keeps its cast", "SELECT 1 WHERE CAST(-1 AS UINT) = -1", "",
+			"SELECT 1 WHERE CAST(-1 AS UINT) = -1"},
+		// Outside a byte the cast could overflow, and what an engine does
+		// then is its own business.
+		{"a large value keeps its cast", "SELECT 1 WHERE CAST(300 AS TINYINT) = 300", "",
+			"SELECT 1 WHERE CAST(300 AS TINYINT) = 300"},
+		{"a non-integer cast is untouched", "SELECT 1 WHERE CAST(1 AS TEXT) = '1'", "",
+			"SELECT 1 WHERE CAST(1 AS TEXT) = '1'"},
 		{"a random operand is not the same value twice",
 			"SELECT 1 WHERE RAND() > 1 AND RAND() < 1", "duckdb",
 			"SELECT 1 WHERE RANDOM() > 1 AND RANDOM() < 1"},
