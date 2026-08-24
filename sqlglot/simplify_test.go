@@ -69,6 +69,14 @@ func TestSimplifyShapes(t *testing.T) {
 			"SELECT 1 WHERE CAST(300 AS TINYINT) = 300"},
 		{"a non-integer cast is untouched", "SELECT 1 WHERE CAST(1 AS TEXT) = '1'", "",
 			"SELECT 1 WHERE CAST(1 AS TEXT) = '1'"},
+		{"a cast of a non-literal keeps its cast", "SELECT 1 WHERE CAST(x AS INT) = 1", "",
+			"SELECT 1 WHERE CAST(x AS INT) = 1"},
+		{"an IS over a column is left alone", "SELECT 1 WHERE x IS NOT NULL", "",
+			"SELECT 1 WHERE NOT x IS NULL"},
+		// PostgreSQL records the negation ON the Is node, and a negated Is is
+		// the one comparison the range rule refuses to reason about.
+		{"a negated IS blocks the range rule", "SELECT 1 WHERE x > 1 AND x IS NOT NULL",
+			"postgres", "SELECT 1 WHERE x > 1 AND x IS NOT NULL"},
 		{"a random operand is not the same value twice",
 			"SELECT 1 WHERE RAND() > 1 AND RAND() < 1", "duckdb",
 			"SELECT 1 WHERE RANDOM() > 1 AND RANDOM() < 1"},

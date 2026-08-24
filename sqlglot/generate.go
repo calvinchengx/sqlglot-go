@@ -77,6 +77,12 @@ func (g *generator) node(e *Expression) string {
 		}
 		return g.binary(e, op)
 	}
+	// A range operator is a binary node with its own spelling: PostgreSQL's
+	// `@>`, `&&`, `-|-` and the rest, probed alongside the parser's table for
+	// them so reading and writing cannot drift apart.
+	if op, ok := g.tables.BinaryRangeSQL[e.Class]; ok {
+		return g.binary(e, op)
+	}
 	if word, ok := g.tables.UnarySQL[e.Class]; ok {
 		if e.Class == "Not" {
 			g.requireCondition(e, "this")
@@ -173,8 +179,44 @@ func (g *generator) wouldFuse(word, operand string) bool {
 // of one argument rather than GREATEST of two -- and the candidates are
 // ordered most-constrained first, so the first whose constraints all hold is
 // the right one.
+// parserWouldRefuse reports whether the port's parser declines this function
+// name because the reference builds it with something the probe could not
+// read -- a builder that inspects the arguments it is given.
+func (g *generator) parserWouldRefuse(name string) bool {
+	if name == "" {
+		return false
+	}
+	// The parser's own order: a name with a syntax of its own is handled
+	// before this question is even asked. Leaving SyntaxFunctions out made
+	// the guard refuse CONVERT, TRIM, EXTRACT and SUBSTRING -- 136
+	// statements, none of which the parser has any trouble with.
+	if _, ok := g.tables.SyntaxFunctions[name]; ok {
+		return false
+	}
+	if _, ok := g.tables.Functions[name]; ok {
+		return false
+	}
+	if _, ok := g.tables.FunctionsByArity[name]; ok {
+		return false
+	}
+	_, custom := g.tables.NamedFunctions[name]
+	return custom
+}
+
 func (g *generator) functionSpelling(e *Expression) (FuncSQL, bool) {
 	for _, candidate := range g.tables.FunctionSQL[e.Class] {
+		// Never write a call the PARSER would refuse to read. T-SQL spells a
+		// Sha as `HASHBYTES('SHA1', x)`, and HASHBYTES is a builder that
+		// inspects its first argument to decide the class -- which the port
+		// refuses rather than half-implement. Writing it anyway produced SQL
+		// the port could not read back, which the generator fuzzer found and
+		// the adjudicator called the port's own.
+		//
+		// The condition here is the parser's, mirrored: a name that has a
+		// custom builder and no plain signature.
+		if g.parserWouldRefuse(candidate.Name) {
+			continue
+		}
 		matches := true
 		for _, c := range candidate.Consts {
 			if !sameConst(e.Args[c.Key], c.Value) {

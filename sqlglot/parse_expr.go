@@ -73,15 +73,6 @@ func (p *parser) parseComparison() (*Expression, error) {
 	return p.parseBinary(p.tables.Comparison, p.parseRange)
 }
 
-// binaryRangeOps are the range operators that take a single right operand.
-var binaryRangeOps = map[TokenType]string{
-	TokLIKE:       "Like",
-	TokILIKE:      "ILike",
-	TokRLIKE:      "RegexpLike",
-	TokGLOB:       "Glob",
-	TokSIMILAR_TO: "SimilarTo",
-}
-
 // parseRange handles IS, IN, BETWEEN and the LIKE family, including their
 // negated forms.
 //
@@ -115,8 +106,13 @@ func (p *parser) parseRange() (*Expression, error) {
 		case c.Type == TokBETWEEN:
 			p.advance()
 			this, err = p.parseBetween(this)
-		case binaryRangeOps[c.Type] != "":
-			class := binaryRangeOps[c.Type]
+		case p.tables.BinaryRangeOps[c.Type] != "":
+			// Every range operator that is just a binary node, from the
+			// probed table rather than a hand-written five. PostgreSQL alone
+			// has a dozen -- `@>`, `&&`, `-|-`, `?&` -- and refusing the ones
+			// nobody had listed cost 37 statements. IS, IN and BETWEEN have
+			// shapes of their own and are matched above, before this.
+			class := p.tables.BinaryRangeOps[c.Type]
 			p.advance()
 			var right *Expression
 			right, err = p.parseBitwise()
@@ -559,7 +555,8 @@ func (p *parser) parsePostfix() (*Expression, error) {
 		}
 		if p.at(TokL_BRACKET) {
 			p.advance()
-			items, err := p.parseBracketItems()
+			// A SUBSCRIPT: a colon here separates a slice's bounds.
+			items, err := p.parseBracketItems(true)
 			if err != nil {
 				return nil, err
 			}
@@ -598,18 +595,24 @@ func (p *parser) applyIndexOffset(this *Expression, items []*Expression) ([]*Exp
 // parseBracketItems reads what sits between `[` and `]`: a comma-separated
 // list where any item may be a slice. `x[:]` is a Slice with neither bound,
 // which is why an empty side is a missing arg rather than an error.
-func (p *parser) parseBracketItems() ([]*Expression, error) {
+//
+// Slices only in a SUBSCRIPT. In an array LITERAL the same colon opens a
+// bound parameter instead -- `[:A]` is an array of one placeholder, not a
+// slice -- and reading it as a slice built `[:A.a]` into a Slice over a
+// column where the reference builds a Dot over a Placeholder. The generator
+// fuzzer found it: the port wrote SQL it could not read back.
+func (p *parser) parseBracketItems(allowSlice bool) ([]*Expression, error) {
 	var items []*Expression
 	for !p.at(TokR_BRACKET) {
 		var low *Expression
-		if !p.at(TokCOLON) {
+		if !allowSlice || !p.at(TokCOLON) {
 			e, err := p.parseExpression()
 			if err != nil {
 				return nil, err
 			}
 			low = e
 		}
-		if p.match(TokCOLON) {
+		if allowSlice && p.match(TokCOLON) {
 			var high *Expression
 			if !p.at(TokR_BRACKET) && !p.at(TokCOMMA) {
 				e, err := p.parseExpression()
@@ -804,7 +807,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	if p.atPair(TokARRAY, TokL_BRACKET) {
 		p.advance()
 		p.advance()
-		items, err := p.parseBracketItems()
+		items, err := p.parseBracketItems(false)
 		if err != nil {
 			return nil, err
 		}
@@ -815,7 +818,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	// difference is position, and only this one begins an expression.
 	if c.Type == TokL_BRACKET {
 		p.advance()
-		items, err := p.parseBracketItems()
+		items, err := p.parseBracketItems(false)
 		if err != nil {
 			return nil, err
 		}

@@ -108,6 +108,11 @@ func TestRefusals(t *testing.T) {
 		{"ORDER BY with nothing to order", "SELECT RANK(ORDER BY b) OVER ()", "duckdb"},
 		{"INTERVAL as a type", "'45 days'::INTERVAL DAY", "postgres"},
 		{"non-numeric type parameter", "a::VARCHAR('x')", "tsql"},
+		// HASHBYTES decides its class by inspecting its first argument, which
+		// the port refuses rather than half-implement -- so it also refuses to
+		// WRITE a node whose only spelling is that call. See
+		// generator.parserWouldRefuse.
+		{"a builder that inspects its arguments", "HASHBYTES('SHA1', x)", "tsql"},
 		{"fixed-size array where the dialect has none", "CAST(a AS INT[3])", "databricks"},
 		{"unknown type", "CAST(a AS wat)", ""},
 		{"CAST without AS", "CAST(a INT)", ""},
@@ -120,7 +125,6 @@ func TestRefusals(t *testing.T) {
 		{"IN without parentheses", "a IN b", ""},
 		{"unclosed IN list", "a IN (1", ""},
 		{"ESCAPE", "a LIKE 'x' ESCAPE 'y'", ""},
-		{"OVERLAPS", "a OVERLAPS b", ""},
 		{"dangling IS", "a IS", ""},
 		{"dangling BETWEEN", "a BETWEEN", ""},
 		{"dangling type", "a::", ""},

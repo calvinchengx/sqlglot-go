@@ -99,6 +99,23 @@ func TestGenerateShapes(t *testing.T) {
 		{"a non-integer index is not shifted", "SELECT a['k']", "duckdb", "SELECT a['k']"},
 		{"nor is a column index", "SELECT a[i]", "duckdb", "SELECT a[i]"},
 		{"nor is a slice", "SELECT a[1:2]", "duckdb", "SELECT a[1:2]"},
+		// PostgreSQL's range and JSONB operators. Each is a plain binary node
+		// and the port used to refuse all but five of them.
+		{"contains", "SELECT a @> b", "postgres", "SELECT a @> b"},
+		{"contained by", "SELECT a <@ b", "postgres", "SELECT a <@ b"},
+		{"overlaps", "SELECT a && b", "postgres", "SELECT a && b"},
+		{"adjacent", "SELECT a -|- b", "postgres", "SELECT a -|- b"},
+		{"extends right", "SELECT a &> b", "postgres", "SELECT a &> b"},
+		{"extends left", "SELECT a &< b", "postgres", "SELECT a &< b"},
+		{"case-insensitive regexp", "SELECT a ~* b", "postgres", "SELECT a ~* b"},
+		{"jsonb has all keys", "SELECT j ?& b", "postgres", "SELECT j ?& b"},
+		{"jsonb has any key", "SELECT j ?| b", "postgres", "SELECT j ?| b"},
+		// A colon opens a slice in a SUBSCRIPT and a bound parameter in an
+		// array LITERAL. Reading the second as the first built a Slice over a
+		// column where the reference builds a placeholder.
+		{"a colon in an array literal is a parameter", "SELECT [:a]", "databricks",
+			"SELECT ARRAY(:a)"},
+		{"a colon in a subscript is a slice", "SELECT x[:2]", "duckdb", "SELECT x[:2]"},
 		{"json extract scalar", "select j ->> '$.a.b'", "duckdb", "SELECT j ->> '$.a.b'"},
 		{"json subscript", "select j -> '$[0]'", "duckdb", "SELECT j -> '$[0]'"},
 		{"json quoted key", `select j -> '$."a b"'`, "duckdb", `SELECT j -> '$."a b"'`},

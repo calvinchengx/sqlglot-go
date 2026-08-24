@@ -974,6 +974,15 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 		if len(candidate.Keys) != len(present) {
 			continue
 		}
+		// Never write a call the PARSER would refuse to read. T-SQL spells a
+		// Sha as `HASHBYTES('SHA1', x)`, and HASHBYTES is a builder that
+		// inspects its first argument to decide the class -- which the port
+		// refuses rather than half-implement. Writing it anyway produced SQL
+		// the port could not read back: the generator fuzzer found it, and
+		// the adjudicator called it the port's own.
+		if g.parserWouldRefuse(templateName(candidate.Template)) {
+			continue
+		}
 		// A template that starts with an argument writes it with nothing in
 		// front, so an operand that would need brackets is refused rather than
 		// written flat -- the template knows no precedence.
@@ -1232,4 +1241,18 @@ func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
 		out = strings.ReplaceAll(step, "{part}", name)
 	}
 	return out
+}
+
+// templateName is the function name a syntax template writes, or "" where the
+// template does not begin with one.
+func templateName(template string) string {
+	open := strings.Index(template, "(")
+	if open <= 0 {
+		return ""
+	}
+	name := template[:open]
+	if !isBareIdentifier(name) {
+		return ""
+	}
+	return strings.ToUpper(name)
 }

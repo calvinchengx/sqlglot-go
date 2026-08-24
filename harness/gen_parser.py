@@ -892,6 +892,45 @@ def _form_class(_unused: str, sql: str, dialect) -> str:
         return ""
 
 
+def binary_range_ops(dialect: str, P, tokenizer_keywords) -> dict:
+    """The range operators that are just a binary node, by token.
+
+    PostgreSQL alone has a dozen -- `@>`, `<@`, `&&`, `-|-`, `?&`, `~*` --
+    and every one of them builds the same shape: a class with `this` and
+    `expression`. The port had five of them hand-listed and refused the rest,
+    which cost 37 statements.
+
+    So they are probed: run `a <op> b` through the reference and keep the
+    class where the result really is a plain two-argument binary. Anything
+    with a shape of its own -- IS, IN, BETWEEN, and LIKE's ESCAPE -- fails
+    that test and stays with the rules written for it. PROBED.
+    """
+    import sqlglot
+
+    out = {}
+    for token in P.RANGE_PARSERS:
+        for text in tokenizer_keywords.get(token, ()):
+            try:
+                node = sqlglot.parse_one(f"a {text} b", read=dialect or None)
+            except Exception:  # noqa: BLE001 -- not a spelling this dialect has
+                continue
+            if sorted(node.args) != ["expression", "this"]:
+                continue
+            left, right = node.args["this"], node.args["expression"]
+            if getattr(left, "name", None) != "a" or getattr(right, "name", None) != "b":
+                continue
+            # The class AND how this dialect writes it back. The two are not
+            # the same fact: `~*` reads as RegexpILike here and PostgreSQL
+            # writes it `~*` again, but another dialect could spell the same
+            # node differently.
+            written = node.sql(dialect=dialect or None)
+            head, sep, tail = written.partition("a ")
+            op = tail.rpartition(" b")[0] if sep else ""
+            out[token.name] = {"class": type(node).__name__, "op": op}
+            break
+    return out
+
+
 def bracket_is_rewritten(dialect: str) -> bool:
     """Whether `a[1]` comes back as something other than a plain subscript.
 
@@ -2085,6 +2124,14 @@ def main() -> int:
         "\t// specific to one dialect. The ones not handled are refused here\n",
         "\t// rather than left to look like the end of the expression.\n",
         "\tRangeTokens map[TokenType]struct{}\n",
+        "\t// BinaryRangeOps are the range operators that are just a binary\n",
+        "\t// node -- PostgreSQL's `@>`, `&&`, `-|-` and the rest. Probed by\n",
+        "\t// running `a <op> b` and keeping the class where the result is\n",
+        "\t// really a plain two-argument binary; IS, IN and BETWEEN have\n",
+        "\t// shapes of their own and are not here.\n",
+        "\tBinaryRangeOps map[TokenType]string\n",
+        "\t// BinaryRangeSQL is how each of those is written back.\n",
+        "\tBinaryRangeSQL map[string]string\n",
         "\t// TypeTokens maps a type keyword to the DataType.Type member the\n",
         "\t// reference records. A few type tokens have no member and are absent,\n",
         "\t// which refuses them rather than inventing one.\n",
@@ -2525,6 +2572,17 @@ def main() -> int:
         out.append(ttset("JoinKinds", P.JOIN_KINDS))
         out.append(ttset("JoinMethods", P.JOIN_METHODS))
         out.append(ttset("RangeTokens", P.RANGE_PARSERS))
+        texts = {}
+        for text, token in Dialect.get_or_raise(name or None).tokenizer_class.KEYWORDS.items():
+            texts.setdefault(token, []).append(text)
+        _br = binary_range_ops(name, P, texts)
+        body = "".join(
+            f"\t\t\tTok{k}: {gostr(v['class'])},\n" for k, v in sorted(_br.items())
+        )
+        out.append(f"\t\tBinaryRangeOps: map[TokenType]string{{\n{body}\t\t}},\n")
+        spellings = {v["class"]: v["op"] for v in _br.values() if v["op"]}
+        body = "".join(f"\t\t\t{gostr(k)}: {gostr(v)},\n" for k, v in sorted(spellings.items()))
+        out.append(f"\t\tBinaryRangeSQL: map[string]string{{\n{body}\t\t}},\n")
         types = {t: exp.DType[t.name] for t in P.TYPE_TOKENS if t.name in exp.DType.__members__}
         body = "".join(
             f"\t\t\tTok{t.name}: {gostr(v.value)},\n"

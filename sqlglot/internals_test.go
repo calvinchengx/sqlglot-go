@@ -189,3 +189,112 @@ func TestNegativeIndexWrapsLikePython(t *testing.T) {
 		t.Errorf("at(0) = %q, want 'a'", r)
 	}
 }
+
+// TestHeredocTagIsDigit covers the rule the reference spells `tag.isdigit()`.
+//
+// Go's unicode.IsDigit is category Nd; Python's isdigit is wider and takes in
+// the superscript and subscript forms. `$¹$` is therefore not a heredoc tag,
+// and reading it as one sent the tokenizer looking for a closing `$¹$` that
+// was never written. It does NOT take in the other numerics: Python calls
+// `½` numeric but not a digit.
+func TestHeredocTagIsDigit(t *testing.T) {
+	for _, c := range []struct {
+		tag  string
+		want bool
+	}{
+		{"1", true},
+		{"123", true},
+		{"¹", true},
+		{"²³", true},
+		{"₇", true},
+		{"½", false},
+		{"a", false},
+		{"1a", false},
+		{"", false},
+	} {
+		if got := allDigits(c.tag); got != c.want {
+			t.Errorf("allDigits(%q) = %v, want %v", c.tag, got, c.want)
+		}
+	}
+}
+
+// TestParserWouldRefuse covers the generator's mirror of the parser's own
+// refusal: a name with a builder that inspects its arguments is one the port
+// must not WRITE either, or it emits SQL it cannot read back.
+func TestParserWouldRefuse(t *testing.T) {
+	cfg, ok := ConfigFor("tsql")
+	if !ok {
+		t.Fatal("no tsql config")
+	}
+	g := &generator{cfg: cfg, tables: cfg.Tables, dialect: "tsql"}
+	for _, c := range []struct {
+		name string
+		want bool
+	}{
+		{"HASHBYTES", true},
+		{"", false},
+		{"CONVERT", false}, // a syntax of its own, which the parser handles
+		{"ABS", false},     // a plain signature
+		{"NOT_A_FUNCTION_ANYWHERE", false},
+		// A name whose shape depends on its argument COUNT is handled too,
+		// and must not be caught by the guard.
+		{"CONVERT_TIMEZONE", false},
+	} {
+		if got := g.parserWouldRefuse(c.name); got != c.want {
+			t.Errorf("parserWouldRefuse(%q) = %v, want %v", c.name, got, c.want)
+		}
+	}
+}
+
+// TestTemplateName reads the function name out of a syntax template, which is
+// what the guard above is applied to.
+func TestTemplateName(t *testing.T) {
+	for _, c := range []struct{ template, want string }{
+		{"HASHBYTES('SHA1', {this})", "HASHBYTES"},
+		{"hashbytes({this})", "HASHBYTES"},
+		{"{this} + {expression}", ""},
+		{"NOPARENS", ""},
+		{"", ""},
+		{"NOT A NAME({this})", ""},
+	} {
+		if got := templateName(c.template); got != c.want {
+			t.Errorf("templateName(%q) = %q, want %q", c.template, got, c.want)
+		}
+	}
+}
+
+// TestCompareConstants covers the ordering the range rule reasons with, and
+// the cases where it declines: two constants that are not both numbers or
+// both strings have no order here. Dates fall there on purpose.
+func TestCompareConstants(t *testing.T) {
+	num := func(v string) *Expression {
+		return New("Literal", Arg{"this", v}, Arg{"is_string", false})
+	}
+	str := func(v string) *Expression {
+		return New("Literal", Arg{"this", v}, Arg{"is_string", true})
+	}
+	for _, c := range []struct {
+		name string
+		a, b *Expression
+		want int
+		ok   bool
+	}{
+		{"numbers ascending", num("1"), num("2"), -1, true},
+		{"numbers descending", num("2"), num("1"), 1, true},
+		{"numbers equal", num("2"), num("2"), 0, true},
+		{"a negative is a number", New("Neg", Arg{"this", num("1")}), num("0"), -1, true},
+		{"strings ascending", str("a"), str("b"), -1, true},
+		{"strings descending", str("b"), str("a"), 1, true},
+		{"strings equal", str("a"), str("a"), 0, true},
+		{"a number against a string has no order", num("1"), str("a"), 0, false},
+		{"nor does a date", New("Cast"), New("Cast"), 0, false},
+		{"nor an unparseable number", num("not a number"), num("1"), 0, false},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			got, ok := compareConstants(c.a, c.b)
+			if ok != c.ok || (ok && got != c.want) {
+				t.Errorf("compareConstants() = (%d, %v), want (%d, %v)", got, ok, c.want, c.ok)
+			}
+		})
+	}
+}

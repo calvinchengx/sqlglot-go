@@ -801,16 +801,43 @@ func isIdentifierChar(r rune) bool {
 	return r == '_' || unicode.IsLetter(r) || unicode.In(r, unicode.Nl, unicode.Mn, unicode.Mc, unicode.Nd, unicode.Pc)
 }
 
+// allDigits is Python's `str.isdigit()`, which the reference calls on a
+// heredoc tag to decide whether it is a tag at all.
+//
+// Go's unicode.IsDigit is category Nd -- decimal digits -- and Python's is
+// wider: it also covers the characters Unicode gives a Digit numeric type,
+// which are the superscript and subscript forms. `$¹$` is therefore NOT a
+// heredoc tag to the reference, and reading it as one left the port
+// hunting for a closing `$¹$` that was never there. The generator fuzzer
+// found it.
+//
+// The wider set is not exposed by Go's unicode package, so the ranges are
+// listed. It does NOT include the other numerics -- Python calls `½`
+// numeric but not a digit -- which is why unicode.IsNumber is wrong here.
 func allDigits(s string) bool {
 	if s == "" {
 		return false
 	}
 	for _, r := range s {
-		if !unicode.IsDigit(r) {
+		if !unicode.IsDigit(r) && !isDigitTyped(r) {
 			return false
 		}
 	}
 	return true
+}
+
+// isDigitTyped covers the Numeric_Type=Digit characters: the superscripts and
+// subscripts, which Python counts as digits and Go's Nd does not.
+func isDigitTyped(r rune) bool {
+	switch {
+	case r == 0x00B2, r == 0x00B3, r == 0x00B9: // superscript two, three, one
+		return true
+	case r >= 0x2070 && r <= 0x2079: // superscript zero and four to nine
+		return true
+	case r >= 0x2080 && r <= 0x2089: // subscript zero to nine
+		return true
+	}
+	return false
 }
 
 func hasSpace(s string) bool { return strings.IndexFunc(s, isPythonSpace) >= 0 }
