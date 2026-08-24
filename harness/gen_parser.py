@@ -721,6 +721,46 @@ def quantifier_sql(dialect: str, exp) -> dict:
     return out
 
 
+def default_nulls_first(dialect: str) -> tuple[bool, bool]:
+    """Where NULLs sort by default, ascending and descending.
+
+    Read off the reference by PARSING a statement that does not say, rather
+    than reimplementing the rule in the generator from the same table the
+    parser uses -- writing that rule twice got Databricks wrong, and the
+    reference answers it directly.
+    """
+    import sqlglot
+
+    def one(direction):
+        o = sqlglot.parse_one(
+            f"SELECT a FROM t ORDER BY a {direction}".strip(), dialect=dialect or None
+        )
+        return bool(o.args["order"].args["expressions"][0].args.get("nulls_first"))
+
+    return one(""), one("DESC")
+
+
+def writes_nulls_ordering(dialect: str) -> bool:
+    """Whether the dialect writes NULLS FIRST/LAST back at all.
+
+    T-SQL has no such clause and drops it; DuckDB and PostgreSQL write it when
+    it differs from their own default for that direction. PROBED, because the
+    difference is between silently losing an ordering and stating it.
+    """
+    import sqlglot
+
+    # Probe with the OPPOSITE of this dialect's own default, or the reference
+    # rightly omits a clause that says nothing and the answer looks like "does
+    # not write it". Databricks sorts NULLs first ascending, so asking it about
+    # NULLS FIRST asked nothing.
+    asc_default, _ = default_nulls_first(dialect)
+    word = "LAST" if asc_default else "FIRST"
+    out = sqlglot.parse_one(f"SELECT a FROM t ORDER BY a NULLS {word}").sql(
+        dialect=dialect or None
+    )
+    return f"NULLS {word}" in out
+
+
 def boolean_sql(dialect: str, exp) -> dict:
     """How TRUE and FALSE are written, in a VALUE position and in a CONDITION.
 
@@ -1695,6 +1735,15 @@ def main() -> int:
         "\t// QuantifierSQL is the text before a quantifier\u2019s operand: ALL\n",
         "\t// takes a trailing space and ANY does not.\n",
         "\tQuantifierSQL map[string]string\n",
+        "\t// WritesNullsOrdering: whether NULLS FIRST/LAST is written back.\n",
+        "\t// T-SQL has no such clause and drops it.\n",
+        "\t// DefaultNullsFirst* is where NULLs sort when the statement does\n",
+        "\t// not say, per direction. Read off the reference rather than\n",
+        "\t// derived twice -- deriving it in the generator as well as the\n",
+        "\t// parser got Databricks wrong.\n",
+        "\tDefaultNullsFirstAsc  bool\n",
+        "\tDefaultNullsFirstDesc bool\n",
+        "\tWritesNullsOrdering bool\n",
         "\tBoolean BooleanSQL\n",
         "\tWritesBooleanLiteral bool\n",
         "\tIsNotNullWrapsInNot bool\n",
@@ -2018,6 +2067,12 @@ def main() -> int:
             for k in sorted(_q):
                 out.append(f"\t\t\t{gostr(k)}: {gostr(_q[k])},\n")
             out.append("\t\t},\n")
+        _na, _nd = default_nulls_first(name)
+        out.append(f"\t\tDefaultNullsFirstAsc: {str(_na).lower()},\n")
+        out.append(f"\t\tDefaultNullsFirstDesc: {str(_nd).lower()},\n")
+        out.append(
+            f"\t\tWritesNullsOrdering: {str(writes_nulls_ordering(name)).lower()},\n"
+        )
         _bs = boolean_sql(name, exp)
         out.append("\t\tBoolean: BooleanSQL{\n")
         for k in ("TrueValue", "FalseValue", "TrueCondition", "FalseCondition"):

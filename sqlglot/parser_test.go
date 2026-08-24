@@ -142,7 +142,7 @@ func TestRefusals(t *testing.T) {
 		{"SELECT ALL", "SELECT ALL a FROM t", ""},
 		{"DISTINCT ON", "SELECT DISTINCT ON (a) a FROM t", ""},
 		{"hint", "SELECT /*+ x */ 1 FROM t", ""},
-		{"nulls ordering", "SELECT a FROM t ORDER BY a NULLS FIRST", ""},
+		{"WITH FILL", "SELECT a FROM t ORDER BY a WITH FILL", ""},
 		{"over-qualified column", "SELECT a.b.c.d.e", ""},
 		{"over-qualified table", "SELECT 1 FROM a.b.c.d", ""},
 		{"trailing tokens", "SELECT 1 FROM t )", ""},

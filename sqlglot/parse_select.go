@@ -485,16 +485,38 @@ func (p *parser) parseOrder() (*Expression, error) {
 		case p.match(TokASC):
 			desc, hasDirection = false, true
 		}
-		// NULLS FIRST/LAST tokenizes as the word NULLS then FIRST/LAST; the
-		// reference records it on the Ordered node and this slice does not.
-		if c := p.curr(); c != nil && (c.Text == "NULLS" || c.Type == TokWITH) {
-			return nil, p.unsupported("NULLS FIRST/LAST or WITH FILL")
+		// `NULLS FIRST` / `NULLS LAST` tokenizes as the word NULLS then the
+		// word FIRST or LAST, neither being a keyword. When it is written the
+		// statement says where NULLs sort; when it is not, the DIALECT does,
+		// which is what nullsFirst answers.
+		nullsFirst, saidSo := false, false
+		if c := p.curr(); c != nil && strings.EqualFold(c.Text, "NULLS") {
+			p.advance()
+			n := p.curr()
+			if n == nil {
+				return nil, p.unsupported("NULLS without FIRST or LAST")
+			}
+			switch {
+			case strings.EqualFold(n.Text, "FIRST"):
+				nullsFirst, saidSo = true, true
+			case strings.EqualFold(n.Text, "LAST"):
+				nullsFirst, saidSo = false, true
+			default:
+				return nil, p.unsupported("NULLS without FIRST or LAST")
+			}
+			p.advance()
+		}
+		if c := p.curr(); c != nil && c.Type == TokWITH {
+			return nil, p.unsupported("WITH FILL")
 		}
 		o := New("Ordered", Arg{"this", e})
 		if hasDirection {
 			o.Set("desc", desc)
 		}
-		o.Set("nulls_first", p.nullsFirst(hasDirection && desc))
+		if !saidSo {
+			nullsFirst = p.nullsFirst(hasDirection && desc)
+		}
+		o.Set("nulls_first", nullsFirst)
 		o.Set("with_fill", nil)
 		ordered = append(ordered, o)
 		if !p.match(TokCOMMA) {

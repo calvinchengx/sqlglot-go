@@ -223,10 +223,19 @@ type ParserTables struct {
 	// and (1 = 1) where a condition is.
 	// QuantifierSQL is the text before a quantifier’s operand: ALL
 	// takes a trailing space and ANY does not.
-	QuantifierSQL        map[string]string
-	Boolean              BooleanSQL
-	WritesBooleanLiteral bool
-	IsNotNullWrapsInNot  bool
+	QuantifierSQL map[string]string
+	// WritesNullsOrdering: whether NULLS FIRST/LAST is written back.
+	// T-SQL has no such clause and drops it.
+	// DefaultNullsFirst* is where NULLs sort when the statement does
+	// not say, per direction. Read off the reference rather than
+	// derived twice -- deriving it in the generator as well as the
+	// parser got Databricks wrong.
+	DefaultNullsFirstAsc  bool
+	DefaultNullsFirstDesc bool
+	WritesNullsOrdering   bool
+	Boolean               BooleanSQL
+	WritesBooleanLiteral  bool
+	IsNotNullWrapsInNot   bool
 	// NullOrdering decides where NULLs sort when nobody says, and so
 	// what nulls_first records on an Ordered node. It differs per
 	// dialect and is not derivable from ASC or DESC alone.
@@ -3336,6 +3345,9 @@ var parserTables = map[string]*ParserTables{
 			"All": "ALL ",
 			"Any": "ANY",
 		},
+		DefaultNullsFirstAsc:  true,
+		DefaultNullsFirstDesc: false,
+		WritesNullsOrdering:   true,
 		Boolean: BooleanSQL{
 			TrueValue:      "TRUE",
 			FalseValue:     "FALSE",
@@ -6585,6 +6597,9 @@ var parserTables = map[string]*ParserTables{
 			"All": "ALL ",
 			"Any": "ANY",
 		},
+		DefaultNullsFirstAsc:  true,
+		DefaultNullsFirstDesc: false,
+		WritesNullsOrdering:   false,
 		Boolean: BooleanSQL{
 			TrueValue:      "1",
 			FalseValue:     "0",
@@ -9881,6 +9896,9 @@ var parserTables = map[string]*ParserTables{
 			"All": "ALL ",
 			"Any": "ANY",
 		},
+		DefaultNullsFirstAsc:  false,
+		DefaultNullsFirstDesc: true,
+		WritesNullsOrdering:   true,
 		Boolean: BooleanSQL{
 			TrueValue:      "TRUE",
 			FalseValue:     "FALSE",
@@ -13331,6 +13349,9 @@ var parserTables = map[string]*ParserTables{
 			"All": "ALL ",
 			"Any": "ANY",
 		},
+		DefaultNullsFirstAsc:  false,
+		DefaultNullsFirstDesc: false,
+		WritesNullsOrdering:   true,
 		Boolean: BooleanSQL{
 			TrueValue:      "TRUE",
 			FalseValue:     "FALSE",
@@ -16793,6 +16814,9 @@ var parserTables = map[string]*ParserTables{
 			"All": "ALL ",
 			"Any": "ANY",
 		},
+		DefaultNullsFirstAsc:  true,
+		DefaultNullsFirstDesc: false,
+		WritesNullsOrdering:   true,
 		Boolean: BooleanSQL{
 			TrueValue:      "TRUE",
 			FalseValue:     "FALSE",

@@ -266,13 +266,38 @@ func (g *generator) writeOrdered(e *Expression) string {
 	this := g.child(e, "this")
 	// A direction that was written is written back; one that was not stays
 	// unwritten, so `ORDER BY x` and `ORDER BY x ASC` stay distinct.
+	desc := false
 	switch e.Args["desc"] {
 	case true:
-		return this + " DESC"
+		desc = true
+		this += " DESC"
 	case false:
-		return this + " ASC"
+		this += " ASC"
 	}
-	return this
+	// NULLS FIRST/LAST is written only when it DIFFERS from where this dialect
+	// puts nulls by default for that direction -- otherwise the clause says
+	// nothing and the reference leaves it out. T-SQL has no clause at all.
+	if !g.tables.WritesNullsOrdering {
+		return this
+	}
+	nullsFirst, ok := e.Args["nulls_first"].(bool)
+	if !ok || nullsFirst == g.defaultNullsFirst(desc) {
+		return this
+	}
+	if nullsFirst {
+		return this + " NULLS FIRST"
+	}
+	return this + " NULLS LAST"
+}
+
+// defaultNullsFirst is where this dialect puts nulls when the statement does
+// not say -- probed per direction rather than derived, since deriving it a
+// second time here got Databricks wrong.
+func (g *generator) defaultNullsFirst(desc bool) bool {
+	if desc {
+		return g.tables.DefaultNullsFirstDesc
+	}
+	return g.tables.DefaultNullsFirstAsc
 }
 
 func (g *generator) writeLimit(e *Expression) string { return g.writeLimitWord(e, "LIMIT ") }
