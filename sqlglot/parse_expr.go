@@ -462,6 +462,23 @@ func (p *parser) parsePostfix() (*Expression, error) {
 		// In T-SQL `[` opens a quoted identifier and the tokenizer has already
 		// consumed it, so this branch is unreachable there -- which is why it
 		// needs no dialect flag.
+		// `x AT TIME ZONE 'UTC'`: three words, of which only TIME is a
+		// keyword, so the phrase is matched by text.
+		if p.atAtTimeZone() {
+			p.advance()
+			p.advance()
+			p.advance()
+			// parsePrimary, not parseBitwise: the zone parse recurses back into
+			// this loop, so a chained `AT TIME ZONE 'a' AT TIME ZONE 'b'` had
+			// the second one swallowed into the first one's ZONE -- right
+			// associative, where the reference nests left.
+			zone, err := p.parsePrimary()
+			if err != nil {
+				return nil, err
+			}
+			this = New("AtTimeZone", Arg{"this", this}, Arg{"zone", zone})
+			continue
+		}
 		// `SUM(x) FILTER(WHERE p)` wraps the aggregate in a Filter carrying a
 		// Where -- not a call to a function named FILTER.
 		if p.at(TokFILTER) && p.next() != nil && p.next().Type == TokL_PAREN {
@@ -1270,4 +1287,16 @@ func isTimeFormatArg(indexes []int, i int) bool {
 		}
 	}
 	return false
+}
+
+// atAtTimeZone reports whether `AT TIME ZONE` starts here. AT and ZONE arrive
+// as plain VARs and only TIME is a keyword, so all three are checked.
+func (p *parser) atAtTimeZone() bool {
+	if p.index+2 >= len(p.tokens) {
+		return false
+	}
+	a, b, c := p.tokens[p.index], p.tokens[p.index+1], p.tokens[p.index+2]
+	return a.Type == TokVAR && strings.EqualFold(a.Text, "AT") &&
+		b.Type == TokTIME &&
+		c.Type == TokVAR && strings.EqualFold(c.Text, "ZONE")
 }

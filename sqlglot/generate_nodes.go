@@ -65,6 +65,7 @@ func init() {
 		"Lambda":            (*generator).writeLambda,
 		"Struct":            (*generator).writeStruct,
 		"Unnest":            (*generator).writeUnnest,
+		"AtTimeZone":        (*generator).writeAtTimeZone,
 		"JSONPath":          (*generator).writeJSONPath,
 		"JSONExtract":       (*generator).writeJSONExtractOp,
 		"JSONExtractScalar": (*generator).writeJSONExtractOp,
@@ -997,4 +998,8 @@ func (g *generator) writeUnnest(e *Expression) string {
 		return g.fail("Unnest with an alias in " + g.dialect)
 	}
 	return call + " AS " + g.node(alias)
+}
+
+func (g *generator) writeAtTimeZone(e *Expression) string {
+	return g.child(e, "this") + " AT TIME ZONE " + g.child(e, "zone")
 }
