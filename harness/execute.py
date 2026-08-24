@@ -50,77 +50,131 @@ import tempfile
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
-def rows(con, sql: str):
-    """The result as a list of tuples -- not its repr.
+class Engine:
+    """One database, and how to run a statement in it without keeping it.
 
-    An earlier cut compared repr strings and recovered 'same rows, different
-    order' by splitting one on `), (`. That is not a parser: the leading and
-    trailing parentheses land on different fragments, so two orderings of the
-    SAME rows sorted differently and the harness reported a divergence that
-    was not one. Compare the rows.
+    Isolation is per engine because the mechanism is: DuckDB gets a scratch
+    working directory (its side effects are FILES -- ATTACH, COPY), PostgreSQL
+    gets a transaction that is always rolled back (its side effects are
+    CATALOG -- CREATE, DROP). Without either, a corpus of a transpiler's tests
+    leaves debris and later statements fail on it: the first run of this
+    harness left a file.db in the repository root, and the PostgreSQL run
+    failed with 'relation "t" already exists'.
     """
-    cur = con.execute(sql)
-    try:
-        return cur.fetchall()
-    except Exception:
-        return None
+
+    name = ""
+    dialect = ""
+
+    def rows(self, sql: str):
+        raise NotImplementedError
+
+    def close(self) -> None:
+        pass
+
+
+class DuckDB(Engine):
+    name = "duckdb"
+    dialect = "duckdb"
+
+    def __init__(self):
+        import duckdb
+
+        self._scratch = tempfile.TemporaryDirectory(prefix="sqlglot-go-oracle-")
+        self._home = pathlib.Path.cwd()
+        os.chdir(self._scratch.name)
+        self._con = duckdb.connect()
+
+    def rows(self, sql: str):
+        cur = self._con.execute(sql)
+        try:
+            return cur.fetchall()
+        except Exception:
+            return None
+
+    def close(self) -> None:
+        os.chdir(self._home)
+        self._scratch.cleanup()
+
+
+class Postgres(Engine):
+    name = "postgres"
+    dialect = "postgres"
+
+    def __init__(self, dsn: str):
+        import psycopg
+
+        self._con = psycopg.connect(dsn)
+
+    def rows(self, sql: str):
+        # Every statement runs and is then UNDONE, so a CREATE in the corpus
+        # cannot make the next statement fail. Anything that refuses to run
+        # inside a transaction (VACUUM, CREATE DATABASE) raises here and is
+        # counted as not running, which is the honest answer for this harness.
+        with self._con.cursor() as cur:
+            try:
+                cur.execute(sql)
+                try:
+                    return cur.fetchall()
+                except Exception:
+                    return None
+            finally:
+                self._con.rollback()
 
 
 def multiset(result):
-    """A stable key for 'the same rows in some order'."""
+    """A stable key for 'the same rows in some order'.
+
+    An earlier cut compared repr strings and recovered this by splitting one
+    on `), (`. That is not a parser: the outer parentheses land on different
+    fragments, so two orderings of the SAME rows sorted differently and the
+    harness reported a divergence that was not one. Compare the rows.
+    """
     return sorted(result, key=repr) if isinstance(result, list) else result
 
 
-def main() -> int:
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--pairs", required=True, help="JSONL from TestEmitExecutionPairs")
-    ap.add_argument("--gate", default=str(ROOT / "testdata" / "execution.json"))
-    ap.add_argument("--update", action="store_true", help="rewrite the gate from this run")
-    a = ap.parse_args()
-
+def open_engines(dsn: str | None) -> tuple[list[Engine], list[str]]:
+    """Whatever can be reached. Skipping is reported, never silent."""
+    engines: list[Engine] = []
+    skipped: list[str] = []
     try:
-        import duckdb
+        engines.append(DuckDB())
     except ModuleNotFoundError:
-        print(
-            "the execution oracle needs DuckDB:\n"
-            "    pip install duckdb\n"
-            "or run it without installing anything:\n"
-            '    make oracle-exec PYTHON="uv run --with duckdb python"',
-            file=sys.stderr,
+        skipped.append(
+            "duckdb: not installed. `pip install duckdb`, or run\n"
+            '          make oracle-exec PYTHON="uv run --with duckdb python"'
         )
-        return 2
+    if dsn:
+        try:
+            engines.append(Postgres(dsn))
+        except ModuleNotFoundError:
+            skipped.append("postgres: psycopg not installed (`pip install 'psycopg[binary]'`)")
+        except Exception as e:
+            skipped.append("postgres: cannot connect -- " + str(e).split("\n")[0][:70])
+    else:
+        skipped.append(
+            "postgres: no server named. Set PGDSN, or start one:\n"
+            "          docker run -d -p 5432:5432 -e POSTGRES_HOST_AUTH_METHOD=trust postgres:17-alpine"
+        )
+    return engines, skipped
 
-    # Executing a transpiler's test corpus is not a read-only act. The corpus
-    # contains ATTACH, COPY and CREATE, and the first run of this harness left
-    # a file.db and a query.json in the repository root. So the engine runs
-    # with its working directory inside a scratch dir that goes away with it:
-    # what the SQL writes, it writes there.
-    scratch = tempfile.TemporaryDirectory(prefix="sqlglot-go-oracle-")
-    here = pathlib.Path.cwd()
-    os.chdir(scratch.name)
 
-    a.gate = str(pathlib.Path(a.gate).resolve())
-    a.pairs = str(pathlib.Path(a.pairs).resolve())
-    gate = json.loads(pathlib.Path(a.gate).read_text()) if pathlib.Path(a.gate).exists() else {}
-    known = {d["sql"]: d for d in gate.get("known_divergences", [])}
-
-    con = duckdb.connect()
+def run(engine: Engine, pairs, known) -> tuple[dict[str, int], list[dict[str, str]]]:
     tally: dict[str, int] = {}
     diverged: list[dict[str, str]] = []
 
     def bump(k: str) -> None:
         tally[k] = tally.get(k, 0) + 1
 
-    def compare(who: str, src: str, first: str, out: str) -> None:
+    def compare(who: str, src: str, first, out: str) -> None:
         """Does `out` ask the same question as `src`?"""
         if src.strip() == out.strip():
             bump(who + ": identical, nothing to compare")
             return
         try:
-            got = rows(con, out)
+            got = engine.rows(out)
         except Exception as e:
             bump("DIVERGED")
-            diverged.append({"sql": src, "who": who, "written": out,
+            diverged.append({"engine": engine.name, "sql": src, "who": who, "written": out,
                              "why": "does not run: " + str(e).split("\n")[0][:70]})
             return
         if got == first:
@@ -129,22 +183,21 @@ def main() -> int:
             bump(who + ": same rows, different order")
         else:
             bump("DIVERGED")
-            diverged.append({"sql": src, "who": who, "written": out,
-                             "why": f"{repr(first)[:56]} != {repr(got)[:56]}"})
+            diverged.append({"engine": engine.name, "sql": src, "who": who, "written": out,
+                             "why": f"{repr(first)[:52]} != {repr(got)[:52]}"})
 
-    for line in pathlib.Path(a.pairs).read_text().splitlines():
-        rec = json.loads(line)
+    for rec in pairs:
+        if rec.get("dialect") != engine.dialect:
+            continue
         src = rec["sql"]
-
         try:
-            first = rows(con, src)
+            first = engine.rows(src)
         except Exception:
             bump("the statement as written does not run")
             continue
-
         # A statement that disagrees with itself cannot arbitrate anything.
         try:
-            if rows(con, src) != first:
+            if engine.rows(src) != first:
                 bump("nondeterministic")
                 continue
         except Exception:
@@ -160,61 +213,97 @@ def main() -> int:
             compare("port", src, first, rec["port"])
         else:
             bump("port refused it")
+    return tally, diverged
 
-    os.chdir(here)
-    scratch.cleanup()
 
-    for k in sorted(tally, key=lambda k: -tally[k]):
-        print("%6d  %s" % (tally[k], k))
+def main() -> int:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--pairs", required=True, help="JSONL from TestEmitExecutionPairs")
+    ap.add_argument("--gate", default=str(ROOT / "testdata" / "execution.json"))
+    ap.add_argument("--postgres", default=os.environ.get("PGDSN"), help="libpq DSN, or $PGDSN")
+    ap.add_argument("--update", action="store_true", help="rewrite the gate from this run")
+    a = ap.parse_args()
 
-    compared = sum(n for k, n in tally.items() if k.endswith(": agree"))
-    unexplained = [d for d in diverged if d["sql"] not in known]
+    gate_path = pathlib.Path(a.gate).resolve()
+    pairs = [json.loads(x) for x in pathlib.Path(a.pairs).resolve().read_text().splitlines()]
+    gate = json.loads(gate_path.read_text()) if gate_path.exists() else {}
+    known = {(d.get("engine", "duckdb"), d["sql"]) for d in gate.get("known_divergences", [])}
+    floors = gate.get("comparable_floor", {})
+
+    engines, skipped = open_engines(a.postgres)
+    if not engines:
+        for note in skipped:
+            print("  " + note, file=sys.stderr)
+        return 2
+
+    results: dict[str, dict] = {}
+    all_diverged: list[dict[str, str]] = []
+    for engine in engines:
+        tally, diverged = run(engine, pairs, known)
+        engine.close()
+        compared = sum(n for k, n in tally.items() if k.endswith(": agree"))
+        results[engine.name] = {"tally": tally, "compared": compared}
+        all_diverged.extend(diverged)
+
+    for name, r in results.items():
+        print("== %s" % name)
+        for k in sorted(r["tally"], key=lambda k: -r["tally"][k]):
+            print("  %6d  %s" % (r["tally"][k], k))
+        print()
+    for note in skipped:
+        print("  skipped %s" % note)
+    if skipped:
+        print()
+
+    unexplained = [d for d in all_diverged if (d["engine"], d["sql"]) not in known]
 
     if a.update:
-        pathlib.Path(a.gate).write_text(
+        seen = {(d.get("engine", "duckdb"), d["sql"]): d for d in gate.get("known_divergences", [])}
+        seen |= {(d["engine"], d["sql"]): d for d in all_diverged}
+        gate_path.write_text(
             json.dumps(
                 {
-                    "comparable_floor": compared,
-                    "known_divergences": sorted(
-                        (known | {d["sql"]: d for d in diverged}).values(),
-                        key=lambda d: d["sql"],
-                    ),
+                    "_comment": gate.get("_comment", ""),
+                    "comparable_floor": floors | {n: r["compared"] for n, r in results.items()},
+                    "known_divergences": sorted(seen.values(), key=lambda d: (d.get("engine",""), d["sql"])),
                 },
                 indent=1,
             )
             + "\n"
         )
-        print("\nwrote %s: floor %d, %d known divergence(s)" % (a.gate, compared, len(diverged)))
+        print("wrote %s" % gate_path)
         return 0
 
     ok = True
     if unexplained:
         ok = False
-        print("\n%d UNEXPLAINED divergence(s) -- two queries, different answers:" % len(unexplained))
+        print("%d UNEXPLAINED divergence(s) -- two queries, different answers:" % len(unexplained))
         for d in unexplained:
-            print("\n  in   : %s" % d["sql"][:96])
-            print("  %-5s: %s" % (d["who"], d["written"][:96]))
+            print("\n  [%s] in : %s" % (d["engine"], d["sql"][:88]))
+            print("  %11s: %s" % (d["who"], d["written"][:88]))
             print("  %s" % d["why"])
         print(
             "\nEach is either a port bug or the reference's, and the string\n"
             "differential cannot tell you which. Investigate, then record it in\n"
-            "%s with a note once it is understood." % a.gate
+            "%s with a note once it is understood.\n" % gate_path
         )
 
-    floor = gate.get("comparable_floor")
-    if floor is not None and compared < floor:
-        ok = False
-        print("\nEXECUTION COVERAGE REGRESSED: %d compared, floor %d" % (compared, floor))
+    for name, r in results.items():
+        floor = floors.get(name)
+        if floor is not None and r["compared"] < floor:
+            ok = False
+            print("EXECUTION COVERAGE REGRESSED for %s: %d compared, floor %d"
+                  % (name, r["compared"], floor))
 
     if ok:
-        print("\n%d statements executed and compared." % compared)
+        total = sum(r["compared"] for r in results.values())
+        print("%d statements executed and compared across %d engine(s)."
+              % (total, len(results)))
         if known:
             print(
                 "%d known divergence(s), recorded in docs/upstream-issues.md and\n"
                 "reproduced on purpose rather than worked around." % len(known)
             )
-        else:
-            print("None asks a different question from the statement it came from.")
     return 0 if ok else 1
 
 

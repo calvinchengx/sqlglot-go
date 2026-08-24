@@ -40,3 +40,67 @@ reference's own rendering, which is checked alongside the port's for exactly
 this reason.
 
 **Reference:** sqlglot @ ceb5111421e9.
+
+---
+
+## sqlglot turns PostgreSQL's binary and hex INTEGER literals into BIT STRINGS
+
+**Found by:** the execution oracle, first PostgreSQL run.
+
+PostgreSQL 16 added `0b`/`0o`/`0x` integer literals, with `_` allowed as a
+digit separator. sqlglot rewrites them to the `b'…'` / `x'…'` bit-string
+syntax, which is a different type and, for `0b`, a different value:
+
+```
+in   SELECT 0b1010   -> 10       integer
+out  SELECT b'1010'  -> '1010'   bit
+
+in   SELECT 0x1_F    -> 31       integer
+out  SELECT x'1_F'   -> error: "_" is not a valid hexadecimal digit
+```
+
+The first is the dangerous one: it runs, returns a value, and the value is
+wrong.
+
+**Reference:** sqlglot @ ceb5111421e9.
+
+---
+
+## sqlglot rewrites DATE_PART to EXTRACT, changing the result type
+
+**Found by:** the execution oracle, first PostgreSQL run.
+
+`DATE_PART` returns `double precision`; `EXTRACT` returns `numeric`. The
+rewrite is otherwise faithful and the numbers are equal, but the type a
+caller receives changes:
+
+```
+SELECT pg_typeof(DATE_PART('epoch', now()))     -> double precision
+SELECT pg_typeof(EXTRACT(epoch FROM now()))     -> numeric
+```
+
+Where the field is an expression rather than a bare word, the rewrite does
+not run at all — `EXTRACT` takes an identifier there, not a value:
+
+```
+in   SELECT DATE_PART('isodow'::varchar(6), current_date)          -> 1.0
+out  SELECT EXTRACT(CAST('isodow' AS VARCHAR(6)) FROM CURRENT_DATE) -> syntax error
+```
+
+**Reference:** sqlglot @ ceb5111421e9.
+
+---
+
+## sqlglot rewrites PostgreSQL's date_add to `+`, dropping the time zone
+
+**Found by:** the execution oracle, first PostgreSQL run.
+
+```
+SELECT pg_typeof(date_add(current_date, interval '7' day))  -> timestamp with time zone
+SELECT pg_typeof(CURRENT_DATE + INTERVAL '7 DAY')           -> timestamp without time zone
+```
+
+Same instant in the session's zone, different type — and therefore different
+behaviour once the result crosses a zone boundary.
+
+**Reference:** sqlglot @ ceb5111421e9.

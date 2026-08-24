@@ -157,6 +157,24 @@ jobs:
     name: The port's SQL means what it was given
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # DuckDB embeds; PostgreSQL needs a server, and a service container is
+    # the cheapest one there is. Databricks has no local engine at all, and
+    # the neutral dialect rewrites 8 statements out of 991 -- neither would
+    # earn the infrastructure.
+    services:
+      postgres:
+        image: postgres:17-alpine
+        env:
+          POSTGRES_HOST_AUTH_METHOD: trust
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+    env:
+      PGDSN: host=127.0.0.1 port=5432 user=postgres dbname=postgres
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -165,6 +183,6 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install duckdb
-      - name: run it through DuckDB and compare the rows
+      - run: pip install duckdb 'psycopg[binary]'
+      - name: run it through both engines and compare the rows
         run: make oracle-exec

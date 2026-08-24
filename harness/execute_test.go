@@ -39,12 +39,17 @@ func TestEmitExecutionPairs(t *testing.T) {
 		}
 	}()
 
+	// The dialects an engine exists for. DuckDB embeds; PostgreSQL needs a
+	// server, which CI supplies and a developer may not -- the oracle skips
+	// what it cannot reach rather than failing. Databricks has no local
+	// engine at all, and the neutral dialect rewrites 8 statements out of
+	// 991, so neither would earn its keep.
+	engines := map[string]bool{"duckdb": true, "postgres": true}
+
 	enc := json.NewEncoder(f)
 	emitted := 0
 	for _, c := range cases {
-		// Only DuckDB for now: it is the one dialect with an engine that needs
-		// no container, and the corpus rewrites more of it than of any other.
-		if c.Dialect != "duckdb" {
+		if !engines[c.Dialect] {
 			continue
 		}
 		rec := map[string]string{"dialect": c.Dialect, "sql": c.SQL, "reference": c.Rendered}

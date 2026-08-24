@@ -22,8 +22,12 @@ GOLANGCI = golangci/golangci-lint:v2.13.1
 PYTHON ?= python3
 # Where the Go side hands the execution oracle its pairs; see harness/execute.py.
 EXEC_PAIRS ?= $(shell echo $${TMPDIR:-/tmp})/sqlglot-go-exec-pairs.jsonl
+# The oracle reaches PostgreSQL through $PGDSN; `make postgres` prints one.
+# Override PGPORT if 5432 or this one is taken -- a developer machine running
+# other stacks is the normal case, and a wedged bind is not worth debugging.
+PGPORT ?= 55433
 
-.PHONY: help doctor test oracle oracle-exec service coverage cover gaps lint clean
+.PHONY: help doctor test oracle oracle-exec postgres postgres-stop service coverage cover gaps lint clean
 
 help: ## Show the available targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN{FS=":.*?## "}{printf "  %-12s %s\n", $$1, $$2}'
@@ -43,9 +47,21 @@ oracle: ## Regenerate expectations and generated tables from the PINNED referenc
 	$(PYTHON) harness/gen_tokenizer.py --sqlglot $(SQLGLOT) --out sqlglot && gofmt -w sqlglot/tokentype_gen.go sqlglot/dialects_gen.go
 	$(PYTHON) harness/gen_parser.py --sqlglot $(SQLGLOT) && gofmt -w sqlglot/parser_gen.go
 
-oracle-exec: ## Run the port's SQL through DuckDB and check it MEANS the same (needs duckdb)
+oracle-exec: ## Run the port's SQL through an engine and check it MEANS the same
 	@DAS_EXEC_EMIT=$(EXEC_PAIRS) go test ./harness/ -run TestEmitExecutionPairs
 	@$(PYTHON) harness/execute.py --pairs $(EXEC_PAIRS)
+
+postgres: ## Start a PostgreSQL for `make oracle-exec` and print the DSN to export
+	@docker rm -f sqlglot-go-pg >/dev/null 2>&1 || true
+	@docker run -d --name sqlglot-go-pg -e POSTGRES_HOST_AUTH_METHOD=trust \
+		-p $(PGPORT):5432 postgres:17-alpine >/dev/null || { \
+		echo "could not bind port $(PGPORT); pick another: make postgres PGPORT=5544x"; \
+		docker rm -f sqlglot-go-pg >/dev/null 2>&1; exit 1; }
+	@until docker exec sqlglot-go-pg pg_isready -q 2>/dev/null; do sleep 1; done
+	@echo 'export PGDSN="host=127.0.0.1 port=$(PGPORT) user=postgres dbname=postgres"'
+
+postgres-stop: ## Stop it again
+	@docker rm -f sqlglot-go-pg >/dev/null 2>&1 || true
 
 service: ## Re-extract the corpus of SQL data agent service is held to
 	$(PYTHON) harness/gen_service_corpus.py --service $(SERVICE) --sqlglot $(SQLGLOT)
