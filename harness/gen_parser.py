@@ -1132,7 +1132,12 @@ def observed_shapes(exp, dialect, repo):
             for key, value in node.args.items():
                 if value is None or value == []:
                     continue
-                if isinstance(value, (exp.Expr, list)):
+                if isinstance(value, list):
+                    # A list-valued arg needs a LIST placeholder. Passing a
+                    # bare column made the reference raise, so no template was
+                    # recorded for any class with one -- Unnest among them.
+                    expr_keys.append(key + "[]")
+                elif isinstance(value, exp.Expr):
                     expr_keys.append(key)
                 elif isinstance(value, str):
                     scalars.append((key, value))
@@ -1183,14 +1188,19 @@ def syntax_templates(exp, dialect, repo):
             # T-SQL renders DATEADD(__AUNIT__, ...) from a `unit` argument --
             # and a lowercase marker simply is not there to replace, so every
             # call form of DateAdd was rejected for want of a token.
-            kwargs = {k: exp.column(f"ZZ{k.upper()}ZZ") for k in expr_keys}
+            kwargs = {}
+            for k in expr_keys:
+                if k.endswith("[]"):
+                    kwargs[k[:-2]] = [exp.column(f"ZZ{k[:-2].upper()}ZZ")]
+                else:
+                    kwargs[k] = exp.column(f"ZZ{k.upper()}ZZ")
             kwargs.update(dict(scalars))
             try:
                 text = cls(**kwargs).sql(dialect=dialect or None)
             except Exception:  # noqa: BLE001 -- this dialect will not write that shape
                 continue
             ok = True
-            for key in expr_keys:
+            for key in [k[:-2] if k.endswith("[]") else k for k in expr_keys]:
                 token = f"ZZ{key.upper()}ZZ"
                 if text.count(token) != 1:
                     ok = False
@@ -1209,7 +1219,7 @@ def syntax_templates(exp, dialect, repo):
                     text = text.replace(value, "{" + key + "}")
                 else:
                     required.append((key, value))
-            marked = [k for k in expr_keys] + [
+            marked = [k[:-2] if k.endswith("[]") else k for k in expr_keys] + [
                 k for k, _ in scalars if (k, dict(scalars)[k]) not in required
             ]
             # Infix templates are rejected. `a #> b` needs parentheses around a
@@ -1218,8 +1228,16 @@ def syntax_templates(exp, dialect, repo):
             # template would write it flat. A template that begins with an
             # argument is infix; the classes that need one already have a
             # writer that knows the precedence table.
-            if text.lstrip().startswith("{"):
-                continue
+            # A template that BEGINS with a marker and continues with words --
+            # `{this} WITHIN GROUP (...)` -- is a postfix modifier, not an
+            # infix operator: there is no right-hand operand whose precedence
+            # could matter. Only a template that is marker-operator-marker is
+            # rejected here; the writer guards the left operand instead.
+            stripped = text.lstrip()
+            if stripped.startswith("{"):
+                rest = stripped[stripped.find("}") + 1 :].strip()
+                if not rest or not rest[0].isalpha():
+                    continue
             # A CAST the probe did not ask for is a COERCION the reference
             # applies by type: DuckDB writes BOOL_OR(CAST(x AS BOOLEAN)) only
             # when x is not already boolean. The probe feeds plain columns, so
@@ -1232,7 +1250,9 @@ def syntax_templates(exp, dialect, repo):
             # argument's NAME rather than its rendered SQL. Substituting the
             # rendering wrote ''ISOWEEK''; the writer looks at the quote and
             # substitutes the name instead.
-            keys = list(expr_keys) + [k for k, _ in scalars]
+            keys = [k[:-2] if k.endswith("[]") else k for k in expr_keys] + [
+                k for k, _ in scalars
+            ]
             out.setdefault(cls_name, []).append((keys, marked, required, text))
     return out
 

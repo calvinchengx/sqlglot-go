@@ -200,6 +200,12 @@ func (g *generator) writeJoin(e *Expression) string {
 	}
 	if len(words) == 0 {
 		if _, hasOn := e.Args["on"].(*Expression); !hasOn {
+			// A comma join over an UNNEST is rewritten by the reference into
+			// `JOIN ... ON TRUE`, which is a different tree and not a
+			// spelling of this one.
+			if inner, _ := e.Args["this"].(*Expression); inner != nil && inner.Class == "Unnest" {
+				return g.fail("comma join over an UNNEST")
+			}
 			return ", " + this
 		}
 	}
@@ -831,6 +837,16 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 		if len(candidate.Keys) != len(present) {
 			continue
 		}
+		// A template that starts with an argument writes it with nothing in
+		// front, so an operand that would need brackets is refused rather than
+		// written flat -- the template knows no precedence.
+		if strings.HasPrefix(candidate.Template, "{") {
+			key := candidate.Template[1:strings.Index(candidate.Template, "}")]
+			child, _ := e.Args[key].(*Expression)
+			if child != nil && !isSafeLeadingOperand(g, child) {
+				continue
+			}
+		}
 		matches := true
 		for _, key := range candidate.Keys {
 			if !present[key] {
@@ -987,6 +1003,12 @@ func isAtomForOperator(e *Expression) bool {
 func (g *generator) writeUnnest(e *Expression) string {
 	spec, ok := g.functionSpelling(e)
 	if !ok {
+		// A writer registered by class SHADOWS the template fallback, so a
+		// dialect whose Unnest spelling only exists as a template was refused
+		// by this function before the template was ever consulted.
+		if out, ok := g.syntaxTemplate(e); ok {
+			return out
+		}
 		return g.fail("Unnest")
 	}
 	call := g.namedFunction(e, spec)
@@ -1002,4 +1024,17 @@ func (g *generator) writeUnnest(e *Expression) string {
 
 func (g *generator) writeAtTimeZone(e *Expression) string {
 	return g.child(e, "this") + " AT TIME ZONE " + g.child(e, "zone")
+}
+
+// isSafeLeadingOperand reports whether a node can be written at the start of a
+// template with nothing in front of it. An operator node cannot: the reference
+// brackets it by precedence and a template cannot.
+func isSafeLeadingOperand(g *generator, e *Expression) bool {
+	if _, isBinary := g.tables.BinarySQL[e.Class]; isBinary {
+		return false
+	}
+	if _, isUnary := g.tables.UnarySQL[e.Class]; isUnary {
+		return false
+	}
+	return true
 }
