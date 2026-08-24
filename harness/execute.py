@@ -48,6 +48,7 @@ import sys
 import tempfile
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
+FIXTURES = ROOT / "testdata" / "fixtures" / "schema.sql"
 
 
 class Engine:
@@ -68,6 +69,15 @@ class Engine:
     def rows(self, sql: str):
         raise NotImplementedError
 
+    def load_fixtures(self) -> None:
+        """The tables the corpus names but never creates.
+
+        Same schema in every engine, so a statement cannot mean one thing here
+        and another there. See testdata/fixtures/schema.sql for why the tables
+        have rows rather than being empty.
+        """
+        raise NotImplementedError
+
     def close(self) -> None:
         pass
 
@@ -83,6 +93,9 @@ class DuckDB(Engine):
         self._home = pathlib.Path.cwd()
         os.chdir(self._scratch.name)
         self._con = duckdb.connect()
+
+    def load_fixtures(self) -> None:
+        self._con.execute(FIXTURES.read_text())
 
     def rows(self, sql: str):
         cur = self._con.execute(sql)
@@ -100,10 +113,28 @@ class Postgres(Engine):
     name = "postgres"
     dialect = "postgres"
 
+    # A schema of its own, named for this harness. Everything the oracle
+    # creates lives here and is dropped on the next run, so a server that
+    # outlives one run does not fail the next with "relation t already
+    # exists" -- and so pointing PGDSN at a database that holds anything else
+    # can only ever destroy what this harness itself put there.
+    SCHEMA = "sqlglot_go_oracle"
+
     def __init__(self, dsn: str):
         import psycopg
 
-        self._con = psycopg.connect(dsn)
+        # search_path is set on the CONNECTION rather than by a statement:
+        # every statement below runs in a transaction that is rolled back,
+        # which would undo a SET.
+        self._con = psycopg.connect(dsn + f" options=-csearch_path={self.SCHEMA}")
+
+    def load_fixtures(self) -> None:
+        # Committed explicitly: every statement below is rolled back, and the
+        # fixture must survive that or the first rollback would take it away.
+        self._con.execute(f"DROP SCHEMA IF EXISTS {self.SCHEMA} CASCADE")
+        self._con.execute(f"CREATE SCHEMA {self.SCHEMA}")
+        self._con.execute(FIXTURES.read_text())
+        self._con.commit()
 
     def rows(self, sql: str):
         # Every statement runs and is then UNDONE, so a CREATE in the corpus
@@ -137,7 +168,9 @@ def open_engines(dsn: str | None) -> tuple[list[Engine], list[str]]:
     engines: list[Engine] = []
     skipped: list[str] = []
     try:
-        engines.append(DuckDB())
+        e = DuckDB()
+        e.load_fixtures()
+        engines.append(e)
     except ModuleNotFoundError:
         skipped.append(
             "duckdb: not installed. `pip install duckdb`, or run\n"
@@ -145,7 +178,9 @@ def open_engines(dsn: str | None) -> tuple[list[Engine], list[str]]:
         )
     if dsn:
         try:
-            engines.append(Postgres(dsn))
+            e = Postgres(dsn)
+            e.load_fixtures()
+            engines.append(e)
         except ModuleNotFoundError:
             skipped.append("postgres: psycopg not installed (`pip install 'psycopg[binary]'`)")
         except Exception as e:
@@ -177,8 +212,27 @@ def run(engine: Engine, pairs, known) -> tuple[dict[str, int], list[dict[str, st
             diverged.append({"engine": engine.name, "sql": src, "who": who, "written": out,
                              "why": "does not run: " + str(e).split("\n")[0][:70]})
             return
+        # The REWRITTEN side has to be stable too. Checking only the input was
+        # not enough: `USING SAMPLE 10%` returned the same thing twice and a
+        # different thing on the sixth run, so an unstable rewrite was
+        # reported as a divergence. A comparison is only meaningful if BOTH
+        # sides reproduce.
+        try:
+            if engine.rows(out) != got:
+                bump(who + ": nondeterministic")
+                return
+        except Exception:
+            bump(who + ": nondeterministic")
+            return
         if got == first:
-            bump(who + ": agree")
+            # Two queries that both return NOTHING agree about nothing. With
+            # fixture tables in place this is the cheap way to look busy --
+            # any pair of mistakes over an empty result set matches -- so it
+            # is counted apart and does NOT reach the comparable floor.
+            if first == [] or first is None:
+                bump(who + ": both returned no rows")
+            else:
+                bump(who + ": agree")
         elif multiset(got) == multiset(first):
             bump(who + ": same rows, different order")
         else:
@@ -196,8 +250,10 @@ def run(engine: Engine, pairs, known) -> tuple[dict[str, int], list[dict[str, st
             bump("the statement as written does not run")
             continue
         # A statement that disagrees with itself cannot arbitrate anything.
+        # Three looks rather than two: sampling and hashing can repeat once by
+        # luck, and every extra look is cheap next to a false divergence.
         try:
-            if engine.rows(src) != first:
+            if any(engine.rows(src) != first for _ in range(2)):
                 bump("nondeterministic")
                 continue
         except Exception:

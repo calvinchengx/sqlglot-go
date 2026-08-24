@@ -145,13 +145,27 @@ So there is one more harness, and it is the only one here whose failure means
 "these two queries ask different questions" rather than "these two strings
 differ". `make oracle-exec` takes each statement as it was written and what
 the port writes back, runs **both** on a real engine, and compares the
-results. **192 statements are currently comparable** — 129 on DuckDB, which
-embeds, and 63 on PostgreSQL, which CI supplies as a service container and
-`make postgres` starts locally. The rest either will not run without a
-schema, or are non-deterministic — which the harness *detects*, by running a
-statement twice and seeing whether it agrees with itself, rather than being
-handed a list of keywords like `RANDOM` to avoid. An engine it cannot reach
-is skipped with a note, not a failure.
+results. **228 statements are currently comparable** — 162 on DuckDB, which
+embeds, and 66 on PostgreSQL, which CI supplies as a service container and
+`make postgres` starts locally. An engine it cannot reach is skipped with a
+note, not a failure.
+
+Most of the corpus is a transpiler's test suite rather than a workload: it
+says `SELECT x FROM t` and never creates `t`. `testdata/fixtures/schema.sql`
+supplies those tables, and their names are not invented — they are harvested
+by parsing every statement with sqlglot and keeping the ones that name
+exactly one table, so a column is only attributed to a table that
+unambiguously owns it. The fixtures have **rows**, deliberately: an empty
+table would be worse than no table, because two different queries over
+nothing both return nothing and would "agree". The harness also refuses to
+count an agreement where both sides returned no rows.
+
+What is left over is non-deterministic, which the harness *detects* rather
+than being handed a list of keywords like `RANDOM` to avoid: it runs **both**
+sides several times and requires each to agree with itself. Checking only the
+input was not enough — `USING SAMPLE 10%` returned the same thing twice and
+something different on the sixth run, and an unstable rewrite was reported as
+a divergence that was not one.
 
 Neither Databricks nor the neutral dialect has an engine here: Spark is not a
 service container, and the neutral dialect rewrites 8 statements out of 991,
