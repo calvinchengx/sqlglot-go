@@ -54,6 +54,8 @@ func init() {
 		"TryCast":           (*generator).writeCast,
 		"DataType":          (*generator).writeDataType,
 		"DataTypeParam":     (*generator).writeChildThis,
+		"Placeholder":       (*generator).writePlaceholder,
+		"Parameter":         (*generator).writeParameter,
 		"ColumnDef":         (*generator).writeColumnDef,
 		"Anonymous":         (*generator).writeAnonymous,
 		"In":                (*generator).writeIn,
@@ -504,6 +506,39 @@ func (g *generator) writeCast(e *Expression) string {
 		word = "TRY_CAST"
 	}
 	return word + "(" + g.child(e, "this") + " AS " + g.child(e, "to") + ")"
+}
+
+// writePlaceholder writes a bound parameter. The spelling is the dialect's:
+// `$name` in DuckDB, `%(name)s` in PostgreSQL, `:name` elsewhere.
+func (g *generator) writePlaceholder(e *Expression) string {
+	// The name is a bare string in most dialects and an IDENTIFIER in
+	// PostgreSQL, whose `%(name)s` form the reference reads that way. Handling
+	// only the string dropped every PostgreSQL name and wrote `%s`.
+	var name string
+	switch v := e.Args["this"].(type) {
+	case string:
+		name = v
+	case *Expression:
+		name = g.node(v)
+	}
+	if name == "" {
+		if jdbc, _ := e.Args["jdbc"].(bool); jdbc {
+			return g.tables.Placeholder.AnonymousJDBCSQL
+		}
+		return g.tables.Placeholder.Anonymous
+	}
+	return strings.ReplaceAll(g.tables.Placeholder.Named, "{name}", name)
+}
+
+// writeParameter writes `@x` -- a different node from a bound parameter, and
+// spelled differently again: `$x` in DuckDB and PostgreSQL, `${x}` in
+// Databricks.
+func (g *generator) writeParameter(e *Expression) string {
+	this, _ := e.Args["this"].(*Expression)
+	if this == nil {
+		return g.fail("Parameter without a name")
+	}
+	return strings.ReplaceAll(g.tables.Placeholder.Parameter, "{name}", g.node(this))
 }
 
 func (g *generator) writeDataType(e *Expression) string {

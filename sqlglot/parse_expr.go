@@ -622,6 +622,102 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return p.parseInterval()
 	}
 
+	// A bound parameter. `?` is one on its own; `:name` is the colon and the
+	// name, and a COLON can only open a placeholder HERE -- everywhere else it
+	// is infix, separating a slice's bounds or a struct's key from its value.
+	//
+	// The port wrote `ARRAY(:Wa)` and could not read it back, which is how the
+	// generator fuzzer found this: the reference reads it, so the round trip
+	// was the port's own gap rather than a property stronger than the oracle.
+	if c.Type == TokPLACEHOLDER {
+		p.advance()
+		if p.tables.Placeholder.AnonymousJDBC {
+			return New("Placeholder", Arg{"jdbc", true}), nil
+		}
+		return New("Placeholder"), nil
+	}
+	if c.Type == TokCOLON {
+		if n := p.next(); isParameterName(n) {
+			p.advance()
+			p.advance()
+			return New("Placeholder", Arg{"this", n.Text}), nil
+		}
+	}
+	// One token, several nodes, and which one is the DIALECT's business.
+	// `$nm` is a Placeholder in DuckDB, a Parameter in PostgreSQL and
+	// Databricks, and a plain column elsewhere. `@nm` is a Parameter
+	// everywhere except DuckDB, where `@` is ABSOLUTE VALUE -- reading it as a
+	// Parameter there built three trees the reference never makes. So the
+	// class is looked up rather than decided here; see harness/gen_parser.py.
+	// Databricks brackets the name: `${x}`. It is the same Parameter, with an
+	// `expression` flag recording that the braces were there -- and the port
+	// WRITES this form, so it has to read it back.
+	if c.Type == TokPARAMETER && c.Text == "$" && p.next() != nil && p.next().Type == TokL_BRACE {
+		// The braces delimit the name, so it can be any single word --
+		// including a KEYWORD. `$WHERE` writes as `${WHERE}` and requiring a
+		// VAR there could not read it back.
+		if name := p.peekAt(2); isParameterName(name) &&
+			p.peekAt(3) != nil && p.peekAt(3).Type == TokR_BRACE {
+			p.advance()
+			p.advance()
+			p.advance()
+			p.advance()
+			// A numeric name is a Literal, a word is a Var -- the same split
+			// the unbraced form makes.
+			inner := New("Var", Arg{"this", name.Text})
+			if name.Type == TokNUMBER {
+				inner = New("Literal", Arg{"this", name.Text}, Arg{"is_string", false})
+			}
+			return New("Parameter", Arg{"this", inner}, Arg{"expression", false}), nil
+		}
+	}
+	if c.Type == TokPARAMETER {
+		if n := p.next(); isParameterName(n) {
+			class := ""
+			switch {
+			case c.Text == "$" && n.Type == TokNUMBER:
+				class = p.tables.Placeholder.DollarNumber
+			case c.Text == "$":
+				class = p.tables.Placeholder.DollarName
+			case c.Text == "@":
+				class = p.tables.Placeholder.AtName
+			}
+			switch class {
+			case "Placeholder":
+				p.advance()
+				p.advance()
+				return New("Placeholder", Arg{"this", n.Text}), nil
+			case "Parameter":
+				p.advance()
+				p.advance()
+				// `$1` names its parameter with a NUMBER, and the reference
+				// keeps that as a Literal rather than a Var.
+				if n.Type == TokNUMBER {
+					lit := New("Literal", Arg{"this", n.Text}, Arg{"is_string", false})
+					return New("Parameter", Arg{"this", lit}), nil
+				}
+				return New("Parameter", Arg{"this", New("Var", Arg{"this", n.Text})}), nil
+			}
+		}
+	}
+	// PostgreSQL spells it `%(name)s`, or `%s` unnamed -- and records the name
+	// as an IDENTIFIER rather than a string, unlike every other dialect. A
+	// modulo cannot open an expression, so a MOD here is unambiguous.
+	if c.Type == TokMOD {
+		if p.tables.Placeholder.PercentAnonymous == "Placeholder" {
+			if n := p.next(); n != nil && strings.EqualFold(n.Text, "s") {
+				p.advance()
+				p.advance()
+				return New("Placeholder"), nil
+			}
+		}
+		if p.tables.Placeholder.PercentNamed == "Placeholder" {
+			if ph, ok := p.parseNamedPercentPlaceholder(); ok {
+				return ph, nil
+			}
+		}
+	}
+
 	// `{'a': 1, 'b': x}` is a Struct whose items are PropertyEQ: the key is an
 	// IDENTIFIER even though it is written as a string.
 	if c.Type == TokL_BRACE {
@@ -765,6 +861,62 @@ func (p *parser) parsePrimary() (*Expression, error) {
 // reference's rather than a lookalike.
 func newStar() *Expression {
 	return New("Star", Arg{"ilike", nil}, Arg{"except_", nil}, Arg{"replace", nil}, Arg{"rename", nil})
+}
+
+// isParameterName reports whether a token can name a bound parameter or a
+// `@` parameter: a word, which includes keywords -- `$WHERE` is a parameter
+// called WHERE, not the start of a clause.
+func isParameterName(t *Token) bool {
+	if t == nil {
+		return false
+	}
+	switch t.Type {
+	case TokNUMBER, TokVAR:
+		// Whatever the tokenizer called a word is a name here, including one
+		// no human would write: the reference reads `:\x01` as a parameter
+		// called \x01, and a stricter rule refused SQL the port itself had
+		// just written.
+		return true
+	case TokIDENTIFIER:
+		// A QUOTED name is a different node -- `@"x"` carries an Identifier,
+		// not a Var -- and is left to the rules below.
+		return false
+	}
+	// A KEYWORD used as a name: `$WHERE` is a parameter called WHERE.
+	return isBareIdentifier(t.Text)
+}
+
+// parseNamedPercentPlaceholder reads PostgreSQL's `%(name)s`. It reports
+// failure rather than erroring, so a `%` that opens something else is left for
+// the rules below to refuse in their own words.
+func (p *parser) parseNamedPercentPlaceholder() (*Expression, bool) {
+	start := p.index
+	p.advance() // %
+	if !p.match(TokL_PAREN) {
+		p.index = start
+		return nil, false
+	}
+	// Any word, keywords included: `%(name)s` is a parameter called `name`,
+	// and requiring a VAR here refused exactly that -- masked at first by
+	// testing with `id_param`, which is not a keyword.
+	name := p.curr()
+	if !isParameterName(name) {
+		p.index = start
+		return nil, false
+	}
+	p.advance()
+	if !p.match(TokR_PAREN) {
+		p.index = start
+		return nil, false
+	}
+	suffix := p.curr()
+	if suffix == nil || !strings.EqualFold(suffix.Text, "s") {
+		p.index = start
+		return nil, false
+	}
+	p.advance()
+	id := New("Identifier", Arg{"this", name.Text}, Arg{"quoted", false})
+	return New("Placeholder", Arg{"this", id}), true
 }
 
 // parseCast reads CAST(x AS type) and TRY_CAST(x AS type).

@@ -228,6 +228,9 @@ type ParserTables struct {
 	// exactly why it is read rather than assumed: a rule that is right
 	// everywhere today is not the same as a rule with no condition.
 	SafeToEliminateDoubleNegation bool
+	// Placeholder is how a bound parameter is written: `$name` in
+	// DuckDB, `%(name)s` in PostgreSQL, `:name` elsewhere.
+	Placeholder PlaceholderSQL
 	// QuantifierWrapsSubquery: whether a quantifier over a QUERY
 	// keeps the Subquery wrapper. ANY does and ALL does not, in
 	// every dialect -- a per-class fact, not a per-dialect one.
@@ -362,6 +365,25 @@ type CompositeTypeSQL struct {
 	StructOpen         string
 	StructClose        string
 	StructFieldSep     string
+}
+
+// PlaceholderSQL is the text around a bound parameter.
+type PlaceholderSQL struct {
+	Named     string
+	Anonymous string
+	Parameter string
+	// The node CLASS each spelling means in this dialect, empty
+	// where the dialect has no such spelling. `@nm` is a Parameter
+	// everywhere but DuckDB, where `@` is absolute value.
+	DollarName       string
+	DollarNumber     string
+	AtName           string
+	PercentNamed     string
+	PercentAnonymous string
+	// AnonymousJDBC: PostgreSQL stamps `jdbc` on a bare `?`, and
+	// writes that node back as `?` where a plain one is `%s`.
+	AnonymousJDBC    bool
+	AnonymousJDBCSQL string
 }
 
 // JSONPathSQL is the text around each piece of a JSON path.
@@ -3486,6 +3508,18 @@ var parserTables = map[string]*ParserTables{
 		QuantifierWrapsSubquery: map[string]bool{
 			"All": false,
 			"Any": true,
+		},
+		Placeholder: PlaceholderSQL{
+			Named:            ":{name}",
+			Anonymous:        "?",
+			Parameter:        "@{name}",
+			DollarName:       "Column",
+			DollarNumber:     "Column",
+			AtName:           "Parameter",
+			PercentNamed:     "",
+			PercentAnonymous: "",
+			AnonymousJDBCSQL: "?",
+			AnonymousJDBC:    false,
 		},
 		QuantifierQuerySQL: map[string]string{
 			"All":          "ALL ({query})",
@@ -6824,6 +6858,18 @@ var parserTables = map[string]*ParserTables{
 		QuantifierWrapsSubquery: map[string]bool{
 			"All": false,
 			"Any": true,
+		},
+		Placeholder: PlaceholderSQL{
+			Named:            ":{name}",
+			Anonymous:        "?",
+			Parameter:        "@{name}",
+			DollarName:       "Column",
+			DollarNumber:     "Column",
+			AtName:           "Parameter",
+			PercentNamed:     "",
+			PercentAnonymous: "",
+			AnonymousJDBCSQL: "?",
+			AnonymousJDBC:    false,
 		},
 		QuantifierQuerySQL: map[string]string{
 			"All":          "ALL ({query})",
@@ -10223,6 +10269,18 @@ var parserTables = map[string]*ParserTables{
 		QuantifierWrapsSubquery: map[string]bool{
 			"All": false,
 			"Any": true,
+		},
+		Placeholder: PlaceholderSQL{
+			Named:            "%({name})s",
+			Anonymous:        "%s",
+			Parameter:        "${name}",
+			DollarName:       "Parameter",
+			DollarNumber:     "Parameter",
+			AtName:           "Parameter",
+			PercentNamed:     "Placeholder",
+			PercentAnonymous: "Placeholder",
+			AnonymousJDBCSQL: "?",
+			AnonymousJDBC:    true,
 		},
 		QuantifierQuerySQL: map[string]string{
 			"All":          "ALL ({query})",
@@ -13770,6 +13828,18 @@ var parserTables = map[string]*ParserTables{
 		QuantifierWrapsSubquery: map[string]bool{
 			"All": false,
 			"Any": true,
+		},
+		Placeholder: PlaceholderSQL{
+			Named:            "${name}",
+			Anonymous:        "?",
+			Parameter:        "${name}",
+			DollarName:       "Placeholder",
+			DollarNumber:     "Placeholder",
+			AtName:           "Abs",
+			PercentNamed:     "",
+			PercentAnonymous: "",
+			AnonymousJDBCSQL: "?",
+			AnonymousJDBC:    false,
 		},
 		QuantifierQuerySQL: map[string]string{
 			"All":          "ALL ({query})",
@@ -17321,6 +17391,18 @@ var parserTables = map[string]*ParserTables{
 		QuantifierWrapsSubquery: map[string]bool{
 			"All": false,
 			"Any": true,
+		},
+		Placeholder: PlaceholderSQL{
+			Named:            ":{name}",
+			Anonymous:        "?",
+			Parameter:        "${{name}}",
+			DollarName:       "Parameter",
+			DollarNumber:     "Parameter",
+			AtName:           "Parameter",
+			PercentNamed:     "",
+			PercentAnonymous: "",
+			AnonymousJDBCSQL: "?",
+			AnonymousJDBC:    false,
 		},
 		QuantifierQuerySQL: map[string]string{
 			"All":          "ALL ({query})",

@@ -837,6 +837,61 @@ def quantifier_query_sql(dialect: str) -> dict[str, str]:
     return out
 
 
+def placeholder_sql(dialect: str) -> dict[str, str]:
+    """How a bound parameter is written. Not one spelling: DuckDB writes
+    `$name`, PostgreSQL `%(name)s`, everyone else `:name`, and the anonymous
+    form is `?` except in PostgreSQL, where it is `%s`. PROBED.
+    """
+    import sqlglot
+
+    d = dialect or None
+    named = sqlglot.parse_one(":zzname", read="databricks").sql(dialect=d)
+    if "zzname" not in named:
+        raise SystemExit(f"{dialect}: named placeholder rendered {named!r}")
+    parameter = sqlglot.parse_one("@zzname", read="tsql").sql(dialect=d)
+    if "zzname" not in parameter:
+        raise SystemExit(f"{dialect}: parameter rendered {parameter!r}")
+    parameter = parameter.replace("zzname", "{name}", 1)
+    return {
+        "Named": named.replace("zzname", "{name}", 1),
+        "Anonymous": sqlglot.parse_one("?", read="databricks").sql(dialect=d),
+        # A placeholder carrying `jdbc` writes back as `?` even in PostgreSQL,
+        # where the plain one is `%s`. Same node, two spellings.
+        "AnonymousJDBCSQL": sqlglot.parse_one("?", read="postgres").sql(dialect=d),
+        # A Parameter is a different node from a Placeholder and has its own
+        # spelling: `@x` in T-SQL, `$x` in DuckDB and PostgreSQL, `${x}` in
+        # Databricks. DuckDB writes BOTH nodes as `$x`, which is the
+        # reference's own ambiguity and not one to resolve here.
+        "Parameter": parameter,
+        # What each SPELLING means here, which is not the same anywhere. `$nm`
+        # is a Placeholder in DuckDB, a Parameter in PostgreSQL and Databricks
+        # and a plain column elsewhere; `@nm` is a Parameter everywhere except
+        # DuckDB, where `@` is ABSOLUTE VALUE. Reading `@nm` as a Parameter
+        # there mismatched three statements against the reference. The port
+        # writes all of these, so it has to be able to read them back, and it
+        # cannot do that from one rule.
+        "DollarName": _form_class(":", "$nm", d),
+        "DollarNumber": _form_class(":", "$1", d),
+        "AtName": _form_class(":", "@nm", d),
+        "PercentNamed": _form_class(":", "%(nm)s", d),
+        "PercentAnonymous": _form_class(":", "%s", d),
+        # PostgreSQL stamps `jdbc` on the anonymous form and nobody else does.
+        "AnonymousJDBC": bool(
+            (sqlglot.parse_one("?", read=d).args or {}).get("jdbc")
+        ),
+    }
+
+
+def _form_class(_unused: str, sql: str, dialect) -> str:
+    """The node class this dialect reads `sql` as, or "" if it cannot."""
+    import sqlglot
+
+    try:
+        return type(sqlglot.parse_one(sql, read=dialect)).__name__
+    except Exception:  # noqa: BLE001 -- a spelling this dialect does not have
+        return ""
+
+
 def bracket_is_rewritten(dialect: str) -> bool:
     """Whether `a[1]` comes back as something other than a plain subscript.
 
@@ -1952,6 +2007,9 @@ def main() -> int:
         "\t// exactly why it is read rather than assumed: a rule that is right\n",
         "\t// everywhere today is not the same as a rule with no condition.\n",
         "\tSafeToEliminateDoubleNegation bool\n",
+        "\t// Placeholder is how a bound parameter is written: `$name` in\n",
+        "\t// DuckDB, `%(name)s` in PostgreSQL, `:name` elsewhere.\n",
+        "\tPlaceholder PlaceholderSQL\n",
         "\t// QuantifierWrapsSubquery: whether a quantifier over a QUERY\n",
         "\t// keeps the Subquery wrapper. ANY does and ALL does not, in\n",
         "\t// every dialect -- a per-class fact, not a per-dialect one.\n",
@@ -2082,6 +2140,25 @@ def main() -> int:
         "\tStructOpen         string\n",
         "\tStructClose        string\n",
         "\tStructFieldSep     string\n",
+        "}\n",
+        "\n",
+        "// PlaceholderSQL is the text around a bound parameter.\n",
+        "type PlaceholderSQL struct {\n",
+        "\tNamed     string\n",
+        "\tAnonymous string\n",
+        "\tParameter string\n",
+        "\t// The node CLASS each spelling means in this dialect, empty\n",
+        "\t// where the dialect has no such spelling. `@nm` is a Parameter\n",
+        "\t// everywhere but DuckDB, where `@` is absolute value.\n",
+        "\tDollarName       string\n",
+        "\tDollarNumber     string\n",
+        "\tAtName           string\n",
+        "\tPercentNamed     string\n",
+        "\tPercentAnonymous string\n",
+        "\t// AnonymousJDBC: PostgreSQL stamps `jdbc` on a bare `?`, and\n",
+        "\t// writes that node back as `?` where a plain one is `%s`.\n",
+        "\tAnonymousJDBC    bool\n",
+        "\tAnonymousJDBCSQL string\n",
         "}\n",
         "\n",
         "// JSONPathSQL is the text around each piece of a JSON path.\n",
@@ -2379,6 +2456,13 @@ def main() -> int:
         out.append("\t\tQuantifierWrapsSubquery: map[string]bool{\n")
         for k in sorted(_qw):
             out.append(f"\t\t\t{gostr(k)}: {str(_qw[k]).lower()},\n")
+        out.append("\t\t},\n")
+        _ph = placeholder_sql(name)
+        out.append("\t\tPlaceholder: PlaceholderSQL{\n")
+        for k in ("Named", "Anonymous", "Parameter", "DollarName", "DollarNumber",
+                  "AtName", "PercentNamed", "PercentAnonymous", "AnonymousJDBCSQL"):
+            out.append(f"\t\t\t{k}: {gostr(_ph[k])},\n")
+        out.append(f"\t\t\tAnonymousJDBC: {str(_ph['AnonymousJDBC']).lower()},\n")
         out.append("\t\t},\n")
         _qq = quantifier_query_sql(name)
         out.append("\t\tQuantifierQuerySQL: map[string]string{\n")

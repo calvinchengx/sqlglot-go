@@ -84,6 +84,15 @@ func (p *parser) next() *Token {
 
 func (p *parser) advance() { p.index++ }
 
+// peekAt is next() for a further offset, for the handful of rules that need
+// to see more than one token ahead before committing.
+func (p *parser) peekAt(n int) *Token {
+	if i := p.index + n; i < len(p.tokens) {
+		return &p.tokens[i]
+	}
+	return nil
+}
+
 func (p *parser) at(tt TokenType) bool {
 	c := p.curr()
 	return c != nil && c.Type == tt

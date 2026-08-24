@@ -98,6 +98,11 @@ func FuzzGeneratedSQLCanBeReadBack(f *testing.F) {
 }
 
 var seeds = []string{
+	// Bound parameters and `@x`, in every spelling the port WRITES. The
+	// generator fuzzer found the first of these: the port wrote `ARRAY(:Wa)`
+	// and could not read it back, which is the round trip failing on the
+	// port's own output rather than on anything exotic.
+	":name", "?", "$name", "${name}", "${0}", "@name", "%(name)s", "%s", "[:Wa]",
 	"SELECT 1", "SELECT a FROM t WHERE b > 1", "WITH x AS (SELECT 1) SELECT * FROM x",
 	"SELECT * FROM a JOIN b ON a.i = b.i", "SELECT CAST(a AS INT) FROM t",
 	"SELECT a, COUNT(*) FROM t GROUP BY a HAVING COUNT(*) > 1",
