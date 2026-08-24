@@ -262,17 +262,21 @@ func (p *parser) parseTable() (*Expression, error) {
 	return table, nil
 }
 
-// parseSubqueryTable reads a parenthesised query used where a table goes.
+// parseSubqueryTable reads a parenthesised FROM item.
 //
-// Only a query is accepted. `FROM (t)` is also a Subquery in the reference,
-// wrapping a table rather than a select, and the two are different enough that
-// guessing between them is not worth the statements it would buy.
+// Whatever is inside, the reference wraps it in a Subquery: a query, a table,
+// a join tree, or another parenthesised item. `FROM (t)` is a Subquery over a
+// TABLE rather than over a select, and `FROM (a CROSS JOIN b)` hangs the joins
+// off that table -- not off a Select, which is where a join usually lives.
 func (p *parser) parseSubqueryTable() (*Expression, error) {
 	p.advance() // the opening parenthesis
-	if !p.at(TokSELECT) && !p.at(TokWITH) {
-		return nil, p.unsupported("parenthesised table")
+	var inner *Expression
+	var err error
+	if p.at(TokSELECT) || p.at(TokWITH) {
+		inner, err = p.parseQuery()
+	} else {
+		inner, err = p.parseParenthesisedTable()
 	}
-	inner, err := p.parseQuery()
 	if err != nil {
 		return nil, err
 	}
@@ -287,6 +291,32 @@ func (p *parser) parseSubqueryTable() (*Expression, error) {
 	sub.Set("alias", alias)
 	sub.Set("sample", nil)
 	return sub, nil
+}
+
+// parseParenthesisedTable reads the table -- or join tree -- inside a pair of
+// parentheses in FROM position. The joins hang off the table itself, which is
+// the one place they do not belong to a Select.
+func (p *parser) parseParenthesisedTable() (*Expression, error) {
+	// `FROM (DESCRIBE t)` is a statement inside the parentheses, not a table.
+	// Reading the keyword as a name built a Table called DESCRIBE, which is a
+	// tree the reference never makes.
+	if c := p.curr(); c != nil {
+		if _, isStatement := p.tables.StatementTokens[c.Type]; isStatement {
+			return nil, p.unsupported("statement where a table goes")
+		}
+	}
+	table, err := p.parseTable()
+	if err != nil {
+		return nil, err
+	}
+	joins, err := p.parseJoins()
+	if err != nil {
+		return nil, err
+	}
+	if len(joins) > 0 {
+		table.Set("joins", joins)
+	}
+	return table, nil
 }
 
 // namesAFunctionCall reports whether the current token opens a call. It is

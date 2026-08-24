@@ -184,6 +184,24 @@ func (g *generator) writeTable(e *Expression) string {
 	if alias := g.child(e, "alias"); alias != "" {
 		out += " AS " + alias
 	}
+	return out + g.joins(e)
+}
+
+// joins writes the joins hanging off a FROM item. Inside a parenthesised item
+// they belong to the table or subquery itself rather than to a Select, which
+// is the one place a join does not live on the query. A comma join writes its
+// own comma and is appended rather than spaced.
+func (g *generator) joins(e *Expression) string {
+	joins, _ := e.Args["joins"].([]*Expression)
+	out := ""
+	for _, j := range joins {
+		s := g.node(j)
+		if strings.HasPrefix(s, ",") {
+			out += s
+			continue
+		}
+		out += " " + s
+	}
 	return out
 }
 
@@ -231,7 +249,9 @@ func (g *generator) writeLateral(e *Expression) string {
 
 func (g *generator) writeSubquery(e *Expression) string {
 	g.qualifyDerivedOutputs(e)
-	out := "(" + g.child(e, "this") + ")"
+	// The parentheses wrap what the subquery IS; a join hanging off it comes
+	// after them, the same way it comes after a table.
+	out := "(" + g.child(e, "this") + ")" + g.joins(e)
 	if alias := g.child(e, "alias"); alias != "" {
 		out += " AS " + alias
 	}

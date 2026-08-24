@@ -131,7 +131,7 @@ func TestRefusals(t *testing.T) {
 		{"GROUP BY ROLLUP", "SELECT a FROM t GROUP BY ROLLUP (a)", ""},
 		{"STREAM table", "SELECT * FROM STREAM t", "databricks"},
 		{"qualified function call", "SELECT a.f(1)", ""},
-		{"parenthesised table", "SELECT 1 FROM (t)", ""},
+		{"statement where a table goes", "SELECT 1 FROM (DESCRIBE t)", "duckdb"},
 		{"natural join", "SELECT 1 FROM a NATURAL JOIN b", ""},
 		{"USING", "SELECT 1 FROM a JOIN b USING (x)", ""},
 		{"a side with no JOIN", "SELECT 1 FROM a LEFT b", ""},
