@@ -660,6 +660,29 @@ def bracket_is_rewritten(dialect: str) -> bool:
     return e.args["this"].type is not None or index.this != "1"
 
 
+def quantifier_sql(dialect: str, exp) -> dict:
+    """The text before a quantifier's operand.
+
+    ALL is written with a trailing space and ANY without -- `ALL (x)` and
+    `ANY(x)` -- and it is a property of the CLASS, uniform across dialects.
+    Read off rather than assumed: comparing an ALL against an ANY suggests a
+    rule about the operator above them, and there is none.
+    """
+    out = {}
+    operand = exp.Paren(this=exp.column("ZZOPERANDZZ"))
+    for cls_name in ("All", "Any"):
+        node = getattr(exp, cls_name)(this=operand.copy())
+        try:
+            text = node.sql(dialect=dialect or None)
+        except Exception:  # noqa: BLE001
+            continue
+        rendered = operand.sql(dialect=dialect or None)
+        if not text.endswith(rendered):
+            continue
+        out[cls_name] = text[: -len(rendered)]
+    return out
+
+
 def boolean_sql(dialect: str, exp) -> dict:
     """How TRUE and FALSE are written, in a VALUE position and in a CONDITION.
 
@@ -1599,6 +1622,9 @@ def main() -> int:
         "\t// Boolean is how TRUE and FALSE are written, and the two\n",
         "\t// positions can differ: T-SQL writes 1 where a value is wanted\n",
         "\t// and (1 = 1) where a condition is.\n",
+        "\t// QuantifierSQL is the text before a quantifier\u2019s operand: ALL\n",
+        "\t// takes a trailing space and ANY does not.\n",
+        "\tQuantifierSQL map[string]string\n",
         "\tBoolean BooleanSQL\n",
         "\tWritesBooleanLiteral bool\n",
         "\tIsNotNullWrapsInNot bool\n",
@@ -1912,6 +1938,12 @@ def main() -> int:
         out.append(
             f"\t\tBracketIsRewritten: {str(bracket_is_rewritten(name)).lower()},\n"
         )
+        _q = quantifier_sql(name, exp)
+        if _q:
+            out.append("\t\tQuantifierSQL: map[string]string{\n")
+            for k in sorted(_q):
+                out.append(f"\t\t\t{gostr(k)}: {gostr(_q[k])},\n")
+            out.append("\t\t},\n")
         _bs = boolean_sql(name, exp)
         out.append("\t\tBoolean: BooleanSQL{\n")
         for k in ("TrueValue", "FalseValue", "TrueCondition", "FalseCondition"):

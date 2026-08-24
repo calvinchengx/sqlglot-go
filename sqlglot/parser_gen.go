@@ -221,6 +221,9 @@ type ParserTables struct {
 	// Boolean is how TRUE and FALSE are written, and the two
 	// positions can differ: T-SQL writes 1 where a value is wanted
 	// and (1 = 1) where a condition is.
+	// QuantifierSQL is the text before a quantifier’s operand: ALL
+	// takes a trailing space and ANY does not.
+	QuantifierSQL        map[string]string
 	Boolean              BooleanSQL
 	WritesBooleanLiteral bool
 	IsNotNullWrapsInNot  bool
@@ -3406,6 +3409,10 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: "[\"{key}\"]",
 		},
 		BracketIsRewritten: false,
+		QuantifierSQL: map[string]string{
+			"All": "ALL ",
+			"Any": "ANY",
+		},
 		Boolean: BooleanSQL{
 			TrueValue:      "TRUE",
 			FalseValue:     "FALSE",
@@ -6723,6 +6730,10 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: ".\"{key}\"",
 		},
 		BracketIsRewritten: false,
+		QuantifierSQL: map[string]string{
+			"All": "ALL ",
+			"Any": "ANY",
+		},
 		Boolean: BooleanSQL{
 			TrueValue:      "1",
 			FalseValue:     "0",
@@ -10098,6 +10109,10 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: "{key}",
 		},
 		BracketIsRewritten: true,
+		QuantifierSQL: map[string]string{
+			"All": "ALL ",
+			"Any": "ANY",
+		},
 		Boolean: BooleanSQL{
 			TrueValue:      "TRUE",
 			FalseValue:     "FALSE",
@@ -13621,6 +13636,10 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: ".\"{key}\"",
 		},
 		BracketIsRewritten: true,
+		QuantifierSQL: map[string]string{
+			"All": "ALL ",
+			"Any": "ANY",
+		},
 		Boolean: BooleanSQL{
 			TrueValue:      "TRUE",
 			FalseValue:     "FALSE",
@@ -17076,6 +17095,10 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: "[\"{key}\"]",
 		},
 		BracketIsRewritten: false,
+		QuantifierSQL: map[string]string{
+			"All": "ALL ",
+			"Any": "ANY",
+		},
 		Boolean: BooleanSQL{
 			TrueValue:      "TRUE",
 			FalseValue:     "FALSE",

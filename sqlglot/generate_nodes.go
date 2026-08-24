@@ -654,13 +654,17 @@ func (g *generator) writeSlice(e *Expression) string {
 	return g.child(e, "this") + ":" + g.child(e, "expression")
 }
 
-// writeQuantifier refuses: how the reference spaces one depends on the
-// operator ABOVE it -- `x = ANY(ARRAY[1])` is written tight and
-// `x LIKE ALL (ARRAY[1])` is not, from the same Paren underneath. That rule is
-// not ported, so the port reads the quantifier and declines to write it rather
-// than emit a statement spaced differently from the one the Python executor
-// sends.
-func (g *generator) writeQuantifier(*Expression) string { return g.fail("quantifier") }
+// writeQuantifier writes ALL or ANY before its operand. The two are spaced
+// differently -- `ALL (x)` and `ANY(x)` -- and that is a property of the class,
+// not of the operator above it. Comparing an ALL against an ANY suggested
+// otherwise, and this used to refuse on the strength of that.
+func (g *generator) writeQuantifier(e *Expression) string {
+	prefix, ok := g.tables.QuantifierSQL[e.Class]
+	if !ok {
+		return g.fail("quantifier")
+	}
+	return prefix + g.child(e, "this")
+}
 
 // writeWindow writes the OVER clause. A named window (`OVER w`) carries an
 // alias instead of a body.
