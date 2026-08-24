@@ -118,7 +118,35 @@ def classify_returns(sqlglot, exp, dialects):
 
 
 def _survives(cls, rule, checks, baseline, annotate_types, d, exp):
-    """Does the rule still hold when the argument is not a scalar literal?"""
+    """Does the rule still hold when the argument is not a scalar literal?
+
+    And does it still hold when the arguments this probe does NOT fill are
+    filled too? `If` keeps its branches under `true` and `false`, so a probe
+    that sets only `this` reads the type of the CONDITION and calls it the
+    rule -- which recorded `IF(true, 1, NULL)` as UNKNOWN where the reference
+    says INT. Filling the other arguments and re-checking catches that,
+    without dropping classes whose extra arguments are mere FLAGS: setting
+    those changes nothing, so the rule survives.
+    """
+    arg_types = getattr(cls, "arg_types", None) or {}
+    others = [k for k in arg_types if k not in ("this", "expressions")]
+    if others:
+        node = _build_call(cls, lambda: exp.Literal.number(1))
+        if node is not None:
+            for k in others:
+                try:
+                    node.set(k, exp.Literal.number(1))
+                except Exception:  # noqa: BLE001
+                    return False
+            try:
+                typed = annotate_types(node, dialect=d)
+                got = typed.type.sql(d) if typed.type is not None else None
+            except Exception:  # noqa: BLE001
+                return False
+            want = rule["type"] if rule["kind"] == "fixed" else baseline["INT"]
+            if rule["kind"] in ("fixed", "args") and got != want:
+                return False
+
     for make in checks:
         node = _build_call(cls, make)
         if node is None:
@@ -152,10 +180,18 @@ def _annotatable(exp):
 
 
 def _build_call(cls, make):
-    """One node of `cls` whose every argument is a probe literal."""
+    """One node of `cls` whose every argument is a probe literal.
+
+    Only classes whose arguments this probe can actually FILL are built. `If`
+    keeps its branches under `true` and `false`, so a probe that sets only
+    `this` is reading the type of the CONDITION and calling it the rule --
+    which recorded `IF(true, 1, NULL)` as UNKNOWN where the reference says
+    INT. A class the probe cannot fill is not probed at all.
+    """
     arg_types = getattr(cls, "arg_types", None)
     if not arg_types or "this" not in arg_types:
         return None
+
     try:
         args = {"this": make()}
         if "expressions" in arg_types:

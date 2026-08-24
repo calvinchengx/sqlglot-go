@@ -132,10 +132,6 @@ func (p *parser) parseRange() (*Expression, error) {
 			return nil, err
 		}
 
-		if p.at(TokESCAPE) {
-			return nil, p.unsupported("ESCAPE")
-		}
-
 		if negate {
 			this = negateRange(this)
 			// A negation followed by another range operator is parenthesised,
@@ -146,6 +142,18 @@ func (p *parser) parseRange() (*Expression, error) {
 					this = New("Paren", Arg{"this", this})
 				}
 			}
+		}
+
+		// `x LIKE 'y' ESCAPE '!'` WRAPS the comparison rather than adding an
+		// argument to it, so the escape character is a node of its own -- and
+		// it wraps the NEGATION too: `x NOT ILIKE 'y' ESCAPE '#'` is an Escape
+		// over a Not, not a Not over an Escape.
+		if p.match(TokESCAPE) {
+			char, cerr := p.parseBitwise()
+			if cerr != nil {
+				return nil, cerr
+			}
+			this = New("Escape", Arg{"this", this}, Arg{"expression", char})
 		}
 	}
 }
@@ -813,8 +821,12 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	// `x LIKE ALL (...)` and `x = ANY (...)` are QUANTIFIERS over what follows,
 	// not calls to functions named ALL and ANY -- which is what the generic
 	// call rule made of them, since both are followed by a parenthesis.
+	// `0 < ALL()` is an ANONYMOUS call, not a quantifier over nothing -- there
+	// is no operand to quantify. The reference builds Anonymous(ALL) and the
+	// port refused, which the generator fuzzer found by writing `ALL()` and
+	// failing to read it back.
 	if (p.at(TokALL) || p.at(TokANY)) && p.next() != nil && p.next().Type == TokL_PAREN &&
-		p.afterComparison() {
+		p.afterComparison() && !p.atEmptyArgList() {
 		class := "All"
 		if p.at(TokANY) {
 			class = "Any"
@@ -902,7 +914,26 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return New("Paren", Arg{"this", inner}), nil
 	}
 	if p.atIdentifier() {
-		if _, noParen := p.tables.NoParenFunctionNames[strings.ToUpper(c.Text)]; noParen && c.Type != TokCASE {
+		// These names have a PARSER of their own in the reference, not a
+		// signature -- and the refusal used to fire on the name alone. But
+		// `IF(x, y, z)` and `MAP([1], [2])` are ordinary calls with ordinary
+		// specs, and a bare `if` is a COLUMN. Only the form that needs the
+		// dedicated parser is still refused, and it is the one with neither
+		// parentheses nor a plain name after it.
+		upper := strings.ToUpper(c.Text)
+		_, noParen := p.tables.NoParenFunctionNames[upper]
+		_, hasSpec := p.tables.Functions[upper]
+		if !hasSpec {
+			_, hasSpec = p.tables.FunctionsByArity[upper]
+		}
+		// A call with a signature the port HAS is parsed with it: `IF(x, y, z)`
+		// and `MAP([1], [2])` are ordinary calls. ANY has a parser in the
+		// reference and no signature here, so it stays refused rather than
+		// becoming an Anonymous call the reference never builds.
+		// An EMPTY argument list makes it an ordinary anonymous call whatever
+		// the name: `ALL()` is Anonymous(ALL).
+		empty := p.namesAFunctionCall() && p.atEmptyArgList()
+		if noParen && c.Type != TokCASE && !empty && (!hasSpec || !p.namesAFunctionCall()) {
 			return nil, p.unsupported("no-paren function " + strings.ToUpper(c.Text))
 		}
 		if n := p.next(); n != nil && n.Type == TokL_PAREN {
@@ -950,6 +981,12 @@ func (p *parser) dotted(this *Expression) *Expression {
 		this = New("Dot", Arg{"this", this}, Arg{"expression", right})
 	}
 	return this
+}
+
+// atEmptyArgList reports whether the name at the cursor is followed by `()`.
+func (p *parser) atEmptyArgList() bool {
+	after := p.peekAt(2)
+	return after != nil && after.Type == TokR_PAREN
 }
 
 // isParameterName reports whether a token can name a bound parameter or a
@@ -1070,9 +1107,13 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 	if !ok {
 		return nil, p.unsupported("type " + c.Text)
 	}
-	// INTERVAL as a type carries a unit and is a different node entirely.
+	// INTERVAL as a type carries a UNIT, and the DataType's `this` is an
+	// Interval node rather than a type name -- `CAST(x AS INTERVAL DAY)` is
+	// DataType(Interval(unit=Var(DAY))). A word that is not a unit means
+	// there is no unit: `CAST(x AS INTERVAL)` is a bare interval type.
 	if c.Type == TokINTERVAL {
-		return nil, p.unsupported("INTERVAL type")
+		p.advance()
+		return p.parseIntervalType(), nil
 	}
 	p.advance()
 
@@ -1135,6 +1176,39 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 	}
 	dt.Set("nested", nested)
 	return dt, nil
+}
+
+// parseIntervalType reads the unit after INTERVAL, if there is one.
+func (p *parser) parseIntervalType() *Expression {
+	unit := p.intervalUnit()
+	if unit == nil {
+		// No `nested` arg: the reference builds this one from a bare type name
+		// and it carries none, where a type WRITTEN with parameters does.
+		return New("DataType", Arg{"this", DataTypeKind("INTERVAL")})
+	}
+	// `DAY TO HOUR` is a span, which is one unit made of two.
+	if p.atWords("TO") {
+		p.advance()
+		if to := p.intervalUnit(); to != nil {
+			unit = New("IntervalSpan", Arg{"this", unit}, Arg{"expression", to})
+		}
+	}
+	return New("DataType", Arg{"this", New("Interval", Arg{"unit", unit})})
+}
+
+// intervalUnit reads one unit word, upper-cased as the reference records it,
+// or nothing where the next word is not a unit this dialect knows.
+func (p *parser) intervalUnit() *Expression {
+	c := p.curr()
+	if c == nil {
+		return nil
+	}
+	word := strings.ToUpper(c.Text)
+	if _, ok := p.tables.ValidIntervalUnits[word]; !ok {
+		return nil
+	}
+	p.advance()
+	return New("Var", Arg{"this", word})
 }
 
 // parseTypeSize reads one parameter of a plain type. A number is a Literal; a

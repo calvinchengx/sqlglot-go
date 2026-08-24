@@ -147,20 +147,37 @@ func sameMeaning(a, b *sqlglot.Expression) bool {
 // flattenConnectors rewrites every AND/OR chain into one right-nested chain of
 // its operands, so two spellings of the same associative chain agree.
 func flattenConnectors(e *sqlglot.Expression) *sqlglot.Expression {
+	return normalise(e, true)
+}
+
+// normalise rebuilds a tree in a canonical form. `asIf` says whether a bare
+// If may be rewritten into the Case it is written as -- false for the If
+// nodes that ARE a Case's branches, which are already where they belong.
+func normalise(e *sqlglot.Expression, asIf bool) *sqlglot.Expression {
 	if e == nil {
 		return nil
 	}
-	out := e.Copy()
-	for key, arg := range out.Args {
-		switch v := arg.(type) {
+	// Rebuilt without the nil-valued args, so two spellings of the same node
+	// compare equal whatever optional slots each happens to carry.
+	out := sqlglot.New(e.Class)
+	out.Type = e.Type
+	for _, key := range e.Keys {
+		switch v := e.Args[key].(type) {
 		case *sqlglot.Expression:
-			out.Set(key, flattenConnectors(v))
-		case []*sqlglot.Expression:
-			kids := make([]*sqlglot.Expression, len(v))
-			for i, k := range v {
-				kids[i] = flattenConnectors(k)
+			if v != nil {
+				out.Set(key, normalise(v, true))
 			}
-			out.Set(key, kids)
+		case []*sqlglot.Expression:
+			if len(v) > 0 {
+				kids := make([]*sqlglot.Expression, len(v))
+				for i, k := range v {
+					kids[i] = normalise(k, key != "ifs")
+				}
+				out.Set(key, kids)
+			}
+		case nil:
+		default:
+			out.Set(key, v)
 		}
 	}
 	// A Subquery wrapping a query is parenthesisation, not meaning. The
@@ -178,6 +195,20 @@ func flattenConnectors(e *sqlglot.Expression) *sqlglot.Expression {
 				}
 			}
 		}
+	}
+	// An IF and the CASE it is written as are the same thing spelled two
+	// ways: most dialects have no IF, so `IF(FALSE, x)` is written
+	// `CASE WHEN FALSE THEN x END` and reads back as a Case. The reference
+	// does not round-trip that either, so the comparison sees past it.
+	if out.Class == "If" && asIf {
+		branch := sqlglot.New("If",
+			sqlglot.Arg{Key: "this", Value: out.Args["this"]},
+			sqlglot.Arg{Key: "true", Value: out.Args["true"]})
+		args := []sqlglot.Arg{{Key: "ifs", Value: []*sqlglot.Expression{branch}}}
+		if fallback, ok := out.Args["false"].(*sqlglot.Expression); ok && fallback != nil {
+			args = append(args, sqlglot.Arg{Key: "default", Value: fallback})
+		}
+		return sqlglot.New("Case", args...)
 	}
 	if out.Class != "And" && out.Class != "Or" {
 		return out

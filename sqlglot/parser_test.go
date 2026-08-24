@@ -106,7 +106,6 @@ func TestRefusals(t *testing.T) {
 		{"STRING_AGG with an ORDER BY", "SELECT STRING_AGG(x, ',' ORDER BY y)", "duckdb"},
 		{"no-paren function named, not tokenized", "CURDATE", "databricks"},
 		{"ORDER BY with nothing to order", "SELECT RANK(ORDER BY b) OVER ()", "duckdb"},
-		{"INTERVAL as a type", "'45 days'::INTERVAL DAY", "postgres"},
 		{"non-numeric type parameter", "a::VARCHAR('x')", "tsql"},
 		// HASHBYTES decides its class by inspecting its first argument, which
 		// the port refuses rather than half-implement -- so it also refuses to
@@ -125,7 +124,6 @@ func TestRefusals(t *testing.T) {
 		{"dangling CASE subject", "CASE", ""},
 		{"IN without parentheses", "a IN b", ""},
 		{"unclosed IN list", "a IN (1", ""},
-		{"ESCAPE", "a LIKE 'x' ESCAPE 'y'", ""},
 		{"dangling IS", "a IS", ""},
 		{"dangling BETWEEN", "a BETWEEN", ""},
 		{"dangling type", "a::", ""},

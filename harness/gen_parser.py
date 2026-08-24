@@ -2124,6 +2124,10 @@ def main() -> int:
         "\t// specific to one dialect. The ones not handled are refused here\n",
         "\t// rather than left to look like the end of the expression.\n",
         "\tRangeTokens map[TokenType]struct{}\n",
+        "\t// ValidIntervalUnits are the words that can follow INTERVAL as a\n",
+        "\t// TYPE. Where the next word is not one, the reference builds a\n",
+        "\t// bare INTERVAL type instead of reading a unit that is not there.\n",
+        "\tValidIntervalUnits map[string]struct{}\n",
         "\t// BinaryRangeOps are the range operators that are just a binary\n",
         "\t// node -- PostgreSQL's `@>`, `&&`, `-|-` and the rest. Probed by\n",
         "\t// running `a <op> b` and keeping the class where the result is\n",
@@ -2572,6 +2576,12 @@ def main() -> int:
         out.append(ttset("JoinKinds", P.JOIN_KINDS))
         out.append(ttset("JoinMethods", P.JOIN_METHODS))
         out.append(ttset("RangeTokens", P.RANGE_PARSERS))
+        units = "".join(
+            f"\t\t\t{gostr(u)}: {{}},\n" for u in sorted(d.VALID_INTERVAL_UNITS)
+        )
+        out.append(
+            f"\t\tValidIntervalUnits: map[string]struct{{}}{{\n{units}\t\t}},\n"
+        )
         texts = {}
         for text, token in Dialect.get_or_raise(name or None).tokenizer_class.KEYWORDS.items():
             texts.setdefault(token, []).append(text)

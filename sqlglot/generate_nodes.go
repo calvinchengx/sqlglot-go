@@ -55,6 +55,7 @@ func init() {
 		"DataType":          (*generator).writeDataType,
 		"DataTypeParam":     (*generator).writeChildThis,
 		"Placeholder":       (*generator).writePlaceholder,
+		"Escape":            (*generator).writeEscape,
 		"Parameter":         (*generator).writeParameter,
 		"ColumnDef":         (*generator).writeColumnDef,
 		"Anonymous":         (*generator).writeAnonymous,
@@ -500,8 +501,28 @@ func (g *generator) writeCase(e *Expression) string {
 // PostgreSQL and DuckDB as a CASE expression. None of that is ported, and
 // writing the branch form here produced `SELECT WHEN x > 0 THEN 'positive'`,
 // which is not SQL. Refused until the dialect rules are ported.
+// writeIf writes a conditional. Most dialects spell it `CASE WHEN … END` and
+// Databricks `IF(…)`; T-SQL spells it `IIF(cond <> 0, …)`, comparing the
+// condition against zero because it has no boolean type.
+//
+// That `<> 0` is the catch: the reference appends it only where the condition
+// is NOT already a comparison, and a template cannot tell. Applying it anyway
+// wrote `IIF(cond <> 0 <> 0, …)`. So where the template carries it and the
+// condition is already a condition, this refuses rather than doubling it.
 func (g *generator) writeIf(e *Expression) string {
-	return g.fail("If")
+	for _, candidate := range g.tables.SyntaxSQL[e.Class] {
+		if !strings.Contains(candidate.Template, "<> 0") {
+			continue
+		}
+		if cond, _ := e.Args["this"].(*Expression); isKnownBoolean(cond) {
+			return g.fail("If over a condition, where the dialect compares against zero")
+		}
+	}
+	out, ok := g.syntaxTemplate(e)
+	if !ok {
+		return g.fail("If")
+	}
+	return out
 }
 
 func (g *generator) writeCast(e *Expression) string {
@@ -545,7 +566,25 @@ func (g *generator) writeParameter(e *Expression) string {
 	return strings.ReplaceAll(g.tables.Placeholder.Parameter, "{name}", g.node(this))
 }
 
+// writeEscape writes the escape character a LIKE was given. Every dialect
+// this port configures spells it the same way.
+func (g *generator) writeEscape(e *Expression) string {
+	return g.child(e, "this") + " ESCAPE " + g.child(e, "expression")
+}
+
 func (g *generator) writeDataType(e *Expression) string {
+	// An INTERVAL type's `this` is an Interval NODE carrying the unit, not a
+	// type name: `CAST(x AS INTERVAL DAY)`.
+	if inner, ok := e.Args["this"].(*Expression); ok && inner != nil {
+		if inner.Class != "Interval" {
+			return g.fail("DataType over " + inner.Class)
+		}
+		unit, _ := inner.Args["unit"].(*Expression)
+		if unit == nil {
+			return "INTERVAL"
+		}
+		return "INTERVAL " + g.node(unit)
+	}
 	kind, _ := e.Args["this"].(DataTypeKind)
 	out, ok := g.tables.TypeSQL[string(kind)]
 	if !ok {

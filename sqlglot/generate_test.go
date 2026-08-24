@@ -139,6 +139,27 @@ func TestGenerateShapes(t *testing.T) {
 		{"a dotted parameter", "SELECT :A.a", "databricks", "SELECT :A.a"},
 		{"a string after the dot stays a string", "SELECT $0.'AS'", "duckdb",
 			"SELECT $0.'AS'"},
+		// ESCAPE wraps the comparison, and the NEGATION with it.
+		{"like with an escape", "SELECT 1 WHERE x LIKE '%y%' ESCAPE '!'", "",
+			"SELECT 1 WHERE x LIKE '%y%' ESCAPE '!'"},
+		{"escape wraps the negation", "SELECT 1 WHERE x NOT ILIKE '%y' ESCAPE '#'", "postgres",
+			"SELECT 1 WHERE x NOT ILIKE '%y' ESCAPE '#'"},
+		// INTERVAL as a TYPE carries a unit, and the DataType's `this` is an
+		// Interval node rather than a type name.
+		{"interval type with a unit", "SELECT CAST('45' AS INTERVAL DAY)", "",
+			"SELECT CAST('45' AS INTERVAL DAY)"},
+		{"interval type with a span", "SELECT CAST('1 2' AS INTERVAL DAY TO HOUR)", "",
+			"SELECT CAST('1 2' AS INTERVAL DAY TO HOUR)"},
+		{"a bare interval type", "SELECT CAST('1 DAY' AS INTERVAL)", "postgres",
+			"SELECT CAST('1 DAY' AS INTERVAL)"},
+		// These names have a PARSER of their own in the reference, not a
+		// signature. The port used to refuse them on sight; only the form that
+		// needs the dedicated parser is refused now.
+		{"if with parentheses is an ordinary call", "SELECT IF(x > 0, 1, 2)", "databricks",
+			"SELECT IF(x > 0, 1, 2)"},
+		{"map with parentheses too", "SELECT MAP([1], [2])", "duckdb", "SELECT MAP([1], [2])"},
+		{"an empty argument list is an anonymous call", "SELECT 1 WHERE 0 < ALL()", "tsql",
+			"SELECT 1 WHERE 0 < ALL()"},
 		{"json extract scalar", "select j ->> '$.a.b'", "duckdb", "SELECT j ->> '$.a.b'"},
 		{"json subscript", "select j -> '$[0]'", "duckdb", "SELECT j -> '$[0]'"},
 		{"json quoted key", `select j -> '$."a b"'`, "duckdb", `SELECT j -> '$."a b"'`},
