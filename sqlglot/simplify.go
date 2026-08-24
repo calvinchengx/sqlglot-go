@@ -62,6 +62,7 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 	}
 	out = simplifyLiterals(out)
 	out = simplifyNot(out, parent, dialect)
+	out = absorb(out, parent)
 	out = simplifyConnectors(out, parent)
 	out = simplifyParens(out, parent)
 	out = sortComparison(out)
@@ -513,6 +514,84 @@ func simplifyConnectors(e, parent *Expression) *Expression {
 		return e
 	}
 	return keepCondition(folded, parent)
+}
+
+// unnest strips the parentheses around an operand so it can be compared with
+// one that was written without them.
+func unnest(e *Expression) *Expression {
+	for e != nil && e.Class == "Paren" {
+		e, _ = e.Args["this"].(*Expression)
+	}
+	return e
+}
+
+// chainOperands flattens a run of the same connector into its operands:
+// `A AND B AND C` gives three, whatever way it happens to be nested.
+func chainOperands(e *Expression, class string) []*Expression {
+	if e == nil || e.Class != class {
+		return []*Expression{e}
+	}
+	this, _ := e.Args["this"].(*Expression)
+	expr, _ := e.Args["expression"].(*Expression)
+	return append(chainOperands(this, class), chainOperands(expr, class)...)
+}
+
+// absorb is the absorption half of the reference's absorb_and_eliminate:
+//
+//	A AND (A OR B) -> A
+//	A OR (A AND B) -> A
+//
+// The ELIMINATION half -- `(A AND B) OR (A AND NOT B)` down to A -- is not
+// here. It holds only where B is known non-null, and that knowledge comes
+// from the type annotator, which is not ported. Folding it without the
+// nullability check would be wrong exactly when B can be NULL, which is the
+// case nobody tests by hand.
+func absorb(e, parent *Expression) *Expression {
+	if e.Class != "And" && e.Class != "Or" {
+		return e
+	}
+	opposite := "Or"
+	if e.Class == "Or" {
+		opposite = "And"
+	}
+	ops := chainOperands(e, e.Class)
+	if len(ops) < 2 {
+		return e
+	}
+
+	kept := make([]*Expression, 0, len(ops))
+	for i, op := range ops {
+		inner := unnest(op)
+		if inner == nil || inner.Class != opposite {
+			kept = append(kept, op)
+			continue
+		}
+		// `A AND (A OR B)`: the parenthesised operand is absorbed when one of
+		// ITS operands is already being required alongside it.
+		absorbed := false
+		for _, sub := range chainOperands(inner, opposite) {
+			for j, other := range ops {
+				if i != j && unnest(other).Equal(unnest(sub)) {
+					absorbed = true
+				}
+			}
+		}
+		if !absorbed {
+			kept = append(kept, op)
+		}
+	}
+	if len(kept) == len(ops) || len(kept) == 0 {
+		return e
+	}
+
+	rebuilt := kept[len(kept)-1]
+	for i := len(kept) - 2; i >= 0; i-- {
+		rebuilt = New(e.Class, Arg{"this", kept[i]}, Arg{"expression", rebuilt})
+	}
+	if rebuilt.Class == "And" || rebuilt.Class == "Or" {
+		return rebuilt
+	}
+	return keepCondition(unnest(rebuilt), parent)
 }
 
 // parenthesizeNestedConnector is the reference's rule, and its comment says
