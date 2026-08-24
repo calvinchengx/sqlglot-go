@@ -1517,7 +1517,9 @@ func (p *parser) parseFunction() (*Expression, error) {
 		// keeps the node instead, which is a different tree. Refused here
 		// rather than built from an empty name.
 		for _, a := range spec.Args {
-			if a.Wrap == "" || a.Index >= len(args) {
+			// Index -1 marks a CONSTANT node rather than a wrapper: it takes
+			// no argument, so there is no name for it to want.
+			if a.Wrap == "" || a.Index < 0 || a.Index >= len(args) {
 				continue
 			}
 			if args[a.Index].Name() == "" {
@@ -1617,6 +1619,17 @@ func (p *parser) buildFunction(name string, spec FuncSpec, args []*Expression) *
 	node := New(spec.Class)
 	for _, a := range spec.Args {
 		switch {
+		case a.Wrap != "" && a.Index < 0:
+			// A constant node the builder always supplies, holding no
+			// argument: DuckDB's two-argument REGEXP_EXTRACT_ALL fills
+			// group with Literal('0'). It is not a scalar const -- the
+			// value is a node -- and not a wrapper either, since there is
+			// no argument inside it to wrap.
+			wrapArgs := make([]Arg, 0, len(a.WrapArgs))
+			for _, extra := range a.WrapArgs {
+				wrapArgs = append(wrapArgs, Arg(extra))
+			}
+			node.Set(a.Key, New(a.Wrap, wrapArgs...))
 		case a.Wrap != "":
 			// Built FROM the argument, not holding it: DATEADD's unit is
 			// Var(args[i].name upper-cased), and the argument node itself does

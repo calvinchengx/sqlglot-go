@@ -260,14 +260,40 @@ def probe_functions(P, exp, dialect=""):
                     for k, v in value.args.items()
                     if k != "this" and (v is None or isinstance(v, (bool, str, int)))
                 ]
-                if not isinstance(inner, str) or len(extras) != len(value.args) - 1:
-                    return None
-                for i, a in enumerate(args):
-                    if inner == a.name.upper():
-                        out.append(
-                            (key, {"wrap": type(value).__name__, "index": i, "extras": extras})
+                wrapped = None
+                if isinstance(inner, str) and len(extras) == len(value.args) - 1:
+                    for i, a in enumerate(args):
+                        if inner == a.name.upper():
+                            wrapped = {
+                                "wrap": type(value).__name__,
+                                "index": i,
+                                "extras": extras,
+                            }
+                            break
+                if wrapped is not None:
+                    out.append((key, wrapped))
+                elif all(
+                    v is None or isinstance(v, (bool, str, int))
+                    for v in value.args.values()
+                ):
+                    # No argument reached this node and everything in it is a
+                    # scalar: a CONSTANT node the builder always supplies.
+                    # DuckDB's two-argument REGEXP_EXTRACT_ALL fills group with
+                    # Literal('0'); LOG10 sets this=Literal('10'). The
+                    # scalar-const branch above cannot hold it -- a Literal is
+                    # an Expr, not a scalar -- so the whole builder used to be
+                    # refused. The test has to come AFTER the wrapper one: run
+                    # first it captures DATEADD's Var(unit) as whatever unit
+                    # the probe happened to pass.
+                    out.append(
+                        (
+                            key,
+                            {
+                                "node": type(value).__name__,
+                                "extras": list(value.args.items()),
+                            },
                         )
-                        break
+                    )
                 else:
                     return None
             else:
@@ -277,7 +303,9 @@ def probe_functions(P, exp, dialect=""):
     def rebuild(spec, args):
         out = {}
         for key, how in spec:
-            if "wrap" in how:
+            if "node" in how:
+                out[key] = getattr(exp, how["node"])(**dict(how.get("extras") or []))
+            elif "wrap" in how:
                 i = how["index"]
                 out[key] = (
                     getattr(exp, how["wrap"])(
@@ -1607,7 +1635,7 @@ def render_functions(P, exp, dialect, funcs):
     that would parse back into a different node.
     """
     out = {}
-    for name, (cls_name, spec) in funcs.items():
+    for name, cls_name, spec in funcs:
         cls = getattr(exp, cls_name, None)
         if cls is None:
             continue
@@ -1618,7 +1646,26 @@ def render_functions(P, exp, dialect, funcs):
         for i, (key, how) in enumerate(positional):
             kwargs[key] = [args[i]] if "varlen" in how else args[i]
         consts = [(k, how["const"]) for k, how in spec if "const" in how]
+        # A constant the builder supplies as a NODE rather than a scalar.
+        # SHA384 and SHA256 are one class told apart by length, and feeding
+        # the probe a node it could not see meant one spelling was recorded
+        # for the whole class: SHA384(x) came back written SHA256(x). What is
+        # compared is the constant's own RENDERING, since a Literal holds
+        # "384" and a Boolean holds a bool.
+        nodes = []
+        for k, how in spec:
+            if "node" not in how:
+                continue
+            try:
+                built = getattr(exp, how["node"])(**dict(how.get("extras") or []))
+                nodes.append((k, built, built.sql(dialect=dialect or None)))
+            except Exception:  # noqa: BLE001 -- not a constant this dialect writes
+                nodes = None
+                break
+        if nodes is None:
+            continue
         kwargs.update(dict(consts))
+        kwargs.update({k: n for k, n, _ in nodes})
         try:
             rendered = cls(**kwargs).sql(dialect=dialect or None)
         except Exception:  # noqa: BLE001 -- a node that will not render is not supported
@@ -1630,6 +1677,7 @@ def render_functions(P, exp, dialect, funcs):
         candidates = out.setdefault(cls_name, [])
         for width in range(len(keys), -1, -1):
             narrowed = dict(consts)
+            narrowed.update({k: n for k, n, _ in nodes})
             for i, (key, how) in enumerate(positional[:width]):
                 narrowed[key] = [args[i]] if "varlen" in how else args[i]
             try:
@@ -1637,7 +1685,11 @@ def render_functions(P, exp, dialect, funcs):
             except Exception:  # noqa: BLE001
                 continue
             used = keys[:width]
-            absent = consts + [(k, None) for k in keys[width:]]
+            absent = (
+                consts
+                + [(k, text) for k, _, text in nodes]
+                + [(k, None) for k in keys[width:]]
+            )
             expected = name + "(" + ", ".join(f"__probe_{i}" for i in range(width)) + ")"
             if rendered == expected:
                 entry = (name, used, absent, False)
@@ -1649,6 +1701,26 @@ def render_functions(P, exp, dialect, funcs):
                 candidates.append(entry)
         if not candidates:
             del out[cls_name]
+
+    # A spelling says nothing about a key its own form never fills, and with
+    # every arity offered that is a licence to DROP an argument: PostgreSQL's
+    # one-argument WIDTH_BUCKET matched a node carrying two and wrote
+    # WIDTH_BUCKET(10) for WIDTH_BUCKET(10, ARRAY[5, 15]). Each spelling is
+    # held to every key any spelling of the class mentions, so a key it does
+    # not write has to be absent for it to apply.
+    for cls_name, candidates in out.items():
+        known = {k for _, keys, consts, _ in candidates for k in list(keys) + [c[0] for c in consts]}
+        for i, (keyword, keys, consts, no_parens) in enumerate(candidates):
+            named = set(keys) | {c[0] for c in consts}
+            extra = [(k, None) for k in sorted(known - named)]
+            candidates[i] = (keyword, keys, consts + extra, no_parens)
+        seen, unique = set(), []
+        for cand in candidates:
+            mark = repr(cand)
+            if mark not in seen:
+                seen.add(mark)
+                unique.append(cand)
+        out[cls_name] = unique
 
     # Most constrained first, so a node with a flag set matches the spelling
     # that flag selects rather than the general one.
@@ -1748,7 +1820,17 @@ def goconst(v) -> str:
 def funcargs(spec) -> str:
     parts = []
     for key, how in spec:
-        if "wrap" in how:
+        if "node" in how:
+            # Index -1 marks a CONSTANT node rather than a wrapper: the class
+            # goes in the same slot, and the index tells the two apart.
+            extras = "".join(
+                "{%s, %s}, " % (gostr(k), goconst(v)) for k, v in (how.get("extras") or [])
+            )
+            parts.append(
+                f"{{{gostr(key)}, -1, false, nil, {gostr(how['node'])}, "
+                f"[]FuncConst{{{extras}}}}}"
+            )
+        elif "wrap" in how:
             extras = "".join(
                 "{%s, %s}, " % (gostr(k), goconst(v)) for k, v in (how.get("extras") or [])
             )
@@ -2400,11 +2482,18 @@ def main() -> int:
                     out.append(f"\t\t\t\t{arity}: {{{gostr(cls)}, []FuncArg{{{funcargs(spec)}}}}},\n")
                 out.append("\t\t\t},\n")
             out.append("\t\t},\n")
-        # The generator needs a spelling for these too; the widest arity gives
-        # it one, and render_functions probes the narrower forms itself.
+        # The generator needs a spelling for these too. Every arity is
+        # offered, not just the widest: a narrow form is where a builder
+        # supplies a constant, and with only the widest recorded the writer
+        # knew just the spelling that writes that constant out by hand --
+        # REGEXP_EXTRACT(a, b) came out as REGEXP_EXTRACT(a, b, 1).
         render_input = dict(funcs)
+        render_forms = [(fname, cls, spec) for fname, (cls, spec) in funcs.items()]
         for fname, variants in by_arity.items():
             render_input.setdefault(fname, variants[max(variants)])
+            for arity in sorted(variants, reverse=True):
+                cls, spec = variants[arity]
+                render_forms.append((fname, cls, spec))
         classes = class_sensitive_args(P, exp, name, render_input)
         if classes:
             out.append("\t\tClassSensitiveArgs: map[string][]ClassTrigger{\n")
@@ -2465,7 +2554,7 @@ def main() -> int:
                 joined = ", ".join(str(i) for i in indexes)
                 out.append(f"\t\t\t{gostr(fname)}: {{{joined}}},\n")
             out.append("\t\t},\n")
-        out.append(sqlmap("FunctionSQL", render_functions(P, exp, name, render_input)))
+        out.append(sqlmap("FunctionSQL", render_functions(P, exp, name, render_forms)))
         binary, unary = render_operators(P, exp, Dialect, name)
         out.append(strstrmap("BinarySQL", binary))
         out.append(strstrmap("UnarySQL", unary))

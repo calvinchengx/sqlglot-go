@@ -219,7 +219,7 @@ func (g *generator) functionSpelling(e *Expression) (FuncSQL, bool) {
 		}
 		matches := true
 		for _, c := range candidate.Consts {
-			if !sameConst(e.Args[c.Key], c.Value) {
+			if !g.sameConst(e.Args[c.Key], c.Value) {
 				matches = false
 				break
 			}
@@ -256,7 +256,14 @@ func (g *generator) functionSpelling(e *Expression) (FuncSQL, bool) {
 
 // sameConst compares an argument against a constant the spelling requires,
 // treating an absent argument and a nil requirement as the same thing.
-func sameConst(got, want any) bool {
+func (g *generator) sameConst(got, want any) bool {
+	// A constant the builder supplies as a NODE, compared by what it WRITES:
+	// SHA2 carries length as Literal("384"), and the spelling that selects
+	// SHA384 over SHA256 is conditioned on that text.
+	if child, ok := got.(*Expression); ok && child != nil {
+		text, isText := want.(string)
+		return isText && g.node(child) == text
+	}
 	if got == nil || want == nil {
 		return got == nil && want == nil
 	}
