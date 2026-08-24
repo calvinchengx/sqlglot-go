@@ -41,6 +41,7 @@ func TestGenerateShapes(t *testing.T) {
 		{"table alias columns", "select * from t as x(a, b)", "", "SELECT * FROM t AS x(a, b)"},
 		{"struct literal", "select {'a': 1, 'b': x}", "duckdb", "SELECT {'a': 1, 'b': x}"},
 		{"json extract", "select j -> '$.a'", "duckdb", "SELECT j -> '$.a'"},
+		{"date add tsql reorders", "select dateadd(day, 1, d)", "tsql", "SELECT DATEADD(DAY, 1, d)"},
 		{"json extract scalar", "select j ->> '$.a.b'", "duckdb", "SELECT j ->> '$.a.b'"},
 		{"json subscript", "select j -> '$[0]'", "duckdb", "SELECT j -> '$[0]'"},
 		{"json quoted key", `select j -> '$."a b"'`, "duckdb", `SELECT j -> '$."a b"'`},

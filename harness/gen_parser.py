@@ -994,7 +994,11 @@ def syntax_templates(exp, dialect, repo):
         if cls is None:
             continue
         for expr_keys, scalars in sorted(variants):
-            kwargs = {k: exp.column(f"__a{k}__") for k in expr_keys}
+            # An ALREADY-UPPERCASE placeholder. A unit comes back upper-cased --
+            # T-SQL renders DATEADD(__AUNIT__, ...) from a `unit` argument --
+            # and a lowercase marker simply is not there to replace, so every
+            # call form of DateAdd was rejected for want of a token.
+            kwargs = {k: exp.column(f"ZZ{k.upper()}ZZ") for k in expr_keys}
             kwargs.update(dict(scalars))
             try:
                 text = cls(**kwargs).sql(dialect=dialect or None)
@@ -1002,7 +1006,7 @@ def syntax_templates(exp, dialect, repo):
                 continue
             ok = True
             for key in expr_keys:
-                token = f"__a{key}__"
+                token = f"ZZ{key.upper()}ZZ"
                 if text.count(token) != 1:
                     ok = False
                     break
