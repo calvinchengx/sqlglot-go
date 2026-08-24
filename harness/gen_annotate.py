@@ -43,6 +43,144 @@ def load_pairs(sqlglot_dir: pathlib.Path):
     return out
 
 
+def classify_returns(sqlglot, exp, dialects):
+    """What each function RETURNS, as a rule rather than an answer.
+
+    A return type is usually not fixed: ABS(1) is an INT and ABS(1.5) a
+    DOUBLE. So the probe runs each class three times -- over an integer, a
+    real and a string -- and reads the RULE out of how the answers move:
+
+      fixed    the same type whatever it was given (ASCII is always INT)
+      args     the coercion of its arguments (ABS, GREATEST)
+      promote  the arguments, widened (INT becomes BIGINT, FLOAT DOUBLE)
+      array    the arguments, wrapped in an ARRAY
+
+    Recording the three ANSWERS instead would be a table that is right for
+    the arguments probed and wrong for every other call.
+    """
+    from sqlglot.optimizer.annotate_types import annotate_types
+
+    probes = {
+        "INT": lambda: exp.Literal.number(1),
+        "DOUBLE": lambda: exp.Literal.number(1.5),
+        "VARCHAR": lambda: exp.Literal.string("a"),
+    }
+    # Shapes that are NOT scalar literals, used to check a rule rather than to
+    # derive one. A rule read from scalars alone was wrong for the classes that
+    # look INTO their argument: ELEMENT_AT over an ARRAY<INT> returns INT, not
+    # ARRAY<INT>, and ALL over a subquery is not the BOOLEAN it is over a
+    # value. Both were recorded confidently and both were wrong, so a class
+    # whose rule does not survive these is not recorded at all.
+    checks = [
+        lambda: exp.Array(expressions=[exp.Literal.number(1)]),
+        lambda: exp.Subquery(this=exp.select(exp.Literal.number(1))),
+    ]
+    out = {}
+    for dialect in sorted(dialects):
+        d = dialect or None
+        # What each probe's OWN type renders as here. DuckDB spells VARCHAR
+        # `TEXT` and PostgreSQL spells DOUBLE `DOUBLE PRECISION`, so comparing
+        # an answer against the neutral name classified `args` as `fixed` in
+        # every dialect but the neutral one -- 32 rules in one and none in the
+        # rest, which is what gave it away.
+        baseline = {
+            name: annotate_types(make(), dialect=d).type.sql(d) for name, make in probes.items()
+        }
+        per_class = {}
+        for cls in sorted(_annotatable(exp), key=lambda c: c.__name__):
+            # An unrecognised call gives NO answer rather than a confident
+            # UNKNOWN. The reference does answer UNKNOWN, but for the port
+            # that would be a claim about a node it did not understand: it
+            # reads `ALL(SELECT 1)` as an anonymous call, where the reference
+            # reads a quantifier, and an UNKNOWN there hides a PARSE gap
+            # behind an annotator answer. No answer keeps the two apart.
+            if cls.__name__ == "Anonymous":
+                continue
+            answers = {}
+            for name, make in probes.items():
+                node = _build_call(cls, make)
+                if node is None:
+                    break
+                try:
+                    typed = annotate_types(node, dialect=d)
+                except Exception:  # noqa: BLE001 -- a class this probe cannot build
+                    break
+                if typed.type is None:
+                    break
+                answers[name] = typed.type.sql(d)
+            if len(answers) != len(probes):
+                continue
+            rule = _rule_from(answers, baseline)
+            if rule and _survives(cls, rule, checks, baseline, annotate_types, d, exp):
+                per_class[cls.__name__] = rule
+        out[dialect] = per_class
+    return out
+
+
+def _survives(cls, rule, checks, baseline, annotate_types, d, exp):
+    """Does the rule still hold when the argument is not a scalar literal?"""
+    for make in checks:
+        node = _build_call(cls, make)
+        if node is None:
+            continue
+        try:
+            typed = annotate_types(node, dialect=d)
+        except Exception:  # noqa: BLE001
+            return False
+        if typed.type is None:
+            return False
+        got = typed.type.sql(d)
+        want = annotate_types(make(), dialect=d).type
+        if rule["kind"] == "fixed":
+            if got != rule["type"]:
+                return False
+        elif rule["kind"] == "args":
+            if want is None or got != want.sql(d):
+                return False
+        else:
+            # promote and array are only claimed from the scalar probes; a
+            # non-scalar argument is not evidence either way for them.
+            continue
+    return True
+
+
+def _annotatable(exp):
+    """The expression classes the annotator has a rule for."""
+    from sqlglot.dialects.dialect import Dialect
+
+    return [c for c in Dialect().EXPRESSION_METADATA if isinstance(c, type)]
+
+
+def _build_call(cls, make):
+    """One node of `cls` whose every argument is a probe literal."""
+    arg_types = getattr(cls, "arg_types", None)
+    if not arg_types or "this" not in arg_types:
+        return None
+    try:
+        args = {"this": make()}
+        if "expressions" in arg_types:
+            args["expressions"] = [make()]
+        return cls(**args)
+    except Exception:  # noqa: BLE001
+        return None
+
+
+def _rule_from(answers, baseline):
+    """Read the rule out of three answers, against this dialect's spellings."""
+    values = set(answers.values())
+    if len(values) == 1:
+        return {"kind": "fixed", "type": answers["INT"]}
+    if all(answers[k] == baseline[k] for k in answers):
+        return {"kind": "args"}
+    if answers["INT"] == "BIGINT" and answers["DOUBLE"] == baseline["DOUBLE"]:
+        return {"kind": "promote"}
+    if all(answers[k].startswith("ARRAY") and baseline[k] in answers[k] for k in answers):
+        return {"kind": "array"}
+    # Anything else moves with its arguments in a way these three probes did
+    # not pin down. Recording it would be recording a guess.
+    return None
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--sqlglot", required=True, type=pathlib.Path)
@@ -104,6 +242,8 @@ def main() -> int:
 
     # ... and as a Go table, because the annotator needs it at RUN time and
     # nothing in sqlglot/ reads testdata.
+    returns = classify_returns(sqlglot, exp, OURS)
+
     from sqlglot.dialects.dialect import Dialect
 
     # Whether a dialect HAS a null type. Where it does not, the reference
@@ -127,6 +267,25 @@ def main() -> int:
         go.append(f'\t"{src}": {{\n')
         for dst in coerces[src]:
             go.append(f'\t\t"{dst}": true,\n')
+        go.append("\t},\n")
+    go.append("}\n\n")
+    go.append("// funcReturns says what each function RETURNS, as a RULE rather\n")
+    go.append("// than an answer: `fixed` is the same type whatever it was given,\n")
+    go.append("// `args` is the coercion of its arguments, `promote` widens that\n")
+    go.append("// (INT to BIGINT, FLOAT to DOUBLE) and `array` wraps it. Probed by\n")
+    go.append("// running each class over an integer, a real and a string and\n")
+    go.append("// reading the rule out of how the answers move -- recording the\n")
+    go.append("// three ANSWERS would be a table right for those arguments and\n")
+    go.append("// wrong for every other call.\n")
+    go.append("type funcReturn struct {\n\tKind string\n\tType string\n}\n\n")
+    go.append("var funcReturns = map[string]map[string]funcReturn{\n")
+    for d in sorted(returns):
+        go.append(f'\t"{d}": {{\n')
+        for cls in sorted(returns[d]):
+            rule = returns[d][cls]
+            go.append(
+                f'\t\t"{cls}": {{Kind: "{rule["kind"]}", Type: "{rule.get("type", "")}"}},\n'
+            )
         go.append("\t},\n")
     go.append("}\n\n")
     go.append("// supportsNullType: where false, a NULL-typed node ends as UNKNOWN.\n")

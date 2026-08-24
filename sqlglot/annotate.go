@@ -77,12 +77,25 @@ func annotate(e *Expression, dialect string) *Expression {
 		return annotate(childOf(e, "this"), dialect)
 	}
 
-	// A binary operator coerces its two operands.
+	// A function returns what its rule says: a fixed type, or its arguments
+	// coerced -- possibly widened, possibly wrapped in an array.
+	if rule, ok := funcReturns[dialect][e.Class]; ok {
+		return annotateFunction(e, dialect, rule)
+	}
+
+	// A binary operator coerces its two operands -- but an operand with NO
+	// answer poisons the whole thing. `NULL + 1` is an INT because NULL
+	// contributes nothing; `x + 1` is UNKNOWN because x could be anything,
+	// and answering INT there would be inventing a type from half a
+	// expression. The two look alike and are not, which is what a test of my
+	// own declining cases caught.
 	if isA("Binary", e) {
-		return coerceTypes(
-			annotate(childOf(e, "this"), dialect),
-			annotate(childOf(e, "expression"), dialect),
-		)
+		left := annotate(childOf(e, "this"), dialect)
+		right := annotate(childOf(e, "expression"), dialect)
+		if left == nil || right == nil {
+			return nil
+		}
+		return coerceTypes(left, right)
 	}
 	return nil
 }
@@ -122,7 +135,11 @@ func annotateArray(e *Expression, dialect string) *Expression {
 	items, _ := e.Args["expressions"].([]*Expression)
 	var element *Expression
 	for _, item := range items {
-		element = coerceTypes(element, annotate(item, dialect))
+		t := annotate(item, dialect)
+		if t == nil {
+			return nil
+		}
+		element = coerceTypes(element, t)
 	}
 	if element == nil {
 		return nil
@@ -179,4 +196,60 @@ func annotateScalarSubquery(e *Expression, dialect string) *Expression {
 		only = childOf(only, "this")
 	}
 	return annotate(only, dialect)
+}
+
+// annotateFunction applies one function's return rule.
+//
+// The reference returns UNKNOWN the moment ANY argument is unknown, rather
+// than coercing what it does know -- so a call over a column, whose type the
+// port cannot resolve, has no answer here either. That is the honest result
+// and not a limitation worth working around: a type inferred from half a
+// call is a type nobody checked.
+func annotateFunction(e *Expression, dialect string, rule funcReturn) *Expression {
+	if rule.Kind == "fixed" {
+		return dataType(rule.Type)
+	}
+
+	var coerced *Expression
+	seen := false
+	for _, key := range []string{"this", "expressions"} {
+		switch v := e.Args[key].(type) {
+		case *Expression:
+			t := annotate(v, dialect)
+			if t == nil {
+				return nil
+			}
+			seen = true
+			coerced = coerceTypes(coerced, t)
+		case []*Expression:
+			for _, item := range v {
+				t := annotate(item, dialect)
+				if t == nil {
+					return nil
+				}
+				seen = true
+				coerced = coerceTypes(coerced, t)
+			}
+		}
+	}
+	if !seen || coerced == nil {
+		return nil
+	}
+
+	switch rule.Kind {
+	case "promote":
+		// An integer widens to BIGINT and a real to DOUBLE; anything else is
+		// left as it is.
+		switch typeKind(coerced) {
+		case "INT", "SMALLINT", "TINYINT", "BIGINT":
+			return dataType("BIGINT")
+		case "FLOAT", "DOUBLE":
+			return dataType("DOUBLE")
+		}
+		return coerced
+	case "array":
+		return New("DataType", Arg{"this", DataTypeKind("ARRAY")},
+			Arg{"expressions", []*Expression{coerced}}, Arg{"nested", true})
+	}
+	return coerced
 }
