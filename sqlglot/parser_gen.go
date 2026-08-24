@@ -223,6 +223,17 @@ type ParserTables struct {
 	// becomes N of something, which is a transform, not a spelling.
 	JSONPerPartSQL     map[string]JSONPerPart
 	BracketIsRewritten bool
+	// NestedTypeKinds are the DataType kinds the reference marks
+	// `nested`, whether or not they were written with parameters.
+	// StructTypeKinds is the subset whose parameters are NAMED
+	// fields (ColumnDef) rather than bare types.
+	NestedTypeKinds map[string]bool
+	StructTypeKinds map[string]bool
+	// SupportsFixedSizeArrays: whether `INT[3]` is a type at all.
+	// Where it is not, the reference RETREATS and reads the
+	// brackets as a subscript of the cast instead.
+	SupportsFixedSizeArrays bool
+	CompositeType           CompositeTypeSQL
 	// Boolean is how TRUE and FALSE are written, and the two
 	// positions can differ: T-SQL writes 1 where a value is wanted
 	// and (1 = 1) where a condition is.
@@ -327,6 +338,18 @@ type BooleanSQL struct {
 type JSONPerPart struct {
 	Chain string
 	Call  string
+}
+
+// CompositeTypeSQL is how a type that contains another type is
+// written. The array form is a TEMPLATE rather than a pair of
+// delimiters because it is not the same shape everywhere: DuckDB
+// suffixes (`INT[]`) and Databricks wraps (`ARRAY<INT>`).
+type CompositeTypeSQL struct {
+	ArrayTemplate      string
+	ArraySizedTemplate string
+	StructOpen         string
+	StructClose        string
+	StructFieldSep     string
 }
 
 // JSONPathSQL is the text around each piece of a JSON path.
@@ -3422,6 +3445,31 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: "[\"{key}\"]",
 		},
 		BracketIsRewritten: false,
+		NestedTypeKinds: map[string]bool{
+			"ARRAY":          true,
+			"LIST":           true,
+			"LOWCARDINALITY": true,
+			"MAP":            true,
+			"NESTED":         true,
+			"OBJECT":         true,
+			"RANGE":          true,
+			"STRUCT":         true,
+			"UNION":          true,
+		},
+		StructTypeKinds: map[string]bool{
+			"NESTED": true,
+			"OBJECT": true,
+			"STRUCT": true,
+			"UNION":  true,
+		},
+		SupportsFixedSizeArrays: false,
+		CompositeType: CompositeTypeSQL{
+			ArrayTemplate:      "ARRAY<{inner}>",
+			ArraySizedTemplate: "ARRAY<{inner}>[{size}]",
+			StructOpen:         "<",
+			StructClose:        ">",
+			StructFieldSep:     " ",
+		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
 			"Any": "ANY",
@@ -6724,6 +6772,31 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: ".\"{key}\"",
 		},
 		BracketIsRewritten: false,
+		NestedTypeKinds: map[string]bool{
+			"ARRAY":          true,
+			"LIST":           true,
+			"LOWCARDINALITY": true,
+			"MAP":            true,
+			"NESTED":         true,
+			"OBJECT":         true,
+			"RANGE":          true,
+			"STRUCT":         true,
+			"UNION":          true,
+		},
+		StructTypeKinds: map[string]bool{
+			"NESTED": true,
+			"OBJECT": true,
+			"STRUCT": true,
+			"UNION":  true,
+		},
+		SupportsFixedSizeArrays: false,
+		CompositeType: CompositeTypeSQL{
+			ArrayTemplate:      "ARRAY<{inner}>",
+			ArraySizedTemplate: "ARRAY<{inner}>[{size}]",
+			StructOpen:         "<",
+			StructClose:        ">",
+			StructFieldSep:     " ",
+		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
 			"Any": "ANY",
@@ -10087,6 +10160,31 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: "{key}",
 		},
 		BracketIsRewritten: true,
+		NestedTypeKinds: map[string]bool{
+			"ARRAY":          true,
+			"LIST":           true,
+			"LOWCARDINALITY": true,
+			"MAP":            true,
+			"NESTED":         true,
+			"OBJECT":         true,
+			"RANGE":          true,
+			"STRUCT":         true,
+			"UNION":          true,
+		},
+		StructTypeKinds: map[string]bool{
+			"NESTED": true,
+			"OBJECT": true,
+			"STRUCT": true,
+			"UNION":  true,
+		},
+		SupportsFixedSizeArrays: false,
+		CompositeType: CompositeTypeSQL{
+			ArrayTemplate:      "{inner}[]",
+			ArraySizedTemplate: "{inner}[{size}]",
+			StructOpen:         "<",
+			StructClose:        ">",
+			StructFieldSep:     " ",
+		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
 			"Any": "ANY",
@@ -13598,6 +13696,31 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: ".\"{key}\"",
 		},
 		BracketIsRewritten: true,
+		NestedTypeKinds: map[string]bool{
+			"ARRAY":          true,
+			"LIST":           true,
+			"LOWCARDINALITY": true,
+			"MAP":            true,
+			"NESTED":         true,
+			"OBJECT":         true,
+			"RANGE":          true,
+			"STRUCT":         true,
+			"UNION":          true,
+		},
+		StructTypeKinds: map[string]bool{
+			"NESTED": true,
+			"OBJECT": true,
+			"STRUCT": true,
+			"UNION":  true,
+		},
+		SupportsFixedSizeArrays: true,
+		CompositeType: CompositeTypeSQL{
+			ArrayTemplate:      "{inner}[]",
+			ArraySizedTemplate: "{inner}[{size}]",
+			StructOpen:         "(",
+			StructClose:        ")",
+			StructFieldSep:     " ",
+		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
 			"Any": "ANY",
@@ -17113,6 +17236,31 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: "[\"{key}\"]",
 		},
 		BracketIsRewritten: false,
+		NestedTypeKinds: map[string]bool{
+			"ARRAY":          true,
+			"LIST":           true,
+			"LOWCARDINALITY": true,
+			"MAP":            true,
+			"NESTED":         true,
+			"OBJECT":         true,
+			"RANGE":          true,
+			"STRUCT":         true,
+			"UNION":          true,
+		},
+		StructTypeKinds: map[string]bool{
+			"NESTED": true,
+			"OBJECT": true,
+			"STRUCT": true,
+			"UNION":  true,
+		},
+		SupportsFixedSizeArrays: false,
+		CompositeType: CompositeTypeSQL{
+			ArrayTemplate:      "ARRAY<{inner}>",
+			ArraySizedTemplate: "ARRAY<{inner}>[{size}]",
+			StructOpen:         "<",
+			StructClose:        ">",
+			StructFieldSep:     ": ",
+		},
 		QuantifierSQL: map[string]string{
 			"All": "ALL ",
 			"Any": "ANY",

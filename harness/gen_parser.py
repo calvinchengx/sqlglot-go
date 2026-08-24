@@ -711,6 +711,66 @@ def json_path_pieces(dialect: str, exp) -> dict:
     }
 
 
+def composite_type_sql(dialect: str) -> dict[str, str]:
+    """How a dialect writes a type that CONTAINS another type.
+
+    Three shapes, and the port needs all three because the parser now builds
+    them: an array of T, a struct of named fields, and a map of two types.
+    They do not share a spelling -- DuckDB writes `INT[]` and `STRUCT(a INT)`,
+    Databricks writes `ARRAY<INT>` and `STRUCT<a: INT>` -- and the array form
+    is not even the same SHAPE as the other two, so it is read back as a
+    template rather than as a pair of delimiters.
+
+    Probed by rendering a known nested type and reading the result apart. The
+    inner type is written by the dialect too (T-SQL says INTEGER, not INT), so
+    the template is cut on the inner rendering rather than on the literal
+    text that went in. PROBED.
+    """
+    import sqlglot
+
+    d = dialect or None
+
+    def to(sql: str) -> str:
+        # Parsed as DuckDB, which spells every one of these forms, and written
+        # in the dialect under test.
+        written = sqlglot.parse_one(sql, read="duckdb").sql(dialect=d)
+        return written[written.index(" AS ") + 4 : -1]
+
+    inner = to("CAST(x AS INT)")
+    array = to("CAST(x AS INT[])")
+    if inner not in array:
+        raise SystemExit(f"{dialect}: array type {array!r} does not contain {inner!r}")
+    result = {"ArrayTemplate": array.replace(inner, "{inner}", 1)}
+
+    # A fixed-size array is its OWN template, not the plain one with a suffix:
+    # DuckDB puts the size inside the brackets it already wrote (`INT[3]`),
+    # Databricks appends a second pair after the angle brackets
+    # (`ARRAY<INT>[3]`). Reading it as a suffix of the plain form got DuckDB
+    # wrong, so both are recorded whole.
+    sized = to("CAST(x AS INT[3])")
+    if inner not in sized or "3" not in sized:
+        raise SystemExit(f"{dialect}: sized array {sized!r} lacks the type or the size")
+    result["ArraySizedTemplate"] = sized.replace(inner, "{inner}", 1).replace("3", "{size}", 1)
+
+    struct = to("CAST(x AS STRUCT(a INT))")
+    head, rest = struct.split("STRUCT", 1)
+    if head:
+        raise SystemExit(f"{dialect}: struct type {struct!r} does not start with STRUCT")
+    field = rest[1:-1]
+    if not field.endswith(inner):
+        raise SystemExit(f"{dialect}: struct field {field!r} does not end with {inner!r}")
+    result["StructOpen"] = rest[0]
+    result["StructClose"] = rest[-1]
+    result["StructFieldSep"] = field[len("a") : -len(inner)]
+
+    # MAP reuses the struct delimiters everywhere so far; assert rather than
+    # record a second pair that has never differed.
+    m = to("CAST(x AS MAP(TEXT, INT))")
+    if not (m.startswith("MAP" + result["StructOpen"]) and m.endswith(result["StructClose"])):
+        raise SystemExit(f"{dialect}: map type {m!r} does not use the struct delimiters")
+    return result
+
+
 def bracket_is_rewritten(dialect: str) -> bool:
     """Whether `a[1]` comes back as something other than a plain subscript.
 
@@ -1821,6 +1881,17 @@ def main() -> int:
 
 
         "\tBracketIsRewritten bool\n",
+        "\t// NestedTypeKinds are the DataType kinds the reference marks\n",
+        "\t// `nested`, whether or not they were written with parameters.\n",
+        "\t// StructTypeKinds is the subset whose parameters are NAMED\n",
+        "\t// fields (ColumnDef) rather than bare types.\n",
+        "\tNestedTypeKinds map[string]bool\n",
+        "\tStructTypeKinds map[string]bool\n",
+        "\t// SupportsFixedSizeArrays: whether `INT[3]` is a type at all.\n",
+        "\t// Where it is not, the reference RETREATS and reads the\n",
+        "\t// brackets as a subscript of the cast instead.\n",
+        "\tSupportsFixedSizeArrays bool\n",
+        "\tCompositeType           CompositeTypeSQL\n",
         "\t// Boolean is how TRUE and FALSE are written, and the two\n",
         "\t// positions can differ: T-SQL writes 1 where a value is wanted\n",
         "\t// and (1 = 1) where a condition is.\n",
@@ -1921,6 +1992,18 @@ def main() -> int:
         "type JSONPerPart struct {\n",
         "\tChain string\n",
         "\tCall  string\n",
+        "}\n",
+        "\n",
+        "// CompositeTypeSQL is how a type that contains another type is\n",
+        "// written. The array form is a TEMPLATE rather than a pair of\n",
+        "// delimiters because it is not the same shape everywhere: DuckDB\n",
+        "// suffixes (`INT[]`) and Databricks wraps (`ARRAY<INT>`).\n",
+        "type CompositeTypeSQL struct {\n",
+        "\tArrayTemplate      string\n",
+        "\tArraySizedTemplate string\n",
+        "\tStructOpen         string\n",
+        "\tStructClose        string\n",
+        "\tStructFieldSep     string\n",
         "}\n",
         "\n",
         "// JSONPathSQL is the text around each piece of a JSON path.\n",
@@ -2186,6 +2269,30 @@ def main() -> int:
         out.append(
             f"\t\tBracketIsRewritten: {str(bracket_is_rewritten(name)).lower()},\n"
         )
+        nested_kinds = {
+            exp.DType[t.name].value
+            for t in P.NESTED_TYPE_TOKENS
+            if t.name in exp.DType.__members__
+        }
+        struct_kinds = {
+            exp.DType[t.name].value
+            for t in P.STRUCT_TYPE_TOKENS
+            if t.name in exp.DType.__members__
+        }
+        for field, kinds in (
+            ("NestedTypeKinds", nested_kinds),
+            ("StructTypeKinds", struct_kinds),
+        ):
+            body = "".join(f"\t\t\t{gostr(k)}: true,\n" for k in sorted(kinds))
+            out.append(f"\t\t{field}: map[string]bool{{\n{body}\t\t}},\n")
+        out.append(
+            f"\t\tSupportsFixedSizeArrays: {str(bool(d.SUPPORTS_FIXED_SIZE_ARRAYS)).lower()},\n"
+        )
+        _ct = composite_type_sql(name)
+        out.append("\t\tCompositeType: CompositeTypeSQL{\n")
+        for k in ("ArrayTemplate", "ArraySizedTemplate", "StructOpen", "StructClose", "StructFieldSep"):
+            out.append(f"\t\t\t{k}: {gostr(_ct[k])},\n")
+        out.append("\t\t},\n")
         _q = quantifier_sql(name, exp)
         if _q:
             out.append("\t\tQuantifierSQL: map[string]string{\n")

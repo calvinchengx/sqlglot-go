@@ -54,6 +54,7 @@ func init() {
 		"TryCast":           (*generator).writeCast,
 		"DataType":          (*generator).writeDataType,
 		"DataTypeParam":     (*generator).writeChildThis,
+		"ColumnDef":         (*generator).writeColumnDef,
 		"Anonymous":         (*generator).writeAnonymous,
 		"In":                (*generator).writeIn,
 		"Between":           (*generator).writeBetween,
@@ -486,10 +487,36 @@ func (g *generator) writeDataType(e *Expression) string {
 	if !ok {
 		return g.fail("DataType." + string(kind))
 	}
-	if params := g.list(e); params != "" {
-		out += "(" + params + ")"
+	params := g.list(e)
+	if params == "" {
+		// A nested type with no members is written bare: PostgreSQL's ARRAY.
+		return out
 	}
-	return out
+	nested, _ := e.Args["nested"].(bool)
+	if !nested {
+		return out + "(" + params + ")"
+	}
+	// An ARRAY is the one nested type that does not wrap its name around its
+	// member -- DuckDB suffixes brackets to the member itself -- so it takes a
+	// template rather than the delimiters the others share.
+	if kind == "ARRAY" {
+		ct := g.tables.CompositeType
+		tmpl := ct.ArrayTemplate
+		if values, _ := e.Args["values"].([]*Expression); len(values) > 0 {
+			if len(values) != 1 {
+				return g.fail("array type with several sizes")
+			}
+			tmpl = strings.ReplaceAll(ct.ArraySizedTemplate, "{size}", g.node(values[0]))
+		}
+		return strings.ReplaceAll(tmpl, "{inner}", params)
+	}
+	return out + g.tables.CompositeType.StructOpen + params + g.tables.CompositeType.StructClose
+}
+
+// writeColumnDef writes one named field of a STRUCT-like type. The separator
+// is the dialect's: Databricks writes `a: INT` where the others write `a INT`.
+func (g *generator) writeColumnDef(e *Expression) string {
+	return g.child(e, "this") + g.tables.CompositeType.StructFieldSep + g.child(e, "kind")
 }
 
 func (g *generator) writeAnonymous(e *Expression) string { return g.anonymous(e, true) }

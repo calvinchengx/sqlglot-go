@@ -788,10 +788,21 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 	return cast, nil
 }
 
-// parseDataType reads a type name and its parameters. Only the flat forms are
-// handled: a composite type -- ARRAY<INT>, STRUCT<…> -- nests, and the
-// reference records the nesting in ways worth porting deliberately.
+// parseDataType reads a type name, its parameters, and any array suffix.
+//
+// The reference splits a type's parameters three ways by what the type is: a
+// STRUCT-like type names its fields, another nested type lists bare types, and
+// a plain type takes sizes. All three are read here; anything outside them is
+// refused rather than built as one of the three.
 func (p *parser) parseDataType() (*Expression, error) {
+	dt, err := p.parseBaseDataType()
+	if err != nil {
+		return nil, err
+	}
+	return p.parseArraySuffix(dt)
+}
+
+func (p *parser) parseBaseDataType() (*Expression, error) {
 	c := p.curr()
 	if c == nil {
 		return nil, p.unsupported("type")
@@ -805,35 +816,50 @@ func (p *parser) parseDataType() (*Expression, error) {
 		return nil, p.unsupported("INTERVAL type")
 	}
 	p.advance()
-	if p.at(TokLT) {
+
+	nested := p.tables.NestedTypeKinds[kind]
+	isStruct := p.tables.StructTypeKinds[kind]
+	dt := New("DataType", Arg{"this", DataTypeKind(kind)})
+
+	// A nested type takes either delimiter -- DuckDB writes STRUCT(a INT) and
+	// Databricks STRUCT<a INT>, and both read to the same tree. A plain type
+	// takes only parentheses; `<` after one is something else entirely.
+	open, close := TokL_PAREN, TokR_PAREN
+	if nested && p.at(TokLT) {
+		open, close = TokLT, TokGT
+	} else if !nested && p.at(TokLT) {
 		return nil, p.unsupported("parameterised composite type")
 	}
 
-	dt := New("DataType", Arg{"this", DataTypeKind(kind)})
-	if p.match(TokL_PAREN) {
+	if p.match(open) {
 		var params []*Expression
 		for {
-			// A type parameter is a number here. A word -- VARCHAR(MAX) --
-			// becomes a Var in the reference, not the Column an expression
-			// would produce, so it is refused rather than mis-built.
-			c := p.curr()
-			if c == nil || c.Type != TokNUMBER {
-				return nil, p.unsupported("non-numeric type parameter")
+			var param *Expression
+			var err error
+			switch {
+			case isStruct:
+				param, err = p.parseStructField()
+			case nested:
+				param, err = p.parseDataType()
+			default:
+				param, err = p.parseTypeSize()
 			}
-			p.advance()
-			lit := New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})
-			params = append(params, New("DataTypeParam", Arg{"this", lit}))
+			if err != nil {
+				return nil, err
+			}
+			params = append(params, param)
 			if !p.match(TokCOMMA) {
 				break
 			}
 		}
-		if !p.match(TokR_PAREN) {
+		if !p.match(close) {
 			return nil, p.unsupported("unclosed type parameters")
 		}
 		// A dialect may discard them: DuckDB reads every text type as TEXT
 		// and drops the length, so `VARCHAR(5)` is a bare TEXT. Keeping the 5
-		// sent the engine a different CAST than the Python executor sent.
-		if !p.tables.DropsTypeParams[kind] {
+		// sent the engine a different CAST than the Python executor sent. Only
+		// sizes are dropped -- a nested type's members are the type.
+		if nested || !p.tables.DropsTypeParams[kind] {
 			dt.Set("expressions", params)
 		}
 	} else if defaults := p.tables.DefaultTypeParams[kind]; len(defaults) > 0 {
@@ -848,7 +874,88 @@ func (p *parser) parseDataType() (*Expression, error) {
 		}
 		dt.Set("expressions", params)
 	}
-	dt.Set("nested", false)
+	dt.Set("nested", nested)
+	return dt, nil
+}
+
+// parseTypeSize reads one parameter of a plain type. A number is a Literal; a
+// word -- VARCHAR(MAX) -- is a Var rather than the Column an expression would
+// produce, which is why it is read here rather than by parseExpression.
+func (p *parser) parseTypeSize() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("type parameter")
+	}
+	switch {
+	case c.Type == TokNUMBER:
+		p.advance()
+		lit := New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})
+		return New("DataTypeParam", Arg{"this", lit}), nil
+	case c.Type == TokVAR, p.atIdentifier() && c.Type != TokIDENTIFIER:
+		// A bare word, not a quoted one: `VARCHAR(MAX)` is a Var, and the
+		// reference UPPER-CASES it, so `varchar(max)` and `VARCHAR(MAX)` are
+		// the same node. A quoted `"max"` is not the same thing and is refused.
+		p.advance()
+		v := New("Var", Arg{"this", strings.ToUpper(c.Text)})
+		return New("DataTypeParam", Arg{"this", v}), nil
+	}
+	return nil, p.unsupported("non-numeric type parameter")
+}
+
+// parseStructField reads one named field of a STRUCT-like type. The colon is
+// optional: Databricks writes `a: INT` and DuckDB `a INT`, and both arrive as
+// the same ColumnDef.
+func (p *parser) parseStructField() (*Expression, error) {
+	name, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	p.match(TokCOLON)
+	kind, err := p.parseDataType()
+	if err != nil {
+		return nil, err
+	}
+	return New("ColumnDef", Arg{"this", name}, Arg{"kind", kind}), nil
+}
+
+// parseArraySuffix wraps a type in as many ARRAY layers as it has bracket
+// pairs. `INT[3]` is a fixed-size array only where the dialect has them; where
+// it does not, the reference RETREATS and reads the brackets as a subscript of
+// the cast, so the loop stops without consuming them rather than building an
+// array the reference never builds.
+func (p *parser) parseArraySuffix(dt *Expression) (*Expression, error) {
+	for p.at(TokL_BRACKET) {
+		var values []*Expression
+		if p.atPair(TokL_BRACKET, TokR_BRACKET) {
+			p.advance()
+			p.advance()
+		} else {
+			if !p.tables.SupportsFixedSizeArrays {
+				return dt, nil
+			}
+			size := p.next()
+			if size == nil || size.Type != TokNUMBER {
+				return dt, nil
+			}
+			p.advance()
+			p.advance()
+			if !p.match(TokR_BRACKET) {
+				return nil, p.unsupported("unclosed array size")
+			}
+			values = []*Expression{
+				New("Literal", Arg{"this", size.Text}, Arg{"is_string", false}),
+			}
+		}
+		args := []Arg{
+			{"this", DataTypeKind("ARRAY")},
+			{"expressions", []*Expression{dt}},
+		}
+		if values != nil {
+			args = append(args, Arg{"values", values})
+		}
+		args = append(args, Arg{"nested", true})
+		dt = New("DataType", args...)
+	}
 	return dt, nil
 }
 
