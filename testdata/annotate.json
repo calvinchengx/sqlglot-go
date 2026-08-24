@@ -1,0 +1,144 @@
+{
+ "cases": [
+  {
+   "dialect": "",
+   "sql": "5",
+   "type": "INT"
+  },
+  {
+   "dialect": "",
+   "sql": "-5",
+   "type": "INT"
+  },
+  {
+   "dialect": "",
+   "sql": "~5",
+   "type": "INT"
+  },
+  {
+   "dialect": "",
+   "sql": "(5)",
+   "type": "INT"
+  },
+  {
+   "dialect": "",
+   "sql": "5.3",
+   "type": "DOUBLE"
+  },
+  {
+   "dialect": "",
+   "sql": "'bla'",
+   "type": "VARCHAR"
+  },
+  {
+   "dialect": "",
+   "sql": "true",
+   "type": "BOOLEAN"
+  },
+  {
+   "dialect": "",
+   "sql": "not true",
+   "type": "BOOLEAN"
+  },
+  {
+   "dialect": "",
+   "sql": "false",
+   "type": "BOOLEAN"
+  },
+  {
+   "dialect": "",
+   "sql": "EXISTS(SELECT 1)",
+   "type": "BOOLEAN"
+  },
+  {
+   "dialect": "",
+   "sql": "ALL(SELECT 1)",
+   "type": "BOOLEAN"
+  },
+  {
+   "dialect": "",
+   "sql": "ANY(SELECT 1)",
+   "type": "BOOLEAN"
+  },
+  {
+   "dialect": "",
+   "sql": "null",
+   "type": "UNKNOWN"
+  },
+  {
+   "dialect": "databricks",
+   "sql": "null",
+   "type": "VOID"
+  },
+  {
+   "dialect": "",
+   "sql": "null and false",
+   "type": "BOOLEAN"
+  },
+  {
+   "dialect": "",
+   "sql": "null + 1",
+   "type": "INT"
+  },
+  {
+   "dialect": "",
+   "sql": "IF(true, 1, null)",
+   "type": "INT"
+  },
+  {
+   "dialect": "",
+   "sql": "IF(true, null, 1)",
+   "type": "INT"
+  },
+  {
+   "dialect": "",
+   "sql": "STRUCT(1 AS col)",
+   "type": "STRUCT<col INT>"
+  },
+  {
+   "dialect": "",
+   "sql": "STRUCT(1 AS col, 2.5 AS row)",
+   "type": "STRUCT<col INT, row DOUBLE>"
+  },
+  {
+   "dialect": "",
+   "sql": "STRUCT(1)",
+   "type": "STRUCT<INT>"
+  },
+  {
+   "dialect": "",
+   "sql": "STRUCT(1 AS col, 2.5 AS row, struct(3.5 AS inner_col, 4 AS inner_row) AS nested_struct)",
+   "type": "STRUCT<col INT, row DOUBLE, nested_struct STRUCT<inner_col DOUBLE, inner_row INT>>"
+  },
+  {
+   "dialect": "",
+   "sql": "STRUCT(1 AS col, 2.5, ARRAY[1, 2, 3] AS nested_array, 'foo')",
+   "type": "STRUCT<col INT, DOUBLE, nested_array ARRAY<INT>, VARCHAR>"
+  },
+  {
+   "dialect": "",
+   "sql": "STRUCT(1, 2.5, 'bar')",
+   "type": "STRUCT<INT, DOUBLE, VARCHAR>"
+  },
+  {
+   "dialect": "",
+   "sql": "STRUCT(1 AS \"CaseSensitive\")",
+   "type": "STRUCT<\"CaseSensitive\" INT>"
+  },
+  {
+   "dialect": "databricks",
+   "sql": "NAMED_STRUCT('col', 1, 'nested', NAMED_STRUCT('inner', 'x'))",
+   "type": "STRUCT<col: INT, nested: STRUCT<inner: STRING>>"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "STRUCT_PACK(a := 1, b := 2.5)",
+   "type": "STRUCT(a INT, b DOUBLE)"
+  },
+  {
+   "dialect": "",
+   "sql": "1 + (SELECT 2.5 AS c)",
+   "type": "DOUBLE"
+  }
+ ]
+}
