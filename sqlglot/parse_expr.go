@@ -690,6 +690,12 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	// The port wrote `ARRAY(:Wa)` and could not read it back, which is how the
 	// generator fuzzer found this: the reference reads it, so the round trip
 	// was the port's own gap rather than a property stronger than the oracle.
+	// `N'abc'` is a National, not a plain string: the reference keeps the
+	// prefix in the node so it can write it back.
+	if c.Type == TokNATIONAL_STRING {
+		p.advance()
+		return p.dotted(New("National", Arg{"this", c.Text})), nil
+	}
 	if c.Type == TokPLACEHOLDER {
 		p.advance()
 		if p.tables.Placeholder.AnonymousJDBC {
@@ -968,6 +974,8 @@ func (p *parser) dotted(this *Expression) *Expression {
 			// A STRING after the dot stays a string: `$0.'AS'` is a Dot over a
 			// Literal, not over an identifier called AS.
 			right = New("Literal", Arg{"this", n.Text}, Arg{"is_string", true})
+		case n.Type == TokNATIONAL_STRING:
+			right = New("National", Arg{"this", n.Text})
 		case isParameterName(n) && n.Type != TokNUMBER:
 			right = New("Identifier", Arg{"this", n.Text}, Arg{"quoted", false})
 		default:
@@ -978,6 +986,26 @@ func (p *parser) dotted(this *Expression) *Expression {
 		this = New("Dot", Arg{"this", this}, Arg{"expression", right})
 	}
 	return this
+}
+
+// dispatchByType picks the signature for the type an argument CARRIES.
+//
+// Carries, not infers. The reference's builder runs while parsing, before
+// anything is annotated, so the only argument with a type at that moment is
+// one written as an explicit CAST. Everything else -- a column, a sum, a
+// date plus an interval -- has no type yet and takes the default.
+//
+// Annotating here instead looked more thorough and was wrong: the annotator
+// types `CAST(x AS DATE) + INTERVAL '1' DAY` as a DATE, which it is, and the
+// reference still builds the default because at parse time it was just an
+// Add. Eleven statements said so.
+func dispatchByType(d TypeDispatch, arg *Expression) FuncSpec {
+	if arg != nil && arg.Type != nil {
+		if spec, ok := d.ByType[typeKind(arg.Type)]; ok {
+			return spec
+		}
+	}
+	return d.Default
 }
 
 // atEmptyArgList reports whether the name at the cursor is followed by `()`.
@@ -1457,6 +1485,14 @@ func (p *parser) parseFunction() (*Expression, error) {
 		}
 		order.Set("this", args[len(args)-1])
 		args[len(args)-1] = order
+	}
+	// A name whose CLASS depends on the TYPE of one argument. DuckDB's
+	// DATE_TRUNC builds a DateTrunc over a DATE and a TimestampTrunc over
+	// anything else -- two different shapes, and the choice is a question
+	// only a type annotator can answer, which is why this was refused for as
+	// long as there was no annotator.
+	if d, ok := p.tables.TypeDispatchFunctions[upper]; ok && d.Index < len(args) {
+		spec, named, byArity = dispatchByType(d, args[d.Index]), true, false
 	}
 	if !named && byArity {
 		byCount, ok := variants[len(args)]

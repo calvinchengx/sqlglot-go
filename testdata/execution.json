@@ -1,7 +1,7 @@
 {
  "_comment": "Gate for harness/execute.py. Floors sit a little under what is observed (duckdb ~162, postgres ~66) on purpose: non-determinism is DETECTED by running both sides several times and seeing whether each agrees with itself, which is sampling, so a statement near the edge lands in 'nondeterministic' on one run and 'agree' on the next. A real regression is a cliff, not a wobble.",
  "comparable_floor": {
-  "duckdb": 236,
+  "duckdb": 238,
   "postgres": 83
  },
  "known_divergences": [

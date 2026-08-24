@@ -312,6 +312,13 @@ type ParserTables struct {
 	// specific to one dialect. The ones not handled are refused here
 	// rather than left to look like the end of the expression.
 	RangeTokens map[TokenType]struct{}
+	// TypeDispatchFunctions are the names whose CLASS depends on the
+	// TYPE of one argument. DuckDB's DATE_TRUNC builds a DateTrunc
+	// over a DATE and a TimestampTrunc over anything else -- two
+	// different shapes, not just two names, which is why each carries
+	// a whole spec. Answerable only with a type annotator, which is
+	// why these were refused until there was one.
+	TypeDispatchFunctions map[string]TypeDispatch
 	// ValidIntervalUnits are the words that can follow INTERVAL as a
 	// TYPE. Where the next word is not one, the reference builds a
 	// bare INTERVAL type instead of reading a unit that is not there.
@@ -332,6 +339,14 @@ type ParserTables struct {
 
 // FuncSpec is how one function name becomes a node: the class, and what
 // fills each of its argument keys.
+// TypeDispatch is a name that builds a different node depending on
+// the type of one of its arguments.
+type TypeDispatch struct {
+	Index   int
+	Default FuncSpec
+	ByType  map[string]FuncSpec
+}
+
 type FuncSpec struct {
 	Class string
 	Args  []FuncArg
@@ -12285,6 +12300,22 @@ var parserTables = map[string]*ParserTables{
 		},
 		TableFunctions: map[string]struct{}{
 			"UNNEST": {},
+		},
+		TypeDispatchFunctions: map[string]TypeDispatch{
+			"DATETRUNC": {
+				Index:   1,
+				Default: FuncSpec{"TimestampTrunc", []FuncArg{{"this", 1, false, nil, "", nil}, {"unit", 0, false, nil, "Var", []FuncConst{}}}},
+				ByType: map[string]FuncSpec{
+					"DATE": {"DateTrunc", []FuncArg{{"unit", 0, false, nil, "Literal", []FuncConst{{"is_string", true}}}, {"this", 1, false, nil, "", nil}}},
+				},
+			},
+			"DATE_TRUNC": {
+				Index:   1,
+				Default: FuncSpec{"TimestampTrunc", []FuncArg{{"this", 1, false, nil, "", nil}, {"unit", 0, false, nil, "Var", []FuncConst{}}}},
+				ByType: map[string]FuncSpec{
+					"DATE": {"DateTrunc", []FuncArg{{"unit", 0, false, nil, "Literal", []FuncConst{{"is_string", true}}}, {"this", 1, false, nil, "", nil}}},
+				},
+			},
 		},
 		Functions: map[string]FuncSpec{
 			"ABS":                             {"Abs", []FuncArg{{"this", 0, false, nil, "", nil}}},

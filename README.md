@@ -64,10 +64,10 @@ Regenerate with `make service`; nothing in it is authored here.
 <!-- coverage:start -->
 | Dialect | Tokens | Trees matched | Of | Unparsed | Mismatched |
 |---|---|---|---|---|---|
-| neutral | 997/997 | 527 | 997 | 470 | 0 |
-| tsql | 597/597 | 275 | 597 | 322 | 0 |
+| neutral | 997/997 | 528 | 997 | 469 | 0 |
+| tsql | 597/597 | 278 | 597 | 319 | 0 |
 | postgres | 857/857 | 407 | 857 | 450 | 0 |
-| duckdb | 1631/1631 | 1134 | 1631 | 497 | 0 |
+| duckdb | 1631/1631 | 1182 | 1631 | 449 | 0 |
 | databricks | 424/424 | 228 | 424 | 196 | 0 |
 <!-- coverage:end -->
 
@@ -76,7 +76,7 @@ that matters** and must be zero: it counts statements the port parsed into a
 *different* tree than the reference. Unparsed is the honest size of the gap.
 
 The port also writes SQL back out, and is held to the reference's own output
-string for string: **2,459 of the statements it parses are written back
+string for string: **2,511 of the statements it parses are written back
 identically and none is written wrongly**, with 104 refused, and the guard's own rewrite -- inject a row ceiling, emit --
 lands as `TOP 500` in T-SQL and `LIMIT 500` in DuckDB from the same edit to the
 same node. Where a dialect would transform a statement in a way the port does

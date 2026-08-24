@@ -150,6 +150,53 @@ def call_builder(builder, args, dialect):
         return builder(list(args), Dialect.get_or_raise(dialect or None))
 
 
+# The types a dispatching builder is probed against. Small on purpose: the
+# point is to find WHICH type it singles out, not to enumerate the type
+# system. DuckDB's DATE_TRUNC builds a DateTrunc for a DATE and a
+# TimestampTrunc for everything else, including a bare column.
+DISPATCH_TYPES = ("DATE", "TIMESTAMP", "DATETIME", "TEXT", "INT")
+
+
+def _type_dispatch(exp, builder, args, index, dialect, describe, call_builder):
+    """A builder that picks its CLASS from one argument's TYPE.
+
+    Probed by casting that argument to each of a few types and reading back
+    what was built. The result is a spec PER type -- not just a class name --
+    because the shapes differ: DuckDB's DateTrunc puts the unit first and its
+    TimestampTrunc puts the value first, and a dump compares key order.
+
+    Recorded only when every type yields a describable spec and at least two
+    of them disagree. A builder that varies for some other reason yields
+    nothing here and stays refused, as it was before.
+    """
+    plain = call_builder(builder, args, dialect)
+    by_type: dict[str, tuple] = {}
+    for ty in DISPATCH_TYPES:
+        subst = list(args)
+        subst[index] = exp.cast(exp.column(f"__probe_{index}"), ty)
+        try:
+            node = call_builder(builder, subst, dialect)
+        except Exception:  # noqa: BLE001 -- this type is invalid here
+            return None
+        if not isinstance(node, exp.Expr):
+            return None
+        spec = describe(node, subst)
+        if spec is None:
+            return None
+        by_type[ty] = (type(node).__name__, spec)
+
+    default = (type(plain).__name__, describe(plain, args))
+    if default[1] is None:
+        return None
+    if len({cls for cls, _ in by_type.values()} | {default[0]}) < 2:
+        return None
+    # Only the types that DIFFER from the default are worth recording.
+    special = {ty: v for ty, v in by_type.items() if v[0] != default[0]}
+    if not special:
+        return None
+    return {"index": index, "default": default, "by_type": special}
+
+
 def probe_functions(P, exp, dialect=""):
     """Work out what each function name builds, by asking the reference.
 
@@ -169,6 +216,8 @@ def probe_functions(P, exp, dialect=""):
     The spec derived from three arguments is then checked against one and two,
     so a builder that changes shape with its argument count is rejected too.
     """
+
+    dispatch: dict = {}
 
     def placeholders(n):
         return [exp.column(f"__probe_{i}") for i in range(n)]
@@ -319,6 +368,7 @@ def probe_functions(P, exp, dialect=""):
         # with one kind of argument cannot see that, so the spec is put to
         # several kinds and kept only if it survives all of them.
         ok = True
+        varied_at = None
         skip = wrapped_indexes(spec)
         for kind in probe_substitutions(exp):
             for i in range(len(args)):
@@ -331,7 +381,12 @@ def probe_functions(P, exp, dialect=""):
                 except Exception:  # noqa: BLE001 -- this argument is invalid here
                     continue
                 if not isinstance(other, exp.Expr) or other.__class__ is not node.__class__:
+                    # The CLASS changed with this argument. That may be a
+                    # builder nobody can describe -- or a dispatch on the
+                    # argument's TYPE, which the port can now follow because
+                    # it has an annotator. Remembered, and tried below.
                     ok = False
+                    varied_at = i
                     break
                 if not same(rebuild(spec, subst), other, subst):
                     ok = False
@@ -356,6 +411,12 @@ def probe_functions(P, exp, dialect=""):
                     rebuild(spec, allstr), other, allstr
                 ):
                     ok = False
+        if not ok and varied_at is not None:
+            entry = _type_dispatch(
+                exp, builder, args, varied_at, dialect, describe, call_builder
+            )
+            if entry is not None:
+                dispatch[name] = entry
         for n in range(len(args)) if ok else ():
             fewer = placeholders(n)
             try:
@@ -433,7 +494,7 @@ def probe_functions(P, exp, dialect=""):
                 aliases = unit_aliases(builder)
                 if aliases:
                     unit_maps[name] = aliases
-    return out, by_arity, unit_maps
+    return out, by_arity, unit_maps, dispatch
 
 
 def reserved_keywords(dialect: str, Dialect) -> list[str]:
@@ -2139,6 +2200,13 @@ def main() -> int:
         "\t// specific to one dialect. The ones not handled are refused here\n",
         "\t// rather than left to look like the end of the expression.\n",
         "\tRangeTokens map[TokenType]struct{}\n",
+        "\t// TypeDispatchFunctions are the names whose CLASS depends on the\n",
+        "\t// TYPE of one argument. DuckDB's DATE_TRUNC builds a DateTrunc\n",
+        "\t// over a DATE and a TimestampTrunc over anything else -- two\n",
+        "\t// different shapes, not just two names, which is why each carries\n",
+        "\t// a whole spec. Answerable only with a type annotator, which is\n",
+        "\t// why these were refused until there was one.\n",
+        "\tTypeDispatchFunctions map[string]TypeDispatch\n",
         "\t// ValidIntervalUnits are the words that can follow INTERVAL as a\n",
         "\t// TYPE. Where the next word is not one, the reference builds a\n",
         "\t// bare INTERVAL type instead of reading a unit that is not there.\n",
@@ -2158,6 +2226,13 @@ def main() -> int:
         "}\n\n",
         "// FuncSpec is how one function name becomes a node: the class, and what\n",
         "// fills each of its argument keys.\n",
+        "// TypeDispatch is a name that builds a different node depending on\n",
+        "// the type of one of its arguments.\n",
+        "type TypeDispatch struct {\n",
+        "\tIndex   int\n",
+        "\tDefault FuncSpec\n",
+        "\tByType  map[string]FuncSpec\n",
+        "}\n\n",
         "type FuncSpec struct {\n",
         "\tClass string\n",
         "\tArgs  []FuncArg\n",
@@ -2286,7 +2361,27 @@ def main() -> int:
         # that label is what decides what gets built next.
         out.append(strset("SyntaxFunctions", sorted(P.FUNCTION_PARSERS)))
         out.append(strset("TableFunctions", table_functions(name, P)))
-        funcs, by_arity, unit_maps = probe_functions(P, exp, name)
+        funcs, by_arity, unit_maps, dispatch = probe_functions(P, exp, name)
+        if dispatch:
+            out.append("\t\tTypeDispatchFunctions: map[string]TypeDispatch{\n")
+            for fn in sorted(dispatch):
+                d = dispatch[fn]
+                dcls, dspec = d["default"]
+                out.append(f"\t\t\t{gostr(fn)}: {{\n")
+                out.append(f"\t\t\t\tIndex: {d['index']},\n")
+                out.append(
+                    f"\t\t\t\tDefault: FuncSpec{{{gostr(dcls)}, "
+                    f"[]FuncArg{{{funcargs(dspec)}}}}},\n"
+                )
+                out.append("\t\t\t\tByType: map[string]FuncSpec{\n")
+                for ty in sorted(d["by_type"]):
+                    cls, spec = d["by_type"][ty]
+                    out.append(
+                        f"\t\t\t\t\t{gostr(ty)}: {{{gostr(cls)}, "
+                        f"[]FuncArg{{{funcargs(spec)}}}}},\n"
+                    )
+                out.append("\t\t\t\t},\n\t\t\t},\n")
+            out.append("\t\t},\n")
         if unit_maps:
             out.append("\t\tUnitAliases: map[string]map[string]string{\n")
             for fname in sorted(unit_maps):

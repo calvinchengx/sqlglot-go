@@ -44,6 +44,7 @@ func init() {
 		"Column":            (*generator).writeColumn,
 		"Identifier":        (*generator).writeIdentifier,
 		"Literal":           (*generator).writeLiteral,
+		"National":          (*generator).writeNational,
 		"Boolean":           (*generator).writeBoolean,
 		"Null":              (*generator).writeNull,
 		"Alias":             (*generator).writeAlias,
@@ -412,6 +413,16 @@ func (g *generator) writeLiteral(e *Expression) string {
 		return "'" + escapeStringBody(text, g.cfg.StringEscapes) + "'"
 	}
 	return text
+}
+
+// writeNational writes a national string. It has a writer of its own
+// rather than a template because a template substitutes text VERBATIM,
+// and the body needs the same quote escaping any other string gets --
+// without it a body containing quotes came out unterminated, which the
+// generator fuzzer found 55 times in a single run.
+func (g *generator) writeNational(e *Expression) string {
+	text, _ := e.Args["this"].(string)
+	return "N'" + escapeStringBody(text, g.cfg.StringEscapes) + "'"
 }
 
 // escapeStringBody escapes a quote the way THIS DIALECT escapes it.

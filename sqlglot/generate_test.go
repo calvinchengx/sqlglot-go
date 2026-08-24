@@ -190,6 +190,25 @@ func TestGenerateShapes(t *testing.T) {
 			"SELECT ``(`` -> '')"},
 		{"and a quoted one reads back", "SELECT A(`abc` -> x)", "databricks",
 			"SELECT A(`abc` -> x)"},
+		// DuckDB's DATE_TRUNC builds a DateTrunc over a DATE and a
+		// TimestampTrunc over anything else -- two different shapes. The type
+		// is the one the argument CARRIES at parse time, so only an explicit
+		// cast selects the first.
+		{"date trunc over a date", "SELECT DATE_TRUNC('DAY', CAST(x AS DATE))", "duckdb",
+			"SELECT DATE_TRUNC('DAY', CAST(x AS DATE))"},
+		{"date trunc over a timestamp", "SELECT DATE_TRUNC('DAY', CAST(x AS TIMESTAMP))", "duckdb",
+			"SELECT DATE_TRUNC('DAY', CAST(x AS TIMESTAMP))"},
+		{"date trunc over an untyped column", "SELECT DATE_TRUNC('DAY', x)", "duckdb",
+			"SELECT DATE_TRUNC('DAY', x)"},
+		// A date PLUS an interval is a date, but not until something annotates
+		// it -- at parse time it is just a sum, and the default applies.
+		{"a sum is not a date at parse time",
+			"SELECT DATE_TRUNC('WEEK', CAST(x AS DATE) + INTERVAL '1' DAY)", "duckdb",
+			"SELECT DATE_TRUNC('WEEK', CAST(x AS DATE) + INTERVAL '1' DAY)"},
+		// A national string keeps its prefix, and its body is escaped like
+		// any other string's -- a template would have written it verbatim.
+		{"a national string", "SELECT N'abc'", "tsql", "SELECT N'abc'"},
+		{"with a quote in it", "SELECT N'a''b'", "tsql", "SELECT N'a''b'"},
 		{"json extract scalar", "select j ->> '$.a.b'", "duckdb", "SELECT j ->> '$.a.b'"},
 		{"json subscript", "select j -> '$[0]'", "duckdb", "SELECT j -> '$[0]'"},
 		{"json quoted key", `select j -> '$."a b"'`, "duckdb", `SELECT j -> '$."a b"'`},
