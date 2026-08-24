@@ -207,6 +207,7 @@ func TestHeredocTagIsDigit(t *testing.T) {
 		{"¹", true},
 		{"²³", true},
 		{"₇", true},
+		{"⑹", true}, // a parenthesised digit, which an inclusion list missed
 		{"½", false},
 		{"a", false},
 		{"1a", false},

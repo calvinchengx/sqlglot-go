@@ -11,8 +11,12 @@ func (p *parser) atLambda() bool {
 	if c == nil {
 		return false
 	}
-	if c.Type == TokVAR {
-		return p.atPair(TokVAR, TokARROW)
+	// A NUMBER can name a lambda parameter: the reference reads `0 -> x` as a
+	// lambda over a parameter called `0`, not as a JSON extraction. The port
+	// built a JSONExtract there -- a tree the reference never makes -- which
+	// the generator fuzzer found by writing it back as `A(0:)`.
+	if c.Type == TokVAR || c.Type == TokNUMBER {
+		return p.next() != nil && p.next().Type == TokARROW
 	}
 	if c.Type != TokL_PAREN {
 		return false

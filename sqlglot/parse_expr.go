@@ -592,27 +592,38 @@ func (p *parser) applyIndexOffset(this *Expression, items []*Expression) ([]*Exp
 	return out, nil
 }
 
+// atSliceStart reports whether a colon here opens a slice with no lower
+// bound rather than a bound parameter.
+//
+// The two look identical and the reference tells them apart by what FOLLOWS:
+// `[:1]` is a slice up to 1, `[:a]` is an array holding the parameter `a`.
+// A blanket rule in either direction is wrong -- reading every colon as a
+// slice built `[:A.a]` into a Slice over a column where the reference builds
+// a Dot over a Placeholder, and reading every colon as a parameter refused
+// `[:0.]`, which the reference reads as a slice.
+func (p *parser) atSliceStart() bool {
+	if !p.at(TokCOLON) {
+		return false
+	}
+	n := p.next()
+	return !isParameterName(n) || n.Type == TokNUMBER
+}
+
 // parseBracketItems reads what sits between `[` and `]`: a comma-separated
 // list where any item may be a slice. `x[:]` is a Slice with neither bound,
 // which is why an empty side is a missing arg rather than an error.
-//
-// Slices only in a SUBSCRIPT. In an array LITERAL the same colon opens a
-// bound parameter instead -- `[:A]` is an array of one placeholder, not a
-// slice -- and reading it as a slice built `[:A.a]` into a Slice over a
-// column where the reference builds a Dot over a Placeholder. The generator
-// fuzzer found it: the port wrote SQL it could not read back.
-func (p *parser) parseBracketItems(allowSlice bool) ([]*Expression, error) {
+func (p *parser) parseBracketItems(_ bool) ([]*Expression, error) {
 	var items []*Expression
 	for !p.at(TokR_BRACKET) {
 		var low *Expression
-		if !allowSlice || !p.at(TokCOLON) {
+		if !p.atSliceStart() {
 			e, err := p.parseExpression()
 			if err != nil {
 				return nil, err
 			}
 			low = e
 		}
-		if allowSlice && p.match(TokCOLON) {
+		if p.match(TokCOLON) {
 			var high *Expression
 			if !p.at(TokR_BRACKET) && !p.at(TokCOMMA) {
 				e, err := p.parseExpression()
@@ -656,15 +667,19 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	if c.Type == TokPLACEHOLDER {
 		p.advance()
 		if p.tables.Placeholder.AnonymousJDBC {
-			return New("Placeholder", Arg{"jdbc", true}), nil
+			return p.dotted(New("Placeholder", Arg{"jdbc", true})), nil
 		}
-		return New("Placeholder"), nil
+		return p.dotted(New("Placeholder")), nil
 	}
 	if c.Type == TokCOLON {
-		if n := p.next(); isParameterName(n) {
+		// A NAME after the colon, never a number. `:a` is a bound parameter
+		// and `[:1]` is a slice with no lower bound -- the reference tells
+		// them apart the same way, and treating a number as a parameter name
+		// here read `[:0.]` as a parameter called `0.`.
+		if n := p.next(); isParameterName(n) && n.Type != TokNUMBER {
 			p.advance()
 			p.advance()
-			return New("Placeholder", Arg{"this", n.Text}), nil
+			return p.dotted(New("Placeholder", Arg{"this", n.Text})), nil
 		}
 	}
 	// One token, several nodes, and which one is the DIALECT's business.
@@ -710,7 +725,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			case "Placeholder":
 				p.advance()
 				p.advance()
-				return New("Placeholder", Arg{"this", n.Text}), nil
+				return p.dotted(New("Placeholder", Arg{"this", n.Text})), nil
 			case "Parameter":
 				p.advance()
 				p.advance()
@@ -732,12 +747,12 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			if n := p.next(); n != nil && strings.EqualFold(n.Text, "s") {
 				p.advance()
 				p.advance()
-				return New("Placeholder"), nil
+				return p.dotted(New("Placeholder")), nil
 			}
 		}
 		if p.tables.Placeholder.PercentNamed == "Placeholder" {
 			if ph, ok := p.parseNamedPercentPlaceholder(); ok {
-				return ph, nil
+				return p.dotted(ph), nil
 			}
 		}
 	}
@@ -807,7 +822,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	if p.atPair(TokARRAY, TokL_BRACKET) {
 		p.advance()
 		p.advance()
-		items, err := p.parseBracketItems(false)
+		items, err := p.parseBracketItems(true)
 		if err != nil {
 			return nil, err
 		}
@@ -818,7 +833,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	// difference is position, and only this one begins an expression.
 	if c.Type == TokL_BRACKET {
 		p.advance()
-		items, err := p.parseBracketItems(false)
+		items, err := p.parseBracketItems(true)
 		if err != nil {
 			return nil, err
 		}
@@ -885,6 +900,26 @@ func (p *parser) parsePrimary() (*Expression, error) {
 // reference's rather than a lookalike.
 func newStar() *Expression {
 	return New("Star", Arg{"ilike", nil}, Arg{"except_", nil}, Arg{"replace", nil}, Arg{"rename", nil})
+}
+
+// dotted reads `.name` after something that is not part of an identifier
+// chain. A column's dots are its qualifiers and parseColumn owns those; a
+// PLACEHOLDER's are a Dot node, which is the only place this port builds one.
+//
+// The generator fuzzer found it twice: the port wrote `ARRAY(:A.a)` and could
+// not read it back, because it had no rule for a dot in that position.
+func (p *parser) dotted(this *Expression) *Expression {
+	for p.at(TokDOT) {
+		n := p.next()
+		if !isParameterName(n) || n.Type == TokNUMBER {
+			return this
+		}
+		p.advance()
+		p.advance()
+		id := New("Identifier", Arg{"this", n.Text}, Arg{"quoted", false})
+		this = New("Dot", Arg{"this", this}, Arg{"expression", id})
+	}
+	return this
 }
 
 // isParameterName reports whether a token can name a bound parameter or a

@@ -826,16 +826,13 @@ func allDigits(s string) bool {
 	return true
 }
 
-// isDigitTyped covers the Numeric_Type=Digit characters: the superscripts and
-// subscripts, which Python counts as digits and Go's Nd does not.
+// isDigitTyped covers the characters Python calls digits and Go's Nd does
+// not. The set is generated; see harness/gen_digits.py.
 func isDigitTyped(r rune) bool {
-	switch {
-	case r == 0x00B2, r == 0x00B3, r == 0x00B9: // superscript two, three, one
-		return true
-	case r >= 0x2070 && r <= 0x2079: // superscript zero and four to nine
-		return true
-	case r >= 0x2080 && r <= 0x2089: // subscript zero to nine
-		return true
+	for _, run := range digitTypedRanges {
+		if r >= run[0] && r <= run[1] {
+			return true
+		}
 	}
 	return false
 }
