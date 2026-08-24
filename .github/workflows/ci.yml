@@ -94,17 +94,25 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
+      - name: the commit NOTICE pins
+        id: pin
+        run: echo "ref=$(grep -oE 'commit [0-9a-f]{40}' NOTICE | head -1 | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
+      # actions/checkout rather than `git clone`, which is not a style
+      # preference: an ANONYMOUS clone from a runner is rate limited and
+      # started returning 403 while the repository itself was public and
+      # reachable. This step authenticates with the workflow's own token.
       - name: check out the pinned reference
-        run: |
-          ref=$(grep -oE 'commit [0-9a-f]{40}' NOTICE | head -1 | cut -d' ' -f2)
-          git clone -q https://github.com/tobymao/sqlglot /tmp/sqlglot
-          git -C /tmp/sqlglot checkout -q "$ref"
+        uses: actions/checkout@v4
+        with:
+          repository: tobymao/sqlglot
+          ref: ${{ steps.pin.outputs.ref }}
+          path: reference
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
       - name: regenerate and diff
         run: |
-          python3 harness/oracle.py --sqlglot /tmp/sqlglot --out /tmp/expected
+          python3 harness/oracle.py --sqlglot reference --out /tmp/expected
           diff -rq testdata/expected /tmp/expected && echo "expectations are exactly the pinned reference's"
       # The tokenizer's keyword and dialect tables are generated from the same
       # pin. A hand-edited table would be a silent divergence from the
@@ -127,21 +135,24 @@ jobs:
             go test ./sqlglot/ -run=XXX -fuzz=FuzzGeneratedSQLCanBeReadBack -fuzztime=45s
           if [ -s /tmp/candidates.txt ]; then
             sort -u /tmp/candidates.txt -o /tmp/candidates.txt
-            python3 harness/adjudicate.py --sqlglot /tmp/sqlglot --candidates /tmp/candidates.txt
+            python3 harness/adjudicate.py --sqlglot reference --candidates /tmp/candidates.txt
           else
             echo "the generator wrote nothing the parser could not read back"
           fi
       - name: the generated tables are the reference's
         run: |
           cp sqlglot/tokentype_gen.go sqlglot/dialects_gen.go sqlglot/parser_gen.go sqlglot/classes_gen.go /tmp/
-          python3 harness/gen_tokenizer.py --sqlglot /tmp/sqlglot --out sqlglot
-          python3 harness/gen_parser.py --sqlglot /tmp/sqlglot
-          python3 harness/gen_classes.py --sqlglot /tmp/sqlglot > sqlglot/classes_gen.go
+          python3 harness/gen_tokenizer.py --sqlglot reference --out sqlglot
+          python3 harness/gen_parser.py --sqlglot reference
+          python3 harness/gen_classes.py --sqlglot reference > sqlglot/classes_gen.go
+          cp testdata/simplify.json /tmp/
+          python3 harness/gen_simplify.py --sqlglot reference
           gofmt -w sqlglot/tokentype_gen.go sqlglot/dialects_gen.go sqlglot/parser_gen.go sqlglot/classes_gen.go
           diff /tmp/tokentype_gen.go sqlglot/tokentype_gen.go
           diff /tmp/dialects_gen.go sqlglot/dialects_gen.go
           diff /tmp/parser_gen.go sqlglot/parser_gen.go
           diff /tmp/classes_gen.go sqlglot/classes_gen.go
+          diff /tmp/simplify.json testdata/simplify.json
           echo "generated tables are exactly the pinned reference's"
 
   # The one check here that can fail because two queries MEAN different
