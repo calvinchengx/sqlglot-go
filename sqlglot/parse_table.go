@@ -202,6 +202,9 @@ func (p *parser) parseTable() (*Expression, error) {
 			// same SQL back and is a different tree, so it is refused.
 			if c := p.curr(); c != nil {
 				if _, isTable := p.tables.TableFunctions[strings.ToUpper(c.Text)]; isTable {
+					if strings.ToUpper(c.Text) == "UNNEST" {
+						return p.parseUnnest()
+					}
 					return nil, p.unsupported("table function " + strings.ToUpper(c.Text))
 				}
 			}
@@ -348,4 +351,42 @@ func (p *parser) parseAliasColumns() ([]*Expression, error) {
 		return nil, p.unsupported("unclosed alias column list")
 	}
 	return columns, nil
+}
+
+// parseUnnest reads `UNNEST(x[, y]) [AS alias(cols)]`, which is an Unnest in
+// the reference rather than a Table wrapping a call -- the distinction the
+// TableFunctions table exists to catch. Entered with UNNEST current.
+func (p *parser) parseUnnest() (*Expression, error) {
+	p.advance()
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("UNNEST without arguments")
+	}
+	var items []*Expression
+	for !p.at(TokR_PAREN) {
+		e, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, e)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed UNNEST")
+	}
+	alias, err := p.parseTableAlias()
+	if err != nil {
+		return nil, err
+	}
+	// `WITH OFFSET` adds an ordinality column; the reference records it on the
+	// offset arg and the port does not model it.
+	if c := p.curr(); c != nil && c.Type == TokWITH {
+		return nil, p.unsupported("UNNEST WITH OFFSET")
+	}
+	return New("Unnest",
+		Arg{"expressions", items},
+		Arg{"alias", alias},
+		Arg{"offset", false},
+		Arg{"explode_array", nil}), nil
 }

@@ -64,6 +64,7 @@ func init() {
 		"Interval":          (*generator).writeInterval,
 		"Lambda":            (*generator).writeLambda,
 		"Struct":            (*generator).writeStruct,
+		"Unnest":            (*generator).writeUnnest,
 		"JSONPath":          (*generator).writeJSONPath,
 		"JSONExtract":       (*generator).writeJSONExtractOp,
 		"JSONExtractScalar": (*generator).writeJSONExtractOp,
@@ -940,4 +941,24 @@ func isAtomForOperator(e *Expression) bool {
 		return true
 	}
 	return false
+}
+
+// writeUnnest writes the call and then its alias. The function spelling comes
+// from the dialect's own table -- Databricks says EXPLODE -- but the alias sits
+// OUTSIDE the call there and inside it in Databricks, so a dialect that puts it
+// inside is refused rather than written with it in the wrong place.
+func (g *generator) writeUnnest(e *Expression) string {
+	spec, ok := g.functionSpelling(e)
+	if !ok {
+		return g.fail("Unnest")
+	}
+	call := g.namedFunction(e, spec)
+	alias, _ := e.Args["alias"].(*Expression)
+	if alias == nil {
+		return call
+	}
+	if spec.Name != "UNNEST" {
+		return g.fail("Unnest with an alias in " + g.dialect)
+	}
+	return call + " AS " + g.node(alias)
 }

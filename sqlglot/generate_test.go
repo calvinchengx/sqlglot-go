@@ -60,6 +60,8 @@ func TestGenerateShapes(t *testing.T) {
 			"SELECT SUM(x) FILTER(WHERE x > 1) FROM t"},
 		{"cte columns", "with t(a, b) as (select 1, 2) select * from t", "",
 			"WITH t(a, b) AS (SELECT 1, 2) SELECT * FROM t"},
+		{"unnest", "select a from unnest(x)", "", "SELECT a FROM UNNEST(x)"},
+		{"unnest aliased", "select a from unnest(x) as t(c)", "", "SELECT a FROM UNNEST(x) AS t(c)"},
 		{"convert", "select convert(varchar(10), x)", "tsql", "SELECT CONVERT(VARCHAR(10), x)"},
 		{"convert with style", "select convert(int, x, 1)", "tsql", "SELECT CONVERT(INTEGER, x, 1)"},
 		{"string agg", "select string_agg(x, ',')", "duckdb", "SELECT LISTAGG(x, ',')"},
