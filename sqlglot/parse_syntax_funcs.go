@@ -19,6 +19,10 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseSubstring()
 	case "POSITION":
 		return p.parsePosition()
+	case "CONVERT":
+		return p.parseConvert()
+	case "STRING_AGG":
+		return p.parseStringAgg()
 	}
 	return nil, p.unsupported("function " + upper + " with a syntax of its own")
 }
@@ -148,4 +152,62 @@ func (p *parser) parsePosition() (*Expression, error) {
 		return nil, p.unsupported("unclosed POSITION")
 	}
 	return New("StrPosition", Arg{"this", haystack}, Arg{"substr", first}), nil
+}
+
+// CONVERT(type, x[, style]) -- the FIRST argument is a data type, which is why
+// the ordinary argument parser cannot read this one: it would read VARCHAR(10)
+// as a call to a function named VARCHAR.
+func (p *parser) parseConvert() (*Expression, error) {
+	p.advance()
+	p.advance()
+	to, err := p.parseDataType()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokCOMMA) {
+		return nil, p.unsupported("CONVERT without a value")
+	}
+	value, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	args := []Arg{{"this", to}, {"expression", value}}
+	if p.match(TokCOMMA) {
+		style, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, Arg{"style", style})
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed CONVERT")
+	}
+	return New("Convert", args...), nil
+}
+
+// STRING_AGG(x, sep) is a GroupConcat. Its first argument may carry an
+// ORDER BY, which the reference records by wrapping it in an Order -- not
+// ported, so that form is refused rather than silently dropped.
+func (p *parser) parseStringAgg() (*Expression, error) {
+	p.advance()
+	p.advance()
+	this, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	if p.at(TokORDER_BY) {
+		return nil, p.unsupported("STRING_AGG with an ORDER BY")
+	}
+	var separator *Expression
+	if p.match(TokCOMMA) {
+		sep, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		separator = sep
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed STRING_AGG")
+	}
+	return New("GroupConcat", Arg{"this", this}, Arg{"separator", separator}), nil
 }
