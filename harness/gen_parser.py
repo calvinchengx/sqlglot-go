@@ -886,6 +886,43 @@ def alter_column_type_word(dialect: str) -> str:
     return text[head + len("zzcol ") : tail].strip()
 
 
+def primary_key_members_ordered(dialect: str) -> bool:
+    """Whether a table-level PRIMARY KEY's members are ORDERED rather than bare.
+
+    T-SQL reads them the way it reads an index -- each column may carry a
+    direction -- so a member is an Ordered over a Column there and a plain
+    Identifier everywhere else. Same statement, two shapes.
+    """
+    import sqlglot
+    from sqlglot import exp
+
+    try:
+        tree = sqlglot.parse_one(
+            "CREATE TABLE t (a INT, PRIMARY KEY (a, b))", read=dialect or None
+        )
+        key = next(tree.find_all(exp.PrimaryKey))
+    except Exception:  # noqa: BLE001
+        return False
+    return any(isinstance(member, exp.Ordered) for member in key.expressions)
+
+
+def unique_constraint_written(dialect: str) -> bool:
+    """Whether a UNIQUE constraint survives being written.
+
+    Databricks has no such constraint and the reference DROPS it, which loses
+    the guarantee the statement was making.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("CREATE TABLE z (a INT UNIQUE)").sql(
+            dialect=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return False
+    return "UNIQUE" in text.upper()
+
+
 def merge_without_target(dialect: str) -> bool:
     """Whether a MERGE drops the target's name from the columns it assigns.
 
@@ -3118,6 +3155,7 @@ def main() -> int:
         "\t// MergeWithoutTarget: a MERGE branch's assignments are written without\n\t// the target's own name in front of them here.\n\tMergeWithoutTarget bool\n\t// NormalizeUnquoted and NormalizeQuoted are the case a name is COMPARED\n\t// in -- lower, upper, or empty for as-written.\n\tNormalizeUnquoted string\n\tNormalizeQuoted   string\n",
         "	// CreateExistsWritten says, per kind, whether IF NOT EXISTS survives\n\t// being written. TemporaryWritten says the same of TEMPORARY.\n\tCreateExistsWritten map[string]bool\n\tTemporaryWritten    map[string]bool\n\t// ViewColumnCommentWritten: a view column keeps its COMMENT here.\n\tViewColumnCommentWritten bool\n",
         "\t// AlterAddColumnWord: an ALTER writes the word COLUMN after ADD here,\n\t// and AlterRepeatsAdd whether each added column gets its own ADD.\n\tAlterAddColumnWord bool\n\tAlterRepeatsAdd    bool\n\t// AlterColumnTypeWord is what comes between an altered column and its\n\t// new type -- SET DATA TYPE, TYPE, or nothing at all.\n\tAlterColumnTypeWord string\n",
+        "\t// PrimaryKeyMembersOrdered: a table-level PRIMARY KEY names its columns\n\t// as ordered index members here, not as bare names.\n\tPrimaryKeyMembersOrdered bool\n\t// UniqueConstraintWritten: a UNIQUE constraint survives being written\n\t// here. Where it does not, the guarantee would be silently dropped.\n\tUniqueConstraintWritten bool\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -3663,6 +3701,14 @@ def main() -> int:
         out.append(f"\t\tMapBraceLiteral: {str(map_brace_literal(name)).lower()},\n")
         out.append(
             "\t\tHoistsInsertWith: %s,\n" % str(hoists_insert_with(name)).lower()
+        )
+        out.append(
+            "\t\tPrimaryKeyMembersOrdered: %s,\n"
+            % str(primary_key_members_ordered(name)).lower()
+        )
+        out.append(
+            "\t\tUniqueConstraintWritten: %s,\n"
+            % str(unique_constraint_written(name)).lower()
         )
         _acw, _ara = alter_add_conventions(name)
         out.append("\t\tAlterAddColumnWord: %s,\n" % str(_acw).lower())

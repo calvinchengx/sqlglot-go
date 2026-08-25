@@ -290,6 +290,12 @@ type ParserTables struct {
 	// AlterColumnTypeWord is what comes between an altered column and its
 	// new type -- SET DATA TYPE, TYPE, or nothing at all.
 	AlterColumnTypeWord string
+	// PrimaryKeyMembersOrdered: a table-level PRIMARY KEY names its columns
+	// as ordered index members here, not as bare names.
+	PrimaryKeyMembersOrdered bool
+	// UniqueConstraintWritten: a UNIQUE constraint survives being written
+	// here. Where it does not, the guarantee would be silently dropped.
+	UniqueConstraintWritten bool
 	// RenameTarget says how much of a qualified name a RENAME TO writes:
 	// the whole thing, the last part only, or -- empty -- neither,
 	// because the dialect writes another statement entirely.
@@ -3643,11 +3649,13 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:     false,
-		HoistsInsertWith:    false,
-		AlterAddColumnWord:  true,
-		AlterRepeatsAdd:     true,
-		AlterColumnTypeWord: "SET DATA TYPE",
+		MapBraceLiteral:          false,
+		HoistsInsertWith:         false,
+		PrimaryKeyMembersOrdered: false,
+		UniqueConstraintWritten:  true,
+		AlterAddColumnWord:       true,
+		AlterRepeatsAdd:          true,
+		AlterColumnTypeWord:      "SET DATA TYPE",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": true,
 			"VIEW":  true,
@@ -7204,11 +7212,13 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:     false,
-		HoistsInsertWith:    true,
-		AlterAddColumnWord:  false,
-		AlterRepeatsAdd:     false,
-		AlterColumnTypeWord: "",
+		MapBraceLiteral:          false,
+		HoistsInsertWith:         true,
+		PrimaryKeyMembersOrdered: true,
+		UniqueConstraintWritten:  true,
+		AlterAddColumnWord:       false,
+		AlterRepeatsAdd:          false,
+		AlterColumnTypeWord:      "",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": false,
 			"VIEW":  false,
@@ -10850,11 +10860,13 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:     false,
-		HoistsInsertWith:    false,
-		AlterAddColumnWord:  true,
-		AlterRepeatsAdd:     true,
-		AlterColumnTypeWord: "SET DATA TYPE",
+		MapBraceLiteral:          false,
+		HoistsInsertWith:         false,
+		PrimaryKeyMembersOrdered: false,
+		UniqueConstraintWritten:  true,
+		AlterAddColumnWord:       true,
+		AlterRepeatsAdd:          true,
+		AlterColumnTypeWord:      "SET DATA TYPE",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": true,
 			"VIEW":  true,
@@ -14669,11 +14681,13 @@ var parserTables = map[string]*ParserTables{
 			"STRINGAGG":    {},
 			"STRING_AGG":   {},
 		},
-		MapBraceLiteral:     true,
-		HoistsInsertWith:    false,
-		AlterAddColumnWord:  true,
-		AlterRepeatsAdd:     true,
-		AlterColumnTypeWord: "SET DATA TYPE",
+		MapBraceLiteral:          true,
+		HoistsInsertWith:         false,
+		PrimaryKeyMembersOrdered: false,
+		UniqueConstraintWritten:  true,
+		AlterAddColumnWord:       true,
+		AlterRepeatsAdd:          true,
+		AlterColumnTypeWord:      "SET DATA TYPE",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": true,
 			"VIEW":  true,
@@ -18485,11 +18499,13 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:     false,
-		HoistsInsertWith:    true,
-		AlterAddColumnWord:  true,
-		AlterRepeatsAdd:     true,
-		AlterColumnTypeWord: "TYPE",
+		MapBraceLiteral:          false,
+		HoistsInsertWith:         true,
+		PrimaryKeyMembersOrdered: false,
+		UniqueConstraintWritten:  false,
+		AlterAddColumnWord:       true,
+		AlterRepeatsAdd:          true,
+		AlterColumnTypeWord:      "TYPE",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": true,
 			"VIEW":  true,

@@ -63,9 +63,14 @@ func init() {
 		"Alter":                         (*generator).writeAlter,
 		"AlterRename":                   (*generator).writeAlterRename,
 		"RenameColumn":                  (*generator).writeRenameColumn,
+		"AddConstraint":                 (*generator).writeAddConstraint,
 		"AlterColumn":                   (*generator).writeAlterColumn,
 		"ColumnConstraint":              (*generator).writeColumnConstraint,
 		"Reference":                     (*generator).writeReference,
+		"PrimaryKey":                    (*generator).writePrimaryKey,
+		"ForeignKey":                    (*generator).writeForeignKey,
+		"Constraint":                    (*generator).writeConstraint,
+		"CheckColumnConstraint":         (*generator).writeCheckConstraint,
 		"NotNullColumnConstraint":       (*generator).writeNotNullConstraint,
 		"DefaultColumnConstraint":       (*generator).writeDefaultConstraint,
 		"PrimaryKeyColumnConstraint":    (*generator).writePrimaryKeyConstraint,
@@ -2035,7 +2040,14 @@ func (g *generator) writeSchema(e *Expression) string {
 		parts = append(parts, g.node(item))
 	}
 	g.inColumnList = was
-	return g.child(e, "this") + " (" + strings.Join(parts, ", ") + ")"
+	columns := "(" + strings.Join(parts, ", ") + ")"
+	// A Schema with no name is a bare column list -- the shape a table-level
+	// UNIQUE keeps its columns in -- and there is nothing for the space to
+	// separate.
+	if name := g.child(e, "this"); name != "" {
+		return name + " " + columns
+	}
+	return columns
 }
 
 // writeInsert writes `INSERT [OVERWRITE] INTO <target> <values-or-query>`.
@@ -2135,7 +2147,44 @@ func (g *generator) writePrimaryKeyConstraint(e *Expression) string {
 	return out
 }
 
-func (g *generator) writeUniqueConstraint(*Expression) string        { return "UNIQUE" }
+// writeUniqueConstraint writes UNIQUE, over a column list when it has one.
+func (g *generator) writeUniqueConstraint(e *Expression) string {
+	if !g.tables.UniqueConstraintWritten {
+		// This dialect has no such constraint and the reference DROPS it,
+		// which silently gives up the guarantee the statement was making.
+		return g.fail(e.Class + ", which this dialect writes nowhere")
+	}
+	if columns, _ := e.Args["this"].(*Expression); columns != nil {
+		return "UNIQUE " + g.node(columns)
+	}
+	return "UNIQUE"
+}
+
+// writePrimaryKey writes a key over the columns of the whole table.
+func (g *generator) writePrimaryKey(e *Expression) string {
+	return "PRIMARY KEY (" + g.list(e) + ")"
+}
+
+// writeForeignKey writes the columns that point at another table, and where.
+func (g *generator) writeForeignKey(e *Expression) string {
+	return "FOREIGN KEY (" + g.list(e) + ") " + g.child(e, "reference")
+}
+
+// writeConstraint writes a NAMED constraint on the table. It holds a LIST of
+// the kinds it names -- one in practice, but the shape is a list.
+func (g *generator) writeConstraint(e *Expression) string {
+	items, _ := e.Args["expressions"].([]*Expression)
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, g.node(item))
+	}
+	return "CONSTRAINT " + g.child(e, "this") + " " + strings.Join(parts, " ")
+}
+
+// writeCheckConstraint writes a condition every row has to satisfy.
+func (g *generator) writeCheckConstraint(e *Expression) string {
+	return "CHECK (" + g.child(e, "this") + ")"
+}
 func (g *generator) writeAutoIncrementConstraint(*Expression) string { return "AUTO_INCREMENT" }
 
 func (g *generator) writeCommentConstraint(e *Expression) string {
@@ -2204,6 +2253,17 @@ func (g *generator) writeAlter(e *Expression) string {
 	}
 	g.inColumnList = was
 	return out + " " + strings.Join(parts, ", ")
+}
+
+// writeAddConstraint writes the constraints an ALTER adds. They are a LIST on
+// the node, as the reference keeps them.
+func (g *generator) writeAddConstraint(e *Expression) string {
+	items, _ := e.Args["expressions"].([]*Expression)
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, g.node(item))
+	}
+	return "ADD " + strings.Join(parts, ", ")
 }
 
 // writeRenameColumn writes the new name one column takes.

@@ -2025,7 +2025,7 @@ func TestAlterTable(t *testing.T) {
 	}
 	for _, sql := range []string{
 		"ALTER TABLE t SET TBLPROPERTIES ('a' = 'b')",
-		"ALTER TABLE t ADD CONSTRAINT c CHECK (a > 0)",
+		"ALTER TABLE t ADD CONSTRAINT c EXCLUDE USING gin(a WITH &&)",
 		"ALTER TABLE t ALTER COLUMN a SET NOT NULL",
 		"ALTER INDEX i RENAME TO j",
 		"ALTER TABLE t",
@@ -2440,5 +2440,76 @@ func TestAlterActions(t *testing.T) {
 			Arg{"this", New("Identifier", Arg{"this", "a"})})}})
 	if got, err := Generate(empty, ""); err == nil {
 		t.Errorf("wrote %q; the action says nothing", got)
+	}
+}
+
+// A constraint on the TABLE rather than on one column: it stands where a
+// column definition would and is told from one by the word it starts with.
+//
+// A NAMED table constraint is a Constraint holding a LIST of kinds -- a
+// different node from the wrapper a named COLUMN constraint uses, though the
+// two look alike in the text.
+func TestTableConstraints(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"a key over columns", "", "CREATE TABLE z (a INT, PRIMARY KEY (a, b))",
+			"CREATE TABLE z (a INT, PRIMARY KEY (a, b))"},
+		{"a foreign key", "", "CREATE TABLE z (a INT, FOREIGN KEY (a) REFERENCES parent (b, c))",
+			"CREATE TABLE z (a INT, FOREIGN KEY (a) REFERENCES parent (b, c))"},
+		{"a named check", "", "CREATE TABLE z (a INT, CONSTRAINT c CHECK (a > 0))",
+			"CREATE TABLE z (a INT, CONSTRAINT c CHECK (a > 0))"},
+		{"unique over columns", "postgres", "CREATE TABLE z (a INT, UNIQUE (a, b))",
+			"CREATE TABLE z (a INT, UNIQUE (a, b))"},
+		// T-SQL reads a key's columns the way it reads an index's, so a
+		// member is an Ordered there and a bare name everywhere else.
+		{"a key with a direction", "tsql",
+			"CREATE TABLE db.t1 (a INTEGER, b INTEGER, CONSTRAINT c PRIMARY KEY (a DESC, b))",
+			"CREATE TABLE db.t1 (a INTEGER, b INTEGER, CONSTRAINT c PRIMARY KEY (a DESC, b))"},
+		{"added to a table", "", "ALTER TABLE t ADD CONSTRAINT c PRIMARY KEY (a, b)",
+			"ALTER TABLE t ADD CONSTRAINT c PRIMARY KEY (a, b)"},
+		{"a foreign key added", "", "ALTER TABLE t ADD CONSTRAINT c FOREIGN KEY (a) REFERENCES p (b)",
+			"ALTER TABLE t ADD CONSTRAINT c FOREIGN KEY (a) REFERENCES p (b)"},
+		{"a check added", "", "ALTER TABLE t ADD CONSTRAINT c CHECK (a > 0)",
+			"ALTER TABLE t ADD CONSTRAINT c CHECK (a > 0)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// Databricks has no UNIQUE at all, and the reference DROPS it -- silently
+	// giving up the guarantee the statement was making. The port refuses
+	// rather than writing a table that promises less than it was asked to.
+	for _, sql := range []string{
+		"CREATE TABLE z (a INT UNIQUE)",
+		"CREATE TABLE z (a INT, UNIQUE (a))",
+	} {
+		e, err := ParseOne(sql, "databricks")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "databricks"); err == nil {
+			t.Errorf("%q wrote %q; Databricks drops the constraint", sql, got)
+		}
+	}
+	for _, sql := range []string{
+		"CREATE TABLE z (a INT, PRIMARY KEY a)",
+		"CREATE TABLE z (a INT, FOREIGN KEY (a))",
+		"CREATE TABLE z (a INT, CHECK a > 0)",
+		"CREATE TABLE z (a INT, CHECK (a > 0)",
+		"CREATE TABLE z (a INT, EXCLUDE USING gin(a WITH &&))",
+		"ALTER TABLE t ADD PRIMARY KEY (x, y) NOT ENFORCED",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
 	}
 }

@@ -139,6 +139,19 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 	p.advance() // the opening parenthesis
 	var out []*Expression
 	for {
+		// A constraint on the TABLE stands where a column definition would,
+		// and is told from one by the word it starts with.
+		if p.atTableConstraint() {
+			constraint, err := p.parseTableConstraint()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, constraint)
+			if !p.match(TokCOMMA) {
+				break
+			}
+			continue
+		}
 		name, err := p.parseIdentifier()
 		if err != nil {
 			return nil, err
@@ -623,6 +636,16 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 	switch {
 	case p.atWords("ADD"):
 		p.advance()
+		// A constraint added to the table is wrapped in an AddConstraint,
+		// which holds a LIST of them; a column is not wrapped at all.
+		if p.atTableConstraint() {
+			constraint, err := p.parseTableConstraint()
+			if err != nil {
+				return nil, err
+			}
+			return New("AddConstraint",
+				Arg{"expressions", []*Expression{constraint}}), nil
+		}
 		// The word COLUMN is optional: T-SQL writes it nowhere and reads it
 		// anywhere.
 		if p.atWords("COLUMN") {
@@ -879,6 +902,141 @@ func (p *parser) parseViewColumns() ([]*Expression, error) {
 	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed column list")
+	}
+	return out, nil
+}
+
+// atTableConstraint reports whether a constraint on the TABLE starts here
+// rather than a column definition. A column is a name followed by a type; each
+// of these is a keyword the reference reserves in this position.
+func (p *parser) atTableConstraint() bool {
+	return p.at(TokCONSTRAINT) || p.at(TokPRIMARY_KEY) ||
+		p.at(TokFOREIGN_KEY) || p.atWords("UNIQUE") || p.atWords("CHECK")
+}
+
+// parseTableConstraint reads one constraint on the table as a whole.
+//
+// A NAMED one is a Constraint holding a LIST of the kinds it names, which is
+// a shape of its own rather than the wrapper a named COLUMN constraint uses --
+// the two look alike in the text and are different nodes.
+func (p *parser) parseTableConstraint() (*Expression, error) {
+	if p.at(TokCONSTRAINT) {
+		p.advance()
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		kind, err := p.parseTableConstraintKind()
+		if err != nil {
+			return nil, err
+		}
+		return New("Constraint",
+			Arg{"this", name},
+			Arg{"expressions", []*Expression{kind}}), nil
+	}
+	return p.parseTableConstraintKind()
+}
+
+// parseTableConstraintKind reads the constraint itself, named or not.
+func (p *parser) parseTableConstraintKind() (*Expression, error) {
+	switch {
+	case p.at(TokPRIMARY_KEY):
+		p.advance()
+		members, err := p.parseKeyColumns()
+		if err != nil {
+			return nil, err
+		}
+		key := New("PrimaryKey", Arg{"expressions", members})
+		// The parameters are on the node whether or not anything was said
+		// about them, holding only the flag that says so.
+		key.Set("include", New("IndexParameters", Arg{"with_storage", false}))
+		return key, nil
+	case p.at(TokFOREIGN_KEY):
+		p.advance()
+		columns, err := p.parseInsertColumns()
+		if err != nil {
+			return nil, err
+		}
+		if !p.at(TokREFERENCES) {
+			return nil, p.unsupported("FOREIGN KEY without REFERENCES")
+		}
+		reference, err := p.parseColumnConstraints()
+		if err != nil {
+			return nil, err
+		}
+		if len(reference) != 1 {
+			return nil, p.unsupported("FOREIGN KEY with more than a reference")
+		}
+		return New("ForeignKey",
+			Arg{"expressions", columns},
+			Arg{"reference", reference[0].Args["kind"]}), nil
+	case p.atWords("UNIQUE"):
+		p.advance()
+		columns, err := p.parseInsertColumns()
+		if err != nil {
+			return nil, err
+		}
+		// The arguments are in the order the reference assigns them, which is
+		// not the order they are written in.
+		return New("UniqueColumnConstraint",
+			Arg{"nulls", false},
+			Arg{"this", New("Schema", Arg{"expressions", columns})},
+			Arg{"index_type", false}), nil
+	case p.atWords("CHECK"):
+		p.advance()
+		if !p.match(TokL_PAREN) {
+			return nil, p.unsupported("CHECK without a condition")
+		}
+		condition, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed CHECK")
+		}
+		return New("CheckColumnConstraint",
+			Arg{"this", condition}, Arg{"enforced", false}), nil
+	}
+	return nil, p.unsupported("a table constraint this port does not read")
+}
+
+// parseKeyColumns reads the `(a, b)` a key is over.
+//
+// T-SQL reads them the way it reads an index -- each may carry a direction --
+// so a member is an Ordered over a Column there and a bare Identifier
+// everywhere else. Same statement, two shapes, and the dialect decides.
+func (p *parser) parseKeyColumns() ([]*Expression, error) {
+	if !p.tables.PrimaryKeyMembersOrdered {
+		return p.parseInsertColumns()
+	}
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("a key without its columns")
+	}
+	var out []*Expression
+	for {
+		column, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		member := New("Ordered", Arg{"this", column})
+		desc := false
+		switch {
+		case p.atWords("DESC"):
+			p.advance()
+			desc = true
+			member.Set("desc", true)
+		case p.atWords("ASC"):
+			p.advance()
+			member.Set("desc", false)
+		}
+		member.Set("nulls_first", p.nullsFirst(desc))
+		out = append(out, member)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed key column list")
 	}
 	return out, nil
 }

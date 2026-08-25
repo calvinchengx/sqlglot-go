@@ -189,3 +189,32 @@ it to agree with, so reading one would agree with nothing. `writeDelete`
 still places the clause where the reference places it.
 
 **Reference:** sqlglot @ ceb5111421e9.
+
+---
+
+## sqlglot writes a bare `CREATE TABLE` for a Databricks table with a UNIQUE constraint
+
+**Found by:** porting the table-level constraints.
+
+Databricks has no UNIQUE constraint, and the reference drops it. On a COLUMN
+that is a lossy but coherent rewrite -- the table is created without the
+guarantee. On the TABLE it takes the whole definition with it:
+
+```
+in   CREATE TABLE z (a INT UNIQUE)          (read as the neutral dialect)
+out  CREATE TABLE z (a INT)                 (written as databricks)
+
+in   CREATE TABLE z (a INT, UNIQUE (a))
+out  CREATE TABLE                           -- no name, no columns
+```
+
+The second is not a table at all. The first is worse in a quieter way: it
+runs, and the table it makes permits duplicates the statement said it should
+not.
+
+The port refuses both rather than reproducing either -- the only place in this
+port that declines to follow the reference. Dropping a constraint is not a
+spelling difference, and a guard that reports "this creates a unique index"
+would be reporting something the emitted SQL does not do.
+
+**Reference:** sqlglot @ ceb5111421e9.
