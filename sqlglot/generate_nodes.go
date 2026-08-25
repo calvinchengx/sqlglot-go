@@ -72,6 +72,7 @@ func init() {
 		"Unnest":            (*generator).writeUnnest,
 		"AtTimeZone":        (*generator).writeAtTimeZone,
 		"JSONPath":          (*generator).writeJSONPath,
+		"JSONKeyValue":      (*generator).writeJSONKeyValue,
 		"JSONExtract":       (*generator).writeJSONExtractOp,
 		"JSONExtractScalar": (*generator).writeJSONExtractOp,
 		"PropertyEQ":        (*generator).writePropertyEQ,
@@ -1033,6 +1034,14 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 			if v != "" {
 				present[key] = true
 			}
+		case bool:
+			// A flag counts. `WITH UNIQUE KEYS` is carried as one, and with
+			// bools invisible here the template that writes only the pairs
+			// matched a node that also carried the flag -- and DROPPED it,
+			// writing a statement that says something else.
+			if v {
+				present[key] = true
+			}
 		}
 	}
 	for _, candidate := range g.tables.SyntaxSQL[e.Class] {
@@ -1069,7 +1078,10 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 		// RTRIM are the same class and the same argument keys, and only the
 		// position tells them apart.
 		for _, req := range candidate.Required {
-			if got, _ := e.Args[req.Key].(string); got != req.Value {
+			// Not a string comparison: a requirement can be a FLAG now, and
+			// a bool compared as a string never matched -- which refused
+			// every JSON_OBJECT, whose node always carries two of them.
+			if !g.sameConst(e.Args[req.Key], req.Value) {
 				matches = false
 				break
 			}
@@ -1482,4 +1494,19 @@ func templateName(template string) string {
 		return ""
 	}
 	return strings.ToUpper(name)
+}
+
+// writeJSONKeyValue writes one pair inside JSON_OBJECT. The separator is per
+// dialect -- DuckDB uses the comma that also separates the pairs, the others a
+// colon -- and it cannot live in the template table, which rejects a
+// marker-operator-marker form as an infix operator whose precedence a template
+// cannot know. A pair is only ever written inside its own parentheses, so
+// there is no precedence for it to get wrong.
+func (g *generator) writeJSONKeyValue(e *Expression) string {
+	form := g.tables.JSONKeyValueSQL
+	if form == "" {
+		return g.fail(e.Class)
+	}
+	out := strings.ReplaceAll(form, "{this}", g.child(e, "this"))
+	return strings.ReplaceAll(out, "{expression}", g.child(e, "expression"))
 }

@@ -223,3 +223,54 @@ func TestVariantExtractEdges(t *testing.T) {
 		t.Errorf("wrote %q; a path that writes nothing should be refused", got)
 	}
 }
+
+// JSON_OBJECT builds its arguments in PAIRS, and the two spellings of a pair
+// are per dialect: DuckDB writes a comma where the others write a colon.
+func TestJSONObject(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"no pairs at all", "", "JSON_OBJECT()", "JSON_OBJECT()"},
+		{"every column", "", "JSON_OBJECT(*)", "JSON_OBJECT(*)"},
+		{"colon pairs", "", "JSON_OBJECT('k': 1, 'j': TRUE)",
+			"JSON_OBJECT('k': 1, 'j': TRUE)"},
+		// DuckDB separates a key from its value with the same comma that
+		// separates the pairs, so the two forms read into one node.
+		{"comma pairs", "duckdb", "JSON_OBJECT('key_1', 'one', 'key_2', NULL)",
+			"JSON_OBJECT('key_1', 'one', 'key_2', NULL)"},
+		{"a colon pair written with a comma", "duckdb", "JSON_OBJECT('k': 1)",
+			"JSON_OBJECT('k', 1)"},
+		{"null handling", "", "JSON_OBJECT('x': NULL, 'y': 1 NULL ON NULL)",
+			"JSON_OBJECT('x': NULL, 'y': 1 NULL ON NULL)"},
+		{"unique keys", "", "JSON_OBJECT('x': 1 WITH UNIQUE KEYS)",
+			"JSON_OBJECT('x': 1 WITH UNIQUE KEYS)"},
+		{"both modifiers", "", "JSON_OBJECT('x': NULL ABSENT ON NULL WITH UNIQUE KEYS)",
+			"JSON_OBJECT('x': NULL ABSENT ON NULL WITH UNIQUE KEYS)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// RETURNING is refused rather than guessed at: it builds the return type out
+// of an Anonymous call or a FormatJson, shapes this port does not model, and a
+// wrong tree behind a statement that reads fine is the one thing to avoid.
+func TestJSONObjectRefusesReturning(t *testing.T) {
+	for _, sql := range []string{
+		"JSON_OBJECT('x': 1 RETURNING VARCHAR(100))",
+		"JSON_OBJECT('x': 1 RETURNING VARBINARY FORMAT JSON ENCODING UTF8)",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; RETURNING should be refused", sql)
+		}
+	}
+}

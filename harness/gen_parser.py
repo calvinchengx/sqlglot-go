@@ -674,6 +674,27 @@ def interval_unit_inside_string(dialect: str, exp) -> bool:
     return "'1 DAY'" in node.sql(dialect=dialect or None)
 
 
+def json_key_value_sql(dialect: str, exp) -> str:
+    """How this dialect writes one key/value pair inside JSON_OBJECT.
+
+    DuckDB separates them with a COMMA -- `JSON_OBJECT('k', 1)` -- and the
+    others with a colon. The template machinery cannot hold this one: a
+    marker-operator-marker template is rejected there as an infix operator
+    whose precedence a template cannot know, which is right for `a #> b` and
+    wrong for a pair that is only ever written inside its own parentheses.
+    """
+    node = exp.JSONKeyValue(
+        this=exp.Literal.string("ZZKZZ"), expression=exp.column("ZZVZZ")
+    )
+    try:
+        text = node.sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001 -- a dialect that will not write one
+        return ""
+    if text.count("ZZKZZ") != 1 or text.count("ZZVZZ") != 1:
+        return ""
+    return text.replace("'ZZKZZ'", "{this}").replace("ZZVZZ", "{expression}")
+
+
 def variant_extract_colon(dialect: str) -> bool:
     """Whether `x:a` is a JSON extraction in this dialect.
 
@@ -1791,7 +1812,11 @@ def observed_shapes(exp, dialect, repo):
                     expr_keys.append(key + "[]")
                 elif isinstance(value, exp.Expr):
                     expr_keys.append(key)
-                elif isinstance(value, str):
+                elif isinstance(value, (str, bool)):
+                    # A FLAG is a shape too. `WITH UNIQUE KEYS` is carried as
+                    # one, and with bools skipped here no template was ever
+                    # probed for it -- so the template that writes only the
+                    # pairs matched and silently dropped the clause.
                     scalars.append((key, value))
             if expr_keys or scalars:
                 shapes.setdefault(type(node).__name__, set()).add(
@@ -1835,7 +1860,9 @@ def syntax_templates(exp, dialect, repo):
         cls = getattr(exp, cls_name, None)
         if cls is None:
             continue
-        for expr_keys, scalars in sorted(variants):
+        # Sorted by their TEXT: a variant may hold a bool beside a string now
+        # that flags are shapes, and the two do not compare.
+        for expr_keys, scalars in sorted(variants, key=repr):
             # An ALREADY-UPPERCASE placeholder. A unit comes back upper-cased --
             # T-SQL renders DATEADD(__AUNIT__, ...) from a `unit` argument --
             # and a lowercase marker simply is not there to replace, so every
@@ -1867,9 +1894,11 @@ def syntax_templates(exp, dialect, repo):
             # requirement or the first one wins for both.
             required = []
             for key, value in scalars:
-                if text.count(value) == 1:
+                if isinstance(value, str) and text.count(value) == 1:
                     text = text.replace(value, "{" + key + "}")
                 else:
+                    # A flag never appears as TEXT -- the words it selects do
+                    # -- so it is always a condition on the spelling.
                     required.append((key, value))
             marked = [k[:-2] if k.endswith("[]") else k for k in expr_keys] + [
                 k for k, _ in scalars if (k, dict(scalars)[k]) not in required
@@ -1902,8 +1931,11 @@ def syntax_templates(exp, dialect, repo):
             # argument's NAME rather than its rendered SQL. Substituting the
             # rendering wrote ''ISOWEEK''; the writer looks at the quote and
             # substitutes the name instead.
+            # A FALSE flag is not a key the node carries -- the writer counts
+            # a bool as present only when it is set, so listing it here made
+            # the key counts disagree and cost 22 statements their template.
             keys = [k[:-2] if k.endswith("[]") else k for k in expr_keys] + [
-                k for k, _ in scalars
+                k for k, v in scalars if v is not False
             ]
             out.setdefault(cls_name, []).append((keys, marked, required, text))
     return out
@@ -2483,6 +2515,9 @@ def main() -> int:
         "\t// form Databricks writes and this port used to write without ever\n",
         "\t// being able to read one back.\n",
         "\tVariantExtractColon bool\n",
+        "\t// JSONKeyValueSQL is one key/value pair inside JSON_OBJECT: DuckDB\n",
+        "\t// separates them with a comma and the others with a colon.\n",
+        "\tJSONKeyValueSQL string\n",
         "\t// JSONPathFunctions are the names that turn their arguments into a\n",
         "\t// JSON PATH rather than holding them. Probed with STRING literals,\n",
         "\t// because with the placeholder columns the generic probe uses they\n",
@@ -2843,7 +2878,7 @@ def main() -> int:
                     % (
                         ", ".join(gostr(k) for k in keys),
                         ", ".join(gostr(k) for k in marked),
-                        "".join("{%s, %s}, " % (gostr(k), gostr(v)) for k, v in required),
+                        "".join("{%s, %s}, " % (gostr(k), goconst(v)) for k, v in required),
                         gostr(text),
                     )
                     for keys, marked, required, text in syn[cls_name]
@@ -2985,6 +3020,9 @@ def main() -> int:
         out.append(
             f"\t\tVariantExtractColon: {str(variant_extract_colon(name)).lower()},\n"
         )
+        _kv = json_key_value_sql(name, exp)
+        if _kv:
+            out.append(f"\t\tJSONKeyValueSQL: {gostr(_kv)},\n")
         _parens = json_extract_needs_parens(name)
         if any(_parens.values()):
             out.append("\t\tJSONExtractNeedsParens: map[string]bool{\n")

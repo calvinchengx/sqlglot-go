@@ -23,6 +23,8 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseConvert()
 	case "STRING_AGG":
 		return p.parseStringAgg()
+	case "JSON_OBJECT":
+		return p.parseJSONObject()
 	}
 	return nil, p.unsupported("function " + upper + " with a syntax of its own")
 }
@@ -210,4 +212,93 @@ func (p *parser) parseStringAgg() (*Expression, error) {
 		return nil, p.unsupported("unclosed STRING_AGG")
 	}
 	return New("GroupConcat", Arg{"this", this}, Arg{"separator", separator}), nil
+}
+
+// JSON_OBJECT builds its arguments in PAIRS, and the two spellings of a pair
+// are per dialect: DuckDB writes `JSON_OBJECT('k', 1)` and the others
+// `JSON_OBJECT('k': 1)`. Both are read here, because the corpus contains both
+// and neither says which dialect it came from.
+//
+//	JSON_OBJECT()                      no pairs at all
+//	JSON_OBJECT(*)                     every column, as a Star
+//	JSON_OBJECT('k': 1, 'j': TRUE)     colon pairs
+//	JSON_OBJECT('k', 1, 'j', TRUE)     comma pairs
+//
+// followed by any of `NULL ON NULL`, `ABSENT ON NULL` and `WITH UNIQUE KEYS`.
+// RETURNING is refused: it builds a return_type out of an Anonymous call or a
+// FormatJson, shapes this port does not model, and guessing at them would put
+// a wrong tree behind a statement that reads fine.
+func (p *parser) parseJSONObject() (*Expression, error) {
+	p.advance() // the name
+	p.advance() // the opening parenthesis
+
+	args := []Arg{}
+	pairs := []*Expression{}
+	switch {
+	case p.at(TokR_PAREN):
+		// Nothing between the parentheses. The reference still records an
+		// empty list rather than no list at all.
+	case p.at(TokSTAR):
+		p.advance()
+		pairs = append(pairs, New("Star"))
+	default:
+		for {
+			key, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			// The separator between a key and ITS value: a colon everywhere
+			// but DuckDB, which uses the same comma that separates the pairs.
+			if !p.match(TokCOLON) && !p.match(TokCOMMA) {
+				return nil, p.unsupported("a JSON_OBJECT key without a value")
+			}
+			value, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			pairs = append(pairs, New("JSONKeyValue",
+				Arg{"this", key}, Arg{"expression", value}))
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
+	args = append(args, Arg{"expressions", pairs})
+
+	// The modifiers, in the order the reference writes them.
+	if word := p.atNullHandling(); word != "" {
+		p.advance()
+		p.advance()
+		p.advance()
+		args = append(args, Arg{"null_handling", word})
+	}
+	if p.atWords("WITH", "UNIQUE", "KEYS") {
+		p.advance()
+		p.advance()
+		p.advance()
+		args = append(args, Arg{"unique_keys", true})
+	}
+	if p.atWords("RETURNING") {
+		return nil, p.unsupported("JSON_OBJECT with a RETURNING type")
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed JSON_OBJECT")
+	}
+	// Both are always ON the node, and always false unless RETURNING set
+	// them -- which is refused above.
+	args = append(args, Arg{"return_type", false}, Arg{"encoding", false})
+	return New("JSONObject", args...), nil
+}
+
+// atNullHandling reports the `NULL ON NULL` / `ABSENT ON NULL` clause, which
+// the reference keeps as the whole phrase rather than as a flag.
+func (p *parser) atNullHandling() string {
+	for _, word := range []string{"NULL", "ABSENT"} {
+		if p.atWords(word, "ON") {
+			if third := p.peekAt(2); third != nil && strings.EqualFold(third.Text, "NULL") {
+				return word + " ON NULL"
+			}
+		}
+	}
+	return ""
 }

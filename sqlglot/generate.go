@@ -286,6 +286,13 @@ func (g *generator) sameConst(got, want any) bool {
 		text, isText := want.(string)
 		return isText && g.node(child) == text
 	}
+	if flag, ok := want.(bool); ok {
+		// A flag condition compares to the flag, and an ABSENT arg is false:
+		// the reference sets these lazily and a template conditioned on false
+		// must still match a node that never had the key at all.
+		got, _ := got.(bool)
+		return got == flag
+	}
 	if got == nil || want == nil {
 		return got == nil && want == nil
 	}
