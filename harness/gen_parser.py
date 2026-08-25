@@ -1842,6 +1842,13 @@ EXTRA_SHAPES = {
 }
 
 
+def _render(exp, node, dialect):
+    """This node as its PARENT would receive it, outer whitespace kept."""
+    from sqlglot.dialects.dialect import Dialect
+
+    return Dialect.get_or_raise(dialect or None).generator().sql(node)
+
+
 def syntax_templates(exp, dialect, repo):
     """How the reference WRITES each shape the corpus contains.
 
@@ -1875,7 +1882,12 @@ def syntax_templates(exp, dialect, repo):
                     kwargs[k] = exp.column(f"ZZ{k.upper()}ZZ")
             kwargs.update(dict(scalars))
             try:
-                text = cls(**kwargs).sql(dialect=dialect or None)
+                # Rendered through the GENERATOR rather than the node, which
+                # strips the outer whitespace. A child hands its parent
+                # whatever its writer returned, leading space and all --
+                # LimitOptions returns " ROWS ONLY" -- and a template that
+                # substitutes the stripped form writes `FETCH FIRST 1ROWS ONLY`.
+                text = _render(exp, cls(**kwargs), dialect)
             except Exception:  # noqa: BLE001 -- this dialect will not write that shape
                 continue
             ok = True

@@ -274,3 +274,76 @@ func TestJSONObjectRefusesReturning(t *testing.T) {
 		}
 	}
 }
+
+// FETCH lands in the same slot as LIMIT, because it is one: the reference
+// keeps a Fetch under `limit`. Everything after the count is a set of FLAGS on
+// a LimitOptions, which is why this clause needed the flag work before it.
+func TestFetch(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"no count at all", "SELECT * FROM test FETCH FIRST ROWS ONLY",
+			"SELECT * FROM test FETCH FIRST ROWS ONLY"},
+		{"a count", "SELECT * FROM test FETCH FIRST 1 ROWS ONLY",
+			"SELECT * FROM test FETCH FIRST 1 ROWS ONLY"},
+		{"with ties", "SELECT * FROM test ORDER BY id DESC FETCH FIRST 10 ROWS WITH TIES",
+			"SELECT * FROM test ORDER BY id DESC FETCH FIRST 10 ROWS WITH TIES"},
+		{"a percentage", "SELECT * FROM test FETCH FIRST 10 PERCENT ROWS WITH TIES",
+			"SELECT * FROM test FETCH FIRST 10 PERCENT ROWS WITH TIES"},
+		{"NEXT rather than FIRST", "SELECT * FROM test FETCH NEXT 1 ROWS ONLY",
+			"SELECT * FROM test FETCH NEXT 1 ROWS ONLY"},
+		// The direction is optional and defaults to FIRST, and the singular
+		// ROW is the plural ROWS: both normalise on the way out.
+		{"neither direction nor plural", "SELECT * FROM x FETCH 1 ROW",
+			"SELECT * FROM x FETCH FIRST 1 ROWS ONLY"},
+		// A FETCH is written AFTER the offset where a LIMIT is written before
+		// it, and both live in the same slot.
+		{"after an offset", "SELECT * FROM x OFFSET 5 FETCH NEXT 1 ROWS ONLY",
+			"SELECT * FROM x OFFSET 5 FETCH NEXT 1 ROWS ONLY"},
+		{"a limit still comes first", "SELECT * FROM t LIMIT 1 OFFSET 2",
+			"SELECT * FROM t LIMIT 1 OFFSET 2"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, "")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// What these two clauses REFUSE. A refusal is the documented outcome, so the
+// branches that produce one are worth holding still.
+func TestJSONObjectAndFetchRefusals(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql string }{
+		{"a key with no value", "", "JSON_OBJECT('k')"},
+		{"a pair list that never closes", "", "JSON_OBJECT('k': 1"},
+		{"a star that never closes", "", "JSON_OBJECT(*"},
+		{"WITH UNIQUE without KEYS", "", "JSON_OBJECT('k': 1 WITH UNIQUE)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := ParseOne(tc.sql, tc.dialect); err == nil {
+				t.Errorf("ParseOne(%q) was read; it should be refused", tc.sql)
+			}
+		})
+	}
+}
+
+// A JSON path key inside a variant subscript that is neither an index nor a
+// string, and a colon with nothing usable after it.
+func TestVariantPathRefusals(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT c1:item[1.5]",
+		"SELECT c1:item[",
+		"SELECT c1:item[1",
+	} {
+		if _, err := ParseOne(sql, "databricks"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}

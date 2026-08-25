@@ -448,6 +448,14 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			if err := p.setOnce(sel, "limit", limit); err != nil {
 				return err
 			}
+		case p.at(TokFETCH):
+			fetch, err := p.parseFetch()
+			if err != nil {
+				return err
+			}
+			if err := p.setOnce(sel, "limit", fetch); err != nil {
+				return err
+			}
 		case p.at(TokOFFSET):
 			p.advance()
 			e, err := p.parseExpression()
@@ -570,6 +578,74 @@ func endsSelectExpression(t *Token) bool {
 	switch t.Type {
 	case TokFROM, TokWHERE, TokCOMMA, TokR_PAREN, TokSEMICOLON, TokUNION:
 		return true
+	}
+	return false
+}
+
+// FETCH [FIRST|NEXT] [count [PERCENT]] ROW|ROWS [ONLY | WITH TIES]
+//
+// It lands in the same slot as LIMIT, because it is one: the reference keeps a
+// Fetch under `limit`. The direction is a WORD kept as a string rather than a
+// node, and everything after the count is a set of flags on a LimitOptions --
+// which is why this clause needed the flag work that came before it, or the
+// options would have been written without their words.
+func (p *parser) parseFetch() (*Expression, error) {
+	p.advance() // FETCH
+
+	// The direction is optional: `FETCH 1 ROW` means FIRST, and the reference
+	// records FIRST rather than leaving it unset.
+	direction := "FIRST"
+	if p.atWords("FIRST") || p.atWords("NEXT") {
+		direction = strings.ToUpper(p.curr().Text)
+		p.advance()
+	}
+
+	var count *Expression
+	if !p.atLimitOptionWord() {
+		e, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		count = e
+	}
+
+	percent := false
+	if p.atWords("PERCENT") {
+		p.advance()
+		percent = true
+	}
+	rows := false
+	if p.atWords("ROW") || p.atWords("ROWS") {
+		p.advance()
+		rows = true
+	}
+	withTies := false
+	switch {
+	case p.atWords("ONLY"):
+		p.advance()
+	case p.atWords("WITH", "TIES"):
+		p.advance()
+		p.advance()
+		withTies = true
+	}
+
+	args := []Arg{{"direction", direction}}
+	if count != nil {
+		args = append(args, Arg{"count", count})
+	}
+	args = append(args, Arg{"limit_options", New("LimitOptions",
+		Arg{"percent", percent}, Arg{"rows", rows}, Arg{"with_ties", withTies})})
+	return New("Fetch", args...), nil
+}
+
+// atLimitOptionWord reports whether what follows FETCH is already one of the
+// option words rather than a count. `FETCH FIRST ROWS ONLY` has no count, and
+// reading ROWS as one built a column called ROWS.
+func (p *parser) atLimitOptionWord() bool {
+	for _, word := range []string{"ROW", "ROWS", "ONLY", "PERCENT", "WITH"} {
+		if p.atWords(word) {
+			return true
+		}
 	}
 	return false
 }

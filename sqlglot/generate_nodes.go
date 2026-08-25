@@ -99,6 +99,12 @@ func (g *generator) writeChildThis(e *Expression) string { return g.child(e, "th
 func (g *generator) writeSelect(e *Expression) string {
 	parts := []string{"SELECT"}
 	add := func(s string) {
+		// A clause that brings its OWN leading separator is joined without a
+		// second one. The reference's writers return `" FETCH ..."` with the
+		// space attached, and the templates are recorded as the reference
+		// returns them, so trimming here is what keeps the two models -- its
+		// separator-carrying one and this one's join-with-a-space -- agreeing.
+		s = strings.TrimLeft(s, " ")
 		if s != "" {
 			parts = append(parts, s)
 		}
@@ -135,10 +141,16 @@ func (g *generator) writeSelect(e *Expression) string {
 	add(g.child(e, "having"))
 	add(g.child(e, "order"))
 
-	if limit != nil && !g.tables.LimitIsTop {
+	// A FETCH is written AFTER the offset where a LIMIT is written before it:
+	// `OFFSET 5 FETCH NEXT 1 ROWS ONLY` but `LIMIT 1 OFFSET 2`. Both live in
+	// the same slot, so it is the CLASS that decides, not the slot.
+	if limit != nil && !g.tables.LimitIsTop && limit.Class != "Fetch" {
 		add(g.node(limit))
 	}
 	add(g.child(e, "offset"))
+	if limit != nil && !g.tables.LimitIsTop && limit.Class == "Fetch" {
+		add(g.node(limit))
+	}
 
 	return g.withPrefix(e, strings.Join(parts, " "))
 }
