@@ -63,6 +63,7 @@ func init() {
 		"Alter":                         (*generator).writeAlter,
 		"AlterRename":                   (*generator).writeAlterRename,
 		"ColumnConstraint":              (*generator).writeColumnConstraint,
+		"Reference":                     (*generator).writeReference,
 		"NotNullColumnConstraint":       (*generator).writeNotNullConstraint,
 		"DefaultColumnConstraint":       (*generator).writeDefaultConstraint,
 		"PrimaryKeyColumnConstraint":    (*generator).writePrimaryKeyConstraint,
@@ -2031,7 +2032,21 @@ func (g *generator) writeDrop(e *Expression) string {
 // writeColumnConstraint writes one thing said about a column. The wrapper is
 // uniform and the KIND carries the meaning, so this only unwraps.
 func (g *generator) writeColumnConstraint(e *Expression) string {
+	if name := g.child(e, "this"); name != "" {
+		return "CONSTRAINT " + name + " " + g.child(e, "kind")
+	}
 	return g.child(e, "kind")
+}
+
+// writeReference writes what a column points AT: the table, the columns of it
+// when they were named, and what happens to this row when that one changes.
+func (g *generator) writeReference(e *Expression) string {
+	out := "REFERENCES " + g.child(e, "this")
+	options, _ := e.Args["options"].([]string)
+	for _, option := range options {
+		out += " " + option
+	}
+	return out
 }
 
 // The constraint kinds, each a fixed phrase or a phrase with one operand.

@@ -1738,7 +1738,6 @@ func TestCreateTable(t *testing.T) {
 	// dropped constraint changes what the table is.
 	for _, sql := range []string{
 		"CREATE TABLE t (a INT GENERATED ALWAYS AS (1))",
-		"CREATE TABLE t (a INT REFERENCES other(b))",
 		"CREATE TEMPORARY TABLE t (a INT)",
 		"CREATE VIEW v AS SELECT 1",
 		"CREATE TABLE t",
@@ -1857,14 +1856,49 @@ func TestColumnConstraints(t *testing.T) {
 	// these says something about the table that dropping it would lose.
 	for _, sql := range []string{
 		"CREATE TABLE z (a INT GENERATED ALWAYS AS (1))",
-		"CREATE TABLE z (a INT REFERENCES other(b))",
 		"CREATE TABLE z (a INT CONSTRAINT c CHECK (a > 0))",
 		"CREATE TABLE z (a INT CHARACTER SET utf8)",
 		"CREATE TABLE z (a INT COMMENT 1)",
 		"CREATE TABLE z (a INT COLLATE)",
+		"CREATE TABLE z (a INT REFERENCES p (b) ON DELETE PANIC)",
+		"CREATE TABLE z (a INT REFERENCES p (b) NOT ENFORCED)",
+		"CREATE TABLE z (a INT CONSTRAINT c)",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+
+	// What a column points AT. The referenced columns wrap the table in a
+	// Schema, and what happens to this row when that one changes is kept as
+	// the PHRASE rather than as a node -- one entry per option, in the order
+	// they were written.
+	for _, tc := range []struct{ sql, want string }{
+		{"CREATE TABLE z (a INT REFERENCES parent)",
+			"CREATE TABLE z (a INT REFERENCES parent)"},
+		{"CREATE TABLE z (a INT REFERENCES parent (b, c))",
+			"CREATE TABLE z (a INT REFERENCES parent (b, c))"},
+		{"CREATE TABLE f (b INT REFERENCES z (i) ON DELETE SET NULL ON UPDATE NO ACTION)",
+			"CREATE TABLE f (b INT REFERENCES z (i) ON DELETE SET NULL ON UPDATE NO ACTION)"},
+		{"CREATE TABLE f (b INT REFERENCES z (i) ON DELETE CASCADE)",
+			"CREATE TABLE f (b INT REFERENCES z (i) ON DELETE CASCADE)"},
+		{"CREATE TABLE f (b INT REFERENCES z (i) ON UPDATE RESTRICT)",
+			"CREATE TABLE f (b INT REFERENCES z (i) ON UPDATE RESTRICT)"},
+		{"CREATE TABLE f (b INT REFERENCES z (i) ON DELETE SET DEFAULT)",
+			"CREATE TABLE f (b INT REFERENCES z (i) ON DELETE SET DEFAULT)"},
+		// A NAMED constraint keeps its name on the wrapper, in front of the
+		// kind it names.
+		{"CREATE TABLE k (s INT CONSTRAINT k_fk REFERENCES szerzo)",
+			"CREATE TABLE k (s INT CONSTRAINT k_fk REFERENCES szerzo)"},
+		{"CREATE TABLE k (s INT CONSTRAINT k_nn NOT NULL)",
+			"CREATE TABLE k (s INT CONSTRAINT k_nn NOT NULL)"},
+	} {
+		e, err := ParseOne(tc.sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, gerr := Generate(e, ""); gerr != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, gerr, tc.want)
 		}
 	}
 	// A bare VARCHAR still becomes STRING where the dialect says so.

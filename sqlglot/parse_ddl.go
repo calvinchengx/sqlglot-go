@@ -409,6 +409,32 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			p.advance()
 			kind = New("CommentColumnConstraint",
 				Arg{"this", New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})})
+		case p.at(TokREFERENCES):
+			p.advance()
+			target, err := p.parseTableName()
+			if err != nil {
+				return nil, err
+			}
+			this := target
+			if p.at(TokL_PAREN) {
+				columns, err := p.parseInsertColumns()
+				if err != nil {
+					return nil, err
+				}
+				// The referenced COLUMNS wrap the table in a Schema, the same
+				// shape a CREATE gives a table with a column list. Reference's
+				// own `expressions` stays empty; the reference fills the
+				// Schema, not the constraint.
+				this = New("Schema", Arg{"this", target}, Arg{"expressions", columns})
+			}
+			options, err := p.parseKeyConstraintOptions()
+			if err != nil {
+				return nil, err
+			}
+			kind = New("Reference", Arg{"this", this})
+			if len(options) > 0 {
+				kind.Set("options", options)
+			}
 		case p.at(TokCOLLATE):
 			p.advance()
 			// A QUOTED collation is an Identifier and a bare one a Column --
@@ -429,6 +455,26 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 				return nil, err
 			}
 			kind = New("CollateColumnConstraint", Arg{"this", name})
+		case p.at(TokCONSTRAINT):
+			// A NAMED constraint: the name goes on the wrapper and the kind
+			// that follows goes where an unnamed one's would. Read here rather
+			// than in the loop below so the name is set BEFORE the kind, which
+			// is the order the reference assigns them in.
+			p.advance()
+			name, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
+			}
+			inner, err := p.parseColumnConstraints()
+			if err != nil {
+				return nil, err
+			}
+			if len(inner) != 1 {
+				return nil, p.unsupported("a named constraint that is not one thing")
+			}
+			named := New("ColumnConstraint", Arg{"this", name})
+			named.Set("kind", inner[0].Args["kind"])
+			return append(out, named), nil
 		default:
 			// The list ends at a comma, at the closing parenthesis, or at the
 			// end of the statement -- an ALTER TABLE ADD COLUMN has neither of
@@ -563,4 +609,51 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 		return New("AlterRename", Arg{"this", target}), nil
 	}
 	return nil, p.unsupported("an ALTER TABLE action this port does not read")
+}
+
+// parseKeyConstraintOptions reads what may follow a REFERENCES: `ON DELETE
+// CASCADE`, `ON UPDATE SET NULL`, and the rest of that small vocabulary.
+//
+// The reference keeps each as a STRING rather than as a node, so the phrase is
+// rebuilt here in the spelling it keeps -- upper-cased, one option per entry.
+// Anything outside the vocabulary is refused rather than guessed at: an
+// unrecognised word after ON is the difference between deleting the children
+// and refusing to.
+func (p *parser) parseKeyConstraintOptions() ([]string, error) {
+	var options []string
+	for p.at(TokON) {
+		p.advance()
+		event := p.curr()
+		if event == nil {
+			return nil, p.unsupported("ON without an event")
+		}
+		p.advance()
+		var action string
+		switch {
+		case p.atWords("NO", "ACTION"):
+			p.advance()
+			p.advance()
+			action = "NO ACTION"
+		case p.atWords("CASCADE"):
+			p.advance()
+			action = "CASCADE"
+		case p.atWords("RESTRICT"):
+			p.advance()
+			action = "RESTRICT"
+		case p.at(TokSET) && p.next() != nil && p.next().Type == TokNULL:
+			p.advance()
+			p.advance()
+			action = "SET NULL"
+		case p.at(TokSET) && p.next() != nil && strings.EqualFold(p.next().Text, "DEFAULT"):
+			p.advance()
+			p.advance()
+			action = "SET DEFAULT"
+		default:
+			return nil, p.unsupported("a key constraint action this port does not read")
+		}
+		// The EVENT keeps the case it was written in; only the action is
+		// spelled by the table above.
+		options = append(options, "ON "+event.Text+" "+action)
+	}
+	return options, nil
 }

@@ -210,6 +210,14 @@ func (e *Expression) Dump() []map[string]any {
 					for j := len(v) - 1; j >= 0; j-- {
 						stack = append(stack, frame{node: v[j], parent: i, key: k, isList: true})
 					}
+				case []string:
+					// A repeated arg whose members are plain STRINGS -- a
+					// Reference's `ON DELETE CASCADE` among them. Each is its
+					// own record, the same as a repeated node, and not one
+					// record holding a list.
+					for j := len(v) - 1; j >= 0; j-- {
+						stack = append(stack, frame{node: v[j], parent: i, key: k, isList: true})
+					}
 				case nil:
 				default:
 					stack = append(stack, frame{node: v, parent: i, key: k})
@@ -268,6 +276,8 @@ func (e *Expression) Copy() *Expression {
 				kids[i] = k.Copy()
 			}
 			out.Set(key, kids)
+		case []string:
+			out.Set(key, append([]string(nil), v...))
 		default:
 			out.Set(key, v)
 		}
@@ -307,6 +317,18 @@ func (e *Expression) Equal(other *Expression) bool {
 			}
 			for i, k := range v {
 				if !k.Equal(w[i]) {
+					return false
+				}
+			}
+		case []string:
+			// A slice is not comparable, so the default below would panic
+			// rather than answer.
+			w, ok := other.Args[key].([]string)
+			if !ok || len(v) != len(w) {
+				return false
+			}
+			for i, k := range v {
+				if k != w[i] {
 					return false
 				}
 			}
