@@ -259,7 +259,131 @@ func (p *parser) parseTable() (*Expression, error) {
 	if alias != nil {
 		table.Set("alias", alias)
 	}
+	// TABLESAMPLE hangs off the TABLE, after its alias.
+	if p.at(TokTABLE_SAMPLE) {
+		sample, err := p.parseTableSample()
+		if err != nil {
+			return nil, err
+		}
+		table.Set("sample", sample)
+	}
 	return table, nil
+}
+
+// TABLESAMPLE [method] (<spec>) [REPEATABLE (seed)], where the spec is one of
+//
+//	BUCKET n OUT OF m [ON field]     bucket_numerator/denominator/field
+//	<n> PERCENT   or   <n>%          percent
+//	<n> ROWS                         size
+//
+// The method is a bare word before the parentheses -- DuckDB's RESERVOIR --
+// and is kept as a Var rather than as a name.
+func (p *parser) parseTableSample() (*Expression, error) {
+	p.advance() // TABLESAMPLE
+
+	args := []Arg{}
+	method := p.tables.DefaultSampleMethod
+	if !p.at(TokL_PAREN) {
+		word := p.curr()
+		if word == nil {
+			return nil, p.unsupported("TABLESAMPLE without a specification")
+		}
+		p.advance()
+		method = strings.ToUpper(word.Text)
+	}
+	if method != "" {
+		args = append(args, Arg{"method", New("Var", Arg{"this", method})})
+	}
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("TABLESAMPLE without a specification")
+	}
+
+	if p.atWords("BUCKET") {
+		p.advance()
+		numerator, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		if !p.atWords("OUT", "OF") {
+			return nil, p.unsupported("a TABLESAMPLE bucket without OUT OF")
+		}
+		p.advance()
+		p.advance()
+		denominator, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args,
+			Arg{"bucket_numerator", numerator},
+			Arg{"bucket_denominator", denominator})
+		if p.match(TokON) {
+			// The field is an IDENTIFIER, not a column: the reference keeps
+			// the bare name here.
+			field, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, Arg{"bucket_field", bareIdentifier(field)})
+		}
+	} else {
+		// A count, not an expression: `20%` would otherwise read as a modulo
+		// and swallow the closing parenthesis.
+		size, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		switch {
+		case p.match(TokMOD), p.atWords("PERCENT"):
+			// `20%` and `20 PERCENT` are the same thing. The percent sign is
+			// the modulo token; nothing else can follow a count here.
+			if p.atWords("PERCENT") {
+				p.advance()
+			}
+			args = append(args, Arg{"percent", size})
+		case p.atWords("ROWS"), p.atWords("ROW"):
+			p.advance()
+			args = append(args, Arg{"size", size})
+		default:
+			// A bare count, whose unit is the DIALECT's: PostgreSQL reads
+			// `TABLESAMPLE (3)` as three percent and the others as three
+			// rows. The same three characters, two sizes of sample.
+			if p.tables.BareSampleCountIsPercent {
+				args = append(args, Arg{"percent", size})
+			} else {
+				args = append(args, Arg{"size", size})
+			}
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed TABLESAMPLE")
+	}
+
+	if p.atWords("REPEATABLE") {
+		p.advance()
+		if !p.match(TokL_PAREN) {
+			return nil, p.unsupported("REPEATABLE without a seed")
+		}
+		seed, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed REPEATABLE")
+		}
+		args = append(args, Arg{"seed", seed})
+	}
+	return New("TableSample", args...), nil
+}
+
+// bareIdentifier unwraps a Column down to the Identifier inside it, which is
+// what the reference keeps where a bare NAME is wanted.
+func bareIdentifier(e *Expression) *Expression {
+	if e != nil && e.Class == "Column" {
+		if inner, _ := e.Args["this"].(*Expression); inner != nil {
+			return inner
+		}
+	}
+	return e
 }
 
 // parseSubqueryTable reads a parenthesised FROM item.

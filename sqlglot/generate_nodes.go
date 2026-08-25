@@ -201,6 +201,9 @@ func (g *generator) writeTable(e *Expression) string {
 	if alias := g.child(e, "alias"); alias != "" {
 		out += " AS " + alias
 	}
+	// TABLESAMPLE hangs off the table, after the alias. Its own template
+	// carries the space in front of it, the way the reference returns it.
+	out += g.child(e, "sample")
 	return out + g.joins(e)
 }
 

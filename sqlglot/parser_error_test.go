@@ -54,11 +54,13 @@ func TestTheUnsupportedMessageIsUnchanged(t *testing.T) {
 // nothing at all.
 //
 // The window function this used to name was the original example, and it now
-// parses -- which is the point of counting them.
+// parses -- which is the point of counting them. TABLESAMPLE followed it, for
+// the same reason and by the same route: the label said what to build, so the
+// label stopped being true.
 func TestLabelNamesTheKeywordThatStoppedIt(t *testing.T) {
 	for _, tc := range []struct{ sql, want string }{
-		{"SELECT a FROM t TABLESAMPLE (10 PERCENT)", "trailing tokens at TABLESAMPLE"},
 		{"SELECT a FROM t PIVOT (SUM(b) FOR c IN ('x'))", "trailing tokens at PIVOT"},
+		{"SELECT a FROM t FOR SYSTEM_TIME AS OF x", "trailing tokens at FOR"},
 	} {
 		_, err := ParseOne(tc.sql, "tsql")
 		var u *UnsupportedError

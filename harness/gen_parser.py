@@ -674,6 +674,46 @@ def interval_unit_inside_string(dialect: str, exp) -> bool:
     return "'1 DAY'" in node.sql(dialect=dialect or None)
 
 
+def bare_sample_count_is_percent(dialect: str, exp) -> bool:
+    """What `TABLESAMPLE (3)` counts, with no unit written after it.
+
+    PostgreSQL reads a bare count as a PERCENTAGE and the others as a number
+    of ROWS -- the same three characters meaning two different sizes of
+    sample. Nothing declares it, so it is read off a statement that omits the
+    unit.
+    """
+    import sqlglot
+
+    try:
+        tree = sqlglot.parse_one(
+            "SELECT * FROM t TABLESAMPLE (3)", read=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return False
+    node = next(iter(tree.find_all(exp.TableSample)), None)
+    return bool(node is not None and node.args.get("percent") is not None)
+
+
+def default_sample_method(dialect: str, exp) -> str:
+    """The sampling method this dialect supplies when none is written.
+
+    DuckDB records RESERVOIR whether or not the statement says so, and the
+    others record nothing. It is a default baked into the parser where no flag
+    reports it, so it is read off a statement that omits the method.
+    """
+    import sqlglot
+
+    try:
+        tree = sqlglot.parse_one(
+            "SELECT * FROM t TABLESAMPLE (3 ROWS)", read=dialect or None
+        )
+    except Exception:  # noqa: BLE001 -- not a form this dialect reads
+        return ""
+    node = next(iter(tree.find_all(exp.TableSample)), None)
+    method = node.args.get("method") if node else None
+    return method.name if method else ""
+
+
 def json_key_value_sql(dialect: str, exp) -> str:
     """How this dialect writes one key/value pair inside JSON_OBJECT.
 
@@ -2530,6 +2570,12 @@ def main() -> int:
         "\t// JSONKeyValueSQL is one key/value pair inside JSON_OBJECT: DuckDB\n",
         "\t// separates them with a comma and the others with a colon.\n",
         "\tJSONKeyValueSQL string\n",
+        "\t// DefaultSampleMethod is the TABLESAMPLE method this dialect records\n",
+        "\t// when the statement names none. DuckDB says RESERVOIR either way.\n",
+        "\tDefaultSampleMethod string\n",
+        "\t// BareSampleCountIsPercent: `TABLESAMPLE (3)` is a PERCENTAGE in\n",
+        "\t// PostgreSQL and a number of rows everywhere else.\n",
+        "\tBareSampleCountIsPercent bool\n",
         "\t// JSONPathFunctions are the names that turn their arguments into a\n",
         "\t// JSON PATH rather than holding them. Probed with STRING literals,\n",
         "\t// because with the placeholder columns the generic probe uses they\n",
@@ -3032,6 +3078,13 @@ def main() -> int:
         out.append(
             f"\t\tVariantExtractColon: {str(variant_extract_colon(name)).lower()},\n"
         )
+        out.append(
+            "\t\tBareSampleCountIsPercent: %s,\n"
+            % str(bare_sample_count_is_percent(name, exp)).lower()
+        )
+        _dsm = default_sample_method(name, exp)
+        if _dsm:
+            out.append(f"\t\tDefaultSampleMethod: {gostr(_dsm)},\n")
         _kv = json_key_value_sql(name, exp)
         if _kv:
             out.append(f"\t\tJSONKeyValueSQL: {gostr(_kv)},\n")

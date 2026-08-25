@@ -223,6 +223,12 @@ type ParserTables struct {
 	// JSONKeyValueSQL is one key/value pair inside JSON_OBJECT: DuckDB
 	// separates them with a comma and the others with a colon.
 	JSONKeyValueSQL string
+	// DefaultSampleMethod is the TABLESAMPLE method this dialect records
+	// when the statement names none. DuckDB says RESERVOIR either way.
+	DefaultSampleMethod string
+	// BareSampleCountIsPercent: `TABLESAMPLE (3)` is a PERCENTAGE in
+	// PostgreSQL and a number of rows everywhere else.
+	BareSampleCountIsPercent bool
 	// JSONPathFunctions are the names that turn their arguments into a
 	// JSON PATH rather than holding them. Probed with STRING literals,
 	// because with the placeholder columns the generic probe uses they
@@ -3554,6 +3560,7 @@ var parserTables = map[string]*ParserTables{
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
 		VariantExtractColon:      false,
+		BareSampleCountIsPercent: false,
 		JSONKeyValueSQL:          "{this}: {expression}",
 		JSONPathIsParsed:         true,
 		IntervalUnitInsideString: false,
@@ -7078,6 +7085,7 @@ var parserTables = map[string]*ParserTables{
 			"JSON_VALUE":             {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 		},
 		VariantExtractColon:      false,
+		BareSampleCountIsPercent: false,
 		JSONKeyValueSQL:          "{this}: {expression}",
 		JSONPathIsParsed:         true,
 		IntervalUnitInsideString: false,
@@ -10665,6 +10673,7 @@ var parserTables = map[string]*ParserTables{
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
 		VariantExtractColon:      false,
+		BareSampleCountIsPercent: true,
 		JSONKeyValueSQL:          "{this}: {expression}",
 		JSONPathIsParsed:         false,
 		IntervalUnitInsideString: true,
@@ -14442,8 +14451,10 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_STRING":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
-		VariantExtractColon: false,
-		JSONKeyValueSQL:     "{this}, {expression}",
+		VariantExtractColon:      false,
+		BareSampleCountIsPercent: false,
+		DefaultSampleMethod:      "RESERVOIR",
+		JSONKeyValueSQL:          "{this}, {expression}",
 		JSONExtractNeedsParens: map[string]bool{
 			"JSONExtract":       true,
 			"JSONExtractScalar": true,
@@ -18214,6 +18225,7 @@ var parserTables = map[string]*ParserTables{
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
 		VariantExtractColon:      true,
+		BareSampleCountIsPercent: false,
 		JSONKeyValueSQL:          "{this}: {expression}",
 		JSONPathIsParsed:         true,
 		IntervalUnitInsideString: false,

@@ -347,3 +347,109 @@ func TestVariantPathRefusals(t *testing.T) {
 		}
 	}
 }
+
+// TABLESAMPLE hangs off the TABLE, after its alias, and two of its facts are
+// per dialect rather than per statement.
+func TestTableSample(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"a bucket", "", "SELECT a FROM test TABLESAMPLE (BUCKET 1 OUT OF 5)",
+			"SELECT a FROM test TABLESAMPLE (BUCKET 1 OUT OF 5)"},
+		{"a bucket on a field", "", "SELECT a FROM test TABLESAMPLE (BUCKET 1 OUT OF 5 ON x)",
+			"SELECT a FROM test TABLESAMPLE (BUCKET 1 OUT OF 5 ON x)"},
+		{"after an alias", "", "SELECT a FROM test AS x TABLESAMPLE (BUCKET 1 OUT OF 5)",
+			"SELECT a FROM test AS x TABLESAMPLE (BUCKET 1 OUT OF 5)"},
+		{"a percentage", "", "SELECT a FROM test TABLESAMPLE (0.1 PERCENT)",
+			"SELECT a FROM test TABLESAMPLE (0.1 PERCENT)"},
+		{"a row count", "", "SELECT a FROM test TABLESAMPLE (100 ROWS)",
+			"SELECT a FROM test TABLESAMPLE (100 ROWS)"},
+		// The percent SIGN is the modulo token, so the count has to be read
+		// tighter than an expression or `20%` swallows the parenthesis.
+		{"a percent sign", "duckdb", "SELECT * FROM tbl TABLESAMPLE RESERVOIR(20%)",
+			"SELECT * FROM tbl TABLESAMPLE RESERVOIR (20 PERCENT)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// A bare count means different things in different dialects, and DuckDB names
+// a method whether or not the statement did. Both are probed off the
+// reference; neither is written down anywhere that could be read.
+func TestTableSampleDialectDefaults(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql, wantKey string }{
+		{"postgres", "SELECT * FROM t TABLESAMPLE SYSTEM (50)", "percent"},
+		{"duckdb", "SELECT * FROM t TABLESAMPLE (3)", "size"},
+		{"tsql", "SELECT * FROM t TABLESAMPLE (3)", "size"},
+	} {
+		t.Run(tc.dialect+" "+tc.wantKey, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne: %v", err)
+			}
+			table, _ := e.Args["from_"].(*Expression)
+			inner, _ := table.Args["this"].(*Expression)
+			sample, _ := inner.Args["sample"].(*Expression)
+			if sample == nil {
+				t.Fatal("no sample on the table")
+			}
+			if sample.Args[tc.wantKey] == nil {
+				t.Errorf("no %s; got keys %v", tc.wantKey, keysOf(sample))
+			}
+		})
+	}
+	// DuckDB records RESERVOIR even where the statement names no method.
+	// Checked on the TREE: whether that shape can be written back depends on
+	// whether the corpus taught the writer a template for it, which is a
+	// separate question from whether the parser got it right.
+	e, err := ParseOne("SELECT * FROM t TABLESAMPLE (3 ROWS)", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	table, _ := e.Args["from_"].(*Expression)
+	inner, _ := table.Args["this"].(*Expression)
+	sample, _ := inner.Args["sample"].(*Expression)
+	method, _ := sample.Args["method"].(*Expression)
+	if method == nil || method.Name() != "RESERVOIR" {
+		t.Errorf("method = %v, want RESERVOIR supplied by the dialect", method)
+	}
+}
+
+func keysOf(e *Expression) []string {
+	var out []string
+	for k, v := range e.Args {
+		if v != nil {
+			out = append(out, k)
+		}
+	}
+	return out
+}
+
+// The refusal branches of TABLESAMPLE. Each one is a form the port declines to
+// guess at rather than build something plausible from.
+func TestTableSampleRefusals(t *testing.T) {
+	for _, tc := range []struct{ name, sql string }{
+		{"nothing after the word", "SELECT a FROM t TABLESAMPLE"},
+		{"no parentheses", "SELECT a FROM t TABLESAMPLE SYSTEM 5"},
+		{"a bucket without OUT OF", "SELECT a FROM t TABLESAMPLE (BUCKET 1 OF 5)"},
+		{"a specification that never closes", "SELECT a FROM t TABLESAMPLE (100 ROWS"},
+		{"REPEATABLE without a seed", "SELECT a FROM t TABLESAMPLE (100 ROWS) REPEATABLE 5"},
+		{"a seed that never closes", "SELECT a FROM t TABLESAMPLE (100 ROWS) REPEATABLE (5"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := ParseOne(tc.sql, ""); err == nil {
+				t.Errorf("ParseOne(%q) was read; it should be refused", tc.sql)
+			}
+		})
+	}
+}
