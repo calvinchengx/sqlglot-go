@@ -73,6 +73,7 @@ func init() {
 		"AtTimeZone":        (*generator).writeAtTimeZone,
 		"JSONPath":          (*generator).writeJSONPath,
 		"JSONKeyValue":      (*generator).writeJSONKeyValue,
+		"Pivot":             (*generator).writePivot,
 		"JSONExtract":       (*generator).writeJSONExtractOp,
 		"JSONExtractScalar": (*generator).writeJSONExtractOp,
 		"PropertyEQ":        (*generator).writePropertyEQ,
@@ -204,6 +205,12 @@ func (g *generator) writeTable(e *Expression) string {
 	// TABLESAMPLE hangs off the table, after the alias. Its own template
 	// carries the space in front of it, the way the reference returns it.
 	out += g.child(e, "sample")
+	// Then the pivots, in the order they were written, each carrying its own
+	// leading space too.
+	pivots, _ := e.Args["pivots"].([]*Expression)
+	for _, pivot := range pivots {
+		out += g.node(pivot)
+	}
 	return out + g.joins(e)
 }
 
@@ -278,6 +285,12 @@ func (g *generator) writeSubquery(e *Expression) string {
 	// comma onto the joined table, which already had one.
 	if alias := g.child(e, "alias"); alias != "" {
 		out += " AS " + alias
+	}
+	// A pivot hangs off a subquery the same way it hangs off a table, and
+	// carries its own leading space.
+	pivots, _ := e.Args["pivots"].([]*Expression)
+	for _, pivot := range pivots {
+		out += g.node(pivot)
 	}
 	return out + g.joins(e)
 }
@@ -1524,4 +1537,43 @@ func (g *generator) writeJSONKeyValue(e *Expression) string {
 	}
 	out := strings.ReplaceAll(form, "{this}", g.child(e, "this"))
 	return strings.ReplaceAll(out, "{expression}", g.child(e, "expression"))
+}
+
+// writePivot writes the postfix `PIVOT(<aggregates> FOR <field> IN (<values>))`
+// that hangs off a table, and the UNPIVOT that mirrors it.
+//
+// Written here rather than as a template because the template machinery
+// records one spelling per SET of present arguments, and a pivot carries four
+// dialect conventions that are on the node without ever being written -- so
+// every combination of them would be a separate template of the same shape.
+//
+// The space in front is the separator, the way the reference returns it.
+func (g *generator) writePivot(e *Expression) string {
+	word := "PIVOT"
+	if unpivot, _ := e.Args["unpivot"].(bool); unpivot {
+		word = "UNPIVOT"
+	}
+	aggregates, _ := e.Args["expressions"].([]*Expression)
+	fields, _ := e.Args["fields"].([]*Expression)
+	if len(aggregates) == 0 || len(fields) != 1 {
+		return g.fail(e.Class + " without an aggregate and one field")
+	}
+	parts := make([]string, 0, len(aggregates))
+	for _, agg := range aggregates {
+		parts = append(parts, g.node(agg))
+	}
+	// The NULLS clause brings a space before the parenthesis with it, where a
+	// bare PIVOT has none: `UNPIVOT INCLUDE NULLS (...)` but `UNPIVOT(...)`.
+	if include, ok := e.Args["include_nulls"].(bool); ok {
+		if include {
+			word += " INCLUDE NULLS "
+		} else {
+			word += " EXCLUDE NULLS "
+		}
+	}
+	out := " " + word + "(" + strings.Join(parts, ", ") + " FOR " + g.node(fields[0]) + ")"
+	if alias := g.child(e, "alias"); alias != "" {
+		out += " AS " + alias
+	}
+	return out
 }

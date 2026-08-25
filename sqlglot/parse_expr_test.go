@@ -493,3 +493,134 @@ func TestPrefixAlias(t *testing.T) {
 		t.Error("`FROM foo: bar AS baz` was read; it names the relation twice")
 	}
 }
+
+// PIVOT hangs off a table or a subquery as a LIST, and carries more than the
+// statement says: four dialect conventions, and output COLUMNS that are
+// derived rather than read.
+func TestPivot(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"an aggregate over values", "", "SELECT a FROM test PIVOT(SUM(x) FOR y IN ('z', 'q'))",
+			"SELECT a FROM test PIVOT(SUM(x) FOR y IN ('z', 'q'))"},
+		{"an unknown aggregate", "", "SELECT a FROM test PIVOT(SOMEAGG(x, y, z) FOR q IN (1))",
+			"SELECT a FROM test PIVOT(SOMEAGG(x, y, z) FOR q IN (1))"},
+		{"a chain", "", "SELECT a FROM test PIVOT(SUM(x) FOR y IN ('z')) PIVOT(MAX(b) FOR c IN ('d'))",
+			"SELECT a FROM test PIVOT(SUM(x) FOR y IN ('z')) PIVOT(MAX(b) FOR c IN ('d'))"},
+		{"over a subquery", "", "SELECT a FROM (SELECT a, b FROM test) PIVOT(SUM(x) FOR y IN ('z'))",
+			"SELECT a FROM (SELECT a, b FROM test) PIVOT(SUM(x) FOR y IN ('z'))"},
+		{"an unpivot, which takes the alias", "", "SELECT a FROM test UNPIVOT(x FOR y IN (z, q)) AS x",
+			"SELECT a FROM test UNPIVOT(x FOR y IN (z, q)) AS x"},
+		{"one of each", "", "SELECT a FROM test PIVOT(SUM(x) FOR y IN ('z')) UNPIVOT(x FOR y IN (z)) AS x",
+			"SELECT a FROM test PIVOT(SUM(x) FOR y IN ('z')) UNPIVOT(x FOR y IN (z)) AS x"},
+		// DuckDB tolerates a trailing comma before FOR; it normalises away.
+		{"a trailing comma", "duckdb", "SELECT * FROM t PIVOT(FIRST(t) AS t, FOR quarter IN ('Q1'))",
+			"SELECT * FROM t PIVOT(FIRST(t) AS t FOR quarter IN ('Q1'))"},
+		// The NULLS clause brings a space before the parenthesis with it.
+		{"including nulls", "databricks",
+			"SELECT * FROM sales UNPIVOT INCLUDE NULLS (sales FOR quarter IN (q1))",
+			"SELECT * FROM sales UNPIVOT INCLUDE NULLS (sales FOR quarter IN (q1))"},
+		{"excluding them", "databricks",
+			"SELECT * FROM sales UNPIVOT EXCLUDE NULLS (sales FOR quarter IN (q1))",
+			"SELECT * FROM sales UNPIVOT EXCLUDE NULLS (sales FOR quarter IN (q1))"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// The output columns are DERIVED: the product of the IN values with the
+// aliases of whichever aggregates carry one, joined by underscores, and
+// quoted when the result could not be written bare.
+func TestPivotDerivedColumns(t *testing.T) {
+	for _, tc := range []struct {
+		name, dialect, sql string
+		want               []string
+	}{
+		{"no alias, one column per value", "", "SELECT a FROM t PIVOT(SUM(x) FOR y IN ('a', 'b'))",
+			[]string{"a", "b"}},
+		{"an alias suffixes each", "", "SELECT a FROM t PIVOT(SUM(x) AS s FOR y IN ('a'))",
+			[]string{"a_s"}},
+		{"several aliases multiply", "", "SELECT a FROM t PIVOT(SUM(x) AS s, MAX(z) AS m FOR y IN ('a'))",
+			[]string{"a_s", "a_m"}},
+		{"no alias among several is still one", "", "SELECT a FROM t PIVOT(SUM(x), MAX(z) FOR y IN ('a'))",
+			[]string{"a"}},
+		// An explicit `<value> AS <alias>` names the column outright.
+		{"a named value wins", "duckdb",
+			`SELECT * FROM produce PIVOT(SUM(sales) FOR quarter IN ('Q1' AS "'Q1'"))`,
+			[]string{"'Q1'"}},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne: %v", err)
+			}
+			from, _ := e.Args["from_"].(*Expression)
+			table, _ := from.Args["this"].(*Expression)
+			pivots, _ := table.Args["pivots"].([]*Expression)
+			columns, _ := pivots[0].Args["columns"].([]*Expression)
+			var got []string
+			for _, c := range columns {
+				got = append(got, c.Name())
+			}
+			if len(got) != len(tc.want) {
+				t.Fatalf("columns = %v, want %v", got, tc.want)
+			}
+			for i := range got {
+				if got[i] != tc.want[i] {
+					t.Errorf("columns = %v, want %v", got, tc.want)
+					break
+				}
+			}
+		})
+	}
+}
+
+// What PIVOT refuses. DuckDB names its columns after the AGGREGATES once there
+// is more than one, rendering each back to SQL to do it -- a derivation over
+// generated text, refused rather than approximated.
+func TestPivotRefusals(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql string }{
+		{"several aggregates DuckDB would name", "duckdb",
+			"SELECT * FROM t PIVOT(SUM(x), MAX(z) FOR y IN ('a'))"},
+		{"a list that is not parenthesised", "duckdb",
+			"SELECT * FROM t PIVOT(SUM(y) FOR foo IN y_enum)"},
+		{"a GROUP BY inside", "duckdb",
+			"SELECT * FROM cities PIVOT(SUM(population) FOR year IN (2000) GROUP BY country)"},
+		{"no FOR at all", "", "SELECT a FROM t PIVOT(SUM(x))"},
+		{"no specification", "", "SELECT a FROM t PIVOT"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := ParseOne(tc.sql, tc.dialect); err == nil {
+				t.Errorf("ParseOne(%q) was read; it should be refused", tc.sql)
+			}
+		})
+	}
+}
+
+// The rest of PIVOT's refusals -- the malformed shapes, which matter because
+// a half-read pivot would put a wrong tree behind a statement that looks fine.
+func TestPivotMalformed(t *testing.T) {
+	for _, tc := range []struct{ name, sql string }{
+		{"an unclosed value list", "SELECT a FROM t PIVOT(SUM(x) FOR y IN ('a'"},
+		{"an unclosed pivot", "SELECT a FROM t PIVOT(SUM(x) FOR y IN ('a')"},
+		{"no IN", "SELECT a FROM t PIVOT(SUM(x) FOR y)"},
+		{"nothing before FOR", "SELECT a FROM t PIVOT(FOR y IN ('a'))"},
+		{"an alias with no name", "SELECT a FROM t PIVOT(SUM(x) AS FOR y IN ('a'))"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := ParseOne(tc.sql, ""); err == nil {
+				t.Errorf("ParseOne(%q) was read; it should be refused", tc.sql)
+			}
+		})
+	}
+}

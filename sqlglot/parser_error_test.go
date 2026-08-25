@@ -49,18 +49,18 @@ func TestTheUnsupportedMessageIsUnchanged(t *testing.T) {
 }
 
 // Label narrows the construct with the token when, and only when, the token is
-// dialect vocabulary. Without this a TABLESAMPLE and a PIVOT are both
-// "trailing tokens", which tells whoever is deciding what to build next
-// nothing at all.
+// dialect vocabulary. Without this a FETCH and a WINDOW are both "trailing
+// tokens", which tells whoever is deciding what to build next nothing at all.
 //
 // The window function this used to name was the original example, and it now
-// parses -- which is the point of counting them. TABLESAMPLE followed it, for
-// the same reason and by the same route: the label said what to build, so the
-// label stopped being true.
+// parses -- which is the point of counting them. TABLESAMPLE and PIVOT have
+// both followed it since, for the same reason and by the same route: the label
+// said what to build, so the label stopped being true. The cases here are
+// whatever is still refused, and they are meant to keep being replaced.
 func TestLabelNamesTheKeywordThatStoppedIt(t *testing.T) {
 	for _, tc := range []struct{ sql, want string }{
-		{"SELECT a FROM t PIVOT (SUM(b) FOR c IN ('x'))", "trailing tokens at PIVOT"},
 		{"SELECT a FROM t FOR SYSTEM_TIME AS OF x", "trailing tokens at FOR"},
+		{"SELECT a FROM t WINDOW w AS (PARTITION BY b)", "trailing tokens at WINDOW"},
 	} {
 		_, err := ParseOne(tc.sql, "tsql")
 		var u *UnsupportedError

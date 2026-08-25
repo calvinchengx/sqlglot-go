@@ -233,6 +233,12 @@ type ParserTables struct {
 	// spelling of `SELECT 1 AS foo`. The same characters are a JSON
 	// extraction in Databricks, so the dialect decides, not the shape.
 	PrefixAlias bool
+	// The four conventions a PIVOT node carries that the statement never
+	// says: how output columns are named, and three flags stamped on.
+	PivotColumnNaming        string
+	PivotIdentifiesStrings   bool
+	PivotPrefixesColumns     bool
+	UnpivotValueColumnsFirst bool
 	// JSONPathFunctions are the names that turn their arguments into a
 	// JSON PATH rather than holding them. Probed with STRING literals,
 	// because with the placeholder columns the generic probe uses they
@@ -3565,6 +3571,10 @@ var parserTables = map[string]*ParserTables{
 		},
 		VariantExtractColon:      false,
 		PrefixAlias:              false,
+		PivotColumnNaming:        "agg_name_if_aliased",
+		PivotIdentifiesStrings:   false,
+		PivotPrefixesColumns:     false,
+		UnpivotValueColumnsFirst: false,
 		BareSampleCountIsPercent: false,
 		JSONKeyValueSQL:          "{this}: {expression}",
 		JSONPathIsParsed:         true,
@@ -7091,6 +7101,10 @@ var parserTables = map[string]*ParserTables{
 		},
 		VariantExtractColon:      false,
 		PrefixAlias:              false,
+		PivotColumnNaming:        "agg_name_if_aliased",
+		PivotIdentifiesStrings:   false,
+		PivotPrefixesColumns:     false,
+		UnpivotValueColumnsFirst: true,
 		BareSampleCountIsPercent: false,
 		JSONKeyValueSQL:          "{this}: {expression}",
 		JSONPathIsParsed:         true,
@@ -10680,6 +10694,10 @@ var parserTables = map[string]*ParserTables{
 		},
 		VariantExtractColon:      false,
 		PrefixAlias:              false,
+		PivotColumnNaming:        "agg_name_if_aliased",
+		PivotIdentifiesStrings:   false,
+		PivotPrefixesColumns:     false,
+		UnpivotValueColumnsFirst: false,
 		BareSampleCountIsPercent: true,
 		JSONKeyValueSQL:          "{this}: {expression}",
 		JSONPathIsParsed:         false,
@@ -14460,6 +14478,10 @@ var parserTables = map[string]*ParserTables{
 		},
 		VariantExtractColon:      false,
 		PrefixAlias:              true,
+		PivotColumnNaming:        "agg_name_if_aliased_or_multiple",
+		PivotIdentifiesStrings:   false,
+		PivotPrefixesColumns:     false,
+		UnpivotValueColumnsFirst: false,
 		BareSampleCountIsPercent: false,
 		DefaultSampleMethod:      "RESERVOIR",
 		JSONKeyValueSQL:          "{this}, {expression}",
@@ -18234,6 +18256,10 @@ var parserTables = map[string]*ParserTables{
 		},
 		VariantExtractColon:      true,
 		PrefixAlias:              false,
+		PivotColumnNaming:        "agg_name_if_multiple",
+		PivotIdentifiesStrings:   false,
+		PivotPrefixesColumns:     false,
+		UnpivotValueColumnsFirst: false,
 		BareSampleCountIsPercent: false,
 		JSONKeyValueSQL:          "{this}: {expression}",
 		JSONPathIsParsed:         true,

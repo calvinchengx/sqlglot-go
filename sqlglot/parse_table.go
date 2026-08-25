@@ -287,7 +287,225 @@ func (p *parser) parseTable() (*Expression, error) {
 		}
 		table.Set("sample", sample)
 	}
+	// And so do the pivots, as a LIST: `PIVOT(...) PIVOT(...)` chains, and the
+	// reference keeps them in the order they were written.
+	pivots, err := p.parsePivots()
+	if err != nil {
+		return nil, err
+	}
+	if len(pivots) > 0 {
+		table.Set("pivots", pivots)
+	}
 	return table, nil
+}
+
+// parsePivots reads the run of PIVOT and UNPIVOT clauses after a table.
+func (p *parser) parsePivots() ([]*Expression, error) {
+	var out []*Expression
+	for p.at(TokPIVOT) || p.at(TokUNPIVOT) {
+		pivot, err := p.parsePivot()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, pivot)
+	}
+	return out, nil
+}
+
+// PIVOT(<aggregates> FOR <field> IN (<values>)) [AS alias], and the UNPIVOT
+// that mirrors it.
+//
+// The node carries more than the statement says. Four conventions come from
+// the dialect and are probed, and the output COLUMNS are DERIVED rather than
+// read: the reference takes the product of the IN values with the aliases of
+// whichever aggregates have one, joined by an underscore. With no alias
+// anywhere there is no suffix and one column per value.
+func (p *parser) parsePivot() (*Expression, error) {
+	unpivot := p.at(TokUNPIVOT)
+	p.advance()
+	// `UNPIVOT INCLUDE NULLS (...)` and its EXCLUDE twin, before the
+	// parentheses. Absent, the arg stays off the node entirely -- which is a
+	// different tree from one carrying false.
+	var includeNulls *bool
+	if p.atWords("INCLUDE", "NULLS") || p.atWords("EXCLUDE", "NULLS") {
+		include := p.atWords("INCLUDE", "NULLS")
+		p.advance()
+		p.advance()
+		includeNulls = &include
+	}
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("PIVOT without a specification")
+	}
+
+	var aggregates []*Expression
+	// `PIVOT(FIRST(t) AS t, FOR quarter IN (...))` -- DuckDB tolerates a
+	// trailing comma before FOR, and the reference reads it, so the loop ends
+	// on FOR as well as on a missing comma.
+	for !p.at(TokFOR) {
+		// An OPERAND, not a full expression: FOR and IN are both range
+		// operators, so `SUM(x) FOR y IN (...)` parsed as one expression
+		// swallows the whole clause and then refuses it.
+		agg, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		agg, err = p.parseAlias(agg)
+		if err != nil {
+			return nil, err
+		}
+		aggregates = append(aggregates, unpivotTarget(agg, unpivot))
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if len(aggregates) == 0 {
+		return nil, p.unsupported("PIVOT without an aggregate")
+	}
+	if !p.match(TokFOR) {
+		return nil, p.unsupported("PIVOT without FOR")
+	}
+
+	field, err := p.parseUnary()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokIN) {
+		return nil, p.unsupported("PIVOT without IN")
+	}
+	if !p.match(TokL_PAREN) {
+		// `IN y_enum` names an enum rather than listing values, which is a
+		// different shape and not read here.
+		return nil, p.unsupported("a PIVOT list that is not parenthesised")
+	}
+	var values []*Expression
+	for {
+		v, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		// `IN (q1 AS `Jan-Mar`)` names the output column. The reference
+		// builds a PivotAlias for it, not the ordinary Alias.
+		if p.match(TokALIAS) {
+			name, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
+			}
+			v = New("PivotAlias", Arg{"this", v}, Arg{"alias", name})
+		}
+		values = append(values, v)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed PIVOT list")
+	}
+	if !p.match(TokR_PAREN) {
+		// A GROUP BY or an ORDER BY inside the parentheses lands here; both
+		// are shapes this does not model.
+		return nil, p.unsupported("unclosed PIVOT")
+	}
+
+	in := New("In", Arg{"this", unpivotTarget(field, unpivot)},
+		Arg{"expressions", values})
+	args := []Arg{
+		{"expressions", aggregates},
+		{"fields", []*Expression{in}},
+		{"unpivot", unpivot},
+	}
+	if includeNulls != nil {
+		args = append(args, Arg{"include_nulls", *includeNulls})
+	} else {
+		args = append(args, Arg{"include_nulls", nil})
+	}
+	args = append(args,
+		Arg{"default_on_null", false},
+		Arg{"group", nil})
+
+	if unpivot {
+		args = append(args, Arg{"value_columns_first", p.tables.UnpivotValueColumnsFirst})
+	} else {
+		columns, err := p.pivotColumns(aggregates, values)
+		if err != nil {
+			return nil, err
+		}
+		args = append(args,
+			Arg{"columns", columns},
+			Arg{"identify_pivot_strings", p.tables.PivotIdentifiesStrings},
+			Arg{"prefixed_pivot_columns", p.tables.PivotPrefixesColumns},
+			Arg{"pivot_column_naming", p.tables.PivotColumnNaming})
+	}
+
+	// An alias belongs to the LAST pivot in a chain, so it is only taken when
+	// another one does not follow.
+	if !p.at(TokPIVOT) && !p.at(TokUNPIVOT) {
+		alias, err := p.parseTableAlias()
+		if err != nil {
+			return nil, err
+		}
+		if alias != nil {
+			args = append(args, Arg{"alias", alias})
+		}
+	}
+	return New("Pivot", args...), nil
+}
+
+// pivotColumns derives the output column names: the product of the IN values
+// with the aliases of whichever aggregates carry one, joined by underscores.
+func (p *parser) pivotColumns(aggregates, values []*Expression) ([]*Expression, error) {
+	var names []string
+	for _, agg := range aggregates {
+		if agg.Class == "Alias" {
+			if alias, _ := agg.Args["alias"].(*Expression); alias != nil {
+				names = append(names, alias.Name())
+			}
+		}
+	}
+	// DuckDB names the columns after the AGGREGATES themselves once there is
+	// more than one, rendering each back to SQL to do it. That is a
+	// derivation over generated text rather than over names, and it is
+	// refused rather than approximated.
+	if len(names) == 0 && len(aggregates) > 1 &&
+		p.tables.PivotColumnNaming == "agg_name_if_aliased_or_multiple" {
+		return nil, p.unsupported("a PIVOT naming its columns after several aggregates")
+	}
+
+	var out []*Expression
+	for _, value := range values {
+		// An explicit `<value> AS <alias>` NAMES the output column, so it
+		// wins over the value's own name: the reference asks each field for
+		// its alias-or-name, and only falls back to the name.
+		base := value.Name()
+		if value.Class == "PivotAlias" {
+			if alias, _ := value.Args["alias"].(*Expression); alias != nil {
+				base = alias.Name()
+			}
+		}
+		if len(names) == 0 {
+			out = append(out, identifierFor(base))
+			continue
+		}
+		for _, name := range names {
+			out = append(out, identifierFor(base+"_"+name))
+		}
+	}
+	return out, nil
+}
+
+// identifierFor builds the identifier a derived name becomes, quoted when the
+// name could not be written bare.
+func identifierFor(name string) *Expression {
+	return New("Identifier", Arg{"this", name}, Arg{"quoted", !isBareIdentifier(name)})
+}
+
+// unpivotTarget unwraps a Column to the Identifier inside it. An UNPIVOT names
+// COLUMNS where a PIVOT holds expressions, and the reference keeps the bare
+// name for them.
+func unpivotTarget(e *Expression, unpivot bool) *Expression {
+	if !unpivot {
+		return e
+	}
+	return bareIdentifier(e)
 }
 
 // TABLESAMPLE [method] (<spec>) [REPEATABLE (seed)], where the spec is one of
@@ -428,9 +646,22 @@ func (p *parser) parseSubqueryTable() (*Expression, error) {
 		return nil, p.unsupported("unclosed subquery")
 	}
 	sub := New("Subquery", Arg{"this", inner})
+	// An alias written BEFORE the pivot is the subquery's; one written after
+	// belongs to the pivot, which takes it itself.
 	alias, err := p.parseTableAlias()
 	if err != nil {
 		return nil, err
+	}
+	pivots, err := p.parsePivots()
+	if err != nil {
+		return nil, err
+	}
+	// Set in the reference's order, which puts the pivots before the alias
+	// however they were written: argument order is part of the tree here.
+	if len(pivots) > 0 {
+		sub.Set("pivots", pivots)
+	} else {
+		sub.Set("pivots", nil)
 	}
 	sub.Set("alias", alias)
 	sub.Set("sample", nil)

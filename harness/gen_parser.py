@@ -674,6 +674,48 @@ def interval_unit_inside_string(dialect: str, exp) -> bool:
     return "'1 DAY'" in node.sql(dialect=dialect or None)
 
 
+def pivot_conventions(dialect: str) -> dict:
+    """The four things a PIVOT node carries that the statement never says.
+
+    Each is a parser constant with no spelling of its own, so each is read off
+    a pivot the reference just built rather than transcribed from the class.
+    """
+    import sqlglot
+    from sqlglot import exp
+
+    out = {
+        "naming": "",
+        "identify_strings": False,
+        "prefixed_columns": False,
+        "value_columns_first": False,
+    }
+    try:
+        node = next(
+            iter(
+                sqlglot.parse_one(
+                    "SELECT a FROM t PIVOT(SUM(x) FOR y IN ('z'))", read=dialect or None
+                ).find_all(exp.Pivot)
+            )
+        )
+        out["naming"] = node.args.get("pivot_column_naming") or ""
+        out["identify_strings"] = bool(node.args.get("identify_pivot_strings"))
+        out["prefixed_columns"] = bool(node.args.get("prefixed_pivot_columns"))
+    except Exception:  # noqa: BLE001 -- not a form this dialect reads
+        pass
+    try:
+        node = next(
+            iter(
+                sqlglot.parse_one(
+                    "SELECT a FROM t UNPIVOT(x FOR y IN (z))", read=dialect or None
+                ).find_all(exp.Pivot)
+            )
+        )
+        out["value_columns_first"] = bool(node.args.get("value_columns_first"))
+    except Exception:  # noqa: BLE001
+        pass
+    return out
+
+
 def prefix_alias(dialect: str) -> bool:
     """Whether `name: expr` NAMES the expression in this dialect.
 
@@ -2597,6 +2639,12 @@ def main() -> int:
         "\t// spelling of `SELECT 1 AS foo`. The same characters are a JSON\n",
         "\t// extraction in Databricks, so the dialect decides, not the shape.\n",
         "\tPrefixAlias bool\n",
+        "\t// The four conventions a PIVOT node carries that the statement never\n",
+        "\t// says: how output columns are named, and three flags stamped on.\n",
+        "\tPivotColumnNaming        string\n",
+        "\tPivotIdentifiesStrings   bool\n",
+        "\tPivotPrefixesColumns     bool\n",
+        "\tUnpivotValueColumnsFirst bool\n",
         "\t// JSONPathFunctions are the names that turn their arguments into a\n",
         "\t// JSON PATH rather than holding them. Probed with STRING literals,\n",
         "\t// because with the placeholder columns the generic probe uses they\n",
@@ -3100,6 +3148,15 @@ def main() -> int:
             f"\t\tVariantExtractColon: {str(variant_extract_colon(name)).lower()},\n"
         )
         out.append(f"\t\tPrefixAlias: {str(prefix_alias(name)).lower()},\n")
+        _pc = pivot_conventions(name)
+        if _pc["naming"]:
+            out.append(f"\t\tPivotColumnNaming: {gostr(_pc['naming'])},\n")
+        for _key, _field in (
+            ("identify_strings", "PivotIdentifiesStrings"),
+            ("prefixed_columns", "PivotPrefixesColumns"),
+            ("value_columns_first", "UnpivotValueColumnsFirst"),
+        ):
+            out.append(f"\t\t{_field}: {str(_pc[_key]).lower()},\n")
         out.append(
             "\t\tBareSampleCountIsPercent: %s,\n"
             % str(bare_sample_count_is_percent(name, exp)).lower()
