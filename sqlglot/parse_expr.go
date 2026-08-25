@@ -2355,7 +2355,18 @@ func (p *parser) parseQualifiedName() (*Expression, error) {
 	p.inCallArgs = true
 	if !p.at(TokR_PAREN) {
 		for {
-			arg, err := p.parseExpression()
+			// A qualified call's arguments are argument position too, so
+			// `a.b(x -> y)` is a lambda here exactly as `b(x -> y)` is. Only
+			// the unqualified call checked, so the port read this one as a
+			// JSON extraction and Databricks wrote it back as `a.b(x:y)`,
+			// which is not SQL. The generator fuzzer found it.
+			var arg *Expression
+			var err error
+			if p.atLambda() {
+				arg, err = p.parseLambda()
+			} else {
+				arg, err = p.parseExpression()
+			}
 			if err != nil {
 				p.inCallArgs = wasInCallArgs
 				return nil, err

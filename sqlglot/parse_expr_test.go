@@ -2223,3 +2223,33 @@ func TestDMLRefusalsAreCarried(t *testing.T) {
 		}
 	}
 }
+
+// `x -> y` means two different things, and which one it is depends on where
+// it is written: in argument position it is a lambda, and anywhere else it is
+// a JSON extraction. A QUALIFIED call is argument position too -- the port
+// checked only the unqualified one, and Databricks wrote the JSON spelling of
+// a lambda, `a.b(x:y)`, which is not SQL. The generator fuzzer found it.
+func TestALambdaInAQualifiedCall(t *testing.T) {
+	for _, tc := range []struct{ sql, want, class string }{
+		{"A.A(A -> B)", "A.A(A -> B)", "Dot"},
+		{"A.A(A -> A(0))", "A.A(A -> A(0))", "Dot"},
+		{"F(A -> B)", "F(A -> B)", "Anonymous"},
+		// And outside a call the same tokens still extract from JSON.
+		{"A -> B", "A:B", "JSONExtract"},
+	} {
+		e, err := ParseOne(tc.sql, "databricks")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if e.Class != tc.class {
+			t.Errorf("%q is a %s, want %s", tc.sql, e.Class, tc.class)
+		}
+		got, err := Generate(e, "databricks")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.want {
+			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
+		}
+	}
+}
