@@ -15,7 +15,7 @@ func TestAnUnsupportedStatementNamesItsConstruct(t *testing.T) {
 		sql, dialect, construct string
 	}{
 		{"SELECT a FROM t1 NATURAL JOIN t2", "tsql", "join method NATURAL"},
-		{"SELECT a FROM t1 JOIN t2 USING (a)", "tsql", "USING"},
+		{"SELECT a FROM t1 JOIN t2 USING", "tsql", "USING without a column list"},
 		{"SELECT a FROM t GROUP BY ROLLUP(a)", "tsql", "GROUP BY ROLLUP"},
 	} {
 		_, err := ParseOne(tc.sql, tc.dialect)

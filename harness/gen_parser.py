@@ -674,6 +674,42 @@ def interval_unit_inside_string(dialect: str, exp) -> bool:
     return "'1 DAY'" in node.sql(dialect=dialect or None)
 
 
+def select_sample_words(dialect: str, exp) -> tuple:
+    """What a sample is called where it hangs off the QUERY rather than a table.
+
+    DuckDB writes the same node `TABLESAMPLE ...` after a table and
+    `USING SAMPLE ...` after the query. One node, two words, decided by where
+    it is -- so both are read off a rendering rather than assumed equal.
+    """
+    import sqlglot
+
+    node = exp.TableSample(
+        method=exp.Var(this="RESERVOIR"), size=exp.Literal.number(5)
+    )
+    try:
+        standalone = (
+            sqlglot.dialects.dialect.Dialect.get_or_raise(dialect or None)
+            .generator()
+            .sql(node)
+        )
+        select = sqlglot.parse_one("SELECT * FROM t", read=dialect or None)
+        select.set("sample", node.copy())
+        rendered = select.sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return ("", "")
+    tail = standalone.strip()
+    # The two spellings share everything after the leading words. A dialect
+    # that writes no method at all has nothing to line them up on.
+    if "RESERVOIR" not in tail or "RESERVOIR" not in rendered:
+        return ("", "")
+    marker = tail[tail.index("RESERVOIR") :]
+    if marker not in rendered:
+        return ("", "")
+    head = rendered[: rendered.index(marker)]
+    head = head[len("SELECT * FROM t ") :]
+    return (tail[: tail.index("RESERVOIR")].strip(), head.strip())
+
+
 def for_clause_options(dialect: str) -> dict:
     """The option vocabulary of `FOR XML` and `FOR JSON`.
 
@@ -2715,6 +2751,11 @@ def main() -> int:
         "\t// ForClauseOptions is the option vocabulary of FOR XML and FOR JSON,\n",
         "\t// by kind: each word, and the second word it may take after it.\n",
         "\tForClauseOptions map[string]map[string][]string\n",
+        "\t// TableSampleWord and SelectSampleWord are what a sample is called\n",
+        "\t// after a TABLE and after the QUERY: DuckDB says TABLESAMPLE for the\n",
+        "\t// one and USING SAMPLE for the other, for the very same node.\n",
+        "\tTableSampleWord  string\n",
+        "\tSelectSampleWord string\n",
         "\tPivotColumnNaming        string\n",
         "\tPivotIdentifiesStrings   bool\n",
         "\tPivotPrefixesColumns     bool\n",
@@ -3222,6 +3263,10 @@ def main() -> int:
             f"\t\tVariantExtractColon: {str(variant_extract_colon(name)).lower()},\n"
         )
         out.append(f"\t\tPrefixAlias: {str(prefix_alias(name)).lower()},\n")
+        _ss = select_sample_words(name, exp)
+        if _ss[0] and _ss[1] and _ss[0] != _ss[1]:
+            out.append(f"\t\tTableSampleWord: {gostr(_ss[0])},\n")
+            out.append(f"\t\tSelectSampleWord: {gostr(_ss[1])},\n")
         _fc = for_clause_options(name)
         if _fc:
             out.append("\t\tForClauseOptions: map[string]map[string][]string{\n")

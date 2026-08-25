@@ -99,7 +99,27 @@ func (p *parser) parseJoin() (*Expression, error) {
 		}
 		join.Set("on", on)
 	case p.at(TokUSING):
-		return nil, p.unsupported("USING")
+		// `JOIN b USING (x, y)` joins on the columns both sides share. The
+		// reference keeps them as bare IDENTIFIERS, not columns.
+		p.advance()
+		if !p.match(TokL_PAREN) {
+			return nil, p.unsupported("USING without a column list")
+		}
+		var columns []*Expression
+		for {
+			column, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
+			}
+			columns = append(columns, column)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed USING")
+		}
+		join.Set("using", columns)
 	case p.tables.BareJoinIsOnTrue:
 		// Databricks records a bare JOIN as `ON TRUE` rather than leaving the
 		// slot empty and writing the comma form. The same relation either way,

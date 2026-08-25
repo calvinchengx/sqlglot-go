@@ -136,7 +136,7 @@ func TestRefusals(t *testing.T) {
 		{"qualified function call", "SELECT a.f(1)", ""},
 		{"statement where a table goes", "SELECT 1 FROM (DESCRIBE t)", "duckdb"},
 		{"natural join", "SELECT 1 FROM a NATURAL JOIN b", ""},
-		{"USING", "SELECT 1 FROM a JOIN b USING (x)", ""},
+		{"USING with no columns", "SELECT 1 FROM a JOIN b USING", ""},
 		{"a side with no JOIN", "SELECT 1 FROM a LEFT b", ""},
 		{"unclosed subquery", "SELECT 1 FROM (SELECT 1", ""},
 		{"assignment", "SELECT 1 FROM t WHERE a := 1", ""},

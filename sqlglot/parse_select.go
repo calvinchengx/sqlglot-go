@@ -479,6 +479,19 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			if err := p.setOnce(sel, "limit", limit); err != nil {
 				return err
 			}
+		case p.atWords("USING", "SAMPLE"):
+			// DuckDB's other sampling spelling, which hangs off the QUERY
+			// where TABLESAMPLE hangs off the table -- the same node either
+			// way.
+			p.advance()
+			p.advance()
+			sample, err := p.parseUsingSample()
+			if err != nil {
+				return err
+			}
+			if err := p.setOnce(sel, "sample", sample); err != nil {
+				return err
+			}
 		case p.atWords("LATERAL", "VIEW"):
 			view, err := p.parseLateralView()
 			if err != nil {
@@ -964,4 +977,105 @@ func (p *parser) parseLateralView() (*Expression, error) {
 		Arg{"alias", New("TableAlias", Arg{"this", name}, Arg{"columns", columns})},
 		Arg{"cross_apply", nil},
 		Arg{"ordinality", nil}), nil
+}
+
+// USING SAMPLE, in either order:
+//
+//	USING SAMPLE 5                              a row count
+//	USING SAMPLE 10%                            a percentage
+//	USING SAMPLE 10 PERCENT (bernoulli)         and the method after it
+//	USING SAMPLE reservoir(50 ROWS)             or the method first
+//	USING SAMPLE 10% (system, 377)              with a seed beside the method
+//
+// The default method is not one value but two: a row count is RESERVOIR and a
+// percentage is SYSTEM, so it cannot be settled until the unit is known.
+func (p *parser) parseUsingSample() (*Expression, error) {
+	method := ""
+	if !p.at(TokNUMBER) {
+		word := p.curr()
+		if word == nil {
+			return nil, p.unsupported("USING SAMPLE without a specification")
+		}
+		method = strings.ToUpper(word.Text)
+		p.advance()
+		if !p.match(TokL_PAREN) {
+			return nil, p.unsupported("USING SAMPLE method without a size")
+		}
+	}
+
+	size, err := p.parseUnary()
+	if err != nil {
+		return nil, err
+	}
+	percent := false
+	switch {
+	case p.match(TokMOD), p.atWords("PERCENT"):
+		if p.atWords("PERCENT") {
+			p.advance()
+		}
+		percent = true
+	case p.atWords("ROWS"), p.atWords("ROW"):
+		p.advance()
+	}
+	if method != "" && !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed USING SAMPLE")
+	}
+
+	var seed *Expression
+	seedSet := false
+	// `(bernoulli)` or `(system, 377)` names the method after the size, and
+	// the seed beside it. The seed is recorded FALSE when the parentheses are
+	// there without one.
+	if method == "" && p.match(TokL_PAREN) {
+		word := p.curr()
+		if word == nil {
+			return nil, p.unsupported("USING SAMPLE without a method")
+		}
+		method = strings.ToUpper(word.Text)
+		p.advance()
+		seedSet = true
+		if p.match(TokCOMMA) {
+			seed, err = p.parseUnary()
+			if err != nil {
+				return nil, err
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed USING SAMPLE method")
+		}
+	}
+	if p.atWords("REPEATABLE") {
+		p.advance()
+		if !p.match(TokL_PAREN) {
+			return nil, p.unsupported("REPEATABLE without a seed")
+		}
+		seed, err = p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed REPEATABLE")
+		}
+		seedSet = true
+	}
+
+	if method == "" {
+		// The default depends on the UNIT, not on the dialect alone.
+		method = "RESERVOIR"
+		if percent {
+			method = "SYSTEM"
+		}
+	}
+	args := []Arg{{"method", New("Var", Arg{"this", method})}}
+	if percent {
+		args = append(args, Arg{"percent", size})
+	} else {
+		args = append(args, Arg{"size", size})
+	}
+	if seed != nil {
+		args = append(args, Arg{"seed", seed})
+	} else if seedSet {
+		args = append(args, Arg{"seed", false})
+	}
+	return New("TableSample", args...), nil
 }

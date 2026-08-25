@@ -156,6 +156,16 @@ func (g *generator) writeSelect(e *Expression) string {
 	if limit != nil && !g.tables.LimitIsTop && limit.Class == "Fetch" {
 		add(g.node(limit))
 	}
+	// A sample hanging off the QUERY rather than a table is the same node
+	// under a different word: DuckDB says USING SAMPLE here and TABLESAMPLE
+	// there. Both words are probed, and the template carries the other one.
+	if sample := g.child(e, "sample"); sample != "" {
+		if g.tables.SelectSampleWord != "" && g.tables.TableSampleWord != "" {
+			sample = strings.Replace(sample,
+				g.tables.TableSampleWord, g.tables.SelectSampleWord, 1)
+		}
+		add(sample)
+	}
 	// A LATERAL VIEW is a clause of the query, and there may be several.
 	laterals, _ := e.Args["laterals"].([]*Expression)
 	for _, lateral := range laterals {
@@ -273,7 +283,8 @@ func (g *generator) writeJoin(e *Expression) string {
 			words = append(words, s)
 		}
 	}
-	if len(words) == 0 {
+	usingColumns, _ := e.Args["using"].([]*Expression)
+	if len(words) == 0 && len(usingColumns) == 0 {
 		if _, hasOn := e.Args["on"].(*Expression); !hasOn {
 			// A comma join over an UNNEST is rewritten by the reference into
 			// `JOIN ... ON TRUE`, which is a different tree and not a
@@ -287,6 +298,13 @@ func (g *generator) writeJoin(e *Expression) string {
 	words = append(words, "JOIN", this)
 	if on := g.child(e, "on"); on != "" {
 		words = append(words, "ON", on)
+	}
+	if len(usingColumns) > 0 {
+		names := make([]string, 0, len(usingColumns))
+		for _, column := range usingColumns {
+			names = append(names, g.node(column))
+		}
+		words = append(words, "USING ("+strings.Join(names, ", ")+")")
 	}
 	return strings.Join(words, " ")
 }

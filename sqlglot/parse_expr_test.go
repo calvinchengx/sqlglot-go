@@ -1084,3 +1084,115 @@ func TestLateralEdges(t *testing.T) {
 		t.Error("the lateral has no alias; it should have taken the subquery's")
 	}
 }
+
+// `JOIN b USING (x, y)` joins on the columns both sides share, kept as bare
+// identifiers rather than columns.
+func TestJoinUsing(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT 1 FROM a JOIN b USING (x)", "SELECT 1 FROM a JOIN b USING (x)"},
+		{"SELECT 1 FROM a JOIN b USING (x, y, z)", "SELECT 1 FROM a JOIN b USING (x, y, z)"},
+	} {
+		e, err := ParseOne(tc.sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		got, err := Generate(e, "")
+		if err != nil {
+			t.Fatalf("Generate: %v", err)
+		}
+		if got != tc.want {
+			t.Errorf("got %q, want %q", got, tc.want)
+		}
+	}
+	for _, sql := range []string{
+		"SELECT 1 FROM a JOIN b USING",
+		"SELECT 1 FROM a JOIN b USING (x",
+		"SELECT 1 FROM a JOIN b USING ()",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
+// USING SAMPLE is DuckDB's other sampling spelling, hanging off the QUERY
+// where TABLESAMPLE hangs off the table -- the same node under a different
+// word, and both words are probed.
+func TestUsingSample(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		// The default method is not one value but two: a percentage is
+		// SYSTEM where a row count is RESERVOIR.
+		{"a percentage", "SELECT * FROM tbl USING SAMPLE 10%",
+			"SELECT * FROM tbl USING SAMPLE SYSTEM (10 PERCENT)"},
+		{"a named method after the size", "SELECT * FROM tbl USING SAMPLE 10 PERCENT (bernoulli)",
+			"SELECT * FROM tbl USING SAMPLE BERNOULLI (10 PERCENT)"},
+		{"a seed beside the method", "SELECT * FROM tbl USING SAMPLE 10% (system, 377)",
+			"SELECT * FROM tbl USING SAMPLE SYSTEM (10 PERCENT) REPEATABLE (377)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "duckdb")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, "duckdb")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// A row count reads, and the writer declines: DuckDB forces RESERVOIR
+	// there whatever the node says, so the shape has no template of its own.
+	e, err := ParseOne("SELECT * FROM tbl USING SAMPLE 5", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "duckdb"); err == nil {
+		t.Errorf("wrote %q; the row-count shape has no spelling recorded", got)
+	}
+	for _, sql := range []string{
+		"SELECT * FROM tbl USING SAMPLE",
+		"SELECT * FROM tbl USING SAMPLE reservoir 5",
+		"SELECT * FROM tbl USING SAMPLE 10% (",
+		"SELECT * FROM tbl USING SAMPLE 5 REPEATABLE 3",
+	} {
+		if _, err := ParseOne(sql, "duckdb"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
+// The rest of USING SAMPLE's shapes and refusals.
+func TestUsingSampleShapes(t *testing.T) {
+	e, err := ParseOne("SELECT * FROM tbl USING SAMPLE reservoir(50 ROWS) REPEATABLE (100)", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	sample, _ := e.Args["sample"].(*Expression)
+	if sample == nil {
+		t.Fatal("no sample on the query")
+	}
+	if seed, _ := sample.Args["seed"].(*Expression); seed == nil || seed.Name() != "100" {
+		t.Errorf("seed = %v, want 100", sample.Args["seed"])
+	}
+	// The parentheses without a seed still RECORD one, as false.
+	bare, err := ParseOne("SELECT * FROM tbl USING SAMPLE 10 PERCENT (bernoulli)", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	inner, _ := bare.Args["sample"].(*Expression)
+	if v, ok := inner.Args["seed"].(bool); !ok || v {
+		t.Errorf("seed = %v, want false and present", inner.Args["seed"])
+	}
+	for _, sql := range []string{
+		"SELECT * FROM tbl USING SAMPLE reservoir 5)",
+		"SELECT * FROM tbl USING SAMPLE reservoir(50 ROWS",
+		"SELECT * FROM tbl USING SAMPLE 5 REPEATABLE (3",
+	} {
+		if _, err := ParseOne(sql, "duckdb"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}

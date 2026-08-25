@@ -240,7 +240,12 @@ type ParserTables struct {
 	VersionRangeSep map[string]string
 	// ForClauseOptions is the option vocabulary of FOR XML and FOR JSON,
 	// by kind: each word, and the second word it may take after it.
-	ForClauseOptions         map[string]map[string][]string
+	ForClauseOptions map[string]map[string][]string
+	// TableSampleWord and SelectSampleWord are what a sample is called
+	// after a TABLE and after the QUERY: DuckDB says TABLESAMPLE for the
+	// one and USING SAMPLE for the other, for the very same node.
+	TableSampleWord          string
+	SelectSampleWord         string
 	PivotColumnNaming        string
 	PivotIdentifiesStrings   bool
 	PivotPrefixesColumns     bool
@@ -14506,6 +14511,8 @@ var parserTables = map[string]*ParserTables{
 		},
 		VariantExtractColon:      false,
 		PrefixAlias:              true,
+		TableSampleWord:          "TABLESAMPLE",
+		SelectSampleWord:         "USING SAMPLE",
 		PivotColumnNaming:        "agg_name_if_aliased_or_multiple",
 		PivotIdentifiesStrings:   false,
 		PivotPrefixesColumns:     false,
