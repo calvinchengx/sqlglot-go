@@ -1738,14 +1738,81 @@ func TestCreateTable(t *testing.T) {
 	// dropped constraint changes what the table is.
 	for _, sql := range []string{
 		"CREATE TABLE t (a INT GENERATED ALWAYS AS (1))",
-		"CREATE TEMPORARY TABLE t (a INT)",
-		"CREATE VIEW v AS SELECT 1",
+		"CREATE MATERIALIZED VIEW v AS SELECT 1",
 		"CREATE TABLE t",
 		"CREATE TABLE t (a INT",
 		"CREATE TABLE t (a INT) PARTITIONED BY (b)",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
+// A VIEW names a query, and TEMPORARY says how long what is made lasts. The
+// second is not a flag on the node: the reference keeps it as one of a LIST of
+// properties, which is why it needs a node rather than a boolean.
+//
+// Both are also where a dialect stops writing what it read. T-SQL has no
+// TEMPORARY and renames the object to `#t` instead; Databricks gives a
+// temporary TABLE a storage format it was never given; PostgreSQL and DuckDB
+// drop a view column's comment. Each is refused rather than written.
+func TestCreateViewAndTemporary(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"a view", "", "CREATE VIEW x AS SELECT a FROM b",
+			"CREATE VIEW x AS SELECT a FROM b"},
+		{"guarded", "duckdb", "CREATE VIEW IF NOT EXISTS x AS SELECT a FROM b",
+			"CREATE VIEW IF NOT EXISTS x AS SELECT a FROM b"},
+		{"replaced", "duckdb", "CREATE OR REPLACE VIEW x AS SELECT *",
+			"CREATE OR REPLACE VIEW x AS SELECT *"},
+		// A view's columns have no types, and a bare name is an Identifier
+		// where a name with something said about it is a ColumnDef.
+		{"named columns", "", "CREATE VIEW z (a, b COMMENT 'b') AS SELECT a, b FROM d",
+			"CREATE VIEW z (a, b COMMENT 'b') AS SELECT a, b FROM d"},
+		{"named columns, no query", "", "CREATE VIEW z (a, b)", "CREATE VIEW z (a, b)"},
+		{"a temporary table", "duckdb", "CREATE TEMPORARY TABLE x (a INT)",
+			"CREATE TEMPORARY TABLE x (a INT)"},
+		{"a temporary view", "", "CREATE TEMPORARY VIEW x AS SELECT a FROM d",
+			"CREATE TEMPORARY VIEW x AS SELECT a FROM d"},
+		{"temporary and replaced", "databricks",
+			"CREATE OR REPLACE TEMPORARY VIEW x AS SELECT *",
+			"CREATE OR REPLACE TEMPORARY VIEW x AS SELECT *"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			if !IsWrite(e) {
+				t.Errorf("IsWrite(%q) = false; it makes something", tc.sql)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// The dialects that write something else, each refused rather than
+	// written as though it were the same statement.
+	for _, tc := range []struct{ dialect, sql string }{
+		{"tsql", "CREATE TEMPORARY TABLE x (a INT)"},
+		{"tsql", "CREATE TEMPORARY VIEW x AS SELECT 1"},
+		{"tsql", "CREATE VIEW IF NOT EXISTS x AS SELECT 1"},
+		{"tsql", "CREATE TABLE IF NOT EXISTS x (a INT)"},
+		{"databricks", "CREATE TEMPORARY TABLE x (a INT)"},
+		{"postgres", "CREATE VIEW z (a, b COMMENT 'b')"},
+		{"duckdb", "CREATE VIEW z (a, b COMMENT 'b')"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q, %s): %v", tc.sql, tc.dialect, err)
+		}
+		if got, err := Generate(e, tc.dialect); err == nil {
+			t.Errorf("[%s] %q wrote %q; this dialect writes something else",
+				tc.dialect, tc.sql, got)
 		}
 	}
 }

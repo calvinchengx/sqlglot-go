@@ -902,6 +902,11 @@ func (g *generator) writeColumnDef(e *Expression) string {
 	g.inColumnList = false
 	kind := g.child(e, "kind")
 	g.inColumnList = was
+	if kind == "" {
+		// A VIEW's column has no type -- it names a result the query already
+		// produced -- so there is nothing for the separator to separate.
+		return g.child(e, "this") + trailing
+	}
 	return g.child(e, "this") + sep + kind + trailing
 }
 
@@ -1943,9 +1948,30 @@ func (g *generator) writeCreate(e *Expression) string {
 	if replace, _ := e.Args["replace"].(bool); replace {
 		out += "OR REPLACE "
 	}
+	if g.hasTemporaryProperty(e) {
+		// Not every dialect has the modifier. T-SQL renames the object to
+		// `#name` instead, and Databricks writes a temporary TABLE with a
+		// storage format it was never given -- both say something the
+		// statement did not.
+		if !g.tables.TemporaryWritten[kind] {
+			return g.fail(e.Class + " TEMPORARY " + kind + ", which this dialect writes another way")
+		}
+		out += "TEMPORARY "
+	}
 	out += kind + " "
 	if exists, _ := e.Args["exists"].(bool); exists {
+		// T-SQL drops these words from a VIEW and turns a TABLE into a
+		// conditional EXEC. Writing the statement without them makes it do
+		// something it was told not to.
+		if !g.tables.CreateExistsWritten[kind] {
+			return g.fail(e.Class + " IF NOT EXISTS, which this dialect writes another way")
+		}
 		out += "IF NOT EXISTS "
+	}
+	if kind == "VIEW" && !g.tables.ViewColumnCommentWritten && g.viewColumnHasComment(e) {
+		// The comment says what the column is FOR, and this dialect writes
+		// the name alone.
+		return g.fail(e.Class + " VIEW whose column comments this dialect drops")
 	}
 	if expr, _ := e.Args["expression"].(*Expression); expr != nil && g.tables.RewritesCreateAsSelect {
 		// This dialect has no such statement and the reference turns it into
@@ -1959,6 +1985,39 @@ func (g *generator) writeCreate(e *Expression) string {
 		out += " AS " + expression
 	}
 	return out
+}
+
+// hasTemporaryProperty reports whether this CREATE was written TEMPORARY. The
+// reference keeps it as one of a LIST of properties rather than as a flag,
+// so it is looked for rather than read.
+func (g *generator) hasTemporaryProperty(e *Expression) bool {
+	properties, _ := e.Args["properties"].(*Expression)
+	if properties == nil {
+		return false
+	}
+	items, _ := properties.Args["expressions"].([]*Expression)
+	for _, item := range items {
+		if item.Class == "TemporaryProperty" {
+			return true
+		}
+	}
+	return false
+}
+
+// viewColumnHasComment reports whether any of a view's named columns carries
+// a comment.
+func (g *generator) viewColumnHasComment(e *Expression) bool {
+	schema, _ := e.Args["this"].(*Expression)
+	if schema == nil || schema.Class != "Schema" {
+		return false
+	}
+	columns, _ := schema.Args["expressions"].([]*Expression)
+	for _, column := range columns {
+		if items, _ := column.Args["constraints"].([]*Expression); len(items) > 0 {
+			return true
+		}
+	}
+	return false
 }
 
 // writeSchema writes a name with its column list: `t (a INT, b TEXT)`.

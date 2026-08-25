@@ -26,10 +26,17 @@ func (p *parser) parseCreate() (*Expression, error) {
 		p.advance()
 		replace = true
 	}
-	// The modifiers the reference keeps as PROPERTIES rather than as flags are
-	// not read here; a statement carrying one is refused rather than built
-	// without it.
-	for _, word := range []string{"TEMPORARY", "TEMP", "GLOBAL", "LOCAL",
+	// TEMPORARY is not a flag on the node: the reference keeps it as a
+	// PROPERTY, in a list of them, which is why it needs a node of its own
+	// rather than a boolean.
+	temporary := false
+	if p.atWords("TEMPORARY") || p.atWords("TEMP") {
+		p.advance()
+		temporary = true
+	}
+	// The other modifiers are properties too, and none of them is read here;
+	// a statement carrying one is refused rather than built without it.
+	for _, word := range []string{"GLOBAL", "LOCAL",
 		"MATERIALIZED", "EXTERNAL", "SECURE", "TRANSIENT", "UNIQUE"} {
 		if p.atWords(word) {
 			return nil, p.unsupported("CREATE " + word)
@@ -41,7 +48,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 		return nil, p.unsupported("CREATE without a kind")
 	}
 	kind := strings.ToUpper(kindToken.Text)
-	if kind != "TABLE" {
+	if kind != "TABLE" && kind != "VIEW" {
 		return nil, p.unsupported("CREATE " + kind)
 	}
 	p.advance()
@@ -62,11 +69,27 @@ func (p *parser) parseCreate() (*Expression, error) {
 	var this, expression *Expression
 	switch {
 	case p.at(TokL_PAREN):
-		columns, err := p.parseColumnDefs()
+		// A TABLE's columns each carry a type; a VIEW's are names the query's
+		// results are given, and carry only what is said ABOUT them.
+		var columns []*Expression
+		var err error
+		if kind == "VIEW" {
+			columns, err = p.parseViewColumns()
+		} else {
+			columns, err = p.parseColumnDefs()
+		}
 		if err != nil {
 			return nil, err
 		}
 		this = New("Schema", Arg{"this", table}, Arg{"expressions", columns})
+		// A view may name its columns AND supply the query.
+		if p.match(TokALIAS) {
+			query, err := p.parseQuery()
+			if err != nil {
+				return nil, err
+			}
+			expression = query
+		}
 	case p.match(TokALIAS):
 		this = table
 		query, err := p.parseQuery()
@@ -75,10 +98,16 @@ func (p *parser) parseCreate() (*Expression, error) {
 		}
 		expression = query
 	default:
-		return nil, p.unsupported("CREATE TABLE without columns or a query")
+		return nil, p.unsupported("CREATE " + kind + " without columns or a query")
 	}
 	if p.curr() != nil {
-		return nil, p.unsupported("CREATE TABLE with more than this port reads")
+		return nil, p.unsupported("CREATE " + kind + " with more than this port reads")
+	}
+
+	var properties *Expression
+	if temporary {
+		properties = New("Properties", Arg{"expressions",
+			[]*Expression{New("TemporaryProperty")}})
 	}
 
 	// Every one of these is ON the node, in this order, whether or not the
@@ -92,7 +121,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 		Arg{"unique", false},
 		Arg{"expression", expression},
 		Arg{"exists", exists},
-		Arg{"properties", nil},
+		Arg{"properties", properties},
 		Arg{"indexes", []*Expression{}},
 		Arg{"no_schema_binding", nil},
 		Arg{"begin", nil},
@@ -656,4 +685,38 @@ func (p *parser) parseKeyConstraintOptions() ([]string, error) {
 		options = append(options, "ON "+event.Text+" "+action)
 	}
 	return options, nil
+}
+
+// parseViewColumns reads the `(a, b COMMENT 'b')` a view may name its results
+// with.
+//
+// Unlike a table's, these have no types, and the two spellings build different
+// nodes: a bare name is an Identifier and a name with something said about it
+// is a ColumnDef with no kind at all.
+func (p *parser) parseViewColumns() ([]*Expression, error) {
+	p.advance() // the opening parenthesis
+	var out []*Expression
+	for {
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		constraints, err := p.parseColumnConstraints()
+		if err != nil {
+			return nil, err
+		}
+		if len(constraints) > 0 {
+			out = append(out, New("ColumnDef",
+				Arg{"this", name}, Arg{"constraints", constraints}))
+		} else {
+			out = append(out, name)
+		}
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed column list")
+	}
+	return out, nil
 }

@@ -277,6 +277,12 @@ type ParserTables struct {
 	// in -- lower, upper, or empty for as-written.
 	NormalizeUnquoted string
 	NormalizeQuoted   string
+	// CreateExistsWritten says, per kind, whether IF NOT EXISTS survives
+	// being written. TemporaryWritten says the same of TEMPORARY.
+	CreateExistsWritten map[string]bool
+	TemporaryWritten    map[string]bool
+	// ViewColumnCommentWritten: a view column keeps its COMMENT here.
+	ViewColumnCommentWritten bool
 	// RenameTarget says how much of a qualified name a RENAME TO writes:
 	// the whole thing, the last part only, or -- empty -- neither,
 	// because the dialect writes another statement entirely.
@@ -3630,8 +3636,17 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:          false,
-		HoistsInsertWith:         false,
+		MapBraceLiteral:  false,
+		HoistsInsertWith: false,
+		CreateExistsWritten: map[string]bool{
+			"TABLE": true,
+			"VIEW":  true,
+		},
+		TemporaryWritten: map[string]bool{
+			"TABLE": true,
+			"VIEW":  true,
+		},
+		ViewColumnCommentWritten: true,
 		MergeWithoutTarget:       false,
 		NormalizeUnquoted:        "lower",
 		NormalizeQuoted:          "",
@@ -7179,17 +7194,26 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:        false,
-		HoistsInsertWith:       true,
-		MergeWithoutTarget:     false,
-		NormalizeUnquoted:      "lower",
-		NormalizeQuoted:        "lower",
-		ReturningWord:          "OUTPUT",
-		ReturningEnd:           false,
-		RenameTarget:           "",
-		DropTruncatesCatalog:   true,
-		RewritesCreateAsSelect: true,
-		GroupConcatOrder:       "within_group",
+		MapBraceLiteral:  false,
+		HoistsInsertWith: true,
+		CreateExistsWritten: map[string]bool{
+			"TABLE": false,
+			"VIEW":  false,
+		},
+		TemporaryWritten: map[string]bool{
+			"TABLE": false,
+			"VIEW":  false,
+		},
+		ViewColumnCommentWritten: true,
+		MergeWithoutTarget:       false,
+		NormalizeUnquoted:        "lower",
+		NormalizeQuoted:          "lower",
+		ReturningWord:            "OUTPUT",
+		ReturningEnd:             false,
+		RenameTarget:             "",
+		DropTruncatesCatalog:     true,
+		RewritesCreateAsSelect:   true,
+		GroupConcatOrder:         "within_group",
 		ForClauseOptions: map[string]map[string][]string{
 			"JSON": {
 				"AUTO":                  {},
@@ -10813,8 +10837,17 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:          false,
-		HoistsInsertWith:         false,
+		MapBraceLiteral:  false,
+		HoistsInsertWith: false,
+		CreateExistsWritten: map[string]bool{
+			"TABLE": true,
+			"VIEW":  true,
+		},
+		TemporaryWritten: map[string]bool{
+			"TABLE": true,
+			"VIEW":  true,
+		},
+		ViewColumnCommentWritten: false,
 		MergeWithoutTarget:       true,
 		NormalizeUnquoted:        "lower",
 		NormalizeQuoted:          "",
@@ -14620,8 +14653,17 @@ var parserTables = map[string]*ParserTables{
 			"STRINGAGG":    {},
 			"STRING_AGG":   {},
 		},
-		MapBraceLiteral:          true,
-		HoistsInsertWith:         false,
+		MapBraceLiteral:  true,
+		HoistsInsertWith: false,
+		CreateExistsWritten: map[string]bool{
+			"TABLE": true,
+			"VIEW":  true,
+		},
+		TemporaryWritten: map[string]bool{
+			"TABLE": true,
+			"VIEW":  true,
+		},
+		ViewColumnCommentWritten: false,
 		MergeWithoutTarget:       false,
 		NormalizeUnquoted:        "lower",
 		NormalizeQuoted:          "lower",
@@ -18424,8 +18466,17 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:          false,
-		HoistsInsertWith:         true,
+		MapBraceLiteral:  false,
+		HoistsInsertWith: true,
+		CreateExistsWritten: map[string]bool{
+			"TABLE": true,
+			"VIEW":  true,
+		},
+		TemporaryWritten: map[string]bool{
+			"TABLE": false,
+			"VIEW":  true,
+		},
+		ViewColumnCommentWritten: true,
 		MergeWithoutTarget:       false,
 		NormalizeUnquoted:        "lower",
 		NormalizeQuoted:          "lower",

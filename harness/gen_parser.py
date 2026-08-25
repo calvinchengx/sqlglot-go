@@ -770,6 +770,82 @@ def returning_conventions(dialect: str) -> tuple[str, bool]:
     return word, update_last
 
 
+def _create_body(kind: str) -> str:
+    """What follows the name in the canonical CREATE used by the probes below."""
+    return " (a INT)" if kind == "TABLE" else " AS SELECT 1"
+
+
+def create_exists_written(dialect: str) -> dict:
+    """Whether `IF NOT EXISTS` survives, per kind.
+
+    Asked by rendering the same statement twice, with the guard and without,
+    and checking the only difference is the words themselves. T-SQL drops them
+    from a VIEW -- which turns "make this if it is missing" into "make this" --
+    and rewrites a TABLE into a conditional EXEC.
+    """
+    import sqlglot
+
+    out = {}
+    for kind in ("TABLE", "VIEW"):
+        body = _create_body(kind)
+        try:
+            guarded = sqlglot.parse_one(
+                f"CREATE {kind} IF NOT EXISTS zzname{body}"
+            ).sql(dialect=dialect or None)
+            plain = sqlglot.parse_one(f"CREATE {kind} zzname{body}").sql(
+                dialect=dialect or None
+            )
+        except Exception:  # noqa: BLE001
+            out[kind] = False
+            continue
+        want = plain.replace(f"CREATE {kind} ", f"CREATE {kind} IF NOT EXISTS ", 1)
+        out[kind] = guarded == want
+    return out
+
+
+def temporary_written(dialect: str) -> dict:
+    """Whether TEMPORARY survives unchanged, per kind.
+
+    The same two-renderings question. T-SQL has no such modifier and renames
+    the object to `#zzname` instead; Databricks writes a temporary TABLE with
+    a storage format it was never given. Both say something the statement did
+    not.
+    """
+    import sqlglot
+
+    out = {}
+    for kind in ("TABLE", "VIEW"):
+        body = _create_body(kind)
+        try:
+            temp = sqlglot.parse_one(f"CREATE TEMPORARY {kind} zzname{body}").sql(
+                dialect=dialect or None
+            )
+            plain = sqlglot.parse_one(f"CREATE {kind} zzname{body}").sql(
+                dialect=dialect or None
+            )
+        except Exception:  # noqa: BLE001
+            out[kind] = False
+            continue
+        out[kind] = temp == plain.replace("CREATE ", "CREATE TEMPORARY ", 1)
+    return out
+
+
+def view_column_comment_written(dialect: str) -> bool:
+    """Whether a view column's COMMENT survives being written.
+
+    PostgreSQL and DuckDB drop it, which loses what the column is FOR.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("CREATE VIEW z (a, b COMMENT 'zzdesc')").sql(
+            dialect=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return False
+    return "zzdesc" in text
+
+
 def merge_without_target(dialect: str) -> bool:
     """Whether a MERGE drops the target's name from the columns it assigns.
 
@@ -3000,6 +3076,7 @@ def main() -> int:
         "\tHoistsInsertWith bool\n",
         "\t// ReturningWord is what this dialect calls a RETURNING clause, and\n\t// ReturningEnd whether it is written after the WHERE rather than\n\t// straight after the verb.\n\tReturningWord string\n\tReturningEnd  bool\n",
         "\t// MergeWithoutTarget: a MERGE branch's assignments are written without\n\t// the target's own name in front of them here.\n\tMergeWithoutTarget bool\n\t// NormalizeUnquoted and NormalizeQuoted are the case a name is COMPARED\n\t// in -- lower, upper, or empty for as-written.\n\tNormalizeUnquoted string\n\tNormalizeQuoted   string\n",
+        "	// CreateExistsWritten says, per kind, whether IF NOT EXISTS survives\n\t// being written. TemporaryWritten says the same of TEMPORARY.\n\tCreateExistsWritten map[string]bool\n\tTemporaryWritten    map[string]bool\n\t// ViewColumnCommentWritten: a view column keeps its COMMENT here.\n\tViewColumnCommentWritten bool\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -3545,6 +3622,18 @@ def main() -> int:
         out.append(f"\t\tMapBraceLiteral: {str(map_brace_literal(name)).lower()},\n")
         out.append(
             "\t\tHoistsInsertWith: %s,\n" % str(hoists_insert_with(name)).lower()
+        )
+        for field, table in (
+            ("CreateExistsWritten", create_exists_written(name)),
+            ("TemporaryWritten", temporary_written(name)),
+        ):
+            out.append("\t\t%s: map[string]bool{\n" % field)
+            for kind, ok in sorted(table.items()):
+                out.append(f"\t\t\t{gostr(kind)}: {str(ok).lower()},\n")
+            out.append("\t\t},\n")
+        out.append(
+            "\t\tViewColumnCommentWritten: %s,\n"
+            % str(view_column_comment_written(name)).lower()
         )
         out.append(
             "\t\tMergeWithoutTarget: %s,\n" % str(merge_without_target(name)).lower()
