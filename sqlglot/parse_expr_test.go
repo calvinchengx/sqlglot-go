@@ -1737,8 +1737,8 @@ func TestCreateTable(t *testing.T) {
 	// Anything the port cannot read WHOLE is refused, not read in part: a
 	// dropped constraint changes what the table is.
 	for _, sql := range []string{
-		"CREATE TABLE t (a INT PRIMARY KEY)",
-		"CREATE TABLE t (a INT DEFAULT 1)",
+		"CREATE TABLE t (a INT GENERATED ALWAYS AS (1))",
+		"CREATE TABLE t (a INT REFERENCES other(b))",
 		"CREATE TEMPORARY TABLE t (a INT)",
 		"CREATE VIEW v AS SELECT 1",
 		"CREATE TABLE t",
@@ -1809,5 +1809,70 @@ func TestInsertAndDrop(t *testing.T) {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
 		}
+	}
+}
+
+// What a column may say about itself. Each is a ColumnConstraint wrapping a
+// node of its own kind: the wrapper is uniform and the kind carries the
+// meaning.
+func TestColumnConstraints(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"not null", "", "CREATE TABLE z (a INT NOT NULL)", "CREATE TABLE z (a INT NOT NULL)"},
+		// NULL is the same node with the flag set, not a different one.
+		{"null", "", "CREATE TABLE z (a INT NULL)", "CREATE TABLE z (a INT NULL)"},
+		{"a default", "", "CREATE TABLE z (a INT DEFAULT 1)", "CREATE TABLE z (a INT DEFAULT 1)"},
+		{"a negative default", "", "CREATE TABLE z (a INT(11) NOT NULL DEFAULT -1)",
+			"CREATE TABLE z (a INT(11) NOT NULL DEFAULT -1)"},
+		{"a primary key", "", "CREATE TABLE z (a INT PRIMARY KEY)", "CREATE TABLE z (a INT PRIMARY KEY)"},
+		// The direction is written only when the statement said one.
+		{"and a direction", "", "CREATE TABLE foo (id INT PRIMARY KEY ASC)",
+			"CREATE TABLE foo (id INT PRIMARY KEY ASC)"},
+		{"unique", "", "CREATE TABLE z (a INT UNIQUE)", "CREATE TABLE z (a INT UNIQUE)"},
+		{"a comment", "", "CREATE TABLE z (a INT COMMENT 'x')", "CREATE TABLE z (a INT COMMENT 'x')"},
+		{"several at once", "", "CREATE TABLE z (a INT(11) NOT NULL COLLATE utf8_bin AUTO_INCREMENT)",
+			"CREATE TABLE z (a INT(11) NOT NULL COLLATE utf8_bin AUTO_INCREMENT)"},
+		{"a quoted collation", "postgres", `CREATE TABLE x (a TEXT COLLATE "de_DE")`,
+			`CREATE TABLE x (a TEXT COLLATE "de_DE")`},
+		// A type carrying PARAMETERS may take a different name from the bare
+		// one: Databricks writes VARCHAR as STRING and VARCHAR(255) as itself.
+		{"a sized type that keeps its name", "databricks",
+			"CREATE TABLE `dbo`.`mytable` (`email` VARCHAR(255) NOT NULL)",
+			"CREATE TABLE `dbo`.`mytable` (`email` VARCHAR(255) NOT NULL)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// A constraint this port does not read is refused, not skipped: each of
+	// these says something about the table that dropping it would lose.
+	for _, sql := range []string{
+		"CREATE TABLE z (a INT GENERATED ALWAYS AS (1))",
+		"CREATE TABLE z (a INT REFERENCES other(b))",
+		"CREATE TABLE z (a INT CONSTRAINT c CHECK (a > 0))",
+		"CREATE TABLE z (a INT CHARACTER SET utf8)",
+		"CREATE TABLE z (a INT COMMENT 1)",
+		"CREATE TABLE z (a INT COLLATE)",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+	// A bare VARCHAR still becomes STRING where the dialect says so.
+	e, err := ParseOne("CREATE TABLE t (a VARCHAR)", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, _ := Generate(e, "databricks"); got != "CREATE TABLE t (a STRING)" {
+		t.Errorf("got %q, want the bare type mapped", got)
 	}
 }

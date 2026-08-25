@@ -46,6 +46,10 @@ type ParserTables struct {
 	// TypeSQL is how each data type is written in this dialect: T-SQL
 	// spells DataType.Type.INT as INTEGER.
 	TypeSQL map[string]string
+	// SizedTypeSQL is the name a type takes when it carries PARAMETERS,
+	// where that differs: Databricks writes a bare VARCHAR as STRING and
+	// a VARCHAR(255) as itself.
+	SizedTypeSQL map[string]string
 	// IdentifierStart and IdentifierEnd are the delimiters a quoted name
 	// is written with: brackets in T-SQL, backticks in Databricks.
 	IdentifierStart string
@@ -3359,6 +3363,9 @@ var parserTables = map[string]*ParserTables{
 			"VECTOR":                  "VECTOR",
 			"XML":                     "XML",
 			"YEAR":                    "YEAR",
+		},
+		SizedTypeSQL: map[string]string{
+			"INTERVAL": "INTERVAL 10",
 		},
 		IdentifierStart:         "\"",
 		IdentifierEnd:           "\"",
@@ -6894,6 +6901,10 @@ var parserTables = map[string]*ParserTables{
 			"VECTOR":                  "VECTOR",
 			"XML":                     "XML",
 			"YEAR":                    "YEAR",
+		},
+		SizedTypeSQL: map[string]string{
+			"INTERVAL": "INTERVAL 10",
+			"TEXT":     "VARCHAR",
 		},
 		IdentifierStart:         "[",
 		IdentifierEnd:           "]",
@@ -10516,6 +10527,13 @@ var parserTables = map[string]*ParserTables{
 			"VECTOR":                  "VECTOR",
 			"XML":                     "XML",
 			"YEAR":                    "YEAR",
+		},
+		SizedTypeSQL: map[string]string{
+			"ARRAY":    "10[]",
+			"DOUBLE":   "FLOAT",
+			"ENUM":     "ENUM ",
+			"FLOAT":    "FLOAT",
+			"INTERVAL": "INTERVAL 10",
 		},
 		IdentifierStart:         "\"",
 		IdentifierEnd:           "\"",
@@ -14218,6 +14236,12 @@ var parserTables = map[string]*ParserTables{
 			"VECTOR":                  "VECTOR",
 			"XML":                     "XML",
 			"YEAR":                    "YEAR",
+		},
+		SizedTypeSQL: map[string]string{
+			"ARRAY":      "10[]",
+			"BIGDECIMAL": "DECIMAL",
+			"DECFLOAT":   "DECIMAL",
+			"INTERVAL":   "INTERVAL 10",
 		},
 		IdentifierStart:         "\"",
 		IdentifierEnd:           "\"",
@@ -18096,6 +18120,16 @@ var parserTables = map[string]*ParserTables{
 			"VECTOR":                  "VECTOR",
 			"XML":                     "XML",
 			"YEAR":                    "YEAR",
+		},
+		SizedTypeSQL: map[string]string{
+			"CHAR":       "CHAR",
+			"INTERVAL":   "INTERVAL 10",
+			"MONEY":      "DECIMAL",
+			"NCHAR":      "CHAR",
+			"NVARCHAR":   "VARCHAR",
+			"SMALLMONEY": "DECIMAL",
+			"TEXT":       "VARCHAR",
+			"VARCHAR":    "VARCHAR",
 		},
 		IdentifierStart:         "`",
 		IdentifierEnd:           "`",

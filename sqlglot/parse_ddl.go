@@ -118,10 +118,15 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		if !p.at(TokCOMMA) && !p.at(TokR_PAREN) {
-			return nil, p.unsupported("a column with more than a name and a type")
+		constraints, err := p.parseColumnConstraints()
+		if err != nil {
+			return nil, err
 		}
-		out = append(out, New("ColumnDef", Arg{"this", name}, Arg{"kind", kind}))
+		def := New("ColumnDef", Arg{"this", name}, Arg{"kind", kind})
+		if len(constraints) > 0 {
+			def.Set("constraints", constraints)
+		}
+		out = append(out, def)
 		if !p.match(TokCOMMA) {
 			break
 		}
@@ -346,4 +351,90 @@ func (p *parser) parseDrop() (*Expression, error) {
 		Arg{"cluster", nil}, Arg{"concurrently", false},
 		Arg{"sync", false}, Arg{"iceberg", false}, Arg{"force", false},
 	), nil
+}
+
+// parseColumnConstraints reads what may follow a column's type. Each is a
+// ColumnConstraint wrapping a node of its own kind, which is how the reference
+// keeps them: the wrapper is uniform and the kind carries the meaning.
+//
+// What is not here is refused rather than skipped. A GENERATED column, a
+// REFERENCES, a named CONSTRAINT -- each says something about the table that
+// dropping it would lose.
+func (p *parser) parseColumnConstraints() ([]*Expression, error) {
+	var out []*Expression
+	for {
+		var kind *Expression
+		switch {
+		case p.atWords("NOT", "NULL"):
+			p.advance()
+			p.advance()
+			kind = New("NotNullColumnConstraint")
+		case p.at(TokNULL):
+			p.advance()
+			kind = New("NotNullColumnConstraint", Arg{"allow_null", true})
+		case p.atWords("DEFAULT"):
+			p.advance()
+			value, err := p.parseUnary()
+			if err != nil {
+				return nil, err
+			}
+			kind = New("DefaultColumnConstraint", Arg{"this", value})
+		case p.atWords("PRIMARY KEY"):
+			// One TOKEN, not two words: the tokenizer joins them.
+			p.advance()
+			kind = New("PrimaryKeyColumnConstraint")
+			// `PRIMARY KEY ASC` records the direction; without a word the
+			// argument is left off rather than set false.
+			switch {
+			case p.atWords("ASC"):
+				p.advance()
+				kind.Set("desc", false)
+			case p.atWords("DESC"):
+				p.advance()
+				kind.Set("desc", true)
+			}
+		case p.atWords("UNIQUE"):
+			p.advance()
+			kind = New("UniqueColumnConstraint",
+				Arg{"nulls", false}, Arg{"index_type", false})
+		case p.atWords("AUTO_INCREMENT"), p.atWords("AUTOINCREMENT"):
+			p.advance()
+			kind = New("AutoIncrementColumnConstraint")
+		case p.atWords("COMMENT"):
+			p.advance()
+			c := p.curr()
+			if c == nil || c.Type != TokSTRING {
+				return nil, p.unsupported("COMMENT without a string")
+			}
+			p.advance()
+			kind = New("CommentColumnConstraint",
+				Arg{"this", New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})})
+		case p.at(TokCOLLATE):
+			p.advance()
+			// A QUOTED collation is an Identifier and a bare one a Column --
+			// the same split COLLATE has as an operator, and the reason it
+			// needed a reader of its own there too.
+			c := p.curr()
+			if c == nil {
+				return nil, p.unsupported("COLLATE without a collation")
+			}
+			if c.Type == TokIDENTIFIER {
+				p.advance()
+				kind = New("CollateColumnConstraint",
+					Arg{"this", New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true})})
+				break
+			}
+			name, err := p.parseColumn()
+			if err != nil {
+				return nil, err
+			}
+			kind = New("CollateColumnConstraint", Arg{"this", name})
+		default:
+			if !p.at(TokCOMMA) && !p.at(TokR_PAREN) {
+				return nil, p.unsupported("a column constraint this port does not read")
+			}
+			return out, nil
+		}
+		out = append(out, New("ColumnConstraint", Arg{"kind", kind}))
+	}
 }

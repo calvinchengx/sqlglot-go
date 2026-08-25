@@ -20,93 +20,101 @@ var generators map[string]func(*generator, *Expression) string
 // dispatcher, and Go will not let a package-level map close that loop.
 func init() {
 	generators = map[string]func(*generator, *Expression) string{
-		"Select":            (*generator).writeSelect,
-		"Union":             (*generator).writeSetOperation,
-		"Except":            (*generator).writeSetOperation,
-		"Intersect":         (*generator).writeSetOperation,
-		"With":              (*generator).writeWith,
-		"CTE":               (*generator).writeCTE,
-		"TableAlias":        (*generator).writeTableAlias,
-		"From":              (*generator).writeFrom,
-		"Table":             (*generator).writeTable,
-		"Join":              (*generator).writeJoin,
-		"Lateral":           (*generator).writeLateral,
-		"Subquery":          (*generator).writeSubquery,
-		"Where":             (*generator).writeWhere,
-		"Group":             (*generator).writeGroup,
-		"Having":            (*generator).writeHaving,
-		"Order":             (*generator).writeOrder,
-		"Ordered":           (*generator).writeOrdered,
-		"Limit":             (*generator).writeLimit,
-		"Offset":            (*generator).writeOffset,
-		"Into":              (*generator).writeInto,
-		"Star":              (*generator).writeStar,
-		"Column":            (*generator).writeColumn,
-		"Identifier":        (*generator).writeIdentifier,
-		"Literal":           (*generator).writeLiteral,
-		"National":          (*generator).writeNational,
-		"Boolean":           (*generator).writeBoolean,
-		"Null":              (*generator).writeNull,
-		"Alias":             (*generator).writeAlias,
-		"Paren":             (*generator).writeParen,
-		"Case":              (*generator).writeCase,
-		"If":                (*generator).writeIf,
-		"Cast":              (*generator).writeCast,
-		"TryCast":           (*generator).writeCast,
-		"DataType":          (*generator).writeDataType,
-		"DataTypeParam":     (*generator).writeChildThis,
-		"Placeholder":       (*generator).writePlaceholder,
-		"Escape":            (*generator).writeEscape,
-		"Parameter":         (*generator).writeParameter,
-		"ColumnDef":         (*generator).writeColumnDef,
-		"Create":            (*generator).writeCreate,
-		"Insert":            (*generator).writeInsert,
-		"Values":            (*generator).writeValues,
-		"Drop":              (*generator).writeDrop,
-		"Schema":            (*generator).writeSchema,
-		"Anonymous":         (*generator).writeAnonymous,
-		"In":                (*generator).writeIn,
-		"Between":           (*generator).writeBetween,
-		"Dot":               (*generator).writeDot,
-		"Distinct":          (*generator).writeDistinct,
-		"Array":             (*generator).writeArray,
-		"Window":            (*generator).writeWindow,
-		"Interval":          (*generator).writeInterval,
-		"Lambda":            (*generator).writeLambda,
-		"Struct":            (*generator).writeStruct,
-		"Unnest":            (*generator).writeUnnest,
-		"AtTimeZone":        (*generator).writeAtTimeZone,
-		"JSONPath":          (*generator).writeJSONPath,
-		"JSONKeyValue":      (*generator).writeJSONKeyValue,
-		"Pivot":             (*generator).writePivot,
-		"Version":           (*generator).writeVersion,
-		"Tuple":             (*generator).writeTuple,
-		"ToMap":             (*generator).writeToMap,
-		"GroupConcat":       (*generator).writeGroupConcat,
-		"GroupingSets":      (*generator).writeGrouping,
-		"Cube":              (*generator).writeGrouping,
-		"Rollup":            (*generator).writeGrouping,
-		"ForClause":         (*generator).writeForClause,
-		"QueryOption":       (*generator).writeQueryOption,
-		"XMLKeyValueOption": (*generator).writeXMLKeyValueOption,
-		"JSONExtract":       (*generator).writeJSONExtractOp,
-		"JSONExtractScalar": (*generator).writeJSONExtractOp,
-		"PropertyEQ":        (*generator).writePropertyEQ,
-		"Filter":            (*generator).writeFilter,
-		"Extract":           (*generator).writeSyntaxFunction,
-		"Trim":              (*generator).writeSyntaxFunction,
-		"Substring":         (*generator).writeSyntaxFunction,
-		"StrPosition":       (*generator).writeSyntaxFunction,
-		"IntervalSpan":      (*generator).writeIntervalSpan,
-		"Var":               (*generator).writeVar,
-		"WindowSpec":        (*generator).writeWindowSpec,
-		"Bracket":           (*generator).writeBracket,
-		"Slice":             (*generator).writeSlice,
-		"All":               (*generator).writeQuantifier,
-		"Any":               (*generator).writeQuantifier,
-		"Like":              (*generator).writeLike,
-		"ILike":             (*generator).writeLike,
-		"Is":                (*generator).writeIs,
+		"Select":                        (*generator).writeSelect,
+		"Union":                         (*generator).writeSetOperation,
+		"Except":                        (*generator).writeSetOperation,
+		"Intersect":                     (*generator).writeSetOperation,
+		"With":                          (*generator).writeWith,
+		"CTE":                           (*generator).writeCTE,
+		"TableAlias":                    (*generator).writeTableAlias,
+		"From":                          (*generator).writeFrom,
+		"Table":                         (*generator).writeTable,
+		"Join":                          (*generator).writeJoin,
+		"Lateral":                       (*generator).writeLateral,
+		"Subquery":                      (*generator).writeSubquery,
+		"Where":                         (*generator).writeWhere,
+		"Group":                         (*generator).writeGroup,
+		"Having":                        (*generator).writeHaving,
+		"Order":                         (*generator).writeOrder,
+		"Ordered":                       (*generator).writeOrdered,
+		"Limit":                         (*generator).writeLimit,
+		"Offset":                        (*generator).writeOffset,
+		"Into":                          (*generator).writeInto,
+		"Star":                          (*generator).writeStar,
+		"Column":                        (*generator).writeColumn,
+		"Identifier":                    (*generator).writeIdentifier,
+		"Literal":                       (*generator).writeLiteral,
+		"National":                      (*generator).writeNational,
+		"Boolean":                       (*generator).writeBoolean,
+		"Null":                          (*generator).writeNull,
+		"Alias":                         (*generator).writeAlias,
+		"Paren":                         (*generator).writeParen,
+		"Case":                          (*generator).writeCase,
+		"If":                            (*generator).writeIf,
+		"Cast":                          (*generator).writeCast,
+		"TryCast":                       (*generator).writeCast,
+		"DataType":                      (*generator).writeDataType,
+		"DataTypeParam":                 (*generator).writeChildThis,
+		"Placeholder":                   (*generator).writePlaceholder,
+		"Escape":                        (*generator).writeEscape,
+		"Parameter":                     (*generator).writeParameter,
+		"ColumnDef":                     (*generator).writeColumnDef,
+		"Create":                        (*generator).writeCreate,
+		"ColumnConstraint":              (*generator).writeColumnConstraint,
+		"NotNullColumnConstraint":       (*generator).writeNotNullConstraint,
+		"DefaultColumnConstraint":       (*generator).writeDefaultConstraint,
+		"PrimaryKeyColumnConstraint":    (*generator).writePrimaryKeyConstraint,
+		"UniqueColumnConstraint":        (*generator).writeUniqueConstraint,
+		"AutoIncrementColumnConstraint": (*generator).writeAutoIncrementConstraint,
+		"CommentColumnConstraint":       (*generator).writeCommentConstraint,
+		"CollateColumnConstraint":       (*generator).writeCollateConstraint,
+		"Insert":                        (*generator).writeInsert,
+		"Values":                        (*generator).writeValues,
+		"Drop":                          (*generator).writeDrop,
+		"Schema":                        (*generator).writeSchema,
+		"Anonymous":                     (*generator).writeAnonymous,
+		"In":                            (*generator).writeIn,
+		"Between":                       (*generator).writeBetween,
+		"Dot":                           (*generator).writeDot,
+		"Distinct":                      (*generator).writeDistinct,
+		"Array":                         (*generator).writeArray,
+		"Window":                        (*generator).writeWindow,
+		"Interval":                      (*generator).writeInterval,
+		"Lambda":                        (*generator).writeLambda,
+		"Struct":                        (*generator).writeStruct,
+		"Unnest":                        (*generator).writeUnnest,
+		"AtTimeZone":                    (*generator).writeAtTimeZone,
+		"JSONPath":                      (*generator).writeJSONPath,
+		"JSONKeyValue":                  (*generator).writeJSONKeyValue,
+		"Pivot":                         (*generator).writePivot,
+		"Version":                       (*generator).writeVersion,
+		"Tuple":                         (*generator).writeTuple,
+		"ToMap":                         (*generator).writeToMap,
+		"GroupConcat":                   (*generator).writeGroupConcat,
+		"GroupingSets":                  (*generator).writeGrouping,
+		"Cube":                          (*generator).writeGrouping,
+		"Rollup":                        (*generator).writeGrouping,
+		"ForClause":                     (*generator).writeForClause,
+		"QueryOption":                   (*generator).writeQueryOption,
+		"XMLKeyValueOption":             (*generator).writeXMLKeyValueOption,
+		"JSONExtract":                   (*generator).writeJSONExtractOp,
+		"JSONExtractScalar":             (*generator).writeJSONExtractOp,
+		"PropertyEQ":                    (*generator).writePropertyEQ,
+		"Filter":                        (*generator).writeFilter,
+		"Extract":                       (*generator).writeSyntaxFunction,
+		"Trim":                          (*generator).writeSyntaxFunction,
+		"Substring":                     (*generator).writeSyntaxFunction,
+		"StrPosition":                   (*generator).writeSyntaxFunction,
+		"IntervalSpan":                  (*generator).writeIntervalSpan,
+		"Var":                           (*generator).writeVar,
+		"WindowSpec":                    (*generator).writeWindowSpec,
+		"Bracket":                       (*generator).writeBracket,
+		"Slice":                         (*generator).writeSlice,
+		"All":                           (*generator).writeQuantifier,
+		"Any":                           (*generator).writeQuantifier,
+		"Like":                          (*generator).writeLike,
+		"ILike":                         (*generator).writeLike,
+		"Is":                            (*generator).writeIs,
 	}
 }
 
@@ -834,6 +842,11 @@ func (g *generator) writeDataType(e *Expression) string {
 	}
 	nested, _ := e.Args["nested"].(bool)
 	if !nested {
+		// A type carrying PARAMETERS may take a different name from the bare
+		// one: Databricks writes VARCHAR as STRING and VARCHAR(255) as itself.
+		if sized, ok := g.tables.SizedTypeSQL[string(kind)]; ok {
+			return sized + "(" + params + ")"
+		}
 		return out + "(" + params + ")"
 	}
 	// An ARRAY is the one nested type that does not wrap its name around its
@@ -862,13 +875,19 @@ func (g *generator) writeColumnDef(e *Expression) string {
 	if g.inColumnList {
 		sep = " "
 	}
+	trailing := ""
+	if items, _ := e.Args["constraints"].([]*Expression); len(items) > 0 {
+		for _, item := range items {
+			trailing += " " + g.node(item)
+		}
+	}
 	// The column's TYPE is not a column list, however deep the struct in it
 	// goes: `a STRUCT<c: MAP<...>>` keeps the field separator inside.
 	was := g.inColumnList
 	g.inColumnList = false
 	kind := g.child(e, "kind")
 	g.inColumnList = was
-	return g.child(e, "this") + sep + kind
+	return g.child(e, "this") + sep + kind + trailing
 }
 
 func (g *generator) writeAnonymous(e *Expression) string { return g.anonymous(e, true) }
@@ -1993,4 +2012,46 @@ func (g *generator) writeDrop(e *Expression) string {
 		names = append(names, g.node(t))
 	}
 	return out + strings.Join(names, ", ")
+}
+
+// writeColumnConstraint writes one thing said about a column. The wrapper is
+// uniform and the KIND carries the meaning, so this only unwraps.
+func (g *generator) writeColumnConstraint(e *Expression) string {
+	return g.child(e, "kind")
+}
+
+// The constraint kinds, each a fixed phrase or a phrase with one operand.
+func (g *generator) writeNotNullConstraint(e *Expression) string {
+	if allow, _ := e.Args["allow_null"].(bool); allow {
+		return "NULL"
+	}
+	return "NOT NULL"
+}
+
+func (g *generator) writeDefaultConstraint(e *Expression) string {
+	return "DEFAULT " + g.child(e, "this")
+}
+
+func (g *generator) writePrimaryKeyConstraint(e *Expression) string {
+	out := "PRIMARY KEY"
+	// The direction is written only when the statement said one; the argument
+	// is absent otherwise, which is not the same as false.
+	if desc, ok := e.Args["desc"].(bool); ok {
+		if desc {
+			return out + " DESC"
+		}
+		return out + " ASC"
+	}
+	return out
+}
+
+func (g *generator) writeUniqueConstraint(*Expression) string        { return "UNIQUE" }
+func (g *generator) writeAutoIncrementConstraint(*Expression) string { return "AUTO_INCREMENT" }
+
+func (g *generator) writeCommentConstraint(e *Expression) string {
+	return "COMMENT " + g.child(e, "this")
+}
+
+func (g *generator) writeCollateConstraint(e *Expression) string {
+	return "COLLATE " + g.child(e, "this")
 }

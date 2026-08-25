@@ -2676,6 +2676,10 @@ def main() -> int:
         "\t// TypeSQL is how each data type is written in this dialect: T-SQL\n",
         "\t// spells DataType.Type.INT as INTEGER.\n",
         "\tTypeSQL map[string]string\n",
+        "\t// SizedTypeSQL is the name a type takes when it carries PARAMETERS,\n",
+        "\t// where that differs: Databricks writes a bare VARCHAR as STRING and\n",
+        "\t// a VARCHAR(255) as itself.\n",
+        "\tSizedTypeSQL map[string]string\n",
         "\t// IdentifierStart and IdentifierEnd are the delimiters a quoted name\n",
         "\t// is written with: brackets in T-SQL, backticks in Databricks.\n",
         "\tIdentifierStart string\n",
@@ -3321,6 +3325,27 @@ def main() -> int:
                 continue
             types_sql[member.value] = rendered
         out.append(strstrmap("TypeSQL", types_sql))
+        # The name a type takes when it carries PARAMETERS is not always the
+        # one it takes bare: Databricks writes a bare VARCHAR as STRING and a
+        # VARCHAR(255) as itself. Only the ones that differ are recorded.
+        sized_sql = {}
+        for t, member in sorted(
+            {t: exp.DType[t.name] for t in P.TYPE_TOKENS if t.name in exp.DType.__members__}.items(),
+            key=lambda kv: kv[0].value,
+        ):
+            try:
+                node = exp.DataType(
+                    this=member,
+                    expressions=[exp.DataTypeParam(this=exp.Literal.number(10))],
+                )
+                rendered = node.sql(dialect=name or None)
+            except Exception:  # noqa: BLE001
+                continue
+            head = rendered.split("(")[0]
+            if head and head != types_sql.get(member.value):
+                sized_sql[member.value] = head
+        if sized_sql:
+            out.append(strstrmap("SizedTypeSQL", sized_sql))
         quoted = exp.Identifier(this="A", quoted=True).sql(dialect=name or None)
         out.append(f"\t\tIdentifierStart: {gostr(quoted[0])},\n")
         out.append(f"\t\tIdentifierEnd: {gostr(quoted[-1])},\n")
