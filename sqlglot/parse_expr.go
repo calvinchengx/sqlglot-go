@@ -533,11 +533,6 @@ func (p *parser) parsePostfix() (*Expression, error) {
 			continue
 		}
 		if p.atWords("WITHIN", "GROUP") {
-			if this != nil && p.tables.WithinGroupAbsorbedBy[this.Class] {
-				// This class folds the clause into itself rather than being
-				// wrapped by it, and the fold is not ported.
-				return nil, p.unsupported("WITHIN GROUP folded into " + this.Class)
-			}
 			p.advance()
 			p.advance()
 			if !p.match(TokL_PAREN) {

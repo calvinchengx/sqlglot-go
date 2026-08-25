@@ -76,6 +76,7 @@ func init() {
 		"Pivot":             (*generator).writePivot,
 		"Version":           (*generator).writeVersion,
 		"Tuple":             (*generator).writeTuple,
+		"GroupConcat":       (*generator).writeGroupConcat,
 		"GroupingSets":      (*generator).writeGrouping,
 		"Cube":              (*generator).writeGrouping,
 		"Rollup":            (*generator).writeGrouping,
@@ -1776,4 +1777,36 @@ func (g *generator) writeXMLKeyValueOption(e *Expression) string {
 		out += "(" + expression + ")"
 	}
 	return out
+}
+
+// writeGroupConcat writes the node that `... WITHIN GROUP (ORDER BY ...)`
+// FOLDS into: a GroupConcat whose first argument is an ordering of what was
+// there before.
+//
+// Where the ordering goes on the way back out is per dialect and probed --
+// inside the first argument, or unfolded into a WITHIN GROUP again. A dialect
+// that does neither puts it somewhere this port cannot spell (DuckDB and
+// PostgreSQL attach it to the SEPARATOR), and is refused rather than written
+// in the wrong place.
+func (g *generator) writeGroupConcat(e *Expression) string {
+	order, _ := e.Args["this"].(*Expression)
+	// Nothing folded in, or a dialect that writes the ordering where it
+	// already is: the ordinary spelling serves.
+	if order == nil || order.Class != "Order" || g.tables.GroupConcatOrder == "inline" {
+		return g.spell(e)
+	}
+	switch g.tables.GroupConcatOrder {
+	case "within_group":
+		// Written as it arrived: the call over the ordered argument alone,
+		// and the ordering after it.
+		unfolded := New(e.Class)
+		for key, value := range e.Args {
+			unfolded.Set(key, value)
+		}
+		unfolded.Set("this", order.Args["this"])
+		out := g.spell(unfolded)
+		ordering := New("Order", Arg{"expressions", order.Args["expressions"]})
+		return out + " WITHIN GROUP (" + strings.TrimSpace(g.node(ordering)) + ")"
+	}
+	return g.fail(e.Class + " over an ordering this dialect writes elsewhere")
 }

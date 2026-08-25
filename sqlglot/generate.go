@@ -74,6 +74,13 @@ func (g *generator) node(e *Expression) string {
 	if fn, ok := generators[e.Class]; ok {
 		return fn(g, e)
 	}
+	return g.spell(e)
+}
+
+// spell writes a node by the generic routes -- operators, function spellings,
+// templates -- skipping the per-class writers. A writer that has decided what
+// SHAPE to write calls this to have that shape spelled.
+func (g *generator) spell(e *Expression) string {
 	if op, ok := g.tables.BinarySQL[e.Class]; ok {
 		if e.Class == "And" || e.Class == "Or" {
 			g.requireCondition(e, "this", "expression")

@@ -211,6 +211,33 @@ func (p *parser) parseStringAgg() (*Expression, error) {
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed STRING_AGG")
 	}
+	// The builder SWALLOWS a following `WITHIN GROUP (ORDER BY ...)` rather
+	// than being wrapped by one -- but only for the names whose builder does,
+	// which is a fact about the NAME and not the class it builds: Databricks
+	// reads LISTAGG into this very class and does not fold it.
+	//
+	// The ordering is over the argument that was already there, so it takes
+	// that argument as its own `this`: `STRING_AGG(x, ',') WITHIN GROUP
+	// (ORDER BY y)` becomes GroupConcat(Order(x, y), ',').
+	if _, folds := p.tables.WithinGroupFolds["STRING_AGG"]; folds && p.atWords("WITHIN", "GROUP") {
+		p.advance()
+		p.advance()
+		if !p.match(TokL_PAREN) {
+			return nil, p.unsupported("WITHIN GROUP without a parenthesised ORDER BY")
+		}
+		if !p.match(TokORDER_BY) {
+			return nil, p.unsupported("WITHIN GROUP without ORDER BY")
+		}
+		order, err := p.parseOrder()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed WITHIN GROUP")
+		}
+		order.Set("this", this)
+		this = order
+	}
 	return New("GroupConcat", Arg{"this", this}, Arg{"separator", separator}), nil
 }
 

@@ -1302,3 +1302,71 @@ func TestGroupingWriterEdges(t *testing.T) {
 		t.Errorf("got %q", got)
 	}
 }
+
+// `STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y)` FOLDS: the builder swallows
+// the clause rather than being wrapped by it, and the ordering takes the
+// argument that was already there as its own.
+func TestWithinGroupFold(t *testing.T) {
+	e, err := ParseOne("SELECT STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y DESC)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	got, err := Generate(e, "")
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	if want := "SELECT GROUP_CONCAT(x ORDER BY y DESC, ',')"; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+	// The same node unfolds again where the dialect spells it that way.
+	tsql, err := ParseOne("STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y DESC)", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, _ := Generate(tsql, "tsql"); got != "STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y DESC)" {
+		t.Errorf("got %q, want it written back unfolded", got)
+	}
+	// It is the NAME that folds, not the class: Databricks reads LISTAGG into
+	// the very same class and leaves the clause wrapping it.
+	listagg, err := ParseOne("LISTAGG(x, z) WITHIN GROUP (ORDER BY y)", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if listagg.Class != "WithinGroup" {
+		t.Errorf("LISTAGG folded into %s; Databricks does not fold it", listagg.Class)
+	}
+	for _, sql := range []string{
+		"SELECT STRING_AGG(x, ',') WITHIN GROUP (y)",
+		"SELECT STRING_AGG(x, ',') WITHIN GROUP ORDER BY y",
+		"SELECT STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
+// Where a dialect writes the folded ordering somewhere this port cannot spell
+// -- DuckDB and PostgreSQL attach it to the SEPARATOR -- the node is refused
+// rather than written in the wrong place.
+func TestGroupConcatOrderRefused(t *testing.T) {
+	e, err := ParseOne("SELECT STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y DESC)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	for _, dialect := range []string{"duckdb", "postgres"} {
+		if got, err := Generate(e, dialect); err == nil {
+			t.Errorf("%s wrote %q; it puts the ordering elsewhere", dialect, got)
+		}
+	}
+	// And a GroupConcat with nothing folded in writes normally everywhere.
+	plain, err := ParseOne("SELECT STRING_AGG(x, ',')", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	for _, dialect := range []string{"", "duckdb", "tsql"} {
+		if _, err := Generate(plain, dialect); err != nil {
+			t.Errorf("%s refused a plain GROUP_CONCAT: %v", dialect, err)
+		}
+	}
+}

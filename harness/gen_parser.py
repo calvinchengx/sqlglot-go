@@ -674,6 +674,59 @@ def interval_unit_inside_string(dialect: str, exp) -> bool:
     return "'1 DAY'" in node.sql(dialect=dialect or None)
 
 
+def within_group_folding_names(dialect: str, P) -> list:
+    """Which function NAMES swallow a `WITHIN GROUP (ORDER BY ...)`.
+
+    It belongs to the name's builder, not to the class it builds: Databricks
+    reads LISTAGG into a GroupConcat and still does NOT fold, where STRING_AGG
+    into the same class does. Keyed by class, the port folded both and put a
+    GroupConcat where the reference has a WithinGroup.
+    """
+    import sqlglot
+
+    out = []
+    # Both tables: STRING_AGG has a PARSER rather than a signature, and it is
+    # the one that folds in most dialects.
+    for name in sorted(set(P.FUNCTIONS) | set(P.FUNCTION_PARSERS)):
+        if not name.isidentifier():
+            continue
+        try:
+            node = sqlglot.parse_one(
+                "%s(x, z) WITHIN GROUP (ORDER BY y)" % name, read=dialect or None
+            )
+        except Exception:  # noqa: BLE001 -- not a call this name makes
+            continue
+        if type(node).__name__ != "WithinGroup":
+            out.append(name)
+    return out
+
+
+def group_concat_order(dialect: str) -> str:
+    """Where a folded ORDER BY goes when a GroupConcat is written back.
+
+    `STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y)` FOLDS into a GroupConcat
+    whose first argument is the ordering of x. Writing it back, the dialects
+    disagree about where the ordering goes: inside the first argument, after
+    the separator, or unfolded into a WITHIN GROUP again. Only the two the
+    port can spell are named; anything else is refused rather than written in
+    the wrong place.
+    """
+    import sqlglot
+
+    try:
+        node = sqlglot.parse_one(
+            "SELECT STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y DESC)"
+        ).selects[0]
+        text = node.sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return ""
+    if "WITHIN GROUP" in text:
+        return "within_group"
+    if "x ORDER BY y DESC" in text:
+        return "inline"
+    return ""
+
+
 def select_sample_words(dialect: str, exp) -> tuple:
     """What a sample is called where it hangs off the QUERY rather than a table.
 
@@ -2754,6 +2807,15 @@ def main() -> int:
         "\t// TableSampleWord and SelectSampleWord are what a sample is called\n",
         "\t// after a TABLE and after the QUERY: DuckDB says TABLESAMPLE for the\n",
         "\t// one and USING SAMPLE for the other, for the very same node.\n",
+        "\t// GroupConcatOrder says where a folded ORDER BY goes when a\n",
+        "\t// GroupConcat is written back: inside the first argument, or\n",
+        "\t// unfolded into a WITHIN GROUP. Empty means neither, and refuse.\n",
+        "\t// WithinGroupFolds are the function NAMES whose builder swallows a\n",
+        "\t// following WITHIN GROUP instead of being wrapped by one. It is the\n",
+        "\t// NAME that decides, not the class: Databricks folds STRING_AGG and\n",
+        "\t// not LISTAGG, and both build a GroupConcat.\n",
+        "\tWithinGroupFolds map[string]struct{}\n",
+        "\tGroupConcatOrder string\n",
         "\tTableSampleWord  string\n",
         "\tSelectSampleWord string\n",
         "\tPivotColumnNaming        string\n",
@@ -3263,6 +3325,12 @@ def main() -> int:
             f"\t\tVariantExtractColon: {str(variant_extract_colon(name)).lower()},\n"
         )
         out.append(f"\t\tPrefixAlias: {str(prefix_alias(name)).lower()},\n")
+        _wgf = within_group_folding_names(name, P)
+        if _wgf:
+            out.append(strset("WithinGroupFolds", _wgf))
+        _gco = group_concat_order(name)
+        if _gco:
+            out.append(f"\t\tGroupConcatOrder: {gostr(_gco)},\n")
         _ss = select_sample_words(name, exp)
         if _ss[0] and _ss[1] and _ss[0] != _ss[1]:
             out.append(f"\t\tTableSampleWord: {gostr(_ss[0])},\n")

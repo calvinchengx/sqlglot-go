@@ -244,6 +244,15 @@ type ParserTables struct {
 	// TableSampleWord and SelectSampleWord are what a sample is called
 	// after a TABLE and after the QUERY: DuckDB says TABLESAMPLE for the
 	// one and USING SAMPLE for the other, for the very same node.
+	// GroupConcatOrder says where a folded ORDER BY goes when a
+	// GroupConcat is written back: inside the first argument, or
+	// unfolded into a WITHIN GROUP. Empty means neither, and refuse.
+	// WithinGroupFolds are the function NAMES whose builder swallows a
+	// following WITHIN GROUP instead of being wrapped by one. It is the
+	// NAME that decides, not the class: Databricks folds STRING_AGG and
+	// not LISTAGG, and both build a GroupConcat.
+	WithinGroupFolds         map[string]struct{}
+	GroupConcatOrder         string
 	TableSampleWord          string
 	SelectSampleWord         string
 	PivotColumnNaming        string
@@ -3580,8 +3589,12 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
-		VariantExtractColon:      false,
-		PrefixAlias:              false,
+		VariantExtractColon: false,
+		PrefixAlias:         false,
+		WithinGroupFolds: map[string]struct{}{
+			"STRING_AGG": {},
+		},
+		GroupConcatOrder:         "inline",
 		PivotColumnNaming:        "agg_name_if_aliased",
 		PivotIdentifiesStrings:   false,
 		PivotPrefixesColumns:     false,
@@ -7113,6 +7126,10 @@ var parserTables = map[string]*ParserTables{
 		},
 		VariantExtractColon: false,
 		PrefixAlias:         false,
+		WithinGroupFolds: map[string]struct{}{
+			"STRING_AGG": {},
+		},
+		GroupConcatOrder: "within_group",
 		ForClauseOptions: map[string]map[string][]string{
 			"JSON": {
 				"AUTO":                  {},
@@ -10724,8 +10741,11 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
-		VariantExtractColon:      false,
-		PrefixAlias:              false,
+		VariantExtractColon: false,
+		PrefixAlias:         false,
+		WithinGroupFolds: map[string]struct{}{
+			"STRING_AGG": {},
+		},
 		PivotColumnNaming:        "agg_name_if_aliased",
 		PivotIdentifiesStrings:   false,
 		PivotPrefixesColumns:     false,
@@ -14509,8 +14529,14 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_STRING":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
-		VariantExtractColon:      false,
-		PrefixAlias:              true,
+		VariantExtractColon: false,
+		PrefixAlias:         true,
+		WithinGroupFolds: map[string]struct{}{
+			"GROUP_CONCAT": {},
+			"LISTAGG":      {},
+			"STRINGAGG":    {},
+			"STRING_AGG":   {},
+		},
 		TableSampleWord:          "TABLESAMPLE",
 		SelectSampleWord:         "USING SAMPLE",
 		PivotColumnNaming:        "agg_name_if_aliased_or_multiple",
@@ -18290,8 +18316,12 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
-		VariantExtractColon:      true,
-		PrefixAlias:              false,
+		VariantExtractColon: true,
+		PrefixAlias:         false,
+		WithinGroupFolds: map[string]struct{}{
+			"STRING_AGG": {},
+		},
+		GroupConcatOrder:         "within_group",
 		PivotColumnNaming:        "agg_name_if_multiple",
 		PivotIdentifiesStrings:   false,
 		PivotPrefixesColumns:     false,
