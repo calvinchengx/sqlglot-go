@@ -720,6 +720,41 @@ def create_as_select_rewritten(dialect: str) -> bool:
     return not text.upper().startswith("CREATE")
 
 
+def hoists_insert_with(dialect: str) -> bool:
+    """Whether a WITH inside an INSERT is written in FRONT of the statement.
+
+    T-SQL writes `WITH cte AS (...) INSERT INTO t SELECT ...` for the tree
+    that has the WITH on the inner query; the neutral dialect leaves it where
+    it was written. Same tree, two spellings.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one(
+            "INSERT INTO x WITH y AS (SELECT 1) SELECT * FROM y", read=dialect or None
+        ).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return False
+    return text.upper().startswith("WITH")
+
+
+def drop_truncates_catalog(dialect: str) -> bool:
+    """Whether a DROP of a three-part name writes only two of them.
+
+    T-SQL does, dropping the catalog -- which names a different object, so the
+    port refuses rather than writing it.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("DROP VIEW a.b.c", read=dialect or None).sql(
+            dialect=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return False
+    return "a.b.c" not in text
+
+
 def map_brace_literal(dialect: str) -> bool:
     """Whether `MAP {k: v}` is a map LITERAL in this dialect.
 
@@ -2853,6 +2888,12 @@ def main() -> int:
         "\t// MapBraceLiteral: `MAP {k: v}` is a map LITERAL here. Elsewhere MAP\n",
         "\t// is an ordinary name and the braces are a struct.\n",
         "\tMapBraceLiteral bool\n",
+        "\t// DropTruncatesCatalog: a DROP of a three-part name is written with\n",
+        "\t// only two of them here, which names a different object.\n",
+        "\tDropTruncatesCatalog bool\n",
+        "\t// HoistsInsertWith: a WITH inside an INSERT is written in FRONT of\n",
+        "\t// the statement here, and left where it was written elsewhere.\n",
+        "\tHoistsInsertWith bool\n",
         "\t// RewritesCreateAsSelect: this dialect has no CREATE TABLE AS SELECT\n",
         "\t// and the reference turns it into something else, which is a\n",
         "\t// transformation rather than a spelling.\n",
@@ -3371,6 +3412,13 @@ def main() -> int:
         if _wgf:
             out.append(strset("WithinGroupFolds", _wgf))
         out.append(f"\t\tMapBraceLiteral: {str(map_brace_literal(name)).lower()},\n")
+        out.append(
+            "\t\tHoistsInsertWith: %s,\n" % str(hoists_insert_with(name)).lower()
+        )
+        out.append(
+            "\t\tDropTruncatesCatalog: %s,\n"
+            % str(drop_truncates_catalog(name)).lower()
+        )
         out.append(
             "\t\tRewritesCreateAsSelect: %s,\n"
             % str(create_as_select_rewritten(name)).lower()

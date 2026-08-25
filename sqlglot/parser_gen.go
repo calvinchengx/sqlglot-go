@@ -255,6 +255,12 @@ type ParserTables struct {
 	// MapBraceLiteral: `MAP {k: v}` is a map LITERAL here. Elsewhere MAP
 	// is an ordinary name and the braces are a struct.
 	MapBraceLiteral bool
+	// DropTruncatesCatalog: a DROP of a three-part name is written with
+	// only two of them here, which names a different object.
+	DropTruncatesCatalog bool
+	// HoistsInsertWith: a WITH inside an INSERT is written in FRONT of
+	// the statement here, and left where it was written elsewhere.
+	HoistsInsertWith bool
 	// RewritesCreateAsSelect: this dialect has no CREATE TABLE AS SELECT
 	// and the reference turns it into something else, which is a
 	// transformation rather than a spelling.
@@ -3602,6 +3608,8 @@ var parserTables = map[string]*ParserTables{
 			"STRING_AGG": {},
 		},
 		MapBraceLiteral:          false,
+		HoistsInsertWith:         false,
+		DropTruncatesCatalog:     false,
 		RewritesCreateAsSelect:   false,
 		GroupConcatOrder:         "inline",
 		PivotColumnNaming:        "agg_name_if_aliased",
@@ -7139,6 +7147,8 @@ var parserTables = map[string]*ParserTables{
 			"STRING_AGG": {},
 		},
 		MapBraceLiteral:        false,
+		HoistsInsertWith:       true,
+		DropTruncatesCatalog:   true,
 		RewritesCreateAsSelect: true,
 		GroupConcatOrder:       "within_group",
 		ForClauseOptions: map[string]map[string][]string{
@@ -10758,6 +10768,8 @@ var parserTables = map[string]*ParserTables{
 			"STRING_AGG": {},
 		},
 		MapBraceLiteral:          false,
+		HoistsInsertWith:         false,
+		DropTruncatesCatalog:     false,
 		RewritesCreateAsSelect:   false,
 		PivotColumnNaming:        "agg_name_if_aliased",
 		PivotIdentifiesStrings:   false,
@@ -14551,6 +14563,8 @@ var parserTables = map[string]*ParserTables{
 			"STRING_AGG":   {},
 		},
 		MapBraceLiteral:          true,
+		HoistsInsertWith:         false,
+		DropTruncatesCatalog:     false,
 		RewritesCreateAsSelect:   false,
 		TableSampleWord:          "TABLESAMPLE",
 		SelectSampleWord:         "USING SAMPLE",
@@ -18337,6 +18351,8 @@ var parserTables = map[string]*ParserTables{
 			"STRING_AGG": {},
 		},
 		MapBraceLiteral:          false,
+		HoistsInsertWith:         true,
+		DropTruncatesCatalog:     false,
 		RewritesCreateAsSelect:   false,
 		GroupConcatOrder:         "within_group",
 		PivotColumnNaming:        "agg_name_if_multiple",

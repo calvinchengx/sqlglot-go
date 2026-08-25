@@ -195,3 +195,155 @@ var writeClasses = map[string]bool{
 func IsWrite(e *Expression) bool {
 	return e != nil && writeClasses[e.Class]
 }
+
+// parseInsert reads `INSERT [OVERWRITE] INTO <table> [(cols)] <values-or-query>`.
+//
+// Eighteen arguments sit on the node whether the statement mentions them or
+// not, the same way a Create carries fourteen.
+func (p *parser) parseInsert() (*Expression, error) {
+	p.advance() // INSERT
+
+	overwrite := false
+	if p.atWords("OVERWRITE") {
+		p.advance()
+		overwrite = true
+	}
+	// INTO is optional after OVERWRITE, where TABLE takes its place.
+	if !p.match(TokINTO) && !p.atWords("TABLE") {
+		return nil, p.unsupported("INSERT without INTO")
+	}
+	if p.atWords("TABLE") {
+		p.advance()
+	}
+
+	table, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+	this := table
+	if p.at(TokL_PAREN) {
+		columns, err := p.parseInsertColumns()
+		if err != nil {
+			return nil, err
+		}
+		this = New("Schema", Arg{"this", table}, Arg{"expressions", columns})
+	}
+
+	var expression *Expression
+	switch {
+	case p.at(TokVALUES):
+		expression, err = p.parseValues()
+	case p.at(TokSELECT), p.at(TokWITH):
+		expression, err = p.parseQuery()
+	default:
+		return nil, p.unsupported("INSERT without VALUES or a query")
+	}
+	if err != nil {
+		return nil, err
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("INSERT with more than this port reads")
+	}
+
+	return New("Insert",
+		Arg{"hint", nil}, Arg{"is_function", false}, Arg{"this", this},
+		Arg{"stored", false}, Arg{"by_name", false}, Arg{"exists", false},
+		Arg{"where", nil}, Arg{"using", nil}, Arg{"partition", false},
+		Arg{"settings", false}, Arg{"default", false},
+		Arg{"expression", expression},
+		Arg{"conflict", nil}, Arg{"returning", nil},
+		Arg{"overwrite", overwrite}, Arg{"alternative", nil},
+		Arg{"ignore", false}, Arg{"source", false},
+	), nil
+}
+
+// parseInsertColumns reads the `(a, b)` naming which columns are written. They
+// are bare identifiers, not the definitions a CREATE takes.
+func (p *parser) parseInsertColumns() ([]*Expression, error) {
+	p.advance() // the opening parenthesis
+	var out []*Expression
+	for {
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		// Bare IDENTIFIERS, not columns: nothing here refers to anything, it
+		// only names which columns are being written.
+		out = append(out, id)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed column list")
+	}
+	return out, nil
+}
+
+// parseValues reads `VALUES (1, 2), (3, 4)` -- a list of rows.
+func (p *parser) parseValues() (*Expression, error) {
+	p.advance() // VALUES
+	var rows []*Expression
+	for {
+		if !p.at(TokL_PAREN) {
+			return nil, p.unsupported("a VALUES row that is not parenthesised")
+		}
+		row, err := p.parseParenthesisedList()
+		if err != nil {
+			return nil, err
+		}
+		// `VALUES (DEFAULT)` names the column's default rather than referring
+		// to anything, and the reference keeps the WORD as a Var.
+		for i, member := range row {
+			if member.Class == "Column" && strings.EqualFold(member.Name(), "DEFAULT") {
+				row[i] = New("Var", Arg{"this", strings.ToUpper(member.Name())})
+			}
+		}
+		rows = append(rows, New("Tuple", Arg{"expressions", row}))
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	return New("Values", Arg{"expressions", rows}), nil
+}
+
+// parseDrop reads `DROP <kind> [IF EXISTS] <name>`. The names go in a LIST,
+// because some dialects drop several at once.
+func (p *parser) parseDrop() (*Expression, error) {
+	p.advance() // DROP
+
+	kindToken := p.curr()
+	if kindToken == nil {
+		return nil, p.unsupported("DROP without a kind")
+	}
+	kind := strings.ToUpper(kindToken.Text)
+	if kind != "TABLE" && kind != "VIEW" {
+		return nil, p.unsupported("DROP " + kind)
+	}
+	p.advance()
+
+	exists := false
+	if p.atWords("IF", "EXISTS") {
+		p.advance()
+		p.advance()
+		exists = true
+	}
+	table, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("DROP with more than this port reads")
+	}
+	return New("Drop",
+		Arg{"exists", exists},
+		Arg{"tables", []*Expression{table}},
+		Arg{"expressions", nil},
+		Arg{"kind", kind},
+		Arg{"temporary", false}, Arg{"materialized", false},
+		Arg{"cascade", false}, Arg{"restrict", false},
+		Arg{"constraints", false}, Arg{"purge", false},
+		Arg{"cluster", nil}, Arg{"concurrently", false},
+		Arg{"sync", false}, Arg{"iceberg", false}, Arg{"force", false},
+	), nil
+}

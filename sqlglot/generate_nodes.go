@@ -60,6 +60,9 @@ func init() {
 		"Parameter":         (*generator).writeParameter,
 		"ColumnDef":         (*generator).writeColumnDef,
 		"Create":            (*generator).writeCreate,
+		"Insert":            (*generator).writeInsert,
+		"Values":            (*generator).writeValues,
+		"Drop":              (*generator).writeDrop,
 		"Schema":            (*generator).writeSchema,
 		"Anonymous":         (*generator).writeAnonymous,
 		"In":                (*generator).writeIn,
@@ -1938,4 +1941,56 @@ func (g *generator) writeSchema(e *Expression) string {
 	}
 	g.inColumnList = was
 	return g.child(e, "this") + " (" + strings.Join(parts, ", ") + ")"
+}
+
+// writeInsert writes `INSERT [OVERWRITE] INTO <target> <values-or-query>`.
+func (g *generator) writeInsert(e *Expression) string {
+	out := "INSERT "
+	if overwrite, _ := e.Args["overwrite"].(bool); overwrite {
+		out += "OVERWRITE TABLE "
+	} else {
+		out += "INTO "
+	}
+	was := g.inColumnList
+	g.inColumnList = true
+	target := g.child(e, "this")
+	g.inColumnList = was
+	body := g.child(e, "expression")
+	// A WITH inside the query is written in FRONT of the whole statement:
+	// `WITH cte AS (...) INSERT INTO t SELECT ...`. The tree has it where it
+	// was written; only the spelling moves it.
+	if expr, _ := e.Args["expression"].(*Expression); expr != nil && g.tables.HoistsInsertWith {
+		if with, _ := expr.Args["with_"].(*Expression); with != nil {
+			prefix := g.node(with)
+			if rest, found := strings.CutPrefix(body, prefix+" "); found {
+				return prefix + " " + out + target + " " + rest
+			}
+		}
+	}
+	return out + target + " " + body
+}
+
+// writeValues writes the rows of a VALUES clause.
+func (g *generator) writeValues(e *Expression) string { return "VALUES " + g.list(e) }
+
+// writeDrop writes `DROP <kind> [IF EXISTS] <name>`.
+func (g *generator) writeDrop(e *Expression) string {
+	kind, _ := e.Args["kind"].(string)
+	out := "DROP " + kind + " "
+	if exists, _ := e.Args["exists"].(bool); exists {
+		out += "IF EXISTS "
+	}
+	tables, _ := e.Args["tables"].([]*Expression)
+	names := make([]string, 0, len(tables))
+	for _, t := range tables {
+		// T-SQL writes only the last two parts of a three-part name here,
+		// dropping the catalog. That LOSES a part of the name, so the port
+		// refuses rather than writing something that names another object.
+		if catalog, _ := t.Args["catalog"].(*Expression); catalog != nil &&
+			g.tables.DropTruncatesCatalog {
+			return g.fail(e.Class + " of a three-part name this dialect shortens")
+		}
+		names = append(names, g.node(t))
+	}
+	return out + strings.Join(names, ", ")
 }

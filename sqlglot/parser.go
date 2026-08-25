@@ -218,6 +218,12 @@ func (p *parser) parseStatement() (*Expression, error) {
 	if p.at(TokCREATE) {
 		return p.parseCreate()
 	}
+	if p.at(TokINSERT) {
+		return p.parseInsert()
+	}
+	if p.at(TokDROP) {
+		return p.parseDrop()
+	}
 	if c := p.curr(); c != nil {
 		if _, isStatement := p.tables.StatementTokens[c.Type]; isStatement {
 			return nil, &NotAQueryError{Kind: strings.ToUpper(c.Text)}

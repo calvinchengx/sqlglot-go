@@ -576,10 +576,8 @@ func TestCountKeepsItsFlag(t *testing.T) {
 // that have crossed over.
 func TestWritesAreNamedNotParsed(t *testing.T) {
 	for _, c := range []struct{ sql, kind string }{
-		{"DROP TABLE dbo.fct_sales", "DROP"},
 		{"DELETE FROM dbo.fct_sales", "DELETE"},
 		{"UPDATE dbo.fct_sales SET amount_usd = 0", "UPDATE"},
-		{"INSERT INTO dbo.fct_sales VALUES (1)", "INSERT"},
 		{"TRUNCATE TABLE dbo.fct_sales", "TRUNCATE"},
 		{"EXEC xp_cmdshell 'dir'", "EXEC"},
 	} {
@@ -683,6 +681,8 @@ func TestWritesAreNamedWhenTheyParse(t *testing.T) {
 		"CREATE TABLE t (a INT)",
 		"CREATE TABLE t AS SELECT 1",
 		"CREATE OR REPLACE TABLE t (a INT)",
+		"INSERT INTO dbo.fct_sales VALUES (1)",
+		"DROP TABLE dbo.fct_sales",
 	} {
 		e, err := ParseOne(sql, "tsql")
 		if err != nil {

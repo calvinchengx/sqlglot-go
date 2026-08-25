@@ -1750,3 +1750,64 @@ func TestCreateTable(t *testing.T) {
 		}
 	}
 }
+
+// INSERT and DROP, which join CREATE in parsing rather than being refused for
+// being unreadable. Both are still writes, and IsWrite says so.
+func TestInsertAndDrop(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"values", "", "INSERT INTO t VALUES (1, 2)", "INSERT INTO t VALUES (1, 2)"},
+		{"named columns", "", "INSERT INTO t (a, b) VALUES (1, 2)", "INSERT INTO t (a, b) VALUES (1, 2)"},
+		{"several rows", "", "INSERT INTO t VALUES (1, 2), (3, 4)", "INSERT INTO t VALUES (1, 2), (3, 4)"},
+		{"a query", "", "INSERT INTO t SELECT 1", "INSERT INTO t SELECT 1"},
+		{"overwrite", "", "INSERT OVERWRITE TABLE t SELECT 1", "INSERT OVERWRITE TABLE t SELECT 1"},
+		// `DEFAULT` names the column's default rather than referring to
+		// anything, so the reference keeps the WORD.
+		{"a default", "duckdb", "INSERT INTO t (i) VALUES (DEFAULT)", "INSERT INTO t (i) VALUES (DEFAULT)"},
+		// A WITH inside an INSERT is written in FRONT in some dialects and
+		// left where it was written in others. Same tree, two spellings.
+		{"a cte, left alone", "", "INSERT INTO x WITH y AS (SELECT 1) SELECT * FROM y",
+			"INSERT INTO x WITH y AS (SELECT 1) SELECT * FROM y"},
+		// T-SQL names an unnamed projection, which is why this one carries an
+		// alias the neutral spelling does not.
+		{"a cte, hoisted", "tsql", "INSERT INTO x WITH y AS (SELECT 1) SELECT * FROM y",
+			"WITH y AS (SELECT 1 AS [1]) INSERT INTO x SELECT * FROM y"},
+		{"a drop", "", "DROP TABLE t", "DROP TABLE t"},
+		{"a drop if exists", "", "DROP TABLE IF EXISTS t", "DROP TABLE IF EXISTS t"},
+		{"a view", "", "DROP VIEW v", "DROP VIEW v"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			if !IsWrite(e) {
+				t.Errorf("IsWrite(%q) = false; it changes something", tc.sql)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// T-SQL writes only two parts of a three-part name in a DROP, which names
+	// a different object. Read, and declined.
+	e, err := ParseOne("DROP VIEW a.b.c", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "tsql"); err == nil {
+		t.Errorf("wrote %q; T-SQL shortens the name here", got)
+	}
+	for _, sql := range []string{
+		"INSERT INTO t", "INSERT t VALUES (1)", "INSERT INTO t VALUES 1",
+		"INSERT INTO t (a VALUES (1)", "DROP TABLE", "DROP INDEX i",
+		"DROP TABLE t CASCADE",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
