@@ -331,6 +331,23 @@ func (p *parser) parseProjection() (*Expression, error) {
 			return nil, p.unsupported("T-SQL alias assignment")
 		}
 	}
+	// DuckDB names a projection in FRONT of it: `SELECT foo: 1` is
+	// `SELECT 1 AS foo`. Claimed only when a NAME is followed by the colon,
+	// so a slice or a parameter elsewhere in the expression is untouched.
+	if p.tables.PrefixAlias && p.atAliasName() {
+		if n := p.next(); n != nil && n.Type == TokCOLON {
+			alias, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
+			}
+			p.advance() // the colon
+			named, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			return New("Alias", Arg{"this", named}, Arg{"alias", alias}), nil
+		}
+	}
 	e, err := p.parseExpression()
 	if err != nil {
 		return nil, err

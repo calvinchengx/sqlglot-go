@@ -453,3 +453,43 @@ func TestTableSampleRefusals(t *testing.T) {
 		})
 	}
 }
+
+// DuckDB names a thing in FRONT of it, in both places a name can go. The very
+// same characters are a JSON extraction in Databricks, so the dialect decides
+// which colon this is -- not the shape of what follows it.
+func TestPrefixAlias(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"a projection", "duckdb", "SELECT foo: 1", "SELECT 1 AS foo"},
+		{"a quoted name", "duckdb", `SELECT "foo": 1`, `SELECT 1 AS "foo"`},
+		{"several", "duckdb", "SELECT foo: 1, bar: 2", "SELECT 1 AS foo, 2 AS bar"},
+		{"over an expression", "duckdb", "SELECT e: 1 + 2", "SELECT 1 + 2 AS e"},
+		{"over a subquery", "duckdb", "SELECT s: (SELECT 42)", "SELECT (SELECT 42) AS s"},
+		{"a relation", "duckdb", "SELECT * FROM foo: bar", "SELECT * FROM bar AS foo"},
+		{"a qualified relation", "duckdb", "SELECT * FROM foo: c.db.tbl",
+			"SELECT * FROM c.db.tbl AS foo"},
+		// The same text in Databricks, where a colon extracts rather than names.
+		{"not in Databricks", "databricks", "SELECT c1:price", "SELECT c1:price"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// And nowhere else: a colon after a name is not an alias in PostgreSQL.
+	if _, err := ParseOne("SELECT foo: 1", "postgres"); err == nil {
+		t.Error("`SELECT foo: 1` was read in PostgreSQL, which has no such form")
+	}
+	// A relation cannot be named twice.
+	if _, err := ParseOne("SELECT * FROM foo: bar AS baz", "duckdb"); err == nil {
+		t.Error("`FROM foo: bar AS baz` was read; it names the relation twice")
+	}
+}

@@ -229,6 +229,10 @@ type ParserTables struct {
 	// BareSampleCountIsPercent: `TABLESAMPLE (3)` is a PERCENTAGE in
 	// PostgreSQL and a number of rows everywhere else.
 	BareSampleCountIsPercent bool
+	// PrefixAlias: `SELECT foo: 1` NAMES the expression, DuckDB's
+	// spelling of `SELECT 1 AS foo`. The same characters are a JSON
+	// extraction in Databricks, so the dialect decides, not the shape.
+	PrefixAlias bool
 	// JSONPathFunctions are the names that turn their arguments into a
 	// JSON PATH rather than holding them. Probed with STRING literals,
 	// because with the placeholder columns the generic probe uses they
@@ -3560,6 +3564,7 @@ var parserTables = map[string]*ParserTables{
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
 		VariantExtractColon:      false,
+		PrefixAlias:              false,
 		BareSampleCountIsPercent: false,
 		JSONKeyValueSQL:          "{this}: {expression}",
 		JSONPathIsParsed:         true,
@@ -7085,6 +7090,7 @@ var parserTables = map[string]*ParserTables{
 			"JSON_VALUE":             {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 		},
 		VariantExtractColon:      false,
+		PrefixAlias:              false,
 		BareSampleCountIsPercent: false,
 		JSONKeyValueSQL:          "{this}: {expression}",
 		JSONPathIsParsed:         true,
@@ -10673,6 +10679,7 @@ var parserTables = map[string]*ParserTables{
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
 		VariantExtractColon:      false,
+		PrefixAlias:              false,
 		BareSampleCountIsPercent: true,
 		JSONKeyValueSQL:          "{this}: {expression}",
 		JSONPathIsParsed:         false,
@@ -14452,6 +14459,7 @@ var parserTables = map[string]*ParserTables{
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
 		VariantExtractColon:      false,
+		PrefixAlias:              true,
 		BareSampleCountIsPercent: false,
 		DefaultSampleMethod:      "RESERVOIR",
 		JSONKeyValueSQL:          "{this}, {expression}",
@@ -18225,6 +18233,7 @@ var parserTables = map[string]*ParserTables{
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
 		VariantExtractColon:      true,
+		PrefixAlias:              false,
 		BareSampleCountIsPercent: false,
 		JSONKeyValueSQL:          "{this}: {expression}",
 		JSONPathIsParsed:         true,

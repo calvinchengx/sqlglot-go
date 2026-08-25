@@ -129,3 +129,41 @@ func TestExpressionEqual(t *testing.T) {
 		})
 	}
 }
+
+// The two small helpers the type annotator leans on, at their edges.
+func TestAnnotateHelpers(t *testing.T) {
+	for _, tc := range []struct {
+		text string
+		want bool
+	}{
+		{"0", true},
+		{"123", true},
+		{"", false},
+		{"1a", false},
+		{"-1", false}, // a sign is not part of the text here
+		{"١٢", false}, // nor is a non-ASCII digit
+		{" 1", false},
+	} {
+		if got := isIntegerText(tc.text); got != tc.want {
+			t.Errorf("isIntegerText(%q) = %v, want %v", tc.text, got, tc.want)
+		}
+	}
+
+	if hasTypeParams(nil) {
+		t.Error("hasTypeParams(nil) = true, want false")
+	}
+	bare, err := ParseOne("CAST(x AS INT)", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if hasTypeParams(bare.Args["to"].(*Expression)) {
+		t.Error("INT has no type parameters")
+	}
+	sized, err := ParseOne("CAST(x AS DECIMAL(10, 2))", "")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !hasTypeParams(sized.Args["to"].(*Expression)) {
+		t.Error("DECIMAL(10, 2) has type parameters")
+	}
+}

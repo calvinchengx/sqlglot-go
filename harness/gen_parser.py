@@ -674,6 +674,23 @@ def interval_unit_inside_string(dialect: str, exp) -> bool:
     return "'1 DAY'" in node.sql(dialect=dialect or None)
 
 
+def prefix_alias(dialect: str) -> bool:
+    """Whether `name: expr` NAMES the expression in this dialect.
+
+    DuckDB writes `SELECT foo: 1` for `SELECT 1 AS foo`. The same characters
+    are a JSON extraction in Databricks -- `c1:price` -- so which one a colon
+    is depends entirely on the dialect, and both are read here under their own
+    flag rather than by guessing from what follows.
+    """
+    import sqlglot
+
+    try:
+        node = sqlglot.parse_one("SELECT foo: 1", read=dialect or None).selects[0]
+    except Exception:  # noqa: BLE001 -- not a form this dialect has
+        return False
+    return type(node).__name__ == "Alias"
+
+
 def bare_sample_count_is_percent(dialect: str, exp) -> bool:
     """What `TABLESAMPLE (3)` counts, with no unit written after it.
 
@@ -2576,6 +2593,10 @@ def main() -> int:
         "\t// BareSampleCountIsPercent: `TABLESAMPLE (3)` is a PERCENTAGE in\n",
         "\t// PostgreSQL and a number of rows everywhere else.\n",
         "\tBareSampleCountIsPercent bool\n",
+        "\t// PrefixAlias: `SELECT foo: 1` NAMES the expression, DuckDB's\n",
+        "\t// spelling of `SELECT 1 AS foo`. The same characters are a JSON\n",
+        "\t// extraction in Databricks, so the dialect decides, not the shape.\n",
+        "\tPrefixAlias bool\n",
         "\t// JSONPathFunctions are the names that turn their arguments into a\n",
         "\t// JSON PATH rather than holding them. Probed with STRING literals,\n",
         "\t// because with the placeholder columns the generic probe uses they\n",
@@ -3078,6 +3099,7 @@ def main() -> int:
         out.append(
             f"\t\tVariantExtractColon: {str(variant_extract_colon(name)).lower()},\n"
         )
+        out.append(f"\t\tPrefixAlias: {str(prefix_alias(name)).lower()},\n")
         out.append(
             "\t\tBareSampleCountIsPercent: %s,\n"
             % str(bare_sample_count_is_percent(name, exp)).lower()

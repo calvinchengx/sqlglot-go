@@ -177,6 +177,26 @@ func (p *parser) parseQualifiedCall() (*Expression, error) {
 }
 
 func (p *parser) parseTable() (*Expression, error) {
+	// DuckDB names a relation in FRONT of it too: `FROM foo: bar` is
+	// `FROM bar AS foo`, the same prefix alias the projection list takes.
+	if p.tables.PrefixAlias && p.atAliasName() {
+		if n := p.next(); n != nil && n.Type == TokCOLON {
+			alias, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
+			}
+			p.advance() // the colon
+			named, err := p.parseTable()
+			if err != nil {
+				return nil, err
+			}
+			if existing, _ := named.Args["alias"].(*Expression); existing != nil {
+				return nil, p.unsupported("a relation named twice")
+			}
+			named.Set("alias", New("TableAlias", Arg{"this", alias}))
+			return named, nil
+		}
+	}
 	if p.at(TokL_PAREN) {
 		return p.parseSubqueryTable()
 	}
