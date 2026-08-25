@@ -1289,7 +1289,11 @@ func TestGroupingWriterEdges(t *testing.T) {
 	if got, err := Generate(New("GroupingSets"), ""); err != nil || got != "GROUPING SETS ()" {
 		t.Errorf("got %q (%v), want the empty grouping written", got, err)
 	}
-	// A class this writer does not name is refused rather than guessed at.
+	// A class this writer does not name is refused rather than guessed at:
+	// it spells three groupings and nothing else.
+	if got, err := Generate(New("Rollup"), ""); err != nil || got != "ROLLUP ()" {
+		t.Errorf("got %q (%v), want ROLLUP ()", got, err)
+	}
 	if got, err := Generate(New("Cube", Arg{"expressions", []*Expression{}}), ""); err != nil || got != "CUBE ()" {
 		t.Errorf("got %q (%v), want CUBE ()", got, err)
 	}
@@ -1466,5 +1470,71 @@ func TestStarAndMapWriterEdges(t *testing.T) {
 	// statement has the shape.
 	if _, err := ParseOne("SELECT * REPLACE", ""); err == nil {
 		t.Error("`SELECT * REPLACE` was read; this port refuses it")
+	}
+}
+
+// `f(name := value)` is a NAMED ARGUMENT, and the reference records it as the
+// same PropertyEQ a struct field uses. Which spelling comes back out depends
+// on the PARENT: a field of a struct is `'k': v`, an argument of a call is
+// `k := v`.
+func TestNamedArguments(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"a struct built from named arguments", "struct_pack(a := 1, b := 2)", "{'a': 1, 'b': 2}"},
+		{"a quoted name", `STRUCT_PACK("a b" := 1)`, "{'a b': 1}"},
+		{"an argument of a known call", "SELECT UNNEST(col, recursive := TRUE) FROM t",
+			"SELECT UNNEST(col, recursive := TRUE) FROM t"},
+		{"an argument of an unknown call", "SELECT STAR(tbl, exclude := [foo])",
+			"SELECT STAR(tbl, exclude := [foo])"},
+		// A struct nested inside a call keeps the FIELD spelling: the two are
+		// decided by the immediate parent, not by how deep the call is.
+		{"a struct inside a call", "SELECT CARDINALITY(CAST({'a': 1} AS MAP(TEXT, INT)))",
+			"SELECT CARDINALITY(CAST({'a': 1} AS MAP(TEXT, INT)))"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "duckdb")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, "duckdb")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// Outside an argument list `:=` is an assignment, which is a statement.
+	if _, err := ParseOne("SELECT 1 FROM t WHERE a := 1", "duckdb"); err == nil {
+		t.Error("`a := 1` was read outside a call; it should be refused")
+	}
+	// And a name that is not a name.
+	if _, err := ParseOne("f(1 := 2)", "duckdb"); err == nil {
+		t.Error("`1 := 2` was read; the name is not a name")
+	}
+}
+
+// What can stand before a `:=` in an argument list.
+func TestNamedArgumentNames(t *testing.T) {
+	for _, tc := range []struct {
+		sql  string
+		read bool
+	}{
+		{"f(a := 1)", true},
+		{`f("a b" := 1)`, true},
+		{"f(1 := 2)", false},
+		{"f('a' := 2)", false},
+		{"f(a.b := 2)", true},
+		{"f(a := )", false},
+		{"f(a.b.c := 2)", true},
+		{"f(x[1] := 2)", false},
+	} {
+		_, err := ParseOne(tc.sql, "duckdb")
+		if tc.read && err != nil {
+			t.Errorf("ParseOne(%q) was refused: %v", tc.sql, err)
+		}
+		if !tc.read && err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", tc.sql)
+		}
 	}
 }

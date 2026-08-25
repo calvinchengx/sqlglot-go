@@ -53,6 +53,9 @@ type generator struct {
 	// T-SQL writes those `(1 = 1)` and a plain value `1`, so which one to
 	// write is a fact about the node's position rather than about the node.
 	conditions map[*Expression]bool
+	// inCallArgs marks the arguments of a CALL being written, where a named
+	// argument is spelled `k := v` rather than as a struct field.
+	inCallArgs bool
 	// pathOwner is the extraction class whose path is being written, because
 	// a path's separators depend on the call it appears in.
 	pathOwner string
@@ -126,6 +129,16 @@ func (g *generator) childOperand(e *Expression, key string) string {
 // list renders the `expressions` arg, the only repeated arg rendered this way
 // -- CASE renders its own branches, because exp.If is written one way as a
 // branch and another as a standalone call.
+// callList renders a call's arguments, where a named argument takes its own
+// spelling.
+func (g *generator) callList(e *Expression) string {
+	was := g.inCallArgs
+	g.inCallArgs = true
+	out := g.list(e)
+	g.inCallArgs = was
+	return out
+}
+
 func (g *generator) list(e *Expression) string {
 	items, _ := e.Args["expressions"].([]*Expression)
 	parts := make([]string, 0, len(items))
@@ -377,6 +390,10 @@ func (g *generator) namedFunction(e *Expression, spec FuncSQL) string {
 	}
 	arity := argCount(e)
 	parts := []string{}
+	// These are a CALL's arguments, so a named one takes its own spelling.
+	wasInCallArgs := g.inCallArgs
+	g.inCallArgs = true
+	defer func() { g.inCallArgs = wasInCallArgs }()
 	for _, key := range spec.Keys {
 		// A literal zero this dialect leaves out entirely: DuckDB writes
 		// `REGEXP_EXTRACT(x, p)` for a zero group. Probed, not assumed.

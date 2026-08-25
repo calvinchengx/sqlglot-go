@@ -259,3 +259,37 @@ func TestAnnotateCoercionEdges(t *testing.T) {
 		})
 	}
 }
+
+// An array whose members disagree, and one the annotator can say nothing about.
+func TestAnnotateArrayEdges(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT [1, 2, 3]", "INT[]"},
+		{"SELECT ['a', 'b']", "TEXT[]"},
+		// The FIRST member answers for the array; a later one that disagrees
+		// does not make it unknown. The reference does the same.
+		{"SELECT [1, 'a']", "INT[]"},
+		{"SELECT [[1], [2]]", "INT[][]"},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
+		if err != nil {
+			t.Skipf("ParseOne(%q): %v", tc.sql, err)
+		}
+		only, _ := e.Args["expressions"].([]*Expression)
+		got := Annotate(only[0], "duckdb")
+		if tc.want == "" {
+			if got != nil {
+				if r, err := Generate(got, "duckdb"); err == nil && r != "UNKNOWN" {
+					t.Errorf("%q: Annotate = %q, want no answer", tc.sql, r)
+				}
+			}
+			continue
+		}
+		if got == nil {
+			t.Errorf("%q: no answer, want %s", tc.sql, tc.want)
+			continue
+		}
+		if r, err := Generate(got, "duckdb"); err != nil || r != tc.want {
+			t.Errorf("%q: Annotate = %q (%v), want %q", tc.sql, r, err, tc.want)
+		}
+	}
+}

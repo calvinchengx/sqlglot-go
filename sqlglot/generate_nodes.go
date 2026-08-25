@@ -487,12 +487,11 @@ func (g *generator) writeTuple(e *Expression) string {
 // A grouping writes its name and its members: `CUBE (a, b)`, and the empty
 // `GROUPING SETS ()` writes its parentheses with nothing between them.
 func (g *generator) writeGrouping(e *Expression) string {
+	// Registered for these three classes and no others, so there is no fourth
+	// case to fall through to.
 	word := map[string]string{
 		"GroupingSets": "GROUPING SETS", "Cube": "CUBE", "Rollup": "ROLLUP",
 	}[e.Class]
-	if word == "" {
-		return g.fail(e.Class)
-	}
 	return word + " (" + g.list(e) + ")"
 }
 
@@ -859,7 +858,7 @@ func (g *generator) anonymous(e *Expression, upper bool) string {
 		open, close := g.tables.IdentifierStart, g.tables.IdentifierEnd
 		name = open + strings.ReplaceAll(name, close, close+close) + close
 	}
-	return name + "(" + g.list(e) + ")"
+	return name + "(" + g.callList(e) + ")"
 }
 
 func (g *generator) writeIn(e *Expression) string {
@@ -1346,7 +1345,16 @@ func (g *generator) writeTableAlias(e *Expression) string {
 	return out + "(" + strings.Join(rendered, ", ") + ")"
 }
 
-func (g *generator) writeStruct(e *Expression) string { return "{" + g.list(e) + "}" }
+// writeStruct writes a struct literal. Its fields are FIELDS however deep
+// inside a call the struct sits, so the named-argument spelling is put down
+// here rather than carried in from above.
+func (g *generator) writeStruct(e *Expression) string {
+	was := g.inCallArgs
+	g.inCallArgs = false
+	out := "{" + g.list(e) + "}"
+	g.inCallArgs = was
+	return out
+}
 
 // writePropertyEQ writes a struct entry. The key is an Identifier in the tree
 // and a quoted string on the page.
@@ -1355,6 +1363,12 @@ func (g *generator) writePropertyEQ(e *Expression) string {
 	name := ""
 	if key != nil {
 		name, _ = key.Args["this"].(string)
+	}
+	// The same node has two spellings, and the PARENT decides which. As a
+	// field of a struct it is `'k': v`; as a named ARGUMENT of a call it is
+	// `k := v`, the way it was written.
+	if g.inCallArgs {
+		return g.node(key) + " := " + g.child(e, "expression")
 	}
 	return "'" + escapeStringBody(name, g.cfg.StringEscapes) + "': " + g.child(e, "expression")
 }

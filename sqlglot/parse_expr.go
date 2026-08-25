@@ -52,7 +52,23 @@ func (p *parser) parseAssignment() (*Expression, error) {
 		return nil, err
 	}
 	if p.at(TokCOLON_EQ) {
-		return nil, p.unsupported("assignment")
+		// `f(name := value)` is a NAMED ARGUMENT, and the reference records
+		// the name as a bare identifier -- the same PropertyEQ a struct field
+		// uses. Only in argument position: `:=` anywhere else is an
+		// assignment, which is a statement rather than an expression.
+		if !p.inCallArgs {
+			return nil, p.unsupported("assignment")
+		}
+		name := namedArgument(this)
+		if name == nil {
+			return nil, p.unsupported("a named argument whose name is not a name")
+		}
+		p.advance()
+		value, err := p.parseDisjunction()
+		if err != nil {
+			return nil, err
+		}
+		return New("PropertyEQ", Arg{"this", name}, Arg{"expression", value}), nil
 	}
 	return this, nil
 }
@@ -2243,4 +2259,32 @@ func (p *parser) parseMapLiteral() (*Expression, error) {
 		return nil, p.unsupported("unclosed map literal")
 	}
 	return New("ToMap", Arg{"this", New("Struct", Arg{"expressions", items})}), nil
+}
+
+// namedArgument unwraps what stands before a `:=` into the identifier the
+// reference keeps there, or reports that it is not a name at all.
+func namedArgument(e *Expression) *Expression {
+	if e == nil {
+		return nil
+	}
+	if e.Class == "Identifier" {
+		return e
+	}
+	if e.Class == "Column" {
+		inner, _ := e.Args["this"].(*Expression)
+		if inner == nil || inner.Class != "Identifier" {
+			return nil
+		}
+		// A QUALIFIED name is kept whole -- the reference writes
+		// `F(a.b := 2)` -- where a bare one is unwrapped to the identifier
+		// the reference keeps there. Unwrapping both dropped the qualifier
+		// and named a different argument.
+		for _, key := range []string{"table", "db", "catalog"} {
+			if part, _ := e.Args[key].(*Expression); part != nil {
+				return e
+			}
+		}
+		return inner
+	}
+	return nil
 }
