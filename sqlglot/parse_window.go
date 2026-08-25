@@ -12,7 +12,27 @@ import "strings"
 // nothing is being invented here, only read back.
 func (p *parser) parseWindow(this *Expression) (*Expression, error) {
 	p.advance() // OVER
+	return p.windowBody(this, "OVER")
+}
 
+// parseNamedWindow reads one entry of a `WINDOW w AS (...)` clause. It is the
+// same Window node an OVER builds, with the NAME where the call would be and
+// `over` left off -- so the body is read by the same code.
+func (p *parser) parseNamedWindow() (*Expression, error) {
+	name, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokALIAS) {
+		return nil, p.unsupported("a named window without AS")
+	}
+	if !p.at(TokL_PAREN) {
+		return nil, p.unsupported("a named window without a specification")
+	}
+	return p.windowBody(name, nil)
+}
+
+func (p *parser) windowBody(this *Expression, over any) (*Expression, error) {
 	partitionBy := []*Expression{}
 	var order, spec, alias *Expression
 
@@ -62,7 +82,7 @@ func (p *parser) parseWindow(this *Expression) (*Expression, error) {
 		Arg{"order", order},
 		Arg{"spec", spec},
 		Arg{"alias", alias},
-		Arg{"over", "OVER"},
+		Arg{"over", over},
 		Arg{"first", nil},
 	), nil
 }

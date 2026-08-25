@@ -172,6 +172,16 @@ func (g *generator) writeSelect(e *Expression) string {
 		}
 		add(sample)
 	}
+	// The WINDOW clause comes BEFORE the QUALIFY that refers to its names.
+	windows, _ := e.Args["windows"].([]*Expression)
+	if len(windows) > 0 {
+		names := make([]string, 0, len(windows))
+		for _, w := range windows {
+			names = append(names, g.node(w))
+		}
+		add("WINDOW " + strings.Join(names, ", "))
+	}
+	add(g.child(e, "qualify"))
 	// A LATERAL VIEW is a clause of the query, and there may be several.
 	laterals, _ := e.Args["laterals"].([]*Expression)
 	for _, lateral := range laterals {
@@ -1113,7 +1123,12 @@ func isQuery(e *Expression) bool {
 // writeWindow writes the OVER clause. A named window (`OVER w`) carries an
 // alias instead of a body.
 func (g *generator) writeWindow(e *Expression) string {
+	// A NAMED window -- one entry of a WINDOW clause -- is the same node with
+	// the name where the call would be and no OVER. `over` says which.
 	out := g.child(e, "this") + " OVER "
+	if _, over := e.Args["over"].(string); !over {
+		out = g.child(e, "this") + " AS "
+	}
 	if alias := g.child(e, "alias"); alias != "" {
 		return out + alias
 	}

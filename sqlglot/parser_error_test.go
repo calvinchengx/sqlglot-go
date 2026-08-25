@@ -59,8 +59,8 @@ func TestTheUnsupportedMessageIsUnchanged(t *testing.T) {
 // whatever is still refused, and they are meant to keep being replaced.
 func TestLabelNamesTheKeywordThatStoppedIt(t *testing.T) {
 	for _, tc := range []struct{ sql, want string }{
-		{"SELECT a FROM t WINDOW w AS (PARTITION BY b)", "trailing tokens at WINDOW"},
-		{"SELECT a FROM t USING (b)", "trailing tokens at USING"},
+		{"SELECT a FROM t CLUSTER BY b", "trailing tokens at CLUSTER BY"},
+		{"SELECT a FROM t DISTRIBUTE BY b", "trailing tokens at DISTRIBUTE BY"},
 	} {
 		_, err := ParseOne(tc.sql, "tsql")
 		var u *UnsupportedError

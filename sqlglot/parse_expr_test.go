@@ -1648,3 +1648,47 @@ func TestCollate(t *testing.T) {
 		t.Error("`COLLATE` at the end was read; it should be refused")
 	}
 }
+
+// A named window is the same node an OVER builds, with the NAME where the call
+// would be and no OVER -- so the body is read and written by the same code,
+// and `over` is what tells the two apart.
+func TestNamedWindowAndQualify(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"one window", "", "SELECT a FROM t WINDOW w AS (PARTITION BY b)",
+			"SELECT a FROM t WINDOW w AS (PARTITION BY b)"},
+		{"two of them", "", "SELECT a FROM t WINDOW w AS (PARTITION BY b ORDER BY c), v AS (ORDER BY d)",
+			"SELECT a FROM t WINDOW w AS (PARTITION BY b ORDER BY c), v AS (ORDER BY d)"},
+		{"referred to by an OVER", "", "SELECT SUM(x) OVER w FROM t WINDOW w AS (PARTITION BY b)",
+			"SELECT SUM(x) OVER w FROM t WINDOW w AS (PARTITION BY b)"},
+		{"qualify", "duckdb", "SELECT a FROM t QUALIFY ROW_NUMBER() OVER (PARTITION BY b) = 1",
+			"SELECT a FROM t QUALIFY ROW_NUMBER() OVER (PARTITION BY b) = 1"},
+		// The WINDOW clause comes BEFORE the QUALIFY that refers to its names.
+		{"both, in order", "duckdb",
+			"SELECT a FROM t WINDOW w AS (PARTITION BY b) QUALIFY ROW_NUMBER() OVER w < 3",
+			"SELECT a FROM t WINDOW w AS (PARTITION BY b) QUALIFY ROW_NUMBER() OVER w < 3"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	for _, sql := range []string{
+		"SELECT a FROM t WINDOW w (PARTITION BY b)",
+		"SELECT a FROM t WINDOW w AS b",
+		"SELECT a FROM t WINDOW",
+		"SELECT a FROM t QUALIFY",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}

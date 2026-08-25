@@ -515,6 +515,34 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			if err := p.setOnce(sel, "limit", limit); err != nil {
 				return err
 			}
+		case p.at(TokWINDOW):
+			// `WINDOW w AS (...), v AS (...)` names windows for OVER to refer
+			// to. Each is the same node an OVER builds.
+			p.advance()
+			var windows []*Expression
+			for {
+				w, err := p.parseNamedWindow()
+				if err != nil {
+					return err
+				}
+				windows = append(windows, w)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			if err := p.setOnce(sel, "windows", windows[0]); err != nil {
+				return err
+			}
+			sel.Set("windows", windows)
+		case p.at(TokQUALIFY):
+			p.advance()
+			e, err := p.parseDisjunction()
+			if err != nil {
+				return err
+			}
+			if err := p.setOnce(sel, "qualify", New("Qualify", Arg{"this", e})); err != nil {
+				return err
+			}
 		case p.atWords("USING", "SAMPLE"):
 			// DuckDB's other sampling spelling, which hangs off the QUERY
 			// where TABLESAMPLE hangs off the table -- the same node either
