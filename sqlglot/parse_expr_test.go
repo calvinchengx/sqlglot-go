@@ -1692,3 +1692,61 @@ func TestNamedWindowAndQualify(t *testing.T) {
 		}
 	}
 }
+
+// CREATE TABLE, in the two shapes the corpus is mostly made of. The kind is a
+// WORD on the node and the name is wrapped in a Schema when there are columns,
+// so the shape of `this` is what says which spelling this is.
+func TestCreateTable(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"columns", "", "CREATE TABLE t (a INT, b TEXT)", "CREATE TABLE t (a INT, b TEXT)"},
+		{"a query", "", "CREATE TABLE t AS SELECT 1", "CREATE TABLE t AS SELECT 1"},
+		{"or replace", "", "CREATE OR REPLACE TABLE t (a INT)", "CREATE OR REPLACE TABLE t (a INT)"},
+		{"if not exists", "", "CREATE TABLE IF NOT EXISTS t (a INT)", "CREATE TABLE IF NOT EXISTS t (a INT)"},
+		{"a qualified name", "", "CREATE TABLE db.t (a INT)", "CREATE TABLE db.t (a INT)"},
+		{"a sized type", "", "CREATE TABLE t (c VARCHAR(100), d DECIMAL(5, 3))",
+			"CREATE TABLE t (c VARCHAR(100), d DECIMAL(5, 3))"},
+		// A column of a table is `a STRING`; a FIELD of a struct is `a: STRING`
+		// in Databricks, and the struct inside a column keeps its own.
+		{"a struct column", "databricks", "CREATE TABLE t (a STRUCT<c: MAP<STRING, STRING>>)",
+			"CREATE TABLE t (a STRUCT<c: MAP<STRING, STRING>>)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// T-SQL has no CREATE TABLE AS SELECT and the reference REWRITES it into
+	// `SELECT * INTO`. That is a transformation, not a spelling, so the port
+	// reads the statement and declines to write it.
+	e, err := ParseOne("CREATE TABLE t AS SELECT 1", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "tsql"); err == nil {
+		t.Errorf("wrote %q; T-SQL writes this another way entirely", got)
+	}
+	// Anything the port cannot read WHOLE is refused, not read in part: a
+	// dropped constraint changes what the table is.
+	for _, sql := range []string{
+		"CREATE TABLE t (a INT PRIMARY KEY)",
+		"CREATE TABLE t (a INT DEFAULT 1)",
+		"CREATE TEMPORARY TABLE t (a INT)",
+		"CREATE VIEW v AS SELECT 1",
+		"CREATE TABLE t",
+		"CREATE TABLE t (a INT",
+		"CREATE TABLE t (a INT) PARTITIONED BY (b)",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}

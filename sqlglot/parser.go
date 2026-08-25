@@ -215,6 +215,9 @@ func (p *parser) parseStatement() (*Expression, error) {
 	if p.at(TokSELECT) || p.at(TokWITH) || p.at(TokPIVOT) || p.at(TokUNPIVOT) {
 		return p.parseQuery()
 	}
+	if p.at(TokCREATE) {
+		return p.parseCreate()
+	}
 	if c := p.curr(); c != nil {
 		if _, isStatement := p.tables.StatementTokens[c.Type]; isStatement {
 			return nil, &NotAQueryError{Kind: strings.ToUpper(c.Text)}

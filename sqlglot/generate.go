@@ -56,6 +56,9 @@ type generator struct {
 	// inCallArgs marks the arguments of a CALL being written, where a named
 	// argument is spelled `k := v` rather than as a struct field.
 	inCallArgs bool
+	// inColumnList marks a table's COLUMN list, where a definition is spelled
+	// `a STRING` rather than as the struct field `a: STRING`.
+	inColumnList bool
 	// pathOwner is the extraction class whose path is being written, because
 	// a path's separators depend on the call it appears in.
 	pathOwner string

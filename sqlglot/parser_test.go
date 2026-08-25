@@ -568,6 +568,12 @@ func TestCountKeepsItsFlag(t *testing.T) {
 // A write is refused for being a write, not for being unreadable. The guard
 // above this parser reports "read-only" on the strength of that distinction,
 // and the service's conformance suite checks the wording.
+//
+// CREATE has left this list because it now PARSES. That is the whole point of
+// bringing DDL into scope, and it moves the read-only question: a caller that
+// asks ErrNotAQuery will see a CREATE go past as though it were a query, and
+// has to ask IsWrite instead. TestWritesAreNamedWhenTheyParse covers the ones
+// that have crossed over.
 func TestWritesAreNamedNotParsed(t *testing.T) {
 	for _, c := range []struct{ sql, kind string }{
 		{"DROP TABLE dbo.fct_sales", "DROP"},
@@ -575,7 +581,6 @@ func TestWritesAreNamedNotParsed(t *testing.T) {
 		{"UPDATE dbo.fct_sales SET amount_usd = 0", "UPDATE"},
 		{"INSERT INTO dbo.fct_sales VALUES (1)", "INSERT"},
 		{"TRUNCATE TABLE dbo.fct_sales", "TRUNCATE"},
-		{"CREATE TABLE t (a INT)", "CREATE"},
 		{"EXEC xp_cmdshell 'dir'", "EXEC"},
 	} {
 		_, err := ParseOne(c.sql, "tsql")
@@ -668,5 +673,31 @@ func TestSelectInto(t *testing.T) {
 	}
 	if got := into.This().Name(); got != "copy" {
 		t.Errorf("INTO target is %q, want copy", got)
+	}
+}
+
+// A write that PARSES is still a write, and says so. This is the replacement
+// for the ErrNotAQuery signal on every statement that has crossed over.
+func TestWritesAreNamedWhenTheyParse(t *testing.T) {
+	for _, sql := range []string{
+		"CREATE TABLE t (a INT)",
+		"CREATE TABLE t AS SELECT 1",
+		"CREATE OR REPLACE TABLE t (a INT)",
+	} {
+		e, err := ParseOne(sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; a CREATE changes something", sql)
+		}
+	}
+	// And a query is not a write.
+	q, err := ParseOne("SELECT 1", "tsql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if IsWrite(q) {
+		t.Error("IsWrite(SELECT 1) = true")
 	}
 }

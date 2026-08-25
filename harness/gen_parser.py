@@ -701,6 +701,25 @@ def within_group_folding_names(dialect: str, P) -> list:
     return out
 
 
+def create_as_select_rewritten(dialect: str) -> bool:
+    """Whether `CREATE TABLE x AS SELECT` is written back as something else.
+
+    T-SQL has no such statement and the reference REWRITES it into
+    `SELECT * INTO x FROM (...)`, wrapping the query and naming it. That is a
+    transformation rather than a spelling, and this port does not do it -- so
+    the statement is refused there rather than written as itself.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("CREATE TABLE x AS SELECT 1", read=dialect or None).sql(
+            dialect=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return True
+    return not text.upper().startswith("CREATE")
+
+
 def map_brace_literal(dialect: str) -> bool:
     """Whether `MAP {k: v}` is a map LITERAL in this dialect.
 
@@ -2834,6 +2853,10 @@ def main() -> int:
         "\t// MapBraceLiteral: `MAP {k: v}` is a map LITERAL here. Elsewhere MAP\n",
         "\t// is an ordinary name and the braces are a struct.\n",
         "\tMapBraceLiteral bool\n",
+        "\t// RewritesCreateAsSelect: this dialect has no CREATE TABLE AS SELECT\n",
+        "\t// and the reference turns it into something else, which is a\n",
+        "\t// transformation rather than a spelling.\n",
+        "\tRewritesCreateAsSelect bool\n",
         "\tGroupConcatOrder string\n",
         "\tTableSampleWord  string\n",
         "\tSelectSampleWord string\n",
@@ -3348,6 +3371,10 @@ def main() -> int:
         if _wgf:
             out.append(strset("WithinGroupFolds", _wgf))
         out.append(f"\t\tMapBraceLiteral: {str(map_brace_literal(name)).lower()},\n")
+        out.append(
+            "\t\tRewritesCreateAsSelect: %s,\n"
+            % str(create_as_select_rewritten(name)).lower()
+        )
         _gco = group_concat_order(name)
         if _gco:
             out.append(f"\t\tGroupConcatOrder: {gostr(_gco)},\n")

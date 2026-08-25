@@ -59,6 +59,8 @@ func init() {
 		"Escape":            (*generator).writeEscape,
 		"Parameter":         (*generator).writeParameter,
 		"ColumnDef":         (*generator).writeColumnDef,
+		"Create":            (*generator).writeCreate,
+		"Schema":            (*generator).writeSchema,
 		"Anonymous":         (*generator).writeAnonymous,
 		"In":                (*generator).writeIn,
 		"Between":           (*generator).writeBetween,
@@ -851,7 +853,19 @@ func (g *generator) writeDataType(e *Expression) string {
 // writeColumnDef writes one named field of a STRUCT-like type. The separator
 // is the dialect's: Databricks writes `a: INT` where the others write `a INT`.
 func (g *generator) writeColumnDef(e *Expression) string {
-	return g.child(e, "this") + g.tables.CompositeType.StructFieldSep + g.child(e, "kind")
+	// A COLUMN of a table is `a STRING`; a FIELD of a struct is `a: STRING` in
+	// Databricks. Same node, and the parent says which.
+	sep := g.tables.CompositeType.StructFieldSep
+	if g.inColumnList {
+		sep = " "
+	}
+	// The column's TYPE is not a column list, however deep the struct in it
+	// goes: `a STRUCT<c: MAP<...>>` keeps the field separator inside.
+	was := g.inColumnList
+	g.inColumnList = false
+	kind := g.child(e, "kind")
+	g.inColumnList = was
+	return g.child(e, "this") + sep + kind
 }
 
 func (g *generator) writeAnonymous(e *Expression) string { return g.anonymous(e, true) }
@@ -1881,4 +1895,47 @@ func (g *generator) writeGroupConcat(e *Expression) string {
 		return out + " WITHIN GROUP (" + strings.TrimSpace(g.node(ordering)) + ")"
 	}
 	return g.fail(e.Class + " over an ordering this dialect writes elsewhere")
+}
+
+// writeCreate writes the statements that make things. The kind is a WORD on
+// the node and the name is wrapped in a Schema when there are columns, so the
+// shape of `this` is what says which spelling this is.
+func (g *generator) writeCreate(e *Expression) string {
+	kind, _ := e.Args["kind"].(string)
+	out := "CREATE "
+	if replace, _ := e.Args["replace"].(bool); replace {
+		out += "OR REPLACE "
+	}
+	out += kind + " "
+	if exists, _ := e.Args["exists"].(bool); exists {
+		out += "IF NOT EXISTS "
+	}
+	if expr, _ := e.Args["expression"].(*Expression); expr != nil && g.tables.RewritesCreateAsSelect {
+		// This dialect has no such statement and the reference turns it into
+		// another one -- `SELECT * INTO x FROM (...)`. That is a rewrite, not
+		// a spelling, and writing the statement as itself would be SQL the
+		// engine cannot run.
+		return g.fail(e.Class + " as a query, which this dialect writes another way")
+	}
+	out += g.child(e, "this")
+	if expression := g.child(e, "expression"); expression != "" {
+		out += " AS " + expression
+	}
+	return out
+}
+
+// writeSchema writes a name with its column list: `t (a INT, b TEXT)`.
+func (g *generator) writeSchema(e *Expression) string {
+	items, _ := e.Args["expressions"].([]*Expression)
+	if len(items) == 0 {
+		return g.child(e, "this")
+	}
+	was := g.inColumnList
+	g.inColumnList = true
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, g.node(item))
+	}
+	g.inColumnList = was
+	return g.child(e, "this") + " (" + strings.Join(parts, ", ") + ")"
 }

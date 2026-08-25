@@ -254,7 +254,11 @@ type ParserTables struct {
 	WithinGroupFolds map[string]struct{}
 	// MapBraceLiteral: `MAP {k: v}` is a map LITERAL here. Elsewhere MAP
 	// is an ordinary name and the braces are a struct.
-	MapBraceLiteral          bool
+	MapBraceLiteral bool
+	// RewritesCreateAsSelect: this dialect has no CREATE TABLE AS SELECT
+	// and the reference turns it into something else, which is a
+	// transformation rather than a spelling.
+	RewritesCreateAsSelect   bool
 	GroupConcatOrder         string
 	TableSampleWord          string
 	SelectSampleWord         string
@@ -3598,6 +3602,7 @@ var parserTables = map[string]*ParserTables{
 			"STRING_AGG": {},
 		},
 		MapBraceLiteral:          false,
+		RewritesCreateAsSelect:   false,
 		GroupConcatOrder:         "inline",
 		PivotColumnNaming:        "agg_name_if_aliased",
 		PivotIdentifiesStrings:   false,
@@ -7133,8 +7138,9 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:  false,
-		GroupConcatOrder: "within_group",
+		MapBraceLiteral:        false,
+		RewritesCreateAsSelect: true,
+		GroupConcatOrder:       "within_group",
 		ForClauseOptions: map[string]map[string][]string{
 			"JSON": {
 				"AUTO":                  {},
@@ -10752,6 +10758,7 @@ var parserTables = map[string]*ParserTables{
 			"STRING_AGG": {},
 		},
 		MapBraceLiteral:          false,
+		RewritesCreateAsSelect:   false,
 		PivotColumnNaming:        "agg_name_if_aliased",
 		PivotIdentifiesStrings:   false,
 		PivotPrefixesColumns:     false,
@@ -14544,6 +14551,7 @@ var parserTables = map[string]*ParserTables{
 			"STRING_AGG":   {},
 		},
 		MapBraceLiteral:          true,
+		RewritesCreateAsSelect:   false,
 		TableSampleWord:          "TABLESAMPLE",
 		SelectSampleWord:         "USING SAMPLE",
 		PivotColumnNaming:        "agg_name_if_aliased_or_multiple",
@@ -18329,6 +18337,7 @@ var parserTables = map[string]*ParserTables{
 			"STRING_AGG": {},
 		},
 		MapBraceLiteral:          false,
+		RewritesCreateAsSelect:   false,
 		GroupConcatOrder:         "within_group",
 		PivotColumnNaming:        "agg_name_if_multiple",
 		PivotIdentifiesStrings:   false,
