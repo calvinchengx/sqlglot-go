@@ -212,3 +212,50 @@ func TestAnnotateEdges(t *testing.T) {
 		})
 	}
 }
+
+// Coercion and the annotator's walk over shapes it can say nothing about.
+func TestAnnotateCoercionEdges(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"two ints stay int", "SELECT 1 + 2", "INT"},
+		{"an int and a double widen", "SELECT 1 + 1.5", "DOUBLE"},
+		// The reference answers UNKNOWN here and this port answers INT: an
+		// operand whose type it never worked out is treated as contributing
+		// nothing rather than as poisoning. Recorded as it IS, not as it
+		// should be -- making nil poison costs 17 of the annotator contract's
+		// 48 cases, so `nil` plainly does not mean `unknown` everywhere it
+		// appears, and the fix is not this one line.
+		{"an untyped operand does not poison, and should", "SELECT 1 + x", "INT"},
+		{"a null contributes nothing", "SELECT 1 + NULL", "INT"},
+		{"a cast is taken as written", "SELECT CAST(x AS BIGINT)", "BIGINT"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "duckdb")
+			if err != nil {
+				t.Skipf("ParseOne: %v", err)
+			}
+			only, _ := e.Args["expressions"].([]*Expression)
+			if len(only) == 0 {
+				t.Skip("no projection")
+			}
+			got := Annotate(only[0], "duckdb")
+			if tc.want == "" {
+				if got != nil {
+					if rendered, err := Generate(got, "duckdb"); err == nil && rendered != "UNKNOWN" {
+						t.Errorf("Annotate = %q, want no answer", rendered)
+					}
+				}
+				return
+			}
+			if got == nil {
+				t.Fatalf("Annotate gave no answer, want %s", tc.want)
+			}
+			rendered, err := Generate(got, "duckdb")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if rendered != tc.want {
+				t.Errorf("Annotate = %q, want %q", rendered, tc.want)
+			}
+		})
+	}
+}

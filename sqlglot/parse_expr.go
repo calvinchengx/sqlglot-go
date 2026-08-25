@@ -921,7 +921,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return New("Null"), nil
 	case TokSTAR:
 		p.advance()
-		return newStar(), nil
+		return p.starModifiers(newStar())
 	case TokINTERVAL:
 		return nil, p.unsupported("INTERVAL")
 	case TokL_PAREN:
@@ -984,6 +984,14 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		// becoming an Anonymous call the reference never builds.
 		// An EMPTY argument list makes it an ordinary anonymous call whatever
 		// the name: `ALL()` is Anonymous(ALL).
+		// `MAP {'x': 1}` is a map LITERAL, not a call: the reference builds a
+		// ToMap over a Struct whose keys stay literals, where a bare `{...}`
+		// makes them identifiers.
+		if upper == "MAP" {
+			if n := p.next(); n != nil && n.Type == TokL_BRACE {
+				return p.parseMapLiteral()
+			}
+		}
 		empty := p.namesAFunctionCall() && p.atEmptyArgList()
 		if noParen && c.Type != TokCASE && !empty && (!hasSpec || !p.namesAFunctionCall()) {
 			return nil, p.unsupported("no-paren function " + strings.ToUpper(c.Text))
@@ -1004,6 +1012,51 @@ func (p *parser) parsePrimary() (*Expression, error) {
 // reference's rather than a lookalike.
 func newStar() *Expression {
 	return New("Star", Arg{"ilike", nil}, Arg{"except_", nil}, Arg{"replace", nil}, Arg{"rename", nil})
+}
+
+// starModifiers reads what may follow a `*`: `EXCEPT (a, b)` drops columns and
+// `REPLACE (a AS b)` swaps them. Both are lists on the Star itself rather than
+// anything wrapping it, so `SELECT * EXCEPT (a)` is one projection.
+//
+// EXCEPT is also a set operation, which is why the port used to read this as
+// one and refuse the statement for having no SELECT after it.
+func (p *parser) starModifiers(star *Expression) (*Expression, error) {
+	for {
+		var key string
+		switch {
+		case p.at(TokEXCEPT):
+			key = "except_"
+		case p.atWords("REPLACE"):
+			key = "replace"
+		default:
+			return star, nil
+		}
+		if next := p.next(); next == nil || next.Type != TokL_PAREN {
+			// EXCEPT with no list after it is the set operation.
+			return star, nil
+		}
+		p.advance()
+		p.advance()
+		var items []*Expression
+		for {
+			item, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			item, err = p.parseAlias(item)
+			if err != nil {
+				return nil, err
+			}
+			items = append(items, item)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed star modifier")
+		}
+		star.Set(key, items)
+	}
 }
 
 // dotted reads `.name` after something that is not part of an identifier
@@ -1765,7 +1818,13 @@ func (p *parser) parseColumn() (*Expression, error) {
 
 	if star {
 		// t.* keeps all four qualifier slots, as the reference builds it.
-		col := New("Column", Arg{"this", newStar()})
+		// `t.* EXCEPT (a)` carries the modifiers on the STAR inside the
+		// column, the same ones a bare `*` takes.
+		qualified, err := p.starModifiers(newStar())
+		if err != nil {
+			return nil, err
+		}
+		col := New("Column", Arg{"this", qualified})
 		names := []string{"table", "db", "catalog"}
 		for i := len(parts) - 1; i >= 0; i-- {
 			slot := len(parts) - 1 - i
@@ -2152,4 +2211,36 @@ func (p *parser) parseVariantPath() (*Expression, error) {
 		}
 		return New("JSONPath", Arg{"expressions", segments}), nil
 	}
+}
+
+// MAP {k: v, ...} -- DuckDB's map literal. The keys are EXPRESSIONS and stay
+// as they were written, where the keys of a bare `{...}` struct literal become
+// identifiers.
+func (p *parser) parseMapLiteral() (*Expression, error) {
+	p.advance() // MAP
+	p.advance() // the brace
+
+	var items []*Expression
+	for !p.at(TokR_BRACE) {
+		key, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokCOLON) {
+			return nil, p.unsupported("a map entry without a colon")
+		}
+		value, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, New("PropertyEQ",
+			Arg{"this", key}, Arg{"expression", value}))
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_BRACE) {
+		return nil, p.unsupported("unclosed map literal")
+	}
+	return New("ToMap", Arg{"this", New("Struct", Arg{"expressions", items})}), nil
 }

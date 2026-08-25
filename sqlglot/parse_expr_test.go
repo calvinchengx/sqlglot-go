@@ -1370,3 +1370,101 @@ func TestGroupConcatOrderRefused(t *testing.T) {
 		}
 	}
 }
+
+// `*` takes modifiers: EXCEPT drops columns, REPLACE swaps them. Both are
+// lists on the Star itself, so `SELECT * EXCEPT (a)` is one projection --
+// which is why reading EXCEPT as the SET OPERATION refused the whole
+// statement for having no SELECT after it.
+func TestStarModifiers(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"except", "SELECT * EXCEPT (a, b)", "SELECT * EXCEPT (a, b)"},
+		{"and a from", "SELECT * EXCEPT (a, b) FROM y", "SELECT * EXCEPT (a, b) FROM y"},
+		{"and replace", "SELECT * EXCEPT (a, b) REPLACE (a AS b, b AS C)",
+			"SELECT * EXCEPT (a, b) REPLACE (a AS b, b AS C)"},
+		{"on a qualified star", "SELECT a.* EXCEPT (a, b), b.* REPLACE (a AS b, b AS C)",
+			"SELECT a.* EXCEPT (a, b), b.* REPLACE (a AS b, b AS C)"},
+		{"a qualified name inside", "SELECT A.* EXCEPT (A.COL_1) FROM TABLE_1 AS A",
+			"SELECT A.* EXCEPT (A.COL_1) FROM TABLE_1 AS A"},
+		// EXCEPT with no list after it is still the set operation.
+		{"the set operation is untouched", "SELECT 1 EXCEPT SELECT 2", "SELECT 1 EXCEPT SELECT 2"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, "")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	if _, err := ParseOne("SELECT * EXCEPT (a", ""); err == nil {
+		t.Error("an unclosed star modifier was read; it should be refused")
+	}
+}
+
+// `MAP {k: v}` is DuckDB's map LITERAL, not a call. Its keys are expressions
+// and stay as they were written, where the keys of a bare `{...}` struct
+// literal become identifiers.
+func TestMapLiteral(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"a string key", "SELECT MAP {'x': 1}", "SELECT MAP {'x': 1}"},
+		// A numeric key stays numeric; quoting it would be a different map.
+		{"a numeric key", "MAP {1: 'a', 2: 'b'}", "MAP {1: 'a', 2: 'b'}"},
+		{"a quoted numeric key", "MAP {'1': 'a', '2': 'b'}", "MAP {'1': 'a', '2': 'b'}"},
+		{"an array key", "MAP {[1, 2]: 'a', [3, 4]: 'b'}", "MAP {[1, 2]: 'a', [3, 4]: 'b'}"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "duckdb")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, "duckdb")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	for _, sql := range []string{"MAP {'x' 1}", "MAP {'x': 1", "MAP {'x': }"} {
+		if _, err := ParseOne(sql, "duckdb"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+	// And `MAP(...)` with parentheses is still the ordinary call.
+	if _, err := ParseOne("SELECT MAP([1], [2])", "duckdb"); err != nil {
+		t.Errorf("the parenthesised MAP call was refused: %v", err)
+	}
+}
+
+// The writers refuse what they cannot spell rather than writing part of it.
+func TestStarAndMapWriterEdges(t *testing.T) {
+	// A map over something that is not a struct of pairs.
+	if got, err := Generate(New("ToMap", Arg{"this", New("Column")}), "duckdb"); err == nil {
+		t.Errorf("wrote %q for a map over a column", got)
+	}
+	bad := New("ToMap", Arg{"this", New("Struct",
+		Arg{"expressions", []*Expression{New("Column")}})})
+	if got, err := Generate(bad, "duckdb"); err == nil {
+		t.Errorf("wrote %q for a map entry that is not a pair", got)
+	}
+	// A star with a RENAME, which the reference also carries.
+	star := New("Star", Arg{"rename", []*Expression{New("Column",
+		Arg{"this", New("Identifier", Arg{"this", "a"}, Arg{"quoted", false})})}})
+	if got, err := Generate(star, ""); err != nil || got != "* RENAME (a)" {
+		t.Errorf("got %q (%v), want `* RENAME (a)`", got, err)
+	}
+	// A REPLACE with no list after it is not a modifier, and this port
+	// refuses the statement. The reference reads it as `SELECT *`, silently
+	// dropping the word -- narrower here is the safe direction, and no corpus
+	// statement has the shape.
+	if _, err := ParseOne("SELECT * REPLACE", ""); err == nil {
+		t.Error("`SELECT * REPLACE` was read; this port refuses it")
+	}
+}

@@ -76,6 +76,7 @@ func init() {
 		"Pivot":             (*generator).writePivot,
 		"Version":           (*generator).writeVersion,
 		"Tuple":             (*generator).writeTuple,
+		"ToMap":             (*generator).writeToMap,
 		"GroupConcat":       (*generator).writeGroupConcat,
 		"GroupingSets":      (*generator).writeGrouping,
 		"Cube":              (*generator).writeGrouping,
@@ -433,6 +434,49 @@ func (g *generator) writeGroup(e *Expression) string {
 	return " GROUP BY " + strings.Join(parts, ", ")
 }
 
+// writeStar writes `*` and what may follow it: EXCEPT drops columns, REPLACE
+// swaps them. Both are lists on the Star itself.
+func (g *generator) writeStar(e *Expression) string {
+	out := "*"
+	for _, part := range []struct{ key, word string }{
+		{"except_", "EXCEPT"}, {"replace", "REPLACE"}, {"rename", "RENAME"},
+	} {
+		items, _ := e.Args[part.key].([]*Expression)
+		if len(items) == 0 {
+			continue
+		}
+		names := make([]string, 0, len(items))
+		for _, item := range items {
+			names = append(names, g.node(item))
+		}
+		out += " " + part.word + " (" + strings.Join(names, ", ") + ")"
+	}
+	return out
+}
+
+// writeToMap writes DuckDB's map literal: the word, then the struct it holds
+// written with braces rather than as a struct.
+func (g *generator) writeToMap(e *Expression) string {
+	inner, _ := e.Args["this"].(*Expression)
+	if inner == nil || inner.Class != "Struct" {
+		return g.fail(e.Class)
+	}
+	items, _ := inner.Args["expressions"].([]*Expression)
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		// The entries are spelled here rather than by the PropertyEQ writer,
+		// which names a struct FIELD and would quote a numeric key into a
+		// string and lose an array one entirely.
+		key, _ := item.Args["this"].(*Expression)
+		value, _ := item.Args["expression"].(*Expression)
+		if key == nil || value == nil {
+			return g.fail(e.Class + " with an entry that is not a pair")
+		}
+		parts = append(parts, g.node(key)+": "+g.node(value))
+	}
+	return "MAP {" + strings.Join(parts, ", ") + "}"
+}
+
 // writeTuple writes a row. The template table has one for a tuple that HOLDS
 // something, and the empty `()` -- the grouping that groups everything -- has
 // no members for a template keyed on them to match.
@@ -525,7 +569,6 @@ func (g *generator) writeOffset(e *Expression) string {
 	return "OFFSET " + g.child(e, "expression")
 }
 
-func (g *generator) writeStar(*Expression) string { return "*" }
 func (g *generator) writeNull(*Expression) string { return "NULL" }
 
 // writeDistinct serves both `SELECT DISTINCT`, where the node is bare, and
