@@ -24,9 +24,8 @@ import (
 // a left and a right operand. Div and DPipe are handled; the rest are refused
 // rather than built without the arguments that give them meaning.
 var specialConstruction = map[string]bool{
-	"Div":     true,
-	"DPipe":   true,
-	"Collate": true,
+	"Div":   true,
+	"DPipe": true,
 	// Databricks' `a:b` reads the right-hand side as a JSON PATH, not as the
 	// column the generic operator rule produces. `->` and `->>` are handled
 	// directly in parsePostfix and never reach here; the colon form has its
@@ -443,6 +442,17 @@ func (p *parser) parseBinary(ops map[TokenType]string, next func() (*Expression,
 			return this, nil
 		}
 		p.advance()
+		// COLLATE names a collation, not an expression: a bare word there is
+		// a Var and a quoted one an Identifier, where the generic operand
+		// rule would make a column of either.
+		if class == "Collate" {
+			name, cerr := p.parseCollation()
+			if cerr != nil {
+				return nil, cerr
+			}
+			this = New(class, Arg{"this", this}, Arg{"expression", name})
+			continue
+		}
 		right, err := next()
 		if err != nil {
 			return nil, err
@@ -1822,12 +1832,23 @@ func (p *parser) parseColumn() (*Expression, error) {
 			parts = append(parts, New("Identifier", Arg{"this", c.Text}))
 			continue
 		}
+		// `a.b.C()` is a CALL under a chain of dots, not a column: the
+		// reference builds Dot(Dot(a, b), C()). Detected before the name is
+		// consumed, so the call parser sees it where it expects to.
+		if p.namesAFunctionCall() {
+			fn, err := p.parseFunction()
+			if err != nil {
+				return nil, err
+			}
+			chain := parts[0]
+			for _, part := range parts[1:] {
+				chain = New("Dot", Arg{"this", chain}, Arg{"expression", part})
+			}
+			return New("Dot", Arg{"this", chain}, Arg{"expression", fn}), nil
+		}
 		id, err := p.parseIdentifier()
 		if err != nil {
 			return nil, err
-		}
-		if p.at(TokL_PAREN) {
-			return nil, p.unsupported("qualified function call")
 		}
 		parts = append(parts, id)
 	}
@@ -2287,4 +2308,26 @@ func namedArgument(e *Expression) *Expression {
 		return inner
 	}
 	return nil
+}
+
+// parseCollation reads what follows COLLATE. A string literal stays a literal,
+// a QUOTED name is an Identifier, and a bare word is a Var -- three shapes for
+// one slot, and the generic operand rule made a column of the last two.
+func (p *parser) parseCollation() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("COLLATE without a collation")
+	}
+	switch {
+	case c.Type == TokSTRING:
+		p.advance()
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
+	case c.Type == TokIDENTIFIER:
+		p.advance()
+		return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true}), nil
+	case p.atIdentifier():
+		p.advance()
+		return New("Var", Arg{"this", c.Text}), nil
+	}
+	return nil, p.unsupported("COLLATE without a collation")
 }

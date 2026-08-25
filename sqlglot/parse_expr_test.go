@@ -1538,3 +1538,80 @@ func TestNamedArgumentNames(t *testing.T) {
 		}
 	}
 }
+
+// `a.b.C()` is a CALL under a chain of dots, not a column, and the chain may
+// be any depth.
+func TestQualifiedCall(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"a.b.C()", "a.b.C()"},
+		{"a.B()", "a.B()"},
+		{"a.b.INT(1.234)", "a.b.INT(1.234)"},
+		{"a.b.c.d.e.f.G()", "a.b.c.d.e.f.G()"},
+		// And a plain qualified column is untouched.
+		{"a.b.c", "a.b.c"},
+	} {
+		e, err := ParseOne(tc.sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		got, err := Generate(e, "")
+		if err != nil {
+			t.Fatalf("Generate: %v", err)
+		}
+		if got != tc.want {
+			t.Errorf("got %q, want %q", got, tc.want)
+		}
+	}
+	// A qualified call to a name with a SYNTAX of its own is still refused:
+	// the port cannot read `EXTRACT(1)` at all, qualified or not.
+	if _, err := ParseOne("x.EXTRACT(1)", ""); err == nil {
+		t.Error("`x.EXTRACT(1)` was read; EXTRACT needs its FROM")
+	}
+}
+
+// COLLATE names a collation, not an expression: three shapes for one slot,
+// and the generic operand rule made a column of two of them.
+func TestCollate(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"a string", "", "SELECT a FROM x WHERE a COLLATE 'utf8_general_ci' = 'b'",
+			"SELECT a FROM x WHERE a COLLATE 'utf8_general_ci' = 'b'"},
+		{"a bare word", "databricks", "SELECT substring_index('5' COLLATE UTF8_BINARY, 'a', 2)",
+			"SELECT SUBSTRING_INDEX('5' COLLATE UTF8_BINARY, 'a', 2)"},
+		{"two of them", "databricks", "SELECT substring_index('A' COLLATE UTF8_LCASE, 'A' COLLATE UTF8_LCASE, 2)",
+			"SELECT SUBSTRING_INDEX('A' COLLATE UTF8_LCASE, 'A' COLLATE UTF8_LCASE, 2)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	if _, err := ParseOne("SELECT a COLLATE FROM t", ""); err == nil {
+		t.Error("`COLLATE` with no collation was read; it should be refused")
+	}
+	if _, err := ParseOne("SELECT a COLLATE 1", ""); err == nil {
+		t.Error("`COLLATE 1` was read; a number is not a collation")
+	}
+	// A quoted name is an Identifier where a bare one is a Var.
+	quoted, err := ParseOne(`SELECT a COLLATE "de_DE"`, "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	only, _ := quoted.Args["expressions"].([]*Expression)
+	collate := only[0]
+	name, _ := collate.Args["expression"].(*Expression)
+	if name == nil || name.Class != "Identifier" {
+		t.Errorf("a quoted collation is %v, want an Identifier", name)
+	}
+	if _, err := ParseOne("SELECT a COLLATE", ""); err == nil {
+		t.Error("`COLLATE` at the end was read; it should be refused")
+	}
+}
