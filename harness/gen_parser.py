@@ -738,6 +738,30 @@ def hoists_insert_with(dialect: str) -> bool:
     return text.upper().startswith("WITH")
 
 
+def rename_target(dialect: str) -> str:
+    """How much of a qualified name an ALTER ... RENAME TO writes.
+
+    Three answers. DuckDB and PostgreSQL write only the last part -- the new
+    table lives where the old one did, so the qualifier would be noise.
+    Databricks and the neutral dialect keep it whole. T-SQL has no such
+    statement at all and rewrites the whole thing into `EXEC sp_rename`, which
+    is a transformation this port does not do.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one(
+            "ALTER TABLE db.t1 RENAME TO db.t2", read=dialect or None
+        ).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return ""
+    if not text.upper().startswith("ALTER"):
+        return ""
+    if "db.t2" in text:
+        return "whole"
+    return "name"
+
+
 def drop_truncates_catalog(dialect: str) -> bool:
     """Whether a DROP of a three-part name writes only two of them.
 
@@ -2898,6 +2922,10 @@ def main() -> int:
         "\t// HoistsInsertWith: a WITH inside an INSERT is written in FRONT of\n",
         "\t// the statement here, and left where it was written elsewhere.\n",
         "\tHoistsInsertWith bool\n",
+        "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
+        "\t// the whole thing, the last part only, or -- empty -- neither,\n",
+        "\t// because the dialect writes another statement entirely.\n",
+        "\tRenameTarget string\n",
         "\t// RewritesCreateAsSelect: this dialect has no CREATE TABLE AS SELECT\n",
         "\t// and the reference turns it into something else, which is a\n",
         "\t// transformation rather than a spelling.\n",
@@ -3440,6 +3468,7 @@ def main() -> int:
         out.append(
             "\t\tHoistsInsertWith: %s,\n" % str(hoists_insert_with(name)).lower()
         )
+        out.append(f"\t\tRenameTarget: {gostr(rename_target(name))},\n")
         out.append(
             "\t\tDropTruncatesCatalog: %s,\n"
             % str(drop_truncates_catalog(name)).lower()

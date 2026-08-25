@@ -1876,3 +1876,62 @@ func TestColumnConstraints(t *testing.T) {
 		t.Errorf("got %q, want the bare type mapped", got)
 	}
 }
+
+// ALTER TABLE, in the three shapes the corpus mostly holds. The actions are a
+// LIST because some dialects take several, and each is a node of its own -- an
+// ADD is the very ColumnDef a CREATE builds, with one argument more.
+func TestAlterTable(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"add a column", "", "ALTER TABLE t ADD COLUMN k INT", "ALTER TABLE t ADD COLUMN k INT"},
+		{"with a default", "", "ALTER TABLE integers ADD COLUMN l INT DEFAULT 10",
+			"ALTER TABLE integers ADD COLUMN l INT DEFAULT 10"},
+		{"drop a column", "", "ALTER TABLE t DROP COLUMN k", "ALTER TABLE t DROP COLUMN k"},
+		{"if exists", "", "ALTER TABLE IF EXISTS t ADD COLUMN k INT",
+			"ALTER TABLE IF EXISTS t ADD COLUMN k INT"},
+		{"rename", "", "ALTER TABLE t RENAME TO u", "ALTER TABLE t RENAME TO u"},
+		// How much of a qualified name a RENAME writes is per dialect: the new
+		// table lives where the old one did, so DuckDB writes only the name.
+		{"a qualified rename, kept", "databricks", "ALTER TABLE db.t1 RENAME TO db.t2",
+			"ALTER TABLE db.t1 RENAME TO db.t2"},
+		{"a qualified rename, shortened", "duckdb", "ALTER TABLE db.t1 RENAME TO db.t2",
+			"ALTER TABLE db.t1 RENAME TO t2"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			if !IsWrite(e) {
+				t.Errorf("IsWrite(%q) = false; it changes something", tc.sql)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// T-SQL has no ALTER ... RENAME at all: the reference calls a stored
+	// procedure instead, which is a transformation this port does not do.
+	e, err := ParseOne("ALTER TABLE t RENAME TO u", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "tsql"); err == nil {
+		t.Errorf("wrote %q; T-SQL calls sp_rename", got)
+	}
+	for _, sql := range []string{
+		"ALTER TABLE t ADD COLUMN IF NOT EXISTS k INT",
+		"ALTER TABLE t ADD k INT",
+		"ALTER TABLE t DROP k",
+		"ALTER TABLE t SET TBLPROPERTIES ('a' = 'b')",
+		"ALTER VIEW v AS SELECT 1",
+		"ALTER TABLE t",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}

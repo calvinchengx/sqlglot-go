@@ -60,6 +60,8 @@ func init() {
 		"Parameter":                     (*generator).writeParameter,
 		"ColumnDef":                     (*generator).writeColumnDef,
 		"Create":                        (*generator).writeCreate,
+		"Alter":                         (*generator).writeAlter,
+		"AlterRename":                   (*generator).writeAlterRename,
 		"ColumnConstraint":              (*generator).writeColumnConstraint,
 		"NotNullColumnConstraint":       (*generator).writeNotNullConstraint,
 		"DefaultColumnConstraint":       (*generator).writeDefaultConstraint,
@@ -2054,4 +2056,61 @@ func (g *generator) writeCommentConstraint(e *Expression) string {
 
 func (g *generator) writeCollateConstraint(e *Expression) string {
 	return "COLLATE " + g.child(e, "this")
+}
+
+// writeAlter writes `ALTER TABLE [IF EXISTS] <name> <actions>`.
+func (g *generator) writeAlter(e *Expression) string {
+	kind, _ := e.Args["kind"].(string)
+	out := "ALTER " + kind + " "
+	if exists, _ := e.Args["exists"].(bool); exists {
+		out += "IF EXISTS "
+	}
+	out += g.child(e, "this")
+	actions, _ := e.Args["actions"].([]*Expression)
+	was := g.inColumnList
+	g.inColumnList = true
+	for _, action := range actions {
+		word := " "
+		switch action.Class {
+		case "ColumnDef":
+			word = " ADD COLUMN "
+		case "Drop":
+			// The Drop written here names a COLUMN and takes no kind word of
+			// its own; the statement-level DROP writes one.
+			word = " DROP COLUMN "
+			tables, _ := action.Args["tables"].([]*Expression)
+			if len(tables) == 1 {
+				out += word + g.node(tables[0])
+				continue
+			}
+			g.inColumnList = was
+			return g.fail(e.Class + " dropping more than one column")
+		}
+		out += word + g.node(action)
+	}
+	g.inColumnList = was
+	return out
+}
+
+// writeAlterRename writes the new name a table takes.
+func (g *generator) writeAlterRename(e *Expression) string {
+	target, _ := e.Args["this"].(*Expression)
+	if target == nil {
+		return g.fail(e.Class + " with no target")
+	}
+	switch g.tables.RenameTarget {
+	case "whole":
+		return "RENAME TO " + g.node(target)
+	case "name":
+		// The new table lives where the old one did, so the qualifier is not
+		// written. Only the name is.
+		name, _ := target.Args["this"].(*Expression)
+		if name == nil {
+			return g.fail(e.Class + " with no name")
+		}
+		return "RENAME TO " + g.node(name)
+	}
+	// This dialect writes another statement entirely -- T-SQL calls a stored
+	// procedure -- which is a transformation rather than a spelling.
+	return g.fail(e.Class + ", which this dialect writes another way")
 }

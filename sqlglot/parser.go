@@ -224,6 +224,9 @@ func (p *parser) parseStatement() (*Expression, error) {
 	if p.at(TokDROP) {
 		return p.parseDrop()
 	}
+	if p.at(TokALTER) {
+		return p.parseAlter()
+	}
 	if c := p.curr(); c != nil {
 		if _, isStatement := p.tables.StatementTokens[c.Type]; isStatement {
 			return nil, &NotAQueryError{Kind: strings.ToUpper(c.Text)}

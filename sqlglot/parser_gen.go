@@ -265,6 +265,10 @@ type ParserTables struct {
 	// HoistsInsertWith: a WITH inside an INSERT is written in FRONT of
 	// the statement here, and left where it was written elsewhere.
 	HoistsInsertWith bool
+	// RenameTarget says how much of a qualified name a RENAME TO writes:
+	// the whole thing, the last part only, or -- empty -- neither,
+	// because the dialect writes another statement entirely.
+	RenameTarget string
 	// RewritesCreateAsSelect: this dialect has no CREATE TABLE AS SELECT
 	// and the reference turns it into something else, which is a
 	// transformation rather than a spelling.
@@ -3616,6 +3620,7 @@ var parserTables = map[string]*ParserTables{
 		},
 		MapBraceLiteral:          false,
 		HoistsInsertWith:         false,
+		RenameTarget:             "whole",
 		DropTruncatesCatalog:     false,
 		RewritesCreateAsSelect:   false,
 		GroupConcatOrder:         "inline",
@@ -7159,6 +7164,7 @@ var parserTables = map[string]*ParserTables{
 		},
 		MapBraceLiteral:        false,
 		HoistsInsertWith:       true,
+		RenameTarget:           "",
 		DropTruncatesCatalog:   true,
 		RewritesCreateAsSelect: true,
 		GroupConcatOrder:       "within_group",
@@ -10787,6 +10793,7 @@ var parserTables = map[string]*ParserTables{
 		},
 		MapBraceLiteral:          false,
 		HoistsInsertWith:         false,
+		RenameTarget:             "name",
 		DropTruncatesCatalog:     false,
 		RewritesCreateAsSelect:   false,
 		PivotColumnNaming:        "agg_name_if_aliased",
@@ -14588,6 +14595,7 @@ var parserTables = map[string]*ParserTables{
 		},
 		MapBraceLiteral:          true,
 		HoistsInsertWith:         false,
+		RenameTarget:             "name",
 		DropTruncatesCatalog:     false,
 		RewritesCreateAsSelect:   false,
 		TableSampleWord:          "TABLESAMPLE",
@@ -18386,6 +18394,7 @@ var parserTables = map[string]*ParserTables{
 		},
 		MapBraceLiteral:          false,
 		HoistsInsertWith:         true,
+		RenameTarget:             "whole",
 		DropTruncatesCatalog:     false,
 		RewritesCreateAsSelect:   false,
 		GroupConcatOrder:         "within_group",

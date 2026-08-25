@@ -430,11 +430,137 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			}
 			kind = New("CollateColumnConstraint", Arg{"this", name})
 		default:
-			if !p.at(TokCOMMA) && !p.at(TokR_PAREN) {
+			// The list ends at a comma, at the closing parenthesis, or at the
+			// end of the statement -- an ALTER TABLE ADD COLUMN has neither of
+			// the first two. Anything ELSE is a constraint this port cannot
+			// read, and is refused rather than skipped.
+			if p.curr() != nil && !p.at(TokCOMMA) && !p.at(TokR_PAREN) {
 				return nil, p.unsupported("a column constraint this port does not read")
 			}
 			return out, nil
 		}
 		out = append(out, New("ColumnConstraint", Arg{"kind", kind}))
 	}
+}
+
+// parseAlter reads `ALTER TABLE [IF EXISTS] <name> <action>`, in the three
+// shapes the corpus mostly holds: adding a column, dropping one, and renaming
+// the table.
+//
+// The actions are a LIST, because some dialects take several at once, and each
+// is a node of its own -- an ADD is the very ColumnDef a CREATE builds.
+func (p *parser) parseAlter() (*Expression, error) {
+	p.advance() // ALTER
+
+	kindToken := p.curr()
+	if kindToken == nil {
+		return nil, p.unsupported("ALTER without a kind")
+	}
+	kind := strings.ToUpper(kindToken.Text)
+	if kind != "TABLE" {
+		return nil, p.unsupported("ALTER " + kind)
+	}
+	p.advance()
+
+	exists := false
+	if p.atWords("IF", "EXISTS") {
+		p.advance()
+		p.advance()
+		exists = true
+	}
+	table, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+
+	action, err := p.parseAlterAction()
+	if err != nil {
+		return nil, err
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("ALTER with more than this port reads")
+	}
+	return New("Alter",
+		Arg{"this", table},
+		Arg{"kind", kind},
+		Arg{"exists", exists},
+		Arg{"actions", []*Expression{action}},
+		Arg{"only", false},
+		Arg{"options", []*Expression{}},
+		Arg{"cluster", nil},
+		Arg{"not_valid", false},
+		Arg{"check", false},
+		Arg{"cascade", false},
+		Arg{"iceberg", false},
+	), nil
+}
+
+// parseAlterAction reads the one thing this ALTER does.
+func (p *parser) parseAlterAction() (*Expression, error) {
+	switch {
+	case p.atWords("ADD"):
+		p.advance()
+		if !p.atWords("COLUMN") {
+			return nil, p.unsupported("ALTER TABLE ADD without COLUMN")
+		}
+		p.advance()
+		if p.atWords("IF", "NOT", "EXISTS") {
+			// The reference records this on the ColumnDef, which this port
+			// does not read -- so the statement is refused rather than built
+			// without it.
+			return nil, p.unsupported("ADD COLUMN IF NOT EXISTS")
+		}
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		kind, err := p.parseDataType()
+		if err != nil {
+			return nil, err
+		}
+		constraints, err := p.parseColumnConstraints()
+		if err != nil {
+			return nil, err
+		}
+		// The definition an ALTER adds carries one argument the same definition
+		// inside a CREATE does not: whether the column had to be absent.
+		if constraints == nil {
+			constraints = []*Expression{}
+		}
+		return New("ColumnDef",
+			Arg{"this", name}, Arg{"kind", kind},
+			Arg{"constraints", constraints},
+			Arg{"position", nil},
+			Arg{"exists", false}), nil
+	case p.at(TokDROP):
+		p.advance()
+		if !p.atWords("COLUMN") {
+			return nil, p.unsupported("ALTER TABLE DROP without COLUMN")
+		}
+		p.advance()
+		name, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		return New("Drop",
+			Arg{"exists", false},
+			Arg{"tables", []*Expression{name}},
+			Arg{"expressions", nil},
+			Arg{"kind", "COLUMN"},
+			Arg{"temporary", false}, Arg{"materialized", false},
+			Arg{"cascade", false}, Arg{"restrict", false},
+			Arg{"constraints", false}, Arg{"purge", false},
+			Arg{"cluster", nil}, Arg{"concurrently", false},
+			Arg{"sync", false}, Arg{"iceberg", false}, Arg{"force", false},
+		), nil
+	case p.atWords("RENAME", "TO"):
+		p.advance()
+		p.advance()
+		target, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		return New("AlterRename", Arg{"this", target}), nil
+	}
+	return nil, p.unsupported("an ALTER TABLE action this port does not read")
 }
