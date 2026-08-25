@@ -2024,11 +2024,10 @@ func TestAlterTable(t *testing.T) {
 		t.Errorf("wrote %q; T-SQL calls sp_rename", got)
 	}
 	for _, sql := range []string{
-		"ALTER TABLE t ADD COLUMN IF NOT EXISTS k INT",
-		"ALTER TABLE t ADD k INT",
-		"ALTER TABLE t DROP k",
 		"ALTER TABLE t SET TBLPROPERTIES ('a' = 'b')",
-		"ALTER VIEW v AS SELECT 1",
+		"ALTER TABLE t ADD CONSTRAINT c CHECK (a > 0)",
+		"ALTER TABLE t ALTER COLUMN a SET NOT NULL",
+		"ALTER INDEX i RENAME TO j",
 		"ALTER TABLE t",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
@@ -2352,5 +2351,94 @@ func TestALambdaInAQualifiedCall(t *testing.T) {
 		if got != tc.want {
 			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
 		}
+	}
+}
+
+// Everything else an ALTER TABLE does, and the ALTER VIEW that gives a view a
+// new query.
+//
+// The actions are a LIST, and the commas are not always between whole ones:
+// T-SQL writes `ADD a INT, b INT`, where only the first says ADD and the rest
+// continue it. The tree is the same list of definitions either way.
+func TestAlterActions(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"add if not exists", "", "ALTER TABLE t ADD COLUMN IF NOT EXISTS k INT",
+			"ALTER TABLE t ADD COLUMN IF NOT EXISTS k INT"},
+		{"add two", "", "ALTER TABLE t ADD COLUMN a TEXT, ADD COLUMN b INT",
+			"ALTER TABLE t ADD COLUMN a TEXT, ADD COLUMN b INT"},
+		// T-SQL says neither the word COLUMN nor a second ADD, reading and
+		// writing the same list another way.
+		{"add two, T-SQL", "tsql", "ALTER TABLE a ADD b INTEGER, c INTEGER",
+			"ALTER TABLE a ADD b INTEGER, c INTEGER"},
+		{"drop if exists", "", "ALTER TABLE t DROP COLUMN IF EXISTS k",
+			"ALTER TABLE t DROP COLUMN IF EXISTS k"},
+		{"drop cascade", "", "ALTER TABLE t DROP COLUMN k CASCADE",
+			"ALTER TABLE t DROP COLUMN k CASCADE"},
+		{"drop two", "", "ALTER TABLE t DROP COLUMN a, DROP COLUMN IF EXISTS b",
+			"ALTER TABLE t DROP COLUMN a, DROP COLUMN IF EXISTS b"},
+		{"rename a column", "", "ALTER TABLE t RENAME COLUMN c1 TO c2",
+			"ALTER TABLE t RENAME COLUMN c1 TO c2"},
+		{"rename a column if it is there", "", "ALTER TABLE t RENAME COLUMN IF EXISTS c1 TO c2",
+			"ALTER TABLE t RENAME COLUMN IF EXISTS c1 TO c2"},
+		// The phrase in front of a column's new type is the dialect's.
+		{"a new type", "postgres", "ALTER TABLE t ALTER COLUMN i SET DATA TYPE VARCHAR",
+			"ALTER TABLE t ALTER COLUMN i SET DATA TYPE VARCHAR"},
+		{"a new type, Databricks", "databricks", "ALTER TABLE t ALTER COLUMN i TYPE BIGINT",
+			"ALTER TABLE t ALTER COLUMN i TYPE BIGINT"},
+		{"a new type, T-SQL", "tsql", "ALTER TABLE t ALTER COLUMN i SET DATA TYPE BIGINT",
+			"ALTER TABLE t ALTER COLUMN i BIGINT"},
+		{"a new type from the old", "databricks",
+			"ALTER TABLE t ALTER COLUMN i TYPE STRING USING CONCAT(i, '_', j)",
+			"ALTER TABLE t ALTER COLUMN i TYPE STRING USING CONCAT(i, '_', j)"},
+		{"a new default", "", "ALTER TABLE t ALTER COLUMN i SET DEFAULT 10",
+			"ALTER TABLE t ALTER COLUMN i SET DEFAULT 10"},
+		{"no default", "", "ALTER TABLE t ALTER COLUMN i DROP DEFAULT",
+			"ALTER TABLE t ALTER COLUMN i DROP DEFAULT"},
+		{"a comment", "", "ALTER TABLE t ALTER COLUMN a COMMENT 'tablespoons'",
+			"ALTER TABLE t ALTER COLUMN a COMMENT 'tablespoons'"},
+		{"a view's new query", "", "ALTER VIEW v AS SELECT a, b FROM t",
+			"ALTER VIEW v AS SELECT a, b FROM t"},
+		{"a view's new union", "", "ALTER VIEW v AS SELECT a FROM t UNION ALL SELECT a FROM u",
+			"ALTER VIEW v AS SELECT a FROM t UNION ALL SELECT a FROM u"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			if !IsWrite(e) {
+				t.Errorf("IsWrite(%q) = false; it changes the table", tc.sql)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	for _, sql := range []string{
+		"ALTER TABLE t ALTER COLUMN i SET SOMETHING",
+		"ALTER TABLE t RENAME COLUMN c1 c2",
+		"ALTER TABLE t ADD COLUMN a INT, b",
+		"ALTER TABLE t DROP PARTITION(dt = '2014-05-14')",
+		"ALTER VIEW v",
+		"ALTER TABLE t ALTER COLUMN i COMMENT 1",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+	// An AlterColumn that says nothing at all is not a statement, and no
+	// parser builds one -- but the writer is what stands between such a tree
+	// and SQL that means something else.
+	empty := New("Alter",
+		Arg{"this", New("Table", Arg{"this", New("Identifier", Arg{"this", "t"})})},
+		Arg{"kind", "TABLE"},
+		Arg{"actions", []*Expression{New("AlterColumn",
+			Arg{"this", New("Identifier", Arg{"this", "a"})})}})
+	if got, err := Generate(empty, ""); err == nil {
+		t.Errorf("wrote %q; the action says nothing", got)
 	}
 }

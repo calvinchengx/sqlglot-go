@@ -532,7 +532,7 @@ func (p *parser) parseAlter() (*Expression, error) {
 		return nil, p.unsupported("ALTER without a kind")
 	}
 	kind := strings.ToUpper(kindToken.Text)
-	if kind != "TABLE" {
+	if kind != "TABLE" && kind != "VIEW" {
 		return nil, p.unsupported("ALTER " + kind)
 	}
 	p.advance()
@@ -548,9 +548,23 @@ func (p *parser) parseAlter() (*Expression, error) {
 		return nil, err
 	}
 
-	action, err := p.parseAlterAction()
-	if err != nil {
-		return nil, err
+	var actions []*Expression
+	if kind == "VIEW" {
+		// A view is altered by being GIVEN a new query, and the query itself
+		// is the action.
+		if !p.match(TokALIAS) {
+			return nil, p.unsupported("ALTER VIEW without a query")
+		}
+		query, err := p.parseQuery()
+		if err != nil {
+			return nil, err
+		}
+		actions = []*Expression{query}
+	} else {
+		actions, err = p.parseAlterActions()
+		if err != nil {
+			return nil, err
+		}
 	}
 	if p.curr() != nil {
 		return nil, p.unsupported("ALTER with more than this port reads")
@@ -559,7 +573,7 @@ func (p *parser) parseAlter() (*Expression, error) {
 		Arg{"this", table},
 		Arg{"kind", kind},
 		Arg{"exists", exists},
-		Arg{"actions", []*Expression{action}},
+		Arg{"actions", actions},
 		Arg{"only", false},
 		Arg{"options", []*Expression{}},
 		Arg{"cluster", nil},
@@ -570,60 +584,89 @@ func (p *parser) parseAlter() (*Expression, error) {
 	), nil
 }
 
-// parseAlterAction reads the one thing this ALTER does.
+// parseAlterActions reads everything this ALTER does, comma-separated.
+//
+// The commas are not always between whole actions: T-SQL writes `ADD a INT,
+// b INT`, where only the first says ADD and the rest continue it. So an item
+// that does not begin with an action word carries on the one before it.
+func (p *parser) parseAlterActions() ([]*Expression, error) {
+	var actions []*Expression
+	for {
+		var action *Expression
+		var err error
+		if len(actions) > 0 && !p.atAlterActionWord() {
+			if actions[len(actions)-1].Class != "ColumnDef" {
+				return nil, p.unsupported("an ALTER TABLE action with no verb")
+			}
+			action, err = p.parseAddedColumn(false)
+		} else {
+			action, err = p.parseAlterAction()
+		}
+		if err != nil {
+			return nil, err
+		}
+		actions = append(actions, action)
+		if !p.match(TokCOMMA) {
+			return actions, nil
+		}
+	}
+}
+
+// atAlterActionWord reports whether a word that begins an action is current.
+func (p *parser) atAlterActionWord() bool {
+	return p.at(TokDROP) || p.at(TokALTER) ||
+		p.atWords("ADD") || p.atWords("RENAME")
+}
+
+// parseAlterAction reads one thing this ALTER does.
 func (p *parser) parseAlterAction() (*Expression, error) {
 	switch {
 	case p.atWords("ADD"):
 		p.advance()
-		if !p.atWords("COLUMN") {
-			return nil, p.unsupported("ALTER TABLE ADD without COLUMN")
+		// The word COLUMN is optional: T-SQL writes it nowhere and reads it
+		// anywhere.
+		if p.atWords("COLUMN") {
+			p.advance()
 		}
-		p.advance()
+		exists := false
 		if p.atWords("IF", "NOT", "EXISTS") {
-			// The reference records this on the ColumnDef, which this port
-			// does not read -- so the statement is refused rather than built
-			// without it.
-			return nil, p.unsupported("ADD COLUMN IF NOT EXISTS")
+			p.advance()
+			p.advance()
+			p.advance()
+			exists = true
 		}
-		name, err := p.parseIdentifier()
-		if err != nil {
-			return nil, err
-		}
-		kind, err := p.parseDataType()
-		if err != nil {
-			return nil, err
-		}
-		constraints, err := p.parseColumnConstraints()
-		if err != nil {
-			return nil, err
-		}
-		// The definition an ALTER adds carries one argument the same definition
-		// inside a CREATE does not: whether the column had to be absent.
-		if constraints == nil {
-			constraints = []*Expression{}
-		}
-		return New("ColumnDef",
-			Arg{"this", name}, Arg{"kind", kind},
-			Arg{"constraints", constraints},
-			Arg{"position", nil},
-			Arg{"exists", false}), nil
+		return p.parseAddedColumn(exists)
 	case p.at(TokDROP):
 		p.advance()
-		if !p.atWords("COLUMN") {
-			return nil, p.unsupported("ALTER TABLE DROP without COLUMN")
+		if p.atWords("COLUMN") {
+			p.advance()
 		}
-		p.advance()
+		exists := false
+		if p.atWords("IF", "EXISTS") {
+			p.advance()
+			p.advance()
+			exists = true
+		}
 		name, err := p.parseColumn()
 		if err != nil {
 			return nil, err
 		}
+		cascade, restrict := false, false
+		switch {
+		case p.atWords("CASCADE"):
+			p.advance()
+			cascade = true
+		case p.atWords("RESTRICT"):
+			p.advance()
+			restrict = true
+		}
 		return New("Drop",
-			Arg{"exists", false},
+			Arg{"exists", exists},
 			Arg{"tables", []*Expression{name}},
 			Arg{"expressions", nil},
 			Arg{"kind", "COLUMN"},
 			Arg{"temporary", false}, Arg{"materialized", false},
-			Arg{"cascade", false}, Arg{"restrict", false},
+			Arg{"cascade", cascade}, Arg{"restrict", restrict},
 			Arg{"constraints", false}, Arg{"purge", false},
 			Arg{"cluster", nil}, Arg{"concurrently", false},
 			Arg{"sync", false}, Arg{"iceberg", false}, Arg{"force", false},
@@ -636,8 +679,127 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			return nil, err
 		}
 		return New("AlterRename", Arg{"this", target}), nil
+	case p.atWords("RENAME", "COLUMN"):
+		p.advance()
+		p.advance()
+		exists := false
+		if p.atWords("IF", "EXISTS") {
+			p.advance()
+			p.advance()
+			exists = true
+		}
+		from, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		if !p.atWords("TO") {
+			return nil, p.unsupported("RENAME COLUMN without TO")
+		}
+		p.advance()
+		to, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		return New("RenameColumn",
+			Arg{"this", from}, Arg{"to", to}, Arg{"exists", exists}), nil
+	case p.at(TokALTER):
+		p.advance()
+		if p.atWords("COLUMN") {
+			p.advance()
+		}
+		return p.parseAlteredColumn()
 	}
 	return nil, p.unsupported("an ALTER TABLE action this port does not read")
+}
+
+// parseAddedColumn reads one column definition an ALTER adds.
+//
+// The definition carries one argument the same definition inside a CREATE
+// does not: whether the column had to be absent.
+func (p *parser) parseAddedColumn(exists bool) (*Expression, error) {
+	name, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	kind, err := p.parseDataType()
+	if err != nil {
+		return nil, err
+	}
+	constraints, err := p.parseColumnConstraints()
+	if err != nil {
+		return nil, err
+	}
+	if constraints == nil {
+		constraints = []*Expression{}
+	}
+	return New("ColumnDef",
+		Arg{"this", name}, Arg{"kind", kind},
+		Arg{"constraints", constraints},
+		Arg{"position", nil},
+		Arg{"exists", exists}), nil
+}
+
+// parseAlteredColumn reads what an `ALTER COLUMN` says about one column: a new
+// type, a new default, the removal of one, or a comment. Each lands in a slot
+// of its own on the node rather than in a shared one.
+func (p *parser) parseAlteredColumn() (*Expression, error) {
+	name, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	action := New("AlterColumn", Arg{"this", name})
+	switch {
+	case p.atWords("SET", "DATA", "TYPE"), p.atWords("TYPE"):
+		if p.atWords("TYPE") {
+			p.advance()
+		} else {
+			p.advance()
+			p.advance()
+			p.advance()
+		}
+		kind, err := p.parseDataType()
+		if err != nil {
+			return nil, err
+		}
+		action.Set("dtype", kind)
+		// Both are on the node whenever a type is, whether or not the
+		// statement said anything about them.
+		action.Set("collate", false)
+		if p.at(TokUSING) {
+			p.advance()
+			using, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			action.Set("using", using)
+		} else {
+			action.Set("using", false)
+		}
+	case p.atWords("SET", "DEFAULT"):
+		p.advance()
+		p.advance()
+		value, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		action.Set("default", value)
+	case p.at(TokDROP) && p.next() != nil && strings.EqualFold(p.next().Text, "DEFAULT"):
+		p.advance()
+		p.advance()
+		action.Set("drop", true)
+	case p.atWords("COMMENT"):
+		p.advance()
+		c := p.curr()
+		if c == nil || c.Type != TokSTRING {
+			return nil, p.unsupported("COMMENT without a string")
+		}
+		p.advance()
+		action.Set("comment",
+			New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}))
+	default:
+		return nil, p.unsupported("an ALTER COLUMN action this port does not read")
+	}
+	return action, nil
 }
 
 // parseKeyConstraintOptions reads what may follow a REFERENCES: `ON DELETE

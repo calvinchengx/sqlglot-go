@@ -62,6 +62,8 @@ func init() {
 		"Create":                        (*generator).writeCreate,
 		"Alter":                         (*generator).writeAlter,
 		"AlterRename":                   (*generator).writeAlterRename,
+		"RenameColumn":                  (*generator).writeRenameColumn,
+		"AlterColumn":                   (*generator).writeAlterColumn,
 		"ColumnConstraint":              (*generator).writeColumnConstraint,
 		"Reference":                     (*generator).writeReference,
 		"NotNullColumnConstraint":       (*generator).writeNotNullConstraint,
@@ -2155,26 +2157,89 @@ func (g *generator) writeAlter(e *Expression) string {
 	actions, _ := e.Args["actions"].([]*Expression)
 	was := g.inColumnList
 	g.inColumnList = true
-	for _, action := range actions {
-		word := " "
+	parts := make([]string, 0, len(actions))
+	for i, action := range actions {
 		switch action.Class {
 		case "ColumnDef":
-			word = " ADD COLUMN "
+			// T-SQL says neither the word COLUMN nor a second ADD: it writes
+			// `ADD a INT, b INT` for the same list of definitions.
+			lead := ""
+			if i == 0 || g.tables.AlterRepeatsAdd {
+				lead = "ADD "
+				if g.tables.AlterAddColumnWord {
+					lead += "COLUMN "
+				}
+			}
+			if exists, _ := action.Args["exists"].(bool); exists {
+				lead += "IF NOT EXISTS "
+			}
+			parts = append(parts, lead+g.node(action))
 		case "Drop":
 			// The Drop written here names a COLUMN and takes no kind word of
 			// its own; the statement-level DROP writes one.
-			word = " DROP COLUMN "
 			tables, _ := action.Args["tables"].([]*Expression)
-			if len(tables) == 1 {
-				out += word + g.node(tables[0])
-				continue
+			if len(tables) != 1 {
+				g.inColumnList = was
+				return g.fail(e.Class + " dropping more than one column")
 			}
-			g.inColumnList = was
-			return g.fail(e.Class + " dropping more than one column")
+			text := "DROP COLUMN "
+			if exists, _ := action.Args["exists"].(bool); exists {
+				text += "IF EXISTS "
+			}
+			text += g.node(tables[0])
+			if cascade, _ := action.Args["cascade"].(bool); cascade {
+				text += " CASCADE"
+			}
+			if restrict, _ := action.Args["restrict"].(bool); restrict {
+				text += " RESTRICT"
+			}
+			parts = append(parts, text)
+		case "Select", "Union", "Except", "Intersect":
+			// A VIEW is altered by being GIVEN a new query, and the query is
+			// introduced the same way a CREATE introduces one.
+			parts = append(parts, "AS "+g.node(action))
+		default:
+			parts = append(parts, g.node(action))
 		}
-		out += word + g.node(action)
 	}
 	g.inColumnList = was
+	return out + " " + strings.Join(parts, ", ")
+}
+
+// writeRenameColumn writes the new name one column takes.
+func (g *generator) writeRenameColumn(e *Expression) string {
+	out := "RENAME COLUMN "
+	if exists, _ := e.Args["exists"].(bool); exists {
+		out += "IF EXISTS "
+	}
+	return out + g.child(e, "this") + " TO " + g.child(e, "to")
+}
+
+// writeAlterColumn writes what an ALTER says about one column. Exactly one of
+// the four slots is filled, and which one it is says what the statement does.
+func (g *generator) writeAlterColumn(e *Expression) string {
+	out := "ALTER COLUMN " + g.child(e, "this")
+	switch {
+	case e.Args["dtype"] != nil:
+		// The phrase in front of the new type is the dialect's: `SET DATA
+		// TYPE` in most, `TYPE` in Databricks, nothing at all in T-SQL.
+		if word := g.tables.AlterColumnTypeWord; word != "" {
+			out += " " + word
+		}
+		out += " " + g.child(e, "dtype")
+		if using := g.child(e, "using"); using != "" {
+			out += " USING " + using
+		}
+	case e.Args["default"] != nil:
+		out += " SET DEFAULT " + g.child(e, "default")
+	case e.Args["comment"] != nil:
+		out += " COMMENT " + g.child(e, "comment")
+	default:
+		if drop, _ := e.Args["drop"].(bool); drop {
+			return out + " DROP DEFAULT"
+		}
+		return g.fail(e.Class + " that says nothing about the column")
+	}
 	return out
 }
 

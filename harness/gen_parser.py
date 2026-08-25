@@ -846,6 +846,46 @@ def view_column_comment_written(dialect: str) -> bool:
     return "zzdesc" in text
 
 
+def alter_add_conventions(dialect: str) -> tuple[bool, bool]:
+    """How an ALTER writes the columns it ADDS.
+
+    Two questions, asked of one rendering of two added columns. T-SQL says
+    neither the word COLUMN nor a second ADD -- `ADD a INT, b INT` -- where
+    everyone else says both.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one(
+            "ALTER TABLE t ADD COLUMN zza INT, ADD COLUMN zzb INT"
+        ).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return True, True
+    return "COLUMN zza" in text, text.count("ADD ") == 2
+
+
+def alter_column_type_word(dialect: str) -> str:
+    """What comes between an altered column and its NEW type.
+
+    `SET DATA TYPE` almost everywhere, `TYPE` in Databricks, and nothing at
+    all in T-SQL. Read off a rendering, because the phrase lives in the
+    dialect's writer rather than in any table.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one(
+            "ALTER TABLE t ALTER COLUMN zzcol SET DATA TYPE BIGINT"
+        ).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return "SET DATA TYPE"
+    head = text.find("zzcol ")
+    tail = text.find("BIGINT")
+    if head < 0 or tail < 0 or tail < head:
+        return "SET DATA TYPE"
+    return text[head + len("zzcol ") : tail].strip()
+
+
 def merge_without_target(dialect: str) -> bool:
     """Whether a MERGE drops the target's name from the columns it assigns.
 
@@ -3077,6 +3117,7 @@ def main() -> int:
         "\t// ReturningWord is what this dialect calls a RETURNING clause, and\n\t// ReturningEnd whether it is written after the WHERE rather than\n\t// straight after the verb.\n\tReturningWord string\n\tReturningEnd  bool\n",
         "\t// MergeWithoutTarget: a MERGE branch's assignments are written without\n\t// the target's own name in front of them here.\n\tMergeWithoutTarget bool\n\t// NormalizeUnquoted and NormalizeQuoted are the case a name is COMPARED\n\t// in -- lower, upper, or empty for as-written.\n\tNormalizeUnquoted string\n\tNormalizeQuoted   string\n",
         "	// CreateExistsWritten says, per kind, whether IF NOT EXISTS survives\n\t// being written. TemporaryWritten says the same of TEMPORARY.\n\tCreateExistsWritten map[string]bool\n\tTemporaryWritten    map[string]bool\n\t// ViewColumnCommentWritten: a view column keeps its COMMENT here.\n\tViewColumnCommentWritten bool\n",
+        "\t// AlterAddColumnWord: an ALTER writes the word COLUMN after ADD here,\n\t// and AlterRepeatsAdd whether each added column gets its own ADD.\n\tAlterAddColumnWord bool\n\tAlterRepeatsAdd    bool\n\t// AlterColumnTypeWord is what comes between an altered column and its\n\t// new type -- SET DATA TYPE, TYPE, or nothing at all.\n\tAlterColumnTypeWord string\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -3622,6 +3663,12 @@ def main() -> int:
         out.append(f"\t\tMapBraceLiteral: {str(map_brace_literal(name)).lower()},\n")
         out.append(
             "\t\tHoistsInsertWith: %s,\n" % str(hoists_insert_with(name)).lower()
+        )
+        _acw, _ara = alter_add_conventions(name)
+        out.append("\t\tAlterAddColumnWord: %s,\n" % str(_acw).lower())
+        out.append("\t\tAlterRepeatsAdd: %s,\n" % str(_ara).lower())
+        out.append(
+            f"\t\tAlterColumnTypeWord: {gostr(alter_column_type_word(name))},\n"
         )
         for field, table in (
             ("CreateExistsWritten", create_exists_written(name)),

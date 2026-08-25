@@ -283,6 +283,13 @@ type ParserTables struct {
 	TemporaryWritten    map[string]bool
 	// ViewColumnCommentWritten: a view column keeps its COMMENT here.
 	ViewColumnCommentWritten bool
+	// AlterAddColumnWord: an ALTER writes the word COLUMN after ADD here,
+	// and AlterRepeatsAdd whether each added column gets its own ADD.
+	AlterAddColumnWord bool
+	AlterRepeatsAdd    bool
+	// AlterColumnTypeWord is what comes between an altered column and its
+	// new type -- SET DATA TYPE, TYPE, or nothing at all.
+	AlterColumnTypeWord string
 	// RenameTarget says how much of a qualified name a RENAME TO writes:
 	// the whole thing, the last part only, or -- empty -- neither,
 	// because the dialect writes another statement entirely.
@@ -3636,8 +3643,11 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:  false,
-		HoistsInsertWith: false,
+		MapBraceLiteral:     false,
+		HoistsInsertWith:    false,
+		AlterAddColumnWord:  true,
+		AlterRepeatsAdd:     true,
+		AlterColumnTypeWord: "SET DATA TYPE",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": true,
 			"VIEW":  true,
@@ -7194,8 +7204,11 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:  false,
-		HoistsInsertWith: true,
+		MapBraceLiteral:     false,
+		HoistsInsertWith:    true,
+		AlterAddColumnWord:  false,
+		AlterRepeatsAdd:     false,
+		AlterColumnTypeWord: "",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": false,
 			"VIEW":  false,
@@ -10837,8 +10850,11 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:  false,
-		HoistsInsertWith: false,
+		MapBraceLiteral:     false,
+		HoistsInsertWith:    false,
+		AlterAddColumnWord:  true,
+		AlterRepeatsAdd:     true,
+		AlterColumnTypeWord: "SET DATA TYPE",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": true,
 			"VIEW":  true,
@@ -14653,8 +14669,11 @@ var parserTables = map[string]*ParserTables{
 			"STRINGAGG":    {},
 			"STRING_AGG":   {},
 		},
-		MapBraceLiteral:  true,
-		HoistsInsertWith: false,
+		MapBraceLiteral:     true,
+		HoistsInsertWith:    false,
+		AlterAddColumnWord:  true,
+		AlterRepeatsAdd:     true,
+		AlterColumnTypeWord: "SET DATA TYPE",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": true,
 			"VIEW":  true,
@@ -18466,8 +18485,11 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:  false,
-		HoistsInsertWith: true,
+		MapBraceLiteral:     false,
+		HoistsInsertWith:    true,
+		AlterAddColumnWord:  true,
+		AlterRepeatsAdd:     true,
+		AlterColumnTypeWord: "TYPE",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": true,
 			"VIEW":  true,
