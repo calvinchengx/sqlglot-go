@@ -1233,3 +1233,72 @@ func TestWithRecursive(t *testing.T) {
 		t.Errorf("recursive = %v on a plain WITH, want it absent", with.Args["recursive"])
 	}
 }
+
+// CUBE, ROLLUP and GROUPING SETS look like calls but land on their OWN args of
+// Group rather than in its expression list, and any of them may sit beside
+// plain columns. The reference writes them in a fixed order whatever order
+// they were written in.
+func TestGroupings(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"grouping sets", "SELECT a FROM t GROUP BY GROUPING SETS ((a), (b))",
+			"SELECT a FROM t GROUP BY GROUPING SETS ((a), (b))"},
+		{"a cube", "SELECT a FROM t GROUP BY CUBE(a, b)", "SELECT a FROM t GROUP BY CUBE (a, b)"},
+		{"a rollup", "SELECT a FROM t GROUP BY ROLLUP(a)", "SELECT a FROM t GROUP BY ROLLUP (a)"},
+		{"beside a column", "SELECT a FROM t GROUP BY a, ROLLUP(b)",
+			"SELECT a FROM t GROUP BY a, ROLLUP (b)"},
+		// Written first, but the columns still come first on the way out.
+		{"before a column", "SELECT a FROM t GROUP BY ROLLUP(a), b",
+			"SELECT a FROM t GROUP BY b, ROLLUP (a)"},
+		{"all three", "SELECT a FROM t GROUP BY CUBE(a), ROLLUP(b), GROUPING SETS ((c))",
+			"SELECT a FROM t GROUP BY GROUPING SETS ((c)), CUBE (a), ROLLUP (b)"},
+		// `()` is the grouping that groups everything, and is a row of nothing.
+		{"an empty grouping", "SELECT a FROM t GROUP BY GROUPING SETS (a, (b, c), ())",
+			"SELECT a FROM t GROUP BY GROUPING SETS (a, (b, c), ())"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, "")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	for _, sql := range []string{
+		"SELECT a FROM t GROUP BY ROLLUP",
+		"SELECT a FROM t GROUP BY CUBE(a",
+		"SELECT a FROM t GROUP BY GROUPING SETS a",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
+// The grouping writers refuse what they cannot name, and a GROUP BY with
+// nothing left to group by is refused rather than written bare.
+func TestGroupingWriterEdges(t *testing.T) {
+	if got, err := Generate(New("Group"), ""); err == nil {
+		t.Errorf("wrote %q for a GROUP BY with nothing in it", got)
+	}
+	if got, err := Generate(New("GroupingSets"), ""); err != nil || got != "GROUPING SETS ()" {
+		t.Errorf("got %q (%v), want the empty grouping written", got, err)
+	}
+	// A class this writer does not name is refused rather than guessed at.
+	if got, err := Generate(New("Cube", Arg{"expressions", []*Expression{}}), ""); err != nil || got != "CUBE ()" {
+		t.Errorf("got %q (%v), want CUBE ()", got, err)
+	}
+	// An empty grouping list still closes its parentheses.
+	e, err := ParseOne("SELECT a FROM t GROUP BY GROUPING SETS ()", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, _ := Generate(e, ""); got != "SELECT a FROM t GROUP BY GROUPING SETS ()" {
+		t.Errorf("got %q", got)
+	}
+}

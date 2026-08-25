@@ -131,7 +131,7 @@ func TestRefusals(t *testing.T) {
 		{"NOT that introduces nothing", "a NOT b", ""},
 		{"dangling BETWEEN bound", "a BETWEEN 1 AND", ""},
 		{"unclosed type parameters", "a::VARCHAR(10", ""},
-		{"GROUP BY ROLLUP", "SELECT a FROM t GROUP BY ROLLUP (a)", ""},
+		{"a grouping with no arguments", "SELECT a FROM t GROUP BY ROLLUP", ""},
 		{"STREAM table", "SELECT * FROM STREAM t", "databricks"},
 		{"qualified function call", "SELECT a.f(1)", ""},
 		{"statement where a table goes", "SELECT 1 FROM (DESCRIBE t)", "duckdb"},

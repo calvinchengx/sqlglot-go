@@ -16,7 +16,7 @@ func TestAnUnsupportedStatementNamesItsConstruct(t *testing.T) {
 	}{
 		{"SELECT a FROM t1 NATURAL JOIN t2", "tsql", "join method NATURAL"},
 		{"SELECT a FROM t1 JOIN t2 USING", "tsql", "USING without a column list"},
-		{"SELECT a FROM t GROUP BY ROLLUP(a)", "tsql", "GROUP BY ROLLUP"},
+		{"SELECT a FROM t GROUP BY ROLLUP", "tsql", "a grouping without its arguments"},
 	} {
 		_, err := ParseOne(tc.sql, tc.dialect)
 		if err == nil {

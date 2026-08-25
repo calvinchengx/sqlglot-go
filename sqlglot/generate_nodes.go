@@ -75,6 +75,10 @@ func init() {
 		"JSONKeyValue":      (*generator).writeJSONKeyValue,
 		"Pivot":             (*generator).writePivot,
 		"Version":           (*generator).writeVersion,
+		"Tuple":             (*generator).writeTuple,
+		"GroupingSets":      (*generator).writeGrouping,
+		"Cube":              (*generator).writeGrouping,
+		"Rollup":            (*generator).writeGrouping,
 		"ForClause":         (*generator).writeForClause,
 		"QueryOption":       (*generator).writeQueryOption,
 		"XMLKeyValueOption": (*generator).writeXMLKeyValueOption,
@@ -410,7 +414,41 @@ func (g *generator) writeGroup(e *Expression) string {
 	if all, _ := e.Args["all"].(bool); all {
 		return " GROUP BY ALL"
 	}
-	return " GROUP BY " + g.list(e)
+	// The plain columns first, then each grouping in the order the reference
+	// writes them, whatever order they were written in.
+	parts := []string{}
+	if plain := g.list(e); plain != "" {
+		parts = append(parts, plain)
+	}
+	for _, key := range []string{"grouping_sets", "cube", "rollup"} {
+		items, _ := e.Args[key].([]*Expression)
+		for _, item := range items {
+			parts = append(parts, g.node(item))
+		}
+	}
+	if len(parts) == 0 {
+		return g.fail("GROUP BY with nothing to group by")
+	}
+	return " GROUP BY " + strings.Join(parts, ", ")
+}
+
+// writeTuple writes a row. The template table has one for a tuple that HOLDS
+// something, and the empty `()` -- the grouping that groups everything -- has
+// no members for a template keyed on them to match.
+func (g *generator) writeTuple(e *Expression) string {
+	return "(" + g.list(e) + ")"
+}
+
+// A grouping writes its name and its members: `CUBE (a, b)`, and the empty
+// `GROUPING SETS ()` writes its parentheses with nothing between them.
+func (g *generator) writeGrouping(e *Expression) string {
+	word := map[string]string{
+		"GroupingSets": "GROUPING SETS", "Cube": "CUBE", "Rollup": "ROLLUP",
+	}[e.Class]
+	if word == "" {
+		return g.fail(e.Class)
+	}
+	return word + " (" + g.list(e) + ")"
 }
 
 func (g *generator) writeOrder(e *Expression) string {

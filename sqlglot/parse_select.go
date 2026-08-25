@@ -421,11 +421,7 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			}
 		case p.at(TokGROUP_BY):
 			p.advance()
-			// CUBE, ROLLUP and GROUPING SETS look like calls but land on
-			// their own args of Group, not in its expression list.
-			if p.atAny(TokCUBE, TokROLLUP, TokGROUPING_SETS) {
-				return p.unsupported("GROUP BY " + p.curr().Text)
-			}
+
 			// `GROUP BY ALL` is a flag on Group, not a column named "all".
 			// Parsing it as an expression built a Group over a Column, which
 			// is a different tree for a statement the engine reads as
@@ -437,11 +433,49 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 				}
 				continue
 			}
-			es, err := p.parseExpressionList()
-			if err != nil {
-				return err
+			// CUBE, ROLLUP and GROUPING SETS look like calls but land on
+			// their OWN args of Group rather than in its expression list,
+			// and any of them may sit beside plain columns.
+			var plain, sets, cube, rollup []*Expression
+			for {
+				var target *[]*Expression
+				var class string
+				switch {
+				case p.at(TokGROUPING_SETS):
+					target, class = &sets, "GroupingSets"
+				case p.at(TokCUBE):
+					target, class = &cube, "Cube"
+				case p.at(TokROLLUP):
+					target, class = &rollup, "Rollup"
+				}
+				if target != nil {
+					p.advance()
+					members, err := p.parseParenthesisedList()
+					if err != nil {
+						return err
+					}
+					*target = append(*target, New(class, Arg{"expressions", members}))
+				} else {
+					e, err := p.parseExpression()
+					if err != nil {
+						return err
+					}
+					plain = append(plain, e)
+				}
+				if !p.match(TokCOMMA) {
+					break
+				}
 			}
-			if err := p.setOnce(sel, "group", New("Group", Arg{"expressions", es})); err != nil {
+			group := New("Group", Arg{"expressions", plain})
+			for _, pair := range []struct {
+				key  string
+				list []*Expression
+			}{{"grouping_sets", sets}, {"cube", cube}, {"rollup", rollup}} {
+				if len(pair.list) > 0 {
+					group.Set(pair.key, pair.list)
+				}
+			}
+			if err := p.setOnce(sel, "group", group); err != nil {
 				return err
 			}
 		case p.at(TokHAVING):
@@ -1080,4 +1114,40 @@ func (p *parser) parseUsingSample() (*Expression, error) {
 		args = append(args, Arg{"seed", false})
 	}
 	return New("TableSample", args...), nil
+}
+
+// parseParenthesisedList reads `(a, b, c)`, the argument list CUBE, ROLLUP and
+// GROUPING SETS take. A member may itself be a parenthesised row, and `()` --
+// the empty grouping -- is one too.
+func (p *parser) parseParenthesisedList() ([]*Expression, error) {
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("a grouping without its arguments")
+	}
+	var out []*Expression
+	if p.at(TokR_PAREN) {
+		p.advance()
+		return out, nil
+	}
+	for {
+		// `()` is the EMPTY grouping -- the one that groups everything -- and
+		// it is a Tuple of nothing rather than a missing member.
+		if p.at(TokL_PAREN) && p.next() != nil && p.next().Type == TokR_PAREN {
+			p.advance()
+			p.advance()
+			out = append(out, New("Tuple"))
+		} else {
+			e, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, e)
+		}
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed grouping")
+	}
+	return out, nil
 }
