@@ -71,6 +71,12 @@ func init() {
 		"CommentColumnConstraint":       (*generator).writeCommentConstraint,
 		"CollateColumnConstraint":       (*generator).writeCollateConstraint,
 		"Insert":                        (*generator).writeInsert,
+		"Update":                        (*generator).writeUpdate,
+		"Delete":                        (*generator).writeDelete,
+		"Merge":                         (*generator).writeMerge,
+		"Whens":                         (*generator).writeWhens,
+		"When":                          (*generator).writeWhen,
+		"Returning":                     (*generator).writeReturning,
 		"Values":                        (*generator).writeValues,
 		"Drop":                          (*generator).writeDrop,
 		"Schema":                        (*generator).writeSchema,
@@ -607,6 +613,12 @@ func (g *generator) writeDistinct(e *Expression) string {
 func (g *generator) writeColumn(e *Expression) string {
 	parts := []string{}
 	for _, key := range []string{"catalog", "db", "table", "this"} {
+		if key == "table" && g.mergeTarget[e] {
+			// This column is assigned by a MERGE branch in a dialect that
+			// writes no qualifier there. The tree keeps it; the spelling
+			// does not.
+			continue
+		}
 		if s := g.child(e, key); s != "" {
 			parts = append(parts, s)
 		}
@@ -2113,4 +2125,258 @@ func (g *generator) writeAlterRename(e *Expression) string {
 	// This dialect writes another statement entirely -- T-SQL calls a stored
 	// procedure -- which is a transformation rather than a spelling.
 	return g.fail(e.Class + ", which this dialect writes another way")
+}
+
+// writeUpdate writes `UPDATE <table> SET a = 1 [FROM ...] [WHERE ...]`.
+//
+// It serves two shapes. As a statement it has a target and a SET list; as the
+// action of a MERGE branch it has the list alone, or -- DuckDB's `WHEN MATCHED
+// THEN UPDATE` -- neither.
+func (g *generator) writeUpdate(e *Expression) string {
+	head := "UPDATE"
+	if this := g.child(e, "this"); this != "" {
+		head += " " + this
+	}
+	if items, _ := e.Args["expressions"].([]*Expression); len(items) > 0 {
+		head += " SET " + g.list(e)
+	}
+	returning := g.child(e, "returning")
+	from := g.child(e, "from_")
+	where := g.child(e, "where")
+	if g.tables.ReturningEnd {
+		return clauses(head, from, where, returning)
+	}
+	// T-SQL writes it here, between the assignments and the FROM.
+	return clauses(head, returning, from, where)
+}
+
+// clauses joins what a statement is made of, skipping the parts it has none
+// of. The writers return their clause without a leading space, so the spaces
+// belong to whoever puts them in a row.
+func clauses(parts ...string) string {
+	kept := make([]string, 0, len(parts))
+	for _, part := range parts {
+		if part != "" {
+			kept = append(kept, part)
+		}
+	}
+	return strings.Join(kept, " ")
+}
+
+// writeDelete writes `DELETE FROM <table> [USING ...] [WHERE ...]`.
+func (g *generator) writeDelete(e *Expression) string {
+	this := g.child(e, "this")
+	if this == "" {
+		return g.fail(e.Class + " with no table")
+	}
+	if tables, _ := e.Args["tables"].([]*Expression); len(tables) > 0 {
+		// `DELETE x FROM z` names the target separately from the source; the
+		// port does not read that shape and does not write it either.
+		return g.fail(e.Class + " naming its target twice")
+	}
+	body := "FROM " + this
+	if using, _ := e.Args["using"].([]*Expression); len(using) > 0 {
+		parts := make([]string, 0, len(using))
+		for _, t := range using {
+			// A comma join hangs off the table it follows and is written by
+			// the table, which is why `USING a, b` is one entry here.
+			parts = append(parts, g.node(t))
+		}
+		body += " USING " + strings.Join(parts, ", ")
+	}
+	cluster := g.child(e, "cluster")
+	where := g.child(e, "where")
+	returning := g.child(e, "returning")
+	if g.tables.ReturningEnd {
+		return clauses("DELETE", body, cluster, where, returning)
+	}
+	return clauses("DELETE", returning, body, cluster, where)
+}
+
+// writeReturning writes the clause that says which rows a write hands back.
+// T-SQL calls it OUTPUT; writeUpdate and writeDelete put it where the dialect
+// wants it.
+func (g *generator) writeReturning(e *Expression) string {
+	if into, _ := e.Args["into"].(*Expression); into != nil {
+		return g.fail(e.Class + " with an INTO")
+	}
+	return g.tables.ReturningWord + " " + g.list(e)
+}
+
+// writeMerge writes `MERGE INTO <target> USING <source> ON <cond> WHEN ...`.
+//
+// DuckDB's match is a column list rather than a condition, and it takes the
+// place of the ON entirely rather than sitting beside it.
+func (g *generator) writeMerge(e *Expression) string {
+	this, using := g.child(e, "this"), g.child(e, "using")
+	target, _ := e.Args["this"].(*Expression)
+	whens, _ := e.Args["whens"].(*Expression)
+	if this == "" || using == "" || target == nil || whens == nil {
+		// All three are what a MERGE IS: two relations and what to do about
+		// how they line up. Writing it without one names no statement.
+		return g.fail(e.Class + " missing what it matches or what it does")
+	}
+	if g.tables.MergeWithoutTarget {
+		g.markMergeTargets(target, whens)
+	}
+	out := "MERGE INTO " + this + " USING " + using
+	if on := g.child(e, "on"); on != "" {
+		out += " ON " + on
+	} else if columns, _ := e.Args["using_cond"].([]*Expression); len(columns) > 0 {
+		parts := make([]string, 0, len(columns))
+		for _, c := range columns {
+			parts = append(parts, g.node(c))
+		}
+		out += " USING (" + strings.Join(parts, ", ") + ")"
+	}
+	return clauses(out, g.child(e, "whens"), g.child(e, "returning"))
+}
+
+// writeWhens writes the branches, in the order they were written.
+func (g *generator) writeWhens(e *Expression) string {
+	items, _ := e.Args["expressions"].([]*Expression)
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, g.node(item))
+	}
+	return strings.Join(parts, " ")
+}
+
+// writeWhen writes one branch.
+//
+// The INSERT and UPDATE spellings are built HERE rather than by their own
+// writers: a branch's `INSERT (a, b) VALUES (1, 2)` names no table and is not
+// the statement of the same name.
+func (g *generator) writeWhen(e *Expression) string {
+	out := "WHEN "
+	if matched, _ := e.Args["matched"].(bool); matched {
+		out += "MATCHED"
+	} else {
+		out += "NOT MATCHED"
+	}
+	if source, _ := e.Args["source"].(bool); source {
+		out += " BY SOURCE"
+	}
+	if condition := g.child(e, "condition"); condition != "" {
+		out += " AND " + condition
+	}
+	out += " THEN "
+
+	then, _ := e.Args["then"].(*Expression)
+	if then == nil {
+		return g.fail(e.Class + " with no action")
+	}
+	switch then.Class {
+	case "Insert":
+		action := "INSERT"
+		if this := g.child(then, "this"); this != "" {
+			action += " " + this
+		}
+		if values := g.child(then, "expression"); values != "" {
+			action += " VALUES " + values
+		}
+		return out + action
+	case "Update":
+		if items, _ := then.Args["expressions"].([]*Expression); len(items) > 0 {
+			return out + "UPDATE SET " + g.list(then)
+		}
+		return out + "UPDATE"
+	}
+	return out + g.node(then)
+}
+
+// markMergeTargets finds the columns a MERGE branch ASSIGNS whose qualifier
+// names the target table -- by its own name or by its alias -- so that
+// writeColumn leaves the qualifier off.
+//
+// Only the assigned side. The condition, the right-hand side of an assignment
+// and the VALUES of an INSERT all still refer to two tables and keep their
+// qualifiers; the column LIST of an INSERT does not.
+func (g *generator) markMergeTargets(table, whens *Expression) {
+	targets := map[string]bool{}
+	if name, _ := table.Args["this"].(*Expression); name != nil {
+		targets[g.normalized(name)] = true
+	}
+	if alias, _ := table.Args["alias"].(*Expression); alias != nil {
+		if name, _ := alias.Args["this"].(*Expression); name != nil {
+			targets[g.normalized(name)] = true
+		}
+	}
+
+	branches, _ := whens.Args["expressions"].([]*Expression)
+	for _, when := range branches {
+		then, _ := when.Args["then"].(*Expression)
+		if then == nil {
+			continue
+		}
+		switch then.Class {
+		case "Update":
+			g.markAssignedTargets(then, targets)
+		case "Insert":
+			columns, _ := then.Args["this"].(*Expression)
+			if columns == nil || columns.Class != "Tuple" {
+				continue
+			}
+			items, _ := columns.Args["expressions"].([]*Expression)
+			for _, item := range items {
+				g.markIfTarget(item, targets)
+			}
+		}
+	}
+}
+
+// markAssignedTargets walks an UPDATE branch for every equality in it, as the
+// reference does: an assignment nested inside another expression is assigned
+// just the same. A subquery is its own scope and is left alone.
+func (g *generator) markAssignedTargets(e *Expression, targets map[string]bool) {
+	if e == nil || e.Class == "Select" || e.Class == "Subquery" {
+		return
+	}
+	if e.Class == "EQ" {
+		if lhs, _ := e.Args["this"].(*Expression); lhs != nil {
+			g.markIfTarget(lhs, targets)
+		}
+	}
+	for _, arg := range e.Args {
+		switch child := arg.(type) {
+		case *Expression:
+			g.markAssignedTargets(child, targets)
+		case []*Expression:
+			for _, one := range child {
+				g.markAssignedTargets(one, targets)
+			}
+		}
+	}
+}
+
+func (g *generator) markIfTarget(column *Expression, targets map[string]bool) {
+	if column == nil || column.Class != "Column" {
+		return
+	}
+	qualifier, _ := column.Args["table"].(*Expression)
+	if qualifier == nil || !targets[g.normalized(qualifier)] {
+		return
+	}
+	if g.mergeTarget == nil {
+		g.mergeTarget = map[*Expression]bool{}
+	}
+	g.mergeTarget[column] = true
+}
+
+// normalized is the case a name is COMPARED in, which is not always the case
+// it is written in: PostgreSQL folds a bare name and keeps a quoted one, so
+// `X.a` names the same table as `x` and `"X".a` does not.
+func (g *generator) normalized(identifier *Expression) string {
+	name, _ := identifier.Args["this"].(string)
+	fold := g.tables.NormalizeUnquoted
+	if identifier.Args["quoted"] == true {
+		fold = g.tables.NormalizeQuoted
+	}
+	switch fold {
+	case "lower":
+		return strings.ToLower(name)
+	case "upper":
+		return strings.ToUpper(name)
+	}
+	return name
 }

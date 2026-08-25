@@ -738,6 +738,82 @@ def hoists_insert_with(dialect: str) -> bool:
     return text.upper().startswith("WITH")
 
 
+def returning_conventions(dialect: str) -> tuple[str, bool]:
+    """How a RETURNING clause is spelled, and whether it comes LAST.
+
+    T-SQL calls it OUTPUT and writes it early -- straight after SET in an
+    UPDATE, straight after the verb in a DELETE -- where everyone else writes
+    it after the WHERE. One trait with two consequences, so both statements
+    are asked and the answers have to agree.
+    """
+    import sqlglot
+
+    try:
+        update = sqlglot.parse_one(
+            "UPDATE t SET a = 1 WHERE b = 2 RETURNING zzret", read="postgres"
+        ).sql(dialect=dialect or None)
+        delete = sqlglot.parse_one(
+            "DELETE FROM t WHERE b = 2 RETURNING zzret", read="postgres"
+        ).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return "RETURNING", True
+
+    # The clause is not necessarily last, so the word is the one in FRONT of
+    # the marker rather than the second from the end.
+    head = update.split("zzret")[0].split()
+    word = head[-1] if head else "RETURNING"
+    update_last = update.rstrip().endswith("zzret")
+    delete_last = delete.rstrip().endswith("zzret")
+    assert update_last == delete_last, (
+        "%s writes RETURNING last in one statement and not the other" % dialect
+    )
+    return word, update_last
+
+
+def merge_without_target(dialect: str) -> bool:
+    """Whether a MERGE drops the target's name from the columns it assigns.
+
+    PostgreSQL and Trino write `UPDATE SET a = y.b` for a branch written as
+    `SET x.a = y.b`, because the target is the only thing that side can name.
+    The tree keeps the qualifier; only the spelling drops it, and only where
+    it names the TARGET -- the right-hand side keeps its own.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one(
+            "MERGE INTO x USING (SELECT id) AS y ON a = b "
+            "WHEN MATCHED THEN UPDATE SET x.a = y.b",
+            read="postgres",
+        ).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return False
+    return "SET x.a" not in text
+
+
+def identifier_normalization(dialect: str) -> tuple[str, str]:
+    """The case a name is COMPARED in, quoted and unquoted.
+
+    Only comparison, not spelling: the MERGE rule above asks whether a column's
+    qualifier is the target, and `X.a` names `x` in a dialect that folds and
+    something else in one that does not.
+    """
+    from sqlglot import exp
+    from sqlglot.dialects.dialect import Dialect
+
+    D = Dialect.get_or_raise(dialect or None)
+
+    def fold(quoted: bool) -> str:
+        name = D.normalize_identifier(exp.to_identifier("AbC", quoted=quoted)).name
+        if name == "abc":
+            return "lower"
+        if name == "ABC":
+            return "upper"
+        return ""
+
+    return fold(False), fold(True)
+
+
 def rename_target(dialect: str) -> str:
     """How much of a qualified name an ALTER ... RENAME TO writes.
 
@@ -2922,6 +2998,8 @@ def main() -> int:
         "\t// HoistsInsertWith: a WITH inside an INSERT is written in FRONT of\n",
         "\t// the statement here, and left where it was written elsewhere.\n",
         "\tHoistsInsertWith bool\n",
+        "\t// ReturningWord is what this dialect calls a RETURNING clause, and\n\t// ReturningEnd whether it is written after the WHERE rather than\n\t// straight after the verb.\n\tReturningWord string\n\tReturningEnd  bool\n",
+        "\t// MergeWithoutTarget: a MERGE branch's assignments are written without\n\t// the target's own name in front of them here.\n\tMergeWithoutTarget bool\n\t// NormalizeUnquoted and NormalizeQuoted are the case a name is COMPARED\n\t// in -- lower, upper, or empty for as-written.\n\tNormalizeUnquoted string\n\tNormalizeQuoted   string\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -3468,6 +3546,15 @@ def main() -> int:
         out.append(
             "\t\tHoistsInsertWith: %s,\n" % str(hoists_insert_with(name)).lower()
         )
+        out.append(
+            "\t\tMergeWithoutTarget: %s,\n" % str(merge_without_target(name)).lower()
+        )
+        _nu, _nq = identifier_normalization(name)
+        out.append(f"\t\tNormalizeUnquoted: {gostr(_nu)},\n")
+        out.append(f"\t\tNormalizeQuoted: {gostr(_nq)},\n")
+        _rw, _re = returning_conventions(name)
+        out.append(f"\t\tReturningWord: {gostr(_rw)},\n")
+        out.append("\t\tReturningEnd: %s,\n" % str(_re).lower())
         out.append(f"\t\tRenameTarget: {gostr(rename_target(name))},\n")
         out.append(
             "\t\tDropTruncatesCatalog: %s,\n"

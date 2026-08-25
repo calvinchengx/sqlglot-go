@@ -299,3 +299,29 @@ func TestCompareConstants(t *testing.T) {
 		})
 	}
 }
+
+// The case a name is compared in is a fact about the dialect, and a dialect
+// that upper-cases is one the reference already has -- Snowflake. None of the
+// five configured here does, so the fold is exercised directly rather than
+// shipped unrun.
+func TestIdentifierFolding(t *testing.T) {
+	for _, tc := range []struct{ unquoted, quoted, name, want string }{
+		{"lower", "", "AbC", "abc"},
+		{"upper", "", "AbC", "ABC"},
+		{"", "", "AbC", "AbC"},
+	} {
+		g := &generator{tables: &ParserTables{
+			NormalizeUnquoted: tc.unquoted, NormalizeQuoted: tc.quoted,
+		}}
+		if got := g.normalized(New("Identifier", Arg{"this", tc.name})); got != tc.want {
+			t.Errorf("%q folded to %q, want %q", tc.unquoted, got, tc.want)
+		}
+	}
+	// A quoted name folds by its own rule: PostgreSQL keeps it as written
+	// where it lower-cases a bare one.
+	g := &generator{tables: &ParserTables{NormalizeUnquoted: "lower", NormalizeQuoted: ""}}
+	quoted := New("Identifier", Arg{"this", "AbC"}, Arg{"quoted", true})
+	if got := g.normalized(quoted); got != "AbC" {
+		t.Errorf("a quoted name folded to %q, want AbC", got)
+	}
+}

@@ -265,6 +265,18 @@ type ParserTables struct {
 	// HoistsInsertWith: a WITH inside an INSERT is written in FRONT of
 	// the statement here, and left where it was written elsewhere.
 	HoistsInsertWith bool
+	// ReturningWord is what this dialect calls a RETURNING clause, and
+	// ReturningEnd whether it is written after the WHERE rather than
+	// straight after the verb.
+	ReturningWord string
+	ReturningEnd  bool
+	// MergeWithoutTarget: a MERGE branch's assignments are written without
+	// the target's own name in front of them here.
+	MergeWithoutTarget bool
+	// NormalizeUnquoted and NormalizeQuoted are the case a name is COMPARED
+	// in -- lower, upper, or empty for as-written.
+	NormalizeUnquoted string
+	NormalizeQuoted   string
 	// RenameTarget says how much of a qualified name a RENAME TO writes:
 	// the whole thing, the last part only, or -- empty -- neither,
 	// because the dialect writes another statement entirely.
@@ -3620,6 +3632,11 @@ var parserTables = map[string]*ParserTables{
 		},
 		MapBraceLiteral:          false,
 		HoistsInsertWith:         false,
+		MergeWithoutTarget:       false,
+		NormalizeUnquoted:        "lower",
+		NormalizeQuoted:          "",
+		ReturningWord:            "RETURNING",
+		ReturningEnd:             true,
 		RenameTarget:             "whole",
 		DropTruncatesCatalog:     false,
 		RewritesCreateAsSelect:   false,
@@ -7164,6 +7181,11 @@ var parserTables = map[string]*ParserTables{
 		},
 		MapBraceLiteral:        false,
 		HoistsInsertWith:       true,
+		MergeWithoutTarget:     false,
+		NormalizeUnquoted:      "lower",
+		NormalizeQuoted:        "lower",
+		ReturningWord:          "OUTPUT",
+		ReturningEnd:           false,
 		RenameTarget:           "",
 		DropTruncatesCatalog:   true,
 		RewritesCreateAsSelect: true,
@@ -10793,6 +10815,11 @@ var parserTables = map[string]*ParserTables{
 		},
 		MapBraceLiteral:          false,
 		HoistsInsertWith:         false,
+		MergeWithoutTarget:       true,
+		NormalizeUnquoted:        "lower",
+		NormalizeQuoted:          "",
+		ReturningWord:            "RETURNING",
+		ReturningEnd:             true,
 		RenameTarget:             "name",
 		DropTruncatesCatalog:     false,
 		RewritesCreateAsSelect:   false,
@@ -14595,6 +14622,11 @@ var parserTables = map[string]*ParserTables{
 		},
 		MapBraceLiteral:          true,
 		HoistsInsertWith:         false,
+		MergeWithoutTarget:       false,
+		NormalizeUnquoted:        "lower",
+		NormalizeQuoted:          "lower",
+		ReturningWord:            "RETURNING",
+		ReturningEnd:             true,
 		RenameTarget:             "name",
 		DropTruncatesCatalog:     false,
 		RewritesCreateAsSelect:   false,
@@ -18394,6 +18426,11 @@ var parserTables = map[string]*ParserTables{
 		},
 		MapBraceLiteral:          false,
 		HoistsInsertWith:         true,
+		MergeWithoutTarget:       false,
+		NormalizeUnquoted:        "lower",
+		NormalizeQuoted:          "lower",
+		ReturningWord:            "RETURNING",
+		ReturningEnd:             true,
 		RenameTarget:             "whole",
 		DropTruncatesCatalog:     false,
 		RewritesCreateAsSelect:   false,

@@ -163,3 +163,29 @@ JSONExtract over a key holding a quote`. It reads the statement, and declines
 to write it. Two corpus statements land here.
 
 **Reference:** sqlglot @ ceb5111421e9.
+
+---
+
+## sqlglot writes a T-SQL DELETE ... OUTPUT it cannot read back
+
+**Found by:** porting UPDATE, DELETE and MERGE.
+
+T-SQL spells RETURNING as OUTPUT and writes it early -- straight after the
+verb in a DELETE, in front of the FROM. Its own parser then expects a table
+name there and refuses:
+
+```
+in   DELETE FROM x WHERE y > 1 RETURNING a      (read as postgres)
+out  DELETE OUTPUT a FROM x WHERE y > 1         (written as tsql)
+     sqlglot.errors.ParseError: Expected table name but got OUTPUT
+```
+
+The same clause round-trips fine in an UPDATE, where it is written after the
+SET list; only the DELETE position is unreadable.
+
+Nothing is worked around. The port's `parseDelete` reads no RETURNING in that
+position -- not to avoid the bug, but because there is no reference tree for
+it to agree with, so reading one would agree with nothing. `writeDelete`
+still places the clause where the reference places it.
+
+**Reference:** sqlglot @ ceb5111421e9.

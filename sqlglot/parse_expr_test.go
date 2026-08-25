@@ -1935,3 +1935,291 @@ func TestAlterTable(t *testing.T) {
 		}
 	}
 }
+
+// The statements that change ROWS. Each is read, named a write, and written
+// back; the dialect facts among them get a case of their own.
+func TestUpdateAndDelete(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"a plain update", "", "UPDATE tbl SET foo = 123, bar = 345",
+			"UPDATE tbl SET foo = 123, bar = 345"},
+		{"qualified, with a where", "", "UPDATE db.t SET foo = 123 WHERE t.bar = 234",
+			"UPDATE db.t SET foo = 123 WHERE t.bar = 234"},
+		{"an aliased target", "postgres", "UPDATE prices AS p SET p.amount = p.amount * 0.9",
+			"UPDATE prices AS p SET p.amount = p.amount * 0.9"},
+		{"a second table to read from", "postgres",
+			"UPDATE foo SET a = bar.a FROM bar WHERE foo.id = bar.id",
+			"UPDATE foo SET a = bar.a FROM bar WHERE foo.id = bar.id"},
+		{"returning", "postgres", "UPDATE tbl SET foo = 123 RETURNING a",
+			"UPDATE tbl SET foo = 123 RETURNING a"},
+		// T-SQL calls it OUTPUT and writes it in front of the FROM rather than
+		// after the WHERE. Same node, two places.
+		{"output", "tsql", "UPDATE x SET y = 1 OUTPUT x.a, x.b FROM y",
+			"UPDATE x SET y = 1 OUTPUT x.a, x.b FROM y"},
+		{"a plain delete", "", "DELETE FROM y", "DELETE FROM y"},
+		{"with a where", "", "DELETE FROM x WHERE y > 1", "DELETE FROM x WHERE y > 1"},
+		{"using", "", "DELETE FROM event USING sales AS s WHERE event.eventid = s.eventid",
+			"DELETE FROM event USING sales AS s WHERE event.eventid = s.eventid"},
+		// `USING a, b` is a comma JOIN on the first table, not a second entry.
+		{"using two", "", "DELETE FROM event USING sales, bla WHERE event.eventid = sales.eventid",
+			"DELETE FROM event USING sales, bla WHERE event.eventid = sales.eventid"},
+		{"delete returning", "postgres", "DELETE FROM x WHERE y > 1 RETURNING a",
+			"DELETE FROM x WHERE y > 1 RETURNING a"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			if !IsWrite(e) {
+				t.Errorf("IsWrite(%q) = false; it changes rows", tc.sql)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// A DELETE reads as much as a query does, and the guard above this port
+	// has to see it: the source here is a subquery, not a table.
+	e, err := ParseOne("DELETE FROM t WHERE id IN (SELECT id FROM secrets)", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if len(e.FindAll("Select")) != 1 {
+		t.Error("the subquery a DELETE reads from is not in the tree")
+	}
+	for _, sql := range []string{
+		"UPDATE t1 AS a, t2 AS b SET a.id = 1",
+		"UPDATE t WHERE a = 1",
+		"DELETE x OUTPUT x.a FROM z",
+		"UPDATE t SET a = 1 ORDER BY a",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
+// MERGE matches two relations and says what to do about each outcome, so the
+// branches are where its meaning is.
+func TestMerge(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"update on match", "duckdb",
+			"MERGE INTO x AS z USING (SELECT id) AS y ON a = b WHEN MATCHED THEN UPDATE SET a = y.b",
+			"MERGE INTO x AS z USING (SELECT id) AS y ON a = b WHEN MATCHED THEN UPDATE SET a = y.b"},
+		{"insert when not matched", "duckdb",
+			"MERGE INTO x USING (SELECT id) AS y ON a = b WHEN NOT MATCHED THEN INSERT (a, b) VALUES (y.a, y.b)",
+			"MERGE INTO x USING (SELECT id) AS y ON a = b WHEN NOT MATCHED THEN INSERT (a, b) VALUES (y.a, y.b)"},
+		{"a guarded branch", "duckdb",
+			"MERGE INTO t USING s ON a = b WHEN MATCHED AND x > 1 THEN DO NOTHING",
+			"MERGE INTO t USING s ON a = b WHEN MATCHED AND x > 1 THEN DO NOTHING"},
+		{"by source", "duckdb",
+			"MERGE INTO t USING s ON a = b WHEN NOT MATCHED BY SOURCE THEN DELETE",
+			"MERGE INTO t USING s ON a = b WHEN NOT MATCHED BY SOURCE THEN DELETE"},
+		// DuckDB spells the match as a column list rather than a condition,
+		// and it takes the place of the ON entirely.
+		{"matched on columns", "duckdb",
+			"MERGE INTO people USING (SELECT 1 AS id) AS su USING (id) WHEN MATCHED THEN UPDATE",
+			"MERGE INTO people USING (SELECT 1 AS id) AS su USING (id) WHEN MATCHED THEN UPDATE"},
+		// PostgreSQL leaves the target's own name off the side that assigns:
+		// nothing else can be assigned there, so the qualifier is noise. The
+		// right-hand side keeps its own.
+		{"the target name dropped", "postgres",
+			"MERGE INTO x AS z USING (SELECT id) AS y ON a = b WHEN MATCHED THEN UPDATE SET z.a = y.b",
+			"MERGE INTO x AS z USING (SELECT id) AS y ON a = b WHEN MATCHED THEN UPDATE SET a = y.b"},
+		// The comparison folds case where the dialect does: `X` names `x`.
+		{"the target name folded", "postgres",
+			"MERGE INTO x USING (SELECT id) AS y ON a = b WHEN MATCHED THEN UPDATE SET X.a = y.b",
+			"MERGE INTO x USING (SELECT id) AS y ON a = b WHEN MATCHED THEN UPDATE SET a = y.b"},
+		// And a dialect that does not drop it writes it.
+		{"the target name kept", "duckdb",
+			"MERGE INTO x USING (SELECT id) AS y ON a = b WHEN MATCHED THEN UPDATE SET x.a = y.b",
+			"MERGE INTO x USING (SELECT id) AS y ON a = b WHEN MATCHED THEN UPDATE SET x.a = y.b"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			if !IsWrite(e) {
+				t.Errorf("IsWrite(%q) = false; it changes rows", tc.sql)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	for _, sql := range []string{
+		"MERGE INTO t USING s ON a = b",
+		"MERGE INTO t USING s ON a = b WHEN MATCHED THEN TRUNCATE",
+		"MERGE t USING s ON a = b WHEN MATCHED THEN DELETE",
+		"MERGE INTO mytable WITH (HOLDLOCK) AS T USING m AS S ON T.id = S.id WHEN MATCHED THEN DELETE",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
+// The refusals and the corners of the DML writers.
+//
+// Some of these trees no statement in the corpus produces: a Delete naming its
+// target twice, a Returning with an INTO. They are built here directly rather
+// than left unrun, because the writer that refuses them is the only thing
+// standing between such a tree and SQL that says the wrong thing.
+func TestDMLCorners(t *testing.T) {
+	for _, sql := range []string{
+		"UPDATE t SET a",
+		"MERGE INTO t USING s USING (1) WHEN MATCHED THEN DELETE",
+		"MERGE INTO t USING s ON a = b WHEN MATCHED THEN DELETE LIMIT 1",
+		"MERGE INTO t USING s ON a = b WHEN NOT x THEN DELETE",
+		"MERGE INTO t USING s ON a = b WHEN MATCHED DELETE",
+		"MERGE INTO t USING s ON a = b WHEN NOT MATCHED THEN INSERT",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+	// T-SQL writes OUTPUT in front of the FROM, so a statement with one there
+	// AND one at the end says the same thing twice.
+	if _, err := ParseOne("UPDATE x SET y = 1 OUTPUT a WHERE b = 1 OUTPUT c", "tsql"); err == nil {
+		t.Error("two OUTPUT clauses were read as one statement")
+	}
+
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		// `BY TARGET` is the default and is recorded as nothing, so it is read
+		// and then not written -- unlike BY SOURCE, which is a different set
+		// of rows and keeps its words.
+		{"by target", "duckdb",
+			"MERGE INTO t USING s ON a = b WHEN NOT MATCHED BY TARGET THEN DELETE",
+			"MERGE INTO t USING s ON a = b WHEN NOT MATCHED THEN DELETE"},
+		{"insert everything", "duckdb",
+			"MERGE INTO t USING s ON a = b WHEN NOT MATCHED THEN INSERT *",
+			"MERGE INTO t USING s ON a = b WHEN NOT MATCHED THEN INSERT *"},
+		{"insert values only", "duckdb",
+			"MERGE INTO t USING s ON a = b WHEN NOT MATCHED THEN INSERT VALUES (1, 2)",
+			"MERGE INTO t USING s ON a = b WHEN NOT MATCHED THEN INSERT VALUES (1, 2)"},
+		// A subquery is its own scope: the target's name is not dropped inside
+		// one, because in there it refers to something else.
+		{"a subquery keeps its names", "postgres",
+			"MERGE INTO x USING s AS y ON a = b WHEN MATCHED THEN UPDATE SET x.a = (SELECT x.c FROM z)",
+			"MERGE INTO x USING s AS y ON a = b WHEN MATCHED THEN UPDATE SET a = (SELECT x.c FROM z)"},
+		// An equality whose left side is not a column is left alone.
+		{"an assignment of a comparison", "postgres",
+			"MERGE INTO x USING s AS y ON a = b WHEN MATCHED THEN UPDATE SET a = (1 = 2)",
+			"MERGE INTO x USING s AS y ON a = b WHEN MATCHED THEN UPDATE SET a = (1 = 2)"},
+		// PostgreSQL folds a bare name and keeps a quoted one, so `"X"` names
+		// a different table from `x` and its qualifier stays.
+		{"a quoted qualifier is another table", "postgres",
+			`MERGE INTO x USING s AS y ON a = b WHEN MATCHED THEN UPDATE SET "X".a = y.b`,
+			`MERGE INTO x USING s AS y ON a = b WHEN MATCHED THEN UPDATE SET "X".a = y.b`},
+		// And the INSERT column list is stripped the same way the assignments
+		// are, while the VALUES keep their qualifiers.
+		{"insert columns stripped", "postgres",
+			"MERGE INTO x USING s AS y ON a = b WHEN NOT MATCHED THEN INSERT (x.a, x.b) VALUES (y.a, y.b)",
+			"MERGE INTO x USING s AS y ON a = b WHEN NOT MATCHED THEN INSERT (a, b) VALUES (y.a, y.b)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+
+	// Trees the parser never builds, and the writers that refuse them.
+	for _, tc := range []struct {
+		name string
+		node *Expression
+	}{
+		{"a delete with no table", New("Delete")},
+		{"a delete naming its target twice", New("Delete",
+			Arg{"this", New("Table", Arg{"this", New("Identifier", Arg{"this", "x"})})},
+			Arg{"tables", []*Expression{New("Table",
+				Arg{"this", New("Identifier", Arg{"this", "y"})})}})},
+		{"a returning that also writes elsewhere", New("Delete",
+			Arg{"this", New("Table", Arg{"this", New("Identifier", Arg{"this", "x"})})},
+			Arg{"returning", New("Returning",
+				Arg{"expressions", []*Expression{New("Star")}},
+				Arg{"into", New("Table", Arg{"this", New("Identifier", Arg{"this", "t"})})})},
+		)},
+		{"a merge branch that does nothing at all", New("Merge",
+			Arg{"this", New("Table", Arg{"this", New("Identifier", Arg{"this", "x"})})},
+			Arg{"using", New("Table", Arg{"this", New("Identifier", Arg{"this", "y"})})},
+			Arg{"whens", New("Whens", Arg{"expressions", []*Expression{
+				New("When", Arg{"matched", true})}})})},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got, err := Generate(tc.node, ""); err == nil {
+				t.Errorf("wrote %q; it should be refused", got)
+			}
+		})
+	}
+
+	// And a MERGE missing the parts the target-stripping walk reads: it looks
+	// at each of them before it looks inside, so a tree without one is left
+	// alone rather than crashing the writer.
+	for _, node := range []*Expression{
+		New("Merge", Arg{"using", New("Table")}),
+		New("Merge", Arg{"this", New("Table",
+			Arg{"this", New("Identifier", Arg{"this", "x"})})}),
+		New("Merge",
+			Arg{"this", New("Table", Arg{"this", New("Identifier", Arg{"this", "x"})})},
+			Arg{"using", New("Table", Arg{"this", New("Identifier", Arg{"this", "y"})})},
+			Arg{"whens", New("Whens", Arg{"expressions", []*Expression{
+				New("When", Arg{"matched", true}),
+				New("When", Arg{"matched", false},
+					Arg{"then", New("Insert", Arg{"this", New("Star")})}),
+			}})}),
+	} {
+		// PostgreSQL is the dialect that strips, so it is the one that walks.
+		if _, err := Generate(node, "postgres"); err == nil {
+			t.Error("a half-built MERGE was written")
+		}
+	}
+}
+
+// The DML readers hand back whatever the expression parser refuses, rather
+// than swallowing it and reading half a statement. One malformed input per
+// place a sub-parser is called.
+func TestDMLRefusalsAreCarried(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql string }{
+		{"", "UPDATE 1 SET a = 1"},
+		{"", "UPDATE t SET FROM"},
+		{"", "UPDATE t SET a = 1 FROM 1"},
+		{"", "UPDATE t SET a = 1 WHERE FROM"},
+		{"postgres", "UPDATE t SET a = 1 RETURNING FROM"},
+		{"postgres", "UPDATE t SET a = 1 RETURNING a INTO b"},
+		{"", "DELETE FROM 1"},
+		{"", "DELETE FROM x USING 1"},
+		{"", "DELETE FROM x WHERE FROM"},
+		{"postgres", "DELETE FROM x RETURNING a INTO b"},
+		{"", "MERGE INTO 1 USING s ON a = b WHEN MATCHED THEN DELETE"},
+		{"", "MERGE INTO t USING 1 ON a = b WHEN MATCHED THEN DELETE"},
+		{"", "MERGE INTO t USING s ON FROM WHEN MATCHED THEN DELETE"},
+		{"", "MERGE INTO t USING s USING (FROM) WHEN MATCHED THEN DELETE"},
+		{"", "MERGE INTO t USING s ON a = b WHEN MATCHED AND FROM THEN DELETE"},
+		{"", "MERGE INTO t USING s ON a = b WHEN MATCHED THEN UPDATE SET FROM"},
+		{"", "MERGE INTO t USING s ON a = b WHEN NOT MATCHED THEN INSERT (FROM) VALUES (1)"},
+		{"", "MERGE INTO t USING s ON a = b WHEN NOT MATCHED THEN INSERT (a) VALUES (FROM)"},
+		{"postgres", "MERGE INTO t USING s ON a = b WHEN MATCHED THEN DELETE RETURNING a INTO b"},
+	} {
+		if _, err := ParseOne(tc.sql, tc.dialect); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", tc.sql)
+		}
+	}
+}

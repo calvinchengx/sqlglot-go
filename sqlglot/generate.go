@@ -62,6 +62,10 @@ type generator struct {
 	// pathOwner is the extraction class whose path is being written, because
 	// a path's separators depend on the call it appears in.
 	pathOwner string
+	// mergeTarget are the columns whose qualifier names the MERGE's target,
+	// which some dialects leave off: the assigned side of a branch can name
+	// nothing else, so the qualifier is noise there and written nowhere.
+	mergeTarget map[*Expression]bool
 }
 
 // fail records the first failure. Later writers keep running and return empty

@@ -569,17 +569,17 @@ func TestCountKeepsItsFlag(t *testing.T) {
 // above this parser reports "read-only" on the strength of that distinction,
 // and the service's conformance suite checks the wording.
 //
-// CREATE has left this list because it now PARSES. That is the whole point of
-// bringing DDL into scope, and it moves the read-only question: a caller that
-// asks ErrNotAQuery will see a CREATE go past as though it were a query, and
-// has to ask IsWrite instead. TestWritesAreNamedWhenTheyParse covers the ones
-// that have crossed over.
+// CREATE left this list when it began to PARSE, and DELETE, UPDATE and MERGE
+// have followed it. That is the whole point of bringing DDL and DML into
+// scope, and it moves the read-only question: a caller that asks ErrNotAQuery
+// will see them go past as though they were queries, and has to ask IsWrite
+// instead. TestWritesAreNamedWhenTheyParse covers the ones that have crossed
+// over.
 func TestWritesAreNamedNotParsed(t *testing.T) {
 	for _, c := range []struct{ sql, kind string }{
-		{"DELETE FROM dbo.fct_sales", "DELETE"},
-		{"UPDATE dbo.fct_sales SET amount_usd = 0", "UPDATE"},
 		{"TRUNCATE TABLE dbo.fct_sales", "TRUNCATE"},
 		{"EXEC xp_cmdshell 'dir'", "EXEC"},
+		{"GRANT SELECT ON dbo.fct_sales TO reader", "GRANT"},
 	} {
 		_, err := ParseOne(c.sql, "tsql")
 		if !errors.Is(err, ErrNotAQuery) {
@@ -683,6 +683,8 @@ func TestWritesAreNamedWhenTheyParse(t *testing.T) {
 		"CREATE OR REPLACE TABLE t (a INT)",
 		"INSERT INTO dbo.fct_sales VALUES (1)",
 		"DROP TABLE dbo.fct_sales",
+		"DELETE FROM dbo.fct_sales",
+		"UPDATE dbo.fct_sales SET amount_usd = 0",
 	} {
 		e, err := ParseOne(sql, "tsql")
 		if err != nil {
