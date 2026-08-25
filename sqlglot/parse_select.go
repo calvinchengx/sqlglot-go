@@ -479,6 +479,13 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			if err := p.setOnce(sel, "limit", limit); err != nil {
 				return err
 			}
+		case p.atWords("LATERAL", "VIEW"):
+			view, err := p.parseLateralView()
+			if err != nil {
+				return err
+			}
+			laterals, _ := sel.Args["laterals"].([]*Expression)
+			sel.Set("laterals", append(laterals, view))
 		case p.atWords("FOR", "XML"), p.atWords("FOR", "JSON"), p.atWords("FOR", "BROWSE"):
 			clause, err := p.parseForClause()
 			if err != nil {
@@ -906,4 +913,55 @@ func (p *parser) parseForClause() (*Expression, error) {
 		}
 	}
 	return New("ForClause", Arg{"kind", kind}, Arg{"expressions", options}), nil
+}
+
+// LATERAL VIEW [OUTER] <call> [alias] [AS <column>[, <column>]]
+//
+// Hive's, and a CLAUSE of the query rather than a relation in the FROM list --
+// the reference keeps a list of them under `laterals`. The alias is always
+// present, and empty when the statement named nothing.
+//
+// The column list after AS is bare and comma-separated, not parenthesised,
+// which is why it cannot go through the table-alias reader.
+func (p *parser) parseLateralView() (*Expression, error) {
+	p.advance() // LATERAL
+	p.advance() // VIEW
+
+	outer := false
+	if p.atWords("OUTER") {
+		p.advance()
+		outer = true
+	}
+	call, err := p.parseUnary()
+	if err != nil {
+		return nil, err
+	}
+
+	var name *Expression
+	if p.atAliasName() {
+		name, err = p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+	}
+	var columns []*Expression
+	if p.match(TokALIAS) {
+		for {
+			column, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
+			}
+			columns = append(columns, column)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
+	return New("Lateral",
+		Arg{"this", call},
+		Arg{"view", true},
+		Arg{"outer", outer},
+		Arg{"alias", New("TableAlias", Arg{"this", name}, Arg{"columns", columns})},
+		Arg{"cross_apply", nil},
+		Arg{"ordinality", nil}), nil
 }

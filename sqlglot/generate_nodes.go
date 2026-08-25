@@ -156,6 +156,11 @@ func (g *generator) writeSelect(e *Expression) string {
 	if limit != nil && !g.tables.LimitIsTop && limit.Class == "Fetch" {
 		add(g.node(limit))
 	}
+	// A LATERAL VIEW is a clause of the query, and there may be several.
+	laterals, _ := e.Args["laterals"].([]*Expression)
+	for _, lateral := range laterals {
+		add(g.node(lateral))
+	}
 	// FOR XML / FOR JSON / FOR BROWSE comes after the query's own clauses.
 	add(g.child(e, "for_"))
 	// Row locking comes last, and there may be more than one of them.
@@ -254,9 +259,13 @@ func (g *generator) joins(e *Expression) string {
 
 func (g *generator) writeJoin(e *Expression) string {
 	this := g.child(e, "this")
-	// A Lateral writes its own CROSS APPLY; a comma join writes a comma.
+	// An APPLY writes its own words and is the whole join. A plain LATERAL is
+	// not: it goes where a table goes, so the comma or the JOIN and its ON
+	// are still the enclosing join's to write.
 	if inner, _ := e.Args["this"].(*Expression); inner != nil && inner.Class == "Lateral" {
-		return this
+		if _, apply := inner.Args["cross_apply"].(bool); apply {
+			return this
+		}
 	}
 	words := []string{}
 	for _, key := range []string{"side", "kind"} {
@@ -283,15 +292,50 @@ func (g *generator) writeJoin(e *Expression) string {
 }
 
 func (g *generator) writeLateral(e *Expression) string {
-	word := "OUTER APPLY "
-	if e.Args["cross_apply"] == true {
-		word = "CROSS APPLY "
+	// One node, three spellings, told apart by which of its arguments are
+	// filled. APPLY sets cross_apply and leaves view off; LATERAL VIEW sets
+	// view; a plain LATERAL sets neither.
+	if _, apply := e.Args["cross_apply"].(bool); apply {
+		word := "OUTER APPLY "
+		if e.Args["cross_apply"] == true {
+			word = "CROSS APPLY "
+		}
+		this := g.child(e, "this")
+		if alias := g.child(e, "alias"); alias != "" {
+			return word + this + " AS " + alias
+		}
+		return word + this
 	}
-	this := g.child(e, "this")
+	if view, _ := e.Args["view"].(bool); view {
+		out := "LATERAL VIEW "
+		if outer, _ := e.Args["outer"].(bool); outer {
+			out += "OUTER "
+		}
+		out += g.child(e, "this")
+		// The alias is always PRESENT on a view and empty when the statement
+		// named nothing. It is spelled here rather than by the table-alias
+		// writer: a view names its columns `t AS a, b`, where a table would
+		// have written `t(a, b)`.
+		if alias, _ := e.Args["alias"].(*Expression); alias != nil {
+			if name, _ := alias.Args["this"].(*Expression); name != nil {
+				out += " " + g.node(name)
+			}
+			columns, _ := alias.Args["columns"].([]*Expression)
+			if len(columns) > 0 {
+				names := make([]string, 0, len(columns))
+				for _, column := range columns {
+					names = append(names, g.node(column))
+				}
+				out += " AS " + strings.Join(names, ", ")
+			}
+		}
+		return out
+	}
+	out := "LATERAL " + g.child(e, "this")
 	if alias := g.child(e, "alias"); alias != "" {
-		return word + this + " AS " + alias
+		out += " AS " + alias
 	}
-	return word + this
+	return out
 }
 
 func (g *generator) writeSubquery(e *Expression) string {

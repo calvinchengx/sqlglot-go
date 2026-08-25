@@ -197,6 +197,9 @@ func (p *parser) parseTable() (*Expression, error) {
 			return named, nil
 		}
 	}
+	if p.at(TokLATERAL) {
+		return p.parseLateral()
+	}
 	if p.at(TokL_PAREN) {
 		return p.parseSubqueryTable()
 	}
@@ -904,4 +907,78 @@ func (p *parser) parseSystemTime() (*Expression, error) {
 		Arg{"this", "TIMESTAMP"},
 		Arg{"expression", expression},
 		Arg{"kind", kind}), nil
+}
+
+// LATERAL over a subquery or a function, which is a relation that may refer to
+// the ones before it: `FROM foo, LATERAL (SELECT ... WHERE bar.id = foo.id)`.
+//
+// It goes where a table goes, so a comma join and an explicit JOIN both reach
+// it by the same route. The alias belongs to the LATERAL rather than to what
+// is inside it -- a subquery parsed here would otherwise take it -- and it may
+// name the columns: `AS t(v, y)`.
+//
+// The same node serves CROSS APPLY, which fills a different set of its
+// arguments; see parseApply. `view` and `outer` are FALSE here where APPLY
+// leaves them off, and `cross_apply` is absent where APPLY sets it.
+func (p *parser) parseLateral() (*Expression, error) {
+	p.advance() // LATERAL
+
+	var this *Expression
+	var ordinality any
+	switch {
+	case p.at(TokL_PAREN):
+		sub, err := p.parseSubqueryTable()
+		if err != nil {
+			return nil, err
+		}
+		// A subquery takes any alias that follows it, and here that alias is
+		// the LATERAL's. Moved rather than re-parsed.
+		this = sub
+	case p.at(TokUNNEST) || (p.curr() != nil && strings.EqualFold(p.curr().Text, "UNNEST")):
+		// In this position UNNEST is a RELATION, not the function the
+		// expression grammar maps it to: the reference builds an Unnest
+		// where a call would have built an Explode.
+		target, err := p.parseUnnest()
+		if err != nil {
+			return nil, err
+		}
+		this = target
+	case p.namesAFunctionCall() || p.atIdentifier():
+		target, err := p.parseQualifiedCall()
+		if err != nil {
+			return nil, err
+		}
+		this = target
+		// A plain call may take WITH ORDINALITY after it, so the reference
+		// records the answer -- false -- where the other operands leave the
+		// argument off entirely.
+		ordinality = false
+	default:
+		return nil, p.unsupported("LATERAL over something the port cannot read")
+	}
+
+	// The alias belongs to the LATERAL, not to what is inside it. A subquery
+	// and an UNNEST both take one while being parsed, so it is moved rather
+	// than re-read.
+	var alias *Expression
+	if this.Class == "Subquery" || this.Class == "Unnest" {
+		if inner, _ := this.Args["alias"].(*Expression); inner != nil {
+			alias = inner
+			this.Set("alias", nil)
+		}
+	}
+	if alias == nil {
+		var err error
+		alias, err = p.parseTableAlias()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return New("Lateral",
+		Arg{"this", this},
+		Arg{"view", false},
+		Arg{"outer", false},
+		Arg{"alias", alias},
+		Arg{"cross_apply", nil},
+		Arg{"ordinality", ordinality}), nil
 }

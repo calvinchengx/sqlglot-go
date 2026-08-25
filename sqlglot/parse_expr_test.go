@@ -953,3 +953,134 @@ func TestForClauseMalformed(t *testing.T) {
 		}
 	}
 }
+
+// LATERAL goes where a table goes, so a comma join and an explicit JOIN reach
+// it by the same route -- and the join around it is still the join's to write.
+func TestLateral(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"after a comma", "postgres", "SELECT * FROM foo, LATERAL (SELECT * FROM bar) AS ss",
+			"SELECT * FROM foo, LATERAL (SELECT * FROM bar) AS ss"},
+		{"in a join, with named columns", "postgres",
+			"SELECT t.x, y.z FROM x INNER JOIN LATERAL TVFTEST(t.x) AS y(z) ON TRUE",
+			"SELECT t.x, y.z FROM x INNER JOIN LATERAL TVFTEST(t.x) AS y(z) ON TRUE"},
+		{"over a qualified call", "postgres",
+			"SELECT t.x, y.z FROM x LEFT JOIN LATERAL a.b.tvfTest(t.x) AS y(z) ON TRUE",
+			"SELECT t.x, y.z FROM x LEFT JOIN LATERAL a.b.tvfTest(t.x) AS y(z) ON TRUE"},
+		// In this position UNNEST is a RELATION, not the function the
+		// expression grammar maps it to.
+		{"over an UNNEST", "postgres", "SELECT * FROM r CROSS JOIN LATERAL UNNEST(ARRAY[1]) AS s(location)",
+			"SELECT * FROM r CROSS JOIN LATERAL UNNEST(ARRAY[1]) AS s(location)"},
+		{"over a subquery in a join", "postgres",
+			"SELECT x.a, t.v FROM x INNER JOIN LATERAL (SELECT v, y FROM t) AS t(v, y) ON TRUE",
+			"SELECT x.a, t.v FROM x INNER JOIN LATERAL (SELECT v, y FROM t) AS t(v, y) ON TRUE"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	if _, err := ParseOne("SELECT * FROM x, LATERAL 1", "postgres"); err == nil {
+		t.Error("`LATERAL 1` was read; it should be refused")
+	}
+}
+
+// LATERAL VIEW is Hive's, and a CLAUSE of the query rather than a relation in
+// the FROM list. Its alias names the columns `t AS a, b` where a table alias
+// would have written `t(a, b)`.
+func TestLateralView(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"no alias at all", "", "SELECT s FROM tests LATERAL VIEW EXPLODE(scores)",
+			"SELECT s FROM tests LATERAL VIEW EXPLODE(scores)"},
+		{"columns but no name", "", "SELECT s FROM tests LATERAL VIEW EXPLODE(scores) AS score",
+			"SELECT s FROM tests LATERAL VIEW EXPLODE(scores) AS score"},
+		{"a name and a column", "", "SELECT s FROM tests LATERAL VIEW EXPLODE(scores) t AS score",
+			"SELECT s FROM tests LATERAL VIEW EXPLODE(scores) t AS score"},
+		{"several columns", "", "SELECT s FROM tests LATERAL VIEW EXPLODE(scores) t AS score, name",
+			"SELECT s FROM tests LATERAL VIEW EXPLODE(scores) t AS score, name"},
+		{"the outer form", "", "SELECT s FROM tests LATERAL VIEW OUTER EXPLODE(scores) t AS score, name",
+			"SELECT s FROM tests LATERAL VIEW OUTER EXPLODE(scores) t AS score, name"},
+		{"a name but no columns", "", "SELECT tf.* FROM (SELECT 0) AS t LATERAL VIEW STACK(1, 2) tf",
+			"SELECT tf.* FROM (SELECT 0) AS t LATERAL VIEW STACK(1, 2) tf"},
+		{"another dialect's", "databricks", "SELECT a FROM x LATERAL VIEW POSEXPLODE(y) t AS pos, a",
+			"SELECT a FROM x LATERAL VIEW POSEXPLODE(y) t AS pos, a"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	for _, sql := range []string{
+		"SELECT s FROM tests LATERAL VIEW",
+		"SELECT s FROM tests LATERAL VIEW EXPLODE(scores) t AS",
+		"SELECT s FROM tests LATERAL VIEW EXPLODE(scores) t AS a,",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
+// The remaining LATERAL edges: a subquery that never closes, an alias the
+// lateral takes rather than the relation inside it, and the ordinality
+// argument, which the reference records only over a plain CALL.
+func TestLateralEdges(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT * FROM x, LATERAL (SELECT 1",
+		"SELECT * FROM x, LATERAL UNNEST(",
+	} {
+		if _, err := ParseOne(sql, "postgres"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+
+	lateralIn := func(sql string) *Expression {
+		e, err := ParseOne(sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		joins, _ := e.Args["joins"].([]*Expression)
+		if len(joins) == 0 {
+			t.Fatalf("no join in %q", sql)
+		}
+		lateral, _ := joins[0].Args["this"].(*Expression)
+		return lateral
+	}
+
+	// Over a plain call the reference records the answer -- false -- where
+	// over a subquery or an UNNEST it leaves the argument off.
+	call := lateralIn("SELECT * FROM x, LATERAL f(y) AS z")
+	if v, ok := call.Args["ordinality"].(bool); !ok || v {
+		t.Errorf("over a call: ordinality = %v, want false and present", call.Args["ordinality"])
+	}
+	sub := lateralIn("SELECT * FROM x, LATERAL (SELECT 1) AS z")
+	if v := sub.Args["ordinality"]; v != nil {
+		t.Errorf("over a subquery: ordinality = %v, want it absent", v)
+	}
+	// The alias belongs to the LATERAL, not to the subquery inside it.
+	if inner, _ := sub.Args["this"].(*Expression); inner != nil {
+		if a := inner.Args["alias"]; a != nil {
+			t.Errorf("the subquery kept the alias %v; it belongs to the lateral", a)
+		}
+	}
+	if sub.Args["alias"] == nil {
+		t.Error("the lateral has no alias; it should have taken the subquery's")
+	}
+}
