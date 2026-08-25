@@ -272,6 +272,15 @@ func (p *parser) parseTable() (*Expression, error) {
 		}
 	}
 
+	// T-SQL's temporal clause hangs off the table, BEFORE the alias in the
+	// text and before it on the node.
+	if p.atWords("FOR", "SYSTEM_TIME") {
+		version, err := p.parseSystemTime()
+		if err != nil {
+			return nil, err
+		}
+		table.Set("version", version)
+	}
 	alias, err := p.parseTableAlias()
 	if err != nil {
 		return nil, err
@@ -801,4 +810,98 @@ func (p *parser) parseUnnest() (*Expression, error) {
 		Arg{"alias", alias},
 		Arg{"offset", false},
 		Arg{"explode_array", nil}), nil
+}
+
+// FOR SYSTEM_TIME, which asks a temporal table what it held at some point or
+// over some range:
+//
+//	AS OF <when>              a moment
+//	FROM <a> TO <b>           a range, held as a Tuple
+//	BETWEEN <a> AND <b>       another range
+//	CONTAINED IN (<a>, <b>)   and another
+//	ALL                       no bound at all
+//
+// The kind is the WORDS, kept as a string; `this` is always TIMESTAMP.
+func (p *parser) parseSystemTime() (*Expression, error) {
+	p.advance() // FOR
+	p.advance() // SYSTEM_TIME
+
+	var kind string
+	var expression *Expression
+	pair := func(sep TokenType, word string) error {
+		low, err := p.parseUnary()
+		if err != nil {
+			return err
+		}
+		if sep != TokUNKNOWN {
+			if !p.match(sep) {
+				return p.unsupported("FOR SYSTEM_TIME " + kind + " without " + word)
+			}
+		} else if !p.atWords(word) {
+			return p.unsupported("FOR SYSTEM_TIME " + kind + " without " + word)
+		} else {
+			p.advance()
+		}
+		high, err := p.parseUnary()
+		if err != nil {
+			return err
+		}
+		expression = New("Tuple", Arg{"expressions", []*Expression{low, high}})
+		return nil
+	}
+
+	switch {
+	case p.atWords("AS", "OF"):
+		p.advance()
+		p.advance()
+		kind = "AS OF"
+		e, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		expression = e
+	case p.atWords("ALL"):
+		p.advance()
+		kind = "ALL"
+	case p.at(TokFROM):
+		p.advance()
+		kind = "FROM"
+		if err := pair(TokUNKNOWN, "TO"); err != nil {
+			return nil, err
+		}
+	case p.at(TokBETWEEN):
+		p.advance()
+		kind = "BETWEEN"
+		if err := pair(TokAND, "AND"); err != nil {
+			return nil, err
+		}
+	case p.atWords("CONTAINED", "IN"):
+		p.advance()
+		p.advance()
+		kind = "CONTAINED IN"
+		if !p.match(TokL_PAREN) {
+			return nil, p.unsupported("CONTAINED IN without a range")
+		}
+		low, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokCOMMA) {
+			return nil, p.unsupported("CONTAINED IN without two bounds")
+		}
+		high, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed CONTAINED IN")
+		}
+		expression = New("Tuple", Arg{"expressions", []*Expression{low, high}})
+	default:
+		return nil, p.unsupported("FOR SYSTEM_TIME without a bound")
+	}
+	return New("Version",
+		Arg{"this", "TIMESTAMP"},
+		Arg{"expression", expression},
+		Arg{"kind", kind}), nil
 }

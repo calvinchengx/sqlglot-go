@@ -74,6 +74,10 @@ func init() {
 		"JSONPath":          (*generator).writeJSONPath,
 		"JSONKeyValue":      (*generator).writeJSONKeyValue,
 		"Pivot":             (*generator).writePivot,
+		"Version":           (*generator).writeVersion,
+		"ForClause":         (*generator).writeForClause,
+		"QueryOption":       (*generator).writeQueryOption,
+		"XMLKeyValueOption": (*generator).writeXMLKeyValueOption,
 		"JSONExtract":       (*generator).writeJSONExtractOp,
 		"JSONExtractScalar": (*generator).writeJSONExtractOp,
 		"PropertyEQ":        (*generator).writePropertyEQ,
@@ -152,6 +156,13 @@ func (g *generator) writeSelect(e *Expression) string {
 	if limit != nil && !g.tables.LimitIsTop && limit.Class == "Fetch" {
 		add(g.node(limit))
 	}
+	// FOR XML / FOR JSON / FOR BROWSE comes after the query's own clauses.
+	add(g.child(e, "for_"))
+	// Row locking comes last, and there may be more than one of them.
+	locks, _ := e.Args["locks"].([]*Expression)
+	for _, lock := range locks {
+		add(g.node(lock))
+	}
 
 	return g.withPrefix(e, strings.Join(parts, " "))
 }
@@ -201,6 +212,15 @@ func (g *generator) writeTable(e *Expression) string {
 	out := strings.Join(parts, ".")
 	if alias := g.child(e, "alias"); alias != "" {
 		out += " AS " + alias
+	}
+	// The temporal clause comes before the alias, as it does in the text.
+	if version := g.child(e, "version"); version != "" {
+		parts := strings.SplitN(out, " AS ", 2)
+		if len(parts) == 2 {
+			out = parts[0] + " " + version + " AS " + parts[1]
+		} else {
+			out += " " + version
+		}
 	}
 	// TABLESAMPLE hangs off the table, after the alias. Its own template
 	// carries the space in front of it, the way the reference returns it.
@@ -1598,6 +1618,59 @@ func (g *generator) writePivot(e *Expression) string {
 	out := " " + word + "(" + strings.Join(parts, ", ") + " FOR " + g.node(fields[0]) + ")"
 	if alias := g.child(e, "alias"); alias != "" {
 		out += " AS " + alias
+	}
+	return out
+}
+
+// writeVersion writes FOR SYSTEM_TIME. The template table holds the shape, but
+// a RANGE cannot go through it: the two bounds are held as a Tuple, which
+// would render `(c, d)`, and the dialect writes `c TO d` or `c AND d`
+// depending on the kind. The separating word is probed per kind.
+func (g *generator) writeVersion(e *Expression) string {
+	kind, _ := e.Args["kind"].(string)
+	rendered := ""
+	if expr, _ := e.Args["expression"].(*Expression); expr != nil {
+		sep := g.tables.VersionRangeSep[kind]
+		items, _ := expr.Args["expressions"].([]*Expression)
+		if sep != "" && expr.Class == "Tuple" && len(items) == 2 {
+			rendered = g.node(items[0]) + " " + sep + " " + g.node(items[1])
+		} else {
+			rendered = g.node(expr)
+		}
+	}
+	for _, candidate := range g.tables.SyntaxSQL[e.Class] {
+		wantsExpression := strings.Contains(candidate.Template, "{expression}")
+		if wantsExpression != (rendered != "") {
+			continue
+		}
+		out := strings.ReplaceAll(candidate.Template, "{kind}", kind)
+		return strings.ReplaceAll(out, "{expression}", rendered)
+	}
+	return g.fail(e.Class)
+}
+
+// writeForClause writes `FOR XML ...`, `FOR JSON ...` and the bare FOR BROWSE.
+func (g *generator) writeForClause(e *Expression) string {
+	kind, _ := e.Args["kind"].(string)
+	options, _ := e.Args["expressions"].([]*Expression)
+	if len(options) == 0 {
+		return "FOR " + kind
+	}
+	parts := make([]string, 0, len(options))
+	for _, option := range options {
+		parts = append(parts, g.node(option))
+	}
+	return "FOR " + kind + " " + strings.Join(parts, ", ")
+}
+
+// A QueryOption is a wrapper and writes whatever it holds.
+func (g *generator) writeQueryOption(e *Expression) string { return g.child(e, "this") }
+
+// An option written as a WORD, or a word with a parenthesised string after it.
+func (g *generator) writeXMLKeyValueOption(e *Expression) string {
+	out := g.child(e, "this")
+	if expression := g.child(e, "expression"); expression != "" {
+		out += "(" + expression + ")"
 	}
 	return out
 }

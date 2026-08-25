@@ -479,6 +479,22 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			if err := p.setOnce(sel, "limit", limit); err != nil {
 				return err
 			}
+		case p.atWords("FOR", "XML"), p.atWords("FOR", "JSON"), p.atWords("FOR", "BROWSE"):
+			clause, err := p.parseForClause()
+			if err != nil {
+				return err
+			}
+			if err := p.setOnce(sel, "for_", clause); err != nil {
+				return err
+			}
+		case p.atWords("FOR", "UPDATE"), p.atWords("FOR", "SHARE"):
+			// PostgreSQL's row locking, which the reference keeps as a LIST
+			// of Lock nodes distinguished by a single flag.
+			p.advance()
+			update := p.atWords("UPDATE")
+			p.advance()
+			locks, _ := sel.Args["locks"].([]*Expression)
+			sel.Set("locks", append(locks, New("Lock", Arg{"update", update})))
 		case p.at(TokFETCH):
 			fetch, err := p.parseFetch()
 			if err != nil {
@@ -820,4 +836,74 @@ func (p *parser) parseStatementPivot() (*Expression, error) {
 		args = append(args, Arg{"unpivot", nil})
 	}
 	return New("Pivot", append(args, Arg{"into", into})...), nil
+}
+
+// FOR XML <options>, FOR JSON <options> and the bare FOR BROWSE.
+//
+// An option is a WORD from this kind's vocabulary, which may take a second
+// word after it -- `ELEMENTS XSINIL`, `BINARY BASE64` -- and a word that is
+// not in the vocabulary falls through to a key/value option that may carry a
+// parenthesised string. That fall-through is why `PATH` is a plain Var under
+// JSON, whose table has it, and an XMLKeyValueOption under XML, whose does
+// not. The vocabularies are generated from the reference's own tables.
+func (p *parser) parseForClause() (*Expression, error) {
+	p.advance() // FOR
+	kind := strings.ToUpper(p.curr().Text)
+	p.advance()
+	if kind == "BROWSE" {
+		return New("ForClause", Arg{"kind", kind}), nil
+	}
+
+	vocabulary := p.tables.ForClauseOptions[kind]
+	var options []*Expression
+	for {
+		word := p.curr()
+		if word == nil {
+			return nil, p.unsupported("FOR " + kind + " without an option")
+		}
+		upper := strings.ToUpper(word.Text)
+		if follows, known := vocabulary[upper]; known {
+			p.advance()
+			// A second word belongs to the first, and the reference keeps
+			// the pair as ONE Var rather than as two options.
+			for _, follow := range follows {
+				if p.atWords(follow) {
+					p.advance()
+					upper += " " + follow
+					break
+				}
+			}
+			options = append(options, New("QueryOption",
+				Arg{"this", New("Var", Arg{"this", upper})}))
+		} else {
+			// A bare WORD here is a Var, not a column: the reference reads a
+			// primary-or-var, so `ROOT` and `PATH` name options rather than
+			// referring to anything.
+			var this *Expression
+			var err error
+			if p.atIdentifier() {
+				this = New("Var", Arg{"this", p.curr().Text})
+				p.advance()
+			} else if this, err = p.parseUnary(); err != nil {
+				return nil, err
+			}
+			var expression *Expression
+			if p.match(TokL_PAREN) {
+				expression, err = p.parseExpression()
+				if err != nil {
+					return nil, err
+				}
+				if !p.match(TokR_PAREN) {
+					return nil, p.unsupported("unclosed FOR " + kind + " option")
+				}
+			}
+			options = append(options, New("QueryOption",
+				Arg{"this", New("XMLKeyValueOption",
+					Arg{"this", this}, Arg{"expression", expression})}))
+		}
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	return New("ForClause", Arg{"kind", kind}, Arg{"expressions", options}), nil
 }

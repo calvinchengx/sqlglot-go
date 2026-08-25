@@ -674,6 +674,66 @@ def interval_unit_inside_string(dialect: str, exp) -> bool:
     return "'1 DAY'" in node.sql(dialect=dialect or None)
 
 
+def for_clause_options(dialect: str) -> dict:
+    """The option vocabulary of `FOR XML` and `FOR JSON`.
+
+    Each kind has a table of words, and a word may take a second word after it
+    -- `ELEMENTS XSINIL`, `BINARY BASE64`. A word IN the table becomes a plain
+    Var; one that is not falls through to a key/value option, which is why
+    `PATH` is a Var under JSON, where the table has it, and an
+    XMLKeyValueOption under XML, where it does not.
+
+    Read off the reference's own tables rather than transcribed, and empty for
+    every dialect that has none.
+    """
+    import importlib
+
+    out = {}
+    for kind in ("XML", "JSON"):
+        try:
+            module = importlib.import_module("sqlglot.parsers." + (dialect or "_"))
+            table = getattr(module, "FOR_%s_OPTIONS" % kind, None)
+        except Exception:  # noqa: BLE001 -- no parser module for this dialect
+            table = None
+        if not table:
+            continue
+        out[kind] = {word: list(follows) for word, follows in table.items()}
+    return out
+
+
+def version_range_separators(dialect: str, exp) -> dict:
+    """The word between the two bounds of a FOR SYSTEM_TIME range.
+
+    The bounds are held as a Tuple, which would render `(c, d)`, and T-SQL
+    writes `c TO d` for FROM and `c AND d` for BETWEEN instead. The word
+    depends on the KIND and lives in the dialect's writer, so it is read back
+    off a rendering rather than transcribed.
+    """
+    out = {}
+    for kind in ("FROM", "BETWEEN", "CONTAINED IN"):
+        node = exp.Version(
+            this="TIMESTAMP",
+            expression=exp.Tuple(
+                expressions=[exp.column("ZZLOWZZ"), exp.column("ZZHIGHZZ")]
+            ),
+            kind=kind,
+        )
+        try:
+            text = node.sql(dialect=dialect or None)
+        except Exception:  # noqa: BLE001
+            continue
+        head = text.find("ZZLOWZZ")
+        tail = text.find("ZZHIGHZZ")
+        if head < 0 or tail < 0 or tail < head:
+            continue
+        between = text[head + len("ZZLOWZZ") : tail].strip()
+        # A comma means the tuple was written as a tuple, which needs no
+        # separator of its own.
+        if between and between != ",":
+            out[kind] = between
+    return out
+
+
 def pivot_conventions(dialect: str) -> dict:
     """The four things a PIVOT node carries that the statement never says.
 
@@ -2649,6 +2709,12 @@ def main() -> int:
         "\tPrefixAlias bool\n",
         "\t// The four conventions a PIVOT node carries that the statement never\n",
         "\t// says: how output columns are named, and three flags stamped on.\n",
+        "\t// VersionRangeSep is the word between the two bounds of a FOR\n",
+        "\t// SYSTEM_TIME range, which are held as a Tuple: `c TO d`, `c AND d`.\n",
+        "\tVersionRangeSep map[string]string\n",
+        "\t// ForClauseOptions is the option vocabulary of FOR XML and FOR JSON,\n",
+        "\t// by kind: each word, and the second word it may take after it.\n",
+        "\tForClauseOptions map[string]map[string][]string\n",
         "\tPivotColumnNaming        string\n",
         "\tPivotIdentifiesStrings   bool\n",
         "\tPivotPrefixesColumns     bool\n",
@@ -3156,6 +3222,22 @@ def main() -> int:
             f"\t\tVariantExtractColon: {str(variant_extract_colon(name)).lower()},\n"
         )
         out.append(f"\t\tPrefixAlias: {str(prefix_alias(name)).lower()},\n")
+        _fc = for_clause_options(name)
+        if _fc:
+            out.append("\t\tForClauseOptions: map[string]map[string][]string{\n")
+            for kind in sorted(_fc):
+                out.append(f"\t\t\t{gostr(kind)}: {{\n")
+                for word in sorted(_fc[kind]):
+                    follows = ", ".join(gostr(f) for f in _fc[kind][word])
+                    out.append(f"\t\t\t\t{gostr(word)}: {{{follows}}},\n")
+                out.append("\t\t\t},\n")
+            out.append("\t\t},\n")
+        _vr = version_range_separators(name, exp)
+        if _vr:
+            out.append("\t\tVersionRangeSep: map[string]string{\n")
+            for kind in sorted(_vr):
+                out.append(f"\t\t\t{gostr(kind)}: {gostr(_vr[kind])},\n")
+            out.append("\t\t},\n")
         _pc = pivot_conventions(name)
         if _pc["naming"]:
             out.append(f"\t\tPivotColumnNaming: {gostr(_pc['naming'])},\n")

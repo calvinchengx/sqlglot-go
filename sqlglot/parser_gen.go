@@ -235,6 +235,12 @@ type ParserTables struct {
 	PrefixAlias bool
 	// The four conventions a PIVOT node carries that the statement never
 	// says: how output columns are named, and three flags stamped on.
+	// VersionRangeSep is the word between the two bounds of a FOR
+	// SYSTEM_TIME range, which are held as a Tuple: `c TO d`, `c AND d`.
+	VersionRangeSep map[string]string
+	// ForClauseOptions is the option vocabulary of FOR XML and FOR JSON,
+	// by kind: each word, and the second word it may take after it.
+	ForClauseOptions         map[string]map[string][]string
 	PivotColumnNaming        string
 	PivotIdentifiesStrings   bool
 	PivotPrefixesColumns     bool
@@ -7100,8 +7106,27 @@ var parserTables = map[string]*ParserTables{
 			"JSON_QUERY":             {"JSONExtract", false, []FuncConst{}, true, false, 0, true},
 			"JSON_VALUE":             {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 		},
-		VariantExtractColon:      false,
-		PrefixAlias:              false,
+		VariantExtractColon: false,
+		PrefixAlias:         false,
+		ForClauseOptions: map[string]map[string][]string{
+			"JSON": {
+				"AUTO":                  {},
+				"INCLUDE_NULL_VALUES":   {},
+				"PATH":                  {},
+				"WITHOUT_ARRAY_WRAPPER": {},
+			},
+			"XML": {
+				"AUTO":     {},
+				"BINARY":   {"BASE64"},
+				"ELEMENTS": {"XSINIL", "ABSENT"},
+				"EXPLICIT": {},
+				"TYPE":     {},
+			},
+		},
+		VersionRangeSep: map[string]string{
+			"BETWEEN": "AND",
+			"FROM":    "TO",
+		},
 		PivotColumnNaming:        "agg_name_if_aliased",
 		PivotIdentifiesStrings:   false,
 		PivotPrefixesColumns:     false,

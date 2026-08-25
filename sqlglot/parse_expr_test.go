@@ -823,3 +823,133 @@ func TestQuantifierSpacing(t *testing.T) {
 		})
 	}
 }
+
+// FOR SYSTEM_TIME asks a temporal table what it held at a moment or over a
+// range. It hangs off the table, before the alias.
+func TestSystemTime(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"a moment", "SELECT [x] FROM [a].[b] FOR SYSTEM_TIME AS OF 'foo'",
+			"SELECT [x] FROM [a].[b] FOR SYSTEM_TIME AS OF 'foo'"},
+		{"and an alias after it", "SELECT [x] FROM [a].[b] FOR SYSTEM_TIME AS OF 'foo' AS alias",
+			"SELECT [x] FROM [a].[b] FOR SYSTEM_TIME AS OF 'foo' AS alias"},
+		// The bounds of a range are held as a Tuple, which would write
+		// `(c, d)`; the dialect writes the pair with a word between them.
+		{"a range", "SELECT [x] FROM [a].[b] FOR SYSTEM_TIME FROM c TO d",
+			"SELECT [x] FROM [a].[b] FOR SYSTEM_TIME FROM c TO d"},
+		{"another range", "SELECT [x] FROM [a].[b] FOR SYSTEM_TIME BETWEEN c AND d",
+			"SELECT [x] FROM [a].[b] FOR SYSTEM_TIME BETWEEN c AND d"},
+		{"a contained range, which keeps the tuple",
+			"SELECT [x] FROM [a].[b] FOR SYSTEM_TIME CONTAINED IN (c, d)",
+			"SELECT [x] FROM [a].[b] FOR SYSTEM_TIME CONTAINED IN (c, d)"},
+		{"no bound at all", "SELECT [x] FROM [a].[b] FOR SYSTEM_TIME ALL AS alias",
+			"SELECT [x] FROM [a].[b] FOR SYSTEM_TIME ALL AS alias"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "tsql")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, "tsql")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	for _, sql := range []string{
+		"SELECT x FROM b FOR SYSTEM_TIME",
+		"SELECT x FROM b FOR SYSTEM_TIME FROM c d",
+		"SELECT x FROM b FOR SYSTEM_TIME BETWEEN c d",
+		"SELECT x FROM b FOR SYSTEM_TIME CONTAINED IN c",
+		"SELECT x FROM b FOR SYSTEM_TIME CONTAINED IN (c)",
+		"SELECT x FROM b FOR SYSTEM_TIME CONTAINED IN (c, d",
+	} {
+		if _, err := ParseOne(sql, "tsql"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
+// FOR XML, FOR JSON and the bare FOR BROWSE, plus the row locking that shares
+// the keyword.
+func TestForClauseAndLocks(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"a json kind", "tsql", "SELECT * FROM t FOR JSON AUTO",
+			"SELECT * FROM t FOR JSON AUTO"},
+		{"a bare kind", "tsql", "SELECT * FROM t FOR BROWSE", "SELECT * FROM t FOR BROWSE"},
+		// A word the vocabulary has takes a second word with it; one it does
+		// not falls through to a key/value option -- which is why PATH is a
+		// plain Var under JSON and a key/value option under XML.
+		{"paired words", "tsql", "SELECT * FROM t FOR XML PATH, BINARY BASE64, ELEMENTS XSINIL",
+			"SELECT * FROM t FOR XML PATH, BINARY BASE64, ELEMENTS XSINIL"},
+		{"an option with a value", "tsql",
+			"SELECT * FROM t FOR JSON PATH, ROOT('Root'), INCLUDE_NULL_VALUES",
+			"SELECT * FROM t FOR JSON PATH, ROOT('Root'), INCLUDE_NULL_VALUES"},
+		{"inside a subquery", "tsql", "SELECT j FROM (SELECT a AS j FROM t FOR JSON PATH) AS x",
+			"SELECT j FROM (SELECT a AS j FROM t FOR JSON PATH) AS x"},
+		{"locking for update", "postgres", "SELECT a FROM tbl FOR UPDATE",
+			"SELECT a FROM tbl FOR UPDATE"},
+		{"locking for share", "postgres", "SELECT a FROM tbl FOR SHARE",
+			"SELECT a FROM tbl FOR SHARE"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	for _, sql := range []string{
+		"SELECT * FROM t FOR JSON",
+		"SELECT * FROM t FOR JSON PATH, ROOT('Root'",
+	} {
+		if _, err := ParseOne(sql, "tsql"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
+// A FOR option that is a LITERAL rather than a word, and a locking clause
+// written twice -- both of which the reference reads and this follows.
+func TestForClauseEdges(t *testing.T) {
+	e, err := ParseOne("SELECT * FROM t FOR JSON 'x'", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "tsql"); err != nil || got != "SELECT * FROM t FOR JSON 'x'" {
+		t.Errorf("got %q (%v), want the literal kept as the option", got, err)
+	}
+	twice, err := ParseOne("SELECT a FROM tbl FOR UPDATE FOR SHARE", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, _ := Generate(twice, "postgres"); got != "SELECT a FROM tbl FOR UPDATE FOR SHARE" {
+		t.Errorf("got %q, want both locks kept", got)
+	}
+}
+
+// The malformed FOR shapes, held still because a half-read clause would put a
+// wrong tree behind a statement that reads fine.
+func TestForClauseMalformed(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql string }{
+		{"tsql", "SELECT * FROM t FOR XML"},
+		{"tsql", "SELECT * FROM t FOR XML ELEMENTS,"},
+		{"tsql", "SELECT * FROM t FOR JSON PATH,"},
+		{"tsql", "SELECT x FROM b FOR SYSTEM_TIME AS OF"},
+		{"tsql", "SELECT x FROM b FOR SYSTEM_TIME FROM c TO"},
+		{"tsql", "SELECT x FROM b FOR SYSTEM_TIME BETWEEN c AND"},
+	} {
+		if _, err := ParseOne(tc.sql, tc.dialect); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", tc.sql)
+		}
+	}
+}
