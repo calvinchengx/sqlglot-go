@@ -701,6 +701,22 @@ def within_group_folding_names(dialect: str, P) -> list:
     return out
 
 
+def map_brace_literal(dialect: str) -> bool:
+    """Whether `MAP {k: v}` is a map LITERAL in this dialect.
+
+    DuckDB's. Elsewhere MAP is an ordinary name and the braces are a struct,
+    so applying the rule everywhere read `MAP{:YD00:0}` as a map and wrote
+    something PostgreSQL cannot parse. The generator fuzzer found it.
+    """
+    import sqlglot
+
+    try:
+        node = sqlglot.parse_one("SELECT MAP {'x': 1}", read=dialect or None).selects[0]
+    except Exception:  # noqa: BLE001
+        return False
+    return type(node).__name__ == "ToMap"
+
+
 def group_concat_order(dialect: str) -> str:
     """Where a folded ORDER BY goes when a GroupConcat is written back.
 
@@ -2815,6 +2831,9 @@ def main() -> int:
         "\t// NAME that decides, not the class: Databricks folds STRING_AGG and\n",
         "\t// not LISTAGG, and both build a GroupConcat.\n",
         "\tWithinGroupFolds map[string]struct{}\n",
+        "\t// MapBraceLiteral: `MAP {k: v}` is a map LITERAL here. Elsewhere MAP\n",
+        "\t// is an ordinary name and the braces are a struct.\n",
+        "\tMapBraceLiteral bool\n",
         "\tGroupConcatOrder string\n",
         "\tTableSampleWord  string\n",
         "\tSelectSampleWord string\n",
@@ -3328,6 +3347,7 @@ def main() -> int:
         _wgf = within_group_folding_names(name, P)
         if _wgf:
             out.append(strset("WithinGroupFolds", _wgf))
+        out.append(f"\t\tMapBraceLiteral: {str(map_brace_literal(name)).lower()},\n")
         _gco = group_concat_order(name)
         if _gco:
             out.append(f"\t\tGroupConcatOrder: {gostr(_gco)},\n")

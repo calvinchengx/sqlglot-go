@@ -1013,7 +1013,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		// `MAP {'x': 1}` is a map LITERAL, not a call: the reference builds a
 		// ToMap over a Struct whose keys stay literals, where a bare `{...}`
 		// makes them identifiers.
-		if upper == "MAP" {
+		if upper == "MAP" && p.tables.MapBraceLiteral {
 			if n := p.next(); n != nil && n.Type == TokL_BRACE {
 				return p.parseMapLiteral()
 			}
@@ -1836,7 +1836,7 @@ func (p *parser) parseColumn() (*Expression, error) {
 		// reference builds Dot(Dot(a, b), C()). Detected before the name is
 		// consumed, so the call parser sees it where it expects to.
 		if p.namesAFunctionCall() {
-			fn, err := p.parseFunction()
+			fn, err := p.parseQualifiedName()
 			if err != nil {
 				return nil, err
 			}
@@ -2330,4 +2330,49 @@ func (p *parser) parseCollation() (*Expression, error) {
 		return New("Var", Arg{"this", c.Text}), nil
 	}
 	return nil, p.unsupported("COLLATE without a collation")
+}
+
+// parseQualifiedName reads the call at the end of a dotted chain. A name AFTER
+// a dot is not the builtin it spells: `a.IF(1, 0)` is a call to a function
+// called IF in some schema, and the reference builds an ANONYMOUS call for it
+// rather than the If node a bare `IF(1, 0)` builds.
+//
+// Resolving the name here wrote `a.CASE WHEN 1 THEN 0 END`, which is not SQL
+// at all -- the generator fuzzer found it and CI's gate stopped it.
+func (p *parser) parseQualifiedName() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("a qualified call with no name")
+	}
+	quoted := c.Type == TokIDENTIFIER
+	name := c.Text
+	p.advance()
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("a qualified call with no arguments")
+	}
+	var args []*Expression
+	wasInCallArgs := p.inCallArgs
+	p.inCallArgs = true
+	if !p.at(TokR_PAREN) {
+		for {
+			arg, err := p.parseExpression()
+			if err != nil {
+				p.inCallArgs = wasInCallArgs
+				return nil, err
+			}
+			args = append(args, arg)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
+	p.inCallArgs = wasInCallArgs
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed qualified call")
+	}
+	var this any = name
+	if quoted {
+		this = New("Identifier", Arg{"this", name}, Arg{"quoted", true})
+	}
+	return New("Anonymous", Arg{"this", this}, Arg{"expressions", args}), nil
 }

@@ -1441,6 +1441,12 @@ func TestMapLiteral(t *testing.T) {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
 		}
 	}
+	// The brace form is DuckDB's. Elsewhere MAP is an ordinary name and the
+	// braces are something else, so reading it everywhere wrote SQL
+	// PostgreSQL could not parse -- which the generator fuzzer found.
+	if _, err := ParseOne("MAP {'x': 1}", "postgres"); err == nil {
+		t.Error("`MAP {...}` was read in PostgreSQL, which has no such form")
+	}
 	// And `MAP(...)` with parentheses is still the ordinary call.
 	if _, err := ParseOne("SELECT MAP([1], [2])", "duckdb"); err != nil {
 		t.Errorf("the parenthesised MAP call was refused: %v", err)
@@ -1562,10 +1568,37 @@ func TestQualifiedCall(t *testing.T) {
 			t.Errorf("got %q, want %q", got, tc.want)
 		}
 	}
-	// A qualified call to a name with a SYNTAX of its own is still refused:
-	// the port cannot read `EXTRACT(1)` at all, qualified or not.
-	if _, err := ParseOne("x.EXTRACT(1)", ""); err == nil {
-		t.Error("`x.EXTRACT(1)` was read; EXTRACT needs its FROM")
+	// A name AFTER a dot is not the builtin it spells: `x.EXTRACT(1)` is a
+	// call to a function called EXTRACT in some schema, and needs none of the
+	// grammar the bare EXTRACT does.
+	e, err := ParseOne("x.EXTRACT(1)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, ""); err != nil || got != "x.EXTRACT(1)" {
+		t.Errorf("got %q (%v), want x.EXTRACT(1)", got, err)
+	}
+	// The same for a name whose bare form builds a node of its own: resolving
+	// it here wrote `a.CASE WHEN 1 THEN 0 END`, which is not SQL at all.
+	iff, err := ParseOne("SELECT a.IF(1, 0)", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(iff, "duckdb"); err != nil || got != "SELECT a.IF(1, 0)" {
+		t.Errorf("got %q (%v), want the call written back", got, err)
+	}
+	// A quoted name after a dot keeps its quoting.
+	q, err := ParseOne(`a."My Func"(1)`, "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(q, ""); err != nil || got != `a."My Func"(1)` {
+		t.Errorf("got %q (%v), want the quoted name kept", got, err)
+	}
+	for _, sql := range []string{"a.b.C(", "a.b.C(1,", "a.b.C(1"} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
 	}
 }
 
