@@ -563,6 +563,17 @@ func (g *generator) writePlaceholder(e *Expression) string {
 		}
 		return g.tables.Placeholder.Anonymous
 	}
+	// A name holding a DOLLAR is refused. `$` opens dollar-quoting on the way
+	// back in, so `Placeholder(¹$)` writes `$¹$`, which the port then cannot
+	// read: it is looking for a closing `$¹$` that is not there. The
+	// reference writes the same `$¹$` and gets away with it only because it
+	// keeps the trailing comment that follows in the statement it came from.
+	//
+	// Found by the generator fuzzer on `$¹$---- `, where both build the very
+	// same node and only the writing differs.
+	if strings.Contains(name, "$") {
+		return g.fail(e.Class + " whose name holds a dollar")
+	}
 	return strings.ReplaceAll(g.tables.Placeholder.Named, "{name}", name)
 }
 
@@ -1141,9 +1152,17 @@ func (g *generator) writeJSONPath(e *Expression) string {
 	// `'$.item[1].price'` under a JSONExtractScalar. The owner is what says
 	// which, and only the separators change.
 	pieces := g.tables.JSONPath
+	// A quote in a key is doubled only where the path is written INSIDE a
+	// string. Databricks' colon form is bare SQL, so `col:["fr'uit"]` keeps
+	// its quote; an empty escape set is not the same thing, since that still
+	// means "double it".
+	escapeQuote := true
 	if over, ok := g.tables.JSONPathByClass[g.pathOwner]; ok {
 		pieces.Key, pieces.Subscript, pieces.QuotedKey = over.Key, over.Subscript, over.QuotedKey
+		pieces.KeyAfter = over.KeyAfter
+		escapeQuote = over.EscapesQuote
 	}
+	keys := 0
 	out := pieces.Open
 	for _, part := range parts {
 		switch part.Class {
@@ -1177,15 +1196,53 @@ func (g *generator) writeJSONPath(e *Expression) string {
 			// string, which the generator fuzzer found by feeding a path made
 			// of quote characters.
 			name, _ := part.Args["this"].(string)
+			// The separator before the FIRST key is not always the one before
+			// the rest: Databricks writes `c1:item.price`, a colon and then a
+			// dot. Probed from one key alone, every later separator was
+			// missing and `c1:item[1].price` came out `c1:item[1]price`.
 			form := pieces.Key
-			if !isBareIdentifier(name) {
+			if keys > 0 && pieces.KeyAfter != "" {
+				form = pieces.KeyAfter
+			}
+			keys++
+			// A key the SOURCE quoted stays quoted, whatever it looks like:
+			// `raw:store['bicycle']` is written `raw:store["bicycle"]`, not
+			// `raw:store.bicycle`. The colon form records that on the segment
+			// where the arrow form does not, so a bare-looking name is only
+			// bare when nothing says otherwise.
+			quoted, hasFlag := part.Args["quoted"].(bool)
+			if (hasFlag && quoted) || !isBareIdentifier(name) {
 				form = pieces.QuotedKey
 			}
-			out += strings.ReplaceAll(form, "{key}",
-				escapeStringBody(name, g.cfg.StringEscapes))
+			body := name
+			if escapeQuote {
+				body = escapeStringBody(name, g.cfg.StringEscapes)
+			}
+			segment := strings.ReplaceAll(form, "{key}", body)
+			// A segment that renders to NOTHING cannot be read back.
+			// Databricks spells a key as bare text with no delimiter, so a key
+			// with no name leaves `0:` -- which the reference accepts and this
+			// port does not. The test is on what was WRITTEN, not on the name:
+			// where the form carries a separator, an empty key survives it.
+			//
+			// Found by the generator fuzzer on `0->''`.
+			if segment == "" {
+				return g.fail("a JSON path key that writes nothing")
+			}
+			out += segment
 		default:
 			return g.fail(part.Class)
 		}
+	}
+	// A path that writes NOTHING cannot be read back. Databricks spells the
+	// root as the empty string and a key as bare text, so `0 -> ''` -- whose
+	// path is a bare root -- comes out `0:`, which the reference accepts and
+	// this port does not. Dialects that spell the root `$` are unaffected,
+	// which is why the test is on what was written rather than on the parts.
+	//
+	// Found by the generator fuzzer.
+	if out+pieces.Close == "" {
+		return g.fail("a JSON path that writes nothing")
 	}
 	return out + pieces.Close
 }
@@ -1395,6 +1452,18 @@ func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
 	}
 	out := g.node(this)
 	for _, name := range names {
+		// An empty key VANISHES in the chain form, which spells a key as bare
+		// text: Databricks writes `0:` for a key with no name, and this port
+		// cannot read that back. The function form above quotes each key, so
+		// an empty one survives there and only the chain needs the guard.
+		//
+		// The reference writes `0:` too and does read it back. This is the
+		// port being narrower, not the reference being wrong -- so it refuses
+		// rather than emitting what it cannot re-read. Found by the generator
+		// fuzzer on `0->''`.
+		if name == "" {
+			return g.fail(e.Class + " over a key with no name")
+		}
 		step := strings.ReplaceAll(per.Chain, "{this}", out)
 		out = strings.ReplaceAll(step, "{part}", name)
 	}

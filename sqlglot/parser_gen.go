@@ -216,6 +216,10 @@ type ParserTables struct {
 	// writes as an OPERATOR, which the reference parenthesises when one
 	// is an operand: `(a -> b) & c`, but Databricks' `a:b & c` plain.
 	JSONExtractNeedsParens map[string]bool
+	// VariantExtractColon says `x:a` is a JSON extraction here, the
+	// form Databricks writes and this port used to write without ever
+	// being able to read one back.
+	VariantExtractColon bool
 	// JSONPathFunctions are the names that turn their arguments into a
 	// JSON PATH rather than holding them. Probed with STRING literals,
 	// because with the placeholder columns the generic probe uses they
@@ -452,8 +456,15 @@ type JSONPathSQL struct {
 	Open      string
 	Close     string
 	Key       string
-	Subscript string
-	QuotedKey string
+	// KeyAfter is the form for a key that is not the FIRST: Databricks
+	// writes `c1:item.price`, a colon and then a dot.
+	KeyAfter string
+	// EscapesQuote says a quote inside a key is doubled, which it must
+	// be where the path is written inside a string and must NOT be
+	// where the form is bare SQL.
+	EscapesQuote bool
+	Subscript    string
+	QuotedKey    string
 }
 
 type SyntaxTemplate struct {
@@ -3532,6 +3543,7 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
+		VariantExtractColon:      false,
 		JSONPathIsParsed:         true,
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
@@ -7045,6 +7057,7 @@ var parserTables = map[string]*ParserTables{
 			"JSON_QUERY":             {"JSONExtract", false, []FuncConst{}, true, false, 0, true},
 			"JSON_VALUE":             {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 		},
+		VariantExtractColon:      false,
 		JSONPathIsParsed:         true,
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
@@ -10620,6 +10633,7 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
+		VariantExtractColon:      false,
 		JSONPathIsParsed:         false,
 		IntervalUnitInsideString: true,
 		ArrayOpen:                "ARRAY[",
@@ -14385,6 +14399,7 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_STRING":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
+		VariantExtractColon: false,
 		JSONExtractNeedsParens: map[string]bool{
 			"JSONExtract":       true,
 			"JSONExtractScalar": true,
@@ -18149,6 +18164,7 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
+		VariantExtractColon:      true,
 		JSONPathIsParsed:         true,
 		IntervalUnitInsideString: false,
 		ArrayOpen:                "ARRAY(",
@@ -18166,12 +18182,23 @@ var parserTables = map[string]*ParserTables{
 			QuotedKey: "[\"{key}\"]",
 		},
 		JSONPathByClass: map[string]JSONPathSQL{
+			"JSONExtract": {
+				Key:          "{key}",
+				KeyAfter:     ".{key}",
+				Subscript:    "[{index}]",
+				QuotedKey:    "[\"{key}\"]",
+				Form:         "{this}:{path}",
+				PlainForm:    "{this}:{path}",
+				EscapesQuote: false,
+			},
 			"JSONExtractScalar": {
-				Key:       ".{key}",
-				Subscript: "[{index}]",
-				QuotedKey: "[\"{key}\"]",
-				Form:      "GET_JSON_OBJECT({this}, '${path}')",
-				PlainForm: "GET_JSON_OBJECT({this}, {path})",
+				Key:          ".{key}",
+				KeyAfter:     ".{key}",
+				Subscript:    "[{index}]",
+				QuotedKey:    "[\"{key}\"]",
+				Form:         "GET_JSON_OBJECT({this}, '${path}')",
+				PlainForm:    "GET_JSON_OBJECT({this}, {path})",
+				EscapesQuote: true,
 			},
 		},
 		BracketIsRewritten:            false,

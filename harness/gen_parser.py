@@ -674,6 +674,25 @@ def interval_unit_inside_string(dialect: str, exp) -> bool:
     return "'1 DAY'" in node.sql(dialect=dialect or None)
 
 
+def variant_extract_colon(dialect: str) -> bool:
+    """Whether `x:a` is a JSON extraction in this dialect.
+
+    Databricks spells one that way -- `c1:item[1].price` -- and the port WROTE
+    that form while refusing to read a single instance of it, so every
+    extraction it emitted for Databricks was SQL it could not read back. The
+    generator fuzzer found it on `0->''`.
+    """
+    import sqlglot
+
+    try:
+        node = sqlglot.parse_one("SELECT x:a", dialect=dialect or None).selects[0]
+    except Exception:  # noqa: BLE001 -- not a form this dialect has
+        return False
+    return type(node).__name__ == "JSONExtract" and bool(
+        node.args.get("variant_extract")
+    )
+
+
 def json_extract_needs_parens(dialect: str) -> dict:
     """Whether a JSON extraction used as an OPERAND is parenthesised.
 
@@ -984,6 +1003,7 @@ def json_path_pieces_in_class(dialect: str, exp, cls_name: str) -> dict:
             render(root + [exp.JSONPathKey(this="KEY")]),
             render(root + [exp.JSONPathSubscript(this=7)]),
             render(root + [exp.JSONPathKey(this="a b")]),
+            render(root + [exp.JSONPathKey(this="KEY"), exp.JSONPathKey(this="LATER")]),
         ]
     except Exception:  # noqa: BLE001 -- this dialect will not write that class
         return {}
@@ -999,7 +1019,7 @@ def json_path_pieces_in_class(dialect: str, exp, cls_name: str) -> dict:
         while not t.endswith(tail):
             tail = tail[1:]
     inner = [t[len(head): len(t) - len(tail)] for t in texts]
-    only_root, with_key, with_sub, with_quoted = inner
+    only_root, with_key, with_sub, with_quoted, with_two = inner
 
     def suffix(longer):
         return longer[len(only_root):] if longer.startswith(only_root) else longer
@@ -1011,6 +1031,15 @@ def json_path_pieces_in_class(dialect: str, exp, cls_name: str) -> dict:
         "Subscript": suffix(with_sub).replace("7", "{index}"),
         "QuotedKey": suffix(with_quoted).replace("a b", "{key}"),
     }
+    # The separator before the FIRST key is not always the one before the
+    # rest. Databricks writes `c1:item.price` -- a colon, then a dot -- so a
+    # form probed from one key alone wrote `c1:itemprice`, with every
+    # separator after the first missing.
+    pieces["KeyAfter"] = (
+        with_two[len(with_key):].replace("LATER", "{key}")
+        if with_two.startswith(with_key)
+        else pieces["Key"]
+    )
     # The pieces have to REBUILD what the reference wrote, or they are not
     # pieces of anything. T-SQL writes the path TWICE -- ISNULL(JSON_QUERY(x,
     # p), JSON_VALUE(x, p)) -- and PostgreSQL writes it variadic, so
@@ -1019,16 +1048,18 @@ def json_path_pieces_in_class(dialect: str, exp, cls_name: str) -> dict:
     # standalone pieces, which are right for them.
     def rebuild(parts):
         out = pieces["Open"]
-        for kind, value in parts:
+        for n, (kind, value) in enumerate(parts):
+            form_key = "Key" if n == 0 else "KeyAfter"
             if kind == "sub":
                 out += pieces["Subscript"].replace("{index}", str(value))
             elif " " in value:
                 out += pieces["QuotedKey"].replace("{key}", value)
             else:
-                out += pieces["Key"].replace("{key}", value)
+                out += pieces[form_key].replace("{key}", value)
         return out + pieces["Close"]
 
-    wanted = [[], [("key", "KEY")], [("sub", 7)], [("key", "a b")]]
+    wanted = [[], [("key", "KEY")], [("sub", 7)], [("key", "a b")],
+              [("key", "KEY"), ("key", "LATER")]]
     if any(rebuild(w) != got for w, got in zip(wanted, inner)):
         return {}
     # The CALL around the path comes from the same measurement, or the two
@@ -1039,6 +1070,17 @@ def json_path_pieces_in_class(dialect: str, exp, cls_name: str) -> dict:
     # And the form for an operand that is NOT a path. The reference writes
     # `GET_JSON_OBJECT(col, path_col)` with the column bare, where the path
     # form would have quoted it into `'$path_col'` -- a different argument.
+    # Whether a QUOTE inside a key must be doubled depends on whether the path
+    # sits inside a STRING. It cannot be probed by writing one and looking:
+    # the reference writes `c -> '$."a'b"'` with the quote bare, which does not
+    # tokenize -- the same class of upstream bug as issue (8). So the answer
+    # comes from the FORM. An odd number of quotes before the path means the
+    # path is inside one.
+    #
+    # DuckDB writes the path inside `'...'` and needs the escape; Databricks'
+    # colon form is bare SQL and must NOT have it, or `col:["fr'uit"]` comes
+    # out `col:["fr\'uit"]`.
+    pieces["EscapesQuote"] = pieces["Form"].split("{path}")[0].count("'") % 2 == 1
     pieces["PlainForm"] = ""
     try:
         plain = cls(this=exp.column("ZZTHISZZ"), expression=exp.column("ZZPATHZZ")).sql(
@@ -2437,6 +2479,10 @@ def main() -> int:
         "\t// writes as an OPERATOR, which the reference parenthesises when one\n",
         "\t// is an operand: `(a -> b) & c`, but Databricks' `a:b & c` plain.\n",
         "\tJSONExtractNeedsParens map[string]bool\n",
+        "\t// VariantExtractColon says `x:a` is a JSON extraction here, the\n",
+        "\t// form Databricks writes and this port used to write without ever\n",
+        "\t// being able to read one back.\n",
+        "\tVariantExtractColon bool\n",
         "\t// JSONPathFunctions are the names that turn their arguments into a\n",
         "\t// JSON PATH rather than holding them. Probed with STRING literals,\n",
         "\t// because with the placeholder columns the generic probe uses they\n",
@@ -2670,6 +2716,13 @@ def main() -> int:
         "\tOpen      string\n",
         "\tClose     string\n",
         "\tKey       string\n",
+        "\t// KeyAfter is the form for a key that is not the FIRST: Databricks\n",
+        "\t// writes `c1:item.price`, a colon and then a dot.\n",
+        "\tKeyAfter  string\n",
+        "\t// EscapesQuote says a quote inside a key is doubled, which it must\n",
+        "\t// be where the path is written inside a string and must NOT be\n",
+        "\t// where the form is bare SQL.\n",
+        "\tEscapesQuote bool\n",
         "\tSubscript string\n",
         "\tQuotedKey string\n",
         "}\n",
@@ -2929,6 +2982,9 @@ def main() -> int:
                     )
                 )
             out.append("\t\t},\n")
+        out.append(
+            f"\t\tVariantExtractColon: {str(variant_extract_colon(name)).lower()},\n"
+        )
         _parens = json_extract_needs_parens(name)
         if any(_parens.values()):
             out.append("\t\tJSONExtractNeedsParens: map[string]bool{\n")
@@ -2990,7 +3046,8 @@ def main() -> int:
             for cls_name in ("JSONExtract", "JSONExtractScalar"):
                 got = json_path_pieces_in_class(name, exp, cls_name)
                 if got and any(
-                    got[k] != _jp[k] for k in ("Key", "Subscript", "QuotedKey")
+                    got[k] != _jp.get(k, got["Key"])
+                    for k in ("Key", "KeyAfter", "Subscript", "QuotedKey")
                 ):
                     overrides[cls_name] = got
             if overrides:
@@ -2998,8 +3055,11 @@ def main() -> int:
                 for cls_name in sorted(overrides):
                     o = overrides[cls_name]
                     out.append(f"\t\t\t{gostr(cls_name)}: {{\n")
-                    for k in ("Key", "Subscript", "QuotedKey", "Form", "PlainForm"):
+                    for k in ("Key", "KeyAfter", "Subscript", "QuotedKey", "Form", "PlainForm"):
                         out.append(f"\t\t\t\t{k}: {gostr(o[k])},\n")
+                    out.append(
+                        f"\t\t\t\tEscapesQuote: {str(o['EscapesQuote']).lower()},\n"
+                    )
                     out.append("\t\t\t},\n")
                 out.append("\t\t},\n")
         out.append(

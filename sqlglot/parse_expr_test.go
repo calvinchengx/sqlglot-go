@@ -172,3 +172,54 @@ func TestJSONPathFunctionsReadButNotWritten(t *testing.T) {
 		})
 	}
 }
+
+// Databricks spells a JSON extraction with a colon. The port WROTE that form
+// while refusing to read a single one, so every extraction it emitted for that
+// dialect was SQL it could not read back.
+func TestVariantExtractColon(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"one key", "SELECT c1:price", "SELECT c1:price"},
+		{"a dotted key", "SELECT c1:price.foo", "SELECT c1:price.foo"},
+		{"a subscript between keys", "SELECT c1:item[1].price", "SELECT c1:item[1].price"},
+		{"a wildcard subscript", "SELECT c1:item[*].price", "SELECT c1:item[*].price"},
+		// A key the source quoted stays quoted, whatever it looks like.
+		{"a bracketed key", "SELECT raw:store['bicycle']", "SELECT raw:store[\"bicycle\"]"},
+		// The colon form is bare SQL, so a quote in a key is NOT doubled --
+		// unlike a path written inside a string.
+		{"a quote in a key", "SELECT col:`fr'uit`", "SELECT col:[\"fr'uit\"]"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "databricks")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, "databricks")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+			if _, err := ParseOne(got, "databricks"); err != nil {
+				t.Errorf("wrote %q and cannot read it back: %v", got, err)
+			}
+		})
+	}
+}
+
+// A colon with no key after it is not an extraction, and a path that would
+// write nothing is refused rather than emitted.
+func TestVariantExtractEdges(t *testing.T) {
+	if _, err := ParseOne("SELECT c1:", "databricks"); err == nil {
+		t.Error("`c1:` was read as an extraction; the reference leaves the colon")
+	}
+	// `0 -> ''` has a path of nothing but a root, which Databricks spells as
+	// the empty string: writing it gives `0:`, which the port cannot read.
+	e, err := ParseOne("SELECT 0 -> ''", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "databricks"); err == nil {
+		t.Errorf("wrote %q; a path that writes nothing should be refused", got)
+	}
+}

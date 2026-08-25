@@ -1,6 +1,9 @@
 package sqlglot
 
-import "strings"
+import (
+	"strconv"
+	"strings"
+)
 
 // The expression grammar: precedence climbing, in the reference's shapes.
 //
@@ -495,6 +498,22 @@ func (p *parser) parsePostfix() (*Expression, error) {
 			cast := New("Cast", Arg{"this", this}, Arg{"to", to})
 			cast.Type = to
 			this = cast
+			continue
+		}
+		// `c1:item[1].price` is a JSON extraction, the form Databricks writes.
+		// The port WROTE it while refusing to read a single one, so every
+		// extraction it emitted for that dialect was SQL it could not read
+		// back; the generator fuzzer found it on `0->''`.
+		if p.tables.VariantExtractColon && p.at(TokCOLON) && p.variantKeyAhead() {
+			path, err := p.parseVariantPath()
+			if err != nil {
+				return nil, err
+			}
+			this = New("JSONExtract",
+				Arg{"this", this},
+				Arg{"expression", path},
+				Arg{"variant_extract", true},
+				Arg{"requires_json", false})
 			continue
 		}
 		// `x[1]`, `x[1:2]` and `x[1][2]` are Brackets over what precedes them.
@@ -2043,4 +2062,72 @@ func (p *parser) foldJSONPath(keys []*Expression, spec JSONPathFunc) *Expression
 		segments = append(segments, New("JSONPathKey", Arg{"this", text}))
 	}
 	return New("JSONPath", Arg{"expressions", segments})
+}
+
+// variantKeyAhead reports whether a NAME follows the colon. `c1:` alone is not
+// an extraction -- the reference reads it as the column and leaves the colon --
+// so the key has to be there before the colon is claimed.
+func (p *parser) variantKeyAhead() bool {
+	next := p.next()
+	if next == nil {
+		return false
+	}
+	return next.Type == TokVAR || next.Type == TokIDENTIFIER || next.Type == TokL_BRACKET
+}
+
+// parseVariantPath reads `:a`, `:a.b`, `:a[1].b` and `:['a']` into the JSONPath
+// the reference builds. The key carries `quoted`, which the arrow form does not
+// set -- a backquoted `c1:`a b“ is quoted and a bare one is not.
+func (p *parser) parseVariantPath() (*Expression, error) {
+	p.advance() // the colon
+	segments := []*Expression{New("JSONPathRoot")}
+	for {
+		switch {
+		case p.at(TokVAR) || p.at(TokIDENTIFIER):
+			c := p.curr()
+			p.advance()
+			segments = append(segments, New("JSONPathKey",
+				Arg{"this", c.Text}, Arg{"quoted", c.Type == TokIDENTIFIER}))
+		case p.at(TokL_BRACKET):
+			p.advance()
+			c := p.curr()
+			if c == nil {
+				return nil, p.unsupported("a variant subscript with nothing in it")
+			}
+			switch c.Type {
+			case TokSTAR:
+				// `c1:item[*].price` takes every element. The subscript HOLDS
+				// the wildcard rather than being one, which is the shape the
+				// writer already knew how to spell.
+				p.advance()
+				segments = append(segments,
+					New("JSONPathSubscript", Arg{"this", New("JSONPathWildcard")}))
+			case TokNUMBER:
+				n, err := strconv.Atoi(c.Text)
+				if err != nil {
+					return nil, p.unsupported("a variant subscript that is not an index")
+				}
+				p.advance()
+				segments = append(segments, New("JSONPathSubscript", Arg{"this", n}))
+			case TokSTRING:
+				p.advance()
+				segments = append(segments, New("JSONPathKey",
+					Arg{"this", c.Text}, Arg{"quoted", true}))
+			default:
+				return nil, p.unsupported("a variant subscript that is not an index")
+			}
+			if !p.match(TokR_BRACKET) {
+				return nil, p.unsupported("a variant subscript without its bracket")
+			}
+		default:
+			return nil, p.unsupported("a variant path without a key")
+		}
+		if p.match(TokDOT) {
+			continue
+		}
+		if p.at(TokL_BRACKET) {
+			continue
+		}
+		return New("JSONPath", Arg{"expressions", segments}), nil
+	}
 }
