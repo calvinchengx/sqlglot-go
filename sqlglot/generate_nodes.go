@@ -315,12 +315,17 @@ func (g *generator) writeInto(e *Expression) string {
 }
 
 func (g *generator) writeGroup(e *Expression) string {
+	// The leading space is the SEPARATOR, carried the way the reference
+	// carries it -- `g.sql(group)` there is " GROUP BY b". A query's clause
+	// joiner trims it back off; the statement-level PIVOT template does not,
+	// and without it wrote `USING SUM(x)GROUP BY y`.
+	//
 	// `GROUP BY ALL` is carried as a flag, so the expression list is empty and
 	// writing it alone produced a bare "GROUP BY".
 	if all, _ := e.Args["all"].(bool); all {
-		return "GROUP BY ALL"
+		return " GROUP BY ALL"
 	}
-	return "GROUP BY " + g.list(e)
+	return " GROUP BY " + g.list(e)
 }
 
 func (g *generator) writeOrder(e *Expression) string {
@@ -1549,6 +1554,16 @@ func (g *generator) writeJSONKeyValue(e *Expression) string {
 //
 // The space in front is the separator, the way the reference returns it.
 func (g *generator) writePivot(e *Expression) string {
+	// The STATEMENT form is a different shape -- `PIVOT t ON x USING SUM(y)`,
+	// with the source under `this` -- and the template table already spells
+	// it. Only the postfix form, which hangs off a table and has no source of
+	// its own, is written here.
+	if source, _ := e.Args["this"].(*Expression); source != nil {
+		if out, ok := g.syntaxTemplate(e); ok {
+			return out
+		}
+		return g.fail(e.Class + " as a statement")
+	}
 	word := "PIVOT"
 	if unpivot, _ := e.Args["unpivot"].(bool); unpivot {
 		word = "UNPIVOT"

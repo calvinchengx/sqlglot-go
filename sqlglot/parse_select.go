@@ -25,6 +25,20 @@ func (p *parser) parseQuery() (*Expression, error) {
 	// check parseSelect advanced PAST the FROM and read the table name as the
 	// selected expression: `SELECT t`, a different query that names no table
 	// at all. The bare form was already refused; only the WITH path was not.
+	// DuckDB has a PIVOT that is a QUERY rather than something hanging off a
+	// table: `PIVOT Cities ON Year USING SUM(Population)`. It reaches here by
+	// every route a query does -- on its own, inside a CTE, inside a
+	// parenthesised FROM item -- so it is recognised here rather than at each.
+	if p.at(TokPIVOT) || p.at(TokUNPIVOT) {
+		this, err := p.parseStatementPivot()
+		if err != nil {
+			return nil, err
+		}
+		if with != nil {
+			this.Set("with_", with)
+		}
+		return this, nil
+	}
 	if !p.at(TokSELECT) {
 		return nil, p.unsupported("query without SELECT")
 	}
@@ -665,4 +679,145 @@ func (p *parser) atLimitOptionWord() bool {
 		}
 	}
 	return false
+}
+
+// PIVOT <source> ON <expressions> [USING <aggregates>] [GROUP BY ...], and the
+// UNPIVOT that instead takes [INTO NAME <column> VALUE <columns>].
+//
+// A different grammar from the PIVOT that hangs off a table, and a different
+// shape: no derived columns and none of the dialect conventions, because
+// nothing here is being named after anything.
+//
+// Two arguments are asymmetric and both are copied as the reference has them:
+// `using` is FALSE when there is no USING, where `unpivot` is absent rather
+// than false when it is a PIVOT.
+func (p *parser) parseStatementPivot() (*Expression, error) {
+	unpivot := p.at(TokUNPIVOT)
+	p.advance()
+
+	source, err := p.parseTable()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokON) {
+		return nil, p.unsupported("a PIVOT statement without ON")
+	}
+
+	var on []*Expression
+	for {
+		e, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		// `ON Year IN (2000, 2010)` lists the values to pivot on, and
+		// `ON (jan, feb) AS q1` names a group of columns.
+		switch {
+		case p.match(TokIN):
+			if !p.match(TokL_PAREN) {
+				return nil, p.unsupported("a PIVOT list that is not parenthesised")
+			}
+			var values []*Expression
+			for {
+				v, verr := p.parseExpression()
+				if verr != nil {
+					return nil, verr
+				}
+				values = append(values, v)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed PIVOT list")
+			}
+			e = New("In", Arg{"this", e}, Arg{"expressions", values})
+		default:
+			e, err = p.parseAlias(e)
+			if err != nil {
+				return nil, err
+			}
+		}
+		on = append(on, e)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+
+	var using []*Expression
+	if p.match(TokUSING) {
+		for {
+			agg, err := p.parseUnary()
+			if err != nil {
+				return nil, err
+			}
+			agg, err = p.parseAlias(agg)
+			if err != nil {
+				return nil, err
+			}
+			using = append(using, agg)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
+
+	var group *Expression
+	if p.match(TokGROUP_BY) {
+		// Only the plain column list. CUBE, ROLLUP, GROUPING SETS and ALL
+		// land on their own args of Group and are refused for the same
+		// reason they are refused in a SELECT.
+		if p.atAny(TokCUBE, TokROLLUP, TokGROUPING_SETS, TokALL) {
+			return nil, p.unsupported("GROUP BY " + p.curr().Text)
+		}
+		es, gerr := p.parseExpressionList()
+		if gerr != nil {
+			return nil, gerr
+		}
+		group = New("Group", Arg{"expressions", es})
+	}
+
+	var into *Expression
+	if p.atWords("INTO", "NAME") {
+		p.advance()
+		p.advance()
+		name, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		if !p.atWords("VALUE") {
+			return nil, p.unsupported("INTO NAME without VALUE")
+		}
+		p.advance()
+		var values []*Expression
+		for {
+			v, verr := p.parseUnary()
+			if verr != nil {
+				return nil, verr
+			}
+			values = append(values, v)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		into = New("UnpivotColumns", Arg{"this", name}, Arg{"expressions", values})
+	}
+
+	args := []Arg{{"this", source}, {"expressions", on}}
+	if len(using) > 0 {
+		args = append(args, Arg{"using", using})
+	} else {
+		args = append(args, Arg{"using", false})
+	}
+	args = append(args, Arg{"group", group})
+	switch {
+	case unpivot:
+		args = append(args, Arg{"unpivot", true})
+	case p.inFromSubquery:
+		// See parseSubqueryTable: the reference sets this false on that path
+		// alone, and leaves it off everywhere else.
+		args = append(args, Arg{"unpivot", false})
+	default:
+		args = append(args, Arg{"unpivot", nil})
+	}
+	return New("Pivot", append(args, Arg{"into", into})...), nil
 }

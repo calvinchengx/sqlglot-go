@@ -60,11 +60,14 @@ type parser struct {
 	// inCallArgs is set while reading a call's own argument list, where a
 	// trailing IGNORE NULLS belongs to the CALL rather than to the argument.
 	inCallArgs bool
-	tokens     []Token
-	index      int
-	cfg        *Config
-	tables     *ParserTables
-	dialect    string
+	// inFromSubquery marks a query being parsed as a parenthesised FROM item,
+	// which is the one path on which the reference stamps `unpivot` false.
+	inFromSubquery bool
+	tokens         []Token
+	index          int
+	cfg            *Config
+	tables         *ParserTables
+	dialect        string
 }
 
 func (p *parser) curr() *Token {
@@ -209,7 +212,7 @@ func (p *parser) parseOne() (*Expression, error) {
 // bare expression, as in the reference -- most of sqlglot's own fixture corpus
 // is expressions rather than whole statements.
 func (p *parser) parseStatement() (*Expression, error) {
-	if p.at(TokSELECT) || p.at(TokWITH) {
+	if p.at(TokSELECT) || p.at(TokWITH) || p.at(TokPIVOT) || p.at(TokUNPIVOT) {
 		return p.parseQuery()
 	}
 	if c := p.curr(); c != nil {

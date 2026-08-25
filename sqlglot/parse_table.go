@@ -634,8 +634,17 @@ func (p *parser) parseSubqueryTable() (*Expression, error) {
 	p.advance() // the opening parenthesis
 	var inner *Expression
 	var err error
-	if p.at(TokSELECT) || p.at(TokWITH) {
+	if p.at(TokSELECT) || p.at(TokWITH) || p.at(TokPIVOT) || p.at(TokUNPIVOT) {
+		// A pivot STATEMENT reached through a FROM item comes out with
+		// unpivot set FALSE, where the very same statement on its own or in
+		// a CTE leaves the argument off. That is the reference being
+		// inconsistent with itself, not a distinction that means anything --
+		// but an argument present-and-false is a different tree from an
+		// argument absent, so the port follows it.
+		wasFromItem := p.inFromSubquery
+		p.inFromSubquery = true
 		inner, err = p.parseQuery()
+		p.inFromSubquery = wasFromItem
 	} else {
 		inner, err = p.parseParenthesisedTable()
 	}
@@ -660,8 +669,6 @@ func (p *parser) parseSubqueryTable() (*Expression, error) {
 	// however they were written: argument order is part of the tree here.
 	if len(pivots) > 0 {
 		sub.Set("pivots", pivots)
-	} else {
-		sub.Set("pivots", nil)
 	}
 	sub.Set("alias", alias)
 	sub.Set("sample", nil)

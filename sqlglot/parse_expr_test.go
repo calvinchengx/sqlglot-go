@@ -624,3 +624,134 @@ func TestPivotMalformed(t *testing.T) {
 		})
 	}
 }
+
+// DuckDB has a PIVOT that is a QUERY rather than something hanging off a
+// table. A different grammar and a different shape: no derived columns and
+// none of the dialect conventions, because nothing is being named after
+// anything.
+func TestStatementPivot(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"the plain form", "PIVOT Cities ON Year USING SUM(Population)",
+			"PIVOT Cities ON Year USING SUM(Population)"},
+		{"with a group", "PIVOT Cities ON Year USING SUM(Population) GROUP BY Country",
+			"PIVOT Cities ON Year USING SUM(Population) GROUP BY Country"},
+		{"values named on the ON", "PIVOT Cities ON Year IN (2000, 2010) USING SUM(Population)",
+			"PIVOT Cities ON Year IN (2000, 2010) USING SUM(Population)"},
+		{"several ON columns", "PIVOT Cities ON Country, Name USING SUM(Population)",
+			"PIVOT Cities ON Country, Name USING SUM(Population)"},
+		{"several aggregates", "PIVOT Cities ON Year USING SUM(Population) AS total, MAX(Population) AS m",
+			"PIVOT Cities ON Year USING SUM(Population) AS total, MAX(Population) AS m"},
+		// PIVOT_WIDER is the same node and normalises to PIVOT.
+		{"the wider spelling", "PIVOT_WIDER Cities ON Year USING SUM(Population)",
+			"PIVOT Cities ON Year USING SUM(Population)"},
+		{"an unpivot with INTO", "UNPIVOT monthly_sales ON jan, feb INTO NAME month VALUE sales",
+			"UNPIVOT monthly_sales ON jan, feb INTO NAME month VALUE sales"},
+		{"an unpivot without", "UNPIVOT (SELECT 1 AS col1, 2 AS col2) ON foo, bar",
+			"UNPIVOT (SELECT 1 AS col1, 2 AS col2) ON foo, bar"},
+		// It reaches the parser by every route a query does.
+		{"as a FROM item", "SELECT * FROM (PIVOT Cities ON Year USING SUM(Population)) AS a",
+			"SELECT * FROM (PIVOT Cities ON Year USING SUM(Population)) AS a"},
+		{"in a CTE", "WITH a AS (PIVOT Cities ON Year USING SUM(Population)) SELECT * FROM a",
+			"WITH a AS (PIVOT Cities ON Year USING SUM(Population)) SELECT * FROM a"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "duckdb")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, "duckdb")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// The same statement carries `unpivot` false when it is a FROM item and leaves
+// the argument off when it is not. That is the reference disagreeing with
+// itself rather than a distinction that means anything -- but an argument
+// present-and-false is a different tree from one absent, so it is followed.
+func TestStatementPivotUnpivotArgument(t *testing.T) {
+	pivotIn := func(sql string) *Expression {
+		e, err := ParseOne(sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		var found *Expression
+		var walk func(*Expression)
+		walk = func(n *Expression) {
+			if n == nil || found != nil {
+				return
+			}
+			if n.Class == "Pivot" {
+				found = n
+				return
+			}
+			for _, v := range n.Args {
+				switch c := v.(type) {
+				case *Expression:
+					walk(c)
+				case []*Expression:
+					for _, x := range c {
+						walk(x)
+					}
+				}
+			}
+		}
+		walk(e)
+		if found == nil {
+			t.Fatalf("no pivot in %q", sql)
+		}
+		return found
+	}
+
+	bare := pivotIn("PIVOT Cities ON Year USING SUM(Population)")
+	if v, ok := bare.Args["unpivot"]; ok && v != nil {
+		t.Errorf("standalone: unpivot = %v, want it absent", v)
+	}
+	item := pivotIn("SELECT * FROM (PIVOT Cities ON Year USING SUM(Population)) AS a")
+	if v, _ := item.Args["unpivot"].(bool); v {
+		t.Error("as a FROM item: unpivot = true, want false")
+	}
+	if _, ok := item.Args["unpivot"]; !ok {
+		t.Error("as a FROM item: unpivot absent, want it present and false")
+	}
+}
+
+// What the statement form refuses.
+func TestStatementPivotRefusals(t *testing.T) {
+	for _, tc := range []struct{ name, sql string }{
+		{"no ON at all", "PIVOT Cities USING SUM(Population)"},
+		{"a value list that never closes", "PIVOT Cities ON Year IN (2000 USING SUM(x)"},
+		{"a list that is not parenthesised", "PIVOT Cities ON Year IN 2000 USING SUM(x)"},
+		{"INTO NAME without VALUE", "UNPIVOT t ON a INTO NAME month"},
+		{"a GROUP BY this does not model", "PIVOT Cities ON Year USING SUM(x) GROUP BY ALL"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := ParseOne(tc.sql, "duckdb"); err == nil {
+				t.Errorf("ParseOne(%q) was read; it should be refused", tc.sql)
+			}
+		})
+	}
+}
+
+// The remaining malformed statement-level shapes, and the one the writer
+// declines: a pivot statement whose combination of arguments the corpus never
+// taught a spelling for is refused rather than written half-formed.
+func TestStatementPivotMalformed(t *testing.T) {
+	for _, tc := range []struct{ name, sql string }{
+		{"an ON list that never ends", "PIVOT Cities ON"},
+		{"USING with nothing after it", "PIVOT Cities ON Year USING"},
+		{"an unpivot naming no value column", "UNPIVOT t ON a INTO NAME m VALUE"},
+		{"a source that is not a table", "PIVOT ON Year USING SUM(x)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if _, err := ParseOne(tc.sql, "duckdb"); err == nil {
+				t.Errorf("ParseOne(%q) was read; it should be refused", tc.sql)
+			}
+		})
+	}
+}
