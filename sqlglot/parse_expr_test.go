@@ -1196,3 +1196,40 @@ func TestUsingSampleShapes(t *testing.T) {
 		}
 	}
 }
+
+// RECURSIVE changes what a CTE means -- it may refer to itself -- and the
+// reference records it as a flag on the WITH rather than on each CTE.
+func TestWithRecursive(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"WITH RECURSIVE t AS (SELECT 1 AS n) SELECT SUM(n) FROM t",
+			"WITH RECURSIVE t AS (SELECT 1 AS n) SELECT SUM(n) FROM t"},
+		{"WITH RECURSIVE t AS (SELECT 1 AS n UNION ALL SELECT n + 1 AS n FROM t WHERE n < 4) SELECT * FROM t",
+			"WITH RECURSIVE t AS (SELECT 1 AS n UNION ALL SELECT n + 1 AS n FROM t WHERE n < 4) SELECT * FROM t"},
+		{"WITH RECURSIVE t1 AS (SELECT 1 AS n), t2 AS (SELECT 2 AS n) SELECT 1",
+			"WITH RECURSIVE t1 AS (SELECT 1 AS n), t2 AS (SELECT 2 AS n) SELECT 1"},
+		// And the flag is left OFF where the word is absent, which is a
+		// different tree from one carrying false.
+		{"WITH t AS (SELECT 1 AS n) SELECT * FROM t",
+			"WITH t AS (SELECT 1 AS n) SELECT * FROM t"},
+	} {
+		e, err := ParseOne(tc.sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		got, err := Generate(e, "postgres")
+		if err != nil {
+			t.Fatalf("Generate: %v", err)
+		}
+		if got != tc.want {
+			t.Errorf("got %q, want %q", got, tc.want)
+		}
+	}
+	plain, err := ParseOne("WITH t AS (SELECT 1) SELECT * FROM t", "postgres")
+	if err != nil {
+		t.Fatal(err)
+	}
+	with, _ := plain.Args["with_"].(*Expression)
+	if with.Args["recursive"] != nil {
+		t.Errorf("recursive = %v on a plain WITH, want it absent", with.Args["recursive"])
+	}
+}

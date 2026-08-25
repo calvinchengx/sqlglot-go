@@ -184,7 +184,7 @@ func TestRefusals(t *testing.T) {
 		{"APPLY over a qualified name that is not a call", "SELECT * FROM a CROSS APPLY b.c", "tsql"},
 		{"APPLY over a qualifier followed by a number", "SELECT * FROM a CROSS APPLY dbo.1", "tsql"},
 		{"SELECT INTO nothing", "SELECT * INTO FROM t1", "tsql"},
-		{"recursive CTE", "WITH RECURSIVE a AS (SELECT 1) SELECT 2", ""},
+		{"a CTE with no body", "WITH a AS SELECT 1 SELECT 2", ""},
 		{"CTE without AS", "WITH a (SELECT 1) SELECT 2", ""},
 		{"CTE without a query", "WITH a AS SELECT 1", ""},
 		{"unclosed CTE", "WITH a AS (SELECT 1 SELECT 2", ""},

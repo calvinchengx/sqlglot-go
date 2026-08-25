@@ -206,6 +206,9 @@ func (g *generator) writeSetOperation(e *Expression) string {
 }
 
 func (g *generator) writeWith(e *Expression) string {
+	if recursive, _ := e.Args["recursive"].(bool); recursive {
+		return "WITH RECURSIVE " + g.list(e)
+	}
 	return "WITH " + g.list(e)
 }
 

@@ -59,15 +59,13 @@ func (p *parser) parseQuery() (*Expression, error) {
 	return this, nil
 }
 
-// parseWith reads a WITH clause. RECURSIVE is refused: it changes what the
-// CTE means and the reference records it.
+// parseWith reads a WITH clause. RECURSIVE changes what the CTE means -- it may
+// refer to itself -- and the reference records it as a flag on the With.
 func (p *parser) parseWith() (*Expression, error) {
 	if !p.match(TokWITH) {
 		return nil, nil
 	}
-	if p.at(TokRECURSIVE) {
-		return nil, p.unsupported("WITH RECURSIVE")
-	}
+	recursive := p.match(TokRECURSIVE)
 
 	var ctes []*Expression
 	for {
@@ -106,7 +104,11 @@ func (p *parser) parseWith() (*Expression, error) {
 			break
 		}
 	}
-	return New("With", Arg{"expressions", ctes}, Arg{"recursive", nil},
+	var recursiveArg any
+	if recursive {
+		recursiveArg = true
+	}
+	return New("With", Arg{"expressions", ctes}, Arg{"recursive", recursiveArg},
 		Arg{"search", nil}, Arg{"udfs", nil}), nil
 }
 
