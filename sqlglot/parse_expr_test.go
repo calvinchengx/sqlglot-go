@@ -755,3 +755,71 @@ func TestStatementPivotMalformed(t *testing.T) {
 		})
 	}
 }
+
+// A parenthesised list of two or more is a ROW, not a grouping: `(a, b)` is
+// the Tuple that the left of an IN compares and that OVERLAPS takes. One item
+// is a Paren, whatever it holds -- and either may be NAMED.
+func TestTuple(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"on the left of IN", "", "SELECT a FROM test WHERE (a, b) IN (SELECT 1, 2)",
+			"SELECT a FROM test WHERE (a, b) IN (SELECT 1, 2)"},
+		{"as a projection", "duckdb", "SELECT (x, x + 1, y) FROM t",
+			"SELECT (x, x + 1, y) FROM t"},
+		{"named members", "", "(x AS y, y AS z)", "(x AS y, y AS z)"},
+		{"a named tuple", "", "((a, b) AS c)", "((a, b) AS c)"},
+		// One item stays a Paren, named or not.
+		{"one named item", "", "(x AS y)", "(x AS y)"},
+		{"one item", "", "(a)", "(a)"},
+		{"one expression", "", "(a + b)", "(a + b)"},
+		// A quantifier over a row is SPACED where one over a Paren is not.
+		{"under a quantifier", "databricks", "c LIKE ANY ('a', 'b') AND other_cond",
+			"c LIKE ANY ('a', 'b') AND other_cond"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// A row that never closes is refused rather than half-read.
+	for _, sql := range []string{"(a, b", "(a, )", "(a, b AS)"} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
+// A quantifier is spaced by what follows it: tight against an operand that
+// brings its own parentheses, spaced from one that does not. Both spellings
+// are probed off the reference rather than inferred from each other.
+func TestQuantifierSpacing(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"over a row", "databricks", "c LIKE ANY ('a', 'b')", "c LIKE ANY ('a', 'b')"},
+		// A bare query is spaced too; only a Paren is written tight.
+		{"over a subquery", "", "SELECT 1 WHERE a = ANY(SELECT 1)",
+			"SELECT 1 WHERE a = ANY (SELECT 1)"},
+		{"ALL over a row", "databricks", "c LIKE ALL ('a', 'b')", "c LIKE ALL ('a', 'b')"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Skipf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}

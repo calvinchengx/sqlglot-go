@@ -919,9 +919,18 @@ func (g *generator) writeQuantifier(e *Expression) string {
 		}
 		return strings.ReplaceAll(tmpl, "{query}", g.node(inner))
 	}
-	prefix, ok := g.tables.QuantifierSQL[e.Class]
-	if !ok {
-		return g.fail("quantifier")
+	// An operand that brings its own parentheses is written tight against the
+	// word and one that does not is spaced: `ANY(x)` but `ANY ('a', 'b')`.
+	// Both spellings are probed; the condition is the reference's own.
+	spelling := e.Class
+	if inner != nil && inner.Class != "Paren" {
+		spelling = e.Class + "Value"
+	}
+	prefix, found := g.tables.QuantifierSQL[spelling]
+	if !found {
+		if prefix, found = g.tables.QuantifierSQL[e.Class]; !found {
+			return g.fail("quantifier")
+		}
 	}
 	return prefix + g.child(e, "this")
 }

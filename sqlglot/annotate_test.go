@@ -167,3 +167,48 @@ func TestAnnotateHelpers(t *testing.T) {
 		t.Error("DECIMAL(10, 2) has type parameters")
 	}
 }
+
+// The annotator's edges: an array whose elements disagree, a scalar subquery
+// that projects more than one column, and a walk over a tree it can say
+// nothing about.
+func TestAnnotateEdges(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"an array of one type", "SELECT [1, 2]", "INT[]"},
+		{"an array of mixed types", "SELECT [1, 1.5]", "DOUBLE[]"},
+		{"an empty array", "SELECT []", ""},
+		{"a scalar subquery", "SELECT (SELECT 1)", "INT"},
+		// More than one projection, and there is no single answer to give.
+		{"a subquery of two", "SELECT (SELECT 1, 2)", ""},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "duckdb")
+			if err != nil {
+				t.Skipf("ParseOne(%q): %v", tc.sql, err)
+			}
+			only, _ := e.Args["expressions"].([]*Expression)
+			if len(only) == 0 {
+				t.Skip("no projection")
+			}
+			got := Annotate(only[0], "duckdb")
+			if tc.want == "" {
+				if got == nil {
+					return
+				}
+				if rendered, err := Generate(got, "duckdb"); err == nil && rendered != "UNKNOWN" {
+					t.Errorf("Annotate = %q, want no answer", rendered)
+				}
+				return
+			}
+			if got == nil {
+				t.Fatalf("Annotate gave no answer, want %s", tc.want)
+			}
+			rendered, err := Generate(got, "duckdb")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if rendered != tc.want {
+				t.Errorf("Annotate = %q, want %q", rendered, tc.want)
+			}
+		})
+	}
+}

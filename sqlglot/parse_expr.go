@@ -938,6 +938,33 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// A parenthesised item may be NAMED: `(x AS y)` is a Paren over an
+		// Alias, and `(x AS y, y AS z)` a Tuple of them.
+		inner, err = p.parseAlias(inner)
+		if err != nil {
+			return nil, err
+		}
+		// A COMMA makes it a row rather than a grouping. `(a, b)` is a Tuple,
+		// which is what the left of `WHERE (a, b) IN (...)` is, and what
+		// OVERLAPS compares. One item is a Paren, whatever it contains.
+		if p.at(TokCOMMA) {
+			items := []*Expression{inner}
+			for p.match(TokCOMMA) {
+				item, err := p.parseExpression()
+				if err != nil {
+					return nil, err
+				}
+				item, err = p.parseAlias(item)
+				if err != nil {
+					return nil, err
+				}
+				items = append(items, item)
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed tuple")
+			}
+			return New("Tuple", Arg{"expressions", items}), nil
+		}
 		if !p.match(TokR_PAREN) {
 			return nil, p.unsupported("unclosed parenthesis")
 		}

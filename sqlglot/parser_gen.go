@@ -3644,8 +3644,9 @@ var parserTables = map[string]*ParserTables{
 			"AnyUnwrapped": "ANY({query})",
 		},
 		QuantifierSQL: map[string]string{
-			"All": "ALL ",
-			"Any": "ANY",
+			"All":      "ALL ",
+			"Any":      "ANY",
+			"AnyValue": "ANY ",
 		},
 		WithinGroupAbsorbedBy: map[string]bool{
 			"GroupConcat": true,
@@ -7170,8 +7171,9 @@ var parserTables = map[string]*ParserTables{
 			"AnyUnwrapped": "ANY({query})",
 		},
 		QuantifierSQL: map[string]string{
-			"All": "ALL ",
-			"Any": "ANY",
+			"All":      "ALL ",
+			"Any":      "ANY",
+			"AnyValue": "ANY ",
 		},
 		WithinGroupAbsorbedBy: map[string]bool{
 			"GroupConcat": true,
@@ -10767,8 +10769,9 @@ var parserTables = map[string]*ParserTables{
 			"AnyUnwrapped": "ANY({query})",
 		},
 		QuantifierSQL: map[string]string{
-			"All": "ALL ",
-			"Any": "ANY",
+			"All":      "ALL ",
+			"Any":      "ANY",
+			"AnyValue": "ANY ",
 		},
 		WithinGroupAbsorbedBy: map[string]bool{
 			"GroupConcat": true,
@@ -14556,8 +14559,9 @@ var parserTables = map[string]*ParserTables{
 			"AnyUnwrapped": "ANY({query})",
 		},
 		QuantifierSQL: map[string]string{
-			"All": "ALL ",
-			"Any": "ANY",
+			"All":      "ALL ",
+			"Any":      "ANY",
+			"AnyValue": "ANY ",
 		},
 		WithinGroupAbsorbedBy: map[string]bool{
 			"GroupConcat": true,
@@ -18349,8 +18353,9 @@ var parserTables = map[string]*ParserTables{
 			"AnyUnwrapped": "ANY({query})",
 		},
 		QuantifierSQL: map[string]string{
-			"All": "ALL ",
-			"Any": "ANY",
+			"All":      "ALL ",
+			"Any":      "ANY",
+			"AnyValue": "ANY ",
 		},
 		WithinGroupAbsorbedBy: map[string]bool{
 			"GroupConcat": true,

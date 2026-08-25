@@ -1470,17 +1470,25 @@ def quantifier_sql(dialect: str, exp) -> dict:
     rule about the operator above them, and there is none.
     """
     out = {}
-    operand = exp.Paren(this=exp.column("ZZOPERANDZZ"))
     for cls_name in ("All", "Any"):
-        node = getattr(exp, cls_name)(this=operand.copy())
-        try:
-            text = node.sql(dialect=dialect or None)
-        except Exception:  # noqa: BLE001
-            continue
-        rendered = operand.sql(dialect=dialect or None)
-        if not text.endswith(rendered):
-            continue
-        out[cls_name] = text[: -len(rendered)]
+        for key, operand in (
+            (cls_name, exp.Paren(this=exp.column("ZZOPERANDZZ"))),
+            # An operand that brings no parentheses of its own is spaced
+            # differently: `ANY(x)` around a Paren but `ANY ('a', 'b')` around
+            # a Tuple. Probed with a Paren alone, the spelling was right for
+            # the one operand the port could build and wrong for the row it
+            # can build now.
+            (cls_name + "Value", exp.column("ZZOPERANDZZ")),
+        ):
+            node = getattr(exp, cls_name)(this=operand.copy())
+            try:
+                text = node.sql(dialect=dialect or None)
+            except Exception:  # noqa: BLE001
+                continue
+            rendered = operand.sql(dialect=dialect or None)
+            if not text.endswith(rendered):
+                continue
+            out[key] = text[: -len(rendered)]
     return out
 
 
