@@ -230,7 +230,7 @@ func (p *parser) parseStatement() (*Expression, error) {
 		}
 		return this, nil
 	}
-	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) {
+	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) || p.at(TokFROM) {
 		return p.parseQuery()
 	}
 	return p.parseStatementBody()
@@ -260,7 +260,7 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokMERGE) {
 		return p.parseMerge()
 	}
-	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) {
+	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) || p.at(TokFROM) {
 		return p.parseQueryBody()
 	}
 	if c := p.curr(); c != nil {

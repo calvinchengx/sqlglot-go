@@ -48,6 +48,18 @@ func (p *parser) parseQueryBody() (*Expression, error) {
 	if p.at(TokPIVOT) || p.at(TokUNPIVOT) {
 		return p.parseStatementPivot()
 	}
+	// DuckDB lets the FROM come FIRST, with the projections after it or left
+	// out entirely: `FROM t` means `SELECT * FROM t`. Every dialect here reads
+	// it, and the tree it makes is an ordinary Select -- with one difference
+	// that shows only in this order: a comma join hangs off the TABLE rather
+	// than off the query.
+	if p.at(TokFROM) {
+		this, err := p.parseFromFirst()
+		if err != nil {
+			return nil, err
+		}
+		return p.parseSetOperations(this)
+	}
 	if !p.at(TokSELECT) {
 		return nil, p.unsupported("query without SELECT")
 	}
@@ -56,6 +68,53 @@ func (p *parser) parseQueryBody() (*Expression, error) {
 		return nil, err
 	}
 	return p.parseSetOperations(this)
+}
+
+// parseFromFirst reads `FROM <relation> [SELECT <projections>]`.
+//
+// The projections are assigned FIRST whatever order they were written in, so
+// the tree is the one an ordinary SELECT makes; only the joins land somewhere
+// else.
+func (p *parser) parseFromFirst() (*Expression, error) {
+	p.advance() // FROM
+	table, err := p.parseTable()
+	if err != nil {
+		return nil, err
+	}
+	joins, err := p.parseJoins()
+	if err != nil {
+		return nil, err
+	}
+	if len(joins) > 0 {
+		table.Set("joins", joins)
+	}
+
+	projections := []*Expression{newStar()}
+	distinct := false
+	if p.match(TokSELECT) {
+		distinct = p.match(TokDISTINCT)
+		if distinct && p.at(TokON) {
+			return nil, p.unsupported("DISTINCT ON")
+		}
+		projections, err = p.parseProjections()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	sel := New("Select")
+	for _, k := range selectPrefix {
+		sel.Set(k, nil)
+	}
+	if distinct {
+		sel.Set("distinct", New("Distinct", Arg{"on", nil}))
+	}
+	sel.Set("expressions", projections)
+	sel.Set("from_", New("From", Arg{"this", table}))
+	if err := p.parseQueryModifiers(sel); err != nil {
+		return nil, err
+	}
+	return sel, nil
 }
 
 // parseWith reads a WITH clause. RECURSIVE changes what the CTE means -- it may

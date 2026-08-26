@@ -3144,3 +3144,52 @@ func TestQuotedStringClasses(t *testing.T) {
 		t.Errorf("control characters: %q", escapeControlCharacters("a\a\b\f\v\rb"))
 	}
 }
+
+// DuckDB lets the FROM come FIRST, with the projections after it or left out
+// entirely: `FROM t` means `SELECT * FROM t`. Every dialect here reads it, and
+// the tree is an ordinary Select -- with one difference that shows only in
+// this order: a comma join hangs off the TABLE rather than off the query.
+func TestAQueryThatStartsWithFrom(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql, want string }{
+		{"duckdb", "FROM tbl", "SELECT * FROM tbl"},
+		{"", "FROM tbl", "SELECT * FROM tbl"},
+		{"duckdb", "FROM x SELECT x", "SELECT x FROM x"},
+		{"duckdb", "FROM t1, t2 SELECT *", "SELECT * FROM t1, t2"},
+		{"duckdb", "FROM (FROM tbl)", "SELECT * FROM (SELECT * FROM tbl)"},
+		{"duckdb", "FROM x SELECT x UNION SELECT 1", "SELECT x FROM x UNION SELECT 1"},
+		{"duckdb", "WITH t AS (SELECT 1) FROM t", "WITH t AS (SELECT 1) SELECT * FROM t"},
+		{"duckdb", "FROM t SELECT DISTINCT x", "SELECT DISTINCT x FROM t"},
+		{"duckdb", "FROM t WHERE x = 1", "SELECT * FROM t WHERE x = 1"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		got, err := Generate(e, tc.dialect)
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.want {
+			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
+		}
+	}
+	// The join hangs off the table here and off the query when the SELECT
+	// comes first -- the reference makes that distinction, so the port does.
+	first, err := ParseOne("FROM t1, t2 SELECT *", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if _, onQuery := first.Args["joins"]; onQuery {
+		t.Error("the comma join hangs off the query; it belongs to the table")
+	}
+	usual, err := ParseOne("SELECT * FROM t1, t2", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if _, onQuery := usual.Args["joins"]; !onQuery {
+		t.Error("the comma join does not hang off the query, where it belongs")
+	}
+	if _, err := ParseOne("FROM t SELECT DISTINCT ON (a) b", "duckdb"); err == nil {
+		t.Error("DISTINCT ON was read")
+	}
+}

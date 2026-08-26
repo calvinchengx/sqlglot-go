@@ -666,7 +666,8 @@ func (p *parser) parseSubqueryTable() (*Expression, error) {
 	p.advance() // the opening parenthesis
 	var inner *Expression
 	var err error
-	if p.at(TokSELECT) || p.at(TokWITH) || p.at(TokPIVOT) || p.at(TokUNPIVOT) {
+	if p.at(TokSELECT) || p.at(TokWITH) || p.at(TokPIVOT) || p.at(TokUNPIVOT) ||
+		p.at(TokFROM) {
 		// A pivot STATEMENT reached through a FROM item comes out with
 		// unpivot set FALSE, where the very same statement on its own or in
 		// a CTE leaves the argument off. That is the reference being
