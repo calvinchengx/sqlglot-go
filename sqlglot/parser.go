@@ -263,6 +263,9 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokTRUNCATE) {
 		return p.parseTruncate()
 	}
+	if p.at(TokGRANT) || p.at(TokREVOKE) {
+		return p.parseGrant()
+	}
 	if p.at(TokUSE) {
 		return p.parseUse()
 	}

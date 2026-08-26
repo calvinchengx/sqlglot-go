@@ -73,6 +73,10 @@ func init() {
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
+		"Grant":                               (*generator).writeGrant,
+		"Revoke":                              (*generator).writeGrant,
+		"GrantPrivilege":                      (*generator).writeGrantPrivilege,
+		"GrantPrincipal":                      (*generator).writeGrantPrincipal,
 		"TruncateTable":                       (*generator).writeTruncate,
 		"Use":                                 (*generator).writeUse,
 		"Transaction":                         (*generator).writeTransaction,
@@ -3116,4 +3120,59 @@ func (g *generator) writeTransaction(e *Expression) string {
 		return verb + " " + name
 	}
 	return verb
+}
+
+// writeGrant writes a permission handed over, and the REVOKE that takes it
+// back.
+func (g *generator) writeGrant(e *Expression) string {
+	verb, joiner := "GRANT", "TO"
+	if e.Class == "Revoke" {
+		verb, joiner = "REVOKE", "FROM"
+	}
+	out := verb + " "
+	grantOption, _ := e.Args["grant_option"].(bool)
+	// On a REVOKE the option comes FIRST and takes away the right to pass the
+	// privilege on; on a GRANT it comes last and hands that right over.
+	if verb == "REVOKE" && grantOption {
+		out += "GRANT OPTION FOR "
+	}
+	privileges, _ := e.Args["privileges"].([]*Expression)
+	parts := make([]string, 0, len(privileges))
+	for _, privilege := range privileges {
+		parts = append(parts, g.node(privilege))
+	}
+	out += strings.Join(parts, ", ") + " ON "
+	if kind, _ := e.Args["kind"].(string); kind != "" {
+		out += kind + " "
+	}
+	out += g.child(e, "securable") + " " + joiner + " "
+
+	principals, _ := e.Args["principals"].([]*Expression)
+	parts = parts[:0]
+	for _, principal := range principals {
+		parts = append(parts, g.node(principal))
+	}
+	out += strings.Join(parts, ", ")
+	if verb == "GRANT" && grantOption {
+		out += " WITH GRANT OPTION"
+	}
+	if cascade, _ := e.Args["cascade"].(string); cascade != "" {
+		out += " " + cascade
+	}
+	return out
+}
+
+// writeGrantPrivilege writes one right.
+func (g *generator) writeGrantPrivilege(e *Expression) string {
+	return g.child(e, "this")
+}
+
+// writeGrantPrincipal writes who the right is handed to, with the word that
+// says what sort of principal it is when the statement said one.
+func (g *generator) writeGrantPrincipal(e *Expression) string {
+	out := ""
+	if kind, _ := e.Args["kind"].(string); kind != "" {
+		out = kind + " "
+	}
+	return out + g.child(e, "this")
 }

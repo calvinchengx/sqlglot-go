@@ -578,7 +578,6 @@ func TestCountKeepsItsFlag(t *testing.T) {
 func TestWritesAreNamedNotParsed(t *testing.T) {
 	for _, c := range []struct{ sql, kind string }{
 		{"EXEC xp_cmdshell 'dir'", "EXEC"},
-		{"GRANT SELECT ON dbo.fct_sales TO reader", "GRANT"},
 	} {
 		_, err := ParseOne(c.sql, "tsql")
 		if !errors.Is(err, ErrNotAQuery) {
@@ -687,6 +686,8 @@ func TestWritesAreNamedWhenTheyParse(t *testing.T) {
 		"TRUNCATE TABLE dbo.fct_sales",
 		"USE other_db",
 		"BEGIN TRANSACTION",
+		"GRANT SELECT ON dbo.fct_sales TO reader",
+		"REVOKE SELECT ON dbo.fct_sales FROM reader",
 	} {
 		e, err := ParseOne(sql, "tsql")
 		if err != nil {

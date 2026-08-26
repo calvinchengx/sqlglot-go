@@ -3413,3 +3413,58 @@ func TestTruncateUseAndTransactions(t *testing.T) {
 		}
 	}
 }
+
+// A permission handed over, and the REVOKE that takes it back. Neither is a
+// query, and what they change is exactly what a caller is allowed to do next.
+func TestGrantAndRevoke(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"one privilege", "GRANT SELECT ON TABLE tbl TO user", "GRANT SELECT ON TABLE tbl TO user"},
+		{"several", "GRANT SELECT, INSERT ON FUNCTION tbl TO user",
+			"GRANT SELECT, INSERT ON FUNCTION tbl TO user"},
+		{"no kind word", "GRANT SELECT ON orders TO ROLE PUBLIC",
+			"GRANT SELECT ON orders TO ROLE PUBLIC"},
+		{"with the right to pass it on", "GRANT SELECT ON TABLE t TO user WITH GRANT OPTION",
+			"GRANT SELECT ON TABLE t TO user WITH GRANT OPTION"},
+		{"revoking", "REVOKE SELECT ON TABLE tbl FROM user", "REVOKE SELECT ON TABLE tbl FROM user"},
+		{"all of them", "REVOKE ALL PRIVILEGES ON TABLE forecasts FROM finance",
+			"REVOKE ALL PRIVILEGES ON TABLE forecasts FROM finance"},
+		// On a REVOKE the option comes FIRST and takes away the right to pass
+		// the privilege on rather than the privilege itself.
+		{"only the right to pass it on", "REVOKE GRANT OPTION FOR SELECT ON nation FROM alice",
+			"REVOKE GRANT OPTION FOR SELECT ON nation FROM alice"},
+		// `user` here NAMES a principal; reading it as the word USER took
+		// RESTRICT for the name and the restriction with it.
+		{"a principal called user", "REVOKE INSERT ON TABLE orders FROM user RESTRICT",
+			"REVOKE INSERT ON TABLE orders FROM user RESTRICT"},
+		{"a quoted principal", `GRANT SELECT ON TABLE t TO "role"`,
+			`GRANT SELECT ON TABLE t TO "role"`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			if !IsWrite(e) {
+				t.Errorf("IsWrite(%q) = false; it changes what a caller may do", tc.sql)
+			}
+			got, err := Generate(e, "")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	for _, sql := range []string{
+		// `AS role` says WHO is doing the granting, and the reference gives
+		// up on it and keeps the raw text.
+		"GRANT EXECUTE ON TestProc TO User2 AS TesterRole",
+		"GRANT SELECT ON TABLE t",
+		"REVOKE SELECT ON TABLE t",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}

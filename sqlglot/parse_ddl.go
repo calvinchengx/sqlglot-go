@@ -1898,3 +1898,156 @@ func (p *parser) parseTransaction() (*Expression, error) {
 	}
 	return node, nil
 }
+
+// parseGrant reads `GRANT <privileges> ON [<kind>] <name> TO <principals>
+// [WITH GRANT OPTION]`, and the REVOKE that undoes it.
+//
+// A permission change is not a query and is not read-only, and it is one of
+// the few statements whose whole point is what a caller is allowed to do
+// next -- which is exactly what a guard is for.
+func (p *parser) parseGrant() (*Expression, error) {
+	class := "Grant"
+	if p.at(TokREVOKE) {
+		class = "Revoke"
+	}
+	p.advance()
+
+	node := New(class)
+	// `REVOKE GRANT OPTION FOR SELECT` takes away the right to pass the
+	// privilege on rather than the privilege itself.
+	grantOption := false
+	if class == "Revoke" && p.atWords("GRANT", "OPTION", "FOR") {
+		p.advance()
+		p.advance()
+		p.advance()
+		grantOption = true
+	}
+
+	privileges, err := p.parsePrivileges()
+	if err != nil {
+		return nil, err
+	}
+	node.Set("privileges", privileges)
+
+	if !p.atWords("ON") {
+		return nil, p.unsupported(class + " without ON")
+	}
+	p.advance()
+	// The kind is a WORD and is written only when it was: `ON TABLE t` and
+	// `ON t` are different trees.
+	for _, word := range []string{"TABLE", "VIEW", "FUNCTION", "SCHEMA", "DATABASE"} {
+		if c := p.curr(); c != nil && c.Type != TokIDENTIFIER && p.atWords(word) {
+			p.advance()
+			node.Set("kind", word)
+			break
+		}
+	}
+	securable, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+	node.Set("securable", securable)
+
+	if class == "Grant" && !p.atWords("TO") {
+		return nil, p.unsupported("GRANT without TO")
+	}
+	if class == "Revoke" && !p.atWords("FROM") && !p.at(TokFROM) {
+		return nil, p.unsupported("REVOKE without FROM")
+	}
+	p.advance()
+
+	var principals []*Expression
+	for {
+		principal := New("GrantPrincipal")
+		// The word is a KIND only when a name follows it. `FROM user
+		// RESTRICT` revokes from a principal CALLED user -- reading the word
+		// as a kind took RESTRICT for the name and the restriction with it.
+		kind := ""
+		for _, word := range []string{"ROLE", "USER", "GROUP"} {
+			c := p.curr()
+			if c == nil || c.Type == TokIDENTIFIER || !p.atWords(word) {
+				continue
+			}
+			if n := p.next(); n == nil || endsAPrincipal(n) {
+				break
+			}
+			p.advance()
+			kind = word
+			break
+		}
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		principal.Set("this", name)
+		if kind == "" {
+			principal.Set("kind", false)
+		} else {
+			principal.Set("kind", kind)
+		}
+		principals = append(principals, principal)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	node.Set("principals", principals)
+
+	if class == "Grant" && p.atWords("WITH", "GRANT", "OPTION") {
+		p.advance()
+		p.advance()
+		p.advance()
+		grantOption = true
+	}
+	node.Set("grant_option", grantOption)
+	switch {
+	case p.atWords("RESTRICT"):
+		p.advance()
+		node.Set("cascade", "RESTRICT")
+	case p.atWords("CASCADE"):
+		p.advance()
+		node.Set("cascade", "CASCADE")
+	}
+	if p.curr() != nil {
+		// `GRANT ... AS role` says who is doing the granting, and the
+		// reference gives up on it and keeps the raw text.
+		return nil, p.unsupported(class + " with more than this port reads")
+	}
+	return node, nil
+}
+
+// parsePrivileges reads the comma-separated rights a GRANT hands over. Each is
+// a WORD, and some are two: `ALL PRIVILEGES` is one privilege, not two.
+func (p *parser) parsePrivileges() ([]*Expression, error) {
+	var out []*Expression
+	for {
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("a privilege with no name")
+		}
+		name := strings.ToUpper(c.Text)
+		p.advance()
+		if name == "ALL" && p.atWords("PRIVILEGES") {
+			p.advance()
+			name = "ALL PRIVILEGES"
+		}
+		out = append(out, New("GrantPrivilege",
+			Arg{"this", New("Var", Arg{"this", name})}))
+		if !p.match(TokCOMMA) {
+			return out, nil
+		}
+	}
+}
+
+// endsAPrincipal reports whether a token closes the list of principals rather
+// than naming one. The words that may follow the list are few, and they are
+// what tells `FROM user RESTRICT` from `FROM ROLE public`.
+func endsAPrincipal(t *Token) bool {
+	if t == nil {
+		return true
+	}
+	switch strings.ToUpper(t.Text) {
+	case "RESTRICT", "CASCADE", "WITH", "AS":
+		return true
+	}
+	return t.Type == TokCOMMA || t.Type == TokSEMICOLON
+}
