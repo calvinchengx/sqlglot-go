@@ -1509,6 +1509,24 @@ def key_constraint_options(dialect: str) -> dict:
     return out
 
 
+def with_data_written(dialect: str) -> bool:
+    """Whether `WITH NO DATA` survives being written.
+
+    It says whether the table is FILLED from the query or only shaped by it,
+    which is the difference between a copy and an empty table. DuckDB and
+    Databricks drop the words, so the port refuses rather than following.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("CREATE TABLE t AS SELECT 1 WITH NO DATA").sql(
+            dialect=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return False
+    return "NO DATA" in text.upper()
+
+
 def merge_without_target(dialect: str) -> bool:
     """Whether a MERGE drops the target's name from the columns it assigns.
 
@@ -3764,6 +3782,7 @@ def main() -> int:
         "\t// AlterSetOptionWritten: an `ALTER TABLE ... SET` keeps the words that\n\t// say WHAT it sets, and AlterSetWrapsOptions whether a list of\n\t// settings is written in parentheses.\n\tAlterSetOptionWritten bool\n\tAlterSetWrapsOptions  bool\n",
         "\t// AlterSetListIsSettings: `ALTER TABLE t SET (k = v)` is a list of\n\t// settings here rather than of table properties.\n\tAlterSetListIsSettings bool\n",
         "\t// KeyConstraintOptions are the words that may follow a REFERENCES or a\n\t// key, and what may follow each of them.\n\tKeyConstraintOptions map[string][]string\n",
+        "\t// WithDataWritten: `WITH NO DATA` survives here. It says whether the\n\t// table is FILLED from the query or only shaped by it.\n\tWithDataWritten bool\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -4335,6 +4354,7 @@ def main() -> int:
         out.append(f"\t\tOffsetRowsWord: {gostr(offset_rows_word(name))},\n")
         out.append(f"\t\tIndexOnWord: {gostr(index_on_word(name))},\n")
         out.append(f"\t\tPartitionSQL: {gostr(partition_sql(name))},\n")
+        out.append("\t\tWithDataWritten: %s,\n" % str(with_data_written(name)).lower())
         out.append("\t\tKeyConstraintOptions: map[string][]string{\n")
         for word, follows in sorted(key_constraint_options(name).items()):
             inner = ", ".join(gostr(f) for f in follows)

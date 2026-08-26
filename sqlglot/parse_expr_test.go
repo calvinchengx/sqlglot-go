@@ -3940,3 +3940,44 @@ func TestSizedArrayTypes(t *testing.T) {
 		t.Logf("read as %s", e.Class)
 	}
 }
+
+// `WITH NO DATA` says the table is SHAPED by the query rather than filled
+// from it -- the difference between a copy and an empty table.
+func TestCreateTableWithData(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"CREATE TABLE asd AS SELECT asd FROM asd WITH DATA",
+			"CREATE TABLE asd AS SELECT asd FROM asd WITH DATA"},
+		{"CREATE TABLE asd AS SELECT asd FROM asd WITH NO DATA",
+			"CREATE TABLE asd AS SELECT asd FROM asd WITH NO DATA"},
+		{"CREATE TABLE a.b AS SELECT 1 WITH DATA AND STATISTICS",
+			"CREATE TABLE a.b AS SELECT 1 WITH DATA AND STATISTICS"},
+		{"CREATE TABLE a.b AS SELECT 1 WITH NO DATA AND NO STATISTICS",
+			"CREATE TABLE a.b AS SELECT 1 WITH NO DATA AND NO STATISTICS"},
+	} {
+		e, err := ParseOne(tc.sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		got, err := Generate(e, "")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.want {
+			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
+		}
+	}
+	// DuckDB and Databricks write the words nowhere, which would make a copy
+	// where an empty table was asked for.
+	e, err := ParseOne("CREATE TABLE t AS SELECT 1 WITH NO DATA", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	for _, d := range []string{"duckdb", "databricks"} {
+		if got, err := Generate(e, d); err == nil {
+			t.Errorf("[%s] wrote %q, which fills the table", d, got)
+		}
+	}
+	if _, err := ParseOne("CREATE TABLE t AS SELECT 1 WITH DATA AND INDEXES", ""); err == nil {
+		t.Error("WITH DATA AND INDEXES was read")
+	}
+}

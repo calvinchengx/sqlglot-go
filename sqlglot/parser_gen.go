@@ -379,6 +379,9 @@ type ParserTables struct {
 	// KeyConstraintOptions are the words that may follow a REFERENCES or a
 	// key, and what may follow each of them.
 	KeyConstraintOptions map[string][]string
+	// WithDataWritten: `WITH NO DATA` survives here. It says whether the
+	// table is FILLED from the query or only shaped by it.
+	WithDataWritten bool
 	// RenameTarget says how much of a qualified name a RENAME TO writes:
 	// the whole thing, the last part only, or -- empty -- neither,
 	// because the dialect writes another statement entirely.
@@ -3758,6 +3761,7 @@ var parserTables = map[string]*ParserTables{
 		OffsetRowsWord:          "",
 		IndexOnWord:             "ON",
 		PartitionSQL:            "PARTITION({members})",
+		WithDataWritten:         true,
 		KeyConstraintOptions: map[string][]string{
 			"DEFERRABLE": {},
 			"INITIALLY":  {"DEFERRED", "IMMEDIATE"},
@@ -7390,6 +7394,7 @@ var parserTables = map[string]*ParserTables{
 		OffsetRowsWord:          "ROWS",
 		IndexOnWord:             "ON",
 		PartitionSQL:            "WITH (PARTITIONS({members}))",
+		WithDataWritten:         false,
 		KeyConstraintOptions: map[string][]string{
 			"DEFERRABLE": {},
 			"INITIALLY":  {"DEFERRED", "IMMEDIATE"},
@@ -11109,6 +11114,7 @@ var parserTables = map[string]*ParserTables{
 		OffsetRowsWord:          "",
 		IndexOnWord:             "ON",
 		PartitionSQL:            "PARTITION({members})",
+		WithDataWritten:         true,
 		KeyConstraintOptions: map[string][]string{
 			"DEFERRABLE": {},
 			"INITIALLY":  {"DEFERRED", "IMMEDIATE"},
@@ -15000,6 +15006,7 @@ var parserTables = map[string]*ParserTables{
 		OffsetRowsWord:          "",
 		IndexOnWord:             "ON",
 		PartitionSQL:            "PARTITION({members})",
+		WithDataWritten:         false,
 		KeyConstraintOptions: map[string][]string{
 			"DEFERRABLE": {},
 			"INITIALLY":  {"DEFERRED", "IMMEDIATE"},
@@ -18888,6 +18895,7 @@ var parserTables = map[string]*ParserTables{
 		OffsetRowsWord:          "",
 		IndexOnWord:             "ON TABLE",
 		PartitionSQL:            "PARTITION({members})",
+		WithDataWritten:         false,
 		KeyConstraintOptions: map[string][]string{
 			"DEFERRABLE": {},
 			"INITIALLY":  {"DEFERRED", "IMMEDIATE"},

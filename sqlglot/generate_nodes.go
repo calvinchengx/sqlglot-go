@@ -73,6 +73,7 @@ func init() {
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
+		"WithDataProperty":                    (*generator).writeWithDataProperty,
 		"AlterSet":                            (*generator).writeAlterSet,
 		"Partition":                           (*generator).writePartition,
 		"OnConflict":                          (*generator).writeOnConflict,
@@ -2144,6 +2145,16 @@ func (g *generator) writeCreate(e *Expression) string {
 	if expression := g.child(e, "expression"); expression != "" {
 		out += " AS " + expression
 	}
+	// The properties written AFTER the query, which is where the words that
+	// say whether it filled the table go.
+	if properties, _ := e.Args["properties"].(*Expression); properties != nil {
+		items, _ := properties.Args["expressions"].([]*Expression)
+		for _, item := range items {
+			if item.Class == "WithDataProperty" {
+				out += " " + g.node(item)
+			}
+		}
+	}
 	return out
 }
 
@@ -3328,4 +3339,27 @@ func (g *generator) writeAlterSet(e *Expression) string {
 		return "SET " + value
 	}
 	return g.fail(e.Class + " that sets nothing")
+}
+
+// writeWithDataProperty writes whether a table made from a query is FILLED
+// from it or only shaped by it.
+func (g *generator) writeWithDataProperty(e *Expression) string {
+	if !g.tables.WithDataWritten {
+		// The words say whether the table has rows in it. A dialect that
+		// writes them nowhere would make a copy where an empty table was
+		// asked for, or the other way round.
+		return g.fail(e.Class + ", which this dialect writes nowhere")
+	}
+	out := "WITH "
+	if no, _ := e.Args["no"].(bool); no {
+		out += "NO "
+	}
+	out += "DATA"
+	if statistics, ok := e.Args["statistics"].(bool); ok {
+		if statistics {
+			return out + " AND STATISTICS"
+		}
+		return out + " AND NO STATISTICS"
+	}
+	return out
 }

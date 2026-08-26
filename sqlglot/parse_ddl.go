@@ -123,14 +123,46 @@ func (p *parser) parseCreate() (*Expression, error) {
 	default:
 		return nil, p.unsupported("CREATE " + kind + " without columns or a query")
 	}
+	// `WITH NO DATA` says the table is SHAPED by the query rather than filled
+	// from it, which is the difference between a copy and an empty table.
+	var withData *Expression
+	if p.atWords("WITH", "DATA") || p.atWords("WITH", "NO", "DATA") {
+		p.advance()
+		no := false
+		if p.atWords("NO") {
+			p.advance()
+			no = true
+		}
+		p.advance() // DATA
+		withData = New("WithDataProperty", Arg{"no", no})
+		if p.atWords("AND") {
+			p.advance()
+			statistics := true
+			if p.atWords("NO") {
+				p.advance()
+				statistics = false
+			}
+			if !p.atWords("STATISTICS") {
+				return nil, p.unsupported("WITH DATA AND something else")
+			}
+			p.advance()
+			withData.Set("statistics", statistics)
+		}
+	}
 	if p.curr() != nil {
 		return nil, p.unsupported("CREATE " + kind + " with more than this port reads")
 	}
 
-	var properties *Expression
+	var items []*Expression
 	if temporary {
-		properties = New("Properties", Arg{"expressions",
-			[]*Expression{New("TemporaryProperty")}})
+		items = append(items, New("TemporaryProperty"))
+	}
+	if withData != nil {
+		items = append(items, withData)
+	}
+	var properties *Expression
+	if len(items) > 0 {
+		properties = New("Properties", Arg{"expressions", items})
 	}
 
 	// Every one of these is ON the node, in this order, whether or not the
