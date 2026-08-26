@@ -1215,6 +1215,47 @@ def index_on_word(dialect: str) -> str:
     return tail.split("zzt")[0].strip()
 
 
+def string_class_sql(dialect: str) -> dict:
+    """How each kind of quoted string is written, and whether its body is
+    escaped on the way.
+
+    Five classes the tokenizer already tells apart -- a raw string, a byte
+    string, a unicode string, a hex string -- and every dialect spells them
+    differently: PostgreSQL writes `x'1F'` where T-SQL writes `0x1F` and
+    DuckDB writes `UNHEX('1F')`. An empty template means this dialect writes
+    the value in a way that LOSES it, and the port refuses rather than
+    following.
+
+    The body is substituted verbatim into the template, so whether it needs a
+    string's own escaping is asked separately -- a template cannot do it.
+    """
+    from sqlglot import exp
+
+    out = {}
+    for cls in ("RawString", "ByteString", "UnicodeString", "HexString", "BitString"):
+        try:
+            plain = getattr(exp, cls)(this="zzbody").sql(dialect=dialect or None)
+        except Exception:  # noqa: BLE001
+            continue
+        if "zzbody" not in plain:
+            continue
+        template = plain.replace("zzbody", "{body}")
+        # Does a quote in the body come back escaped the way a plain string
+        # literal's would?
+        quoted = getattr(exp, cls)(this="a'b").sql(dialect=dialect or None)
+        literal = exp.Literal.string("a'b").sql(dialect=dialect or None)
+        body = literal[1:-1]
+        escapes = "true" if template.replace("{body}", body) == quoted else "false"
+        # A byte string goes further: a control character in the body is
+        # written back as the two characters that spell it, so a tab comes
+        # out as a backslash and a t.
+        control = getattr(exp, cls)(this="a\tb").sql(dialect=dialect or None)
+        if escapes == "true" and "\\t" in control:
+            escapes = "byte"
+        out[cls] = template + "\t" + escapes
+    return out
+
+
 def merge_without_target(dialect: str) -> bool:
     """Whether a MERGE drops the target's name from the columns it assigns.
 
@@ -3454,6 +3495,7 @@ def main() -> int:
         "\t// ComputedColumnSpelling is how a computed column is written, with\n\t// {expr} where the expression goes, and ComputedKeepsType whether the\n\t// column\'s declared type survives beside it.\n\tComputedColumnSpelling string\n\tComputedKeepsType      bool\n\t// IdentityWritten: a GENERATED ... AS IDENTITY column keeps that\n\t// spelling here rather than being rewritten into something else.\n\tIdentityWritten bool\n\t// IdentityWidensType: an identity column\'s type is widened to BIGINT.\n\tIdentityWidensType bool\n",
         "\t// GeneratedExpressionIsComputed: `GENERATED ALWAYS AS (x)` with no\n\t// STORED is a COMPUTED column here, not an identity with an\n\t// expression on it.\n\tGeneratedExpressionIsComputed bool\n",
         "\t// IndexOnWord sits between an index and the table it is on.\n\tIndexOnWord string\n",
+        "\t// StringClassSQL is how each kind of quoted string is written, keyed by\n\t// class. The value is the template, a tab, and whether the body takes a\n\t// string\'s own escaping. A class missing from the map is one this\n\t// dialect writes in a way that loses the value.\n\tStringClassSQL map[string]string\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -4004,6 +4046,11 @@ def main() -> int:
             "\t\tGeneratedExpressionIsComputed: %s,\n"
             % str(generated_expression_is_computed(name)).lower()
         )
+        _scs = string_class_sql(name)
+        out.append("\t\tStringClassSQL: map[string]string{\n")
+        for cls, spec in sorted(_scs.items()):
+            out.append(f"\t\t\t{gostr(cls)}: {gostr(spec)},\n")
+        out.append("\t\t},\n")
         out.append(f"\t\tIndexOnWord: {gostr(index_on_word(name))},\n")
         _ccs, _cct = computed_column_spelling(name)
         out.append(f"\t\tComputedColumnSpelling: {gostr(_ccs)},\n")

@@ -45,6 +45,11 @@ func init() {
 		"Identifier":                          (*generator).writeIdentifier,
 		"Literal":                             (*generator).writeLiteral,
 		"National":                            (*generator).writeNational,
+		"RawString":                           (*generator).writeQuotedString,
+		"ByteString":                          (*generator).writeQuotedString,
+		"UnicodeString":                       (*generator).writeQuotedString,
+		"HexString":                           (*generator).writeQuotedString,
+		"BitString":                           (*generator).writeQuotedString,
 		"Boolean":                             (*generator).writeBoolean,
 		"Null":                                (*generator).writeNull,
 		"Alias":                               (*generator).writeAlias,
@@ -683,6 +688,38 @@ func (g *generator) writeLiteral(e *Expression) string {
 		return "'" + escapeStringBody(text, g.cfg.StringEscapes) + "'"
 	}
 	return text
+}
+
+// writeQuotedString writes one of the string classes the tokenizer tells
+// apart. The spelling is the dialect's -- `0x1F`, `x'1F'`, `UNHEX('1F')` --
+// and so is whether the body takes a string's own escaping, because a
+// template substitutes text VERBATIM and a body holding a quote would end
+// the string early otherwise.
+func (g *generator) writeQuotedString(e *Expression) string {
+	spec, ok := g.tables.StringClassSQL[e.Class]
+	if !ok {
+		// This dialect writes the value in a way that loses it -- the neutral
+		// one writes a byte string as `''` -- so it is refused instead.
+		return g.fail(e.Class + ", which this dialect writes in a way that loses it")
+	}
+	template, escapes, _ := strings.Cut(spec, "\t")
+	body, _ := e.Args["this"].(string)
+	switch escapes {
+	case "byte":
+		// A byte string goes further than a quoted one: a CONTROL character
+		// is written back as the two characters that spell it, so the tab a
+		// statement wrote as `\t` comes back as `\t` rather than as a tab.
+		body = escapeControlCharacters(body)
+		body = escapeStringBody(body, g.cfg.StringEscapes)
+	case "true":
+		body = escapeStringBody(body, g.cfg.StringEscapes)
+	}
+	out := strings.ReplaceAll(template, "{body}", body)
+	// A unicode string may name the character its escapes start with.
+	if escape := g.child(e, "escape"); escape != "" {
+		out += " UESCAPE " + escape
+	}
+	return out
 }
 
 // writeNational writes a national string. It has a writer of its own
@@ -2957,4 +2994,32 @@ func (g *generator) writeIndex(e *Expression) string {
 		parts = append(parts, g.node(column))
 	}
 	return out + "(" + strings.Join(parts, ", ") + ")"
+}
+
+// escapeControlCharacters turns the control characters a C-style escape can
+// spell back into that escape. A literal backslash is left alone -- the
+// reference does not double it here -- and so is a NUL, which has no spelling.
+func escapeControlCharacters(body string) string {
+	var out strings.Builder
+	for _, r := range body {
+		switch r {
+		case '\a':
+			out.WriteString(`\a`)
+		case '\b':
+			out.WriteString(`\b`)
+		case '\f':
+			out.WriteString(`\f`)
+		case '\n':
+			out.WriteString(`\n`)
+		case '\r':
+			out.WriteString(`\r`)
+		case '\t':
+			out.WriteString(`\t`)
+		case '\v':
+			out.WriteString(`\v`)
+		default:
+			out.WriteRune(r)
+		}
+	}
+	return out.String()
 }

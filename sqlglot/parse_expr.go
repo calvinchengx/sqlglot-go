@@ -955,6 +955,26 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	case TokSTRING:
 		p.advance()
 		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
+	// The tokenizer already tells these apart -- a raw string, a byte string,
+	// a unicode string, a hex or bit literal -- and each is a class of its
+	// own rather than a Literal with a flag, because what a dialect WRITES
+	// for one has nothing to do with what it writes for another: `0x1F` is
+	// `x'1F'` in PostgreSQL and `UNHEX('1F')` in DuckDB.
+	case TokHEREDOC_STRING, TokRAW_STRING:
+		p.advance()
+		return New("RawString", Arg{"this", c.Text}), nil
+	case TokBYTE_STRING:
+		p.advance()
+		return New("ByteString", Arg{"this", c.Text}), nil
+	case TokUNICODE_STRING:
+		p.advance()
+		return New("UnicodeString", Arg{"this", c.Text}, Arg{"escape", false}), nil
+	case TokHEX_STRING:
+		p.advance()
+		return New("HexString", Arg{"this", c.Text}), nil
+	case TokBIT_STRING:
+		p.advance()
+		return New("BitString", Arg{"this", c.Text}), nil
 	case TokTRUE, TokFALSE:
 		p.advance()
 		return New("Boolean", Arg{"this", c.Type == TokTRUE}), nil

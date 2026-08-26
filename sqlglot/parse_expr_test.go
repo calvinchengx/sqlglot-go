@@ -3079,3 +3079,68 @@ func TestCreateIndex(t *testing.T) {
 		}
 	}
 }
+
+// The string classes the tokenizer already tells apart. Each is a node of its
+// own rather than a Literal with a flag, because what a dialect WRITES for one
+// has nothing to do with what it writes for another: `0x1F` is `x'1F'` in
+// PostgreSQL, `0x1F` in T-SQL and `UNHEX('1F')` in DuckDB.
+func TestQuotedStringClasses(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"a dollar-quoted string", "duckdb", "SELECT $$foo$$", "SELECT 'foo'"},
+		{"a tagged one", "postgres", "SELECT $tag$a b$tag$", "SELECT 'a b'"},
+		{"a raw string", "databricks", `SELECT r"a\nb"`, `SELECT 'a\\nb'`},
+		{"a byte string", "postgres", `SELECT e'foo bar'`, `SELECT e'foo bar'`},
+		{"a unicode string", "postgres", `SELECT U&'a b'`, `SELECT U&'a b'`},
+		{"a hex literal, PostgreSQL", "postgres", "SELECT 0x1F", "SELECT x'1F'"},
+		{"a hex literal, T-SQL", "tsql", "SELECT 0x1F", "SELECT 0x1F"},
+		{"a hex literal, Databricks", "databricks", "SELECT 0xFF", `SELECT X'FF'`},
+		// DuckDB does not read `0xFF` as a hex literal at all -- it reads a
+		// zero and an alias -- so the UNHEX spelling is reached by writing a
+		// hex literal read elsewhere.
+		{"a hex literal, DuckDB", "duckdb", "SELECT 0 AS xFF", "SELECT 0 AS xFF"},
+		// A quote in the body is escaped the way this dialect escapes one,
+		// because the spelling substitutes the body VERBATIM.
+		{"a quote inside", "postgres", `SELECT U&'a''b''c'`, `SELECT U&'a''b''c'`},
+		// A byte string goes further: a control character comes back as the
+		// two characters that spell it.
+		{"a tab inside", "postgres", `SELECT E'a\tb'`, `SELECT e'a\tb'`},
+		{"a newline inside", "postgres", `SELECT E'a\nb'`, `SELECT e'a\nb'`},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// The neutral dialect writes a byte string as `''` and a hex literal not
+	// at all, so both are refused rather than written empty.
+	for _, tc := range []struct{ read, sql string }{
+		{"postgres", `SELECT e'foo'`},
+		{"postgres", "SELECT 0x1F"},
+	} {
+		e, err := ParseOne(tc.sql, tc.read)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, ""); err == nil {
+			t.Errorf("%q wrote %q for the neutral dialect, which loses the value", tc.sql, got)
+		}
+	}
+	// A hex literal read in PostgreSQL becomes a call when written for DuckDB.
+	if e, err := ParseOne("SELECT 0xFF", "postgres"); err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	} else if got, _ := Generate(e, "duckdb"); got != `SELECT UNHEX('FF')` {
+		t.Errorf("got %q", got)
+	}
+	if escapeControlCharacters("a\a\b\f\v\rb") != `a\a\b\f\v\rb` {
+		t.Errorf("control characters: %q", escapeControlCharacters("a\a\b\f\v\rb"))
+	}
+}
