@@ -2831,6 +2831,15 @@ func TestANameThatIsNotAName(t *testing.T) {
 	if !readableAsABareName("a_1") || readableAsABareName("") || readableAsABareName("a b") {
 		t.Error("readableAsABareName disagrees with what a bare name is")
 	}
+	// A PARAMETER's name is put back bare too, so it takes the same rule:
+	// `:"//"` would write `$//`, which the port could not read.
+	odd, err := ParseOne(`:"//"`, "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(odd, "duckdb"); err == nil {
+		t.Errorf("wrote %q; `//` is not a name", got)
+	}
 }
 
 // CURRENT_DATE and friends may be written WITH empty parentheses, and the

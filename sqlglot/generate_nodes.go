@@ -839,6 +839,13 @@ func (g *generator) writePlaceholder(e *Expression) string {
 	if strings.Contains(name, "$") {
 		return g.fail(e.Class + " whose name holds a dollar")
 	}
+	// And a name that is not a NAME is refused for the same reason: the
+	// spelling puts it back bare, and `:"//"` wrote `$//`, which the port
+	// then could not read. Only the plain-string form is checked -- the
+	// PostgreSQL spelling wraps the name and needs no rule.
+	if _, plain := e.Args["this"].(string); plain && !readableAsABareName(name) {
+		return g.fail(e.Class + " whose name is not a name")
+	}
 	return strings.ReplaceAll(g.tables.Placeholder.Named, "{name}", name)
 }
 
