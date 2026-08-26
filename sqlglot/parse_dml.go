@@ -157,14 +157,29 @@ func (p *parser) parseDelete() (*Expression, error) {
 		// `USING a, b` is a comma JOIN, exactly as it is in a FROM clause, and
 		// the reference hangs it off the first table rather than making a
 		// second entry. `using` stays a list of one.
-		joins, err := p.parseJoins()
-		if err != nil {
-			return nil, err
+		// `USING a, b` is a comma JOIN, exactly as in a FROM clause, and the
+		// reference hangs it off the first table rather than making a second
+		// entry -- unless the item is a VALUES, which takes no joins, and the
+		// comma then separates two entries after all.
+		using := []*Expression{source}
+		if source.Class == "Values" {
+			for p.match(TokCOMMA) {
+				next, err := p.parseTable()
+				if err != nil {
+					return nil, err
+				}
+				using = append(using, next)
+			}
+		} else {
+			joins, err := p.parseJoins()
+			if err != nil {
+				return nil, err
+			}
+			if len(joins) > 0 {
+				source.Set("joins", joins)
+			}
 		}
-		if len(joins) > 0 {
-			source.Set("joins", joins)
-		}
-		node.Set("using", []*Expression{source})
+		node.Set("using", using)
 	} else {
 		node.Set("using", false)
 	}

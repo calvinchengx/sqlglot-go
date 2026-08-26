@@ -4042,3 +4042,64 @@ func TestColumnPositionAndIdentity(t *testing.T) {
 		}
 	}
 }
+
+// Rows written out where a table would go. The alias belongs to the VALUES
+// rather than to anything wrapping it, and the parentheses are the writer's
+// alone -- the reference keeps the same tree whether the source had them.
+func TestValuesAsATable(t *testing.T) {
+	for _, tc := range []struct{ name, read, write, sql, want string }{
+		{"parenthesised", "duckdb", "duckdb",
+			"SELECT col1, col2 FROM (VALUES (1, 2), (3, 4)) AS _t(col1, col2)",
+			"SELECT col1, col2 FROM (VALUES (1, 2), (3, 4)) AS _t(col1, col2)"},
+		// Databricks writes the form bare, and reads it that way too.
+		{"bare", "databricks", "databricks", "SELECT c1 FROM VALUES ('x') AS T(c1)",
+			"SELECT c1 FROM VALUES ('x') AS T(c1)"},
+		{"bare in, wrapped out", "databricks", "postgres", "SELECT c1 FROM VALUES ('x') AS T(c1)",
+			"SELECT c1 FROM (VALUES ('x')) AS T(c1)"},
+		{"wrapped in, bare out", "duckdb", "databricks",
+			"SELECT c FROM (VALUES (1)) AS t(c)", "SELECT c FROM VALUES (1) AS t(c)"},
+		{"joined", "postgres", "postgres",
+			"SELECT * FROM (VALUES (1)) AS t1(id) CROSS JOIN (VALUES (1)) AS t2(id)",
+			"SELECT * FROM (VALUES (1)) AS t1(id) CROSS JOIN (VALUES (1)) AS t2(id)"},
+		// Two of them in a DELETE's USING are two ENTRIES, where two ordinary
+		// tables there would be one entry carrying a comma join.
+		{"in a delete", "duckdb", "duckdb",
+			"DELETE FROM t USING (VALUES (1)) AS t1(c), (VALUES (1), (2)) AS t2(c) WHERE t.c = t1.c",
+			"DELETE FROM t USING (VALUES (1)) AS t1(c), (VALUES (1), (2)) AS t2(c) WHERE t.c = t1.c"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.read)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.write)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// Inside a join TREE the rows are wrapped in a Table, where standing
+	// alone as a FROM item they are not -- and the alias moves with them.
+	nested, err := ParseOne(
+		"SELECT 1 FROM ((VALUES (1)) AS vals(id) LEFT OUTER JOIN tbl ON vals.id = tbl.id)",
+		"postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(nested, "postgres"); err != nil {
+		t.Fatalf("Generate: %v", err)
+	} else if got != "SELECT 1 FROM ((VALUES (1)) AS vals(id) LEFT OUTER JOIN tbl ON vals.id = tbl.id)" {
+		t.Errorf("got %q", got)
+	}
+	// And the body of an INSERT is still written bare.
+	body, err := ParseOne("INSERT INTO x VALUES (1), (2)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, _ := Generate(body, ""); got != "INSERT INTO x VALUES (1), (2)" {
+		t.Errorf("got %q", got)
+	}
+}

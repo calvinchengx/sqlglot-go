@@ -1588,6 +1588,24 @@ def auto_increment_sql(dialect: str) -> str:
     return parts[1]
 
 
+def values_table_wrapped(dialect: str) -> bool:
+    """Whether a VALUES clause used as a TABLE is written in parentheses.
+
+    `FROM (VALUES (1)) AS t(c)` almost everywhere; Databricks writes it bare.
+    The tree is the same either way -- the reference normalises the source's
+    parentheses away -- so the wrapping is the writer's alone.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one(
+            "SELECT c FROM (VALUES (1)) AS t(c)", read="postgres"
+        ).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return True
+    return "(VALUES" in text
+
+
 def merge_without_target(dialect: str) -> bool:
     """Whether a MERGE drops the target's name from the columns it assigns.
 
@@ -3846,6 +3864,7 @@ def main() -> int:
         "\t// WithDataWritten: `WITH NO DATA` survives here. It says whether the\n\t// table is FILLED from the query or only shaped by it.\n\tWithDataWritten bool\n",
         "\t// IdentityShortSQL is the short spelling of an identity column, with\n\t// {start} and {increment} in it, and empty where the dialect writes\n\t// the whole GENERATED form instead.\n\tIdentityShortSQL string\n",
         "\t// AutoIncrementSQL is how an auto-incrementing column is spelled, and\n\t// is empty where the dialect writes nothing and drops the numbering.\n\tAutoIncrementSQL string\n",
+        "\t// ValuesTableWrapped: a VALUES clause used as a TABLE is written in\n\t// parentheses here.\n\tValuesTableWrapped bool\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -4420,6 +4439,7 @@ def main() -> int:
         out.append("\t\tWithDataWritten: %s,\n" % str(with_data_written(name)).lower())
         out.append(f"\t\tIdentityShortSQL: {gostr(identity_short_sql(name))},\n")
         out.append(f"\t\tAutoIncrementSQL: {gostr(auto_increment_sql(name))},\n")
+        out.append("\t\tValuesTableWrapped: %s,\n" % str(values_table_wrapped(name)).lower())
         out.append("\t\tKeyConstraintOptions: map[string][]string{\n")
         for word, follows in sorted(key_constraint_options(name).items()):
             inner = ", ".join(gostr(f) for f in follows)

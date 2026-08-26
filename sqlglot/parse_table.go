@@ -227,6 +227,14 @@ func (p *parser) parseTable() (*Expression, error) {
 	if p.at(TokLATERAL) {
 		return p.parseLateral()
 	}
+	// `FROM VALUES (1) AS t(c)` is rows written out where a table would go,
+	// and the alias belongs to the VALUES rather than to anything wrapping
+	// it. Databricks writes the form bare; elsewhere it is parenthesised, and
+	// the parentheses are the writer's alone -- the reference keeps the same
+	// tree either way.
+	if p.at(TokVALUES) {
+		return p.parseValuesTable()
+	}
 	if p.at(TokL_PAREN) {
 		return p.parseSubqueryTable()
 	}
@@ -681,6 +689,25 @@ func (p *parser) parseSubqueryTable() (*Expression, error) {
 	p.advance() // the opening parenthesis
 	var inner *Expression
 	var err error
+	if p.at(TokVALUES) {
+		// The parentheses round a VALUES table are not kept: the alias goes
+		// on the VALUES itself rather than on a Subquery wrapping it.
+		values, err := p.parseValues()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed VALUES")
+		}
+		alias, err := p.parseTableAlias()
+		if err != nil {
+			return nil, err
+		}
+		if alias != nil {
+			values.Set("alias", alias)
+		}
+		return values, nil
+	}
 	if p.at(TokSELECT) || p.at(TokWITH) || p.at(TokPIVOT) || p.at(TokUNPIVOT) ||
 		p.at(TokFROM) {
 		// A pivot STATEMENT reached through a FROM item comes out with
@@ -738,6 +765,18 @@ func (p *parser) parseParenthesisedTable() (*Expression, error) {
 	table, err := p.parseTable()
 	if err != nil {
 		return nil, err
+	}
+	// Inside a join tree a VALUES is wrapped in a TABLE, where standing alone
+	// as a FROM item it is not -- and the alias moves onto the wrapper with
+	// it. Same rows, two shapes, and the position decides.
+	if table.Class == "Values" {
+		alias, _ := table.Args["alias"].(*Expression)
+		table.Set("alias", nil)
+		wrapped := New("Table", Arg{"this", table})
+		if alias != nil {
+			wrapped.Set("alias", alias)
+		}
+		table = wrapped
 	}
 	joins, err := p.parseJoins()
 	if err != nil {
@@ -1051,4 +1090,21 @@ func (p *parser) parseTableHint() (*Expression, error) {
 		return nil, p.unsupported("unclosed table hint")
 	}
 	return New("WithTableHint", Arg{"expressions", members}), nil
+}
+
+// parseValuesTable reads a bare `VALUES (1), (2) AS t(c)` standing where a
+// table would.
+func (p *parser) parseValuesTable() (*Expression, error) {
+	values, err := p.parseValues()
+	if err != nil {
+		return nil, err
+	}
+	alias, err := p.parseTableAlias()
+	if err != nil {
+		return nil, err
+	}
+	if alias != nil {
+		values.Set("alias", alias)
+	}
+	return values, nil
 }

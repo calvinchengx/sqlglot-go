@@ -2275,7 +2275,22 @@ func (g *generator) writeInsert(e *Expression) string {
 }
 
 // writeValues writes the rows of a VALUES clause.
-func (g *generator) writeValues(e *Expression) string { return "VALUES " + g.list(e) }
+// writeValues writes the rows of a VALUES clause -- as the body of an INSERT,
+// where it stands bare, or as a TABLE, where all but Databricks wrap it and
+// it carries an alias of its own.
+func (g *generator) writeValues(e *Expression) string {
+	out := "VALUES " + g.list(e)
+	if !standsWhereATableGoes(e) {
+		return out
+	}
+	if g.tables.ValuesTableWrapped {
+		out = "(" + out + ")"
+	}
+	if alias := g.child(e, "alias"); alias != "" {
+		out += " AS " + alias
+	}
+	return out
+}
 
 // writeDrop writes `DROP <kind> [IF EXISTS] <name>`.
 func (g *generator) writeDrop(e *Expression) string {
@@ -3413,4 +3428,22 @@ func (g *generator) writeColumnPosition(e *Expression) string {
 		return where + " " + this
 	}
 	return where
+}
+
+// standsWhereATableGoes reports whether a VALUES is being used as a TABLE
+// rather than as the body of an INSERT.
+//
+// The reference asks the same question the same way -- by looking for a FROM
+// or a JOIN above it -- because nothing on the node itself says which it is.
+// A DELETE's USING counts too: it holds relations.
+func standsWhereATableGoes(e *Expression) bool {
+	for at := e.Parent; at != nil; at = at.Parent {
+		switch at.Class {
+		case "From", "Join", "Delete", "Table":
+			return true
+		case "Insert", "Select", "Union", "Except", "Intersect":
+			return false
+		}
+	}
+	return false
 }
