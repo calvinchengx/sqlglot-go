@@ -655,6 +655,13 @@ func (g *generator) writeIdentifier(e *Expression) string {
 	if !quoted && g.tables.ReservedKeywords[strings.ToUpper(name)] {
 		quoted = true
 	}
+	if !quoted && !readableAsABareName(name) {
+		// A name the tokenizer would not give back. The port builds one only
+		// from a token the tokenizer could not classify -- a stray backtick
+		// among them -- and writing it bare produced SQL nothing can read.
+		// The generator fuzzer found it.
+		return g.fail(e.Class + " whose name is not a name")
+	}
 	if quoted {
 		// The delimiters the dialect WRITES, which are not always the ones it
 		// reads: T-SQL accepts "x" and writes [x]. A closing delimiter inside
@@ -2810,4 +2817,20 @@ func (g *generator) writeReturn(e *Expression) string {
 		return word + " " + g.child(e, "this")
 	}
 	return g.child(e, "this")
+}
+
+// readableAsABareName reports whether a name written without quotes would be
+// read back as the same name. It is the tokenizer's own rule for what may
+// continue a word, plus the symbols a dialect lets a name hold.
+func readableAsABareName(name string) bool {
+	if name == "" {
+		return false
+	}
+	for _, r := range name {
+		if isIdentifierChar(r) || r == '$' || r == '#' || r == '@' {
+			continue
+		}
+		return false
+	}
+	return true
 }

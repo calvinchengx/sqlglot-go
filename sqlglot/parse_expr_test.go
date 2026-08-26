@@ -2777,3 +2777,58 @@ func TestDDLRefusalsAreReached(t *testing.T) {
 		t.Errorf("got %q", got)
 	}
 }
+
+// `:name` after a colon is a bound parameter, and a QUOTED name counts --
+// unlike after `@`, where the quotes make it an Identifier instead. The colon
+// form was reading `[:"a"]` as a slice with no lower bound and writing it back
+// that way, for a tree the reference writes as `[$a]`.
+func TestAQuotedColonParameter(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql, want string }{
+		{"duckdb", `[:"a"]`, "[$a]"},
+		{"postgres", `[:"a"]`, "ARRAY[%(a)s]"},
+		// A quoted name in the OTHER position is still a column: only the
+		// leading colon names a parameter.
+		{"duckdb", `x[1:"a"]`, `x[1:"a"]`},
+		{"duckdb", "[:1]", "[:1]"},
+		{"duckdb", "[:x]", "[$x]"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q, %s): %v", tc.sql, tc.dialect, err)
+		}
+		got, err := Generate(e, tc.dialect)
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.want {
+			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
+		}
+	}
+}
+
+// A name the tokenizer would not give back is refused rather than written.
+//
+// The port builds one only from a token the tokenizer could not classify --
+// a stray backtick among them -- and writing it bare produced SQL nothing
+// could read: `[:CAST(` AS UNKNOWN)]`. The generator fuzzer found it.
+func TestANameThatIsNotAName(t *testing.T) {
+	e, err := ParseOne("[:`::`]", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "duckdb"); err == nil {
+		t.Errorf("wrote %q; a stray backtick is not a name", got)
+	}
+	// A name with a space in it is a name -- it is written in quotes, and
+	// reads back as itself.
+	q, err := ParseOne(`SELECT "we ird"`, "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(q, "duckdb"); err != nil || got != `SELECT "we ird"` {
+		t.Errorf("got %q (%v)", got, err)
+	}
+	if !readableAsABareName("a_1") || readableAsABareName("") || readableAsABareName("a b") {
+		t.Error("readableAsABareName disagrees with what a bare name is")
+	}
+}

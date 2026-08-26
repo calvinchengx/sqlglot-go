@@ -680,8 +680,11 @@ func (p *parser) atSliceStart() bool {
 	// `$WHERE` form still takes keywords -- that is a different token and a
 	// different rule.
 	n := p.next()
-	return n == nil || n.Type != TokVAR
+	return n == nil || (n.Type != TokVAR && !isQuotedName(n))
 }
+
+// isQuotedName reports whether a token is a name written in quotes.
+func isQuotedName(t *Token) bool { return t != nil && t.Type == TokIDENTIFIER }
 
 // parseBracketItems reads what sits between `[` and `]`: a comma-separated
 // list where any item may be a slice. `x[:]` is a Slice with neither bound,
@@ -756,7 +759,12 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		// and `[:1]` is a slice with no lower bound -- the reference tells
 		// them apart the same way, and treating a number as a parameter name
 		// here read `[:0.]` as a parameter called `0.`.
-		if n := p.next(); isParameterName(n) && n.Type != TokNUMBER {
+		//
+		// A QUOTED name counts here, unlike after `@`: `[:"a"]` is the
+		// parameter `a` and the quotes are not kept, where `@"x"` carries an
+		// Identifier. The colon form was reading it as a slice instead, and
+		// wrote `[:"a"]` back for a tree the reference writes as `[$a]`.
+		if n := p.next(); (isParameterName(n) || isQuotedName(n)) && n.Type != TokNUMBER {
 			p.advance()
 			p.advance()
 			return p.dotted(New("Placeholder", Arg{"this", n.Text})), nil
