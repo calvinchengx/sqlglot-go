@@ -365,6 +365,9 @@ type ParserTables struct {
 	// SetWithoutASign: a SET may be written with no `=` between the name
 	// and the value here.
 	SetWithoutASign bool
+	// PartitionSQL is how a table's PARTITION clause is written, with
+	// {members} where its members go.
+	PartitionSQL string
 	// RenameTarget says how much of a qualified name a RENAME TO writes:
 	// the whole thing, the last part only, or -- empty -- neither,
 	// because the dialect writes another statement entirely.
@@ -3743,6 +3746,7 @@ var parserTables = map[string]*ParserTables{
 		TransactionNameWritten:   true,
 		OffsetRowsWord:           "",
 		IndexOnWord:              "ON",
+		PartitionSQL:             "PARTITION({members})",
 		ComputedColumnSpelling:   "AS {expr}",
 		ComputedKeepsType:        true,
 		IdentityWritten:          true,
@@ -7362,6 +7366,7 @@ var parserTables = map[string]*ParserTables{
 		TransactionNameWritten:   false,
 		OffsetRowsWord:           "ROWS",
 		IndexOnWord:              "ON",
+		PartitionSQL:             "WITH (PARTITIONS({members}))",
 		ComputedColumnSpelling:   "AS {expr}",
 		ComputedKeepsType:        false,
 		IdentityWritten:          false,
@@ -11068,6 +11073,7 @@ var parserTables = map[string]*ParserTables{
 		TransactionNameWritten:   true,
 		OffsetRowsWord:           "",
 		IndexOnWord:              "ON",
+		PartitionSQL:             "PARTITION({members})",
 		ComputedColumnSpelling:   "GENERATED ALWAYS AS ({expr}) STORED",
 		ComputedKeepsType:        true,
 		IdentityWritten:          true,
@@ -14946,6 +14952,7 @@ var parserTables = map[string]*ParserTables{
 		TransactionNameWritten:   true,
 		OffsetRowsWord:           "",
 		IndexOnWord:              "ON",
+		PartitionSQL:             "PARTITION({members})",
 		ComputedColumnSpelling:   "AS {expr}",
 		ComputedKeepsType:        true,
 		IdentityWritten:          true,
@@ -18821,6 +18828,7 @@ var parserTables = map[string]*ParserTables{
 		TransactionNameWritten:   true,
 		OffsetRowsWord:           "",
 		IndexOnWord:              "ON TABLE",
+		PartitionSQL:             "PARTITION({members})",
 		ComputedColumnSpelling:   "GENERATED ALWAYS AS ({expr})",
 		ComputedKeepsType:        true,
 		IdentityWritten:          true,

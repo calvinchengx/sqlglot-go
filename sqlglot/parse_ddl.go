@@ -295,6 +295,24 @@ func (p *parser) parseInsert() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	// The partition hangs off the TABLE, not off the INSERT -- the Insert's
+	// own `partition` stays false. It says which partition is written, which
+	// is part of naming the target rather than part of the statement.
+	if p.atWords("PARTITION") && p.next() != nil && p.next().Type == TokL_PAREN {
+		p.advance()
+		members, err := p.parseParenthesisedList()
+		if err != nil {
+			return nil, err
+		}
+		table.Set("partition", New("Partition",
+			Arg{"subpartition", false}, Arg{"expressions", members}))
+	}
+	exists := false
+	if p.atWords("IF", "EXISTS") {
+		p.advance()
+		p.advance()
+		exists = true
+	}
 	this := table
 	if p.at(TokL_PAREN) {
 		columns, err := p.parseInsertColumns()
@@ -342,7 +360,7 @@ func (p *parser) parseInsert() (*Expression, error) {
 
 	return New("Insert",
 		Arg{"hint", nil}, Arg{"is_function", false}, Arg{"this", this},
-		Arg{"stored", false}, Arg{"by_name", false}, Arg{"exists", false},
+		Arg{"stored", false}, Arg{"by_name", false}, Arg{"exists", exists},
 		Arg{"where", nil}, Arg{"using", nil}, Arg{"partition", false},
 		Arg{"settings", false}, Arg{"default", false},
 		Arg{"expression", expression},

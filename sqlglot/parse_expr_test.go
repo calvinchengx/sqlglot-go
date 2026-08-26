@@ -3783,3 +3783,56 @@ func TestInsertReturningAndConflict(t *testing.T) {
 		}
 	}
 }
+
+// Which partition an INSERT writes, and whether the target has to be there
+// already.
+//
+// The partition hangs off the TABLE and not off the INSERT -- the statement's
+// own `partition` argument stays false. It is part of naming the target.
+func TestInsertPartitionAndExists(t *testing.T) {
+	for _, tc := range []struct{ name, write, sql, want string }{
+		{"a partition", "", "INSERT OVERWRITE TABLE a.b PARTITION(ds) SELECT x FROM y",
+			"INSERT OVERWRITE TABLE a.b PARTITION(ds) SELECT x FROM y"},
+		{"several", "", "INSERT OVERWRITE TABLE a.b PARTITION(ds, hour) SELECT x FROM y",
+			"INSERT OVERWRITE TABLE a.b PARTITION(ds, hour) SELECT x FROM y"},
+		{"a named value", "", "INSERT OVERWRITE TABLE a.b PARTITION(ds = 'YYYY-MM-DD') SELECT x FROM y",
+			"INSERT OVERWRITE TABLE a.b PARTITION(ds = 'YYYY-MM-DD') SELECT x FROM y"},
+		{"and a column list", "", "INSERT INTO a.b PARTITION(DAY = '2024-04-14') (col1, col2) SELECT x FROM y",
+			"INSERT INTO a.b PARTITION(DAY = '2024-04-14') (col1, col2) SELECT x FROM y"},
+		// T-SQL wraps the clause in words of its own.
+		{"T-SQL wraps it", "tsql", "INSERT OVERWRITE TABLE a.b PARTITION(ds) SELECT x FROM y",
+			"INSERT OVERWRITE TABLE a.b WITH (PARTITIONS(ds)) SELECT x FROM y"},
+		{"only if it is there", "", "INSERT OVERWRITE TABLE x IF EXISTS SELECT * FROM y",
+			"INSERT OVERWRITE TABLE x IF EXISTS SELECT * FROM y"},
+		{"into, if it is there", "", "INSERT INTO x.z IF EXISTS SELECT * FROM y",
+			"INSERT INTO x.z IF EXISTS SELECT * FROM y"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.write)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// The partition is on the table, which is where a guard has to look for it.
+	e, err := ParseOne("INSERT OVERWRITE TABLE a.b PARTITION(ds) SELECT 1", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if e.Args["partition"] != false {
+		t.Errorf("the INSERT's own partition is %v; it belongs to the table", e.Args["partition"])
+	}
+	if len(e.FindAll("Partition")) != 1 {
+		t.Error("no Partition on the table")
+	}
+	if _, err := ParseOne("INSERT OVERWRITE TABLE a.b PARTITION(ds SELECT 1", ""); err == nil {
+		t.Error("an unclosed partition was read")
+	}
+}

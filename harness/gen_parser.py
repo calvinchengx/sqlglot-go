@@ -1432,6 +1432,24 @@ def set_without_a_sign(dialect: str) -> bool:
         return False
 
 
+def partition_sql(dialect: str) -> str:
+    """How a table's PARTITION clause is written, with {members} in it.
+
+    `PARTITION(ds)` almost everywhere; T-SQL wraps it as `WITH (PARTITIONS(ds))`.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one(
+            "INSERT OVERWRITE TABLE t PARTITION(zzmember) SELECT 1"
+        ).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return "PARTITION({members})"
+    head, _, tail = text.partition("TABLE t ")
+    del head
+    return tail.split(" SELECT")[0].replace("zzmember", "{members}")
+
+
 def merge_without_target(dialect: str) -> bool:
     """Whether a MERGE drops the target's name from the columns it assigns.
 
@@ -3683,6 +3701,7 @@ def main() -> int:
         "\t// SetItemKindWritten says whether a SET\'s scope word survives, per\n\t// word. Dropping one changes which scope the setting belongs to.\n\tSetItemKindWritten map[string]bool\n",
         "\t// SetItemVariableSeparator sits between a VARIABLE and its value,\n\t// which is not always what sits between a setting and its value.\n\tSetItemVariableSeparator string\n",
         "\t// SetWithoutASign: a SET may be written with no `=` between the name\n\t// and the value here.\n\tSetWithoutASign bool\n",
+        "\t// PartitionSQL is how a table\'s PARTITION clause is written, with\n\t// {members} where its members go.\n\tPartitionSQL string\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -4253,6 +4272,7 @@ def main() -> int:
         out.append("\t\tTransactionNameWritten: %s,\n" % str(_tn).lower())
         out.append(f"\t\tOffsetRowsWord: {gostr(offset_rows_word(name))},\n")
         out.append(f"\t\tIndexOnWord: {gostr(index_on_word(name))},\n")
+        out.append(f"\t\tPartitionSQL: {gostr(partition_sql(name))},\n")
         _ccs, _cct = computed_column_spelling(name)
         out.append(f"\t\tComputedColumnSpelling: {gostr(_ccs)},\n")
         out.append("\t\tComputedKeepsType: %s,\n" % str(_cct).lower())

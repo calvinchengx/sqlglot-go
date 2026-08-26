@@ -73,6 +73,7 @@ func init() {
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
+		"Partition":                           (*generator).writePartition,
 		"OnConflict":                          (*generator).writeOnConflict,
 		"Pragma":                              (*generator).writePragma,
 		"Comment":                             (*generator).writeComment,
@@ -326,6 +327,11 @@ func (g *generator) writeTable(e *Expression) string {
 		} else {
 			out += " " + version
 		}
+	}
+	// The partition names WHICH partition is written, and hangs off the table
+	// because it is part of naming the target.
+	if partition := g.child(e, "partition"); partition != "" {
+		out += " " + partition
 	}
 	// The locking hints come after the alias too. Every dialect but T-SQL
 	// DROPS them: a hint is advice about how to READ rather than part of what
@@ -2221,6 +2227,10 @@ func (g *generator) writeInsert(e *Expression) string {
 	} else {
 		out += "INTO "
 	}
+	exists := ""
+	if yes, _ := e.Args["exists"].(bool); yes {
+		exists = " IF EXISTS"
+	}
 	was := g.inColumnList
 	g.inColumnList = true
 	target := g.child(e, "this")
@@ -2238,6 +2248,7 @@ func (g *generator) writeInsert(e *Expression) string {
 			}
 		}
 	}
+	target += exists
 	conflict := g.child(e, "conflict")
 	returning := g.child(e, "returning")
 	if g.tables.ReturningEnd {
@@ -3279,4 +3290,9 @@ func (g *generator) writeOnConflict(e *Expression) string {
 		out += " " + where
 	}
 	return out
+}
+
+// writePartition writes which partition of a table is being written.
+func (g *generator) writePartition(e *Expression) string {
+	return strings.ReplaceAll(g.tables.PartitionSQL, "{members}", g.list(e))
 }
