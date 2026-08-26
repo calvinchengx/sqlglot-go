@@ -1491,6 +1491,24 @@ def alter_set_list_is_settings(dialect: str) -> bool:
     return not any(True for _ in tree.find_all(exp.Properties))
 
 
+def key_constraint_options(dialect: str) -> dict:
+    """The words that may follow a REFERENCES or a key, and what may follow
+    each of them.
+
+    `DEFERRABLE` stands alone; `INITIALLY` takes DEFERRED or IMMEDIATE; `NOT`
+    takes ENFORCED. Read off the reference's own table rather than
+    transcribed, because a word missing from it is a word the reference
+    refuses.
+    """
+    from sqlglot.dialects.dialect import Dialect
+
+    out = {}
+    P = Dialect.get_or_raise(dialect or None).parser_class
+    for word, follows in getattr(P, "KEY_CONSTRAINT_OPTIONS", {}).items():
+        out[word.upper()] = sorted(f.upper() for f in (follows or ()))
+    return out
+
+
 def merge_without_target(dialect: str) -> bool:
     """Whether a MERGE drops the target's name from the columns it assigns.
 
@@ -3745,6 +3763,7 @@ def main() -> int:
         "\t// PartitionSQL is how a table\'s PARTITION clause is written, with\n\t// {members} where its members go.\n\tPartitionSQL string\n",
         "\t// AlterSetOptionWritten: an `ALTER TABLE ... SET` keeps the words that\n\t// say WHAT it sets, and AlterSetWrapsOptions whether a list of\n\t// settings is written in parentheses.\n\tAlterSetOptionWritten bool\n\tAlterSetWrapsOptions  bool\n",
         "\t// AlterSetListIsSettings: `ALTER TABLE t SET (k = v)` is a list of\n\t// settings here rather than of table properties.\n\tAlterSetListIsSettings bool\n",
+        "\t// KeyConstraintOptions are the words that may follow a REFERENCES or a\n\t// key, and what may follow each of them.\n\tKeyConstraintOptions map[string][]string\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -4316,6 +4335,11 @@ def main() -> int:
         out.append(f"\t\tOffsetRowsWord: {gostr(offset_rows_word(name))},\n")
         out.append(f"\t\tIndexOnWord: {gostr(index_on_word(name))},\n")
         out.append(f"\t\tPartitionSQL: {gostr(partition_sql(name))},\n")
+        out.append("\t\tKeyConstraintOptions: map[string][]string{\n")
+        for word, follows in sorted(key_constraint_options(name).items()):
+            inner = ", ".join(gostr(f) for f in follows)
+            out.append(f"\t\t\t{gostr(word)}: {{{inner}}},\n")
+        out.append("\t\t},\n")
         _aso, _asw = alter_set_conventions(name)
         out.append("\t\tAlterSetOptionWritten: %s,\n" % str(_aso).lower())
         out.append("\t\tAlterSetWrapsOptions: %s,\n" % str(_asw).lower())

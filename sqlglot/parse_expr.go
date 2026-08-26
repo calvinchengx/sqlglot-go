@@ -1474,22 +1474,44 @@ func (p *parser) parseStructField() (*Expression, error) {
 }
 
 // parseArraySuffix wraps a type in as many ARRAY layers as it has bracket
-// pairs. `INT[3]` is a fixed-size array only where the dialect has them; where
-// it does not, the reference RETREATS and reads the brackets as a subscript of
-// the cast, so the loop stops without consuming them rather than building an
+// pairs, and in one more where the word ARRAY follows it.
+//
+// `INT[3]` is a fixed-size array only where the dialect has them -- unless the
+// type is a COLUMN's, where every dialect takes the size. Where neither
+// holds, the reference RETREATS and reads the brackets as a subscript of the
+// cast, so the loop stops without consuming them rather than building an
 // array the reference never builds.
 func (p *parser) parseArraySuffix(dt *Expression) (*Expression, error) {
-	for p.at(TokL_BRACKET) {
+	for {
+		// `integer ARRAY` is `integer[]` written the long way, and
+		// `integer ARRAY[3]` is `integer[3]` -- one layer with a size, not
+		// a layer for the word and another for the brackets.
+		arrayWord := false
+		if p.atWords("ARRAY") {
+			p.advance()
+			arrayWord = true
+		}
+		if !p.at(TokL_BRACKET) {
+			if arrayWord {
+				dt = arrayOf(dt, nil)
+				continue
+			}
+			return dt, nil
+		}
+
 		var values []*Expression
 		if p.atPair(TokL_BRACKET, TokR_BRACKET) {
 			p.advance()
 			p.advance()
 		} else {
-			if !p.tables.SupportsFixedSizeArrays {
+			if !p.tables.SupportsFixedSizeArrays && !p.inColumnType && !arrayWord {
 				return dt, nil
 			}
 			size := p.next()
 			if size == nil || size.Type != TokNUMBER {
+				if arrayWord {
+					return nil, p.unsupported("an array size that is not a number")
+				}
 				return dt, nil
 			}
 			p.advance()
@@ -1501,17 +1523,21 @@ func (p *parser) parseArraySuffix(dt *Expression) (*Expression, error) {
 				New("Literal", Arg{"this", size.Text}, Arg{"is_string", false}),
 			}
 		}
-		args := []Arg{
-			{"this", DataTypeKind("ARRAY")},
-			{"expressions", []*Expression{dt}},
-		}
-		if values != nil {
-			args = append(args, Arg{"values", values})
-		}
-		args = append(args, Arg{"nested", true})
-		dt = New("DataType", args...)
+		dt = arrayOf(dt, values)
 	}
-	return dt, nil
+}
+
+// arrayOf wraps a type in one ARRAY layer, with a fixed size when it has one.
+func arrayOf(dt *Expression, values []*Expression) *Expression {
+	args := []Arg{
+		{"this", DataTypeKind("ARRAY")},
+		{"expressions", []*Expression{dt}},
+	}
+	if values != nil {
+		args = append(args, Arg{"values", values})
+	}
+	args = append(args, Arg{"nested", true})
+	return New("DataType", args...)
 }
 
 // parseScalarSubquery reads a parenthesised query used where a value goes.

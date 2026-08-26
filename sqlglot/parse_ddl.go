@@ -1,6 +1,7 @@
 package sqlglot
 
 import (
+	"slices"
 	"strings"
 	"unicode"
 )
@@ -178,7 +179,7 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		kind, err := p.parseDataType()
+		kind, err := p.parseColumnType()
 		if err != nil {
 			return nil, err
 		}
@@ -834,7 +835,7 @@ func (p *parser) parseAddedColumn(exists bool) (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	kind, err := p.parseDataType()
+	kind, err := p.parseColumnType()
 	if err != nil {
 		return nil, err
 	}
@@ -958,6 +959,35 @@ func (p *parser) parseKeyConstraintOptions() ([]string, error) {
 		// The EVENT keeps the case it was written in; only the action is
 		// spelled by the table above.
 		options = append(options, "ON "+event.Text+" "+action)
+	}
+	// The rest of the vocabulary -- DEFERRABLE, INITIALLY DEFERRED, NOT
+	// ENFORCED -- is a table of words and the words that may follow each.
+	// Read off the reference's own rather than transcribed: a word missing
+	// from it is a word the reference refuses.
+	for {
+		c := p.curr()
+		if c == nil {
+			break
+		}
+		follows, known := p.tables.KeyConstraintOptions[strings.ToUpper(c.Text)]
+		if !known {
+			break
+		}
+		word := strings.ToUpper(c.Text)
+		p.advance()
+		if len(follows) > 0 {
+			next := p.curr()
+			if next == nil {
+				return nil, p.unsupported(word + " with nothing after it")
+			}
+			second := strings.ToUpper(next.Text)
+			if !slices.Contains(follows, second) {
+				return nil, p.unsupported(word + " " + second)
+			}
+			p.advance()
+			word += " " + second
+		}
+		options = append(options, word)
 	}
 	return options, nil
 }
@@ -2456,4 +2486,16 @@ func (p *parser) parseAlterSet() (*Expression, error) {
 		return nil, p.unsupported("an ALTER TABLE SET this port does not read")
 	}
 	return node, nil
+}
+
+// parseColumnType reads the type of a COLUMN, where a fixed-size array is a
+// type in every dialect. Outside a column only the dialects that have them
+// read `INT[3]` that way, which is why the position is recorded rather than
+// asked of the type alone.
+func (p *parser) parseColumnType() (*Expression, error) {
+	was := p.inColumnType
+	p.inColumnType = true
+	kind, err := p.parseDataType()
+	p.inColumnType = was
+	return kind, err
 }

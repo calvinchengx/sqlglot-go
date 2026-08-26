@@ -67,7 +67,11 @@ type parser struct {
 	index          int
 	cfg            *Config
 	tables         *ParserTables
-	dialect        string
+	// inColumnType marks the type of a COLUMN being read, where a fixed-size
+	// array is a type in every dialect -- outside one, only the dialects that
+	// have them read `INT[3]` that way.
+	inColumnType bool
+	dialect      string
 }
 
 func (p *parser) curr() *Token {

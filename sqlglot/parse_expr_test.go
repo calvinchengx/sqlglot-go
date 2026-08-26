@@ -1933,7 +1933,8 @@ func TestColumnConstraints(t *testing.T) {
 		"CREATE TABLE z (a INT COMMENT 1)",
 		"CREATE TABLE z (a INT COLLATE)",
 		"CREATE TABLE z (a INT REFERENCES p (b) ON DELETE PANIC)",
-		"CREATE TABLE z (a INT REFERENCES p (b) NOT ENFORCED)",
+		"CREATE TABLE z (a INT REFERENCES p (b) NOT LIKELY)",
+		"CREATE TABLE z (a INT REFERENCES p (b) INITIALLY)",
 		"CREATE TABLE z (a INT CONSTRAINT c)",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
@@ -1958,6 +1959,16 @@ func TestColumnConstraints(t *testing.T) {
 			"CREATE TABLE f (b INT REFERENCES z (i) ON UPDATE RESTRICT)"},
 		{"CREATE TABLE f (b INT REFERENCES z (i) ON DELETE SET DEFAULT)",
 			"CREATE TABLE f (b INT REFERENCES z (i) ON DELETE SET DEFAULT)"},
+		// The rest of the vocabulary: a word alone, or a word and the one
+		// word that may follow it.
+		{"CREATE TABLE foo (baz_id INT REFERENCES baz (id) DEFERRABLE)",
+			"CREATE TABLE foo (baz_id INT REFERENCES baz (id) DEFERRABLE)"},
+		{"CREATE TABLE foo (b INT REFERENCES z (i) NOT ENFORCED)",
+			"CREATE TABLE foo (b INT REFERENCES z (i) NOT ENFORCED)"},
+		{"CREATE TABLE foo (b INT REFERENCES z (i) DEFERRABLE INITIALLY DEFERRED)",
+			"CREATE TABLE foo (b INT REFERENCES z (i) DEFERRABLE INITIALLY DEFERRED)"},
+		{"CREATE TABLE foo (b INT REFERENCES z (i) MATCH FULL)",
+			"CREATE TABLE foo (b INT REFERENCES z (i) MATCH FULL)"},
 		// A NAMED constraint keeps its name on the wrapper, in front of the
 		// kind it names.
 		{"CREATE TABLE k (s INT CONSTRAINT k_fk REFERENCES szerzo)",
@@ -3892,5 +3903,40 @@ func TestAlterTableSet(t *testing.T) {
 	}
 	if _, err := ParseOne("ALTER TABLE t1 SET SOMETHING", "postgres"); err == nil {
 		t.Error("an unknown SET was read")
+	}
+}
+
+// A fixed-size array is a type in every dialect where it is a COLUMN's type.
+// Outside a column only the dialects that have them read `INT[3]` that way,
+// which is why the position is recorded rather than asked of the type alone.
+//
+// The flag the port used to consult is the reference's own
+// SUPPORTS_FIXED_SIZE_ARRAYS, and it is false for PostgreSQL -- which reads
+// `INT[3]` as a type all the same, because the reference asks a different
+// question inside a column list.
+func TestSizedArrayTypes(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql, want string }{
+		{"postgres", "CREATE TABLE t (col INT[3])", "CREATE TABLE t (col INT[3])"},
+		{"postgres", "CREATE TABLE t (col INT[3][5])", "CREATE TABLE t (col INT[3][5])"},
+		{"postgres", "CREATE TABLE t (col integer ARRAY)", "CREATE TABLE t (col INT[])"},
+		{"postgres", "CREATE TABLE t (col integer ARRAY[3])", "CREATE TABLE t (col INT[3])"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		got, err := Generate(e, tc.dialect)
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.want {
+			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
+		}
+	}
+	// Outside a column, PostgreSQL reads the brackets as a subscript of the
+	// cast rather than as a size -- the reference retreats there, and so does
+	// the port.
+	if e, err := ParseOne("SELECT CAST(x AS INT[3])", "postgres"); err == nil {
+		t.Logf("read as %s", e.Class)
 	}
 }
