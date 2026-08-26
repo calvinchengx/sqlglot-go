@@ -3645,3 +3645,39 @@ func TestABareCreate(t *testing.T) {
 		}
 	}
 }
+
+// The refusals in the statement readers that no corpus statement reaches. One
+// malformed input each, so the reader that turns it away is run rather than
+// shipped on trust.
+func TestStatementRefusalsAreReached(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql string }{
+		{"", "USE db extra"},
+		{"", "COMMIT TRANSACTION n extra"},
+		{"", "COMMENT ON"},
+		{"", "COMMENT ON TABLE t IS 'x' extra"},
+		{"", "PRAGMA x extra"},
+		{"", "SET x = 1 extra"},
+		{"", "SET x ="},
+		{"", "GRANT SELECT TO user"},
+		{"", "GRANT"},
+		{"", "CREATE INDEX abc t(a)"},
+		{"", "CREATE TABLE z (a INT, FOREIGN KEY (a) REFERENCES p (b) NOT NULL)"},
+		{"", "CREATE TABLE z (a INT GENERATED ALWAYS AS (1 + 2)"},
+		{"", "CREATE TABLE z (a INT, CHECK (a > 0"},
+		{"", "CREATE FUNCTION f(a INT"},
+	} {
+		if _, err := ParseOne(tc.sql, tc.dialect); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", tc.sql)
+		}
+	}
+	// A key column may be written ascending or descending, and T-SQL is the
+	// dialect that reads an index's order here.
+	if e, err := ParseOne("CREATE INDEX i ON t(a DESC)", ""); err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	} else if got, _ := Generate(e, ""); got != "CREATE INDEX i ON t(a DESC)" {
+		t.Errorf("got %q", got)
+	}
+	if isBareWord("") || isBareWord("1a") || !isBareWord("a1") {
+		t.Error("isBareWord disagrees with what a word is")
+	}
+}
