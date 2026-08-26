@@ -3694,6 +3694,22 @@ func TestSetNeedsASignExceptInTSQL(t *testing.T) {
 	if _, err := ParseOne("SET KEY VALUE", "tsql"); err != nil {
 		t.Errorf("T-SQL writes this form: %v", err)
 	}
+	// The parameter marker is the dialect's -- `@x` in T-SQL, `$x` in
+	// PostgreSQL -- and the ordinary reader is asked which node it builds
+	// rather than this statement guessing.
+	for _, tc := range []struct{ dialect, sql, want string }{
+		{"tsql", "SET @x = 1", "SET @x = 1"},
+		{"postgres", "SET $x = 1", "SET $x = 1"},
+		{"postgres", "SET $0 = 0", "SET $0 = 0"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q, %s): %v", tc.sql, tc.dialect, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
 	// And a PARAMETER's name is put back bare, so a name that is not a name
 	// makes SQL nothing can read: PostgreSQL spells `@x` as `$x`, and a
 	// dollar opens a quote that never closes.

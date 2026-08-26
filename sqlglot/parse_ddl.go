@@ -2175,13 +2175,18 @@ func (p *parser) parseSetStatementItem() (*Expression, error) {
 			return nil, err
 		}
 		name = New("Tuple", Arg{"expressions", members})
+	case p.at(TokPARAMETER):
+		// The marker is the dialect's -- `@x` in T-SQL, `$x` in PostgreSQL --
+		// and which node it builds is the dialect's too, so the ordinary
+		// reader is asked rather than a rule of this statement's own.
+		name, err = p.parsePrimary()
+		if err != nil {
+			return nil, err
+		}
 	default:
-		name = p.parseParameterName()
-		if name == nil {
-			name, err = p.parseColumn()
-			if err != nil {
-				return nil, err
-			}
+		name, err = p.parseColumn()
+		if err != nil {
+			return nil, err
 		}
 	}
 
