@@ -1256,6 +1256,53 @@ def string_class_sql(dialect: str) -> dict:
     return out
 
 
+def offset_rows_word(dialect: str) -> str:
+    """The word T-SQL writes after an OFFSET count, and nobody else does.
+
+    `OFFSET 2 ROWS` and `OFFSET 2` are the same tree; only the spelling
+    differs, so the word is read off a rendering rather than kept on the node.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("SELECT * FROM t ORDER BY 1 OFFSET 2").sql(
+            dialect=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return ""
+    return text.split("OFFSET 2", 1)[1].strip()
+
+
+def interval_unit_aliases(dialect: str) -> dict:
+    """The interval unit spellings the reference NORMALISES, and to what.
+
+    `INTERVAL '500 us'` records MICROSECOND, not US. There is a 92-entry map
+    behind it, but not every entry takes effect here -- `usec` and `hrs` are
+    in it and come back unchanged -- so the map is not transcribed. Each key
+    is RUN and only the ones that actually change are kept.
+    """
+    import sqlglot
+    from sqlglot.dialects.dialect import Dialect
+
+    D = Dialect.get_or_raise(dialect or None)
+    out = {}
+    for key in getattr(D, "DATE_PART_MAPPING", {}):
+        if not key.isalpha():
+            continue
+        try:
+            node = sqlglot.parse_one(
+                "SELECT INTERVAL '1 %s'" % key, read=dialect or None
+            ).selects[0]
+        except Exception:  # noqa: BLE001
+            continue
+        unit = node.args.get("unit")
+        if unit is None:
+            continue
+        if unit.name != key.upper():
+            out[key.upper()] = unit.name
+    return out
+
+
 def merge_without_target(dialect: str) -> bool:
     """Whether a MERGE drops the target's name from the columns it assigns.
 
@@ -3496,6 +3543,8 @@ def main() -> int:
         "\t// GeneratedExpressionIsComputed: `GENERATED ALWAYS AS (x)` with no\n\t// STORED is a COMPUTED column here, not an identity with an\n\t// expression on it.\n\tGeneratedExpressionIsComputed bool\n",
         "\t// IndexOnWord sits between an index and the table it is on.\n\tIndexOnWord string\n",
         "\t// StringClassSQL is how each kind of quoted string is written, keyed by\n\t// class. The value is the template, a tab, and whether the body takes a\n\t// string\'s own escaping. A class missing from the map is one this\n\t// dialect writes in a way that loses the value.\n\tStringClassSQL map[string]string\n",
+        "\t// OffsetRowsWord is written after an OFFSET count, and is empty in\n\t// every dialect but T-SQL.\n\tOffsetRowsWord string\n",
+        "\t// IntervalUnitAliases are the unit spellings an INTERVAL normalises,\n\t// keyed by the upper-cased spelling written.\n\tIntervalUnitAliases map[string]string\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -4051,6 +4100,12 @@ def main() -> int:
         for cls, spec in sorted(_scs.items()):
             out.append(f"\t\t\t{gostr(cls)}: {gostr(spec)},\n")
         out.append("\t\t},\n")
+        _iua = interval_unit_aliases(name)
+        out.append("\t\tIntervalUnitAliases: map[string]string{\n")
+        for key, value in sorted(_iua.items()):
+            out.append(f"\t\t\t{gostr(key)}: {gostr(value)},\n")
+        out.append("\t\t},\n")
+        out.append(f"\t\tOffsetRowsWord: {gostr(offset_rows_word(name))},\n")
         out.append(f"\t\tIndexOnWord: {gostr(index_on_word(name))},\n")
         _ccs, _cct = computed_column_spelling(name)
         out.append(f"\t\tComputedColumnSpelling: {gostr(_ccs)},\n")

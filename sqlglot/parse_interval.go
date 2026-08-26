@@ -31,7 +31,7 @@ func (p *parser) parseInterval() (*Expression, error) {
 	var unit *Expression
 	if c := p.curr(); c != nil && c.Type == TokVAR && !strings.EqualFold(c.Text, "TO") {
 		p.advance()
-		unit = New("Var", Arg{"this", strings.ToUpper(c.Text)})
+		unit = New("Var", Arg{"this", p.normalisedIntervalUnit(c.Text)})
 	}
 
 	switch {
@@ -48,7 +48,7 @@ func (p *parser) parseInterval() (*Expression, error) {
 		}
 		if len(parts) == 1 {
 			this = New("Literal", Arg{"this", parts[0][1]}, Arg{"is_string", true})
-			unit = New("Var", Arg{"this", strings.ToUpper(parts[0][2])})
+			unit = New("Var", Arg{"this", p.normalisedIntervalUnit(parts[0][2])})
 		}
 	}
 
@@ -62,8 +62,21 @@ func (p *parser) parseInterval() (*Expression, error) {
 		p.advance()
 		unit = New("IntervalSpan",
 			Arg{"this", unit},
-			Arg{"expression", New("Var", Arg{"this", strings.ToUpper(end.Text)})})
+			Arg{"expression", New("Var", Arg{"this", p.normalisedIntervalUnit(end.Text)})})
 	}
 
 	return New("Interval", Arg{"this", this}, Arg{"unit", unit}), nil
+}
+
+// normalisedIntervalUnit is the unit the reference records for a spelling. Most words
+// are simply upper-cased, and the short forms are NAMES for the long ones:
+// `INTERVAL '500 us'` records MICROSECOND. Which spellings normalise is
+// probed rather than transcribed -- `usec` and `hrs` are in the reference's
+// own table and come back unchanged.
+func (p *parser) normalisedIntervalUnit(text string) string {
+	upper := strings.ToUpper(text)
+	if full, ok := p.tables.IntervalUnitAliases[upper]; ok {
+		return full
+	}
+	return upper
 }

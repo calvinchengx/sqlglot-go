@@ -651,6 +651,12 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			if err != nil {
 				return err
 			}
+			// `OFFSET 2 ROWS` and `OFFSET 2` are the same tree: the word
+			// says nothing the count does not, and T-SQL is the only dialect
+			// that writes it.
+			if p.atWords("ROWS") || p.atWords("ROW") {
+				p.advance()
+			}
 			offset := New("Offset", Arg{"this", nil}, Arg{"expression", e}, Arg{"expressions", nil})
 			if err := p.setOnce(sel, "offset", offset); err != nil {
 				return err

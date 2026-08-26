@@ -65,10 +65,10 @@ Regenerate with `make service`; nothing in it is authored here.
 | Dialect | Tokens | Trees matched | Of | Unparsed | Mismatched |
 |---|---|---|---|---|---|
 | neutral | 997/997 | 739 | 997 | 258 | 0 |
-| tsql | 597/597 | 347 | 597 | 250 | 0 |
-| postgres | 857/857 | 583 | 857 | 274 | 0 |
-| duckdb | 1631/1631 | 1382 | 1631 | 249 | 0 |
-| databricks | 424/424 | 294 | 424 | 130 | 0 |
+| tsql | 597/597 | 351 | 597 | 246 | 0 |
+| postgres | 857/857 | 588 | 857 | 269 | 0 |
+| duckdb | 1631/1631 | 1385 | 1631 | 246 | 0 |
+| databricks | 424/424 | 295 | 424 | 129 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number

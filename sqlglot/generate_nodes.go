@@ -177,7 +177,10 @@ func (g *generator) writeSelect(e *Expression) string {
 	// tree is the same either way, which is the point: the guard rewrites one
 	// node and the dialect decides where it lands.
 	limit, _ := e.Args["limit"].(*Expression)
-	if limit != nil && g.tables.LimitIsTop {
+	// A FETCH lands in the same slot as a LIMIT but is not one: T-SQL writes
+	// a limit as TOP and a fetch where it stands, and writing the fetch as
+	// TOP left the count behind -- `SELECT TOP  *`.
+	if limit != nil && limit.Class == "Limit" && g.tables.LimitIsTop {
 		add(g.writeLimitWord(limit, "TOP "))
 	}
 
@@ -209,7 +212,10 @@ func (g *generator) writeSelect(e *Expression) string {
 		add(g.node(limit))
 	}
 	add(g.child(e, "offset"))
-	if limit != nil && !g.tables.LimitIsTop && limit.Class == "Fetch" {
+	// A FETCH is written here whatever the dialect does with a LIMIT: T-SQL
+	// writes a limit as TOP and has no other place to put it, but it writes a
+	// fetch at the end like everyone else.
+	if limit != nil && limit.Class == "Fetch" {
 		add(g.node(limit))
 	}
 	// A sample hanging off the QUERY rather than a table is the same node
@@ -627,7 +633,13 @@ func (g *generator) writeLimitWord(e *Expression, word string) string {
 }
 
 func (g *generator) writeOffset(e *Expression) string {
-	return "OFFSET " + g.child(e, "expression")
+	out := "OFFSET " + g.child(e, "expression")
+	// T-SQL says ROWS after the count; nobody else does, and the word is on
+	// no node -- the two spellings are the same tree.
+	if word := g.tables.OffsetRowsWord; word != "" {
+		out += " " + word
+	}
+	return out
 }
 
 func (g *generator) writeNull(*Expression) string { return "NULL" }

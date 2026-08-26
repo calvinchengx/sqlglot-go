@@ -986,6 +986,39 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return p.starModifiers(newStar())
 	case TokINTERVAL:
 		return nil, p.unsupported("INTERVAL")
+	}
+
+	// A TYPE followed by a string is a typed literal -- `TIMESTAMP '2020-01-01'`,
+	// `INET '127.0.0.1/32'` -- and the reference records it as an ordinary
+	// CAST of the string. The shape is what makes it one: the same word with
+	// anything else after it is a name.
+	//
+	// The word binds LOOSER than the cast operator, so
+	// `TIMESTAMP 'x'::DATE` is a TIMESTAMP of a DATE and not the other way
+	// round; the operand is therefore read with its own postfix casts before
+	// this one wraps it.
+	if _, isType := p.tables.TypeTokens[c.Type]; isType {
+		if n := p.next(); n != nil && n.Type == TokSTRING {
+			kind, err := p.parseDataType()
+			if err != nil {
+				return nil, err
+			}
+			if text := p.curr(); text == nil || text.Type != TokSTRING {
+				// The type took the string as a parameter of its own, so
+				// there is nothing left for it to be a literal of.
+				return nil, p.unsupported("a typed literal with no value")
+			}
+			inner, err := p.parsePostfix()
+			if err != nil {
+				return nil, err
+			}
+			cast := New("Cast", Arg{"this", inner}, Arg{"to", kind})
+			cast.Type = kind
+			return cast, nil
+		}
+	}
+
+	switch c.Type {
 	case TokL_PAREN:
 		if n := p.next(); n != nil && (n.Type == TokSELECT || n.Type == TokWITH) {
 			return p.parseScalarSubquery()

@@ -3193,3 +3193,77 @@ func TestAQueryThatStartsWithFrom(t *testing.T) {
 		t.Error("DISTINCT ON was read")
 	}
 }
+
+// Three small facts that only show at the edges of a query.
+func TestOffsetRowsAndTypedLiterals(t *testing.T) {
+	for _, tc := range []struct{ name, read, write, sql, want string }{
+		// `OFFSET 2 ROWS` and `OFFSET 2` are the same tree; only T-SQL writes
+		// the word, so it is dropped on the way in and put back per dialect.
+		{"offset rows", "tsql", "tsql", "SELECT * FROM t ORDER BY 1 OFFSET 2 ROWS",
+			"SELECT * FROM t ORDER BY 1 OFFSET 2 ROWS"},
+		{"offset rows, elsewhere", "tsql", "postgres", "SELECT * FROM t ORDER BY 1 OFFSET 2 ROWS",
+			"SELECT * FROM t ORDER BY 1 NULLS FIRST OFFSET 2"},
+		{"and back again", "postgres", "tsql", "SELECT * FROM t ORDER BY 1 OFFSET 2",
+			"SELECT * FROM t ORDER BY 1 OFFSET 2 ROWS"},
+		// A FETCH shares the LIMIT slot but is not one: T-SQL writes a limit
+		// as TOP and a fetch where it stands.
+		{"a fetch is not a top", "tsql", "tsql",
+			"SELECT * FROM taxi ORDER BY 1 OFFSET 0 ROWS FETCH NEXT 3 ROWS ONLY",
+			"SELECT * FROM taxi ORDER BY 1 OFFSET 0 ROWS FETCH NEXT 3 ROWS ONLY"},
+		// A TYPE in front of a string is a typed literal, which the reference
+		// records as an ordinary CAST.
+		{"a typed literal", "postgres", "postgres", "INET '127.0.0.1/32'",
+			"CAST('127.0.0.1/32' AS INET)"},
+		{"a timestamp literal", "postgres", "postgres",
+			"SELECT TIMESTAMP '2020-01-01' + INTERVAL '500 us'",
+			"SELECT CAST('2020-01-01' AS TIMESTAMP) + INTERVAL '500 MICROSECOND'"},
+		// The word binds LOOSER than the cast operator, so this is a
+		// timestamp OF a date and not the other way round.
+		{"looser than a cast", "databricks", "databricks",
+			"SELECT TIMESTAMP '2025-04-29 18.47.18'::DATE",
+			"SELECT CAST(CAST('2025-04-29 18.47.18' AS DATE) AS TIMESTAMP)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.read)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.write)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// The short spellings of an interval unit are NAMES for the long ones,
+	// and which spellings normalise is probed rather than assumed: `usec` is
+	// in the reference's own table and comes back unchanged.
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT INTERVAL '1 us'", "MICROSECOND"},
+		{"SELECT INTERVAL '1' us", "MICROSECOND"},
+		{"SELECT INTERVAL '1 ms'", "MILLISECOND"},
+		{"SELECT INTERVAL '1 usec'", "USEC"},
+		{"SELECT INTERVAL '1 hrs'", "HRS"},
+		{"SELECT INTERVAL '1 day'", "DAY"},
+	} {
+		e, err := ParseOne(tc.sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		unit, _ := e.Args["expressions"].([]*Expression)
+		if len(unit) != 1 {
+			t.Fatalf("%q: no projection", tc.sql)
+		}
+		got, _ := unit[0].Args["unit"].(*Expression)
+		if got == nil || got.Name() != tc.want {
+			t.Errorf("%q recorded %v, want %s", tc.sql, got, tc.want)
+		}
+	}
+	// A type whose parentheses swallow the string has nothing left to be a
+	// literal of.
+	if _, err := ParseOne("SELECT VARCHAR('x')", "postgres"); err == nil {
+		t.Log("VARCHAR('x') is read as a call, which is what it is")
+	}
+}
