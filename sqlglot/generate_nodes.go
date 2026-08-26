@@ -73,6 +73,7 @@ func init() {
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
+		"OnConflict":                          (*generator).writeOnConflict,
 		"Pragma":                              (*generator).writePragma,
 		"Comment":                             (*generator).writeComment,
 		"Grant":                               (*generator).writeGrant,
@@ -2232,11 +2233,17 @@ func (g *generator) writeInsert(e *Expression) string {
 		if with, _ := expr.Args["with_"].(*Expression); with != nil {
 			prefix := g.node(with)
 			if rest, found := strings.CutPrefix(body, prefix+" "); found {
-				return prefix + " " + out + target + " " + rest
+				body = rest
+				out = prefix + " " + out
 			}
 		}
 	}
-	return out + target + " " + body
+	conflict := g.child(e, "conflict")
+	returning := g.child(e, "returning")
+	if g.tables.ReturningEnd {
+		return clauses(out+target, body, conflict, returning)
+	}
+	return clauses(out+target, returning, body, conflict)
 }
 
 // writeValues writes the rows of a VALUES clause.
@@ -3238,4 +3245,38 @@ func (g *generator) writeComment(e *Expression) string {
 // writePragma writes the engine setting a PRAGMA reads or changes.
 func (g *generator) writePragma(e *Expression) string {
 	return "PRAGMA " + g.child(e, "this")
+}
+
+// writeOnConflict writes what an INSERT does when a row is already there.
+//
+// The keys are written as ORDERED members, which is why one may carry a NULLS
+// clause: the conflict is decided by an index, and this names which one.
+func (g *generator) writeOnConflict(e *Expression) string {
+	out := "ON CONFLICT"
+	if constraint := g.child(e, "constraint"); constraint != "" {
+		out += " ON CONSTRAINT " + constraint
+	}
+	if keys, _ := e.Args["conflict_keys"].([]*Expression); len(keys) > 0 {
+		parts := make([]string, 0, len(keys))
+		for _, key := range keys {
+			parts = append(parts, g.node(key))
+		}
+		out += "(" + strings.Join(parts, ", ") + ")"
+	}
+	if predicate := g.child(e, "index_predicate"); predicate != "" {
+		out += " " + predicate
+	}
+	action, _ := e.Args["action"].(*Expression)
+	if action == nil {
+		return g.fail(e.Class + " that says nothing to do")
+	}
+	name, _ := action.Args["this"].(string)
+	out += " " + name
+	if items, _ := e.Args["expressions"].([]*Expression); len(items) > 0 {
+		out += " SET " + g.list(e)
+	}
+	if where := g.child(e, "where"); where != "" {
+		out += " " + where
+	}
+	return out
 }

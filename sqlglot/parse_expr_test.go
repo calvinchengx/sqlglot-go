@@ -3723,3 +3723,63 @@ func TestSetNeedsASignExceptInTSQL(t *testing.T) {
 		t.Errorf("wrote %q; `a b` is not a name", got)
 	}
 }
+
+// What an INSERT hands back, and what it does when a row is already there.
+//
+// The conflict KEYS are ordered members -- the same shape an index keeps its
+// columns in -- because the conflict is decided by an index and this names
+// which one.
+func TestInsertReturningAndConflict(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"returning", "postgres", "INSERT INTO x VALUES (1, 'a', 2.0) RETURNING a, b",
+			"INSERT INTO x VALUES (1, 'a', 2.0) RETURNING a, b"},
+		{"returning everything", "postgres", "INSERT INTO x VALUES (1) RETURNING *",
+			"INSERT INTO x VALUES (1) RETURNING *"},
+		// T-SQL writes it in front of the query and calls it OUTPUT.
+		{"output", "tsql", "INSERT INTO x (y) OUTPUT x.a, x.b SELECT * FROM z",
+			"INSERT INTO x (y) OUTPUT x.a, x.b SELECT * FROM z"},
+		{"do nothing", "postgres", "INSERT INTO x VALUES (1) ON CONFLICT(id) DO NOTHING",
+			"INSERT INTO x VALUES (1) ON CONFLICT(id) DO NOTHING"},
+		{"do update", "postgres", "INSERT INTO x VALUES (1) ON CONFLICT(id) DO UPDATE SET x.id = 1",
+			"INSERT INTO x VALUES (1) ON CONFLICT(id) DO UPDATE SET x.id = 1"},
+		{"a named constraint", "postgres",
+			"INSERT INTO x VALUES (1) ON CONFLICT ON CONSTRAINT pkey DO NOTHING",
+			"INSERT INTO x VALUES (1) ON CONFLICT ON CONSTRAINT pkey DO NOTHING"},
+		// Two WHEREs, and they mean different things: the first picks which
+		// index decides the conflict, the second which rows the update runs on.
+		{"two wheres", "postgres",
+			"INSERT INTO b (i) VALUES (1) ON CONFLICT(i) WHERE d IS NULL DO UPDATE SET t = 1 WHERE b.t < 1",
+			"INSERT INTO b (i) VALUES (1) ON CONFLICT(i) WHERE d IS NULL DO UPDATE SET t = 1 WHERE b.t < 1"},
+		// A key may be an EXPRESSION rather than a column: the index it names
+		// is over the expression.
+		{"a key that is an expression", "postgres",
+			"INSERT INTO tbl (a, b) VALUES (1, 'x') ON CONFLICT(a, b || c) DO UPDATE SET b = excluded.b",
+			"INSERT INTO tbl (a, b) VALUES (1, 'x') ON CONFLICT(a, b || c) DO UPDATE SET b = excluded.b"},
+		{"both at once", "postgres",
+			"INSERT INTO x VALUES (1) ON CONFLICT(id) DO NOTHING RETURNING *",
+			"INSERT INTO x VALUES (1) ON CONFLICT(id) DO NOTHING RETURNING *"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	for _, sql := range []string{
+		"INSERT INTO x VALUES (1) ON CONFLICT(id)",
+		"INSERT INTO x VALUES (1) ON CONFLICT(id) DO UPDATE",
+		"INSERT INTO x VALUES (1) ON CONFLICT(id) DO SOMETHING",
+	} {
+		if _, err := ParseOne(sql, "postgres"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}

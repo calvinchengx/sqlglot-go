@@ -304,6 +304,14 @@ func (p *parser) parseInsert() (*Expression, error) {
 		this = New("Schema", Arg{"this", table}, Arg{"expressions", columns})
 	}
 
+	// T-SQL writes its OUTPUT here, in front of the query; everyone else
+	// writes RETURNING after it. The node carries it in one place either way,
+	// so where it is READ makes no difference to the tree.
+	returning, err := p.parseReturning()
+	if err != nil {
+		return nil, err
+	}
+
 	var expression *Expression
 	switch {
 	case p.at(TokVALUES):
@@ -316,6 +324,18 @@ func (p *parser) parseInsert() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	var conflict *Expression
+	if p.atWords("ON", "CONFLICT") {
+		conflict, err = p.parseOnConflict()
+		if err != nil {
+			return nil, err
+		}
+	}
+	if returning == nil {
+		if returning, err = p.parseReturning(); err != nil {
+			return nil, err
+		}
+	}
 	if p.curr() != nil {
 		return nil, p.unsupported("INSERT with more than this port reads")
 	}
@@ -326,7 +346,7 @@ func (p *parser) parseInsert() (*Expression, error) {
 		Arg{"where", nil}, Arg{"using", nil}, Arg{"partition", false},
 		Arg{"settings", false}, Arg{"default", false},
 		Arg{"expression", expression},
-		Arg{"conflict", nil}, Arg{"returning", nil},
+		Arg{"conflict", conflict}, Arg{"returning", returning},
 		Arg{"overwrite", overwrite}, Arg{"alternative", nil},
 		Arg{"ignore", false}, Arg{"source", false},
 	), nil
@@ -2267,4 +2287,98 @@ func (p *parser) parsePragma() (*Expression, error) {
 		return nil, p.unsupported("PRAGMA with more than this port reads")
 	}
 	return New("Pragma", Arg{"this", this}), nil
+}
+
+// parseOnConflict reads what an INSERT does when a row is already there:
+// `ON CONFLICT (keys) [WHERE ...] DO NOTHING`, or DO UPDATE with the
+// assignments that follow.
+//
+// The keys are ORDERED members, the same shape an index keeps its columns in
+// -- the conflict is decided by an index, and this names which one.
+func (p *parser) parseOnConflict() (*Expression, error) {
+	p.advance() // ON
+	p.advance() // CONFLICT
+
+	node := New("OnConflict", Arg{"duplicate", false})
+	var keys []*Expression
+	var constraint, indexPredicate *Expression
+	switch {
+	case p.atWords("ON", "CONSTRAINT"):
+		p.advance()
+		p.advance()
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		constraint = name
+	case p.at(TokL_PAREN):
+		members, err := p.parseParenthesisedList()
+		if err != nil {
+			return nil, err
+		}
+		for _, member := range members {
+			keys = append(keys, New("Ordered",
+				Arg{"this", member},
+				Arg{"nulls_first", p.nullsFirst(false)}))
+		}
+		if p.at(TokWHERE) {
+			p.advance()
+			cond, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			indexPredicate = New("Where", Arg{"this", cond})
+		}
+	}
+
+	var assignments []*Expression
+	var where *Expression
+	action := ""
+	switch {
+	case p.atWords("DO", "NOTHING"):
+		p.advance()
+		p.advance()
+		action = "DO NOTHING"
+	case p.atWords("DO", "UPDATE"):
+		p.advance()
+		p.advance()
+		action = "DO UPDATE"
+		if !p.match(TokSET) {
+			return nil, p.unsupported("DO UPDATE without SET")
+		}
+		items, err := p.parseAssignments()
+		if err != nil {
+			return nil, err
+		}
+		assignments = items
+		if p.at(TokWHERE) {
+			p.advance()
+			cond, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			where = New("Where", Arg{"this", cond})
+		}
+	default:
+		return nil, p.unsupported("ON CONFLICT without DO")
+	}
+
+	// Set in the reference's order, which is not the order they are written.
+	if len(assignments) > 0 {
+		node.Set("expressions", assignments)
+	}
+	node.Set("action", New("Var", Arg{"this", action}))
+	if len(keys) > 0 {
+		node.Set("conflict_keys", keys)
+	}
+	if indexPredicate != nil {
+		node.Set("index_predicate", indexPredicate)
+	}
+	if where != nil {
+		node.Set("where", where)
+	}
+	if constraint != nil {
+		node.Set("constraint", constraint)
+	}
+	return node, nil
 }
