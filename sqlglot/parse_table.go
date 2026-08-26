@@ -311,6 +311,14 @@ func (p *parser) parseTable() (*Expression, error) {
 	if alias != nil {
 		table.Set("alias", alias)
 	}
+	// T-SQL's locking hints come after the alias: `FROM a AS b WITH (NOLOCK)`.
+	if p.at(TokWITH) && p.next() != nil && p.next().Type == TokL_PAREN {
+		hint, err := p.parseTableHint()
+		if err != nil {
+			return nil, err
+		}
+		table.Set("hints", []*Expression{hint})
+	}
 	// TABLESAMPLE hangs off the TABLE, after its alias.
 	if p.at(TokTABLE_SAMPLE) {
 		sample, err := p.parseTableSample()
@@ -1002,4 +1010,38 @@ func (p *parser) parseLateral() (*Expression, error) {
 		Arg{"alias", alias},
 		Arg{"cross_apply", nil},
 		Arg{"ordinality", ordinality}), nil
+}
+
+// parseTableHint reads `WITH (NOLOCK, INDEX(i))`, the advice T-SQL gives an
+// engine about how to read a table.
+//
+// A bare word is a Var and keeps the case it was written in; anything with
+// parentheses is an ordinary call.
+func (p *parser) parseTableHint() (*Expression, error) {
+	p.advance() // WITH
+	p.advance() // the opening parenthesis
+	var members []*Expression
+	for !p.at(TokR_PAREN) {
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("unclosed table hint")
+		}
+		if n := p.next(); n != nil && (n.Type == TokCOMMA || n.Type == TokR_PAREN) {
+			p.advance()
+			members = append(members, New("Var", Arg{"this", c.Text}))
+		} else {
+			member, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			members = append(members, member)
+		}
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed table hint")
+	}
+	return New("WithTableHint", Arg{"expressions", members}), nil
 }

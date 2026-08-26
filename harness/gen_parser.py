@@ -1303,6 +1303,25 @@ def interval_unit_aliases(dialect: str) -> dict:
     return out
 
 
+def table_hints_written(dialect: str) -> bool:
+    """Whether a table's locking hints survive being written.
+
+    `WITH (NOLOCK)` is T-SQL's; every other dialect here DROPS it. The hint is
+    advisory rather than part of what the query returns, and dropping one only
+    ever makes the read stricter -- which is why the port follows the
+    reference here rather than refusing as it does where a guarantee is lost.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("SELECT x FROM a WITH (NOLOCK)", read="tsql").sql(
+            dialect=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return False
+    return "NOLOCK" in text
+
+
 def merge_without_target(dialect: str) -> bool:
     """Whether a MERGE drops the target's name from the columns it assigns.
 
@@ -3545,6 +3564,7 @@ def main() -> int:
         "\t// StringClassSQL is how each kind of quoted string is written, keyed by\n\t// class. The value is the template, a tab, and whether the body takes a\n\t// string\'s own escaping. A class missing from the map is one this\n\t// dialect writes in a way that loses the value.\n\tStringClassSQL map[string]string\n",
         "\t// OffsetRowsWord is written after an OFFSET count, and is empty in\n\t// every dialect but T-SQL.\n\tOffsetRowsWord string\n",
         "\t// IntervalUnitAliases are the unit spellings an INTERVAL normalises,\n\t// keyed by the upper-cased spelling written.\n\tIntervalUnitAliases map[string]string\n",
+        "\t// TableHintsWritten: a table\'s locking hints survive here. Every\n\t// dialect but T-SQL drops them.\n\tTableHintsWritten bool\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -4105,6 +4125,7 @@ def main() -> int:
         for key, value in sorted(_iua.items()):
             out.append(f"\t\t\t{gostr(key)}: {gostr(value)},\n")
         out.append("\t\t},\n")
+        out.append("\t\tTableHintsWritten: %s,\n" % str(table_hints_written(name)).lower())
         out.append(f"\t\tOffsetRowsWord: {gostr(offset_rows_word(name))},\n")
         out.append(f"\t\tIndexOnWord: {gostr(index_on_word(name))},\n")
         _ccs, _cct = computed_column_spelling(name)

@@ -346,6 +346,9 @@ type ParserTables struct {
 	// IntervalUnitAliases are the unit spellings an INTERVAL normalises,
 	// keyed by the upper-cased spelling written.
 	IntervalUnitAliases map[string]string
+	// TableHintsWritten: a table's locking hints survive here. Every
+	// dialect but T-SQL drops them.
+	TableHintsWritten bool
 	// RenameTarget says how much of a qualified name a RENAME TO writes:
 	// the whole thing, the last part only, or -- empty -- neither,
 	// because the dialect writes another statement entirely.
@@ -3718,6 +3721,7 @@ var parserTables = map[string]*ParserTables{
 			"W":  "WEEK",
 			"Y":  "YEAR",
 		},
+		TableHintsWritten:      true,
 		OffsetRowsWord:         "",
 		IndexOnWord:            "ON",
 		ComputedColumnSpelling: "AS {expr}",
@@ -7325,6 +7329,7 @@ var parserTables = map[string]*ParserTables{
 			"W":  "WEEK",
 			"Y":  "YEAR",
 		},
+		TableHintsWritten:      true,
 		OffsetRowsWord:         "ROWS",
 		IndexOnWord:            "ON",
 		ComputedColumnSpelling: "AS {expr}",
@@ -11019,6 +11024,7 @@ var parserTables = map[string]*ParserTables{
 			"W":  "WEEK",
 			"Y":  "YEAR",
 		},
+		TableHintsWritten:      false,
 		OffsetRowsWord:         "",
 		IndexOnWord:            "ON",
 		ComputedColumnSpelling: "GENERATED ALWAYS AS ({expr}) STORED",
@@ -14885,6 +14891,7 @@ var parserTables = map[string]*ParserTables{
 			"W":  "WEEK",
 			"Y":  "YEAR",
 		},
+		TableHintsWritten:      false,
 		OffsetRowsWord:         "",
 		IndexOnWord:            "ON",
 		ComputedColumnSpelling: "AS {expr}",
@@ -18748,6 +18755,7 @@ var parserTables = map[string]*ParserTables{
 			"W":  "WEEK",
 			"Y":  "YEAR",
 		},
+		TableHintsWritten:      false,
 		OffsetRowsWord:         "",
 		IndexOnWord:            "ON TABLE",
 		ComputedColumnSpelling: "GENERATED ALWAYS AS ({expr})",

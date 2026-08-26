@@ -73,6 +73,7 @@ func init() {
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
+		"WithTableHint":                       (*generator).writeTableHint,
 		"UserDefinedFunction":                 (*generator).writeUserDefinedFunction,
 		"Return":                              (*generator).writeReturn,
 		"ReturnsProperty":                     (*generator).writeReturnsProperty,
@@ -312,6 +313,15 @@ func (g *generator) writeTable(e *Expression) string {
 			out = parts[0] + " " + version + " AS " + parts[1]
 		} else {
 			out += " " + version
+		}
+	}
+	// The locking hints come after the alias too. Every dialect but T-SQL
+	// DROPS them: a hint is advice about how to READ rather than part of what
+	// is read, and losing one only ever makes the read stricter -- which is
+	// why they are dropped here rather than refused.
+	if hints, _ := e.Args["hints"].([]*Expression); len(hints) > 0 && g.tables.TableHintsWritten {
+		for _, hint := range hints {
+			out += " " + g.node(hint)
 		}
 	}
 	// TABLESAMPLE hangs off the table, after the alias. Its own template
@@ -3034,4 +3044,9 @@ func escapeControlCharacters(body string) string {
 		}
 	}
 	return out.String()
+}
+
+// writeTableHint writes the advice a table was given about how to read it.
+func (g *generator) writeTableHint(e *Expression) string {
+	return "WITH (" + g.list(e) + ")"
 }

@@ -3267,3 +3267,44 @@ func TestOffsetRowsAndTypedLiterals(t *testing.T) {
 		t.Log("VARCHAR('x') is read as a call, which is what it is")
 	}
 }
+
+// T-SQL's locking hints: advice to the engine about HOW to read a table,
+// written after the alias.
+//
+// Every other dialect drops them, and the port drops them too rather than
+// refusing -- unlike the constraints it refuses to lose. A hint is not part of
+// what the query returns, and losing one only ever makes the read stricter.
+func TestTableHints(t *testing.T) {
+	for _, tc := range []struct{ name, write, sql, want string }{
+		{"one hint", "tsql", "SELECT x FROM a WITH (NOLOCK)", "SELECT x FROM a WITH (NOLOCK)"},
+		{"after the alias", "tsql", "SELECT * FROM t AS b WITH (NOLOCK)",
+			"SELECT * FROM t AS b WITH (NOLOCK)"},
+		{"several", "tsql", "SELECT * FROM t WITH (TABLOCK, INDEX(myindex))",
+			"SELECT * FROM t WITH (TABLOCK, INDEX(myindex))"},
+		{"on an update", "tsql", "UPDATE start WITH (ROWLOCK) SET a = 1",
+			"UPDATE start WITH (ROWLOCK) SET a = 1"},
+		{"on a delete", "tsql", "DELETE FROM start WITH (ROWLOCK)",
+			"DELETE FROM start WITH (ROWLOCK)"},
+		// Elsewhere the hint is dropped, as the reference drops it.
+		{"dropped", "postgres", "SELECT x FROM a WITH (NOLOCK)", "SELECT x FROM a"},
+		{"dropped on an update", "duckdb", "UPDATE start WITH (ROWLOCK) SET a = 1",
+			"UPDATE start SET a = 1"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "tsql")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.write)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	if _, err := ParseOne("SELECT x FROM a WITH (NOLOCK", "tsql"); err == nil {
+		t.Error("an unclosed hint was read")
+	}
+}
