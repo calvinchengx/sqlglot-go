@@ -2238,3 +2238,20 @@ func isBareWord(text string) bool {
 	}
 	return true
 }
+
+// parsePragma reads `PRAGMA <whatever>`.
+//
+// What follows the word is an ordinary EXPRESSION -- a name, a qualified call,
+// or an equality -- and the reference keeps it as one rather than giving the
+// statement a grammar of its own.
+func (p *parser) parsePragma() (*Expression, error) {
+	p.advance() // PRAGMA
+	this, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("PRAGMA with more than this port reads")
+	}
+	return New("Pragma", Arg{"this", this}), nil
+}

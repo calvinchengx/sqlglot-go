@@ -272,6 +272,9 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokSET) {
 		return p.parseSet()
 	}
+	if p.at(TokPRAGMA) {
+		return p.parsePragma()
+	}
 	if p.at(TokUSE) {
 		return p.parseUse()
 	}

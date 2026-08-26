@@ -73,6 +73,7 @@ func init() {
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
+		"Pragma":                              (*generator).writePragma,
 		"Comment":                             (*generator).writeComment,
 		"Grant":                               (*generator).writeGrant,
 		"Revoke":                              (*generator).writeGrant,
@@ -3201,4 +3202,9 @@ func (g *generator) writeComment(e *Expression) string {
 	kind, _ := e.Args["kind"].(string)
 	return "COMMENT ON " + kind + " " + g.child(e, "this") +
 		" IS " + g.child(e, "expression")
+}
+
+// writePragma writes the engine setting a PRAGMA reads or changes.
+func (g *generator) writePragma(e *Expression) string {
+	return "PRAGMA " + g.child(e, "this")
 }

@@ -3574,3 +3574,34 @@ func TestSetStatement(t *testing.T) {
 		t.Error("a bare SET was read")
 	}
 }
+
+// PRAGMA reads or changes an engine setting, and what follows the word is an
+// ordinary EXPRESSION -- a name, a qualified call, or an equality -- rather
+// than a grammar of its own.
+func TestPragma(t *testing.T) {
+	for _, sql := range []string{
+		"PRAGMA quick_check",
+		"PRAGMA schema.quick_check",
+		"PRAGMA QUICK_CHECK(0)",
+		"PRAGMA schema.QUICK_CHECK(0)",
+		"PRAGMA schema.synchronous = FULL",
+	} {
+		e, err := ParseOne(sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; it reaches past the query", sql)
+		}
+		got, err := Generate(e, "")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+	}
+	if _, err := ParseOne("PRAGMA", ""); err == nil {
+		t.Error("a bare PRAGMA was read")
+	}
+}
