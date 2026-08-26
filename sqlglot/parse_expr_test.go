@@ -3511,3 +3511,66 @@ func TestCommentOn(t *testing.T) {
 		}
 	}
 }
+
+// SET changes a setting, a session variable, or a global one -- and which of
+// those it is depends on a word that not every dialect has.
+func TestSetStatement(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"a setting", "", "SET x = 1", "SET x = 1"},
+		{"a string value", "duckdb", "SET memory_limit = '10GB'", "SET memory_limit = '10GB'"},
+		// A bare word on the right refers to nothing, so it is a Var rather
+		// than a column.
+		{"a bare value", "", "SET variable = value", "SET variable = value"},
+		{"a scope", "", "SET GLOBAL variable = value", "SET GLOBAL variable = value"},
+		{"a session scope", "duckdb", "SET SESSION default_collation = 'nocase'",
+			"SET SESSION default_collation = 'nocase'"},
+		// `VAR` and `VARIABLE` are the same word; the reference records the
+		// long one.
+		{"a variable", "databricks", "SET VAR v = 5", "SET VARIABLE v = 5"},
+		{"TO is the same as =", "duckdb", "SET VARIABLE my_var TO 30",
+			"SET VARIABLE my_var = 30"},
+		{"several at once", "databricks", "SET VARIABLE v1 = 1, v2 = '2'",
+			"SET VARIABLE v1 = 1, v2 = '2'"},
+		{"from a query", "duckdb", "SET VARIABLE location_map = (SELECT foo FROM bar)",
+			"SET VARIABLE location_map = (SELECT foo FROM bar)"},
+		{"several from one query", "databricks", "SET VARIABLE (v1, v2) = (SELECT 1, 2)",
+			"SET VARIABLE (v1, v2) = (SELECT 1, 2)"},
+		// T-SQL writes nothing between a setting and its value, and an equals
+		// sign between a VARIABLE and its value -- two statements wearing the
+		// same word.
+		{"no sign at all", "tsql", "SET XACT_ABORT ON", "SET XACT_ABORT ON"},
+		{"a T-SQL variable", "tsql", "SET @count = (SELECT COUNT(1) FROM x)",
+			"SET @count = (SELECT COUNT(1) FROM x)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			if !IsWrite(e) {
+				t.Errorf("IsWrite(%q) = false; it changes the session", tc.sql)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// A scope word a dialect does not have is refused rather than dropped: a
+	// global setting applied to a session is a different effect.
+	for _, sql := range []string{"SET GLOBAL variable = value", "SET LOCAL variable = value"} {
+		e, err := ParseOne(sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "tsql"); err == nil {
+			t.Errorf("%q wrote %q for T-SQL, which has no such scope", sql, got)
+		}
+	}
+	if _, err := ParseOne("SET", ""); err == nil {
+		t.Error("a bare SET was read")
+	}
+}

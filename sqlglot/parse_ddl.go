@@ -1,6 +1,9 @@
 package sqlglot
 
-import "strings"
+import (
+	"strings"
+	"unicode"
+)
 
 // The statement grammar for things that are not queries.
 //
@@ -2108,4 +2111,130 @@ func (p *parser) parseComment() (*Expression, error) {
 		Arg{"exists", false},
 		Arg{"materialized", false},
 	), nil
+}
+
+// parseSet reads `SET [<scope>] <name> = <value>[, ...]`.
+//
+// The `=` is optional -- T-SQL writes `SET XACT_ABORT ON` -- and the reference
+// records an equality either way, so the sign is a spelling rather than part
+// of the tree.
+func (p *parser) parseSet() (*Expression, error) {
+	p.advance() // SET
+	var items []*Expression
+	for {
+		item, err := p.parseSetStatementItem()
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("SET with more than this port reads")
+	}
+	return New("Set", Arg{"expressions", items},
+		Arg{"unset", false}, Arg{"tag", false}), nil
+}
+
+// parseSetStatementItem reads one setting, with the scope word that may come
+// in front of it.
+func (p *parser) parseSetStatementItem() (*Expression, error) {
+	kind := ""
+	for word, records := range map[string]string{
+		"GLOBAL": "GLOBAL", "SESSION": "SESSION", "LOCAL": "LOCAL",
+		"VARIABLE": "VARIABLE", "VAR": "VARIABLE",
+	} {
+		c := p.curr()
+		if c == nil || c.Type == TokIDENTIFIER || !p.atWords(word) {
+			continue
+		}
+		// The word is a SCOPE only when a name follows it; `SET local = 1`
+		// sets a setting CALLED local.
+		if n := p.next(); n == nil || n.Type == TokEQ || strings.EqualFold(n.Text, "TO") {
+			break
+		}
+		p.advance()
+		kind = records
+		break
+	}
+
+	var name *Expression
+	var err error
+	switch {
+	case p.at(TokL_PAREN):
+		// `SET VARIABLE (v1, v2) = (SELECT 1, 2)` sets several at once from
+		// one query, and the names are a Tuple.
+		members, err := p.parseParenthesisedList()
+		if err != nil {
+			return nil, err
+		}
+		name = New("Tuple", Arg{"expressions", members})
+	default:
+		name = p.parseParameterName()
+		if name == nil {
+			name, err = p.parseColumn()
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
+
+	// `TO` and `=` are the same thing, and a setting may be written with
+	// neither: `SET XACT_ABORT ON`.
+	if !p.at(TokEQ) && !p.atWords("TO") {
+		if p.curr() == nil {
+			return nil, p.unsupported("SET without a value")
+		}
+	} else {
+		p.advance()
+	}
+	value, err := p.parseSetValue()
+	if err != nil {
+		return nil, err
+	}
+
+	item := New("SetItem",
+		Arg{"this", New("EQ", Arg{"this", name}, Arg{"expression", value})})
+	if kind != "" {
+		item.Set("kind", kind)
+	}
+	return item, nil
+}
+
+// parseSetValue reads what a setting is set TO. A bare word is a Var rather
+// than a column: nothing here refers to anything.
+func (p *parser) parseSetValue() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("SET without a value")
+	}
+	// A WORD standing alone here is a Var whatever the tokenizer called it:
+	// `SET XACT_ABORT ON` sets a setting to the word ON, and ON is a keyword
+	// that no expression rule would accept in this position.
+	if n := p.next(); (n == nil || n.Type == TokCOMMA || n.Type == TokSEMICOLON) &&
+		isBareWord(c.Text) && c.Type != TokIDENTIFIER && c.Type != TokSTRING {
+		p.advance()
+		return New("Var", Arg{"this", c.Text}), nil
+	}
+	return p.parseExpression()
+}
+
+// isBareWord reports whether a token's text is a word rather than punctuation
+// or a number -- which is what makes it a name for something. A NUMBER passes
+// the character test and is not a word: `SET x = 1` sets a value, not a name.
+func isBareWord(text string) bool {
+	if text == "" {
+		return false
+	}
+	for i, r := range text {
+		if !isIdentifierChar(r) {
+			return false
+		}
+		if i == 0 && unicode.IsDigit(r) {
+			return false
+		}
+	}
+	return true
 }

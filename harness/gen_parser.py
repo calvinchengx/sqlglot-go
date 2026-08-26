@@ -1103,10 +1103,13 @@ def set_item_separator(dialect: str) -> str:
     """
     import sqlglot
 
+    # Asked of a SET STATEMENT rather than of one inside a function: DuckDB
+    # writes a function's properties nowhere, so the function form measured
+    # the absence of the whole clause instead of the separator in it.
     try:
-        text = sqlglot.parse_one(
-            "CREATE FUNCTION zzf() RETURNS INT SET zzname TO 'zzvalue'", read="postgres"
-        ).sql(dialect=dialect or None)
+        text = sqlglot.parse_one("SET zzname TO 'zzvalue'").sql(
+            dialect=dialect or None
+        )
     except Exception:  # noqa: BLE001
         return " = "
     head, _, tail = text.partition("zzname")
@@ -1354,6 +1357,61 @@ def bare_begin_is_a_transaction(dialect: str) -> bool:
         return type(sqlglot.parse_one("BEGIN", read=dialect or None)).__name__ == "Transaction"
     except Exception:  # noqa: BLE001
         return False
+
+
+def set_item_kind_written(dialect: str) -> dict:
+    """Whether the SCOPE word of a SET survives, per word.
+
+    `SET GLOBAL x = 1` says which scope the setting belongs to, and T-SQL --
+    which has no such word -- drops it. A global setting applied to a session
+    is a different effect, so the port refuses rather than following.
+    """
+    from sqlglot import exp
+
+    out = {}
+    for word in ("GLOBAL", "SESSION", "LOCAL", "VARIABLE"):
+        # Built rather than parsed: `SET VARIABLE zzname = 1` read in a
+        # dialect without the word puts VARIABLE in the NAME, and the word
+        # then survives for a reason that has nothing to do with the scope.
+        node = exp.Set(
+            expressions=[
+                exp.SetItem(
+                    this=exp.EQ(
+                        this=exp.column("zzname"), expression=exp.Literal.number(1)
+                    ),
+                    kind=word,
+                )
+            ],
+            unset=False,
+            tag=False,
+        )
+        try:
+            text = node.sql(dialect=dialect or None)
+        except Exception:  # noqa: BLE001
+            out[word] = False
+            continue
+        out[word] = word in text.upper()
+    return out
+
+
+def set_variable_separator(dialect: str) -> str:
+    """What sits between a VARIABLE and its value.
+
+    T-SQL writes nothing between a setting and its value -- `SET XACT_ABORT
+    ON` -- and an equals sign between a variable and its value, which is a
+    different statement wearing the same word.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("SET @zzname = 'zzvalue'", read="tsql").sql(
+            dialect=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return " = "
+    head, _, tail = text.partition("zzname")
+    del head
+    return tail.split("'zzvalue'")[0]
 
 
 def merge_without_target(dialect: str) -> bool:
@@ -3601,6 +3659,8 @@ def main() -> int:
         "\t// TableHintsWritten: a table\'s locking hints survive here. Every\n\t// dialect but T-SQL drops them.\n\tTableHintsWritten bool\n",
         "\t// TransactionWord is written after BEGIN, COMMIT and ROLLBACK here,\n\t// and TransactionNameWritten whether the name one carries survives.\n\tTransactionWord        string\n\tTransactionNameWritten bool\n",
         "\t// BareBeginIsATransaction: a BEGIN with no TRANSACTION after it opens\n\t// one here. In T-SQL it opens a block instead.\n\tBareBeginIsATransaction bool\n",
+        "\t// SetItemKindWritten says whether a SET\'s scope word survives, per\n\t// word. Dropping one changes which scope the setting belongs to.\n\tSetItemKindWritten map[string]bool\n",
+        "\t// SetItemVariableSeparator sits between a VARIABLE and its value,\n\t// which is not always what sits between a setting and its value.\n\tSetItemVariableSeparator string\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -4179,6 +4239,12 @@ def main() -> int:
             "\t\tIdentityWidensType: %s,\n" % str(identity_widens_type(name)).lower()
         )
         out.append(f"\t\tSetItemSeparator: {gostr(set_item_separator(name))},\n")
+        out.append(f"\t\tSetItemVariableSeparator: {gostr(set_variable_separator(name))},\n")
+        out.append("\t\tSetItemKindWritten: map[string]bool{\n")
+        for word, ok in sorted(set_item_kind_written(name).items()):
+            out.append(f"\t\t\t{gostr(word)}: {str(ok).lower()},\n")
+        out.append("\t\t},\n")
+
         _pmp, _pmw = parameter_mode(name)
         out.append("\t\tParameterModePrefix: %s,\n" % str(_pmp).lower())
         out.append("\t\tParameterModeWords: map[string]string{\n")

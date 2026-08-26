@@ -2911,7 +2911,25 @@ func (g *generator) writeSetItem(e *Expression) string {
 	if item == nil || item.Class != "EQ" {
 		return g.fail(e.Class + " that is not a setting")
 	}
-	return g.child(item, "this") + g.tables.SetItemSeparator + g.child(item, "expression")
+	out := ""
+	if kind, _ := e.Args["kind"].(string); kind != "" {
+		// The scope word says WHICH setting is being changed -- a global one
+		// or this session's. A dialect that has no such word writes none, and
+		// the port refuses rather than changing the wrong scope.
+		if !g.tables.SetItemKindWritten[kind] {
+			return g.fail(e.Class + " " + kind + ", a scope this dialect writes away")
+		}
+		out = kind + " "
+	}
+	// A VARIABLE takes an equals sign even where a SETTING does not: T-SQL
+	// writes `SET XACT_ABORT ON` and `SET @count = 1`, which are two
+	// statements wearing the same word.
+	separator := g.tables.SetItemSeparator
+	if target, _ := item.Args["this"].(*Expression); target != nil &&
+		target.Class == "Parameter" {
+		separator = g.tables.SetItemVariableSeparator
+	}
+	return out + g.child(item, "this") + separator + g.child(item, "expression")
 }
 
 func (g *generator) writeCalledOnNullInputProperty(*Expression) string {
