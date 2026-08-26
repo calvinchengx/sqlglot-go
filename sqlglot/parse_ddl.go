@@ -2051,3 +2051,61 @@ func endsAPrincipal(t *Token) bool {
 	}
 	return t.Type == TokCOMMA || t.Type == TokSEMICOLON
 }
+
+// parseComment reads `COMMENT ON <kind> <name> IS '<text>'`.
+//
+// The name is a COLUMN where the kind says so and a table-shaped name
+// otherwise -- the same words, two nodes, and the kind is what decides.
+func (p *parser) parseComment() (*Expression, error) {
+	p.advance() // COMMENT
+	if !p.atWords("ON") {
+		return nil, p.unsupported("COMMENT without ON")
+	}
+	p.advance()
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("COMMENT without a kind")
+	}
+	kind := strings.ToUpper(c.Text)
+	switch kind {
+	case "TABLE", "VIEW", "COLUMN", "TYPE", "SEQUENCE", "SCHEMA", "DATABASE", "INDEX":
+	default:
+		// A PROCEDURE or FUNCTION is named with its SIGNATURE, which is a
+		// third shape again.
+		return nil, p.unsupported("COMMENT ON " + kind)
+	}
+	p.advance()
+
+	var this *Expression
+	var err error
+	if kind == "COLUMN" {
+		this, err = p.parseColumn()
+	} else {
+		this, err = p.parseTableName()
+	}
+	if err != nil {
+		return nil, err
+	}
+	if !p.atWords("IS") {
+		return nil, p.unsupported("COMMENT without IS")
+	}
+	p.advance()
+	text := p.curr()
+	if text == nil || text.Type != TokSTRING {
+		// `IS NULL` removes the comment, which the reference does not read
+		// either.
+		return nil, p.unsupported("COMMENT without a string")
+	}
+	p.advance()
+	if p.curr() != nil {
+		return nil, p.unsupported("COMMENT with more than this port reads")
+	}
+	return New("Comment",
+		Arg{"this", this},
+		Arg{"kind", kind},
+		Arg{"expression", New("Literal",
+			Arg{"this", text.Text}, Arg{"is_string", true})},
+		Arg{"exists", false},
+		Arg{"materialized", false},
+	), nil
+}

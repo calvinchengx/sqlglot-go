@@ -73,6 +73,7 @@ func init() {
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
+		"Comment":                             (*generator).writeComment,
 		"Grant":                               (*generator).writeGrant,
 		"Revoke":                              (*generator).writeGrant,
 		"GrantPrivilege":                      (*generator).writeGrantPrivilege,
@@ -3175,4 +3176,11 @@ func (g *generator) writeGrantPrincipal(e *Expression) string {
 		out = kind + " "
 	}
 	return out + g.child(e, "this")
+}
+
+// writeComment writes the note left on a table, a view or a column.
+func (g *generator) writeComment(e *Expression) string {
+	kind, _ := e.Args["kind"].(string)
+	return "COMMENT ON " + kind + " " + g.child(e, "this") +
+		" IS " + g.child(e, "expression")
 }

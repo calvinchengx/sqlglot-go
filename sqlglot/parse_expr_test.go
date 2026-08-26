@@ -3468,3 +3468,46 @@ func TestGrantAndRevoke(t *testing.T) {
 		}
 	}
 }
+
+// A note left on a table, a view or a column. The name is a COLUMN where the
+// kind says so and a table-shaped name otherwise -- the same words, two
+// nodes, and the kind is what decides.
+func TestCommentOn(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"COMMENT ON TABLE my_schema.my_table IS 'Employee Information'",
+			"COMMENT ON TABLE my_schema.my_table IS 'Employee Information'"},
+		{"COMMENT ON VIEW foo.bat IS 'x'", "COMMENT ON VIEW foo.bat IS 'x'"},
+		{"COMMENT ON COLUMN my_schema.my_table.my_column IS 'Employee ID number'",
+			"COMMENT ON COLUMN my_schema.my_table.my_column IS 'Employee ID number'"},
+		{"COMMENT ON TYPE mood IS 'x'", "COMMENT ON TYPE mood IS 'x'"},
+		{"COMMENT ON SEQUENCE public.seq IS 'x'", "COMMENT ON SEQUENCE public.seq IS 'x'"},
+	} {
+		e, err := ParseOne(tc.sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; it changes the catalogue", tc.sql)
+		}
+		got, err := Generate(e, "")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.want {
+			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
+		}
+	}
+	for _, sql := range []string{
+		// A PROCEDURE is named with its SIGNATURE, which is a third shape.
+		"COMMENT ON PROCEDURE my_proc(integer, integer) IS 'Runs a report'",
+		// And `IS NULL` removes the comment, which the reference does not
+		// read either.
+		"COMMENT ON TABLE t IS NULL",
+		"COMMENT ON TABLE t",
+		"COMMENT TABLE t IS 'x'",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}

@@ -266,6 +266,9 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokGRANT) || p.at(TokREVOKE) {
 		return p.parseGrant()
 	}
+	if p.at(TokCOMMENT) {
+		return p.parseComment()
+	}
 	if p.at(TokUSE) {
 		return p.parseUse()
 	}
