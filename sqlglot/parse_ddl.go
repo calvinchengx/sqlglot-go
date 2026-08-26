@@ -538,7 +538,23 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			p.advance()
 			kind = New("UniqueColumnConstraint",
 				Arg{"nulls", false}, Arg{"index_type", false})
-		case p.atWords("AUTO_INCREMENT"), p.atWords("AUTOINCREMENT"):
+		case p.atWords("IDENTITY") && p.next() != nil && p.next().Type == TokL_PAREN:
+			// T-SQL's short spelling of an identity column. The reference
+			// records the same node the long `GENERATED ... AS IDENTITY`
+			// makes -- with its arguments in another order, because they are
+			// read in another order.
+			p.advance()
+			values, err := p.parseParenthesisedList()
+			if err != nil {
+				return nil, err
+			}
+			if len(values) != 2 {
+				return nil, p.unsupported("IDENTITY without a start and an increment")
+			}
+			kind = New("GeneratedAsIdentityColumnConstraint",
+				Arg{"start", values[0]}, Arg{"increment", values[1]},
+				Arg{"this", false})
+		case p.atWords("AUTO_INCREMENT"), p.atWords("AUTOINCREMENT"), p.atWords("IDENTITY"):
 			p.advance()
 			kind = New("AutoIncrementColumnConstraint")
 		case p.atWords("COMMENT"):
@@ -640,8 +656,12 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 		default:
 			// The list ends at a comma, at the closing parenthesis, or at the
 			// end of the statement -- an ALTER TABLE ADD COLUMN has neither of
-			// the first two. Anything ELSE is a constraint this port cannot
+			// the first two, and ends instead at the words that say WHERE the
+			// column goes. Anything ELSE is a constraint this port cannot
 			// read, and is refused rather than skipped.
+			if p.atWords("FIRST") || p.atWords("AFTER") {
+				return out, nil
+			}
 			if p.curr() != nil && !p.at(TokCOMMA) && !p.at(TokR_PAREN) {
 				return nil, p.unsupported("a column constraint this port does not read")
 			}
@@ -878,10 +898,25 @@ func (p *parser) parseAddedColumn(exists bool) (*Expression, error) {
 	if constraints == nil {
 		constraints = []*Expression{}
 	}
+	// Where the new column goes among the ones already there.
+	var position *Expression
+	switch {
+	case p.atWords("FIRST"):
+		p.advance()
+		position = New("ColumnPosition", Arg{"position", "FIRST"})
+	case p.atWords("AFTER"):
+		p.advance()
+		after, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		position = New("ColumnPosition",
+			Arg{"this", after}, Arg{"position", "AFTER"})
+	}
 	return New("ColumnDef",
 		Arg{"this", name}, Arg{"kind", kind},
 		Arg{"constraints", constraints},
-		Arg{"position", nil},
+		Arg{"position", position},
 		Arg{"exists", exists}), nil
 }
 

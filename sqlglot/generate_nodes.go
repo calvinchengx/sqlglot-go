@@ -73,6 +73,7 @@ func init() {
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
+		"ColumnPosition":                      (*generator).writeColumnPosition,
 		"WithDataProperty":                    (*generator).writeWithDataProperty,
 		"AlterSet":                            (*generator).writeAlterSet,
 		"Partition":                           (*generator).writePartition,
@@ -1045,6 +1046,10 @@ func (g *generator) writeColumnDef(e *Expression) string {
 		hasConstraint(e, "GeneratedAsIdentityColumnConstraint") &&
 		integerTypes[typeKind(kindOf(e))]:
 		kind = "BIGINT"
+	}
+	// Where a newly added column goes comes after everything else it says.
+	if position := g.child(e, "position"); position != "" {
+		trailing += " " + position
 	}
 	if kind == "" {
 		// A VIEW's column has no type -- it names a result the query already
@@ -2340,6 +2345,17 @@ func (g *generator) writePrimaryKeyConstraint(e *Expression) string {
 }
 
 // writeUniqueConstraint writes UNIQUE, over a column list when it has one.
+// writeAutoIncrementConstraint writes an auto-numbering column. The spelling
+// is the dialect's whole answer -- `AUTO_INCREMENT`, `IDENTITY`, or the long
+// GENERATED form -- and DuckDB writes nothing at all, which drops the
+// numbering, so the port refuses there instead.
+func (g *generator) writeAutoIncrementConstraint(e *Expression) string {
+	if spelling := g.tables.AutoIncrementSQL; spelling != "" {
+		return spelling
+	}
+	return g.fail(e.Class + ", which this dialect writes nowhere")
+}
+
 func (g *generator) writeUniqueConstraint(e *Expression) string {
 	if !g.tables.UniqueConstraintWritten {
 		// This dialect has no such constraint and the reference DROPS it,
@@ -2387,6 +2403,32 @@ func (g *generator) writeComputedConstraint(e *Expression) string {
 
 // writeGeneratedAsIdentity writes a column the engine numbers for itself.
 func (g *generator) writeGeneratedAsIdentity(e *Expression) string {
+	// T-SQL has a short spelling of its own -- `IDENTITY(7, 9)` -- with
+	// nowhere to put CYCLE, ON NULL or ALWAYS. A column that says one of
+	// those is refused rather than written without it.
+	if short := g.tables.IdentityShortSQL; short != "" {
+		if always, _ := e.Args["this"].(bool); always {
+			return g.fail(e.Class + " ALWAYS, which this dialect writes as BY DEFAULT")
+		}
+		if cycle, _ := e.Args["cycle"].(bool); cycle {
+			return g.fail(e.Class + " CYCLE, which this dialect writes nowhere")
+		}
+		if onNull, _ := e.Args["on_null"].(bool); onNull {
+			return g.fail(e.Class + " ON NULL, which this dialect writes nowhere")
+		}
+		if value := g.child(e, "expression"); value != "" {
+			return g.fail(e.Class + " over an expression, which this dialect writes nowhere")
+		}
+		start, increment := g.child(e, "start"), g.child(e, "increment")
+		if start == "" {
+			start = "1"
+		}
+		if increment == "" {
+			increment = "1"
+		}
+		short = strings.ReplaceAll(short, "{start}", start)
+		return strings.ReplaceAll(short, "{increment}", increment)
+	}
 	if !g.tables.IdentityWritten {
 		// T-SQL has no such constraint and rewrites every one into
 		// `IDENTITY(start, increment)`, which drops CYCLE and ON NULL with
@@ -2427,7 +2469,6 @@ func (g *generator) writeGeneratedAsIdentity(e *Expression) string {
 func (g *generator) writeCheckConstraint(e *Expression) string {
 	return "CHECK (" + g.child(e, "this") + ")"
 }
-func (g *generator) writeAutoIncrementConstraint(*Expression) string { return "AUTO_INCREMENT" }
 
 func (g *generator) writeCommentConstraint(e *Expression) string {
 	return "COMMENT " + g.child(e, "this")
@@ -3362,4 +3403,14 @@ func (g *generator) writeWithDataProperty(e *Expression) string {
 		return out + " AND NO STATISTICS"
 	}
 	return out
+}
+
+// writeColumnPosition writes where a newly added column goes among the ones
+// already there.
+func (g *generator) writeColumnPosition(e *Expression) string {
+	where, _ := e.Args["position"].(string)
+	if this := g.child(e, "this"); this != "" {
+		return where + " " + this
+	}
+	return where
 }
