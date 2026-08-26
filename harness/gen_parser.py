@@ -1450,6 +1450,47 @@ def partition_sql(dialect: str) -> str:
     return tail.split(" SELECT")[0].replace("zzmember", "{members}")
 
 
+def alter_set_conventions(dialect: str) -> tuple[bool, bool]:
+    """Whether an `ALTER TABLE ... SET` keeps what it sets, and whether a list
+    of settings is parenthesised.
+
+    Only PostgreSQL writes the option words -- LOGGED, TABLESPACE, ACCESS
+    METHOD; everywhere else the reference writes a bare `ALTER TABLE t SET`,
+    which sets nothing at all. The port refuses rather than writing that.
+    """
+    import sqlglot
+
+    try:
+        option = sqlglot.parse_one(
+            "ALTER TABLE t SET LOGGED", read="postgres"
+        ).sql(dialect=dialect or None)
+        listed = sqlglot.parse_one(
+            "ALTER TABLE t SET (zzname = 5)", read="postgres"
+        ).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return False, False
+    return "LOGGED" in option, "(zzname" in listed
+
+
+def alter_set_list_is_settings(dialect: str) -> bool:
+    """Whether `ALTER TABLE t SET (k = v)` is a list of SETTINGS here.
+
+    T-SQL reads the same words as table PROPERTIES, each with a class of its
+    own -- `SYSTEM_VERSIONING=OFF` is a property rather than an equality --
+    so the port refuses there rather than building the wrong node.
+    """
+    import sqlglot
+    from sqlglot import exp
+
+    try:
+        tree = sqlglot.parse_one(
+            "ALTER TABLE t SET (zzname = 5)", read=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return False
+    return not any(True for _ in tree.find_all(exp.Properties))
+
+
 def merge_without_target(dialect: str) -> bool:
     """Whether a MERGE drops the target's name from the columns it assigns.
 
@@ -3702,6 +3743,8 @@ def main() -> int:
         "\t// SetItemVariableSeparator sits between a VARIABLE and its value,\n\t// which is not always what sits between a setting and its value.\n\tSetItemVariableSeparator string\n",
         "\t// SetWithoutASign: a SET may be written with no `=` between the name\n\t// and the value here.\n\tSetWithoutASign bool\n",
         "\t// PartitionSQL is how a table\'s PARTITION clause is written, with\n\t// {members} where its members go.\n\tPartitionSQL string\n",
+        "\t// AlterSetOptionWritten: an `ALTER TABLE ... SET` keeps the words that\n\t// say WHAT it sets, and AlterSetWrapsOptions whether a list of\n\t// settings is written in parentheses.\n\tAlterSetOptionWritten bool\n\tAlterSetWrapsOptions  bool\n",
+        "\t// AlterSetListIsSettings: `ALTER TABLE t SET (k = v)` is a list of\n\t// settings here rather than of table properties.\n\tAlterSetListIsSettings bool\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -4273,6 +4316,10 @@ def main() -> int:
         out.append(f"\t\tOffsetRowsWord: {gostr(offset_rows_word(name))},\n")
         out.append(f"\t\tIndexOnWord: {gostr(index_on_word(name))},\n")
         out.append(f"\t\tPartitionSQL: {gostr(partition_sql(name))},\n")
+        _aso, _asw = alter_set_conventions(name)
+        out.append("\t\tAlterSetOptionWritten: %s,\n" % str(_aso).lower())
+        out.append("\t\tAlterSetWrapsOptions: %s,\n" % str(_asw).lower())
+        out.append("\t\tAlterSetListIsSettings: %s,\n" % str(alter_set_list_is_settings(name)).lower())
         _ccs, _cct = computed_column_spelling(name)
         out.append(f"\t\tComputedColumnSpelling: {gostr(_ccs)},\n")
         out.append("\t\tComputedKeepsType: %s,\n" % str(_cct).lower())

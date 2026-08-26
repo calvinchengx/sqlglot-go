@@ -368,6 +368,14 @@ type ParserTables struct {
 	// PartitionSQL is how a table's PARTITION clause is written, with
 	// {members} where its members go.
 	PartitionSQL string
+	// AlterSetOptionWritten: an `ALTER TABLE ... SET` keeps the words that
+	// say WHAT it sets, and AlterSetWrapsOptions whether a list of
+	// settings is written in parentheses.
+	AlterSetOptionWritten bool
+	AlterSetWrapsOptions  bool
+	// AlterSetListIsSettings: `ALTER TABLE t SET (k = v)` is a list of
+	// settings here rather than of table properties.
+	AlterSetListIsSettings bool
 	// RenameTarget says how much of a qualified name a RENAME TO writes:
 	// the whole thing, the last part only, or -- empty -- neither,
 	// because the dialect writes another statement entirely.
@@ -3747,6 +3755,9 @@ var parserTables = map[string]*ParserTables{
 		OffsetRowsWord:           "",
 		IndexOnWord:              "ON",
 		PartitionSQL:             "PARTITION({members})",
+		AlterSetOptionWritten:    false,
+		AlterSetWrapsOptions:     false,
+		AlterSetListIsSettings:   true,
 		ComputedColumnSpelling:   "AS {expr}",
 		ComputedKeepsType:        true,
 		IdentityWritten:          true,
@@ -7367,6 +7378,9 @@ var parserTables = map[string]*ParserTables{
 		OffsetRowsWord:           "ROWS",
 		IndexOnWord:              "ON",
 		PartitionSQL:             "WITH (PARTITIONS({members}))",
+		AlterSetOptionWritten:    false,
+		AlterSetWrapsOptions:     true,
+		AlterSetListIsSettings:   false,
 		ComputedColumnSpelling:   "AS {expr}",
 		ComputedKeepsType:        false,
 		IdentityWritten:          false,
@@ -11074,6 +11088,9 @@ var parserTables = map[string]*ParserTables{
 		OffsetRowsWord:           "",
 		IndexOnWord:              "ON",
 		PartitionSQL:             "PARTITION({members})",
+		AlterSetOptionWritten:    true,
+		AlterSetWrapsOptions:     true,
+		AlterSetListIsSettings:   true,
 		ComputedColumnSpelling:   "GENERATED ALWAYS AS ({expr}) STORED",
 		ComputedKeepsType:        true,
 		IdentityWritten:          true,
@@ -14953,6 +14970,9 @@ var parserTables = map[string]*ParserTables{
 		OffsetRowsWord:           "",
 		IndexOnWord:              "ON",
 		PartitionSQL:             "PARTITION({members})",
+		AlterSetOptionWritten:    false,
+		AlterSetWrapsOptions:     false,
+		AlterSetListIsSettings:   true,
 		ComputedColumnSpelling:   "AS {expr}",
 		ComputedKeepsType:        true,
 		IdentityWritten:          true,
@@ -18829,6 +18849,9 @@ var parserTables = map[string]*ParserTables{
 		OffsetRowsWord:           "",
 		IndexOnWord:              "ON TABLE",
 		PartitionSQL:             "PARTITION({members})",
+		AlterSetOptionWritten:    false,
+		AlterSetWrapsOptions:     false,
+		AlterSetListIsSettings:   true,
 		ComputedColumnSpelling:   "GENERATED ALWAYS AS ({expr})",
 		ComputedKeepsType:        true,
 		IdentityWritten:          true,

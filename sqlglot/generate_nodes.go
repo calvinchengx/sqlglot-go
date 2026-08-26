@@ -73,6 +73,7 @@ func init() {
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
+		"AlterSet":                            (*generator).writeAlterSet,
 		"Partition":                           (*generator).writePartition,
 		"OnConflict":                          (*generator).writeOnConflict,
 		"Pragma":                              (*generator).writePragma,
@@ -3295,4 +3296,36 @@ func (g *generator) writeOnConflict(e *Expression) string {
 // writePartition writes which partition of a table is being written.
 func (g *generator) writePartition(e *Expression) string {
 	return strings.ReplaceAll(g.tables.PartitionSQL, "{members}", g.list(e))
+}
+
+// writeAlterSet writes what an `ALTER TABLE ... SET` sets.
+//
+// Only PostgreSQL writes the words that say WHAT is set; everywhere else the
+// reference writes a bare `ALTER TABLE t SET`, which sets nothing at all, so
+// the port refuses rather than writing that.
+func (g *generator) writeAlterSet(e *Expression) string {
+	if settings, _ := e.Args["expressions"].([]*Expression); len(settings) > 0 {
+		list := g.list(e)
+		if g.tables.AlterSetWrapsOptions {
+			return "SET (" + list + ")"
+		}
+		return "SET " + list
+	}
+	for _, key := range []string{"option", "tablespace", "access_method"} {
+		value := g.child(e, key)
+		if value == "" {
+			continue
+		}
+		if !g.tables.AlterSetOptionWritten {
+			return g.fail(e.Class + ", which this dialect writes away")
+		}
+		switch key {
+		case "tablespace":
+			return "SET TABLESPACE " + value
+		case "access_method":
+			return "SET ACCESS METHOD " + value
+		}
+		return "SET " + value
+	}
+	return g.fail(e.Class + " that sets nothing")
 }

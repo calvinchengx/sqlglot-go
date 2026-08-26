@@ -3836,3 +3836,61 @@ func TestInsertPartitionAndExists(t *testing.T) {
 		t.Error("an unclosed partition was read")
 	}
 }
+
+// What an `ALTER TABLE ... SET` sets: a word, a tablespace, an access method,
+// or a list of settings. Each lands in an argument of its own, because they
+// are different things rather than different spellings.
+func TestAlterTableSet(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"logged", "ALTER TABLE t1 SET LOGGED", "ALTER TABLE t1 SET LOGGED"},
+		{"unlogged", "ALTER TABLE t1 SET UNLOGGED", "ALTER TABLE t1 SET UNLOGGED"},
+		{"without oids", "ALTER TABLE t1 SET WITHOUT OIDS", "ALTER TABLE t1 SET WITHOUT OIDS"},
+		{"without cluster", "ALTER TABLE t1 SET WITHOUT CLUSTER", "ALTER TABLE t1 SET WITHOUT CLUSTER"},
+		{"a tablespace", "ALTER TABLE t1 SET TABLESPACE tablespace",
+			"ALTER TABLE t1 SET TABLESPACE tablespace"},
+		{"an access method", "ALTER TABLE t1 SET ACCESS METHOD method",
+			"ALTER TABLE t1 SET ACCESS METHOD method"},
+		{"settings", "ALTER TABLE t1 SET (fillfactor = 5, autovacuum_enabled = TRUE)",
+			"ALTER TABLE t1 SET (fillfactor = 5, autovacuum_enabled = TRUE)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "postgres")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			if !IsWrite(e) {
+				t.Errorf("IsWrite(%q) = false; it changes the table", tc.sql)
+			}
+			got, err := Generate(e, "postgres")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// Only PostgreSQL writes the words that say WHAT is set; everywhere else
+	// the reference writes a bare `ALTER TABLE t SET`, which sets nothing at
+	// all. The port refuses rather than writing that.
+	for _, sql := range []string{"ALTER TABLE t1 SET LOGGED", "ALTER TABLE t1 SET TABLESPACE ts"} {
+		e, err := ParseOne(sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		for _, d := range []string{"", "duckdb", "databricks"} {
+			if got, err := Generate(e, d); err == nil {
+				t.Errorf("[%s] %q wrote %q, which sets nothing", d, sql, got)
+			}
+		}
+	}
+	// T-SQL reads the same parenthesised words as table PROPERTIES, each with
+	// a class of its own, so the port refuses there rather than building an
+	// equality the reference never makes.
+	if _, err := ParseOne("ALTER TABLE tbl SET (SYSTEM_VERSIONING=OFF)", "tsql"); err == nil {
+		t.Error("a T-SQL property list was read as settings")
+	}
+	if _, err := ParseOne("ALTER TABLE t1 SET SOMETHING", "postgres"); err == nil {
+		t.Error("an unknown SET was read")
+	}
+}

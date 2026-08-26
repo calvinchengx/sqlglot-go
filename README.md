@@ -66,7 +66,7 @@ Regenerate with `make service`; nothing in it is authored here.
 |---|---|---|---|---|---|
 | neutral | 997/997 | 792 | 997 | 205 | 0 |
 | tsql | 597/597 | 389 | 597 | 208 | 0 |
-| postgres | 857/857 | 613 | 857 | 244 | 0 |
+| postgres | 857/857 | 620 | 857 | 237 | 0 |
 | duckdb | 1631/1631 | 1395 | 1631 | 236 | 0 |
 | databricks | 424/424 | 311 | 424 | 113 | 0 |
 <!-- coverage:end -->

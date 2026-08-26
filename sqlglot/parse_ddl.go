@@ -818,6 +818,9 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			p.advance()
 		}
 		return p.parseAlteredColumn()
+	case p.at(TokSET):
+		p.advance()
+		return p.parseAlterSet()
 	}
 	return nil, p.unsupported("an ALTER TABLE action this port does not read")
 }
@@ -2397,6 +2400,60 @@ func (p *parser) parseOnConflict() (*Expression, error) {
 	}
 	if constraint != nil {
 		node.Set("constraint", constraint)
+	}
+	return node, nil
+}
+
+// parseAlterSet reads `ALTER TABLE t SET <what>`, where what is set may be a
+// WORD, a tablespace, an access method, or a parenthesised list of settings.
+//
+// Each lands in an argument of its own rather than a shared one, because they
+// are different things rather than different spellings.
+func (p *parser) parseAlterSet() (*Expression, error) {
+	node := New("AlterSet")
+	switch {
+	case p.atWords("WITHOUT", "OIDS"), p.atWords("WITHOUT", "CLUSTER"):
+		word := strings.ToUpper(p.curr().Text) + " " + strings.ToUpper(p.next().Text)
+		p.advance()
+		p.advance()
+		node.Set("option", New("Var", Arg{"this", word}))
+	case p.atWords("LOGGED"), p.atWords("UNLOGGED"):
+		word := strings.ToUpper(p.curr().Text)
+		p.advance()
+		node.Set("option", New("Var", Arg{"this", word}))
+	case p.atWords("TABLESPACE"):
+		p.advance()
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("tablespace", name)
+	case p.atWords("ACCESS", "METHOD"):
+		p.advance()
+		p.advance()
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("access_method", name)
+	case p.at(TokL_PAREN):
+		// T-SQL reads the same words as table PROPERTIES, each with a class
+		// of its own, rather than as equalities.
+		if !p.tables.AlterSetListIsSettings {
+			return nil, p.unsupported("an ALTER TABLE SET of properties")
+		}
+		settings, err := p.parseParenthesisedList()
+		if err != nil {
+			return nil, err
+		}
+		for _, setting := range settings {
+			if setting.Class != "EQ" {
+				return nil, p.unsupported("an ALTER SET item that is not a setting")
+			}
+		}
+		node.Set("expressions", settings)
+	default:
+		return nil, p.unsupported("an ALTER TABLE SET this port does not read")
 	}
 	return node, nil
 }
