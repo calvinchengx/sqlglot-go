@@ -2861,9 +2861,13 @@ func TestNoParenFunctionWithParens(t *testing.T) {
 			t.Errorf("%q wrote %q, which it cannot read back: %v", tc.sql, got, err)
 		}
 	}
-	// Parentheses holding something are not the empty pair, and the call is
-	// still refused rather than read as though they were absent.
-	if _, err := ParseOne("CURRENT_TIMESTAMP(3)", "databricks"); err == nil {
-		t.Error("CURRENT_TIMESTAMP(3) was read as though it took no argument")
+	// Parentheses holding something are the SAME node carrying an argument --
+	// a precision -- not a different call and not an empty pair.
+	e, err := ParseOne("CURRENT_TIMESTAMP(3)", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if e.Class != "CurrentTimestamp" || e.This() == nil || e.This().Name() != "3" {
+		t.Errorf("CURRENT_TIMESTAMP(3) is a %s over %v", e.Class, e.Args["this"])
 	}
 }

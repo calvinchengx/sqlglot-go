@@ -934,15 +934,15 @@ func (p *parser) parsePrimary() (*Expression, error) {
 
 	// CURRENT_DATE and friends are calls with no argument list.
 	if class, ok := p.tables.NoParenFunctionClasses[c.Type]; ok {
-		p.advance()
-		// The parentheses are optional and hold nothing either way -- the
-		// tree is the same. Databricks WRITES them, so a port that could not
-		// read them could not read back what it had just written. The
-		// generator fuzzer found that.
-		if p.at(TokL_PAREN) && p.next() != nil && p.next().Type == TokR_PAREN {
-			p.advance()
-			p.advance()
+		// The parentheses are OPTIONAL, not forbidden: `CURRENT_TIMESTAMP(0)`
+		// is the same node carrying a precision, and `CURRENT_TIMESTAMP()` is
+		// the same node carrying nothing. Databricks writes both, so a port
+		// that could not read them could not read back what it had just
+		// written. The generator fuzzer found that.
+		if n := p.next(); n != nil && n.Type == TokL_PAREN {
+			return p.parseFunction()
 		}
+		p.advance()
 		return New(class), nil
 	}
 
