@@ -2832,3 +2832,38 @@ func TestANameThatIsNotAName(t *testing.T) {
 		t.Error("readableAsABareName disagrees with what a bare name is")
 	}
 }
+
+// CURRENT_DATE and friends may be written WITH empty parentheses, and the
+// tree is the same either way. Databricks writes them, so a port that could
+// not read them could not read back what it had just written: `NOW()` there
+// becomes `CURRENT_TIMESTAMP()`, and that came back as trailing tokens. The
+// generator fuzzer found it.
+func TestNoParenFunctionWithParens(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql, want string }{
+		{"databricks", "NOW()", "CURRENT_TIMESTAMP()"},
+		{"databricks", "CURRENT_TIMESTAMP()", "CURRENT_TIMESTAMP()"},
+		{"databricks", "CURRENT_TIMESTAMP", "CURRENT_TIMESTAMP()"},
+		{"postgres", "CURRENT_TIMESTAMP()", "CURRENT_TIMESTAMP"},
+		{"duckdb", "CURRENT_DATE()", "CURRENT_DATE"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q, %s): %v", tc.sql, tc.dialect, err)
+		}
+		got, err := Generate(e, tc.dialect)
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.want {
+			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
+		}
+		if _, err := ParseOne(got, tc.dialect); err != nil {
+			t.Errorf("%q wrote %q, which it cannot read back: %v", tc.sql, got, err)
+		}
+	}
+	// Parentheses holding something are not the empty pair, and the call is
+	// still refused rather than read as though they were absent.
+	if _, err := ParseOne("CURRENT_TIMESTAMP(3)", "databricks"); err == nil {
+		t.Error("CURRENT_TIMESTAMP(3) was read as though it took no argument")
+	}
+}
