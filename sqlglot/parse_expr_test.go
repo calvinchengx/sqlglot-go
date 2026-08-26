@@ -3308,3 +3308,35 @@ func TestTableHints(t *testing.T) {
 		t.Error("an unclosed hint was read")
 	}
 }
+
+// APPLY runs a table function once per row, and the alias that names what it
+// produced belongs to the LATERAL rather than to the call inside it. It may
+// name the columns too, and it may be written with or without AS.
+func TestApplyWithAnAlias(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		// A name with no builder behind it is written upper-cased, which is
+		// the reference's rule for one and not this test's business.
+		{"SELECT t.x, y.z FROM x CROSS APPLY tvfTest(t.x) y(z)",
+			"SELECT t.x, y.z FROM x CROSS APPLY TVFTEST(t.x) AS y(z)"},
+		{"SELECT t.x, y.z FROM x OUTER APPLY tvfTest(t.x) AS y(z)",
+			"SELECT t.x, y.z FROM x OUTER APPLY TVFTEST(t.x) AS y(z)"},
+		{"SELECT t.x FROM x CROSS APPLY a.b.tvfTest(t.x) y",
+			// A QUALIFIED call keeps its case, where a bare one does not.
+			"SELECT t.x FROM x CROSS APPLY a.b.tvfTest(t.x) AS y"},
+		// And with no alias at all, which was the only form read before.
+		{"SELECT t.x FROM x CROSS APPLY tvfTest(t.x)",
+			"SELECT t.x FROM x CROSS APPLY TVFTEST(t.x)"},
+	} {
+		e, err := ParseOne(tc.sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		got, err := Generate(e, "tsql")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.want {
+			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
+		}
+	}
+}

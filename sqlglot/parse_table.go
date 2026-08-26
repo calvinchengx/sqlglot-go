@@ -154,10 +154,17 @@ func (p *parser) parseApply(cross bool) (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// The alias names what the call produced, and it may name the
+		// columns too: `APPLY f(x) y(z)`. It belongs to the Lateral rather
+		// than to the call inside it.
+		alias, err := p.parseTableAlias()
+		if err != nil {
+			return nil, err
+		}
 		lateral.Set("this", target)
 		lateral.Set("view", nil)
 		lateral.Set("outer", nil)
-		lateral.Set("alias", nil)
+		lateral.Set("alias", alias)
 		lateral.Set("cross_apply", cross)
 		lateral.Set("ordinality", false)
 	default:
