@@ -17,7 +17,23 @@ func (p *parser) parseQuery() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	this, err := p.parseQueryBody()
+	if err != nil {
+		return nil, err
+	}
+	if with != nil {
+		// The WITH clause is assigned to the whole statement once it is built,
+		// so it dumps last -- and lands on the set operation, not on the first
+		// query inside it, however early it was written.
+		this.Set("with_", with)
+	}
+	return this, nil
+}
 
+// parseQueryBody is everything a query is APART from its WITH clause. It is
+// separate because a WITH may also stand in front of an INSERT or an UPDATE,
+// where what follows is not a query at all.
+func (p *parser) parseQueryBody() (*Expression, error) {
 	// parseSelect's precondition -- the SELECT token is current -- is checked
 	// by parseStatement, but a WITH clause reaches here having consumed only
 	// the CTEs. DuckDB allows the SELECT to be left out entirely
@@ -30,14 +46,7 @@ func (p *parser) parseQuery() (*Expression, error) {
 	// every route a query does -- on its own, inside a CTE, inside a
 	// parenthesised FROM item -- so it is recognised here rather than at each.
 	if p.at(TokPIVOT) || p.at(TokUNPIVOT) {
-		this, err := p.parseStatementPivot()
-		if err != nil {
-			return nil, err
-		}
-		if with != nil {
-			this.Set("with_", with)
-		}
-		return this, nil
+		return p.parseStatementPivot()
 	}
 	if !p.at(TokSELECT) {
 		return nil, p.unsupported("query without SELECT")
@@ -46,17 +55,7 @@ func (p *parser) parseQuery() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	this, err = p.parseSetOperations(this)
-	if err != nil {
-		return nil, err
-	}
-	if with != nil {
-		// The WITH clause is assigned to the whole statement once it is built,
-		// so it dumps last -- and lands on the set operation, not on the first
-		// query inside it, however early it was written.
-		this.Set("with_", with)
-	}
-	return this, nil
+	return p.parseSetOperations(this)
 }
 
 // parseWith reads a WITH clause. RECURSIVE changes what the CTE means -- it may

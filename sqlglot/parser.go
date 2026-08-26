@@ -212,9 +212,33 @@ func (p *parser) parseOne() (*Expression, error) {
 // bare expression, as in the reference -- most of sqlglot's own fixture corpus
 // is expressions rather than whole statements.
 func (p *parser) parseStatement() (*Expression, error) {
-	if p.at(TokSELECT) || p.at(TokWITH) || p.at(TokPIVOT) || p.at(TokUNPIVOT) {
+	if p.at(TokWITH) {
+		// A WITH may stand in front of a statement that is not a query at
+		// all: `WITH a AS (SELECT * FROM b) UPDATE a SET c = 1` reads from b
+		// and writes to a. The clause is parsed first and assigned LAST,
+		// which is where the reference puts it however early it was written.
+		with, err := p.parseWith()
+		if err != nil {
+			return nil, err
+		}
+		this, err := p.parseStatementBody()
+		if err != nil {
+			return nil, err
+		}
+		if with != nil {
+			this.Set("with_", with)
+		}
+		return this, nil
+	}
+	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) {
 		return p.parseQuery()
 	}
+	return p.parseStatementBody()
+}
+
+// parseStatementBody reads a statement once any WITH clause in front of it has
+// been taken off.
+func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokCREATE) {
 		return p.parseCreate()
 	}
@@ -235,6 +259,9 @@ func (p *parser) parseStatement() (*Expression, error) {
 	}
 	if p.at(TokMERGE) {
 		return p.parseMerge()
+	}
+	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) {
+		return p.parseQueryBody()
 	}
 	if c := p.curr(); c != nil {
 		if _, isStatement := p.tables.StatementTokens[c.Type]; isStatement {

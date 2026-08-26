@@ -2964,3 +2964,55 @@ func TestGeneratedColumns(t *testing.T) {
 		}
 	}
 }
+
+// A WITH may stand in front of a statement that is not a query at all, and
+// the guard above this port has to see through it: `WITH a AS (SELECT * FROM
+// b) UPDATE a SET c = 1` reads from b and writes through a.
+//
+// The clause is written first and assigned LAST, which is where the reference
+// puts it however early it appeared.
+func TestACTEBeforeAWrite(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql, want string }{
+		{"", "WITH a AS (SELECT * FROM b) UPDATE a SET col = 1",
+			"WITH a AS (SELECT * FROM b) UPDATE a SET col = 1"},
+		{"", "WITH a AS (SELECT * FROM b) DELETE FROM a",
+			"WITH a AS (SELECT * FROM b) DELETE FROM a"},
+		{"", "WITH a AS (SELECT 1) INSERT INTO b SELECT * FROM a",
+			"WITH a AS (SELECT 1) INSERT INTO b SELECT * FROM a"},
+		{"", "WITH a AS (SELECT * FROM b) CREATE TABLE b AS SELECT * FROM a",
+			"WITH a AS (SELECT * FROM b) CREATE TABLE b AS SELECT * FROM a"},
+		// And the parentheses around a CREATE's query are KEPT: a Subquery
+		// where a bare one holds the Select itself.
+		{"", "CREATE TABLE t1 AS (SELECT c FROM t2)", "CREATE TABLE t1 AS (SELECT c FROM t2)"},
+		{"", "CREATE TABLE t1 AS SELECT c FROM t2", "CREATE TABLE t1 AS SELECT c FROM t2"},
+		{"", "CREATE TABLE z AS (WITH cte AS (SELECT 1) SELECT * FROM cte)",
+			"CREATE TABLE z AS (WITH cte AS (SELECT 1) SELECT * FROM cte)"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; it changes something", tc.sql)
+		}
+		got, err := Generate(e, tc.dialect)
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.want {
+			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
+		}
+	}
+	// The CTE's own query is in the tree, which is the point: a guard that
+	// looked only at the target would not see what the statement reads.
+	e, err := ParseOne("WITH a AS (SELECT * FROM secrets) UPDATE t SET c = 1", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if len(e.FindAll("Select")) != 1 {
+		t.Error("the CTE's query is not in the tree")
+	}
+	if _, err := ParseOne("CREATE TABLE t AS (SELECT 1", ""); err == nil {
+		t.Error("an unclosed query was read")
+	}
+}

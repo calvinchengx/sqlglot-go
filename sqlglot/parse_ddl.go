@@ -88,7 +88,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 		this = New("Schema", Arg{"this", table}, Arg{"expressions", columns})
 		// A view may name its columns AND supply the query.
 		if p.match(TokALIAS) {
-			query, err := p.parseQuery()
+			query, err := p.parseCreateBody()
 			if err != nil {
 				return nil, err
 			}
@@ -96,7 +96,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 		}
 	case p.match(TokALIAS):
 		this = table
-		query, err := p.parseQuery()
+		query, err := p.parseCreateBody()
 		if err != nil {
 			return nil, err
 		}
@@ -1593,4 +1593,24 @@ func (p *parser) parseGenerated() (*Expression, error) {
 		identity.Set("cycle", true)
 	}
 	return identity, nil
+}
+
+// parseCreateBody reads the query a CREATE is given.
+//
+// The parentheses around one are KEPT: `CREATE TABLE t AS (SELECT 1)` holds a
+// Subquery where `CREATE TABLE t AS SELECT 1` holds the Select itself, and the
+// two are different trees for what an engine runs the same way.
+func (p *parser) parseCreateBody() (*Expression, error) {
+	if !p.at(TokL_PAREN) {
+		return p.parseQuery()
+	}
+	p.advance()
+	inner, err := p.parseQuery()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed query")
+	}
+	return New("Subquery", Arg{"this", inner}), nil
 }

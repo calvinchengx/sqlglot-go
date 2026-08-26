@@ -242,7 +242,9 @@ func (g *generator) writeSelect(e *Expression) string {
 	return g.withPrefix(e, strings.Join(parts, " "))
 }
 
-// withPrefix puts a WITH clause in front of whatever it qualifies.
+// withPrefix puts a WITH clause in front of whatever it qualifies -- a query,
+// or a statement that CHANGES something: `WITH a AS (...) UPDATE a SET c = 1`
+// reads through the CTE and writes through it too.
 func (g *generator) withPrefix(e *Expression, body string) string {
 	with := g.child(e, "with_")
 	if with == "" {
@@ -1998,7 +2000,7 @@ func (g *generator) writeGroupConcat(e *Expression) string {
 // shape of `this` is what says which spelling this is.
 func (g *generator) writeCreate(e *Expression) string {
 	kind, _ := e.Args["kind"].(string)
-	out := "CREATE "
+	out := g.withPrefix(e, "CREATE") + " "
 	if replace, _ := e.Args["replace"].(bool); replace {
 		out += "OR REPLACE "
 	}
@@ -2102,7 +2104,7 @@ func (g *generator) writeSchema(e *Expression) string {
 
 // writeInsert writes `INSERT [OVERWRITE] INTO <target> <values-or-query>`.
 func (g *generator) writeInsert(e *Expression) string {
-	out := "INSERT "
+	out := g.withPrefix(e, "INSERT") + " "
 	if overwrite, _ := e.Args["overwrite"].(bool); overwrite {
 		out += "OVERWRITE TABLE "
 	} else {
@@ -2432,7 +2434,7 @@ func (g *generator) writeAlterRename(e *Expression) string {
 // action of a MERGE branch it has the list alone, or -- DuckDB's `WHEN MATCHED
 // THEN UPDATE` -- neither.
 func (g *generator) writeUpdate(e *Expression) string {
-	head := "UPDATE"
+	head := g.withPrefix(e, "UPDATE")
 	if this := g.child(e, "this"); this != "" {
 		head += " " + this
 	}
@@ -2486,10 +2488,11 @@ func (g *generator) writeDelete(e *Expression) string {
 	cluster := g.child(e, "cluster")
 	where := g.child(e, "where")
 	returning := g.child(e, "returning")
+	verb := g.withPrefix(e, "DELETE")
 	if g.tables.ReturningEnd {
-		return clauses("DELETE", body, cluster, where, returning)
+		return clauses(verb, body, cluster, where, returning)
 	}
-	return clauses("DELETE", returning, body, cluster, where)
+	return clauses(verb, returning, body, cluster, where)
 }
 
 // writeReturning writes the clause that says which rows a write hands back.
@@ -2518,7 +2521,7 @@ func (g *generator) writeMerge(e *Expression) string {
 	if g.tables.MergeWithoutTarget {
 		g.markMergeTargets(target, whens)
 	}
-	out := "MERGE INTO " + this + " USING " + using
+	out := g.withPrefix(e, "MERGE INTO "+this+" USING "+using)
 	if on := g.child(e, "on"); on != "" {
 		out += " ON " + on
 	} else if columns, _ := e.Args["using_cond"].([]*Expression); len(columns) > 0 {
