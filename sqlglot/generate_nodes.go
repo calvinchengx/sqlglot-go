@@ -2118,11 +2118,34 @@ func (g *generator) writeCreate(e *Expression) string {
 		// engine cannot run.
 		return g.fail(e.Class + " as a query, which this dialect writes another way")
 	}
+	// T-SQL writes only two parts of a three-part name, dropping the catalog
+	// -- which names a different object. The same rule turns a DROP away, and
+	// it belongs to the dialect's naming rather than to either statement.
+	if g.tables.TruncatesCatalog && namesACatalog(e.Args["this"]) {
+		return g.fail(e.Class + " of a three-part name this dialect shortens")
+	}
 	out += g.child(e, "this")
 	if expression := g.child(e, "expression"); expression != "" {
 		out += " AS " + expression
 	}
 	return out
+}
+
+// namesACatalog reports whether a CREATE's target carries all three parts of
+// a name. The target may be the table itself or a Schema wrapping it.
+func namesACatalog(target any) bool {
+	node, _ := target.(*Expression)
+	if node == nil {
+		return false
+	}
+	if node.Class == "Schema" {
+		node, _ = node.Args["this"].(*Expression)
+		if node == nil {
+			return false
+		}
+	}
+	catalog, _ := node.Args["catalog"].(*Expression)
+	return catalog != nil
 }
 
 // hasTemporaryProperty reports whether this CREATE was written TEMPORARY. The
@@ -2225,7 +2248,7 @@ func (g *generator) writeDrop(e *Expression) string {
 		// dropping the catalog. That LOSES a part of the name, so the port
 		// refuses rather than writing something that names another object.
 		if catalog, _ := t.Args["catalog"].(*Expression); catalog != nil &&
-			g.tables.DropTruncatesCatalog {
+			g.tables.TruncatesCatalog {
 			return g.fail(e.Class + " of a three-part name this dialect shortens")
 		}
 		names = append(names, g.node(t))

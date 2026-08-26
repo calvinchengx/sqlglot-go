@@ -115,6 +115,10 @@ func (p *parser) parseCreate() (*Expression, error) {
 			return nil, err
 		}
 		expression = query
+	case p.curr() == nil:
+		// A table with no columns and no query: the statement makes the name
+		// and nothing else. `CREATE TABLE a` is a whole statement.
+		this = table
 	default:
 		return nil, p.unsupported("CREATE " + kind + " without columns or a query")
 	}

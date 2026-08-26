@@ -1739,7 +1739,7 @@ func TestCreateTable(t *testing.T) {
 	for _, sql := range []string{
 		"CREATE TABLE t (a INT GENERATED ALWAYS AS ROW START)",
 		"CREATE MATERIALIZED VIEW v AS SELECT 1",
-		"CREATE TABLE t",
+		"CREATE TABLE t WITH (FORMAT='parquet')",
 		"CREATE TABLE t (a INT",
 		"CREATE TABLE t (a INT) PARTITIONED BY (b)",
 	} {
@@ -3603,5 +3603,45 @@ func TestPragma(t *testing.T) {
 	}
 	if _, err := ParseOne("PRAGMA", ""); err == nil {
 		t.Error("a bare PRAGMA was read")
+	}
+}
+
+// `CREATE TABLE a` is a whole statement: it makes the name and nothing else.
+//
+// And T-SQL writes only two parts of a three-part name here, dropping the
+// catalog -- which names a different object. The same rule turns a DROP away,
+// and it belongs to the dialect's naming rather than to either statement.
+func TestABareCreate(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql string }{
+		{"", "CREATE TABLE a"},
+		{"postgres", "CREATE TABLE a"},
+		{"duckdb", "CREATE TABLE x"},
+		{"tsql", "CREATE TABLE a"},
+		{"databricks", "CREATE TABLE a"},
+		{"", "CREATE TABLE a.b.c"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q, %s): %v", tc.sql, tc.dialect, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; it makes something", tc.sql)
+		}
+		got, err := Generate(e, tc.dialect)
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.sql {
+			t.Errorf("%q wrote %q", tc.sql, got)
+		}
+	}
+	for _, sql := range []string{"CREATE TABLE a.b.c", "CREATE TABLE a.b.c (x INT)"} {
+		e, err := ParseOne(sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "tsql"); err == nil {
+			t.Errorf("%q wrote %q for T-SQL, which drops the catalog", sql, got)
+		}
 	}
 }

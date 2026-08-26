@@ -1482,11 +1482,14 @@ def rename_target(dialect: str) -> str:
     return "name"
 
 
-def drop_truncates_catalog(dialect: str) -> bool:
-    """Whether a DROP of a three-part name writes only two of them.
+def truncates_catalog(dialect: str) -> bool:
+    """Whether a three-part name is written with only two of them.
 
     T-SQL does, dropping the catalog -- which names a different object, so the
-    port refuses rather than writing it.
+    port refuses rather than writing it. The rule belongs to the DIALECT's
+    naming rather than to any one statement: a DROP and a CREATE lose the
+    part the same way, and the flag was named for the first place it was
+    found.
     """
     import sqlglot
 
@@ -3636,9 +3639,9 @@ def main() -> int:
         "\t// MapBraceLiteral: `MAP {k: v}` is a map LITERAL here. Elsewhere MAP\n",
         "\t// is an ordinary name and the braces are a struct.\n",
         "\tMapBraceLiteral bool\n",
-        "\t// DropTruncatesCatalog: a DROP of a three-part name is written with\n",
-        "\t// only two of them here, which names a different object.\n",
-        "\tDropTruncatesCatalog bool\n",
+        "\t// TruncatesCatalog: a three-part name is written with only two of\n",
+        "\t// them here, which names a different object.\n",
+        "\tTruncatesCatalog bool\n",
         "\t// HoistsInsertWith: a WITH inside an INSERT is written in FRONT of\n",
         "\t// the statement here, and left where it was written elsewhere.\n",
         "\tHoistsInsertWith bool\n",
@@ -4305,8 +4308,8 @@ def main() -> int:
         out.append("\t\tReturningEnd: %s,\n" % str(_re).lower())
         out.append(f"\t\tRenameTarget: {gostr(rename_target(name))},\n")
         out.append(
-            "\t\tDropTruncatesCatalog: %s,\n"
-            % str(drop_truncates_catalog(name)).lower()
+            "\t\tTruncatesCatalog: %s,\n"
+            % str(truncates_catalog(name)).lower()
         )
         out.append(
             "\t\tRewritesCreateAsSelect: %s,\n"

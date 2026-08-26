@@ -259,9 +259,9 @@ type ParserTables struct {
 	// MapBraceLiteral: `MAP {k: v}` is a map LITERAL here. Elsewhere MAP
 	// is an ordinary name and the braces are a struct.
 	MapBraceLiteral bool
-	// DropTruncatesCatalog: a DROP of a three-part name is written with
-	// only two of them here, which names a different object.
-	DropTruncatesCatalog bool
+	// TruncatesCatalog: a three-part name is written with only two of
+	// them here, which names a different object.
+	TruncatesCatalog bool
 	// HoistsInsertWith: a WITH inside an INSERT is written in FRONT of
 	// the statement here, and left where it was written elsewhere.
 	HoistsInsertWith bool
@@ -3791,7 +3791,7 @@ var parserTables = map[string]*ParserTables{
 		ReturningWord:            "RETURNING",
 		ReturningEnd:             true,
 		RenameTarget:             "whole",
-		DropTruncatesCatalog:     false,
+		TruncatesCatalog:         false,
 		RewritesCreateAsSelect:   false,
 		GroupConcatOrder:         "inline",
 		PivotColumnNaming:        "agg_name_if_aliased",
@@ -7409,7 +7409,7 @@ var parserTables = map[string]*ParserTables{
 		ReturningWord:            "OUTPUT",
 		ReturningEnd:             false,
 		RenameTarget:             "",
-		DropTruncatesCatalog:     true,
+		TruncatesCatalog:         true,
 		RewritesCreateAsSelect:   true,
 		GroupConcatOrder:         "within_group",
 		ForClauseOptions: map[string]map[string][]string{
@@ -11114,7 +11114,7 @@ var parserTables = map[string]*ParserTables{
 		ReturningWord:            "RETURNING",
 		ReturningEnd:             true,
 		RenameTarget:             "name",
-		DropTruncatesCatalog:     false,
+		TruncatesCatalog:         false,
 		RewritesCreateAsSelect:   false,
 		PivotColumnNaming:        "agg_name_if_aliased",
 		PivotIdentifiesStrings:   false,
@@ -14991,7 +14991,7 @@ var parserTables = map[string]*ParserTables{
 		ReturningWord:            "RETURNING",
 		ReturningEnd:             true,
 		RenameTarget:             "name",
-		DropTruncatesCatalog:     false,
+		TruncatesCatalog:         false,
 		RewritesCreateAsSelect:   false,
 		TableSampleWord:          "TABLESAMPLE",
 		SelectSampleWord:         "USING SAMPLE",
@@ -18865,7 +18865,7 @@ var parserTables = map[string]*ParserTables{
 		ReturningWord:            "RETURNING",
 		ReturningEnd:             true,
 		RenameTarget:             "whole",
-		DropTruncatesCatalog:     false,
+		TruncatesCatalog:         false,
 		RewritesCreateAsSelect:   false,
 		GroupConcatOrder:         "within_group",
 		PivotColumnNaming:        "agg_name_if_multiple",
