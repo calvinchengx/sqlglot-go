@@ -1112,6 +1112,89 @@ def set_item_separator(dialect: str) -> str:
     return tail.split("'zzvalue'")[0]
 
 
+def computed_column_spelling(dialect: str) -> tuple[str, bool]:
+    """How a COMPUTED column is written, and whether its type survives.
+
+    Four spellings for one node. PostgreSQL keeps the whole
+    `GENERATED ALWAYS AS (x) STORED`, Databricks drops the STORED, the neutral
+    dialect and DuckDB write only `AS x`, and T-SQL writes `AS x` and drops
+    the column's TYPE with it -- a computed column has no declared type there.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one(
+            "CREATE TABLE t (zzcol INT GENERATED ALWAYS AS (zzexpr) STORED)",
+            read="postgres",
+        ).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return "", False
+    inside = text[text.index("(") + 1 : text.rindex(")")]
+    kept = " INT" in inside or " INTEGER" in inside
+    spelling = inside.split("zzcol", 1)[1]
+    for word in (" INTEGER", " INT"):
+        if spelling.startswith(word):
+            spelling = spelling[len(word) :]
+            break
+    return spelling.strip().replace("zzexpr", "{expr}"), kept
+
+
+def identity_written(dialect: str) -> bool:
+    """Whether a GENERATED ... AS IDENTITY column keeps that spelling.
+
+    T-SQL has no such constraint and rewrites every one of them into
+    `IDENTITY(start, increment)`, which drops CYCLE and ON NULL with it.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one(
+            "CREATE TABLE t (x BIGINT GENERATED ALWAYS AS IDENTITY (CYCLE))"
+        ).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return False
+    return "GENERATED" in text and "CYCLE" in text
+
+
+def identity_widens_type(dialect: str) -> bool:
+    """Whether an identity column's type is widened to BIGINT.
+
+    Databricks supports only BIGINT identity columns and the reference changes
+    the declared type to match, which is a change to the tree rather than a
+    spelling. It is reproduced rather than refused: the column still holds
+    every value the narrower type could.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one(
+            "CREATE TABLE t (x INT GENERATED ALWAYS AS IDENTITY)"
+        ).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return False
+    return "BIGINT" in text
+
+
+def generated_expression_is_computed(dialect: str) -> bool:
+    """Whether `GENERATED ALWAYS AS (x)` -- with no STORED -- is a COMPUTED
+    column here.
+
+    Databricks reads it that way; everyone else records it as an identity
+    carrying an expression, odd as that reads. One statement, two nodes, and
+    the dialect decides which.
+    """
+    import sqlglot
+    from sqlglot import exp
+
+    try:
+        tree = sqlglot.parse_one(
+            "CREATE TABLE t (a INT GENERATED ALWAYS AS (1 + 2))", read=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return False
+    return any(True for _ in tree.find_all(exp.ComputedColumnConstraint))
+
+
 def merge_without_target(dialect: str) -> bool:
     """Whether a MERGE drops the target's name from the columns it assigns.
 
@@ -3348,6 +3431,8 @@ def main() -> int:
         "\t// FunctionReturnsPlace says WHERE a RETURNS property is written, per\n\t// shape of what it holds: after the parameter list, in the body, or\n\t// nowhere at all.\n\tFunctionReturnsPlace map[string]string\n\t// FunctionPropertiesWritten: a function\'s other properties -- LANGUAGE,\n\t// IMMUTABLE, STRICT -- survive being written here.\n\tFunctionPropertiesWritten bool\n\t// FunctionReturnAs: AS is written in front of a RETURN body.\n\tFunctionReturnAs bool\n\t// FunctionWrapsTableBody: a table-valued function\'s body becomes a\n\t// RETURN here even when it was not written as one.\n\tFunctionWrapsTableBody bool\n\t// FunctionAsTableRead: `AS TABLE <query>` is READ as a return type here.\n\tFunctionAsTableRead bool\n\t// ReturnWord is the word a RETURN writes, empty where it writes none.\n\tReturnWord string\n",
         "\t// ParameterModePrefix: a parameter\'s mode is written in FRONT of it\n\t// here rather than after its type, and ParameterModeWords how each is\n\t// spelled -- one word or two.\n\tParameterModePrefix bool\n\tParameterModeWords  map[string]string\n",
         "\t// SetItemSeparator sits between a configuration name and its value.\n\tSetItemSeparator string\n",
+        "\t// ComputedColumnSpelling is how a computed column is written, with\n\t// {expr} where the expression goes, and ComputedKeepsType whether the\n\t// column\'s declared type survives beside it.\n\tComputedColumnSpelling string\n\tComputedKeepsType      bool\n\t// IdentityWritten: a GENERATED ... AS IDENTITY column keeps that\n\t// spelling here rather than being rewritten into something else.\n\tIdentityWritten bool\n\t// IdentityWidensType: an identity column\'s type is widened to BIGINT.\n\tIdentityWidensType bool\n",
+        "\t// GeneratedExpressionIsComputed: `GENERATED ALWAYS AS (x)` with no\n\t// STORED is a COMPUTED column here, not an identity with an\n\t// expression on it.\n\tGeneratedExpressionIsComputed bool\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -3893,6 +3978,17 @@ def main() -> int:
         out.append(f"\t\tMapBraceLiteral: {str(map_brace_literal(name)).lower()},\n")
         out.append(
             "\t\tHoistsInsertWith: %s,\n" % str(hoists_insert_with(name)).lower()
+        )
+        out.append(
+            "\t\tGeneratedExpressionIsComputed: %s,\n"
+            % str(generated_expression_is_computed(name)).lower()
+        )
+        _ccs, _cct = computed_column_spelling(name)
+        out.append(f"\t\tComputedColumnSpelling: {gostr(_ccs)},\n")
+        out.append("\t\tComputedKeepsType: %s,\n" % str(_cct).lower())
+        out.append("\t\tIdentityWritten: %s,\n" % str(identity_written(name)).lower())
+        out.append(
+            "\t\tIdentityWidensType: %s,\n" % str(identity_widens_type(name)).lower()
         )
         out.append(f"\t\tSetItemSeparator: {gostr(set_item_separator(name))},\n")
         _pmp, _pmw = parameter_mode(name)

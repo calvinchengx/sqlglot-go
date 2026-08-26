@@ -455,6 +455,27 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			p.advance()
 			kind = New("CommentColumnConstraint",
 				Arg{"this", New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})})
+		case p.atWords("GENERATED"):
+			p.advance()
+			generated, err := p.parseGenerated()
+			if err != nil {
+				return nil, err
+			}
+			kind = generated
+		case p.atWords("CHECK"):
+			p.advance()
+			if !p.match(TokL_PAREN) {
+				return nil, p.unsupported("CHECK without a condition")
+			}
+			condition, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed CHECK")
+			}
+			kind = New("CheckColumnConstraint",
+				Arg{"this", condition}, Arg{"enforced", false})
 		case p.at(TokREFERENCES):
 			p.advance()
 			target, err := p.parseTableName()
@@ -1459,4 +1480,117 @@ func (p *parser) parseParameterName() *Expression {
 	p.advance()
 	p.advance()
 	return New("Parameter", Arg{"this", New("Var", Arg{"this", n.Text})})
+}
+
+// parseGenerated reads what follows GENERATED on a column.
+//
+// Three constructs share the word, and what comes after AS decides which: a
+// column the engine fills from a SEQUENCE (`AS IDENTITY`), one it computes
+// and stores (`AS (expr) STORED`), and one it computes without storing
+// (`AS (expr)`) -- which the reference records as an identity carrying an
+// expression rather than as a computed column, odd as that reads.
+func (p *parser) parseGenerated() (*Expression, error) {
+	always := false
+	onNull := false
+	switch {
+	case p.atWords("ALWAYS"):
+		p.advance()
+		always = true
+	case p.atWords("BY", "DEFAULT"):
+		p.advance()
+		p.advance()
+		if p.atWords("ON", "NULL") {
+			p.advance()
+			p.advance()
+			onNull = true
+		}
+	default:
+		return nil, p.unsupported("GENERATED without ALWAYS or BY DEFAULT")
+	}
+	if !p.match(TokALIAS) {
+		return nil, p.unsupported("GENERATED without AS")
+	}
+
+	if p.at(TokL_PAREN) {
+		// The parentheses are not kept: the reference kept the expression
+		// alone here, unlike T-SQL's own `AS (x) PERSISTED`, which keeps them.
+		p.advance()
+		value, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed generated expression")
+		}
+		if p.atWords("STORED") {
+			p.advance()
+			return New("ComputedColumnConstraint", Arg{"this", value}), nil
+		}
+		if !always {
+			return nil, p.unsupported("a computed column that is not ALWAYS")
+		}
+		// Without STORED it is a computed column in Databricks and an
+		// identity CARRYING an expression everywhere else. One statement,
+		// two nodes, and the dialect decides which.
+		if p.tables.GeneratedExpressionIsComputed {
+			return New("ComputedColumnConstraint", Arg{"this", value}), nil
+		}
+		return New("GeneratedAsIdentityColumnConstraint",
+			Arg{"this", true}, Arg{"expression", value}), nil
+	}
+	if !p.atWords("IDENTITY") {
+		// `GENERATED ALWAYS AS ROW START` and its like say what the column
+		// tracks rather than how it is filled.
+		return nil, p.unsupported("a GENERATED column this port does not read")
+	}
+	p.advance()
+
+	identity := New("GeneratedAsIdentityColumnConstraint", Arg{"this", always})
+	if !always {
+		identity.Set("on_null", onNull)
+	}
+	if !p.at(TokL_PAREN) {
+		return identity, nil
+	}
+	p.advance()
+	var start, increment *Expression
+	cycle := false
+	for !p.at(TokR_PAREN) {
+		switch {
+		case p.atWords("START", "WITH"):
+			p.advance()
+			p.advance()
+			value, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			start = value
+		case p.atWords("INCREMENT", "BY"):
+			p.advance()
+			p.advance()
+			value, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			increment = value
+		case p.atWords("CYCLE"):
+			p.advance()
+			cycle = true
+		default:
+			return nil, p.unsupported("an IDENTITY option this port does not read")
+		}
+	}
+	p.advance() // the closing parenthesis
+	// Set in the reference's order, which is not the order they may be
+	// written in.
+	if start != nil {
+		identity.Set("start", start)
+	}
+	if increment != nil {
+		identity.Set("increment", increment)
+	}
+	if cycle {
+		identity.Set("cycle", true)
+	}
+	return identity, nil
 }

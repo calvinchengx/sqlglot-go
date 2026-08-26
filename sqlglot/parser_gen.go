@@ -319,6 +319,20 @@ type ParserTables struct {
 	ParameterModeWords  map[string]string
 	// SetItemSeparator sits between a configuration name and its value.
 	SetItemSeparator string
+	// ComputedColumnSpelling is how a computed column is written, with
+	// {expr} where the expression goes, and ComputedKeepsType whether the
+	// column's declared type survives beside it.
+	ComputedColumnSpelling string
+	ComputedKeepsType      bool
+	// IdentityWritten: a GENERATED ... AS IDENTITY column keeps that
+	// spelling here rather than being rewritten into something else.
+	IdentityWritten bool
+	// IdentityWidensType: an identity column's type is widened to BIGINT.
+	IdentityWidensType bool
+	// GeneratedExpressionIsComputed: `GENERATED ALWAYS AS (x)` with no
+	// STORED is a COMPUTED column here, not an identity with an
+	// expression on it.
+	GeneratedExpressionIsComputed bool
 	// RenameTarget says how much of a qualified name a RENAME TO writes:
 	// the whole thing, the last part only, or -- empty -- neither,
 	// because the dialect writes another statement entirely.
@@ -3672,10 +3686,15 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:     false,
-		HoistsInsertWith:    false,
-		SetItemSeparator:    " = ",
-		ParameterModePrefix: false,
+		MapBraceLiteral:               false,
+		HoistsInsertWith:              false,
+		GeneratedExpressionIsComputed: false,
+		ComputedColumnSpelling:        "AS {expr}",
+		ComputedKeepsType:             true,
+		IdentityWritten:               true,
+		IdentityWidensType:            false,
+		SetItemSeparator:              " = ",
+		ParameterModePrefix:           false,
 		ParameterModeWords: map[string]string{
 			"in":       "IN",
 			"inout":    "IN OUT",
@@ -7254,10 +7273,15 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:     false,
-		HoistsInsertWith:    true,
-		SetItemSeparator:    " ",
-		ParameterModePrefix: false,
+		MapBraceLiteral:               false,
+		HoistsInsertWith:              true,
+		GeneratedExpressionIsComputed: false,
+		ComputedColumnSpelling:        "AS {expr}",
+		ComputedKeepsType:             false,
+		IdentityWritten:               false,
+		IdentityWidensType:            false,
+		SetItemSeparator:              " ",
+		ParameterModePrefix:           false,
 		ParameterModeWords: map[string]string{
 			"in":       "IN",
 			"inout":    "IN OUT",
@@ -10921,10 +10945,15 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:     false,
-		HoistsInsertWith:    false,
-		SetItemSeparator:    " = ",
-		ParameterModePrefix: true,
+		MapBraceLiteral:               false,
+		HoistsInsertWith:              false,
+		GeneratedExpressionIsComputed: false,
+		ComputedColumnSpelling:        "GENERATED ALWAYS AS ({expr}) STORED",
+		ComputedKeepsType:             true,
+		IdentityWritten:               true,
+		IdentityWidensType:            false,
+		SetItemSeparator:              " = ",
+		ParameterModePrefix:           true,
 		ParameterModeWords: map[string]string{
 			"in":       "IN",
 			"inout":    "INOUT",
@@ -14761,10 +14790,15 @@ var parserTables = map[string]*ParserTables{
 			"STRINGAGG":    {},
 			"STRING_AGG":   {},
 		},
-		MapBraceLiteral:     true,
-		HoistsInsertWith:    false,
-		SetItemSeparator:    "",
-		ParameterModePrefix: false,
+		MapBraceLiteral:               true,
+		HoistsInsertWith:              false,
+		GeneratedExpressionIsComputed: false,
+		ComputedColumnSpelling:        "AS {expr}",
+		ComputedKeepsType:             true,
+		IdentityWritten:               true,
+		IdentityWidensType:            false,
+		SetItemSeparator:              "",
+		ParameterModePrefix:           false,
 		ParameterModeWords: map[string]string{
 			"in":       "IN",
 			"inout":    "IN OUT",
@@ -18598,10 +18632,15 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:     false,
-		HoistsInsertWith:    true,
-		SetItemSeparator:    " = ",
-		ParameterModePrefix: false,
+		MapBraceLiteral:               false,
+		HoistsInsertWith:              true,
+		GeneratedExpressionIsComputed: true,
+		ComputedColumnSpelling:        "GENERATED ALWAYS AS ({expr})",
+		ComputedKeepsType:             true,
+		IdentityWritten:               true,
+		IdentityWidensType:            true,
+		SetItemSeparator:              " = ",
+		ParameterModePrefix:           false,
 		ParameterModeWords: map[string]string{
 			"in":       "IN",
 			"inout":    "IN OUT",
