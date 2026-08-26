@@ -73,6 +73,11 @@ func init() {
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
+		"TruncateTable":                       (*generator).writeTruncate,
+		"Use":                                 (*generator).writeUse,
+		"Transaction":                         (*generator).writeTransaction,
+		"Commit":                              (*generator).writeTransaction,
+		"Rollback":                            (*generator).writeTransaction,
 		"WithTableHint":                       (*generator).writeTableHint,
 		"UserDefinedFunction":                 (*generator).writeUserDefinedFunction,
 		"Return":                              (*generator).writeReturn,
@@ -3049,4 +3054,66 @@ func escapeControlCharacters(body string) string {
 // writeTableHint writes the advice a table was given about how to read it.
 func (g *generator) writeTableHint(e *Expression) string {
 	return "WITH (" + g.list(e) + ")"
+}
+
+// writeTruncate writes the tables a TRUNCATE empties.
+func (g *generator) writeTruncate(e *Expression) string {
+	out := "TRUNCATE TABLE "
+	if exists, _ := e.Args["exists"].(bool); exists {
+		out += "IF EXISTS "
+	}
+	tables, _ := e.Args["expressions"].([]*Expression)
+	parts := make([]string, 0, len(tables))
+	for _, table := range tables {
+		text := g.node(table)
+		// ONLY says this table and not the ones that inherit from it.
+		if only, _ := table.Args["only"].(bool); only {
+			text = "ONLY " + text
+		}
+		parts = append(parts, text)
+	}
+	out += strings.Join(parts, ", ")
+	if identity, _ := e.Args["identity"].(string); identity != "" {
+		out += " " + identity + " IDENTITY"
+	}
+	if option, _ := e.Args["option"].(string); option != "" {
+		out += " " + option
+	}
+	return out
+}
+
+// writeUse writes the database, schema or role a session moves to.
+func (g *generator) writeUse(e *Expression) string {
+	out := "USE "
+	if kind := g.child(e, "kind"); kind != "" {
+		out += kind + " "
+	}
+	return out + g.child(e, "this")
+}
+
+// writeTransaction writes BEGIN, COMMIT and ROLLBACK.
+//
+// T-SQL says TRANSACTION after the verb and DROPS the name that follows -- so
+// a `ROLLBACK TO b` written there would roll back everything rather than to
+// the savepoint, which is a different action and is refused instead.
+func (g *generator) writeTransaction(e *Expression) string {
+	verb := map[string]string{
+		"Transaction": "BEGIN", "Commit": "COMMIT", "Rollback": "ROLLBACK",
+	}[e.Class]
+	if savepoint := g.child(e, "savepoint"); savepoint != "" {
+		if !g.tables.TransactionNameWritten {
+			return g.fail(e.Class + " to a savepoint, which this dialect writes away")
+		}
+		return verb + " TO " + savepoint
+	}
+	if word := g.tables.TransactionWord; word != "" {
+		verb += " " + word
+	}
+	if name := g.child(e, "this"); name != "" {
+		if !g.tables.TransactionNameWritten {
+			return g.fail(e.Class + " with a name, which this dialect writes away")
+		}
+		return verb + " " + name
+	}
+	return verb
 }

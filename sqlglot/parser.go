@@ -260,6 +260,15 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokMERGE) {
 		return p.parseMerge()
 	}
+	if p.at(TokTRUNCATE) {
+		return p.parseTruncate()
+	}
+	if p.at(TokUSE) {
+		return p.parseUse()
+	}
+	if p.at(TokBEGIN) || p.at(TokCOMMIT) || p.at(TokROLLBACK) {
+		return p.parseTransaction()
+	}
 	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) || p.at(TokFROM) {
 		return p.parseQueryBody()
 	}

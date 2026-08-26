@@ -3340,3 +3340,76 @@ func TestApplyWithAnAlias(t *testing.T) {
 		}
 	}
 }
+
+// The statements that are barely statements: a table emptied, a database
+// chosen, a transaction opened or closed. None is a query, and none is
+// read-only either -- a guard has to see them.
+func TestTruncateUseAndTransactions(t *testing.T) {
+	for _, tc := range []struct{ name, read, write, sql, want string }{
+		{"truncate", "", "", "TRUNCATE TABLE t", "TRUNCATE TABLE t"},
+		{"if it is there", "", "", "TRUNCATE TABLE IF EXISTS t", "TRUNCATE TABLE IF EXISTS t"},
+		{"cascading", "postgres", "postgres", "TRUNCATE TABLE t1 CASCADE", "TRUNCATE TABLE t1 CASCADE"},
+		{"restarting", "postgres", "postgres", "TRUNCATE TABLE t1 RESTART IDENTITY",
+			"TRUNCATE TABLE t1 RESTART IDENTITY"},
+		// ONLY is on the TABLE; the star that means the opposite is the
+		// default and is written nowhere.
+		{"only these tables", "postgres", "postgres",
+			"TRUNCATE TABLE ONLY t1, t2*, ONLY t3 RESTART IDENTITY CASCADE",
+			"TRUNCATE TABLE ONLY t1, t2, ONLY t3 RESTART IDENTITY CASCADE"},
+		{"use", "", "", "USE db", "USE db"},
+		{"use a schema", "", "", "USE SCHEMA x.y", "USE SCHEMA x.y"},
+		// A quoted word that spells a kind is a NAME.
+		{"use a name that spells a kind", "", "", `USE "role"`, `USE "role"`},
+		{"begin", "", "", "BEGIN", "BEGIN"},
+		{"commit", "", "", "COMMIT", "COMMIT"},
+		{"rollback", "", "", "ROLLBACK", "ROLLBACK"},
+		{"rollback to a savepoint", "", "", "ROLLBACK TO b", "ROLLBACK TO b"},
+		// The word TRANSACTION says nothing the verb does not, and only
+		// T-SQL writes it back.
+		{"the word is optional", "", "", "COMMIT WORK", "COMMIT"},
+		{"and T-SQL writes it", "tsql", "tsql", "COMMIT TRAN", "COMMIT TRANSACTION"},
+		{"begin one, T-SQL", "tsql", "tsql", "BEGIN TRANSACTION", "BEGIN TRANSACTION"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.read)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			if !IsWrite(e) {
+				t.Errorf("IsWrite(%q) = false; it is not a read", tc.sql)
+			}
+			got, err := Generate(e, tc.write)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// T-SQL's BEGIN opens a BLOCK, and it takes the word TRANSACTION to mean
+	// the other thing. The reference keeps the block form as raw text.
+	if _, err := ParseOne("BEGIN", "tsql"); err == nil {
+		t.Error("a T-SQL BEGIN was read as a transaction")
+	}
+	// And T-SQL DROPS the name a transaction carries, so a rollback TO a
+	// savepoint would roll back everything -- a different action.
+	for _, sql := range []string{"ROLLBACK TO b", "COMMIT TRANSACTION n"} {
+		e, err := ParseOne(sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "tsql"); err == nil {
+			t.Errorf("%q wrote %q for T-SQL, which writes the name away", sql, got)
+		}
+	}
+	for _, sql := range []string{
+		"TRUNCATE t",
+		"TRUNCATE TABLE t1 PARTITION(age = 10)",
+		"USE",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}

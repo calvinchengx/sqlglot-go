@@ -1322,6 +1322,40 @@ def table_hints_written(dialect: str) -> bool:
     return "NOLOCK" in text
 
 
+def transaction_conventions(dialect: str) -> tuple[str, bool]:
+    """The word a transaction statement writes, and whether a NAME survives.
+
+    T-SQL writes `BEGIN TRANSACTION` where everyone else writes `BEGIN`, and
+    it drops the name that follows -- `ROLLBACK TO b` becomes `ROLLBACK
+    TRANSACTION`, which rolls back everything rather than to the savepoint.
+    That is a different action, so the port refuses it rather than following.
+    """
+    import sqlglot
+
+    try:
+        plain = sqlglot.parse_one("BEGIN").sql(dialect=dialect or None)
+        named = sqlglot.parse_one("ROLLBACK TO zzsave").sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return "", True
+    word = plain.replace("BEGIN", "").strip()
+    return word, "zzsave" in named
+
+
+def bare_begin_is_a_transaction(dialect: str) -> bool:
+    """Whether a bare BEGIN opens a TRANSACTION here.
+
+    T-SQL's BEGIN opens a BLOCK -- `BEGIN ... END` -- and it takes the word
+    TRANSACTION to mean the other thing. The reference gives up on the block
+    form and keeps the raw text, which is not a tree this port builds.
+    """
+    import sqlglot
+
+    try:
+        return type(sqlglot.parse_one("BEGIN", read=dialect or None)).__name__ == "Transaction"
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def merge_without_target(dialect: str) -> bool:
     """Whether a MERGE drops the target's name from the columns it assigns.
 
@@ -3565,6 +3599,8 @@ def main() -> int:
         "\t// OffsetRowsWord is written after an OFFSET count, and is empty in\n\t// every dialect but T-SQL.\n\tOffsetRowsWord string\n",
         "\t// IntervalUnitAliases are the unit spellings an INTERVAL normalises,\n\t// keyed by the upper-cased spelling written.\n\tIntervalUnitAliases map[string]string\n",
         "\t// TableHintsWritten: a table\'s locking hints survive here. Every\n\t// dialect but T-SQL drops them.\n\tTableHintsWritten bool\n",
+        "\t// TransactionWord is written after BEGIN, COMMIT and ROLLBACK here,\n\t// and TransactionNameWritten whether the name one carries survives.\n\tTransactionWord        string\n\tTransactionNameWritten bool\n",
+        "\t// BareBeginIsATransaction: a BEGIN with no TRANSACTION after it opens\n\t// one here. In T-SQL it opens a block instead.\n\tBareBeginIsATransaction bool\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -4126,6 +4162,13 @@ def main() -> int:
             out.append(f"\t\t\t{gostr(key)}: {gostr(value)},\n")
         out.append("\t\t},\n")
         out.append("\t\tTableHintsWritten: %s,\n" % str(table_hints_written(name)).lower())
+        out.append(
+            "\t\tBareBeginIsATransaction: %s,\n"
+            % str(bare_begin_is_a_transaction(name)).lower()
+        )
+        _tw, _tn = transaction_conventions(name)
+        out.append(f"\t\tTransactionWord: {gostr(_tw)},\n")
+        out.append("\t\tTransactionNameWritten: %s,\n" % str(_tn).lower())
         out.append(f"\t\tOffsetRowsWord: {gostr(offset_rows_word(name))},\n")
         out.append(f"\t\tIndexOnWord: {gostr(index_on_word(name))},\n")
         _ccs, _cct = computed_column_spelling(name)

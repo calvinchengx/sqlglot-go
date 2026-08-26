@@ -577,7 +577,6 @@ func TestCountKeepsItsFlag(t *testing.T) {
 // over.
 func TestWritesAreNamedNotParsed(t *testing.T) {
 	for _, c := range []struct{ sql, kind string }{
-		{"TRUNCATE TABLE dbo.fct_sales", "TRUNCATE"},
 		{"EXEC xp_cmdshell 'dir'", "EXEC"},
 		{"GRANT SELECT ON dbo.fct_sales TO reader", "GRANT"},
 	} {
@@ -685,13 +684,16 @@ func TestWritesAreNamedWhenTheyParse(t *testing.T) {
 		"DROP TABLE dbo.fct_sales",
 		"DELETE FROM dbo.fct_sales",
 		"UPDATE dbo.fct_sales SET amount_usd = 0",
+		"TRUNCATE TABLE dbo.fct_sales",
+		"USE other_db",
+		"BEGIN TRANSACTION",
 	} {
 		e, err := ParseOne(sql, "tsql")
 		if err != nil {
 			t.Fatalf("ParseOne(%q): %v", sql, err)
 		}
 		if !IsWrite(e) {
-			t.Errorf("IsWrite(%q) = false; a CREATE changes something", sql)
+			t.Errorf("IsWrite(%q) = false; it is not a read", sql)
 		}
 	}
 	// And a query is not a write.

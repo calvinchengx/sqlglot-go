@@ -246,6 +246,12 @@ var writeClasses = map[string]bool{
 	"Set":           true,
 	"Use":           true,
 	"Pragma":        true,
+	// A transaction verb changes no rows by itself, but it is not read-only
+	// either: what follows it is held open, committed or thrown away. A guard
+	// that let one past would be letting the session be steered.
+	"Transaction": true,
+	"Commit":      true,
+	"Rollback":    true,
 }
 
 // IsWrite reports whether a parsed statement changes anything.
@@ -1743,4 +1749,152 @@ func (p *parser) parseIndexColumns() ([]*Expression, error) {
 		return nil, p.unsupported("unclosed index column list")
 	}
 	return out, nil
+}
+
+// The statements that are barely statements: a table emptied, a database
+// chosen, a transaction opened or closed. Each is small, and each CHANGES
+// something, which is why the guard above this port has to see them.
+
+// parseTruncate reads `TRUNCATE TABLE [IF EXISTS] [ONLY] t[, ...]
+// [RESTART|CONTINUE IDENTITY] [CASCADE|RESTRICT]`.
+func (p *parser) parseTruncate() (*Expression, error) {
+	p.advance() // TRUNCATE
+	if !p.atWords("TABLE") {
+		return nil, p.unsupported("TRUNCATE without TABLE")
+	}
+	p.advance()
+	exists := false
+	if p.atWords("IF", "EXISTS") {
+		p.advance()
+		p.advance()
+		exists = true
+	}
+
+	var tables []*Expression
+	for {
+		only := false
+		if p.atWords("ONLY") {
+			p.advance()
+			only = true
+		}
+		table, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		// `t2*` says the table AND everything that inherits from it, which is
+		// the default -- the star is written and recorded nowhere.
+		if p.at(TokSTAR) {
+			p.advance()
+		}
+		if only {
+			table.Set("only", true)
+		}
+		tables = append(tables, table)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+
+	node := New("TruncateTable", Arg{"expressions", tables},
+		Arg{"is_database", false}, Arg{"exists", exists})
+	switch {
+	case p.atWords("RESTART", "IDENTITY"):
+		p.advance()
+		p.advance()
+		node.Set("identity", "RESTART")
+	case p.atWords("CONTINUE", "IDENTITY"):
+		p.advance()
+		p.advance()
+		node.Set("identity", "CONTINUE")
+	}
+	switch {
+	case p.atWords("CASCADE"):
+		p.advance()
+		node.Set("option", "CASCADE")
+	case p.atWords("RESTRICT"):
+		p.advance()
+		node.Set("option", "RESTRICT")
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("TRUNCATE with more than this port reads")
+	}
+	return node, nil
+}
+
+// parseUse reads `USE [SCHEMA|CATALOG|...] <name>`. The kind is a WORD and
+// lands on the node before the name, whatever order the two are read in.
+func (p *parser) parseUse() (*Expression, error) {
+	p.advance() // USE
+	node := New("Use")
+	for _, word := range []string{"SCHEMA", "CATALOG", "DATABASE", "WAREHOUSE", "ROLE"} {
+		if c := p.curr(); c != nil && c.Type != TokIDENTIFIER && p.atWords(word) {
+			p.advance()
+			node.Set("kind", New("Var", Arg{"this", word}))
+			break
+		}
+	}
+	table, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+	node.Set("this", table)
+	if p.curr() != nil {
+		return nil, p.unsupported("USE with more than this port reads")
+	}
+	return node, nil
+}
+
+// parseTransaction reads BEGIN, COMMIT and ROLLBACK, each of which may name
+// the transaction it acts on -- and ROLLBACK may name a SAVEPOINT instead,
+// which is a different argument because it is a different action.
+func (p *parser) parseTransaction() (*Expression, error) {
+	verb := strings.ToUpper(p.curr().Text)
+	// T-SQL's bare BEGIN opens a BLOCK -- `BEGIN ... END` -- and takes the
+	// word TRANSACTION to mean the other thing. The reference gives up on the
+	// block form and keeps the raw text, which is not a tree this port makes.
+	if verb == "BEGIN" && !p.tables.BareBeginIsATransaction {
+		if n := p.next(); n == nil ||
+			(!strings.EqualFold(n.Text, "TRANSACTION") && !strings.EqualFold(n.Text, "TRAN")) {
+			return nil, p.unsupported("BEGIN opening a block")
+		}
+	}
+	p.advance()
+	class := map[string]string{
+		"BEGIN": "Transaction", "COMMIT": "Commit", "ROLLBACK": "Rollback",
+	}[verb]
+	node := New(class)
+
+	if verb == "ROLLBACK" && p.atWords("TO") {
+		p.advance()
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("savepoint", name)
+		if p.curr() != nil {
+			return nil, p.unsupported(verb + " with more than this port reads")
+		}
+		return node, nil
+	}
+	// The word is optional and says nothing: `COMMIT` and `COMMIT TRANSACTION`
+	// are the same node, and only T-SQL writes it back.
+	if p.atWords("TRANSACTION") || p.atWords("TRAN") || p.atWords("WORK") {
+		p.advance()
+	}
+	if p.curr() != nil {
+		name, err := p.parsePrimary()
+		if err != nil {
+			return nil, err
+		}
+		if name.Class == "Column" {
+			// A bare word here NAMES the transaction; the reference keeps the
+			// identifier rather than a reference to a column.
+			name = name.This()
+		}
+		node.Set("this", name)
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported(verb + " with more than this port reads")
+	}
+	return node, nil
 }
