@@ -333,6 +333,8 @@ type ParserTables struct {
 	// STORED is a COMPUTED column here, not an identity with an
 	// expression on it.
 	GeneratedExpressionIsComputed bool
+	// IndexOnWord sits between an index and the table it is on.
+	IndexOnWord string
 	// RenameTarget says how much of a qualified name a RENAME TO writes:
 	// the whole thing, the last part only, or -- empty -- neither,
 	// because the dialect writes another statement entirely.
@@ -3689,6 +3691,7 @@ var parserTables = map[string]*ParserTables{
 		MapBraceLiteral:               false,
 		HoistsInsertWith:              false,
 		GeneratedExpressionIsComputed: false,
+		IndexOnWord:                   "ON",
 		ComputedColumnSpelling:        "AS {expr}",
 		ComputedKeepsType:             true,
 		IdentityWritten:               true,
@@ -3717,6 +3720,7 @@ var parserTables = map[string]*ParserTables{
 		AlterRepeatsAdd:           true,
 		AlterColumnTypeWord:       "SET DATA TYPE",
 		CreateExistsWritten: map[string]bool{
+			"INDEX": true,
 			"TABLE": true,
 			"VIEW":  true,
 		},
@@ -7276,6 +7280,7 @@ var parserTables = map[string]*ParserTables{
 		MapBraceLiteral:               false,
 		HoistsInsertWith:              true,
 		GeneratedExpressionIsComputed: false,
+		IndexOnWord:                   "ON",
 		ComputedColumnSpelling:        "AS {expr}",
 		ComputedKeepsType:             false,
 		IdentityWritten:               false,
@@ -7304,6 +7309,7 @@ var parserTables = map[string]*ParserTables{
 		AlterRepeatsAdd:           false,
 		AlterColumnTypeWord:       "",
 		CreateExistsWritten: map[string]bool{
+			"INDEX": false,
 			"TABLE": false,
 			"VIEW":  false,
 		},
@@ -10948,6 +10954,7 @@ var parserTables = map[string]*ParserTables{
 		MapBraceLiteral:               false,
 		HoistsInsertWith:              false,
 		GeneratedExpressionIsComputed: false,
+		IndexOnWord:                   "ON",
 		ComputedColumnSpelling:        "GENERATED ALWAYS AS ({expr}) STORED",
 		ComputedKeepsType:             true,
 		IdentityWritten:               true,
@@ -10976,6 +10983,7 @@ var parserTables = map[string]*ParserTables{
 		AlterRepeatsAdd:           true,
 		AlterColumnTypeWord:       "SET DATA TYPE",
 		CreateExistsWritten: map[string]bool{
+			"INDEX": true,
 			"TABLE": true,
 			"VIEW":  true,
 		},
@@ -14793,6 +14801,7 @@ var parserTables = map[string]*ParserTables{
 		MapBraceLiteral:               true,
 		HoistsInsertWith:              false,
 		GeneratedExpressionIsComputed: false,
+		IndexOnWord:                   "ON",
 		ComputedColumnSpelling:        "AS {expr}",
 		ComputedKeepsType:             true,
 		IdentityWritten:               true,
@@ -14821,6 +14830,7 @@ var parserTables = map[string]*ParserTables{
 		AlterRepeatsAdd:           true,
 		AlterColumnTypeWord:       "SET DATA TYPE",
 		CreateExistsWritten: map[string]bool{
+			"INDEX": true,
 			"TABLE": true,
 			"VIEW":  true,
 		},
@@ -18635,6 +18645,7 @@ var parserTables = map[string]*ParserTables{
 		MapBraceLiteral:               false,
 		HoistsInsertWith:              true,
 		GeneratedExpressionIsComputed: true,
+		IndexOnWord:                   "ON TABLE",
 		ComputedColumnSpelling:        "GENERATED ALWAYS AS ({expr})",
 		ComputedKeepsType:             true,
 		IdentityWritten:               true,
@@ -18663,6 +18674,7 @@ var parserTables = map[string]*ParserTables{
 		AlterRepeatsAdd:           true,
 		AlterColumnTypeWord:       "TYPE",
 		CreateExistsWritten: map[string]bool{
+			"INDEX": true,
 			"TABLE": true,
 			"VIEW":  true,
 		},

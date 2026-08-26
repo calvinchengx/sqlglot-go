@@ -776,6 +776,8 @@ def _create_body(kind: str) -> str:
         return " (a INT)"
     if kind == "FUNCTION":
         return "() AS \'b\'"
+    if kind == "INDEX":
+        return " ON zztbl(zzc)"
     return " AS SELECT 1"
 
 
@@ -790,7 +792,7 @@ def create_exists_written(dialect: str) -> dict:
     import sqlglot
 
     out = {}
-    for kind in ("TABLE", "VIEW"):
+    for kind in ("TABLE", "VIEW", "INDEX"):
         body = _create_body(kind)
         try:
             guarded = sqlglot.parse_one(
@@ -1193,6 +1195,24 @@ def generated_expression_is_computed(dialect: str) -> bool:
     except Exception:  # noqa: BLE001
         return False
     return any(True for _ in tree.find_all(exp.ComputedColumnConstraint))
+
+
+def index_on_word(dialect: str) -> str:
+    """The word between an index's name and the table it is on.
+
+    Databricks says `ON TABLE t`; everyone else says `ON t`.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("CREATE INDEX zzi ON zzt(zzc)").sql(
+            dialect=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return "ON"
+    head, _, tail = text.partition("zzi ")
+    del head
+    return tail.split("zzt")[0].strip()
 
 
 def merge_without_target(dialect: str) -> bool:
@@ -3433,6 +3453,7 @@ def main() -> int:
         "\t// SetItemSeparator sits between a configuration name and its value.\n\tSetItemSeparator string\n",
         "\t// ComputedColumnSpelling is how a computed column is written, with\n\t// {expr} where the expression goes, and ComputedKeepsType whether the\n\t// column\'s declared type survives beside it.\n\tComputedColumnSpelling string\n\tComputedKeepsType      bool\n\t// IdentityWritten: a GENERATED ... AS IDENTITY column keeps that\n\t// spelling here rather than being rewritten into something else.\n\tIdentityWritten bool\n\t// IdentityWidensType: an identity column\'s type is widened to BIGINT.\n\tIdentityWidensType bool\n",
         "\t// GeneratedExpressionIsComputed: `GENERATED ALWAYS AS (x)` with no\n\t// STORED is a COMPUTED column here, not an identity with an\n\t// expression on it.\n\tGeneratedExpressionIsComputed bool\n",
+        "\t// IndexOnWord sits between an index and the table it is on.\n\tIndexOnWord string\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -3983,6 +4004,7 @@ def main() -> int:
             "\t\tGeneratedExpressionIsComputed: %s,\n"
             % str(generated_expression_is_computed(name)).lower()
         )
+        out.append(f"\t\tIndexOnWord: {gostr(index_on_word(name))},\n")
         _ccs, _cct = computed_column_spelling(name)
         out.append(f"\t\tComputedColumnSpelling: {gostr(_ccs)},\n")
         out.append("\t\tComputedKeepsType: %s,\n" % str(_cct).lower())

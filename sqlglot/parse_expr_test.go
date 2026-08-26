@@ -3016,3 +3016,66 @@ func TestACTEBeforeAWrite(t *testing.T) {
 		t.Error("an unclosed query was read")
 	}
 }
+
+// An index over a table's columns. The name is OPTIONAL -- PostgreSQL lets
+// the server choose one -- and each column is an ORDERED member, whether or
+// not it says anything about order.
+func TestCreateIndex(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"plain", "", "CREATE INDEX abc ON t(a)", "CREATE INDEX abc ON t(a)"},
+		{"quoted", "", `CREATE INDEX "abc" ON t(a)`, `CREATE INDEX "abc" ON t(a)`},
+		{"several columns", "", "CREATE INDEX abc ON t(a, b, b)", "CREATE INDEX abc ON t(a, b, b)"},
+		{"unique", "", "CREATE UNIQUE INDEX abc ON t(a, b)", "CREATE UNIQUE INDEX abc ON t(a, b)"},
+		{"guarded", "", "CREATE UNIQUE INDEX IF NOT EXISTS my_idx ON tbl(a, b)",
+			"CREATE UNIQUE INDEX IF NOT EXISTS my_idx ON tbl(a, b)"},
+		{"where the nulls go", "", "CREATE INDEX abc ON t(a NULLS LAST)",
+			"CREATE INDEX abc ON t(a NULLS LAST)"},
+		{"without blocking", "postgres", "CREATE INDEX CONCURRENTLY ix ON tbl(id)",
+			"CREATE INDEX CONCURRENTLY ix ON tbl(id)"},
+		// PostgreSQL lets the server name it.
+		{"unnamed", "postgres", "CREATE INDEX IF NOT EXISTS ON t(c)",
+			"CREATE INDEX IF NOT EXISTS ON t(c)"},
+		// A quoted name that spells an option IS a name.
+		{"a name that spells an option", "", `CREATE INDEX "concurrently" ON t(x)`,
+			`CREATE INDEX "concurrently" ON t(x)`},
+		// Databricks puts the word TABLE between the index and its table.
+		{"on TABLE", "databricks", "CREATE INDEX abc ON t(a)", "CREATE INDEX abc ON TABLE t(a)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			if !IsWrite(e) {
+				t.Errorf("IsWrite(%q) = false; it makes something", tc.sql)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// T-SQL has no `IF NOT EXISTS` on an index and rewrites the statement
+	// into a conditional EXEC over sys.indexes.
+	e, err := ParseOne("CREATE INDEX IF NOT EXISTS i ON t(a)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "tsql"); err == nil {
+		t.Errorf("wrote %q for T-SQL, which writes a conditional EXEC", got)
+	}
+	for _, sql := range []string{
+		"CREATE INDEX abc ON t USING GIST(a)",
+		"CREATE INDEX abc ON t(a) WHERE a > 1",
+		"CREATE INDEX abc ON t",
+		"CREATE INDEX abc ON t(a",
+		"CREATE TEMPORARY INDEX abc ON t(a)",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}

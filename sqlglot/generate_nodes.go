@@ -67,6 +67,7 @@ func init() {
 		"AlterColumn":                         (*generator).writeAlterColumn,
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
+		"Index":                               (*generator).writeIndex,
 		"UserDefinedFunction":                 (*generator).writeUserDefinedFunction,
 		"Return":                              (*generator).writeReturn,
 		"ReturnsProperty":                     (*generator).writeReturnsProperty,
@@ -2004,6 +2005,9 @@ func (g *generator) writeCreate(e *Expression) string {
 	if replace, _ := e.Args["replace"].(bool); replace {
 		out += "OR REPLACE "
 	}
+	if unique, _ := e.Args["unique"].(bool); unique {
+		out += "UNIQUE "
+	}
 	if g.hasTemporaryProperty(e) {
 		// Not every dialect has the modifier. T-SQL renames the object to
 		// `#name` instead, and Databricks writes a temporary TABLE with a
@@ -2015,6 +2019,11 @@ func (g *generator) writeCreate(e *Expression) string {
 		out += "TEMPORARY "
 	}
 	out += kind + " "
+	if concurrently, _ := e.Args["concurrently"].(bool); concurrently {
+		// Only an index takes this, and it goes after the kind rather than
+		// before it.
+		out += "CONCURRENTLY "
+	}
 	if exists, _ := e.Args["exists"].(bool); exists {
 		// T-SQL drops these words from a VIEW and turns a TABLE into a
 		// conditional EXEC. Writing the statement without them makes it do
@@ -2926,4 +2935,26 @@ func hasConstraint(e *Expression, class string) bool {
 func kindOf(e *Expression) *Expression {
 	kind, _ := e.Args["kind"].(*Expression)
 	return kind
+}
+
+// writeIndex writes an index's name, the table it is on, and the columns.
+//
+// The name may be absent -- PostgreSQL lets the server choose one -- and
+// Databricks puts the word TABLE between the two.
+func (g *generator) writeIndex(e *Expression) string {
+	out := ""
+	if name := g.child(e, "this"); name != "" {
+		out = name + " "
+	}
+	out += g.tables.IndexOnWord + " " + g.child(e, "table")
+	params, _ := e.Args["params"].(*Expression)
+	if params == nil {
+		return g.fail(e.Class + " over no columns")
+	}
+	columns, _ := params.Args["columns"].([]*Expression)
+	parts := make([]string, 0, len(columns))
+	for _, column := range columns {
+		parts = append(parts, g.node(column))
+	}
+	return out + "(" + strings.Join(parts, ", ") + ")"
 }

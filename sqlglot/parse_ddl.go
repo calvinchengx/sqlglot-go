@@ -34,6 +34,13 @@ func (p *parser) parseCreate() (*Expression, error) {
 		p.advance()
 		temporary = true
 	}
+	// UNIQUE is a flag on the node rather than a property, and only an INDEX
+	// takes it.
+	unique := false
+	if p.atWords("UNIQUE") && p.next() != nil && strings.EqualFold(p.next().Text, "INDEX") {
+		p.advance()
+		unique = true
+	}
 	// The other modifiers are properties too, and none of them is read here;
 	// a statement carrying one is refused rather than built without it.
 	for _, word := range []string{"GLOBAL", "LOCAL",
@@ -48,10 +55,14 @@ func (p *parser) parseCreate() (*Expression, error) {
 		return nil, p.unsupported("CREATE without a kind")
 	}
 	kind := strings.ToUpper(kindToken.Text)
-	if kind != "TABLE" && kind != "VIEW" && kind != "FUNCTION" {
+	if kind != "TABLE" && kind != "VIEW" && kind != "FUNCTION" && kind != "INDEX" {
 		return nil, p.unsupported("CREATE " + kind)
 	}
 	p.advance()
+
+	if kind == "INDEX" {
+		return p.parseIndexRest(replace, unique, temporary)
+	}
 
 	exists := false
 	if p.atWords("IF", "NOT", "EXISTS") {
@@ -1613,4 +1624,123 @@ func (p *parser) parseCreateBody() (*Expression, error) {
 		return nil, p.unsupported("unclosed query")
 	}
 	return New("Subquery", Arg{"this", inner}), nil
+}
+
+// parseIndexRest reads everything after `CREATE [UNIQUE] INDEX`.
+//
+// The name is OPTIONAL -- PostgreSQL lets the server choose one -- and the
+// columns are ORDERED members, each of which may say where its nulls go.
+func (p *parser) parseIndexRest(replace, unique, temporary bool) (*Expression, error) {
+	if temporary {
+		return nil, p.unsupported("CREATE TEMPORARY INDEX")
+	}
+	concurrently := false
+	// A QUOTED name that happens to spell the word is a name, not the option:
+	// `CREATE INDEX "concurrently" ON t(x)` names an index.
+	if c := p.curr(); c != nil && c.Type != TokIDENTIFIER && p.atWords("CONCURRENTLY") {
+		p.advance()
+		concurrently = true
+	}
+	exists := false
+	if p.atWords("IF", "NOT", "EXISTS") {
+		p.advance()
+		p.advance()
+		p.advance()
+		exists = true
+	}
+
+	index := New("Index")
+	if !p.atWords("ON") {
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		index.Set("this", name)
+	}
+	if !p.atWords("ON") {
+		return nil, p.unsupported("CREATE INDEX without ON")
+	}
+	p.advance()
+	table, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+	index.Set("table", table)
+	if !p.at(TokL_PAREN) {
+		// `USING gin(...)` names the method the index is built with, and the
+		// rest of that vocabulary -- INCLUDE, WHERE, an operator class -- is
+		// not read here either.
+		return nil, p.unsupported("CREATE INDEX with more than columns")
+	}
+	columns, err := p.parseIndexColumns()
+	if err != nil {
+		return nil, err
+	}
+	params := New("IndexParameters", Arg{"columns", columns})
+	params.Set("with_storage", false)
+	index.Set("params", params)
+	if p.curr() != nil {
+		return nil, p.unsupported("CREATE INDEX with more than this port reads")
+	}
+
+	return New("Create",
+		Arg{"this", index},
+		Arg{"kind", "INDEX"},
+		Arg{"replace", replace},
+		Arg{"refresh", false},
+		Arg{"unique", unique},
+		Arg{"expression", nil},
+		Arg{"exists", exists},
+		Arg{"properties", nil},
+		Arg{"indexes", []*Expression{}},
+		Arg{"no_schema_binding", nil},
+		Arg{"begin", nil},
+		Arg{"clone", nil},
+		Arg{"concurrently", concurrently},
+		Arg{"clustered", nil},
+	), nil
+}
+
+// parseIndexColumns reads the `(a, b DESC NULLS LAST)` an index is over. Each
+// member is an Ordered, whether or not it says anything about order.
+func (p *parser) parseIndexColumns() ([]*Expression, error) {
+	p.advance() // the opening parenthesis
+	var out []*Expression
+	for {
+		column, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		member := New("Ordered", Arg{"this", column})
+		desc := false
+		switch {
+		case p.atWords("DESC"):
+			p.advance()
+			desc = true
+			member.Set("desc", true)
+		case p.atWords("ASC"):
+			p.advance()
+			member.Set("desc", false)
+		}
+		switch {
+		case p.atWords("NULLS", "FIRST"):
+			p.advance()
+			p.advance()
+			member.Set("nulls_first", true)
+		case p.atWords("NULLS", "LAST"):
+			p.advance()
+			p.advance()
+			member.Set("nulls_first", false)
+		default:
+			member.Set("nulls_first", p.nullsFirst(desc))
+		}
+		out = append(out, member)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed index column list")
+	}
+	return out, nil
 }
