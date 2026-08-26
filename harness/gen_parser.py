@@ -772,7 +772,11 @@ def returning_conventions(dialect: str) -> tuple[str, bool]:
 
 def _create_body(kind: str) -> str:
     """What follows the name in the canonical CREATE used by the probes below."""
-    return " (a INT)" if kind == "TABLE" else " AS SELECT 1"
+    if kind == "TABLE":
+        return " (a INT)"
+    if kind == "FUNCTION":
+        return "() AS \'b\'"
+    return " AS SELECT 1"
 
 
 def create_exists_written(dialect: str) -> dict:
@@ -814,7 +818,7 @@ def temporary_written(dialect: str) -> dict:
     import sqlglot
 
     out = {}
-    for kind in ("TABLE", "VIEW"):
+    for kind in ("TABLE", "VIEW", "FUNCTION"):
         body = _create_body(kind)
         try:
             temp = sqlglot.parse_one(f"CREATE TEMPORARY {kind} zzname{body}").sql(
@@ -921,6 +925,191 @@ def unique_constraint_written(dialect: str) -> bool:
     except Exception:  # noqa: BLE001
         return False
     return "UNIQUE" in text.upper()
+
+
+def _returns_shapes(exp):
+    """The three shapes a RETURNS property's operand takes."""
+    return {
+        "type": exp.ReturnsProperty(this=exp.DataType.build("INT"), is_table=False),
+        "table": exp.ReturnsProperty(this=exp.Var(this="TABLE"), is_table=True),
+        "schema": exp.ReturnsProperty(
+            this=exp.Schema(this=exp.Var(this="TABLE")), is_table=True
+        ),
+    }
+
+
+def function_returns_place(dialect: str) -> dict:
+    """WHERE each shape of a RETURNS property is written, per shape.
+
+    Three answers. Most dialects write it after the parameter list, as
+    `RETURNS INT`. DuckDB writes no return type at all -- except the one shape
+    it spells in the body instead, `AS TABLE SELECT ...` -- so the same
+    property is written in three different places depending on the dialect and
+    on what it holds.
+    """
+    from sqlglot import exp
+
+    out = {}
+    for name, prop in _returns_shapes(exp).items():
+        node = exp.Create(
+            this=exp.UserDefinedFunction(this=exp.to_table("zzf"), wrapped=True),
+            kind="FUNCTION",
+            properties=exp.Properties(expressions=[prop]),
+            expression=exp.Literal.string("zzbody"),
+        )
+        try:
+            text = node.sql(dialect=dialect or None)
+        except Exception:  # noqa: BLE001
+            out[name] = ""
+            continue
+        head, _, tail = text.partition("zzf()")
+        if "RETURNS" in tail.split("zzbody")[0].split(" AS ")[0]:
+            out[name] = "schema"
+        elif "TABLE" in tail.split("zzbody")[0]:
+            out[name] = "alias"
+        else:
+            out[name] = ""
+        del head
+    return out
+
+
+def function_properties_written(dialect: str) -> bool:
+    """Whether a function's properties other than its return type survive.
+
+    DuckDB writes none of them -- LANGUAGE, IMMUTABLE, STRICT and the rest all
+    vanish -- so a function carrying one cannot be written there without
+    saying less than the statement did.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("CREATE FUNCTION zzf() LANGUAGE zzlang AS \'b\'").sql(
+            dialect=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return False
+    return "zzlang" in text
+
+
+def function_return_as(dialect: str) -> bool:
+    """Whether AS is written in front of a RETURN body.
+
+    Databricks writes `RETURNS INT RETURN x`; everyone else writes
+    `RETURNS INT AS RETURN x`.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("CREATE FUNCTION zzf() RETURNS INT AS RETURN zzbody").sql(
+            dialect=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return True
+    return " AS " in text
+
+
+def function_wraps_table_body(dialect: str) -> bool:
+    """Whether a table-valued function's body becomes a RETURN even when it
+    was not written as one.
+
+    Databricks does that before writing, so a literal body comes out as
+    `RETURN 'b'` rather than as `AS 'b'`. It is a change to the tree rather
+    than a spelling, so a body written any other way is refused here.
+    """
+    from sqlglot import exp
+
+    node = exp.Create(
+        this=exp.UserDefinedFunction(this=exp.to_table("zzf"), wrapped=True),
+        kind="FUNCTION",
+        properties=exp.Properties(
+            expressions=[exp.ReturnsProperty(this=exp.Var(this="TABLE"), is_table=True)]
+        ),
+        expression=exp.Literal.string("zzbody"),
+    )
+    try:
+        text = node.sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return False
+    return "RETURN \'zzbody\'" in text
+
+
+def return_word(dialect: str) -> str:
+    """The word a RETURN writes. DuckDB writes none, leaving the body bare."""
+    from sqlglot import exp
+
+    try:
+        text = exp.Return(this=exp.column("zzbody")).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return "RETURN"
+    return text.replace("zzbody", "").strip()
+
+
+def function_as_table_read(dialect: str) -> bool:
+    """Whether `AS TABLE <query>` is read as a function's return type.
+
+    DuckDB's spelling. Elsewhere the words are not a return type at all, so
+    reading them as one would build a property the reference never made.
+    """
+    import sqlglot
+    from sqlglot import exp
+
+    try:
+        tree = sqlglot.parse_one(
+            "CREATE FUNCTION zzf() AS TABLE SELECT 1", read=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return False
+    return any(True for _ in tree.find_all(exp.ReturnsProperty))
+
+
+def parameter_mode(dialect: str) -> tuple[bool, dict]:
+    """Where a parameter's MODE is written, and how it is spelled.
+
+    PostgreSQL writes it in front of the parameter and spells both directions
+    as one word, `INOUT`; everywhere else it follows the type and is two,
+    `IN OUT`. Same node, two places and two spellings.
+    """
+    import sqlglot
+
+    prefix = True
+    words = {}
+    for key, src in (
+        ("in", "IN"),
+        ("out", "OUT"),
+        ("inout", "INOUT"),
+        ("variadic", "VARIADIC"),
+    ):
+        try:
+            text = sqlglot.parse_one(
+                f"CREATE FUNCTION zzf({src} zzp INT)", read="postgres"
+            ).sql(dialect=dialect or None)
+        except Exception:  # noqa: BLE001
+            words[key] = src
+            continue
+        inside = text[text.index("(") + 1 : text.rindex(")")]
+        head, _, tail = inside.partition("zzp")
+        prefix = bool(head.strip())
+        words[key] = (head if prefix else tail.split(" ", 2)[-1]).strip()
+    return prefix, words
+
+
+def set_item_separator(dialect: str) -> str:
+    """What sits between a configuration name and its value.
+
+    `SET search_path = 'public'` almost everywhere; T-SQL writes the two side
+    by side with nothing between them.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one(
+            "CREATE FUNCTION zzf() RETURNS INT SET zzname TO 'zzvalue'", read="postgres"
+        ).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return " = "
+    head, _, tail = text.partition("zzname")
+    del head
+    return tail.split("'zzvalue'")[0]
 
 
 def merge_without_target(dialect: str) -> bool:
@@ -3156,6 +3345,9 @@ def main() -> int:
         "	// CreateExistsWritten says, per kind, whether IF NOT EXISTS survives\n\t// being written. TemporaryWritten says the same of TEMPORARY.\n\tCreateExistsWritten map[string]bool\n\tTemporaryWritten    map[string]bool\n\t// ViewColumnCommentWritten: a view column keeps its COMMENT here.\n\tViewColumnCommentWritten bool\n",
         "\t// AlterAddColumnWord: an ALTER writes the word COLUMN after ADD here,\n\t// and AlterRepeatsAdd whether each added column gets its own ADD.\n\tAlterAddColumnWord bool\n\tAlterRepeatsAdd    bool\n\t// AlterColumnTypeWord is what comes between an altered column and its\n\t// new type -- SET DATA TYPE, TYPE, or nothing at all.\n\tAlterColumnTypeWord string\n",
         "\t// PrimaryKeyMembersOrdered: a table-level PRIMARY KEY names its columns\n\t// as ordered index members here, not as bare names.\n\tPrimaryKeyMembersOrdered bool\n\t// UniqueConstraintWritten: a UNIQUE constraint survives being written\n\t// here. Where it does not, the guarantee would be silently dropped.\n\tUniqueConstraintWritten bool\n",
+        "\t// FunctionReturnsPlace says WHERE a RETURNS property is written, per\n\t// shape of what it holds: after the parameter list, in the body, or\n\t// nowhere at all.\n\tFunctionReturnsPlace map[string]string\n\t// FunctionPropertiesWritten: a function\'s other properties -- LANGUAGE,\n\t// IMMUTABLE, STRICT -- survive being written here.\n\tFunctionPropertiesWritten bool\n\t// FunctionReturnAs: AS is written in front of a RETURN body.\n\tFunctionReturnAs bool\n\t// FunctionWrapsTableBody: a table-valued function\'s body becomes a\n\t// RETURN here even when it was not written as one.\n\tFunctionWrapsTableBody bool\n\t// FunctionAsTableRead: `AS TABLE <query>` is READ as a return type here.\n\tFunctionAsTableRead bool\n\t// ReturnWord is the word a RETURN writes, empty where it writes none.\n\tReturnWord string\n",
+        "\t// ParameterModePrefix: a parameter\'s mode is written in FRONT of it\n\t// here rather than after its type, and ParameterModeWords how each is\n\t// spelled -- one word or two.\n\tParameterModePrefix bool\n\tParameterModeWords  map[string]string\n",
+        "\t// SetItemSeparator sits between a configuration name and its value.\n\tSetItemSeparator string\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -3702,6 +3894,30 @@ def main() -> int:
         out.append(
             "\t\tHoistsInsertWith: %s,\n" % str(hoists_insert_with(name)).lower()
         )
+        out.append(f"\t\tSetItemSeparator: {gostr(set_item_separator(name))},\n")
+        _pmp, _pmw = parameter_mode(name)
+        out.append("\t\tParameterModePrefix: %s,\n" % str(_pmp).lower())
+        out.append("\t\tParameterModeWords: map[string]string{\n")
+        for key, word in sorted(_pmw.items()):
+            out.append(f"\t\t\t{gostr(key)}: {gostr(word)},\n")
+        out.append("\t\t},\n")
+        out.append("\t\tFunctionReturnsPlace: map[string]string{\n")
+        for shape, place in sorted(function_returns_place(name).items()):
+            out.append(f"\t\t\t{gostr(shape)}: {gostr(place)},\n")
+        out.append("\t\t},\n")
+        out.append(
+            "\t\tFunctionPropertiesWritten: %s,\n"
+            % str(function_properties_written(name)).lower()
+        )
+        out.append("\t\tFunctionReturnAs: %s,\n" % str(function_return_as(name)).lower())
+        out.append(
+            "\t\tFunctionWrapsTableBody: %s,\n"
+            % str(function_wraps_table_body(name)).lower()
+        )
+        out.append(
+            "\t\tFunctionAsTableRead: %s,\n" % str(function_as_table_read(name)).lower()
+        )
+        out.append(f"\t\tReturnWord: {gostr(return_word(name))},\n")
         out.append(
             "\t\tPrimaryKeyMembersOrdered: %s,\n"
             % str(primary_key_members_ordered(name)).lower()

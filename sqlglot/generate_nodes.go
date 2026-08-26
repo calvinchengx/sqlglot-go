@@ -67,6 +67,19 @@ func init() {
 		"AlterColumn":                   (*generator).writeAlterColumn,
 		"ColumnConstraint":              (*generator).writeColumnConstraint,
 		"Reference":                     (*generator).writeReference,
+		"UserDefinedFunction":           (*generator).writeUserDefinedFunction,
+		"Return":                        (*generator).writeReturn,
+		"ReturnsProperty":               (*generator).writeReturnsProperty,
+		"LanguageProperty":              (*generator).writeLanguageProperty,
+		"StabilityProperty":             (*generator).writeStabilityProperty,
+		"StrictProperty":                (*generator).writeStrictProperty,
+		"CalledOnNullInputProperty":     (*generator).writeCalledOnNullInputProperty,
+		"SqlReadWriteProperty":          (*generator).writeSqlReadWriteProperty,
+		"SetConfigProperty":             (*generator).writeSetConfigProperty,
+		"Heredoc":                       (*generator).writeHeredoc,
+		"Set":                           (*generator).writeSet,
+		"SetItem":                       (*generator).writeSetItem,
+		"InOutColumnConstraint":         (*generator).writeInOutConstraint,
 		"PrimaryKey":                    (*generator).writePrimaryKey,
 		"ForeignKey":                    (*generator).writeForeignKey,
 		"Constraint":                    (*generator).writeConstraint,
@@ -897,9 +910,16 @@ func (g *generator) writeColumnDef(e *Expression) string {
 	if g.inColumnList {
 		sep = " "
 	}
-	trailing := ""
+	leading, trailing := "", ""
 	if items, _ := e.Args["constraints"].([]*Expression); len(items) > 0 {
 		for _, item := range items {
+			// A parameter's MODE is written in front of it in PostgreSQL and
+			// after its type everywhere else. It is the only constraint that
+			// moves, and it is the only one the list holds unwrapped.
+			if item.Class == "InOutColumnConstraint" && g.tables.ParameterModePrefix {
+				leading = g.node(item) + " "
+				continue
+			}
 			trailing += " " + g.node(item)
 		}
 	}
@@ -912,9 +932,9 @@ func (g *generator) writeColumnDef(e *Expression) string {
 	if kind == "" {
 		// A VIEW's column has no type -- it names a result the query already
 		// produced -- so there is nothing for the separator to separate.
-		return g.child(e, "this") + trailing
+		return leading + g.child(e, "this") + trailing
 	}
-	return g.child(e, "this") + sep + kind + trailing
+	return leading + g.child(e, "this") + sep + kind + trailing
 }
 
 func (g *generator) writeAnonymous(e *Expression) string { return g.anonymous(e, true) }
@@ -1975,6 +1995,9 @@ func (g *generator) writeCreate(e *Expression) string {
 		}
 		out += "IF NOT EXISTS "
 	}
+	if kind == "FUNCTION" {
+		return g.writeFunctionRest(e, out)
+	}
 	if kind == "VIEW" && !g.tables.ViewColumnCommentWritten && g.viewColumnHasComment(e) {
 		// The comment says what the column is FOR, and this dialect writes
 		// the name alone.
@@ -2578,4 +2601,213 @@ func (g *generator) normalized(identifier *Expression) string {
 		return strings.ToUpper(name)
 	}
 	return name
+}
+
+// writeFunctionRest writes everything after `CREATE ... FUNCTION `, which is
+// the one CREATE whose properties are not all in one place: a return type goes
+// after the parameter list in most dialects and INSIDE the body in DuckDB,
+// and the rest go after the parameter list or -- in DuckDB -- nowhere at all.
+func (g *generator) writeFunctionRest(e *Expression, out string) string {
+	out += g.child(e, "this")
+
+	var afterParams, afterAs []string
+	properties, _ := e.Args["properties"].(*Expression)
+	if properties != nil {
+		items, _ := properties.Args["expressions"].([]*Expression)
+		for _, item := range items {
+			if item.Class == "TemporaryProperty" {
+				continue // already written, in front of the kind
+			}
+			place := "schema"
+			if item.Class == "ReturnsProperty" {
+				place = g.tables.FunctionReturnsPlace[returnsShape(item)]
+			} else if !g.tables.FunctionPropertiesWritten {
+				place = ""
+			}
+			switch place {
+			case "schema":
+				afterParams = append(afterParams, g.node(item))
+			case "alias":
+				afterAs = append(afterAs, "TABLE")
+			default:
+				// The dialect writes this nowhere, so the function it makes
+				// would promise less than the statement did.
+				return g.fail(item.Class + ", which this dialect writes nowhere")
+			}
+		}
+	}
+	for _, part := range afterParams {
+		out += " " + part
+	}
+
+	body, _ := e.Args["expression"].(*Expression)
+	if body == nil {
+		if len(afterAs) > 0 {
+			return g.fail(e.Class + " whose return type has no body to sit in")
+		}
+		return out
+	}
+	// Databricks turns a table-valued function's body into a RETURN before
+	// writing it, whatever it was written as, and then writes no AS in front
+	// of one.
+	isReturn := body.Class == "Return"
+	if !isReturn && g.tables.FunctionWrapsTableBody && g.returnsATable(properties) {
+		return out + " " + g.tables.ReturnWord + " " + g.node(body)
+	}
+	if isReturn && !g.tables.FunctionReturnAs {
+		return out + " " + g.node(body)
+	}
+	out += " AS"
+	for _, part := range afterAs {
+		out += " " + part
+	}
+	return out + " " + g.node(body)
+}
+
+// returnsShape names which of the three shapes a RETURNS property holds, which
+// is what decides where the dialect writes it.
+func returnsShape(e *Expression) string {
+	this, _ := e.Args["this"].(*Expression)
+	switch {
+	case this == nil:
+		return "type"
+	case this.Class == "Schema":
+		return "schema"
+	case this.Class == "Var":
+		return "table"
+	}
+	return "type"
+}
+
+// returnsATable reports whether these properties say the function returns one.
+func (g *generator) returnsATable(properties *Expression) bool {
+	if properties == nil {
+		return false
+	}
+	items, _ := properties.Args["expressions"].([]*Expression)
+	for _, item := range items {
+		if item.Class == "ReturnsProperty" {
+			if isTable, _ := item.Args["is_table"].(bool); isTable {
+				return true
+			}
+		}
+	}
+	return false
+}
+
+// The properties a function is described by. Each is a fixed phrase or a
+// phrase with one operand, and the reference writes the operand of the two
+// that have one WITHOUT quotes -- the string is the phrase, not a value.
+func (g *generator) writeReturnsProperty(e *Expression) string {
+	if null, _ := e.Args["null"].(bool); null {
+		return "RETURNS NULL ON NULL INPUT"
+	}
+	out := "RETURNS "
+	// T-SQL NAMES the table a function returns, and the name sits between the
+	// word and the table it names.
+	if named := g.child(e, "table"); named != "" {
+		out += named + " "
+	}
+	return out + g.child(e, "this")
+}
+
+func (g *generator) writeLanguageProperty(e *Expression) string {
+	return "LANGUAGE " + g.child(e, "this")
+}
+
+func (g *generator) writeStabilityProperty(e *Expression) string {
+	this, _ := e.Args["this"].(*Expression)
+	if this == nil {
+		return g.fail(e.Class + " with no word")
+	}
+	word, _ := this.Args["this"].(string)
+	return word
+}
+
+func (g *generator) writeStrictProperty(*Expression) string { return "STRICT" }
+
+// writeHeredoc writes a body the reference never read. The tag is not on the
+// node, so every dialect writes the bare `$$`.
+func (g *generator) writeHeredoc(e *Expression) string {
+	body, _ := e.Args["this"].(string)
+	return "$$" + body + "$$"
+}
+
+// writeSetConfigProperty writes the session setting a function runs under.
+func (g *generator) writeSetConfigProperty(e *Expression) string {
+	return g.child(e, "this")
+}
+
+// writeSet writes `SET a = 1`, the items it holds separated by commas.
+func (g *generator) writeSet(e *Expression) string {
+	if unset, _ := e.Args["unset"].(bool); unset {
+		return g.fail(e.Class + " that unsets rather than sets")
+	}
+	return "SET " + g.list(e)
+}
+
+// writeSetItem writes one setting. The two sides are held as an equality and
+// the dialect decides what goes between them -- T-SQL writes nothing at all.
+func (g *generator) writeSetItem(e *Expression) string {
+	item, _ := e.Args["this"].(*Expression)
+	if item == nil || item.Class != "EQ" {
+		return g.fail(e.Class + " that is not a setting")
+	}
+	return g.child(item, "this") + g.tables.SetItemSeparator + g.child(item, "expression")
+}
+
+func (g *generator) writeCalledOnNullInputProperty(*Expression) string {
+	return "CALLED ON NULL INPUT"
+}
+
+func (g *generator) writeSqlReadWriteProperty(e *Expression) string {
+	phrase, _ := e.Args["this"].(string)
+	return phrase
+}
+
+// writeUserDefinedFunction writes a function's name and its parameters.
+func (g *generator) writeUserDefinedFunction(e *Expression) string {
+	items, _ := e.Args["expressions"].([]*Expression)
+	was := g.inColumnList
+	g.inColumnList = true
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, g.node(item))
+	}
+	g.inColumnList = was
+	return g.child(e, "this") + "(" + strings.Join(parts, ", ") + ")"
+}
+
+// writeInOutConstraint writes which way a parameter carries its value.
+//
+// PostgreSQL writes it in FRONT of the parameter; everywhere else it follows
+// the type, and INOUT is two words there. Same node, two places.
+func (g *generator) writeInOutConstraint(e *Expression) string {
+	input, _ := e.Args["input_"].(bool)
+	output, _ := e.Args["output"].(bool)
+	variadic, _ := e.Args["variadic"].(bool)
+	key := ""
+	switch {
+	case variadic:
+		key = "variadic"
+	case input && output:
+		key = "inout"
+	case output:
+		key = "out"
+	case input:
+		key = "in"
+	default:
+		return g.fail(e.Class + " that says nothing")
+	}
+	// PostgreSQL spells both directions as one word; everyone else as two.
+	return g.tables.ParameterModeWords[key]
+}
+
+// writeReturn writes what a function hands back. DuckDB writes no word at
+// all, leaving the body where the word would have been.
+func (g *generator) writeReturn(e *Expression) string {
+	if word := g.tables.ReturnWord; word != "" {
+		return word + " " + g.child(e, "this")
+	}
+	return g.child(e, "this")
 }

@@ -48,7 +48,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 		return nil, p.unsupported("CREATE without a kind")
 	}
 	kind := strings.ToUpper(kindToken.Text)
-	if kind != "TABLE" && kind != "VIEW" {
+	if kind != "TABLE" && kind != "VIEW" && kind != "FUNCTION" {
 		return nil, p.unsupported("CREATE " + kind)
 	}
 	p.advance()
@@ -64,6 +64,10 @@ func (p *parser) parseCreate() (*Expression, error) {
 	table, err := p.parseTableName()
 	if err != nil {
 		return nil, err
+	}
+
+	if kind == "FUNCTION" {
+		return p.parseFunctionRest(table, replace, exists, temporary)
 	}
 
 	var this, expression *Expression
@@ -1039,4 +1043,420 @@ func (p *parser) parseKeyColumns() ([]*Expression, error) {
 		return nil, p.unsupported("unclosed key column list")
 	}
 	return out, nil
+}
+
+// parseFunctionRest reads everything after `CREATE FUNCTION <name>`.
+//
+// A function is the one CREATE whose parts are not in a fixed order: the
+// properties may come before the body, after it, or on both sides, and the
+// reference keeps them in the order they were WRITTEN rather than in the order
+// it knows them by. So there is one loop, and each turn of it reads whichever
+// part is next.
+func (p *parser) parseFunctionRest(name *Expression, replace, exists, temporary bool) (*Expression, error) {
+	this := name
+	if p.at(TokL_PAREN) {
+		params, err := p.parseFunctionParams()
+		if err != nil {
+			return nil, err
+		}
+		udf := New("UserDefinedFunction", Arg{"this", name})
+		if len(params) > 0 {
+			udf.Set("expressions", params)
+		}
+		// Always true here: a function written with parentheses is what this
+		// node is for, and one written without them never reaches it.
+		udf.Set("wrapped", true)
+		this = udf
+	}
+
+	var properties []*Expression
+	if temporary {
+		properties = append(properties, New("TemporaryProperty"))
+	}
+	var expression *Expression
+	for {
+		property, err := p.parseFunctionProperty()
+		if err != nil {
+			return nil, err
+		}
+		if property != nil {
+			properties = append(properties, property)
+			continue
+		}
+		body, returns, err := p.parseFunctionBody()
+		if err != nil {
+			return nil, err
+		}
+		if body == nil {
+			break
+		}
+		if expression != nil {
+			return nil, p.unsupported("a function with two bodies")
+		}
+		expression = body
+		if returns != nil {
+			properties = append(properties, returns)
+		}
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("CREATE FUNCTION with more than this port reads")
+	}
+
+	var props *Expression
+	if len(properties) > 0 {
+		props = New("Properties", Arg{"expressions", properties})
+	}
+	var begin any = false
+	if expression != nil && expression.Class == "Heredoc" {
+		begin = nil
+	}
+	return New("Create",
+		Arg{"this", this},
+		Arg{"kind", "FUNCTION"},
+		Arg{"replace", replace},
+		Arg{"refresh", false},
+		Arg{"unique", false},
+		Arg{"expression", expression},
+		Arg{"exists", exists},
+		Arg{"properties", props},
+		Arg{"indexes", []*Expression{}},
+		Arg{"no_schema_binding", nil},
+		// A function carries this where a table does not: the reference sets
+		// it false rather than leaving it off -- except when the body is a
+		// heredoc, where it never gets as far as setting it.
+		Arg{"begin", begin},
+		Arg{"clone", nil},
+		Arg{"concurrently", false},
+		Arg{"clustered", nil},
+	), nil
+}
+
+// parseFunctionParams reads the parenthesised parameter list.
+//
+// Two spellings live in it. `add(INT, INT)` names no parameters at all and the
+// reference keeps each TYPE as a bare Identifier; `add(a INT)` names one and
+// builds a ColumnDef. Which it is depends on whether anything follows the word.
+func (p *parser) parseFunctionParams() ([]*Expression, error) {
+	p.advance() // the opening parenthesis
+	var out []*Expression
+	if p.at(TokR_PAREN) {
+		p.advance()
+		return out, nil
+	}
+	for {
+		param, err := p.parseFunctionParam()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, param)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed parameter list")
+	}
+	return out, nil
+}
+
+// parseFunctionParam reads one parameter.
+func (p *parser) parseFunctionParam() (*Expression, error) {
+	mode, wasModeWord := p.parseParameterMode()
+	var name *Expression
+	if named := p.parseParameterName(); named != nil {
+		// T-SQL names a function's parameters the way it names variables, and
+		// the reference keeps the marker: `@bar` is a Parameter, not an
+		// identifier that happens to start with a symbol.
+		name = named
+	} else if mode == nil && wasModeWord {
+		// The word turned out to be the parameter's NAME -- `foo(variadic
+		// INT[])` declares one called variadic -- and the tokenizer gives it a
+		// keyword's token, which is not one an identifier may usually take.
+		c := p.curr()
+		p.advance()
+		name = New("Identifier", Arg{"this", c.Text}, Arg{"quoted", false})
+	} else {
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		name = id
+	}
+	// Nothing after the name means the name WAS the type: `add(INT, INT)`
+	// declares two unnamed parameters, and the reference keeps each as a bare
+	// Identifier rather than as a definition with no name.
+	if p.at(TokCOMMA) || p.at(TokR_PAREN) {
+		return name, nil
+	}
+	kind, err := p.parseDataType()
+	if err != nil {
+		return nil, err
+	}
+	def := New("ColumnDef", Arg{"this", name}, Arg{"kind", kind})
+	var constraints []*Expression
+	if mode != nil {
+		// The mode goes in the constraint list UNWRAPPED, unlike everything
+		// else that lands there.
+		constraints = append(constraints, mode)
+	}
+	rest, err := p.parseColumnConstraints()
+	if err != nil {
+		return nil, err
+	}
+	constraints = append(constraints, rest...)
+	if len(constraints) > 0 {
+		def.Set("constraints", constraints)
+	}
+	return def, nil
+}
+
+// parseParameterMode reads `IN`, `OUT`, `INOUT` or `VARIADIC` when one of them
+// is a MODE rather than a name.
+//
+// `foo(out INT)` declares a parameter called `out` of type INT; `foo(OUT b
+// INT)` declares an output parameter called `b`. The word is a mode only when
+// a name AND a type follow it, so the decision needs a look at what comes
+// after -- and the port rewinds when the guess is wrong.
+func (p *parser) parseParameterMode() (mode *Expression, wasModeWord bool) {
+	input, output, variadic := false, false, false
+	switch {
+	case p.atWords("INOUT"):
+		input, output = true, true
+	case p.atWords("IN"):
+		input = true
+	case p.atWords("OUT"):
+		output = true
+	case p.at(TokVARIADIC), p.atWords("VARIADIC"):
+		variadic = true
+	default:
+		return nil, false
+	}
+	mark := p.index
+	p.advance()
+	// The word is a mode only if a NAME and a TYPE both follow it. Looking
+	// for a name and "something after it" is not enough: `variadic INT[]`
+	// declares a parameter CALLED variadic, and the `[` after INT would pass
+	// that weaker test while the whole thing is one type, not two things. So
+	// the rest is parsed for real and the position put back if it fails --
+	// and nothing is asked about what comes AFTER the type, because a
+	// constraint may follow one: `OUT a INT NOT NULL` is still a mode.
+	after := p.index
+	if _, err := p.parseIdentifier(); err != nil {
+		p.index = mark
+		return nil, true
+	}
+	if _, err := p.parseDataType(); err != nil {
+		p.index = mark
+		return nil, true
+	}
+	p.index = after
+	return New("InOutColumnConstraint",
+		Arg{"input_", input}, Arg{"output", output}, Arg{"variadic", variadic}), true
+}
+
+// parseFunctionProperty reads one of the words a function may be described by,
+// or nil when none is here.
+func (p *parser) parseFunctionProperty() (*Expression, error) {
+	switch {
+	case p.at(TokLANGUAGE) || p.atWords("LANGUAGE"):
+		p.advance()
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("LANGUAGE without a language")
+		}
+		p.advance()
+		// The name keeps the case it was written in.
+		return New("LanguageProperty",
+			Arg{"this", New("Var", Arg{"this", c.Text})}), nil
+	case p.atWords("RETURNS", "NULL", "ON", "NULL", "INPUT"):
+		for range 5 {
+			p.advance()
+		}
+		// The reference records this as a second RETURNS property rather than
+		// as a kind of its own.
+		return New("ReturnsProperty", Arg{"is_table", false}, Arg{"null", true}), nil
+	case p.atWords("RETURNS"):
+		p.advance()
+		return p.parseReturnsProperty()
+	case p.atWords("IMMUTABLE"), p.atWords("STABLE"), p.atWords("VOLATILE"):
+		word := strings.ToUpper(p.curr().Text)
+		p.advance()
+		return New("StabilityProperty",
+			Arg{"this", New("Literal", Arg{"this", word}, Arg{"is_string", true})}), nil
+	case p.atWords("STRICT"):
+		p.advance()
+		return New("StrictProperty"), nil
+	case p.atWords("CALLED", "ON", "NULL", "INPUT"):
+		for range 4 {
+			p.advance()
+		}
+		return New("CalledOnNullInputProperty"), nil
+	case p.atWords("READS", "SQL", "DATA"):
+		for range 3 {
+			p.advance()
+		}
+		return New("SqlReadWriteProperty", Arg{"this", "READS SQL DATA"}), nil
+	case p.atWords("MODIFIES", "SQL", "DATA"):
+		for range 3 {
+			p.advance()
+		}
+		return New("SqlReadWriteProperty", Arg{"this", "MODIFIES SQL DATA"}), nil
+	case p.atWords("CONTAINS", "SQL"):
+		p.advance()
+		p.advance()
+		return New("SqlReadWriteProperty", Arg{"this", "CONTAINS SQL"}), nil
+	case p.at(TokSET):
+		p.advance()
+		name, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		// `TO` and `=` are the same thing here and the reference keeps neither
+		// -- the item is an equality either way, and the dialect decides how
+		// it is spelled back.
+		if !p.match(TokALIAS) && !p.atWords("TO") && !p.at(TokEQ) {
+			// `SET foo FROM CURRENT` takes its value from the session; the
+			// reference gives up on it and keeps the raw text, which is not
+			// a tree this port can build.
+			return nil, p.unsupported("a function SET this port does not read")
+		}
+		if p.atWords("TO") || p.at(TokEQ) {
+			p.advance()
+		}
+		value, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		if p.curr() != nil {
+			// The reference reads a SET as a setting only when it ENDS the
+			// statement; with anything after it, it gives up and swallows the
+			// rest as raw text. That is not a tree this port builds.
+			return nil, p.unsupported("a function SET with more after it")
+		}
+		item := New("SetItem", Arg{"this",
+			New("EQ", Arg{"this", name}, Arg{"expression", value})})
+		return New("SetConfigProperty", Arg{"this", New("Set",
+			Arg{"expressions", []*Expression{item}},
+			Arg{"unset", false}, Arg{"tag", false})}), nil
+	}
+	return nil, nil
+}
+
+// parseReturnsProperty reads what follows RETURNS: a type, the word TABLE, or
+// TABLE with the columns it returns.
+func (p *parser) parseReturnsProperty() (*Expression, error) {
+	// T-SQL NAMES the table a function returns -- `RETURNS @foo TABLE (...)`
+	// -- and the name lands on this property rather than on the schema, after
+	// the flag that says there is one.
+	named := p.parseParameterName()
+	if named != nil && !p.atWords("TABLE") {
+		return nil, p.unsupported("a named RETURNS that is not a table")
+	}
+	if !p.atWords("TABLE") {
+		kind, err := p.parseDataType()
+		if err != nil {
+			return nil, err
+		}
+		return New("ReturnsProperty", Arg{"this", kind}, Arg{"is_table", false}), nil
+	}
+	p.advance()
+	// Bare TABLE is a WORD, not a schema: the shape is what the writer looks
+	// at, so the two cannot be merged.
+	this := New("Var", Arg{"this", "TABLE"})
+	property := New("ReturnsProperty")
+	if p.at(TokL_PAREN) {
+		columns, err := p.parseColumnDefs()
+		if err != nil {
+			return nil, err
+		}
+		property.Set("this", New("Schema",
+			Arg{"this", this}, Arg{"expressions", columns}))
+	} else {
+		property.Set("this", this)
+	}
+	property.Set("is_table", true)
+	if named != nil {
+		property.Set("table", named)
+	}
+	return property, nil
+}
+
+// parseFunctionBody reads what the function DOES, and -- for the one dialect
+// that spells a return type there -- the property that came with it.
+//
+// Returns (nil, nil, nil) when no body starts here.
+func (p *parser) parseFunctionBody() (body, returns *Expression, err error) {
+	switch {
+	case p.atWords("RETURN"):
+		p.advance()
+		inner, err := p.parseReturnBody()
+		if err != nil {
+			return nil, nil, err
+		}
+		return New("Return", Arg{"this", inner}), nil, nil
+	case p.match(TokALIAS):
+		// `AS TABLE <query>` is DuckDB's way of saying the function returns a
+		// table; elsewhere those words are not a return type at all, and
+		// reading them as one would build a property the reference never made.
+		if p.tables.FunctionAsTableRead && p.atWords("TABLE") {
+			p.advance()
+			query, err := p.parseQuery()
+			if err != nil {
+				return nil, nil, err
+			}
+			return query, New("ReturnsProperty",
+				Arg{"this", New("Schema", Arg{"this", New("Var", Arg{"this", "TABLE"})})},
+				Arg{"is_table", true}), nil
+		}
+		if p.atWords("RETURN") {
+			p.advance()
+			inner, err := p.parseReturnBody()
+			if err != nil {
+				return nil, nil, err
+			}
+			return New("Return", Arg{"this", inner}), nil, nil
+		}
+		if c := p.curr(); c != nil && c.Type == TokSTRING {
+			p.advance()
+			return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil, nil
+		}
+		// `AS $$ ... $$` holds a body in another language entirely, and the
+		// reference keeps the text without reading it. The TAG between the
+		// dollars is not kept, so `$FOO$ ... $FOO$` comes back as `$$ ... $$`.
+		if c := p.curr(); c != nil && c.Type == TokHEREDOC_STRING {
+			p.advance()
+			return New("Heredoc", Arg{"this", c.Text}), nil, nil
+		}
+		inner, err := p.parseReturnBody()
+		if err != nil {
+			return nil, nil, err
+		}
+		return inner, nil, nil
+	}
+	return nil, nil, nil
+}
+
+// parseReturnBody reads the expression or query a function hands back.
+func (p *parser) parseReturnBody() (*Expression, error) {
+	if p.at(TokSELECT) || p.at(TokWITH) {
+		return p.parseQuery()
+	}
+	return p.parseExpression()
+}
+
+// parseParameterName reads `@name` where a parameter's name is spelled that
+// way, and nil where it is not.
+func (p *parser) parseParameterName() *Expression {
+	c := p.curr()
+	if c == nil || c.Type != TokPARAMETER || c.Text != "@" ||
+		p.tables.Placeholder.AtName != "Parameter" {
+		return nil
+	}
+	n := p.next()
+	if !isParameterName(n) {
+		return nil
+	}
+	p.advance()
+	p.advance()
+	return New("Parameter", Arg{"this", New("Var", Arg{"this", n.Text})})
 }

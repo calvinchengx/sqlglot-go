@@ -2513,3 +2513,267 @@ func TestTableConstraints(t *testing.T) {
 		}
 	}
 }
+
+// CREATE FUNCTION, which is the one CREATE whose parts are not in a fixed
+// order: the properties may come before the body, after it, or on both sides,
+// and the reference keeps them in the order they were WRITTEN.
+func TestCreateFunction(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"a bare name", "", "CREATE FUNCTION f", "CREATE FUNCTION f"},
+		{"a string body", "", "CREATE FUNCTION f AS 'g'", "CREATE FUNCTION f AS 'g'"},
+		{"parameters", "", "CREATE FUNCTION a(b INT, c VARCHAR) AS 'SELECT 1'",
+			"CREATE FUNCTION a(b INT, c VARCHAR) AS 'SELECT 1'"},
+		// `add(INT, INT)` names no parameters at all: each TYPE is kept as a
+		// bare name, because that is all the statement said.
+		{"unnamed parameters", "postgres", "CREATE FUNCTION add(INT, INT) RETURNS INT AS 'x'",
+			"CREATE FUNCTION add(INT, INT) RETURNS INT AS 'x'"},
+		{"a returned expression", "", "CREATE FUNCTION a.b(x INT) RETURNS INT AS RETURN x + 1",
+			"CREATE FUNCTION a.b(x INT) RETURNS INT AS RETURN x + 1"},
+		// Databricks writes no AS in front of a RETURN.
+		{"returned, Databricks", "databricks",
+			"CREATE FUNCTION a.b(x INT) RETURNS INT RETURN x + 1",
+			"CREATE FUNCTION a.b(x INT) RETURNS INT RETURN x + 1"},
+		{"properties in source order", "",
+			"CREATE FUNCTION a.b(x TEXT) LANGUAGE SQL READS SQL DATA RETURNS TEXT AS RETURN x",
+			"CREATE FUNCTION a.b(x TEXT) LANGUAGE SQL READS SQL DATA RETURNS TEXT AS RETURN x"},
+		{"properties after the body", "postgres",
+			"CREATE FUNCTION add(INT, INT) RETURNS INT LANGUAGE SQL IMMUTABLE STRICT AS 'x'",
+			"CREATE FUNCTION add(INT, INT) RETURNS INT LANGUAGE SQL IMMUTABLE STRICT AS 'x'"},
+		{"called on null input", "",
+			"CREATE FUNCTION a(x INT) RETURNS INT LANGUAGE SQL CALLED ON NULL INPUT AS 'SELECT 1'",
+			"CREATE FUNCTION a(x INT) RETURNS INT LANGUAGE SQL CALLED ON NULL INPUT AS 'SELECT 1'"},
+		// A second RETURNS, which is how the reference records this phrase.
+		{"returns null on null input", "postgres",
+			"CREATE FUNCTION add(INT) RETURNS INT LANGUAGE SQL RETURNS NULL ON NULL INPUT AS 'x'",
+			"CREATE FUNCTION add(INT) RETURNS INT LANGUAGE SQL RETURNS NULL ON NULL INPUT AS 'x'"},
+		{"returning a table", "databricks",
+			"CREATE OR REPLACE FUNCTION func(a BIGINT) RETURNS TABLE (a INT) RETURN SELECT a",
+			"CREATE OR REPLACE FUNCTION func(a BIGINT) RETURNS TABLE (a INT) RETURN SELECT a"},
+		// DuckDB writes the return type IN the body and no other property at
+		// all, so the same node lands in a different place there.
+		{"a table, DuckDB", "duckdb",
+			"CREATE OR REPLACE FUNCTION func(a BIGINT) AS TABLE SELECT a",
+			"CREATE OR REPLACE FUNCTION func(a BIGINT) AS TABLE SELECT a"},
+		{"a temporary function", "duckdb", "CREATE TEMPORARY FUNCTION f1(a BIGINT) AS (a + b)",
+			"CREATE TEMPORARY FUNCTION f1(a BIGINT) AS (a + b)"},
+		// PostgreSQL writes a parameter's mode in front of it and spells both
+		// directions as one word; everyone else writes it after the type, as
+		// two.
+		{"a mode, PostgreSQL", "postgres", "CREATE FUNCTION foo(INOUT a INT)",
+			"CREATE FUNCTION foo(INOUT a INT)"},
+		{"every mode", "postgres",
+			"CREATE FUNCTION foo(a INT, OUT b INT, INOUT c VARCHAR, VARIADIC d INT[])",
+			"CREATE FUNCTION foo(a INT, OUT b INT, INOUT c VARCHAR, VARIADIC d INT[])"},
+		// And a mode word is only a mode when a name AND a type follow it:
+		// this one names the parameter.
+		{"a mode word as a name", "postgres", "CREATE FUNCTION foo(variadic INT[])",
+			"CREATE FUNCTION foo(variadic INT[])"},
+		{"a default", "postgres", "CREATE FUNCTION foo(OUT x INT DEFAULT 5)",
+			"CREATE FUNCTION foo(OUT x INT DEFAULT 5)"},
+		// T-SQL names parameters the way it names variables, and the marker
+		// is part of the name rather than punctuation in front of it.
+		{"a T-SQL parameter", "tsql", "CREATE FUNCTION foo(@bar INTEGER) RETURNS TABLE AS RETURN SELECT 1",
+			"CREATE FUNCTION foo(@bar INTEGER) RETURNS TABLE AS RETURN SELECT 1"},
+		// It also NAMES the table it returns, and the name sits on the
+		// property rather than on the columns.
+		{"a named table", "tsql",
+			"CREATE FUNCTION foo(@bar INTEGER) RETURNS @foo TABLE (x INTEGER) AS RETURN SELECT 1",
+			"CREATE FUNCTION foo(@bar INTEGER) RETURNS @foo TABLE (x INTEGER) AS RETURN SELECT 1"},
+		{"a session setting", "postgres",
+			"CREATE FUNCTION x(INT) RETURNS INT SET search_path TO 'public'",
+			"CREATE FUNCTION x(INT) RETURNS INT SET search_path = 'public'"},
+		// A body in another language is kept as text and never read. The TAG
+		// between the dollars is not on the node, so it comes back bare.
+		{"a foreign body", "postgres",
+			"CREATE FUNCTION pymax(a INT) RETURNS INT LANGUAGE plpython3u AS $$return 1$$",
+			"CREATE FUNCTION pymax(a INT) RETURNS INT LANGUAGE plpython3u AS $$return 1$$"},
+		{"a tagged foreign body", "postgres",
+			"CREATE FUNCTION pymax(a INT) RETURNS INT AS $FOO$return 1$FOO$",
+			"CREATE FUNCTION pymax(a INT) RETURNS INT AS $$return 1$$"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			if !IsWrite(e) {
+				t.Errorf("IsWrite(%q) = false; it makes something", tc.sql)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+
+	// DuckDB writes no function property except TEMPORARY and the one return
+	// type it spells in the body. A function carrying any other one cannot be
+	// written there without saying less than the statement did.
+	for _, sql := range []string{
+		"CREATE FUNCTION f() LANGUAGE sql AS 'x'",
+		"CREATE FUNCTION f() RETURNS INT AS 'x'",
+		"CREATE FUNCTION f() IMMUTABLE AS 'x'",
+	} {
+		e, err := ParseOne(sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err == nil {
+			t.Errorf("%q wrote %q for DuckDB, which writes the property nowhere", sql, got)
+		}
+	}
+
+	for _, tc := range []struct{ dialect, sql string }{
+		// The reference reads a SET as a setting only when it ENDS the
+		// statement, and otherwise swallows the rest as raw text.
+		{"postgres", "CREATE FUNCTION x(INT) RETURNS INT SET search_path TO 'p' AS 'y'"},
+		{"postgres", "CREATE FUNCTION x(INT) RETURNS INT SET foo FROM CURRENT"},
+		{"databricks", "CREATE FUNCTION a() HANDLER 'handler_function'"},
+		{"databricks", "CREATE FUNCTION a() PARAMETER STYLE PANDAS"},
+		{"", "CREATE FUNCTION f() RETURNS @foo INT"},
+		{"", "CREATE FUNCTION f(a INT"},
+		{"", "CREATE FUNCTION f() AS 'x' AS 'y'"},
+		{"", "CREATE FUNCTION f() LANGUAGE"},
+	} {
+		if _, err := ParseOne(tc.sql, tc.dialect); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", tc.sql)
+		}
+	}
+}
+
+// The corners of the function writers, and the trees no parser builds.
+func TestCreateFunctionCorners(t *testing.T) {
+	for _, tc := range []struct{ name, read, write, sql, want string }{
+		// Databricks turns a table-valued function's body into a RETURN
+		// before writing it, whatever it was written as.
+		{"a table body becomes a return", "", "databricks",
+			"CREATE FUNCTION f() RETURNS TABLE AS 1",
+			"CREATE FUNCTION f() RETURNS TABLE RETURN 1"},
+		// DuckDB writes no word in front of a returned expression at all.
+		{"a return with no word", "", "duckdb",
+			"CREATE FUNCTION f(a INT) AS RETURN a + 1",
+			"CREATE FUNCTION f(a INT) AS a + 1"},
+		// A mode is still a mode when a constraint follows the type.
+		{"a mode before a constraint", "postgres", "postgres",
+			"CREATE FUNCTION foo(OUT a INT NOT NULL)",
+			"CREATE FUNCTION foo(OUT a INT NOT NULL)"},
+		{"and after it elsewhere", "postgres", "databricks",
+			"CREATE FUNCTION foo(OUT a INT NOT NULL)",
+			"CREATE FUNCTION foo(a INT OUT NOT NULL)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.read)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.write)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+
+	name := New("UserDefinedFunction",
+		Arg{"this", New("Table", Arg{"this", New("Identifier", Arg{"this", "f"})})},
+		Arg{"wrapped", true})
+	for _, tc := range []struct {
+		name, dialect string
+		node          *Expression
+	}{
+		// DuckDB spells a table return type in the body, so a function with
+		// one and no body has nowhere to put it.
+		{"a return type with no body", "duckdb", New("Create",
+			Arg{"this", name}, Arg{"kind", "FUNCTION"},
+			Arg{"properties", New("Properties", Arg{"expressions", []*Expression{
+				New("ReturnsProperty",
+					Arg{"this", New("Schema", Arg{"this", New("Var", Arg{"this", "TABLE"})})},
+					Arg{"is_table", true})}})})},
+		{"a stability with no word", "", New("Create",
+			Arg{"this", name}, Arg{"kind", "FUNCTION"},
+			Arg{"properties", New("Properties", Arg{"expressions", []*Expression{
+				New("StabilityProperty")}})})},
+		{"a setting that unsets", "", New("Create",
+			Arg{"this", name}, Arg{"kind", "FUNCTION"},
+			Arg{"properties", New("Properties", Arg{"expressions", []*Expression{
+				New("SetConfigProperty", Arg{"this", New("Set",
+					Arg{"expressions", []*Expression{}}, Arg{"unset", true})})}})})},
+		{"a setting that is not one", "", New("Create",
+			Arg{"this", name}, Arg{"kind", "FUNCTION"},
+			Arg{"properties", New("Properties", Arg{"expressions", []*Expression{
+				New("SetConfigProperty", Arg{"this", New("Set",
+					Arg{"expressions", []*Expression{New("SetItem",
+						Arg{"this", New("Star")})}})})}})})},
+		{"a mode that says nothing", "postgres", New("Create",
+			Arg{"this", New("UserDefinedFunction",
+				Arg{"this", New("Table", Arg{"this", New("Identifier", Arg{"this", "f"})})},
+				Arg{"expressions", []*Expression{New("ColumnDef",
+					Arg{"this", New("Identifier", Arg{"this", "a"})},
+					Arg{"kind", New("DataType", Arg{"this", DataTypeKind("INT")})},
+					Arg{"constraints", []*Expression{New("InOutColumnConstraint")}})}},
+				Arg{"wrapped", true})},
+			Arg{"kind", "FUNCTION"})},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got, err := Generate(tc.node, tc.dialect); err == nil {
+				t.Errorf("wrote %q; it should be refused", got)
+			}
+		})
+	}
+}
+
+// The refusals in the DDL readers that no corpus statement reaches. Each is
+// one malformed statement, so the reader that turns it away is run rather
+// than shipped on trust.
+func TestDDLRefusalsAreReached(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql string }{
+		{"", "CREATE"},
+		{"", "DROP"},
+		{"", "ALTER"},
+		{"", "CREATE TABLE a.b.c.d (a INT)"},
+		{"", "CREATE TABLE z (a INT COLLATE)"},
+		{"", "ALTER TABLE t ADD COLUMN a INT, DROP"},
+		{"", "CREATE TABLE z (a INT, PRIMARY KEY (a"},
+		{"", "CREATE TABLE z (a INT, CHECK (a > 0"},
+		{"", "CREATE TABLE z (a INT, FOREIGN KEY (a) REFERENCES p (b) ON"},
+		{"tsql", "CREATE TABLE t (a INT, CONSTRAINT c PRIMARY KEY (a"},
+		{"tsql", "CREATE FUNCTION f(@)"},
+	} {
+		if _, err := ParseOne(tc.sql, tc.dialect); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", tc.sql)
+		}
+	}
+	// The two directions a key's columns may be written in, one of which is
+	// the default and still recorded.
+	for _, tc := range []struct{ sql, want string }{
+		{"CREATE TABLE t (a INT, CONSTRAINT c PRIMARY KEY (a ASC))",
+			"CREATE TABLE t (a INTEGER, CONSTRAINT c PRIMARY KEY (a ASC))"},
+		{"CREATE TABLE t (a INT, CONSTRAINT c PRIMARY KEY (a DESC))",
+			"CREATE TABLE t (a INTEGER, CONSTRAINT c PRIMARY KEY (a DESC))"},
+	} {
+		e, err := ParseOne(tc.sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, _ := Generate(e, "tsql"); got != tc.want {
+			t.Errorf("got %q, want %q", got, tc.want)
+		}
+	}
+	// A column's own PRIMARY KEY takes a direction too.
+	if e, err := ParseOne("CREATE TABLE t (a INT PRIMARY KEY DESC)", ""); err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	} else if got, _ := Generate(e, ""); got != "CREATE TABLE t (a INT PRIMARY KEY DESC)" {
+		t.Errorf("got %q", got)
+	}
+	// And a dropped column may be restricted rather than cascaded.
+	if e, err := ParseOne("ALTER TABLE t DROP COLUMN k RESTRICT", ""); err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	} else if got, _ := Generate(e, ""); got != "ALTER TABLE t DROP COLUMN k RESTRICT" {
+		t.Errorf("got %q", got)
+	}
+}

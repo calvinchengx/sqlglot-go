@@ -296,6 +296,29 @@ type ParserTables struct {
 	// UniqueConstraintWritten: a UNIQUE constraint survives being written
 	// here. Where it does not, the guarantee would be silently dropped.
 	UniqueConstraintWritten bool
+	// FunctionReturnsPlace says WHERE a RETURNS property is written, per
+	// shape of what it holds: after the parameter list, in the body, or
+	// nowhere at all.
+	FunctionReturnsPlace map[string]string
+	// FunctionPropertiesWritten: a function's other properties -- LANGUAGE,
+	// IMMUTABLE, STRICT -- survive being written here.
+	FunctionPropertiesWritten bool
+	// FunctionReturnAs: AS is written in front of a RETURN body.
+	FunctionReturnAs bool
+	// FunctionWrapsTableBody: a table-valued function's body becomes a
+	// RETURN here even when it was not written as one.
+	FunctionWrapsTableBody bool
+	// FunctionAsTableRead: `AS TABLE <query>` is READ as a return type here.
+	FunctionAsTableRead bool
+	// ReturnWord is the word a RETURN writes, empty where it writes none.
+	ReturnWord string
+	// ParameterModePrefix: a parameter's mode is written in FRONT of it
+	// here rather than after its type, and ParameterModeWords how each is
+	// spelled -- one word or two.
+	ParameterModePrefix bool
+	ParameterModeWords  map[string]string
+	// SetItemSeparator sits between a configuration name and its value.
+	SetItemSeparator string
 	// RenameTarget says how much of a qualified name a RENAME TO writes:
 	// the whole thing, the last part only, or -- empty -- neither,
 	// because the dialect writes another statement entirely.
@@ -3649,20 +3672,39 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:          false,
-		HoistsInsertWith:         false,
-		PrimaryKeyMembersOrdered: false,
-		UniqueConstraintWritten:  true,
-		AlterAddColumnWord:       true,
-		AlterRepeatsAdd:          true,
-		AlterColumnTypeWord:      "SET DATA TYPE",
+		MapBraceLiteral:     false,
+		HoistsInsertWith:    false,
+		SetItemSeparator:    " = ",
+		ParameterModePrefix: false,
+		ParameterModeWords: map[string]string{
+			"in":       "IN",
+			"inout":    "IN OUT",
+			"out":      "OUT",
+			"variadic": "VARIADIC",
+		},
+		FunctionReturnsPlace: map[string]string{
+			"schema": "schema",
+			"table":  "schema",
+			"type":   "schema",
+		},
+		FunctionPropertiesWritten: true,
+		FunctionReturnAs:          true,
+		FunctionWrapsTableBody:    false,
+		FunctionAsTableRead:       false,
+		ReturnWord:                "RETURN",
+		PrimaryKeyMembersOrdered:  false,
+		UniqueConstraintWritten:   true,
+		AlterAddColumnWord:        true,
+		AlterRepeatsAdd:           true,
+		AlterColumnTypeWord:       "SET DATA TYPE",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": true,
 			"VIEW":  true,
 		},
 		TemporaryWritten: map[string]bool{
-			"TABLE": true,
-			"VIEW":  true,
+			"FUNCTION": true,
+			"TABLE":    true,
+			"VIEW":     true,
 		},
 		ViewColumnCommentWritten: true,
 		MergeWithoutTarget:       false,
@@ -7212,20 +7254,39 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:          false,
-		HoistsInsertWith:         true,
-		PrimaryKeyMembersOrdered: true,
-		UniqueConstraintWritten:  true,
-		AlterAddColumnWord:       false,
-		AlterRepeatsAdd:          false,
-		AlterColumnTypeWord:      "",
+		MapBraceLiteral:     false,
+		HoistsInsertWith:    true,
+		SetItemSeparator:    " ",
+		ParameterModePrefix: false,
+		ParameterModeWords: map[string]string{
+			"in":       "IN",
+			"inout":    "IN OUT",
+			"out":      "OUT",
+			"variadic": "VARIADIC",
+		},
+		FunctionReturnsPlace: map[string]string{
+			"schema": "schema",
+			"table":  "schema",
+			"type":   "schema",
+		},
+		FunctionPropertiesWritten: true,
+		FunctionReturnAs:          true,
+		FunctionWrapsTableBody:    false,
+		FunctionAsTableRead:       false,
+		ReturnWord:                "RETURN",
+		PrimaryKeyMembersOrdered:  true,
+		UniqueConstraintWritten:   true,
+		AlterAddColumnWord:        false,
+		AlterRepeatsAdd:           false,
+		AlterColumnTypeWord:       "",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": false,
 			"VIEW":  false,
 		},
 		TemporaryWritten: map[string]bool{
-			"TABLE": false,
-			"VIEW":  false,
+			"FUNCTION": false,
+			"TABLE":    false,
+			"VIEW":     false,
 		},
 		ViewColumnCommentWritten: true,
 		MergeWithoutTarget:       false,
@@ -10860,20 +10921,39 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:          false,
-		HoistsInsertWith:         false,
-		PrimaryKeyMembersOrdered: false,
-		UniqueConstraintWritten:  true,
-		AlterAddColumnWord:       true,
-		AlterRepeatsAdd:          true,
-		AlterColumnTypeWord:      "SET DATA TYPE",
+		MapBraceLiteral:     false,
+		HoistsInsertWith:    false,
+		SetItemSeparator:    " = ",
+		ParameterModePrefix: true,
+		ParameterModeWords: map[string]string{
+			"in":       "IN",
+			"inout":    "INOUT",
+			"out":      "OUT",
+			"variadic": "VARIADIC",
+		},
+		FunctionReturnsPlace: map[string]string{
+			"schema": "schema",
+			"table":  "schema",
+			"type":   "schema",
+		},
+		FunctionPropertiesWritten: true,
+		FunctionReturnAs:          true,
+		FunctionWrapsTableBody:    false,
+		FunctionAsTableRead:       false,
+		ReturnWord:                "RETURN",
+		PrimaryKeyMembersOrdered:  false,
+		UniqueConstraintWritten:   true,
+		AlterAddColumnWord:        true,
+		AlterRepeatsAdd:           true,
+		AlterColumnTypeWord:       "SET DATA TYPE",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": true,
 			"VIEW":  true,
 		},
 		TemporaryWritten: map[string]bool{
-			"TABLE": true,
-			"VIEW":  true,
+			"FUNCTION": true,
+			"TABLE":    true,
+			"VIEW":     true,
 		},
 		ViewColumnCommentWritten: false,
 		MergeWithoutTarget:       true,
@@ -14681,20 +14761,39 @@ var parserTables = map[string]*ParserTables{
 			"STRINGAGG":    {},
 			"STRING_AGG":   {},
 		},
-		MapBraceLiteral:          true,
-		HoistsInsertWith:         false,
-		PrimaryKeyMembersOrdered: false,
-		UniqueConstraintWritten:  true,
-		AlterAddColumnWord:       true,
-		AlterRepeatsAdd:          true,
-		AlterColumnTypeWord:      "SET DATA TYPE",
+		MapBraceLiteral:     true,
+		HoistsInsertWith:    false,
+		SetItemSeparator:    "",
+		ParameterModePrefix: false,
+		ParameterModeWords: map[string]string{
+			"in":       "IN",
+			"inout":    "IN OUT",
+			"out":      "OUT",
+			"variadic": "VARIADIC",
+		},
+		FunctionReturnsPlace: map[string]string{
+			"schema": "alias",
+			"table":  "",
+			"type":   "",
+		},
+		FunctionPropertiesWritten: false,
+		FunctionReturnAs:          true,
+		FunctionWrapsTableBody:    false,
+		FunctionAsTableRead:       true,
+		ReturnWord:                "",
+		PrimaryKeyMembersOrdered:  false,
+		UniqueConstraintWritten:   true,
+		AlterAddColumnWord:        true,
+		AlterRepeatsAdd:           true,
+		AlterColumnTypeWord:       "SET DATA TYPE",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": true,
 			"VIEW":  true,
 		},
 		TemporaryWritten: map[string]bool{
-			"TABLE": true,
-			"VIEW":  true,
+			"FUNCTION": true,
+			"TABLE":    true,
+			"VIEW":     true,
 		},
 		ViewColumnCommentWritten: false,
 		MergeWithoutTarget:       false,
@@ -18499,20 +18598,39 @@ var parserTables = map[string]*ParserTables{
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
-		MapBraceLiteral:          false,
-		HoistsInsertWith:         true,
-		PrimaryKeyMembersOrdered: false,
-		UniqueConstraintWritten:  false,
-		AlterAddColumnWord:       true,
-		AlterRepeatsAdd:          true,
-		AlterColumnTypeWord:      "TYPE",
+		MapBraceLiteral:     false,
+		HoistsInsertWith:    true,
+		SetItemSeparator:    " = ",
+		ParameterModePrefix: false,
+		ParameterModeWords: map[string]string{
+			"in":       "IN",
+			"inout":    "IN OUT",
+			"out":      "OUT",
+			"variadic": "VARIADIC",
+		},
+		FunctionReturnsPlace: map[string]string{
+			"schema": "schema",
+			"table":  "schema",
+			"type":   "schema",
+		},
+		FunctionPropertiesWritten: true,
+		FunctionReturnAs:          false,
+		FunctionWrapsTableBody:    true,
+		FunctionAsTableRead:       false,
+		ReturnWord:                "RETURN",
+		PrimaryKeyMembersOrdered:  false,
+		UniqueConstraintWritten:   false,
+		AlterAddColumnWord:        true,
+		AlterRepeatsAdd:           true,
+		AlterColumnTypeWord:       "TYPE",
 		CreateExistsWritten: map[string]bool{
 			"TABLE": true,
 			"VIEW":  true,
 		},
 		TemporaryWritten: map[string]bool{
-			"TABLE": false,
-			"VIEW":  true,
+			"FUNCTION": true,
+			"TABLE":    false,
+			"VIEW":     true,
 		},
 		ViewColumnCommentWritten: true,
 		MergeWithoutTarget:       false,
