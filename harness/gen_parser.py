@@ -1414,6 +1414,24 @@ def set_variable_separator(dialect: str) -> str:
     return tail.split("'zzvalue'")[0]
 
 
+def set_without_a_sign(dialect: str) -> bool:
+    """Whether a SET may be written with no `=` between name and value.
+
+    `SET XACT_ABORT ON` is T-SQL's; everywhere else the reference gives up on
+    it and keeps the raw text. Reading the form in dialects that have no such
+    statement let the port read `SET@0B` as a setting and write back SQL it
+    could not read.
+    """
+    import sqlglot
+
+    try:
+        return type(
+            sqlglot.parse_one("SET zzname zzvalue", read=dialect or None)
+        ).__name__ == "Set"
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def merge_without_target(dialect: str) -> bool:
     """Whether a MERGE drops the target's name from the columns it assigns.
 
@@ -3664,6 +3682,7 @@ def main() -> int:
         "\t// BareBeginIsATransaction: a BEGIN with no TRANSACTION after it opens\n\t// one here. In T-SQL it opens a block instead.\n\tBareBeginIsATransaction bool\n",
         "\t// SetItemKindWritten says whether a SET\'s scope word survives, per\n\t// word. Dropping one changes which scope the setting belongs to.\n\tSetItemKindWritten map[string]bool\n",
         "\t// SetItemVariableSeparator sits between a VARIABLE and its value,\n\t// which is not always what sits between a setting and its value.\n\tSetItemVariableSeparator string\n",
+        "\t// SetWithoutASign: a SET may be written with no `=` between the name\n\t// and the value here.\n\tSetWithoutASign bool\n",
         "\t// RenameTarget says how much of a qualified name a RENAME TO writes:\n",
         "\t// the whole thing, the last part only, or -- empty -- neither,\n",
         "\t// because the dialect writes another statement entirely.\n",
@@ -4242,6 +4261,7 @@ def main() -> int:
             "\t\tIdentityWidensType: %s,\n" % str(identity_widens_type(name)).lower()
         )
         out.append(f"\t\tSetItemSeparator: {gostr(set_item_separator(name))},\n")
+        out.append("\t\tSetWithoutASign: %s,\n" % str(set_without_a_sign(name)).lower())
         out.append(f"\t\tSetItemVariableSeparator: {gostr(set_variable_separator(name))},\n")
         out.append("\t\tSetItemKindWritten: map[string]bool{\n")
         for word, ok in sorted(set_item_kind_written(name).items()):

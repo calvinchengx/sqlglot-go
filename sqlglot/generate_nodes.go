@@ -932,7 +932,15 @@ func (g *generator) writeParameter(e *Expression) string {
 	if this == nil {
 		return g.fail("Parameter without a name")
 	}
-	return strings.ReplaceAll(g.tables.Placeholder.Parameter, "{name}", g.node(this))
+	name := g.node(this)
+	// The spelling puts the name back BARE, so a name that is not a name
+	// makes SQL nothing can read -- `SET @<nul> = 0` written for PostgreSQL
+	// is `SET $<nul> = 0`, where the dollar opens a quote that never closes.
+	// The same rule turns a Placeholder away. The generator fuzzer found it.
+	if !readableAsABareName(name) {
+		return g.fail(e.Class + " whose name is not a name")
+	}
+	return strings.ReplaceAll(g.tables.Placeholder.Parameter, "{name}", name)
 }
 
 // writeEscape writes the escape character a LIKE was given. Every dialect

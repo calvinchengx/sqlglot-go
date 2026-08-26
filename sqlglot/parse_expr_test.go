@@ -3681,3 +3681,29 @@ func TestStatementRefusalsAreReached(t *testing.T) {
 		t.Error("isBareWord disagrees with what a word is")
 	}
 }
+
+// The sign-less SET is T-SQL's alone. Reading it everywhere let the port take
+// `SET@0B` for a setting and write back SQL it could not read -- the
+// generator fuzzer found 111 of those in a single run.
+func TestSetNeedsASignExceptInTSQL(t *testing.T) {
+	for _, d := range []string{"", "postgres", "duckdb", "databricks"} {
+		if _, err := ParseOne("SET KEY VALUE", d); err == nil {
+			t.Errorf("[%s] a sign-less SET was read", d)
+		}
+	}
+	if _, err := ParseOne("SET KEY VALUE", "tsql"); err != nil {
+		t.Errorf("T-SQL writes this form: %v", err)
+	}
+	// And a PARAMETER's name is put back bare, so a name that is not a name
+	// makes SQL nothing can read: PostgreSQL spells `@x` as `$x`, and a
+	// dollar opens a quote that never closes.
+	odd := New("Set",
+		Arg{"expressions", []*Expression{New("SetItem",
+			Arg{"this", New("EQ",
+				Arg{"this", New("Parameter", Arg{"this", New("Var", Arg{"this", "a b"})})},
+				Arg{"expression", New("Literal", Arg{"this", "1"}, Arg{"is_string", false})})})}},
+		Arg{"unset", false}, Arg{"tag", false})
+	if got, err := Generate(odd, "postgres"); err == nil {
+		t.Errorf("wrote %q; `a b` is not a name", got)
+	}
+}

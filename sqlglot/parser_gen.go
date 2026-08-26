@@ -362,6 +362,9 @@ type ParserTables struct {
 	// SetItemVariableSeparator sits between a VARIABLE and its value,
 	// which is not always what sits between a setting and its value.
 	SetItemVariableSeparator string
+	// SetWithoutASign: a SET may be written with no `=` between the name
+	// and the value here.
+	SetWithoutASign bool
 	// RenameTarget says how much of a qualified name a RENAME TO writes:
 	// the whole thing, the last part only, or -- empty -- neither,
 	// because the dialect writes another statement entirely.
@@ -3745,6 +3748,7 @@ var parserTables = map[string]*ParserTables{
 		IdentityWritten:          true,
 		IdentityWidensType:       false,
 		SetItemSeparator:         " = ",
+		SetWithoutASign:          false,
 		SetItemVariableSeparator: " = ",
 		SetItemKindWritten: map[string]bool{
 			"GLOBAL":   true,
@@ -7363,6 +7367,7 @@ var parserTables = map[string]*ParserTables{
 		IdentityWritten:          false,
 		IdentityWidensType:       false,
 		SetItemSeparator:         " ",
+		SetWithoutASign:          true,
 		SetItemVariableSeparator: " = ",
 		SetItemKindWritten: map[string]bool{
 			"GLOBAL":   false,
@@ -11068,6 +11073,7 @@ var parserTables = map[string]*ParserTables{
 		IdentityWritten:          true,
 		IdentityWidensType:       false,
 		SetItemSeparator:         " = ",
+		SetWithoutASign:          false,
 		SetItemVariableSeparator: " = ",
 		SetItemKindWritten: map[string]bool{
 			"GLOBAL":   true,
@@ -14945,6 +14951,7 @@ var parserTables = map[string]*ParserTables{
 		IdentityWritten:          true,
 		IdentityWidensType:       false,
 		SetItemSeparator:         " = ",
+		SetWithoutASign:          false,
 		SetItemVariableSeparator: " = ",
 		SetItemKindWritten: map[string]bool{
 			"GLOBAL":   true,
@@ -18819,6 +18826,7 @@ var parserTables = map[string]*ParserTables{
 		IdentityWritten:          true,
 		IdentityWidensType:       true,
 		SetItemSeparator:         " = ",
+		SetWithoutASign:          false,
 		SetItemVariableSeparator: " = ",
 		SetItemKindWritten: map[string]bool{
 			"GLOBAL":   true,

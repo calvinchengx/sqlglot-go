@@ -2188,7 +2188,11 @@ func (p *parser) parseSetStatementItem() (*Expression, error) {
 	// `TO` and `=` are the same thing, and a setting may be written with
 	// neither: `SET XACT_ABORT ON`.
 	if !p.at(TokEQ) && !p.atWords("TO") {
-		if p.curr() == nil {
+		// The sign-less form is T-SQL's alone; elsewhere the reference gives
+		// up on it and keeps the raw text. Reading it everywhere let the port
+		// read `SET@0B` as a setting and write back SQL it could not read --
+		// the generator fuzzer found 111 of those in one run.
+		if !p.tables.SetWithoutASign || p.curr() == nil {
 			return nil, p.unsupported("SET without a value")
 		}
 	} else {
