@@ -108,3 +108,35 @@ func TestSimplifyShapes(t *testing.T) {
 		})
 	}
 }
+
+// TestFlatFold covers folding constants out of a chain of one associative
+// operator, wherever in the chain they sit -- and NOT out of a chain that
+// mixes in an operator which is not associative.
+func TestFlatFold(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"a sum folds past a column", "y + 2 + 3", "y + 5"},
+		{"and so does a product", "y * 2 * 3", "y * 6"},
+		{"the offset a subscript carries folds itself out", "y + -1 + 1", "y + 0"},
+		// The folded value goes back to the FRONT of the chain, which is
+		// where the reference puts it: `1 + y + 2` is `3 + y`, not `y + 3`.
+		{"constants at either end of the chain", "1 + y + 2", "3 + y"},
+		{"and constants in front of it", "1 + 2 + y", "3 + y"},
+		{"a chain of columns is left as it was", "y + z + w", "y + z + w"},
+		{"a subtraction in the chain stops it", "y - 2 + 3", "y - 2 + 3"},
+		{"and a division does too", "y / 2 * 3", "y / 2 * 3"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(Simplify(e, ""), "")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("%q simplified to %q, want %q", tc.sql, got, tc.want)
+			}
+		})
+	}
+}

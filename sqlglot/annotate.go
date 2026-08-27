@@ -419,7 +419,28 @@ func ApplyIndexOffset(this *Expression, items []*Expression, offset int, dialect
 	}
 	// The shift goes through the SIMPLIFIER, as the reference's does: reading
 	// `a[1]` gives `a[0]`, and writing that back gives `a[1]` again.
-	shifted := New("Add", Arg{"this", index},
-		Arg{"expression", New("Literal", Arg{"this", strconv.Itoa(offset)}, Arg{"is_string", false})})
+	//
+	// The Add is BUILT the way the reference builds one, because both halves
+	// of how it is built are load-bearing:
+	//
+	//   -- a negative offset is a NEGATED one, not a negative literal. The
+	//      port wrote `Literal(-1)`, which its own annotator reads as a
+	//      DOUBLE, which made the sum a DOUBLE, which made the GENERATOR
+	//      decline to shift it back -- and `a[CAST(x AS INT)]` came out as
+	//      `a[CAST(x AS INT) + -1]`, one element lower than it went in.
+	//
+	//   -- an operand that is itself a binary operation is parenthesised,
+	//      unless the sum is being added to a sum, in which case the
+	//      reference leaves both alone.
+	amount := New("Literal", Arg{"this", strconv.Itoa(offset)}, Arg{"is_string", false})
+	if offset < 0 {
+		amount = New("Neg", Arg{"this",
+			New("Literal", Arg{"this", strconv.Itoa(-offset)}, Arg{"is_string", false})})
+	}
+	left := index
+	if index.Class != "Add" && isA("Binary", index) {
+		left = New("Paren", Arg{"this", index})
+	}
+	shifted := New("Add", Arg{"this", left}, Arg{"expression", amount})
 	return []*Expression{Simplify(shifted, dialect)}, true
 }

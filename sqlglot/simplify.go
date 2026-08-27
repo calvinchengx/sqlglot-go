@@ -60,7 +60,7 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 			out.Set(key, kids)
 		}
 	}
-	out = simplifyLiterals(out)
+	out = simplifyLiterals(out, parent)
 	out = simplifyNot(out, parent, dialect)
 	out = absorb(out, parent)
 	out = simplifyConnectors(out, parent)
@@ -130,7 +130,7 @@ var nullOK = map[string]bool{"NullSafeEQ": true, "NullSafeNEQ": true, "PropertyE
 // Dates and intervals are the reference's other half of this rule and are not
 // here: folding them means doing calendar arithmetic, and a port that got that
 // subtly wrong would return the wrong rows rather than the wrong spelling.
-func simplifyLiterals(e *Expression) *Expression {
+func simplifyLiterals(e, parent *Expression) *Expression {
 	if !isA("Binary", e) || isA("Connector", e) || nullOK[e.Class] {
 		return e
 	}
@@ -142,6 +142,23 @@ func simplifyLiterals(e *Expression) *Expression {
 
 	if e.Class == "Is" {
 		return simplifyIs(e, a, b)
+	}
+	// The two ASSOCIATIVE operators fold across a whole chain rather than one
+	// pair at a time. `a[CAST(x AS INT)]` is read as `CAST(x AS INT) + -1`
+	// and written as `(CAST(x AS INT) + -1) + 1`, and only a rule that can
+	// see past the inner Add turns that back into `+ 0` -- without it the
+	// generator declined the shift altogether and wrote a subscript one
+	// element lower than the one it read.
+	//
+	// Only Add and Mul. The reference folds a Sub or a Div solely where both
+	// operands hang off the SAME node, because neither is associative:
+	// `y - 2 + 3` is not `y + 1`, and a chain that lost track of which
+	// operator separated which pair would say it was.
+	if e.Class == "Add" || e.Class == "Mul" {
+		if parent != nil && parent.Class == e.Class {
+			return e
+		}
+		return flatFold(e)
 	}
 	// A comparison sees THROUGH a widening cast of a small integer:
 	// `CAST(1 AS UINT) >= 0` is `1 >= 0`, which then folds to TRUE. Only
@@ -888,4 +905,47 @@ func withoutWideningCast(e *Expression) *Expression {
 		return inner
 	}
 	return e
+}
+
+// flatFold folds the constants out of a chain of one associative operator,
+// wherever in the chain they sit.
+//
+// This is the reference's `_flat_simplify`, and the shape of the scan is its
+// own: take the first operand, look for any LATER one it combines with, and
+// put the combined value back at the FRONT so it can combine again. What is
+// left over keeps the order it was written in, and the chain is rebuilt
+// leaning left, which is how the parser built it.
+//
+// A chain nothing folds in is returned unchanged rather than rebuilt, so a
+// sum of columns is not re-associated for nothing.
+func flatFold(e *Expression) *Expression {
+	queue := chainOperands(e, e.Class)
+	size := len(queue)
+	var kept []*Expression
+	for len(queue) > 0 {
+		a := queue[0]
+		queue = queue[1:]
+		folded := false
+		for i, b := range queue {
+			out := foldNumbers(e, a, b)
+			if out == nil {
+				continue
+			}
+			rest := append([]*Expression{out}, queue[:i]...)
+			queue = append(rest, queue[i+1:]...)
+			folded = true
+			break
+		}
+		if !folded {
+			kept = append(kept, a)
+		}
+	}
+	if len(kept) == size {
+		return e
+	}
+	out := kept[0]
+	for _, operand := range kept[1:] {
+		out = New(e.Class, Arg{"this", out}, Arg{"expression", operand})
+	}
+	return out
 }

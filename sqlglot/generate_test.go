@@ -96,6 +96,18 @@ func TestGenerateShapes(t *testing.T) {
 		{"and in postgres", "SELECT a[2]", "postgres", "SELECT a[2]"},
 		{"a dialect that numbers from 0 is untouched", "SELECT a[1]", "databricks",
 			"SELECT a[1]"},
+		// A COMPUTED index shifts too, and the shift only comes back out
+		// where the sum still types as an integer. It did not: the offset
+		// was built as the literal `-1`, which the port's annotator reads as
+		// a DOUBLE, so the writer declined the shift and wrote a subscript
+		// one element lower than the one it read. It is `Neg(1)` now, and
+		// the two shifts fold against each other the way the reference's do.
+		{"a computed index shifts and shifts back", "SELECT a[CAST(x AS INT)]",
+			"postgres", "SELECT a[CAST(x AS INT) + 0]"},
+		{"one already carrying an offset", "SELECT a[CAST(x AS INT) + 1]",
+			"postgres", "SELECT a[CAST(x AS INT) + 1]"},
+		{"and a binary index is parenthesised first", "SELECT a[1 # 2]",
+			"postgres", "SELECT a[(1 # 2) + 0]"},
 		{"a non-integer index is not shifted", "SELECT a['k']", "duckdb", "SELECT a['k']"},
 		{"nor is a column index", "SELECT a[i]", "duckdb", "SELECT a[i]"},
 		{"nor is a slice", "SELECT a[1:2]", "duckdb", "SELECT a[1:2]"},
