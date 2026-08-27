@@ -294,6 +294,13 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) || p.at(TokFROM) {
 		return p.parseQueryBody()
 	}
+	// After every statement with a grammar of its own, and before the ones
+	// this port only names: the reference asks in that order too, so a
+	// keyword that is BOTH -- DuckDB's SHOW -- is read as the statement
+	// rather than kept as text.
+	if p.atCommand() {
+		return p.parseCommand()
+	}
 	if c := p.curr(); c != nil {
 		if _, isStatement := p.tables.StatementTokens[c.Type]; isStatement {
 			return nil, &NotAQueryError{Kind: strings.ToUpper(c.Text)}

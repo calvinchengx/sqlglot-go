@@ -90,6 +90,7 @@ func init() {
 		"Detach":                              (*generator).writeDetach,
 		"AttachOption":                        (*generator).writeAttachOption,
 		"Install":                             (*generator).writeInstall,
+		"Command":                             (*generator).writeCommand,
 		"Transaction":                         (*generator).writeTransaction,
 		"Commit":                              (*generator).writeTransaction,
 		"Rollback":                            (*generator).writeTransaction,
@@ -3513,4 +3514,18 @@ func (g *generator) writeInstall(e *Expression) string {
 		out += " FROM " + from
 	}
 	return out
+}
+
+// writeCommand writes back a statement the tokenizer took verbatim: the
+// keyword, and the text after it exactly as it was written.
+func (g *generator) writeCommand(e *Expression) string {
+	this, _ := e.Args["this"].(string)
+	payload := ""
+	if lit, ok := e.Args["expression"].(*Expression); ok {
+		payload, _ = lit.Args["this"].(string)
+	}
+	if payload = strings.TrimSpace(payload); payload == "" {
+		return this
+	}
+	return this + " " + payload
 }

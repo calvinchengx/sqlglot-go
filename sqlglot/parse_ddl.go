@@ -292,6 +292,10 @@ var writeClasses = map[string]bool{
 	"Attach":  true,
 	"Detach":  true,
 	"Install": true,
+	// A Command is a statement nothing here understood -- the tokenizer took
+	// the payload verbatim and no grammar was applied to it. It is a write
+	// because it cannot be shown to be anything else.
+	"Command": true,
 	// A transaction verb changes no rows by itself, but it is not read-only
 	// either: what follows it is held open, committed or thrown away. A guard
 	// that let one past would be letting the session be steered.
@@ -2780,4 +2784,55 @@ func (p *parser) parseInstall() (*Expression, error) {
 		return nil, p.unsupported("INSTALL with more than this port reads")
 	}
 	return node, nil
+}
+
+// parseCommand reads a statement the TOKENIZER decided was opaque.
+//
+// A handful of keywords -- EXPLAIN, CALL, VACUUM, OPTIMIZE, PREPARE, SHOW,
+// FETCH, RENAME, and each dialect's own additions -- put the tokenizer into a
+// mode where the rest of the line is taken verbatim as one string, and no
+// grammar is applied to it at all. The tree is the keyword and that string.
+//
+// The port makes this node where the TOKENIZER gave up, and nowhere else. The
+// reference has a second Command it reaches from inside two dozen parsers --
+// `_parse_as_command`, "I got part-way through a CREATE and could not go on"
+// -- and reproducing that would mean giving up in exactly the same places the
+// reference gives up. The port gives up in different places, so a Command
+// built that way would be a Command the reference did not build. Those are
+// refused instead.
+//
+// A Command is not an understood statement. It parses, and nothing can be
+// asked of it: which tables it touches, whether it writes, whether the payload
+// is even SQL. IsWrite says true for that reason -- not because EXPLAIN
+// changes anything, but because nothing here can show that it does not.
+func (p *parser) parseCommand() (*Expression, error) {
+	c := p.curr()
+	p.advance()
+	// The keyword upper-cased, as a plain string rather than a node: this is
+	// the one class whose `this` is not an expression.
+	node := New("Command", Arg{"this", strings.ToUpper(c.Text)})
+	// The payload, where the tokenizer found one. It took everything up to
+	// the end of the statement, so the only thing that can follow is the
+	// semicolon that ended it -- which is parseOne's to deal with, and is
+	// how `EXPLAIN; SELECT 1` is reported as two statements rather than one.
+	if s := p.curr(); s != nil && s.Type == TokSTRING {
+		p.advance()
+		node.Set("expression", New("Literal", Arg{"this", s.Text}, Arg{"is_string", true}))
+	}
+	return node, nil
+}
+
+// atCommand reports whether the current token opens one of those statements.
+//
+// The set is the TOKENIZER's, per dialect, and it is asked here rather than
+// inferred from the token stream: DuckDB takes SHOW out of it because it
+// reads SHOW as a statement of its own, and T-SQL puts END in and takes
+// EXECUTE out.
+func (p *parser) atCommand() bool {
+	c := p.curr()
+	if c == nil {
+		return false
+	}
+	_, ok := p.cfg.Commands[c.Type]
+	return ok
 }

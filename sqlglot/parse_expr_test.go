@@ -1,6 +1,9 @@
 package sqlglot
 
-import "testing"
+import (
+	"errors"
+	"testing"
+)
 
 // A builder that supplies a CONSTANT node -- one holding no argument at all --
 // rather than a scalar or a wrapper around an argument.
@@ -4232,6 +4235,106 @@ func TestInstall(t *testing.T) {
 	} {
 		if e, err := ParseOne(sql, "duckdb"); err == nil {
 			t.Errorf("ParseOne(%q) read %s", sql, e.Class)
+		}
+	}
+}
+
+// TestCommand covers the statements the TOKENIZER takes verbatim.
+//
+// Every one of them writes back as itself, because the payload was never
+// read: it is carried as one string and put back where it was.
+func TestCommand(t *testing.T) {
+	for _, c := range []struct{ sql, dialect string }{
+		{"EXPLAIN SELECT 1", ""},
+		{"EXPLAIN", ""},
+		{"SHOW TABLES", ""},
+		{"VACUUM t", ""},
+		{"CALL f(1)", ""},
+		{"OPTIMIZE t", ""},
+		{"PREPARE s AS SELECT 1", ""},
+		{"EXECUTE p", ""},
+		{"FETCH c", ""},
+		{"RENAME TABLE a TO b", ""},
+		// Each dialect adds its own and takes others away.
+		{"PRINT @x", "tsql"},
+		{"GO", "tsql"},
+		{"END", "tsql"},
+		{"RESET threads", "duckdb"},
+		{"RESET GLOBAL memory_limit", "duckdb"},
+		{"EXEC sp_rename 'a', 'b'", "postgres"},
+	} {
+		e, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q, %q): %v", c.sql, c.dialect, err)
+		}
+		if e.Class != "Command" {
+			t.Errorf("ParseOne(%q, %q) read %s, want Command", c.sql, c.dialect, e.Class)
+		}
+		// Nothing here understood the statement, so nothing here can say it
+		// is read-only.
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; a command is opaque, not harmless", c.sql)
+		}
+		got, err := Generate(e, c.dialect)
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", c.sql, err)
+		}
+		if got != c.sql {
+			t.Errorf("%q wrote %q", c.sql, got)
+		}
+	}
+}
+
+// TestCommandIsPerDialect covers the keywords one dialect takes verbatim and
+// another reads, which is the reason the set is asked of the tokenizer rather
+// than written down here.
+func TestCommandIsPerDialect(t *testing.T) {
+	for _, c := range []struct{ sql, dialect, why string }{
+		// DuckDB reads SHOW as a statement of its own, so it is not one of
+		// these -- and the port does not read that statement yet.
+		{"SHOW TABLES", "duckdb", "DuckDB reads SHOW"},
+		// T-SQL reads EXECUTE, and takes END verbatim where PostgreSQL reads
+		// it as a COMMIT.
+		{"EXECUTE p", "tsql", "T-SQL reads EXECUTE"},
+		{"END", "postgres", "PostgreSQL reads END as a COMMIT"},
+	} {
+		if e, err := ParseOne(c.sql, c.dialect); err == nil && e.Class == "Command" {
+			t.Errorf("ParseOne(%q, %q) made a Command; %s", c.sql, c.dialect, c.why)
+		}
+	}
+	// Outside the dialects that have it, RESET is an ordinary name and the
+	// statement is a column with an alias.
+	e, err := ParseOne("RESET threads", "")
+	if err != nil {
+		t.Fatalf(`ParseOne("RESET threads", ""): %v`, err)
+	}
+	if e.Class == "Command" {
+		t.Error("the neutral dialect took RESET verbatim; only DuckDB and PostgreSQL do")
+	}
+}
+
+// TestCommandEndsAtTheSemicolon covers what the tokenizer leaves behind. It
+// takes the payload up to the end of the statement and stops, so a command
+// followed by a second statement is two statements, not one long payload.
+func TestCommandEndsAtTheSemicolon(t *testing.T) {
+	e, err := ParseOne("EXPLAIN;", "")
+	if err != nil {
+		t.Fatalf(`ParseOne("EXPLAIN;"): %v`, err)
+	}
+	if e.Class != "Command" {
+		t.Errorf("read %s, want Command", e.Class)
+	}
+	if _, err := ParseOne("EXPLAIN; SELECT 1", ""); !errors.Is(err, ErrMultipleStatements) {
+		t.Errorf("EXPLAIN followed by a query gave %v, want ErrMultipleStatements", err)
+	}
+}
+
+// An empty statement is refused rather than read as nothing -- and it reaches
+// every rule that asks what the current token is with no token there.
+func TestEmptyStatement(t *testing.T) {
+	for _, dialect := range []string{"", "tsql", "postgres", "duckdb", "databricks"} {
+		if e, err := ParseOne("", dialect); err == nil {
+			t.Errorf("ParseOne(\"\", %q) read %s", dialect, e.Class)
 		}
 	}
 }
