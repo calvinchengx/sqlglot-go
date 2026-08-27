@@ -297,6 +297,9 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokDESCRIBE) || p.at(TokDESC) {
 		return p.parseDescribe()
 	}
+	if p.at(TokANALYZE) {
+		return p.parseAnalyze()
+	}
 	if p.at(TokBEGIN) || p.at(TokCOMMIT) || p.at(TokROLLBACK) {
 		return p.parseTransaction()
 	}

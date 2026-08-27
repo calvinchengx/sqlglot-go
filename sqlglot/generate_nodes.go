@@ -94,6 +94,8 @@ func init() {
 		"Cache":                               (*generator).writeCache,
 		"Uncache":                             (*generator).writeUncache,
 		"Describe":                            (*generator).writeDescribe,
+		"Analyze":                             (*generator).writeAnalyze,
+		"AnalyzeStatistics":                   (*generator).writeAnalyzeStatistics,
 		"Transaction":                         (*generator).writeTransaction,
 		"Commit":                              (*generator).writeTransaction,
 		"Rollback":                            (*generator).writeTransaction,
@@ -3568,6 +3570,48 @@ func (g *generator) writeDescribe(e *Expression) string {
 	out += " " + g.child(e, "this")
 	if asJSON, _ := e.Args["as_json"].(bool); asJSON {
 		out += " AS JSON"
+	}
+	return out
+}
+
+// writeAnalyze writes `ANALYZE {options} {kind} {tables} {partition}
+// {statistics}`, in that order whatever order they were read in.
+func (g *generator) writeAnalyze(e *Expression) string {
+	out := "ANALYZE"
+	if options, _ := e.Args["options"].([]string); len(options) > 0 {
+		out += " " + strings.Join(options, " ")
+	}
+	if kind, _ := e.Args["kind"].(string); kind != "" {
+		out += " " + kind
+	}
+	if tables, _ := e.Args["tables"].([]*Expression); len(tables) > 0 {
+		parts := make([]string, 0, len(tables))
+		for _, table := range tables {
+			parts = append(parts, g.node(table))
+		}
+		out += " " + strings.Join(parts, ", ")
+	}
+	if partition := g.child(e, "partition"); partition != "" {
+		out += " " + partition
+	}
+	if statistics := g.child(e, "expression"); statistics != "" {
+		out += " " + statistics
+	}
+	return out
+}
+
+// writeAnalyzeStatistics writes `COMPUTE [DELTA] STATISTICS [what] [columns]`.
+func (g *generator) writeAnalyzeStatistics(e *Expression) string {
+	out, _ := e.Args["kind"].(string)
+	if option, _ := e.Args["option"].(string); option != "" {
+		out += " " + option
+	}
+	out += " STATISTICS"
+	if what, _ := e.Args["this"].(string); what != "" {
+		out += " " + what
+	}
+	if columns, _ := e.Args["expressions"].([]*Expression); len(columns) > 0 {
+		out += " " + g.list(e)
 	}
 	return out
 }

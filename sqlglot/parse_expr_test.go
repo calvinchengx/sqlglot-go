@@ -4483,3 +4483,88 @@ func TestDescribe(t *testing.T) {
 		}
 	}
 }
+
+// TestAnalyze covers gathering the statistics a planner uses -- one statement
+// spelled three ways by three dialects.
+func TestAnalyze(t *testing.T) {
+	for _, c := range []struct{ sql, dialect string }{
+		// DuckDB's whole statement.
+		{"ANALYZE", "duckdb"},
+		// PostgreSQL: options in front, then a list of tables.
+		{"ANALYZE TBL", "postgres"},
+		{"ANALYZE t1, t2", "postgres"},
+		{"ANALYZE VERBOSE t1, t2", "postgres"},
+		{"ANALYZE VERBOSE SKIP_LOCKED TBL", "postgres"},
+		{"ANALYZE BUFFER_USAGE_LIMIT 1337 TBL", "postgres"},
+		// A column list makes the table a CALL, which is the reference's
+		// reading of the position.
+		{"ANALYZE TBL(col1, col2)", "postgres"},
+		{"ANALYZE VERBOSE SKIP_LOCKED TBL(col1, col2)", "postgres"},
+		// A quoted name that spells an option is a name.
+		{`ANALYZE "verbose"`, ""},
+		{`ANALYZE "tables"`, ""},
+		{`ANALYZE "database"`, ""},
+		// Databricks: a kind, then a COMPUTE clause.
+		{"ANALYZE TABLE ctlg.db.tbl COMPUTE DELTA STATISTICS NOSCAN", "databricks"},
+		{"ANALYZE TABLE tbl COMPUTE DELTA STATISTICS FOR ALL COLUMNS", "databricks"},
+		{"ANALYZE TABLE tbl COMPUTE DELTA STATISTICS FOR COLUMNS foo, bar", "databricks"},
+		{"ANALYZE TABLE ctlg.db.tbl PARTITION(foo = 'foo', bar = 'bar') COMPUTE STATISTICS NOSCAN", "databricks"},
+		// TABLES with no FROM or IN keeps the kind and names nothing.
+		{"ANALYZE TABLES COMPUTE STATISTICS NOSCAN", "databricks"},
+		{"ANALYZE TABLES FROM db COMPUTE STATISTICS", "databricks"},
+		{"ANALYZE TABLES IN db COMPUTE STATISTICS", "databricks"},
+		{"ANALYZE TABLE tbl ESTIMATE STATISTICS", "databricks"},
+	} {
+		e, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q, %q): %v", c.sql, c.dialect, err)
+		}
+		if e.Class != "Analyze" {
+			t.Errorf("ParseOne(%q) read %s, want Analyze", c.sql, e.Class)
+		}
+		// It writes the statistics the planner will read next.
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; it stores what it gathers", c.sql)
+		}
+		got, err := Generate(e, c.dialect)
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", c.sql, err)
+		}
+		if got != c.sql {
+			t.Errorf("%q wrote %q", c.sql, got)
+		}
+	}
+}
+
+// TestAnalyzeRefusals covers the shapes this port declines to guess at.
+func TestAnalyzeRefusals(t *testing.T) {
+	for _, sql := range []string{
+		// Each reads its subject a different way and none is in the corpus.
+		"ANALYZE INDEX i",
+		"ANALYZE DATABASE db",
+		"ANALYZE CLUSTER c",
+		// The other words the reference accepts where COMPUTE stands, each
+		// of which builds a node of its own.
+		"ANALYZE TABLE t DROP HISTOGRAM ON c",
+		"ANALYZE TABLE t UPDATE HISTOGRAM ON c",
+		"ANALYZE TABLE t DELETE STATISTICS",
+		"ANALYZE TABLE t COMPUTE STATISTICS SAMPLE 5 PERCENT",
+		"ANALYZE TABLE t COMPUTE STATISTICS FOR SOMETHING",
+		"ANALYZE TABLE t COMPUTE THINGS",
+		"ANALYZE BUFFER_USAGE_LIMIT TBL",
+		"ANALYZE TABLE t EXTRA EXTRA",
+		"ANALYZE a.b(c)",
+		// Error paths: a bad table name, a bad partition, a bad column list.
+		"ANALYZE 1",
+		"ANALYZE t1, 2",
+		"ANALYZE TABLES IN 1 COMPUTE STATISTICS",
+		"ANALYZE TABLE t PARTITION(",
+		"ANALYZE TABLE t COMPUTE STATISTICS FOR COLUMNS 1",
+		"ANALYZE TABLE t COMPUTE STATISTICS FOR COLUMNS a,",
+		"ANALYZE TBL(",
+	} {
+		if e, err := ParseOne(sql, "databricks"); err == nil {
+			t.Errorf("ParseOne(%q) read %s", sql, e.Class)
+		}
+	}
+}

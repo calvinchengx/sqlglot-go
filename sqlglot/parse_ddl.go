@@ -3038,3 +3038,239 @@ func (p *parser) parseDescribeSubject() (*Expression, error) {
 	}
 	return p.parseTableName()
 }
+
+// analyzeStyles are the words that say HOW an ANALYZE should run, before it
+// says what to run over. PostgreSQL and MySQL each contribute some.
+var analyzeStyles = map[string]bool{
+	"BUFFER_USAGE_LIMIT": true, "FULL": true, "LOCAL": true,
+	"NO_WRITE_TO_BINLOG": true, "SAMPLE": true, "SKIP_LOCKED": true, "VERBOSE": true,
+}
+
+// parseAnalyze reads `ANALYZE [<styles>] [<kind>] [<tables>] [PARTITION(...)]
+// [COMPUTE STATISTICS ...]`, which gathers the statistics a planner uses.
+//
+// One statement across three grammars. DuckDB writes it bare; PostgreSQL puts
+// its options in front and lists tables; Databricks names a kind and finishes
+// with a COMPUTE clause. The reference reads all three into one node and the
+// port does the same rather than splitting it by dialect -- nothing here is
+// per-dialect, and a PostgreSQL option read in Databricks is refused by the
+// engine rather than by this.
+//
+// The styles and the kind are kept as plain STRINGS rather than as nodes,
+// which is the reference's choice: `BUFFER_USAGE_LIMIT 1337` is one option
+// with a number inside it, and `TABLES FROM` is one kind made of two words.
+func (p *parser) parseAnalyze() (*Expression, error) {
+	p.advance() // ANALYZE
+	if p.curr() == nil {
+		// DuckDB's whole statement.
+		return New("Analyze"), nil
+	}
+
+	options, err := p.parseAnalyzeOptions()
+	if err != nil {
+		return nil, err
+	}
+
+	node := New("Analyze")
+	kind, tables, err := p.parseAnalyzeSubject()
+	if err != nil {
+		return nil, err
+	}
+	if kind != "" {
+		node.Set("kind", kind)
+	}
+	if len(tables) > 0 {
+		node.Set("tables", tables)
+	}
+
+	if p.atWords("PARTITION") && p.next() != nil && p.next().Type == TokL_PAREN {
+		p.advance()
+		members, err := p.parseParenthesisedList()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("partition", New("Partition",
+			Arg{"subpartition", false}, Arg{"expressions", members}))
+	}
+
+	if p.atUnquotedWord("COMPUTE") || p.atUnquotedWord("ESTIMATE") {
+		statistics, err := p.parseAnalyzeStatistics()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("expression", statistics)
+	}
+	if len(options) > 0 {
+		node.Set("options", options)
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("ANALYZE with more than this port reads")
+	}
+	return node, nil
+}
+
+// parseAnalyzeOptions reads the words in front of the subject. Only
+// BUFFER_USAGE_LIMIT takes a value, and it keeps it inside the option's own
+// text rather than beside it.
+func (p *parser) parseAnalyzeOptions() ([]string, error) {
+	var options []string
+	for {
+		c := p.curr()
+		if c == nil || c.Type == TokIDENTIFIER || !analyzeStyles[strings.ToUpper(c.Text)] {
+			return options, nil
+		}
+		word := strings.ToUpper(c.Text)
+		p.advance()
+		if word == "BUFFER_USAGE_LIMIT" {
+			n := p.curr()
+			if n == nil || n.Type != TokNUMBER {
+				return nil, p.unsupported("a BUFFER_USAGE_LIMIT without a limit")
+			}
+			p.advance()
+			word += " " + n.Text
+		}
+		options = append(options, word)
+	}
+}
+
+// parseAnalyzeSubject reads WHAT is being analysed, and the word that says
+// which sort of thing it is.
+//
+// The kind is read off the token BEFORE anything is matched, so `ANALYZE
+// TABLES COMPUTE STATISTICS` keeps the kind TABLES with no table beside it.
+// A bare list of tables has no kind at all.
+func (p *parser) parseAnalyzeSubject() (string, []*Expression, error) {
+	switch {
+	case p.at(TokTABLE):
+		p.advance()
+		tables, err := p.parseAnalyzeTables()
+		return "TABLE", tables, err
+
+	case p.atUnquotedWord("TABLES"):
+		p.advance()
+		if !p.at(TokFROM) && !p.at(TokIN) {
+			return "TABLES", nil, nil
+		}
+		word := strings.ToUpper(p.curr().Text)
+		p.advance()
+		// A database reference: the name is the DB rather than the table,
+		// which is why it cannot go through the ordinary table reader.
+		db, err := p.parseIdentifier()
+		if err != nil {
+			return "", nil, err
+		}
+		return "TABLES " + word, []*Expression{New("Table", Arg{"db", db})}, nil
+
+	case p.at(TokINDEX), p.atUnquotedWord("DATABASE"), p.atUnquotedWord("CLUSTER"):
+		// Each reads its subject a different way and none is in the corpus,
+		// so there is no tree here to agree with.
+		return "", nil, p.unsupported("ANALYZE of something other than tables")
+	}
+
+	tables, err := p.parseAnalyzeTables()
+	return "", tables, err
+}
+
+// parseAnalyzeTables reads the comma-separated tables an ANALYZE runs over.
+//
+// A name followed by a parenthesised column list is read as a CALL --
+// `ANALYZE TBL(col1, col2)` holds an Anonymous, not a table with columns.
+// That is the reference's reading of the position and it is reproduced rather
+// than tidied: the columns are what PostgreSQL analyses, and a tree that said
+// otherwise would not be the reference's.
+func (p *parser) parseAnalyzeTables() ([]*Expression, error) {
+	var tables []*Expression
+	for {
+		table, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		if p.at(TokL_PAREN) {
+			name, _ := table.Args["this"].(*Expression)
+			if len(table.Keys) != 1 || name == nil {
+				return nil, p.unsupported("a qualified name with a column list in ANALYZE")
+			}
+			columns, err := p.parseParenthesisedList()
+			if err != nil {
+				return nil, err
+			}
+			text, _ := name.Args["this"].(string)
+			table = New("Table", Arg{"this", New("Anonymous",
+				Arg{"this", text}, Arg{"expressions", columns})})
+		}
+		tables = append(tables, table)
+		if !p.match(TokCOMMA) {
+			return tables, nil
+		}
+	}
+}
+
+// parseAnalyzeStatistics reads Databricks' `COMPUTE [DELTA] STATISTICS
+// [NOSCAN | FOR ALL COLUMNS | FOR COLUMNS a, b]`.
+//
+// SAMPLE, and the other seven words the reference accepts in this position,
+// are not read: each builds a node of its own and none appears in the corpus.
+func (p *parser) parseAnalyzeStatistics() (*Expression, error) {
+	kind := strings.ToUpper(p.curr().Text)
+	p.advance()
+	node := New("AnalyzeStatistics", Arg{"kind", kind})
+	if p.atUnquotedWord("DELTA") {
+		p.advance()
+		node.Set("option", "DELTA")
+	}
+	if !p.atUnquotedWord("STATISTICS") {
+		return nil, p.unsupported("a COMPUTE that is not of STATISTICS")
+	}
+	p.advance()
+
+	switch {
+	case p.atUnquotedWord("NOSCAN"):
+		p.advance()
+		node.Set("this", "NOSCAN")
+	case p.at(TokFOR):
+		p.advance()
+		switch {
+		case p.atUnquotedWord("ALL") && p.next() != nil && strings.EqualFold(p.next().Text, "COLUMNS"):
+			p.advance()
+			p.advance()
+			node.Set("this", "FOR ALL COLUMNS")
+		case p.atUnquotedWord("COLUMNS"):
+			p.advance()
+			node.Set("this", "FOR COLUMNS")
+			columns, err := p.parseAnalyzeColumns()
+			if err != nil {
+				return nil, err
+			}
+			node.Set("expressions", columns)
+		default:
+			return nil, p.unsupported("STATISTICS FOR something this port does not read")
+		}
+	}
+	return node, nil
+}
+
+// parseAnalyzeColumns reads the columns statistics are gathered for. Each is
+// a plain Column, not an expression: only a name may stand here.
+func (p *parser) parseAnalyzeColumns() ([]*Expression, error) {
+	var columns []*Expression
+	for {
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		columns = append(columns, New("Column", Arg{"this", name}))
+		if !p.match(TokCOMMA) {
+			return columns, nil
+		}
+	}
+}
+
+// atUnquotedWord reports whether the current token spells this word AND was
+// written as a word rather than quoted. `ANALYZE "tables"` names a table
+// called tables, and the reference excludes every quoted and string token
+// from a match on text for exactly that reason.
+func (p *parser) atUnquotedWord(word string) bool {
+	c := p.curr()
+	return c != nil && c.Type != TokIDENTIFIER && c.Type != TokSTRING &&
+		strings.EqualFold(c.Text, word)
+}

@@ -254,3 +254,44 @@ reference keeps it. There is no tree to agree with otherwise: the SQL that
 comes back names a different database.
 
 **Reference:** sqlglot @ ceb5111421e9.
+
+---
+
+## sqlglot writes Python's `None` into an ANALYZE, and upper-cases a table it analyses
+
+**Found by:** porting ANALYZE.
+
+Two separate losses in the same statement, both in positions the port now
+refuses.
+
+`BUFFER_USAGE_LIMIT` is kept as one option string with its number built into
+the text: `f"BUFFER_USAGE_LIMIT {self._parse_number()}"`. Where no number
+follows, the interpolation writes the Python value:
+
+```
+in   ANALYZE BUFFER_USAGE_LIMIT TBL        (postgres)
+out  ANALYZE BUFFER_USAGE_LIMIT None TBL   -- which sqlglot cannot read back
+```
+
+Separately, a table with a column list is read as a function CALL, and a call
+takes the name's own casing rules -- so the name is written back in a
+different case:
+
+```
+in   ANALYZE a.b(c)                        (postgres)
+out  ANALYZE a.B(c)
+
+in   ANALYZE "a"."b"(c)
+out  ANALYZE "a"."B"(c)
+```
+
+The second is the worse of the two. It round-trips, so nothing complains, and
+in PostgreSQL a quoted name is case-SENSITIVE: `"b"` and `"B"` are two
+different tables. The unquoted form is harmless in PostgreSQL, which folds to
+lower case, and is not harmless everywhere.
+
+The port reads `ANALYZE TBL(col1, col2)` -- the Anonymous call and all,
+because that is the tree the reference builds -- and refuses the qualified
+form and the empty BUFFER_USAGE_LIMIT.
+
+**Reference:** sqlglot @ ceb5111421e9.
