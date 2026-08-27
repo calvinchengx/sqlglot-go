@@ -285,6 +285,24 @@ func (e *Expression) Copy() *Expression {
 	return out
 }
 
+// shallowCopy copies a node WITHOUT its children: the class, the type and the
+// argument keys in order, with each child pointer carried across as it is.
+//
+// It is for a caller that is about to replace every child anyway. A `[]string`
+// is duplicated, because that is a value the node owns rather than a node it
+// points at.
+func (e *Expression) shallowCopy() *Expression {
+	out := &Expression{Class: e.Class, Args: make(map[string]any, len(e.Args)), Type: e.Type.Copy()}
+	for _, key := range e.Keys {
+		value := e.Args[key]
+		if strs, ok := value.([]string); ok {
+			value = append([]string(nil), strs...)
+		}
+		out.Set(key, value)
+	}
+	return out
+}
+
 // Equal reports whether two nodes are the same tree.
 //
 // It compares what the DUMP compares -- class, arg keys in order, and values --

@@ -43,11 +43,22 @@ func Simplify(e *Expression, dialect string) *Expression {
 
 // simplifyNode rewrites children first, then the node itself: a rule that
 // folds `x AND TRUE` can only see the TRUE once whatever produced it has run.
+//
+// The node is copied ONE LEVEL deep, not wholly. Every child is replaced by
+// its own simplified copy on the next line, so a deep copy here duplicates
+// the entire subtree and then throws it away -- once per node, which over a
+// chain of n operators is n^2 nodes copied per pass and up to 32 passes of
+// it. `A[0*0*0*...]` with two thousand terms took three seconds to parse,
+// nearly all of it garbage collection. The fuzzer found it as a worker that
+// stopped responding rather than as a wrong answer.
+//
+// Nothing is shared with the input: a leaf is copied too, and the only values
+// carried over are scalars.
 func simplifyNode(e, parent *Expression, dialect string) *Expression {
 	if e == nil {
 		return nil
 	}
-	out := e.Copy()
+	out := e.shallowCopy()
 	for key, arg := range out.Args {
 		switch v := arg.(type) {
 		case *Expression:

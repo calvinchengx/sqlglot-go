@@ -325,3 +325,39 @@ Nothing else changes. A count that is a plain number, including a float, is
 still written bare.
 
 **Reference:** sqlglot @ ceb5111421e9.
+
+---
+
+## A note on cost: the type annotator is quadratic over a long chain
+
+**Not an upstream issue -- a limit of this port, recorded here so it is not
+rediscovered.**
+
+`annotate` works a binary operator's type out by annotating both operands
+again, and it does that whether or not they already carry a type. `AnnotateFully`
+walks bottom-up and annotates every node, so a chain of n operators is
+annotated O(n^2) times.
+
+It shows up on a subscript, because reading one in a dialect that numbers from
+1 annotates the index to decide whether to shift it:
+
+```
+A[0*0*0* ... *0]      2000 terms, postgres:   ~570ms
+                      1000 terms:             ~140ms
+                       500 terms:              ~38ms
+```
+
+-- four times the work for twice the input.
+
+The obvious fix is to read a child's stamped type instead of recomputing it,
+and it is not safe as written: `AnnotateFully` stamps the type the DUMP is
+held to, which converts NULL to UNKNOWN, while an operator above needs the
+NULL. `NULL + 1` is an INT and `x + 1` is UNKNOWN, and the two would become
+the same answer. Memoising the RAW result separately is the way, and it is a
+change to the annotator rather than to a caller.
+
+A related fix has already landed: `simplifyNode` copied each node's whole
+subtree before replacing every child of the copy, which was the larger half of
+the same statement's cost -- three seconds down to under one.
+
+**Reference:** sqlglot @ ceb5111421e9.

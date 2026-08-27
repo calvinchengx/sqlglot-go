@@ -1,6 +1,10 @@
 package sqlglot
 
-import "testing"
+import (
+	"strings"
+	"testing"
+	"time"
+)
 
 // TestSimplifyShapes pins the rules by example, so a regression names itself
 // rather than showing up as a number moving in the contract harness.
@@ -138,5 +142,30 @@ func TestFlatFold(t *testing.T) {
 				t.Errorf("%q simplified to %q, want %q", tc.sql, got, tc.want)
 			}
 		})
+	}
+}
+
+// TestDeepChainDoesNotBlowUp guards the cost of simplifying a long chain of
+// one operator, which is what a subscript's index can be.
+//
+// simplifyNode used to copy each node's whole subtree and then replace every
+// child of the copy -- n^2 nodes copied per pass, up to 32 passes. Two
+// thousand terms took over three seconds to parse, nearly all of it garbage
+// collection, and the generator fuzzer found it as a worker that stopped
+// responding rather than as a wrong answer.
+//
+// The bound is loose on purpose: the point is the SHAPE of the cost, and the
+// regression it guards against is several times slower than this on any
+// machine that can run the rest of the suite.
+func TestDeepChainDoesNotBlowUp(t *testing.T) {
+	// PostgreSQL numbers subscripts from 1, so reading one shifts the index
+	// -- which is what puts the simplifier in front of the whole chain.
+	sql := "A[" + strings.Repeat("0*", 2000) + "0]"
+	start := time.Now()
+	if _, err := ParseOne(sql, "postgres"); err != nil {
+		t.Fatalf("ParseOne of a 2000-term index: %v", err)
+	}
+	if elapsed := time.Since(start); elapsed > 3*time.Second {
+		t.Errorf("a 2000-term index took %v to parse", elapsed)
 	}
 }
