@@ -154,9 +154,14 @@ func TestFlatFold(t *testing.T) {
 // collection, and the generator fuzzer found it as a worker that stopped
 // responding rather than as a wrong answer.
 //
-// The bound is loose on purpose: the point is the SHAPE of the cost, and the
-// regression it guards against is several times slower than this on any
-// machine that can run the rest of the suite.
+// The annotator was the other half of the same cost, and for the same reason:
+// a binary operator worked its type out by annotating both operands again,
+// however deep. Together the two took a 2000-term index from over three
+// seconds to under ten milliseconds.
+//
+// The bound is loose on purpose: the point is the SHAPE of the cost, and
+// either regression is a hundred times slower than this on any machine that
+// can run the rest of the suite.
 func TestDeepChainDoesNotBlowUp(t *testing.T) {
 	// PostgreSQL numbers subscripts from 1, so reading one shifts the index
 	// -- which is what puts the simplifier in front of the whole chain.
@@ -165,7 +170,7 @@ func TestDeepChainDoesNotBlowUp(t *testing.T) {
 	if _, err := ParseOne(sql, "postgres"); err != nil {
 		t.Fatalf("ParseOne of a 2000-term index: %v", err)
 	}
-	if elapsed := time.Since(start); elapsed > 3*time.Second {
+	if elapsed := time.Since(start); elapsed > time.Second {
 		t.Errorf("a 2000-term index took %v to parse", elapsed)
 	}
 }

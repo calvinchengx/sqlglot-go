@@ -34,6 +34,23 @@ type Expression struct {
 	Type *Expression
 	// Parent is set by the parser; never serialised.
 	Parent *Expression
+	// rawType memoises what the annotator worked out for this node, BEFORE
+	// the conversion Annotate applies on the way out. It is the raw answer
+	// because that is what an operator above needs: `NULL + 1` is an INT and
+	// `x + 1` is UNKNOWN, and caching the converted answer would make the two
+	// the same.
+	//
+	// Without it a binary operator re-annotates both operands from scratch
+	// however deep they are, which is quadratic over a chain -- and a
+	// subscript in a dialect that numbers from 1 puts the annotator in front
+	// of whatever the index happens to be.
+	//
+	// A copy does not carry it: a copy is a different node, and recomputing
+	// is always safe. The dialect is kept alongside because the same tree may
+	// be asked about under another one.
+	rawType        *Expression
+	rawTypeDialect string
+	rawTypeKnown   bool
 }
 
 // Arg is one named argument of a node, in the order it was given.
@@ -86,6 +103,11 @@ func (e *Expression) Set(key string, value any) {
 		e.Keys = append(e.Keys, key)
 	}
 	e.Args[key] = value
+	// A node whose arguments changed is not the node the annotator answered
+	// about. Nothing in the port annotates and then rewrites in place today,
+	// and a memo that survived such a rewrite would be wrong in a way no
+	// test would name.
+	e.rawTypeKnown = false
 }
 
 // Append adds one child to a list-valued arg, creating it if absent -- the

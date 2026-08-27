@@ -328,10 +328,10 @@ still written bare.
 
 ---
 
-## A note on cost: the type annotator is quadratic over a long chain
+## A note on cost: two quadratic walks over a long chain, both fixed
 
-**Not an upstream issue -- a limit of this port, recorded here so it is not
-rediscovered.**
+**Not an upstream issue -- a limit of this port, recorded because the fix has
+a correctness condition that is easy to get wrong.**
 
 `annotate` works a binary operator's type out by annotating both operands
 again, and it does that whether or not they already carry a type. `AnnotateFully`
@@ -349,15 +349,28 @@ A[0*0*0* ... *0]      2000 terms, postgres:   ~570ms
 
 -- four times the work for twice the input.
 
-The obvious fix is to read a child's stamped type instead of recomputing it,
-and it is not safe as written: `AnnotateFully` stamps the type the DUMP is
-held to, which converts NULL to UNKNOWN, while an operator above needs the
-NULL. `NULL + 1` is an INT and `x + 1` is UNKNOWN, and the two would become
-the same answer. Memoising the RAW result separately is the way, and it is a
-change to the annotator rather than to a caller.
+The obvious fix -- read a child's stamped type instead of recomputing it -- is
+NOT safe: `AnnotateFully` stamps the type the DUMP is held to, and that one
+converts NULL to UNKNOWN, while an operator above needs the NULL. `NULL + 1`
+is an INT and `x + 1` is UNKNOWN, and the two would become the same answer.
 
-A related fix has already landed: `simplifyNode` copied each node's whole
-subtree before replacing every child of the copy, which was the larger half of
-the same statement's cost -- three seconds down to under one.
+So what is memoised is the RAW answer, on the node, invalidated when its
+arguments change and keyed by dialect. `TestAnnotationMemoKeepsTheRawAnswer`
+pins exactly that: asking about the NULL first must not change what the sum
+answers.
+
+`simplifyNode` was the other half, and the same shape of mistake: it copied
+each node's whole subtree and then replaced every child of the copy, once per
+node. A copy one level deep is all it needed.
+
+Together:
+
+```
+A[0*0*0* ... *0]      2000 terms, postgres:   3.2s  ->  7ms
+                      4000 terms:             (unmeasured) -> 22ms
+```
+
+-- and the cost is linear in the number of terms now rather than quadratic.
+`TestDeepChainDoesNotBlowUp` holds it there.
 
 **Reference:** sqlglot @ ceb5111421e9.

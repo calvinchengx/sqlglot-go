@@ -293,3 +293,49 @@ func TestAnnotateArrayEdges(t *testing.T) {
 		}
 	}
 }
+
+// TestAnnotationMemoKeepsTheRawAnswer covers the one thing that makes the
+// annotator's memo safe to have.
+//
+// Annotate converts a NULL result to UNKNOWN on the way out, because a
+// NULL-typed answer tells a caller nothing. An operator ABOVE needs the NULL:
+// `NULL + 1` is an INT because NULL contributes nothing, where `x + 1` is
+// UNKNOWN. So what is memoised is the RAW answer, and asking about the NULL
+// first must not change what the sum answers.
+func TestAnnotationMemoKeepsTheRawAnswer(t *testing.T) {
+	sum, err := ParseOne("NULL + 1", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	null, _ := sum.Args["this"].(*Expression)
+	if null == nil || null.Class != "Null" {
+		t.Fatalf("expected a NULL on the left, got %v", null)
+	}
+	// Ask about the operand first, which is what fills the memo.
+	if got, _ := Generate(Annotate(null, ""), ""); got != "UNKNOWN" {
+		t.Errorf("Annotate(NULL) = %s, want UNKNOWN", got)
+	}
+	if got, _ := Generate(Annotate(sum, ""), ""); got != "INT" {
+		t.Errorf("Annotate(NULL + 1) after asking about the NULL = %s, want INT", got)
+	}
+
+	// The same tree under another dialect is a different question: Databricks
+	// has a null type where the others do not.
+	if got, _ := Generate(Annotate(null, "databricks"), "databricks"); got != "VOID" {
+		t.Errorf("Annotate(NULL, databricks) = %s, want VOID", got)
+	}
+	if got, _ := Generate(Annotate(null, ""), ""); got != "UNKNOWN" {
+		t.Errorf("Annotate(NULL) after asking Databricks = %s, want UNKNOWN", got)
+	}
+
+	// And a node whose arguments change is no longer the node the memo
+	// answered about.
+	lit, _ := sum.Args["expression"].(*Expression)
+	if got, _ := Generate(Annotate(lit, ""), ""); got != "INT" {
+		t.Errorf("Annotate(1) = %s, want INT", got)
+	}
+	lit.Set("is_string", true)
+	if got, _ := Generate(Annotate(lit, ""), ""); got != "VARCHAR" {
+		t.Errorf("Annotate after rewriting the literal = %s, want VARCHAR", got)
+	}
+}

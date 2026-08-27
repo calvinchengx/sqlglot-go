@@ -31,10 +31,21 @@ func Annotate(e *Expression, dialect string) *Expression {
 	return t
 }
 
+// annotate is Annotate without the conversion at the end, and it MEMOISES:
+// see Expression.rawType for why the raw answer is the one worth keeping.
 func annotate(e *Expression, dialect string) *Expression {
 	if e == nil {
 		return nil
 	}
+	if e.rawTypeKnown && e.rawTypeDialect == dialect {
+		return e.rawType
+	}
+	t := annotateNode(e, dialect)
+	e.rawType, e.rawTypeDialect, e.rawTypeKnown = t, dialect, true
+	return t
+}
+
+func annotateNode(e *Expression, dialect string) *Expression {
 	switch e.Class {
 	case "Literal":
 		// A string is VARCHAR, a whole number INT, anything else DOUBLE.
