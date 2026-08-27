@@ -86,6 +86,10 @@ func init() {
 		"GrantPrincipal":                      (*generator).writeGrantPrincipal,
 		"TruncateTable":                       (*generator).writeTruncate,
 		"Use":                                 (*generator).writeUse,
+		"Attach":                              (*generator).writeAttach,
+		"Detach":                              (*generator).writeDetach,
+		"AttachOption":                        (*generator).writeAttachOption,
+		"Install":                             (*generator).writeInstall,
 		"Transaction":                         (*generator).writeTransaction,
 		"Commit":                              (*generator).writeTransaction,
 		"Rollback":                            (*generator).writeTransaction,
@@ -3446,4 +3450,67 @@ func standsWhereATableGoes(e *Expression) bool {
 		}
 	}
 	return false
+}
+
+// writeAttach writes `ATTACH [IF NOT EXISTS] <this> [(options)]`.
+//
+// The word DATABASE never comes back: it is optional on the way in and the
+// reference drops it, so `ATTACH DATABASE 'f'` and `ATTACH 'f'` are the same
+// statement written the one way.
+func (g *generator) writeAttach(e *Expression) string {
+	out := "ATTACH"
+	if exists, _ := e.Args["exists"].(bool); exists {
+		out += " IF NOT EXISTS"
+	}
+	out += " " + g.child(e, "this")
+	if options, _ := e.Args["expressions"].([]*Expression); len(options) > 0 {
+		out += " (" + g.list(e) + ")"
+	}
+	return out
+}
+
+// writeDetach writes `DETACH [DATABASE IF EXISTS] <this>`.
+//
+// DuckDB requires the word DATABASE where IF EXISTS is written and accepts it
+// nowhere else that matters, so the reference puts it in exactly there. The
+// word is not in the tree: `DETACH DATABASE db` and `DETACH db` both come
+// back as `DETACH db`, and `DETACH IF EXISTS f` gains the word it was
+// written without.
+func (g *generator) writeDetach(e *Expression) string {
+	out := "DETACH"
+	if exists, _ := e.Args["exists"].(bool); exists {
+		out += " DATABASE IF EXISTS"
+	}
+	return out + " " + g.child(e, "this")
+}
+
+// writeAttachOption writes one setting of an ATTACH: a name, and a value
+// separated from it by nothing but a space.
+func (g *generator) writeAttachOption(e *Expression) string {
+	out := g.child(e, "this")
+	if value := g.child(e, "expression"); value != "" {
+		out += " " + value
+	}
+	return out
+}
+
+// writeInstall writes `[FORCE] INSTALL <this> [FROM <source>]`.
+//
+// Only DuckDB has the statement; every other dialect's generator refuses it
+// rather than writing something that dialect cannot run. The port reaches
+// that case only when a tree parsed as DuckDB is written back as something
+// else, because nowhere else is INSTALL a keyword to begin with.
+func (g *generator) writeInstall(e *Expression) string {
+	if g.dialect != "duckdb" {
+		return g.fail("INSTALL, which this dialect has no spelling for")
+	}
+	out := "INSTALL "
+	if force, _ := e.Args["force"].(bool); force {
+		out = "FORCE " + out
+	}
+	out += g.child(e, "this")
+	if from := g.child(e, "from_"); from != "" {
+		out += " FROM " + from
+	}
+	return out
 }

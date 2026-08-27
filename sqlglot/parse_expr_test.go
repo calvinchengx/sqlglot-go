@@ -4103,3 +4103,135 @@ func TestValuesAsATable(t *testing.T) {
 		t.Errorf("got %q", got)
 	}
 }
+
+// TestAttachDetach covers the two statements that open and close a database.
+//
+// Every case here writes back as itself EXCEPT the two the reference
+// normalises: the optional word DATABASE is dropped on the way in, and DETACH
+// puts it back only where IF EXISTS is written.
+func TestAttachDetach(t *testing.T) {
+	for sql, want := range map[string]string{
+		"ATTACH 'file.db'":                            "ATTACH 'file.db'",
+		"ATTACH 123":                                  "ATTACH 123",
+		"ATTACH 'f' (a 1, b TRUE, c FALSE, d e)":      "ATTACH 'f' (a 1, b TRUE, c FALSE, d e)",
+		"ATTACH ':memory:' AS db_alias":               "ATTACH ':memory:' AS db_alias",
+		"ATTACH IF NOT EXISTS 'file.db' AS db":        "ATTACH IF NOT EXISTS 'file.db' AS db",
+		"ATTACH 'file.db' AS db_alias (READ_ONLY)":    "ATTACH 'file.db' AS db_alias (READ_ONLY)",
+		"ATTACH 'f' (READ_ONLY FALSE, TYPE sqlite)":   "ATTACH 'f' (READ_ONLY FALSE, TYPE sqlite)",
+		"ATTACH 'f' (TYPE POSTGRES, SCHEMA 'public')": "ATTACH 'f' (TYPE POSTGRES, SCHEMA 'public')",
+		// The word DATABASE is optional on the way in and is not kept.
+		"ATTACH DATABASE 'file.db'": "ATTACH 'file.db'",
+		"DETACH DATABASE db":        "DETACH db",
+		"DETACH new_database":       "DETACH new_database",
+		// ...and DETACH writes it where IF EXISTS is written, because DuckDB
+		// requires it there.
+		"DETACH IF EXISTS file":          "DETACH DATABASE IF EXISTS file",
+		"DETACH DATABASE IF EXISTS file": "DETACH DATABASE IF EXISTS file",
+	} {
+		e, err := ParseOne(sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; it changes what the session can reach", sql)
+		}
+		got, err := Generate(e, "duckdb")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != want {
+			t.Errorf("%q wrote %q, want %q", sql, got, want)
+		}
+	}
+}
+
+// TestAttachRefusals covers what the port will not read.
+//
+// The alias must be EXPLICIT and a quoted name is refused, because the
+// reference reads it as a bare word and writes the quotes away.
+func TestAttachRefusals(t *testing.T) {
+	for _, sql := range []string{
+		"ATTACH 'file.db' db_alias",
+		`DETACH "My DB"`,
+		`ATTACH 'f' ("Q" 1)`,
+		"ATTACH",
+		"ATTACH 'f' (",
+		"ATTACH 'f' (READ_ONLY",
+		"DETACH db EXTRA",
+		// The reference reads a NUMBER as the name of a setting, and an alias
+		// written as one as a quoted identifier. Neither is a name this port
+		// makes from a number.
+		"ATTACH 'f' (1)",
+		"ATTACH 'f' AS 1",
+		"ATTACH 'f' (a b c)",
+		"ATTACH 'f' (a *)",
+		// The reference reads a parenthesised name here. The port's reader
+		// for this position is narrower on purpose -- a string, a number or
+		// a word -- so this is the port's own gap rather than a shared one.
+		"ATTACH ('f')",
+	} {
+		if e, err := ParseOne(sql, "duckdb"); err == nil {
+			t.Errorf("ParseOne(%q) read %s", sql, e.Class)
+		}
+	}
+	// Only DuckDB has the statement at all; elsewhere the word is a name.
+	e, err := ParseOne("DETACH db", "postgres")
+	if err != nil {
+		t.Fatalf(`ParseOne("DETACH db", "postgres"): %v`, err)
+	}
+	if e.Class == "Detach" {
+		t.Error("PostgreSQL read a DETACH statement, which it does not have")
+	}
+}
+
+// TestInstall covers `[FORCE] INSTALL <extension> [FROM <source>]`.
+func TestInstall(t *testing.T) {
+	for _, sql := range []string{
+		"INSTALL httpfs",
+		"INSTALL httpfs FROM community",
+		"INSTALL httpfs FROM 'https://extensions.duckdb.org'",
+		`INSTALL "http fs"`,
+		"FORCE INSTALL httpfs",
+		"FORCE INSTALL httpfs FROM community",
+	} {
+		e, err := ParseOne(sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; it loads code into the engine", sql)
+		}
+		got, err := Generate(e, "duckdb")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+		// No other dialect has a spelling for it, and the generator says so
+		// rather than writing something that dialect cannot run.
+		if _, err := Generate(e, "postgres"); err == nil {
+			t.Errorf("PostgreSQL wrote %q, which it has no INSTALL for", sql)
+		}
+	}
+	for _, sql := range []string{
+		// FORCE stands in front of an INSTALL and of nothing else this port
+		// reads; the reference keeps `FORCE CHECKPOINT` as raw text.
+		"FORCE CHECKPOINT db",
+		"FORCE",
+		"INSTALL",
+		"INSTALL x FROM y.z",
+		// The reference reads a FROM with nothing after it and drops the
+		// word, writing `INSTALL x`. Refusing beats writing a statement the
+		// caller did not ask for.
+		"INSTALL x FROM",
+		"INSTALL x EXTRA",
+		// A quoted source loses its quotes the same way a quoted database
+		// name does; see docs/upstream-issues.md.
+		`INSTALL x FROM "q"`,
+	} {
+		if e, err := ParseOne(sql, "duckdb"); err == nil {
+			t.Errorf("ParseOne(%q) read %s", sql, e.Class)
+		}
+	}
+}

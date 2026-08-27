@@ -218,3 +218,39 @@ spelling difference, and a guard that reports "this creates a unique index"
 would be reporting something the emitted SQL does not do.
 
 **Reference:** sqlglot @ ceb5111421e9.
+
+---
+
+## sqlglot drops the quotes from a database name in ATTACH and DETACH
+
+**Found by:** porting DuckDB's ATTACH, DETACH and INSTALL.
+
+The name a DETACH names, and the name of each ATTACH option, are read with
+`_parse_var`, which takes a quoted identifier's TEXT and forgets that it was
+quoted. Writing the tree back spells the name bare:
+
+```
+in   DETACH "My DB"                    (duckdb)
+out  DETACH My DB                      -- which sqlglot then cannot read
+
+in   ATTACH 'f' AS x ("Q" 1)           (duckdb)
+out  ATTACH 'f' AS x (Q 1)             -- reads, but names something else
+
+in   INSTALL x FROM "q"                (duckdb)
+out  INSTALL x FROM q                  -- same, in a third position
+```
+
+The first is unreadable. The second is the quieter one: it parses, and in
+DuckDB an unquoted name is folded to lower case, so `"Q"` and `Q` are not the
+same setting.
+
+The value of an option keeps its quotes -- `ATTACH 'f' (TYPE "sq lite")`
+round-trips -- because that side is read with `_parse_field`. So the loss
+follows the READER used, not the statement: every position that reaches for a
+bare word loses the quotes, and the one that reaches for a field keeps them.
+
+The port refuses a quoted name in either position and reads it everywhere the
+reference keeps it. There is no tree to agree with otherwise: the SQL that
+comes back names a different database.
+
+**Reference:** sqlglot @ ceb5111421e9.

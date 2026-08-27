@@ -282,6 +282,12 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokUSE) {
 		return p.parseUse()
 	}
+	if p.at(TokATTACH) || p.at(TokDETACH) {
+		return p.parseAttachDetach()
+	}
+	if p.at(TokINSTALL) || p.at(TokFORCE) {
+		return p.parseInstall()
+	}
 	if p.at(TokBEGIN) || p.at(TokCOMMIT) || p.at(TokROLLBACK) {
 		return p.parseTransaction()
 	}

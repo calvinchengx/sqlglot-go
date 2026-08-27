@@ -286,6 +286,12 @@ var writeClasses = map[string]bool{
 	"Set":           true,
 	"Use":           true,
 	"Pragma":        true,
+	// ATTACH opens a database the session can then read and write, DETACH
+	// closes one, and INSTALL loads code into the engine. None of the three
+	// changes a row, and all three change what the next statement can reach.
+	"Attach":  true,
+	"Detach":  true,
+	"Install": true,
 	// A transaction verb changes no rows by itself, but it is not read-only
 	// either: what follows it is held open, committed or thrown away. A guard
 	// that let one past would be letting the session be steered.
@@ -2565,4 +2571,213 @@ func (p *parser) parseColumnType() (*Expression, error) {
 	kind, err := p.parseDataType()
 	p.inColumnType = was
 	return kind, err
+}
+
+// parseAttachDetach reads ATTACH and DETACH, which open a database file for
+// the session to name and close it again.
+//
+// The two share a grammar and differ only in which way round the existence
+// test reads -- ATTACH takes IF NOT EXISTS and DETACH takes IF EXISTS -- so
+// the reference parses them with one function, and so does this.
+//
+// The word DATABASE is optional and is NOT kept: `ATTACH DATABASE 'f'` and
+// `ATTACH 'f'` make the same tree. DETACH puts it back when writing, but only
+// where IF EXISTS is written too, because DuckDB requires it there and
+// nowhere else -- so the word is the GENERATOR's, recovered from `exists`,
+// rather than anything the parser saw.
+//
+// Only DuckDB has these statements. The port needs no flag to say so: ATTACH
+// is a keyword in DuckDB's table alone, and elsewhere the word tokenizes as
+// an ordinary name and never reaches here.
+func (p *parser) parseAttachDetach() (*Expression, error) {
+	isAttach := p.at(TokATTACH)
+	p.advance()
+	if p.at(TokDATABASE) {
+		p.advance()
+	}
+
+	exists := false
+	switch {
+	case isAttach && p.atWords("IF", "NOT", "EXISTS"):
+		p.advance()
+		p.advance()
+		p.advance()
+		exists = true
+	case !isAttach && p.atWords("IF", "EXISTS"):
+		p.advance()
+		p.advance()
+		exists = true
+	}
+
+	this, err := p.parseAttachTarget()
+	if err != nil {
+		return nil, err
+	}
+	// The alias is EXPLICIT: `ATTACH 'f' db_alias` is not a name for the
+	// database, it is a syntax error, and the reference refuses it too.
+	if p.at(TokALIAS) {
+		p.advance()
+		alias, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		this = New("Alias", Arg{"this", this}, Arg{"alias", alias})
+	}
+
+	class := "Detach"
+	if isAttach {
+		class = "Attach"
+	}
+	node := New(class, Arg{"this", this}, Arg{"exists", exists})
+
+	if p.at(TokL_PAREN) {
+		options, err := p.parseAttachOptions()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("expressions", options)
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported(class + " with more than this port reads")
+	}
+	return node, nil
+}
+
+// parseAttachTarget reads WHICH database is being attached or detached: a
+// string naming a file, or a bare word naming one already known.
+//
+// A QUOTED name is refused. The reference reads it as a bare word and throws
+// the quotes away, so `DETACH "My DB"` is written back as `DETACH My DB` --
+// a different name, and one the reference itself can no longer read. See
+// docs/upstream-issues.md.
+func (p *parser) parseAttachTarget() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("ATTACH without a database")
+	}
+	switch {
+	case c.Type == TokIDENTIFIER:
+		return nil, p.unsupported("a quoted database name in ATTACH")
+	case c.Type == TokSTRING:
+		p.advance()
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
+	case c.Type == TokNUMBER:
+		p.advance()
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", false}), nil
+	case isBareWord(c.Text):
+		p.advance()
+		return New("Var", Arg{"this", c.Text}), nil
+	}
+	return nil, p.unsupported("a database name in ATTACH")
+}
+
+// parseAttachOptions reads the parenthesised settings an ATTACH may carry --
+// `(READ_ONLY, TYPE sqlite, SCHEMA 'public')`.
+//
+// Each is a bare word naming the setting and, optionally, one value: a
+// boolean, a number, a string, or a name. There is no `=` and no comma
+// between the two halves, so the VALUE is recognised by there being another
+// token before the comma or the closing paren rather than by any marker.
+func (p *parser) parseAttachOptions() ([]*Expression, error) {
+	p.advance() // (
+	var options []*Expression
+	for {
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("unclosed ATTACH option list")
+		}
+		// As above: the reference takes this name unquoted whatever it was
+		// written as, and `("Q" 1)` comes back as `(Q 1)`.
+		if c.Type == TokIDENTIFIER {
+			return nil, p.unsupported("a quoted ATTACH option name")
+		}
+		if !isBareWord(c.Text) {
+			return nil, p.unsupported("an ATTACH option that is not a setting")
+		}
+		p.advance()
+		option := New("AttachOption", Arg{"this", New("Var", Arg{"this", c.Text})})
+		if n := p.curr(); n != nil && n.Type != TokCOMMA && n.Type != TokR_PAREN {
+			value, err := p.parseAttachOptionValue()
+			if err != nil {
+				return nil, err
+			}
+			option.Set("expression", value)
+		}
+		options = append(options, option)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed ATTACH option list")
+	}
+	return options, nil
+}
+
+// parseAttachOptionValue reads what one ATTACH setting is set TO.
+//
+// A quoted name keeps its quotes HERE, alone among the four positions in
+// these statements that take a name: this is the only one the reference reads
+// as a field rather than as a bare word.
+func (p *parser) parseAttachOptionValue() (*Expression, error) {
+	c := p.curr()
+	switch c.Type {
+	case TokSTRING:
+		p.advance()
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
+	case TokNUMBER:
+		p.advance()
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", false}), nil
+	case TokTRUE, TokFALSE:
+		p.advance()
+		return New("Boolean", Arg{"this", c.Type == TokTRUE}), nil
+	}
+	return p.parseIdentifier()
+}
+
+// parseInstall reads DuckDB's `[FORCE] INSTALL <extension> [FROM <source>]`,
+// which loads an extension into the engine.
+//
+// FORCE is a statement of its own in the reference's grammar and only two
+// words may follow it: INSTALL, which is this, and CHECKPOINT, which the
+// reference keeps as raw text rather than as a tree. This port refuses that
+// second form rather than inventing a shape for it.
+func (p *parser) parseInstall() (*Expression, error) {
+	force := p.at(TokFORCE)
+	if force {
+		p.advance()
+		if !p.at(TokINSTALL) {
+			return nil, p.unsupported("FORCE of anything but an INSTALL")
+		}
+	}
+	p.advance() // INSTALL
+
+	this, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	node := New("Install", Arg{"this", this})
+	if p.match(TokFROM) {
+		// A single word or a string: the repository to take it from, which
+		// is a name like `community` or a URL. A dotted name is not read
+		// here, by the reference either.
+		c := p.curr()
+		switch {
+		case c == nil:
+			return nil, p.unsupported("INSTALL FROM without a source")
+		case c.Type == TokSTRING:
+			p.advance()
+			node.Set("from_", New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}))
+		case c.Type != TokIDENTIFIER && isBareWord(c.Text):
+			p.advance()
+			node.Set("from_", New("Var", Arg{"this", c.Text}))
+		default:
+			return nil, p.unsupported("an INSTALL source this port does not read")
+		}
+	}
+	node.Set("force", force)
+	if p.curr() != nil {
+		return nil, p.unsupported("INSTALL with more than this port reads")
+	}
+	return node, nil
 }
