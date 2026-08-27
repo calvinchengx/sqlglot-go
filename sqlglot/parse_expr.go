@@ -637,6 +637,31 @@ func (p *parser) parsePostfix() (*Expression, error) {
 				Arg{"offset", nil}, Arg{"safe", nil}, Arg{"returns_null_on_error", nil})
 			continue
 		}
+		// A dot after something that is NOT a plain name: `a[0].b`, `f(x).g`,
+		// `X(y).1`. parsePrimary reads `a.b.c` into one Column and stops where
+		// it cannot go on; whatever dot is left over continues HERE, which is
+		// where the reference continues it too -- its `_parse_column_ops`
+		// loops over brackets and dots together, and only the run of plain
+		// names collapses into a Column.
+		if p.at(TokDOT) {
+			field, isCall, err := p.parseDotField()
+			if err != nil {
+				return nil, err
+			}
+			if field == nil {
+				return this, nil
+			}
+			// A dot chain ending in a CALL is a QUALIFIED call, and the names
+			// leading to it are parts of the call's name rather than columns:
+			// `a[b].C()` reads a and b as identifiers where `a[b].c` reads
+			// both as columns. The reference rewrites every Column below the
+			// chain when the field turns out to be a function.
+			if isCall {
+				this = columnsToDots(this)
+			}
+			this = New("Dot", Arg{"this", this}, Arg{"expression", field})
+			continue
+		}
 		return this, nil
 	}
 }
@@ -2481,4 +2506,100 @@ func (p *parser) parseQualifiedName() (*Expression, error) {
 		this = New("Identifier", Arg{"this", name}, Arg{"quoted", true})
 	}
 	return New("Anonymous", Arg{"this", this}, Arg{"expressions", args}), nil
+}
+
+// parseDotField reads what follows a dot in a chain of accesses: a call, a
+// name, a number or a string.
+//
+// It reports (nil, nil) where the token after the dot can be none of those,
+// which leaves the dot unread and the statement refused for what follows it
+// rather than for the dot itself.
+func (p *parser) parseDotField() (*Expression, bool, error) {
+	n := p.next()
+	if n == nil {
+		return nil, false, nil
+	}
+	switch n.Type {
+	case TokNUMBER:
+		p.advance()
+		p.advance()
+		return New("Literal", Arg{"this", n.Text}, Arg{"is_string", false}), false, nil
+	case TokSTRING:
+		p.advance()
+		p.advance()
+		return New("Literal", Arg{"this", n.Text}, Arg{"is_string", true}), false, nil
+	case TokNATIONAL_STRING:
+		p.advance()
+		p.advance()
+		return New("National", Arg{"this", n.Text}), false, nil
+	}
+	// A name with an argument list after it is a CALL, and the call reads
+	// itself -- including the arguments this port gives a class of its own.
+	// Whether it WAS a call is reported rather than asked of the node
+	// afterwards: the reference asks `isinstance(field, exp.Func)`, and the
+	// port has no such base -- a call may come back as any of six hundred
+	// classes.
+	if after := p.peekAt(2); after != nil && after.Type == TokL_PAREN {
+		p.advance()
+		call, err := p.parseFunction()
+		return call, err == nil, err
+	}
+	mark := p.index
+	p.advance()
+	if !p.atIdentifier() {
+		p.index = mark
+		return nil, false, nil
+	}
+	name, err := p.parseIdentifier()
+	return name, false, err
+}
+
+// columnsToDots rewrites every Column beneath a node into the dotted name it
+// spells: `Column(this=b, table=a)` becomes `Dot(a, b)`, and a Column of one
+// part becomes that part alone.
+//
+// This is the reference's `to_dot(include_dots=False)` applied through a
+// transform. It runs when a chain of accesses turns out to end in a function
+// call, because then every name in front of it is part of the call's name.
+//
+// In practice only single-part Columns reach it: a qualified name in front of
+// a call -- `t.col[0].F()` -- is read as a dotted name by parsePrimary before
+// the chain gets here, so it arrives already in this shape. The multi-part
+// case below is the reference's rule rather than a path this port takes, and
+// it is kept so that a Column arriving by some other route is rewritten the
+// same way rather than left as a Column the reference would not have built.
+func columnsToDots(e *Expression) *Expression {
+	if e == nil {
+		return nil
+	}
+	if e.Class == "Column" {
+		var parts []*Expression
+		for _, key := range []string{"catalog", "db", "table", "this"} {
+			if part, _ := e.Args[key].(*Expression); part != nil {
+				parts = append(parts, part)
+			}
+		}
+		if len(parts) == 0 {
+			return e
+		}
+		out := parts[0]
+		for _, part := range parts[1:] {
+			out = New("Dot", Arg{"this", out}, Arg{"expression", part})
+		}
+		return out
+	}
+	out := e.Copy()
+	for key, arg := range out.Args {
+		switch v := arg.(type) {
+		case *Expression:
+			out.Set(key, columnsToDots(v))
+		case []*Expression:
+			kids := make([]*Expression, len(v))
+			for i, k := range v {
+				kids[i] = columnsToDots(k)
+			}
+			out.Set(key, kids)
+		}
+	}
+	return out
 }

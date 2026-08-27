@@ -4568,3 +4568,84 @@ func TestAnalyzeRefusals(t *testing.T) {
 		}
 	}
 }
+
+// TestChainedAccess covers reaching into nested data: a subscript, then a
+// field, then another subscript, as far as the statement goes.
+func TestChainedAccess(t *testing.T) {
+	for _, sql := range []string{
+		"a[0].b[1]",
+		"a[0].b.c['d']",
+		"a['x'].C()",
+		"a['x'].b.C()",
+		"a[0][0].b.c[1].d.e.f[1][1]",
+		"X((y AS z)).1",
+		"a[b].C()",
+		"a.b[c].D()",
+		"x.y.FOO()",
+		// A string, a national string and a number stand where a name would.
+		"a[0].'x'",
+		"a[0].N'x'",
+		"a[0].1",
+		"a[0].b.'c'",
+	} {
+		e, err := ParseOne(sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+	}
+}
+
+// A chain that cannot go on is refused for what follows the dot, not read as
+// far as it goes and the rest dropped.
+func TestChainedAccessRefusals(t *testing.T) {
+	for _, sql := range []string{
+		"a[0].",
+		"a[0].+",
+		"a[0].b.",
+	} {
+		if e, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) read %s", sql, e.Class)
+		}
+	}
+}
+
+// TestChainEndingInACall covers what a trailing call does to the names in
+// front of it.
+//
+// `a[b].c` reads a and b as COLUMNS. `a[b].C()` reads the same two as
+// IDENTIFIERS, because the chain turns out to name a function and everything
+// leading to it is part of that name.
+func TestChainEndingInACall(t *testing.T) {
+	column, err := ParseOne("a[b].c", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	inner, _ := column.Args["this"].(*Expression)
+	base, _ := inner.Args["this"].(*Expression)
+	if base.Class != "Column" {
+		t.Errorf("a[b].c read its base as %s, want Column", base.Class)
+	}
+
+	call, err := ParseOne("a[b].C()", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	bracket, _ := call.Args["this"].(*Expression)
+	base, _ = bracket.Args["this"].(*Expression)
+	if base.Class != "Identifier" {
+		t.Errorf("a[b].C() read its base as %s, want Identifier", base.Class)
+	}
+	// The index is rewritten too: the transform runs over the whole chain,
+	// not only over the names on its spine.
+	index, _ := bracket.Args["expressions"].([]*Expression)
+	if len(index) != 1 || index[0].Class != "Identifier" {
+		t.Errorf("a[b].C() read its index as %v, want one Identifier", index)
+	}
+}
