@@ -490,3 +490,38 @@ func TestFunctionName(t *testing.T) {
 		t.Error("an unknown dialect has no function names")
 	}
 }
+
+// TestTopIsParenthesisedUnlessItIsANumber covers T-SQL's spelling of a row
+// limit, which the generator fuzzer has now caught twice.
+//
+// A count that is not a plain number needs parentheses or the output is not
+// T-SQL. The port used to test for a Literal, which let a STRING count
+// through: it wrote `TOP ”` and could not read it back.
+func TestTopIsParenthesisedUnlessItIsANumber(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT x FROM t LIMIT 5", "SELECT TOP 5 x FROM t"},
+		{"SELECT x FROM t LIMIT 1.5", "SELECT TOP 1.5 x FROM t"},
+		{"SELECT x FROM t LIMIT ''", "SELECT TOP ('') x FROM t"},
+		{"SELECT x FROM t LIMIT n", "SELECT TOP (n) x FROM t"},
+		// The reference writes `TOP -1` and cannot read it back. This port
+		// parenthesises rather than emit SQL nobody can parse; see
+		// docs/upstream-issues.md.
+		{"SELECT x FROM t LIMIT -1", "SELECT TOP (-1) x FROM t"},
+	} {
+		e, err := ParseOne(tc.sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		got, err := Generate(e, "tsql")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.want {
+			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
+		}
+		// Everything this writes, it reads.
+		if _, err := ParseOne(got, "tsql"); err != nil {
+			t.Errorf("%q wrote %q, which it cannot read back: %v", tc.sql, got, err)
+		}
+	}
+}

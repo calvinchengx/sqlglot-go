@@ -295,3 +295,33 @@ because that is the tree the reference builds -- and refuses the qualified
 form and the empty BUFFER_USAGE_LIMIT.
 
 **Reference:** sqlglot @ ceb5111421e9.
+
+---
+
+## sqlglot writes a T-SQL `TOP -1` it cannot read back
+
+**Found by:** the generator fuzzer, twice, on the same rule.
+
+T-SQL needs parentheses around a row limit that is not a plain number, and
+`limit_sql` puts them there for anything `is_number` says no to. `is_number`
+is true for a negated literal, so a negative limit is written bare:
+
+```
+in   SELECT x FROM t LIMIT -1          (read as the neutral dialect)
+out  SELECT TOP -1 x FROM t            (written as tsql)
+```
+
+which sqlglot then refuses to parse. A string limit is handled correctly --
+`LIMIT ''` becomes `TOP ('')` -- because a string literal is not a number.
+
+This is the one place the port's writer does not follow the reference: it
+parenthesises the negative too, writing `SELECT TOP (-1) x FROM t`. The
+alternative is emitting SQL that neither the reference nor this port can read,
+and the port holds itself to reading back everything it writes -- that
+property is a fuzz target, so following the reference here would fail its own
+gate.
+
+Nothing else changes. A count that is a plain number, including a float, is
+still written bare.
+
+**Reference:** sqlglot @ ceb5111421e9.

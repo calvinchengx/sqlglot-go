@@ -657,13 +657,20 @@ func (g *generator) writeLimit(e *Expression) string { return g.writeLimitWord(e
 // projections, LIMIT after the query.
 func (g *generator) writeLimitWord(e *Expression, word string) string {
 	count := g.child(e, "expression")
-	// T-SQL requires parentheses around a TOP that is not a plain literal, and
-	// the reference writes them: `SELECT TOP (A) 0`. Without them the output is
-	// not valid T-SQL and neither the reference nor this port can read it back
-	// -- a generator emitting SQL nobody can parse is worse than one that
-	// declines. Found by fuzzing the generator's output through the parser.
+	// T-SQL requires parentheses around a TOP that is not a plain NUMBER, and
+	// the reference writes them: `SELECT TOP (A) 0`, `SELECT TOP ('') 0`.
+	// Without them the output is not valid T-SQL and neither the reference nor
+	// this port can read it back -- a generator emitting SQL nobody can parse
+	// is worse than one that declines. Both halves of this were found by
+	// fuzzing the generator's output back through the parser: first a column
+	// count, then a STRING one, which is a Literal like a number is and is not
+	// a number.
+	//
+	// A NEGATIVE count is parenthesised here and is not by the reference,
+	// which writes `SELECT TOP -1 x` and then cannot read it back. That is the
+	// one place this writer does not follow it; see docs/upstream-issues.md.
 	if inner, _ := e.Args["expression"].(*Expression); inner != nil &&
-		word == "TOP " && inner.Class != "Literal" {
+		word == "TOP " && !isPlainNumber(inner) {
 		count = "(" + count + ")"
 	}
 	out := word + count
@@ -3614,4 +3621,16 @@ func (g *generator) writeAnalyzeStatistics(e *Expression) string {
 		out += " " + g.list(e)
 	}
 	return out
+}
+
+// isPlainNumber reports whether a node is a number WRITTEN as one: a numeric
+// literal and nothing else. A negated literal counts as a number to the
+// reference and does not here, because the two differ in whether the result
+// can be read again.
+func isPlainNumber(e *Expression) bool {
+	if e == nil || e.Class != "Literal" {
+		return false
+	}
+	str, _ := e.Args["is_string"].(bool)
+	return !str
 }
