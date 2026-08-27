@@ -288,6 +288,12 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokINSTALL) || p.at(TokFORCE) {
 		return p.parseInstall()
 	}
+	if p.at(TokCACHE) {
+		return p.parseCache()
+	}
+	if p.at(TokUNCACHE) {
+		return p.parseUncache()
+	}
 	if p.at(TokBEGIN) || p.at(TokCOMMIT) || p.at(TokROLLBACK) {
 		return p.parseTransaction()
 	}

@@ -64,7 +64,7 @@ Regenerate with `make service`; nothing in it is authored here.
 <!-- coverage:start -->
 | Dialect | Tokens | Trees matched | Of | Unparsed | Mismatched |
 |---|---|---|---|---|---|
-| neutral | 997/997 | 803 | 997 | 194 | 0 |
+| neutral | 997/997 | 814 | 997 | 183 | 0 |
 | tsql | 597/597 | 396 | 597 | 201 | 0 |
 | postgres | 857/857 | 629 | 857 | 228 | 0 |
 | duckdb | 1631/1631 | 1425 | 1631 | 206 | 0 |

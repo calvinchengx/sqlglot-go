@@ -4338,3 +4338,76 @@ func TestEmptyStatement(t *testing.T) {
 		}
 	}
 }
+
+// TestCache covers holding a table in memory and letting it go again.
+func TestCache(t *testing.T) {
+	for sql, want := range map[string]string{
+		"CACHE TABLE x":      "CACHE TABLE x",
+		"CACHE LAZY TABLE x": "CACHE LAZY TABLE x",
+		"CACHE TABLE a.b":    "CACHE TABLE a.b",
+		// TABLE is optional going in and always written coming out.
+		"CACHE x":      "CACHE TABLE x",
+		"CACHE LAZY x": "CACHE LAZY TABLE x",
+		"CACHE LAZY TABLE x OPTIONS('storageLevel' = 'value')": "CACHE LAZY TABLE x OPTIONS('storageLevel' = 'value')",
+		// A national string keeps its prefix, so the option is not simply a
+		// pair of Literals.
+		"CACHE LAZY TABLE x OPTIONS(N'storageLevel' = 'value')": "CACHE LAZY TABLE x OPTIONS(N'storageLevel' = 'value')",
+		"CACHE TABLE x AS SELECT 1":                             "CACHE TABLE x AS SELECT 1",
+		// The parentheses are KEPT: they make a Subquery, which is a
+		// different tree from the Select they wrap.
+		"CACHE TABLE x AS (SELECT 1 AS y)":                                 "CACHE TABLE x AS (SELECT 1 AS y)",
+		"CACHE TABLE x AS WITH a AS (SELECT 1) SELECT a.* FROM a":          "CACHE TABLE x AS WITH a AS (SELECT 1) SELECT a.* FROM a",
+		"CACHE LAZY TABLE x OPTIONS('storageLevel' = 'value') AS SELECT 1": "CACHE LAZY TABLE x OPTIONS('storageLevel' = 'value') AS SELECT 1",
+		"UNCACHE TABLE x":           "UNCACHE TABLE x",
+		"UNCACHE TABLE IF EXISTS x": "UNCACHE TABLE IF EXISTS x",
+	} {
+		e, err := ParseOne(sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; it changes what the session holds", sql)
+		}
+		got, err := Generate(e, "")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != want {
+			t.Errorf("%q wrote %q, want %q", sql, got, want)
+		}
+	}
+}
+
+// TestCacheRefusals covers what the port will not read here, and why.
+func TestCacheRefusals(t *testing.T) {
+	for _, sql := range []string{
+		// The reference refuses these too.
+		"UNCACHE x",
+		"UNCACHE TABLE",
+		"CACHE TABLE 1",
+		"UNCACHE TABLE 1",
+		"CACHE TABLE x OPTIONS(k = 'v')",
+		"CACHE TABLE x OPTIONS('k' = 1)",
+		"CACHE TABLE x OPTIONS('k' = 'v', 'j' = 'w')",
+		"CACHE",
+		"CACHE TABLE x EXTRA",
+		"UNCACHE TABLE x EXTRA",
+		// The reference reads a setting with no value and writes
+		// `OPTIONS('k' = )`, which is not SQL and which it cannot read back.
+		"CACHE TABLE x OPTIONS('k')",
+		"CACHE TABLE x OPTIONS",
+		"CACHE TABLE x OPTIONS(",
+		// ...and drops a dangling AS, writing back less than it was given.
+		"CACHE TABLE x AS",
+		// The reference reads an empty SELECT here and writes it back;
+		// this port has no tree for a query that selects nothing.
+		"CACHE TABLE x AS SELECT",
+		// The reference reads a column list here as a Schema. This port's
+		// reader for the position is a table name and nothing else.
+		"CACHE TABLE x(a, b)",
+	} {
+		if e, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) read %s", sql, e.Class)
+		}
+	}
+}

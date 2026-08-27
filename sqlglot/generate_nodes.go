@@ -91,6 +91,8 @@ func init() {
 		"AttachOption":                        (*generator).writeAttachOption,
 		"Install":                             (*generator).writeInstall,
 		"Command":                             (*generator).writeCommand,
+		"Cache":                               (*generator).writeCache,
+		"Uncache":                             (*generator).writeUncache,
 		"Transaction":                         (*generator).writeTransaction,
 		"Commit":                              (*generator).writeTransaction,
 		"Rollback":                            (*generator).writeTransaction,
@@ -3528,4 +3530,30 @@ func (g *generator) writeCommand(e *Expression) string {
 		return this
 	}
 	return this + " " + payload
+}
+
+// writeCache writes `CACHE [LAZY] TABLE <table> [OPTIONS(k = v)] [AS <query>]`.
+// The word TABLE is always written, whether or not it was read.
+func (g *generator) writeCache(e *Expression) string {
+	out := "CACHE"
+	if lazy, _ := e.Args["lazy"].(bool); lazy {
+		out += " LAZY"
+	}
+	out += " TABLE " + g.child(e, "this")
+	if options, _ := e.Args["options"].([]*Expression); len(options) == 2 {
+		out += " OPTIONS(" + g.node(options[0]) + " = " + g.node(options[1]) + ")"
+	}
+	if body := g.child(e, "expression"); body != "" {
+		out += " AS " + body
+	}
+	return out
+}
+
+// writeUncache writes `UNCACHE TABLE [IF EXISTS] <table>`.
+func (g *generator) writeUncache(e *Expression) string {
+	out := "UNCACHE TABLE"
+	if exists, _ := e.Args["exists"].(bool); exists {
+		out += " IF EXISTS"
+	}
+	return out + " " + g.child(e, "this")
 }

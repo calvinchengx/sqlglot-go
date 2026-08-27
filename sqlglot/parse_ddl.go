@@ -2836,3 +2836,123 @@ func (p *parser) atCommand() bool {
 	_, ok := p.cfg.Commands[c.Type]
 	return ok
 }
+
+// parseCache reads `CACHE [LAZY] [TABLE] <table> [OPTIONS(k = v)] [AS <query>]`,
+// which holds a table in memory for the queries that follow.
+//
+// The word TABLE is optional on the way in and always written on the way out,
+// so `CACHE x` and `CACHE TABLE x` are one statement spelled two ways.
+func (p *parser) parseCache() (*Expression, error) {
+	p.advance() // CACHE
+	lazy := false
+	if p.atWords("LAZY") {
+		p.advance()
+		lazy = true
+	}
+	if p.at(TokTABLE) {
+		p.advance()
+	}
+	table, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+	node := New("Cache", Arg{"this", table}, Arg{"lazy", lazy})
+
+	if p.atWords("OPTIONS") {
+		options, err := p.parseCacheOptions()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("options", options)
+	}
+	if p.match(TokALIAS) {
+		// The reference DROPS a dangling AS and writes the statement without
+		// it. Refusing beats writing back something shorter than what came
+		// in, as with `INSTALL x FROM`.
+		if p.curr() == nil {
+			return nil, p.unsupported("CACHE with an AS and no query")
+		}
+		body, err := p.parseCreateBody()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("expression", body)
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("CACHE with more than this port reads")
+	}
+	return node, nil
+}
+
+// parseCacheOptions reads the ONE setting a CACHE may carry.
+//
+// One, not a list: the reference reads a single `'key' = 'value'` and refuses
+// a second pair, and both halves have to be strings. It keeps them as two
+// members of a list rather than as an equality, so the `=` is the writer's.
+//
+// A missing value is refused. The reference reads `OPTIONS('k')` and writes
+// `OPTIONS('k' = )`, which is not SQL and which it cannot read back.
+func (p *parser) parseCacheOptions() ([]*Expression, error) {
+	p.advance() // OPTIONS
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("CACHE OPTIONS without a setting")
+	}
+	key, err := p.parseCacheString()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokEQ) {
+		return nil, p.unsupported("a CACHE option that is not a setting")
+	}
+	value, err := p.parseCacheString()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("more than one CACHE option")
+	}
+	return []*Expression{key, value}, nil
+}
+
+// parseCacheString reads one half of that setting. A national string keeps
+// its prefix, which is why this is not simply a Literal.
+func (p *parser) parseCacheString() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("a CACHE option without a value")
+	}
+	switch c.Type {
+	case TokSTRING:
+		p.advance()
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
+	case TokNATIONAL_STRING:
+		p.advance()
+		return New("National", Arg{"this", c.Text}), nil
+	}
+	return nil, p.unsupported("a CACHE option that is not a string")
+}
+
+// parseUncache reads `UNCACHE TABLE [IF EXISTS] <table>`, which lets the table
+// go again. TABLE is required here, unlike in a CACHE.
+func (p *parser) parseUncache() (*Expression, error) {
+	p.advance() // UNCACHE
+	if !p.match(TokTABLE) {
+		return nil, p.unsupported("UNCACHE without TABLE")
+	}
+	exists := false
+	if p.atWords("IF", "EXISTS") {
+		p.advance()
+		p.advance()
+		exists = true
+	}
+	table, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("UNCACHE with more than this port reads")
+	}
+	// `exists` first: the reference builds it before the table, and the
+	// arguments dump in the order they were assigned.
+	return New("Uncache", Arg{"exists", exists}, Arg{"this", table}), nil
+}
