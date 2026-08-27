@@ -93,6 +93,7 @@ func init() {
 		"Command":                             (*generator).writeCommand,
 		"Cache":                               (*generator).writeCache,
 		"Uncache":                             (*generator).writeUncache,
+		"Describe":                            (*generator).writeDescribe,
 		"Transaction":                         (*generator).writeTransaction,
 		"Commit":                              (*generator).writeTransaction,
 		"Rollback":                            (*generator).writeTransaction,
@@ -3556,4 +3557,17 @@ func (g *generator) writeUncache(e *Expression) string {
 		out += " IF EXISTS"
 	}
 	return out + " " + g.child(e, "this")
+}
+
+// writeDescribe writes `DESCRIBE [<style>] <subject> [AS JSON]`.
+func (g *generator) writeDescribe(e *Expression) string {
+	out := "DESCRIBE"
+	if style, _ := e.Args["style"].(string); style != "" {
+		out += " " + style
+	}
+	out += " " + g.child(e, "this")
+	if asJSON, _ := e.Args["as_json"].(bool); asJSON {
+		out += " AS JSON"
+	}
+	return out
 }

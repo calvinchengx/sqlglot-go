@@ -294,6 +294,9 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokUNCACHE) {
 		return p.parseUncache()
 	}
+	if p.at(TokDESCRIBE) || p.at(TokDESC) {
+		return p.parseDescribe()
+	}
 	if p.at(TokBEGIN) || p.at(TokCOMMIT) || p.at(TokROLLBACK) {
 		return p.parseTransaction()
 	}

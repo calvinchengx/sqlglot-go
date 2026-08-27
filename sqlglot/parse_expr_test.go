@@ -4411,3 +4411,75 @@ func TestCacheRefusals(t *testing.T) {
 		}
 	}
 }
+
+// TestDescribe covers asking what something IS.
+func TestDescribe(t *testing.T) {
+	for _, c := range []struct{ sql, dialect string }{
+		{"DESCRIBE x", ""},
+		{"DESCRIBE a.b", ""},
+		{"DESCRIBE EXTENDED a.b", ""},
+		{"DESCRIBE FORMATTED a.b", ""},
+		{"DESCRIBE ANALYZE x", ""},
+		{"DESCRIBE SELECT 1", ""},
+		{"DESCRIBE x AS JSON", ""},
+		{"DESCRIBE EXTENDED staging.tbl AS JSON", "databricks"},
+		{"DESCRIBE HISTORY a.b", "databricks"},
+		// The same word, one token later, is a schema name -- and a QUOTED
+		// one is a name wherever it stands.
+		{"DESCRIBE history.tbl", "databricks"},
+		{`DESCRIBE "history"`, ""},
+	} {
+		e, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q, %q): %v", c.sql, c.dialect, err)
+		}
+		if e.Class != "Describe" {
+			t.Errorf("ParseOne(%q) read %s, want Describe", c.sql, e.Class)
+		}
+		// Asking what a table is changes nothing.
+		if IsWrite(e) {
+			t.Errorf("IsWrite(%q) = true; it asks a question", c.sql)
+		}
+		got, err := Generate(e, c.dialect)
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", c.sql, err)
+		}
+		if got != c.sql {
+			t.Errorf("%q wrote %q", c.sql, got)
+		}
+	}
+
+	if IsWrite(nil) {
+		t.Error("IsWrite(nil) = true")
+	}
+
+	// ...but what it names may be a statement, and then the statement is
+	// what a guard has to answer about.
+	e, err := ParseOne("DESCRIBE INSERT INTO t VALUES (1)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if !IsWrite(e) {
+		t.Error("IsWrite over a DESCRIBE of an INSERT = false; the INSERT is a write")
+	}
+	if got, _ := Generate(e, ""); got != "DESCRIBE INSERT INTO t VALUES (1)" {
+		t.Errorf("wrote %q", got)
+	}
+
+	for _, sql := range []string{
+		// The reference reads the KIND and then writes the statement without
+		// it -- `DESCRIBE VIEW x` comes back as `DESCRIBE x`, which asks
+		// about whatever object holds the name.
+		"DESCRIBE TABLE x",
+		"DESCRIBE VIEW x",
+		// Not read: none is in the corpus and each is a shape to guess at.
+		"DESCRIBE x PARTITION(a = 1)",
+		"DESCRIBE FORMAT=JSON x",
+		"DESCRIBE",
+		"DESCRIBE x EXTRA",
+	} {
+		if e, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) read %s", sql, e.Class)
+		}
+	}
+}

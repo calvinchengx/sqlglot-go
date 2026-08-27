@@ -311,7 +311,18 @@ var writeClasses = map[string]bool{
 // be read, the fact has to be asked for, and a caller that keeps using the
 // error will see a CREATE go past as though it were a query.
 func IsWrite(e *Expression) bool {
-	return e != nil && writeClasses[e.Class]
+	if e == nil {
+		return false
+	}
+	// A DESCRIBE is a question about the thing it names, and asking it
+	// changes nothing -- except that what it names may itself be a whole
+	// statement. `DESCRIBE INSERT INTO t VALUES (1)` carries an Insert, and
+	// what a guard has to answer about is the Insert.
+	if e.Class == "Describe" {
+		subject, _ := e.Args["this"].(*Expression)
+		return IsWrite(subject)
+	}
+	return writeClasses[e.Class]
 }
 
 // parseInsert reads `INSERT [OVERWRITE] INTO <table> [(cols)] <values-or-query>`.
@@ -2955,4 +2966,75 @@ func (p *parser) parseUncache() (*Expression, error) {
 	// `exists` first: the reference builds it before the table, and the
 	// arguments dump in the order they were assigned.
 	return New("Uncache", Arg{"exists", exists}, Arg{"this", table}), nil
+}
+
+// describeStyles are the words that say HOW a DESCRIBE should answer, as
+// against naming the thing to describe.
+var describeStyles = map[string]bool{
+	"ANALYZE": true, "EXTENDED": true, "FORMATTED": true, "HISTORY": true,
+}
+
+// parseDescribe reads `DESCRIBE [<style>] <table-or-statement> [AS JSON]`.
+//
+// The style word and a database name are told apart by ONE token of
+// lookahead: `DESCRIBE HISTORY a.b` asks for the history of a.b, and
+// `DESCRIBE history.tbl` describes a table in a schema that happens to be
+// called history. A dot after the word settles it, and the reference backs up
+// and re-reads when it finds one.
+//
+// The KIND -- `DESCRIBE TABLE x` -- is not read. The reference reads the word
+// and then writes the statement without it, so `DESCRIBE VIEW x` comes back
+// as `DESCRIBE x`, which asks about whatever object holds that name. The
+// FORMAT clause, a PARTITION and trailing properties are not read either;
+// none appears in the corpus and each would be a shape to guess at.
+func (p *parser) parseDescribe() (*Expression, error) {
+	p.advance() // DESCRIBE
+	style := ""
+	// A QUOTED name is never one of these words, however it is spelled:
+	// `DESCRIBE "history"` describes the table called history. The reference
+	// excludes every quoted and string token from a match on text, and this
+	// is the position where that mattered.
+	if c := p.curr(); c != nil && c.Type != TokIDENTIFIER &&
+		describeStyles[strings.ToUpper(c.Text)] {
+		if n := p.next(); n == nil || n.Type != TokDOT {
+			style = strings.ToUpper(c.Text)
+			p.advance()
+		}
+	}
+
+	this, err := p.parseDescribeSubject()
+	if err != nil {
+		return nil, err
+	}
+	node := New("Describe", Arg{"this", this})
+	if style != "" {
+		node.Set("style", style)
+	}
+	asJSON := false
+	if p.atWords("AS", "JSON") {
+		p.advance()
+		p.advance()
+		asJSON = true
+	}
+	node.Set("as_json", asJSON)
+	if p.curr() != nil {
+		return nil, p.unsupported("DESCRIBE with more than this port reads")
+	}
+	return node, nil
+}
+
+// parseDescribeSubject reads WHAT is being described: a whole statement where
+// one begins here, and a table name otherwise.
+func (p *parser) parseDescribeSubject() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("DESCRIBE without a subject")
+	}
+	if p.at(TokSELECT) || p.at(TokWITH) {
+		return p.parseStatement()
+	}
+	if _, isStatement := p.tables.StatementTokens[c.Type]; isStatement {
+		return p.parseStatementBody()
+	}
+	return p.parseTableName()
 }
