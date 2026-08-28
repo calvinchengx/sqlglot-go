@@ -804,53 +804,13 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	// Databricks brackets the name: `${x}`. It is the same Parameter, with an
 	// `expression` flag recording that the braces were there -- and the port
 	// WRITES this form, so it has to read it back.
-	if c.Type == TokPARAMETER && c.Text == "$" && p.next() != nil && p.next().Type == TokL_BRACE {
-		// The braces delimit the name, so it can be any single word --
-		// including a KEYWORD. `$WHERE` writes as `${WHERE}` and requiring a
-		// VAR there could not read it back.
-		if name := p.peekAt(2); isParameterName(name) &&
-			p.peekAt(3) != nil && p.peekAt(3).Type == TokR_BRACE {
-			p.advance()
-			p.advance()
-			p.advance()
-			p.advance()
-			// A numeric name is a Literal, a word is a Var -- the same split
-			// the unbraced form makes.
-			inner := New("Var", Arg{"this", name.Text})
-			if name.Type == TokNUMBER {
-				inner = New("Literal", Arg{"this", name.Text}, Arg{"is_string", false})
-			}
-			return New("Parameter", Arg{"this", inner}, Arg{"expression", false}), nil
+	if node := p.parseParameter(); node != nil {
+		// A PLACEHOLDER may be reached through: `?.a` is an attribute of what
+		// was bound. A Parameter is not, and never was.
+		if node.Class == "Placeholder" {
+			return p.dotted(node), nil
 		}
-	}
-	if c.Type == TokPARAMETER {
-		if n := p.next(); isParameterName(n) {
-			class := ""
-			switch {
-			case c.Text == "$" && n.Type == TokNUMBER:
-				class = p.tables.Placeholder.DollarNumber
-			case c.Text == "$":
-				class = p.tables.Placeholder.DollarName
-			case c.Text == "@":
-				class = p.tables.Placeholder.AtName
-			}
-			switch class {
-			case "Placeholder":
-				p.advance()
-				p.advance()
-				return p.dotted(New("Placeholder", Arg{"this", n.Text})), nil
-			case "Parameter":
-				p.advance()
-				p.advance()
-				// `$1` names its parameter with a NUMBER, and the reference
-				// keeps that as a Literal rather than a Var.
-				if n.Type == TokNUMBER {
-					lit := New("Literal", Arg{"this", n.Text}, Arg{"is_string", false})
-					return New("Parameter", Arg{"this", lit}), nil
-				}
-				return New("Parameter", Arg{"this", New("Var", Arg{"this", n.Text})}), nil
-			}
-		}
+		return node, nil
 	}
 	// PostgreSQL spells it `%(name)s`, or `%s` unnamed -- and records the name
 	// as an IDENTIFIER rather than a string, unlike every other dialect. A
@@ -2623,4 +2583,72 @@ func columnsToDots(e *Expression) *Expression {
 		}
 	}
 	return out
+}
+
+// parseParameter reads a bound parameter or a placeholder written with the
+// marker this dialect uses, and returns nil where the cursor opens neither.
+//
+// It is one function because the SPELLINGS are one question: `$nm` is a
+// Placeholder in DuckDB, a Parameter in PostgreSQL and Databricks, and a
+// plain column elsewhere; `@nm` is a Parameter everywhere except DuckDB,
+// where `@` is absolute value. Every caller that accepts one has to accept
+// all of them -- an `@`-only reader in one position was how a table variable
+// came to parse in T-SQL while the `$` form this port WRITES could not be
+// read back anywhere else.
+func (p *parser) parseParameter() *Expression {
+	c := p.curr()
+	if c == nil || c.Type != TokPARAMETER {
+		return nil
+	}
+	// Databricks brackets the name: `${x}`. It is the same Parameter, with an
+	// `expression` flag recording that the braces were there -- and the port
+	// WRITES this form, so it has to read it back.
+	if c.Text == "$" && p.next() != nil && p.next().Type == TokL_BRACE {
+		// The braces delimit the name, so it can be any single word --
+		// including a KEYWORD. `$WHERE` writes as `${WHERE}` and requiring a
+		// VAR there could not read it back.
+		if name := p.peekAt(2); isParameterName(name) &&
+			p.peekAt(3) != nil && p.peekAt(3).Type == TokR_BRACE {
+			p.advance()
+			p.advance()
+			p.advance()
+			p.advance()
+			return New("Parameter", Arg{"this", parameterName(name)}, Arg{"expression", false})
+		}
+		return nil
+	}
+	n := p.next()
+	if !isParameterName(n) {
+		return nil
+	}
+	class := ""
+	switch {
+	case c.Text == "$" && n.Type == TokNUMBER:
+		class = p.tables.Placeholder.DollarNumber
+	case c.Text == "$":
+		class = p.tables.Placeholder.DollarName
+	case c.Text == "@":
+		class = p.tables.Placeholder.AtName
+	}
+	switch class {
+	case "Placeholder":
+		p.advance()
+		p.advance()
+		return New("Placeholder", Arg{"this", n.Text})
+	case "Parameter":
+		p.advance()
+		p.advance()
+		return New("Parameter", Arg{"this", parameterName(n)})
+	}
+	return nil
+}
+
+// parameterName is what a parameter's name is BUILT as: a numeric one is a
+// Literal, a word is a Var, and the reference makes that split in both the
+// braced form and the bare one.
+func parameterName(n *Token) *Expression {
+	if n.Type == TokNUMBER {
+		return New("Literal", Arg{"this", n.Text}, Arg{"is_string", false})
+	}
+	return New("Var", Arg{"this", n.Text})
 }

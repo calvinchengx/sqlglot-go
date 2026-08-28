@@ -157,6 +157,10 @@ func TestRefusals(t *testing.T) {
 		// an IMPLICIT alias carrying the mark, which this port does not read
 		// in that position.
 		{"T-SQL temp mark on an implicit alias", "SELECT a #b", "tsql"},
+		// The braces around a parameter's name delimit ONE word; the
+		// reference refuses these two as well.
+		{"a braced parameter holding an expression", "SELECT ${1 + 2}", "databricks"},
+		{"a braced parameter holding nothing", "SELECT ${}", "databricks"},
 		{"dangling HAVING", "SELECT a FROM t HAVING", ""},
 		{"dangling conjunction", "SELECT 1 WHERE a AND", ""},
 		{"dangling disjunction", "SELECT 1 WHERE a OR", ""},

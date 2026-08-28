@@ -242,6 +242,12 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 // reads `t (a INT)` as a call to a table function and `t AS SELECT` as a table
 // with an alias, both of which are what a CREATE puts after the name.
 func (p *parser) parseTableName() (*Expression, error) {
+	// A table variable stands where a name would: `INSERT INTO @TestTable
+	// VALUES (1)` writes to the parameter itself. Every spelling of one, for
+	// the reason parseTable gives.
+	if param := p.parseParameter(); param != nil {
+		return New("Table", Arg{"this", param}), nil
+	}
 	var parts []*Expression
 	for {
 		id, err := p.parseIdentifier()

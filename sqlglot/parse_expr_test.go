@@ -4732,3 +4732,77 @@ func TestTsqlTemporaryIsRecordedTwice(t *testing.T) {
 		t.Errorf("the CREATE's properties are %v, want one TemporaryProperty", items)
 	}
 }
+
+// TestTsqlTableVariables covers `@name` standing where a table name goes.
+//
+// T-SQL declares a table VARIABLE and then reads and writes it by name. The
+// relation is the parameter itself -- the reference puts a Parameter where
+// the name would be -- rather than a table that happens to be called
+// @MyTableVar.
+func TestTsqlTableVariables(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT * FROM @x",
+		"SELECT Employee_ID FROM @MyTableVar",
+		"SELECT x FROM @MyTableVar AS m JOIN Employee ON m.EmployeeID = Employee.EmployeeID",
+		"INSERT INTO @TestTable VALUES (1, 'Value1', 12, 20)",
+		"DELETE FROM @x",
+		"UPDATE @x SET a = 1",
+	} {
+		e, err := ParseOne(sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "tsql")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+	}
+
+	// It is the PARAMETER that names the relation, not an identifier.
+	e, err := ParseOne("SELECT * FROM @x", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	from, _ := e.Args["from_"].(*Expression)
+	table, _ := from.Args["this"].(*Expression)
+	name, _ := table.Args["this"].(*Expression)
+	if name == nil || name.Class != "Parameter" {
+		t.Errorf("the table is named by %v, want a Parameter", name)
+	}
+
+	// Only where `@name` is a PARAMETER, which is what the dialect's own
+	// table says. DuckDB spells a parameter `$x` and reads `@x` here as one
+	// too; this port does not build that shape, and refuses rather than
+	// naming the relation something the reference did not.
+	if e, err := ParseOne("SELECT * FROM @x", "duckdb"); err == nil {
+		t.Errorf("DuckDB read %s; the port has no tree for a placeholder table", e.Class)
+	}
+}
+
+// TestParameterInATablePositionReadsEverySpelling covers the property the
+// generator fuzzer checks, in the position that broke it.
+//
+// A parameter naming a relation has to be readable in whatever the dialect
+// WRITES it as. Reading only T-SQL's `@name` let `USE @0` parse in Databricks
+// and come back as `USE ${0}`, which nothing could read again -- a thousand
+// findings from one shortcut.
+func TestParameterInATablePositionReadsEverySpelling(t *testing.T) {
+	for _, dialect := range []string{"", "tsql", "postgres", "duckdb", "databricks"} {
+		for _, sql := range []string{"USE @0", "SELECT * FROM @x", "SELECT * FROM $x", "SELECT * FROM ${x}"} {
+			e, err := ParseOne(sql, dialect)
+			if err != nil {
+				continue // refusing is allowed; writing something unreadable is not
+			}
+			got, err := Generate(e, dialect)
+			if err != nil {
+				continue
+			}
+			if _, err := ParseOne(got, dialect); err != nil {
+				t.Errorf("[%s] %q wrote %q, which it cannot read back: %v", dialect, sql, got, err)
+			}
+		}
+	}
+}

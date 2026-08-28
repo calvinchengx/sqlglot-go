@@ -245,6 +245,20 @@ func (p *parser) parseTable() (*Expression, error) {
 		return nil, p.unsupported("STREAM table")
 	}
 
+	// T-SQL declares a TABLE VARIABLE and then selects from it by name:
+	// `SELECT * FROM @MyTableVar`. The relation is the parameter itself, not
+	// a table called @MyTableVar, and the reference puts the Parameter where
+	// the name would go. It takes no qualifier and no dots.
+	//
+	// EVERY spelling, not just T-SQL's: whatever this dialect writes for a
+	// parameter has to be readable here, or the port emits SQL it cannot read
+	// back. An `@`-only reader here made `USE @0` parse in Databricks and
+	// come back as `USE ${0}`, which nothing could then read -- a thousand
+	// fuzz findings, and the second time the same shortcut has cost that.
+	if param := p.parseParameter(); param != nil {
+		return p.tableRest(New("Table", Arg{"this", param}))
+	}
+
 	parts := []*Expression{}
 	var fn *Expression
 	for {
@@ -311,7 +325,13 @@ func (p *parser) parseTable() (*Expression, error) {
 	}
 
 	markTemporaryTable(table, p.dialect)
+	return p.tableRest(table)
+}
 
+// tableRest reads everything that may FOLLOW a table's name -- its temporal
+// clause, its alias, its hints, its sample and its pivots -- in the order the
+// reference reads them, which is the order they are written.
+func (p *parser) tableRest(table *Expression) (*Expression, error) {
 	// T-SQL's temporal clause hangs off the table, BEFORE the alias in the
 	// text and before it on the node.
 	if p.atWords("FOR", "SYSTEM_TIME") {
