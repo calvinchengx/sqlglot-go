@@ -492,7 +492,17 @@ func (g *generator) writeSubquery(e *Expression) string {
 	for _, pivot := range pivots {
 		out += g.node(pivot)
 	}
-	return out + g.joins(e)
+	out += g.joins(e)
+	// A subquery takes the same modifiers a query does, and they go
+	// OUTSIDE the parentheses: `(SELECT 1) ORDER BY x LIMIT 1` orders
+	// the subquery, not the SELECT inside it, and the two are
+	// different trees for what an engine runs the same way.
+	for _, key := range []string{"order", "limit", "offset"} {
+		if s := g.child(e, key); s != "" {
+			out += " " + s
+		}
+	}
+	return out
 }
 
 func (g *generator) writeWhere(e *Expression) string {

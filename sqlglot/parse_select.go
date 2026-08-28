@@ -60,6 +60,17 @@ func (p *parser) parseQueryBody() (*Expression, error) {
 		}
 		return p.parseSetOperations(this)
 	}
+	// A query may be WRAPPED, and every pair of parentheses is recorded:
+	// `((SELECT 1))` is a Subquery inside a Subquery. Reading it here rather
+	// than only at the statement means the nesting works wherever a query
+	// goes -- inside a CTE, inside a FROM item, on either side of a UNION.
+	if p.opensAParenthesisedQuery() {
+		this, err := p.parseScalarSubquery()
+		if err != nil {
+			return nil, err
+		}
+		return p.parseSetOperations(this)
+	}
 	if !p.at(TokSELECT) {
 		return nil, p.unsupported("query without SELECT")
 	}
@@ -229,10 +240,38 @@ func (p *parser) liftSetOpModifiers(setOp, right *Expression) {
 }
 
 func (p *parser) parseSelectOrParenthesised() (*Expression, error) {
+	if p.opensAParenthesisedQuery() {
+		return p.parseScalarSubquery()
+	}
 	if !p.at(TokSELECT) {
 		return nil, p.unsupported("set operation over something other than a SELECT")
 	}
 	return p.parseSelect()
+}
+
+// opensAParenthesisedQuery reports whether the cursor is on a parenthesis
+// that opens a QUERY rather than an expression.
+//
+// It looks past a run of parentheses, because a query may be wrapped more
+// than once and the reference records every pair: `((SELECT 1))` is a
+// Subquery inside a Subquery, not one with a spare set of brackets.
+func (p *parser) opensAParenthesisedQuery() bool {
+	if !p.at(TokL_PAREN) {
+		return false
+	}
+	for i := 1; ; i++ {
+		next := p.peekAt(i)
+		if next == nil {
+			return false
+		}
+		switch next.Type {
+		case TokL_PAREN:
+		case TokSELECT, TokWITH, TokFROM, TokPIVOT, TokUNPIVOT:
+			return true
+		default:
+			return false
+		}
+	}
 }
 
 // selectPrefix is the key order exp.Select is constructed with.
@@ -1244,4 +1283,39 @@ func (p *parser) parseParenthesisedList() ([]*Expression, error) {
 		return nil, p.unsupported("unclosed grouping")
 	}
 	return out, nil
+}
+
+// opensASetOperation reports whether the cursor is on a parenthesised query
+// that a SET OPERATION follows: `((SELECT 1) UNION SELECT 2)` as a FROM item,
+// where the cursor sits on the inner parenthesis.
+//
+// The plainer question -- does this parenthesis open a query -- is the wrong
+// one HERE, because a parenthesised JOIN TREE begins the same way:
+// `((SELECT 1) CROSS JOIN (SELECT 2))` is a join, not a query, and reading it
+// as one stopped at the JOIN with the parentheses still open. So the group is
+// skipped whole and the token after it is what decides.
+func (p *parser) opensASetOperation() bool {
+	if !p.opensAParenthesisedQuery() {
+		return false
+	}
+	depth := 0
+	for i := 0; ; i++ {
+		next := p.peekAt(i)
+		if next == nil {
+			return false
+		}
+		switch next.Type {
+		case TokL_PAREN:
+			depth++
+		case TokR_PAREN:
+			if depth--; depth == 0 {
+				after := p.peekAt(i + 1)
+				if after == nil {
+					return false
+				}
+				_, isSetOp := setOperations[after.Type]
+				return isSetOp
+			}
+		}
+	}
 }

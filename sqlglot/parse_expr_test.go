@@ -4855,3 +4855,86 @@ func TestPostgresJSONOperators(t *testing.T) {
 		}
 	}
 }
+
+// TestParenthesisedQuery covers a query in parentheses standing where a query
+// stands: as a whole statement, on either side of a set operation, carrying
+// modifiers of its own, and as a FROM item.
+//
+// Every pair of parentheses is recorded. `((SELECT 1))` is a Subquery inside a
+// Subquery, not one with a spare set of brackets, and the modifiers go
+// OUTSIDE them -- `(SELECT 1) ORDER BY x` orders the subquery rather than the
+// SELECT inside it.
+func TestParenthesisedQuery(t *testing.T) {
+	for _, sql := range []string{
+		"(SELECT 1)",
+		"((SELECT 1))",
+		"((SELECT 1)) LIMIT 1",
+		"(SELECT 1) UNION SELECT 2",
+		"(SELECT 1) UNION (SELECT 2)",
+		"(SELECT 1) UNION SELECT 2 ORDER BY x",
+		"(SELECT 1) ORDER BY x LIMIT 1 OFFSET 1",
+		"(SELECT 1 UNION SELECT 2) ORDER BY x LIMIT 1 OFFSET 1",
+		"(SELECT 1 UNION SELECT 2) UNION (SELECT 2 UNION ALL SELECT 3)",
+		"SELECT * FROM ((SELECT 1) UNION SELECT 2) AS t",
+		"SELECT * FROM ((SELECT 1)) AS t",
+		// A parenthesised JOIN TREE begins the same way and is not a query.
+		"SELECT * FROM ((SELECT 1 AS x) CROSS JOIN (SELECT 2 AS y)) AS z",
+		"SELECT * FROM (a CROSS JOIN b)",
+		"SELECT * FROM ((x))",
+	} {
+		e, err := ParseOne(sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+	}
+
+	// The modifiers of a set operation land on the OPERATION, not on the
+	// query that was written last.
+	e, err := ParseOne("(SELECT 1) UNION SELECT 2 ORDER BY x", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if e.Class != "Union" {
+		t.Fatalf("read %s, want Union", e.Class)
+	}
+	if _, ok := e.Args["order"].(*Expression); !ok {
+		t.Error("the ORDER BY is not on the union")
+	}
+	// ...and a modified subquery keeps them on itself.
+	e, err = ParseOne("(SELECT 1) ORDER BY x LIMIT 1 OFFSET 1", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if e.Class != "Subquery" {
+		t.Fatalf("read %s, want Subquery", e.Class)
+	}
+	for _, key := range []string{"order", "limit", "offset"} {
+		if _, ok := e.Args[key].(*Expression); !ok {
+			t.Errorf("the subquery has no %s", key)
+		}
+	}
+}
+
+// A parenthesis that opens neither a query nor a balanced group is refused
+// rather than scanned past the end of the statement.
+func TestUnclosedParenthesisedQuery(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT * FROM ((SELECT 1) UNION",
+		"SELECT * FROM ((SELECT 1)",
+		"SELECT * FROM ((SELECT 1))) AS t",
+		"SELECT * FROM ((SELECT 1",
+		"SELECT * FROM ((SELECT 1)",
+		"(SELECT 1",
+	} {
+		if e, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) read %s", sql, e.Class)
+		}
+	}
+}

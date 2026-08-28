@@ -306,6 +306,26 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) || p.at(TokFROM) {
 		return p.parseQueryBody()
 	}
+	// A query in PARENTHESES is a statement too: `(SELECT 1) UNION SELECT 2`
+	// and `(SELECT 1) ORDER BY x LIMIT 1` are a set operation and a modified
+	// query, not an expression with tokens left over. The reference reads the
+	// parentheses as a Subquery and then continues exactly as it would after
+	// a SELECT -- set operations first, then the modifiers, which is why the
+	// ORDER BY of a union lands on the union.
+	if p.opensAParenthesisedQuery() {
+		this, err := p.parseScalarSubquery()
+		if err != nil {
+			return nil, err
+		}
+		this, err = p.parseSetOperations(this)
+		if err != nil {
+			return nil, err
+		}
+		if err := p.parseQueryModifiers(this); err != nil {
+			return nil, err
+		}
+		return this, nil
+	}
 	// After every statement with a grammar of its own, and before the ones
 	// this port only names: the reference asks in that order too, so a
 	// keyword that is BOTH -- DuckDB's SHOW -- is read as the statement
