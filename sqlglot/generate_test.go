@@ -525,3 +525,16 @@ func TestTopIsParenthesisedUnlessItIsANumber(t *testing.T) {
 		}
 	}
 }
+
+// A JSON operator written with one operand is refused rather than written as
+// half an expression. The node cannot be PARSED that way -- the reference
+// refuses `JSONB_EXTRACT(a)` too -- so this is reachable only from a tree
+// built by hand, which is what the guard above this port does when it rewrites
+// one.
+func TestJSONOperatorNeedsTwoOperands(t *testing.T) {
+	half := New("JSONBExtract", Arg{"this", New("Column",
+		Arg{"this", New("Identifier", Arg{"this", "a"}, Arg{"quoted", false})})})
+	if got, err := Generate(half, "postgres"); err == nil {
+		t.Errorf("wrote %q for a JSONBExtract with one operand", got)
+	}
+}

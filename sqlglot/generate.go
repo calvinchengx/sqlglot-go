@@ -103,6 +103,12 @@ func (g *generator) spell(e *Expression) string {
 	if op, ok := g.tables.BinaryRangeSQL[e.Class]; ok {
 		return g.binary(e, op)
 	}
+	// And so is a JSON operator, in the dialect that READS it as one. The
+	// same node is a function call elsewhere, which the function route below
+	// spells -- so this table is empty for every dialect but PostgreSQL.
+	if op, ok := g.tables.JSONOperatorSQL[e.Class]; ok {
+		return g.jsonOperator(e, op)
+	}
 	if word, ok := g.tables.UnarySQL[e.Class]; ok {
 		if e.Class == "Not" {
 			g.requireCondition(e, "this")
@@ -555,4 +561,24 @@ func anonymousName(e *Expression) (name string, quoted bool) {
 		}
 	}
 	return "", false
+}
+
+// jsonOperator writes one of PostgreSQL's JSON operators.
+//
+// Its right-hand side is PARENTHESISED where it is an operator of its own --
+// a binary, a predicate or a NOT. The parentheses are not in the tree: the
+// same node written as a function call carries none, and `JSONB_EXTRACT(a, n
+// IN (1, 2))` has to come back as `a #> (n IN (1, 2))` or it reads as
+// `(a #> n) IN (1, 2)`, which asks a different question.
+func (g *generator) jsonOperator(e *Expression, op string) string {
+	this, _ := e.Args["this"].(*Expression)
+	other, _ := e.Args["expression"].(*Expression)
+	if this == nil || other == nil {
+		return g.fail(e.Class + " written as an operator without two operands")
+	}
+	right := g.node(other)
+	if isA("Binary", other) || isA("Predicate", other) || other.Class == "Not" {
+		right = "(" + right + ")"
+	}
+	return g.operand(this) + " " + op + " " + right
 }

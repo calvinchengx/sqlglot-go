@@ -340,6 +340,20 @@ func (p *parser) parseBitwise() (*Expression, error) {
 		if c == nil {
 			return this, nil
 		}
+		// PostgreSQL's other JSON operators sit at THIS tier too, and only
+		// there: `1 + x #> 'y'` is `(1 + x) #> 'y'` in PostgreSQL and
+		// `1 + (x #> 'y')` everywhere else, which is the asymmetry the
+		// generator probes for. Elsewhere they are refused rather than read
+		// one tier out.
+		if class, ok := p.tables.JSONOperatorsAtBitwise[c.Type]; ok {
+			p.advance()
+			right, err := p.parseTerm()
+			if err != nil {
+				return nil, err
+			}
+			this = New(class, Arg{"this", this}, Arg{"expression", right})
+			continue
+		}
 		switch {
 		case c.Type == TokARROW || c.Type == TokDARROW:
 			// The JSON arrow is one of these operators, not a level of its

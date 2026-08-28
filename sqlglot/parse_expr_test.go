@@ -4806,3 +4806,52 @@ func TestParameterInATablePositionReadsEverySpelling(t *testing.T) {
 		}
 	}
 }
+
+// TestPostgresJSONOperators covers the three JSON operators PostgreSQL reads
+// level with `||` rather than as accessors.
+func TestPostgresJSONOperators(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"x #> 'y'", "x #> 'y'"},
+		{"x #>> 'y'", "x #>> 'y'"},
+		{"x ? y", "x ? y"},
+		{"x ? 'x'", "x ? 'x'"},
+		// The right-hand side is parenthesised where it is an operator of
+		// its own, and the parentheses are the WRITER's: the same node
+		// written as a call carries none.
+		{"SELECT a #> (n IN (1, 2))", "SELECT a #> (n IN (1, 2))"},
+		{"SELECT JSONB_EXTRACT(a, n IN (1, 2))", "SELECT a #> (n IN (1, 2))"},
+		// The tier shows in the asymmetry: the sum on the left is swallowed,
+		// the one on the right is not.
+		{"1 + x #> 'y'", "1 + x #> 'y'"},
+		{"x #> 'y' + 1", "x #> ('y' + 1)"},
+		{"x #> NOT y", "x #> (NOT y)"},
+	} {
+		e, err := ParseOne(tc.sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		got, err := Generate(e, "postgres")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.want {
+			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
+		}
+	}
+
+	// `1 + x #> 'y'` is `(1 + x) #> 'y'` HERE and `1 + (x #> 'y')` in a
+	// dialect that reads the operator as an accessor. The port reads it in
+	// PostgreSQL alone rather than one tier out everywhere.
+	e, err := ParseOne("1 + x #> 'y'", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if e.Class != "JSONBExtract" {
+		t.Errorf("PostgreSQL read %s on top, want JSONBExtract", e.Class)
+	}
+	for _, dialect := range []string{"", "tsql", "duckdb", "databricks"} {
+		if e, err := ParseOne("x #> 'y'", dialect); err == nil {
+			t.Errorf("[%s] read %s; the operator is PostgreSQL's here", dialect, e.Class)
+		}
+	}
+}

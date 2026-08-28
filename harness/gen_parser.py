@@ -1674,6 +1674,36 @@ def rename_target(dialect: str) -> str:
     return "name"
 
 
+def json_operators_at_bitwise(dialect: str) -> dict:
+    """Which operators this dialect reads at the BITWISE tier, and as what.
+
+    PostgreSQL takes the JSON operators out of the accessor tier and reads
+    them level with `||` -- so `1 + x #> 'y'` is `(1 + x) #> 'y'` there and
+    `1 + (x #> 'y')` everywhere else. DuckDB moves the ARROWS and leaves the
+    rest behind, which is three separate per-dialect facts and exactly the
+    sort of thing to measure rather than transcribe.
+
+    The probe is the asymmetry itself: parse `1 + x <op> 'y'` and look at
+    what ended up on top. The operator's own class means it swallowed the
+    sum, which is the bitwise tier; an Add means it bound tighter.
+    """
+    import sqlglot
+
+    out = {}
+    for token, text in (
+        ("HASH_ARROW", "#>"),
+        ("DHASH_ARROW", "#>>"),
+        ("PLACEHOLDER", "?"),
+    ):
+        try:
+            top = sqlglot.parse_one(f"1 + x {text} 'y'", read=dialect or None)
+        except Exception:  # noqa: BLE001
+            continue
+        if type(top).__name__ != "Add":
+            out[token] = (type(top).__name__, text)
+    return out
+
+
 def truncates_catalog(dialect: str) -> bool:
     """Whether a three-part name is written with only two of them.
 
@@ -4014,6 +4044,16 @@ def main() -> int:
         "\tBinaryRangeOps map[TokenType]string\n",
         "\t// BinaryRangeSQL is how each of those is written back.\n",
         "\tBinaryRangeSQL map[string]string\n",
+        "\t// JSONOperatorsAtBitwise are the operators this dialect reads\n",
+        "\t// level with `||` rather than as an accessor binding tighter\n",
+        "\t// than arithmetic. Probed by the asymmetry: `1 + x #> 'y'` is\n",
+        "\t// `(1 + x) #> 'y'` where the operator is here, and\n",
+        "\t// `1 + (x #> 'y')` where it is not.\n",
+        "\tJSONOperatorsAtBitwise map[TokenType]string\n",
+        "\t// JSONOperatorSQL is how each of those is written back, which\n",
+        "\t// is only ever in the dialect that reads it there: elsewhere\n",
+        "\t// the same node is a function call.\n",
+        "\tJSONOperatorSQL map[string]string\n",
         "\t// TypeTokens maps a type keyword to the DataType.Type member the\n",
         "\t// reference records. A few type tokens have no member and are absent,\n",
         "\t// which refuses them rather than inventing one.\n",
@@ -4767,6 +4807,18 @@ def main() -> int:
         spellings = {v["class"]: v["op"] for v in _br.values() if v["op"]}
         body = "".join(f"\t\t\t{gostr(k)}: {gostr(v)},\n" for k, v in sorted(spellings.items()))
         out.append(f"\t\tBinaryRangeSQL: map[string]string{{\n{body}\t\t}},\n")
+        _jb = json_operators_at_bitwise(name)
+        body = "".join(
+            f"\t\t\tTok{k}: {gostr(v[0])},\n" for k, v in sorted(_jb.items())
+        )
+        out.append(
+            f"\t\tJSONOperatorsAtBitwise: map[TokenType]string{{\n{body}\t\t}},\n"
+        )
+        body = "".join(
+            f"\t\t\t{gostr(v[0])}: {gostr(v[1])},\n"
+            for v in sorted(_jb.values())
+        )
+        out.append(f"\t\tJSONOperatorSQL: map[string]string{{\n{body}\t\t}},\n")
         types = {t: exp.DType[t.name] for t in P.TYPE_TOKENS if t.name in exp.DType.__members__}
         body = "".join(
             f"\t\t\tTok{t.name}: {gostr(v.value)},\n"

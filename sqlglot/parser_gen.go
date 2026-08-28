@@ -539,6 +539,16 @@ type ParserTables struct {
 	BinaryRangeOps map[TokenType]string
 	// BinaryRangeSQL is how each of those is written back.
 	BinaryRangeSQL map[string]string
+	// JSONOperatorsAtBitwise are the operators this dialect reads
+	// level with `||` rather than as an accessor binding tighter
+	// than arithmetic. Probed by the asymmetry: `1 + x #> 'y'` is
+	// `(1 + x) #> 'y'` where the operator is here, and
+	// `1 + (x #> 'y')` where it is not.
+	JSONOperatorsAtBitwise map[TokenType]string
+	// JSONOperatorSQL is how each of those is written back, which
+	// is only ever in the dialect that reads it there: elsewhere
+	// the same node is a function call.
+	JSONOperatorSQL map[string]string
 	// TypeTokens maps a type keyword to the DataType.Type member the
 	// reference records. A few type tokens have no member and are absent,
 	// which refuses them rather than inventing one.
@@ -4155,6 +4165,8 @@ var parserTables = map[string]*ParserTables{
 			"Overlaps":     "OVERLAPS",
 			"SimilarTo":    "SIMILAR TO",
 		},
+		JSONOperatorsAtBitwise: map[TokenType]string{},
+		JSONOperatorSQL:        map[string]string{},
 		TypeTokens: map[TokenType]string{
 			TokBIT:                     "BIT",
 			TokBOOLEAN:                 "BOOLEAN",
@@ -7817,6 +7829,8 @@ var parserTables = map[string]*ParserTables{
 			"Overlaps":     "OVERLAPS",
 			"SimilarTo":    "SIMILAR TO",
 		},
+		JSONOperatorsAtBitwise: map[TokenType]string{},
+		JSONOperatorSQL:        map[string]string{},
 		TypeTokens: map[TokenType]string{
 			TokBIT:                     "BIT",
 			TokBOOLEAN:                 "BOOLEAN",
@@ -11533,6 +11547,16 @@ var parserTables = map[string]*ParserTables{
 			"RegexpILike":             "~*",
 			"RegexpLike":              "~",
 			"SimilarTo":               "SIMILAR TO",
+		},
+		JSONOperatorsAtBitwise: map[TokenType]string{
+			TokDHASH_ARROW: "JSONBExtractScalar",
+			TokHASH_ARROW:  "JSONBExtract",
+			TokPLACEHOLDER: "JSONBContainsTopKey",
+		},
+		JSONOperatorSQL: map[string]string{
+			"JSONBContainsTopKey": "?",
+			"JSONBExtract":        "#>",
+			"JSONBExtractScalar":  "#>>",
 		},
 		TypeTokens: map[TokenType]string{
 			TokBIT:                     "BIT",
@@ -15428,6 +15452,8 @@ var parserTables = map[string]*ParserTables{
 			"Overlaps":         "OVERLAPS",
 			"SimilarTo":        "SIMILAR TO",
 		},
+		JSONOperatorsAtBitwise: map[TokenType]string{},
+		JSONOperatorSQL:        map[string]string{},
 		TypeTokens: map[TokenType]string{
 			TokBIT:                     "BIT",
 			TokBOOLEAN:                 "BOOLEAN",
@@ -19322,6 +19348,8 @@ var parserTables = map[string]*ParserTables{
 			"Overlaps":     "OVERLAPS",
 			"SimilarTo":    "SIMILAR TO",
 		},
+		JSONOperatorsAtBitwise: map[TokenType]string{},
+		JSONOperatorSQL:        map[string]string{},
 		TypeTokens: map[TokenType]string{
 			TokBIT:                     "BIT",
 			TokBOOLEAN:                 "BOOLEAN",
