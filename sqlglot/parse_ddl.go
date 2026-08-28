@@ -154,7 +154,10 @@ func (p *parser) parseCreate() (*Expression, error) {
 	}
 
 	var items []*Expression
-	if temporary {
+	// T-SQL says a table is temporary by writing a # in front of its name
+	// rather than the word TEMPORARY, and the reference records BOTH: the
+	// mark stays on the name and a TemporaryProperty is added beside it.
+	if temporary || namesATemporaryTable(createdTable(this)) {
 		items = append(items, New("TemporaryProperty"))
 	}
 	if withData != nil {
@@ -259,7 +262,34 @@ func (p *parser) parseTableName() (*Expression, error) {
 	for i := range parts {
 		table.Set(names[i], parts[len(parts)-1-i])
 	}
+	markTemporaryTable(table, p.dialect)
 	return table, nil
+}
+
+// markTemporaryTable takes T-SQL's # off a table name that was WRITTEN with
+// the mark inside its quotes.
+//
+// `#foo` arrives as a HASH token and parseIdentifier reads it. `[#foo]` is one
+// token whose text carries the mark, and the reference strips it HERE, where
+// it knows the name belongs to a table: a column called `[#x]` keeps its mark
+// in the name, because a column is never temporary.
+func markTemporaryTable(table *Expression, dialect string) {
+	if dialect != "tsql" {
+		return
+	}
+	name, _ := table.Args["this"].(*Expression)
+	if name == nil || name.Class != "Identifier" {
+		return
+	}
+	text, _ := name.Args["this"].(string)
+	switch {
+	case strings.HasPrefix(text, "##"):
+		name.Set("this", strings.TrimPrefix(text, "##"))
+		name.Set("global_", true)
+	case strings.HasPrefix(text, "#"):
+		name.Set("this", strings.TrimPrefix(text, "#"))
+		name.Set("temporary", true)
+	}
 }
 
 // writeClasses are the statements that CHANGE something. A guard deciding
@@ -3273,4 +3303,26 @@ func (p *parser) atUnquotedWord(word string) bool {
 	c := p.curr()
 	return c != nil && c.Type != TokIDENTIFIER && c.Type != TokSTRING &&
 		strings.EqualFold(c.Text, word)
+}
+
+// namesATemporaryTable reports whether a table's own name carries T-SQL's
+// mark for a temporary one. The mark lives on the Identifier, and two nodes
+// above it -- an Into and a Create -- record it again.
+func namesATemporaryTable(table *Expression) bool {
+	if table == nil || table.Class != "Table" {
+		return false
+	}
+	name, _ := table.Args["this"].(*Expression)
+	return name != nil && name.Args["temporary"] == true
+}
+
+// createdTable digs the table out of what a CREATE was given, which is the
+// table itself where no columns were written and a Schema wrapping it where
+// they were.
+func createdTable(this *Expression) *Expression {
+	if this != nil && this.Class == "Schema" {
+		inner, _ := this.Args["this"].(*Expression)
+		return inner
+	}
+	return this
 }

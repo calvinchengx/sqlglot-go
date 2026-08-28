@@ -1085,6 +1085,13 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		}
 		return New("Paren", Arg{"this", inner}), nil
 	}
+	// T-SQL's mark for a temporary table stands in front of a NAME wherever a
+	// name may stand -- including a projection, where `SELECT #x` is a column
+	// carrying the mark rather than an operator applied to one. Nothing else
+	// in T-SQL begins with a #, so the token settles it on its own.
+	if p.dialect == "tsql" && p.at(TokHASH) {
+		return p.parseColumn()
+	}
 	if p.atIdentifier() {
 		// These names have a PARSER of their own in the reference, not a
 		// signature -- and the refusal used to fire on the name alone. But
@@ -2012,24 +2019,38 @@ func (p *parser) parseColumn() (*Expression, error) {
 }
 
 func (p *parser) parseIdentifier() (*Expression, error) {
+	// T-SQL writes a temporary table's name with a # in front of it, and a
+	// GLOBAL one with two. The marks are not part of the name: the reference
+	// takes them off and records a flag, and the writer puts them back.
+	//
+	// The tokenizer hands them over as HASH tokens of their own, so this is
+	// where they are read -- and it is every identifier rather than only a
+	// table's, because `SELECT #x` is a column with the same mark on it.
+	temporary, global := false, false
+	if p.dialect == "tsql" && p.at(TokHASH) {
+		p.advance()
+		temporary = true
+		if p.at(TokHASH) {
+			p.advance()
+			global, temporary = true, false
+		}
+	}
 	if !p.atIdentifier() {
 		return nil, p.unsupported("identifier")
 	}
 	c := p.curr()
-	// T-SQL strips a leading # from some identifiers and not others -- the
-	// temp-table rule. Refuse rather than reproduce half of it.
-	if p.dialect == "tsql" && strings.Contains(c.Text, "#") {
-		return nil, p.unsupported("T-SQL temp-table identifier")
-	}
-	if c.Type == TokIDENTIFIER {
-		p.advance()
-		return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true}), nil
-	}
 	p.advance()
 	// The token's text, not its upper-cased keyword spelling: a keyword used
 	// as a name keeps the case it was written in, and the tokenizer only
 	// upper-cases the keywords it finds through the trie.
-	return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", false}), nil
+	name := New("Identifier", Arg{"this", c.Text}, Arg{"quoted", c.Type == TokIDENTIFIER})
+	if temporary {
+		name.Set("temporary", true)
+	}
+	if global {
+		name.Set("global_", true)
+	}
+	return name, nil
 }
 
 // atIdentifier reports whether the current token can stand in for a name --

@@ -732,14 +732,24 @@ func (g *generator) writeIdentifier(e *Expression) string {
 		// The generator fuzzer found it.
 		return g.fail(e.Class + " whose name is not a name")
 	}
+	// T-SQL's mark for a temporary table, which the parser took off the name
+	// and recorded here. It goes INSIDE the quoting -- `[#foo]`, not `#[foo]`
+	// -- because it is part of the name as the engine reads it.
+	prefix := ""
+	switch {
+	case e.Args["global_"] == true:
+		prefix = "##"
+	case e.Args["temporary"] == true:
+		prefix = "#"
+	}
 	if quoted {
 		// The delimiters the dialect WRITES, which are not always the ones it
 		// reads: T-SQL accepts "x" and writes [x]. A closing delimiter inside
 		// the name is doubled, or the name would end early.
 		open, close := g.tables.IdentifierStart, g.tables.IdentifierEnd
-		return open + strings.ReplaceAll(name, close, close+close) + close
+		return open + prefix + strings.ReplaceAll(name, close, close+close) + close
 	}
-	return name
+	return prefix + name
 }
 
 func (g *generator) writeLiteral(e *Expression) string {
@@ -2118,14 +2128,23 @@ func (g *generator) writeCreate(e *Expression) string {
 		out += "UNIQUE "
 	}
 	if g.hasTemporaryProperty(e) {
-		// Not every dialect has the modifier. T-SQL renames the object to
-		// `#name` instead, and Databricks writes a temporary TABLE with a
-		// storage format it was never given -- both say something the
-		// statement did not.
-		if !g.tables.TemporaryWritten[kind] {
+		this, _ := e.Args["this"].(*Expression)
+		switch {
+		// T-SQL says it in the NAME rather than with the word, and where the
+		// name already carries the mark there is nothing more to write: the
+		// property and the mark are two records of one fact, and the writer
+		// of the name has put it back already.
+		case namesATemporaryTable(createdTable(this)):
+		case !g.tables.TemporaryWritten[kind]:
+			// Not every dialect has the modifier, and the ones that do not
+			// say it some other way. Writing the object under a DIFFERENT
+			// NAME is not a spelling difference, and Databricks writes a
+			// temporary TABLE with a storage format it was never given --
+			// both say something the statement did not.
 			return g.fail(e.Class + " TEMPORARY " + kind + ", which this dialect writes another way")
+		default:
+			out += "TEMPORARY "
 		}
-		out += "TEMPORARY "
 	}
 	out += kind + " "
 	if concurrently, _ := e.Args["concurrently"].(bool); concurrently {

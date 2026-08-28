@@ -4649,3 +4649,86 @@ func TestChainEndingInACall(t *testing.T) {
 		t.Errorf("a[b].C() read its index as %v, want one Identifier", index)
 	}
 }
+
+// TestTsqlTemporaryTables covers the # T-SQL writes in front of a temporary
+// table's name, and the ## it writes in front of a global one.
+//
+// The mark is not part of the name. The reference takes it off and records a
+// flag on the Identifier, and the writer puts it back -- which is why the
+// port refused all of this until the rule was worked out rather than
+// reproducing half of it.
+func TestTsqlTemporaryTables(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT * FROM #foo",
+		"SELECT * FROM ##foo",
+		"SELECT #x",
+		"SELECT ##x",
+		"SELECT a FROM #t AS x",
+		"CREATE TABLE #mytemptable (a INTEGER)",
+		"WITH t(c) AS (SELECT 1) SELECT c INTO #foo FROM t",
+		// Written inside the quoting, and read back out of it.
+		"SELECT * FROM [#temp_table]",
+		"SELECT * FROM [##temp_table]",
+		"CREATE TABLE [#temptest] (name INTEGER)",
+		// A COLUMN is never temporary, so a quoted name keeps its mark: the
+		// stripping happens where the name is known to be a table's.
+		"SELECT [#a]",
+		"SELECT a#b",
+		"SELECT * FROM ##g.t",
+	} {
+		e, err := ParseOne(sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "tsql")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+	}
+}
+
+// TestTsqlTemporaryIsRecordedTwice covers where the mark ends up: on the name,
+// and again on the node above it.
+func TestTsqlTemporaryIsRecordedTwice(t *testing.T) {
+	e, err := ParseOne("SELECT * FROM #foo", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	from, _ := e.Args["from_"].(*Expression)
+	table, _ := from.Args["this"].(*Expression)
+	name, _ := table.Args["this"].(*Expression)
+	if got, _ := name.Args["this"].(string); got != "foo" {
+		t.Errorf("the name is %q; the mark is not part of it", got)
+	}
+	if name.Args["temporary"] != true {
+		t.Error("the name does not carry the mark")
+	}
+
+	// A SELECT INTO promotes it onto the Into.
+	into, err := ParseOne("SELECT c INTO #foo FROM t", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	node, _ := into.Args["into"].(*Expression)
+	if node.Args["temporary"] != true {
+		t.Error("the INTO does not carry the mark")
+	}
+
+	// ...and a CREATE gains a TemporaryProperty beside it, which is what
+	// lets a dialect that spells it with a word write the same tree.
+	create, err := ParseOne("CREATE TABLE #t (a INT)", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	props, _ := create.Args["properties"].(*Expression)
+	if props == nil {
+		t.Fatal("the CREATE has no properties")
+	}
+	items, _ := props.Args["expressions"].([]*Expression)
+	if len(items) != 1 || items[0].Class != "TemporaryProperty" {
+		t.Errorf("the CREATE's properties are %v, want one TemporaryProperty", items)
+	}
+}

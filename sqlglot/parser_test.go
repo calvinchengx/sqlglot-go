@@ -152,9 +152,11 @@ func TestRefusals(t *testing.T) {
 		{"unclosed parenthesis", "SELECT (1", ""},
 		{"empty expression", "SELECT", ""},
 		{"T-SQL alias assignment", "SELECT a = 1", "tsql"},
-		{"T-SQL temp table", "SELECT * FROM #t", "tsql"},
-		{"T-SQL temp table as a column", "SELECT [#a]", "tsql"},
-		{"T-SQL hash inside a name", "SELECT a#b", "tsql"},
+		// A # can no longer stand alone in front of a name: it is the mark
+		// on a temporary table and is read. `SELECT a #b` is what is left --
+		// an IMPLICIT alias carrying the mark, which this port does not read
+		// in that position.
+		{"T-SQL temp mark on an implicit alias", "SELECT a #b", "tsql"},
 		{"dangling HAVING", "SELECT a FROM t HAVING", ""},
 		{"dangling conjunction", "SELECT 1 WHERE a AND", ""},
 		{"dangling disjunction", "SELECT 1 WHERE a OR", ""},

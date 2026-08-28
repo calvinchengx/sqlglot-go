@@ -310,6 +310,8 @@ func (p *parser) parseTable() (*Expression, error) {
 		}
 	}
 
+	markTemporaryTable(table, p.dialect)
+
 	// T-SQL's temporal clause hangs off the table, BEFORE the alias in the
 	// text and before it on the node.
 	if p.atWords("FOR", "SYSTEM_TIME") {

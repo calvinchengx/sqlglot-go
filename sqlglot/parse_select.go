@@ -302,8 +302,10 @@ func (p *parser) parseSelect() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// T-SQL's # marks the TABLE as temporary, and the reference promotes
+		// that up onto the INTO as well as leaving it on the name.
 		sel.Set("into", New("Into", Arg{"this", target},
-			Arg{"temporary", false}, Arg{"unlogged", unlogged}))
+			Arg{"temporary", namesATemporaryTable(target)}, Arg{"unlogged", unlogged}))
 	}
 
 	if p.at(TokFROM) {
