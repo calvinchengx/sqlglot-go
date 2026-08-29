@@ -5357,3 +5357,114 @@ func TestFormatBuilder(t *testing.T) {
 		t.Errorf("duckdb read FORMAT as %v, want a Format", call)
 	}
 }
+
+// TestCeilFloor covers the grammar CEIL and FLOOR are given for the sake of
+// one spelling: the unit they round TO.
+func TestCeilFloor(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT CEIL(a)",
+		"SELECT FLOOR(a)",
+		"SELECT CEIL(a, b)",
+		"SELECT FLOOR(a, b)",
+	} {
+		e, err := ParseOne(sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+	}
+
+	// An absent second argument is ABSENT, not present and empty.
+	e, err := ParseOne("SELECT FLOOR(a)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call := e.Args["expressions"].([]*Expression)[0]
+	if _, ok := call.Args["decimals"]; ok {
+		t.Errorf("a one-argument FLOOR carries decimals = %v", call.Args["decimals"])
+	}
+
+	// The unit is a Var built from the word as written, and it is not one of
+	// the arguments -- `FLOOR(x TO DAY)` is a Floor of ONE thing.
+	e, err = ParseOne("SELECT FLOOR(a TO DAY)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call = e.Args["expressions"].([]*Expression)[0]
+	unit, _ := call.Args["to"].(*Expression)
+	if unit == nil || unit.Class != "Var" || unit.Args["this"] != "DAY" {
+		t.Errorf("the unit is %v, want Var(DAY)", unit)
+	}
+	if got, err := Generate(e, ""); err != nil || got != "SELECT FLOOR(a TO DAY)" {
+		t.Errorf("wrote %q, %v", got, err)
+	}
+
+	for _, sql := range []string{
+		// TO wants a word, and a string is not one.
+		"SELECT FLOOR(a TO 'DAY')",
+		"SELECT FLOOR(a TO)",
+		// Two is all the reference reads; a third would be dropped.
+		"SELECT FLOOR(a, b, c)",
+		"SELECT FLOOR(a",
+	} {
+		if e, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("read %q as %v, want a refusal", sql, e)
+		}
+	}
+}
+
+// TestOverlay covers OVERLAY, which replaces part of a string and can be
+// written with words or with commas between the same four pieces.
+func TestOverlay(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT OVERLAY(a PLACING b FROM 1)",
+		"SELECT OVERLAY(a PLACING b FROM 1 FOR 1)",
+	} {
+		e, err := ParseOne(sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "postgres")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+	}
+
+	// Commas and words build the same node, which is why the comma form is
+	// written back out in the word form.
+	commas, err := ParseOne("SELECT OVERLAY('Spark SQL', 'ANSI ', 7, 0)", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	words, err := ParseOne("SELECT OVERLAY('Spark SQL' PLACING 'ANSI ' FROM 7 FOR 0)", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if !commas.Equal(words) {
+		t.Errorf("the comma form read as a different tree:\n%v\n%v", commas, words)
+	}
+
+	// A call may stop after any of the pieces, and the ones it did not reach
+	// are absent rather than empty.
+	e, err := ParseOne("SELECT OVERLAY(a PLACING b FROM 1)", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call := e.Args["expressions"].([]*Expression)[0]
+	if _, ok := call.Args["for_"]; ok {
+		t.Errorf("a three-piece OVERLAY carries for_ = %v", call.Args["for_"])
+	}
+
+	if e, err := ParseOne("SELECT OVERLAY(a PLACING b FROM 1", "postgres"); err == nil {
+		t.Errorf("read an unclosed OVERLAY as %v", e)
+	}
+}

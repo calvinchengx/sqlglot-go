@@ -3137,6 +3137,10 @@ EXTRA_SHAPES = {
     "Substring": [(("this",), ()), (("this", "start"), ()), (("this", "start", "length"), ())],
     "StrPosition": [(("this", "substr"), ())],
     "Extract": [(("this", "expression"), ())],
+    # The unit a rounding rounds TO. The corpus never writes one, so no shape
+    # was observed for it -- and the port reads the grammar that produces it.
+    "Ceil": [(("this", "to"), ())],
+    "Floor": [(("this", "to"), ())],
 }
 
 

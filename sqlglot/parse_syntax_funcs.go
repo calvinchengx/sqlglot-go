@@ -25,6 +25,12 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseStringAgg()
 	case "JSON_OBJECT":
 		return p.parseJSONObject()
+	case "CEIL":
+		return p.parseCeilFloor("Ceil")
+	case "FLOOR":
+		return p.parseCeilFloor("Floor")
+	case "OVERLAY":
+		return p.parseOverlay()
 	}
 	return nil, p.unsupported("function " + upper + " with a syntax of its own")
 }
@@ -359,4 +365,109 @@ func (p *parser) atNullHandling() string {
 		}
 	}
 	return ""
+}
+
+// CEIL and FLOOR are ordinary-looking calls with one extra spelling: a unit to
+// round TO. The reference gives them a grammar of their own for that alone --
+// `FLOOR(x TO DAY)` is a Floor with a unit, not a Floor of two things.
+//
+// Both build the same shape, so the class is the only difference between them.
+func (p *parser) parseCeilFloor(class string) (*Expression, error) {
+	p.advance()
+	p.advance()
+
+	var args []*Expression
+	if !p.at(TokR_PAREN) {
+		for {
+			var arg *Expression
+			var err error
+			if p.atLambda() {
+				arg, err = p.parseLambda()
+			} else {
+				arg, err = p.parseExpression()
+			}
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, arg)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
+
+	var unit *Expression
+	if p.atUnquotedWord("TO") {
+		p.advance()
+		// The reference asks for a VAR and takes a placeholder otherwise; a
+		// unit written any other way is not a unit it would read either.
+		c := p.curr()
+		if c == nil || c.Type != TokVAR {
+			return nil, p.unsupported("TO without a unit")
+		}
+		p.advance()
+		unit = New("Var", Arg{"this", c.Text})
+	}
+
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed " + strings.ToUpper(class))
+	}
+	// An absent argument is absent rather than present-and-empty: the
+	// reference's constructor drops the Nones, and the dump compares keys.
+	node := New(class)
+	if this := argAt(args, 0); this != nil {
+		node.Set("this", this)
+	}
+	if decimals := argAt(args, 1); decimals != nil {
+		node.Set("decimals", decimals)
+	}
+	if unit != nil {
+		node.Set("to", unit)
+	}
+	if len(args) > 2 {
+		return nil, p.unsupported("more arguments to " + strings.ToUpper(class) + " than it reads")
+	}
+	return node, nil
+}
+
+// OVERLAY(x PLACING y FROM a FOR b) replaces part of a string, and the same
+// call can be written with commas instead of the words. Each of the three
+// pieces after the first is read the same way -- a comma or the word that
+// introduces it, then an expression -- so a call may stop after any of them.
+func (p *parser) parseOverlay() (*Expression, error) {
+	p.advance()
+	p.advance()
+
+	this, err := p.parseBitwise()
+	if err != nil {
+		return nil, err
+	}
+	node := New("Overlay", Arg{"this", this})
+	for _, part := range []struct{ word, key string }{
+		{"PLACING", "expression"},
+		{"FROM", "from_"},
+		{"FOR", "for_"},
+	} {
+		if !p.match(TokCOMMA) && !p.matchUnquotedWord(part.word) {
+			break
+		}
+		arg, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		node.Set(part.key, arg)
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed OVERLAY")
+	}
+	return node, nil
+}
+
+// matchUnquotedWord consumes the current token when it spells this word.
+func (p *parser) matchUnquotedWord(word string) bool {
+	if !p.atUnquotedWord(word) {
+		return false
+	}
+	p.advance()
+	return true
 }
