@@ -1059,6 +1059,26 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		}
 		return New("Paren", Arg{"this", inner}), nil
 	}
+	// PostgreSQL's VARIADIC spreads an array over a call's parameters:
+	// `MLEAST(VARIADIC ARRAY[10, -1])`. It is the word and then an
+	// expression -- a no-paren function in the reference's terms, not
+	// anything the call's own signature knows about -- and only PostgreSQL
+	// has it, which is what its own table of no-paren names says. The token
+	// has a type of its own, so this stands in front of the name branch
+	// rather than inside it.
+	//
+	// The operand is a BITWISE expression: `VARIADIC a || b` spreads the
+	// concatenation, and a comma ends it.
+	if c.Type == TokVARIADIC {
+		if _, ok := p.tables.NoParenFunctionNames["VARIADIC"]; ok {
+			p.advance()
+			inner, err := p.parseBitwise()
+			if err != nil {
+				return nil, err
+			}
+			return New("Variadic", Arg{"this", inner}), nil
+		}
+	}
 	// T-SQL's mark for a temporary table stands in front of a NAME wherever a
 	// name may stand -- including a projection, where `SELECT #x` is a column
 	// carrying the mark rather than an operator applied to one. Nothing else
@@ -2230,11 +2250,18 @@ func (p *parser) buildJSONPathFunction(spec JSONPathFunc, args []*Expression) *E
 	var tail []*Expression
 	switch {
 	case spec.Fold:
-		// Every argument has to be a string literal for the fold to happen.
-		// Handed anything else the reference cannot transpile it and lays the
-		// arguments out positionally instead -- a different tree, so the port
-		// refuses rather than folding something it was not given.
+		// Every argument has to be a LITERAL for the fold to happen. Handed
+		// anything else the reference cannot transpile it and lays the
+		// arguments out positionally instead -- `this`, `expression` and
+		// whatever is left -- which is how `JSON_EXTRACT_PATH(a, VARIADIC
+		// '{}')` keeps the VARIADIC where the path would be.
 		for _, arg := range args[1:] {
+			if arg.Class != "Literal" {
+				return p.positionalJSONPathCall(spec, args)
+			}
+			// A literal that is not a STRING is one this port does not fold
+			// yet, and folding it wrongly would build a path the reference
+			// did not.
 			if !isStringLiteral(arg) {
 				return nil
 			}
@@ -2665,4 +2692,33 @@ func parameterName(n *Token) *Expression {
 		return New("Literal", Arg{"this", n.Text}, Arg{"is_string", false})
 	}
 	return New("Var", Arg{"this", n.Text})
+}
+
+// positionalJSONPathCall is the reference's fallback for a path-folding
+// function handed something it cannot fold: the arguments are laid out
+// positionally rather than turned into a path.
+//
+// It is a DIFFERENT tree from the folded one, not a worse version of it --
+// `JSON_EXTRACT_PATH(a, x)` cannot be a path because x is not known here, and
+// the reference says so by keeping the argument where it was written.
+//
+// The GENERATOR does not write this shape yet. PostgreSQL spells a JSON
+// extraction one argument per path part, and every template it has quotes the
+// part -- so a tree whose parts are columns has no form to go into, and the
+// writer refuses rather than quoting a column into a string. Reading these is
+// worth having on its own: a guard asking which columns a statement touches
+// gets an answer where it used to get a refusal.
+func (p *parser) positionalJSONPathCall(spec JSONPathFunc, args []*Expression) *Expression {
+	out := []Arg{{"this", args[0]}}
+	if len(args) > 1 {
+		out = append(out, Arg{"expression", args[1]})
+	}
+	if len(args) > 2 {
+		out = append(out, Arg{"expressions", args[2:]})
+	}
+	// The constants the FOLDED form carries are not set here. The reference
+	// adds them beside the path it built, and this shape has no path -- so
+	// `only_json_types` is absent rather than present-and-false, which is a
+	// different tree and the differential said so.
+	return New(spec.Class, out...)
 }

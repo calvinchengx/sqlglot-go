@@ -110,10 +110,13 @@ func TestJSONPathFunctionRefusals(t *testing.T) {
 		// it. Building a Literal instead would be a different tree.
 		{"a key the path grammar cannot read", "databricks",
 			"SELECT GET_JSON_OBJECT(c, '$.x-y')"},
-		// A fold needs every key to be a string; handed anything else the
-		// reference lays the arguments out positionally instead.
-		{"a fold over something that is not a string", "postgres",
-			"SELECT JSON_EXTRACT_PATH(x, k1, k2)"},
+		// A fold needs every key to be a LITERAL; handed a non-literal the
+		// reference lays the arguments out positionally instead, which the
+		// port now builds. A literal that is not a STRING is the case still
+		// refused: folding a number needs the subscript rules and folding it
+		// wrongly would build a path the reference did not.
+		{"a fold over a literal that is not a string", "postgres",
+			"SELECT JSON_EXTRACT_PATH(x, 1)"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if _, err := ParseOne(tc.sql, tc.dialect); err == nil {
@@ -4935,6 +4938,65 @@ func TestUnclosedParenthesisedQuery(t *testing.T) {
 	} {
 		if e, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) read %s", sql, e.Class)
+		}
+	}
+}
+
+// TestVariadic covers PostgreSQL's VARIADIC, which spreads an array over a
+// call's parameters.
+func TestVariadic(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT MLEAST(VARIADIC ARRAY[10, -1, 5, 4.4])",
+		"SELECT F(VARIADIC a)",
+		"SELECT F(VARIADIC a || b)",
+	} {
+		e, err := ParseOne(sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "postgres")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+	}
+	// Only PostgreSQL has the word; elsewhere it is not a no-paren function
+	// and the port has no tree for it.
+	for _, dialect := range []string{"", "tsql", "duckdb", "databricks"} {
+		if e, err := ParseOne("SELECT F(VARIADIC a)", dialect); err == nil {
+			t.Errorf("[%s] read %s; VARIADIC is PostgreSQL's", dialect, e.Class)
+		}
+	}
+}
+
+// TestJSONPathFunctionPositionalForm covers what a path-folding function does
+// with an argument it cannot fold into a path.
+//
+// The reference lays the arguments out where they were written rather than
+// building a path, and the port now reads that shape. It does not WRITE it:
+// PostgreSQL spells the extraction one argument per part and quotes each one,
+// so a part that is a column has no form to go into.
+func TestJSONPathFunctionPositionalForm(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT JSON_EXTRACT_PATH(x, k1, k2) FROM t",
+		"SELECT JSON_EXTRACT_PATH(x, k1, 'k2') FROM t",
+		"SELECT JSON_EXTRACT_PATH(a, VARIADIC '{}') FROM t",
+		"SELECT JSON_EXTRACT_PATH_TEXT(x, k1, k2) FROM t",
+	} {
+		e, err := ParseOne(sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		// The arguments stay where they were written: no path is built, and
+		// the constants the folded form carries are absent rather than
+		// present-and-false.
+		if _, ok := e.Args["expressions"]; !ok {
+			t.Fatalf("%q: no projections", sql)
+		}
+		if _, refused := Generate(e, "postgres"); refused == nil {
+			t.Errorf("%q was written back; the port has no form for it", sql)
 		}
 	}
 }
