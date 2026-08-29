@@ -21,6 +21,7 @@ var generators map[string]func(*generator, *Expression) string
 func init() {
 	generators = map[string]func(*generator, *Expression) string{
 		"Select":                              (*generator).writeSelect,
+		"TimeToStr":                           (*generator).writeTimeToStr,
 		"Union":                               (*generator).writeSetOperation,
 		"Except":                              (*generator).writeSetOperation,
 		"Intersect":                           (*generator).writeSetOperation,
@@ -3775,4 +3776,27 @@ func (g *generator) writeLoadData(e *Expression) string {
 // writeKwarg writes a named argument: `years => 1`.
 func (g *generator) writeKwarg(e *Expression) string {
 	return g.child(e, "this") + " => " + g.child(e, "expression")
+}
+
+// writeTimeToStr spells T-SQL's FORMAT back out.
+//
+// The format the tree carries is the reference's own spelling, and T-SQL wants
+// its own back: `%Y-%m-%d` is written `yyyy-MM-dd`. The probe recorded the
+// call's shape from a placeholder column, where this branch is not taken, so
+// the template it produced writes the stored spelling verbatim -- which is a
+// different format string, not just a different way of writing one.
+//
+// Everywhere else this class is a call like any other, and falls through.
+func (g *generator) writeTimeToStr(e *Expression) string {
+	format, _ := e.Args["format"].(*Expression)
+	if len(g.tables.InverseTimeMapping) == 0 || len(g.tables.FormatTimeMapping) == 0 ||
+		!isStringLiteral(format) {
+		return g.spell(e)
+	}
+	text, _ := format.Args["this"].(string)
+	out := e.shallowCopy()
+	out.Set("format", New("Literal",
+		Arg{"this", formatTime(text, g.tables.InverseTimeMapping)},
+		Arg{"is_string", true}))
+	return g.spell(out)
 }

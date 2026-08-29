@@ -5270,3 +5270,90 @@ func TestNamedArgument(t *testing.T) {
 		t.Errorf("read %s for a named argument with no value", e.Class)
 	}
 }
+
+// TestFormatBuilder covers T-SQL's FORMAT, whose builder reads the format it
+// is handed rather than only placing it.
+func TestFormatBuilder(t *testing.T) {
+	for _, tc := range []struct {
+		sql   string
+		class string
+		// The format the tree ends up carrying, "" for none at all.
+		format string
+	}{
+		// A date field anywhere makes it a time format, rewritten into the
+		// reference's own spelling.
+		{"SELECT FORMAT(a, 'yyyy-MM-dd HH:mm:ss.ffffff')", "TimeToStr", "%Y-%m-%d %H:%M:%S.%f"},
+		{"SELECT FORMAT(a, 'MMMM')", "TimeToStr", "%B"},
+		{"SELECT FORMAT(a, 'dddd', 'de-CH')", "TimeToStr", "%A"},
+		// One character is read through a table of its own: `m` is a whole
+		// month-and-day format, not the minutes `mm` stands for.
+		{"SELECT FORMAT(a, 'm')", "TimeToStr", "%B %-d"},
+		{"SELECT FORMAT(a, 'd')", "TimeToStr", "%m/%d/%Y"},
+		// No date field at all: a number format, kept as written.
+		{"SELECT FORMAT(12345, '###.###.###')", "NumberToStr", "###.###.###"},
+		{"SELECT FORMAT(a, 'f')", "NumberToStr", "f"},
+		// N and C are number formats even though C would otherwise read as
+		// nothing and N holds no date field either -- the reference names
+		// them explicitly, and both land the same way here.
+		{"SELECT FORMAT(a, 'N', 'en-us')", "NumberToStr", "N"},
+		{"SELECT FORMAT(a, 'C')", "NumberToStr", "C"},
+		// A format that is not a literal has no name to read, which is no
+		// date field, so it stays where it was written.
+		{"SELECT FORMAT(a, CONCAT('yyyy', 'MM'))", "NumberToStr", ""},
+	} {
+		e, err := ParseOne(tc.sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		call, _ := e.Args["expressions"].([]*Expression)
+		if len(call) != 1 || call[0].Class != tc.class {
+			t.Fatalf("%q read as %v, want a %s", tc.sql, call, tc.class)
+		}
+		format, _ := call[0].Args["format"].(*Expression)
+		got := ""
+		if format != nil && format.Class == "Literal" {
+			got, _ = format.Args["this"].(string)
+		}
+		if tc.format != "" && got != tc.format {
+			t.Errorf("%q carries format %q, want %q", tc.sql, got, tc.format)
+		}
+	}
+
+	// Both nodes require a format, and the reference rejects a call without
+	// one rather than building a node that has none.
+	if e, err := ParseOne("SELECT FORMAT(a)", "tsql"); err == nil {
+		t.Errorf("read %v; the reference rejects a FORMAT with no format", e)
+	}
+
+	// The format goes back out in T-SQL's spelling, not the tree's -- and a
+	// one-character format is written out in full, which is the reference's
+	// own lossy round trip rather than a divergence.
+	for sql, want := range map[string]string{
+		"SELECT FORMAT(a, 'yyyy-MM-dd HH:mm:ss.ffffff')": "SELECT FORMAT(a, 'yyyy-MM-dd HH:mm:ss.ffffff')",
+		"SELECT FORMAT(a, 'm')":                          "SELECT FORMAT(a, 'MMMM d')",
+		"SELECT FORMAT(a, 'N', 'en-us')":                 "SELECT FORMAT(a, 'N', 'en-us')",
+		"SELECT FORMAT(12345, '###.###.###')":            "SELECT FORMAT(12345, '###.###.###')",
+	} {
+		e, err := ParseOne(sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "tsql")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != want {
+			t.Errorf("%q wrote %q, want %q", sql, got, want)
+		}
+	}
+
+	// Elsewhere FORMAT is an ordinary variadic call and none of this applies.
+	e, err := ParseOne("SELECT FORMAT(a, 'yyyy')", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call, _ := e.Args["expressions"].([]*Expression)
+	if len(call) != 1 || call[0].Class != "Format" {
+		t.Errorf("duckdb read FORMAT as %v, want a Format", call)
+	}
+}

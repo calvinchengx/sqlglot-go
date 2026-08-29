@@ -1745,6 +1745,20 @@ func (p *parser) parseFunction() (*Expression, error) {
 		order.Set("this", args[len(args)-1])
 		args[len(args)-1] = order
 	}
+	// A builder that reads its arguments rather than only placing them. The
+	// probe drives builders with placeholder columns and cannot see such a
+	// decision, so the recorded signature describes a node the reference does
+	// not actually build; these are written out in parse_builders.go.
+	if upper == "FORMAT" && len(p.tables.FormatTimeMapping) > 0 {
+		built, err := p.buildFormat(args)
+		if err != nil {
+			return nil, err
+		}
+		if inner != "" {
+			return New(inner, Arg{"this", built}), nil
+		}
+		return built, nil
+	}
 	if isJSONPath {
 		if node := p.buildJSONPathFunction(jsonPath, args); node != nil {
 			return node, nil

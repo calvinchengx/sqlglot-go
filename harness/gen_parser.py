@@ -3773,6 +3773,13 @@ def main() -> int:
         "\t// builder rewrites the literal on the way in.\n",
         "\tTimeMapping    map[string]string\n",
         "\tTimeFormatArgs map[string][]int\n",
+        "\t// InverseTimeMapping spells a stored format back out again, and\n",
+        "\t// FormatTimeMapping is the SEPARATE table a one-character format\n",
+        "\t// is read through. Only the dialects whose FORMAT is a builder\n",
+        "\t// that reads its argument have the second one, which is what\n",
+        "\t// tells the port that builder is installed.\n",
+        "\tInverseTimeMapping map[string]string\n",
+        "\tFormatTimeMapping  map[string]string\n",
         "\tCastSensitiveArgs map[string]map[int][]string\n",
         "\t// DropsZeroArgs are the argument keys a literal ZERO simply\n",
         "\t// DISAPPEARS from -- DuckDB writes REGEXP_EXTRACT(x, p) for a\n",
@@ -4296,6 +4303,15 @@ def main() -> int:
             out.append("\t\tTimeMapping: map[string]string{\n")
             for k in sorted(_tm):
                 out.append(f"\t\t\t{gostr(k)}: {gostr(_tm[k])},\n")
+            out.append("\t\t},\n")
+        for field, attr in (("InverseTimeMapping", "INVERSE_TIME_MAPPING"),
+                            ("FormatTimeMapping", "FORMAT_TIME_MAPPING")):
+            _m = getattr(_D.get_or_raise(name or None), attr, None) or {}
+            if not _m:
+                continue
+            out.append(f"\t\t{field}: map[string]string{{\n")
+            for k in sorted(_m):
+                out.append(f"\t\t\t{gostr(k)}: {gostr(_m[k])},\n")
             out.append("\t\t},\n")
         _tfa = time_format_args(name, P, exp, render_input)
         if _tfa:
