@@ -20,7 +20,9 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 	case "POSITION":
 		return p.parsePosition()
 	case "CONVERT":
-		return p.parseConvert()
+		return p.parseConvert(false)
+	case "TRY_CONVERT":
+		return p.parseConvert(true)
 	case "STRING_AGG":
 		return p.parseStringAgg()
 	case "JSON_OBJECT":
@@ -57,6 +59,18 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseDistinctArgFunction("RegrSyy", 1)
 	case "XMLELEMENT":
 		return p.parseXMLElement()
+	// One parser under four names: DuckDB spells the same aggregate
+	// GROUP_CONCAT, LISTAGG and STRINGAGG as well as STRING_AGG.
+	case "GROUP_CONCAT", "LISTAGG", "STRINGAGG":
+		return p.parseStringAgg()
+	case "CHAR", "CHR":
+		return p.parseChr()
+	case "JSONB_EXISTS":
+		return p.parseJSONBExists()
+	case "JSON_AGG":
+		return p.parseJSONAgg()
+	case "JSON_ARRAYAGG":
+		return p.parseJSONArrayAgg()
 	}
 	return nil, p.unsupported("function " + upper + " with a syntax of its own")
 }
@@ -191,7 +205,15 @@ func (p *parser) parsePosition() (*Expression, error) {
 // CONVERT(type, x[, style]) -- the FIRST argument is a data type, which is why
 // the ordinary argument parser cannot read this one: it would read VARCHAR(10)
 // as a call to a function named VARCHAR.
-func (p *parser) parseConvert() (*Expression, error) {
+func (p *parser) parseConvert(safe bool) (*Expression, error) {
+	// Only T-SQL keeps this call as a Convert. Everywhere else the reference
+	// reads the same word as a CAST written another way, and it does so with
+	// a grammar the port does not have -- `CONVERT(INT, x)` comes out as
+	// `CAST(INT AS x)`, with the type read off the SECOND argument. Building
+	// a Convert there was a divergence the corpus never happened to contain.
+	if !p.tables.ConvertBuildsConvert {
+		return nil, p.unsupported("CONVERT where it is a CAST written another way")
+	}
 	p.advance()
 	p.advance()
 	to, err := p.parseDataType()
@@ -215,6 +237,11 @@ func (p *parser) parseConvert() (*Expression, error) {
 	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed CONVERT")
+	}
+	// TRY_CONVERT is the same node flagged safe. The flag is SET rather than
+	// supplied, so an ordinary CONVERT does not carry the key at all.
+	if safe {
+		args = append(args, Arg{"safe", true})
 	}
 	return New("Convert", args...), nil
 }
@@ -626,4 +653,157 @@ func (p *parser) parseXMLElement() (*Expression, error) {
 		return nil, p.unsupported("unclosed XMLELEMENT")
 	}
 	return node, nil
+}
+
+// CHR(97) and T-SQL's CHAR(10) are the same node, and both take a list --
+// `CHR(97, 98)` is one call, not two. The character set is recorded even when
+// it is not written, as false rather than as nothing.
+func (p *parser) parseChr() (*Expression, error) {
+	p.advance()
+	p.advance()
+
+	var args []*Expression
+	if !p.at(TokR_PAREN) && !p.at(TokUSING) {
+		for {
+			arg, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, arg)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
+	node := New("Chr", Arg{"expressions", args})
+	if p.match(TokUSING) {
+		// The reference asks for a bare word here and takes nothing else.
+		c := p.curr()
+		if c == nil || (c.Type != TokVAR && c.Type != TokIDENTIFIER && c.Type != TokBINARY) {
+			return nil, p.unsupported("USING without a character set")
+		}
+		p.advance()
+		node.Set("charset", New("Var", Arg{"this", c.Text}))
+	} else {
+		node.Set("charset", false)
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed CHR")
+	}
+	return node, nil
+}
+
+// JSONB_EXISTS(doc, path) folds its second argument into a JSON path, and
+// records FALSE where there is no second argument at all.
+func (p *parser) parseJSONBExists() (*Expression, error) {
+	p.advance()
+	p.advance()
+
+	this, err := p.parseBitwise()
+	if err != nil {
+		return nil, err
+	}
+	node := New("JSONBExists", Arg{"this", this})
+	if p.match(TokCOMMA) {
+		path, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		if isStringLiteral(path) {
+			text, _ := path.Args["this"].(string)
+			folded, err := parseJSONPath(text)
+			if err != nil {
+				return nil, p.unsupported("JSONB_EXISTS over a path it cannot fold")
+			}
+			path = folded
+		}
+		node.Set("path", path)
+	} else {
+		node.Set("path", false)
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed JSONB_EXISTS")
+	}
+	return node, nil
+}
+
+// PostgreSQL's JSON_AGG reads its ONE argument the way a call's argument is
+// read -- so a DISTINCT wraps it, and an ORDER BY written after it wraps that.
+// The clause is consumed there rather than by the `order` slot, which is why
+// the slot stays empty on a call that plainly has an ordering.
+func (p *parser) parseJSONAgg() (*Expression, error) {
+	p.advance()
+	p.advance()
+
+	this, err := p.parseAggregateArgument()
+	if err != nil {
+		return nil, err
+	}
+	if p.at(TokORDER_BY) {
+		p.advance()
+		order, err := p.parseOrder()
+		if err != nil {
+			return nil, err
+		}
+		order.Set("this", this)
+		this = order
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed JSON_AGG")
+	}
+	return New("JSONArrayAgg", Arg{"this", this}), nil
+}
+
+// T-SQL's JSON_ARRAYAGG reads a plain expression instead, so its ORDER BY does
+// land in the `order` slot -- the same clause in the same place, recorded two
+// different ways by two dialects.
+func (p *parser) parseJSONArrayAgg() (*Expression, error) {
+	p.advance()
+	p.advance()
+
+	this, err := p.parseBitwise()
+	if err != nil {
+		return nil, err
+	}
+	node := New("JSONArrayAgg", Arg{"this", this})
+	if p.at(TokORDER_BY) {
+		p.advance()
+		order, err := p.parseOrder()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("order", order)
+	}
+	if word := p.atNullHandling(); word != "" {
+		p.advance()
+		p.advance()
+		p.advance()
+		node.Set("null_handling", word)
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed JSON_ARRAYAGG")
+	}
+	return node, nil
+}
+
+// parseAggregateArgument reads the single argument of an aggregate whose
+// grammar the reference writes by hand: DISTINCT collects everything after it
+// into one node, as it does in an ordinary call.
+func (p *parser) parseAggregateArgument() (*Expression, error) {
+	if !p.match(TokDISTINCT) {
+		p.match(TokALL)
+		return p.parseCallArgument()
+	}
+	var args []*Expression
+	for {
+		arg, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	return New("Distinct", Arg{"expressions", args}), nil
 }

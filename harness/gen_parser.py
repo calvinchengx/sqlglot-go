@@ -1924,6 +1924,24 @@ def prefix_alias(dialect: str) -> bool:
     return type(node).__name__ == "Alias"
 
 
+def convert_builds_convert(dialect: str) -> bool:
+    """Whether CONVERT(type, value) builds a Convert in this dialect.
+
+    T-SQL's CONVERT names the type FIRST and keeps the call as a Convert;
+    everywhere else the same word is a CAST written another way, and the
+    reference builds a Cast whose arguments come out in an order nothing here
+    would guess. The override lives on a parser class, which is not a thing
+    the port can read -- so it is asked rather than transcribed.
+    """
+    import sqlglot
+
+    try:
+        node = sqlglot.parse_one("SELECT CONVERT(INT, x)", read=dialect or None).selects[0]
+    except Exception:  # noqa: BLE001 -- not a form this dialect has
+        return False
+    return type(node).__name__ == "Convert"
+
+
 def bare_sample_count_is_percent(dialect: str, exp) -> bool:
     """What `TABLESAMPLE (3)` counts, with no unit written after it.
 
@@ -3853,6 +3871,9 @@ def main() -> int:
         "\t// spelling of `SELECT 1 AS foo`. The same characters are a JSON\n",
         "\t// extraction in Databricks, so the dialect decides, not the shape.\n",
         "\tPrefixAlias bool\n",
+        "\t// ConvertBuildsConvert: CONVERT(type, value) is a Convert here and a\n",
+        "\t// CAST written another way everywhere else.\n",
+        "\tConvertBuildsConvert bool\n",
         "\t// The four conventions a PIVOT node carries that the statement never\n",
         "\t// says: how output columns are named, and three flags stamped on.\n",
         "\t// VersionRangeSep is the word between the two bounds of a FOR\n",
@@ -4467,6 +4488,9 @@ def main() -> int:
             f"\t\tVariantExtractColon: {str(variant_extract_colon(name)).lower()},\n"
         )
         out.append(f"\t\tPrefixAlias: {str(prefix_alias(name)).lower()},\n")
+        out.append(
+            f"\t\tConvertBuildsConvert: {str(convert_builds_convert(name)).lower()},\n"
+        )
         _wgf = within_group_folding_names(name, P)
         if _wgf:
             out.append(strset("WithinGroupFolds", _wgf))

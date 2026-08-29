@@ -1602,7 +1602,17 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 			case string:
 				text = v
 			}
-			out = strings.ReplaceAll(out, "{"+key+"}", text)
+			// A marker that follows another marker with nothing between them
+			// takes its separator FROM the child: the reference writes a
+			// clause with a leading space, and the probe recorded the
+			// template from a placeholder that had none. Without this,
+			// `JSON_ARRAYAGG({this}{order})` wrote `JSON_ARRAYAGG(cORDER BY
+			// c)` -- one token where there were two.
+			if text != "" && strings.Contains(candidate.Template, "}"+marker) &&
+				!strings.HasPrefix(text, " ") {
+				text = " " + text
+			}
+			out = strings.ReplaceAll(out, marker, text)
 		}
 		return out, true
 	}

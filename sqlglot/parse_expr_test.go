@@ -5628,3 +5628,152 @@ func TestAliasedFunctionArgument(t *testing.T) {
 		}
 	}
 }
+
+// TestConvertIsATSQLCall covers CONVERT, which is a Convert in T-SQL and a
+// CAST written another way everywhere else.
+func TestConvertIsATSQLCall(t *testing.T) {
+	e, err := ParseOne("SELECT CONVERT(INTEGER, x)", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call := e.Args["expressions"].([]*Expression)[0]
+	if call.Class != "Convert" {
+		t.Errorf("T-SQL read CONVERT as %s", call.Class)
+	}
+	if _, ok := call.Args["safe"]; ok {
+		t.Errorf("a plain CONVERT carries safe = %v", call.Args["safe"])
+	}
+
+	// TRY_CONVERT is the same node with the flag SET, which is why an
+	// ordinary one does not carry the key at all.
+	e, err = ParseOne("SELECT TRY_CONVERT(INTEGER, x)", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call = e.Args["expressions"].([]*Expression)[0]
+	if call.Class != "Convert" || call.Args["safe"] != true {
+		t.Errorf("TRY_CONVERT read as %s with safe = %v", call.Class, call.Args["safe"])
+	}
+	if got, err := Generate(e, "tsql"); err != nil || got != "SELECT TRY_CONVERT(INTEGER, x)" {
+		t.Errorf("wrote %q, %v", got, err)
+	}
+
+	// Elsewhere the reference builds a Cast whose arguments come out in an
+	// order this port has no grammar for -- `CONVERT(INT, x)` becomes
+	// `CAST(INT AS x)`. Refused rather than built as a Convert.
+	for _, dialect := range []string{"", "postgres", "duckdb", "databricks"} {
+		if e, err := ParseOne("SELECT CONVERT(INTEGER, x)", dialect); err == nil {
+			t.Errorf("[%s] read CONVERT as %v; only T-SQL builds one", dialect, e)
+		}
+	}
+}
+
+// TestGroupConcatSpellings covers the four names DuckDB gives one aggregate.
+func TestGroupConcatSpellings(t *testing.T) {
+	first, err := ParseOne("SELECT STRING_AGG(x, ', ')", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	for _, name := range []string{"GROUP_CONCAT", "LISTAGG", "STRINGAGG"} {
+		e, err := ParseOne("SELECT "+name+"(x, ', ')", "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%s): %v", name, err)
+		}
+		if !e.Equal(first) {
+			t.Errorf("%s read as a different tree from STRING_AGG", name)
+		}
+	}
+}
+
+// TestChr covers CHR and T-SQL's CHAR, one node under two names.
+func TestChr(t *testing.T) {
+	for _, tc := range []struct{ sql, dialect string }{
+		{"SELECT CHR(97)", ""},
+		{"SELECT CHR(97, 98)", ""},
+		{"SELECT CHAR(10)", "tsql"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		call := e.Args["expressions"].([]*Expression)[0]
+		if call.Class != "Chr" {
+			t.Fatalf("%q read as %s", tc.sql, call.Class)
+		}
+		// The character set is recorded as FALSE when it is not written.
+		if call.Args["charset"] != false {
+			t.Errorf("%q carries charset = %v", tc.sql, call.Args["charset"])
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.sql {
+			t.Errorf("%q wrote %q, %v", tc.sql, got, err)
+		}
+	}
+
+	if e, err := ParseOne("SELECT CHR(97 USING 'utf8')", ""); err == nil {
+		t.Errorf("read %v; USING wants a bare word", e)
+	}
+}
+
+// TestJSONAggregates covers the two ways the same aggregate is read: PostgreSQL
+// folds an ORDER BY into the argument, T-SQL keeps it in a slot of its own.
+func TestJSONAggregates(t *testing.T) {
+	e, err := ParseOne("SELECT JSON_AGG(c1 ORDER BY c1)", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call := e.Args["expressions"].([]*Expression)[0]
+	if call.Class != "JSONArrayAgg" {
+		t.Fatalf("JSON_AGG read as %s", call.Class)
+	}
+	if _, ok := call.Args["order"]; ok {
+		t.Errorf("PostgreSQL put the ordering in the slot: %v", call.Args["order"])
+	}
+	if this, _ := call.Args["this"].(*Expression); this == nil || this.Class != "Order" {
+		t.Errorf("the ordering did not wrap the argument: %v", call.Args["this"])
+	}
+
+	// DISTINCT wraps the argument, and an ORDER BY wraps THAT.
+	e, err = ParseOne("SELECT JSON_AGG(DISTINCT c1 ORDER BY c1)", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call = e.Args["expressions"].([]*Expression)[0]
+	order, _ := call.Args["this"].(*Expression)
+	if order == nil || order.Class != "Order" {
+		t.Fatalf("the argument is %v", call.Args["this"])
+	}
+	if inner, _ := order.Args["this"].(*Expression); inner == nil || inner.Class != "Distinct" {
+		t.Errorf("the DISTINCT is not inside the ordering: %v", order.Args["this"])
+	}
+
+	// T-SQL reads a plain expression, so the SAME clause lands in the slot.
+	e, err = ParseOne("SELECT JSON_ARRAYAGG(c1 ORDER BY c1)", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call = e.Args["expressions"].([]*Expression)[0]
+	if slot, _ := call.Args["order"].(*Expression); slot == nil || slot.Class != "Order" {
+		t.Errorf("T-SQL did not put the ordering in the slot: %v", call.Args)
+	}
+	if got, err := Generate(e, "tsql"); err != nil || got != "SELECT JSON_ARRAYAGG(c1 ORDER BY c1)" {
+		t.Errorf("wrote %q, %v", got, err)
+	}
+
+	// A path folded from a string, and false where there is no path at all.
+	e, err = ParseOne(`SELECT JSONB_EXISTS('{"a": 1}', 'a')`, "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call = e.Args["expressions"].([]*Expression)[0]
+	if path, _ := call.Args["path"].(*Expression); path == nil || path.Class != "JSONPath" {
+		t.Errorf("the path is %v", call.Args["path"])
+	}
+	e, err = ParseOne(`SELECT JSONB_EXISTS('{"a": 1}')`, "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call = e.Args["expressions"].([]*Expression)[0]
+	if call.Args["path"] != false {
+		t.Errorf("a one-argument JSONB_EXISTS carries path = %v", call.Args["path"])
+	}
+}

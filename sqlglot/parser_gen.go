@@ -244,6 +244,9 @@ type ParserTables struct {
 	// spelling of `SELECT 1 AS foo`. The same characters are a JSON
 	// extraction in Databricks, so the dialect decides, not the shape.
 	PrefixAlias bool
+	// ConvertBuildsConvert: CONVERT(type, value) is a Convert here and a
+	// CAST written another way everywhere else.
+	ConvertBuildsConvert bool
 	// The four conventions a PIVOT node carries that the statement never
 	// says: how output columns are named, and three flags stamped on.
 	// VersionRangeSep is the word between the two bounds of a FOR
@@ -3765,8 +3768,9 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
-		VariantExtractColon: false,
-		PrefixAlias:         false,
+		VariantExtractColon:  false,
+		PrefixAlias:          false,
+		ConvertBuildsConvert: false,
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
@@ -7454,8 +7458,9 @@ var parserTables = map[string]*ParserTables{
 			"JSON_QUERY":             {"JSONExtract", false, []FuncConst{}, true, false, 0, true},
 			"JSON_VALUE":             {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 		},
-		VariantExtractColon: false,
-		PrefixAlias:         false,
+		VariantExtractColon:  false,
+		PrefixAlias:          false,
+		ConvertBuildsConvert: true,
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
@@ -11215,8 +11220,9 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
-		VariantExtractColon: false,
-		PrefixAlias:         false,
+		VariantExtractColon:  false,
+		PrefixAlias:          false,
+		ConvertBuildsConvert: false,
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
@@ -15139,8 +15145,9 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_STRING":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
-		VariantExtractColon: false,
-		PrefixAlias:         true,
+		VariantExtractColon:  false,
+		PrefixAlias:          true,
+		ConvertBuildsConvert: false,
 		WithinGroupFolds: map[string]struct{}{
 			"GROUP_CONCAT": {},
 			"LISTAGG":      {},
@@ -19071,8 +19078,9 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
-		VariantExtractColon: true,
-		PrefixAlias:         false,
+		VariantExtractColon:  true,
+		PrefixAlias:          false,
+		ConvertBuildsConvert: false,
 		WithinGroupFolds: map[string]struct{}{
 			"STRING_AGG": {},
 		},
