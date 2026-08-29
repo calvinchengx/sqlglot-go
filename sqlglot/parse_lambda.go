@@ -148,3 +148,36 @@ func (p *parser) bindLambdaParams(e *Expression, names map[string]bool) (*Expres
 	}
 	return e, nil
 }
+
+// atKwarg reports whether a NAMED argument starts here: a name followed by
+// `=>`. PostgreSQL writes `MAKE_INTERVAL(years => 1)` and the reference reads
+// the pair where it reads a lambda -- the two markers sit in one table there,
+// which is why this stands beside atLambda rather than anywhere else.
+func (p *parser) atKwarg() bool {
+	c := p.curr()
+	if c == nil || !p.atIdentifier() {
+		return false
+	}
+	return p.next() != nil && p.next().Type == TokFARROW
+}
+
+// parseKwarg reads `name => value`.
+//
+// The name becomes a VAR rather than an identifier or a column: the reference
+// takes the NAME off whatever it parsed on the left and builds a fresh Var
+// from it, so a quoted one loses its quotes here.
+func (p *parser) parseKwarg() (*Expression, error) {
+	name := p.curr()
+	if name.Type == TokIDENTIFIER {
+		return nil, p.unsupported("a quoted name for a named argument")
+	}
+	p.advance()
+	p.advance() // =>
+	value, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	return New("Kwarg",
+		Arg{"this", New("Var", Arg{"this", name.Text})},
+		Arg{"expression", value}), nil
+}

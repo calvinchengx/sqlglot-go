@@ -5216,3 +5216,57 @@ func TestWithOrdinality(t *testing.T) {
 		}
 	}
 }
+
+// TestNamedArgument covers `name => value` inside a call.
+//
+// The reference reads the pair where it reads a LAMBDA -- `->` and `=>` sit
+// in one table there -- which is why one name followed by an arrow is either
+// a lambda's parameter or an argument's name, decided by which arrow.
+func TestNamedArgument(t *testing.T) {
+	for _, c := range []struct{ sql, dialect, want string }{
+		{"SELECT F(a => 1)", "postgres", "SELECT F(a => 1)"},
+		{"SELECT MAKE_INTERVAL(years => 1)", "postgres", "SELECT MAKE_INTERVAL(years => 1)"},
+		{"SELECT MAKE_INTERVAL(years => 1, months => 2, days => 3)", "postgres",
+			"SELECT MAKE_INTERVAL(years => 1, months => 2, days => 3)"},
+		{"SELECT UNNEST(x, max_depth => 2)", "duckdb", "SELECT UNNEST(x, max_depth => 2)"},
+		// The other arrow in the same position is still a lambda.
+		{"SELECT LIST_TRANSFORM(x, y -> y + 1)", "duckdb", "SELECT LIST_TRANSFORM(x, y -> y + 1)"},
+	} {
+		e, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q, %q): %v", c.sql, c.dialect, err)
+		}
+		got, err := Generate(e, c.dialect)
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", c.sql, err)
+		}
+		if got != c.want {
+			t.Errorf("%q wrote %q, want %q", c.sql, got, c.want)
+		}
+	}
+
+	// The name becomes a VAR, not the column the left side was parsed as.
+	e, err := ParseOne("SELECT F(a => 1)", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call, _ := e.Args["expressions"].([]*Expression)
+	kwarg, _ := call[0].Args["expressions"].([]*Expression)
+	if len(kwarg) != 1 || kwarg[0].Class != "Kwarg" {
+		t.Fatalf("the argument is %v, want a Kwarg", kwarg)
+	}
+	name, _ := kwarg[0].Args["this"].(*Expression)
+	if name == nil || name.Class != "Var" {
+		t.Errorf("the name is %v, want a Var", name)
+	}
+
+	// A QUOTED name loses its quotes there, so it is refused rather than
+	// written back as a different name.
+	if e, err := ParseOne(`SELECT F("a" => 1)`, "postgres"); err == nil {
+		t.Errorf("read %s; the quotes would be written away", e.Class)
+	}
+	// ...and so is a value that is not an expression at all.
+	if e, err := ParseOne("SELECT F(a => )", "postgres"); err == nil {
+		t.Errorf("read %s for a named argument with no value", e.Class)
+	}
+}

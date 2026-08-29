@@ -96,6 +96,7 @@ func init() {
 		"Describe":                            (*generator).writeDescribe,
 		"Analyze":                             (*generator).writeAnalyze,
 		"LoadData":                            (*generator).writeLoadData,
+		"Kwarg":                               (*generator).writeKwarg,
 		"AnalyzeStatistics":                   (*generator).writeAnalyzeStatistics,
 		"Transaction":                         (*generator).writeTransaction,
 		"Commit":                              (*generator).writeTransaction,
@@ -3769,4 +3770,9 @@ func (g *generator) writeLoadData(e *Expression) string {
 		out += " SERDE " + serde
 	}
 	return out
+}
+
+// writeKwarg writes a named argument: `years => 1`.
+func (g *generator) writeKwarg(e *Expression) string {
+	return g.child(e, "this") + " => " + g.child(e, "expression")
 }

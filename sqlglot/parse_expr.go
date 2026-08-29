@@ -1692,6 +1692,8 @@ func (p *parser) parseFunction() (*Expression, error) {
 			switch {
 			case p.atLambda():
 				arg, err = p.parseLambda()
+			case p.atKwarg():
+				arg, err = p.parseKwarg()
 			case p.at(TokSELECT), p.at(TokWITH):
 				// `EXISTS(SELECT 1)`: the call's own parentheses are the
 				// subquery's, so the argument is the Select ITSELF -- there
