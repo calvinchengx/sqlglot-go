@@ -187,26 +187,57 @@ func (p *parser) parseConvert() (*Expression, error) {
 	return New("Convert", args...), nil
 }
 
-// STRING_AGG(x, sep) is a GroupConcat. Its first argument may carry an
-// ORDER BY, which the reference records by wrapping it in an Order -- not
-// ported, so that form is refused rather than silently dropped.
+// STRING_AGG(x, sep) is a GroupConcat.
+//
+// Two things hang off its FIRST argument however they are written. DISTINCT
+// wraps it, and an ORDER BY wraps whatever that produced -- and the ORDER BY
+// is written after the SEPARATOR, so `STRING_AGG(DISTINCT x, ',' ORDER BY y)`
+// is GroupConcat(Order(Distinct(x), y), ','). The reference reads the
+// arguments first and then reaches back for the one it belongs to; so does
+// this.
 func (p *parser) parseStringAgg() (*Expression, error) {
 	p.advance()
 	p.advance()
-	this, err := p.parseExpression()
+
+	var args []*Expression
+	distinct := p.match(TokDISTINCT)
+	first, err := p.parseExpression()
 	if err != nil {
 		return nil, err
 	}
-	if p.at(TokORDER_BY) {
-		return nil, p.unsupported("STRING_AGG with an ORDER BY")
+	if distinct {
+		// One expression, not the whole list: `STRING_AGG(DISTINCT x, ',')`
+		// distinguishes x and takes ',' as the separator.
+		first = New("Distinct", Arg{"expressions", []*Expression{first}})
 	}
-	var separator *Expression
-	if p.match(TokCOMMA) {
-		sep, err := p.parseExpression()
+	args = append(args, first)
+	for p.match(TokCOMMA) {
+		next, err := p.parseExpression()
 		if err != nil {
 			return nil, err
 		}
-		separator = sep
+		args = append(args, next)
+	}
+
+	if p.at(TokORDER_BY) {
+		p.advance()
+		order, err := p.parseOrder()
+		if err != nil {
+			return nil, err
+		}
+		order.Set("this", args[0])
+		args[0] = order
+	}
+	// A third argument is the overflow behaviour, which the reference reads
+	// and then writes away -- `STRING_AGG(DISTINCT x, y, z)` comes back
+	// without the z.
+	if len(args) > 2 {
+		return nil, p.unsupported("STRING_AGG with an overflow behaviour")
+	}
+	this := args[0]
+	var separator *Expression
+	if len(args) > 1 {
+		separator = args[1]
 	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed STRING_AGG")

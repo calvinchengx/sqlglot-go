@@ -1746,9 +1746,8 @@ def group_concat_order(dialect: str) -> str:
     `STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y)` FOLDS into a GroupConcat
     whose first argument is the ordering of x. Writing it back, the dialects
     disagree about where the ordering goes: inside the first argument, after
-    the separator, or unfolded into a WITHIN GROUP again. Only the two the
-    port can spell are named; anything else is refused rather than written in
-    the wrong place.
+    the separator but still inside the call, or unfolded into a WITHIN GROUP
+    again. Anything else is refused rather than written in the wrong place.
     """
     import sqlglot
 
@@ -1763,6 +1762,10 @@ def group_concat_order(dialect: str) -> str:
         return "within_group"
     if "x ORDER BY y DESC" in text:
         return "inline"
+    # PostgreSQL and DuckDB put it after the separator and inside the call:
+    # `STRING_AGG(x, ',' ORDER BY y DESC)`.
+    if text.rstrip().endswith(")") and "ORDER BY y DESC" in text:
+        return "after_separator"
     return ""
 
 

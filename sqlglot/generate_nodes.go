@@ -2110,15 +2110,21 @@ func (g *generator) writeGroupConcat(e *Expression) string {
 		return g.spell(e)
 	}
 	switch g.tables.GroupConcatOrder {
+	case "after_separator":
+		// PostgreSQL and DuckDB write the ordering INSIDE the call, after the
+		// separator: `STRING_AGG(x, ',' ORDER BY y DESC)`. The reference
+		// reaches the same place by rebuilding the argument text with the
+		// ordering appended, so the surgery here is its surgery.
+		out := g.spell(g.withoutFoldedOrder(e, order))
+		if !strings.HasSuffix(out, ")") {
+			return g.fail(e.Class + " whose spelling is not a call")
+		}
+		ordering := New("Order", Arg{"expressions", order.Args["expressions"]})
+		return out[:len(out)-1] + " " + strings.TrimSpace(g.node(ordering)) + ")"
 	case "within_group":
 		// Written as it arrived: the call over the ordered argument alone,
 		// and the ordering after it.
-		unfolded := New(e.Class)
-		for key, value := range e.Args {
-			unfolded.Set(key, value)
-		}
-		unfolded.Set("this", order.Args["this"])
-		out := g.spell(unfolded)
+		out := g.spell(g.withoutFoldedOrder(e, order))
 		ordering := New("Order", Arg{"expressions", order.Args["expressions"]})
 		return out + " WITHIN GROUP (" + strings.TrimSpace(g.node(ordering)) + ")"
 	}
@@ -3662,4 +3668,15 @@ func isPlainNumber(e *Expression) bool {
 	}
 	str, _ := e.Args["is_string"].(bool)
 	return !str
+}
+
+// withoutFoldedOrder is the call as it was before the ordering was folded
+// into its first argument: the same node, with that argument put back.
+func (g *generator) withoutFoldedOrder(e, order *Expression) *Expression {
+	unfolded := New(e.Class)
+	for _, key := range e.Keys {
+		unfolded.Set(key, e.Args[key])
+	}
+	unfolded.Set("this", order.Args["this"])
+	return unfolded
 }

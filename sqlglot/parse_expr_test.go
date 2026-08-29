@@ -1359,14 +1359,27 @@ func TestWithinGroupFold(t *testing.T) {
 // Where a dialect writes the folded ordering somewhere this port cannot spell
 // -- DuckDB and PostgreSQL attach it to the SEPARATOR -- the node is refused
 // rather than written in the wrong place.
-func TestGroupConcatOrderRefused(t *testing.T) {
+func TestGroupConcatOrderPerDialect(t *testing.T) {
 	e, err := ParseOne("SELECT STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y DESC)", "")
 	if err != nil {
 		t.Fatalf("ParseOne: %v", err)
 	}
-	for _, dialect := range []string{"duckdb", "postgres"} {
-		if got, err := Generate(e, dialect); err == nil {
-			t.Errorf("%s wrote %q; it puts the ordering elsewhere", dialect, got)
+	// Three arrangements, one per dialect: the ordering inside the first
+	// argument, unfolded into a WITHIN GROUP again, or after the separator
+	// and still inside the call. Which one is probed.
+	for dialect, want := range map[string]string{
+		"duckdb":   "LISTAGG(x, ',' ORDER BY y DESC)",
+		"postgres": "STRING_AGG(x, ',' ORDER BY y DESC NULLS LAST)",
+		"tsql":     "STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y DESC)",
+		"":         "GROUP_CONCAT(x ORDER BY y DESC, ',')",
+	} {
+		got, err := Generate(e, dialect)
+		if err != nil {
+			t.Errorf("[%s] refused: %v", dialect, err)
+			continue
+		}
+		if got != "SELECT "+want {
+			t.Errorf("[%s] wrote %q, want %q", dialect, got, "SELECT "+want)
 		}
 	}
 	// And a GroupConcat with nothing folded in writes normally everywhere.
@@ -4998,5 +5011,53 @@ func TestJSONPathFunctionPositionalForm(t *testing.T) {
 		if _, refused := Generate(e, "postgres"); refused == nil {
 			t.Errorf("%q was written back; the port has no form for it", sql)
 		}
+	}
+}
+
+// TestStringAggDistinct covers the two things that hang off STRING_AGG's
+// FIRST argument however they are written.
+//
+// DISTINCT wraps it, and an ORDER BY -- written after the SEPARATOR -- wraps
+// whatever that produced. `STRING_AGG(DISTINCT x, ',' ORDER BY y)` is
+// GroupConcat(Order(Distinct(x), y), ',').
+func TestStringAggDistinct(t *testing.T) {
+	for _, sql := range []string{
+		"STRING_AGG(x, ',')",
+		"STRING_AGG(DISTINCT x, ',')",
+		"STRING_AGG(x, ',' ORDER BY y DESC)",
+		"STRING_AGG(DISTINCT x, ',' ORDER BY y DESC NULLS LAST)",
+		"STRING_AGG(DISTINCT a || b || c, '')",
+		"STRING_AGG(DISTINCT a || b || c, '' ORDER BY d NULLS FIRST)",
+	} {
+		e, err := ParseOne(sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "postgres")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+	}
+
+	e, err := ParseOne("STRING_AGG(DISTINCT x, ',' ORDER BY y)", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	order, _ := e.Args["this"].(*Expression)
+	if order == nil || order.Class != "Order" {
+		t.Fatalf("the first argument is %v, want an Order", order)
+	}
+	distinct, _ := order.Args["this"].(*Expression)
+	if distinct == nil || distinct.Class != "Distinct" {
+		t.Errorf("the ordering is over %v, want a Distinct", distinct)
+	}
+
+	// The overflow behaviour is read by the reference and then written away,
+	// so a third argument is refused rather than dropped.
+	if e, err := ParseOne("STRING_AGG(DISTINCT x, y, z)", "postgres"); err == nil {
+		t.Errorf("read %s; the third argument would be written away", e.Class)
 	}
 }

@@ -103,7 +103,6 @@ func TestClauseOrderFollowsTheSource(t *testing.T) {
 
 func TestRefusals(t *testing.T) {
 	for _, c := range []struct{ name, sql, dialect string }{
-		{"STRING_AGG with an ORDER BY", "SELECT STRING_AGG(x, ',' ORDER BY y)", "duckdb"},
 		{"no-paren function named, not tokenized", "CURDATE", "databricks"},
 		{"ORDER BY with nothing to order", "SELECT RANK(ORDER BY b) OVER ()", "duckdb"},
 		{"non-numeric type parameter", "a::VARCHAR('x')", "tsql"},
