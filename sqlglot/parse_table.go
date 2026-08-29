@@ -373,6 +373,21 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 	if len(pivots) > 0 {
 		table.Set("pivots", pivots)
 	}
+	// WITH ORDINALITY numbers the rows a table function returns, and the
+	// ALIAS comes after it rather than before: the reference reads the words
+	// last of all and then reaches for an alias again.
+	if p.atWords("WITH", "ORDINALITY") {
+		p.advance()
+		p.advance()
+		table.Set("ordinality", true)
+		alias, err := p.parseTableAlias()
+		if err != nil {
+			return nil, err
+		}
+		if alias != nil {
+			table.Set("alias", alias)
+		}
+	}
 	return table, nil
 }
 
@@ -896,19 +911,41 @@ func (p *parser) parseUnnest() (*Expression, error) {
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed UNNEST")
 	}
+	// WITH ORDINALITY is read BEFORE the alias here, unlike on a table, and
+	// it starts life as a plain true.
+	ordinality := p.atWords("WITH", "ORDINALITY")
+	if ordinality {
+		p.advance()
+		p.advance()
+	}
 	alias, err := p.parseTableAlias()
 	if err != nil {
 		return nil, err
 	}
-	// `WITH OFFSET` adds an ordinality column; the reference records it on the
-	// offset arg and the port does not model it.
-	if c := p.curr(); c != nil && c.Type == TokWITH {
-		return nil, p.unsupported("UNNEST WITH OFFSET")
+	var offset any = ordinality
+	// An alias with MORE columns than there are unnested expressions names
+	// the ordinality column with its last one: `UNNEST(x) WITH ORDINALITY AS
+	// t(a, b)` numbers the rows into b and leaves a for the values.
+	if ordinality && alias != nil {
+		columns, _ := alias.Args["columns"].([]*Expression)
+		if len(items) < len(columns) {
+			offset = columns[len(columns)-1]
+			alias.Set("columns", columns[:len(columns)-1])
+		}
+	}
+	// `WITH OFFSET [AS name]` names the same column another way, and the
+	// reference writes every spelling of it back as WITH ORDINALITY -- which
+	// drops the name. Refuse rather than write a column the statement did not
+	// ask for.
+	if !ordinality {
+		if c := p.curr(); c != nil && c.Type == TokWITH {
+			return nil, p.unsupported("UNNEST WITH OFFSET")
+		}
 	}
 	return New("Unnest",
 		Arg{"expressions", items},
 		Arg{"alias", alias},
-		Arg{"offset", false},
+		Arg{"offset", offset},
 		Arg{"explode_array", nil}), nil
 }
 
@@ -1046,17 +1083,13 @@ func (p *parser) parseLateral() (*Expression, error) {
 			return nil, err
 		}
 		this = target
-		// A plain call may take WITH ORDINALITY after it, so the reference
-		// records the answer -- false -- where the other operands leave the
-		// argument off entirely.
-		ordinality = false
 	default:
 		return nil, p.unsupported("LATERAL over something the port cannot read")
 	}
 
 	// The alias belongs to the LATERAL, not to what is inside it. A subquery
 	// and an UNNEST both take one while being parsed, so it is moved rather
-	// than re-read.
+	// than re-read -- and where one was moved, nothing more is read here.
 	var alias *Expression
 	if this.Class == "Subquery" || this.Class == "Unnest" {
 		if inner, _ := this.Args["alias"].(*Expression); inner != nil {
@@ -1065,6 +1098,16 @@ func (p *parser) parseLateral() (*Expression, error) {
 		}
 	}
 	if alias == nil {
+		// Everything else may take WITH ORDINALITY and then an alias, and
+		// the reference records the ANSWER here -- false where the words are
+		// absent -- while leaving the argument off entirely on the path that
+		// moved an alias.
+		found := p.atWords("WITH", "ORDINALITY")
+		if found {
+			p.advance()
+			p.advance()
+		}
+		ordinality = found
 		var err error
 		alias, err = p.parseTableAlias()
 		if err != nil {

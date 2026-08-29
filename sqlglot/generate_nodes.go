@@ -330,7 +330,13 @@ func (g *generator) writeTable(e *Expression) string {
 		}
 	}
 	out := strings.Join(parts, ".")
-	if alias := g.child(e, "alias"); alias != "" {
+	// WITH ORDINALITY numbers the rows a table function returns, and it takes
+	// the ALIAS with it: the words go where the alias would, and the alias
+	// follows them. `F(x) WITH ORDINALITY AS t(a, b)` names both the rows and
+	// the number.
+	ordinality := e.Args["ordinality"] == true
+	alias := g.child(e, "alias")
+	if alias != "" && !ordinality {
 		out += " AS " + alias
 	}
 	// The temporal clause comes before the alias, as it does in the text.
@@ -365,7 +371,14 @@ func (g *generator) writeTable(e *Expression) string {
 	for _, pivot := range pivots {
 		out += g.node(pivot)
 	}
-	return out + g.joins(e)
+	out += g.joins(e)
+	if ordinality {
+		out += " WITH ORDINALITY"
+		if alias != "" {
+			out += " AS " + alias
+		}
+	}
+	return out
 }
 
 // joins writes the joins hanging off a FROM item. Inside a parenthesised item
@@ -469,6 +482,12 @@ func (g *generator) writeLateral(e *Expression) string {
 		return out
 	}
 	out := "LATERAL " + g.child(e, "this")
+	// The ordinality goes between the relation and the alias, as it does on
+	// a table: the words say the rows are numbered and the alias names both
+	// the values and the number.
+	if e.Args["ordinality"] == true {
+		out += " WITH ORDINALITY"
+	}
 	if alias := g.child(e, "alias"); alias != "" {
 		out += " AS " + alias
 	}
@@ -1852,6 +1871,47 @@ func isAtomForOperator(e *Expression) bool {
 // OUTSIDE the call there and inside it in Databricks, so a dialect that puts it
 // inside is refused rather than written with it in the wrong place.
 func (g *generator) writeUnnest(e *Expression) string {
+	// The ordinality is a plain true, or the NAME the column was given. Both
+	// mean the same words are written; a name goes back into the alias's
+	// column list, which is where it was read from.
+	named, isNamed := e.Args["offset"].(*Expression)
+	ordinality := isNamed || e.Args["offset"] == true
+	alias, _ := e.Args["alias"].(*Expression)
+	if !ordinality {
+		return g.unnestCall(e, alias)
+	}
+	if isNamed {
+		if alias == nil {
+			return g.fail("Unnest whose ordinality is named but which has no alias")
+		}
+		alias = alias.Copy()
+		columns, _ := alias.Args["columns"].([]*Expression)
+		alias.Set("columns", append(append([]*Expression{}, columns...), named))
+	}
+	// The words go between the call and the alias, so the call is spelled
+	// WITHOUT either: a dialect's spelling for an Unnest is chosen by which
+	// arguments are set, and the two that this writer places itself would
+	// leave it with no spelling at all.
+	items, _ := e.Args["expressions"].([]*Expression)
+	bare := New("Unnest",
+		Arg{"expressions", items},
+		Arg{"alias", nil},
+		Arg{"offset", false},
+		Arg{"explode_array", nil})
+	out := g.unnestCall(bare, nil)
+	if g.err != nil {
+		return ""
+	}
+	out += " WITH ORDINALITY"
+	if alias != nil {
+		out += " AS " + g.node(alias)
+	}
+	return out
+}
+
+// unnestCall spells an UNNEST and the alias its own spelling carries, by
+// whichever route this dialect has for it: a function spelling, or a template.
+func (g *generator) unnestCall(e, alias *Expression) string {
 	spec, ok := g.functionSpelling(e)
 	if !ok {
 		// A writer registered by class SHADOWS the template fallback, so a
@@ -1863,11 +1923,12 @@ func (g *generator) writeUnnest(e *Expression) string {
 		return g.fail("Unnest")
 	}
 	call := g.namedFunction(e, spec)
-	alias, _ := e.Args["alias"].(*Expression)
 	if alias == nil {
 		return call
 	}
 	if spec.Name != "UNNEST" {
+		// Databricks writes the whole thing as EXPLODE with the alias among
+		// the arguments, which is a shape this port does not build.
 		return g.fail("Unnest with an alias in " + g.dialect)
 	}
 	return call + " AS " + g.node(alias)

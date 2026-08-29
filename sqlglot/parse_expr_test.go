@@ -5135,3 +5135,84 @@ func TestLoadData(t *testing.T) {
 		}
 	}
 }
+
+// TestWithOrdinality covers numbering the rows a relation returns.
+//
+// Three nodes carry it and each puts it in a slightly different place. On a
+// TABLE the words come after everything and take the alias with them; on an
+// UNNEST they come before the alias is read; on a LATERAL they sit between
+// the relation and its alias.
+func TestWithOrdinality(t *testing.T) {
+	for _, c := range []struct{ sql, dialect string }{
+		{"SELECT * FROM F(x) WITH ORDINALITY", ""},
+		{"SELECT * FROM F(x) WITH ORDINALITY AS t(a, b)", ""},
+		{"SELECT * FROM JSON_ARRAY_ELEMENTS('[1]') WITH ORDINALITY", "postgres"},
+		{"SELECT * FROM UNNEST(x) WITH ORDINALITY", ""},
+		{"SELECT * FROM UNNEST(x) WITH ORDINALITY", "postgres"},
+		{"SELECT * FROM UNNEST(x) WITH ORDINALITY AS t(a, b)", ""},
+		{"SELECT * FROM UNNEST(x) WITH ORDINALITY AS t(a, b)", "postgres"},
+		{"SELECT * FROM UNNEST(x) WITH ORDINALITY AS t(a, b)", "duckdb"},
+		{"SELECT * FROM test_data, LATERAL JSONB_ARRAY_ELEMENTS(data) WITH ORDINALITY AS elem(value, ordinality)", "postgres"},
+	} {
+		e, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q, %q): %v", c.sql, c.dialect, err)
+		}
+		got, err := Generate(e, c.dialect)
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", c.sql, err)
+		}
+		if got != c.sql {
+			t.Errorf("%q wrote %q", c.sql, got)
+		}
+	}
+
+	// An UNNEST with MORE alias columns than unnested expressions names the
+	// ordinality column with the last one: `t(a, b)` numbers into b and
+	// leaves a for the values.
+	e, err := ParseOne("SELECT * FROM UNNEST(x) WITH ORDINALITY AS t(a, b)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	from, _ := e.Args["from_"].(*Expression)
+	unnest, _ := from.Args["this"].(*Expression)
+	offset, _ := unnest.Args["offset"].(*Expression)
+	if offset == nil || offset.Class != "Identifier" {
+		t.Fatalf("the ordinality is %v, want an Identifier", unnest.Args["offset"])
+	}
+	if name, _ := offset.Args["this"].(string); name != "b" {
+		t.Errorf("the ordinality column is %q, want b", name)
+	}
+	alias, _ := unnest.Args["alias"].(*Expression)
+	columns, _ := alias.Args["columns"].([]*Expression)
+	if len(columns) != 1 {
+		t.Errorf("the alias keeps %d columns, want 1", len(columns))
+	}
+
+	// Databricks writes an aliased UNNEST as EXPLODE with the alias among
+	// the arguments, and one that numbers its rows as EXPLODE too -- shapes
+	// this port does not build, so it refuses rather than write them.
+	for _, sql := range []string{
+		"SELECT * FROM UNNEST(x) AS t(a)",
+		"SELECT * FROM UNNEST(x) WITH ORDINALITY AS t(a, b)",
+	} {
+		e, err := ParseOne(sql, "databricks")
+		if err != nil {
+			t.Fatalf("ParseOne(%q, databricks): %v", sql, err)
+		}
+		if got, err := Generate(e, "databricks"); err == nil {
+			t.Errorf("Databricks wrote %q; it spells this as EXPLODE", got)
+		}
+	}
+
+	// `WITH OFFSET` names the same column another way and the reference
+	// writes every spelling of it back as WITH ORDINALITY, dropping the name.
+	for _, sql := range []string{
+		"SELECT * FROM UNNEST(x) WITH OFFSET",
+		"SELECT * FROM UNNEST(x) WITH OFFSET AS o",
+	} {
+		if e, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) read %s; the name would be written away", sql, e.Class)
+		}
+	}
+}
