@@ -95,6 +95,7 @@ func init() {
 		"Uncache":                             (*generator).writeUncache,
 		"Describe":                            (*generator).writeDescribe,
 		"Analyze":                             (*generator).writeAnalyze,
+		"LoadData":                            (*generator).writeLoadData,
 		"AnalyzeStatistics":                   (*generator).writeAnalyzeStatistics,
 		"Transaction":                         (*generator).writeTransaction,
 		"Commit":                              (*generator).writeTransaction,
@@ -3679,4 +3680,32 @@ func (g *generator) withoutFoldedOrder(e, order *Expression) *Expression {
 	}
 	unfolded.Set("this", order.Args["this"])
 	return unfolded
+}
+
+// writeLoadData writes `LOAD DATA [LOCAL] INPATH '<file>' [OVERWRITE] INTO
+// TABLE <table> [PARTITION(...)] [INPUTFORMAT '<f>'] [SERDE '<s>']`.
+//
+// OVERWRITE goes between the path and the table, which is where it is
+// written and not where it is read: the reference matches it before INTO and
+// puts it back after the path.
+func (g *generator) writeLoadData(e *Expression) string {
+	out := "LOAD DATA"
+	if local, _ := e.Args["local"].(bool); local {
+		out += " LOCAL"
+	}
+	out += " INPATH " + g.child(e, "inpath")
+	if overwrite, _ := e.Args["overwrite"].(bool); overwrite {
+		out += " OVERWRITE"
+	}
+	out += " INTO TABLE " + g.child(e, "this")
+	if partition := g.child(e, "partition"); partition != "" {
+		out += " " + partition
+	}
+	if format := g.child(e, "input_format"); format != "" {
+		out += " INPUTFORMAT " + format
+	}
+	if serde := g.child(e, "serde"); serde != "" {
+		out += " SERDE " + serde
+	}
+	return out
 }

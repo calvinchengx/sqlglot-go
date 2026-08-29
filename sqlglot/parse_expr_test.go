@@ -4897,6 +4897,11 @@ func TestParenthesisedQuery(t *testing.T) {
 		"SELECT * FROM ((SELECT 1 AS x) CROSS JOIN (SELECT 2 AS y)) AS z",
 		"SELECT * FROM (a CROSS JOIN b)",
 		"SELECT * FROM ((x))",
+		// ...and so does an EXPRESSION whose first operand is a query.
+		"SELECT ((SELECT 1) + 1)",
+		"(SELECT 1) + 1",
+		"(SELECT 1) % (SELECT 2)",
+		"1 UNION SELECT 2",
 	} {
 		e, err := ParseOne(sql, "")
 		if err != nil {
@@ -4948,6 +4953,8 @@ func TestUnclosedParenthesisedQuery(t *testing.T) {
 		"SELECT * FROM ((SELECT 1",
 		"SELECT * FROM ((SELECT 1)",
 		"(SELECT 1",
+		"SELECT ((",
+		"SELECT ((SELECT 1)",
 	} {
 		if e, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) read %s", sql, e.Class)
@@ -5059,5 +5066,72 @@ func TestStringAggDistinct(t *testing.T) {
 	// so a third argument is refused rather than dropped.
 	if e, err := ParseOne("STRING_AGG(DISTINCT x, y, z)", "postgres"); err == nil {
 		t.Errorf("read %s; the third argument would be written away", e.Class)
+	}
+}
+
+// TestLoadData covers Hive's LOAD DATA, which puts a file's rows into a table.
+func TestLoadData(t *testing.T) {
+	for _, sql := range []string{
+		"LOAD DATA INPATH 'x' INTO TABLE y",
+		"LOAD DATA LOCAL INPATH 'x' INTO TABLE y",
+		"LOAD DATA INPATH 'x' OVERWRITE INTO TABLE y",
+		"LOAD DATA INPATH 'x' INTO TABLE y.b INPUTFORMAT 'y' SERDE 'z'",
+		"LOAD DATA INPATH 'x' INTO TABLE y PARTITION(ds = 'yyyy')",
+		"LOAD DATA LOCAL INPATH 'x' INTO TABLE y PARTITION(ds = 'yyyy') INPUTFORMAT 'y' SERDE 'z'",
+	} {
+		e, err := ParseOne(sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; it fills a table", sql)
+		}
+		got, err := Generate(e, "")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+	}
+
+	// Three arguments are FALSE when the clause is absent rather than
+	// missing, which is what the reference's `matched and value` yields.
+	e, err := ParseOne("LOAD DATA INPATH 'x' INTO TABLE y", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	for _, key := range []string{"files", "input_format", "serde"} {
+		if e.Args[key] != false {
+			t.Errorf("%s is %v, want false", key, e.Args[key])
+		}
+	}
+
+	for _, sql := range []string{
+		// The reference reads TEMPORARY and writes the statement without it,
+		// loading the file into a table that outlives the session.
+		"LOAD DATA INPATH 'x' INTO TEMPORARY TABLE y",
+		// Refused by the reference too: a LOAD DATA has to say where it
+		// loads to.
+		"LOAD DATA INPATH 'x'",
+		// The reference reads a missing path as nothing and writes
+		// `LOAD DATA INPATH  INTO TABLE y` -- a statement that names no
+		// file, which is not the one that was written.
+		"LOAD DATA INTO TABLE y",
+		// Kept as raw text by the reference, which is not a tree this port
+		// builds.
+		"LOAD INDEX INTO CACHE t",
+		"LOAD DATA INPATH 'x' INTO TABLE y EXTRA",
+		"LOAD DATA INPATH 'x' INTO TABLE y INPUTFORMAT z",
+		"LOAD DATA INPATH 'x' INTO TABLE y SERDE z",
+		"LOAD DATA LOCAL",
+		"LOAD DATA INPATH x INTO TABLE y",
+		"LOAD DATA INPATH 'x' INTO y",
+		"LOAD DATA INPATH 'x' INTO TABLE 1",
+		"LOAD DATA INPATH 'x' INTO TABLE y PARTITION(",
+	} {
+		if e, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) read %s", sql, e.Class)
+		}
 	}
 }

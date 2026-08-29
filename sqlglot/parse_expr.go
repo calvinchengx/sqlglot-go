@@ -1019,7 +1019,10 @@ func (p *parser) parsePrimary() (*Expression, error) {
 
 	switch c.Type {
 	case TokL_PAREN:
-		if n := p.next(); n != nil && (n.Type == TokSELECT || n.Type == TokWITH) {
+		// Past a RUN of parentheses, because a query may be wrapped more than
+		// once and every pair is a Subquery of its own: `((SELECT 1))` is one
+		// inside another, not a Paren around one.
+		if p.opensAParenthesisedQuery() {
 			return p.parseScalarSubquery()
 		}
 		p.advance()

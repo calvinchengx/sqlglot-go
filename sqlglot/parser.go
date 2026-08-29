@@ -300,31 +300,14 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokANALYZE) {
 		return p.parseAnalyze()
 	}
+	if p.at(TokLOAD) {
+		return p.parseLoadData()
+	}
 	if p.at(TokBEGIN) || p.at(TokCOMMIT) || p.at(TokROLLBACK) {
 		return p.parseTransaction()
 	}
 	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) || p.at(TokFROM) {
 		return p.parseQueryBody()
-	}
-	// A query in PARENTHESES is a statement too: `(SELECT 1) UNION SELECT 2`
-	// and `(SELECT 1) ORDER BY x LIMIT 1` are a set operation and a modified
-	// query, not an expression with tokens left over. The reference reads the
-	// parentheses as a Subquery and then continues exactly as it would after
-	// a SELECT -- set operations first, then the modifiers, which is why the
-	// ORDER BY of a union lands on the union.
-	if p.opensAParenthesisedQuery() {
-		this, err := p.parseScalarSubquery()
-		if err != nil {
-			return nil, err
-		}
-		this, err = p.parseSetOperations(this)
-		if err != nil {
-			return nil, err
-		}
-		if err := p.parseQueryModifiers(this); err != nil {
-			return nil, err
-		}
-		return this, nil
 	}
 	// After every statement with a grammar of its own, and before the ones
 	// this port only names: the reference asks in that order too, so a
@@ -342,5 +325,31 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	// A statement that is an expression may still go on: a SET OPERATION
+	// takes any expression on its left -- `1 UNION SELECT 2` is a Union --
+	// and a query in parentheses then takes the modifiers a query takes.
+	// `(SELECT 1) UNION SELECT 2` and `(SELECT 1) ORDER BY x LIMIT 1` are
+	// both of those, and `(SELECT 1) + 1` is neither: reading the
+	// parentheses as a query BEFORE the expression parser saw them refused
+	// the sum for having tokens left over, which the generator fuzzer found
+	// on the port's own output.
+	e, err = p.parseSetOperations(e)
+	if err != nil {
+		return nil, err
+	}
+	if takesQueryModifiers[e.Class] {
+		if err := p.parseQueryModifiers(e); err != nil {
+			return nil, err
+		}
+	}
 	return p.parseAlias(e)
+}
+
+// takesQueryModifiers are the classes an ORDER BY, a LIMIT or an OFFSET may
+// follow where they stand on their own. It is the reference's MODIFIABLES:
+// a query, a table, or rows written out. `x ORDER BY y` is not a statement,
+// and reading one would order a column.
+var takesQueryModifiers = map[string]bool{
+	"Select": true, "Union": true, "Except": true, "Intersect": true,
+	"Subquery": true, "Table": true, "Values": true,
 }

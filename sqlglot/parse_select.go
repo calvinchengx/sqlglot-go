@@ -251,25 +251,64 @@ func (p *parser) parseSelectOrParenthesised() (*Expression, error) {
 
 // opensAParenthesisedQuery reports whether the cursor is on a parenthesis
 // that opens a QUERY rather than an expression.
+func (p *parser) opensAParenthesisedQuery() bool { return p.queryAt(0) }
+
+// queryAt reports whether the parenthesis `i` tokens ahead opens a query.
 //
-// It looks past a run of parentheses, because a query may be wrapped more
-// than once and the reference records every pair: `((SELECT 1))` is a
-// Subquery inside a Subquery, not one with a spare set of brackets.
-func (p *parser) opensAParenthesisedQuery() bool {
-	if !p.at(TokL_PAREN) {
+// A query may be WRAPPED more than once and every pair is recorded --
+// `((SELECT 1))` is a Subquery inside a Subquery -- so a parenthesis whose
+// next token is another parenthesis has to look further. But it cannot simply
+// look past the whole run: `((SELECT 1) + 1)` opens an EXPRESSION whose first
+// operand is a query, and reading it as a query stopped at the `+` with the
+// parentheses still open.
+//
+// So what follows the inner group decides: the parenthesis that closes this
+// one means the query was the whole of it, a set operator means the query
+// continues, and anything else means an expression.
+func (p *parser) queryAt(i int) bool {
+	if at := p.peekAt(i); at == nil || at.Type != TokL_PAREN {
 		return false
 	}
-	for i := 1; ; i++ {
+	next := p.peekAt(i + 1)
+	if next == nil {
+		return false
+	}
+	switch next.Type {
+	case TokSELECT, TokWITH, TokFROM, TokPIVOT, TokUNPIVOT:
+		return true
+	case TokL_PAREN:
+		if !p.queryAt(i + 1) {
+			return false
+		}
+		after := p.afterGroup(i + 1)
+		if after == nil {
+			return false
+		}
+		if after.Type == TokR_PAREN {
+			return true
+		}
+		_, isSetOp := setOperations[after.Type]
+		return isSetOp
+	}
+	return false
+}
+
+// afterGroup returns the token following the balanced parenthesis group that
+// begins `i` tokens ahead, or nil where the group does not close.
+func (p *parser) afterGroup(i int) *Token {
+	depth := 0
+	for ; ; i++ {
 		next := p.peekAt(i)
 		if next == nil {
-			return false
+			return nil
 		}
 		switch next.Type {
 		case TokL_PAREN:
-		case TokSELECT, TokWITH, TokFROM, TokPIVOT, TokUNPIVOT:
-			return true
-		default:
-			return false
+			depth++
+		case TokR_PAREN:
+			if depth--; depth == 0 {
+				return p.peekAt(i + 1)
+			}
 		}
 	}
 }
@@ -1298,24 +1337,10 @@ func (p *parser) opensASetOperation() bool {
 	if !p.opensAParenthesisedQuery() {
 		return false
 	}
-	depth := 0
-	for i := 0; ; i++ {
-		next := p.peekAt(i)
-		if next == nil {
-			return false
-		}
-		switch next.Type {
-		case TokL_PAREN:
-			depth++
-		case TokR_PAREN:
-			if depth--; depth == 0 {
-				after := p.peekAt(i + 1)
-				if after == nil {
-					return false
-				}
-				_, isSetOp := setOperations[after.Type]
-				return isSetOp
-			}
-		}
+	after := p.afterGroup(0)
+	if after == nil {
+		return false
 	}
+	_, isSetOp := setOperations[after.Type]
+	return isSetOp
 }

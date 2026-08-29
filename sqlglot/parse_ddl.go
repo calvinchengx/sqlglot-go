@@ -328,6 +328,8 @@ var writeClasses = map[string]bool{
 	"Attach":  true,
 	"Detach":  true,
 	"Install": true,
+	// LOAD DATA puts a file's rows into a table without reading one here.
+	"LoadData": true,
 	// A Command is a statement nothing here understood -- the tokenizer took
 	// the payload verbatim and no grammar was applied to it. It is a write
 	// because it cannot be shown to be anything else.
@@ -3331,4 +3333,94 @@ func createdTable(this *Expression) *Expression {
 		return inner
 	}
 	return this
+}
+
+// parseLoadData reads Hive's `LOAD DATA [LOCAL] INPATH '<file>' [OVERWRITE]
+// INTO TABLE <table> [PARTITION(...)] [INPUTFORMAT '<f>'] [SERDE '<s>']`,
+// which loads a file into a table without reading a row of it here.
+//
+// Three of its arguments are FALSE when the clause is absent rather than
+// missing: the reference writes `matched and self._parse_string()`, which
+// yields the boolean when the match fails. An argument present-and-false is a
+// different tree from one absent, so the port sets them the same way.
+func (p *parser) parseLoadData() (*Expression, error) {
+	p.advance() // LOAD
+	if !p.atUnquotedWord("DATA") {
+		// Everything else the word opens is kept as raw text by the
+		// reference, which is a tree this port does not build.
+		return nil, p.unsupported("LOAD of something other than DATA")
+	}
+	p.advance()
+
+	local := false
+	if p.atUnquotedWord("LOCAL") {
+		p.advance()
+		local = true
+	}
+	if !p.atUnquotedWord("INPATH") {
+		return nil, p.unsupported("LOAD DATA without an INPATH")
+	}
+	p.advance()
+	inpath := p.curr()
+	if inpath == nil || inpath.Type != TokSTRING {
+		return nil, p.unsupported("LOAD DATA without a path")
+	}
+	p.advance()
+
+	overwrite := p.match(TokOVERWRITE)
+	if !p.match(TokINTO) {
+		return nil, p.unsupported("LOAD DATA without INTO")
+	}
+	// The reference reads TEMPORARY here and then writes the statement
+	// without it, which loads the file into a table that outlives the
+	// session. Refusing beats writing a different statement.
+	if p.at(TokTEMPORARY) {
+		return nil, p.unsupported("LOAD DATA INTO a temporary table")
+	}
+	if !p.match(TokTABLE) {
+		return nil, p.unsupported("LOAD DATA INTO something other than a TABLE")
+	}
+	table, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+
+	node := New("LoadData",
+		Arg{"this", table},
+		Arg{"local", local},
+		Arg{"overwrite", overwrite},
+		Arg{"temp", false},
+		Arg{"inpath", New("Literal", Arg{"this", inpath.Text}, Arg{"is_string", true})},
+		Arg{"files", false},
+	)
+	if p.atWords("PARTITION") && p.next() != nil && p.next().Type == TokL_PAREN {
+		p.advance()
+		members, err := p.parseParenthesisedList()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("partition", New("Partition",
+			Arg{"subpartition", false}, Arg{"expressions", members}))
+	}
+	for _, clause := range []struct{ word, key string }{
+		{"INPUTFORMAT", "input_format"},
+		{"SERDE", "serde"},
+	} {
+		value := false
+		if p.atUnquotedWord(clause.word) {
+			p.advance()
+			text := p.curr()
+			if text == nil || text.Type != TokSTRING {
+				return nil, p.unsupported("LOAD DATA " + clause.word + " without a string")
+			}
+			p.advance()
+			node.Set(clause.key, New("Literal", Arg{"this", text.Text}, Arg{"is_string", true}))
+			continue
+		}
+		node.Set(clause.key, value)
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("LOAD DATA with more than this port reads")
+	}
+	return node, nil
 }
