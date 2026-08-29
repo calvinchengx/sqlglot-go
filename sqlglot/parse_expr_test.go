@@ -5544,3 +5544,87 @@ func TestDistinctArgFunction(t *testing.T) {
 		t.Errorf("read an unclosed ARG_MAX as %v", e)
 	}
 }
+
+// TestXMLElement covers XMLELEMENT, whose tag is a NAME rather than an
+// expression -- and whose empty content is recorded as false, not as nothing.
+func TestXMLElement(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT XMLELEMENT(NAME foo)",
+		"SELECT XMLELEMENT(NAME foo, XMLATTRIBUTES('xyz' AS bar))",
+		`SELECT XMLELEMENT(NAME "foo$bar", XMLATTRIBUTES('xyz' AS "a&b"))`,
+		"SELECT XMLELEMENT(NAME foo, XMLATTRIBUTES('xyz' AS bar), 'cont', 'ent')",
+	} {
+		e, err := ParseOne(sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "postgres")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+	}
+
+	// No content at all is FALSE rather than absent, which is what the
+	// reference's `matched and value` yields -- and the spelling for the
+	// short form is chosen by that very flag.
+	e, err := ParseOne("SELECT XMLELEMENT(NAME foo)", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call := e.Args["expressions"].([]*Expression)[0]
+	if call.Args["expressions"] != false {
+		t.Errorf("an empty XMLELEMENT carries expressions = %v", call.Args["expressions"])
+	}
+	if _, ok := call.Args["evalname"]; ok {
+		t.Errorf("a NAME form carries evalname = %v", call.Args["evalname"])
+	}
+
+	// EVALNAME computes the tag instead of naming it, and is recorded.
+	e, err = ParseOne("SELECT XMLELEMENT(EVALNAME a || b, 1)", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call = e.Args["expressions"].([]*Expression)[0]
+	if call.Args["evalname"] != true {
+		t.Errorf("EVALNAME was not recorded: %v", call.Args)
+	}
+	if this, _ := call.Args["this"].(*Expression); this == nil || this.Class != "DPipe" {
+		t.Errorf("the computed tag is %v, want the concatenation", call.Args["this"])
+	}
+
+	if e, err := ParseOne("SELECT XMLELEMENT(NAME foo", "postgres"); err == nil {
+		t.Errorf("read an unclosed XMLELEMENT as %v", e)
+	}
+}
+
+// TestAliasedFunctionArgument covers an argument that names itself, which the
+// reference allows only where it has no node for the call.
+func TestAliasedFunctionArgument(t *testing.T) {
+	e, err := ParseOne("SELECT F(x AS a)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call := e.Args["expressions"].([]*Expression)[0]
+	if call.Class != "Anonymous" {
+		t.Fatalf("F read as %s", call.Class)
+	}
+	arg := call.Args["expressions"].([]*Expression)[0]
+	if arg.Class != "Alias" {
+		t.Errorf("the argument is a %s, want an Alias", arg.Class)
+	}
+
+	for _, sql := range []string{
+		// Only the WRITTEN alias counts: a bare word after an argument is a
+		// stray word, and the reference refuses it too.
+		"SELECT F(x a)",
+		// A name the reference HAS a node for takes no alias either.
+		"SELECT ABS(x AS a)",
+	} {
+		if e, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("read %q as %v, want a refusal", sql, e)
+		}
+	}
+}

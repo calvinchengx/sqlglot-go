@@ -55,6 +55,8 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseDistinctArgFunction("RegrSxx", 1)
 	case "REGR_SYY":
 		return p.parseDistinctArgFunction("RegrSyy", 1)
+	case "XMLELEMENT":
+		return p.parseXMLElement()
 	}
 	return nil, p.unsupported("function " + upper + " with a syntax of its own")
 }
@@ -539,6 +541,15 @@ func (p *parser) parseDistinctArgFunction(class string, distinctIndex int) (*Exp
 // between two ordinary expressions is JSON extraction, and reading
 // `data -> '$.value'` as a lambda made a Lambda out of a JSON path.
 func (p *parser) parseCallArgument() (*Expression, error) {
+	return p.parseCallArgumentAliased(false)
+}
+
+// parseCallArgumentAliased is the same, for a call whose arguments may NAME
+// themselves. The reference allows that only where the name is one it has no
+// node for: `XMLATTRIBUTES('xyz' AS bar)` is an Anonymous call over an Alias,
+// and the same words inside a call the reference knows would be an argument
+// followed by a stray word.
+func (p *parser) parseCallArgumentAliased(alias bool) (*Expression, error) {
 	switch {
 	case p.atLambda():
 		return p.parseLambda()
@@ -550,6 +561,69 @@ func (p *parser) parseCallArgument() (*Expression, error) {
 		// wrapper the way there is after `IN`.
 		return p.parseQuery()
 	default:
-		return p.parseExpression()
+		e, err := p.parseExpression()
+		if err != nil || !alias {
+			return e, err
+		}
+		// Only the WRITTEN alias counts: the reference asks for an explicit
+		// one here, so `F(x a)` is a stray word rather than a naming.
+		if !p.match(TokALIAS) {
+			return e, nil
+		}
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		return New("Alias", Arg{"this", e}, Arg{"alias", name}), nil
 	}
+}
+
+// XMLELEMENT(NAME tag, ...) builds one XML element. The tag is a NAME rather
+// than an expression, unless EVALNAME says to compute it -- and the reference
+// records which of the two was written.
+//
+// A call with no content records `expressions` as FALSE rather than leaving it
+// out: the reference writes `self._match(COMMA) and self._parse_csv(...)`, and
+// a comma that is not there yields the false rather than nothing at all.
+func (p *parser) parseXMLElement() (*Expression, error) {
+	p.advance()
+	p.advance()
+
+	var this *Expression
+	var err error
+	evalname := p.matchUnquotedWord("EVALNAME")
+	if evalname {
+		this, err = p.parseBitwise()
+	} else {
+		p.matchUnquotedWord("NAME")
+		this, err = p.parseIdentifier()
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	node := New("XMLElement", Arg{"this", this})
+	if p.match(TokCOMMA) {
+		var contents []*Expression
+		for {
+			content, err := p.parseBitwise()
+			if err != nil {
+				return nil, err
+			}
+			contents = append(contents, content)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		node.Set("expressions", contents)
+	} else {
+		node.Set("expressions", false)
+	}
+	if evalname {
+		node.Set("evalname", true)
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed XMLELEMENT")
+	}
+	return node, nil
 }

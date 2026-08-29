@@ -1664,6 +1664,11 @@ func (p *parser) parseFunction() (*Expression, error) {
 			return nil, p.unsupported("function " + upper + " with a builder of its own")
 		}
 	}
+	// A name the reference has no node for takes arguments that may name
+	// themselves; one it does know does not.
+	_, aliasedArgs := p.tables.NamedFunctions[upper]
+	aliasedArgs = !aliasedArgs
+
 	p.advance()
 	p.advance() // the opening parenthesis
 
@@ -1687,7 +1692,7 @@ func (p *parser) parseFunction() (*Expression, error) {
 			// same `->` between two ordinary expressions is JSON extraction,
 			// and reading `data -> '$.value'` as a lambda made a Lambda out of
 			// a JSON path.
-			arg, err := p.parseCallArgument()
+			arg, err := p.parseCallArgumentAliased(aliasedArgs)
 			if err != nil {
 				return nil, err
 			}
