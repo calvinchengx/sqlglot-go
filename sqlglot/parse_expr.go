@@ -1687,21 +1687,7 @@ func (p *parser) parseFunction() (*Expression, error) {
 			// same `->` between two ordinary expressions is JSON extraction,
 			// and reading `data -> '$.value'` as a lambda made a Lambda out of
 			// a JSON path.
-			var arg *Expression
-			var err error
-			switch {
-			case p.atLambda():
-				arg, err = p.parseLambda()
-			case p.atKwarg():
-				arg, err = p.parseKwarg()
-			case p.at(TokSELECT), p.at(TokWITH):
-				// `EXISTS(SELECT 1)`: the call's own parentheses are the
-				// subquery's, so the argument is the Select ITSELF -- there
-				// is no Subquery wrapper the way there is after `IN`.
-				arg, err = p.parseQuery()
-			default:
-				arg, err = p.parseExpression()
-			}
+			arg, err := p.parseCallArgument()
 			if err != nil {
 				return nil, err
 			}

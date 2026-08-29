@@ -88,6 +88,33 @@ def main() -> int:
                     print(f'\t\t"{cls}": true,')
         print("\t},")
     print("}")
+
+    print()
+    print("// classArgKeys is each class's arg_types in ORDER, which is the order a")
+    print("// call's arguments are zipped onto by the reference's from_arg_list, and")
+    print("// classVarLen marks the classes whose LAST key collects the rest.")
+    print("// Read from the class rather than probed: a builder that only places its")
+    print("// arguments is this table, and a hand-written parser that has to place")
+    print("// them itself would otherwise have to guess the order.")
+    print("var classArgKeys = map[string][]string{")
+    for module in sorted(by_module):
+        for cls in sorted(by_module[module]):
+            obj = getattr(exp, cls, None)
+            keys = list(getattr(obj, "arg_types", None) or ())
+            if not keys:
+                continue
+            joined = ", ".join('"%s"' % k for k in keys)
+            print(f'\t"{cls}": {{{joined}}},')
+    print("}")
+
+    print()
+    print("var classVarLen = map[string]bool{")
+    for module in sorted(by_module):
+        for cls in sorted(by_module[module]):
+            obj = getattr(exp, cls, None)
+            if getattr(obj, "is_var_len_args", False):
+                print(f'\t"{cls}": true,')
+    print("}")
     return 0
 
 

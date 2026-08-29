@@ -67,3 +67,22 @@ func argAt(args []*Expression, i int) *Expression {
 	}
 	return nil
 }
+
+// fromArgList places a call's arguments onto a class's own argument keys, in
+// order, the way the reference's Func.from_arg_list does: the zip stops at
+// whichever runs out first, and an argument that is not there at all leaves
+// its key absent rather than present and empty.
+//
+// The reference's variadic tail is not handled -- no hand-written parser here
+// places arguments onto a class that has one, and the probed signatures cover
+// every call that does.
+func fromArgList(class string, args []*Expression) *Expression {
+	node := New(class)
+	for i, key := range classArgKeys[class] {
+		if i >= len(args) {
+			break
+		}
+		node.Set(key, args[i])
+	}
+	return node
+}

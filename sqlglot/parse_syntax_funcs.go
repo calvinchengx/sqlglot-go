@@ -31,6 +31,30 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseCeilFloor("Floor")
 	case "OVERLAY":
 		return p.parseOverlay()
+	case "ARG_MAX", "ARGMAX", "MAX_BY":
+		return p.parseDistinctArgFunction("ArgMax", 0)
+	case "ARG_MIN", "ARGMIN", "MIN_BY":
+		return p.parseDistinctArgFunction("ArgMin", 0)
+	case "APPROX_QUANTILE", "APPROX_PERCENTILE", "PERCENTILE_APPROX":
+		return p.parseDistinctArgFunction("ApproxQuantile", 0)
+	case "QUANTILE", "PERCENTILE":
+		return p.parseDistinctArgFunction("Quantile", 0)
+	case "QUANTILE_CONT":
+		return p.parseDistinctArgFunction("PercentileCont", 0)
+	case "QUANTILE_DISC":
+		return p.parseDistinctArgFunction("PercentileDisc", 0)
+	// The regressions take their DISTINCT on the argument the reference names,
+	// which for three of the five is the SECOND one.
+	case "REGR_AVGY":
+		return p.parseDistinctArgFunction("RegrAvgy", 0)
+	case "REGR_SXY":
+		return p.parseDistinctArgFunction("RegrSxy", 0)
+	case "REGR_AVGX":
+		return p.parseDistinctArgFunction("RegrAvgx", 1)
+	case "REGR_SXX":
+		return p.parseDistinctArgFunction("RegrSxx", 1)
+	case "REGR_SYY":
+		return p.parseDistinctArgFunction("RegrSyy", 1)
 	}
 	return nil, p.unsupported("function " + upper + " with a syntax of its own")
 }
@@ -470,4 +494,62 @@ func (p *parser) matchUnquotedWord(word string) bool {
 	}
 	p.advance()
 	return true
+}
+
+// ARG_MAX and ARG_MIN take a DISTINCT that belongs to the FIRST argument
+// rather than to the call: `ARG_MAX(DISTINCT a, b)` is a maximum over distinct
+// values of a, not a distinct list of two things. That is the whole reason
+// they are given a grammar -- everything after the first argument is read the
+// way any call's arguments are.
+func (p *parser) parseDistinctArgFunction(class string, distinctIndex int) (*Expression, error) {
+	p.advance()
+	p.advance()
+
+	distinct := p.match(TokDISTINCT)
+	if !distinct {
+		p.match(TokALL)
+	}
+
+	var args []*Expression
+	first, err := p.parseCallArgument()
+	if err != nil {
+		return nil, err
+	}
+	args = append(args, first)
+	for p.match(TokCOMMA) {
+		arg, err := p.parseCallArgument()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed " + strings.ToUpper(class))
+	}
+	if distinct && distinctIndex < len(args) && args[distinctIndex] != nil {
+		args[distinctIndex] = New("Distinct",
+			Arg{"expressions", []*Expression{args[distinctIndex]}}, Arg{"on", nil})
+	}
+	return fromArgList(class, args), nil
+}
+
+// parseCallArgument reads ONE argument of a call.
+//
+// `x -> x > 1` is a lambda ONLY here, in argument position. The same `->`
+// between two ordinary expressions is JSON extraction, and reading
+// `data -> '$.value'` as a lambda made a Lambda out of a JSON path.
+func (p *parser) parseCallArgument() (*Expression, error) {
+	switch {
+	case p.atLambda():
+		return p.parseLambda()
+	case p.atKwarg():
+		return p.parseKwarg()
+	case p.at(TokSELECT), p.at(TokWITH):
+		// `EXISTS(SELECT 1)`: the call's own parentheses are the subquery's,
+		// so the argument is the Select ITSELF -- there is no Subquery
+		// wrapper the way there is after `IN`.
+		return p.parseQuery()
+	default:
+		return p.parseExpression()
+	}
 }

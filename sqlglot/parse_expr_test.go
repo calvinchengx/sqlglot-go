@@ -5468,3 +5468,79 @@ func TestOverlay(t *testing.T) {
 		t.Errorf("read an unclosed OVERLAY as %v", e)
 	}
 }
+
+// TestDistinctArgFunction covers the calls whose DISTINCT belongs to one
+// argument rather than to the call.
+func TestDistinctArgFunction(t *testing.T) {
+	for _, tc := range []struct{ sql, dialect, class string }{
+		{"SELECT ARG_MAX(a, b)", "", "ArgMax"},
+		{"SELECT MAX_BY(a, b)", "", "ArgMax"},
+		{"SELECT ARG_MIN(a, b)", "", "ArgMin"},
+		{"SELECT MIN_BY(a, b)", "", "ArgMin"},
+		{"SELECT QUANTILE(a, 0.5)", "duckdb", "Quantile"},
+		{"SELECT APPROX_QUANTILE(a, 0.5)", "duckdb", "ApproxQuantile"},
+		{"SELECT QUANTILE_CONT(a, 0.5)", "duckdb", "PercentileCont"},
+		{"SELECT QUANTILE_DISC(a, 0.5)", "duckdb", "PercentileDisc"},
+		{"SELECT REGR_SXY(a, b)", "databricks", "RegrSxy"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		call := e.Args["expressions"].([]*Expression)[0]
+		if call.Class != tc.class {
+			t.Errorf("%q read as %s, want %s", tc.sql, call.Class, tc.class)
+		}
+		// The arguments land on the class's OWN keys, in order.
+		if this, _ := call.Args["this"].(*Expression); this == nil {
+			t.Errorf("%q has no first argument", tc.sql)
+		}
+	}
+
+	// The DISTINCT wraps the argument the reference names, which is the
+	// second one for three of the five regressions and the first everywhere
+	// else -- so the same word lands in two different places.
+	for _, tc := range []struct {
+		sql, dialect string
+		index        int
+	}{
+		{"SELECT ARG_MAX(DISTINCT a, b)", "", 0},
+		{"SELECT REGR_SXY(DISTINCT a, b)", "databricks", 0},
+		{"SELECT REGR_SXX(DISTINCT a, b)", "databricks", 1},
+		{"SELECT REGR_SYY(DISTINCT a, b)", "databricks", 1},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		call := e.Args["expressions"].([]*Expression)[0]
+		keys := []string{"this", "expression"}
+		got, _ := call.Args[keys[tc.index]].(*Expression)
+		if got == nil || got.Class != "Distinct" {
+			t.Errorf("%q put the DISTINCT somewhere other than %s: %v",
+				tc.sql, keys[tc.index], call)
+		}
+	}
+
+	// ALL is the no-op modifier and leaves the argument alone.
+	all, err := ParseOne("SELECT ARG_MAX(ALL a, b)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	plain, err := ParseOne("SELECT ARG_MAX(a, b)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if !all.Equal(plain) {
+		t.Errorf("ALL changed the tree:\n%v\n%v", all, plain)
+	}
+
+	// More arguments than the class has keys are dropped by the reference's
+	// own zip, so they are dropped here too rather than refused.
+	if _, err := ParseOne("SELECT ARG_MAX(a, b, c, d)", ""); err != nil {
+		t.Errorf("ParseOne: %v", err)
+	}
+	if e, err := ParseOne("SELECT ARG_MAX(a, b", ""); err == nil {
+		t.Errorf("read an unclosed ARG_MAX as %v", e)
+	}
+}
