@@ -6178,3 +6178,127 @@ func TestTimeZoneTypes(t *testing.T) {
 		}
 	}
 }
+
+// TestDeclare covers the statement that makes a variable, whose commas mean
+// two different things depending on what follows them.
+func TestDeclare(t *testing.T) {
+	for _, tc := range []struct{ sql, dialect, want string }{
+		{"DECLARE @X INT", "tsql", "DECLARE @X INTEGER"},
+		{"DECLARE @X INT = 1", "tsql", "DECLARE @X INTEGER = 1"},
+		// Two variables of two types.
+		{"DECLARE @X INT, @Y VARCHAR(10)", "tsql", "DECLARE @X INTEGER, @Y VARCHAR(10)"},
+		{"DECLARE @v1 AS INTEGER = 1, @v2 AS CHAR(1) = 'c'", "tsql",
+			"DECLARE @v1 INTEGER = 1, @v2 CHAR(1) = 'c'"},
+		{"DECLARE @X INT = (SELECT col FROM t WHERE id = 1)", "tsql",
+			"DECLARE @X INTEGER = (SELECT col FROM t WHERE id = 1)"},
+		{"DECLARE @X TABLE (Id INT NOT NULL, Name VARCHAR(100) NOT NULL)", "tsql",
+			"DECLARE @X TABLE (Id INTEGER NOT NULL, Name VARCHAR(100) NOT NULL)"},
+		{"DECLARE x INT", "databricks", "DECLARE x INT"},
+		// VAR and VARIABLE say nothing and are written back away.
+		{"DECLARE VAR x INT", "databricks", "DECLARE x INT"},
+		{"DECLARE VARIABLE x INT", "databricks", "DECLARE x INT"},
+		{"DECLARE OR REPLACE x INT = 1", "databricks", "DECLARE OR REPLACE x INT = 1"},
+		// Three variables of ONE type: the same comma, read the other way.
+		{"DECLARE x, y, z INT DEFAULT 1", "databricks", "DECLARE x, y, z INT = 1"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.want {
+			t.Errorf("[%s] %q wrote %q, want %q (%v)", tc.dialect, tc.sql, got, tc.want, err)
+		}
+	}
+
+	// One item for three names, two items for two names and two types.
+	e, err := ParseOne("DECLARE x, y, z INT", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	items, _ := e.Args["expressions"].([]*Expression)
+	if len(items) != 1 {
+		t.Fatalf("three names read as %d items", len(items))
+	}
+	names, _ := items[0].Args["this"].([]*Expression)
+	if len(names) != 3 {
+		t.Errorf("one item holds %d names", len(names))
+	}
+	e, err = ParseOne("DECLARE @X INT, @Y INT", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if items, _ = e.Args["expressions"].([]*Expression); len(items) != 2 {
+		t.Errorf("two types read as %d items", len(items))
+	}
+
+	// No initial value is FALSE rather than absent.
+	if items[0].Args["default"] != false {
+		t.Errorf("a bare DECLARE carries default = %v", items[0].Args["default"])
+	}
+
+	for _, tc := range []struct{ sql, dialect string }{
+		// A cursor is not a type. The reference keeps the whole statement as
+		// raw text rather than building a Declare, and so does anything the
+		// item parser cannot finish -- which is a shape this port does not
+		// make, so it declines instead.
+		{"DECLARE vendor_cursor CURSOR FOR SELECT a FROM b", "tsql"},
+		{"DECLARE @X INT extra", "tsql"},
+		// The reference reads TABLE with no columns as no type at all and
+		// writes `DECLARE @X`, dropping the word. Refused rather than
+		// reproduced.
+		{"DECLARE @X TABLE", "tsql"},
+	} {
+		if e, err := ParseOne(tc.sql, tc.dialect); err == nil {
+			t.Errorf("read %q as %v, want a refusal", tc.sql, e)
+		}
+	}
+}
+
+// TestKillAndChain covers two small statements: stopping something the server
+// is doing, and saying what happens after a COMMIT.
+func TestKillAndChain(t *testing.T) {
+	for _, sql := range []string{
+		"KILL '123'",
+		"KILL CONNECTION 123",
+		"KILL QUERY '123'",
+	} {
+		e, err := ParseOne(sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, ""); err != nil || got != sql {
+			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+	if e, err := ParseOne("KILL CONNECTION 123 extra", ""); err == nil {
+		t.Errorf("read %v, want a refusal", e)
+	}
+
+	// PostgreSQL reads a bare END as COMMIT; everywhere else the word names
+	// something or closes a block.
+	for _, tc := range []struct{ sql, want string }{
+		{"END WORK AND NO CHAIN", "COMMIT AND NO CHAIN"},
+		{"END AND CHAIN", "COMMIT AND CHAIN"},
+		{"COMMIT AND CHAIN", "COMMIT AND CHAIN"},
+		{"COMMIT", "COMMIT"},
+	} {
+		e, err := ParseOne(tc.sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "postgres"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q, want %q (%v)", tc.sql, got, tc.want, err)
+		}
+	}
+	// A COMMIT that says nothing about it carries no such key.
+	e, err := ParseOne("COMMIT", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if _, ok := e.Args["chain"]; ok {
+		t.Errorf("a plain COMMIT carries chain = %v", e.Args["chain"])
+	}
+	if e, err := ParseOne("COMMIT AND NOT CHAIN", "postgres"); err == nil {
+		t.Errorf("read %v, want a refusal", e)
+	}
+}

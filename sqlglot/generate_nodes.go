@@ -22,6 +22,7 @@ func init() {
 	generators = map[string]func(*generator, *Expression) string{
 		"Select":                              (*generator).writeSelect,
 		"TimeToStr":                           (*generator).writeTimeToStr,
+		"DeclareItem":                         (*generator).writeDeclareItem,
 		"TsOrDsToDate":                        (*generator).writeTsOrDsToDate,
 		"OpenJSONColumnDef":                   (*generator).writeOpenJSONColumnDef,
 		"Union":                               (*generator).writeSetOperation,
@@ -3393,6 +3394,12 @@ func (g *generator) writeTransaction(e *Expression) string {
 		}
 		return verb + " " + name
 	}
+	// A COMMIT may say whether a new transaction starts where it ended. Both
+	// spellings of that are templates the reference produced, so they are
+	// looked up rather than written out here.
+	if _, said := e.Args["chain"].(bool); said {
+		return g.spell(e)
+	}
 	return verb
 }
 
@@ -3861,4 +3868,31 @@ func (g *generator) writeTsOrDsToDate(e *Expression) string {
 		return g.spell(e)
 	}
 	return g.child(e, "this")
+}
+
+// writeDeclareItem writes one declared variable: the names, the type, and the
+// value it starts at.
+//
+// The template probe rejects a shape that begins with one argument and
+// continues with another -- that is what an infix operator looks like -- and
+// this is three arguments in a row. A TABLE type is a Schema, and the word
+// TABLE is written here rather than carried on the node.
+func (g *generator) writeDeclareItem(e *Expression) string {
+	names, _ := e.Args["this"].([]*Expression)
+	parts := make([]string, 0, len(names))
+	for _, n := range names {
+		parts = append(parts, g.node(n))
+	}
+	out := strings.Join(parts, ", ")
+	if kind, _ := e.Args["kind"].(*Expression); kind != nil {
+		if kind.Class == "Schema" {
+			out += " TABLE " + g.node(kind)
+		} else {
+			out += " " + g.node(kind)
+		}
+	}
+	if value, _ := e.Args["default"].(*Expression); value != nil {
+		out += " " + g.tables.DeclareAssignment + " " + g.node(value)
+	}
+	return out
 }

@@ -1972,6 +1972,22 @@ def convert_builds_convert(dialect: str) -> bool:
     return type(node).__name__ == "Convert"
 
 
+def end_commits(dialect: str) -> bool:
+    """Whether a bare END ends the transaction in this dialect.
+
+    PostgreSQL reads END as COMMIT; everywhere else the word is a name or the
+    close of a block. The mapping lives in a statement-parser table keyed by
+    token, which the port has no way to read, so it is asked instead.
+    """
+    import sqlglot
+
+    try:
+        node = sqlglot.parse_one("END", read=dialect or None)
+    except Exception:  # noqa: BLE001 -- not a statement this dialect has
+        return False
+    return type(node).__name__ == "Commit"
+
+
 def bare_sample_count_is_percent(dialect: str, exp) -> bool:
     """What `TABLESAMPLE (3)` counts, with no unit written after it.
 
@@ -3217,6 +3233,8 @@ EXTRA_SHAPES = {
         (("this",), (("null_handling", "NULL ON NULL"),)),
         (("this",), (("null_handling", "ABSENT ON NULL"),)),
     ],
+    # A COMMIT that says whether a new transaction starts where it ended.
+    "Commit": [((), (("chain", True),)), ((), (("chain", False),))],
     "Cluster": [(("expressions[]",), ())],
     "Distribute": [(("expressions[]",), ())],
     "Sort": [(("expressions[]",), ())],
@@ -3960,6 +3978,12 @@ def main() -> int:
         "\t// StarExceptWord is what `* EXCEPT (a)` is written with: DuckDB\n",
         "\t// says EXCLUDE, and both words are READ everywhere.\n",
         "\tStarExceptWord string\n",
+        "\t// DeclareAssignment is what stands between a declared variable and\n",
+        "\t// its initial value.\n",
+        "\tDeclareAssignment string\n",
+        "\t// EndCommits: a bare END ENDS THE TRANSACTION here, and is a name\n",
+        "\t// or a block anywhere else.\n",
+        "\tEndCommits bool\n",
         "\t// TsOrDsParents are the classes a TsOrDsToDate DISAPPEARS under.\n",
         "\t// Databricks reads YEAR(y) as a Year over a TsOrDsToDate and writes\n",
         "\t// it back as YEAR(y) -- the wrapper is written only where its\n",
@@ -4600,6 +4624,12 @@ def main() -> int:
         ) or ()
         out.append(strset("TsOrDsParents", sorted(c.__name__ for c in _tsp)))
         out.append(f"\t\tPrefixAlias: {str(prefix_alias(name)).lower()},\n")
+        out.append("\t\tEndCommits: %s,\n" % str(end_commits(name)).lower())
+        out.append(
+            "\t\tDeclareAssignment: %s,\n"
+            % gostr(getattr(type(_DG.get_or_raise(name or None)).generator_class,
+                            "DECLARE_DEFAULT_ASSIGNMENT", "="))
+        )
         out.append(
             "\t\tStarExceptWord: %s,\n"
             % gostr(getattr(type(_DG.get_or_raise(name or None)).generator_class,

@@ -254,6 +254,12 @@ type ParserTables struct {
 	// StarExceptWord is what `* EXCEPT (a)` is written with: DuckDB
 	// says EXCLUDE, and both words are READ everywhere.
 	StarExceptWord string
+	// DeclareAssignment is what stands between a declared variable and
+	// its initial value.
+	DeclareAssignment string
+	// EndCommits: a bare END ENDS THE TRANSACTION here, and is a name
+	// or a block anywhere else.
+	EndCommits bool
 	// TsOrDsParents are the classes a TsOrDsToDate DISAPPEARS under.
 	// Databricks reads YEAR(y) as a Year over a TsOrDsToDate and writes
 	// it back as YEAR(y) -- the wrapper is written only where its
@@ -2739,6 +2745,7 @@ var parserTables = map[string]*ParserTables{
 			"ColumnDef":                           {{[]string{"this", "kind", "exists"}, []string{"this", "kind"}, []FuncConst{{"exists", true}}, "IF NOT EXISTS {this} {kind}"}},
 			"Comment":                             {{[]string{"this", "expression", "kind"}, []string{"this", "expression", "kind"}, []FuncConst{{"exists", false}, {"materialized", false}}, "COMMENT ON {kind} {this} IS {expression}"}, {[]string{"this", "expression", "kind"}, []string{"this", "expression", "kind"}, []FuncConst{{"exists", false}, {"materialized", false}}, "COMMENT ON {kind} {this} IS {expression}"}, {[]string{"this", "expression", "kind"}, []string{"this", "expression", "kind"}, []FuncConst{{"exists", false}, {"materialized", false}}, "COMMENT ON {kind} {this} IS {expression}"}, {[]string{"this", "expression", "kind"}, []string{"this", "expression", "kind"}, []FuncConst{{"exists", false}, {"materialized", false}}, "COMMENT ON {kind} {this} IS {expression}"}},
 			"CommentColumnConstraint":             {{[]string{"this"}, []string{"this"}, []FuncConst{}, "COMMENT {this}"}},
+			"Commit":                              {{[]string{}, []string{}, []FuncConst{{"chain", false}}, "COMMIT AND NO CHAIN"}, {[]string{"chain"}, []string{}, []FuncConst{{"chain", true}}, "COMMIT AND CHAIN"}},
 			"CompressColumnConstraint":            {{[]string{"this"}, []string{"this"}, []FuncConst{}, "COMPRESS {this}"}, {[]string{"this"}, []string{"this"}, []FuncConst{}, "COMPRESS ({this})"}},
 			"Concat":                              {{[]string{"expressions", "safe"}, []string{"expressions"}, []FuncConst{{"safe", true}, {"coalesce", false}}, "CONCAT({expressions})"}},
 			"ConcatWs":                            {{[]string{"expressions", "safe"}, []string{"expressions"}, []FuncConst{{"safe", true}, {"coalesce", false}}, "CONCAT_WS({expressions})"}},
@@ -3938,6 +3945,8 @@ var parserTables = map[string]*ParserTables{
 		VariantExtractColon:  false,
 		TsOrDsParents:        map[string]struct{}{},
 		PrefixAlias:          false,
+		EndCommits:           false,
+		DeclareAssignment:    "=",
 		StarExceptWord:       "EXCEPT",
 		NormalizeNotNull:     true,
 		ConvertBuildsConvert: false,
@@ -6585,7 +6594,7 @@ var parserTables = map[string]*ParserTables{
 			"Coalesce":                            {{[]string{"this", "expressions", "is_null"}, []string{"this", "expressions"}, []FuncConst{{"is_null", true}}, "ISNULL({this}, {expressions})"}},
 			"Collate":                             {{[]string{"this", "expression"}, []string{"this", "expression"}, []FuncConst{}, "{this} COLLATE {expression}"}},
 			"Command":                             {{[]string{"this", "expression"}, []string{"expression"}, []FuncConst{{"this", "CREATE"}}, "CREATE{expression}"}},
-			"Commit":                              {{[]string{"this"}, []string{"this"}, []FuncConst{{"durability", false}}, "COMMIT TRANSACTION {this} WITH (DELAYED_DURABILITY = OFF)"}, {[]string{"this", "durability"}, []string{"this"}, []FuncConst{{"durability", true}}, "COMMIT TRANSACTION {this} WITH (DELAYED_DURABILITY = ON)"}, {[]string{"this"}, []string{"this"}, []FuncConst{}, "COMMIT TRANSACTION {this}"}},
+			"Commit":                              {{[]string{"this"}, []string{"this"}, []FuncConst{{"durability", false}}, "COMMIT TRANSACTION {this} WITH (DELAYED_DURABILITY = OFF)"}, {[]string{"this", "durability"}, []string{"this"}, []FuncConst{{"durability", true}}, "COMMIT TRANSACTION {this} WITH (DELAYED_DURABILITY = ON)"}, {[]string{"this"}, []string{"this"}, []FuncConst{}, "COMMIT TRANSACTION {this}"}, {[]string{}, []string{}, []FuncConst{{"chain", false}}, "COMMIT TRANSACTION"}, {[]string{"chain"}, []string{}, []FuncConst{{"chain", true}}, "COMMIT TRANSACTION"}},
 			"Compress":                            {{[]string{"this"}, []string{"this"}, []FuncConst{}, "COMPRESS({this})"}},
 			"ComputedColumnConstraint":            {{[]string{"this"}, []string{"this"}, []FuncConst{{"persisted", false}, {"not_null", false}}, "AS {this}"}, {[]string{"this", "persisted"}, []string{"this"}, []FuncConst{{"persisted", true}, {"not_null", false}}, "AS {this} PERSISTED"}, {[]string{"this", "persisted", "not_null"}, []string{"this"}, []FuncConst{{"persisted", true}, {"not_null", true}}, "AS {this} PERSISTED NOT NULL"}},
 			"Constraint":                          {{[]string{"this", "expressions"}, []string{"this", "expressions"}, []FuncConst{}, "CONSTRAINT {this} {expressions}"}},
@@ -7821,6 +7830,8 @@ var parserTables = map[string]*ParserTables{
 		VariantExtractColon:  false,
 		TsOrDsParents:        map[string]struct{}{},
 		PrefixAlias:          false,
+		EndCommits:           false,
+		DeclareAssignment:    "=",
 		StarExceptWord:       "EXCEPT",
 		NormalizeNotNull:     true,
 		ConvertBuildsConvert: true,
@@ -11738,6 +11749,8 @@ var parserTables = map[string]*ParserTables{
 		VariantExtractColon:  false,
 		TsOrDsParents:        map[string]struct{}{},
 		PrefixAlias:          false,
+		EndCommits:           true,
+		DeclareAssignment:    "=",
 		StarExceptWord:       "EXCEPT",
 		NormalizeNotNull:     false,
 		ConvertBuildsConvert: false,
@@ -14574,6 +14587,7 @@ var parserTables = map[string]*ParserTables{
 			"Cluster":               {{[]string{"expressions"}, []string{"expressions"}, []FuncConst{}, " CLUSTER BY {expressions}"}},
 			"Coalesce":              {{[]string{"this", "expressions"}, []string{"this", "expressions"}, []FuncConst{}, "COALESCE({this}, {expressions})"}, {[]string{"this"}, []string{"this"}, []FuncConst{}, "COALESCE({this})"}},
 			"Columns":               {{[]string{"this", "unpack"}, []string{"this"}, []FuncConst{{"unpack", true}}, "*COLUMNS({this})"}, {[]string{"this"}, []string{"this"}, []FuncConst{}, "COLUMNS({this})"}},
+			"Commit":                {{[]string{}, []string{}, []FuncConst{{"chain", false}}, "COMMIT AND NO CHAIN"}, {[]string{"chain"}, []string{}, []FuncConst{{"chain", true}}, "COMMIT AND CHAIN"}},
 			"Comprehension":         {{[]string{"this", "expression", "iterator", "condition"}, []string{"this", "expression", "iterator", "condition"}, []FuncConst{{"position", false}}, "{this} FOR {expression} IN {iterator} IF {condition}"}, {[]string{"this", "expression", "position", "iterator", "condition"}, []string{"this", "expression", "position", "iterator", "condition"}, []FuncConst{}, "{this} FOR {expression}, {position} IN {iterator} IF {condition}"}},
 			"Concat":                {{[]string{"expressions", "safe", "coalesce"}, []string{"expressions"}, []FuncConst{{"safe", true}, {"coalesce", true}}, "CONCAT({expressions})"}},
 			"ConcatWs":              {{[]string{"expressions", "safe", "coalesce"}, []string{"expressions"}, []FuncConst{{"safe", true}, {"coalesce", true}}, "CONCAT_WS({expressions})"}},
@@ -15857,6 +15871,8 @@ var parserTables = map[string]*ParserTables{
 		VariantExtractColon:  false,
 		TsOrDsParents:        map[string]struct{}{},
 		PrefixAlias:          true,
+		EndCommits:           false,
+		DeclareAssignment:    "=",
 		StarExceptWord:       "EXCLUDE",
 		NormalizeNotNull:     true,
 		ConvertBuildsConvert: false,
@@ -18802,6 +18818,7 @@ var parserTables = map[string]*ParserTables{
 			"ClusterProperty":                     {{[]string{"expressions"}, []string{"expressions"}, []FuncConst{}, "CLUSTER BY ({expressions})"}, {[]string{"this"}, []string{"this"}, []FuncConst{}, "CLUSTER BY {this}"}, {[]string{"this"}, []string{"this"}, []FuncConst{}, "CLUSTER BY {this}"}},
 			"Collate":                             {{[]string{"this", "expression"}, []string{"this", "expression"}, []FuncConst{}, "{this} COLLATE {expression}"}},
 			"CommentColumnConstraint":             {{[]string{"this"}, []string{"this"}, []FuncConst{}, "COMMENT {this}"}},
+			"Commit":                              {{[]string{}, []string{}, []FuncConst{{"chain", false}}, "COMMIT AND NO CHAIN"}, {[]string{"chain"}, []string{}, []FuncConst{{"chain", true}}, "COMMIT AND CHAIN"}},
 			"ComputedColumnConstraint":            {{[]string{"this"}, []string{"this"}, []FuncConst{}, "GENERATED ALWAYS AS ({this})"}},
 			"Concat":                              {{[]string{"expressions", "safe"}, []string{"expressions"}, []FuncConst{{"safe", true}, {"coalesce", false}}, "CONCAT({expressions})"}},
 			"Constraint":                          {{[]string{"this", "expressions"}, []string{"this", "expressions"}, []FuncConst{}, "CONSTRAINT {this} {expressions}"}},
@@ -20034,6 +20051,8 @@ var parserTables = map[string]*ParserTables{
 			"Year":       {},
 		},
 		PrefixAlias:          false,
+		EndCommits:           false,
+		DeclareAssignment:    "=",
 		StarExceptWord:       "EXCEPT",
 		NormalizeNotNull:     true,
 		ConvertBuildsConvert: false,

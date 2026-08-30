@@ -2053,6 +2053,12 @@ func (p *parser) parseUse() (*Expression, error) {
 // which is a different argument because it is a different action.
 func (p *parser) parseTransaction() (*Expression, error) {
 	verb := strings.ToUpper(p.curr().Text)
+	// PostgreSQL reads a bare END as COMMIT. Everywhere else the word names
+	// something or closes a block, which is why this is asked of the dialect
+	// rather than assumed.
+	if verb == "END" {
+		verb = "COMMIT"
+	}
 	// T-SQL's bare BEGIN opens a BLOCK -- `BEGIN ... END` -- and takes the
 	// word TRANSACTION to mean the other thing. The reference gives up on the
 	// block form and keeps the raw text, which is not a tree this port makes.
@@ -2084,6 +2090,26 @@ func (p *parser) parseTransaction() (*Expression, error) {
 	// are the same node, and only T-SQL writes it back.
 	if p.atWords("TRANSACTION") || p.atWords("TRAN") || p.atWords("WORK") {
 		p.advance()
+	}
+	// `AND CHAIN` starts a new transaction where the old one ended, and
+	// `AND NO CHAIN` says so explicitly. Only a COMMIT records it.
+	if p.at(TokAND) {
+		p.advance()
+		chain := true
+		if p.atWords("NO") {
+			p.advance()
+			chain = false
+		}
+		if !p.matchUnquotedWord("CHAIN") {
+			return nil, p.unsupported("AND without CHAIN")
+		}
+		if verb == "COMMIT" {
+			node.Set("chain", chain)
+		}
+		if p.curr() != nil {
+			return nil, p.unsupported(verb + " with more than this port reads")
+		}
+		return node, nil
 	}
 	if p.curr() != nil {
 		name, err := p.parsePrimary()
@@ -3421,6 +3447,130 @@ func (p *parser) parseLoadData() (*Expression, error) {
 	}
 	if p.curr() != nil {
 		return nil, p.unsupported("LOAD DATA with more than this port reads")
+	}
+	return node, nil
+}
+
+// parseDeclare reads `DECLARE [OR REPLACE] <name> [, <name>...] <type> [= v]`,
+// which makes a variable.
+//
+// The commas are ambiguous on their face -- `DECLARE x, y INT` declares two
+// variables of one type and `DECLARE @x INT, @y CHAR` declares two of two --
+// and the reference settles it by reading the names as a list of their own
+// and stopping where a type follows without a comma. That is the same rule
+// here, and it needs no lookahead.
+func (p *parser) parseDeclare() (*Expression, error) {
+	p.advance() // DECLARE
+
+	replace := false
+	if p.atWords("OR", "REPLACE") {
+		p.advance()
+		p.advance()
+		replace = true
+	}
+
+	var items []*Expression
+	for {
+		item, err := p.parseDeclareItem()
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("DECLARE with more than this port reads")
+	}
+	return New("Declare", Arg{"expressions", items}, Arg{"replace", replace}), nil
+}
+
+// parseDeclareItem reads one variable, or the several that share a type.
+func (p *parser) parseDeclareItem() (*Expression, error) {
+	// Databricks lets the word VAR or VARIABLE stand in front, and writes
+	// neither back out: the two spellings are one tree.
+	if !p.matchUnquotedWord("VAR") {
+		p.matchUnquotedWord("VARIABLE")
+	}
+
+	var names []*Expression
+	for {
+		name, err := p.parseDeclaredName()
+		if err != nil {
+			return nil, err
+		}
+		names = append(names, name)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+
+	p.match(TokALIAS) // an optional AS before the type
+
+	var kind *Expression
+	if p.match(TokTABLE) {
+		if !p.at(TokL_PAREN) {
+			return nil, p.unsupported("DECLARE of a table without columns")
+		}
+		columns, err := p.parseColumnDefs()
+		if err != nil {
+			return nil, err
+		}
+		// A Schema with no name: the columns are the whole of the type.
+		kind = New("Schema", Arg{"expressions", columns})
+	} else {
+		var err error
+		kind, err = p.parseDataType()
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	item := New("DeclareItem", Arg{"this", names}, Arg{"kind", kind})
+	// An initial value is introduced by either word, and its absence is
+	// recorded as FALSE rather than left out.
+	if p.match(TokDEFAULT) || p.match(TokEQ) {
+		value, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		item.Set("default", value)
+	} else {
+		item.Set("default", false)
+	}
+	return item, nil
+}
+
+// parseDeclaredName reads the name a DECLARE gives: a parameter in T-SQL,
+// where variables are written with an @, and a plain identifier elsewhere.
+func (p *parser) parseDeclaredName() (*Expression, error) {
+	if param := p.parseParameter(); param != nil {
+		return param, nil
+	}
+	return p.parseIdentifier()
+}
+
+// parseKill reads `KILL [CONNECTION|QUERY] <id>`, which stops something the
+// server is doing.
+func (p *parser) parseKill() (*Expression, error) {
+	p.advance() // KILL
+
+	var kind *Expression
+	if c := p.curr(); c != nil && (p.atUnquotedWord("CONNECTION") || p.atUnquotedWord("QUERY")) {
+		p.advance()
+		kind = New("Var", Arg{"this", c.Text})
+	}
+	this, err := p.parsePrimary()
+	if err != nil {
+		return nil, err
+	}
+	node := New("Kill", Arg{"this", this})
+	if kind != nil {
+		node.Set("kind", kind)
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("KILL with more than this port reads")
 	}
 	return node, nil
 }

@@ -303,8 +303,15 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokLOAD) {
 		return p.parseLoadData()
 	}
-	if p.at(TokBEGIN) || p.at(TokCOMMIT) || p.at(TokROLLBACK) {
+	if p.at(TokDECLARE) {
+		return p.parseDeclare()
+	}
+	if p.at(TokBEGIN) || p.at(TokCOMMIT) || p.at(TokROLLBACK) ||
+		(p.at(TokEND) && p.tables.EndCommits) {
 		return p.parseTransaction()
+	}
+	if p.at(TokKILL) {
+		return p.parseKill()
 	}
 	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) || p.at(TokFROM) {
 		return p.parseQueryBody()
