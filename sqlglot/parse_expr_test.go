@@ -1888,8 +1888,11 @@ func TestInsertAndDrop(t *testing.T) {
 	}
 	for _, sql := range []string{
 		"INSERT INTO t", "INSERT t VALUES (1)", "INSERT INTO t VALUES 1",
-		"INSERT INTO t (a VALUES (1)", "DROP TABLE", "DROP INDEX i",
-		"DROP TABLE t CASCADE",
+		"INSERT INTO t (a VALUES (1)", "DROP TABLE",
+		// A kind the reference has no CREATABLE for is raw text there and a
+		// refusal here.
+		"DROP NOTHING x",
+		"DROP TABLE t EXTRA",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
@@ -6726,5 +6729,91 @@ func TestConvertStyle(t *testing.T) {
 		if e, err := ParseOne(sql, "tsql"); err == nil {
 			t.Errorf("read %q as %v", sql, e)
 		}
+	}
+}
+
+// TestDropMore covers what a DROP may say beyond the name: several names at
+// once, and the words on either side of the kind.
+func TestDropMore(t *testing.T) {
+	for _, tc := range []struct{ sql, dialect string }{
+		// A TABLE or a VIEW may name several at once; everything else names
+		// exactly one.
+		{"DROP TABLE a, b", ""},
+		{"DROP TABLE a.b, c.d", ""},
+		{"DROP TABLE IF EXISTS a, b CASCADE", ""},
+		{"DROP TABLE a CASCADE", ""},
+		{"DROP TABLE a RESTRICT", ""},
+		{"DROP TABLE s_hajo CASCADE CONSTRAINTS", ""},
+		{"DROP TABLE a PURGE", ""},
+		{"DROP TEMPORARY TABLE a", ""},
+		{"DROP MATERIALIZED VIEW a", ""},
+		// An INDEX is a kind like any other, and PostgreSQL drops one without
+		// locking the table -- said BEFORE the IF EXISTS.
+		{"DROP INDEX a.b.c", ""},
+		{`DROP INDEX "concurrently"`, ""},
+		{"DROP INDEX ix_table_id", "postgres"},
+		{"DROP INDEX CONCURRENTLY IF EXISTS ix_table_id", "postgres"},
+		{"DROP SCHEMA x", ""},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false", tc.sql)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.sql {
+			t.Errorf("[%s] %q wrote %q, %v", tc.dialect, tc.sql, got, err)
+		}
+	}
+
+	// A word in front of a name is a name, not a flag: `DROP INDEX
+	// "concurrently"` drops an index called that.
+	e, err := ParseOne(`DROP INDEX "concurrently"`, "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if e.Args["concurrently"] != false {
+		t.Errorf("a quoted name was read as the flag")
+	}
+
+	// Only a TABLE and a VIEW take a list; a second name after anything else
+	// is left over.
+	if e, err := ParseOne("DROP INDEX a, b", ""); err == nil {
+		t.Errorf("read %v; only a TABLE or a VIEW names several", e)
+	}
+}
+
+// TestCreateSchema covers making a schema, whose name is a DATABASE reference
+// rather than a table in one.
+func TestCreateSchema(t *testing.T) {
+	for _, tc := range []struct{ sql, dialect string }{
+		{"CREATE SCHEMA x", ""},
+		{"CREATE SCHEMA IF NOT EXISTS y", ""},
+		{"CREATE SCHEMA x", "duckdb"},
+		{"CREATE SCHEMA testSchema", "tsql"},
+		{"CREATE SCHEMA a.b", ""},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.sql {
+			t.Errorf("[%s] %q wrote %q, %v", tc.dialect, tc.sql, got, err)
+		}
+	}
+
+	// The name lands on `db` and leaves `this` empty, which is how the
+	// reference tells a schema from a table.
+	e, err := ParseOne("CREATE SCHEMA x", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	table, _ := e.Args["this"].(*Expression)
+	if table == nil || table.Args["this"] != nil {
+		t.Fatalf("the schema names a table: %v", table)
+	}
+	if db, _ := table.Args["db"].(*Expression); db == nil || db.Args["this"] != "x" {
+		t.Errorf("the schema's name is %v", table.Args["db"])
 	}
 }

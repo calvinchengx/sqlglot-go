@@ -2443,7 +2443,21 @@ func (g *generator) writeValues(e *Expression) string {
 // writeDrop writes `DROP <kind> [IF EXISTS] <name>`.
 func (g *generator) writeDrop(e *Expression) string {
 	kind, _ := e.Args["kind"].(string)
-	out := "DROP " + kind + " "
+	out := "DROP"
+	// The words in front of the kind, then the kind, then the words after it,
+	// each in the order the reference writes them.
+	for _, flag := range []struct{ key, word string }{
+		{"temporary", "TEMPORARY"}, {"materialized", "MATERIALIZED"},
+	} {
+		if set, _ := e.Args[flag.key].(bool); set {
+			out += " " + flag.word
+		}
+	}
+	out += " " + kind
+	if set, _ := e.Args["concurrently"].(bool); set {
+		out += " CONCURRENTLY"
+	}
+	out += " "
 	if exists, _ := e.Args["exists"].(bool); exists {
 		out += "IF EXISTS "
 	}
@@ -2459,7 +2473,17 @@ func (g *generator) writeDrop(e *Expression) string {
 		}
 		names = append(names, g.node(t))
 	}
-	return out + strings.Join(names, ", ")
+	out += strings.Join(names, ", ")
+	for _, flag := range []struct{ key, word string }{
+		{"cascade", "CASCADE"}, {"restrict", "RESTRICT"},
+		{"constraints", "CONSTRAINTS"}, {"purge", "PURGE"},
+		{"sync", "SYNC"}, {"force", "FORCE"},
+	} {
+		if set, _ := e.Args[flag.key].(bool); set {
+			out += " " + flag.word
+		}
+	}
+	return out
 }
 
 // writeColumnConstraint writes one thing said about a column. The wrapper is

@@ -59,7 +59,8 @@ func (p *parser) parseCreate() (*Expression, error) {
 		return nil, p.unsupported("CREATE without a kind")
 	}
 	kind := strings.ToUpper(kindToken.Text)
-	if kind != "TABLE" && kind != "VIEW" && kind != "FUNCTION" && kind != "INDEX" {
+	if kind != "TABLE" && kind != "VIEW" && kind != "FUNCTION" &&
+		kind != "INDEX" && kind != "SCHEMA" {
 		return nil, p.unsupported("CREATE " + kind)
 	}
 	p.advance()
@@ -79,6 +80,14 @@ func (p *parser) parseCreate() (*Expression, error) {
 	table, err := p.parseTableName()
 	if err != nil {
 		return nil, err
+	}
+	// A SCHEMA is a DATABASE reference rather than a table in one, so its
+	// name lands on `db` and leaves `this` empty.
+	if kind == "SCHEMA" {
+		table, err = asDatabaseReference(table)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	if kind == "FUNCTION" {
@@ -526,15 +535,27 @@ func (p *parser) parseValues() (*Expression, error) {
 func (p *parser) parseDrop() (*Expression, error) {
 	p.advance() // DROP
 
+	temporary := p.match(TokTEMPORARY)
+	materialized := p.matchUnquotedWord("MATERIALIZED")
+
 	kindToken := p.curr()
 	if kindToken == nil {
 		return nil, p.unsupported("DROP without a kind")
 	}
-	kind := strings.ToUpper(kindToken.Text)
-	if kind != "TABLE" && kind != "VIEW" {
-		return nil, p.unsupported("DROP " + kind)
+	if _, creatable := p.tables.CreatableTokens[kindToken.Type]; !creatable {
+		return nil, p.unsupported("DROP " + strings.ToUpper(kindToken.Text))
 	}
+	kind := strings.ToUpper(kindToken.Text)
 	p.advance()
+	// A dialect may call the same thing another name; the reference records
+	// the name it settles on rather than the word that was written.
+	if renamed, ok := p.tables.CreatableKindNames[kind]; ok {
+		kind = renamed
+	}
+
+	// PostgreSQL drops an index without locking the table, and says so BEFORE
+	// the IF EXISTS.
+	concurrently := p.matchUnquotedWord("CONCURRENTLY")
 
 	exists := false
 	if p.atWords("IF", "EXISTS") {
@@ -542,24 +563,75 @@ func (p *parser) parseDrop() (*Expression, error) {
 		p.advance()
 		exists = true
 	}
-	table, err := p.parseTableName()
-	if err != nil {
-		return nil, err
+
+	// A TABLE or a VIEW may name several at once; everything else names one.
+	var tables []*Expression
+	for {
+		table, err := p.parseDroppedName(kind)
+		if err != nil {
+			return nil, err
+		}
+		tables = append(tables, table)
+		if kind != "TABLE" && kind != "VIEW" {
+			break
+		}
+		if !p.match(TokCOMMA) {
+			break
+		}
 	}
+
+	// The words after the names, in the order the reference reads them.
+	cascade := p.matchUnquotedWord("CASCADE")
+	restrict := false
+	if !cascade {
+		restrict = p.matchUnquotedWord("RESTRICT")
+	}
+	constraints := p.matchUnquotedWord("CONSTRAINTS")
+	purge := p.matchUnquotedWord("PURGE")
+	sync := p.matchUnquotedWord("SYNC")
+	force := p.matchUnquotedWord("FORCE")
+
 	if p.curr() != nil {
 		return nil, p.unsupported("DROP with more than this port reads")
 	}
 	return New("Drop",
 		Arg{"exists", exists},
-		Arg{"tables", []*Expression{table}},
+		Arg{"tables", tables},
 		Arg{"expressions", nil},
 		Arg{"kind", kind},
-		Arg{"temporary", false}, Arg{"materialized", false},
-		Arg{"cascade", false}, Arg{"restrict", false},
-		Arg{"constraints", false}, Arg{"purge", false},
-		Arg{"cluster", nil}, Arg{"concurrently", false},
-		Arg{"sync", false}, Arg{"iceberg", false}, Arg{"force", false},
+		Arg{"temporary", temporary}, Arg{"materialized", materialized},
+		Arg{"cascade", cascade}, Arg{"restrict", restrict},
+		Arg{"constraints", constraints}, Arg{"purge", purge},
+		Arg{"cluster", nil}, Arg{"concurrently", concurrently},
+		Arg{"sync", sync}, Arg{"iceberg", false}, Arg{"force", force},
 	), nil
+}
+
+// parseDroppedName reads what a DROP names. A SCHEMA is a DATABASE reference
+// rather than a table in one, so its name lands on `db` and leaves `this`
+// empty -- which is how the reference tells the two apart.
+func (p *parser) parseDroppedName(kind string) (*Expression, error) {
+	name, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+	if kind == "SCHEMA" {
+		return asDatabaseReference(name)
+	}
+	return name, nil
+}
+
+// asDatabaseReference moves a one-part table name onto the `db` slot.
+func asDatabaseReference(table *Expression) (*Expression, error) {
+	if table == nil || table.Class != "Table" {
+		return table, nil
+	}
+	this, _ := table.Args["this"].(*Expression)
+	if _, qualified := table.Args["db"]; qualified || this == nil {
+		return table, nil
+	}
+	out := New("Table", Arg{"db", this})
+	return out, nil
 }
 
 // parseColumnConstraints reads what may follow a column's type. Each is a

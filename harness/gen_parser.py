@@ -802,6 +802,8 @@ def returning_conventions(dialect: str) -> tuple[str, bool]:
 
 def _create_body(kind: str) -> str:
     """What follows the name in the canonical CREATE used by the probes below."""
+    if kind == "SCHEMA":
+        return ""
     if kind == "TABLE":
         return " (a INT)"
     if kind == "FUNCTION":
@@ -822,7 +824,7 @@ def create_exists_written(dialect: str) -> dict:
     import sqlglot
 
     out = {}
-    for kind in ("TABLE", "VIEW", "INDEX"):
+    for kind in ("TABLE", "VIEW", "INDEX", "SCHEMA"):
         body = _create_body(kind)
         try:
             guarded = sqlglot.parse_one(
@@ -4042,6 +4044,11 @@ def main() -> int:
         "\t// ShowKinds are the phrases SHOW reads as a statement rather than\n",
         "\t// keeping as text.\n",
         "\tShowKinds map[string]struct{}\n",
+        "\t// CreatableTokens are the things a CREATE makes and a DROP\n",
+        "\t// removes, and CreatableKindNames what a dialect calls them where\n",
+        "\t// it uses another word.\n",
+        "\tCreatableTokens    map[TokenType]struct{}\n",
+        "\tCreatableKindNames map[string]string\n",
         "\t// How a COPY's parameters are written: separated by commas or by\n",
         "\t// spaces, and with or without an = before each value. The names\n",
         "\t// whose value is a LIST are kept apart, since those are read a\n",
@@ -4697,6 +4704,12 @@ def main() -> int:
             "\t\tExecuteBuildsExecute: %s,\n" % str(execute_builds_execute(name)).lower()
         )
         out.append(strset("ShowKinds", sorted(P.SHOW_PARSERS)))
+        toks = sorted(P.CREATABLES, key=lambda t: t.value)
+        body = "".join(f"\t\t\tTok{t.name}: {{}},\n" for t in toks)
+        out.append(f"\t\tCreatableTokens: map[TokenType]struct{{}}{{\n{body}\t\t}},\n")
+        _ckm = getattr(_DG.get_or_raise(name or None), "CREATABLE_KIND_MAPPING", None) or {}
+        body = "".join(f"\t\t\t{gostr(k)}: {gostr(v)},\n" for k, v in sorted(_ckm.items()))
+        out.append(f"\t\tCreatableKindNames: map[string]string{{\n{body}\t\t}},\n")
         out.append(
             "\t\tCopyParamsAreCSV: %s,\n"
             % str(bool(getattr(type(_DG.get_or_raise(name or None)), "COPY_PARAMS_ARE_CSV", True))).lower()
