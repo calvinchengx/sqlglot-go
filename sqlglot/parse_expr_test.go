@@ -6270,8 +6270,10 @@ func TestKillAndChain(t *testing.T) {
 			t.Errorf("%q wrote %q, %v", sql, got, err)
 		}
 	}
-	if e, err := ParseOne("KILL CONNECTION 123 extra", ""); err == nil {
-		t.Errorf("read %v, want a refusal", e)
+	for _, sql := range []string{"KILL CONNECTION 123 extra", "KILL", "KILL QUERY"} {
+		if e, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("read %q as %v, want a refusal", sql, e)
+		}
 	}
 
 	// PostgreSQL reads a bare END as COMMIT; everywhere else the word names
@@ -7157,6 +7159,98 @@ func TestArrayOverAQuery(t *testing.T) {
 		}
 		if got, err := Generate(e, "duckdb"); err != nil || got != sql {
 			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+}
+
+// TestPrefixCall covers punctuation that NAMES a function rather than being an
+// operator: DuckDB's `@x` is ABS(x).
+func TestPrefixCall(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT @col FROM t", "SELECT ABS(col) FROM t"},
+		// It takes a whole arithmetic expression, not just the next operand:
+		// `@col + 1` is ABS(col + 1).
+		{"SELECT @col + 1 FROM t", "SELECT ABS(col + 1) FROM t"},
+		{"SELECT @(-1)", "SELECT ABS((-1))"},
+		{"SELECT @(-1) + 1", "SELECT ABS((-1) + 1)"},
+		// Bracketed, it stops where the brackets do.
+		{"SELECT (@-1) + 1", "SELECT (ABS(-1)) + 1"},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q, want %q (%v)", tc.sql, got, tc.want, err)
+		}
+	}
+
+	// It is read wherever an expression is, including on the left of a SET --
+	// where DuckDB's `SET @x = 1` is `SET ABS(x) = 1`, and a reader that only
+	// took names there could not read back what the port itself wrote.
+	for _, tc := range []struct{ sql, want string }{
+		{"SET @0 = 0", "SET ABS(0) = 0"},
+		{"SET ABS(0) = 0", "SET ABS(0) = 0"},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q, want %q (%v)", tc.sql, got, tc.want, err)
+		}
+	}
+
+	// The same TOKEN is the parameter marker in the same dialect, which is
+	// why this is keyed by the characters rather than by the token type.
+	e, err := ParseOne("SELECT $1", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, _ := Generate(e, "duckdb"); got != "SELECT $1" {
+		t.Errorf("wrote %q", got)
+	}
+	// And elsewhere `@x` is a parameter, not a call.
+	e, err = ParseOne("SELECT @x", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if call := e.Args["expressions"].([]*Expression)[0]; call.Class != "Parameter" {
+		t.Errorf("T-SQL read @x as %s", call.Class)
+	}
+}
+
+// TestNextValueFor covers the sequence's next number, whose name is three
+// words and whose ordering is recorded as FALSE when it is not written.
+func TestNextValueFor(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT NEXT VALUE FOR db.schema.sequence_name",
+		"SELECT NEXT VALUE FOR db.schema.sequence_name OVER (ORDER BY foo), col",
+	} {
+		e, err := ParseOne(sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "tsql"); err != nil || got != sql {
+			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+
+	e, err := ParseOne("SELECT NEXT VALUE FOR s", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if call := e.Args["expressions"].([]*Expression)[0]; call.Args["order"] != false {
+		t.Errorf("an unordered NEXT VALUE FOR carries order = %v", call.Args["order"])
+	}
+
+	for _, sql := range []string{
+		"SELECT NEXT VALUE FOR s OVER (foo)",
+		"SELECT NEXT VALUE FOR s OVER (ORDER BY foo",
+		"SELECT NEXT VALUE FOR s OVER foo",
+	} {
+		if e, err := ParseOne(sql, "tsql"); err == nil {
+			t.Errorf("read %q as %v", sql, e)
 		}
 	}
 }

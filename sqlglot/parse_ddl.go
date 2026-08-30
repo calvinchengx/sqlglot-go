@@ -2519,7 +2519,10 @@ func (p *parser) parseSetStatementItem() (*Expression, error) {
 			return nil, err
 		}
 	default:
-		name, err = p.parseColumn()
+		// A CALL may stand here as well as a name: DuckDB reads `SET @x = 1`
+		// as `SET ABS(x) = 1`, and a reader that only took names could not
+		// read back what the port itself wrote.
+		name, err = p.parsePrimary()
 		if err != nil {
 			return nil, err
 		}

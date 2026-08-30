@@ -293,6 +293,10 @@ type ParserTables struct {
 	// UnaryOps is which token opens a PREFIX operator, and what it
 	// builds. The empty string is the no-op unary plus.
 	UnaryOps map[TokenType]string
+	// PrefixCalls is punctuation that NAMES a function written in
+	// front of its operand, keyed by the characters: DuckDB's `@x` is
+	// ABS(x), and it takes a whole arithmetic expression.
+	PrefixCalls map[string]string
 	// TsOrDsParents are the classes a TsOrDsToDate DISAPPEARS under.
 	// Databricks reads YEAR(y) as a Year over a TsOrDsToDate and writes
 	// it back as YEAR(y) -- the wrapper is written only where its
@@ -3981,6 +3985,7 @@ var parserTables = map[string]*ParserTables{
 		LikeInsideSchema:     false,
 		SupportsCreateLike:   true,
 		EndCommits:           false,
+		PrefixCalls:          map[string]string{},
 		ExecuteBuildsExecute: false,
 		ShowKinds:            map[string]struct{}{},
 		ReservedTokens: map[TokenType]struct{}{
@@ -7962,6 +7967,7 @@ var parserTables = map[string]*ParserTables{
 		LikeInsideSchema:     false,
 		SupportsCreateLike:   true,
 		EndCommits:           false,
+		PrefixCalls:          map[string]string{},
 		ExecuteBuildsExecute: true,
 		ShowKinds:            map[string]struct{}{},
 		ReservedTokens: map[TokenType]struct{}{
@@ -11977,6 +11983,7 @@ var parserTables = map[string]*ParserTables{
 		LikeInsideSchema:     true,
 		SupportsCreateLike:   true,
 		EndCommits:           true,
+		PrefixCalls:          map[string]string{},
 		ExecuteBuildsExecute: false,
 		ShowKinds:            map[string]struct{}{},
 		ReservedTokens: map[TokenType]struct{}{
@@ -16192,12 +16199,15 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_STRING":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
-		VariantExtractColon:  false,
-		TsOrDsParents:        map[string]struct{}{},
-		PrefixAlias:          true,
-		LikeInsideSchema:     false,
-		SupportsCreateLike:   false,
-		EndCommits:           false,
+		VariantExtractColon: false,
+		TsOrDsParents:       map[string]struct{}{},
+		PrefixAlias:         true,
+		LikeInsideSchema:    false,
+		SupportsCreateLike:  false,
+		EndCommits:          false,
+		PrefixCalls: map[string]string{
+			"@": "Abs",
+		},
 		ExecuteBuildsExecute: false,
 		ShowKinds: map[string]struct{}{
 			"ALL TABLES": {},
@@ -20477,6 +20487,7 @@ var parserTables = map[string]*ParserTables{
 		LikeInsideSchema:     false,
 		SupportsCreateLike:   true,
 		EndCommits:           false,
+		PrefixCalls:          map[string]string{},
 		ExecuteBuildsExecute: false,
 		ShowKinds:            map[string]struct{}{},
 		ReservedTokens: map[TokenType]struct{}{

@@ -22,6 +22,7 @@ func init() {
 	generators = map[string]func(*generator, *Expression) string{
 		"Select":                              (*generator).writeSelect,
 		"TimeToStr":                           (*generator).writeTimeToStr,
+		"NextValueFor":                        (*generator).writeNextValueFor,
 		"LikeProperty":                        (*generator).writeLikeProperty,
 		"SequenceProperties":                  (*generator).writeSequenceProperties,
 		"Credentials":                         (*generator).writeCredentials,
@@ -1011,7 +1012,14 @@ func (g *generator) writePlaceholder(e *Expression) string {
 	if _, plain := e.Args["this"].(string); plain && !readableAsABareName(name) {
 		return g.fail(e.Class + " whose name is not a name")
 	}
-	return strings.ReplaceAll(g.tables.Placeholder.Named, "{name}", name)
+	out := strings.ReplaceAll(g.tables.Placeholder.Named, "{name}", name)
+	// A placeholder written with a dollar leaves one behind that a later
+	// dollar can pair with, exactly as a parameter does; see
+	// lexesBackAsOneName.
+	if strings.Contains(out, "$") {
+		g.wroteDollar = true
+	}
+	return out
 }
 
 // writeParameter writes `@x` -- a different node from a bound parameter, and
@@ -4056,4 +4064,15 @@ func (g *generator) lexesBackAsOneName(name string) bool {
 		return false
 	}
 	return !g.wroteDollar || !strings.Contains(name, "$")
+}
+
+// writeNextValueFor writes the sequence's next number, and the ordering it is
+// handed out in. The probe recorded a template for the ordering from a column
+// placeholder, which is not the shape an Order takes.
+func (g *generator) writeNextValueFor(e *Expression) string {
+	out := "NEXT VALUE FOR " + g.child(e, "this")
+	if order, _ := e.Args["order"].(*Expression); order != nil {
+		out += " OVER (" + g.node(order) + ")"
+	}
+	return out
 }

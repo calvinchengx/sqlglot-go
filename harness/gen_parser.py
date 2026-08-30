@@ -2026,6 +2026,33 @@ def execute_builds_execute(dialect: str) -> bool:
     return type(node).__name__ in ("Execute", "ExecuteSql")
 
 
+def prefix_calls(dialect: str, P) -> dict:
+    """Punctuation that names a FUNCTION written in front of its operand.
+
+    DuckDB's `@x` is ABS(x). It lives among the no-paren function names rather
+    than among the prefix operators, and it takes a whole arithmetic
+    expression: `@col + 1` is ABS(col + 1), not ABS(col) + 1.
+
+    Keyed by the characters rather than by a token type, because the same
+    token type is a parameter marker here as well -- `$1` and `@x` are both
+    PARAMETER in DuckDB and only one of them is this.
+    """
+    import sqlglot
+
+    out = {}
+    for key in P.NO_PAREN_FUNCTION_PARSERS:
+        if key.isalnum() or "_" in key:
+            continue
+        try:
+            node = sqlglot.parse_one(f"SELECT {key} x", read=dialect or None).selects[0]
+        except Exception:  # noqa: BLE001 -- not a prefix this dialect reads
+            continue
+        name = type(node).__name__
+        if name not in ("Column", "Parameter", "Placeholder"):
+            out[key] = name
+    return out
+
+
 def end_commits(dialect: str) -> bool:
     """Whether a bare END ends the transaction in this dialect.
 
@@ -4071,6 +4098,10 @@ def main() -> int:
         "\t// UnaryOps is which token opens a PREFIX operator, and what it\n",
         "\t// builds. The empty string is the no-op unary plus.\n",
         "\tUnaryOps map[TokenType]string\n",
+        "\t// PrefixCalls is punctuation that NAMES a function written in\n",
+        "\t// front of its operand, keyed by the characters: DuckDB's `@x` is\n",
+        "\t// ABS(x), and it takes a whole arithmetic expression.\n",
+        "\tPrefixCalls map[string]string\n",
         "\t// TsOrDsParents are the classes a TsOrDsToDate DISAPPEARS under.\n",
         "\t// Databricks reads YEAR(y) as a Year over a TsOrDsToDate and writes\n",
         "\t// it back as YEAR(y) -- the wrapper is written only where its\n",
@@ -4721,6 +4752,9 @@ def main() -> int:
             % str(bool(getattr(_gen, "SUPPORTS_CREATE_TABLE_LIKE", True))).lower()
         )
         out.append("\t\tEndCommits: %s,\n" % str(end_commits(name)).lower())
+        _pc = prefix_calls(name, P)
+        body = "".join(f"\t\t\t{gostr(k)}: {gostr(v)},\n" for k, v in sorted(_pc.items()))
+        out.append(f"\t\tPrefixCalls: map[string]string{{\n{body}\t\t}},\n")
         out.append(
             "\t\tExecuteBuildsExecute: %s,\n" % str(execute_builds_execute(name)).lower()
         )

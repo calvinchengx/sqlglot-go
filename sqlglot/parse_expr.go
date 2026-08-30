@@ -775,9 +775,17 @@ func (p *parser) parseBracketItems(_ bool) ([]*Expression, error) {
 	return items, nil
 }
 
-// parsePrimary is entered with a token current; parseUnary checked.
+// parsePrimary reads the smallest thing an expression can be.
+//
+// Every path through parseUnary checks there is a token first, but the
+// statement parsers that reach for an expression directly -- KILL, SET -- do
+// not always have one, and a bare `KILL` panicked here. The check belongs in
+// one place rather than at each caller.
 func (p *parser) parsePrimary() (*Expression, error) {
 	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("expression")
+	}
 
 	if c.Type == TokINTERVAL {
 		return p.parseInterval()
@@ -1091,6 +1099,25 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			}
 			return New("Variadic", Arg{"this", inner}), nil
 		}
+	}
+	// `NEXT VALUE FOR seq` takes the sequence's next number. It is a no-paren
+	// function whose name is three words, and only where the dialect has one.
+	if _, hasNext := p.tables.NoParenFunctionNames["NEXT"]; hasNext &&
+		p.atWords("NEXT", "VALUE", "FOR") {
+		return p.parseNextValueFor()
+	}
+	// Punctuation that NAMES a function: DuckDB's `@x` is ABS(x). It lives
+	// among the no-paren function names rather than among the prefix
+	// operators, and it takes a whole arithmetic expression -- `@col + 1` is
+	// ABS(col + 1). Keyed by the characters, because the same token type is
+	// the parameter marker here too.
+	if class, ok := p.tables.PrefixCalls[c.Text]; ok {
+		p.advance()
+		inner, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		return New(class, Arg{"this", inner}), nil
 	}
 	// T-SQL's mark for a temporary table stands in front of a NAME wherever a
 	// name may stand -- including a projection, where `SELECT #x` is a column
@@ -2823,4 +2850,39 @@ func (p *parser) positionalJSONPathCall(spec JSONPathFunc, args []*Expression) *
 	// `only_json_types` is absent rather than present-and-false, which is a
 	// different tree and the differential said so.
 	return New(spec.Class, out...)
+}
+
+// parseNextValueFor reads `NEXT VALUE FOR seq [OVER (ORDER BY ...)]`.
+//
+// The ordering is recorded as FALSE where it is not written, which is what
+// the reference's `matched and value` yields.
+func (p *parser) parseNextValueFor() (*Expression, error) {
+	p.advance() // NEXT
+	p.advance() // VALUE
+	p.advance() // FOR
+
+	this, err := p.parseColumn()
+	if err != nil {
+		return nil, err
+	}
+	node := New("NextValueFor", Arg{"this", this})
+	if !p.match(TokOVER) {
+		node.Set("order", false)
+		return node, nil
+	}
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("OVER without a parenthesised ordering")
+	}
+	if !p.match(TokORDER_BY) {
+		return nil, p.unsupported("NEXT VALUE FOR OVER without an ordering")
+	}
+	order, err := p.parseOrder()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed OVER clause")
+	}
+	node.Set("order", order)
+	return node, nil
 }
