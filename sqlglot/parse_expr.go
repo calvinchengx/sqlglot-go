@@ -1786,15 +1786,8 @@ func (p *parser) parseFunction() (*Expression, error) {
 		// cast, a subquery -- is one the reference does not name either: it
 		// keeps the node instead, which is a different tree. Refused here
 		// rather than built from an empty name.
-		for _, a := range spec.Args {
-			// Index -1 marks a CONSTANT node rather than a wrapper: it takes
-			// no argument, so there is no name for it to want.
-			if a.Wrap == "" || a.Index < 0 || a.Index >= len(args) {
-				continue
-			}
-			if args[a.Index].Name() == "" {
-				return nil, p.unsupported("unnamed argument where " + upper + " wants a word")
-			}
+		if !namedWhereWrapped(spec.Args, args) {
+			return nil, p.unsupported("unnamed argument where " + upper + " wants a word")
 		}
 		// A string literal in one of these slots makes the reference build
 		// something else -- an Interval step, a `modifiers` argument that
@@ -1873,8 +1866,22 @@ func isStringLiteral(e *Expression) bool {
 // consumes reports how many positional arguments the spec reads, and whether
 // that count is a bound at all -- a variadic tail swallows everything after it.
 func (spec FuncSpec) consumes() (int, bool) {
+	return consumedBy(spec.Args)
+}
+
+func consumedBy(keys []FuncArg) (int, bool) {
 	n := 0
-	for _, a := range spec.Args {
+	for _, a := range keys {
+		if a.Nested != "" {
+			inner, bounded := consumedBy(a.NestedArgs)
+			if !bounded {
+				return 0, false
+			}
+			if inner > n {
+				n = inner
+			}
+			continue
+		}
 		if a.VarLen {
 			return 0, false
 		}
@@ -1885,10 +1892,42 @@ func (spec FuncSpec) consumes() (int, bool) {
 	return n, true
 }
 
+// namedWhereWrapped reports whether every argument a wrapper would take the
+// NAME of actually has one. It reaches into a nested node, where a wrapper can
+// sit just as well as at the top.
+func namedWhereWrapped(keys []FuncArg, args []*Expression) bool {
+	for _, a := range keys {
+		if a.Nested != "" {
+			if !namedWhereWrapped(a.NestedArgs, args) {
+				return false
+			}
+			continue
+		}
+		// Index -1 marks a CONSTANT node rather than a wrapper: it takes no
+		// argument, so there is no name for it to want.
+		if a.Wrap == "" || a.Index < 0 || a.Index >= len(args) {
+			continue
+		}
+		if args[a.Index].Name() == "" {
+			return false
+		}
+	}
+	return true
+}
+
 func (p *parser) buildFunction(name string, spec FuncSpec, args []*Expression) *Expression {
-	node := New(spec.Class)
-	for _, a := range spec.Args {
+	return p.buildFromSpec(name, spec.Class, spec.Args, args)
+}
+
+func (p *parser) buildFromSpec(name, class string, keys []FuncArg, args []*Expression) *Expression {
+	node := New(class)
+	for _, a := range keys {
 		switch {
+		case a.Nested != "":
+			// A node built AROUND the arguments: DuckDB's ANY_VALUE is an
+			// IgnoreNulls over an AnyValue, and the arguments belong to the
+			// inner node, not this one.
+			node.Set(a.Key, p.buildFromSpec(name, a.Nested, a.NestedArgs, args))
 		case a.Wrap != "" && a.Index < 0:
 			// A constant node the builder always supplies, holding no
 			// argument: DuckDB's two-argument REGEXP_EXTRACT_ALL fills

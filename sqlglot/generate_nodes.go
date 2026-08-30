@@ -22,6 +22,7 @@ func init() {
 	generators = map[string]func(*generator, *Expression) string{
 		"Select":                              (*generator).writeSelect,
 		"TimeToStr":                           (*generator).writeTimeToStr,
+		"TsOrDsToDate":                        (*generator).writeTsOrDsToDate,
 		"OpenJSONColumnDef":                   (*generator).writeOpenJSONColumnDef,
 		"Union":                               (*generator).writeSetOperation,
 		"Except":                              (*generator).writeSetOperation,
@@ -3828,4 +3829,27 @@ func (g *generator) writeOpenJSONColumnDef(e *Expression) string {
 		out += " AS JSON"
 	}
 	return out
+}
+
+// writeTsOrDsToDate writes the date coercion Databricks reads into YEAR, MONTH
+// and the other date parts.
+//
+// `YEAR(y)` is a Year over a TsOrDsToDate there, and it is written back as
+// `YEAR(y)`: the wrapper is spelled only where its parent is not one of the
+// classes that imply it. That is a rule about the PARENT, so the template
+// probe -- which renders a node on its own -- cannot see it, and the port
+// wrote `YEAR(TO_DATE(y))`.
+//
+// A coercion carrying a FORMAT is a different call and falls through.
+func (g *generator) writeTsOrDsToDate(e *Expression) string {
+	if len(g.tables.TsOrDsParents) == 0 || e.Parent == nil {
+		return g.spell(e)
+	}
+	if format, _ := e.Args["format"].(*Expression); format != nil {
+		return g.spell(e)
+	}
+	if _, implied := g.tables.TsOrDsParents[e.Parent.Class]; !implied {
+		return g.spell(e)
+	}
+	return g.child(e, "this")
 }

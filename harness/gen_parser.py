@@ -407,7 +407,19 @@ def probe_functions(P, exp, dialect="", branch_classes=None):
                         )
                     )
                 else:
-                    return None
+                    # A node built AROUND the arguments rather than from one
+                    # of them: DuckDB's ANY_VALUE returns
+                    # IgnoreNulls(AnyValue(args[0])), and Databricks' MONTH
+                    # returns Month(TsOrDsToDate(args[0])). The wrapper is
+                    # fixed and the inside is describable, so describe it and
+                    # keep both -- rejecting the name outright turned away a
+                    # whole family of date parts.
+                    inner_spec = describe(value, args)
+                    if inner_spec is None:
+                        return None
+                    out.append(
+                        (key, {"nested": type(value).__name__, "spec": inner_spec})
+                    )
             else:
                 return None
         return out
@@ -415,7 +427,9 @@ def probe_functions(P, exp, dialect="", branch_classes=None):
     def rebuild(spec, args):
         out = {}
         for key, how in spec:
-            if "node" in how:
+            if "nested" in how:
+                out[key] = getattr(exp, how["nested"])(**rebuild(how["spec"], args))
+            elif "node" in how:
                 out[key] = getattr(exp, how["node"])(**dict(how.get("extras") or []))
             elif "wrap" in how:
                 i = how["index"]
@@ -3327,6 +3341,11 @@ def render_functions(P, exp, dialect, funcs):
         cls = getattr(exp, cls_name, None)
         if cls is None:
             continue
+        # A spec with a nested node describes a call whose ARGUMENTS are not
+        # the node's own, so the plain `NAME(a, b, c)` probe below would
+        # record a spelling for a shape that never occurs.
+        if any("nested" in how for _, how in spec):
+            continue
         positional = [kv for kv in spec if "index" in kv[1] or "varlen" in kv[1]]
         keys = [k for k, _ in positional]
         args = [exp.column(f"__probe_{i}") for i in range(len(keys))]
@@ -3508,30 +3527,41 @@ def goconst(v) -> str:
 def funcargs(spec) -> str:
     parts = []
     for key, how in spec:
-        if "node" in how:
+        if "nested" in how:
+            # A node built AROUND the arguments rather than from one of them:
+            # the class here, its own arguments described the same way one
+            # level down.
+            inner = funcargs(how["spec"])
+            parts.append(
+                '{%s, -1, false, nil, "", nil, %s, []FuncArg{%s}}'
+                % (gostr(key), gostr(how["nested"]), inner)
+            )
+        elif "node" in how:
             # Index -1 marks a CONSTANT node rather than a wrapper: the class
             # goes in the same slot, and the index tells the two apart.
             extras = "".join(
                 "{%s, %s}, " % (gostr(k), goconst(v)) for k, v in (how.get("extras") or [])
             )
             parts.append(
-                f"{{{gostr(key)}, -1, false, nil, {gostr(how['node'])}, "
-                f"[]FuncConst{{{extras}}}}}"
+                '{%s, -1, false, nil, %s, []FuncConst{%s}, "", nil}'
+                % (gostr(key), gostr(how["node"]), extras)
             )
         elif "wrap" in how:
             extras = "".join(
                 "{%s, %s}, " % (gostr(k), goconst(v)) for k, v in (how.get("extras") or [])
             )
             parts.append(
-                f"{{{gostr(key)}, {how['index']}, false, nil, {gostr(how['wrap'])}, "
-                f"[]FuncConst{{{extras}}}}}"
+                '{%s, %d, false, nil, %s, []FuncConst{%s}, "", nil}'
+                % (gostr(key), how["index"], gostr(how["wrap"]), extras)
             )
         elif "index" in how:
-            parts.append(f'{{{gostr(key)}, {how["index"]}, false, nil, "", nil}}')
+            parts.append('{%s, %d, false, nil, "", nil, "", nil}' % (gostr(key), how["index"]))
         elif "varlen" in how:
-            parts.append(f'{{{gostr(key)}, {how["varlen"]}, true, nil, "", nil}}')
+            parts.append('{%s, %d, true, nil, "", nil, "", nil}' % (gostr(key), how["varlen"]))
         else:
-            parts.append(f'{{{gostr(key)}, -1, false, {goconst(how["const"])}, "", nil}}')
+            parts.append(
+                '{%s, -1, false, %s, "", nil, "", nil}' % (gostr(key), goconst(how["const"]))
+            )
     return ", ".join(parts)
 
 
@@ -3904,6 +3934,12 @@ def main() -> int:
         "\t// spelling of `SELECT 1 AS foo`. The same characters are a JSON\n",
         "\t// extraction in Databricks, so the dialect decides, not the shape.\n",
         "\tPrefixAlias bool\n",
+        "\t// TsOrDsParents are the classes a TsOrDsToDate DISAPPEARS under.\n",
+        "\t// Databricks reads YEAR(y) as a Year over a TsOrDsToDate and writes\n",
+        "\t// it back as YEAR(y) -- the wrapper is written only where its\n",
+        "\t// parent is not one of these, which is a rule about the PARENT and\n",
+        "\t// so invisible to a probe that renders a node on its own.\n",
+        "\tTsOrDsParents map[string]struct{}\n",
         "\t// ConvertBuildsConvert: CONVERT(type, value) is a Convert here and a\n",
         "\t// CAST written another way everywhere else.\n",
         "\tConvertBuildsConvert bool\n",
@@ -4258,6 +4294,12 @@ def main() -> int:
         "\t// carries is_string, and a check for exactly one argument rejected\n",
         "\t// every builder whose wrapper was a Literal rather than a Var.\n",
         "\tWrapArgs []FuncConst\n",
+        "\t// Nested names a class built AROUND the arguments rather than\n",
+        "\t// from one of them -- DuckDB's ANY_VALUE is an IgnoreNulls over\n",
+        "\t// an AnyValue, and T-SQL's YEAR a Year over a TsOrDsToDate. Its\n",
+        "\t// own arguments are described the same way, one level down.\n",
+        "\tNested     string\n",
+        "\tNestedArgs []FuncArg\n",
 
         "}\n\n",
         "var parserTables = map[string]*ParserTables{\n",
@@ -4521,6 +4563,11 @@ def main() -> int:
         out.append(
             f"\t\tVariantExtractColon: {str(variant_extract_colon(name)).lower()},\n"
         )
+        from sqlglot.dialects.dialect import Dialect as _DG
+        _tsp = getattr(
+            type(_DG.get_or_raise(name or None)).generator_class, "TS_OR_DS_EXPRESSIONS", None
+        ) or ()
+        out.append(strset("TsOrDsParents", sorted(c.__name__ for c in _tsp)))
         out.append(f"\t\tPrefixAlias: {str(prefix_alias(name)).lower()},\n")
         out.append(
             f"\t\tConvertBuildsConvert: {str(convert_builds_convert(name)).lower()},\n"

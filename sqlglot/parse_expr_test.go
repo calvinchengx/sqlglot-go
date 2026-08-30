@@ -5930,3 +5930,70 @@ func TestUpperLower(t *testing.T) {
 		}
 	}
 }
+
+// TestNestedBuilder covers builders that put the arguments inside a node
+// WRAPPED in another one, which the signature probe used to refuse outright.
+func TestNestedBuilder(t *testing.T) {
+	for _, tc := range []struct {
+		sql, dialect string
+		// The chain of classes from the call down to the argument.
+		chain []string
+	}{
+		// DuckDB's ANY_VALUE is an IgnoreNulls over an AnyValue: the wrapper
+		// is fixed and the arguments belong to the node inside it.
+		{"SELECT ANY_VALUE(x)", "duckdb", []string{"IgnoreNulls", "AnyValue", "Column"}},
+		// T-SQL's date parts coerce first, and the coercion carries a default
+		// date the builder always supplies.
+		{"SELECT YEAR(y)", "tsql", []string{"Year", "TsOrDsToDate", "Column"}},
+		{"SELECT MONTH(y)", "tsql", []string{"Month", "TsOrDsToDate", "Column"}},
+		{"SELECT DAY(y)", "tsql", []string{"Day", "TsOrDsToDate", "Column"}},
+		// EOMONTH is a LastDay over the same coercion, and its optional lag
+		// puts a DateAdd in between.
+		{"SELECT EOMONTH(x)", "tsql", []string{"LastDay", "TsOrDsToDate", "Column"}},
+		{"SELECT EOMONTH(x, -1)", "tsql", []string{"LastDay", "DateAdd", "TsOrDsToDate", "Column"}},
+		{"SELECT YEAR(y)", "databricks", []string{"Year", "TsOrDsToDate", "Column"}},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		node := e.Args["expressions"].([]*Expression)[0]
+		for _, want := range tc.chain {
+			if node == nil || node.Class != want {
+				t.Fatalf("[%s] %q: expected a %s, got %v", tc.dialect, tc.sql, want, node)
+			}
+			node, _ = node.Args["this"].(*Expression)
+		}
+	}
+
+	// The T-SQL coercion carries a default date, which is a constant node the
+	// builder always supplies rather than anything the call was given.
+	e, err := ParseOne("SELECT YEAR(y)", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	inner, _ := e.Args["expressions"].([]*Expression)[0].Args["this"].(*Expression)
+	deflt, _ := inner.Args["default_date"].(*Expression)
+	if deflt == nil || deflt.Args["this"] != "1900-01-01" {
+		t.Errorf("the coercion's default date is %v", inner.Args["default_date"])
+	}
+
+	// Databricks writes the coercion away again under the classes that imply
+	// it -- a rule about the PARENT, which a probe that renders a node on its
+	// own cannot see.
+	e, err = ParseOne("SELECT YEAR(y)", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "databricks"); err != nil || got != "SELECT YEAR(y)" {
+		t.Errorf("wrote %q, %v", got, err)
+	}
+	// Written out where nothing implies it.
+	e, err = ParseOne("SELECT TO_DATE(y)", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "databricks"); err != nil || got != "SELECT TO_DATE(y)" {
+		t.Errorf("wrote %q, %v", got, err)
+	}
+}
