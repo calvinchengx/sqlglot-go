@@ -22,6 +22,7 @@ func init() {
 	generators = map[string]func(*generator, *Expression) string{
 		"Select":                              (*generator).writeSelect,
 		"TimeToStr":                           (*generator).writeTimeToStr,
+		"LikeProperty":                        (*generator).writeLikeProperty,
 		"SequenceProperties":                  (*generator).writeSequenceProperties,
 		"Credentials":                         (*generator).writeCredentials,
 		"CopyParameter":                       (*generator).writeCopyParameter,
@@ -777,7 +778,7 @@ func (g *generator) writeIdentifier(e *Expression) string {
 	if !quoted && g.tables.ReservedKeywords[strings.ToUpper(name)] {
 		quoted = true
 	}
-	if !quoted && !readableAsABareName(name) {
+	if !quoted && (!readableAsABareName(name) || !g.lexesBackAsOneName(name)) {
 		// A name the tokenizer would not give back. The port builds one only
 		// from a token the tokenizer could not classify -- a stray backtick
 		// among them -- and writing it bare produced SQL nothing can read.
@@ -1029,7 +1030,13 @@ func (g *generator) writeParameter(e *Expression) string {
 	if !readableAsABareName(name) {
 		return g.fail(e.Class + " whose name is not a name")
 	}
-	return strings.ReplaceAll(g.tables.Placeholder.Parameter, "{name}", name)
+	out := strings.ReplaceAll(g.tables.Placeholder.Parameter, "{name}", name)
+	// A parameter written with a dollar leaves one behind that a later dollar
+	// can pair with; see lexesBackAsOneName.
+	if strings.Contains(out, "$") {
+		g.wroteDollar = true
+	}
+	return out
 }
 
 // writeEscape writes the escape character a LIKE was given. Every dialect
@@ -3999,4 +4006,54 @@ func (g *generator) writeSequenceProperties(e *Expression) string {
 		out += " " + g.node(option)
 	}
 	return strings.TrimPrefix(out, " ")
+}
+
+// writeLikeProperty writes `LIKE other`, which copies a table's shape.
+//
+// Whether it brings its own parentheses depends on its PARENT: PostgreSQL
+// writes `(LIKE t)` where the property stands on its own and a bare `LIKE t`
+// inside a column list, where the list supplies them. The template probe
+// renders a node alone and so recorded only the first.
+func (g *generator) writeLikeProperty(e *Expression) string {
+	if !g.tables.SupportsCreateLike {
+		return g.fail(e.Class + ", which this dialect writes as a query instead")
+	}
+	out := "LIKE " + g.child(e, "this")
+	options, _ := e.Args["expressions"].([]*Expression)
+	parts := make([]string, 0, len(options))
+	for _, option := range options {
+		word, _ := option.Args["this"].(string)
+		parts = append(parts, word+" "+g.child(option, "value"))
+	}
+	if len(parts) > 0 {
+		out += " " + strings.Join(parts, " ")
+	}
+	if g.tables.LikeInsideSchema && (e.Parent == nil || e.Parent.Class != "Schema") {
+		out = "(" + out + ")"
+	}
+	return out
+}
+
+// lexesBackAsOneName reports whether writing this name bare gives it back.
+//
+// The character test above is not enough, and the failure is not local: where
+// a dialect writes a parameter with a `$`, a `$` INSIDE a bare name pairs with
+// that one and changes how everything between them lexes. `$0 AS A$` comes
+// back as a parameter, a VAR called AS and a VAR called `A$` -- three tokens
+// where there were four, and no alias among them. The reference does the same
+// thing with its own output and is saved only by the comment it carries.
+//
+// So a bare name holding a dollar is refused once a dollar has already been
+// written. `SELECT 1 AS a$b` on its own is fine and stays fine; it is the
+// PAIR that is unreadable. Found by the generator fuzzer.
+func (g *generator) lexesBackAsOneName(name string) bool {
+	tk, err := NewTokenizer(g.dialect)
+	if err != nil {
+		return true
+	}
+	toks, err := tk.Tokenize(name)
+	if err != nil || len(toks) != 1 || !strings.EqualFold(toks[0].Text, name) {
+		return false
+	}
+	return !g.wroteDollar || !strings.Contains(name, "$")
 }

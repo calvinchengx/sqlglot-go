@@ -411,3 +411,21 @@ rather than to a table, which is why it is written down here rather than done
 alongside.
 
 **Reference:** sqlglot @ ceb5111421e9.
+
+## A bare name holding a dollar pairs with an earlier one
+
+`$0 A$` is an alias in PostgreSQL: a parameter named 0, aliased `A$`. Written
+back as `$0 AS A$`, the two dollars pair and the statement lexes as three
+tokens rather than four -- a parameter, a var called `AS`, and a var called
+`A$`. There is no alias in it any more.
+
+The reference does this to its own output:
+
+    >>> sqlglot.parse_one("$0 AS A$", read="postgres").sql("postgres")
+    '$AS AS A$'
+
+It survives its own round trip only because it carries the comment that
+followed the statement, which separates the pair. This port does not model
+comments, so it declines to write a bare name holding a dollar once one has
+already gone into the output; the name on its own -- `SELECT 1 AS a$b` -- is
+unaffected. Found by the generator fuzzer.

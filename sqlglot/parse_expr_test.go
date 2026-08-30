@@ -6872,6 +6872,30 @@ func TestCreateSequence(t *testing.T) {
 		t.Errorf("the options are %v", options)
 	}
 
+	// A cache size, and the column the numbers belong to.
+	for _, sql := range []string{
+		"CREATE SEQUENCE s CACHE 5",
+		"CREATE SEQUENCE s START WITH 1 OWNED BY t.c",
+	} {
+		e, err := ParseOne(sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != sql {
+			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+	// `OWNED BY NONE` is the default and records nothing.
+	e, err = ParseOne("CREATE SEQUENCE s OWNED BY NONE", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	props, _ = e.Args["properties"].(*Expression)
+	seq = props.Args["expressions"].([]*Expression)[0]
+	if _, ok := seq.Args["owned"]; ok {
+		t.Errorf("OWNED BY NONE recorded %v", seq.Args["owned"])
+	}
+
 	if e, err := ParseOne("CREATE SEQUENCE seq NONSENSE", "duckdb"); err == nil {
 		t.Errorf("read %v", e)
 	}
@@ -6959,5 +6983,88 @@ func TestOnly(t *testing.T) {
 	}
 	if target, _ := alter.Args["this"].(*Expression); target.Args["only"] != nil {
 		t.Errorf("the flag is on the table too: %v", target.Args["only"])
+	}
+}
+
+// TestInsertParenthesisedQuery covers an INSERT whose parentheses belong to
+// the QUERY rather than to a column list -- the two look identical until the
+// token after the bracket says which.
+func TestInsertParenthesisedQuery(t *testing.T) {
+	for _, sql := range []string{
+		"INSERT INTO x (SELECT * FROM y)",
+		"INSERT INTO y (SELECT 1) UNION (SELECT 2)",
+		"INSERT INTO r (WITH t AS (SELECT * FROM s) SELECT * FROM t)",
+		// And the column list still reads as one.
+		"INSERT INTO x (a, b) VALUES (1, 2)",
+		"INSERT INTO x (a) SELECT 1",
+	} {
+		e, err := ParseOne(sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, ""); err != nil || got != sql {
+			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+
+	// The query keeps its parentheses: the reference wraps it in a Subquery.
+	e, err := ParseOne("INSERT INTO x (SELECT 1)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if inner, _ := e.Args["expression"].(*Expression); inner == nil || inner.Class != "Subquery" {
+		t.Errorf("the query is %v, want a Subquery", e.Args["expression"])
+	}
+	// And the target keeps no column list.
+	if target, _ := e.Args["this"].(*Expression); target == nil || target.Class != "Table" {
+		t.Errorf("the target is %v, want a bare table", e.Args["this"])
+	}
+}
+
+// TestCreateTableLike covers `LIKE other` in a column list, which copies
+// another table's shape -- and whose parentheses depend on its PARENT.
+func TestCreateTableLike(t *testing.T) {
+	for _, tc := range []struct{ sql, dialect string }{
+		{"CREATE TABLE t1 (LIKE t2)", "postgres"},
+		{"CREATE TABLE t1 (col VARCHAR, LIKE t2)", "postgres"},
+		{"CREATE TABLE A (LIKE B INCLUDING CONSTRAINT INCLUDING COMPRESSION EXCLUDING COMMENTS)",
+			"postgres"},
+		{"CREATE TABLE a (LIKE b)", "databricks"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.sql {
+			t.Errorf("[%s] %q wrote %q, %v", tc.dialect, tc.sql, got, err)
+		}
+	}
+
+	// DuckDB has no such word: the reference writes the copy as a query
+	// instead, which is a different statement and is refused here.
+	if e, err := ParseOne("CREATE TABLE a (LIKE b)", "duckdb"); err == nil {
+		if got, gerr := Generate(e, "duckdb"); gerr == nil {
+			t.Errorf("wrote %q; DuckDB writes a query instead", got)
+		}
+	}
+
+	// The copy is a property among the columns rather than a column, and what
+	// it includes is upper-cased into a bare word.
+	e, err := ParseOne("CREATE TABLE A (LIKE B including constraint)", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	schema, _ := e.Args["this"].(*Expression)
+	items, _ := schema.Args["expressions"].([]*Expression)
+	if len(items) != 1 || items[0].Class != "LikeProperty" {
+		t.Fatalf("the column list holds %v", items)
+	}
+	options, _ := items[0].Args["expressions"].([]*Expression)
+	if len(options) != 1 {
+		t.Fatalf("the options are %v", options)
+	}
+	if value, _ := options[0].Args["value"].(*Expression); value == nil ||
+		value.Args["this"] != "CONSTRAINT" {
+		t.Errorf("the option names %v", options[0].Args["value"])
 	}
 }

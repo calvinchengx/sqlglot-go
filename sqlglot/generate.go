@@ -66,6 +66,10 @@ type generator struct {
 	// which some dialects leave off: the assigned side of a branch can name
 	// nothing else, so the qualifier is noise there and written nowhere.
 	mergeTarget map[*Expression]bool
+	// wroteDollar records that a dollar has gone into the output already, so
+	// a later bare name holding one would pair with it; see
+	// lexesBackAsOneName.
+	wroteDollar bool
 }
 
 // fail records the first failure. Later writers keep running and return empty

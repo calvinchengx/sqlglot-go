@@ -4038,6 +4038,11 @@ def main() -> int:
         "\t// EndCommits: a bare END ENDS THE TRANSACTION here, and is a name\n",
         "\t// or a block anywhere else.\n",
         "\tEndCommits bool\n",
+        "\t// LikeInsideSchema: a `LIKE other` that is NOT inside a column\n",
+        "\t// list brings its own parentheses here. SupportsCreateLike says\n",
+        "\t// the dialect writes the word at all.\n",
+        "\tLikeInsideSchema   bool\n",
+        "\tSupportsCreateLike bool\n",
         "\t// ExecuteBuildsExecute: EXEC names a procedure to run here, and is\n",
         "\t// kept as raw text anywhere else.\n",
         "\tExecuteBuildsExecute bool\n",
@@ -4706,6 +4711,15 @@ def main() -> int:
         ) or ()
         out.append(strset("TsOrDsParents", sorted(c.__name__ for c in _tsp)))
         out.append(f"\t\tPrefixAlias: {str(prefix_alias(name)).lower()},\n")
+        _gen = type(_DG.get_or_raise(name or None)).generator_class
+        out.append(
+            "\t\tLikeInsideSchema: %s,\n"
+            % str(bool(getattr(_gen, "LIKE_PROPERTY_INSIDE_SCHEMA", False))).lower()
+        )
+        out.append(
+            "\t\tSupportsCreateLike: %s,\n"
+            % str(bool(getattr(_gen, "SUPPORTS_CREATE_TABLE_LIKE", True))).lower()
+        )
         out.append("\t\tEndCommits: %s,\n" % str(end_commits(name)).lower())
         out.append(
             "\t\tExecuteBuildsExecute: %s,\n" % str(execute_builds_execute(name)).lower()

@@ -212,6 +212,20 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 	p.advance() // the opening parenthesis
 	var out []*Expression
 	for {
+		// `LIKE other` copies another table's shape into this one. It stands
+		// where a column definition would and is a property rather than a
+		// column, so it goes into the same list under a class of its own.
+		if p.at(TokLIKE) {
+			like, err := p.parseCreateLike()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, like)
+			if !p.match(TokCOMMA) {
+				break
+			}
+			continue
+		}
 		// A constraint on the TABLE stands where a column definition would,
 		// and is told from one by the word it starts with.
 		if p.atTableConstraint() {
@@ -430,7 +444,10 @@ func (p *parser) parseInsert() (*Expression, error) {
 		exists = true
 	}
 	this := table
-	if p.at(TokL_PAREN) {
+	// `INSERT INTO x (SELECT 1)` names no columns: the parentheses are the
+	// QUERY's, and the reference keeps them as a Subquery around it. What
+	// follows a bare `(` decides which of the two this is.
+	if p.at(TokL_PAREN) && !p.opensAParenthesisedQuery() {
 		columns, err := p.parseInsertColumns()
 		if err != nil {
 			return nil, err
@@ -452,6 +469,10 @@ func (p *parser) parseInsert() (*Expression, error) {
 		expression, err = p.parseValues()
 	case p.at(TokSELECT), p.at(TokWITH):
 		expression, err = p.parseQuery()
+	case p.opensAParenthesisedQuery():
+		// The parentheses are the QUERY's, and the reference keeps them as a
+		// Subquery around it -- which may then be one side of a UNION.
+		expression, err = p.parseQueryBody()
 	default:
 		return nil, p.unsupported("INSERT without VALUES or a query")
 	}
@@ -3975,6 +3996,31 @@ func (p *parser) parseSequenceProperties() (*Expression, error) {
 			p.matchUnquotedWord("WITH")
 			p.match(TokEQ)
 			key = "start"
+		case p.atWords("OWNED", "BY"):
+			p.advance()
+			p.advance()
+			// `OWNED BY NONE` is the default and records nothing.
+			if p.matchUnquotedWord("NONE") {
+				read = true
+				continue
+			}
+			owner, err := p.parseColumn()
+			if err != nil {
+				return nil, err
+			}
+			seq.Set("owned", owner)
+			read = true
+			continue
+		case p.matchUnquotedWord("CACHE"):
+			// T-SQL allows a bare CACHE, whose size the engine picks.
+			if c := p.curr(); c != nil && c.Type == TokNUMBER {
+				p.advance()
+				seq.Set("cache", New("Literal", Arg{"this", c.Text}, Arg{"is_string", false}))
+			} else {
+				seq.Set("cache", true)
+			}
+			read = true
+			continue
 		}
 		if key != "" {
 			value, err := p.parseTerm()
@@ -4070,4 +4116,45 @@ func (p *parser) parseTablePart() (*Expression, error) {
 func (p *parser) atTablePart() bool {
 	c := p.curr()
 	return c != nil && (c.Type == TokSTRING || p.atIdentifier())
+}
+
+// parseCreateLike reads `LIKE other [INCLUDING|EXCLUDING what]...`, which
+// copies another table's shape.
+func (p *parser) parseCreateLike() (*Expression, error) {
+	p.advance() // LIKE
+
+	table, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+	node := New("LikeProperty", Arg{"this", table})
+
+	var options []*Expression
+	for {
+		word := ""
+		switch {
+		case p.atUnquotedWord("INCLUDING"):
+			word = "INCLUDING"
+		case p.atUnquotedWord("EXCLUDING"):
+			word = "EXCLUDING"
+		default:
+		}
+		if word == "" {
+			break
+		}
+		p.advance()
+		what, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		// The thing named is upper-cased into a bare word, whatever case it
+		// was written in.
+		options = append(options, New("Property",
+			Arg{"this", word},
+			Arg{"value", New("Var", Arg{"this", strings.ToUpper(what.Name())})}))
+	}
+	if len(options) > 0 {
+		node.Set("expressions", options)
+	}
+	return node, nil
 }

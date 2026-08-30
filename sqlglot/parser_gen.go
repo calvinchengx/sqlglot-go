@@ -260,6 +260,11 @@ type ParserTables struct {
 	// EndCommits: a bare END ENDS THE TRANSACTION here, and is a name
 	// or a block anywhere else.
 	EndCommits bool
+	// LikeInsideSchema: a `LIKE other` that is NOT inside a column
+	// list brings its own parentheses here. SupportsCreateLike says
+	// the dialect writes the word at all.
+	LikeInsideSchema   bool
+	SupportsCreateLike bool
 	// ExecuteBuildsExecute: EXEC names a procedure to run here, and is
 	// kept as raw text anywhere else.
 	ExecuteBuildsExecute bool
@@ -3973,6 +3978,8 @@ var parserTables = map[string]*ParserTables{
 		VariantExtractColon:  false,
 		TsOrDsParents:        map[string]struct{}{},
 		PrefixAlias:          false,
+		LikeInsideSchema:     false,
+		SupportsCreateLike:   true,
 		EndCommits:           false,
 		ExecuteBuildsExecute: false,
 		ShowKinds:            map[string]struct{}{},
@@ -7952,6 +7959,8 @@ var parserTables = map[string]*ParserTables{
 		VariantExtractColon:  false,
 		TsOrDsParents:        map[string]struct{}{},
 		PrefixAlias:          false,
+		LikeInsideSchema:     false,
+		SupportsCreateLike:   true,
 		EndCommits:           false,
 		ExecuteBuildsExecute: true,
 		ShowKinds:            map[string]struct{}{},
@@ -11965,6 +11974,8 @@ var parserTables = map[string]*ParserTables{
 		VariantExtractColon:  false,
 		TsOrDsParents:        map[string]struct{}{},
 		PrefixAlias:          false,
+		LikeInsideSchema:     true,
+		SupportsCreateLike:   true,
 		EndCommits:           true,
 		ExecuteBuildsExecute: false,
 		ShowKinds:            map[string]struct{}{},
@@ -16184,6 +16195,8 @@ var parserTables = map[string]*ParserTables{
 		VariantExtractColon:  false,
 		TsOrDsParents:        map[string]struct{}{},
 		PrefixAlias:          true,
+		LikeInsideSchema:     false,
+		SupportsCreateLike:   false,
 		EndCommits:           false,
 		ExecuteBuildsExecute: false,
 		ShowKinds: map[string]struct{}{
@@ -20461,6 +20474,8 @@ var parserTables = map[string]*ParserTables{
 			"Year":       {},
 		},
 		PrefixAlias:          false,
+		LikeInsideSchema:     false,
+		SupportsCreateLike:   true,
 		EndCommits:           false,
 		ExecuteBuildsExecute: false,
 		ShowKinds:            map[string]struct{}{},

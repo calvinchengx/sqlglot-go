@@ -538,3 +538,53 @@ func TestJSONOperatorNeedsTwoOperands(t *testing.T) {
 		t.Errorf("wrote %q for a JSONBExtract with one operand", got)
 	}
 }
+
+// TestBareNameAfterADollar covers a name the port declines to write BARE
+// because a dollar has already gone into the output.
+//
+// `$0 A$` is an alias in PostgreSQL. Written back, the two dollars pair: the
+// parameter swallows the AS and the statement reads as three tokens where
+// there were four. The reference does the same thing with its own output and
+// is saved only by the comment it carries, which this port does not model --
+// so the port declines rather than emit it.
+func TestBareNameAfterADollar(t *testing.T) {
+	e, err := ParseOne("$0 A$-- ", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "postgres"); err == nil {
+		t.Errorf("wrote %q; it does not read back", got)
+	}
+
+	// A braced parameter takes ANY token as its name, including one that is
+	// only a keyword by case-folding: `aſ` upper-cases to AS, so the
+	// tokenizer hands it back as the ALIAS keyword and a name-shaped test
+	// there could not read `${aſ}` -- which is what the port itself writes.
+	for _, sql := range []string{"$aſ", "${aſ}", "${WHERE}"} {
+		e, err := ParseOne(sql, "databricks")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		out, err := Generate(e, "databricks")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if _, err := ParseOne(out, "databricks"); err != nil {
+			t.Errorf("%q wrote %q, which does not read back: %v", sql, out, err)
+		}
+	}
+
+	// The name alone is fine, and stays fine: it is the PAIR that is not.
+	for _, tc := range []struct{ sql, dialect string }{
+		{"SELECT 1 AS a$b", "duckdb"},
+		{"x$", "postgres"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.sql {
+			t.Errorf("[%s] %q wrote %q, %v", tc.dialect, tc.sql, got, err)
+		}
+	}
+}

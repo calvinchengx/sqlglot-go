@@ -2744,10 +2744,13 @@ func (p *parser) parseParameter() *Expression {
 	// `expression` flag recording that the braces were there -- and the port
 	// WRITES this form, so it has to read it back.
 	if c.Text == "$" && p.next() != nil && p.next().Type == TokL_BRACE {
-		// The braces delimit the name, so it can be any single word --
-		// including a KEYWORD. `$WHERE` writes as `${WHERE}` and requiring a
-		// VAR there could not read it back.
-		if name := p.peekAt(2); isParameterName(name) &&
+		// The braces delimit the name, so it can be ANY single token --
+		// including a keyword, and including one that only became a keyword
+		// by case-folding. `$WHERE` writes as `${WHERE}`, and `$aſ` writes as
+		// `${aſ}` whose name upper-cases to AS; requiring a name-shaped token
+		// here could read back neither. The reference takes whatever stands
+		// between the braces too.
+		if name := p.peekAt(2); name != nil && name.Type != TokR_BRACE &&
 			p.peekAt(3) != nil && p.peekAt(3).Type == TokR_BRACE {
 			p.advance()
 			p.advance()
