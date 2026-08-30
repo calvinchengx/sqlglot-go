@@ -6625,3 +6625,106 @@ func TestCopy(t *testing.T) {
 		}
 	}
 }
+
+// TestPosition covers POSITION, which says the same thing two ways round.
+func TestPosition(t *testing.T) {
+	// `POSITION(a IN b)` and `POSITION(a, b)` both look for a in b, so the
+	// same tree comes out of both -- and only the comma form takes a third
+	// argument saying where in b to start.
+	in, err := ParseOne("SELECT POSITION(a IN b)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	comma, err := ParseOne("SELECT POSITION(a, b)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if !in.Equal(comma) {
+		t.Errorf("the two spellings read differently:\n%v\n%v", in, comma)
+	}
+	for _, tc := range []struct{ sql, dialect, want string }{
+		{"SELECT POSITION(a IN b)", "", "SELECT STR_POSITION(b, a)"},
+		{"SELECT POSITION(a, b, 3)", "", "SELECT STR_POSITION(b, a, 3)"},
+		{"SELECT POSITION(a, b)", "tsql", "SELECT CHARINDEX(a, b)"},
+		{"SELECT POSITION(a IN b)", "postgres", "SELECT POSITION(a IN b)"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.want {
+			t.Errorf("[%s] %q wrote %q, want %q (%v)", tc.dialect, tc.sql, got, tc.want, err)
+		}
+	}
+	if e, err := ParseOne("SELECT POSITION(a IN b", ""); err == nil {
+		t.Errorf("read an unclosed POSITION as %v", e)
+	}
+}
+
+// TestPercentPlaceholder covers PostgreSQL's `%(name)s`, which only that
+// dialect reads -- everywhere else a percent sign there is arithmetic with a
+// missing left-hand side.
+func TestPercentPlaceholder(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT %(name)s",
+		// The name may be a keyword: the parentheses delimit it.
+		"SELECT %(select)s",
+		"SELECT %(1)s",
+		"SELECT %s",
+		// A placeholder can be qualified like anything else.
+		"SELECT %(name)s.a",
+	} {
+		e, err := ParseOne(sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "postgres"); err != nil || got != sql {
+			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+
+	// A percent that is not a placeholder is still arithmetic.
+	if e, err := ParseOne("SELECT a % (b)", "postgres"); err != nil {
+		t.Errorf("ParseOne: %v", err)
+	} else if got, _ := Generate(e, "postgres"); got != "SELECT a % (b)" {
+		t.Errorf("wrote %q", got)
+	}
+	// The suffix is required here: the reference reads `%(a)x` as a
+	// placeholder followed by an alias, which is a shape this port declines
+	// rather than reads two ways.
+	if e, err := ParseOne("SELECT %(a)x", "postgres"); err == nil {
+		t.Errorf("read %v", e)
+	}
+	// And no other dialect reads any of it.
+	for _, dialect := range []string{"", "tsql", "duckdb", "databricks"} {
+		if e, err := ParseOne("SELECT %(name)s", dialect); err == nil {
+			t.Errorf("[%s] read %v", dialect, e)
+		}
+	}
+}
+
+// TestConvertStyle covers T-SQL's CONVERT with the style number that says how
+// to read the value.
+func TestConvertStyle(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT CONVERT(VARCHAR(10), x, 120)",
+		"SELECT CONVERT(INTEGER, x)",
+		"SELECT TRY_CONVERT(VARCHAR(10), x, 120)",
+	} {
+		e, err := ParseOne(sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "tsql"); err != nil || got != sql {
+			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+	for _, sql := range []string{
+		"SELECT CONVERT(INTEGER)",
+		"SELECT CONVERT(INTEGER, x",
+	} {
+		if e, err := ParseOne(sql, "tsql"); err == nil {
+			t.Errorf("read %q as %v", sql, e)
+		}
+	}
+}

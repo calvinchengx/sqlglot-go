@@ -198,21 +198,40 @@ func (p *parser) parsePosition() (*Expression, error) {
 	p.advance()
 	// parseBitwise, not parseExpression: at the full level `a IN b` is an IN
 	// predicate and the IN is gone before this function sees it.
-	first, err := p.parseBitwise()
-	if err != nil {
-		return nil, err
+	var args []*Expression
+	for {
+		arg, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+		if !p.match(TokCOMMA) {
+			break
+		}
 	}
-	if !p.match(TokIN) {
-		return nil, p.unsupported("POSITION without IN")
-	}
-	haystack, err := p.parseExpression()
-	if err != nil {
-		return nil, err
+
+	// `POSITION(a IN b)` looks for a in b, and so does `POSITION(a, b)` --
+	// the same two arguments the other way round. Only the comma form takes
+	// a third, which is where in b to start.
+	var node *Expression
+	if p.match(TokIN) {
+		haystack, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		node = New("StrPosition", Arg{"this", haystack}, Arg{"substr", argAt(args, 0)})
+	} else {
+		node = New("StrPosition",
+			Arg{"this", argAt(args, 1)},
+			Arg{"substr", argAt(args, 0)})
+		if start := argAt(args, 2); start != nil {
+			node.Set("position", start)
+		}
 	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed POSITION")
 	}
-	return New("StrPosition", Arg{"this", haystack}, Arg{"substr", first}), nil
+	return node, nil
 }
 
 // CONVERT(type, x[, style]) -- the FIRST argument is a data type, which is why
