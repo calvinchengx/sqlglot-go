@@ -6817,3 +6817,62 @@ func TestCreateSchema(t *testing.T) {
 		t.Errorf("the schema's name is %v", table.Args["db"])
 	}
 }
+
+// TestCreateSequence covers the statement that makes a source of numbers. Its
+// settings are all optional and come in the order the statement writes them,
+// so the parser reads until it meets a word it does not know.
+func TestCreateSequence(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		// START and START WITH are the same thing; the reference writes the
+		// longer form back.
+		{"CREATE SEQUENCE serial START 101", "CREATE SEQUENCE serial START WITH 101"},
+		{"CREATE SEQUENCE serial START WITH 1 INCREMENT BY 2",
+			"CREATE SEQUENCE serial START WITH 1 INCREMENT BY 2"},
+		{"CREATE SEQUENCE serial START WITH 99 INCREMENT BY -1 MAXVALUE 99",
+			"CREATE SEQUENCE serial START WITH 99 INCREMENT BY -1 MAXVALUE 99"},
+		// `NO CYCLE` is ONE option, not two.
+		{"CREATE SEQUENCE serial START WITH 1 MAXVALUE 10 NO CYCLE",
+			"CREATE SEQUENCE serial START WITH 1 MAXVALUE 10 NO CYCLE"},
+		{"CREATE SEQUENCE serial START WITH 1 MAXVALUE 10 CYCLE",
+			"CREATE SEQUENCE serial START WITH 1 MAXVALUE 10 CYCLE"},
+		{"CREATE SEQUENCE seq MINVALUE 1", "CREATE SEQUENCE seq MINVALUE 1"},
+		// A sequence that says nothing about its numbers carries no
+		// properties at all.
+		{"CREATE SEQUENCE seq", "CREATE SEQUENCE seq"},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false", tc.sql)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q, want %q (%v)", tc.sql, got, tc.want, err)
+		}
+	}
+
+	bare, err := ParseOne("CREATE SEQUENCE seq", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if props, _ := bare.Args["properties"].(*Expression); props != nil {
+		t.Errorf("a bare sequence carries %v", props)
+	}
+
+	// A valueless option is a Var holding both its words.
+	e, err := ParseOne("CREATE SEQUENCE seq NO CYCLE", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	props, _ := e.Args["properties"].(*Expression)
+	seq := props.Args["expressions"].([]*Expression)[0]
+	options, _ := seq.Args["options"].([]*Expression)
+	if len(options) != 1 || options[0].Args["this"] != "NO CYCLE" {
+		t.Errorf("the options are %v", options)
+	}
+
+	if e, err := ParseOne("CREATE SEQUENCE seq NONSENSE", "duckdb"); err == nil {
+		t.Errorf("read %v", e)
+	}
+}

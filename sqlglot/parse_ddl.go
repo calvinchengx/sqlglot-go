@@ -60,7 +60,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 	}
 	kind := strings.ToUpper(kindToken.Text)
 	if kind != "TABLE" && kind != "VIEW" && kind != "FUNCTION" &&
-		kind != "INDEX" && kind != "SCHEMA" {
+		kind != "INDEX" && kind != "SCHEMA" && kind != "SEQUENCE" {
 		return nil, p.unsupported("CREATE " + kind)
 	}
 	p.advance()
@@ -92,6 +92,12 @@ func (p *parser) parseCreate() (*Expression, error) {
 
 	if kind == "FUNCTION" {
 		return p.parseFunctionRest(table, replace, exists, temporary)
+	}
+
+	// A SEQUENCE has no columns and no query -- what follows its name says
+	// which numbers it hands out.
+	if kind == "SEQUENCE" {
+		return p.parseSequenceRest(table, replace, exists)
 	}
 
 	var this, expression *Expression
@@ -3939,4 +3945,106 @@ func atWord(c *Token) bool {
 	}
 	r := rune(c.Text[0])
 	return unicode.IsLetter(r) || r == '_'
+}
+
+// parseSequenceProperties reads what a CREATE SEQUENCE says about the numbers
+// it hands out. Everything is optional and the order is the statement's, so
+// this loops until it meets a word it does not know.
+func (p *parser) parseSequenceProperties() (*Expression, error) {
+	seq := New("SequenceProperties")
+	var options []*Expression
+	read := false
+
+	for p.curr() != nil {
+		p.match(TokCOMMA)
+		var key string
+		switch {
+		case p.matchUnquotedWord("INCREMENT"):
+			p.matchUnquotedWord("BY")
+			p.match(TokEQ)
+			key = "increment"
+		case p.matchUnquotedWord("MINVALUE"):
+			key = "minvalue"
+		case p.matchUnquotedWord("MAXVALUE"):
+			key = "maxvalue"
+		case p.matchUnquotedWord("START"):
+			p.matchUnquotedWord("WITH")
+			p.match(TokEQ)
+			key = "start"
+		}
+		if key != "" {
+			value, err := p.parseTerm()
+			if err != nil {
+				return nil, err
+			}
+			seq.Set(key, value)
+			read = true
+			continue
+		}
+		// A word that carries no value. Some of them take a second word --
+		// `NO CYCLE` is one option, not two -- and the pair is recorded as
+		// one Var holding both.
+		word := p.atSequenceOption()
+		if word == "" {
+			break
+		}
+		options = append(options, New("Var", Arg{"this", word}))
+		read = true
+	}
+	if !read {
+		return nil, nil
+	}
+	if len(options) > 0 {
+		seq.Set("options", options)
+	}
+	return seq, nil
+}
+
+// atSequenceOption consumes one valueless option and returns it as written,
+// with the word that follows it where there is one.
+func (p *parser) atSequenceOption() string {
+	c := p.curr()
+	if c == nil {
+		return ""
+	}
+	word := strings.ToUpper(c.Text)
+	followers, ok := p.tables.SequenceOptions[word]
+	if !ok {
+		return ""
+	}
+	p.advance()
+	if n := p.curr(); n != nil {
+		for _, follower := range followers {
+			if strings.EqualFold(n.Text, follower) {
+				p.advance()
+				return word + " " + strings.ToUpper(n.Text)
+			}
+		}
+	}
+	return word
+}
+
+// parseSequenceRest finishes a CREATE SEQUENCE.
+func (p *parser) parseSequenceRest(table *Expression, replace, exists bool) (*Expression, error) {
+	seq, err := p.parseSequenceProperties()
+	if err != nil {
+		return nil, err
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("CREATE SEQUENCE with more than this port reads")
+	}
+	var properties *Expression
+	if seq != nil {
+		properties = New("Properties", Arg{"expressions", []*Expression{seq}})
+	}
+	return New("Create",
+		Arg{"this", table},
+		Arg{"kind", "SEQUENCE"},
+		Arg{"replace", replace},
+		Arg{"refresh", false},
+		Arg{"unique", false},
+		Arg{"exists", exists},
+		Arg{"properties", properties},
+		Arg{"concurrently", false},
+	), nil
 }

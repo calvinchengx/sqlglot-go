@@ -4044,6 +4044,10 @@ def main() -> int:
         "\t// ShowKinds are the phrases SHOW reads as a statement rather than\n",
         "\t// keeping as text.\n",
         "\tShowKinds map[string]struct{}\n",
+        "\t// SequenceOptions are the words a CREATE SEQUENCE takes that carry\n",
+        "\t// no value, each with the word that may follow it: NO CYCLE is one\n",
+        "\t// option, not two.\n",
+        "\tSequenceOptions map[string][]string\n",
         "\t// CreatableTokens are the things a CREATE makes and a DROP\n",
         "\t// removes, and CreatableKindNames what a dialect calls them where\n",
         "\t// it uses another word.\n",
@@ -4704,6 +4708,11 @@ def main() -> int:
             "\t\tExecuteBuildsExecute: %s,\n" % str(execute_builds_execute(name)).lower()
         )
         out.append(strset("ShowKinds", sorted(P.SHOW_PARSERS)))
+        body = "".join(
+            "\t\t\t%s: {%s},\n" % (gostr(k), ", ".join(gostr(w) for w in v))
+            for k, v in sorted(P.CREATE_SEQUENCE.items())
+        )
+        out.append(f"\t\tSequenceOptions: map[string][]string{{\n{body}\t\t}},\n")
         toks = sorted(P.CREATABLES, key=lambda t: t.value)
         body = "".join(f"\t\t\tTok{t.name}: {{}},\n" for t in toks)
         out.append(f"\t\tCreatableTokens: map[TokenType]struct{{}}{{\n{body}\t\t}},\n")

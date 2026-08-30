@@ -22,6 +22,7 @@ func init() {
 	generators = map[string]func(*generator, *Expression) string{
 		"Select":                              (*generator).writeSelect,
 		"TimeToStr":                           (*generator).writeTimeToStr,
+		"SequenceProperties":                  (*generator).writeSequenceProperties,
 		"Credentials":                         (*generator).writeCredentials,
 		"CopyParameter":                       (*generator).writeCopyParameter,
 		"DeclareItem":                         (*generator).writeDeclareItem,
@@ -2303,7 +2304,8 @@ func (g *generator) writeCreate(e *Expression) string {
 	if properties, _ := e.Args["properties"].(*Expression); properties != nil {
 		items, _ := properties.Args["expressions"].([]*Expression)
 		for _, item := range items {
-			if item.Class == "WithDataProperty" {
+			switch item.Class {
+			case "WithDataProperty", "SequenceProperties":
 				out += " " + g.node(item)
 			}
 		}
@@ -3959,4 +3961,35 @@ func (g *generator) writeCopyParameter(e *Expression) string {
 		return name + " = " + value
 	}
 	return name + " " + value
+}
+
+// writeSequenceProperties writes what a CREATE SEQUENCE says about the numbers
+// it hands out. Every piece is optional, and each brings its own words: the
+// template probe fills them all and so never sees the shapes that matter.
+func (g *generator) writeSequenceProperties(e *Expression) string {
+	out := ""
+	for _, part := range []struct{ key, word string }{
+		{"start", "START WITH"}, {"increment", "INCREMENT BY"},
+		{"minvalue", "MINVALUE"}, {"maxvalue", "MAXVALUE"},
+		{"owned", "OWNED BY"},
+	} {
+		if value := g.child(e, part.key); value != "" {
+			out += " " + part.word + " " + value
+		}
+	}
+	switch cache := e.Args["cache"].(type) {
+	case bool:
+		if cache {
+			out += " CACHE"
+		}
+	case *Expression:
+		if cache != nil {
+			out += " CACHE " + g.node(cache)
+		}
+	}
+	options, _ := e.Args["options"].([]*Expression)
+	for _, option := range options {
+		out += " " + g.node(option)
+	}
+	return strings.TrimPrefix(out, " ")
 }

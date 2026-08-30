@@ -266,6 +266,10 @@ type ParserTables struct {
 	// ShowKinds are the phrases SHOW reads as a statement rather than
 	// keeping as text.
 	ShowKinds map[string]struct{}
+	// SequenceOptions are the words a CREATE SEQUENCE takes that carry
+	// no value, each with the word that may follow it: NO CYCLE is one
+	// option, not two.
+	SequenceOptions map[string][]string
 	// CreatableTokens are the things a CREATE makes and a DROP
 	// removes, and CreatableKindNames what a dialect calls them where
 	// it uses another word.
@@ -3969,6 +3973,24 @@ var parserTables = map[string]*ParserTables{
 		EndCommits:           false,
 		ExecuteBuildsExecute: false,
 		ShowKinds:            map[string]struct{}{},
+		SequenceOptions: map[string][]string{
+			"CYCLE":      {},
+			"GLOBAL":     {},
+			"KEEP":       {},
+			"NO":         {"CYCLE", "CACHE", "MAXVALUE", "MINVALUE"},
+			"NOCACHE":    {},
+			"NOCYCLE":    {},
+			"NOKEEP":     {},
+			"NOMAXVALUE": {},
+			"NOMINVALUE": {},
+			"NOORDER":    {},
+			"NOSCALE":    {},
+			"NOSHARD":    {},
+			"ORDER":      {},
+			"SCALE":      {"EXTEND", "NOEXTEND"},
+			"SESSION":    {},
+			"SHARD":      {"EXTEND", "NOEXTEND"},
+		},
 		CreatableTokens: map[TokenType]struct{}{
 			TokDATABASE:            {},
 			TokCOLUMN:              {},
@@ -7899,6 +7921,24 @@ var parserTables = map[string]*ParserTables{
 		EndCommits:           false,
 		ExecuteBuildsExecute: true,
 		ShowKinds:            map[string]struct{}{},
+		SequenceOptions: map[string][]string{
+			"CYCLE":      {},
+			"GLOBAL":     {},
+			"KEEP":       {},
+			"NO":         {"CYCLE", "CACHE", "MAXVALUE", "MINVALUE"},
+			"NOCACHE":    {},
+			"NOCYCLE":    {},
+			"NOKEEP":     {},
+			"NOMAXVALUE": {},
+			"NOMINVALUE": {},
+			"NOORDER":    {},
+			"NOSCALE":    {},
+			"NOSHARD":    {},
+			"ORDER":      {},
+			"SCALE":      {"EXTEND", "NOEXTEND"},
+			"SESSION":    {},
+			"SHARD":      {"EXTEND", "NOEXTEND"},
+		},
 		CreatableTokens: map[TokenType]struct{}{
 			TokDATABASE:            {},
 			TokCOLUMN:              {},
@@ -11863,6 +11903,24 @@ var parserTables = map[string]*ParserTables{
 		EndCommits:           true,
 		ExecuteBuildsExecute: false,
 		ShowKinds:            map[string]struct{}{},
+		SequenceOptions: map[string][]string{
+			"CYCLE":      {},
+			"GLOBAL":     {},
+			"KEEP":       {},
+			"NO":         {"CYCLE", "CACHE", "MAXVALUE", "MINVALUE"},
+			"NOCACHE":    {},
+			"NOCYCLE":    {},
+			"NOKEEP":     {},
+			"NOMAXVALUE": {},
+			"NOMINVALUE": {},
+			"NOORDER":    {},
+			"NOSCALE":    {},
+			"NOSHARD":    {},
+			"ORDER":      {},
+			"SCALE":      {"EXTEND", "NOEXTEND"},
+			"SESSION":    {},
+			"SHARD":      {"EXTEND", "NOEXTEND"},
+		},
 		CreatableTokens: map[TokenType]struct{}{
 			TokDATABASE:            {},
 			TokCOLUMN:              {},
@@ -16035,6 +16093,24 @@ var parserTables = map[string]*ParserTables{
 		ShowKinds: map[string]struct{}{
 			"ALL TABLES": {},
 			"TABLES":     {},
+		},
+		SequenceOptions: map[string][]string{
+			"CYCLE":      {},
+			"GLOBAL":     {},
+			"KEEP":       {},
+			"NO":         {"CYCLE", "CACHE", "MAXVALUE", "MINVALUE"},
+			"NOCACHE":    {},
+			"NOCYCLE":    {},
+			"NOKEEP":     {},
+			"NOMAXVALUE": {},
+			"NOMINVALUE": {},
+			"NOORDER":    {},
+			"NOSCALE":    {},
+			"NOSHARD":    {},
+			"ORDER":      {},
+			"SCALE":      {"EXTEND", "NOEXTEND"},
+			"SESSION":    {},
+			"SHARD":      {"EXTEND", "NOEXTEND"},
 		},
 		CreatableTokens: map[TokenType]struct{}{
 			TokDATABASE:            {},
@@ -20261,6 +20337,24 @@ var parserTables = map[string]*ParserTables{
 		EndCommits:           false,
 		ExecuteBuildsExecute: false,
 		ShowKinds:            map[string]struct{}{},
+		SequenceOptions: map[string][]string{
+			"CYCLE":      {},
+			"GLOBAL":     {},
+			"KEEP":       {},
+			"NO":         {"CYCLE", "CACHE", "MAXVALUE", "MINVALUE"},
+			"NOCACHE":    {},
+			"NOCYCLE":    {},
+			"NOKEEP":     {},
+			"NOMAXVALUE": {},
+			"NOMINVALUE": {},
+			"NOORDER":    {},
+			"NOSCALE":    {},
+			"NOSHARD":    {},
+			"ORDER":      {},
+			"SCALE":      {"EXTEND", "NOEXTEND"},
+			"SESSION":    {},
+			"SHARD":      {"EXTEND", "NOEXTEND"},
+		},
 		CreatableTokens: map[TokenType]struct{}{
 			TokDATABASE:            {},
 			TokCOLUMN:              {},
