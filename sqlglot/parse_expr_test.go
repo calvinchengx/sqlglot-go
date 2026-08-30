@@ -5777,3 +5777,123 @@ func TestJSONAggregates(t *testing.T) {
 		t.Errorf("a one-argument JSONB_EXISTS carries path = %v", call.Args["path"])
 	}
 }
+
+// TestDatePart covers the two spellings of an Extract with the unit in front,
+// which differ in whether the unit is normalised.
+func TestDatePart(t *testing.T) {
+	// T-SQL takes a bare word and normalises it through the reference's own
+	// table: mm is MONTH, q is QUARTER.
+	for _, tc := range []struct{ sql, unit string }{
+		{"SELECT DATEPART(month, x)", "month"},
+		{"SELECT DATEPART(mm, x)", "MONTH"},
+		{"SELECT DATEPART(q, x)", "QUARTER"},
+		// A part the table does not name keeps its spelling, case and all.
+		{"SELECT DATEPART(nanosecond, x)", "nanosecond"},
+	} {
+		e, err := ParseOne(tc.sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		call := e.Args["expressions"].([]*Expression)[0]
+		unit, _ := call.Args["this"].(*Expression)
+		if call.Class != "Extract" || unit == nil || unit.Args["this"] != tc.unit {
+			t.Errorf("%q read as %s with unit %v, want Extract of %q",
+				tc.sql, call.Class, unit, tc.unit)
+		}
+	}
+
+	// PostgreSQL takes a STRING and keeps whatever was inside it -- the same
+	// `mm` that T-SQL normalises stays `mm` here.
+	e, err := ParseOne("SELECT DATE_PART('mm', x)", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call := e.Args["expressions"].([]*Expression)[0]
+	unit, _ := call.Args["this"].(*Expression)
+	if unit == nil || unit.Class != "Var" || unit.Args["this"] != "mm" {
+		t.Errorf("PostgreSQL normalised the unit: %v", unit)
+	}
+	// And it writes back as an EXTRACT, which is what the reference emits.
+	if got, err := Generate(e, "postgres"); err != nil || got != "SELECT EXTRACT(mm FROM x)" {
+		t.Errorf("wrote %q, %v", got, err)
+	}
+
+	// A unit that is neither a word nor a string is kept as it parsed.
+	e, err = ParseOne("SELECT DATE_PART('isodow'::VARCHAR(6), x)", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call = e.Args["expressions"].([]*Expression)[0]
+	if unit, _ := call.Args["this"].(*Expression); unit == nil || unit.Class != "Cast" {
+		t.Errorf("the cast was turned into %v", call.Args["this"])
+	}
+
+	// T-SQL reads the value only after a comma, and records FALSE where there
+	// is none; PostgreSQL reads one either way, so the same shortened call is
+	// a refusal there.
+	e, err = ParseOne("SELECT DATEPART(month)", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call = e.Args["expressions"].([]*Expression)[0]
+	if call.Args["expression"] != false {
+		t.Errorf("a one-argument DATEPART carries expression = %v", call.Args["expression"])
+	}
+
+	for _, tc := range []struct{ sql, dialect string }{
+		{"SELECT DATEPART('month', x)", "tsql"},
+		{"SELECT DATE_PART('month')", "postgres"},
+	} {
+		if e, err := ParseOne(tc.sql, tc.dialect); err == nil {
+			t.Errorf("read %q as %v, want a refusal", tc.sql, e)
+		}
+	}
+}
+
+// TestOpenJSON covers OPENJSON, whose column list is written OUTSIDE the
+// call's own parentheses.
+func TestOpenJSON(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT * FROM OPENJSON(@json)",
+		`SELECT * FROM OPENJSON(@json, '$.a.b')`,
+		"SELECT * FROM OPENJSON(@a) WITH (month VARCHAR(3), temp INTEGER) AS months",
+		`SELECT * FROM OPENJSON(@a) WITH (month_id TINYINT '$.sql:identity()')`,
+		"SELECT * FROM OPENJSON(@a) WITH (doc VARCHAR(3) AS JSON)",
+	} {
+		e, err := ParseOne(sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "tsql")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+	}
+
+	// No path is FALSE rather than absent, and the short spelling is chosen
+	// by that very flag.
+	e, err := ParseOne("SELECT * FROM OPENJSON(@json)", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	from, _ := e.Args["from_"].(*Expression)
+	table, _ := from.Args["this"].(*Expression)
+	call, _ := table.Args["this"].(*Expression)
+	if call == nil || call.Class != "OpenJSON" || call.Args["path"] != false {
+		t.Errorf("OPENJSON read as %v", call)
+	}
+
+	for _, sql := range []string{
+		// The path is a string and nothing else.
+		"SELECT * FROM OPENJSON(@json, x)",
+		"SELECT * FROM OPENJSON(@a) WITH month VARCHAR(3)",
+		"SELECT * FROM OPENJSON(@a) WITH (month VARCHAR(3)",
+	} {
+		if e, err := ParseOne(sql, "tsql"); err == nil {
+			t.Errorf("read %q as %v, want a refusal", sql, e)
+		}
+	}
+}

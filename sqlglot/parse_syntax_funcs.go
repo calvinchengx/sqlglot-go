@@ -71,6 +71,12 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseJSONAgg()
 	case "JSON_ARRAYAGG":
 		return p.parseJSONArrayAgg()
+	case "DATEPART":
+		return p.parseDatePart(true)
+	case "DATE_PART":
+		return p.parseDatePart(false)
+	case "OPENJSON":
+		return p.parseOpenJSON()
 	}
 	return nil, p.unsupported("function " + upper + " with a syntax of its own")
 }
@@ -806,4 +812,146 @@ func (p *parser) parseAggregateArgument() (*Expression, error) {
 		}
 	}
 	return New("Distinct", Arg{"expressions", args}), nil
+}
+
+// DATEPART and DATE_PART are both an Extract with the unit in front, and they
+// differ in how the unit is read. T-SQL takes a bare word and NORMALISES it --
+// `DATEPART(mm, x)` records MONTH -- while PostgreSQL takes a string and keeps
+// whatever was inside it, so `DATE_PART('mm', x)` records mm.
+//
+// A unit that is neither a word nor a string is left exactly as it parsed:
+// PostgreSQL's `DATE_PART('isodow'::varchar(6), x)` keeps the cast.
+func (p *parser) parseDatePart(normalise bool) (*Expression, error) {
+	p.advance()
+	p.advance()
+
+	var unit *Expression
+	if normalise {
+		c := p.curr()
+		if c == nil || (c.Type != TokVAR && c.Type != TokIDENTIFIER) {
+			return nil, p.unsupported("DATEPART without a unit")
+		}
+		p.advance()
+		word := c.Text
+		if full, ok := p.tables.DatePartMapping[strings.ToUpper(word)]; ok {
+			word = full
+		}
+		unit = New("Var", Arg{"this", word})
+	} else {
+		part, err := p.parsePostfix()
+		if err != nil {
+			return nil, err
+		}
+		// A name is taken OFF a column or a string and made into a bare unit;
+		// anything else is kept as the node it is.
+		if part != nil && (part.Class == "Column" || part.Class == "Literal") {
+			part = New("Var", Arg{"this", part.Name()})
+		}
+		unit = part
+	}
+
+	// T-SQL reads the value only if a comma introduces it, and records FALSE
+	// where there is none. PostgreSQL reads one either way, so a call with
+	// nothing left in it is refused there rather than left empty.
+	node := New("Extract", Arg{"this", unit})
+	if normalise && !p.match(TokCOMMA) {
+		node.Set("expression", false)
+	} else {
+		if !normalise {
+			p.match(TokCOMMA)
+		}
+		value, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("expression", value)
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed DATEPART")
+	}
+	return node, nil
+}
+
+// OPENJSON(doc, path) WITH (col TYPE 'path', ...) reads a JSON document as a
+// table. The WITH list is written OUTSIDE the call's own parentheses, so the
+// closing one belongs to the call and the list brings a second.
+func (p *parser) parseOpenJSON() (*Expression, error) {
+	p.advance()
+	p.advance()
+
+	this, err := p.parseBitwise()
+	if err != nil {
+		return nil, err
+	}
+	node := New("OpenJSON", Arg{"this", this})
+	if p.match(TokCOMMA) {
+		c := p.curr()
+		if c == nil || c.Type != TokSTRING {
+			return nil, p.unsupported("OPENJSON without a path")
+		}
+		p.advance()
+		node.Set("path", New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}))
+	} else {
+		node.Set("path", false)
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed OPENJSON")
+	}
+	if !p.match(TokWITH) {
+		return node, nil
+	}
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("OPENJSON WITH without a column list")
+	}
+	var columns []*Expression
+	for {
+		column, err := p.parseOpenJSONColumn()
+		if err != nil {
+			return nil, err
+		}
+		columns = append(columns, column)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed OPENJSON column list")
+	}
+	node.Set("expressions", columns)
+	return node, nil
+}
+
+// One column of an OPENJSON WITH list: a name, an optional type, an optional
+// path, and AS JSON. Everything after the name may be missing, and each piece
+// that is missing is simply absent -- except AS JSON, which is a flag and is
+// always recorded.
+func (p *parser) parseOpenJSONColumn() (*Expression, error) {
+	name, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	node := New("OpenJSONColumnDef", Arg{"this", name})
+	if c := p.curr(); c != nil {
+		if _, isType := p.tables.TypeTokens[c.Type]; isType {
+			kind, err := p.parseDataType()
+			if err != nil {
+				return nil, err
+			}
+			node.Set("kind", kind)
+		}
+	}
+	if c := p.curr(); c != nil && c.Type == TokSTRING {
+		p.advance()
+		node.Set("path", New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}))
+	}
+	asJSON := false
+	if p.at(TokALIAS) {
+		if n := p.next(); n != nil && n.Type == TokJSON {
+			p.advance()
+			p.advance()
+			asJSON = true
+		}
+	}
+	node.Set("as_json", asJSON)
+	return node, nil
 }

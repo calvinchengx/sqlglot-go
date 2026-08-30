@@ -22,6 +22,7 @@ func init() {
 	generators = map[string]func(*generator, *Expression) string{
 		"Select":                              (*generator).writeSelect,
 		"TimeToStr":                           (*generator).writeTimeToStr,
+		"OpenJSONColumnDef":                   (*generator).writeOpenJSONColumnDef,
 		"Union":                               (*generator).writeSetOperation,
 		"Except":                              (*generator).writeSetOperation,
 		"Intersect":                           (*generator).writeSetOperation,
@@ -3809,4 +3810,22 @@ func (g *generator) writeTimeToStr(e *Expression) string {
 		Arg{"this", formatTime(text, g.tables.InverseTimeMapping)},
 		Arg{"is_string", true}))
 	return g.spell(out)
+}
+
+// writeOpenJSONColumnDef writes one column of an OPENJSON WITH list.
+//
+// The template probe rejects a shape that begins with one argument and
+// continues with another -- that is what an infix operator looks like, and a
+// template substitutes text without knowing any precedence. This is not one:
+// the pieces are simply written in order, and the ones that are missing take
+// their separator with them.
+func (g *generator) writeOpenJSONColumnDef(e *Expression) string {
+	out := g.child(e, "this") + " " + g.child(e, "kind")
+	if path := g.child(e, "path"); path != "" {
+		out += " " + path
+	}
+	if e.Args["as_json"] == true {
+		out += " AS JSON"
+	}
+	return out
 }

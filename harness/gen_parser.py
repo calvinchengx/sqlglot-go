@@ -3800,6 +3800,10 @@ def main() -> int:
         "\t// is read through. Only the dialects whose FORMAT is a builder\n",
         "\t// that reads its argument have the second one, which is what\n",
         "\t// tells the port that builder is installed.\n",
+        "\t// DatePartMapping normalises a date part's spelling: T-SQL records\n",
+        "\t// DATEPART(mm, x) as MONTH. A part the map does not name is kept\n",
+        "\t// exactly as it was written, case and all.\n",
+        "\tDatePartMapping map[string]string\n",
         "\tInverseTimeMapping map[string]string\n",
         "\tFormatTimeMapping  map[string]string\n",
         "\tCastSensitiveArgs map[string]map[int][]string\n",
@@ -4329,7 +4333,8 @@ def main() -> int:
             for k in sorted(_tm):
                 out.append(f"\t\t\t{gostr(k)}: {gostr(_tm[k])},\n")
             out.append("\t\t},\n")
-        for field, attr in (("InverseTimeMapping", "INVERSE_TIME_MAPPING"),
+        for field, attr in (("DatePartMapping", "DATE_PART_MAPPING"),
+                            ("InverseTimeMapping", "INVERSE_TIME_MAPPING"),
                             ("FormatTimeMapping", "FORMAT_TIME_MAPPING")):
             _m = getattr(_D.get_or_raise(name or None), attr, None) or {}
             if not _m:
