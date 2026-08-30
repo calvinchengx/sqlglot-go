@@ -509,33 +509,27 @@ func (p *parser) parseUnary() (*Expression, error) {
 	if c == nil {
 		return nil, p.unsupported("expression")
 	}
-	switch c.Type {
-	case TokPLUS:
-		p.advance()
-		return p.parseUnary() // unary plus is a no-op in the reference too
-	case TokDASH:
-		p.advance()
-		this, err := p.parseUnary()
-		if err != nil {
-			return nil, err
-		}
-		return New("Neg", Arg{"this", this}), nil
-	case TokTILDE:
-		p.advance()
-		this, err := p.parseUnary()
-		if err != nil {
-			return nil, err
-		}
-		return New("BitwiseNot", Arg{"this", this}), nil
-	case TokNOT:
-		p.advance()
-		this, err := p.parseEquality()
-		if err != nil {
-			return nil, err
-		}
-		return New("Not", Arg{"this", this}), nil
+	class, isUnary := p.tables.UnaryOps[c.Type]
+	if !isUnary {
+		return p.parsePostfix()
 	}
-	return p.parsePostfix()
+	p.advance()
+	// Unary plus is a no-op in the reference too: it yields its operand.
+	if class == "" {
+		return p.parseUnary()
+	}
+	// NOT takes an EQUALITY as its operand rather than a unary, so `NOT a = b`
+	// negates the comparison and not the column. Every other prefix operator
+	// binds as tightly as it can.
+	operand := p.parseUnary
+	if class == "Not" {
+		operand = p.parseEquality
+	}
+	this, err := operand()
+	if err != nil {
+		return nil, err
+	}
+	return New(class, Arg{"this", this}), nil
 }
 
 // parsePostfix reads what binds tighter than any operator: the :: cast, which

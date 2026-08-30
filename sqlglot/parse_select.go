@@ -433,7 +433,15 @@ func (p *parser) parseTop() (*Expression, error) {
 	// the port could write `TOP (A)`, which it then could not read back.
 	case p.at(TokL_PAREN):
 		p.advance()
-		inner, err := p.parseExpression()
+		var inner *Expression
+		var err error
+		// A count that is a QUERY is stored as the query itself, with no
+		// Subquery around it -- the parentheses belong to the TOP.
+		if p.at(TokSELECT) {
+			inner, err = p.parseQuery()
+		} else {
+			inner, err = p.parseExpression()
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -454,10 +462,9 @@ func (p *parser) parseTop() (*Expression, error) {
 		Arg{"limit_options", nil},
 		Arg{"expressions", nil},
 	)
-	if cc := p.curr(); cc != nil && strings.EqualFold(cc.Text, "PERCENT") {
-		p.advance()
-		limit.Set("limit_options", New("LimitOptions",
-			Arg{"percent", true}, Arg{"rows", false}, Arg{"with_ties", false}))
+	// The same words a LIMIT takes after its count, in the same order.
+	if options := p.parseLimitOptions(); options != nil {
+		limit.Set("limit_options", options)
 	}
 	return limit, nil
 }
@@ -465,8 +472,20 @@ func (p *parser) parseTop() (*Expression, error) {
 func (p *parser) parseProjections() ([]*Expression, error) {
 	var out []*Expression
 	for {
+		// A SELECT may name nothing at all -- `SELECT TOP 10 PERCENT` is a
+		// whole statement in T-SQL, and `SELECT FROM t` is what the reference
+		// writes for a query with no projections. It records no projections
+		// rather than an empty list.
+		//
+		// The test is the reference's own: a projection is missing when the
+		// token in front of it cannot begin one, which is exactly the case
+		// where the parse fails having consumed nothing.
+		start := p.index
 		e, err := p.parseProjection()
 		if err != nil {
+			if len(out) == 0 && p.index == start {
+				return nil, nil
+			}
 			return nil, err
 		}
 		out = append(out, e)

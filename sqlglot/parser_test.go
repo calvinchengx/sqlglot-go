@@ -149,7 +149,7 @@ func TestRefusals(t *testing.T) {
 		{"over-qualified table", "SELECT 1 FROM a.b.c.d", ""},
 		{"trailing tokens", "SELECT 1 FROM t )", ""},
 		{"unclosed parenthesis", "SELECT (1", ""},
-		{"empty expression", "SELECT", ""},
+		{"empty expression", "SELECT 1 +", ""},
 		{"T-SQL alias assignment", "SELECT a = 1", "tsql"},
 		// A # can no longer stand alone in front of a name: it is the mark
 		// on a temporary table and is read. `SELECT a #b` is what is left --
@@ -198,7 +198,7 @@ func TestRefusals(t *testing.T) {
 		{"TOP without a count", "SELECT TOP a FROM t", "tsql"},
 		{"a call named by a word that cannot name one", "SELECT asc(1)", ""},
 		{"unclosed scalar subquery", "SELECT (SELECT 1", ""},
-		{"a scalar subquery that does not parse", "SELECT (SELECT)", ""},
+		{"a scalar subquery that does not parse", "SELECT (SELECT 1 +)", ""},
 		{"CTE named by nothing", "WITH AS (SELECT 1) SELECT 2", ""},
 		{"dangling subquery alias", "SELECT 1 FROM (SELECT 1) AS", ""},
 		{"over-qualified star", "SELECT a.b.c.d.*", ""},

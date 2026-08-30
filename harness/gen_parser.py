@@ -1972,6 +1972,42 @@ def convert_builds_convert(dialect: str) -> bool:
     return type(node).__name__ == "Convert"
 
 
+def unary_ops(dialect: str, P, exp) -> dict:
+    """Which token opens a PREFIX operator here, and what it builds.
+
+    The base table is five entries, and a dialect adds to it: PostgreSQL reads
+    `~` as its binary regexp operator, so its prefix form arrives under the
+    RLIKE token rather than TILDE, and a port that matched on TILDE alone read
+    `~x` as nothing at all.
+
+    Read by RUNNING the reference rather than by transcribing the lambdas: the
+    operator's own spelling comes from the tokenizer, and the class from what
+    parsing `<op> x` actually builds. A no-op -- unary plus -- records the
+    empty string, since what it yields is the operand itself.
+    """
+    import sqlglot
+    from sqlglot.dialects.dialect import Dialect
+
+    T = type(Dialect.get_or_raise(dialect or None)).tokenizer_class
+    spellings: dict = {}
+    for table in (getattr(T, "SINGLE_TOKENS", {}), getattr(T, "KEYWORDS", {})):
+        for text, token in table.items():
+            spellings.setdefault(token, text)
+
+    out = {}
+    for token in P.UNARY_PARSERS:
+        text = spellings.get(token)
+        if not text:
+            continue
+        try:
+            node = sqlglot.parse_one(f"SELECT {text} x", read=dialect or None).selects[0]
+        except Exception:  # noqa: BLE001 -- not a prefix this dialect reads
+            continue
+        name = type(node).__name__
+        out[token.name] = "" if name == "Column" else name
+    return out
+
+
 def end_commits(dialect: str) -> bool:
     """Whether a bare END ends the transaction in this dialect.
 
@@ -3984,6 +4020,9 @@ def main() -> int:
         "\t// EndCommits: a bare END ENDS THE TRANSACTION here, and is a name\n",
         "\t// or a block anywhere else.\n",
         "\tEndCommits bool\n",
+        "\t// UnaryOps is which token opens a PREFIX operator, and what it\n",
+        "\t// builds. The empty string is the no-op unary plus.\n",
+        "\tUnaryOps map[TokenType]string\n",
         "\t// TsOrDsParents are the classes a TsOrDsToDate DISAPPEARS under.\n",
         "\t// Databricks reads YEAR(y) as a Year over a TsOrDsToDate and writes\n",
         "\t// it back as YEAR(y) -- the wrapper is written only where its\n",
@@ -4625,6 +4664,9 @@ def main() -> int:
         out.append(strset("TsOrDsParents", sorted(c.__name__ for c in _tsp)))
         out.append(f"\t\tPrefixAlias: {str(prefix_alias(name)).lower()},\n")
         out.append("\t\tEndCommits: %s,\n" % str(end_commits(name)).lower())
+        _uo = unary_ops(name, P, exp)
+        body = "".join(f"\t\t\tTok{t}: {gostr(c)},\n" for t, c in sorted(_uo.items()))
+        out.append(f"\t\tUnaryOps: map[TokenType]string{{\n{body}\t\t}},\n")
         out.append(
             "\t\tDeclareAssignment: %s,\n"
             % gostr(getattr(type(_DG.get_or_raise(name or None)).generator_class,

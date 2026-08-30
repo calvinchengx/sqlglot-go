@@ -4415,9 +4415,6 @@ func TestCacheRefusals(t *testing.T) {
 		"CACHE TABLE x OPTIONS(",
 		// ...and drops a dangling AS, writing back less than it was given.
 		"CACHE TABLE x AS",
-		// The reference reads an empty SELECT here and writes it back;
-		// this port has no tree for a query that selects nothing.
-		"CACHE TABLE x AS SELECT",
 		// The reference reads a column list here as a Schema. This port's
 		// reader for the position is a table name and nothing else.
 		"CACHE TABLE x(a, b)",
@@ -6300,5 +6297,150 @@ func TestKillAndChain(t *testing.T) {
 	}
 	if e, err := ParseOne("COMMIT AND NOT CHAIN", "postgres"); err == nil {
 		t.Errorf("read %v, want a refusal", e)
+	}
+}
+
+// TestPrefixOperators covers the operators written in FRONT of their operand,
+// which are a table rather than a fixed five: PostgreSQL reads `~` as its
+// binary regexp operator, so the prefix form arrives under a different token
+// there and a port matching on TILDE alone read `~x` as nothing at all.
+func TestPrefixOperators(t *testing.T) {
+	for _, tc := range []struct{ sql, dialect, class string }{
+		{"SELECT -x", "", "Neg"},
+		{"SELECT ~x", "", "BitwiseNot"},
+		{"SELECT ~x", "postgres", "BitwiseNot"},
+		{"SELECT |/ x", "postgres", "Sqrt"},
+		{"SELECT ||/ x", "postgres", "Cbrt"},
+		{"SELECT NOT x", "", "Not"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		got := e.Args["expressions"].([]*Expression)[0]
+		if got.Class != tc.class {
+			t.Errorf("[%s] %q read as %s, want %s", tc.dialect, tc.sql, got.Class, tc.class)
+		}
+	}
+
+	// The same character is still the BINARY operator when it follows an
+	// operand rather than opening one.
+	e, err := ParseOne("SELECT a ~ b", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got := e.Args["expressions"].([]*Expression)[0]; got.Class == "BitwiseNot" {
+		t.Errorf("the binary form read as a prefix: %v", got)
+	}
+
+	// Unary plus is a no-op: it yields the operand itself.
+	plus, err := ParseOne("SELECT +x", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	bare, err := ParseOne("SELECT x", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if !plus.Equal(bare) {
+		t.Errorf("unary plus changed the tree")
+	}
+
+	// NOT takes an EQUALITY as its operand, so it negates the comparison
+	// rather than the column.
+	not, err := ParseOne("SELECT NOT a = b", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	inner, _ := not.Args["expressions"].([]*Expression)[0].Args["this"].(*Expression)
+	if inner == nil || inner.Class != "EQ" {
+		t.Errorf("NOT wrapped %v, want the comparison", inner)
+	}
+}
+
+// TestTopOptions covers T-SQL's TOP, which takes the same words after its
+// count as a LIMIT does -- and a whole query as that count.
+func TestTopOptions(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT TOP 10 PERCENT * FROM t",
+		"SELECT TOP 10 PERCENT WITH TIES * FROM t",
+		"SELECT TOP (SELECT 1) * FROM t",
+		// A statement that stops there selects nothing, and the reference
+		// records no projections rather than an empty list.
+		"SELECT TOP 10 PERCENT",
+		"SELECT",
+	} {
+		e, err := ParseOne(sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "tsql"); err != nil || got != sql {
+			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+
+	// The query is the count ITSELF: the parentheses belong to the TOP, so
+	// there is no Subquery around it.
+	e, err := ParseOne("SELECT TOP (SELECT 1) * FROM t", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	limit, _ := e.Args["limit"].(*Expression)
+	count, _ := limit.Args["expression"].(*Expression)
+	if count == nil || count.Class != "Select" {
+		t.Errorf("the count is %v, want the query itself", count)
+	}
+	// A SELECT that names nothing is a tree in its own right, whether it
+	// stops there or goes on to a clause -- `SELECT FROM t` is what the
+	// reference writes for a query with no projections, so the port has to
+	// read its own output back.
+	for _, sql := range []string{"SELECT", "SELECT FROM a", "SELECT WHERE x"} {
+		e, err := ParseOne(sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if items, _ := e.Args["expressions"].([]*Expression); len(items) != 0 {
+			t.Errorf("%q names %d projections", sql, len(items))
+		}
+		if got, err := Generate(e, ""); err != nil || got != sql {
+			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+	// A projection that starts and then fails is still an error, not an
+	// empty list.
+	for _, sql := range []string{"SELECT 1 +", "SELECT )"} {
+		if e, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("read %q as %v", sql, e)
+		}
+	}
+}
+
+// TestTrimWithoutCharacters covers TRIM told WHERE to trim but not WHAT.
+func TestTrimWithoutCharacters(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT TRIM(LEADING FROM ' XXX ')", "SELECT LTRIM(' XXX ')"},
+		{"SELECT TRIM(TRAILING FROM ' XXX ')", "SELECT RTRIM(' XXX ')"},
+		{"SELECT TRIM(FROM ' XXX ')", "SELECT TRIM(' XXX ')"},
+		// The form that says both still reads both.
+		{"SELECT TRIM(BOTH 'x' FROM ' XXX ')", "SELECT TRIM(BOTH 'x' FROM ' XXX ')"},
+	} {
+		e, err := ParseOne(tc.sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "postgres"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q, want %q (%v)", tc.sql, got, tc.want, err)
+		}
+	}
+
+	// The characters are ABSENT rather than empty when only a position was
+	// written.
+	e, err := ParseOne("SELECT TRIM(LEADING FROM ' XXX ')", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	trim := e.Args["expressions"].([]*Expression)[0]
+	if chars, _ := trim.Args["expression"].(*Expression); chars != nil {
+		t.Errorf("the characters are %v, want none", chars)
 	}
 }

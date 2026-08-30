@@ -121,9 +121,16 @@ func (p *parser) parseTrim() (*Expression, error) {
 		}
 	}
 
-	first, err := p.parseExpression()
-	if err != nil {
-		return nil, err
+	// The characters to trim may be left out entirely: `TRIM(LEADING FROM x)`
+	// says where to trim and not what, and the reference reads the missing
+	// operand as nothing rather than failing on it.
+	var first *Expression
+	if !p.at(TokFROM) {
+		var err error
+		first, err = p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var chars, target *Expression
