@@ -313,6 +313,12 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokKILL) {
 		return p.parseKill()
 	}
+	if p.at(TokEXECUTE) && p.tables.ExecuteBuildsExecute {
+		return p.parseExecute()
+	}
+	if p.at(TokSHOW) && len(p.tables.ShowKinds) > 0 {
+		return p.parseShow()
+	}
 	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) || p.at(TokFROM) {
 		return p.parseQueryBody()
 	}

@@ -6444,3 +6444,99 @@ func TestTrimWithoutCharacters(t *testing.T) {
 		t.Errorf("the characters are %v, want none", chars)
 	}
 }
+
+// TestExecute covers running a stored procedure, which a guard has to notice:
+// the procedure runs whatever is in it, and sp_executesql runs a string.
+func TestExecute(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"EXEC sp_rename 'db.t1', 't2'", "EXECUTE sp_rename 'db.t1', 't2'"},
+		{"EXEC MyProc @id = 7, @name = 'x'", "EXECUTE MyProc @id = 7, @name = 'x'"},
+		{"EXECUTE @return_status = dbo.MyProc @a, @b",
+			"EXECUTE @return_status = dbo.MyProc @a, @b"},
+		{"EXEC @RC = dbo.MyProc @id = 7", "EXECUTE @RC = dbo.MyProc @id = 7"},
+	} {
+		e, err := ParseOne(tc.sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; it runs whatever the procedure holds", tc.sql)
+		}
+		if got, err := Generate(e, "tsql"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q, want %q (%v)", tc.sql, got, tc.want, err)
+		}
+	}
+
+	// The status variable and the procedure's name look alike where the first
+	// is read, so a parameter with no `=` after it is put back.
+	e, err := ParseOne("EXEC @RC = dbo.MyProc @id = 7", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if status, _ := e.Args["return_status"].(*Expression); status == nil {
+		t.Errorf("the status variable was not read: %v", e.Args)
+	}
+	e, err = ParseOne("EXEC MyProc @a", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if _, ok := e.Args["return_status"]; ok {
+		t.Errorf("a first argument was read as a status variable: %v", e.Args)
+	}
+
+	// One procedure has a class of its own, because it runs a string.
+	e, err = ParseOne("EXEC sp_executesql @payload", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if e.Class != "ExecuteSql" {
+		t.Errorf("sp_executesql read as %s", e.Class)
+	}
+
+	// Only T-SQL names a procedure this way; elsewhere the word opens a
+	// statement the reference keeps as raw text.
+	for _, dialect := range []string{"", "postgres", "duckdb", "databricks"} {
+		if e, err := ParseOne("EXECUTE p", dialect); err == nil && e.Class == "Execute" {
+			t.Errorf("[%s] read EXECUTE as a procedure call", dialect)
+		}
+	}
+}
+
+// TestShow covers the phrases a dialect gives SHOW a statement for.
+func TestShow(t *testing.T) {
+	for _, sql := range []string{
+		"SHOW TABLES",
+		"SHOW ALL TABLES",
+		"SHOW TABLES FROM my_schema",
+		"SHOW TABLES FROM my_database.my_schema",
+	} {
+		e, err := ParseOne(sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != sql {
+			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+
+	// The longer phrase wins: ALL TABLES is not TABLES.
+	e, err := ParseOne("SHOW ALL TABLES", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if e.Args["this"] != "ALL TABLES" {
+		t.Errorf("SHOW ALL TABLES named %v", e.Args["this"])
+	}
+
+	for _, tc := range []struct{ sql, dialect string }{
+		// A phrase outside the table is text the reference keeps rather than
+		// a tree, and is refused here.
+		{"SHOW COLUMNS FROM t", "duckdb"},
+		// No dialect but DuckDB reads SHOW as a statement at all.
+		{"SHOW TABLES", "postgres"},
+	} {
+		if e, err := ParseOne(tc.sql, tc.dialect); err == nil && e.Class == "Show" {
+			t.Errorf("[%s] read %q as a Show", tc.dialect, tc.sql)
+		}
+	}
+}

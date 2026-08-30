@@ -260,6 +260,12 @@ type ParserTables struct {
 	// EndCommits: a bare END ENDS THE TRANSACTION here, and is a name
 	// or a block anywhere else.
 	EndCommits bool
+	// ExecuteBuildsExecute: EXEC names a procedure to run here, and is
+	// kept as raw text anywhere else.
+	ExecuteBuildsExecute bool
+	// ShowKinds are the phrases SHOW reads as a statement rather than
+	// keeping as text.
+	ShowKinds map[string]struct{}
 	// UnaryOps is which token opens a PREFIX operator, and what it
 	// builds. The empty string is the no-op unary plus.
 	UnaryOps map[TokenType]string
@@ -3945,10 +3951,12 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
-		VariantExtractColon: false,
-		TsOrDsParents:       map[string]struct{}{},
-		PrefixAlias:         false,
-		EndCommits:          false,
+		VariantExtractColon:  false,
+		TsOrDsParents:        map[string]struct{}{},
+		PrefixAlias:          false,
+		EndCommits:           false,
+		ExecuteBuildsExecute: false,
+		ShowKinds:            map[string]struct{}{},
 		UnaryOps: map[TokenType]string{
 			TokDASH:  "Neg",
 			TokNOT:   "Not",
@@ -7836,10 +7844,12 @@ var parserTables = map[string]*ParserTables{
 			"JSON_QUERY":             {"JSONExtract", false, []FuncConst{}, true, false, 0, true},
 			"JSON_VALUE":             {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 		},
-		VariantExtractColon: false,
-		TsOrDsParents:       map[string]struct{}{},
-		PrefixAlias:         false,
-		EndCommits:          false,
+		VariantExtractColon:  false,
+		TsOrDsParents:        map[string]struct{}{},
+		PrefixAlias:          false,
+		EndCommits:           false,
+		ExecuteBuildsExecute: true,
+		ShowKinds:            map[string]struct{}{},
 		UnaryOps: map[TokenType]string{
 			TokDASH:  "Neg",
 			TokNOT:   "Not",
@@ -11761,10 +11771,12 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_SCALAR":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
-		VariantExtractColon: false,
-		TsOrDsParents:       map[string]struct{}{},
-		PrefixAlias:         false,
-		EndCommits:          true,
+		VariantExtractColon:  false,
+		TsOrDsParents:        map[string]struct{}{},
+		PrefixAlias:          false,
+		EndCommits:           true,
+		ExecuteBuildsExecute: false,
+		ShowKinds:            map[string]struct{}{},
 		UnaryOps: map[TokenType]string{
 			TokDASH:        "Neg",
 			TokDPIPE_SLASH: "Cbrt",
@@ -15892,10 +15904,15 @@ var parserTables = map[string]*ParserTables{
 			"JSON_EXTRACT_STRING":    {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 			"JSON_KEYS":              {"JSONKeys", false, []FuncConst{}, false, false, 0, false},
 		},
-		VariantExtractColon: false,
-		TsOrDsParents:       map[string]struct{}{},
-		PrefixAlias:         true,
-		EndCommits:          false,
+		VariantExtractColon:  false,
+		TsOrDsParents:        map[string]struct{}{},
+		PrefixAlias:          true,
+		EndCommits:           false,
+		ExecuteBuildsExecute: false,
+		ShowKinds: map[string]struct{}{
+			"ALL TABLES": {},
+			"TABLES":     {},
+		},
 		UnaryOps: map[TokenType]string{
 			TokDASH:  "Neg",
 			TokNOT:   "Not",
@@ -20080,8 +20097,10 @@ var parserTables = map[string]*ParserTables{
 			"WeekOfYear": {},
 			"Year":       {},
 		},
-		PrefixAlias: false,
-		EndCommits:  false,
+		PrefixAlias:          false,
+		EndCommits:           false,
+		ExecuteBuildsExecute: false,
+		ShowKinds:            map[string]struct{}{},
 		UnaryOps: map[TokenType]string{
 			TokDASH:  "Neg",
 			TokNOT:   "Not",

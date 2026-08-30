@@ -574,15 +574,15 @@ func TestCountKeepsItsFlag(t *testing.T) {
 // above this parser reports "read-only" on the strength of that distinction,
 // and the service's conformance suite checks the wording.
 //
-// CREATE left this list when it began to PARSE, and DELETE, UPDATE and MERGE
-// have followed it. That is the whole point of bringing DDL and DML into
+// CREATE left this list when it began to PARSE, and DELETE, UPDATE, MERGE and
+// EXEC have followed it. That is the whole point of bringing DDL and DML into
 // scope, and it moves the read-only question: a caller that asks ErrNotAQuery
 // will see them go past as though they were queries, and has to ask IsWrite
 // instead. TestWritesAreNamedWhenTheyParse covers the ones that have crossed
 // over.
 func TestWritesAreNamedNotParsed(t *testing.T) {
 	for _, c := range []struct{ sql, kind string }{
-		{"EXEC xp_cmdshell 'dir'", "EXEC"},
+		{"COPY t FROM 'file'", "COPY"},
 	} {
 		_, err := ParseOne(c.sql, "tsql")
 		if !errors.Is(err, ErrNotAQuery) {
@@ -693,6 +693,12 @@ func TestWritesAreNamedWhenTheyParse(t *testing.T) {
 		"BEGIN TRANSACTION",
 		"GRANT SELECT ON dbo.fct_sales TO reader",
 		"REVOKE SELECT ON dbo.fct_sales FROM reader",
+		// Running a procedure runs whatever is in it, and sp_executesql runs
+		// a string handed to it -- the shape a guard exists to notice.
+		"EXEC xp_cmdshell 'dir'",
+		"EXEC sp_executesql @payload",
+		"DECLARE @X INT = 1",
+		"KILL '123'",
 	} {
 		e, err := ParseOne(sql, "tsql")
 		if err != nil {

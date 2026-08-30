@@ -340,6 +340,15 @@ var writeClasses = map[string]bool{
 	"Transaction": true,
 	"Commit":      true,
 	"Rollback":    true,
+	// Running a stored procedure runs whatever is in it, and sp_executesql
+	// runs a string handed to it: neither can be shown to change nothing,
+	// which is what a guard has to decide.
+	"Execute":    true,
+	"ExecuteSql": true,
+	// A DECLARE makes a variable the statements after it can read, and KILL
+	// stops something the server is doing. Neither is a query.
+	"Declare": true,
+	"Kill":    true,
 }
 
 // IsWrite reports whether a parsed statement changes anything.
@@ -3571,6 +3580,98 @@ func (p *parser) parseKill() (*Expression, error) {
 	}
 	if p.curr() != nil {
 		return nil, p.unsupported("KILL with more than this port reads")
+	}
+	return node, nil
+}
+
+// parseExecute reads `EXEC[UTE] [@status =] <procedure> [args]`, which runs a
+// stored procedure.
+//
+// The status variable and the procedure's name look the same at the point the
+// first is read, so the reference reads a parameter and puts it back where no
+// `=` follows it. So does this.
+func (p *parser) parseExecute() (*Expression, error) {
+	p.advance() // EXEC or EXECUTE
+
+	var returnStatus *Expression
+	if p.at(TokPARAMETER) {
+		mark := p.index
+		param := p.parseParameter()
+		if param != nil && p.match(TokEQ) {
+			returnStatus = param
+		} else {
+			p.index = mark
+		}
+	}
+
+	this, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+	var args []*Expression
+	if p.curr() != nil {
+		for {
+			arg, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, arg)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("EXECUTE with more than this port reads")
+	}
+
+	// One procedure has a class of its own: sp_executesql runs a string as a
+	// statement, which is exactly what a guard above this port wants to see.
+	class := "Execute"
+	if strings.EqualFold(this.Name(), "sp_executesql") {
+		class = "ExecuteSql"
+	}
+	node := New(class, Arg{"this", this}, Arg{"expressions", args})
+	if returnStatus != nil {
+		node.Set("return_status", returnStatus)
+	}
+	return node, nil
+}
+
+// parseShow reads the phrases this dialect gives SHOW a statement for. The
+// phrases are the reference's own table; anything outside it is text it keeps
+// rather than a tree, and is refused here.
+func (p *parser) parseShow() (*Expression, error) {
+	p.advance() // SHOW
+
+	// Longest phrase first: ALL TABLES is not TABLES.
+	var kind string
+	for phrase := range p.tables.ShowKinds {
+		words := strings.Split(phrase, " ")
+		if !p.atWords(words...) {
+			continue
+		}
+		if len(phrase) > len(kind) {
+			kind = phrase
+		}
+	}
+	if kind == "" {
+		return nil, p.unsupported("SHOW of something this port does not read")
+	}
+	for range strings.Split(kind, " ") {
+		p.advance()
+	}
+
+	node := New("Show", Arg{"this", kind})
+	if p.match(TokFROM) {
+		from, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("from_", from)
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("SHOW with more than this port reads")
 	}
 	return node, nil
 }

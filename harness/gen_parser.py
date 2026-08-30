@@ -2008,6 +2008,22 @@ def unary_ops(dialect: str, P, exp) -> dict:
     return out
 
 
+def execute_builds_execute(dialect: str) -> bool:
+    """Whether EXEC names a procedure to run in this dialect.
+
+    Only T-SQL reads it; everywhere else the word opens a statement the
+    reference keeps as raw text. The mapping lives in a statement-parser table
+    keyed by token, so it is asked rather than transcribed.
+    """
+    import sqlglot
+
+    try:
+        node = sqlglot.parse_one("EXECUTE p", read=dialect or None)
+    except Exception:  # noqa: BLE001 -- not a statement this dialect has
+        return False
+    return type(node).__name__ in ("Execute", "ExecuteSql")
+
+
 def end_commits(dialect: str) -> bool:
     """Whether a bare END ends the transaction in this dialect.
 
@@ -4020,6 +4036,12 @@ def main() -> int:
         "\t// EndCommits: a bare END ENDS THE TRANSACTION here, and is a name\n",
         "\t// or a block anywhere else.\n",
         "\tEndCommits bool\n",
+        "\t// ExecuteBuildsExecute: EXEC names a procedure to run here, and is\n",
+        "\t// kept as raw text anywhere else.\n",
+        "\tExecuteBuildsExecute bool\n",
+        "\t// ShowKinds are the phrases SHOW reads as a statement rather than\n",
+        "\t// keeping as text.\n",
+        "\tShowKinds map[string]struct{}\n",
         "\t// UnaryOps is which token opens a PREFIX operator, and what it\n",
         "\t// builds. The empty string is the no-op unary plus.\n",
         "\tUnaryOps map[TokenType]string\n",
@@ -4664,6 +4686,10 @@ def main() -> int:
         out.append(strset("TsOrDsParents", sorted(c.__name__ for c in _tsp)))
         out.append(f"\t\tPrefixAlias: {str(prefix_alias(name)).lower()},\n")
         out.append("\t\tEndCommits: %s,\n" % str(end_commits(name)).lower())
+        out.append(
+            "\t\tExecuteBuildsExecute: %s,\n" % str(execute_builds_execute(name)).lower()
+        )
+        out.append(strset("ShowKinds", sorted(P.SHOW_PARSERS)))
         _uo = unary_ops(name, P, exp)
         body = "".join(f"\t\t\tTok{t}: {gostr(c)},\n" for t, c in sorted(_uo.items()))
         out.append(f"\t\tUnaryOps: map[TokenType]string{{\n{body}\t\t}},\n")
