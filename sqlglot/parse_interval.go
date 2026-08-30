@@ -20,11 +20,26 @@ var intervalStringRE = regexp.MustCompile(`\s*(-?[0-9]+(?:\.[0-9]+)?)\s*([a-zA-Z
 // `'1 year 2 months'` -- is left whole with no unit, which is why the count of
 // matches decides rather than the first match.
 func (p *parser) parseInterval() (*Expression, error) {
+	start := p.index
 	p.advance() // INTERVAL
 
-	this, err := p.parsePrimary()
-	if err != nil {
-		return nil, err
+	// INTERVAL is a NAME wherever what follows it is not a quantity: `SELECT
+	// interval` selects a column, and `WHERE interval IS NULL` tests one. The
+	// reference reads the operand and puts everything back where it did not
+	// find one -- or found a bare column with no unit after it, which is a
+	// name too. Returning nothing here lets the caller read the word.
+	// A STRING is read on its own; anything else is read as a TERM, so that
+	// `INTERVAL 1 + 2` is a quantity and `interval + 1` is one too.
+	var this *Expression
+	var err error
+	if c := p.curr(); c != nil && c.Type == TokSTRING {
+		this, err = p.parsePrimary()
+	} else {
+		this, err = p.parseTerm()
+	}
+	if err != nil || this == nil || p.namesAColumnRatherThanAQuantity(this) {
+		p.index = start
+		return nil, nil
 	}
 
 	unitIndex := p.index
@@ -79,4 +94,25 @@ func (p *parser) normalisedIntervalUnit(text string) string {
 		return full
 	}
 	return upper
+}
+
+// namesAColumnRatherThanAQuantity reports whether what followed INTERVAL was a
+// bare column with no unit after it -- in which case INTERVAL was a name and
+// the column is the next thing in the statement, not its quantity.
+func (p *parser) namesAColumnRatherThanAQuantity(this *Expression) bool {
+	if this.Class != "Column" {
+		return false
+	}
+	if table, _ := this.Args["table"].(*Expression); table != nil {
+		return false
+	}
+	if name, _ := this.Args["this"].(*Expression); name == nil || name.Args["quoted"] == true {
+		return false
+	}
+	c := p.curr()
+	if c == nil {
+		return true
+	}
+	_, isUnit := p.tables.ValidIntervalUnits[strings.ToUpper(c.Text)]
+	return !isUnit
 }

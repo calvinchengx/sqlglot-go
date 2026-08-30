@@ -788,7 +788,15 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	}
 
 	if c.Type == TokINTERVAL {
-		return p.parseInterval()
+		// Nothing back means INTERVAL was a NAME rather than a quantity, and
+		// the index is where it was; the identifier rules below read it.
+		interval, err := p.parseInterval()
+		if err != nil {
+			return nil, err
+		}
+		if interval != nil {
+			return interval, nil
+		}
 	}
 
 	// A bound parameter. `?` is one on its own; `:name` is the colon and the
@@ -1001,8 +1009,6 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	case TokSTAR:
 		p.advance()
 		return p.starModifiers(newStar())
-	case TokINTERVAL:
-		return nil, p.unsupported("INTERVAL")
 	}
 
 	// A TYPE followed by a string is a typed literal -- `TIMESTAMP '2020-01-01'`,

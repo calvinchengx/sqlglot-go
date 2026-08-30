@@ -7254,3 +7254,44 @@ func TestNextValueFor(t *testing.T) {
 		}
 	}
 }
+
+// TestIntervalIsAlsoAName covers the word INTERVAL standing where a column
+// would. The reference reads what follows it and puts everything back where
+// there was no quantity there -- so `SELECT interval` selects a column and
+// `INTERVAL '1' DAY` is a quantity, from the same word.
+func TestIntervalIsAlsoAName(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT interval", "SELECT interval"},
+		{"SELECT * WHERE interval IS NULL", "SELECT * WHERE interval IS NULL"},
+		{"SELECT * WHERE NOT interval IS NULL", "SELECT * WHERE NOT interval IS NULL"},
+		{"SELECT interval <> 'foo'", "SELECT interval <> 'foo'"},
+		// A bare column IS a quantity where a unit follows it.
+		{"SELECT INTERVAL x DAY", "SELECT INTERVAL x DAY"},
+		// And anything that is not a bare column is a quantity whatever
+		// follows: `interval + 1` is one interval, not a column plus one.
+		{"SELECT interval + 1", "SELECT INTERVAL '1'"},
+		{"SELECT INTERVAL '1' DAY", "SELECT INTERVAL '1' DAY"},
+		{"SELECT INTERVAL 1 DAY", "SELECT INTERVAL '1' DAY"},
+		{"SELECT INTERVAL '1 day'", "SELECT INTERVAL '1' DAY"},
+		{"SELECT INTERVAL '1' DAY TO HOUR", "SELECT INTERVAL '1' DAY TO HOUR"},
+		// The TYPE is untouched by any of this.
+		{"SELECT CAST(x AS INTERVAL DAY)", "SELECT CAST(x AS INTERVAL DAY)"},
+	} {
+		e, err := ParseOne(tc.sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, ""); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q, want %q (%v)", tc.sql, got, tc.want, err)
+		}
+	}
+
+	// The name is a Column, not an Interval carrying nothing.
+	e, err := ParseOne("SELECT interval", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got := e.Args["expressions"].([]*Expression)[0]; got.Class != "Column" {
+		t.Errorf("a bare INTERVAL read as %s", got.Class)
+	}
+}
