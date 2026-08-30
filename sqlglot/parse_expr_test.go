@@ -7068,3 +7068,95 @@ func TestCreateTableLike(t *testing.T) {
 		t.Errorf("the option names %v", options[0].Args["value"])
 	}
 }
+
+// TestComputedColumns covers a column whose value is an expression over the
+// others. One statement, two nodes, and the DIALECT decides which: without
+// STORED it is a computed column in Databricks and an identity carrying an
+// expression everywhere else.
+func TestComputedColumns(t *testing.T) {
+	for _, tc := range []struct{ sql, dialect string }{
+		{"CREATE TABLE t (a INT, b INT GENERATED ALWAYS AS (a + 1))", "duckdb"},
+		{"CREATE TABLE t (a INT, b INT GENERATED ALWAYS AS (a + 1))", "databricks"},
+		{"CREATE TABLE t (a INT, b INT GENERATED ALWAYS AS (a + 1) STORED)", "postgres"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.sql {
+			t.Errorf("[%s] %q wrote %q, %v", tc.dialect, tc.sql, got, err)
+		}
+	}
+
+	// STORED makes it a computed column in every dialect; without it, only
+	// where the dialect says so.
+	stored, err := ParseOne(
+		"CREATE TABLE t (a INT, b INT GENERATED ALWAYS AS (a + 1) STORED)", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if kind := constraintKind(stored); kind != "ComputedColumnConstraint" {
+		t.Errorf("STORED read as %s", kind)
+	}
+	bare, err := ParseOne(
+		"CREATE TABLE t (a INT, b INT GENERATED ALWAYS AS (a + 1))", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if kind := constraintKind(bare); kind != "GeneratedAsIdentityColumnConstraint" {
+		t.Errorf("the bare form read as %s", kind)
+	}
+	databricks, err := ParseOne(
+		"CREATE TABLE t (a INT, b INT GENERATED ALWAYS AS (a + 1))", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if kind := constraintKind(databricks); kind != "ComputedColumnConstraint" {
+		t.Errorf("Databricks read the bare form as %s", kind)
+	}
+}
+
+// constraintKind names the constraint on the SECOND column of a CREATE TABLE.
+func constraintKind(create *Expression) string {
+	schema, _ := create.Args["this"].(*Expression)
+	columns, _ := schema.Args["expressions"].([]*Expression)
+	if len(columns) < 2 {
+		return ""
+	}
+	constraints, _ := columns[1].Args["constraints"].([]*Expression)
+	if len(constraints) == 0 {
+		return ""
+	}
+	kind, _ := constraints[0].Args["kind"].(*Expression)
+	if kind == nil {
+		return constraints[0].Class
+	}
+	return kind.Class
+}
+
+// TestArrayOverAQuery covers the one thing an array literal will not hold.
+func TestArrayOverAQuery(t *testing.T) {
+	// DuckDB writes `ARRAY((SELECT ...))` for an array over a query and
+	// `[1, 2]` for one over values -- a different spelling for a different
+	// thing -- so the port declines to write the first with the second's
+	// brackets.
+	for _, sql := range []string{"SELECT [(SELECT 1)]", "SELECT ARRAY((SELECT 1))"} {
+		e, err := ParseOne(sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err == nil {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+	}
+	// A bracketed expression that is not a query is written as it stands.
+	for _, sql := range []string{"SELECT [1, 2]", "SELECT [(1 + 2)]"} {
+		e, err := ParseOne(sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != sql {
+			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+}
