@@ -3200,6 +3200,26 @@ EXTRA_SHAPES = {
     "Extract": [(("this", "expression"), ())],
     # The unit a rounding rounds TO. The corpus never writes one, so no shape
     # was observed for it -- and the port reads the grammar that produces it.
+    # Hive's reducer clauses. The corpus writes them in one dialect apiece,
+    # and the port reads them in every dialect that has the words.
+    # Every combination of what may follow a LIMIT's count. The corpus writes
+    # one of them; the port reads all three words.
+    "LimitOptions": [
+        ((), (("percent", p), ("rows", r), ("with_ties", w)))
+        for p in (True, False)
+        for r in (True, False)
+        for w in (True, False)
+        if p or r or w
+    ],
+    # T-SQL's JSON_ARRAYAGG reads how nulls are handled; the corpus writes
+    # only the plain form.
+    "JSONArrayAgg": [
+        (("this",), (("null_handling", "NULL ON NULL"),)),
+        (("this",), (("null_handling", "ABSENT ON NULL"),)),
+    ],
+    "Cluster": [(("expressions[]",), ())],
+    "Distribute": [(("expressions[]",), ())],
+    "Sort": [(("expressions[]",), ())],
     "Ceil": [(("this", "to"), ())],
     "Floor": [(("this", "to"), ())],
 }
@@ -3934,6 +3954,12 @@ def main() -> int:
         "\t// spelling of `SELECT 1 AS foo`. The same characters are a JSON\n",
         "\t// extraction in Databricks, so the dialect decides, not the shape.\n",
         "\tPrefixAlias bool\n",
+        "\t// NormalizeNotNull: `x NOTNULL` is written NOT x IS NULL here and\n",
+        "\t// kept as a negated IS elsewhere -- two trees for one word.\n",
+        "\tNormalizeNotNull bool\n",
+        "\t// StarExceptWord is what `* EXCEPT (a)` is written with: DuckDB\n",
+        "\t// says EXCLUDE, and both words are READ everywhere.\n",
+        "\tStarExceptWord string\n",
         "\t// TsOrDsParents are the classes a TsOrDsToDate DISAPPEARS under.\n",
         "\t// Databricks reads YEAR(y) as a Year over a TsOrDsToDate and writes\n",
         "\t// it back as YEAR(y) -- the wrapper is written only where its\n",
@@ -4162,6 +4188,11 @@ def main() -> int:
         "\t// reference records. A few type tokens have no member and are absent,\n",
         "\t// which refuses them rather than inventing one.\n",
         "\tTypeTokens map[TokenType]string\n",
+        "\t// TimestampTypeTokens are the types a WITH/WITHOUT TIME ZONE may\n",
+        "\t// follow, and TimeTypeTokens the ones among them that become a\n",
+        "\t// TIMETZ rather than a TIMESTAMPTZ when it says WITH.\n",
+        "\tTimestampTypeTokens map[TokenType]struct{}\n",
+        "\tTimeTypeTokens      map[TokenType]struct{}\n",
         "}\n\n",
         "// FuncSpec is how one function name becomes a node: the class, and what\n",
         "// fills each of its argument keys.\n",
@@ -4570,6 +4601,17 @@ def main() -> int:
         out.append(strset("TsOrDsParents", sorted(c.__name__ for c in _tsp)))
         out.append(f"\t\tPrefixAlias: {str(prefix_alias(name)).lower()},\n")
         out.append(
+            "\t\tStarExceptWord: %s,\n"
+            % gostr(getattr(type(_DG.get_or_raise(name or None)).generator_class,
+                            "STAR_EXCEPT", "EXCEPT"))
+        )
+        out.append(
+            "\t\tNormalizeNotNull: %s,\n"
+            % str(
+                bool(getattr(type(_DG.get_or_raise(name or None)), "NORMALIZE_NOT_NULL", False))
+            ).lower()
+        )
+        out.append(
             f"\t\tConvertBuildsConvert: {str(convert_builds_convert(name)).lower()},\n"
         )
         _wgf = within_group_folding_names(name, P)
@@ -4953,6 +4995,10 @@ def main() -> int:
             for t, v in sorted(types.items(), key=lambda kv: kv[0].value)
         )
         out.append(f"\t\tTypeTokens: map[TokenType]string{{\n{body}\t\t}},\n")
+        for field, attr in (("TimestampTypeTokens", "TIMESTAMPS"), ("TimeTypeTokens", "TIMES")):
+            toks = sorted(getattr(P, attr, ()) or (), key=lambda t: t.value)
+            body = "".join(f"\t\t\tTok{t.name}: {{}},\n" for t in toks)
+            out.append(f"\t\t{field}: map[TokenType]struct{{}}{{\n{body}\t\t}},\n")
         out.append("\t},\n")
     out.append("}\n")
 

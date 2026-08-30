@@ -112,6 +112,22 @@ func (p *parser) parseRange() (*Expression, error) {
 		}
 
 		switch {
+		// PostgreSQL writes `x ISNULL` and `x NOTNULL` for the two IS NULL
+		// tests. The first is exactly `IS NULL`; the second is a NEGATED Is
+		// in the dialect that keeps one and a Not around an Is in the
+		// dialects that normalise it -- one word, two trees.
+		case c.Type == TokISNULL:
+			p.advance()
+			this = New("Is", Arg{"this", this}, Arg{"expression", New("Null")})
+		case c.Type == TokNOTNULL:
+			p.advance()
+			if p.tables.NormalizeNotNull {
+				this = New("Not", Arg{"this",
+					New("Is", Arg{"this", this}, Arg{"expression", New("Null")})})
+			} else {
+				this = New("Is", Arg{"this", this},
+					Arg{"expression", New("Null")}, Arg{"negate", true})
+			}
 		case c.Type == TokIS:
 			p.advance()
 			this, err = p.parseIs(this)
@@ -1148,10 +1164,14 @@ func (p *parser) starModifiers(star *Expression) (*Expression, error) {
 	for {
 		var key string
 		switch {
-		case p.at(TokEXCEPT):
+		// EXCEPT and EXCLUDE are one list under two words -- DuckDB writes
+		// the second, and the reference matches either into the same slot.
+		case p.at(TokEXCEPT), p.atWords("EXCLUDE"):
 			key = "except_"
 		case p.atWords("REPLACE"):
 			key = "replace"
+		case p.atWords("RENAME"):
+			key = "rename"
 		default:
 			return star, nil
 		}
@@ -1424,6 +1444,42 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 				Arg{"this", New("Literal", Arg{"this", v}, Arg{"is_string", false})}))
 		}
 		dt.Set("expressions", params)
+	}
+	// `TIMESTAMP WITH TIME ZONE` is a type of its own rather than a timestamp
+	// carrying a flag, and WITHOUT says only that the plain one was meant. The
+	// zoned type is built fresh, which is why it carries no `nested` where the
+	// plain one does.
+	if _, timestamp := p.tables.TimestampTypeTokens[c.Type]; timestamp {
+		_, isTime := p.tables.TimeTypeTokens[c.Type]
+		switch {
+		case p.atWords("WITH", "TIME", "ZONE"):
+			p.advance()
+			p.advance()
+			p.advance()
+			zoned := "TIMESTAMPTZ"
+			if isTime {
+				zoned = "TIMETZ"
+			}
+			out := New("DataType", Arg{"this", DataTypeKind(zoned)})
+			if params, ok := dt.Args["expressions"].([]*Expression); ok && len(params) > 0 {
+				out.Set("expressions", params)
+			}
+			return out, nil
+		case p.atWords("WITH", "LOCAL", "TIME", "ZONE"):
+			p.advance()
+			p.advance()
+			p.advance()
+			p.advance()
+			out := New("DataType", Arg{"this", DataTypeKind("TIMESTAMPLTZ")})
+			if params, ok := dt.Args["expressions"].([]*Expression); ok && len(params) > 0 {
+				out.Set("expressions", params)
+			}
+			return out, nil
+		case p.atWords("WITHOUT", "TIME", "ZONE"):
+			p.advance()
+			p.advance()
+			p.advance()
+		}
 	}
 	dt.Set("nested", nested)
 	return dt, nil

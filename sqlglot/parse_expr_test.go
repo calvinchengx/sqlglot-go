@@ -5759,6 +5759,27 @@ func TestJSONAggregates(t *testing.T) {
 		t.Errorf("wrote %q, %v", got, err)
 	}
 
+	// T-SQL's aggregate also reads how nulls are handled, which is a phrase
+	// rather than a flag.
+	for _, sql := range []string{
+		"SELECT JSON_ARRAYAGG(c1 NULL ON NULL)",
+		"SELECT JSON_ARRAYAGG(c1 ABSENT ON NULL)",
+	} {
+		e, err := ParseOne(sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "tsql"); err != nil || got != sql {
+			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+	if e, err := ParseOne("SELECT JSON_ARRAYAGG(c1", "tsql"); err == nil {
+		t.Errorf("read an unclosed JSON_ARRAYAGG as %v", e)
+	}
+	if e, err := ParseOne("SELECT JSON_AGG(c1", "postgres"); err == nil {
+		t.Errorf("read an unclosed JSON_AGG as %v", e)
+	}
+
 	// A path folded from a string, and false where there is no path at all.
 	e, err = ParseOne(`SELECT JSONB_EXISTS('{"a": 1}', 'a')`, "postgres")
 	if err != nil {
@@ -5995,5 +6016,165 @@ func TestNestedBuilder(t *testing.T) {
 	}
 	if got, err := Generate(e, "databricks"); err != nil || got != "SELECT TO_DATE(y)" {
 		t.Errorf("wrote %q, %v", got, err)
+	}
+}
+
+// TestReducerClauses covers Hive's three ways of saying how rows reach the
+// reducers, which sit between HAVING and ORDER BY.
+func TestReducerClauses(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT * FROM x CLUSTER BY a",
+		"SELECT * FROM x CLUSTER BY a, b",
+		"SELECT * FROM x DISTRIBUTE BY a",
+		"SELECT * FROM x SORT BY a",
+		"SELECT * FROM x SORT BY a DESC",
+		"SELECT * FROM x WHERE a GROUP BY a HAVING b SORT BY s ORDER BY c LIMIT d",
+	} {
+		e, err := ParseOne(sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
+		}
+	}
+
+	// CLUSTER BY takes plain columns and the other two take ORDERED items --
+	// the reference's own asymmetry, and the reason a direction may be
+	// written after one but not the other.
+	e, err := ParseOne("SELECT * FROM x CLUSTER BY a", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	cluster, _ := e.Args["cluster"].(*Expression)
+	items, _ := cluster.Args["expressions"].([]*Expression)
+	if len(items) != 1 || items[0].Class != "Column" {
+		t.Errorf("CLUSTER BY holds %v, want a bare column", items)
+	}
+	e, err = ParseOne("SELECT * FROM x SORT BY a", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	sort, _ := e.Args["sort"].(*Expression)
+	items, _ = sort.Args["expressions"].([]*Expression)
+	if len(items) != 1 || items[0].Class != "Ordered" {
+		t.Errorf("SORT BY holds %v, want an ordering", items)
+	}
+}
+
+// TestLimitOptions covers what may follow a LIMIT's count.
+func TestLimitOptions(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT * FROM t LIMIT 10 PERCENT",
+		"SELECT * FROM t LIMIT 10 PERCENT OFFSET 1",
+	} {
+		e, err := ParseOne(sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != sql {
+			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+
+	// ROWS, ONLY and WITH TIES are recorded too, each in its own slot.
+	for _, sql := range []string{
+		"SELECT * FROM t LIMIT 10 ROWS ONLY",
+		"SELECT * FROM t LIMIT 10 WITH TIES",
+	} {
+		e, err := ParseOne(sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != sql {
+			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+
+	// Nothing written is no options node at all, rather than one with three
+	// falses in it.
+	e, err := ParseOne("SELECT * FROM t LIMIT 10", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	limit, _ := e.Args["limit"].(*Expression)
+	if opts, _ := limit.Args["limit_options"].(*Expression); opts != nil {
+		t.Errorf("a plain LIMIT carries options: %v", opts)
+	}
+}
+
+// TestStarExcludeAndNotNull covers two spellings the port could not read, each
+// of which was hiding a divergence behind the refusal.
+func TestStarExcludeAndNotNull(t *testing.T) {
+	// EXCEPT and EXCLUDE are one list under two words, and the word written
+	// back is the DIALECT's -- DuckDB says EXCLUDE.
+	for _, tc := range []struct{ sql, dialect, want string }{
+		{"SELECT * EXCLUDE (a, b) FROM x", "duckdb", "SELECT * EXCLUDE (a, b) FROM x"},
+		{"SELECT * EXCEPT (a, b) FROM x", "duckdb", "SELECT * EXCLUDE (a, b) FROM x"},
+		{"SELECT * EXCEPT (a, b) FROM x", "", "SELECT * EXCEPT (a, b) FROM x"},
+		{"SELECT * EXCLUDE (a) REPLACE (c AS d) FROM x", "duckdb",
+			"SELECT * EXCLUDE (a) REPLACE (c AS d) FROM x"},
+		{"SELECT * RENAME (a AS b) FROM x", "duckdb", "SELECT * RENAME (a AS b) FROM x"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.want {
+			t.Errorf("[%s] %q wrote %q, want %q (%v)", tc.dialect, tc.sql, got, tc.want, err)
+		}
+	}
+
+	// `x NOTNULL` is one word and two trees: PostgreSQL keeps a NEGATED Is,
+	// and the dialects that normalise it wrap the Is in a Not.
+	e, err := ParseOne("SELECT r NOTNULL FROM t", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	is := e.Args["expressions"].([]*Expression)[0]
+	if is.Class != "Is" || is.Args["negate"] != true {
+		t.Errorf("PostgreSQL read NOTNULL as %v", is)
+	}
+	e, err = ParseOne("SELECT r NOTNULL FROM t", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	not := e.Args["expressions"].([]*Expression)[0]
+	if not.Class != "Not" {
+		t.Errorf("the neutral dialect read NOTNULL as %v", not)
+	}
+	e, err = ParseOne("SELECT r ISNULL FROM t", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "postgres"); err != nil || got != "SELECT r IS NULL FROM t" {
+		t.Errorf("wrote %q, %v", got, err)
+	}
+}
+
+// TestTimeZoneTypes covers `TIMESTAMP WITH TIME ZONE` and its relatives, which
+// name a type of their own rather than flag the plain one.
+func TestTimeZoneTypes(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT CAST(x AS TIMESTAMP WITHOUT TIME ZONE)", "SELECT CAST(x AS TIMESTAMP)"},
+		{"SELECT CAST(x AS TIMESTAMP WITH TIME ZONE)", "SELECT CAST(x AS TIMESTAMPTZ)"},
+		{"SELECT CAST(x AS TIME WITHOUT TIME ZONE)", "SELECT CAST(x AS TIME)"},
+		{"SELECT CAST(x AS TIME WITH TIME ZONE)", "SELECT CAST(x AS TIMETZ)"},
+		// The size survives the rename.
+		{"SELECT CAST(x AS TIMESTAMP(3) WITH TIME ZONE)", "SELECT CAST(x AS TIMESTAMPTZ(3))"},
+		{"SELECT x::TIMESTAMP WITH TIME ZONE", "SELECT CAST(x AS TIMESTAMPTZ)"},
+		{"SELECT CAST(x AS TIMESTAMP WITH LOCAL TIME ZONE)", "SELECT CAST(x AS TIMESTAMPLTZ)"},
+	} {
+		e, err := ParseOne(tc.sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "postgres"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q, want %q (%v)", tc.sql, got, tc.want, err)
+		}
 	}
 }

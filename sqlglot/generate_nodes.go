@@ -235,6 +235,11 @@ func (g *generator) writeSelect(e *Expression) string {
 	add(g.child(e, "where"))
 	add(g.child(e, "group"))
 	add(g.child(e, "having"))
+	// Hive's three reducer clauses sit between HAVING and ORDER BY, in the
+	// reference's own order.
+	add(g.child(e, "cluster"))
+	add(g.child(e, "distribute"))
+	add(g.child(e, "sort"))
 	add(g.child(e, "order"))
 
 	// A FETCH is written AFTER the offset where a LIMIT is written before it:
@@ -582,7 +587,9 @@ func (g *generator) writeGroup(e *Expression) string {
 func (g *generator) writeStar(e *Expression) string {
 	out := "*"
 	for _, part := range []struct{ key, word string }{
-		{"except_", "EXCEPT"}, {"replace", "REPLACE"}, {"rename", "RENAME"},
+		// DuckDB writes EXCLUDE where everyone else writes EXCEPT; both words
+		// are read everywhere, so the writer has to be told which to use.
+		{"except_", g.tables.StarExceptWord}, {"replace", "REPLACE"}, {"rename", "RENAME"},
 	} {
 		items, _ := e.Args[part.key].([]*Expression)
 		if len(items) == 0 {
@@ -708,8 +715,10 @@ func (g *generator) writeLimitWord(e *Expression, word string) string {
 		count = "(" + count + ")"
 	}
 	out := word + count
-	if opts, _ := e.Args["limit_options"].(*Expression); opts != nil && opts.Args["percent"] == true {
-		out += " PERCENT"
+	// What follows the count -- PERCENT, ROWS ONLY, WITH TIES -- is a node
+	// with a spelling of its own, and it brings its own leading space.
+	if opts, _ := e.Args["limit_options"].(*Expression); opts != nil {
+		out += g.node(opts)
 	}
 	return out
 }

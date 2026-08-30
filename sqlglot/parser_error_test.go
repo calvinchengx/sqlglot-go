@@ -55,12 +55,13 @@ func TestTheUnsupportedMessageIsUnchanged(t *testing.T) {
 // The window function this used to name was the original example, and it now
 // parses -- which is the point of counting them. TABLESAMPLE and PIVOT have
 // both followed it since, for the same reason and by the same route: the label
-// said what to build, so the label stopped being true. The cases here are
+// said what to build, so the label stopped being true. CLUSTER BY and
+// DISTRIBUTE BY were the third pair to go the same way. The cases here are
 // whatever is still refused, and they are meant to keep being replaced.
 func TestLabelNamesTheKeywordThatStoppedIt(t *testing.T) {
 	for _, tc := range []struct{ sql, want string }{
-		{"SELECT a FROM t CLUSTER BY b", "trailing tokens at CLUSTER BY"},
-		{"SELECT a FROM t DISTRIBUTE BY b", "trailing tokens at DISTRIBUTE BY"},
+		{"SELECT a FROM t CONNECT BY b = 1", "trailing tokens at CONNECT BY"},
+		{"SELECT a FROM t OPTION(LABEL = 'x')", "trailing tokens at OPTION"},
 	} {
 		_, err := ParseOne(tc.sql, "tsql")
 		var u *UnsupportedError

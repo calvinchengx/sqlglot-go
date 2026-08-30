@@ -634,6 +634,41 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			if err := p.setOnce(sel, "order", order); err != nil {
 				return err
 			}
+		// CLUSTER BY, DISTRIBUTE BY and SORT BY are Hive's three ways of
+		// saying how rows reach the reducers. Two of them take ORDERED items
+		// -- a direction may be written -- and CLUSTER BY takes plain
+		// columns, which is the reference's own asymmetry.
+		case p.at(TokCLUSTER_BY):
+			p.advance()
+			var columns []*Expression
+			for {
+				c, err := p.parseColumn()
+				if err != nil {
+					return err
+				}
+				columns = append(columns, c)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			if err := p.setOnce(sel, "cluster",
+				New("Cluster", Arg{"expressions", columns})); err != nil {
+				return err
+			}
+		case p.at(TokDISTRIBUTE_BY), p.at(TokSORT_BY):
+			key, class := "distribute", "Distribute"
+			if p.at(TokSORT_BY) {
+				key, class = "sort", "Sort"
+			}
+			p.advance()
+			ordered, err := p.parseOrderedList()
+			if err != nil {
+				return err
+			}
+			if err := p.setOnce(sel, key,
+				New(class, Arg{"expressions", ordered})); err != nil {
+				return err
+			}
 		case p.at(TokLIMIT):
 			p.advance()
 			// `LIMIT ALL` is PostgreSQL for "no limit", and the reference
@@ -648,8 +683,9 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			if err != nil {
 				return err
 			}
+			options := p.parseLimitOptions()
 			limit := New("Limit", Arg{"this", nil}, Arg{"expression", e},
-				Arg{"limit_options", nil}, Arg{"expressions", nil})
+				Arg{"limit_options", options}, Arg{"expressions", nil})
 			if err := p.setOnce(sel, "limit", limit); err != nil {
 				return err
 			}
@@ -758,6 +794,16 @@ func (p *parser) setOnce(node *Expression, key string, value *Expression) error 
 }
 
 func (p *parser) parseOrder() (*Expression, error) {
+	ordered, err := p.parseOrderedList()
+	if err != nil {
+		return nil, err
+	}
+	return New("Order", Arg{"this", nil}, Arg{"expressions", ordered}, Arg{"siblings", nil}), nil
+}
+
+// parseOrderedList reads the comma-separated `x DESC NULLS LAST` items an
+// ORDER BY is made of. SORT BY and DISTRIBUTE BY are made of the same ones.
+func (p *parser) parseOrderedList() ([]*Expression, error) {
 	var ordered []*Expression
 	for {
 		e, err := p.parseExpression()
@@ -810,7 +856,7 @@ func (p *parser) parseOrder() (*Expression, error) {
 			break
 		}
 	}
-	return New("Order", Arg{"this", nil}, Arg{"expressions", ordered}, Arg{"siblings", nil}), nil
+	return ordered, nil
 }
 
 // nullsFirst answers where NULLs sort when the statement does not say.
@@ -1343,4 +1389,34 @@ func (p *parser) opensASetOperation() bool {
 	}
 	_, isSetOp := setOperations[after.Type]
 	return isSetOp
+}
+
+// parseLimitOptions reads what may follow a LIMIT's count: `PERCENT` says the
+// count is a share rather than a number, `ROWS`/`ROW` and `ONLY` are noise the
+// reference still records, and `WITH TIES` keeps whatever ties the last row.
+//
+// Nothing written at all is no options node, not an empty one.
+func (p *parser) parseLimitOptions() *Expression {
+	percent := p.at(TokPERCENT) || p.at(TokMOD)
+	if percent {
+		p.advance()
+	}
+	rows := p.at(TokROW) || p.at(TokROWS)
+	if rows {
+		p.advance()
+	}
+	p.matchUnquotedWord("ONLY")
+	withTies := false
+	if p.at(TokWITH) {
+		if n := p.next(); n != nil && strings.EqualFold(n.Text, "TIES") {
+			p.advance()
+			p.advance()
+			withTies = true
+		}
+	}
+	if !percent && !rows && !withTies {
+		return nil
+	}
+	return New("LimitOptions",
+		Arg{"percent", percent}, Arg{"rows", rows}, Arg{"with_ties", withTies})
 }
