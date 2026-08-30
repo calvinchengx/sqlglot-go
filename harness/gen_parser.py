@@ -309,7 +309,7 @@ def _json_fold_rules(builder, exp, dialect):
     return rules
 
 
-def probe_functions(P, exp, dialect=""):
+def probe_functions(P, exp, dialect="", branch_classes=None):
     """Work out what each function name builds, by asking the reference.
 
     A function name does not simply become a node of the same shape: COUNT
@@ -474,6 +474,16 @@ def probe_functions(P, exp, dialect=""):
         """
         return {how["index"] for _, how in spec if "wrap" in how}
 
+    # The classes a nested one-argument call can have. A substitution whose
+    # class is one of these and that moves the builder's own class is not an
+    # undescribable builder: it is a position that BRANCHES on a class, and
+    # ClassSensitiveArgs records it separately so the parser can refuse just
+    # those calls. Rejecting the whole name over it left UPPER and LOWER --
+    # two of the commonest functions there are -- with no signature at any
+    # arity, and every plain UPPER(x) refused.
+    if branch_classes is None:
+        branch_classes = class_candidates(P, exp, dialect)
+
     out = {}
     by_arity: dict[str, dict[int, tuple]] = {}
     unit_maps: dict[str, dict] = {}
@@ -607,7 +617,13 @@ def probe_functions(P, exp, dialect=""):
                         other = call_builder(builder, subst, dialect)
                     except Exception:  # noqa: BLE001
                         continue
-                    if not isinstance(other, exp.Expr) or other.__class__ is not one.__class__:
+                    if not isinstance(other, exp.Expr):
+                        fine = False
+                        break
+                    if other.__class__ is not one.__class__:
+                        if type(kind).__name__ in branch_classes:
+                            # A branch ClassSensitiveArgs already records.
+                            continue
                         fine = False
                         break
                     if not same(rebuild(narrow_spec, subst), other, subst):
@@ -3037,6 +3053,26 @@ def cast_sensitive_args(P, exp, dialect, funcs):
     return tidy(sensitive), tidy(zero_sensitive), tidy(drops_zero)
 
 
+def class_candidates(P, exp, dialect):
+    """Every class a one-argument call in this dialect can produce.
+
+    The space of NESTED calls a caller could actually write, read off the
+    reference's own catalogue rather than listed. Two probes want it: the one
+    that finds which positions branch on a class, and the one that describes a
+    builder at all -- which has to know that a class change at such a position
+    is already accounted for.
+    """
+    candidates: dict[str, object] = {}
+    for builder in P.FUNCTIONS.values():
+        try:
+            node = call_builder(builder, [exp.column("__inner")], dialect)
+        except Exception:  # noqa: BLE001 -- not a one-argument name
+            continue
+        if isinstance(node, exp.Expr):
+            candidates.setdefault(type(node).__name__, node)
+    return candidates
+
+
 def class_sensitive_args(P, exp, dialect, funcs):
     """Argument positions where the argument's own CLASS changes what is built.
 
@@ -3054,14 +3090,7 @@ def class_sensitive_args(P, exp, dialect, funcs):
     comes from the reference, so a builder added upstream that branches on some
     new class is found without anyone noticing it was added.
     """
-    candidates: dict[str, object] = {}
-    for builder in P.FUNCTIONS.values():
-        try:
-            node = call_builder(builder, [exp.column("__inner")], dialect)
-        except Exception:  # noqa: BLE001 -- not a one-argument name
-            continue
-        if isinstance(node, exp.Expr):
-            candidates.setdefault(type(node).__name__, node)
+    candidates = class_candidates(P, exp, dialect)
 
     out: dict[str, dict[int, list[str]]] = {}
     for name in funcs:

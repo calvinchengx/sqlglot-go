@@ -5897,3 +5897,36 @@ func TestOpenJSON(t *testing.T) {
 		}
 	}
 }
+
+// TestUpperLower covers two of the commonest functions there are, which had no
+// signature at ANY arity because their builder branches on one argument's
+// class -- LOWER over a HEX is a LowerHex, not a Lower.
+//
+// A branch is not an undescribable builder: the position is recorded
+// separately, and only the calls that actually take the branch are refused.
+func TestUpperLower(t *testing.T) {
+	for _, dialect := range []string{"", "tsql", "postgres", "duckdb", "databricks"} {
+		for _, tc := range []struct{ sql, class string }{
+			{"SELECT UPPER(x)", "Upper"},
+			{"SELECT LOWER(x)", "Lower"},
+			{"SELECT UPPER('hello')", "Upper"},
+		} {
+			e, err := ParseOne(tc.sql, dialect)
+			if err != nil {
+				t.Fatalf("[%s] ParseOne(%q): %v", dialect, tc.sql, err)
+			}
+			call := e.Args["expressions"].([]*Expression)[0]
+			if call.Class != tc.class {
+				t.Errorf("[%s] %q read as %s", dialect, tc.sql, call.Class)
+			}
+			if got, err := Generate(e, dialect); err != nil || got != tc.sql {
+				t.Errorf("[%s] %q wrote %q, %v", dialect, tc.sql, got, err)
+			}
+		}
+
+		// The branch itself is still refused: it builds a class of its own.
+		if e, err := ParseOne("SELECT LOWER(HEX(x))", dialect); err == nil {
+			t.Errorf("[%s] read LOWER(HEX(x)) as %v", dialect, e)
+		}
+	}
+}
