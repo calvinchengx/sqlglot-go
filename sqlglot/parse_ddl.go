@@ -3675,3 +3675,196 @@ func (p *parser) parseShow() (*Expression, error) {
 	}
 	return node, nil
 }
+
+// parseCopy reads `COPY [INTO] <target> FROM|TO <files> [WITH (<params>)]`,
+// which moves rows between a table and a file. It is the statement a guard
+// most wants to see: the file is outside the database entirely.
+//
+// The direction is a FLAG rather than a word on the node -- FROM loads and TO
+// unloads -- and the reference reads a missing direction as a load.
+func (p *parser) parseCopy() (*Expression, error) {
+	p.advance() // COPY
+	p.match(TokINTO)
+
+	var this *Expression
+	var err error
+	if p.at(TokL_PAREN) {
+		this, err = p.parseScalarSubquery()
+	} else {
+		this, err = p.parseCopyTarget()
+	}
+	if err != nil {
+		return nil, err
+	}
+
+	kind := true
+	if !p.match(TokFROM) {
+		if p.matchUnquotedWord("TO") {
+			kind = false
+		}
+	}
+
+	var files []*Expression
+	for {
+		file, ferr := p.parseCopyField()
+		if ferr != nil {
+			return nil, ferr
+		}
+		files = append(files, file)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+
+	// The credentials are read even where none are written: the reference
+	// always builds the node, empty.
+	credentials := New("Credentials")
+
+	p.matchUnquotedWord("WITH")
+	var params []*Expression
+	if p.match(TokL_PAREN) {
+		for !p.at(TokR_PAREN) {
+			param, perr := p.parseCopyParameter()
+			if perr != nil {
+				return nil, perr
+			}
+			params = append(params, param)
+			if p.tables.CopyParamsAreCSV {
+				p.match(TokCOMMA)
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed COPY parameters")
+		}
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("COPY with more than this port reads")
+	}
+	return New("Copy",
+		Arg{"this", this},
+		Arg{"kind", kind},
+		Arg{"credentials", credentials},
+		Arg{"files", files},
+		Arg{"params", params},
+	), nil
+}
+
+// parseCopyTarget reads the table a COPY moves rows through, with the columns
+// it names where it names them.
+func (p *parser) parseCopyTarget() (*Expression, error) {
+	table, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+	if !p.at(TokL_PAREN) {
+		return table, nil
+	}
+	columns, err := p.parseParenthesisedIdentifiers()
+	if err != nil {
+		return nil, err
+	}
+	return New("Schema", Arg{"this", table}, Arg{"expressions", columns}), nil
+}
+
+func (p *parser) parseParenthesisedIdentifiers() ([]*Expression, error) {
+	p.advance() // the opening parenthesis
+	var out []*Expression
+	for {
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, name)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed column list")
+	}
+	return out, nil
+}
+
+// parseCopyParameter reads one `NAME value` setting. The name is whatever
+// word stands there, and what separates it from its value -- nothing, an `=`
+// or an `AS` -- says nothing and is not recorded.
+func (p *parser) parseCopyParameter() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("COPY parameter without a name")
+	}
+	p.advance()
+	name := New("Var", Arg{"this", c.Text})
+
+	p.match(TokEQ)
+	p.match(TokALIAS)
+
+	// A name whose value is a LIST is read another way again, which this port
+	// does not do -- and the list would otherwise be read as a tuple.
+	if _, varlen := p.tables.CopyVarlenOptions[strings.ToUpper(c.Text)]; varlen && p.at(TokL_PAREN) {
+		return nil, p.unsupported("COPY parameter with a list of settings")
+	}
+	value, err := p.parseCopyField()
+	if err != nil {
+		return nil, err
+	}
+	return New("CopyParameter", Arg{"this", name}, Arg{"expression", value}), nil
+}
+
+// parseCopyField reads a file name or a parameter's value: a literal, a bare
+// word as a Var, or a parenthesised list as a Tuple.
+func (p *parser) parseCopyField() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("COPY without a value")
+	}
+	switch {
+	case c.Type == TokL_PAREN:
+		p.advance()
+		var items []*Expression
+		for {
+			item, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			items = append(items, item)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed COPY value")
+		}
+		return New("Tuple", Arg{"expressions", items}), nil
+	case c.Type == TokSTRING:
+		p.advance()
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
+	case c.Type == TokNUMBER:
+		p.advance()
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", false}), nil
+	case c.Type == TokTRUE, c.Type == TokFALSE:
+		p.advance()
+		return New("Boolean", Arg{"this", c.Type == TokTRUE}), nil
+	case c.Type == TokNULL:
+		p.advance()
+		return New("Null"), nil
+	case c.Type == TokIDENTIFIER:
+		p.advance()
+		return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true}), nil
+	case atWord(c):
+		p.advance()
+		return New("Var", Arg{"this", c.Text}), nil
+	}
+	return nil, p.unsupported("COPY value this port does not read")
+}
+
+// atWord reports whether a token was written as a bare word, whatever the
+// tokenizer made of it: a COPY's settings are named with keywords as often as
+// not, and the reference takes whatever stands there.
+func atWord(c *Token) bool {
+	if c == nil || c.Text == "" {
+		return false
+	}
+	r := rune(c.Text[0])
+	return unicode.IsLetter(r) || r == '_'
+}

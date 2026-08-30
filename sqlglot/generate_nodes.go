@@ -22,6 +22,8 @@ func init() {
 	generators = map[string]func(*generator, *Expression) string{
 		"Select":                              (*generator).writeSelect,
 		"TimeToStr":                           (*generator).writeTimeToStr,
+		"Credentials":                         (*generator).writeCredentials,
+		"CopyParameter":                       (*generator).writeCopyParameter,
 		"DeclareItem":                         (*generator).writeDeclareItem,
 		"TsOrDsToDate":                        (*generator).writeTsOrDsToDate,
 		"OpenJSONColumnDef":                   (*generator).writeOpenJSONColumnDef,
@@ -1623,6 +1625,14 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 			if text != "" && strings.Contains(candidate.Template, "}"+marker) &&
 				!strings.HasPrefix(text, " ") {
 				text = " " + text
+			}
+			// And a marker that renders to NOTHING takes its separator with
+			// it. That is the reference's own idiom -- `self.seg(x) if x else
+			// ""` -- and without it an empty Credentials left `COPY x FROM
+			// 'f'  WITH (...)` with two spaces in the middle.
+			if text == "" && strings.Contains(out, " "+marker) {
+				out = strings.ReplaceAll(out, " "+marker, "")
+				continue
 			}
 			out = strings.ReplaceAll(out, marker, text)
 		}
@@ -3895,4 +3905,34 @@ func (g *generator) writeDeclareItem(e *Expression) string {
 		out += " " + g.tables.DeclareAssignment + " " + g.node(value)
 	}
 	return out
+}
+
+// writeCredentials writes how a COPY authenticates, which for every statement
+// this port reads is nothing at all: the reference builds the node whether or
+// not any were written, and an empty one renders empty.
+func (g *generator) writeCredentials(e *Expression) string {
+	for _, key := range e.Keys {
+		if value, _ := e.Args[key].(*Expression); value != nil {
+			return g.fail(e.Class + " this port does not read")
+		}
+		if items, _ := e.Args[key].([]*Expression); len(items) > 0 {
+			return g.fail(e.Class + " this port does not read")
+		}
+	}
+	return ""
+}
+
+// writeCopyParameter writes one of a COPY's settings. Whether an `=` stands
+// between the name and the value is the dialect's, not the statement's: the
+// same tree is written both ways.
+func (g *generator) writeCopyParameter(e *Expression) string {
+	name := g.child(e, "this")
+	value := g.child(e, "expression")
+	if value == "" {
+		return name
+	}
+	if g.tables.CopyParamsNeedEQ {
+		return name + " = " + value
+	}
+	return name + " " + value
 }

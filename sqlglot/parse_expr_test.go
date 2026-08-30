@@ -6540,3 +6540,88 @@ func TestShow(t *testing.T) {
 		}
 	}
 }
+
+// TestCopy covers moving rows between a table and a FILE, which is the shape a
+// guard above this port exists to notice: the file is outside the database.
+func TestCopy(t *testing.T) {
+	for _, tc := range []struct{ sql, dialect string }{
+		{"COPY tbl (col1, col2) FROM 'file' WITH (FORMAT format, HEADER MATCH, FREEZE TRUE)", "postgres"},
+		{"COPY tbl (col1, col2) TO 'file' WITH (FORMAT format)", "postgres"},
+		{"COPY (SELECT * FROM t) TO 'file' WITH (FORMAT format)", "postgres"},
+		{"COPY lineitem (l_orderkey) TO 'orderkey.tbl' WITH (DELIMITER '|')", "duckdb"},
+		{"COPY lineitem FROM 'x.ndjson' WITH (FORMAT JSON, AUTO_DETECT TRUE, FORCE_NOT_NULL (col1, col2))", "duckdb"},
+		// T-SQL writes an `=` between a setting and its value; the others do
+		// not, and the tree is the same either way.
+		{"COPY INTO test_1 FROM 'path' WITH (FORMAT_NAME = test, FILE_TYPE = 'CSV')", "tsql"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; it reaches a file", tc.sql)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.sql {
+			t.Errorf("[%s] %q wrote %q, %v", tc.dialect, tc.sql, got, err)
+		}
+	}
+
+	// The direction is a FLAG rather than a word on the node.
+	load, err := ParseOne("COPY t FROM 'file'", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	unload, err := ParseOne("COPY t TO 'file'", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if load.Args["kind"] != true || unload.Args["kind"] != false {
+		t.Errorf("the direction is %v and %v", load.Args["kind"], unload.Args["kind"])
+	}
+	// And the credentials node is built whether or not any were written.
+	if creds, _ := load.Args["credentials"].(*Expression); creds == nil ||
+		creds.Class != "Credentials" {
+		t.Errorf("no credentials node: %v", load.Args["credentials"])
+	}
+
+	// A setting's value is whatever stands there: a number, a keyword, a
+	// quoted name, or nothing at all.
+	values := `COPY t FROM 'f' WITH (MAXERRORS 10, A NULL, B FALSE, C "q")`
+	e, err := ParseOne(values, "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", values, err)
+	}
+	if got, err := Generate(e, "duckdb"); err != nil || got != values {
+		t.Errorf("%q wrote %q, %v", values, got, err)
+	}
+
+	// A Credentials the port did not build is one it cannot write: it reads
+	// none of them, so an empty node is the only one it can spell.
+	for _, key := range []string{"region", "encryption"} {
+		withCreds, err := ParseOne("COPY t FROM 'f' WITH (FORMAT x)", "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne: %v", err)
+		}
+		creds, _ := withCreds.Args["credentials"].(*Expression)
+		value := New("Literal", Arg{"this", "eu"}, Arg{"is_string", true})
+		if key == "encryption" {
+			creds.Set(key, []*Expression{value})
+		} else {
+			creds.Set(key, value)
+		}
+		if got, err := Generate(withCreds, "postgres"); err == nil {
+			t.Errorf("wrote credentials the port does not read: %q", got)
+		}
+	}
+
+	for _, tc := range []struct{ sql, dialect string }{
+		// A setting whose value is a LIST is read another way again.
+		{"COPY t FROM 'f' WITH (FORMAT_OPTIONS ('a'='b'))", "databricks"},
+		{"COPY t FROM 'f' WITH (FORMAT JSON", "duckdb"},
+		{"COPY t FROM 'f' WITH (FORMAT JSON) EXTRA", "duckdb"},
+	} {
+		if e, err := ParseOne(tc.sql, tc.dialect); err == nil {
+			t.Errorf("[%s] read %q as %v", tc.dialect, tc.sql, e)
+		}
+	}
+}

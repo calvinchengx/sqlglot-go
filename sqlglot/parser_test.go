@@ -574,17 +574,17 @@ func TestCountKeepsItsFlag(t *testing.T) {
 // above this parser reports "read-only" on the strength of that distinction,
 // and the service's conformance suite checks the wording.
 //
-// CREATE left this list when it began to PARSE, and DELETE, UPDATE, MERGE and
-// EXEC have followed it. That is the whole point of bringing DDL and DML into
+// CREATE left this list when it began to PARSE, and DELETE, UPDATE, MERGE,
+// EXEC and COPY have followed it. REFRESH is what is left. That is the whole point of bringing DDL and DML into
 // scope, and it moves the read-only question: a caller that asks ErrNotAQuery
 // will see them go past as though they were queries, and has to ask IsWrite
 // instead. TestWritesAreNamedWhenTheyParse covers the ones that have crossed
 // over.
 func TestWritesAreNamedNotParsed(t *testing.T) {
 	for _, c := range []struct{ sql, kind string }{
-		{"COPY t FROM 'file'", "COPY"},
+		{"REFRESH TABLE t", "REFRESH"},
 	} {
-		_, err := ParseOne(c.sql, "tsql")
+		_, err := ParseOne(c.sql, "databricks")
 		if !errors.Is(err, ErrNotAQuery) {
 			t.Errorf("ParseOne(%q) failed with %v, want ErrNotAQuery", c.sql, err)
 			continue
@@ -592,6 +592,12 @@ func TestWritesAreNamedNotParsed(t *testing.T) {
 		var named *NotAQueryError
 		if !errors.As(err, &named) || named.Kind != c.kind {
 			t.Errorf("ParseOne(%q) did not name the statement: %v", c.sql, err)
+			continue
+		}
+		// The message carries the word too: a caller that logs the error
+		// rather than inspecting it still says which statement it was.
+		if want := "sqlglot-go: not a query: " + c.kind; named.Error() != want {
+			t.Errorf("Error() = %q, want %q", named.Error(), want)
 		}
 	}
 }
@@ -699,6 +705,10 @@ func TestWritesAreNamedWhenTheyParse(t *testing.T) {
 		"EXEC sp_executesql @payload",
 		"DECLARE @X INT = 1",
 		"KILL '123'",
+		// A COPY moves rows between a table and a file, which is the whole
+		// reason a guard exists: the file is outside the database.
+		"COPY t FROM 'file'",
+		"COPY t TO 'file'",
 	} {
 		e, err := ParseOne(sql, "tsql")
 		if err != nil {

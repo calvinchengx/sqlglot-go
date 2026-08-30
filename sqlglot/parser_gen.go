@@ -266,6 +266,13 @@ type ParserTables struct {
 	// ShowKinds are the phrases SHOW reads as a statement rather than
 	// keeping as text.
 	ShowKinds map[string]struct{}
+	// How a COPY's parameters are written: separated by commas or by
+	// spaces, and with or without an = before each value. The names
+	// whose value is a LIST are kept apart, since those are read a
+	// different way again.
+	CopyParamsAreCSV  bool
+	CopyParamsNeedEQ  bool
+	CopyVarlenOptions map[string]struct{}
 	// UnaryOps is which token opens a PREFIX operator, and what it
 	// builds. The empty string is the no-op unary plus.
 	UnaryOps map[TokenType]string
@@ -3957,6 +3964,14 @@ var parserTables = map[string]*ParserTables{
 		EndCommits:           false,
 		ExecuteBuildsExecute: false,
 		ShowKinds:            map[string]struct{}{},
+		CopyParamsAreCSV:     true,
+		CopyParamsNeedEQ:     false,
+		CopyVarlenOptions: map[string]struct{}{
+			"COPY_OPTIONS":   {},
+			"CREDENTIAL":     {},
+			"FILE_FORMAT":    {},
+			"FORMAT_OPTIONS": {},
+		},
 		UnaryOps: map[TokenType]string{
 			TokDASH:  "Neg",
 			TokNOT:   "Not",
@@ -7850,6 +7865,14 @@ var parserTables = map[string]*ParserTables{
 		EndCommits:           false,
 		ExecuteBuildsExecute: true,
 		ShowKinds:            map[string]struct{}{},
+		CopyParamsAreCSV:     true,
+		CopyParamsNeedEQ:     true,
+		CopyVarlenOptions: map[string]struct{}{
+			"COPY_OPTIONS":   {},
+			"CREDENTIAL":     {},
+			"FILE_FORMAT":    {},
+			"FORMAT_OPTIONS": {},
+		},
 		UnaryOps: map[TokenType]string{
 			TokDASH:  "Neg",
 			TokNOT:   "Not",
@@ -11777,6 +11800,14 @@ var parserTables = map[string]*ParserTables{
 		EndCommits:           true,
 		ExecuteBuildsExecute: false,
 		ShowKinds:            map[string]struct{}{},
+		CopyParamsAreCSV:     true,
+		CopyParamsNeedEQ:     false,
+		CopyVarlenOptions: map[string]struct{}{
+			"COPY_OPTIONS":   {},
+			"CREDENTIAL":     {},
+			"FILE_FORMAT":    {},
+			"FORMAT_OPTIONS": {},
+		},
 		UnaryOps: map[TokenType]string{
 			TokDASH:        "Neg",
 			TokDPIPE_SLASH: "Cbrt",
@@ -15912,6 +15943,14 @@ var parserTables = map[string]*ParserTables{
 		ShowKinds: map[string]struct{}{
 			"ALL TABLES": {},
 			"TABLES":     {},
+		},
+		CopyParamsAreCSV: true,
+		CopyParamsNeedEQ: false,
+		CopyVarlenOptions: map[string]struct{}{
+			"COPY_OPTIONS":   {},
+			"CREDENTIAL":     {},
+			"FILE_FORMAT":    {},
+			"FORMAT_OPTIONS": {},
 		},
 		UnaryOps: map[TokenType]string{
 			TokDASH:  "Neg",
@@ -20101,6 +20140,14 @@ var parserTables = map[string]*ParserTables{
 		EndCommits:           false,
 		ExecuteBuildsExecute: false,
 		ShowKinds:            map[string]struct{}{},
+		CopyParamsAreCSV:     false,
+		CopyParamsNeedEQ:     true,
+		CopyVarlenOptions: map[string]struct{}{
+			"COPY_OPTIONS":   {},
+			"CREDENTIAL":     {},
+			"FILE_FORMAT":    {},
+			"FORMAT_OPTIONS": {},
+		},
 		UnaryOps: map[TokenType]string{
 			TokDASH:  "Neg",
 			TokNOT:   "Not",

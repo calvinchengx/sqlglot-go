@@ -313,6 +313,9 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokKILL) {
 		return p.parseKill()
 	}
+	if p.at(TokCOPY) {
+		return p.parseCopy()
+	}
 	if p.at(TokEXECUTE) && p.tables.ExecuteBuildsExecute {
 		return p.parseExecute()
 	}

@@ -4042,6 +4042,13 @@ def main() -> int:
         "\t// ShowKinds are the phrases SHOW reads as a statement rather than\n",
         "\t// keeping as text.\n",
         "\tShowKinds map[string]struct{}\n",
+        "\t// How a COPY's parameters are written: separated by commas or by\n",
+        "\t// spaces, and with or without an = before each value. The names\n",
+        "\t// whose value is a LIST are kept apart, since those are read a\n",
+        "\t// different way again.\n",
+        "\tCopyParamsAreCSV  bool\n",
+        "\tCopyParamsNeedEQ  bool\n",
+        "\tCopyVarlenOptions map[string]struct{}\n",
         "\t// UnaryOps is which token opens a PREFIX operator, and what it\n",
         "\t// builds. The empty string is the no-op unary plus.\n",
         "\tUnaryOps map[TokenType]string\n",
@@ -4690,6 +4697,16 @@ def main() -> int:
             "\t\tExecuteBuildsExecute: %s,\n" % str(execute_builds_execute(name)).lower()
         )
         out.append(strset("ShowKinds", sorted(P.SHOW_PARSERS)))
+        out.append(
+            "\t\tCopyParamsAreCSV: %s,\n"
+            % str(bool(getattr(type(_DG.get_or_raise(name or None)), "COPY_PARAMS_ARE_CSV", True))).lower()
+        )
+        out.append(
+            "\t\tCopyParamsNeedEQ: %s,\n"
+            % str(bool(getattr(type(_DG.get_or_raise(name or None)).generator_class,
+                               "COPY_PARAMS_EQ_REQUIRED", False))).lower()
+        )
+        out.append(strset("CopyVarlenOptions", sorted(P.COPY_INTO_VARLEN_OPTIONS)))
         _uo = unary_ops(name, P, exp)
         body = "".join(f"\t\t\tTok{t}: {gostr(c)},\n" for t, c in sorted(_uo.items()))
         out.append(f"\t\tUnaryOps: map[TokenType]string{{\n{body}\t\t}},\n")
