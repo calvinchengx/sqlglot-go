@@ -6619,6 +6619,36 @@ func TestCopy(t *testing.T) {
 		}
 	}
 
+	// A word with an argument list after it is a CALL in a file position, not
+	// a name followed by the statement's own parameter list. The port read
+	// the brackets as parameters and could not read back what it wrote; the
+	// generator fuzzer found it.
+	// Three things about the writing are the DIALECT's rather than the
+	// statement's: whether INTO is written, whether the settings are wrapped,
+	// and what separates them. Databricks writes them bare and separated by
+	// SPACES, where everyone else wraps them and uses commas.
+	for _, tc := range []struct{ sql, dialect string }{
+		{"COPY INTO t FROM 'f' FORMAT = JSON DELIM = ','", "databricks"},
+		{"COPY tbl FROM 'file' WITH (FORMAT format, HEADER MATCH)", "postgres"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.sql {
+			t.Errorf("[%s] %q wrote %q, %v", tc.dialect, tc.sql, got, err)
+		}
+	}
+
+	call, err := ParseOne("COPY t FROM f(1)", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	files, _ := call.Args["files"].([]*Expression)
+	if len(files) != 1 || files[0].Class != "Anonymous" {
+		t.Errorf("the file is %v, want a call", files)
+	}
+
 	for _, tc := range []struct{ sql, dialect string }{
 		// A setting whose value is a LIST is read another way again.
 		{"COPY t FROM 'f' WITH (FORMAT_OPTIONS ('a'='b'))", "databricks"},
@@ -7293,5 +7323,55 @@ func TestIntervalIsAlsoAName(t *testing.T) {
 	}
 	if got := e.Args["expressions"].([]*Expression)[0]; got.Class != "Column" {
 		t.Errorf("a bare INTERVAL read as %s", got.Class)
+	}
+}
+
+// TestCastAfterIs covers a `::` that follows a null test. The reference runs
+// the column operators after an IS as well as after a column, so the cast
+// takes the whole TEST rather than the NULL beside it.
+func TestCastAfterIs(t *testing.T) {
+	for _, tc := range []struct{ sql, dialect, want string }{
+		{"SELECT col IS NULL::BOOLEAN", "duckdb", "SELECT CAST(col IS NULL AS BOOLEAN)"},
+		{"SELECT col IS NULL::BOOLEAN", "postgres", "SELECT CAST(col IS NULL AS BOOLEAN)"},
+		// The negated test carries the cast too -- around whichever of the
+		// two shapes the dialect makes of it.
+		{"SELECT col IS NOT NULL::BOOLEAN", "duckdb", "SELECT CAST(NOT col IS NULL AS BOOLEAN)"},
+		{"SELECT col IS NOT NULL::BOOLEAN", "postgres", "SELECT CAST(col IS NOT NULL AS BOOLEAN)"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.want {
+			t.Errorf("[%s] %q wrote %q, want %q (%v)", tc.dialect, tc.sql, got, tc.want, err)
+		}
+	}
+
+	// The cast is OUTSIDE the test, not around the NULL.
+	e, err := ParseOne("SELECT col IS NULL::BOOLEAN", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	cast := e.Args["expressions"].([]*Expression)[0]
+	if cast.Class != "Cast" {
+		t.Fatalf("read as %s", cast.Class)
+	}
+	if inner, _ := cast.Args["this"].(*Expression); inner == nil || inner.Class != "Is" {
+		t.Errorf("the cast wraps %v", cast.Args["this"])
+	}
+
+	// A test with nothing after it is unchanged.
+	for _, tc := range []struct{ sql, dialect, want string }{
+		{"SELECT a IS NULL", "", "SELECT a IS NULL"},
+		{"SELECT a IS NOT NULL", "", "SELECT NOT a IS NULL"},
+		{"SELECT a IS NOT NULL", "postgres", "SELECT a IS NOT NULL"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.want {
+			t.Errorf("[%s] %q wrote %q, want %q (%v)", tc.dialect, tc.sql, got, tc.want, err)
+		}
 	}
 }

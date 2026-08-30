@@ -3827,21 +3827,24 @@ func (p *parser) parseCopy() (*Expression, error) {
 	credentials := New("Credentials")
 
 	p.matchUnquotedWord("WITH")
+	// The parentheses around the settings are OPTIONAL: Databricks writes
+	// them bare, and the port wrote them that way too and could not read its
+	// own output back. Without them the list runs to the end of the
+	// statement, which is where the reference stops as well.
 	var params []*Expression
-	if p.match(TokL_PAREN) {
-		for !p.at(TokR_PAREN) {
-			param, perr := p.parseCopyParameter()
-			if perr != nil {
-				return nil, perr
-			}
-			params = append(params, param)
-			if p.tables.CopyParamsAreCSV {
-				p.match(TokCOMMA)
-			}
+	wrapped := p.match(TokL_PAREN)
+	for p.curr() != nil && !p.at(TokR_PAREN) {
+		param, perr := p.parseCopyParameter()
+		if perr != nil {
+			return nil, perr
 		}
-		if !p.match(TokR_PAREN) {
-			return nil, p.unsupported("unclosed COPY parameters")
+		params = append(params, param)
+		if p.tables.CopyParamsAreCSV {
+			p.match(TokCOMMA)
 		}
+	}
+	if wrapped && !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed COPY parameters")
 	}
 	if p.curr() != nil {
 		return nil, p.unsupported("COPY with more than this port reads")
@@ -3925,6 +3928,12 @@ func (p *parser) parseCopyField() (*Expression, error) {
 		return nil, p.unsupported("COPY without a value")
 	}
 	switch {
+	// A word with an argument list after it is a CALL, not a name followed by
+	// something else: the reference reads a file location as an ordinary
+	// field, and the port wrote `A(NOT 0)` and then read the brackets as its
+	// own parameter list. The generator fuzzer found it.
+	case p.namesAFunctionCall():
+		return p.parseFunction()
 	case c.Type == TokL_PAREN:
 		p.advance()
 		var items []*Expression

@@ -22,6 +22,7 @@ func init() {
 	generators = map[string]func(*generator, *Expression) string{
 		"Select":                              (*generator).writeSelect,
 		"TimeToStr":                           (*generator).writeTimeToStr,
+		"Copy":                                (*generator).writeCopy,
 		"NextValueFor":                        (*generator).writeNextValueFor,
 		"LikeProperty":                        (*generator).writeLikeProperty,
 		"SequenceProperties":                  (*generator).writeSequenceProperties,
@@ -4075,4 +4076,54 @@ func (g *generator) writeNextValueFor(e *Expression) string {
 		out += " OVER (" + g.node(order) + ")"
 	}
 	return out
+}
+
+// writeCopy writes rows moving between a table and a file.
+//
+// Three things about it are the dialect's rather than the statement's: whether
+// the word INTO is written, whether the settings are wrapped in `WITH (...)`,
+// and what separates them. The template probe fills every slot and so records
+// one shape for all of it -- and joined Databricks' settings with commas,
+// where that dialect writes spaces.
+func (g *generator) writeCopy(e *Expression) string {
+	out := "COPY"
+	if g.tables.CopyIntoWritten {
+		out += " INTO"
+	}
+	out += " " + g.child(e, "this")
+
+	files, _ := e.Args["files"].([]*Expression)
+	names := make([]string, 0, len(files))
+	for _, f := range files {
+		names = append(names, g.node(f))
+	}
+	if len(names) > 0 {
+		if e.Args["kind"] == true {
+			out += " FROM "
+		} else {
+			out += " TO "
+		}
+		out += strings.Join(names, ", ")
+	}
+	if credentials := g.child(e, "credentials"); credentials != "" {
+		out += " " + credentials
+	}
+
+	params, _ := e.Args["params"].([]*Expression)
+	if len(params) == 0 {
+		return out
+	}
+	sep := " "
+	if g.tables.CopyParamsAreCSV {
+		sep = ", "
+	}
+	written := make([]string, 0, len(params))
+	for _, param := range params {
+		written = append(written, g.node(param))
+	}
+	joined := strings.Join(written, sep)
+	if g.tables.CopyParamsWrapped {
+		return out + " WITH (" + joined + ")"
+	}
+	return out + " " + joined
 }

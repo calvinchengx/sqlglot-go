@@ -245,13 +245,14 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 	// the same, and exactly the divergence this port exists to prevent. The
 	// flag is probed from the reference; see harness/gen_parser.py.
 	if negate && expression.Class == "Null" && !p.tables.IsNotNullWrapsInNot {
-		return New("Is", Arg{"this", this}, Arg{"expression", expression}, Arg{"negate", true}), nil
+		return p.parseColumnOps(New("Is",
+			Arg{"this", this}, Arg{"expression", expression}, Arg{"negate", true}))
 	}
 	is := New("Is", Arg{"this", this}, Arg{"expression", expression})
 	if negate {
-		return New("Not", Arg{"this", is}), nil
+		return p.parseColumnOps(New("Not", Arg{"this", is}))
 	}
-	return is, nil
+	return p.parseColumnOps(is)
 }
 
 func (p *parser) parseIn(this *Expression) (*Expression, error) {
@@ -539,6 +540,14 @@ func (p *parser) parsePostfix() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	return p.parseColumnOps(this)
+}
+
+// parseColumnOps reads the operators that apply to something already parsed:
+// the `::` cast, a subscript, a dot. The reference runs them after an IS as
+// well as after a column, which is why `col IS NULL::BOOLEAN` casts the whole
+// test rather than the NULL.
+func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 	for {
 		if p.match(TokDCOLON) {
 			to, err := p.parseDataType()

@@ -287,6 +287,8 @@ type ParserTables struct {
 	// spaces, and with or without an = before each value. The names
 	// whose value is a LIST are kept apart, since those are read a
 	// different way again.
+	CopyIntoWritten   bool
+	CopyParamsWrapped bool
 	CopyParamsAreCSV  bool
 	CopyParamsNeedEQ  bool
 	CopyVarlenOptions map[string]struct{}
@@ -4066,6 +4068,8 @@ var parserTables = map[string]*ParserTables{
 		},
 		CreatableKindNames: map[string]string{},
 		CopyParamsAreCSV:   true,
+		CopyIntoWritten:    true,
+		CopyParamsWrapped:  true,
 		CopyParamsNeedEQ:   false,
 		CopyVarlenOptions: map[string]struct{}{
 			"COPY_OPTIONS":   {},
@@ -8048,6 +8052,8 @@ var parserTables = map[string]*ParserTables{
 		},
 		CreatableKindNames: map[string]string{},
 		CopyParamsAreCSV:   true,
+		CopyIntoWritten:    true,
+		CopyParamsWrapped:  true,
 		CopyParamsNeedEQ:   true,
 		CopyVarlenOptions: map[string]struct{}{
 			"COPY_OPTIONS":   {},
@@ -12064,6 +12070,8 @@ var parserTables = map[string]*ParserTables{
 		},
 		CreatableKindNames: map[string]string{},
 		CopyParamsAreCSV:   true,
+		CopyIntoWritten:    false,
+		CopyParamsWrapped:  true,
 		CopyParamsNeedEQ:   false,
 		CopyVarlenOptions: map[string]struct{}{
 			"COPY_OPTIONS":   {},
@@ -16291,6 +16299,8 @@ var parserTables = map[string]*ParserTables{
 		},
 		CreatableKindNames: map[string]string{},
 		CopyParamsAreCSV:   true,
+		CopyIntoWritten:    false,
+		CopyParamsWrapped:  true,
 		CopyParamsNeedEQ:   false,
 		CopyVarlenOptions: map[string]struct{}{
 			"COPY_OPTIONS":   {},
@@ -20568,6 +20578,8 @@ var parserTables = map[string]*ParserTables{
 		},
 		CreatableKindNames: map[string]string{},
 		CopyParamsAreCSV:   false,
+		CopyIntoWritten:    true,
+		CopyParamsWrapped:  false,
 		CopyParamsNeedEQ:   true,
 		CopyVarlenOptions: map[string]struct{}{
 			"COPY_OPTIONS":   {},

@@ -4092,6 +4092,8 @@ def main() -> int:
         "\t// spaces, and with or without an = before each value. The names\n",
         "\t// whose value is a LIST are kept apart, since those are read a\n",
         "\t// different way again.\n",
+        "\tCopyIntoWritten   bool\n",
+        "\tCopyParamsWrapped bool\n",
         "\tCopyParamsAreCSV  bool\n",
         "\tCopyParamsNeedEQ  bool\n",
         "\tCopyVarlenOptions map[string]struct{}\n",
@@ -4776,6 +4778,16 @@ def main() -> int:
         out.append(
             "\t\tCopyParamsAreCSV: %s,\n"
             % str(bool(getattr(type(_DG.get_or_raise(name or None)), "COPY_PARAMS_ARE_CSV", True))).lower()
+        )
+        out.append(
+            "\t\tCopyIntoWritten: %s,\n"
+            % str(bool(getattr(type(_DG.get_or_raise(name or None)).generator_class,
+                               "COPY_HAS_INTO_KEYWORD", True))).lower()
+        )
+        out.append(
+            "\t\tCopyParamsWrapped: %s,\n"
+            % str(bool(getattr(type(_DG.get_or_raise(name or None)).generator_class,
+                               "COPY_PARAMS_ARE_WRAPPED", True))).lower()
         )
         out.append(
             "\t\tCopyParamsNeedEQ: %s,\n"
