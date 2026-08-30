@@ -343,6 +343,11 @@ func (g *generator) writeTable(e *Expression) string {
 		}
 	}
 	out := strings.Join(parts, ".")
+	// PostgreSQL's ONLY says not to read the tables that inherit from this
+	// one; it stands in front of the name.
+	if e.Args["only"] == true {
+		out = "ONLY " + out
+	}
 	// WITH ORDINALITY numbers the rows a table function returns, and it takes
 	// the ALIAS with it: the words go where the alias would, and the alias
 	// follows them. `F(x) WITH ORDINALITY AS t(a, b)` names both the rows and
@@ -2674,6 +2679,11 @@ func (g *generator) writeAlter(e *Expression) string {
 	if exists, _ := e.Args["exists"].(bool); exists {
 		out += "IF EXISTS "
 	}
+	// ONLY says this table and not the ones that inherit from it; on an ALTER
+	// the flag is on the statement rather than on the table.
+	if e.Args["only"] == true {
+		out += "ONLY "
+	}
 	out += g.child(e, "this")
 	actions, _ := e.Args["actions"].([]*Expression)
 	was := g.inColumnList
@@ -3380,12 +3390,9 @@ func (g *generator) writeTruncate(e *Expression) string {
 	tables, _ := e.Args["expressions"].([]*Expression)
 	parts := make([]string, 0, len(tables))
 	for _, table := range tables {
-		text := g.node(table)
-		// ONLY says this table and not the ones that inherit from it.
-		if only, _ := table.Args["only"].(bool); only {
-			text = "ONLY " + text
-		}
-		parts = append(parts, text)
+		// ONLY says this table and not the ones that inherit from it, and the
+		// table writes it itself.
+		parts = append(parts, g.node(table))
 	}
 	out += strings.Join(parts, ", ")
 	if identity, _ := e.Args["identity"].(string); identity != "" {

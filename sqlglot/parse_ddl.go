@@ -265,7 +265,7 @@ func (p *parser) parseTableName() (*Expression, error) {
 	}
 	var parts []*Expression
 	for {
-		id, err := p.parseIdentifier()
+		id, err := p.parseTablePart()
 		if err != nil {
 			return nil, err
 		}
@@ -842,6 +842,10 @@ func (p *parser) parseAlter() (*Expression, error) {
 		p.advance()
 		exists = true
 	}
+	// ONLY says this table and not the ones that inherit from it. On an ALTER
+	// the flag is on the STATEMENT rather than on the table, which is the
+	// other way round from a FROM.
+	only := p.match(TokONLY)
 	table, err := p.parseTableName()
 	if err != nil {
 		return nil, err
@@ -873,7 +877,7 @@ func (p *parser) parseAlter() (*Expression, error) {
 		Arg{"kind", kind},
 		Arg{"exists", exists},
 		Arg{"actions", actions},
-		Arg{"only", false},
+		Arg{"only", only},
 		Arg{"options", []*Expression{}},
 		Arg{"cluster", nil},
 		Arg{"not_valid", false},
@@ -4047,4 +4051,23 @@ func (p *parser) parseSequenceRest(table *Expression, replace, exists bool) (*Ex
 		Arg{"properties", properties},
 		Arg{"concurrently", false},
 	), nil
+}
+
+// parseTablePart reads one part of a table's name.
+//
+// A STRING there is a QUOTED name rather than a literal: DuckDB reads a file
+// path as a table, so `FROM 'x.y'` names one table called `x.y` rather than
+// two parts of a name -- and the reference writes it back as `"x.y"`.
+func (p *parser) parseTablePart() (*Expression, error) {
+	if c := p.curr(); c != nil && c.Type == TokSTRING {
+		p.advance()
+		return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true}), nil
+	}
+	return p.parseIdentifier()
+}
+
+// atTablePart reports whether a name may begin here.
+func (p *parser) atTablePart() bool {
+	c := p.curr()
+	return c != nil && (c.Type == TokSTRING || p.atIdentifier())
 }

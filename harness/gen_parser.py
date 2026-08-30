@@ -4044,6 +4044,9 @@ def main() -> int:
         "\t// ShowKinds are the phrases SHOW reads as a statement rather than\n",
         "\t// keeping as text.\n",
         "\tShowKinds map[string]struct{}\n",
+        "\t// ReservedTokens are the ones that can never stand in for a name,\n",
+        "\t// which is what the reference asks where ANY token may.\n",
+        "\tReservedTokens map[TokenType]struct{}\n",
         "\t// SequenceOptions are the words a CREATE SEQUENCE takes that carry\n",
         "\t// no value, each with the word that may follow it: NO CYCLE is one\n",
         "\t// option, not two.\n",
@@ -4708,6 +4711,9 @@ def main() -> int:
             "\t\tExecuteBuildsExecute: %s,\n" % str(execute_builds_execute(name)).lower()
         )
         out.append(strset("ShowKinds", sorted(P.SHOW_PARSERS)))
+        toks = sorted(P.RESERVED_TOKENS, key=lambda t: t.value)
+        body = "".join(f"\t\t\tTok{t.name}: {{}},\n" for t in toks)
+        out.append(f"\t\tReservedTokens: map[TokenType]struct{{}}{{\n{body}\t\t}},\n")
         body = "".join(
             "\t\t\t%s: {%s},\n" % (gostr(k), ", ".join(gostr(w) for w in v))
             for k, v in sorted(P.CREATE_SEQUENCE.items())

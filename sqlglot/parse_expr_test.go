@@ -6876,3 +6876,88 @@ func TestCreateSequence(t *testing.T) {
 		t.Errorf("read %v", e)
 	}
 }
+
+// TestNamesThatAreNotIdentifiers covers the two places the reference takes a
+// name from a token that is not one.
+func TestNamesThatAreNotIdentifiers(t *testing.T) {
+	// After a WRITTEN `AS`, any token that is not reserved is the name.
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT 1 AS delete, 2 AS alter", "SELECT 1 AS delete, 2 AS alter"},
+		{"SELECT x AS INTO FROM bla", "SELECT x AS INTO FROM bla"},
+		// A STRING there is a QUOTED name rather than a literal.
+		{"SELECT a AS 'b'", `SELECT a AS "b"`},
+	} {
+		e, err := ParseOne(tc.sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, ""); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q, want %q (%v)", tc.sql, got, tc.want, err)
+		}
+	}
+	// The handful the reference reserves is still reserved.
+	if e, err := ParseOne("SELECT a AS SELECT", ""); err == nil {
+		t.Errorf("read %v", e)
+	}
+	// And without the word, only an identifier will do.
+	if e, err := ParseOne("SELECT 1 delete", ""); err == nil {
+		t.Errorf("read %v", e)
+	}
+
+	// A table, a CTE and a created table are all named the same way, so a
+	// STRING is a quoted name in each.
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT * FROM 'x.y'", `SELECT * FROM "x.y"`},
+		{"WITH 'x' AS (SELECT 1) SELECT * FROM x", `WITH "x" AS (SELECT 1) SELECT * FROM x`},
+		{"CREATE TEMPORARY TABLE 'temptest' (name INTEGER)",
+			`CREATE TEMPORARY TABLE "temptest" (name INT)`},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q, want %q (%v)", tc.sql, got, tc.want, err)
+		}
+	}
+}
+
+// TestOnly covers PostgreSQL's ONLY, which says not to read the tables that
+// inherit from this one -- and which sits on the TABLE in a FROM and on the
+// STATEMENT in an ALTER.
+func TestOnly(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT * FROM ONLY t1",
+		"SELECT * FROM ONLY a.b",
+		"ALTER TABLE ONLY a ADD CONSTRAINT c UNIQUE (x)",
+		"TRUNCATE TABLE ONLY t1, t2 RESTART IDENTITY CASCADE",
+	} {
+		e, err := ParseOne(sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "postgres"); err != nil || got != sql {
+			t.Errorf("%q wrote %q, %v", sql, got, err)
+		}
+	}
+
+	from, err := ParseOne("SELECT * FROM ONLY t1", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	fromClause, _ := from.Args["from_"].(*Expression)
+	table, _ := fromClause.Args["this"].(*Expression)
+	if table.Args["only"] != true {
+		t.Errorf("the flag is not on the table: %v", table.Args)
+	}
+	alter, err := ParseOne("ALTER TABLE ONLY a ADD CONSTRAINT c UNIQUE (x)", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if alter.Args["only"] != true {
+		t.Errorf("the flag is not on the statement: %v", alter.Args["only"])
+	}
+	if target, _ := alter.Args["this"].(*Expression); target.Args["only"] != nil {
+		t.Errorf("the flag is on the table too: %v", target.Args["only"])
+	}
+}

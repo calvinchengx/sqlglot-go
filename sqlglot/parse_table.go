@@ -188,7 +188,7 @@ func (p *parser) parseQualifiedCall() (*Expression, error) {
 			}
 			return New("Dot", Arg{"this", this}, Arg{"expression", fn}), nil
 		}
-		id, err := p.parseIdentifier()
+		id, err := p.parseTablePart()
 		if err != nil {
 			return nil, err
 		}
@@ -259,6 +259,10 @@ func (p *parser) parseTable() (*Expression, error) {
 		return p.tableRest(New("Table", Arg{"this", param}))
 	}
 
+	// PostgreSQL's ONLY says not to read the tables that inherit from this
+	// one. It is a flag on the table rather than anything wrapping it.
+	only := p.match(TokONLY)
+
 	parts := []*Expression{}
 	var fn *Expression
 	for {
@@ -287,7 +291,7 @@ func (p *parser) parseTable() (*Expression, error) {
 			fn = f
 			break
 		}
-		id, err := p.parseIdentifier()
+		id, err := p.parseTablePart()
 		if err != nil {
 			return nil, err
 		}
@@ -324,6 +328,9 @@ func (p *parser) parseTable() (*Expression, error) {
 		}
 	}
 
+	if only {
+		table.Set("only", true)
+	}
 	markTemporaryTable(table, p.dialect)
 	return p.tableRest(table)
 }

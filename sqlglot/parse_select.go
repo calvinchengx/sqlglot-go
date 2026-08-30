@@ -138,7 +138,9 @@ func (p *parser) parseWith() (*Expression, error) {
 
 	var ctes []*Expression
 	for {
-		alias, err := p.parseIdentifier()
+		// A CTE is named the way a table is, so a STRING there is a QUOTED
+		// name rather than a literal.
+		alias, err := p.parseTablePart()
 		if err != nil {
 			return nil, err
 		}
@@ -543,11 +545,37 @@ func (p *parser) parseAlias(this *Expression) (*Expression, error) {
 	if !explicit && !p.atAliasName() {
 		return this, nil
 	}
+	// After a written AS, ANY token that is not reserved is the name: `SELECT
+	// 1 AS delete` names a column delete, and `SELECT x AS INTO` one called
+	// INTO. Only an identifier can stand there without the word.
 	alias, err := p.parseIdentifier()
 	if err != nil {
-		return nil, err
+		if !explicit {
+			return nil, err
+		}
+		alias, err = p.parseAnyName()
+		if err != nil {
+			return nil, err
+		}
 	}
 	return New("Alias", Arg{"this", this}, Arg{"alias", alias}), nil
+}
+
+// parseAnyName reads a name where the reference accepts any token: everything
+// but the handful it reserves. A STRING there is a QUOTED name rather than a
+// literal, which is how `FROM 'x.y'` names a table.
+func (p *parser) parseAnyName() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("identifier")
+	}
+	if _, reserved := p.tables.ReservedTokens[c.Type]; reserved {
+		return nil, p.unsupported("identifier")
+	}
+	p.advance()
+	return New("Identifier",
+		Arg{"this", c.Text},
+		Arg{"quoted", c.Type == TokIDENTIFIER || c.Type == TokSTRING}), nil
 }
 
 // atAliasName reports whether the current token can begin an implicit alias.
@@ -1224,8 +1252,8 @@ func (p *parser) parseLateralView() (*Expression, error) {
 	}
 
 	var name *Expression
-	if p.atAliasName() {
-		name, err = p.parseIdentifier()
+	if p.atTablePart() {
+		name, err = p.parseTablePart()
 		if err != nil {
 			return nil, err
 		}
