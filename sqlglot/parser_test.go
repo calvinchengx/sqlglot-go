@@ -202,6 +202,8 @@ func TestRefusals(t *testing.T) {
 		{"CTE named by nothing", "WITH AS (SELECT 1) SELECT 2", ""},
 		{"dangling subquery alias", "SELECT 1 FROM (SELECT 1) AS", ""},
 		{"over-qualified star", "SELECT a.b.c.d.*", ""},
+		{"LAMBDA without its colon", "SELECT LIST_TRANSFORM(a, LAMBDA x x)", "duckdb"},
+		{"LAMBDA without a parameter", "SELECT LIST_TRANSFORM(a, LAMBDA : x)", "duckdb"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			tree, err := ParseOne(c.sql, c.dialect)

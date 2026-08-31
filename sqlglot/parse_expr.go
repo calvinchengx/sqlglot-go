@@ -1764,9 +1764,12 @@ func (p *parser) parseFunction() (*Expression, error) {
 		}
 	}
 	// A name the reference has no node for takes arguments that may name
-	// themselves; one it does know does not.
-	_, aliasedArgs := p.tables.NamedFunctions[upper]
-	aliasedArgs = !aliasedArgs
+	// themselves; one it does know does not -- except for the handful that
+	// are listed as taking them anyway, which is how `STRUCT(1 AS a)` names
+	// its fields.
+	_, known := p.tables.NamedFunctions[upper]
+	_, namesItsArgs := p.tables.FunctionsWithAliasedArgs[upper]
+	aliasedArgs := !known || namesItsArgs
 
 	p.advance()
 	p.advance() // the opening parenthesis
@@ -1824,6 +1827,13 @@ func (p *parser) parseFunction() (*Expression, error) {
 	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed function argument list")
+	}
+	// A named argument of one of those calls is a FIELD, not an alias: the
+	// reference turns each key-value argument into a PropertyEQ before the
+	// builder sees it, so `STRUCT(1 AS a)` and `{'a': 1}` produce the same
+	// node from different syntax.
+	if known && namesItsArgs {
+		args = propertyEQArgs(args)
 	}
 	if distinct {
 		args = []*Expression{New("Distinct", Arg{"expressions", args}, Arg{"on", nil})}
@@ -2080,6 +2090,42 @@ func (p *parser) buildFromSpec(name, class string, keys []FuncArg, args []*Expre
 
 // parseColumn reads a possibly-qualified column reference: name, table.name,
 // db.table.name, catalog.db.table.name, and the `t.*` form.
+
+// propertyEQArgs turns each key-value argument of a call that names its
+// arguments into the PropertyEQ the reference builds. Four shapes reach it --
+// `a AS 1`, `a = 1`, `a: 1` and one already converted -- and they differ only
+// in where the key sits; a plain argument is left alone.
+func propertyEQArgs(args []*Expression) []*Expression {
+	out := make([]*Expression, 0, len(args))
+	for _, a := range args {
+		var key, value *Expression
+		switch a.Class {
+		case "Alias":
+			key, _ = a.Args["alias"].(*Expression)
+			value, _ = a.Args["this"].(*Expression)
+		case "PropertyEQ", "EQ", "Slice":
+			this, _ := a.Args["this"].(*Expression)
+			value, _ = a.Args["expression"].(*Expression)
+			key = this
+			if a.Class != "PropertyEQ" && this != nil {
+				key = New("Identifier", Arg{"this", this.Name()}, Arg{"quoted", false})
+			}
+		default:
+			out = append(out, a)
+			continue
+		}
+		// A key written as a bare word arrives as a Column wrapping the
+		// Identifier. The reference unwraps it in place.
+		if key != nil && key.Class == "Column" {
+			if inner, ok := key.Args["this"].(*Expression); ok {
+				key = inner
+			}
+		}
+		out = append(out, New("PropertyEQ", Arg{"this", key}, Arg{"expression", value}))
+	}
+	return out
+}
+
 func (p *parser) parseColumn() (*Expression, error) {
 	first, err := p.parseIdentifier()
 	if err != nil {

@@ -261,6 +261,28 @@ func TestGenerateShapes(t *testing.T) {
 			"SELECT LIST_TRANSFORM(a, x -> x + 1)"},
 		{"lambda two params", "select list_reduce(a, (x, y) -> x + y)", "duckdb",
 			"SELECT LIST_REDUCE(a, (x, y) -> x + y)"},
+		// The same lambda spelled the other way DuckDB has for it. The form
+		// is recorded on the node, so it comes back as it was written --
+		// keyword, colon, and no parentheses however many parameters.
+		{"colon lambda one param", "select list_transform(a, lambda x : x + 1)", "duckdb",
+			"SELECT LIST_TRANSFORM(a, LAMBDA x : x + 1)"},
+		{"colon lambda two params", "select list_reduce(a, lambda x, y : x + y)", "duckdb",
+			"SELECT LIST_REDUCE(a, LAMBDA x, y : x + y)"},
+		// A struct names its fields, and the two dialects disagree about
+		// which half comes first.
+		{"struct fields databricks", "select struct(1 as a, 'x' as b)", "databricks",
+			"SELECT STRUCT(1 AS a, 'x' AS b)"},
+		{"struct fields duckdb", "select struct(1 as a, 'x' as b)", "duckdb",
+			"SELECT {'a': 1, 'b': 'x'}"},
+		{"struct field needing quotes", "select struct(1 as `a b`)", "databricks",
+			"SELECT STRUCT(1 AS `a b`)"},
+		{"struct with an unnamed field", "select struct(x, x as y)", "databricks",
+			"SELECT STRUCT(x, x AS y)"},
+		// A field named with an equals sign is the same field: the reference
+		// turns every key-value shape into one node before the builder runs,
+		// so this comes back written the dialect's one way.
+		{"struct field named with equals", "select struct(a = 1)", "databricks",
+			"SELECT STRUCT(1 AS a)"},
 		{"interval unit in string", "select interval '1 day'", "", "SELECT INTERVAL '1' DAY"},
 		{"interval number becomes string", "select interval 1 day", "", "SELECT INTERVAL '1' DAY"},
 		{"interval postgres folds the unit", "select interval '1' day", "postgres", "SELECT INTERVAL '1 DAY'"},

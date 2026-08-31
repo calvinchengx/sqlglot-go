@@ -1517,6 +1517,15 @@ func (g *generator) writeLambda(e *Expression) string {
 		rendered = append(rendered, g.node(prm))
 	}
 	head := strings.Join(rendered, ", ")
+	// A lambda written with the keyword and a colon is written back that way,
+	// unwrapped however many parameters it has. The template is the dialect's
+	// own, read off a rendered node; a dialect that has no spelling of its own
+	// drops the distinction and writes the arrow, which is what the empty
+	// template means.
+	if colon, _ := e.Args["colon"].(bool); colon && g.tables.ColonLambdaWrite != "" {
+		out := strings.ReplaceAll(g.tables.ColonLambdaWrite, "{expressions}", head)
+		return strings.ReplaceAll(out, "{this}", g.child(e, "this"))
+	}
 	if len(params) != 1 {
 		head = "(" + head + ")"
 	}
@@ -1683,7 +1692,7 @@ func (g *generator) writeTableAlias(e *Expression) string {
 func (g *generator) writeStruct(e *Expression) string {
 	was := g.inCallArgs
 	g.inCallArgs = false
-	out := "{" + g.list(e) + "}"
+	out := strings.ReplaceAll(g.tables.StructTemplate, "{fields}", g.list(e))
 	g.inCallArgs = was
 	return out
 }
@@ -1702,7 +1711,13 @@ func (g *generator) writePropertyEQ(e *Expression) string {
 	if g.inCallArgs {
 		return g.node(key) + " := " + g.child(e, "expression")
 	}
-	return "'" + escapeStringBody(name, g.cfg.StringEscapes) + "': " + g.child(e, "expression")
+	// As a FIELD it takes the dialect's own spelling, and the two dialects
+	// disagree about more than punctuation: one writes the value first and
+	// names it after, the other writes the key first and quotes it as a
+	// string. Both templates are the reference's, read off a rendered node.
+	out := strings.ReplaceAll(g.tables.StructFieldTemplate, "{value}", g.child(e, "expression"))
+	out = strings.ReplaceAll(out, "{name}", escapeStringBody(name, g.cfg.StringEscapes))
+	return strings.ReplaceAll(out, "{key}", g.node(key))
 }
 
 func (g *generator) writeFilter(e *Expression) string {

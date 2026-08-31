@@ -11,6 +11,12 @@ func (p *parser) atLambda() bool {
 	if c == nil {
 		return false
 	}
+	// DuckDB spells a lambda twice over -- `x -> x + 1` and the same thing
+	// written `LAMBDA x : x + 1`. The word is not a token of its own, so the
+	// text decides, and only where the dialect reads the form at all.
+	if p.tables.ColonLambdaRead && strings.EqualFold(c.Text, "LAMBDA") {
+		return true
+	}
 	// A NUMBER can name a lambda parameter: the reference reads `0 -> x` as a
 	// lambda over a parameter called `0`, not as a JSON extraction. The port
 	// built a JSONExtract there -- a tree the reference never makes -- which
@@ -47,6 +53,9 @@ func (p *parser) atLambda() bool {
 }
 
 func (p *parser) parseLambda() (*Expression, error) {
+	if p.tables.ColonLambdaRead && strings.EqualFold(p.curr().Text, "LAMBDA") {
+		return p.parseColonLambda()
+	}
 	var params []*Expression
 	if p.at(TokL_PAREN) {
 		p.advance()
@@ -96,6 +105,43 @@ func (p *parser) parseLambda() (*Expression, error) {
 		return nil, err
 	}
 	return New("Lambda", Arg{"this", replaced}, Arg{"expressions", params}, Arg{"colon", nil}), nil
+}
+
+// parseColonLambda reads the keyword form: `LAMBDA a, b : body`. Its
+// parameters are never parenthesised and the body is separated by a colon,
+// but the node is the same Lambda the arrow builds -- with `colon` recorded,
+// because the dialect writes back the form that was written.
+func (p *parser) parseColonLambda() (*Expression, error) {
+	p.advance() // LAMBDA
+	var params []*Expression
+	for {
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		params = append(params, id)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokCOLON) {
+		return nil, p.unsupported("LAMBDA without a colon")
+	}
+	body, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	names := map[string]bool{}
+	for _, prm := range params {
+		if n, ok := prm.Args["this"].(string); ok {
+			names[strings.ToUpper(n)] = true
+		}
+	}
+	replaced, err := p.bindLambdaParams(body, names)
+	if err != nil {
+		return nil, err
+	}
+	return New("Lambda", Arg{"this", replaced}, Arg{"expressions", params}, Arg{"colon", true}), nil
 }
 
 // bindLambdaParams rewrites Columns that name a parameter into the parameter's

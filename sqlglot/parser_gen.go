@@ -90,6 +90,22 @@ type ParserTables struct {
 	// time: NEXT retreats without its `VALUE FOR` and CURDATE does not
 	// retreat at all.
 	BareNameIsColumn map[string]struct{}
+	// ColonLambdaRead says the dialect reads `LAMBDA a, b : body`, and
+	// ColonLambdaWrite is the template it writes one back with -- empty
+	// where the dialect has no spelling of its own and the ordinary
+	// arrow form is used instead.
+	ColonLambdaRead  bool
+	ColonLambdaWrite string
+	// FunctionsWithAliasedArgs are the calls whose arguments may name
+	// themselves even though the call itself is one the port builds a
+	// node for: `STRUCT(1 AS a)` is a Struct of one named field.
+	FunctionsWithAliasedArgs map[string]struct{}
+	// StructTemplate wraps a struct's fields and StructFieldTemplate
+	// writes one named field. `{key}` is the field name written as an
+	// identifier and `{name}` is the bare name, which the dialect that
+	// quotes its keys as strings uses instead.
+	StructTemplate      string
+	StructFieldTemplate string
 	// TypedDivision and SafeDivision are recorded on every Div node; the
 	// reference reads them off the dialect, so they are not always false.
 	TypedDivision bool
@@ -3995,6 +4011,12 @@ var parserTables = map[string]*ParserTables{
 		BareNameIsColumn: map[string]struct{}{
 			"IF": {},
 		},
+		FunctionsWithAliasedArgs: map[string]struct{}{
+			"STRUCT": {},
+		},
+		StructTemplate:            "STRUCT({fields})",
+		StructFieldTemplate:       "{value} AS {key}",
+		ColonLambdaRead:           false,
 		TypedDivision:             false,
 		SafeDivision:              false,
 		DPipeIsStringConcat:       true,
@@ -7987,6 +8009,12 @@ var parserTables = map[string]*ParserTables{
 		BareNameIsColumn: map[string]struct{}{
 			"NEXT": {},
 		},
+		FunctionsWithAliasedArgs: map[string]struct{}{
+			"STRUCT": {},
+		},
+		StructTemplate:            "STRUCT({fields})",
+		StructFieldTemplate:       "{value} AS {key}",
+		ColonLambdaRead:           false,
 		TypedDivision:             true,
 		SafeDivision:              false,
 		DPipeIsStringConcat:       true,
@@ -12023,6 +12051,12 @@ var parserTables = map[string]*ParserTables{
 		BareNameIsColumn: map[string]struct{}{
 			"IF": {},
 		},
+		FunctionsWithAliasedArgs: map[string]struct{}{
+			"STRUCT": {},
+		},
+		StructTemplate:            "STRUCT({fields})",
+		StructFieldTemplate:       "{value} AS {key}",
+		ColonLambdaRead:           false,
 		TypedDivision:             true,
 		SafeDivision:              false,
 		DPipeIsStringConcat:       true,
@@ -16176,6 +16210,14 @@ var parserTables = map[string]*ParserTables{
 		BareNameIsColumn: map[string]struct{}{
 			"IF": {},
 		},
+		FunctionsWithAliasedArgs: map[string]struct{}{
+			"STRUCT":      {},
+			"STRUCT_PACK": {},
+		},
+		StructTemplate:           "{{fields}}",
+		StructFieldTemplate:      "'{name}': {value}",
+		ColonLambdaRead:          true,
+		ColonLambdaWrite:         "LAMBDA {expressions} : {this}",
 		TypedDivision:            false,
 		SafeDivision:             false,
 		DPipeIsStringConcat:      true,
@@ -20575,6 +20617,12 @@ var parserTables = map[string]*ParserTables{
 			"IF":        {},
 			"TRANSFORM": {},
 		},
+		FunctionsWithAliasedArgs: map[string]struct{}{
+			"STRUCT": {},
+		},
+		StructTemplate:            "STRUCT({fields})",
+		StructFieldTemplate:       "{value} AS {key}",
+		ColonLambdaRead:           false,
 		TypedDivision:             false,
 		SafeDivision:              false,
 		DPipeIsStringConcat:       true,

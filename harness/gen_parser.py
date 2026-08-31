@@ -3806,6 +3806,90 @@ def bare_name_is_column(dialect: str) -> set[str]:
     return out
 
 
+def colon_lambda(dialect: str) -> tuple[bool, str]:
+    """Whether this dialect READS `LAMBDA a, b : body`, and how it WRITES one.
+
+    DuckDB spells a lambda twice over -- `x -> x + 1` and `LAMBDA x : x + 1` --
+    and records which was written on the node itself. Every other dialect drops
+    the distinction and writes the arrow, so the template comes back empty and
+    the port's ordinary lambda writer keeps the node.
+
+    The template is read off a rendered node rather than transcribed: two are
+    rendered, with one parameter and with two, and the second has to agree with
+    the template the first produced or nothing is recorded.
+    """
+    import sqlglot
+    from sqlglot import expressions as e
+
+    reads = False
+    try:
+        tree = sqlglot.parse_one(
+            "SELECT LIST_TRANSFORM(c, LAMBDA aaa : aaa)", dialect=dialect or None
+        )
+        only = (tree.args.get("expressions") or [None])[0]
+        inner = only.args.get("expression") if only is not None else None
+        reads = isinstance(inner, e.Lambda) and bool(inner.args.get("colon"))
+    except Exception:
+        reads = False
+
+    def render(count: int, colon: bool) -> str:
+        names = [e.to_identifier("aaa"), e.to_identifier("ccc")][:count]
+        node = e.Lambda(this=e.column("bbb"), expressions=names, colon=colon or None)
+        return node.sql(dialect=dialect or None)
+
+    one, two = render(1, True), render(2, True)
+    if one == render(1, False) and two == render(2, False):
+        return reads, ""
+    template = one.replace("aaa", "{expressions}").replace("bbb", "{this}")
+    if template.replace("{expressions}", "aaa, ccc").replace("{this}", "bbb") != two:
+        return reads, ""
+    return reads, template
+
+
+def struct_spelling(dialect: str) -> tuple[str, str]:
+    """How this dialect writes a struct and one of its named fields.
+
+    Two spellings that are not variations of each other: `STRUCT(v AS k)` puts
+    the value first and names it after, DuckDB's `{'k': v}` puts the key first
+    and quotes it as a string. Both templates are read off rendered nodes --
+    an empty struct against a one-field one for the wrapper, then a key that
+    needs quoting to settle whether the key is written as an identifier or as
+    its bare name inside quotes.
+    """
+    from sqlglot import expressions as e
+
+    def struct(keys: list[str]) -> str:
+        fields = [
+            e.PropertyEQ(this=e.to_identifier(k), expression=e.column(f"v{i}"))
+            for i, k in enumerate(keys)
+        ]
+        return e.Struct(expressions=fields).sql(dialect=dialect or None)
+
+    empty, one = struct([]), struct(["kkk"])
+    prefix = ""
+    for i, ch in enumerate(empty):
+        if i < len(one) and one[i] == ch:
+            prefix += ch
+        else:
+            break
+    suffix = empty[len(prefix) :]
+    if not one.startswith(prefix) or not one.endswith(suffix):
+        return "", ""
+    wrapper = f"{prefix}{{fields}}{suffix}"
+
+    field = one[len(prefix) : len(one) - len(suffix)]
+    field = field.replace("v0", "{value}")
+    odd = struct(["k-k"])
+    odd_field = odd[len(prefix) : len(odd) - len(suffix)]
+    quoted = e.to_identifier("k-k").sql(dialect=dialect or None)
+    for name, marker in (("kkk", "{name}"), ("kkk", "{key}")):
+        candidate = field.replace(name, marker)
+        want = "k-k" if marker == "{name}" else quoted
+        if candidate.replace(marker, want).replace("{value}", "v0") == odd_field:
+            return wrapper, candidate
+    return "", ""
+
+
 def bare_join_is_on_true(dialect: str) -> bool:
     """Whether `JOIN u` with no ON records `ON TRUE`.
 
@@ -4005,6 +4089,22 @@ def main() -> int:
         "\t// time: NEXT retreats without its `VALUE FOR` and CURDATE does not\n",
         "\t// retreat at all.\n",
         "\tBareNameIsColumn map[string]struct{}\n",
+        "\t// ColonLambdaRead says the dialect reads `LAMBDA a, b : body`, and\n",
+        "\t// ColonLambdaWrite is the template it writes one back with -- empty\n",
+        "\t// where the dialect has no spelling of its own and the ordinary\n",
+        "\t// arrow form is used instead.\n",
+        "\tColonLambdaRead  bool\n",
+        "\tColonLambdaWrite string\n",
+        "\t// FunctionsWithAliasedArgs are the calls whose arguments may name\n",
+        "\t// themselves even though the call itself is one the port builds a\n",
+        "\t// node for: `STRUCT(1 AS a)` is a Struct of one named field.\n",
+        "\tFunctionsWithAliasedArgs map[string]struct{}\n",
+        "\t// StructTemplate wraps a struct's fields and StructFieldTemplate\n",
+        "\t// writes one named field. `{key}` is the field name written as an\n",
+        "\t// identifier and `{name}` is the bare name, which the dialect that\n",
+        "\t// quotes its keys as strings uses instead.\n",
+        "\tStructTemplate      string\n",
+        "\tStructFieldTemplate string\n",
         "\t// TypedDivision and SafeDivision are recorded on every Div node; the\n",
         "\t// reference reads them off the dialect, so they are not always false.\n",
         "\tTypedDivision bool\n",
@@ -4816,6 +4916,14 @@ def main() -> int:
         out.append(strset("NoParenFunctionNames", P.NO_PAREN_FUNCTION_PARSERS))
         out.append(ttset("InvalidFuncNameTokens", P.INVALID_FUNC_NAME_TOKENS))
         out.append(strset("BareNameIsColumn", bare_name_is_column(name)))
+        out.append(strset("FunctionsWithAliasedArgs", P.FUNCTIONS_WITH_ALIASED_ARGS))
+        struct_wrap, struct_field = struct_spelling(name)
+        out.append(f"\t\tStructTemplate: {gostr(struct_wrap)},\n")
+        out.append(f"\t\tStructFieldTemplate: {gostr(struct_field)},\n")
+        reads_colon, colon_template = colon_lambda(name)
+        out.append(f"\t\tColonLambdaRead: {str(reads_colon).lower()},\n")
+        if colon_template:
+            out.append(f"\t\tColonLambdaWrite: {gostr(colon_template)},\n")
         d = Dialect.get_or_raise(name or None)
         for field, value in (
             ("TypedDivision", d.TYPED_DIVISION),
