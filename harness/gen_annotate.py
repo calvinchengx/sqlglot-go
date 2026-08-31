@@ -96,7 +96,7 @@ def classify_returns(sqlglot, exp, dialects):
             # behind an annotator answer. No answer keeps the two apart.
             if cls.__name__ == "Anonymous":
                 continue
-            answers = {}
+            answers, kinds = {}, {}
             for name, make in probes.items():
                 node = _build_call(cls, make)
                 if node is None:
@@ -107,10 +107,21 @@ def classify_returns(sqlglot, exp, dialects):
                     break
                 if typed.type is None:
                     break
+                # Both spellings are kept. The RENDERED one classifies the
+                # rule, because that is what the baseline is in; the CANONICAL
+                # one is what gets recorded, because a fixed type is a type
+                # and not a dialect's way of writing it. Recording the render
+                # put DOUBLE PRECISION and TEXT in the table where the
+                # reference has DOUBLE and VARCHAR, and the trees said so once
+                # anything reached those nodes.
                 answers[name] = typed.type.sql(d)
+                kind = getattr(typed.type.this, "value", None)
+                if not isinstance(kind, str):
+                    break
+                kinds[name] = kind
             if len(answers) != len(probes):
                 continue
-            rule = _rule_from(answers, baseline)
+            rule = _rule_from(answers, kinds, baseline)
             if rule and _survives(cls, rule, checks, baseline, annotate_types, d, exp):
                 per_class[cls.__name__] = rule
         out[dialect] = per_class
@@ -143,7 +154,7 @@ def _survives(cls, rule, checks, baseline, annotate_types, d, exp):
                 got = typed.type.sql(d) if typed.type is not None else None
             except Exception:  # noqa: BLE001
                 return False
-            want = rule["type"] if rule["kind"] == "fixed" else baseline["INT"]
+            want = rule["rendered"] if rule["kind"] == "fixed" else baseline["INT"]
             if rule["kind"] in ("fixed", "args") and got != want:
                 return False
 
@@ -160,7 +171,7 @@ def _survives(cls, rule, checks, baseline, annotate_types, d, exp):
         got = typed.type.sql(d)
         want = annotate_types(make(), dialect=d).type
         if rule["kind"] == "fixed":
-            if got != rule["type"]:
+            if got != rule["rendered"]:
                 return False
         elif rule["kind"] == "args":
             if want is None or got != want.sql(d):
@@ -201,11 +212,11 @@ def _build_call(cls, make):
         return None
 
 
-def _rule_from(answers, baseline):
+def _rule_from(answers, kinds, baseline):
     """Read the rule out of three answers, against this dialect's spellings."""
     values = set(answers.values())
     if len(values) == 1:
-        return {"kind": "fixed", "type": answers["INT"]}
+        return {"kind": "fixed", "type": kinds["INT"], "rendered": answers["INT"]}
     if all(answers[k] == baseline[k] for k in answers):
         return {"kind": "args"}
     if answers["INT"] == "BIGINT" and answers["DOUBLE"] == baseline["DOUBLE"]:
@@ -215,6 +226,39 @@ def _rule_from(answers, baseline):
     # Anything else moves with its arguments in a way these three probes did
     # not pin down. Recording it would be recording a guess.
     return None
+
+
+def unannotated_classes(dialects) -> dict[str, list[str]]:
+    """Classes the reference's annotator has no entry for at all.
+
+    Its answer for one of those is not a guess and not a gap: it looks the
+    class up in EXPRESSION_METADATA, finds nothing, and sets UNKNOWN. So does
+    the port, which until now had no answer for them -- and no answer means a
+    subscript over one cannot be shifted, because the shift is only allowed
+    over a base that is UNKNOWN or an ARRAY and the port could not tell which
+    it had.
+
+    Anonymous is left out for the reason it is left out of the probe above:
+    the port reads some calls anonymously that the reference reads as nodes of
+    their own, and an UNKNOWN there would hide a PARSE gap behind an
+    annotator's answer.
+    """
+    from sqlglot import exp
+    from sqlglot.dialects.dialect import Dialect
+
+    out = {}
+    for dialect in sorted(dialects):
+        metadata = Dialect.get_or_raise(dialect or None).EXPRESSION_METADATA
+        named = {c.__name__ for c in metadata if isinstance(c, type)}
+        out[dialect] = sorted(
+            name
+            for name, cls in vars(exp).items()
+            if isinstance(cls, type)
+            and issubclass(cls, exp.Expr)
+            and name not in named
+            and name != "Anonymous"
+        )
+    return out
 
 
 def main() -> int:
@@ -322,6 +366,18 @@ def main() -> int:
             go.append(
                 f'\t\t"{cls}": {{Kind: "{rule["kind"]}", Type: "{rule.get("type", "")}"}},\n'
             )
+        go.append("\t},\n")
+    go.append("}\n\n")
+    go.append("// unannotatedClasses are the classes the reference's annotator has no\n")
+    go.append("// entry for. It answers UNKNOWN for those -- an answer, not a gap --\n")
+    go.append("// and so does this. Anonymous is excluded: the port reads some calls\n")
+    go.append("// anonymously that the reference reads as nodes of their own, and an\n")
+    go.append("// UNKNOWN there would hide a parse gap behind an annotator's answer.\n")
+    go.append("var unannotatedClasses = map[string]map[string]bool{\n")
+    for d, names in unannotated_classes(OURS).items():
+        go.append(f'\t"{d}": {{\n')
+        for name in names:
+            go.append(f'\t\t"{name}": true,\n')
         go.append("\t},\n")
     go.append("}\n\n")
     go.append("// supportsNullType: where false, a NULL-typed node ends as UNKNOWN.\n")

@@ -27,6 +27,12 @@ func TestAnnotateShapes(t *testing.T) {
 		{"a function with a fixed return", "ASCII('A')", "", "INT"},
 		{"a function that returns its argument", "ABS(1.5)", "", "DOUBLE"},
 		{"a function over several arguments", "GREATEST(1, 2.5, 3)", "", "DOUBLE"},
+		// A class the reference's annotator has no entry for. UNKNOWN is its
+		// ANSWER there, not its silence -- it looks the class up, finds
+		// nothing, and says so -- and a subscript over one is shiftable
+		// because of it.
+		{"a class the annotator has no entry for", "REGEXP_EXTRACT_ALL('s', 'p')", "duckdb",
+			"UNKNOWN"},
 		{"a parameterised type never coerces", "CAST(1 AS DECIMAL(18, 2)) + 1", "",
 			"DECIMAL(18, 2)"},
 		{"and not from the other side either", "1 + CAST(1 AS DECIMAL(18, 2))", "",
@@ -68,6 +74,34 @@ func TestAnnotateShapes(t *testing.T) {
 // TestAnnotateDeclines covers the other half of the contract: where the port
 // cannot know a type it must say so, rather than answer UNKNOWN and have a
 // caller act on it.
+// TestAFixedReturnIsATypeNotASpelling pins what the generated table records.
+// The probe reads a dialect's RENDERED answer to classify the rule, and the
+// render is the dialect's own: DuckDB writes VARCHAR as TEXT and PostgreSQL
+// writes DOUBLE as DOUBLE PRECISION. Recording the render put those two
+// strings in the table where the reference has the types, which nothing
+// noticed until a statement finally reached one of those nodes.
+func TestAFixedReturnIsATypeNotASpelling(t *testing.T) {
+	for _, c := range []struct{ name, sql, dialect, want string }{
+		{"duckdb writes VARCHAR as TEXT", "SUBSTRING('abc', 1, 2)", "duckdb", "VARCHAR"},
+		{"postgres writes DOUBLE as DOUBLE PRECISION", "SQRT(2)", "postgres", "DOUBLE"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			tree, err := ParseOne(c.sql, c.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", c.sql, err)
+			}
+			got := Annotate(tree, c.dialect)
+			if got == nil {
+				t.Fatalf("Annotate(%q) had no answer", c.sql)
+			}
+			kind, _ := got.Args["this"].(DataTypeKind)
+			if string(kind) != c.want {
+				t.Errorf("Annotate(%q) recorded %q, want %q", c.sql, kind, c.want)
+			}
+		})
+	}
+}
+
 func TestAnnotateDeclines(t *testing.T) {
 	for _, c := range []struct{ name, sql, dialect string }{
 		{"an unrecognised call", "WHATEVER(1)", ""},

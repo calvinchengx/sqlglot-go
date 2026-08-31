@@ -126,6 +126,18 @@ func annotateNode(e *Expression, dialect string) *Expression {
 		}
 		return coerceTypes(left, right)
 	}
+	// A class the reference's annotator has no entry for at all. UNKNOWN is
+	// its answer there rather than its silence -- it looks the class up, finds
+	// nothing, and says so -- and the difference matters to a subscript, which
+	// may only be shifted over a base that is UNKNOWN or an ARRAY.
+	//
+	// Left until last so that every rule the port DOES have still decides
+	// first: a class here that the port also reads as a binary operator keeps
+	// the coercion, which is the answer the reference's own binary annotator
+	// would give it.
+	if unannotatedClasses[dialect][e.Class] {
+		return dataType("UNKNOWN")
+	}
 	return nil
 }
 

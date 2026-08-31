@@ -155,6 +155,7 @@ func (g *generator) spell(e *Expression) string {
 	if word, ok := g.tables.UnarySQL[e.Class]; ok {
 		if e.Class == "Not" {
 			g.requireCondition(e, "this")
+			return g.unaryOperand(e, word)
 		}
 		return g.unary(e, word)
 	}
@@ -175,10 +176,10 @@ func (g *generator) child(e *Expression, key string) string {
 	return g.node(c)
 }
 
-// childOperand renders one arg as the OPERAND of an operator, parenthesised
-// where this dialect's spelling would otherwise re-associate.
-func (g *generator) childOperand(e *Expression, key string) string {
-	c, _ := e.Args[key].(*Expression)
+// childOperand renders the `this` arg as the OPERAND of an operator,
+// parenthesised where this dialect's spelling would otherwise re-associate.
+func (g *generator) childOperand(e *Expression) string {
+	c, _ := e.Args["this"].(*Expression)
 	return g.operand(c)
 }
 
@@ -229,6 +230,17 @@ func (g *generator) operand(e *Expression) string {
 		return "(" + g.node(e) + ")"
 	}
 	return g.node(e)
+}
+
+// unaryOperand writes a prefix operator over an OPERAND -- the same rule the
+// binary writer uses, and the reference applies it to the same four parents:
+// a binary operator, a subscript, an IN and a NOT.
+func (g *generator) unaryOperand(e *Expression, word string) string {
+	this := g.childOperand(e)
+	if g.wouldFuse(word, this) {
+		return word + " " + this
+	}
+	return word + this
 }
 
 // unary writes a prefix operator. The spelling carries its own spacing --

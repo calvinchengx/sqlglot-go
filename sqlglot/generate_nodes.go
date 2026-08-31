@@ -1173,9 +1173,9 @@ func (g *generator) anonymous(e *Expression, upper bool) string {
 func (g *generator) writeIn(e *Expression) string {
 	// A subquery brings its own parentheses; a list is given them here.
 	if q, ok := e.Args["query"].(*Expression); ok && q != nil {
-		return g.childOperand(e, "this") + " IN " + g.node(q)
+		return g.childOperand(e) + " IN " + g.node(q)
 	}
-	return g.childOperand(e, "this") + " IN (" + g.list(e) + ")"
+	return g.childOperand(e) + " IN (" + g.list(e) + ")"
 }
 
 func (g *generator) writeBetween(e *Expression) string {
@@ -1358,7 +1358,10 @@ func (g *generator) writeBracket(e *Expression) string {
 	for _, item := range shifted {
 		parts = append(parts, g.node(item))
 	}
-	return g.child(e, "this") + "[" + strings.Join(parts, ", ") + "]"
+	// The base is written as an OPERAND: a DuckDB arrow extraction under a
+	// subscript takes parentheses, or `(c -> '$.a')[1]` comes back as
+	// `c -> '$.a'[1]`, which subscripts the path instead of the result.
+	return g.childOperand(e) + "[" + strings.Join(parts, ", ") + "]"
 }
 
 func (g *generator) writeSlice(e *Expression) string {

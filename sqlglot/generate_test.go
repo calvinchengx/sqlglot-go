@@ -283,6 +283,20 @@ func TestGenerateShapes(t *testing.T) {
 		// so this comes back written the dialect's one way.
 		{"struct field named with equals", "select struct(a = 1)", "databricks",
 			"SELECT STRUCT(1 AS a)"},
+		// A DuckDB arrow extraction is parenthesised wherever it is an
+		// OPERAND, and a subscript and a NOT are two of the four parents the
+		// reference counts as one. Without the parentheses the subscript
+		// lands on the path rather than on the result.
+		{"extraction under a subscript", "select json_extract(c, '$.a')[1]", "duckdb",
+			"SELECT (c -> '$.a')[1]"},
+		{"extraction under a NOT", "select not json_extract(c, '$.a')", "duckdb",
+			"SELECT NOT (c -> '$.a')"},
+		{"extraction under an IN", "select json_extract(c, '$.a') in (1)", "duckdb",
+			"SELECT (c -> '$.a') IN (1)"},
+		// Databricks spells the same tree as a colon path, which is not an
+		// operator and takes no parentheses anywhere.
+		{"colon path under a subscript", "select json_extract(c, '$.a')[1]", "databricks",
+			"SELECT c:a[1]"},
 		{"interval unit in string", "select interval '1 day'", "", "SELECT INTERVAL '1' DAY"},
 		{"interval number becomes string", "select interval 1 day", "", "SELECT INTERVAL '1' DAY"},
 		{"interval postgres folds the unit", "select interval '1' day", "postgres", "SELECT INTERVAL '1 DAY'"},
