@@ -982,7 +982,13 @@ func (p *parser) parsePrimary() (*Expression, error) {
 
 	switch c.Type {
 	case TokCASE:
-		return p.parseCase()
+		// `case.*` is a COLUMN qualified by a table called case. The
+		// reference has the rule in as many words -- a CASE sitting on a
+		// dot retreats and is not a CASE at all -- so the word falls
+		// through to the identifier branch below.
+		if n := p.next(); n == nil || n.Type != TokDOT {
+			return p.parseCase()
+		}
 	case TokNUMBER:
 		p.advance()
 		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", false}), nil
@@ -1169,7 +1175,8 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			}
 		}
 		empty := p.namesAFunctionCall() && p.atEmptyArgList()
-		if noParen && c.Type != TokCASE && !empty && (!hasSpec || !p.namesAFunctionCall()) {
+		if noParen && c.Type != TokCASE && !empty && (!hasSpec || !p.namesAFunctionCall()) &&
+			!p.namesItselfNotACall(c) {
 			return nil, p.unsupported("no-paren function " + strings.ToUpper(c.Text))
 		}
 		if n := p.next(); n != nil && n.Type == TokL_PAREN {
@@ -2188,6 +2195,53 @@ func (p *parser) parseIdentifier() (*Expression, error) {
 	return name, nil
 }
 
+// namesItselfNotACall reports whether a word that USUALLY opens a no-paren
+// function is, here, just a name.
+//
+// Two of the reference's own retreats, kept as two because they retreat for
+// different reasons:
+//
+//   - A QUOTED name never opens anything. `SELECT "case"` is a column; the
+//     reference keeps the token types that cannot name a call in a set of
+//     their own, and it holds exactly the quoted identifier and the string.
+//   - A name reached THROUGH a dot is the far half of a qualified name:
+//     `t.next` is a column, not a call.
+//
+// A third is decided by what FOLLOWS the word, and is written out at the
+// return below.
+func (p *parser) namesItselfNotACall(c *Token) bool {
+	if _, invalid := p.tables.InvalidFuncNameTokens[c.Type]; invalid {
+		return true
+	}
+	if p.index > 0 && p.tokens[p.index-1].Type == TokDOT {
+		return true
+	}
+	// A no-paren function takes its argument from what FOLLOWS it, and some
+	// of these parsers put the word back when nothing there can be one: `IF`
+	// wants a condition and `SELECT if` has none, so it is a column. Others
+	// never retreat -- Databricks reads a bare CURDATE as CURRENT_DATE, with
+	// no argument at all -- which is why the names are probed one at a time
+	// rather than treated alike.
+	if _, retreats := p.tables.BareNameIsColumn[strings.ToUpper(c.Text)]; !retreats {
+		return false
+	}
+	return !p.beginsAnExpression(p.next())
+}
+
+// beginsAnExpression reports whether a token could START one. It is a coarse
+// test on purpose -- its only caller uses it to decide that a word is a NAME
+// because nothing follows it that could be an operand.
+func (p *parser) beginsAnExpression(t *Token) bool {
+	if t == nil {
+		return false
+	}
+	if _, reserved := p.tables.ReservedTokens[t.Type]; reserved {
+		return t.Type == TokL_PAREN || t.Type == TokNOT || t.Type == TokSTAR ||
+			t.Type == TokDASH || t.Type == TokPLUS || t.Type == TokTILDE
+	}
+	return t.Type != TokCOMMA && t.Type != TokSEMICOLON
+}
+
 // atIdentifier reports whether the current token can stand in for a name --
 // a plain word, a quoted identifier, or one of the many keywords the reference
 // still allows as an identifier.
@@ -2203,6 +2257,16 @@ func (p *parser) atIdentifier() bool {
 	// name, even though it looks like a bare word.
 	if _, isFunc := p.tables.NoParenFunctions[c.Type]; isFunc {
 		return false
+	}
+	// A bare VALUES -- one with no argument list after it -- is a name where
+	// the dialect always writes the clause WITH a list, and the start of a
+	// VALUES clause where it does not. The reference reads the flag off the
+	// dialect and so does this, because the same statement means different
+	// things: `SELECT values` is a column in DuckDB and nothing in Spark.
+	if c.Type == TokVALUES && p.tables.ValuesFollowedByParen {
+		if n := p.next(); n == nil || n.Type != TokL_PAREN {
+			return true
+		}
 	}
 	_, ok := p.tables.IDVarTokens[c.Type]
 	return ok

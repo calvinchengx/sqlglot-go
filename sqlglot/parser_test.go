@@ -458,6 +458,63 @@ func TestNoParenFunctions(t *testing.T) {
 	}
 }
 
+// TestAWordThatOpensNothingIsAName covers the three ways a word that usually
+// begins a no-paren function turns out to be an ordinary name instead.
+func TestAWordThatOpensNothingIsAName(t *testing.T) {
+	for _, c := range []struct{ name, sql, dialect, want string }{
+		{"quoted", `SELECT "case"`, "", "Select Column Identifier"},
+		{"after a dot", "SELECT t.next", "", "Select Column Identifier Identifier"},
+		{"before a dot", "SELECT case.a", "", "Select Column Identifier Identifier"},
+		{"a star through it", "SELECT case.*", "", "Select Column Star Identifier"},
+		{"nothing follows", "SELECT if", "", "Select Column Identifier"},
+		{"a comma follows", "SELECT if, a", "", "Select Column Identifier Column Identifier"},
+		{"VALUES with no list", "SELECT values", "duckdb", "Select Column Identifier"},
+		{"VALUES qualifying", "SELECT values.c", "duckdb", "Select Column Identifier Identifier"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			if got := classes(parse(t, c.sql, c.dialect)); got != c.want {
+				t.Errorf("%s parsed as %s, want %s", c.sql, got, c.want)
+			}
+		})
+	}
+}
+
+// TestAWordThatDoesOpenSomething is the other half: the same words, in the
+// positions where they still begin what they name.
+func TestAWordThatDoesOpenSomething(t *testing.T) {
+	for _, c := range []struct{ name, sql, dialect, want string }{
+		// A no-paren parser that never retreats: the reference reads a bare
+		// CURDATE as CURRENT_DATE, taking no argument at all. This port has
+		// no parser for it and refuses -- what matters here is that it does
+		// not quietly become a column instead.
+		{"a name that never retreats", "SELECT curdate", "databricks", ""},
+		// IF retreats only when nothing can be its condition. An operand
+		// after it -- even one opening with reserved punctuation -- is one,
+		// so the word still needs the parser this port does not have.
+		{"IF over a parenthesis", "SELECT if (a) THEN 1 END", "", ""},
+		{"IF over a negation", "SELECT if -a THEN 1 END", "", ""},
+		{"IF over a name", "SELECT if a THEN 1 END", "", ""},
+		// VALUES followed by a list is the clause, not a name.
+		{"VALUES with a list", "SELECT * FROM (VALUES (1))", "duckdb", ""},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			tree, err := ParseOne(c.sql, c.dialect)
+			if c.want == "" {
+				if err == nil && classes(tree) == "Select Column Identifier" {
+					t.Errorf("%s parsed as a bare column", c.sql)
+				}
+				return
+			}
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", c.sql, err)
+			}
+			if got := classes(tree); got != c.want {
+				t.Errorf("%s parsed as %s, want %s", c.sql, got, c.want)
+			}
+		})
+	}
+}
+
 func TestTopIsARowLimit(t *testing.T) {
 	tree := parse(t, "SELECT TOP 10 a FROM t", "tsql")
 	limit, _ := tree.Args["limit"].(*Expression)

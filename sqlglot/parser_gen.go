@@ -76,6 +76,20 @@ type ParserTables struct {
 	// list -- CURDATE in Databricks, CASE and IF everywhere -- and so are
 	// not available as a bare column name.
 	NoParenFunctionNames map[string]struct{}
+	// InvalidFuncNameTokens are the token types that never name a
+	// call, however the name reads: a QUOTED identifier or a string
+	// is a name and nothing else, so a quoted CASE is a column even
+	// though the bare word opens one.
+	InvalidFuncNameTokens map[TokenType]struct{}
+	// ValuesFollowedByParen says a bare VALUES -- one with no argument
+	// list after it -- is a column name in this dialect rather than
+	// the start of a VALUES clause.
+	ValuesFollowedByParen bool
+	// BareNameIsColumn holds the no-paren function names that read as
+	// a COLUMN when nothing usable follows them. Probed one name at a
+	// time: NEXT retreats without its `VALUE FOR` and CURDATE does not
+	// retreat at all.
+	BareNameIsColumn map[string]struct{}
 	// TypedDivision and SafeDivision are recorded on every Div node; the
 	// reference reads them off the dialect, so they are not always false.
 	TypedDivision bool
@@ -3974,11 +3988,19 @@ var parserTables = map[string]*ParserTables{
 			"CONNECT_BY_ROOT": {},
 			"IF":              {},
 		},
+		InvalidFuncNameTokens: map[TokenType]struct{}{
+			TokSTRING:     {},
+			TokIDENTIFIER: {},
+		},
+		BareNameIsColumn: map[string]struct{}{
+			"IF": {},
+		},
 		TypedDivision:             false,
 		SafeDivision:              false,
 		DPipeIsStringConcat:       true,
 		StrictStringConcat:        false,
 		JoinsHaveEqualPrecedence:  false,
+		ValuesFollowedByParen:     true,
 		BareJoinIsOnTrue:          false,
 		LimitAllMeansNoLimit:      false,
 		JSONArrowOnlyJSONTypes:    false,
@@ -7958,11 +7980,19 @@ var parserTables = map[string]*ParserTables{
 			"IF":              {},
 			"NEXT":            {},
 		},
+		InvalidFuncNameTokens: map[TokenType]struct{}{
+			TokSTRING:     {},
+			TokIDENTIFIER: {},
+		},
+		BareNameIsColumn: map[string]struct{}{
+			"NEXT": {},
+		},
 		TypedDivision:             true,
 		SafeDivision:              false,
 		DPipeIsStringConcat:       true,
 		StrictStringConcat:        false,
 		JoinsHaveEqualPrecedence:  false,
+		ValuesFollowedByParen:     true,
 		BareJoinIsOnTrue:          false,
 		LimitAllMeansNoLimit:      false,
 		JSONArrowOnlyJSONTypes:    false,
@@ -11986,11 +12016,19 @@ var parserTables = map[string]*ParserTables{
 			"IF":              {},
 			"VARIADIC":        {},
 		},
+		InvalidFuncNameTokens: map[TokenType]struct{}{
+			TokSTRING:     {},
+			TokIDENTIFIER: {},
+		},
+		BareNameIsColumn: map[string]struct{}{
+			"IF": {},
+		},
 		TypedDivision:             true,
 		SafeDivision:              false,
 		DPipeIsStringConcat:       true,
 		StrictStringConcat:        false,
 		JoinsHaveEqualPrecedence:  false,
+		ValuesFollowedByParen:     true,
 		BareJoinIsOnTrue:          false,
 		LimitAllMeansNoLimit:      true,
 		JSONArrowOnlyJSONTypes:    true,
@@ -16131,11 +16169,19 @@ var parserTables = map[string]*ParserTables{
 			"IF":              {},
 			"MAP":             {},
 		},
+		InvalidFuncNameTokens: map[TokenType]struct{}{
+			TokSTRING:     {},
+			TokIDENTIFIER: {},
+		},
+		BareNameIsColumn: map[string]struct{}{
+			"IF": {},
+		},
 		TypedDivision:            false,
 		SafeDivision:             false,
 		DPipeIsStringConcat:      true,
 		StrictStringConcat:       false,
 		JoinsHaveEqualPrecedence: false,
+		ValuesFollowedByParen:    true,
 		BareJoinIsOnTrue:         false,
 		DefaultTypeParams: map[string][]string{
 			"DECIMAL": {"18", "3"},
@@ -20521,11 +20567,20 @@ var parserTables = map[string]*ParserTables{
 			"IF":              {},
 			"TRANSFORM":       {},
 		},
+		InvalidFuncNameTokens: map[TokenType]struct{}{
+			TokSTRING:     {},
+			TokIDENTIFIER: {},
+		},
+		BareNameIsColumn: map[string]struct{}{
+			"IF":        {},
+			"TRANSFORM": {},
+		},
 		TypedDivision:             false,
 		SafeDivision:              false,
 		DPipeIsStringConcat:       true,
 		StrictStringConcat:        false,
 		JoinsHaveEqualPrecedence:  true,
+		ValuesFollowedByParen:     false,
 		BareJoinIsOnTrue:          true,
 		LimitAllMeansNoLimit:      true,
 		JSONArrowOnlyJSONTypes:    false,

@@ -3777,6 +3777,35 @@ def funcmap(name: str, funcs) -> str:
     return f"\t\t{name}: map[string]FuncSpec{{\n{''.join(lines)}\t\t}},\n"
 
 
+def bare_name_is_column(dialect: str) -> set[str]:
+    """No-paren function names that a BARE occurrence reads as a column.
+
+    Some of these parsers retreat when nothing usable follows -- `SELECT next`
+    is a column called next, because NEXT wanted `VALUE FOR` and did not find
+    it. Others do not: Databricks reads a bare CURDATE as CURRENT_DATE, taking
+    no argument at all. Nothing in the parser says which is which, so each name
+    is asked by parsing one.
+    """
+    import sqlglot
+    from sqlglot import expressions as e
+    from sqlglot.dialects.dialect import Dialect
+
+    parser = Dialect.get_or_raise(dialect or None).parser_class
+    out: set[str] = set()
+    for name in parser.NO_PAREN_FUNCTION_PARSERS:
+        try:
+            tree = sqlglot.parse_one(f"SELECT {name}", dialect=dialect or None)
+        except Exception:
+            continue
+        projections = tree.args.get("expressions") or []
+        if len(projections) != 1:
+            continue
+        only = projections[0]
+        if isinstance(only, e.Column) and only.name.upper() == name.upper():
+            out.add(name)
+    return out
+
+
 def bare_join_is_on_true(dialect: str) -> bool:
     """Whether `JOIN u` with no ON records `ON TRUE`.
 
@@ -3962,6 +3991,20 @@ def main() -> int:
         "\t// list -- CURDATE in Databricks, CASE and IF everywhere -- and so are\n",
         "\t// not available as a bare column name.\n",
         "\tNoParenFunctionNames map[string]struct{}\n",
+        "\t// InvalidFuncNameTokens are the token types that never name a\n",
+        "\t// call, however the name reads: a QUOTED identifier or a string\n",
+        "\t// is a name and nothing else, so a quoted CASE is a column even\n",
+        "\t// though the bare word opens one.\n",
+        "\tInvalidFuncNameTokens map[TokenType]struct{}\n",
+        "\t// ValuesFollowedByParen says a bare VALUES -- one with no argument\n",
+        "\t// list after it -- is a column name in this dialect rather than\n",
+        "\t// the start of a VALUES clause.\n",
+        "\tValuesFollowedByParen bool\n",
+        "\t// BareNameIsColumn holds the no-paren function names that read as\n",
+        "\t// a COLUMN when nothing usable follows them. Probed one name at a\n",
+        "\t// time: NEXT retreats without its `VALUE FOR` and CURDATE does not\n",
+        "\t// retreat at all.\n",
+        "\tBareNameIsColumn map[string]struct{}\n",
         "\t// TypedDivision and SafeDivision are recorded on every Div node; the\n",
         "\t// reference reads them off the dialect, so they are not always false.\n",
         "\tTypedDivision bool\n",
@@ -4771,6 +4814,8 @@ def main() -> int:
         out.append(ttset("StatementTokens", set(P.STATEMENT_PARSERS) | set(tk.COMMANDS)))
         out.append(ttset("FuncTokens", P.FUNC_TOKENS))
         out.append(strset("NoParenFunctionNames", P.NO_PAREN_FUNCTION_PARSERS))
+        out.append(ttset("InvalidFuncNameTokens", P.INVALID_FUNC_NAME_TOKENS))
+        out.append(strset("BareNameIsColumn", bare_name_is_column(name)))
         d = Dialect.get_or_raise(name or None)
         for field, value in (
             ("TypedDivision", d.TYPED_DIVISION),
@@ -4778,6 +4823,7 @@ def main() -> int:
             ("DPipeIsStringConcat", d.DPIPE_IS_STRING_CONCAT),
             ("StrictStringConcat", d.STRICT_STRING_CONCAT),
             ("JoinsHaveEqualPrecedence", P.JOINS_HAVE_EQUAL_PRECEDENCE),
+            ("ValuesFollowedByParen", P.VALUES_FOLLOWED_BY_PAREN),
         ):
             out.append(f"\t\t{field}: {str(bool(value)).lower()},\n")
         out.append(
