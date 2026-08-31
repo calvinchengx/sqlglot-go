@@ -123,6 +123,13 @@ type ParserTables struct {
 	// KEY in quotes -- Databricks writes `'a.b'=15` for what the others
 	// write `a.b=15`. Read off a rendered node.
 	PropertyNameQuoted bool
+	// StringArgWraps are the positions where a builder REWRITES a
+	// string argument rather than carrying it: T-SQL's DATETRUNC casts
+	// one to DATETIME2, PostgreSQL's GENERATE_SERIES turns a step of
+	// `'1 day'` into an INTERVAL. The port does the rewrite itself
+	// before building, so a string that only moves in this way is not
+	// evidence of a builder nobody can describe.
+	StringArgWraps map[string]map[int]string
 	// TypedDivision and SafeDivision are recorded on every Div node; the
 	// reference reads them off the dialect, so they are not always false.
 	TypedDivision bool
@@ -6145,6 +6152,9 @@ var parserTables = map[string]*ParserTables{
 		TableFunctions: map[string]struct{}{
 			"UNNEST": {},
 		},
+		StringArgWraps: map[string]map[int]string{
+			"DATETRUNC": {1: "cast:DATETIME2"},
+		},
 		UnitAliases: map[string]map[string]string{
 			"DATEADD":      {"D": "DAY", "DAY": "DAY", "DD": "DAY", "M": "MONTH", "MM": "MONTH", "MONTH": "MONTH", "Q": "QUARTER", "QQ": "QUARTER", "QUARTER": "QUARTER", "WEEK": "WEEK", "WK": "WEEK", "WW": "WEEK", "YEAR": "YEAR", "YY": "YEAR", "YYYY": "YEAR"},
 			"DATEDIFF":     {"D": "DAY", "DAY": "DAY", "DD": "DAY", "M": "MONTH", "MM": "MONTH", "MONTH": "MONTH", "Q": "QUARTER", "QQ": "QUARTER", "QUARTER": "QUARTER", "WEEK": "WEEK", "WK": "WEEK", "WW": "WEEK", "YEAR": "YEAR", "YY": "YEAR", "YYYY": "YEAR"},
@@ -6327,6 +6337,7 @@ var parserTables = map[string]*ParserTables{
 			"DATETIME_DIFF":                   {"DatetimeDiff", []FuncArg{{"this", 0, false, nil, "", nil, "", nil}, {"expression", 1, false, nil, "", nil, "", nil}, {"unit", 2, false, nil, "Var", []FuncConst{}, "", nil}, {"date_part_boundary", 3, false, nil, "", nil, "", nil}}},
 			"DATETIME_SUB":                    {"DatetimeSub", []FuncArg{{"this", 0, false, nil, "", nil, "", nil}, {"expression", 1, false, nil, "", nil, "", nil}, {"unit", 2, false, nil, "Var", []FuncConst{}, "", nil}}},
 			"DATETIME_TRUNC":                  {"DatetimeTrunc", []FuncArg{{"this", 0, false, nil, "", nil, "", nil}, {"unit", 1, false, nil, "Var", []FuncConst{}, "", nil}, {"zone", 2, false, nil, "", nil, "", nil}}},
+			"DATETRUNC":                       {"TimestampTrunc", []FuncArg{{"this", 1, false, nil, "", nil, "", nil}, {"unit", 0, false, nil, "Var", []FuncConst{}, "", nil}}},
 			"DATE_ADD":                        {"DateAdd", []FuncArg{{"this", 0, false, nil, "", nil, "", nil}, {"expression", 1, false, nil, "", nil, "", nil}, {"unit", 2, false, nil, "Var", []FuncConst{}, "", nil}}},
 			"DATE_BIN":                        {"DateBin", []FuncArg{{"this", 0, false, nil, "", nil, "", nil}, {"expression", 1, false, nil, "", nil, "", nil}, {"unit", 2, false, nil, "Var", []FuncConst{}, "", nil}, {"zone", 3, false, nil, "", nil, "", nil}, {"origin", 4, false, nil, "", nil, "", nil}}},
 			"DATE_DIFF":                       {"DateDiff", []FuncArg{{"this", 0, false, nil, "", nil, "", nil}, {"expression", 1, false, nil, "", nil, "", nil}, {"unit", 2, false, nil, "Var", []FuncConst{}, "", nil}, {"zone", 3, false, nil, "", nil, "", nil}, {"big_int", 4, false, nil, "", nil, "", nil}, {"date_part_boundary", 5, false, nil, "", nil, "", nil}}},
@@ -6810,10 +6821,6 @@ var parserTables = map[string]*ParserTables{
 			"DATEDIFF_BIG": {
 				0: {"DateDiff", []FuncArg{{"this", -1, false, nil, "TimeStrToTime", []FuncConst{{"this", nil}}, "", nil}, {"expression", -1, false, nil, "TimeStrToTime", []FuncConst{{"this", nil}}, "", nil}, {"unit", -1, false, nil, "", nil, "", nil}, {"big_int", -1, false, true, "", nil, "", nil}}},
 				1: {"DateDiff", []FuncArg{{"this", -1, false, nil, "TimeStrToTime", []FuncConst{{"this", nil}}, "", nil}, {"expression", -1, false, nil, "TimeStrToTime", []FuncConst{{"this", nil}}, "", nil}, {"unit", 0, false, nil, "Var", []FuncConst{}, "", nil}, {"big_int", -1, false, true, "", nil, "", nil}}},
-			},
-			"DATETRUNC": {
-				0: {"TimestampTrunc", []FuncArg{{"this", -1, false, nil, "", nil, "", nil}, {"unit", -1, false, nil, "", nil, "", nil}}},
-				1: {"TimestampTrunc", []FuncArg{{"this", -1, false, nil, "", nil, "", nil}, {"unit", 0, false, nil, "Var", []FuncConst{}, "", nil}}},
 			},
 			"EOMONTH": {
 				0:  {"LastDay", []FuncArg{{"this", -1, false, nil, "TsOrDsToDate", []FuncConst{{"this", nil}}, "", nil}}},
@@ -7756,7 +7763,7 @@ var parserTables = map[string]*ParserTables{
 			"TimestampFromParts":         {{"DATETIMEFROMPARTS", []string{"year", "month", "day", "hour", "min", "sec", "milli"}, []FuncConst{}, false}},
 			"TimestampLtzFromParts":      {{"TIMESTAMP_LTZ_FROM_PARTS", []string{}, []FuncConst{{"year", nil}, {"month", nil}, {"day", nil}, {"hour", nil}, {"min", nil}, {"sec", nil}, {"nano", nil}}, false}, {"TIMESTAMP_LTZ_FROM_PARTS", []string{"year"}, []FuncConst{{"month", nil}, {"day", nil}, {"hour", nil}, {"min", nil}, {"sec", nil}, {"nano", nil}}, false}, {"TIMESTAMP_LTZ_FROM_PARTS", []string{"year", "month"}, []FuncConst{{"day", nil}, {"hour", nil}, {"min", nil}, {"sec", nil}, {"nano", nil}}, false}, {"TIMESTAMP_LTZ_FROM_PARTS", []string{"year", "month", "day"}, []FuncConst{{"hour", nil}, {"min", nil}, {"sec", nil}, {"nano", nil}}, false}, {"TIMESTAMP_LTZ_FROM_PARTS", []string{"year", "month", "day", "hour"}, []FuncConst{{"min", nil}, {"sec", nil}, {"nano", nil}}, false}, {"TIMESTAMP_LTZ_FROM_PARTS", []string{"year", "month", "day", "hour", "min"}, []FuncConst{{"sec", nil}, {"nano", nil}}, false}, {"TIMESTAMP_LTZ_FROM_PARTS", []string{"year", "month", "day", "hour", "min", "sec"}, []FuncConst{{"nano", nil}}, false}, {"TIMESTAMP_LTZ_FROM_PARTS", []string{"year", "month", "day", "hour", "min", "sec", "nano"}, []FuncConst{}, false}},
 			"TimestampSub":               {{"TIMESTAMP_SUB", []string{}, []FuncConst{{"this", nil}, {"expression", nil}, {"unit", nil}}, false}, {"TIMESTAMP_SUB", []string{"this"}, []FuncConst{{"expression", nil}, {"unit", nil}}, false}, {"TIMESTAMP_SUB", []string{"this", "expression"}, []FuncConst{{"unit", nil}}, false}},
-			"TimestampTrunc":             {{"DATETRUNC", []string{}, []FuncConst{{"this", nil}, {"unit", nil}}, false}},
+			"TimestampTrunc":             {{"DATETRUNC", []string{}, []FuncConst{{"this", nil}, {"unit", nil}}, false}, {"DATETRUNC", []string{"this"}, []FuncConst{{"unit", nil}}, false}},
 			"TimestampTzFromParts":       {{"TIMESTAMP_TZ_FROM_PARTS", []string{}, []FuncConst{{"year", nil}, {"month", nil}, {"day", nil}, {"hour", nil}, {"min", nil}, {"sec", nil}, {"nano", nil}, {"zone", nil}}, false}, {"TIMESTAMP_TZ_FROM_PARTS", []string{"year"}, []FuncConst{{"month", nil}, {"day", nil}, {"hour", nil}, {"min", nil}, {"sec", nil}, {"nano", nil}, {"zone", nil}}, false}, {"TIMESTAMP_TZ_FROM_PARTS", []string{"year", "month"}, []FuncConst{{"day", nil}, {"hour", nil}, {"min", nil}, {"sec", nil}, {"nano", nil}, {"zone", nil}}, false}, {"TIMESTAMP_TZ_FROM_PARTS", []string{"year", "month", "day"}, []FuncConst{{"hour", nil}, {"min", nil}, {"sec", nil}, {"nano", nil}, {"zone", nil}}, false}, {"TIMESTAMP_TZ_FROM_PARTS", []string{"year", "month", "day", "hour"}, []FuncConst{{"min", nil}, {"sec", nil}, {"nano", nil}, {"zone", nil}}, false}, {"TIMESTAMP_TZ_FROM_PARTS", []string{"year", "month", "day", "hour", "min"}, []FuncConst{{"sec", nil}, {"nano", nil}, {"zone", nil}}, false}, {"TIMESTAMP_TZ_FROM_PARTS", []string{"year", "month", "day", "hour", "min", "sec"}, []FuncConst{{"nano", nil}, {"zone", nil}}, false}, {"TIMESTAMP_TZ_FROM_PARTS", []string{"year", "month", "day", "hour", "min", "sec", "nano"}, []FuncConst{{"zone", nil}}, false}, {"TIMESTAMP_TZ_FROM_PARTS", []string{"year", "month", "day", "hour", "min", "sec", "nano", "zone"}, []FuncConst{}, false}},
 			"ToBase32":                   {{"TO_BASE32", []string{}, []FuncConst{{"this", nil}}, false}, {"TO_BASE32", []string{"this"}, []FuncConst{}, false}},
 			"ToBase64":                   {{"TO_BASE64", []string{}, []FuncConst{{"this", nil}}, false}, {"TO_BASE64", []string{"this"}, []FuncConst{}, false}},
@@ -10345,6 +10352,9 @@ var parserTables = map[string]*ParserTables{
 		TableFunctions: map[string]struct{}{
 			"UNNEST": {},
 		},
+		StringArgWraps: map[string]map[int]string{
+			"GENERATE_SERIES": {2: "interval"},
+		},
 		Functions: map[string]FuncSpec{
 			"ABS":                             {"Abs", []FuncArg{{"this", 0, false, nil, "", nil, "", nil}}},
 			"ACOS":                            {"Acos", []FuncArg{{"this", 0, false, nil, "", nil, "", nil}}},
@@ -10585,6 +10595,7 @@ var parserTables = map[string]*ParserTables{
 			"GENERATE_DOUBLE":                 {"GenerateDouble", []FuncArg{{"this", 0, false, nil, "", nil, "", nil}, {"expression", 1, false, nil, "", nil, "", nil}, {"params_struct", 2, false, nil, "", nil, "", nil}}},
 			"GENERATE_EMBEDDING":              {"GenerateEmbedding", []FuncArg{{"this", 0, false, nil, "", nil, "", nil}, {"expression", 1, false, nil, "", nil, "", nil}, {"params_struct", 2, false, nil, "", nil, "", nil}, {"is_text", 3, false, nil, "", nil, "", nil}}},
 			"GENERATE_INT":                    {"GenerateInt", []FuncArg{{"this", 0, false, nil, "", nil, "", nil}, {"expression", 1, false, nil, "", nil, "", nil}, {"params_struct", 2, false, nil, "", nil, "", nil}}},
+			"GENERATE_SERIES":                 {"ExplodingGenerateSeries", []FuncArg{{"start", 0, false, nil, "", nil, "", nil}, {"end", 1, false, nil, "", nil, "", nil}, {"step", 2, false, nil, "", nil, "", nil}, {"is_end_exclusive", 3, false, nil, "", nil, "", nil}}},
 			"GENERATE_TABLE":                  {"GenerateTable", []FuncArg{{"this", 0, false, nil, "", nil, "", nil}, {"expression", 1, false, nil, "", nil, "", nil}, {"params_struct", 2, false, nil, "", nil, "", nil}}},
 			"GENERATE_TEXT":                   {"GenerateText", []FuncArg{{"this", 0, false, nil, "", nil, "", nil}, {"expression", 1, false, nil, "", nil, "", nil}, {"params_struct", 2, false, nil, "", nil, "", nil}}},
 			"GENERATE_TIMESTAMP_ARRAY":        {"GenerateTimestampArray", []FuncArg{{"start", 0, false, nil, "", nil, "", nil}, {"end", 1, false, nil, "", nil, "", nil}, {"step", 2, false, nil, "", nil, "", nil}}},
@@ -10998,11 +11009,6 @@ var parserTables = map[string]*ParserTables{
 				10: {"GenerateDateArray", []FuncArg{{"start", 0, false, nil, "", nil, "", nil}, {"end", 1, false, nil, "", nil, "", nil}, {"step", 2, false, nil, "", nil, "", nil}}},
 				11: {"GenerateDateArray", []FuncArg{{"start", 0, false, nil, "", nil, "", nil}, {"end", 1, false, nil, "", nil, "", nil}, {"step", 2, false, nil, "", nil, "", nil}}},
 				12: {"GenerateDateArray", []FuncArg{{"start", 0, false, nil, "", nil, "", nil}, {"end", 1, false, nil, "", nil, "", nil}, {"step", 2, false, nil, "", nil, "", nil}}},
-			},
-			"GENERATE_SERIES": {
-				0: {"ExplodingGenerateSeries", []FuncArg{}},
-				1: {"ExplodingGenerateSeries", []FuncArg{{"start", 0, false, nil, "", nil, "", nil}}},
-				2: {"ExplodingGenerateSeries", []FuncArg{{"start", 0, false, nil, "", nil, "", nil}, {"end", 1, false, nil, "", nil, "", nil}}},
 			},
 			"JSON_EXTRACT": {
 				0: {"JSONExtract", []FuncArg{{"this", -1, false, nil, "", nil, "", nil}, {"expression", -1, false, nil, "", nil, "", nil}}},
@@ -11729,7 +11735,7 @@ var parserTables = map[string]*ParserTables{
 			"Exists":                     {{"EXISTS", []string{}, []FuncConst{{"this", nil}, {"expression", nil}}, false}, {"EXISTS", []string{"this"}, []FuncConst{{"expression", nil}}, false}},
 			"Exp":                        {{"EXP", []string{}, []FuncConst{{"this", nil}}, false}, {"EXP", []string{"this"}, []FuncConst{}, false}},
 			"Explode":                    {{"UNNEST", []string{}, []FuncConst{{"this", nil}, {"expressions", nil}}, false}, {"UNNEST", []string{"this"}, []FuncConst{{"expressions", nil}}, false}, {"UNNEST", []string{"this", "expressions"}, []FuncConst{}, false}},
-			"ExplodingGenerateSeries":    {{"GENERATE_SERIES", []string{}, []FuncConst{{"start", nil}, {"end", nil}}, false}, {"GENERATE_SERIES", []string{}, []FuncConst{{"end", nil}, {"start", nil}}, false}, {"GENERATE_SERIES", []string{"start"}, []FuncConst{{"end", nil}}, false}, {"GENERATE_SERIES", []string{"start", "end"}, []FuncConst{}, false}},
+			"ExplodingGenerateSeries":    {{"GENERATE_SERIES", []string{}, []FuncConst{{"start", nil}, {"end", nil}, {"step", nil}, {"is_end_exclusive", nil}}, false}, {"GENERATE_SERIES", []string{"start"}, []FuncConst{{"end", nil}, {"step", nil}, {"is_end_exclusive", nil}}, false}, {"GENERATE_SERIES", []string{"start", "end"}, []FuncConst{{"step", nil}, {"is_end_exclusive", nil}}, false}, {"GENERATE_SERIES", []string{"start", "end", "step"}, []FuncConst{{"is_end_exclusive", nil}}, false}, {"GENERATE_SERIES", []string{"start", "end", "step", "is_end_exclusive"}, []FuncConst{}, false}},
 			"Factorial":                  {{"FACTORIAL", []string{}, []FuncConst{{"this", nil}}, false}, {"FACTORIAL", []string{"this"}, []FuncConst{}, false}},
 			"FarmFingerprint":            {{"FARM_FINGERPRINT", []string{}, []FuncConst{{"expressions", nil}}, false}, {"FARM_FINGERPRINT", []string{"expressions"}, []FuncConst{}, false}},
 			"FeaturesAtTime":             {{"FEATURES_AT_TIME", []string{}, []FuncConst{{"this", nil}, {"time", nil}, {"num_rows", nil}, {"ignore_feature_nulls", nil}}, false}, {"FEATURES_AT_TIME", []string{"this"}, []FuncConst{{"time", nil}, {"num_rows", nil}, {"ignore_feature_nulls", nil}}, false}, {"FEATURES_AT_TIME", []string{"this", "time"}, []FuncConst{{"num_rows", nil}, {"ignore_feature_nulls", nil}}, false}, {"FEATURES_AT_TIME", []string{"this", "time", "num_rows"}, []FuncConst{{"ignore_feature_nulls", nil}}, false}, {"FEATURES_AT_TIME", []string{"this", "time", "num_rows", "ignore_feature_nulls"}, []FuncConst{}, false}},

@@ -314,6 +314,43 @@ def _json_fold_rules(builder, exp, dialect):
     return rules
 
 
+def string_wrap(exp, spec, subst, index, literal, other, same, rebuild, call_builder):
+    """How a builder REWRITES a string argument, if that is all it did.
+
+    Two builders in the catalogue take a string and put something else in the
+    slot: T-SQL's DATETRUNC casts `'foo'` to DATETIME2, and PostgreSQL's
+    GENERATE_SERIES turns a step of `'1 day'` into `INTERVAL '1' DAY`. Probed
+    with a placeholder column neither shows, and probed with a string both look
+    like builders nobody can describe -- so both names were refused at every
+    arity.
+
+    The candidates are not guessed at: the CAST target is read out of the node
+    the builder actually produced, and the interval is the reference's own
+    `to_interval`. A rewrite that neither explains is still a builder this
+    cannot describe, and the name stays refused.
+    """
+    candidates = []
+    for node in other.walk():
+        if isinstance(node, exp.Cast) and node.this == literal:
+            # The TYPE, not a dialect's way of writing it: T-SQL's DATETIME2
+            # renders as TIMESTAMP in the neutral dialect, and recording the
+            # render would have the port build a cast to the wrong type.
+            kind = getattr(node.to.this, "value", None)
+            if isinstance(kind, str):
+                candidates.append(("cast:" + kind, exp.cast(literal.copy(), node.to.copy())))
+    if any(isinstance(node, exp.Interval) for node in other.walk()):
+        try:
+            candidates.append(("interval", exp.to_interval(literal.this)))
+        except Exception:  # noqa: BLE001 -- not a string an interval can be made of
+            pass
+    for label, replacement in candidates:
+        tried = list(subst)
+        tried[index] = replacement
+        if same(rebuild(spec, tried), other, tried):
+            return label
+    return None
+
+
 def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
     """Work out what each function name builds, by asking the reference.
 
@@ -513,6 +550,7 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
     out = {}
     by_arity: dict[str, dict[int, tuple]] = {}
     unit_maps: dict[str, dict] = {}
+    wraps: dict[str, dict[int, str]] = {}
     for name, builder in P.FUNCTIONS.items():
         if name in P.FUNCTION_PARSERS:
             continue
@@ -567,6 +605,13 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                 if not same(rebuild(spec, subst), other, subst):
                     if isStringProbe(exp, kind) and i in format_args.get(name, ()):
                         continue
+                    if isStringProbe(exp, kind):
+                        label = string_wrap(
+                            exp, spec, subst, i, subst[i], other, same, rebuild, call_builder
+                        )
+                        if label is not None and wraps.setdefault(name, {}).get(i, label) == label:
+                            wraps[name][i] = label
+                            continue
                     ok = False
                     break
             if not ok:
@@ -579,7 +624,8 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
         # rewritten there by design, so every all-strings call differs from
         # the spec and would reject the name for the one thing the port
         # already knows how to do.
-        if ok and args and not any(i < len(args) for i in format_args.get(name, ())):
+        if ok and args and not any(i < len(args) for i in format_args.get(name, ())) \
+                and not wraps.get(name):
             allstr = [
                 exp.column(f"w{i}") if i in skip else exp.Literal.string(f"s{i}")
                 for i in range(len(args))
@@ -661,11 +707,20 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                     if not same(rebuild(narrow_spec, subst), other, subst):
                         if isStringProbe(exp, kind) and i in format_args.get(name, ()):
                             continue
+                        if isStringProbe(exp, kind):
+                            label = string_wrap(
+                                exp, narrow_spec, subst, i, subst[i], other,
+                                same, rebuild, call_builder,
+                            )
+                            if label is not None and wraps.setdefault(name, {}).get(i, label) == label:
+                                wraps[name][i] = label
+                                continue
                         fine = False
                         break
                 if not fine:
                     break
-            if fine and width and not any(i < width for i in format_args.get(name, ())):
+            if fine and width and not any(i < width for i in format_args.get(name, ())) \
+                    and not wraps.get(name):
                 allstr = [
                     exp.column(f"w{i}") if i in narrow_skip else exp.Literal.string(f"s{i}")
                     for i in range(width)
@@ -684,7 +739,7 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                 aliases = unit_aliases(builder)
                 if aliases:
                     unit_maps[name] = aliases
-    return out, by_arity, unit_maps, dispatch
+    return out, by_arity, unit_maps, dispatch, wraps
 
 
 def reserved_keywords(dialect: str, Dialect) -> list[str]:
@@ -4224,6 +4279,13 @@ def main() -> int:
         "\t// KEY in quotes -- Databricks writes `'a.b'=15` for what the others\n",
         "\t// write `a.b=15`. Read off a rendered node.\n",
         "\tPropertyNameQuoted bool\n",
+        "\t// StringArgWraps are the positions where a builder REWRITES a\n",
+        "\t// string argument rather than carrying it: T-SQL's DATETRUNC casts\n",
+        "\t// one to DATETIME2, PostgreSQL's GENERATE_SERIES turns a step of\n",
+        "\t// `'1 day'` into an INTERVAL. The port does the rewrite itself\n",
+        "\t// before building, so a string that only moves in this way is not\n",
+        "\t// evidence of a builder nobody can describe.\n",
+        "\tStringArgWraps map[string]map[int]string\n",
         "\t// TypedDivision and SafeDivision are recorded on every Div node; the\n",
         "\t// reference reads them off the dialect, so they are not always false.\n",
         "\tTypedDivision bool\n",
@@ -4859,9 +4921,17 @@ def main() -> int:
         out.append(strset("SyntaxFunctions", sorted(P.FUNCTION_PARSERS)))
         out.append(strset("TableFunctions", table_functions(name, P)))
         _fmt_args = time_format_args(name, P, exp, list(P.FUNCTIONS))
-        funcs, by_arity, unit_maps, dispatch = probe_functions(
+        funcs, by_arity, unit_maps, dispatch, string_wraps = probe_functions(
             P, exp, name, format_args=_fmt_args
         )
+        if string_wraps:
+            out.append("\t\tStringArgWraps: map[string]map[int]string{\n")
+            for fn in sorted(string_wraps):
+                pairs = ", ".join(
+                    f"{i}: {gostr(string_wraps[fn][i])}" for i in sorted(string_wraps[fn])
+                )
+                out.append(f"\t\t\t{gostr(fn)}: {{{pairs}}},\n")
+            out.append("\t\t},\n")
         if dispatch:
             out.append("\t\tTypeDispatchFunctions: map[string]TypeDispatch{\n")
             for fn in sorted(dispatch):

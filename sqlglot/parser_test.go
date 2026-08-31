@@ -202,6 +202,11 @@ func TestRefusals(t *testing.T) {
 		{"CTE named by nothing", "WITH AS (SELECT 1) SELECT 2", ""},
 		{"dangling subquery alias", "SELECT 1 FROM (SELECT 1) AS", ""},
 		{"over-qualified star", "SELECT a.b.c.d.*", ""},
+		// The step is turned into an interval by parsing `INTERVAL <text>`,
+		// and a text no interval can be made of is refused -- which is what
+		// the reference does with it too.
+		{"a step no interval can be made of", "GENERATE_SERIES(a, b, '+')", "postgres"},
+		{"an empty step", "GENERATE_SERIES(a, b, '')", "postgres"},
 		{"LAMBDA without its colon", "SELECT LIST_TRANSFORM(a, LAMBDA x x)", "duckdb"},
 		{"LAMBDA without a parameter", "SELECT LIST_TRANSFORM(a, LAMBDA : x)", "duckdb"},
 	} {

@@ -86,3 +86,32 @@ func fromArgList(class string, args []*Expression) *Expression {
 	}
 	return node
 }
+
+// wrapStringArgument rewrites a string argument the way the builder that
+// receives it would. Only two shapes are recorded, and both are read off the
+// reference rather than named here: a CAST to a type it chose, and the
+// reference's own `to_interval` -- which is `INTERVAL <text>` parsed in the
+// NEUTRAL dialect, whatever dialect the call was written in.
+func (p *parser) wrapStringArgument(arg *Expression, how string) (*Expression, error) {
+	text, _ := arg.Args["this"].(string)
+	if kind, ok := strings.CutPrefix(how, "cast:"); ok {
+		// No `nested` arg: a type the reference BUILDS carries only its
+		// name, where one that was WRITTEN records nested as well.
+		to := New("DataType", Arg{"this", DataTypeKind(kind)})
+		cast := New("Cast", Arg{"this", arg}, Arg{"to", to})
+		// A cast the port BUILDS carries its type already, as every cast the
+		// reference builds does. Leaving it to the annotator is a different
+		// tree: the type is recorded on the node, and the differential
+		// compares it.
+		cast.Type = to
+		return cast, nil
+	}
+	if how == "interval" {
+		interval, err := ParseOne("INTERVAL "+text, "")
+		if err != nil || interval == nil || interval.Class != "Interval" {
+			return nil, p.unsupported("a step this port cannot read as an interval")
+		}
+		return interval, nil
+	}
+	return nil, p.unsupported("a string argument this port cannot rewrite")
+}

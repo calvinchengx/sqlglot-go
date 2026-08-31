@@ -293,6 +293,20 @@ func TestGenerateShapes(t *testing.T) {
 			"SELECT NOT (c -> '$.a')"},
 		{"extraction under an IN", "select json_extract(c, '$.a') in (1)", "duckdb",
 			"SELECT (c -> '$.a') IN (1)"},
+		// Two builders that REWRITE a string argument rather than carrying
+		// it. Probed with a column neither shows; probed with a string both
+		// look like builders nobody can describe, which is why both names
+		// used to be refused at every arity.
+		{"a string cast by its builder", "select datetrunc(month, 'foo')", "tsql",
+			"SELECT DATETRUNC(MONTH, CAST('foo' AS DATETIME2))"},
+		{"a string left alone when it is not one", "select datetrunc(month, foo)", "tsql",
+			"SELECT DATETRUNC(MONTH, foo)"},
+		{"a step string that becomes an interval",
+			"generate_series(a, b, '  2   days  ')", "postgres",
+			"GENERATE_SERIES(a, b, INTERVAL '2 DAYS')"},
+		{"a step written as an interval already",
+			"generate_series(a, b, INTERVAL '2 DAYS')", "postgres",
+			"GENERATE_SERIES(a, b, INTERVAL '2 DAYS')"},
 		// A path key holding the very quote that delimits it. The reference
 		// escapes it with a backslash; without that the key ends early and
 		// the port could not read back what it had just written.

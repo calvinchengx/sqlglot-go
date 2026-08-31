@@ -1916,8 +1916,27 @@ func (p *parser) parseFunction() (*Expression, error) {
 					Arg{"is_string", true})
 			}
 		}
+		// A position where the builder REWRITES a string rather than carrying
+		// it. Two in the catalogue: T-SQL's DATETRUNC casts one to DATETIME2
+		// and PostgreSQL's GENERATE_SERIES turns a step of `'1 day'` into an
+		// INTERVAL. The port does the rewrite here, before building, which is
+		// what lets the recorded signature explain the call.
+		wraps := p.tables.StringArgWraps[upper]
+		for i, how := range wraps {
+			if i >= len(args) || !isStringLiteral(args[i]) {
+				continue
+			}
+			wrapped, err := p.wrapStringArgument(args[i], how)
+			if err != nil {
+				return nil, err
+			}
+			args[i] = wrapped
+		}
 		for _, i := range p.tables.StringSensitiveArgs[strings.ToUpper(name)] {
 			if isTimeFormatArg(formatArgs, i) {
+				continue
+			}
+			if _, rewritten := wraps[i]; rewritten {
 				continue
 			}
 			if i < len(args) && isStringLiteral(args[i]) {
