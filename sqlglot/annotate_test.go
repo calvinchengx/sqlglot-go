@@ -33,6 +33,45 @@ func TestAnnotateShapes(t *testing.T) {
 		// because of it.
 		{"a class the annotator has no entry for", "REGEXP_EXTRACT_ALL('s', 'p')", "duckdb",
 			"UNKNOWN"},
+		// A struct is typed by its FIELDS, each keeping its name; a map by
+		// its two arrays. Both come from the reference's own annotators, and
+		// both are what a subscript over one needs before it can be shifted.
+		{"a struct of named fields", "STRUCT(1 AS a, 'x' AS b)", "databricks",
+			"STRUCT<a: INT, b: STRING>"},
+		{"a struct written as a brace literal", "{'x': 1}", "duckdb", "STRUCT(x INT)"},
+		{"a struct field with no name", "STRUCT(1)", "duckdb", "STRUCT(INT)"},
+		{"a struct with a field nobody can type", "STRUCT(c)", "duckdb", "UNKNOWN"},
+		{"a map of two arrays", "MAP([1, 2], ['a', 'b'])", "duckdb", "MAP(INT, TEXT)"},
+		{"a map whose sides are not arrays", "MAP(a, b)", "duckdb", "MAP"},
+		{"a struct turned into a map", "MAP {'x': 1}", "duckdb", "MAP(TEXT, INT)"},
+		// A subscript: a slice of something is more of it, an element of an
+		// array is what the array holds, a key of a map written in place is
+		// the value beside it, and anything else is UNKNOWN.
+		{"an element of an array", "[1, 2][1]", "duckdb", "INT"},
+		{"a slice of an array", "[1, 2][1:2]", "duckdb", "INT[]"},
+		{"a key of a map written in place", "MAP(['a'], [1])['a']", "duckdb", "INT"},
+		{"a subscript of anything else", "x[1]", "duckdb", "UNKNOWN"},
+		{"an element of an array of nothing", "ARRAY()[1]", "duckdb", "UNKNOWN"},
+		{"a key of a map that holds nothing known", "MAP(['a'], [c])['a']", "duckdb", "UNKNOWN"},
+		// A key that is itself a list, which is what makes the comparison
+		// walk into a repeated argument.
+		{"a key of a map that is a list", "MAP([['a']], [1])[['a']]", "duckdb", "INT"},
+		{"a struct with nothing to give a map", "MAP {'x': c}", "duckdb", "MAP"},
+		{"a subscript over a map of no arrays", "MAP(a, b)['x']", "duckdb", "UNKNOWN"},
+		{"a subscript over a map of empty arrays", "MAP([], [])['x']", "duckdb", "UNKNOWN"},
+		{"a subscript over a key the map does not hold", "MAP(['a'], [1])['z']", "duckdb",
+			"UNKNOWN"},
+		{"a subscript over an array with no element type", "CAST(x AS ARRAY)[1]", "duckdb",
+			"UNKNOWN"},
+		// A CASE branch is typed by its two results, and not by the condition
+		// beside them.
+		{"a branch takes both its results", "CASE WHEN 1 = 1 THEN 1 ELSE 2.5 END", "duckdb",
+			"DOUBLE"},
+		// A call the reference has no builder for either. It answers UNKNOWN
+		// for one of those, and so does this -- but only where the name is
+		// one it also reads anonymously.
+		{"a call nobody has a builder for", "WHATEVER(1)", "", "UNKNOWN"},
+		{"and the same inside an operator", "1 + WHATEVER(1)", "", "UNKNOWN"},
 		{"a parameterised type never coerces", "CAST(1 AS DECIMAL(18, 2)) + 1", "",
 			"DECIMAL(18, 2)"},
 		{"and not from the other side either", "1 + CAST(1 AS DECIMAL(18, 2))", "",
@@ -102,12 +141,24 @@ func TestAFixedReturnIsATypeNotASpelling(t *testing.T) {
 	}
 }
 
+// TestAnnotateUnknownDialect covers the lookup an annotation makes into the
+// parser's own tables. A dialect with no tables has no answer to give, and
+// asking must not panic.
+func TestAnnotateUnknownDialect(t *testing.T) {
+	tree, err := ParseOne("WHATEVER(1)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got := Annotate(tree, "nosuchdialect"); got != nil {
+		rendered, _ := Generate(got, "")
+		t.Errorf("Annotate over an unknown dialect answered %s", rendered)
+	}
+}
+
 func TestAnnotateDeclines(t *testing.T) {
 	for _, c := range []struct{ name, sql, dialect string }{
-		{"an unrecognised call", "WHATEVER(1)", ""},
+
 		{"a subquery with several projections", "1 + (SELECT 1, 2)", ""},
-		{"an empty array has no element type", "ARRAY()", "duckdb"},
-		{"a call the port has no rule for, inside an operator", "1 + WHATEVER(1)", ""},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			tree, err := ParseOne(c.sql, c.dialect)
@@ -209,10 +260,14 @@ func TestAnnotateEdges(t *testing.T) {
 	for _, tc := range []struct{ name, sql, want string }{
 		{"an array of one type", "SELECT [1, 2]", "INT[]"},
 		{"an array of mixed types", "SELECT [1, 1.5]", "DOUBLE[]"},
-		{"an empty array", "SELECT []", ""},
+		{"an empty array holds an unknown", "SELECT []", "UNKNOWN[]"},
 		{"a scalar subquery", "SELECT (SELECT 1)", "INT"},
 		// More than one projection, and there is no single answer to give.
 		{"a subquery of two", "SELECT (SELECT 1, 2)", ""},
+		// A branch this cannot type leaves the whole CASE with no answer,
+		// from either the WHEN or the ELSE.
+		{"a branch nobody can type", "SELECT CASE WHEN 1 = 1 THEN ALL(SELECT 1) END", ""},
+		{"a default nobody can type", "SELECT CASE WHEN 1 = 1 THEN 1 ELSE ALL(SELECT 1) END", ""},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, "duckdb")
@@ -252,13 +307,14 @@ func TestAnnotateCoercionEdges(t *testing.T) {
 	for _, tc := range []struct{ name, sql, want string }{
 		{"two ints stay int", "SELECT 1 + 2", "INT"},
 		{"an int and a double widen", "SELECT 1 + 1.5", "DOUBLE"},
-		// The reference answers UNKNOWN here and this port answers INT: an
-		// operand whose type it never worked out is treated as contributing
-		// nothing rather than as poisoning. Recorded as it IS, not as it
-		// should be -- making nil poison costs 17 of the annotator contract's
-		// 48 cases, so `nil` plainly does not mean `unknown` everywhere it
-		// appears, and the fix is not this one line.
-		{"an untyped operand does not poison, and should", "SELECT 1 + x", "INT"},
+		// An UNKNOWN operand poisons, whichever side it is written on. The
+		// port used to answer INT here and UNKNOWN for `x + 1`, because it
+		// let the widening table decide and the table has no entry either
+		// way -- so whichever operand came first won. Note this is about
+		// UNKNOWN, which is an ANSWER; a nil, which is the absence of one,
+		// still contributes nothing.
+		{"an untyped operand poisons", "SELECT 1 + x", "UNKNOWN"},
+		{"and does so from either side", "SELECT x + 1", "UNKNOWN"},
 		{"a null contributes nothing", "SELECT 1 + NULL", "INT"},
 		{"a cast is taken as written", "SELECT CAST(x AS BIGINT)", "BIGINT"},
 	} {

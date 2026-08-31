@@ -261,6 +261,86 @@ def unannotated_classes(dialects) -> dict[str, list[str]]:
     return out
 
 
+def annotate_by_args(dialects) -> dict[str, dict[str, list[str]]]:
+    """Classes typed by the COERCION of particular argument keys.
+
+    `{'a': 1}` is a struct of an INT: the PropertyEQ carrying the field takes
+    its VALUE's type, not the coercion of its key and its value. A CASE's
+    branch takes the coercion of `true` and `false`, and its condition -- which
+    is not one of them -- contributes nothing. The port's generic binary rule,
+    which coerces `this` and `expression`, is right for most classes and
+    quietly wrong for these.
+
+    Which keys participate is found by moving one at a time: every key is
+    given an INT and then one of them a REAL. A key that moves the answer is in
+    the coercion; one that does not is not. The whole set is then given reals
+    together and has to answer one, or nothing is recorded -- without that
+    check a class that ignores its arguments entirely looks like a class with
+    no participating keys.
+
+    The pair matters. Probed with a string instead, `If` looked as though only
+    its `true` branch counted: a coercion of an INT and a VARCHAR answers INT,
+    so moving the other branch moved nothing. An INT and a REAL coerce to the
+    REAL whichever side it is on, so a key that participates always shows.
+    """
+    from sqlglot import expressions as e
+    from sqlglot.dialects.dialect import Dialect
+    from sqlglot.optimizer.annotate_types import annotate_types
+
+    def typed(node, dialect):
+        found = annotate_types(node, dialect=dialect or None).type
+        return found.sql(dialect or None) if found is not None else None
+
+    out = {}
+    for dialect in sorted(dialects):
+        integer = typed(e.Literal.number(1), dialect)
+        real = typed(e.Literal.number(1.5), dialect)
+        per_class = {}
+        metadata = Dialect.get_or_raise(dialect or None).EXPRESSION_METADATA
+        for cls in sorted((c for c in metadata if isinstance(c, type)), key=lambda c: c.__name__):
+            keys = [
+                k
+                for k, required in (getattr(cls, "arg_types", None) or {}).items()
+                if k in ("this", "expression", "true", "false", "expressions")
+            ]
+            if len(keys) < 2:
+                continue
+
+            def build(reals):
+                args = {}
+                for k in keys:
+                    value = e.Literal.number(1.5 if k in reals else 1)
+                    args[k] = [value] if k == "expressions" else value
+                return cls(**args)
+
+            try:
+                base = typed(build(set()), dialect)
+            except Exception:  # noqa: BLE001 -- a class this probe cannot build
+                continue
+            if base != integer:
+                continue
+            moved = []
+            for key in keys:
+                try:
+                    if typed(build({key}), dialect) == real:
+                        moved.append(key)
+                except Exception:  # noqa: BLE001
+                    moved = []
+                    break
+            if not moved or len(moved) == len(keys):
+                # Every key moving it is what an ordinary coercion of
+                # everything looks like, and the port already does that.
+                continue
+            try:
+                if typed(build(set(moved)), dialect) != real:
+                    continue
+            except Exception:  # noqa: BLE001
+                continue
+            per_class[cls.__name__] = moved
+        out[dialect] = per_class
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--sqlglot", required=True, type=pathlib.Path)
@@ -366,6 +446,18 @@ def main() -> int:
             go.append(
                 f'\t\t"{cls}": {{Kind: "{rule["kind"]}", Type: "{rule.get("type", "")}"}},\n'
             )
+        go.append("\t},\n")
+    go.append("}\n\n")
+    go.append("// annotateByArgs names the classes typed by the coercion of PARTICULAR\n")
+    go.append("// argument keys rather than of everything they hold: a PropertyEQ by\n")
+    go.append("// its value alone, a CASE branch by its two results and not by its\n")
+    go.append("// condition. Probed by moving one key at a time.\n")
+    go.append("var annotateByArgs = map[string]map[string][]string{\n")
+    for d, per_class in annotate_by_args(OURS).items():
+        go.append(f'\t"{d}": {{\n')
+        for cls, cls_keys in sorted(per_class.items()):
+            listed = ", ".join(f'"{k}"' for k in cls_keys)
+            go.append(f'\t\t"{cls}": {{{listed}}},\n')
         go.append("\t},\n")
     go.append("}\n\n")
     go.append("// unannotatedClasses are the classes the reference's annotator has no\n")

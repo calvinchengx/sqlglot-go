@@ -658,6 +658,13 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 		if p.at(TokL_BRACKET) {
 			p.advance()
 			// A SUBSCRIPT: a colon here separates a slice's bounds.
+			// `x[]` subscripts nothing, and the reference refuses it -- a
+			// Bracket must carry an index. An empty pair of brackets is
+			// still an ARRAY where one may stand, which is why this is here
+			// and not in the reader below.
+			if p.at(TokR_BRACKET) {
+				return nil, p.unsupported("subscript with no index")
+			}
 			items, err := p.parseBracketItems(true)
 			if err != nil {
 				return nil, err

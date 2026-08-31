@@ -4286,6 +4286,13 @@ def main() -> int:
         "\t// before building, so a string that only moves in this way is not\n",
         "\t// evidence of a builder nobody can describe.\n",
         "\tStringArgWraps map[string]map[int]string\n",
+        "\t// CallNamesTheReferenceKnows are every name the reference reads as\n",
+        "\t// something other than an anonymous call -- a builder, a parser of\n",
+        "\t// its own, a no-paren form, or a quantifier over a subquery. A name\n",
+        "\t// NOT here is one the reference reads anonymously too, which is what\n",
+        "\t// lets the annotator answer UNKNOWN for it without hiding a parse\n",
+        "\t// gap behind the answer.\n",
+        "\tCallNamesTheReferenceKnows map[string]struct{}\n",
         "\t// TypedDivision and SafeDivision are recorded on every Div node; the\n",
         "\t// reference reads them off the dialect, so they are not always false.\n",
         "\tTypedDivision bool\n",
@@ -4911,6 +4918,14 @@ def main() -> int:
         out.append(ttset("IDVarTokens", P.ID_VAR_TOKENS))
         out.append(ttset("TableAliasTokens", P.TABLE_ALIAS_TOKENS))
         out.append(strset("NamedFunctions", named))
+        out.append(
+            strset(
+                "CallNamesTheReferenceKnows",
+                named
+                | set(P.NO_PAREN_FUNCTION_PARSERS)
+                | {t.name for t in P.SUBQUERY_PREDICATES},
+            )
+        )
         out.append(ttset("NoParenFunctions", P.NO_PAREN_FUNCTIONS))
         out.append(opmap("NoParenFunctionClasses", P.NO_PAREN_FUNCTIONS))
         # Names with their own SYNTAX, not merely their own builder:

@@ -1,6 +1,9 @@
 package sqlglot
 
-import "strconv"
+import (
+	"strconv"
+	"strings"
+)
 
 // Annotate answers what TYPE an expression has.
 //
@@ -77,6 +80,12 @@ func annotateNode(e *Expression, dialect string) *Expression {
 		return annotateArray(e, dialect)
 	case "Case":
 		return annotateCase(e, dialect)
+	case "Struct":
+		return annotateStruct(e, dialect)
+	case "Map", "VarMap":
+		return annotateMap(e, dialect)
+	case "ToMap":
+		return annotateToMap(e, dialect)
 	case "Bracket":
 		return annotateBracket(e, dialect)
 	case "Slice":
@@ -106,6 +115,26 @@ func annotateNode(e *Expression, dialect string) *Expression {
 		return annotate(childOf(e, "this"), dialect)
 	}
 
+	// A class typed by the coercion of PARTICULAR argument keys rather than of
+	// everything it holds. `{'a': 1}` is a struct of an INT -- the PropertyEQ
+	// is typed by its value alone, and coercing its key in as well made it a
+	// VARCHAR -- and a CASE branch is typed by its two results and not by its
+	// condition. The generic binary rule below is right for the rest.
+	if keys, ok := annotateByArgs[dialect][e.Class]; ok {
+		var result *Expression
+		for _, key := range keys {
+			switch v := e.Args[key].(type) {
+			case *Expression:
+				result = coerceTypes(result, annotate(v, dialect))
+			case []*Expression:
+				for _, item := range v {
+					result = coerceTypes(result, annotate(item, dialect))
+				}
+			}
+		}
+		return result
+	}
+
 	// A function returns what its rule says: a fixed type, or its arguments
 	// coerced -- possibly widened, possibly wrapped in an array.
 	if rule, ok := funcReturns[dialect][e.Class]; ok {
@@ -126,6 +155,16 @@ func annotateNode(e *Expression, dialect string) *Expression {
 		}
 		return coerceTypes(left, right)
 	}
+	// An ANONYMOUS call whose name the reference does not know either. The
+	// reference answers UNKNOWN for any call it has no builder for, and so
+	// does this -- but only where the name is one it also reads anonymously.
+	// A name the reference HAS a node for and this port read anonymously is
+	// a parse gap, and answering UNKNOWN there would hide it behind the
+	// annotator.
+	if e.Class == "Anonymous" && !referenceNamesTheCall(e, dialect) {
+		return dataType("UNKNOWN")
+	}
+
 	// A class the reference's annotator has no entry for at all. UNKNOWN is
 	// its answer there rather than its silence -- it looks the class up, finds
 	// nothing, and says so -- and the difference matters to a subscript, which
@@ -187,11 +226,145 @@ func annotateArray(e *Expression, dialect string) *Expression {
 		}
 		element = coerceTypes(element, t)
 	}
+	// An array with nothing in it is an ARRAY of UNKNOWN, not an array with
+	// no type: the reference fills the element in, and a subscript over one
+	// needs the outer ARRAY to be there before it can say anything.
 	if element == nil {
-		return nil
+		element = dataType("UNKNOWN")
 	}
 	return New("DataType", Arg{"this", DataTypeKind("ARRAY")},
 		Arg{"expressions", []*Expression{element}}, Arg{"nested", true})
+}
+
+// referenceNamesTheCall reports whether the reference builds a node of its own
+// for this anonymous call's name. Where it does, the port read the call
+// anonymously and the reference did not -- which is a parse gap, and the one
+// thing an annotator answer must not paper over.
+func referenceNamesTheCall(e *Expression, dialect string) bool {
+	name, _ := e.Args["this"].(string)
+	tables := parserTables[dialect]
+	if tables == nil {
+		return true
+	}
+	_, known := tables.CallNamesTheReferenceKnows[strings.ToUpper(name)]
+	return known
+}
+
+// sameAsWritten compares two nodes by what was WRITTEN, ignoring whatever
+// types have since been stamped on them. The reference compares this way --
+// its own equality is over a node's arguments and not its annotation -- and it
+// matters here because one of the two has usually been annotated already: the
+// keys of a map are typed while the map is, and the index inside the brackets
+// is not.
+func sameAsWritten(a, b *Expression) bool { return withoutTypes(a).Equal(withoutTypes(b)) }
+
+// withoutTypes is a copy with every annotation removed.
+func withoutTypes(e *Expression) *Expression {
+	if e == nil {
+		return nil
+	}
+	out := e.Copy()
+	out.Type = nil
+	for _, key := range out.Keys {
+		switch v := out.Args[key].(type) {
+		case *Expression:
+			out.Args[key] = withoutTypes(v)
+		case []*Expression:
+			items := make([]*Expression, len(v))
+			for i, item := range v {
+				items[i] = withoutTypes(item)
+			}
+			out.Args[key] = items
+		}
+	}
+	return out
+}
+
+// annotateStruct types a struct by its FIELDS, each of which keeps its name:
+// `STRUCT(1 AS a)` is a `STRUCT<a INT>`. A field whose own type is unknown
+// makes the whole struct UNKNOWN rather than a struct with a hole in it.
+func annotateStruct(e *Expression, dialect string) *Expression {
+	fields, _ := e.Args["expressions"].([]*Expression)
+	defs := make([]*Expression, 0, len(fields))
+	for _, field := range fields {
+		def := structFieldType(field, dialect)
+		if def == nil {
+			return dataType("UNKNOWN")
+		}
+		defs = append(defs, def)
+	}
+	return New("DataType", Arg{"this", DataTypeKind("STRUCT")},
+		Arg{"expressions", defs}, Arg{"nested", true})
+}
+
+// structFieldType is one field's contribution: a ColumnDef where the field has
+// a name, and the bare type where it has none. Three ways a field carries a
+// name -- `1 AS a`, `a: 1` under a PropertyEQ, and a bare column, which names
+// itself.
+func structFieldType(field *Expression, dialect string) *Expression {
+	var name *Expression
+	kind := annotate(field, dialect)
+	switch {
+	case field.Args["alias"] != nil:
+		name, _ = field.Args["alias"].(*Expression)
+	case field.Args["expression"] != nil:
+		name, _ = field.Args["this"].(*Expression)
+		kind = annotate(childOf(field, "expression"), dialect)
+	case field.Class == "Column":
+		name, _ = field.Args["this"].(*Expression)
+	}
+	if kind == nil || typeKind(kind) == "UNKNOWN" {
+		return nil
+	}
+	if name == nil {
+		return kind
+	}
+	return New("ColumnDef", Arg{"this", name.Copy()}, Arg{"kind", kind})
+}
+
+// annotateMap types a map by its two arrays: `MAP([1], ['a'])` is a
+// `MAP(INT, VARCHAR)`. Where either side is not an array of a known element
+// type the answer is a bare MAP, which is an answer and not a refusal.
+func annotateMap(e *Expression, dialect string) *Expression {
+	keys, values := childOf(e, "keys"), childOf(e, "values")
+	if keys != nil && values != nil && keys.Class == "Array" && values.Class == "Array" {
+		key, value := elementType(annotate(keys, dialect)), elementType(annotate(values, dialect))
+		if key != nil && value != nil {
+			return New("DataType", Arg{"this", DataTypeKind("MAP")},
+				Arg{"expressions", []*Expression{key, value}}, Arg{"nested", true})
+		}
+	}
+	return New("DataType", Arg{"this", DataTypeKind("MAP")})
+}
+
+// annotateToMap types the map a STRUCT is turned into. Its keys are strings
+// whatever the struct's field names were, and its values take the type of the
+// first field that has one.
+func annotateToMap(e *Expression, dialect string) *Expression {
+	if inner := annotate(childOf(e, "this"), dialect); typeKind(inner) == "STRUCT" {
+		defs, _ := inner.Args["expressions"].([]*Expression)
+		for _, def := range defs {
+			kind, _ := def.Args["kind"].(*Expression)
+			if kind != nil && typeKind(kind) != "UNKNOWN" {
+				return New("DataType", Arg{"this", DataTypeKind("MAP")},
+					Arg{"expressions", []*Expression{dataType("VARCHAR"), kind}},
+					Arg{"nested", true})
+			}
+		}
+	}
+	return New("DataType", Arg{"this", DataTypeKind("MAP")})
+}
+
+// elementType is what an ARRAY holds, or nil where it holds nothing known.
+func elementType(t *Expression) *Expression {
+	if typeKind(t) != "ARRAY" {
+		return nil
+	}
+	items, _ := t.Args["expressions"].([]*Expression)
+	if len(items) == 0 || typeKind(items[0]) == "UNKNOWN" {
+		return nil
+	}
+	return items[0]
 }
 
 // coerceTypes is the reference's `_maybe_coerce`: the second type wins where
@@ -205,6 +378,13 @@ func coerceTypes(a, b *Expression) *Expression {
 		return b
 	case b == nil, typeKind(b) == "NULL":
 		return a
+	}
+	// An UNKNOWN one contributes everything: the reference propagates it
+	// upwards, so `x + 1` is UNKNOWN and so is `1 + x`. Letting the widening
+	// table decide made the port's answer depend on which side the column was
+	// written -- UNKNOWN one way and INT the other.
+	if typeKind(a) == "UNKNOWN" || typeKind(b) == "UNKNOWN" {
+		return dataType("UNKNOWN")
 	}
 	if hasTypeParams(a) {
 		return a
@@ -388,24 +568,61 @@ func annotateCase(e *Expression, dialect string) *Expression {
 // map's key to its value, which needs the map's own keys and is not ported.
 func annotateBracket(e *Expression, dialect string) *Expression {
 	items, _ := e.Args["expressions"].([]*Expression)
-	if len(items) != 1 {
-		return nil
-	}
-	base := annotate(childOf(e, "this"), dialect)
+	this := childOf(e, "this")
+	base := annotate(this, dialect)
 	if base == nil {
 		return nil
 	}
-	if items[0].Class == "Slice" {
+	switch {
+	case items[0].Class == "Slice":
+		// A slice of something is more of the same thing.
 		return base
+	case typeKind(base) == "ARRAY":
+		// An array whose element type is not recorded -- a bare `CAST(x AS
+		// ARRAY)` -- gives UNKNOWN rather than nothing, as every other
+		// subscript this cannot follow does.
+		members, _ := base.Args["expressions"].([]*Expression)
+		if len(members) == 0 {
+			break
+		}
+		return members[0]
 	}
-	if typeKind(base) != "ARRAY" {
+	// A subscript that picks a key OUT of a map written in place:
+	// `MAP(['a'], [1])['a']` is an INT, found by matching the index against
+	// the map's own keys.
+	if value := mapValueFor(this, items[0], dialect); value != nil {
+		return value
+	}
+	// Anything else is UNKNOWN, which is the reference's answer here rather
+	// than its silence -- and it is what lets a subscript over a base nobody
+	// can type still be shifted between the dialect's numbering and this
+	// port's.
+	return dataType("UNKNOWN")
+}
+
+// mapValueFor finds what a subscript picks out of a map written in place: the
+// index is matched against the map's keys by position, and the value at the
+// same position is what the subscript has.
+func mapValueFor(this, index *Expression, dialect string) *Expression {
+	if this == nil || (this.Class != "Map" && this.Class != "VarMap") {
 		return nil
 	}
-	members, _ := base.Args["expressions"].([]*Expression)
-	if len(members) != 1 {
+	keys, values := childOf(this, "keys"), childOf(this, "values")
+	if keys == nil || values == nil {
 		return nil
 	}
-	return members[0]
+	written, _ := keys.Args["expressions"].([]*Expression)
+	held, _ := values.Args["expressions"].([]*Expression)
+	// Matched by what the key IS, not by which node it is: the reference
+	// compares the written index against the map's keys by value, so
+	// `MAP(['a'], [1])['a']` finds its own key even though the two strings
+	// are different nodes.
+	for i, key := range written {
+		if i < len(held) && sameAsWritten(key, index) {
+			return annotate(held[i], dialect)
+		}
+	}
+	return nil
 }
 
 // ApplyIndexOffset shifts a subscript between the dialect's numbering and

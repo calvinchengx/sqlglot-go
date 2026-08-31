@@ -207,6 +207,7 @@ func TestRefusals(t *testing.T) {
 		// the reference does with it too.
 		{"a step no interval can be made of", "GENERATE_SERIES(a, b, '+')", "postgres"},
 		{"an empty step", "GENERATE_SERIES(a, b, '')", "postgres"},
+		{"a subscript with no index", "SELECT x[]", "duckdb"},
 		{"LAMBDA without its colon", "SELECT LIST_TRANSFORM(a, LAMBDA x x)", "duckdb"},
 		{"LAMBDA without a parameter", "SELECT LIST_TRANSFORM(a, LAMBDA : x)", "duckdb"},
 	} {

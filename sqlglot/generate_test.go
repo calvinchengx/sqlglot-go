@@ -307,6 +307,18 @@ func TestGenerateShapes(t *testing.T) {
 		{"a step written as an interval already",
 			"generate_series(a, b, INTERVAL '2 DAYS')", "postgres",
 			"GENERATE_SERIES(a, b, INTERVAL '2 DAYS')"},
+		// Subscripts over things the port can now type. Each needs the base's
+		// type before the index can be shifted between DuckDB's numbering and
+		// the tree's.
+		{"a subscript over a map", "select map([1, 2], ['a', 'b'])[2]", "duckdb",
+			"SELECT MAP([1, 2], ['a', 'b'])[2]"},
+		{"a subscript over a brace map", "select (map {'x': 1})['x']", "duckdb",
+			"SELECT (MAP {'x': 1})['x']"},
+		// The group argument is the builder's own default, so it comes back
+		// written as the two-argument call the reference writes.
+		{"a slice over a call nobody has a builder for",
+			"select regexp_extract_all(s, 'pattern', 0)[2:]", "duckdb",
+			"SELECT REGEXP_EXTRACT_ALL(s, 'pattern')[2:]"},
 		// A path key holding the very quote that delimits it. The reference
 		// escapes it with a backslash; without that the key ends early and
 		// the port could not read back what it had just written.

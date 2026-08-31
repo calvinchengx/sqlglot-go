@@ -1068,6 +1068,75 @@ var funcReturns = map[string]map[string]funcReturn{
 	},
 }
 
+// annotateByArgs names the classes typed by the coercion of PARTICULAR
+// argument keys rather than of everything they hold: a PropertyEQ by
+// its value alone, a CASE branch by its two results and not by its
+// condition. Probed by moving one key at a time.
+var annotateByArgs = map[string]map[string][]string{
+	"": {
+		"Filter":            {"this"},
+		"HavingMax":         {"this"},
+		"If":                {"true", "false"},
+		"JSONExtract":       {"this", "expression"},
+		"JSONExtractScalar": {"this", "expression"},
+		"Limit":             {"this"},
+		"Order":             {"this"},
+		"PropertyEQ":        {"expression"},
+		"WithinGroup":       {"this"},
+	},
+	"databricks": {
+		"ArrayExcept": {"this"},
+		"ArrayFilter": {"this"},
+		"ArrayInsert": {"this"},
+		"Filter":      {"this"},
+		"First":       {"this"},
+		"HavingMax":   {"this"},
+		"JSONExtract": {"this", "expression"},
+		"Last":        {"this"},
+		"Left":        {"this"},
+		"Limit":       {"this"},
+		"Order":       {"this"},
+		"Overlay":     {"this"},
+		"PropertyEQ":  {"expression"},
+		"WithinGroup": {"this"},
+	},
+	"duckdb": {
+		"DateBin":           {"expression"},
+		"Filter":            {"this"},
+		"HavingMax":         {"this"},
+		"If":                {"true", "false"},
+		"JSONExtract":       {"this", "expression"},
+		"JSONExtractScalar": {"this", "expression"},
+		"Limit":             {"this"},
+		"Order":             {"this"},
+		"PercentileDisc":    {"this"},
+		"PropertyEQ":        {"expression"},
+		"WithinGroup":       {"this"},
+	},
+	"postgres": {
+		"Filter":            {"this"},
+		"HavingMax":         {"this"},
+		"If":                {"true", "false"},
+		"JSONExtract":       {"this", "expression"},
+		"JSONExtractScalar": {"this", "expression"},
+		"Limit":             {"this"},
+		"Order":             {"this"},
+		"PropertyEQ":        {"expression"},
+		"WithinGroup":       {"this"},
+	},
+	"tsql": {
+		"Filter":            {"this"},
+		"HavingMax":         {"this"},
+		"If":                {"true", "false"},
+		"JSONExtract":       {"this", "expression"},
+		"JSONExtractScalar": {"this", "expression"},
+		"Limit":             {"this"},
+		"Order":             {"this"},
+		"PropertyEQ":        {"expression"},
+		"WithinGroup":       {"this"},
+	},
+}
+
 // unannotatedClasses are the classes the reference's annotator has no
 // entry for. It answers UNKNOWN for those -- an answer, not a gap --
 // and so does this. Anonymous is excluded: the port reads some calls
