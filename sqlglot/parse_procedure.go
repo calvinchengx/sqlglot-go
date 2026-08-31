@@ -202,6 +202,84 @@ func propertiesOf(items []*Expression) *Expression {
 	return New("Properties", Arg{"expressions", items})
 }
 
+// parseIfStatement reads `IF <condition> <block> [ELSE <block>]`, which in one
+// dialect is a STATEMENT rather than a call or a name.
+//
+// The condition is an ordinary expression, optionally parenthesised -- and
+// ordinary includes an implicit ALIAS, which is how the reference reads
+// `IF NOT EXISTS (...) EXEC('...')`: the EXEC becomes the condition's alias
+// and what follows it becomes the block. That is the reference being odd
+// rather than this port being careless, and the corpus records what it made.
+func (p *parser) parseIfStatement() (*Expression, error) {
+	p.advance() // IF
+	condition, err := p.parseWrappedCondition()
+	if err != nil {
+		return nil, err
+	}
+	p.match(TokBEGIN)
+	block, err := p.parseProcedureBody()
+	if err != nil {
+		return nil, err
+	}
+	var otherwise any = false
+	if p.match(TokELSE) {
+		p.match(TokBEGIN)
+		other, err := p.parseProcedureBody()
+		if err != nil {
+			return nil, err
+		}
+		otherwise = other
+	}
+	return New("IfBlock",
+		Arg{"this", condition}, Arg{"true", block}, Arg{"false", otherwise}), nil
+}
+
+// parseWrappedCondition reads an expression that may or may not be wrapped in
+// parentheses. Where it is, the parentheses belong to the SYNTAX and leave no
+// Paren in the tree -- so what is inside them has to be the whole condition.
+func (p *parser) parseWrappedCondition() (*Expression, error) {
+	if !p.at(TokL_PAREN) {
+		return p.parseAliasedExpression()
+	}
+	p.advance()
+	inner, err := p.parseAliasedExpression()
+	if err != nil {
+		return nil, err
+	}
+	// The parentheses are the SYNTAX's, and what is inside them is the whole
+	// condition. `IF (a) = (b)` is refused rather than read as a comparison,
+	// which is what the reference does with it too.
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("a condition whose parentheses do not close it")
+	}
+	return inner, nil
+}
+
+// parseAliasedExpression reads an expression and whatever names it.
+//
+// The name may be a KEYWORD here, which it may not be in a projection: the
+// reference reads an implicit alias with its ordinary name reader, and that
+// takes every word it allows as an identifier. Widening the projection's
+// reader to match cost thirty statements their trees, so the wider rule is
+// kept where the reference's own path actually reaches it.
+func (p *parser) parseAliasedExpression() (*Expression, error) {
+	this, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	if aliased, err := p.parseAlias(this); err != nil || aliased != this {
+		return aliased, err
+	}
+	if !p.atIdentifier() {
+		return this, nil
+	}
+	name, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	return New("Alias", Arg{"this", this}, Arg{"alias", name}), nil
+}
+
 // parseProcedureBody reads what a procedure DOES: one or more statements,
 // optionally wrapped in BEGIN and END. The reference keeps them in a Block,
 // and records the END that closed it as a statement of its own.

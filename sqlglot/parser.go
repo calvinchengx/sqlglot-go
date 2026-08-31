@@ -234,6 +234,10 @@ func (p *parser) parseStatement() (*Expression, error) {
 		}
 		return this, nil
 	}
+	// A bare IF opens a STATEMENT where the dialect has one.
+	if p.tables.IfIsAStatement && p.atWords("IF") {
+		return p.parseIfStatement()
+	}
 	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) || p.at(TokFROM) ||
 		p.at(TokSUMMARIZE) {
 		return p.parseQuery()

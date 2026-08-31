@@ -214,6 +214,17 @@ func TestRefusals(t *testing.T) {
 		{"a procedure with WITH and nothing after it", "CREATE PROCEDURE foo WITH", "tsql"},
 		{"EXECUTE without AS", "CREATE PROCEDURE foo WITH EXECUTE OWNER AS SELECT 1", "tsql"},
 		{"a procedure with more than this port reads", "CREATE PROCEDURE foo BOGUS", "tsql"},
+		{"IF with no condition", "IF", "tsql"},
+		{"IF with a condition that does not parse", "IF 1 +", "tsql"},
+		{"IF with nothing to do", "IF 1 = 1", "tsql"},
+		{"IF with an ELSE and nothing after it", "IF 1 = 1 SELECT 1 ELSE", "tsql"},
+		{"IF whose parentheses do not close the condition", "IF (1) = (1) SELECT 1", "tsql"},
+		{"EXECUTE AS nobody", "CREATE PROCEDURE foo WITH EXECUTE AS", "tsql"},
+		{"a bare parameter that is not one", "CREATE PROCEDURE foo 1 AS SELECT 1", "tsql"},
+		{"a procedure body that does not parse", "CREATE PROCEDURE foo AS SELECT 1 +", "tsql"},
+		// A parameter name is written back with nothing round it, so one that
+		// would need quotes is refused rather than written unreadably.
+		{"a COPY parameter needing quotes", "COPY INTO t FROM f WITH (`a b` = 1)", "databricks"},
 		{"LAMBDA without its colon", "SELECT LIST_TRANSFORM(a, LAMBDA x x)", "duckdb"},
 		{"LAMBDA without a parameter", "SELECT LIST_TRANSFORM(a, LAMBDA : x)", "duckdb"},
 	} {

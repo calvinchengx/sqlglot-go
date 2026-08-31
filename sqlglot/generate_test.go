@@ -344,6 +344,11 @@ func TestGenerateShapes(t *testing.T) {
 			"CREATE PROCEDURE foo"},
 		{"a procedure with bare parameters", "create procedure foo @a int, @b int as select 1",
 			"tsql", "CREATE PROCEDURE foo @a INTEGER, @b INTEGER AS SELECT 1"},
+		// A parameter whose type carries parentheses of its own: the cut that
+		// finds where the bare list ends has to look past them.
+		{"a bare parameter with a sized type",
+			"create procedure foo @a decimal(1, 2) as select 1", "tsql",
+			"CREATE PROCEDURE foo @a NUMERIC(1, 2) AS SELECT 1"},
 		{"a procedure with a parameter list", "create procedure foo(@a int = 1)", "tsql",
 			"CREATE PROCEDURE foo(@a INTEGER = 1)"},
 		{"a parameter whose type is introduced by AS", "create procedure foo(@a as int = 1)",
@@ -369,6 +374,22 @@ func TestGenerateShapes(t *testing.T) {
 		{"a procedure with several options",
 			"create procedure foo with execute as owner, schemabinding as select 1", "tsql",
 			"CREATE PROCEDURE foo WITH EXECUTE AS OWNER, SCHEMABINDING AS SELECT 1"},
+		// A bare IF opens a STATEMENT in one dialect. Its block is written
+		// with BEGIN whether or not one was written, and the END that closed
+		// it is a statement of the block.
+		{"an if statement", "if 1 = 1 select 1", "tsql", "IF 1 = 1 BEGIN SELECT 1"},
+		{"an if with a parenthesised condition", "if (1 = 1) select 1", "tsql",
+			"IF 1 = 1 BEGIN SELECT 1"},
+		{"an if over a block", "if 1 = 1 begin drop table t; end", "tsql",
+			"IF 1 = 1 BEGIN DROP TABLE t; END"},
+		{"an if with an else", "if 1 = 1 select 1 else select 2", "tsql",
+			"IF 1 = 1 BEGIN SELECT 1; ELSE BEGIN SELECT 2"},
+		// The condition takes an implicit alias, and the word after EXISTS is
+		// one. That is the reference being odd rather than this being
+		// careless -- it writes the statement back this way too.
+		{"an if whose condition swallows what follows it",
+			"if not exists (select * from t) exec('create schema foo')", "tsql",
+			"IF NOT EXISTS(SELECT * FROM t) AS exec BEGIN ('create schema foo')"},
 		// A path key holding the very quote that delimits it. The reference
 		// escapes it with a backslash; without that the key ends early and
 		// the port could not read back what it had just written.

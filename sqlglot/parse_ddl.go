@@ -3955,6 +3955,13 @@ func (p *parser) parseCopyParameter() (*Expression, error) {
 	if c == nil {
 		return nil, p.unsupported("COPY parameter without a name")
 	}
+	// The name is kept as a bare Var and written back with nothing round it,
+	// so a name that would need quotes is refused rather than written
+	// unreadably. The generator fuzzer found the port writing a parameter
+	// called `(` with the quotes taken off.
+	if c.Type == TokIDENTIFIER || !isBareWord(c.Text) {
+		return nil, p.unsupported("a COPY parameter named " + c.Text)
+	}
 	p.advance()
 	name := New("Var", Arg{"this", c.Text})
 

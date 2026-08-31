@@ -3458,6 +3458,9 @@ EXTRA_SHAPES = {
     "Cluster": [(("expressions[]",), ())],
     "Distribute": [(("expressions[]",), ())],
     "Sort": [(("expressions[]",), ())],
+    # An IF statement with an ELSE. The corpus writes only the form without
+    # one, so no shape was observed for it -- and the port reads both.
+    "IfBlock": [(("this", "true", "false"), ())],
     "Ceil": [(("this", "to"), ())],
     "Floor": [(("this", "to"), ())],
 }
@@ -4308,6 +4311,9 @@ def main() -> int:
         "\t// by `= <value>`, which becomes its default. T-SQL alone reads it,\n",
         "\t// and it is how a procedure parameter is given one.\n",
         "\tColumnDefaultAfterEquals bool\n",
+        "\t// IfIsAStatement says a bare IF opens a STATEMENT in this dialect --\n",
+        "\t// `IF <cond> BEGIN ... END` -- rather than being a call or a name.\n",
+        "\tIfIsAStatement bool\n",
         "\t// TypedDivision and SafeDivision are recorded on every Div node; the\n",
         "\t// reference reads them off the dialect, so they are not always false.\n",
         "\tTypedDivision bool\n",
@@ -4969,6 +4975,12 @@ def main() -> int:
         except Exception:  # noqa: BLE001 -- a dialect that will not read it
             _has_default = False
         out.append(f"\t\tColumnDefaultAfterEquals: {str(_has_default).lower()},\n")
+        try:
+            _if = _sg.parse_one("IF 1 = 1 SELECT 1", read=name or None)
+            _if_statement = type(_if).__name__ == "IfBlock"
+        except Exception:  # noqa: BLE001 -- a dialect that will not read it
+            _if_statement = False
+        out.append(f"\t\tIfIsAStatement: {str(_if_statement).lower()},\n")
         if _with:
             out.append("\t\tProcedureWithOptions: map[string]string{\n")
             for _word in sorted(_with):

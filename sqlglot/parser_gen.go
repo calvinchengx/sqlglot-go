@@ -152,6 +152,9 @@ type ParserTables struct {
 	// by `= <value>`, which becomes its default. T-SQL alone reads it,
 	// and it is how a procedure parameter is given one.
 	ColumnDefaultAfterEquals bool
+	// IfIsAStatement says a bare IF opens a STATEMENT in this dialect --
+	// `IF <cond> BEGIN ... END` -- rather than being a call or a name.
+	IfIsAStatement bool
 	// TypedDivision and SafeDivision are recorded on every Div node; the
 	// reference reads them off the dialect, so they are not always false.
 	TypedDivision bool
@@ -2716,6 +2719,7 @@ var parserTables = map[string]*ParserTables{
 		},
 		BareProcedureWrapper:     "",
 		ColumnDefaultAfterEquals: false,
+		IfIsAStatement:           false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",
 			"SCHEMABINDING": "ViewAttributeProperty",
@@ -7487,6 +7491,7 @@ var parserTables = map[string]*ParserTables{
 		},
 		BareProcedureWrapper:     "StoredProcedure",
 		ColumnDefaultAfterEquals: true,
+		IfIsAStatement:           true,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":         "ViewAttributeProperty",
 			"NATIVE_COMPILATION": "WithProcedureOptions",
@@ -8419,7 +8424,7 @@ var parserTables = map[string]*ParserTables{
 			"HexString":                           {{[]string{"this"}, []string{"this"}, []FuncConst{}, "0x{this}"}, {[]string{"this"}, []string{"this"}, []FuncConst{}, "0x{this}"}},
 			"Identifier":                          {{[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "temporary"}, []string{"this"}, []FuncConst{{"quoted", false}, {"temporary", true}}, "#{this}"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{}, []FuncConst{{"this", "c] d"}, {"quoted", true}}, "[c]] d]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "global_"}, []string{"this"}, []FuncConst{{"quoted", false}, {"global_", true}}, "##{this}"}, {[]string{"this", "temporary"}, []string{"this"}, []FuncConst{{"quoted", false}, {"temporary", true}}, "#{this}"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "temporary"}, []string{"this"}, []FuncConst{{"quoted", false}, {"temporary", true}}, "#{this}"}, {[]string{"this", "global_"}, []string{"this"}, []FuncConst{{"quoted", false}, {"global_", true}}, "##{this}"}, {[]string{"this", "temporary"}, []string{"this"}, []FuncConst{{"quoted", false}, {"temporary", true}}, "#{this}"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "temporary"}, []string{"this"}, []FuncConst{{"quoted", false}, {"temporary", true}}, "#{this}"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted", "global_"}, []string{"this"}, []FuncConst{{"quoted", true}, {"global_", true}}, "[##{this}]"}, {[]string{"this", "quoted", "temporary"}, []string{"this"}, []FuncConst{{"quoted", true}, {"temporary", true}}, "[#{this}]"}, {[]string{"this", "quoted", "temporary"}, []string{"this"}, []FuncConst{{"quoted", true}, {"temporary", true}}, "[#{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "global_"}, []string{"this"}, []FuncConst{{"quoted", false}, {"global_", true}}, "##{this}"}, {[]string{"this", "temporary"}, []string{"this"}, []FuncConst{{"quoted", false}, {"temporary", true}}, "#{this}"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}, {[]string{"this", "quoted"}, []string{"this"}, []FuncConst{{"quoted", true}}, "[{this}]"}},
 			"If":                                  {{[]string{"this", "true"}, []string{"this", "true"}, []FuncConst{}, "IIF({this}, {true})"}, {[]string{"this", "true", "false"}, []string{"this", "true", "false"}, []FuncConst{}, "IIF({this}, {true}, {false})"}},
-			"IfBlock":                             {{[]string{"this", "true"}, []string{"this", "true"}, []FuncConst{{"false", false}}, "IF {this} BEGIN {true}"}},
+			"IfBlock":                             {{[]string{"this", "true"}, []string{"this", "true"}, []FuncConst{{"false", false}}, "IF {this} BEGIN {true}"}, {[]string{"this", "true", "false"}, []string{"this", "true", "false"}, []FuncConst{}, "IF {this} BEGIN {true}; ELSE BEGIN {false}"}},
 			"In":                                  {{[]string{"this", "expressions"}, []string{"this", "expressions"}, []FuncConst{}, "{this} IN ({expressions})"}},
 			"Index":                               {{[]string{"this", "table", "params"}, []string{"this", "table", "params"}, []FuncConst{}, "{this} ON {table}{params}"}},
 			"IndexParameters":                     {{[]string{"columns", "with_storage", "on"}, []string{"columns", "with_storage", "on"}, []FuncConst{}, "({columns}) WITH ({with_storage}) ON {on}"}, {[]string{"columns"}, []string{"columns"}, []FuncConst{{"with_storage", false}}, "({columns})"}, {[]string{}, []string{}, []FuncConst{{"with_storage", false}}, ""}},
@@ -12375,6 +12380,7 @@ var parserTables = map[string]*ParserTables{
 		},
 		BareProcedureWrapper:     "",
 		ColumnDefaultAfterEquals: false,
+		IfIsAStatement:           false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",
 			"SCHEMABINDING": "ViewAttributeProperty",
@@ -17344,6 +17350,7 @@ var parserTables = map[string]*ParserTables{
 		},
 		BareProcedureWrapper:     "",
 		ColumnDefaultAfterEquals: false,
+		IfIsAStatement:           false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",
 			"SCHEMABINDING": "ViewAttributeProperty",
@@ -22489,6 +22496,7 @@ var parserTables = map[string]*ParserTables{
 		},
 		BareProcedureWrapper:     "",
 		ColumnDefaultAfterEquals: false,
+		IfIsAStatement:           false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",
 			"SCHEMABINDING": "ViewAttributeProperty",
