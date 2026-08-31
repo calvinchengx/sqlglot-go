@@ -67,6 +67,11 @@ def strset(name: str, names) -> str:
     return f"\t\t{name}: map[string]struct{{}}{{\n{body}\t\t}},\n"
 
 
+def isStringProbe(exp, node) -> bool:
+    """Whether this probe argument is a STRING literal."""
+    return isinstance(node, exp.Literal) and bool(node.args.get("is_string"))
+
+
 def probe_substitutions(exp):
     """Argument kinds a builder might branch on, beyond a plain column.
 
@@ -309,7 +314,7 @@ def _json_fold_rules(builder, exp, dialect):
     return rules
 
 
-def probe_functions(P, exp, dialect="", branch_classes=None):
+def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
     """Work out what each function name builds, by asking the reference.
 
     A function name does not simply become a node of the same shape: COUNT
@@ -497,6 +502,13 @@ def probe_functions(P, exp, dialect="", branch_classes=None):
     # arity, and every plain UPPER(x) refused.
     if branch_classes is None:
         branch_classes = class_candidates(P, exp, dialect)
+    # Positions that hold a TIME FORMAT. A string there is REWRITTEN by the
+    # builder -- `'YYYY-MM-DD'` becomes `'%Y-%m-%d'` -- so the spec probed with
+    # a column does not explain it, and the name was refused at every arity.
+    # The port rewrites the literal itself before building, from the table
+    # time_format_args produces, so a string that only moves in that way is
+    # not evidence of a builder nobody can describe.
+    format_args = format_args or {}
 
     out = {}
     by_arity: dict[str, dict[int, tuple]] = {}
@@ -553,6 +565,8 @@ def probe_functions(P, exp, dialect="", branch_classes=None):
                     varied_at = i
                     break
                 if not same(rebuild(spec, subst), other, subst):
+                    if isStringProbe(exp, kind) and i in format_args.get(name, ()):
+                        continue
                     ok = False
                     break
             if not ok:
@@ -561,7 +575,11 @@ def probe_functions(P, exp, dialect="", branch_classes=None):
         # JSON_EXTRACT_PATH only builds a JSON path when all of its arguments
         # are strings; with placeholder columns, or with one string among
         # columns, it hands them back unchanged and looks perfectly ordinary.
-        if ok and args:
+        # A name with a FORMAT position is not put to it: the format is
+        # rewritten there by design, so every all-strings call differs from
+        # the spec and would reject the name for the one thing the port
+        # already knows how to do.
+        if ok and args and not any(i < len(args) for i in format_args.get(name, ())):
             allstr = [
                 exp.column(f"w{i}") if i in skip else exp.Literal.string(f"s{i}")
                 for i in range(len(args))
@@ -641,11 +659,13 @@ def probe_functions(P, exp, dialect="", branch_classes=None):
                         fine = False
                         break
                     if not same(rebuild(narrow_spec, subst), other, subst):
+                        if isStringProbe(exp, kind) and i in format_args.get(name, ()):
+                            continue
                         fine = False
                         break
                 if not fine:
                     break
-            if fine and width:
+            if fine and width and not any(i < width for i in format_args.get(name, ())):
                 allstr = [
                     exp.column(f"w{i}") if i in narrow_skip else exp.Literal.string(f"s{i}")
                     for i in range(width)
@@ -2050,6 +2070,70 @@ def prefix_calls(dialect: str, P) -> dict:
         name = type(node).__name__
         if name not in ("Column", "Parameter", "Placeholder"):
             out[key] = name
+    return out
+
+
+def inverse_format_classes(dialect: str, exp, classes) -> list:
+    """Classes whose FORMAT argument is written back in the dialect's spelling.
+
+    The tree stores `%Y-%m-%d` and PostgreSQL writes `YYYY-MM-DD`, but only
+    for some of the classes that carry a format: TO_CHAR translates and
+    STR_TO_UNIX does not. So each is rendered with a format the mapping moves,
+    and kept only where the output actually shows the moved spelling.
+    """
+    from sqlglot.dialects.dialect import Dialect
+    from sqlglot.time import format_time
+
+    D = Dialect.get_or_raise(dialect or None)
+    inverse = getattr(D, "INVERSE_TIME_MAPPING", None) or {}
+    if not inverse:
+        return []
+    probe = "%Y-%m-%d"
+    want = format_time(probe, inverse)
+    default_stored = format_time(
+        str(getattr(D, "TIME_FORMAT", "") or "").strip("'"),
+        getattr(D, "TIME_MAPPING", None) or {},
+    )
+    if not want or want == probe:
+        return []
+
+    out = []
+    for name in sorted(classes):
+        cls = getattr(exp, name, None)
+        arg_types = getattr(cls, "arg_types", None)
+        if not isinstance(cls, type) or not arg_types or "format" not in arg_types:
+            continue
+        try:
+            node = cls(this=exp.column("ZZTHISZZ"), format=exp.Literal.string(probe))
+            text = Dialect.get_or_raise(dialect or None).generator().sql(node)
+        except Exception:  # noqa: BLE001 -- a class this probe cannot build
+            continue
+        # A format that is the dialect's OWN DEFAULT is written as nothing at
+        # all: Databricks spells `FROM_UNIXTIME(x)` for the format it would
+        # otherwise put down in full.
+        if default_stored:
+            try:
+                bare = Dialect.get_or_raise(dialect or None).generator().sql(
+                    cls(this=exp.column("ZZTHISZZ"),
+                        format=exp.Literal.string(default_stored))
+                )
+            except Exception:  # noqa: BLE001
+                bare = ""
+            if bare and "'" not in bare:
+                out.append((name, "default-dropped"))
+                continue
+        if want in text and probe not in text:
+            out.append((name, "inverse"))
+        elif probe in text:
+            out.append((name, "verbatim"))
+        else:
+            # A spelling that is neither the one stored nor the one this
+            # mapping gives: the dialect writes that class through a table of
+            # its own -- Databricks spells a TO_DATE format `yyyy-M-d` and a
+            # DATE_FORMAT one `yyyy-MM-dd`, from the same stored `%Y-%m-%d`.
+            # Recorded as neither, and the writer declines rather than put
+            # down a format that says something else.
+            out.append((name, "other"))
     return out
 
 
@@ -4065,6 +4149,15 @@ def main() -> int:
         "\t// EndCommits: a bare END ENDS THE TRANSACTION here, and is a name\n",
         "\t// or a block anywhere else.\n",
         "\tEndCommits bool\n",
+        "\t// FormatSpellings says how each class that carries a FORMAT writes\n",
+        "\t// it: `inverse` through the dialect's own mapping -- the tree\n",
+        "\t// stores %Y-%m-%d and PostgreSQL writes YYYY-MM-DD -- `verbatim`\n",
+        "\t// as stored, and `other` through a table of its own, which the\n",
+        "\t// writer declines rather than guess at.\n",
+        "\tFormatSpellings map[string]string\n",
+        "\t// DefaultTimeFormat is the format a `default-dropped` class writes\n",
+        "\t// as nothing at all.\n",
+        "\tDefaultTimeFormat string\n",
         "\t// LikeInsideSchema: a `LIKE other` that is NOT inside a column\n",
         "\t// list brings its own parentheses here. SupportsCreateLike says\n",
         "\t// the dialect writes the word at all.\n",
@@ -4495,7 +4588,10 @@ def main() -> int:
         # that label is what decides what gets built next.
         out.append(strset("SyntaxFunctions", sorted(P.FUNCTION_PARSERS)))
         out.append(strset("TableFunctions", table_functions(name, P)))
-        funcs, by_arity, unit_maps, dispatch = probe_functions(P, exp, name)
+        _fmt_args = time_format_args(name, P, exp, list(P.FUNCTIONS))
+        funcs, by_arity, unit_maps, dispatch = probe_functions(
+            P, exp, name, format_args=_fmt_args
+        )
         if dispatch:
             out.append("\t\tTypeDispatchFunctions: map[string]TypeDispatch{\n")
             for fn in sorted(dispatch):
@@ -4754,6 +4850,25 @@ def main() -> int:
             % str(bool(getattr(_gen, "SUPPORTS_CREATE_TABLE_LIKE", True))).lower()
         )
         out.append("\t\tEndCommits: %s,\n" % str(end_commits(name)).lower())
+        # Only the classes a TIME FORMAT argument actually builds. Plenty of
+        # other classes carry an argument called `format` -- a COPY's, a
+        # DESCRIBE's -- and it is not a time format at all.
+        _fmt_classes = set()
+        for fname in _fmt_args:
+            if fname in funcs:
+                _fmt_classes.add(funcs[fname][0])
+            for _, (cls_name, _spec) in by_arity.get(fname, {}).items():
+                _fmt_classes.add(cls_name)
+        _ifc = inverse_format_classes(name, exp, _fmt_classes)
+        body = "".join(f"\t\t\t{gostr(k)}: {gostr(v)},\n" for k, v in sorted(_ifc))
+        out.append(f"\t\tFormatSpellings: map[string]string{{\n{body}\t\t}},\n")
+        from sqlglot.time import format_time as _ft
+        _D = _DG.get_or_raise(name or None)
+        out.append(
+            "\t\tDefaultTimeFormat: %s,\n"
+            % gostr(_ft(str(getattr(_D, "TIME_FORMAT", "") or "").strip("'"),
+                        getattr(_D, "TIME_MAPPING", None) or {}))
+        )
         _pc = prefix_calls(name, P)
         body = "".join(f"\t\t\t{gostr(k)}: {gostr(v)},\n" for k, v in sorted(_pc.items()))
         out.append(f"\t\tPrefixCalls: map[string]string{{\n{body}\t\t}},\n")

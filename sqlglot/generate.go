@@ -85,6 +85,45 @@ func (g *generator) node(e *Expression) string {
 	if e == nil {
 		return ""
 	}
+	// A FORMAT is spelled three ways: through the dialect's own mapping (the
+	// tree stores `%Y-%m-%d` and PostgreSQL writes `YYYY-MM-DD`), as stored,
+	// or through a table of the dialect's own that this port does not have.
+	// Which of the three is the CLASS's, and is probed -- PostgreSQL's
+	// TO_CHAR translates and its STR_TO_UNIX does not.
+	//
+	// The probe that records how each class is WRITTEN fills the slot with a
+	// placeholder, where none of this happens, so the template it produced
+	// writes the stored spelling verbatim -- a different format string, not
+	// another way of writing one.
+	if spelling, known := g.tables.FormatSpellings[e.Class]; known {
+		if format, _ := e.Args["format"].(*Expression); isStringLiteral(format) {
+			switch spelling {
+			case "inverse":
+				text, _ := format.Args["this"].(string)
+				if spelled := formatTime(text, g.tables.InverseTimeMapping); spelled != text {
+					e = e.shallowCopy()
+					e.Set("format", New("Literal",
+						Arg{"this", spelled}, Arg{"is_string", true}))
+				}
+			case "default-dropped":
+				// A format that is the dialect's OWN default is written as
+				// nothing: Databricks spells `FROM_UNIXTIME(x)` for the
+				// format it would otherwise put down in full.
+				if text, _ := format.Args["this"].(string); text == g.tables.DefaultTimeFormat {
+					e = e.shallowCopy()
+					e.Set("format", nil)
+					break
+				}
+				return g.fail(e.Class + " whose format this dialect spells its own way")
+			case "other":
+				// A table of the dialect's own: Databricks spells a TO_DATE
+				// format `yyyy-M-d` and a DATE_FORMAT one `yyyy-MM-dd`, both
+				// from the stored `%Y-%m-%d`. Writing either spelling for the
+				// other says something else, so this one is declined.
+				return g.fail(e.Class + " whose format this dialect spells its own way")
+			}
+		}
+	}
 	if fn, ok := generators[e.Class]; ok {
 		return fn(g, e)
 	}

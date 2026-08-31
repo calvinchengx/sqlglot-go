@@ -3966,6 +3966,9 @@ func (p *parser) parseCopyField() (*Expression, error) {
 	case c.Type == TokIDENTIFIER:
 		p.advance()
 		return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true}), nil
+	case c.Type == TokNATIONAL_STRING:
+		p.advance()
+		return New("National", Arg{"this", c.Text}), nil
 	case atWord(c):
 		p.advance()
 		return New("Var", Arg{"this", c.Text}), nil
@@ -3976,12 +3979,13 @@ func (p *parser) parseCopyField() (*Expression, error) {
 // atWord reports whether a token was written as a bare word, whatever the
 // tokenizer made of it: a COPY's settings are named with keywords as often as
 // not, and the reference takes whatever stands there.
+//
+// The whole TEXT has to be a word, not just its first character: a national
+// string arrives as `N'...'` whose text is what was inside the quotes, and
+// reading `N'CopY A'` as a word called `CopY A` wrote it back without the
+// quotes. The generator fuzzer found it.
 func atWord(c *Token) bool {
-	if c == nil || c.Text == "" {
-		return false
-	}
-	r := rune(c.Text[0])
-	return unicode.IsLetter(r) || r == '_'
+	return c != nil && isBareWord(c.Text)
 }
 
 // parseSequenceProperties reads what a CREATE SEQUENCE says about the numbers

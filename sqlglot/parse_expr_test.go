@@ -6640,6 +6640,17 @@ func TestCopy(t *testing.T) {
 		}
 	}
 
+	// A national string is a STRING, not a word: its text is what was inside
+	// the quotes, and reading `N'CopY A'` as a word wrote it back without
+	// them. The generator fuzzer found it.
+	national, err := ParseOne("COPY A FROM N'x'", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(national, "duckdb"); err != nil || got != "COPY A FROM N'x'" {
+		t.Errorf("wrote %q, %v", got, err)
+	}
+
 	call, err := ParseOne("COPY t FROM f(1)", "databricks")
 	if err != nil {
 		t.Fatalf("ParseOne: %v", err)
@@ -7373,5 +7384,62 @@ func TestCastAfterIs(t *testing.T) {
 		if got, err := Generate(e, tc.dialect); err != nil || got != tc.want {
 			t.Errorf("[%s] %q wrote %q, want %q (%v)", tc.dialect, tc.sql, got, tc.want, err)
 		}
+	}
+}
+
+// TestTimeFormatArguments covers the functions whose second argument is a TIME
+// FORMAT, which the builder rewrites into the reference's own spelling on the
+// way in and the writer spells back on the way out.
+func TestTimeFormatArguments(t *testing.T) {
+	for _, tc := range []struct{ sql, dialect string }{
+		{"SELECT TO_DATE('05 12 2000', 'DD MM YYYY')", "postgres"},
+		{"SELECT TO_DATE('01/01/2000', 'MM/DD/YYYY')", "postgres"},
+		{"TO_TIMESTAMP('2020-01-01', 'YYYY-MM-DD')", "postgres"},
+		{"TO_CHAR(x, 'YYYY-MM-DD')", "postgres"},
+		{"TO_CHAR(x, 'YY-FMMM-SS')", "postgres"},
+		// A format that is not a literal is left where it stands.
+		{"SELECT TO_CHAR(foo, bar)", "postgres"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.sql {
+			t.Errorf("[%s] %q wrote %q, %v", tc.dialect, tc.sql, got, err)
+		}
+	}
+
+	// The tree stores the reference's spelling, not the dialect's.
+	e, err := ParseOne("TO_CHAR(x, 'YYYY-MM-DD')", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	format, _ := e.Args["format"].(*Expression)
+	if format == nil || format.Args["this"] != "%Y-%m-%d" {
+		t.Errorf("the stored format is %v", e.Args["format"])
+	}
+
+	// Databricks spells a TO_DATE format one way and a DATE_FORMAT one
+	// another, both from the same stored text -- a table of its own that this
+	// port does not have, so it reads those and declines to write them.
+	e, err = ParseOne("TO_DATE(x, 'yyyy')", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "databricks"); err == nil {
+		t.Errorf("wrote %q; Databricks spells that format its own way", got)
+	}
+
+	// A format that IS the dialect's own default is written as nothing.
+	e, err = ParseOne(
+		"SELECT TIMESTAMPDIFF(MINUTE, CAST(FROM_UNIXTIME(0) AS TIMESTAMP), "+
+			"CAST(FROM_UNIXTIME(60) AS TIMESTAMP))", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	want := "SELECT TIMESTAMPDIFF(MINUTE, CAST(FROM_UNIXTIME(0) AS TIMESTAMP), " +
+		"CAST(FROM_UNIXTIME(60) AS TIMESTAMP))"
+	if got, err := Generate(e, "databricks"); err != nil || got != want {
+		t.Errorf("wrote %q, %v", got, err)
 	}
 }
