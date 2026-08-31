@@ -1758,13 +1758,67 @@ func TestCreateTable(t *testing.T) {
 	for _, sql := range []string{
 		"CREATE TABLE t (a INT GENERATED ALWAYS AS ROW START)",
 		"CREATE MATERIALIZED VIEW v AS SELECT 1",
-		"CREATE TABLE t WITH (FORMAT='parquet')",
 		"CREATE TABLE t (a INT",
-		"CREATE TABLE t (a INT) PARTITIONED BY (b)",
+		"CREATE TABLE t (a INT) DISTRIBUTED BY HASH (b)",
+		// Every way a property can run out or say something the port cannot
+		// read. Each is refused whole rather than read in part.
+		"CREATE TABLE t (a INT) FORMAT",
+		"CREATE TABLE t (a INT) FORMAT = 1",
+		"CREATE TABLE t (a INT) PARTITIONED BY b",
+		"CREATE TABLE t (a INT) CLUSTER BY c",
+		"CREATE TABLE t (a INT) CLUSTER BY (c",
+		"CREATE TABLE t (a INT) INHERITS (t1",
+		"CREATE TABLE t (a INT) WITH (a = 1",
+		"CREATE TABLE t (a INT) WITH (1 = 1)",
+		"CREATE TABLE t (a INT) WITH (a)",
+		"CREATE TABLE t (a INT) WITH (a =",
+		"CREATE TABLE t (a INT) WITH (",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
 		}
+	}
+}
+
+// TestTableProperties covers the words a CREATE may say about the thing it
+// makes. Each word's node and the shape of what follows it are generated, so
+// what is pinned here is the four shapes and the two places they are written.
+func TestTableProperties(t *testing.T) {
+	for _, c := range []struct{ name, sql, dialect, want string }{
+		// POST_WITH: gathered into one wrapped list, under a word that is the
+		// dialect's own.
+		{"a value inside a WITH list", "CREATE TABLE z WITH (FORMAT='parquet') AS SELECT 1", "",
+			"CREATE TABLE z WITH (FORMAT='parquet') AS SELECT 1"},
+		{"a key and value with no word of its own", "CREATE TABLE t TBLPROPERTIES ('a.b'=15)",
+			"databricks", "CREATE TABLE t TBLPROPERTIES ('a.b'=15)"},
+		{"a schema inside a WITH list", "CREATE TABLE z (z INT) WITH (PARTITIONED_BY=(x INT))", "",
+			"CREATE TABLE z (z INT) WITH (PARTITIONED_BY=(x INT))"},
+		// POST_SCHEMA: each stands on its own after the columns.
+		{"a wrapped list of columns", "CREATE TABLE t CLUSTER BY (col1, col2)", "databricks",
+			"CREATE TABLE t CLUSTER BY (col1, col2)"},
+		{"a wrapped list of tables", "CREATE TABLE t (c CHAR(2)) INHERITS (t1, t2)", "postgres",
+			"CREATE TABLE t (c CHAR(2)) INHERITS (t1, t2)"},
+		// A name written with no type keeps no ColumnDef around it: the same
+		// property is a Schema of Identifiers here and of ColumnDefs above.
+		// The word it comes back under is the dialect's, not the one it was
+		// written with -- both spellings are the same property.
+		{"a schema of bare names", "CREATE TABLE t (a INT) PARTITIONED BY (b)", "",
+			"CREATE TABLE t (a INT) WITH (PARTITIONED_BY=(b))"},
+		{"a table name", "CREATE TABLE t LIKE other", "", "CREATE TABLE t LIKE other"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			tree, err := ParseOne(c.sql, c.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", c.sql, err)
+			}
+			got, gerr := Generate(tree, c.dialect)
+			if gerr != nil {
+				t.Fatalf("Generate(%q): %v", c.sql, gerr)
+			}
+			if got != c.want {
+				t.Errorf("%s\n got  %s\n want %s", c.sql, got, c.want)
+			}
+		})
 	}
 }
 

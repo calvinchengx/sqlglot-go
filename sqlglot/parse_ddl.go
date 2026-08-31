@@ -101,6 +101,14 @@ func (p *parser) parseCreate() (*Expression, error) {
 	}
 
 	var this, expression *Expression
+	// Some of what a statement says about its table stands between the name
+	// and the columns -- `CREATE TABLE z WITH (FORMAT='parquet') AS SELECT 1`
+	// -- and some after them. Both are read, in the order they were written,
+	// because the reference keeps them in one list in that order.
+	afterName, err := p.parseTableProperties()
+	if err != nil {
+		return nil, err
+	}
 	switch {
 	case p.at(TokL_PAREN):
 		// A TABLE's columns each carry a type; a VIEW's are names the query's
@@ -164,6 +172,13 @@ func (p *parser) parseCreate() (*Expression, error) {
 			withData.Set("statistics", statistics)
 		}
 	}
+	// What the statement says ABOUT the table: `USING PARQUET`, `CLUSTER BY
+	// (c)`, `PARTITIONED BY (a INT)`. They stand after the columns, and the
+	// ones this port cannot name leave the statement refused below.
+	afterSchema, err := p.parseTableProperties()
+	if err != nil {
+		return nil, err
+	}
 	if p.curr() != nil {
 		return nil, p.unsupported("CREATE " + kind + " with more than this port reads")
 	}
@@ -175,6 +190,8 @@ func (p *parser) parseCreate() (*Expression, error) {
 	if temporary || namesATemporaryTable(createdTable(this)) {
 		items = append(items, New("TemporaryProperty"))
 	}
+	items = append(items, afterName...)
+	items = append(items, afterSchema...)
 	if withData != nil {
 		items = append(items, withData)
 	}

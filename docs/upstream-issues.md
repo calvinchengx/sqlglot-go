@@ -429,3 +429,33 @@ followed the statement, which separates the pair. This port does not model
 comments, so it declines to write a bare name holding a dollar once one has
 already gone into the output; the name on its own -- `SELECT 1 AS a$b` -- is
 unaffected. Found by the generator fuzzer.
+
+## A DATA_DELETION property with anything else in its parentheses never returns
+
+`_parse_data_deletion_property` reads the parenthesised settings with a loop
+that advances only when one of two known settings matches:
+
+```python
+if self._match(TokenType.L_PAREN):
+    while self._curr and not self._match(TokenType.R_PAREN):
+        if self._match_text_seq("FILTER_COLUMN", "="):
+            prop.set("filter_column", self._parse_column())
+        elif self._match_text_seq("RETENTION_PERIOD", "="):
+            prop.set("retention_period", self._parse_retention_period())
+
+        self._match(TokenType.COMMA)
+```
+
+Anything else inside the parentheses matches neither branch, and the trailing
+`_match(COMMA)` does not move either. The cursor never advances, `self._curr`
+stays where it is, and the loop runs forever:
+
+    >>> sqlglot.parse_one("CREATE TABLE t (a INT) DATA_DELETION (aaa)")
+    # never returns
+
+Found while probing what each property name accepts after it. The property
+itself is fine -- `DATA_DELETION=ON` and `DATA_DELETION (FILTER_COLUMN=c)`
+both parse -- so this is a missing "else: advance", not a missing feature.
+The port's probe skips the name rather than waiting on it.
+
+**Reference:** sqlglot @ ceb5111421e9.

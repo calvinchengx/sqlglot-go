@@ -74,6 +74,7 @@ func init() {
 		"Parameter":                           (*generator).writeParameter,
 		"ColumnDef":                           (*generator).writeColumnDef,
 		"Create":                              (*generator).writeCreate,
+		"Property":                            (*generator).writeProperty,
 		"Alter":                               (*generator).writeAlter,
 		"AlterRename":                         (*generator).writeAlterRename,
 		"RenameColumn":                        (*generator).writeRenameColumn,
@@ -1727,6 +1728,20 @@ func (g *generator) writeFilter(e *Expression) string {
 	return g.child(e, "this") + " FILTER(" + g.child(e, "expression") + ")"
 }
 
+// keyDelimiter reports the quote a JSON path form wraps its key in, or "" if
+// it wraps it in nothing. Databricks writes a key as bare text and has none.
+func keyDelimiter(form string) string {
+	at := strings.Index(form, "{key}")
+	if at <= 0 {
+		return ""
+	}
+	switch form[at-1] {
+	case '"', '\'':
+		return form[at-1 : at]
+	}
+	return ""
+}
+
 // writeJSONPath assembles a path from the pieces the dialect uses. DuckDB
 // quotes the whole thing and keeps the $ root; Databricks does neither, and
 // the two spell a key needing quotes differently.
@@ -1800,8 +1815,17 @@ func (g *generator) writeJSONPath(e *Expression) string {
 				form = pieces.QuotedKey
 			}
 			body := name
+			// A key written INSIDE quotes has those quotes escaped in it,
+			// with a backslash: the reference writes `["x \"y\""]`. Which
+			// character to escape is read off the form itself rather than
+			// recorded again -- whatever the form puts against the key is
+			// what would end the key early. Found by the generator fuzzer,
+			// which wrote a path key holding the quote that delimits it.
+			if delimiter := keyDelimiter(form); delimiter != "" {
+				body = strings.ReplaceAll(body, delimiter, "\\"+delimiter)
+			}
 			if escapeQuote {
-				body = escapeStringBody(name, g.cfg.StringEscapes)
+				body = escapeStringBody(body, g.cfg.StringEscapes)
 			}
 			segment := strings.ReplaceAll(form, "{key}", body)
 			// A segment that renders to NOTHING cannot be read back.
@@ -2297,7 +2321,14 @@ func (g *generator) writeCreate(e *Expression) string {
 			out += "TEMPORARY "
 		}
 	}
-	out += kind + " "
+	// What the statement says ABOUT the thing it makes, in the three places
+	// the reference puts it: before the kind, on its own after the columns,
+	// and gathered into one wrapped list after those.
+	beforeKind, afterSchema, failed := g.writeProperties(e)
+	if failed != "" {
+		return failed
+	}
+	out += beforeKind + kind + " "
 	if concurrently, _ := e.Args["concurrently"].(bool); concurrently {
 		// Only an index takes this, and it goes after the kind rather than
 		// before it.
@@ -2334,6 +2365,7 @@ func (g *generator) writeCreate(e *Expression) string {
 		return g.fail(e.Class + " of a three-part name this dialect shortens")
 	}
 	out += g.child(e, "this")
+	out += afterSchema
 	if expression := g.child(e, "expression"); expression != "" {
 		out += " AS " + expression
 	}
@@ -2349,6 +2381,70 @@ func (g *generator) writeCreate(e *Expression) string {
 		}
 	}
 	return out
+}
+
+// writeProperty writes a plain key and value -- the property with no word of
+// its own. The key is written by NAME rather than as the node it is, so a
+// string key loses its quotes and a bare one keeps none; the dialect that
+// quotes keys puts them back on both.
+func (g *generator) writeProperty(e *Expression) string {
+	key, _ := e.Args["this"].(*Expression)
+	name := ""
+	if key != nil {
+		name, _ = key.Args["this"].(string)
+	}
+	if g.tables.PropertyNameQuoted {
+		name = "'" + escapeStringBody(name, g.cfg.StringEscapes) + "'"
+	}
+	return name + "=" + g.child(e, "value")
+}
+
+// writeProperties writes what a CREATE says about the thing it makes. Two
+// groups, and the reference decides which by the class alone: POST_SCHEMA
+// properties stand on their own, one after another, and POST_WITH ones go
+// together inside a single wrapped list opened by a word of the dialect's
+// own -- WITH everywhere but Databricks, which writes TBLPROPERTIES.
+//
+// A property whose place this port has no record of leaves the statement
+// refused, rather than written somewhere plausible.
+func (g *generator) writeProperties(e *Expression) (before string, out string, failed string) {
+	properties, _ := e.Args["properties"].(*Expression)
+	if properties == nil {
+		return "", "", ""
+	}
+	items, _ := properties.Args["expressions"].([]*Expression)
+	var root, with []string
+	var beforeKind []string
+	for _, item := range items {
+		switch g.tables.PropertyLocation[item.Class] {
+		case "POST_SCHEMA":
+			root = append(root, g.node(item))
+		case "POST_WITH":
+			with = append(with, g.node(item))
+		case "POST_CREATE":
+			// Between CREATE and the kind: `CREATE EXTERNAL TABLE t`. The
+			// caller writes these, because they are already behind it by the
+			// time the properties are reached.
+			if item.Class != "TemporaryProperty" {
+				beforeKind = append(beforeKind, g.node(item))
+			}
+		case "POST_EXPRESSION", "POST_NAME", "POST_ALIAS":
+			// Written elsewhere in the statement, by the code that owns that
+			// place -- TEMPORARY before the kind, WITH DATA after the query.
+		default:
+			return "", "", g.fail("a " + item.Class + " this port cannot place")
+		}
+	}
+	if len(root) > 0 {
+		out += " " + strings.Join(root, " ")
+	}
+	if len(with) > 0 {
+		out += " " + g.tables.WithPropertiesPrefix + " (" + strings.Join(with, ", ") + ")"
+	}
+	if len(beforeKind) > 0 {
+		before = strings.Join(beforeKind, " ") + " "
+	}
+	return before, out, ""
 }
 
 // namesACatalog reports whether a CREATE's target carries all three parts of

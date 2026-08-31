@@ -293,6 +293,11 @@ func TestGenerateShapes(t *testing.T) {
 			"SELECT NOT (c -> '$.a')"},
 		{"extraction under an IN", "select json_extract(c, '$.a') in (1)", "duckdb",
 			"SELECT (c -> '$.a') IN (1)"},
+		// A path key holding the very quote that delimits it. The reference
+		// escapes it with a backslash; without that the key ends early and
+		// the port could not read back what it had just written.
+		{"a path key holding its own quote", "SELECT c:`a\"b`", "databricks",
+			"SELECT c:[\"a\\\"b\"]"},
 		// Databricks spells the same tree as a colon path, which is not an
 		// operator and takes no parentheses anywhere.
 		{"colon path under a subscript", "select json_extract(c, '$.a')[1]", "databricks",

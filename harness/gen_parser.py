@@ -3890,6 +3890,108 @@ def struct_spelling(dialect: str) -> tuple[str, str]:
     return "", ""
 
 
+def property_specs(dialect: str) -> dict[str, dict]:
+    """What each table property is called and what it takes after its name.
+
+    The reference keeps 92 of these in a table of closures, one little grammar
+    each, and none of them is readable as data. So each name is asked: six
+    candidate spellings are parsed and the answer is classified by the SHAPE of
+    the node that came back, not by the name.
+
+      bare             no argument at all -- EXTERNAL, HEAP, ICEBERG
+      value            an optional `=` and then a string or a word, into `this`
+      table            a table name, into `this` -- LIKE
+      schema           a parenthesised column list, into `this` as a Schema
+      wrapped-columns  a parenthesised list, into `expressions` as columns
+      wrapped-tables   the same, as tables -- INHERITS
+
+    A name whose answers fit none of them is not recorded, and the port keeps
+    refusing it. One name is skipped for a different reason: DATA_DELETION with
+    anything unexpected in its parentheses never returns -- see
+    docs/upstream-issues.md -- so the probe bounds every parse with a timer
+    rather than waiting on it.
+    """
+    import signal
+
+    import sqlglot
+    from sqlglot import expressions as e
+    from sqlglot.dialects.dialect import Dialect
+
+    class Slow(Exception):
+        pass
+
+    def raise_slow(*_):
+        raise Slow()
+
+    previous = signal.signal(signal.SIGALRM, raise_slow)
+
+    def one(name: str, arg: str):
+        signal.setitimer(signal.ITIMER_REAL, 2.0)
+        try:
+            tree = sqlglot.parse_one(f"CREATE TABLE t (a INT) {name}{arg}", read=dialect or None)
+        except Exception:  # noqa: BLE001 -- including the timer
+            return None
+        finally:
+            signal.setitimer(signal.ITIMER_REAL, 0)
+        found = tree.args.get("properties") if isinstance(tree, e.Create) else None
+        items = found.args["expressions"] if found is not None else []
+        return items[0] if len(items) == 1 else None
+
+    out: dict[str, dict] = {}
+    try:
+        for name in sorted(Dialect.get_or_raise(dialect or None).parser_class.PROPERTY_PARSERS):
+            bare = one(name, "")
+            wrapped = one(name, " (aaa)")
+            word = one(name, " xxx")
+            shape = None
+            node = None
+            if wrapped is not None:
+                inner = wrapped.args.get("this")
+                listed = wrapped.args.get("expressions") or []
+                if isinstance(inner, e.Schema):
+                    shape, node = "schema", wrapped
+                elif listed and all(isinstance(x, e.Column) for x in listed):
+                    shape, node = "wrapped-columns", wrapped
+                elif listed and all(isinstance(x, e.Table) for x in listed):
+                    shape, node = "wrapped-tables", wrapped
+            if shape is None and word is not None:
+                inner = word.args.get("this")
+                if isinstance(inner, e.Var):
+                    shape, node = "value", word
+                elif isinstance(inner, e.Table):
+                    shape, node = "table", word
+            if shape is None and bare is not None and not bare.args:
+                shape, node = "bare", bare
+            if shape is None:
+                # A word that opens a LIST of other properties -- `WITH (...)`,
+                # `TBLPROPERTIES (...)`. Recognised by putting a property the
+                # probe already knows inside it and seeing THAT one come back.
+                # Asked only of a word with no shape of its own, or COMMENT
+                # would answer yes to its own class.
+                nested = one(name, " (COMMENT='sss')")
+                if nested is not None and type(nested).__name__ == "SchemaCommentProperty":
+                    out[name] = {"class": "", "shape": "wrapped-properties", "eq": False}
+                continue
+            if node is None:
+                continue
+            out[name] = {
+                "class": type(node).__name__,
+                "shape": shape,
+                # Whether an equals sign may stand between the word and what
+                # follows it. Asked of the shape's OWN spelling: a value takes
+                # `FORMAT='parquet'` and a schema takes
+                # `PARTITIONED_BY=(x INT)`.
+                "eq": (
+                    one(name, "='sss'") is not None
+                    if shape == "value"
+                    else shape == "schema" and one(name, "=(aaa INT)") is not None
+                ),
+            }
+    finally:
+        signal.signal(signal.SIGALRM, previous)
+    return out
+
+
 def bare_join_is_on_true(dialect: str) -> bool:
     """Whether `JOIN u` with no ON records `ON TRUE`.
 
@@ -4105,6 +4207,23 @@ def main() -> int:
         "\t// quotes its keys as strings uses instead.\n",
         "\tStructTemplate      string\n",
         "\tStructFieldTemplate string\n",
+        "\t// PropertySpecs are the words a CREATE may say about the thing it\n",
+        "\t// makes, keyed by the word. Class is the node built and Shape is\n",
+        "\t// what follows the word; both are probed by parsing one, because\n",
+        "\t// the reference keeps a little grammar per name and none of it is\n",
+        "\t// readable as data.\n",
+        "\tPropertySpecs map[string]PropertySpec\n",
+        "\t// PropertyLocation says WHERE each property class is written --\n",
+        "\t// POST_SCHEMA ones stand on their own after the columns, POST_WITH\n",
+        "\t// ones go together inside one wrapped list.\n",
+        "\tPropertyLocation map[string]string\n",
+        "\t// WithPropertiesPrefix opens that wrapped list: WITH everywhere but\n",
+        "\t// Databricks, which writes TBLPROPERTIES.\n",
+        "\tWithPropertiesPrefix string\n",
+        "\t// PropertyNameQuoted says a plain key-and-value property writes its\n",
+        "\t// KEY in quotes -- Databricks writes `'a.b'=15` for what the others\n",
+        "\t// write `a.b=15`. Read off a rendered node.\n",
+        "\tPropertyNameQuoted bool\n",
         "\t// TypedDivision and SafeDivision are recorded on every Div node; the\n",
         "\t// reference reads them off the dialect, so they are not always false.\n",
         "\tTypedDivision bool\n",
@@ -4606,6 +4725,14 @@ def main() -> int:
         "\tKey   string\n",
         "\tValue any\n",
         "}\n\n",
+        "// PropertySpec is one word a CREATE may say about the thing it makes:\n",
+        "// the node it builds, the shape of what follows the word, and whether\n",
+        "// an equals sign may stand between them.\n",
+        "type PropertySpec struct {\n",
+        "\tClass string\n",
+        "\tShape string\n",
+        "\tEquals bool\n",
+        "}\n\n",
         "// ClassTrigger names the classes that, at Index, make a builder produce\n",
         "// something other than what the probe recorded.\n",
         "// SyntaxTemplate is how one shape of a syntax function is written,\n",
@@ -4920,6 +5047,28 @@ def main() -> int:
         struct_wrap, struct_field = struct_spelling(name)
         out.append(f"\t\tStructTemplate: {gostr(struct_wrap)},\n")
         out.append(f"\t\tStructFieldTemplate: {gostr(struct_field)},\n")
+        _props = property_specs(name)
+        if _props:
+            out.append("\t\tPropertySpecs: map[string]PropertySpec{\n")
+            for _word in sorted(_props):
+                _spec = _props[_word]
+                out.append(
+                    f"\t\t\t{gostr(_word)}: {{{gostr(_spec['class'])}, "
+                    f"{gostr(_spec['shape'])}, {str(_spec['eq']).lower()}}},\n"
+                )
+            out.append("\t\t},\n")
+        _gen = Dialect.get_or_raise(name or None).generator_class
+        out.append("\t\tPropertyLocation: map[string]string{\n")
+        for _cls, _loc in sorted(
+            ((c.__name__, v.name) for c, v in _gen.PROPERTIES_LOCATION.items())
+        ):
+            out.append(f"\t\t\t{gostr(_cls)}: {gostr(_loc)},\n")
+        out.append("\t\t},\n")
+        out.append(f"\t\tWithPropertiesPrefix: {gostr(_gen.WITH_PROPERTIES_PREFIX)},\n")
+        _pn = exp.Property(this=exp.var("kkk"), value=exp.Literal.number(5)).sql(
+            dialect=name or None
+        )
+        out.append(f"\t\tPropertyNameQuoted: {str(_pn.startswith(chr(39))).lower()},\n")
         reads_colon, colon_template = colon_lambda(name)
         out.append(f"\t\tColonLambdaRead: {str(reads_colon).lower()},\n")
         if colon_template:
