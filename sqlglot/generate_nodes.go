@@ -74,6 +74,9 @@ func init() {
 		"Parameter":                           (*generator).writeParameter,
 		"ColumnDef":                           (*generator).writeColumnDef,
 		"Create":                              (*generator).writeCreate,
+		"Block":                               (*generator).writeBlock,
+		"StoredProcedure":                     (*generator).writeStoredProcedure,
+		"EndStatement":                        (*generator).writeEndStatement,
 		"Property":                            (*generator).writeProperty,
 		"Alter":                               (*generator).writeAlter,
 		"AlterRename":                         (*generator).writeAlterRename,
@@ -1124,6 +1127,12 @@ func (g *generator) writeColumnDef(e *Expression) string {
 			}
 			trailing += " " + g.node(item)
 		}
+	}
+	// `= <value>` after the type is the column's DEFAULT, written where it
+	// was read. Only one dialect has it, and it is how a procedure parameter
+	// is given one.
+	if value := g.child(e, "default"); value != "" {
+		trailing += " = " + value
 	}
 	// The column's TYPE is not a column list, however deep the struct in it
 	// goes: `a STRUCT<c: MAP<...>>` keeps the field separator inside.
@@ -2351,7 +2360,11 @@ func (g *generator) writeCreate(e *Expression) string {
 		// the name alone.
 		return g.fail(e.Class + " VIEW whose column comments this dialect drops")
 	}
-	if expr, _ := e.Args["expression"].(*Expression); expr != nil && g.tables.RewritesCreateAsSelect {
+	// A TABLE only: the rewrite is of CREATE TABLE AS SELECT, and a
+	// PROCEDURE whose body is a query is a different statement that this
+	// dialect writes exactly as it was written.
+	if expr, _ := e.Args["expression"].(*Expression); expr != nil && kind == "TABLE" &&
+		g.tables.RewritesCreateAsSelect {
 		// This dialect has no such statement and the reference turns it into
 		// another one -- `SELECT * INTO x FROM (...)`. That is a rewrite, not
 		// a spelling, and writing the statement as itself would be SQL the
@@ -2365,6 +2378,20 @@ func (g *generator) writeCreate(e *Expression) string {
 		return g.fail(e.Class + " of a three-part name this dialect shortens")
 	}
 	out += g.child(e, "this")
+	// A procedure's body may be wrapped in BEGIN and END. The BEGIN is
+	// recorded on the statement rather than on the block, so it is written
+	// here; the END is a statement of the block's own. A procedure with an
+	// EMPTY block has no body to write and no AS either.
+	if kind == "PROCEDURE" {
+		body := g.child(e, "expression")
+		if body == "" {
+			return out + afterSchema
+		}
+		if begin, _ := e.Args["begin"].(bool); begin {
+			body = "BEGIN " + body
+		}
+		return out + afterSchema + " AS " + body
+	}
 	out += afterSchema
 	if expression := g.child(e, "expression"); expression != "" {
 		out += " AS " + expression
@@ -2381,6 +2408,44 @@ func (g *generator) writeCreate(e *Expression) string {
 		}
 	}
 	return out
+}
+
+// writeBlock writes what a procedure DOES: its statements, one after another,
+// separated the way they were written.
+func (g *generator) writeBlock(e *Expression) string {
+	items, _ := e.Args["expressions"].([]*Expression)
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, g.node(item))
+	}
+	return strings.Join(parts, "; ")
+}
+
+// writeEndStatement writes the END that closed a block. The reference keeps it
+// as a statement of the block rather than as a flag on it.
+func (g *generator) writeEndStatement(_ *Expression) string { return "END" }
+
+// writeStoredProcedure writes a procedure's name and its parameters. Only the
+// dialect that BUILDS one has a spelling for it; the reference's own writer
+// declines everywhere else, so a tree carrying one is refused there.
+func (g *generator) writeStoredProcedure(e *Expression) string {
+	if g.tables.BareProcedureWrapper == "" {
+		return g.fail("a stored procedure, which this dialect does not write")
+	}
+	this := g.child(e, "this")
+	params, _ := e.Args["expressions"].([]*Expression)
+	if len(params) == 0 {
+		return this
+	}
+	parts := make([]string, 0, len(params))
+	for _, param := range params {
+		parts = append(parts, g.node(param))
+	}
+	written := strings.Join(parts, ", ")
+	if wrapped, _ := e.Args["wrapped"].(bool); wrapped {
+		return this + "(" + written + ")"
+	}
+	return this + " " + written
 }
 
 // writeProperty writes a plain key and value -- the property with no word of

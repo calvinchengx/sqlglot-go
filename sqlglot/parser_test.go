@@ -209,6 +209,11 @@ func TestRefusals(t *testing.T) {
 		{"an empty step", "GENERATE_SERIES(a, b, '')", "postgres"},
 		{"a subscript with no index", "SELECT x[]", "duckdb"},
 		{"SUMMARIZE with nothing after it", "SUMMARIZE", "duckdb"},
+		{"a procedure option this port does not read", "CREATE PROCEDURE foo WITH WHATEVER AS SELECT 1", "tsql"},
+		{"a list of options beginning with an attribute", "CREATE PROCEDURE foo WITH ENCRYPTION, RECOMPILE AS SELECT 1", "tsql"},
+		{"a procedure with WITH and nothing after it", "CREATE PROCEDURE foo WITH", "tsql"},
+		{"EXECUTE without AS", "CREATE PROCEDURE foo WITH EXECUTE OWNER AS SELECT 1", "tsql"},
+		{"a procedure with more than this port reads", "CREATE PROCEDURE foo BOGUS", "tsql"},
 		{"LAMBDA without its colon", "SELECT LIST_TRANSFORM(a, LAMBDA x x)", "duckdb"},
 		{"LAMBDA without a parameter", "SELECT LIST_TRANSFORM(a, LAMBDA : x)", "duckdb"},
 	} {

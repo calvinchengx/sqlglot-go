@@ -4293,6 +4293,21 @@ def main() -> int:
         "\t// lets the annotator answer UNKNOWN for it without hiding a parse\n",
         "\t// gap behind the answer.\n",
         "\tCallNamesTheReferenceKnows map[string]struct{}\n",
+        "\t// BareProcedureWrapper is the class a CREATE PROCEDURE's name is\n",
+        "\t// wrapped in when it was written WITHOUT a parameter list. T-SQL\n",
+        "\t// puts a StoredProcedure round it and the rest leave the name\n",
+        "\t// alone, so the empty string means no wrapper.\n",
+        "\tBareProcedureWrapper string\n",
+        "\t// ProcedureWithOptions are the words a CREATE PROCEDURE may say\n",
+        "\t// after WITH, and the class each becomes. The reference reads two\n",
+        "\t// of them as a view attribute and the rest as a procedure option,\n",
+        "\t// which is a distinction nothing in the words themselves makes --\n",
+        "\t// so each is asked by parsing one.\n",
+        "\tProcedureWithOptions map[string]string\n",
+        "\t// ColumnDefaultAfterEquals says a column definition may be followed\n",
+        "\t// by `= <value>`, which becomes its default. T-SQL alone reads it,\n",
+        "\t// and it is how a procedure parameter is given one.\n",
+        "\tColumnDefaultAfterEquals bool\n",
         "\t// TypedDivision and SafeDivision are recorded on every Div node; the\n",
         "\t// reference reads them off the dialect, so they are not always false.\n",
         "\tTypedDivision bool\n",
@@ -4927,6 +4942,38 @@ def main() -> int:
             )
         )
         out.append(ttset("NoParenFunctions", P.NO_PAREN_FUNCTIONS))
+        import sqlglot as _sg  # noqa: PLC0415
+
+        _proc = _sg.parse_one("CREATE PROCEDURE foo AS SELECT 1", read=name or None)
+        _named = _proc.args.get("this")
+        out.append(
+            "\t\tBareProcedureWrapper: %s,\n"
+            % gostr("" if isinstance(_named, exp.Table) else type(_named).__name__)
+        )
+        _with = {}
+        for _word in sorted(set(P.PROCEDURE_OPTIONS) | set(getattr(P, "VIEW_ATTRIBUTES", ()))):
+            try:
+                _one = _sg.parse_one(
+                    f"CREATE PROCEDURE foo WITH {_word} AS SELECT 1", read=name or None
+                )
+            except Exception:  # noqa: BLE001 -- a word this dialect will not read there
+                continue
+            _props = _one.args.get("properties")
+            _items = _props.args["expressions"] if _props is not None else []
+            if len(_items) == 1:
+                _with[_word] = type(_items[0]).__name__
+        try:
+            _defaulted = _sg.parse_one("CREATE TABLE t (a INT = 1)", read=name or None)
+            _col = _defaulted.args["this"].args["expressions"][0]
+            _has_default = _col.args.get("default") is not None
+        except Exception:  # noqa: BLE001 -- a dialect that will not read it
+            _has_default = False
+        out.append(f"\t\tColumnDefaultAfterEquals: {str(_has_default).lower()},\n")
+        if _with:
+            out.append("\t\tProcedureWithOptions: map[string]string{\n")
+            for _word in sorted(_with):
+                out.append(f"\t\t\t{gostr(_word)}: {gostr(_with[_word])},\n")
+            out.append("\t\t},\n")
         out.append(opmap("NoParenFunctionClasses", P.NO_PAREN_FUNCTIONS))
         # Names with their own SYNTAX, not merely their own builder:
         # EXTRACT(unit FROM x), TRIM(BOTH ' ' FROM x), POSITION(a IN b). The

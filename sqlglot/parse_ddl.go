@@ -59,7 +59,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 		return nil, p.unsupported("CREATE without a kind")
 	}
 	kind := strings.ToUpper(kindToken.Text)
-	if kind != "TABLE" && kind != "VIEW" && kind != "FUNCTION" &&
+	if kind != "TABLE" && kind != "VIEW" && kind != "FUNCTION" && kind != "PROCEDURE" &&
 		kind != "INDEX" && kind != "SCHEMA" && kind != "SEQUENCE" {
 		return nil, p.unsupported("CREATE " + kind)
 	}
@@ -92,6 +92,9 @@ func (p *parser) parseCreate() (*Expression, error) {
 
 	if kind == "FUNCTION" {
 		return p.parseFunctionRest(table, replace, exists, temporary)
+	}
+	if kind == "PROCEDURE" {
+		return p.parseProcedureRest(table, replace, exists)
 	}
 
 	// A SEQUENCE has no columns and no query -- what follows its name says
@@ -846,6 +849,12 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			if p.atWords("FIRST") || p.atWords("AFTER") {
 				return out, nil
 			}
+			// `= <value>` after a column definition is its DEFAULT where the
+			// dialect reads one, and the reader of that is the caller's --
+			// the reference sets it after the constraints, not among them.
+			if p.tables.ColumnDefaultAfterEquals && p.at(TokEQ) {
+				return out, nil
+			}
 			if p.curr() != nil && !p.at(TokCOMMA) && !p.at(TokR_PAREN) {
 				return nil, p.unsupported("a column constraint this port does not read")
 			}
@@ -1559,6 +1568,9 @@ func (p *parser) parseFunctionParam() (*Expression, error) {
 	if p.at(TokCOMMA) || p.at(TokR_PAREN) {
 		return name, nil
 	}
+	// A parameter's type may be introduced by AS -- `@v1 AS INTEGER` -- which
+	// the reference matches and drops: the word is not part of the tree.
+	p.match(TokALIAS)
 	kind, err := p.parseDataType()
 	if err != nil {
 		return nil, err
@@ -1577,6 +1589,16 @@ func (p *parser) parseFunctionParam() (*Expression, error) {
 	constraints = append(constraints, rest...)
 	if len(constraints) > 0 {
 		def.Set("constraints", constraints)
+	}
+	// `= <value>` after the type is the parameter's DEFAULT, where the
+	// dialect reads one. Probed rather than named: only T-SQL does, and it
+	// reads one after any column definition rather than only a parameter's.
+	if p.tables.ColumnDefaultAfterEquals && p.match(TokEQ) {
+		value, err := p.parseDisjunction()
+		if err != nil {
+			return nil, err
+		}
+		def.Set("default", value)
 	}
 	return def, nil
 }

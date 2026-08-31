@@ -221,6 +221,13 @@ func (e *Expression) Dump() []map[string]any {
 		out = append(out, rec)
 		switch n := f.node.(type) {
 		case *Expression:
+			// A list may hold NOTHING at a position -- a procedure with no
+			// body has a block of one empty statement -- and the reference
+			// records that as a null rather than leaving it out.
+			if n == nil {
+				rec["v"] = nil
+				continue
+			}
 			rec["c"] = qualifiedClass(n.Class)
 			if n.Type != nil && n.Type != n {
 				rec["t"] = n.Type.Dump()

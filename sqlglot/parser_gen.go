@@ -137,6 +137,21 @@ type ParserTables struct {
 	// lets the annotator answer UNKNOWN for it without hiding a parse
 	// gap behind the answer.
 	CallNamesTheReferenceKnows map[string]struct{}
+	// BareProcedureWrapper is the class a CREATE PROCEDURE's name is
+	// wrapped in when it was written WITHOUT a parameter list. T-SQL
+	// puts a StoredProcedure round it and the rest leave the name
+	// alone, so the empty string means no wrapper.
+	BareProcedureWrapper string
+	// ProcedureWithOptions are the words a CREATE PROCEDURE may say
+	// after WITH, and the class each becomes. The reference reads two
+	// of them as a view attribute and the rest as a procedure option,
+	// which is a distinction nothing in the words themselves makes --
+	// so each is asked by parsing one.
+	ProcedureWithOptions map[string]string
+	// ColumnDefaultAfterEquals says a column definition may be followed
+	// by `= <value>`, which becomes its default. T-SQL alone reads it,
+	// and it is how a procedure parameter is given one.
+	ColumnDefaultAfterEquals bool
 	// TypedDivision and SafeDivision are recorded on every Div node; the
 	// reference reads them off the dialect, so they are not always false.
 	TypedDivision bool
@@ -2698,6 +2713,13 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_USER:      {},
 			TokCURRENT_ROLE:      {},
 			TokCURRENT_CATALOG:   {},
+		},
+		BareProcedureWrapper:     "",
+		ColumnDefaultAfterEquals: false,
+		ProcedureWithOptions: map[string]string{
+			"ENCRYPTION":    "ViewAttributeProperty",
+			"SCHEMABINDING": "ViewAttributeProperty",
+			"VIEW_METADATA": "ViewAttributeProperty",
 		},
 		NoParenFunctionClasses: map[TokenType]string{
 			TokSESSION_USER:      "SessionUser",
@@ -7462,6 +7484,15 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_TIMESTAMP: {},
 			TokCURRENT_USER:      {},
 			TokCURRENT_ROLE:      {},
+		},
+		BareProcedureWrapper:     "StoredProcedure",
+		ColumnDefaultAfterEquals: true,
+		ProcedureWithOptions: map[string]string{
+			"ENCRYPTION":         "ViewAttributeProperty",
+			"NATIVE_COMPILATION": "WithProcedureOptions",
+			"RECOMPILE":          "WithProcedureOptions",
+			"SCHEMABINDING":      "ViewAttributeProperty",
+			"VIEW_METADATA":      "ViewAttributeProperty",
 		},
 		NoParenFunctionClasses: map[TokenType]string{
 			TokSESSION_USER:      "SessionUser",
@@ -12341,6 +12372,13 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_USER:      {},
 			TokCURRENT_ROLE:      {},
 			TokCURRENT_CATALOG:   {},
+		},
+		BareProcedureWrapper:     "",
+		ColumnDefaultAfterEquals: false,
+		ProcedureWithOptions: map[string]string{
+			"ENCRYPTION":    "ViewAttributeProperty",
+			"SCHEMABINDING": "ViewAttributeProperty",
+			"VIEW_METADATA": "ViewAttributeProperty",
 		},
 		NoParenFunctionClasses: map[TokenType]string{
 			TokSESSION_USER:      "SessionUser",
@@ -17303,6 +17341,13 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_USER:      {},
 			TokCURRENT_ROLE:      {},
 			TokCURRENT_CATALOG:   {},
+		},
+		BareProcedureWrapper:     "",
+		ColumnDefaultAfterEquals: false,
+		ProcedureWithOptions: map[string]string{
+			"ENCRYPTION":    "ViewAttributeProperty",
+			"SCHEMABINDING": "ViewAttributeProperty",
+			"VIEW_METADATA": "ViewAttributeProperty",
 		},
 		NoParenFunctionClasses: map[TokenType]string{
 			TokSESSION_USER:      "SessionUser",
@@ -22441,6 +22486,13 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_TIMESTAMP: {},
 			TokCURRENT_USER:      {},
 			TokCURRENT_ROLE:      {},
+		},
+		BareProcedureWrapper:     "",
+		ColumnDefaultAfterEquals: false,
+		ProcedureWithOptions: map[string]string{
+			"ENCRYPTION":    "ViewAttributeProperty",
+			"SCHEMABINDING": "ViewAttributeProperty",
+			"VIEW_METADATA": "ViewAttributeProperty",
 		},
 		NoParenFunctionClasses: map[TokenType]string{
 			TokSESSION_USER:      "SessionUser",
