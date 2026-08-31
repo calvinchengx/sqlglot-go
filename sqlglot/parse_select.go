@@ -30,6 +30,31 @@ func (p *parser) parseQuery() (*Expression, error) {
 	return this, nil
 }
 
+// parseSummarize reads `SUMMARIZE [TABLE] <query | string | table>`. The word
+// TABLE is recorded whether or not it was written, because the two spellings
+// are two nodes and the writer picks by the flag.
+func (p *parser) parseSummarize() (*Expression, error) {
+	p.advance() // SUMMARIZE
+	table := p.match(TokTABLE)
+	var this *Expression
+	var err error
+	switch c := p.curr(); {
+	case c == nil:
+		return nil, p.unsupported("SUMMARIZE without anything to summarize")
+	case c.Type == TokSTRING:
+		p.advance()
+		this = New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
+	case p.at(TokSELECT):
+		this, err = p.parseSelect()
+	default:
+		this, err = p.parseTable()
+	}
+	if err != nil {
+		return nil, err
+	}
+	return New("Summarize", Arg{"this", this}, Arg{"table", table}), nil
+}
+
 // parseQueryBody is everything a query is APART from its WITH clause. It is
 // separate because a WITH may also stand in front of an INSERT or an UPDATE,
 // where what follows is not a query at all.
@@ -47,6 +72,13 @@ func (p *parser) parseQueryBody() (*Expression, error) {
 	// parenthesised FROM item -- so it is recognised here rather than at each.
 	if p.at(TokPIVOT) || p.at(TokUNPIVOT) {
 		return p.parseStatementPivot()
+	}
+	// DuckDB's SUMMARIZE describes what is in a table rather than selecting
+	// from it. It stands where a query stands -- on its own and inside a
+	// parenthesised FROM item -- and takes a query, a string naming a file,
+	// or a table.
+	if p.at(TokSUMMARIZE) {
+		return p.parseSummarize()
 	}
 	// DuckDB lets the FROM come FIRST, with the projections after it or left
 	// out entirely: `FROM t` means `SELECT * FROM t`. Every dialect here reads
@@ -276,7 +308,7 @@ func (p *parser) queryAt(i int) bool {
 		return false
 	}
 	switch next.Type {
-	case TokSELECT, TokWITH, TokFROM, TokPIVOT, TokUNPIVOT:
+	case TokSELECT, TokWITH, TokFROM, TokPIVOT, TokUNPIVOT, TokSUMMARIZE:
 		return true
 	case TokL_PAREN:
 		if !p.queryAt(i + 1) {

@@ -208,6 +208,7 @@ func TestRefusals(t *testing.T) {
 		{"a step no interval can be made of", "GENERATE_SERIES(a, b, '+')", "postgres"},
 		{"an empty step", "GENERATE_SERIES(a, b, '')", "postgres"},
 		{"a subscript with no index", "SELECT x[]", "duckdb"},
+		{"SUMMARIZE with nothing after it", "SUMMARIZE", "duckdb"},
 		{"LAMBDA without its colon", "SELECT LIST_TRANSFORM(a, LAMBDA x x)", "duckdb"},
 		{"LAMBDA without a parameter", "SELECT LIST_TRANSFORM(a, LAMBDA : x)", "duckdb"},
 	} {

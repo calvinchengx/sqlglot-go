@@ -319,6 +319,23 @@ func TestGenerateShapes(t *testing.T) {
 		{"a slice over a call nobody has a builder for",
 			"select regexp_extract_all(s, 'pattern', 0)[2:]", "duckdb",
 			"SELECT REGEXP_EXTRACT_ALL(s, 'pattern')[2:]"},
+		// DuckDB's SUMMARIZE describes what is in something rather than
+		// selecting from it, and it stands wherever a query stands.
+		{"summarize a table", "summarize tbl", "duckdb", "SUMMARIZE tbl"},
+		{"summarize a query", "summarize select * from tbl", "duckdb",
+			"SUMMARIZE SELECT * FROM tbl"},
+		{"summarize a file", "summarize table 'x.csv'", "duckdb", "SUMMARIZE TABLE 'x.csv'"},
+		{"summarize inside a FROM", "select * from (summarize tbl)", "duckdb",
+			"SELECT * FROM (SUMMARIZE tbl)"},
+		// A CREATE whose body is a TABLE rather than a query. The name may be
+		// a word that spells an option elsewhere.
+		{"a create over a table", "create table t as other", "", "CREATE TABLE t AS other"},
+		{"a create over a quoted name", `create table t as "minvalue"`, "",
+			`CREATE TABLE t AS "minvalue"`},
+		// A word that is a CALL in a projection and a NAME in a FROM.
+		{"a no-paren name as a table", "select * from current_date", "",
+			"SELECT * FROM current_date"},
+		{"and the same word as a call", "select current_date", "", "SELECT CURRENT_DATE"},
 		// A path key holding the very quote that delimits it. The reference
 		// escapes it with a backslash; without that the key ends early and
 		// the port could not read back what it had just written.

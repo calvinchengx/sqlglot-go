@@ -1952,7 +1952,21 @@ func (p *parser) parseGenerated() (*Expression, error) {
 // two are different trees for what an engine runs the same way.
 func (p *parser) parseCreateBody() (*Expression, error) {
 	if !p.at(TokL_PAREN) {
-		return p.parseQuery()
+		start := p.index
+		query, err := p.parseQuery()
+		if err == nil {
+			return query, nil
+		}
+		// Some dialects put a TABLE where the query goes -- `CREATE TABLE t
+		// AS other` copies one table into another -- and the reference falls
+		// back to reading one when no query is there. The name may be a word
+		// that spells an option elsewhere: `CREATE TABLE t AS "minvalue"`.
+		p.index = start
+		if table, terr := p.parseTableName(); terr == nil && p.curr() == nil {
+			return table, nil
+		}
+		p.index = start
+		return nil, err
 	}
 	p.advance()
 	inner, err := p.parseQuery()
@@ -4142,13 +4156,13 @@ func (p *parser) parseTablePart() (*Expression, error) {
 		p.advance()
 		return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true}), nil
 	}
-	return p.parseIdentifier()
+	return p.parseIdentifierWhere(true)
 }
 
 // atTablePart reports whether a name may begin here.
 func (p *parser) atTablePart() bool {
 	c := p.curr()
-	return c != nil && (c.Type == TokSTRING || p.atIdentifier())
+	return c != nil && (c.Type == TokSTRING || p.atIdentifierWhere(true))
 }
 
 // parseCreateLike reads `LIKE other [INCLUDING|EXCLUDING what]...`, which

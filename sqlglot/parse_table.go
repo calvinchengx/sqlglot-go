@@ -753,7 +753,7 @@ func (p *parser) parseSubqueryTable() (*Expression, error) {
 		return values, nil
 	}
 	if p.at(TokSELECT) || p.at(TokWITH) || p.at(TokPIVOT) || p.at(TokUNPIVOT) ||
-		p.at(TokFROM) || p.opensASetOperation() {
+		p.at(TokFROM) || p.at(TokSUMMARIZE) || p.opensASetOperation() {
 		// A pivot STATEMENT reached through a FROM item comes out with
 		// unpivot set FALSE, where the very same statement on its own or in
 		// a CTE leaves the argument off. That is the reference being

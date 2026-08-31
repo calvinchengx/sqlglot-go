@@ -2232,7 +2232,10 @@ func (p *parser) parseColumn() (*Expression, error) {
 	return col, nil
 }
 
-func (p *parser) parseIdentifier() (*Expression, error) {
+func (p *parser) parseIdentifier() (*Expression, error) { return p.parseIdentifierWhere(false) }
+
+// parseIdentifierWhere reads a name, in a table's name or anywhere else.
+func (p *parser) parseIdentifierWhere(namingATable bool) (*Expression, error) {
 	// T-SQL writes a temporary table's name with a # in front of it, and a
 	// GLOBAL one with two. The marks are not part of the name: the reference
 	// takes them off and records a flag, and the writer puts them back.
@@ -2249,7 +2252,7 @@ func (p *parser) parseIdentifier() (*Expression, error) {
 			global, temporary = true, false
 		}
 	}
-	if !p.atIdentifier() {
+	if !p.atIdentifierWhere(namingATable) {
 		return nil, p.unsupported("identifier")
 	}
 	c := p.curr()
@@ -2317,7 +2320,14 @@ func (p *parser) beginsAnExpression(t *Token) bool {
 // atIdentifier reports whether the current token can stand in for a name --
 // a plain word, a quoted identifier, or one of the many keywords the reference
 // still allows as an identifier.
-func (p *parser) atIdentifier() bool {
+func (p *parser) atIdentifier() bool { return p.atIdentifierWhere(false) }
+
+// atIdentifierWhere is atIdentifier with one exception made explicit: in a
+// TABLE's name a word that would be a CALL anywhere else is just a name.
+// `SELECT * FROM current_date` reads from a table called current_date -- the
+// reference reads a table part as a call only where a parenthesis follows,
+// and falls through to the ordinary name reader when none does.
+func (p *parser) atIdentifierWhere(namingATable bool) bool {
 	c := p.curr()
 	if c == nil {
 		return false
@@ -2327,7 +2337,7 @@ func (p *parser) atIdentifier() bool {
 	}
 	// A no-paren function -- CURRENT_DATE and friends -- is a call, not a
 	// name, even though it looks like a bare word.
-	if _, isFunc := p.tables.NoParenFunctions[c.Type]; isFunc {
+	if _, isFunc := p.tables.NoParenFunctions[c.Type]; isFunc && !namingATable {
 		return false
 	}
 	// A bare VALUES -- one with no argument list after it -- is a name where

@@ -234,7 +234,8 @@ func (p *parser) parseStatement() (*Expression, error) {
 		}
 		return this, nil
 	}
-	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) || p.at(TokFROM) {
+	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) || p.at(TokFROM) ||
+		p.at(TokSUMMARIZE) {
 		return p.parseQuery()
 	}
 	return p.parseStatementBody()
