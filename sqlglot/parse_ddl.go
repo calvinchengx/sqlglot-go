@@ -1341,7 +1341,8 @@ func (p *parser) parseViewColumns() ([]*Expression, error) {
 // of these is a keyword the reference reserves in this position.
 func (p *parser) atTableConstraint() bool {
 	return p.at(TokCONSTRAINT) || p.at(TokPRIMARY_KEY) ||
-		p.at(TokFOREIGN_KEY) || p.atWords("UNIQUE") || p.atWords("CHECK")
+		p.at(TokFOREIGN_KEY) || p.atWords("UNIQUE") || p.atWords("CHECK") ||
+		p.atWords("PERIOD", "FOR", "SYSTEM_TIME")
 }
 
 // parseTableConstraint reads one constraint on the table as a whole.
@@ -1421,6 +1422,21 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 			Arg{"nulls", false},
 			Arg{"this", New("Schema", Arg{"expressions", columns})},
 			Arg{"index_type", false}), nil
+	case p.atWords("PERIOD", "FOR", "SYSTEM_TIME"):
+		// The two columns that say when a row was current. They are named
+		// once for the table rather than on either column.
+		p.advance()
+		p.advance()
+		p.advance()
+		columns, err := p.parseParenthesisedIdentifiers()
+		if err != nil {
+			return nil, err
+		}
+		if len(columns) != 2 {
+			return nil, p.unsupported("PERIOD FOR SYSTEM_TIME over other than two columns")
+		}
+		return New("PeriodForSystemTimeConstraint",
+			Arg{"this", columns[0]}, Arg{"expression", columns[1]}), nil
 	case p.atWords("CHECK"):
 		p.advance()
 		if !p.match(TokL_PAREN) {
@@ -1972,9 +1988,25 @@ func (p *parser) parseGenerated() (*Expression, error) {
 		return New("GeneratedAsIdentityColumnConstraint",
 			Arg{"this", true}, Arg{"expression", value}), nil
 	}
+	// `GENERATED ALWAYS AS ROW START` says what the column TRACKS rather than
+	// how it is filled: the two ends of the period a row was current for. The
+	// word HIDDEN keeps it out of a `SELECT *`.
+	if p.atWords("ROW") {
+		p.advance()
+		start := p.atWords("START")
+		if start {
+			p.advance()
+		} else if p.at(TokEND) {
+			p.advance()
+		}
+		hidden := p.atWords("HIDDEN")
+		if hidden {
+			p.advance()
+		}
+		return New("GeneratedAsRowColumnConstraint",
+			Arg{"start", start}, Arg{"hidden", hidden}), nil
+	}
 	if !p.atWords("IDENTITY") {
-		// `GENERATED ALWAYS AS ROW START` and its like say what the column
-		// tracks rather than how it is filled.
 		return nil, p.unsupported("a GENERATED column this port does not read")
 	}
 	p.advance()

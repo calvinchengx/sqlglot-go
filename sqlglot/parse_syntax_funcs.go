@@ -114,8 +114,7 @@ func (p *parser) parseTrim() (*Expression, error) {
 
 	position := ""
 	if c := p.curr(); c != nil && c.Type == TokVAR {
-		switch strings.ToUpper(c.Text) {
-		case "LEADING", "TRAILING", "BOTH":
+		if _, says := p.tables.TrimTypes[strings.ToUpper(c.Text)]; says {
 			position = strings.ToUpper(c.Text)
 			p.advance()
 		}
@@ -135,13 +134,22 @@ func (p *parser) parseTrim() (*Expression, error) {
 
 	var chars, target *Expression
 	switch {
-	case p.match(TokFROM):
-		chars = first
-		t, err := p.parseExpression()
+	// `TRIM(x FROM y)` and `TRIM(x, y)` are the same call. Which operand is
+	// the STRING and which the characters depends on the separator and on the
+	// dialect: after FROM the characters come first everywhere, and after a
+	// comma only where the dialect says so.
+	case p.at(TokFROM), p.at(TokCOMMA):
+		charactersFirst := p.at(TokFROM) || p.tables.TrimPatternFirst
+		p.advance()
+		second, err := p.parseExpression()
 		if err != nil {
 			return nil, err
 		}
-		target = t
+		if charactersFirst {
+			chars, target = first, second
+		} else {
+			target, chars = first, second
+		}
 	case position != "":
 		return nil, p.unsupported("TRIM with a position but no FROM")
 	default:

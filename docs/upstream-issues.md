@@ -458,4 +458,8 @@ itself is fine -- `DATA_DELETION=ON` and `DATA_DELETION (FILTER_COLUMN=c)`
 both parse -- so this is a missing "else: advance", not a missing feature.
 The port's probe skips the name rather than waiting on it.
 
+`_parse_system_versioning_property` has the same loop written the same way, so
+`WITH(SYSTEM_VERSIONING=ON(WHATEVER))` never returns either. The port refuses
+an unexpected setting there rather than looping.
+
 **Reference:** sqlglot @ ceb5111421e9.

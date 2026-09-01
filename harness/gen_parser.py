@@ -3458,6 +3458,10 @@ EXTRA_SHAPES = {
     "Cluster": [(("expressions[]",), ())],
     "Distribute": [(("expressions[]",), ())],
     "Sort": [(("expressions[]",), ())],
+    # SYSTEM_VERSIONING turned off inside a WITH. The corpus writes the ON
+    # form inside one and the OFF form outside, so the fourth combination was
+    # never observed -- and the port reads all four.
+    "WithSystemVersioningProperty": [((), (("on", False), ("with_", True)))],
     # An IF statement with an ELSE. The corpus writes only the form without
     # one, so no shape was observed for it -- and the port reads both.
     "IfBlock": [(("this", "true", "false"), ())],
@@ -4329,6 +4333,11 @@ def main() -> int:
         "\t// that orders the column, or the punctuation that ends it.\n",
         "\tOpclassFollowWords  map[string]struct{}\n",
         "\tOpclassFollowTokens map[TokenType]struct{}\n",
+        "\t// TrimTypes are the words that may say WHERE a TRIM trims, and\n",
+        "\t// TrimPatternFirst that its comma form writes the characters to\n",
+        "\t// trim before the string they are trimmed from.\n",
+        "\tTrimTypes        map[string]struct{}\n",
+        "\tTrimPatternFirst bool\n",
         "\t// TypedDivision and SafeDivision are recorded on every Div node; the\n",
         "\t// reference reads them off the dialect, so they are not always false.\n",
         "\tTypedDivision bool\n",
@@ -5015,6 +5024,8 @@ def main() -> int:
         out.append(f"\t\tAlterColumnTypeTakesNull: {str(_takes_null).lower()},\n")
         out.append(strset("OpclassFollowWords", P.OPCLASS_FOLLOW_KEYWORDS))
         out.append(ttset("OpclassFollowTokens", P.OPTYPE_FOLLOW_TOKENS))
+        out.append(strset("TrimTypes", P.TRIM_TYPES))
+        out.append(f"\t\tTrimPatternFirst: {str(bool(P.TRIM_PATTERN_FIRST)).lower()},\n")
         out.append(
             "\t\tAlterColumnNullabilityWritten: %s,\n"
             % str(

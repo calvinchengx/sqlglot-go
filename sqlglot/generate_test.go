@@ -407,6 +407,25 @@ func TestGenerateShapes(t *testing.T) {
 		{"a constraint added but not checked",
 			"alter table t add constraint c unique (a) not valid", "postgres",
 			"ALTER TABLE t ADD CONSTRAINT c UNIQUE (a) NOT VALID"},
+		// TRIM in its comma form. Which operand is the STRING and which the
+		// characters depends on the separator and on the dialect.
+		{"trim with a comma", "select trim(s, 'xy')", "duckdb", "SELECT TRIM(s, 'xy')"},
+		{"trim from the left", "select ltrim(s, 'xy')", "duckdb", "SELECT LTRIM(s, 'xy')"},
+		{"trim with the characters first", "trim('a', 'abc')", "databricks",
+			"TRIM('a' FROM 'abc')"},
+		{"trim with a position", "select trim(both 'x' from s)", "duckdb", "SELECT TRIM(s, 'x')"},
+		// The two columns that say when a row was current, and the property
+		// that turns the tracking on. The property carries the WITH it was
+		// written inside and writes the word back itself.
+		{"a table that tracks its own history",
+			"create table t (a int, period for system_time (x, y)) with(system_versioning=on)",
+			"tsql",
+			"CREATE TABLE t (a INTEGER, PERIOD FOR SYSTEM_TIME (x, y)) WITH(SYSTEM_VERSIONING=ON)"},
+		{"system versioning turned off", "create table t (a int) with(system_versioning=off)",
+			"tsql", "CREATE TABLE t (a INTEGER) WITH(SYSTEM_VERSIONING=OFF)"},
+		{"system versioning with a history table",
+			"create table t (a int) with(system_versioning=on(history_table=db.h))", "tsql",
+			"CREATE TABLE t (a INTEGER) WITH(SYSTEM_VERSIONING=ON(HISTORY_TABLE=db.h))"},
 		// A path key holding the very quote that delimits it. The reference
 		// escapes it with a backslash; without that the key ends early and
 		// the port could not read back what it had just written.

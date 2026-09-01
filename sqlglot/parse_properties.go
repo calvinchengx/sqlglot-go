@@ -76,6 +76,20 @@ func (p *parser) parseWrappedProperties() ([]*Expression, error) {
 	}
 	var out []*Expression
 	for {
+		// One property carries the WITH it was written inside: the reference
+		// records `WITH(SYSTEM_VERSIONING=ON)` as a single property with a
+		// flag saying so, and writes the word back itself.
+		if p.atWords("SYSTEM_VERSIONING") {
+			prop, err := p.parseSystemVersioning(true)
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, prop)
+			if !p.match(TokCOMMA) {
+				break
+			}
+			continue
+		}
 		spec, consumed, ok := p.atProperty()
 		if ok && spec.Shape != "wrapped-properties" {
 			for i := 0; i < consumed; i++ {
@@ -101,6 +115,61 @@ func (p *parser) parseWrappedProperties() ([]*Expression, error) {
 		return nil, p.unsupported("unclosed property list")
 	}
 	return out, nil
+}
+
+// parseSystemVersioning reads `SYSTEM_VERSIONING=ON`, `=OFF`, and the
+// parenthesised settings the ON form may carry. The `with_` flag records
+// whether the property was written inside a WITH, because the writer puts that
+// word back itself.
+func (p *parser) parseSystemVersioning(inWith bool) (*Expression, error) {
+	p.advance() // SYSTEM_VERSIONING
+	p.match(TokEQ)
+	prop := New("WithSystemVersioningProperty", Arg{"on", true}, Arg{"with_", inWith})
+	if p.atWords("OFF") {
+		p.advance()
+		prop.Set("on", false)
+		return prop, nil
+	}
+	if !p.match(TokON) {
+		return nil, p.unsupported("SYSTEM_VERSIONING that is neither ON nor OFF")
+	}
+	if !p.match(TokL_PAREN) {
+		return prop, nil
+	}
+	for !p.at(TokR_PAREN) {
+		switch {
+		case p.atWords("HISTORY_TABLE"):
+			p.advance()
+			if !p.match(TokEQ) {
+				return nil, p.unsupported("HISTORY_TABLE without a table")
+			}
+			table, err := p.parseTableName()
+			if err != nil {
+				return nil, err
+			}
+			prop.Set("this", table)
+		case p.atWords("DATA_CONSISTENCY_CHECK"):
+			p.advance()
+			if !p.match(TokEQ) {
+				return nil, p.unsupported("DATA_CONSISTENCY_CHECK without a setting")
+			}
+			c := p.curr()
+			if c == nil {
+				return nil, p.unsupported("DATA_CONSISTENCY_CHECK without a setting")
+			}
+			p.advance()
+			prop.Set("data_consistency", strings.ToUpper(c.Text))
+		default:
+			return nil, p.unsupported("a SYSTEM_VERSIONING setting this port does not read")
+		}
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed SYSTEM_VERSIONING settings")
+	}
+	return prop, nil
 }
 
 // parseKeyValueProperty reads `k = v`, the property with no word of its own.
