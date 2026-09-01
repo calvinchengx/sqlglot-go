@@ -196,6 +196,24 @@ func normalise(e *sqlglot.Expression, asIf bool) *sqlglot.Expression {
 			}
 		}
 	}
+	// A TS_OR_DS_TO_DATE and the CAST it is written as are the same thing
+	// spelled two ways: the node says "read a date out of this", and outside
+	// the dialects that have a call for it that is exactly what the cast
+	// says. The reference does not round-trip it either -- it writes
+	// `CAST(x AS DATE)` and reads back a Cast -- so the comparison sees past
+	// it rather than reporting the reference's own asymmetry as the port's.
+	if inner := readsADate(out); inner != nil {
+		// A date read out of something that is a date already is that thing:
+		// the writer collapses the pair, so the comparison collapses it too.
+		for {
+			deeper := readsADate(inner)
+			if deeper == nil {
+				break
+			}
+			inner = deeper
+		}
+		return sqlglot.New("TsOrDsToDate", sqlglot.Arg{Key: "this", Value: inner})
+	}
 	// An IF and the CASE it is written as are the same thing spelled two
 	// ways: most dialects have no IF, so `IF(FALSE, x)` is written
 	// `CASE WHEN FALSE THEN x END` and reads back as a Case. The reference
@@ -221,6 +239,32 @@ func normalise(e *sqlglot.Expression, asIf bool) *sqlglot.Expression {
 			sqlglot.Arg{Key: "expression", Value: rebuilt})
 	}
 	return rebuilt
+}
+
+// readsADate returns what a node reads a date out of, where the node says
+// only that -- a formatless TS_OR_DS_TO_DATE, or the CAST it is written as.
+// Both become one canonical shape so the two compare equal.
+func readsADate(e *sqlglot.Expression) *sqlglot.Expression {
+	inner, _ := e.Args["this"].(*sqlglot.Expression)
+	if inner == nil {
+		return nil
+	}
+	switch e.Class {
+	case "TsOrDsToDate":
+		if _, hasFormat := e.Args["format"].(*sqlglot.Expression); hasFormat {
+			return nil
+		}
+		return inner
+	case "Cast":
+		to, _ := e.Args["to"].(*sqlglot.Expression)
+		if to == nil || to.Class != "DataType" {
+			return nil
+		}
+		if kind, _ := to.Args["this"].(sqlglot.DataTypeKind); string(kind) == "DATE" {
+			return inner
+		}
+	}
+	return nil
 }
 
 func connectorOperands(e *sqlglot.Expression, class string) []*sqlglot.Expression {

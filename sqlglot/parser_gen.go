@@ -715,6 +715,15 @@ type ParserTables struct {
 	// IgnoreNullsInFunc: `IGNORE NULLS` is written INSIDE the call's
 	// argument list here rather than after the call.
 	IgnoreNullsInFunc bool
+	// RegexpFlags are the flag characters a REGEXP_REPLACE may carry
+	// here, and RegexpFlagsNeedLiteral whether they have to be written as
+	// a string. An empty RegexpFlags means the dialect writes whatever it
+	// is given; a dialect that writes none at all has
+	// RegexpFlagsWritten false and the port refuses rather than dropping
+	// them, because a flag says what the replacement DOES.
+	RegexpFlags            string
+	RegexpFlagsWritten     bool
+	RegexpFlagsNeedLiteral bool
 	// IgnoreNullsWindowFuncs are the calls that KEEP their null
 	// treatment where the dialect writes it inside; IgnoreNullsDropped
 	// are the ones it drops silently because they ignore nulls anyway.
@@ -5372,6 +5381,9 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsInFunc:      false,
 		IgnoreNullsWindowFuncs: map[string]struct{}{},
 		IgnoreNullsDropped:     map[string]struct{}{},
+		RegexpFlags:            "",
+		RegexpFlagsWritten:     true,
+		RegexpFlagsNeedLiteral: false,
 		PercentileClasses: map[string]struct{}{
 			"PercentileCont": {},
 			"PercentileDisc": {},
@@ -9905,11 +9917,15 @@ var parserTables = map[string]*ParserTables{
 			"JSON_VALUE":             {"JSONExtractScalar", false, []FuncConst{{"scalar_only", false}}, false, false, 0, false},
 		},
 		VariantExtractColon: false,
-		TsOrDsParents:       map[string]struct{}{},
-		PrefixAlias:         false,
-		LikeInsideSchema:    false,
-		SupportsCreateLike:  true,
-		EndCommits:          false,
+		TsOrDsParents: map[string]struct{}{
+			"Day":   {},
+			"Month": {},
+			"Year":  {},
+		},
+		PrefixAlias:        false,
+		LikeInsideSchema:   false,
+		SupportsCreateLike: true,
+		EndCommits:         false,
 		FormatSpellings: map[string]string{
 			"TimeToStr": "inverse",
 		},
@@ -10292,6 +10308,9 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsInFunc:      false,
 		IgnoreNullsWindowFuncs: map[string]struct{}{},
 		IgnoreNullsDropped:     map[string]struct{}{},
+		RegexpFlags:            "",
+		RegexpFlagsWritten:     true,
+		RegexpFlagsNeedLiteral: false,
 		PercentileClasses: map[string]struct{}{
 			"PercentileCont": {},
 			"PercentileDisc": {},
@@ -15218,6 +15237,9 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsInFunc:      false,
 		IgnoreNullsWindowFuncs: map[string]struct{}{},
 		IgnoreNullsDropped:     map[string]struct{}{},
+		RegexpFlags:            "",
+		RegexpFlagsWritten:     true,
+		RegexpFlagsNeedLiteral: false,
 		PercentileClasses: map[string]struct{}{
 			"PercentileCont": {},
 			"PercentileDisc": {},
@@ -20400,6 +20422,9 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsDropped: map[string]struct{}{
 			"AnyValue": {},
 		},
+		RegexpFlags:            "cimsg",
+		RegexpFlagsWritten:     true,
+		RegexpFlagsNeedLiteral: true,
 		PercentileClasses: map[string]struct{}{
 			"PercentileCont": {},
 			"PercentileDisc": {},
@@ -25671,6 +25696,9 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsInFunc:      false,
 		IgnoreNullsWindowFuncs: map[string]struct{}{},
 		IgnoreNullsDropped:     map[string]struct{}{},
+		RegexpFlags:            "",
+		RegexpFlagsWritten:     false,
+		RegexpFlagsNeedLiteral: false,
 		PercentileClasses: map[string]struct{}{
 			"PercentileCont": {},
 			"PercentileDisc": {},

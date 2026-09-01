@@ -1,6 +1,7 @@
 package sqlglot
 
 import (
+	"math"
 	"strconv"
 	"strings"
 )
@@ -226,20 +227,33 @@ func foldNumbers(e, a, b *Expression) *Expression {
 		return nil
 	}
 	bothInt := isIntegerLiteral(a) && isIntegerLiteral(b)
+	// A result too big to be a float is not a number this can write down:
+	// `1E70 * 1E300` overflows, and the literal that came out of it --
+	// `+Inf.0` -- was SQL nothing could read. The reference declines to fold
+	// these too. The generator fuzzer found it.
+	folded := func(v float64) *Expression {
+		if math.IsInf(v, 0) || math.IsNaN(v) {
+			return nil
+		}
+		return numberLit(v, bothInt)
+	}
 	switch e.Class {
 	case "Add":
-		return numberLit(x+y, bothInt)
+		return folded(x + y)
 	case "Mul":
-		return numberLit(x*y, bothInt)
+		return folded(x * y)
 	case "Sub":
-		return numberLit(x-y, bothInt)
+		return folded(x - y)
 	case "Div":
 		// Integer division differs between engines, so the reference declines
 		// to fold it rather than pick one engine's answer.
 		if bothInt || y == 0 {
 			return nil
 		}
-		return numberLit(x/y, false)
+		if q := x / y; !math.IsInf(q, 0) && !math.IsNaN(q) {
+			return numberLit(q, false)
+		}
+		return nil
 	}
 	return evalBooleanNumber(e.Class, x, y)
 }

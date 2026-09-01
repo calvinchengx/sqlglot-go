@@ -174,3 +174,33 @@ func TestDeepChainDoesNotBlowUp(t *testing.T) {
 		t.Errorf("a 2000-term index took %v to parse", elapsed)
 	}
 }
+
+// A number too big to be a float is not one this can write down.
+//
+// `1E70 * 1E300` overflows, and folding it produced the literal `+Inf.0` --
+// SQL nothing could read, including this port. The reference declines to fold
+// these too. The generator fuzzer found it.
+func TestArithmeticThatOverflows(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT 1E70 * 1E300",
+		"SELECT 1E300 + 1E300 + 1E300 + 1E300 + 1E300 + 1E300 + 1E300 + 1E300 + 1E300 + 1E300",
+		"SELECT -1E70 * 1E300",
+		"SELECT 1E308 / 1E-10",
+	} {
+		e, err := ParseOne(sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(Simplify(e, "duckdb"), "duckdb")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if strings.Contains(got, "Inf") || strings.Contains(got, "NaN") {
+			t.Errorf("%q folded to %q, which is not a number any engine reads", sql, got)
+		}
+		// And whatever it wrote, the port can read it back.
+		if _, err := ParseOne(got, "duckdb"); err != nil {
+			t.Errorf("%q wrote %q, which reads back as: %v", sql, got, err)
+		}
+	}
+}

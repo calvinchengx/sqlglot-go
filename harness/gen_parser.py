@@ -1616,6 +1616,99 @@ def key_constraint_options(dialect: str) -> dict:
     return out
 
 
+def strips_ts_or_ds(dialect: str) -> list:
+    """Which calls drop a formatless TS_OR_DS_TO_DATE from their argument.
+
+    A call that reads a date out of whatever it is given has no use for a cast
+    saying so, and some dialects take it back off: T-SQL writes YEAR(x) where
+    the tree says YEAR(CAST(x AS DATE)).
+
+    Two dialects reach that by different routes -- one lists the classes, the
+    other rewrites each of them -- and only the first is readable as data. So
+    it is PROBED instead: each candidate is written over the cast and over the
+    bare column, and the ones that come out the same take it off.
+    """
+    from sqlglot import exp
+
+    shapes = (
+        ("this",),
+        ("this", "expression", "unit"),
+    )
+    out = []
+    for name in (
+        "Year",
+        "Month",
+        "Day",
+        "LastDay",
+        "Quarter",
+        "Week",
+        "DayOfWeek",
+        "DayOfMonth",
+        "DayOfYear",
+        "WeekOfYear",
+        "DateDiff",
+        "DateAdd",
+        "DateSub",
+    ):
+        cls = getattr(exp, name, None)
+        if cls is None:
+            continue
+        for shape in shapes:
+            extra = {}
+            if "expression" in shape:
+                extra["expression"] = exp.column("y")
+            if "unit" in shape:
+                extra["unit"] = exp.var("DAY")
+            try:
+                wrapped = cls(this=exp.TsOrDsToDate(this=exp.column("x")), **extra).sql(
+                    dialect=dialect or None
+                )
+                bare = cls(this=exp.column("x"), **extra).sql(dialect=dialect or None)
+            except Exception:
+                continue
+            if wrapped == bare:
+                out.append(name)
+                break
+    return out
+
+
+def regexp_flags(dialect: str) -> tuple:
+    """Which flags a REGEXP_REPLACE may carry here, and in what form.
+
+    Asked by writing a replacement carrying every flag anyone uses and seeing
+    which survive, then by writing one whose flags are a COLUMN and seeing
+    whether they survive at all. DuckDB keeps "cimsg" and only from a string;
+    Databricks writes none; everyone else writes whatever it is given.
+    """
+    from sqlglot import exp
+
+    def probe(mods):
+        node = exp.RegexpReplace(
+            this=exp.column("a"),
+            expression=exp.column("b"),
+            replacement=exp.column("c"),
+            modifiers=mods,
+            single_replace=True,
+        )
+        try:
+            return node.sql(dialect=dialect or None)
+        except Exception:
+            return ""
+
+    every = "cimsgxz"
+    literal = probe(exp.Literal.string(every))
+    written = "'" in literal
+    kept = ""
+    if written:
+        start = literal.index("'")
+        kept = literal[start + 1 : literal.index("'", start + 1)]
+    need_literal = written and "f" not in probe(exp.column("f"))
+    # A dialect that keeps every flag it was offered filters none, and says so
+    # with an empty set rather than with a list of everything anyone might
+    # write -- the list would refuse a flag nobody has thought of yet.
+    return ("" if kept == every else kept, written, need_literal)
+
+
 def ignore_nulls_dropped(dialect: str) -> list:
     """Which calls lose their IGNORE NULLS here without the reference minding.
 
@@ -4894,6 +4987,7 @@ def main() -> int:
         "\t// WithinGroupInside: the ordering an ordered-set aggregate is\n\t// computed over is written INSIDE the call here rather than after it\n\t// in a WITHIN GROUP of its own. DuckDB is the only one, and it moves\n\t// a percentile's order key into the call's first argument as well.\n\tWithinGroupInside bool\n",
         "\t// PercentileClasses are the ordered-set aggregates whose ARGUMENTS a\n\t// dialect writing the order inside reshuffles: the key becomes the\n\t// first and the fraction slides right.\n\tPercentileClasses map[string]struct{}\n",
         "\t// IgnoreNullsInFunc: `IGNORE NULLS` is written INSIDE the call's\n\t// argument list here rather than after the call.\n\tIgnoreNullsInFunc bool\n",
+        "\t// RegexpFlags are the flag characters a REGEXP_REPLACE may carry\n\t// here, and RegexpFlagsNeedLiteral whether they have to be written as\n\t// a string. An empty RegexpFlags means the dialect writes whatever it\n\t// is given; a dialect that writes none at all has\n\t// RegexpFlagsWritten false and the port refuses rather than dropping\n\t// them, because a flag says what the replacement DOES.\n\tRegexpFlags            string\n\tRegexpFlagsWritten     bool\n\tRegexpFlagsNeedLiteral bool\n",
         "\t// IgnoreNullsWindowFuncs are the calls that KEEP their null\n\t// treatment where the dialect writes it inside; IgnoreNullsDropped\n\t// are the ones it drops silently because they ignore nulls anyway.\n\t// Anything else the dialect calls unsupported, and so does the port.\n\tIgnoreNullsWindowFuncs map[string]struct{}\n\tIgnoreNullsDropped     map[string]struct{}\n",
         "\t// WithinGroupPercentile is what a PERCENTILE under a WITHIN GROUP\n\t// becomes: \"outside\" keeps the clause, \"inside\" folds it into the\n\t// call and reshuffles the arguments, and empty means the dialect\n\t// writes a different function and the port refuses.\n\tWithinGroupPercentile string\n",
         "\t// JoinHints are the words a dialect allows between the KIND and the\n\t// JOIN, naming how the engine should do it: `INNER HASH JOIN`. They\n\t// are words rather than tokens, and a dialect that names none writes\n\t// none -- the reference drops a hint where the target has no hints.\n\tJoinHints map[string]struct{}\n",
@@ -5471,10 +5565,8 @@ def main() -> int:
             f"\t\tVariantExtractColon: {str(variant_extract_colon(name)).lower()},\n"
         )
         from sqlglot.dialects.dialect import Dialect as _DG
-        _tsp = getattr(
-            type(_DG.get_or_raise(name or None)).generator_class, "TS_OR_DS_EXPRESSIONS", None
-        ) or ()
-        out.append(strset("TsOrDsParents", sorted(c.__name__ for c in _tsp)))
+
+        out.append(strset("TsOrDsParents", strips_ts_or_ds(name)))
         out.append(f"\t\tPrefixAlias: {str(prefix_alias(name)).lower()},\n")
         _gen = type(_DG.get_or_raise(name or None)).generator_class
         out.append(
@@ -5938,6 +6030,10 @@ def main() -> int:
             )
         )
         out.append(strset("IgnoreNullsDropped", ignore_nulls_dropped(name)))
+        flags, written, need_literal = regexp_flags(name)
+        out.append(f"\t\tRegexpFlags: {gostr(flags)},\n")
+        out.append("\t\tRegexpFlagsWritten: %s,\n" % str(written).lower())
+        out.append("\t\tRegexpFlagsNeedLiteral: %s,\n" % str(need_literal).lower())
         from sqlglot import exp as _exp
 
         out.append(strset("PercentileClasses", [c.__name__ for c in _exp.PERCENTILES]))

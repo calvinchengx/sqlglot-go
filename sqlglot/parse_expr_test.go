@@ -8109,3 +8109,171 @@ func TestOrderedSetGuards(t *testing.T) {
 		})
 	}
 }
+
+// The flags a REGEXP_REPLACE carries, and what each dialect does with them.
+//
+// A flag says what the replacement DOES -- whether it replaces every match,
+// ignores case -- so where one cannot be written the statement is refused
+// rather than written without it.
+func TestRegexpReplaceFlags(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"replace every match", "duckdb", "REGEXP_REPLACE(this, pattern, replacement, 'g')",
+			"REGEXP_REPLACE(this, pattern, replacement, 'g')"},
+		{"several flags", "duckdb", "REGEXP_REPLACE(this, pattern, replacement, 'ims')",
+			"REGEXP_REPLACE(this, pattern, replacement, 'ims')"},
+		{"an empty replacement", "duckdb", "SELECT REGEXP_REPLACE('mr .', '[^a-zA-Z]', '', 'g')",
+			"SELECT REGEXP_REPLACE('mr .', '[^a-zA-Z]', '', 'g')"},
+		// No flags at all: the ordinary spelling serves.
+		{"no flags", "duckdb", "REGEXP_REPLACE(a, b, c)", "REGEXP_REPLACE(a, b, c)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+
+	flagged, err := ParseOne("REGEXP_REPLACE(a, b, c, 'g')", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	// Databricks writes no flags at all, so the statement it would write is a
+	// different one.
+	if got, err := Generate(flagged, "databricks"); err == nil {
+		t.Errorf("Databricks wrote %q; it writes no regexp flags", got)
+	}
+	// A flag DuckDB does not know is dropped by the reference, and refused
+	// here.
+	unknown := ParseOrFail(t, "REGEXP_REPLACE(a, b, c, 'z')", "duckdb")
+	if got, err := Generate(unknown, "duckdb"); err == nil {
+		t.Errorf("DuckDB wrote %q; it does not know the flag z", got)
+	}
+	// Elsewhere the flags are written through, whatever they are.
+	if got, err := Generate(unknown, "postgres"); err != nil ||
+		got != "REGEXP_REPLACE(a, b, c, 'z')" {
+		t.Errorf("PostgreSQL wrote %q (%v)", got, err)
+	}
+	// DuckDB reads its flags out of a STRING, so a column standing there is a
+	// flag it cannot read.
+	column := New("RegexpReplace",
+		Arg{"this", New("Column", Arg{"this", New("Identifier", Arg{"this", "a"})})},
+		Arg{"expression", New("Column", Arg{"this", New("Identifier", Arg{"this", "b"})})},
+		Arg{"replacement", New("Column", Arg{"this", New("Identifier", Arg{"this", "c"})})},
+		Arg{"modifiers", New("Column", Arg{"this", New("Identifier", Arg{"this", "f"})})})
+	if got, err := Generate(column, "duckdb"); err == nil {
+		t.Errorf("DuckDB wrote %q; it cannot read flags out of a column", got)
+	}
+	if got, err := Generate(column, "postgres"); err != nil ||
+		got != "REGEXP_REPLACE(a, b, c, f)" {
+		t.Errorf("PostgreSQL wrote %q (%v)", got, err)
+	}
+}
+
+// ParseOrFail parses or ends the test.
+func ParseOrFail(t *testing.T, sql, dialect string) *Expression {
+	t.Helper()
+	e, err := ParseOne(sql, dialect)
+	if err != nil {
+		t.Fatalf("ParseOne(%q, %q): %v", sql, dialect, err)
+	}
+	return e
+}
+
+// The node that says "read a date out of this", which has no spelling of its
+// own outside the dialects that have a call for it.
+//
+// It becomes the cast it stands for, nothing at all where what it wraps is a
+// date already, and nothing at all again under a call that reads a date out of
+// its argument anyway -- T-SQL writes YEAR(x) where the tree says
+// YEAR(CAST(x AS DATE)).
+func TestTsOrDsToDate(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"under the calls that imply it", "tsql", "SELECT DAY(x), MONTH(x), YEAR(x)",
+			"SELECT DAY(x), MONTH(x), YEAR(x)"},
+		// EOMONTH is not one of them, so the cast is written.
+		{"under one that does not", "tsql", "EOMONTH(GETDATE())",
+			"EOMONTH(CAST(GETDATE() AS DATE))"},
+		// Already a date: the cast would say nothing the value does not.
+		{"over a date already", "tsql", "EOMONTH(CAST(GETDATE() AS DATE))",
+			"EOMONTH(CAST(GETDATE() AS DATE))"},
+		{"under an argument of one", "tsql", "EOMONTH(GETDATE(), -1)",
+			"EOMONTH(DATEADD(MONTH, -1, CAST(GETDATE() AS DATE)))"},
+		{"in a computed column", "tsql", "CREATE TABLE foo (x AS YEAR(y))",
+			"CREATE TABLE foo (x AS YEAR(y))"},
+		// Databricks has a call for it and writes that.
+		{"where the dialect has a call", "databricks", "SELECT YEAR(x)", "SELECT YEAR(x)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
+// The guards on both writers, over trees the corpus does not reach.
+func TestDateAndRegexpGuards(t *testing.T) {
+	column := func(name string) *Expression {
+		return New("Column", Arg{"this", New("Identifier", Arg{"this", name})})
+	}
+	regexp := func(extra ...Arg) *Expression {
+		args := []Arg{
+			{"this", column("a")}, {"expression", column("b")},
+			{"modifiers", New("Literal", Arg{"this", "g"}, Arg{"is_string", true})},
+		}
+		return New("RegexpReplace", append(args, extra...)...)
+	}
+	// A position or an occurrence says WHICH match to replace, and the port
+	// has nowhere to put either alongside the flags.
+	for _, key := range []string{"position", "occurrence"} {
+		node := regexp(Arg{"replacement", column("c")},
+			Arg{key, New("Literal", Arg{"this", "2"}, Arg{"is_string", false})})
+		if got, err := Generate(node, "duckdb"); err == nil {
+			t.Errorf("wrote %q with a %s", got, key)
+		}
+	}
+	// Flags but nothing to put in place of the match.
+	if got, err := Generate(regexp(), "duckdb"); err == nil {
+		t.Errorf("wrote %q with nothing to replace the match with", got)
+	}
+	// A date read out of nothing, and one over a TRY_CAST that already gives
+	// a date.
+	if got, err := Generate(New("TsOrDsToDate"), "tsql"); err == nil {
+		t.Errorf("wrote %q over nothing", got)
+	}
+	tried := New("TsOrDsToDate", Arg{"this", New("TryCast",
+		Arg{"this", column("x")},
+		Arg{"to", New("DataType", Arg{"this", DataTypeKind("DATE")})})})
+	if got, err := Generate(tried, "tsql"); err != nil || got != "TRY_CAST(x AS DATE)" {
+		t.Errorf("wrote %q (%v), want TRY_CAST(x AS DATE)", got, err)
+	}
+	// A cast to something else is not a date, so the coercion stays.
+	other := New("TsOrDsToDate", Arg{"this", New("Cast",
+		Arg{"this", column("x")},
+		Arg{"to", New("DataType", Arg{"this", DataTypeKind("TEXT")})})})
+	if got, err := Generate(other, "tsql"); err != nil ||
+		got != "CAST(CAST(x AS VARCHAR(MAX)) AS DATE)" {
+		t.Errorf("wrote %q (%v)", got, err)
+	}
+	// And one asked to be safe becomes a TRY_CAST of its own.
+	safe := New("TsOrDsToDate", Arg{"this", column("x")}, Arg{"safe", true})
+	if got, err := Generate(safe, "tsql"); err != nil || got != "TRY_CAST(x AS DATE)" {
+		t.Errorf("wrote %q (%v), want TRY_CAST(x AS DATE)", got, err)
+	}
+}

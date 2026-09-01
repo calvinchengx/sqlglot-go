@@ -95,6 +95,7 @@ func init() {
 		"Clone":                               (*generator).writeClone,
 		"MacroOverloads":                      (*generator).writeMacroOverloads,
 		"WithinGroup":                         (*generator).writeWithinGroup,
+		"RegexpReplace":                       (*generator).writeRegexpReplace,
 		"IgnoreNulls":                         (*generator).writeIgnoreNulls,
 		"RespectNulls":                        (*generator).writeRespectNulls,
 		"TriggerProperties":                   (*generator).writeTriggerProperties,
@@ -4256,16 +4257,33 @@ func (g *generator) writeOpenJSONColumnDef(e *Expression) string {
 //
 // A coercion carrying a FORMAT is a different call and falls through.
 func (g *generator) writeTsOrDsToDate(e *Expression) string {
-	if len(g.tables.TsOrDsParents) == 0 || e.Parent == nil {
-		return g.spell(e)
-	}
 	if format, _ := e.Args["format"].(*Expression); format != nil {
 		return g.spell(e)
 	}
-	if _, implied := g.tables.TsOrDsParents[e.Parent.Class]; !implied {
+	if e.Parent != nil {
+		if _, implied := g.tables.TsOrDsParents[e.Parent.Class]; implied {
+			return g.child(e, "this")
+		}
+	}
+	// Elsewhere the node has no spelling of its own: it becomes the CAST it
+	// stands for, and nothing at all where what it wraps is a date already.
+	// Only Databricks writes a call, and its own spelling says so.
+	if _, hasCall := g.tables.FunctionSQL[e.Class]; hasCall {
 		return g.spell(e)
 	}
-	return g.child(e, "this")
+	this, _ := e.Args["this"].(*Expression)
+	if this == nil {
+		return g.fail(e.Class + " over nothing")
+	}
+	if this.Class == "TsOrDsToDate" || castsToDate(this) {
+		return g.node(this)
+	}
+	word := "Cast"
+	if safe, _ := e.Args["safe"].(bool); safe {
+		word = "TryCast"
+	}
+	return g.node(New(word, Arg{"this", this},
+		Arg{"to", New("DataType", Arg{"this", DataTypeKind("DATE")})}))
 }
 
 // writeDeclareItem writes one declared variable: the names, the type, and the
@@ -4676,4 +4694,66 @@ func (g *generator) nullTreatmentInsideCall(e, call *Expression, words string) s
 		return g.fail(e.Class + " over something that is not a call")
 	}
 	return out[:len(out)-1] + " " + words + ")"
+}
+
+// writeRegexpReplace writes a replacement and the FLAGS that say how it is
+// done -- whether it replaces every match, ignores case, and so on.
+//
+// The flags are an argument like any other where a dialect writes them
+// through. DuckDB keeps only the ones it knows and only from a string
+// literal; Databricks writes none at all. A flag says what the replacement
+// DOES, so where one cannot be written the statement is refused rather than
+// written without it.
+func (g *generator) writeRegexpReplace(e *Expression) string {
+	modifiers, _ := e.Args["modifiers"].(*Expression)
+	if modifiers == nil {
+		return g.spell(e)
+	}
+	if !g.tables.RegexpFlagsWritten {
+		return g.fail(e.Class + " with flags, which this dialect writes nowhere")
+	}
+	if !g.tables.RegexpFlagsNeedLiteral {
+		return g.regexpReplaceWithFlags(e, g.node(modifiers))
+	}
+	// A flag the dialect reads out of a string, so a column standing there is
+	// a flag it cannot read: the reference drops it and says so.
+	text, _ := modifiers.Args["this"].(string)
+	if modifiers.Class != "Literal" || modifiers.Args["is_string"] != true {
+		return g.fail(e.Class + " whose flags are not a string, which this dialect cannot read")
+	}
+	for _, r := range text {
+		if !strings.ContainsRune(g.tables.RegexpFlags, r) {
+			return g.fail(e.Class + " with the flag " + string(r) + ", which this dialect drops")
+		}
+	}
+	return g.regexpReplaceWithFlags(e, g.node(modifiers))
+}
+
+// regexpReplaceWithFlags writes the call with the flags as its last argument.
+func (g *generator) regexpReplaceWithFlags(e *Expression, flags string) string {
+	for _, key := range []string{"position", "occurrence"} {
+		if arg, _ := e.Args[key].(*Expression); arg != nil {
+			return g.fail(e.Class + " with a " + key + ", which this port does not place")
+		}
+	}
+	replacement, _ := e.Args["replacement"].(*Expression)
+	if replacement == nil {
+		return g.fail(e.Class + " with flags but nothing to put in place of the match")
+	}
+	return "REGEXP_REPLACE(" + g.child(e, "this") + ", " + g.child(e, "expression") +
+		", " + g.node(replacement) + ", " + flags + ")"
+}
+
+// castsToDate reports whether a node is already a cast to DATE, which is what
+// a TS_OR_DS_TO_DATE around it would ask for.
+func castsToDate(e *Expression) bool {
+	if e.Class != "Cast" && e.Class != "TryCast" {
+		return false
+	}
+	to, _ := e.Args["to"].(*Expression)
+	if to == nil {
+		return false
+	}
+	kind, _ := to.Args["this"].(DataTypeKind)
+	return string(kind) == "DATE"
 }
