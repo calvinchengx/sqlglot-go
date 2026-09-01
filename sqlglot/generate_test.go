@@ -426,6 +426,34 @@ func TestGenerateShapes(t *testing.T) {
 		{"system versioning with a history table",
 			"create table t (a int) with(system_versioning=on(history_table=db.h))", "tsql",
 			"CREATE TABLE t (a INTEGER) WITH(SYSTEM_VERSIONING=ON(HISTORY_TABLE=db.h))"},
+		// A chain naming a lambda parameter is rebuilt as plain identifiers,
+		// with no column left in it -- but only where something ENCLOSES it.
+		// At the top of the body the reference's replacement lands nowhere
+		// and the column survives whole.
+		{"a parameter alone", "filter(a, x -> x)", "", "FILTER(a, x -> x)"},
+		{"a chain off a parameter", "filter(a, x -> x.b.c)", "", "FILTER(a, x -> x.b.c)"},
+		{"the same chain inside a call", "filter(a, x -> foo(x.b.c))", "",
+			"FILTER(a, x -> FOO(x.b.c))"},
+		{"a chain past the column's four slots", "filter(a, x -> x.a.b.c.d.e)", "",
+			"FILTER(a, x -> x.a.b.c.d.e)"},
+		// A chain that hangs off something other than a column, and one whose
+		// column names no parameter: neither is rewritten.
+		{"a chain off a call", "filter(a, x -> foo(1).b)", "", "FILTER(a, x -> FOO(1).b)"},
+		{"a chain off another name", "filter(a, x -> y.a.b.c.d.e)", "",
+			"FILTER(a, x -> y.a.b.c.d.e)"},
+		{"a star past a deep chain", "select a.b.c.d.e.*", "", "SELECT a.b.c.d.e.*"},
+		// An arrow after parentheses is not enough to make a lambda: what is
+		// inside them has to be a list of NAMES. `((A)) -> '$[0]'` is a JSON
+		// extraction from a parenthesised column.
+		{"an arrow after a parenthesised column", "@((A))->0", "duckdb",
+			"ABS(((A)) -> '$[0]')"},
+		{"and the same inside a call", "foo(((A)) -> 0)", "duckdb", "FOO(((A)) -> '$[0]')"},
+		{"an arrow after a parenthesised sum", "foo((a + b) -> 0)", "duckdb",
+			"FOO((a + b) -> '$[0]')"},
+		{"an arrow after two names with no comma", "foo((a b) -> 0)", "duckdb",
+			"FOO((a AS b) -> '$[0]')"},
+		{"and a real parameter list beside them", "foo((a, b) -> 0)", "duckdb",
+			"FOO((a, b) -> 0)"},
 		// A path key holding the very quote that delimits it. The reference
 		// escapes it with a backslash; without that the key ends early and
 		// the port could not read back what it had just written.

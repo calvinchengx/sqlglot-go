@@ -2195,41 +2195,42 @@ func (p *parser) parseColumn() (*Expression, error) {
 	}
 
 	if star {
-		// t.* keeps all four qualifier slots, as the reference builds it.
 		// `t.* EXCEPT (a)` carries the modifiers on the STAR inside the
 		// column, the same ones a bare `*` takes.
 		qualified, err := p.starModifiers(newStar())
 		if err != nil {
 			return nil, err
 		}
-		col := New("Column", Arg{"this", qualified})
-		names := []string{"table", "db", "catalog"}
-		for i := len(parts) - 1; i >= 0; i-- {
-			slot := len(parts) - 1 - i
-			if slot >= len(names) {
-				return nil, p.unsupported("over-qualified column")
-			}
-			col.Set(names[slot], parts[i])
-		}
+		parts = append(parts, qualified)
+	}
+
+	// A column holds FOUR parts at most -- the name and its three qualifiers
+	// -- and anything written past them hangs off it as a chain of Dots:
+	// `a.b.c.d.e` is a Dot over a fully qualified column. The star counts as
+	// one of the four, so `a.b.c.*` is a column and `a.b.c.d.*` is a Dot.
+	held := len(parts)
+	if held > 4 {
+		held = 4
+	}
+	col := New("Column", Arg{"this", parts[held-1]})
+	names := []string{"table", "db", "catalog"}
+	for i := held - 2; i >= 0; i-- {
+		col.Set(names[held-2-i], parts[i])
+	}
+	// A star column keeps all four slots whether or not they were written,
+	// as the reference builds it. A name'd one keeps only what it was given.
+	if star && held == len(parts) {
 		for _, n := range names {
 			if _, ok := col.Args[n]; !ok {
 				col.Set(n, nil)
 			}
 		}
-		return col, nil
 	}
-
-	// The last part is the column; the ones before it qualify it, nearest first.
-	col := New("Column", Arg{"this", parts[len(parts)-1]})
-	names := []string{"table", "db", "catalog"}
-	for i := len(parts) - 2; i >= 0; i-- {
-		slot := len(parts) - 2 - i
-		if slot >= len(names) {
-			return nil, p.unsupported("over-qualified column")
-		}
-		col.Set(names[slot], parts[i])
+	out := col
+	for _, extra := range parts[held:] {
+		out = New("Dot", Arg{"this", out}, Arg{"expression", extra})
 	}
-	return col, nil
+	return out, nil
 }
 
 func (p *parser) parseIdentifier() (*Expression, error) { return p.parseIdentifierWhere(false) }

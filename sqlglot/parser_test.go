@@ -37,6 +37,22 @@ func TestParseShapes(t *testing.T) {
 		{"column", "SELECT a", "Select Column Identifier"},
 		{"qualified column", "SELECT t.a", "Select Column Identifier Identifier"},
 		{"qualified star", "SELECT t.*", "Select Column Star Identifier"},
+		// Four parts at most fit in a column; anything past them hangs off it
+		// as a chain of Dots, and the star counts as one of the four.
+		{"a fully qualified column", "SELECT a.b.c.d",
+			"Select Column Identifier Identifier Identifier Identifier"},
+		{"three parts past the four", "SELECT a.b.c.d.e.f.g",
+			"Select Dot Dot Dot Column Identifier Identifier Identifier Identifier " +
+				"Identifier Identifier Identifier"},
+		{"a subscript over a deep chain", "SELECT a.b.c.d.e[0]",
+			"Select Bracket Dot Column Identifier Identifier Identifier Identifier " +
+				"Identifier Literal"},
+		{"one part past the four", "SELECT a.b.c.d.e",
+			"Select Dot Column Identifier Identifier Identifier Identifier Identifier"},
+		{"a star inside the four", "SELECT a.b.c.*",
+			"Select Column Star Identifier Identifier Identifier"},
+		{"a star past them", "SELECT a.b.c.d.*",
+			"Select Dot Column Identifier Identifier Identifier Identifier Star"},
 		{"alias", "SELECT a AS b", "Select Alias Column Identifier Identifier"},
 		{"implicit alias", "SELECT a b", "Select Alias Column Identifier Identifier"},
 		{"negation", "SELECT -1", "Select Neg Literal"},
@@ -145,7 +161,6 @@ func TestRefusals(t *testing.T) {
 		{"hint", "SELECT /*+ x */ 1 FROM t", ""},
 		{"WITH FILL", "SELECT a FROM t ORDER BY a WITH FILL", ""},
 		{"WITHIN GROUP with no ORDER BY", "SELECT STRING_AGG(x, ',') WITHIN GROUP (y)", ""},
-		{"over-qualified column", "SELECT a.b.c.d.e", ""},
 		{"over-qualified table", "SELECT 1 FROM a.b.c.d", ""},
 		{"trailing tokens", "SELECT 1 FROM t )", ""},
 		{"unclosed parenthesis", "SELECT (1", ""},
@@ -201,7 +216,6 @@ func TestRefusals(t *testing.T) {
 		{"a scalar subquery that does not parse", "SELECT (SELECT 1 +)", ""},
 		{"CTE named by nothing", "WITH AS (SELECT 1) SELECT 2", ""},
 		{"dangling subquery alias", "SELECT 1 FROM (SELECT 1) AS", ""},
-		{"over-qualified star", "SELECT a.b.c.d.*", ""},
 		// The step is turned into an interval by parsing `INTERVAL <text>`,
 		// and a text no interval can be made of is refused -- which is what
 		// the reference does with it too.
@@ -257,6 +271,12 @@ func TestRefusals(t *testing.T) {
 		{"a table property that does not close", "CREATE TABLE t (a INT) WITH (FORMAT='x'", ""},
 		{"SYSTEM_VERSIONING inside a WITH that does not close",
 			"CREATE TABLE t (a INT) WITH(SYSTEM_VERSIONING=OFF", "tsql"},
+		// A lambda that runs out before its body, in each spelling.
+		{"an unclosed lambda parameter list", "FILTER(a, (x, y -> x)", ""},
+		{"a lambda parameter that is not a name", "FILTER(a, (1) -> x)", ""},
+		{"a lambda with no body", "FILTER(a, x ->)", ""},
+		{"a LAMBDA with no body", "SELECT LIST_TRANSFORM(a, LAMBDA x :)", "duckdb"},
+		{"an arrow after an empty pair", "() -> 0", "duckdb"},
 		{"LAMBDA without its colon", "SELECT LIST_TRANSFORM(a, LAMBDA x x)", "duckdb"},
 		{"LAMBDA without a parameter", "SELECT LIST_TRANSFORM(a, LAMBDA : x)", "duckdb"},
 	} {

@@ -45,11 +45,41 @@ func (p *parser) atLambda() bool {
 		case TokR_PAREN:
 			depth--
 			if depth == 0 {
-				return i+1 < len(p.tokens) && p.tokens[i+1].Type == TokARROW
+				if i+1 >= len(p.tokens) || p.tokens[i+1].Type != TokARROW {
+					return false
+				}
+				// An arrow after the parentheses is not enough: what is
+				// inside them has to be a list of NAMES. `((A)) -> '$[0]'`
+				// is a JSON extraction from a parenthesised column, and
+				// reading it as a lambda left the port unable to read back
+				// what it had written. The generator fuzzer found it.
+				return namesOnly(p.tokens[p.index+1 : i])
 			}
 		}
 	}
 	return false
+}
+
+// namesOnly reports whether a run of tokens is a comma-separated list of
+// names and nothing else -- which is all a lambda's parameter list may hold.
+func namesOnly(run []Token) bool {
+	wantName := true
+	for _, t := range run {
+		if wantName {
+			switch t.Type {
+			case TokVAR, TokIDENTIFIER, TokNUMBER, TokSTRING:
+			default:
+				return false
+			}
+			wantName = false
+			continue
+		}
+		if t.Type != TokCOMMA {
+			return false
+		}
+		wantName = true
+	}
+	return !wantName
 }
 
 func (p *parser) parseLambda() (*Expression, error) {
@@ -149,42 +179,54 @@ func (p *parser) parseColonLambda() (*Expression, error) {
 // the reference turns into a Dot chain instead, which is more machinery than
 // this has, so it is refused rather than half-done.
 func (p *parser) bindLambdaParams(e *Expression, names map[string]bool) (*Expression, error) {
+	return p.bindLambdaParamsWhere(e, names, true)
+}
+
+// bindLambdaParamsWhere is bindLambdaParams with one thing it has to know:
+// whether the node is the body's own top. A chain that runs past a column's
+// four slots is rewritten only where something ENCLOSES it -- the reference
+// replaces the outermost Dot in its parent, and at the top of the body there
+// is no parent to replace it in, so the column stays. That is the reference
+// being accidental rather than deliberate, and the corpus records what it
+// made.
+func (p *parser) bindLambdaParamsWhere(
+	e *Expression, names map[string]bool, atRoot bool,
+) (*Expression, error) {
 	if e == nil {
 		return nil, nil
 	}
-	if e.Class == "Column" {
-		// The reference matches on the column's FIRST part, which for `x.key`
-		// is the table `x`, not the column `key`.
-		first, _ := e.Args["this"].(*Expression)
-		qualified := false
-		for _, key := range []string{"catalog", "db", "table"} {
-			if part, _ := e.Args[key].(*Expression); part != nil {
-				first = part
-				qualified = true
+	// A chain of Dots over a column that names a parameter. The whole chain
+	// becomes Identifiers -- the column's own parts and the names dotted onto
+	// it -- because the reference rebuilds it from both.
+	if e.Class == "Dot" {
+		if inner := innermostColumn(e); inner != nil && namesAParameter(inner, names) {
+			if atRoot {
+				// Nothing encloses the chain, so the reference's replacement
+				// lands nowhere and the column survives whole.
+				return e, nil
 			}
+			return chainOfNames(e), nil
 		}
-		if first != nil {
-			if n, ok := first.Args["this"].(string); ok && names[strings.ToUpper(n)] {
-				if qualified {
-					// `x.key` becomes a Dot chain in the reference; that
-					// conversion is not ported, so it is refused.
-					return nil, p.unsupported("qualified lambda parameter")
-				}
-				return first, nil
-			}
+	}
+	if e.Class == "Column" && namesAParameter(e, names) {
+		// A column with no qualifiers IS the parameter; one with them becomes
+		// the Dot chain its parts spell, wherever it stands.
+		if only, _ := e.Args["this"].(*Expression); !qualifiedColumn(e) {
+			return only, nil
 		}
+		return chainOfNames(e), nil
 	}
 	for key, value := range e.Args {
 		switch v := value.(type) {
 		case *Expression:
-			out, err := p.bindLambdaParams(v, names)
+			out, err := p.bindLambdaParamsWhere(v, names, false)
 			if err != nil {
 				return nil, err
 			}
 			e.Args[key] = out
 		case []*Expression:
 			for i, item := range v {
-				out, err := p.bindLambdaParams(item, names)
+				out, err := p.bindLambdaParamsWhere(item, names, false)
 				if err != nil {
 					return nil, err
 				}
@@ -193,6 +235,70 @@ func (p *parser) bindLambdaParams(e *Expression, names map[string]bool) (*Expres
 		}
 	}
 	return e, nil
+}
+
+// innermostColumn follows a chain of Dots down its `this` side to the column
+// the chain hangs off, or nil where it hangs off something else.
+func innermostColumn(e *Expression) *Expression {
+	for e != nil && e.Class == "Dot" {
+		e, _ = e.Args["this"].(*Expression)
+	}
+	if e != nil && e.Class == "Column" {
+		return e
+	}
+	return nil
+}
+
+// qualifiedColumn reports whether a column carries any of its three
+// qualifiers.
+func qualifiedColumn(e *Expression) bool {
+	for _, key := range []string{"catalog", "db", "table"} {
+		if part, _ := e.Args[key].(*Expression); part != nil {
+			return true
+		}
+	}
+	return false
+}
+
+// namesAParameter reports whether a column's OUTERMOST part is one of the
+// lambda's parameters -- for `x.key` the table `x`, not the column `key`.
+func namesAParameter(e *Expression, names map[string]bool) bool {
+	first, _ := e.Args["this"].(*Expression)
+	for _, key := range []string{"catalog", "db", "table"} {
+		if part, _ := e.Args[key].(*Expression); part != nil {
+			first = part
+			break
+		}
+	}
+	if first == nil {
+		return false
+	}
+	n, ok := first.Args["this"].(string)
+	return ok && names[strings.ToUpper(n)]
+}
+
+// chainOfNames rebuilds a column, and whatever is dotted onto it, as a chain
+// of Dots over plain Identifiers -- no Column left in it.
+func chainOfNames(e *Expression) *Expression {
+	var dotted []*Expression
+	for e.Class == "Dot" {
+		if part, _ := e.Args["expression"].(*Expression); part != nil {
+			dotted = append([]*Expression{part}, dotted...)
+		}
+		e, _ = e.Args["this"].(*Expression)
+	}
+	parts := make([]*Expression, 0, 4+len(dotted))
+	for _, key := range []string{"catalog", "db", "table", "this"} {
+		if part, _ := e.Args[key].(*Expression); part != nil {
+			parts = append(parts, part)
+		}
+	}
+	parts = append(parts, dotted...)
+	out := parts[0]
+	for _, part := range parts[1:] {
+		out = New("Dot", Arg{"this", out}, Arg{"expression", part})
+	}
+	return out
 }
 
 // atKwarg reports whether a NAMED argument starts here: a name followed by
