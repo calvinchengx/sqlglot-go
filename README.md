@@ -66,9 +66,9 @@ Regenerate with `make service`; nothing in it is authored here.
 |---|---|---|---|---|---|
 | neutral | 997/997 | 915 | 997 | 82 | 0 |
 | tsql | 597/597 | 527 | 597 | 70 | 0 |
-| postgres | 857/857 | 759 | 857 | 98 | 0 |
-| duckdb | 1631/1631 | 1573 | 1631 | 58 | 0 |
-| databricks | 424/424 | 375 | 424 | 49 | 0 |
+| postgres | 857/857 | 760 | 857 | 97 | 0 |
+| duckdb | 1631/1631 | 1575 | 1631 | 56 | 0 |
+| databricks | 424/424 | 381 | 424 | 43 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number

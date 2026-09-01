@@ -1912,6 +1912,43 @@ func TestInsertAndDrop(t *testing.T) {
 		// alias the neutral spelling does not.
 		{"a cte, hoisted", "tsql", "INSERT INTO x WITH y AS (SELECT 1) SELECT * FROM y",
 			"WITH y AS (SELECT 1 AS [1]) INSERT INTO x SELECT * FROM y"},
+		// Databricks overwrites a slice of the table rather than appending
+		// to it, naming the slice by a condition or by the columns that
+		// identify a row.
+		{"replace where", "databricks", "INSERT INTO a REPLACE WHERE cond VALUES (1), (2)",
+			"INSERT INTO a REPLACE WHERE cond VALUES (1), (2)"},
+		{"replace where, over a query", "databricks",
+			"INSERT INTO t REPLACE WHERE a = 2 (SELECT * FROM src)",
+			"INSERT INTO t REPLACE WHERE a = 2 (SELECT * FROM src)"},
+		{"replace using", "databricks",
+			"INSERT INTO target REPLACE USING (c1, c2) SELECT c1, c2 FROM source",
+			"INSERT INTO target REPLACE USING (c1, c2) SELECT c1, c2 FROM source"},
+		{"replace where, behind named columns", "databricks",
+			"INSERT INTO t (a) REPLACE WHERE a = 1 VALUES (1)",
+			"INSERT INTO t (a) REPLACE WHERE a = 1 VALUES (1)"},
+		{"replace where, behind a cte", "databricks",
+			"WITH s AS (SELECT * FROM src) INSERT INTO t REPLACE WHERE a = 1 SELECT * FROM s",
+			"WITH s AS (SELECT * FROM src) INSERT INTO t REPLACE WHERE a = 1 SELECT * FROM s"},
+		// DuckDB matches the query's columns to the target's by name.
+		{"by name", "duckdb", "INSERT INTO x BY NAME SELECT 1 AS y",
+			"INSERT INTO x BY NAME SELECT 1 AS y"},
+		// `DEFAULT VALUES` writes a row that names no values, so the
+		// statement has no body at all -- the flag stands in place of one.
+		{"default values", "postgres", "INSERT INTO t DEFAULT VALUES",
+			"INSERT INTO t DEFAULT VALUES"},
+		{"default values, with a returning", "duckdb",
+			"INSERT INTO t DEFAULT VALUES RETURNING (c1)",
+			"INSERT INTO t DEFAULT VALUES RETURNING (c1)"},
+		// But the reference only WRITES the flag where RETURNING comes last,
+		// and drops it silently everywhere else. T-SQL loses the whole
+		// clause, and the port loses it too.
+		{"default values, dropped", "tsql", "INSERT INTO t DEFAULT VALUES", "INSERT INTO t"},
+		// Postgres names the target again so ON CONFLICT can refer to it.
+		{"an aliased target", "postgres",
+			"INSERT INTO newtable AS t(a, b, c) VALUES (1, 2, 3) " +
+				"ON CONFLICT(c) DO UPDATE SET a = t.a + 1 WHERE t.a < 1",
+			"INSERT INTO newtable AS t(a, b, c) VALUES (1, 2, 3) " +
+				"ON CONFLICT(c) DO UPDATE SET a = t.a + 1 WHERE t.a < 1"},
 		{"a drop", "", "DROP TABLE t", "DROP TABLE t"},
 		{"a drop if exists", "", "DROP TABLE IF EXISTS t", "DROP TABLE IF EXISTS t"},
 		{"a view", "", "DROP VIEW v", "DROP VIEW v"},

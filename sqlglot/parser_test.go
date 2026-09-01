@@ -277,6 +277,12 @@ func TestRefusals(t *testing.T) {
 		{"a lambda with no body", "FILTER(a, x ->)", ""},
 		{"a LAMBDA with no body", "SELECT LIST_TRANSFORM(a, LAMBDA x :)", "duckdb"},
 		{"an arrow after an empty pair", "() -> 0", "duckdb"},
+		{"a REPLACE that names no slice", "INSERT INTO t REPLACE VALUES (1)", "databricks"},
+		{"a REPLACE WHERE with no condition", "INSERT INTO t REPLACE WHERE FROM VALUES (1)",
+			"databricks"},
+		{"a REPLACE USING that names no column", "INSERT INTO t REPLACE USING (,) VALUES (1)",
+			"databricks"},
+		{"an INSERT alias that is not a name", "INSERT INTO t AS SELECT VALUES (1)", "databricks"},
 		{"LAMBDA without its colon", "SELECT LIST_TRANSFORM(a, LAMBDA x x)", "duckdb"},
 		{"LAMBDA without a parameter", "SELECT LIST_TRANSFORM(a, LAMBDA : x)", "duckdb"},
 	} {

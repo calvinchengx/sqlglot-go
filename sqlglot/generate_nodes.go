@@ -2629,9 +2629,30 @@ func (g *generator) writeInsert(e *Expression) string {
 			}
 		}
 	}
+	if yes, _ := e.Args["by_name"].(bool); yes {
+		target += " BY NAME"
+	}
 	target += exists
+	// Databricks writes the slice it overwrites between the target and the
+	// body, in whichever of the two spellings the statement used.
+	if where := g.child(e, "where"); where != "" {
+		target += " REPLACE WHERE " + where
+	}
+	if using, _ := e.Args["using"].([]*Expression); len(using) > 0 {
+		parts := make([]string, 0, len(using))
+		for _, id := range using {
+			parts = append(parts, g.node(id))
+		}
+		target += " REPLACE USING (" + strings.Join(parts, ", ") + ")"
+	}
 	conflict := g.child(e, "conflict")
 	returning := g.child(e, "returning")
+	// `DEFAULT VALUES` stands where the body would be -- but the reference
+	// only WRITES it where RETURNING comes last, and drops it silently
+	// everywhere else. The port keeps that, quirk and all.
+	if yes, _ := e.Args["default"].(bool); yes && g.tables.ReturningEnd {
+		body = clauses(body, "DEFAULT VALUES")
+	}
 	if g.tables.ReturningEnd {
 		return clauses(out+target, body, conflict, returning)
 	}

@@ -457,6 +457,17 @@ func (p *parser) parseInsert() (*Expression, error) {
 		table.Set("partition", New("Partition",
 			Arg{"subpartition", false}, Arg{"expressions", members}))
 	}
+	// Postgres names the target again so ON CONFLICT can refer to it:
+	// `INSERT INTO newtable AS t(a, b, c) ... DO UPDATE SET a = t.a + 1`.
+	// Only an explicit AS counts. A bare word here is the next clause --
+	// REPLACE, DEFAULT, VALUES -- and reading it as an alias would swallow it.
+	if p.at(TokALIAS) {
+		alias, err := p.parseTableAlias()
+		if err != nil {
+			return nil, err
+		}
+		table.Set("alias", alias)
+	}
 	exists := false
 	if p.atWords("IF", "EXISTS") {
 		p.advance()
@@ -483,6 +494,45 @@ func (p *parser) parseInsert() (*Expression, error) {
 		return nil, err
 	}
 
+	// DuckDB matches the query's columns to the target's by NAME rather than
+	// by position.
+	byName := false
+	if p.atWords("BY", "NAME") {
+		p.advance()
+		p.advance()
+		byName = true
+	}
+
+	// Databricks overwrites a slice of the table rather than appending to it,
+	// naming the slice either by a condition or by the columns that identify
+	// a row. The two spellings share the REPLACE and then diverge.
+	var replaceWhere *Expression
+	var replaceUsing []*Expression
+	if p.at(TokREPLACE) {
+		p.advance()
+		switch {
+		case p.match(TokWHERE):
+			if replaceWhere, err = p.parseDisjunction(); err != nil {
+				return nil, err
+			}
+		case p.match(TokUSING):
+			if replaceUsing, err = p.parseInsertColumns(); err != nil {
+				return nil, err
+			}
+		default:
+			return nil, p.unsupported("REPLACE without WHERE or USING")
+		}
+	}
+
+	// `DEFAULT VALUES` writes a row that names no values at all, so the
+	// statement HAS no body: the flag stands in place of one.
+	defaultValues := false
+	if p.atWords("DEFAULT", "VALUES") {
+		p.advance()
+		p.advance()
+		defaultValues = true
+	}
+
 	var expression *Expression
 	switch {
 	case p.at(TokVALUES):
@@ -493,6 +543,8 @@ func (p *parser) parseInsert() (*Expression, error) {
 		// The parentheses are the QUERY's, and the reference keeps them as a
 		// Subquery around it -- which may then be one side of a UNION.
 		expression, err = p.parseQueryBody()
+	case defaultValues:
+		// Nothing to read: DEFAULT VALUES was the body.
 	default:
 		return nil, p.unsupported("INSERT without VALUES or a query")
 	}
@@ -517,9 +569,10 @@ func (p *parser) parseInsert() (*Expression, error) {
 
 	return New("Insert",
 		Arg{"hint", nil}, Arg{"is_function", false}, Arg{"this", this},
-		Arg{"stored", false}, Arg{"by_name", false}, Arg{"exists", exists},
-		Arg{"where", nil}, Arg{"using", nil}, Arg{"partition", false},
-		Arg{"settings", false}, Arg{"default", false},
+		Arg{"stored", false}, Arg{"by_name", byName}, Arg{"exists", exists},
+		Arg{"where", replaceWhere}, Arg{"using", replaceUsing},
+		Arg{"partition", false},
+		Arg{"settings", false}, Arg{"default", defaultValues},
 		Arg{"expression", expression},
 		Arg{"conflict", conflict}, Arg{"returning", returning},
 		Arg{"overwrite", overwrite}, Arg{"alternative", nil},
