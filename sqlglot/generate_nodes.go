@@ -2030,14 +2030,18 @@ func (g *generator) writeJSONOperand(e *Expression, form string) string {
 	if path == nil {
 		return g.fail(e.Class + " without a path")
 	}
-	if !isAtomForOperator(path) {
+	// The path may be a CALL or an array LITERAL rather than a leaf --
+	// `CONCAT('$.', field_name)` builds one and `['$.a', '$.b']` names
+	// several -- and both carry their own delimiters, so neither needs
+	// brackets beside an operator.
+	text := g.node(path)
+	if !isAtomForOperator(path) && !writesAsACall(text) && !writesAsAList(text) {
 		return g.fail(e.Class + " over a compound path")
 	}
 	// The RIGHT operand is parenthesised where the left is not: the reference
 	// writes `a -> (b * c)` but `POWER(0, 0) -> '$'`. That is what
 	// left-associativity looks like written down -- the left side cannot
 	// re-associate and the right side can.
-	text := g.node(path)
 	if isA("Binary", path) {
 		text = "(" + text + ")"
 	}
@@ -2092,6 +2096,27 @@ func holdsAnExtraction(e *Expression) bool {
 				if holdsAnExtraction(item) {
 					return true
 				}
+			}
+		}
+	}
+	return false
+}
+
+// writesAsAList reports whether a rendering is one bracketed group -- an array
+// literal -- and so needs no brackets beside an operator.
+func writesAsAList(text string) bool {
+	if !strings.HasPrefix(text, "[") || !strings.HasSuffix(text, "]") {
+		return false
+	}
+	depth := 0
+	for i, r := range text {
+		switch r {
+		case '[':
+			depth++
+		case ']':
+			depth--
+			if depth == 0 {
+				return i == len(text)-1
 			}
 		}
 	}
@@ -3994,7 +4019,7 @@ func (g *generator) writeTransaction(e *Expression) string {
 		"Transaction": "BEGIN", "Commit": "COMMIT", "Rollback": "ROLLBACK",
 	}[e.Class]
 	if savepoint := g.child(e, "savepoint"); savepoint != "" {
-		if !g.tables.TransactionNameWritten {
+		if !g.tables.TransactionSavepointWritten {
 			return g.fail(e.Class + " to a savepoint, which this dialect writes away")
 		}
 		return verb + " TO " + savepoint

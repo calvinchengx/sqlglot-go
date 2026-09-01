@@ -3824,15 +3824,33 @@ func TestTruncateUseAndTransactions(t *testing.T) {
 	if _, err := ParseOne("BEGIN", "tsql"); err == nil {
 		t.Error("a T-SQL BEGIN was read as a transaction")
 	}
-	// And T-SQL DROPS the name a transaction carries, so a rollback TO a
-	// savepoint would roll back everything -- a different action.
-	for _, sql := range []string{"ROLLBACK TO b", "COMMIT TRANSACTION n"} {
-		e, err := ParseOne(sql, "")
+	// Two different names, and the dialects disagree about them in opposite
+	// directions. T-SQL drops the SAVEPOINT a rollback names -- which would
+	// roll back everything rather than to it, a different action -- and it
+	// alone keeps the name the TRANSACTION itself carries, which everyone
+	// else writes away.
+	savepoint, err := ParseOne("ROLLBACK TO b", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(savepoint, "tsql"); err == nil {
+		t.Errorf("T-SQL wrote %q; it rolls back everything there", got)
+	}
+	for _, tc := range []struct{ sql, want string }{
+		{"BEGIN TRANSACTION n", "BEGIN TRANSACTION n"},
+		{"COMMIT TRANSACTION n", "COMMIT TRANSACTION n"},
+		{"ROLLBACK TRANSACTION n", "ROLLBACK TRANSACTION n"},
+	} {
+		e, err := ParseOne(tc.sql, "tsql")
 		if err != nil {
-			t.Fatalf("ParseOne(%q): %v", sql, err)
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
 		}
-		if got, err := Generate(e, "tsql"); err == nil {
-			t.Errorf("%q wrote %q for T-SQL, which writes the name away", sql, got)
+		if got, err := Generate(e, "tsql"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+		// Everywhere else the name goes, so the statement is refused.
+		if got, err := Generate(e, "postgres"); err == nil {
+			t.Errorf("PostgreSQL wrote %q; it writes the name away", got)
 		}
 	}
 	for _, sql := range []string{
@@ -7883,14 +7901,34 @@ func TestTimeFormatArguments(t *testing.T) {
 	}
 
 	// Databricks spells a TO_DATE format one way and a DATE_FORMAT one
-	// another, both from the same stored text -- a table of its own that this
-	// port does not have, so it reads those and declines to write them.
-	e, err = ParseOne("TO_DATE(x, 'yyyy')", "databricks")
+	// another, both from the same stored text -- more than one table of them,
+	// where this port has one. A format is written only where the port's own
+	// table means the same thing read back, which mapping out and in again
+	// is the test of.
+	for _, tc := range []struct{ sql, want string }{
+		{"TO_DATE(x, 'yyyy')", "TO_DATE(x, 'yyyy')"},
+		{"SELECT TO_DATE(x, 'MM/dd/yyyy')", "SELECT TO_DATE(x, 'MM/dd/yyyy')"},
+		{"TO_DATE('1992-01', 'yyyy-d')", "TO_DATE('1992-01', 'yyyy-d')"},
+		{"TO_DATE(x, 'MMMM')", "TO_DATE(x, 'MMMM')"},
+	} {
+		e, err := ParseOne(tc.sql, "databricks")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "databricks"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+
+	// And one that does NOT come back the same is refused: the port has one
+	// table where the dialect has several, so a spelling it cannot verify is
+	// a spelling that may say something else.
+	e, err = ParseOne("TO_DATE(x, 'q')", "databricks")
 	if err != nil {
 		t.Fatalf("ParseOne: %v", err)
 	}
 	if got, err := Generate(e, "databricks"); err == nil {
-		t.Errorf("wrote %q; Databricks spells that format its own way", got)
+		t.Errorf("wrote %q; that format does not come back the same", got)
 	}
 
 	// A format that IS the dialect's own default is written as nothing.
@@ -8638,5 +8676,43 @@ func TestJSONExtractOverAnother(t *testing.T) {
 	if got, err := Generate(one, "tsql"); err != nil ||
 		got != "SELECT ISNULL(JSON_QUERY(x, '$.y'), JSON_VALUE(x, '$.y'))" {
 		t.Errorf("wrote %q (%v)", got, err)
+	}
+}
+
+// A JSON path may be a CALL or an array LITERAL rather than a leaf: one builds
+// the path and the other names several. Both carry their own delimiters, so
+// neither needs brackets beside an operator.
+func TestJSONPathThatIsNotALeaf(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql, want string }{
+		{"databricks", "SELECT GET_JSON_OBJECT(col, CONCAT('$.', field_name))",
+			"SELECT GET_JSON_OBJECT(col, CONCAT('$.', field_name))"},
+		{"duckdb", "SELECT '{}' ->> ['$.a', '$.b']", "SELECT '{}' ->> ['$.a', '$.b']"},
+		{"duckdb", "SELECT JSON_EXTRACT_STRING('{}', ['$.a', '$.b'])",
+			"SELECT '{}' ->> ['$.a', '$.b']"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	// A path that is neither -- a connector, which brackets by precedence --
+	// is still refused.
+	column := func(name string) *Expression {
+		return New("Column", Arg{"this", New("Identifier", Arg{"this", name})})
+	}
+	loose := New("JSONExtract", Arg{"this", column("a")},
+		Arg{"expression", New("Or", Arg{"this", column("b")}, Arg{"expression", column("c")})})
+	if got, err := Generate(loose, "duckdb"); err == nil {
+		t.Errorf("wrote %q over a connector", got)
+	}
+	// And a list that is not one whole group.
+	if writesAsAList("[a], [b]") {
+		t.Error(`"[a], [b]" is two lists, not one`)
+	}
+	if !writesAsAList("[[a], [b]]") {
+		t.Error(`"[[a], [b]]" is one list`)
 	}
 }

@@ -115,12 +115,24 @@ func (g *generator) node(e *Expression) string {
 				// A format that is the dialect's OWN default is written as
 				// nothing: Databricks spells `FROM_UNIXTIME(x)` for the
 				// format it would otherwise put down in full.
-				if text, _ := format.Args["this"].(string); text == g.tables.DefaultTimeFormat {
+				text, _ := format.Args["this"].(string)
+				if text == g.tables.DefaultTimeFormat {
 					e = e.shallowCopy()
 					e.Set("format", nil)
 					break
 				}
-				return g.fail(e.Class + " whose format this dialect spells its own way")
+				// Any other format has to be spelled the dialect's way, and
+				// the spelling is only safe where it means the same thing
+				// read back: this dialect keeps more than one table of them,
+				// and a format written from the wrong one says something
+				// else. Mapping out and back in again is the test.
+				spelled := formatTime(text, g.tables.InverseTimeMapping)
+				if spelled == text || formatTime(spelled, g.tables.TimeMapping) != text {
+					return g.fail(e.Class + " whose format this dialect spells its own way")
+				}
+				e = e.shallowCopy()
+				e.Set("format", New("Literal",
+					Arg{"this", spelled}, Arg{"is_string", true}))
 			case "other":
 				// A table of the dialect's own: Databricks spells a TO_DATE
 				// format `yyyy-M-d` and a DATE_FORMAT one `yyyy-MM-dd`, both

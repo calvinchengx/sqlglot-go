@@ -1432,23 +1432,29 @@ def table_hints_written(dialect: str) -> bool:
     return "NOLOCK" in text
 
 
-def transaction_conventions(dialect: str) -> tuple[str, bool]:
-    """The word a transaction statement writes, and whether a NAME survives.
+def transaction_conventions(dialect: str) -> tuple[str, bool, bool]:
+    """The word a transaction statement writes, and which NAMES survive it.
 
-    T-SQL writes `BEGIN TRANSACTION` where everyone else writes `BEGIN`, and
-    it drops the name that follows -- `ROLLBACK TO b` becomes `ROLLBACK
-    TRANSACTION`, which rolls back everything rather than to the savepoint.
-    That is a different action, so the port refuses it rather than following.
+    Two different names, and the dialects disagree about them in opposite
+    directions. A SAVEPOINT name says where to roll back to, and T-SQL drops
+    it -- `ROLLBACK TO b` becomes `ROLLBACK TRANSACTION`, which rolls back
+    everything rather than to the savepoint. A TRANSACTION name is what T-SQL
+    alone keeps, and everyone else writes a bare `BEGIN` without it. Both are a
+    different action from what was written, so each is refused where it is
+    dropped -- and asked for separately, because one answer cannot serve both.
     """
     import sqlglot
 
     try:
         plain = sqlglot.parse_one("BEGIN").sql(dialect=dialect or None)
-        named = sqlglot.parse_one("ROLLBACK TO zzsave").sql(dialect=dialect or None)
+        savepoint = sqlglot.parse_one("ROLLBACK TO zzsave").sql(dialect=dialect or None)
+        named = sqlglot.parse_one("BEGIN TRANSACTION zzname", read="tsql").sql(
+            dialect=dialect or None
+        )
     except Exception:  # noqa: BLE001
-        return "", True
+        return "", True, True
     word = plain.replace("BEGIN", "").strip()
-    return word, "zzsave" in named
+    return word, "zzsave" in savepoint, "zzname" in named
 
 
 def bare_begin_is_a_transaction(dialect: str) -> bool:
@@ -4985,7 +4991,7 @@ def main() -> int:
         "\t// OffsetRowsWord is written after an OFFSET count, and is empty in\n\t// every dialect but T-SQL.\n\tOffsetRowsWord string\n",
         "\t// IntervalUnitAliases are the unit spellings an INTERVAL normalises,\n\t// keyed by the upper-cased spelling written.\n\tIntervalUnitAliases map[string]string\n",
         "\t// TableHintsWritten: a table\'s locking hints survive here. Every\n\t// dialect but T-SQL drops them.\n\tTableHintsWritten bool\n",
-        "\t// TransactionWord is written after BEGIN, COMMIT and ROLLBACK here,\n\t// and TransactionNameWritten whether the name one carries survives.\n\tTransactionWord        string\n\tTransactionNameWritten bool\n",
+        "\t// TransactionWord is written after BEGIN, COMMIT and ROLLBACK here.\n\t// TransactionSavepointWritten says whether the name a ROLLBACK TO\n\t// carries survives, and TransactionNameWritten whether the name the\n\t// TRANSACTION itself carries does. The dialects disagree about the two\n\t// in opposite directions.\n\tTransactionWord             string\n\tTransactionSavepointWritten bool\n\tTransactionNameWritten      bool\n",
         "\t// BareBeginIsATransaction: a BEGIN with no TRANSACTION after it opens\n\t// one here. In T-SQL it opens a block instead.\n\tBareBeginIsATransaction bool\n",
         "\t// SetItemKindWritten says whether a SET\'s scope word survives, per\n\t// word. Dropping one changes which scope the setting belongs to.\n\tSetItemKindWritten map[string]bool\n",
         "\t// SetItemVariableSeparator sits between a VARIABLE and its value,\n\t// which is not always what sits between a setting and its value.\n\tSetItemVariableSeparator string\n",
@@ -5858,8 +5864,9 @@ def main() -> int:
             "\t\tBareBeginIsATransaction: %s,\n"
             % str(bare_begin_is_a_transaction(name)).lower()
         )
-        _tw, _tn = transaction_conventions(name)
+        _tw, _ts, _tn = transaction_conventions(name)
         out.append(f"\t\tTransactionWord: {gostr(_tw)},\n")
+        out.append("\t\tTransactionSavepointWritten: %s,\n" % str(_ts).lower())
         out.append("\t\tTransactionNameWritten: %s,\n" % str(_tn).lower())
         out.append(f"\t\tOffsetRowsWord: {gostr(offset_rows_word(name))},\n")
         out.append(f"\t\tIndexOnWord: {gostr(index_on_word(name))},\n")
