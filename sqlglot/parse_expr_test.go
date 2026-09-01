@@ -4068,11 +4068,35 @@ func TestAlterTableSet(t *testing.T) {
 			}
 		}
 	}
-	// T-SQL reads the same parenthesised words as table PROPERTIES, each with
-	// a class of its own, so the port refuses there rather than building an
-	// equality the reference never makes.
-	if _, err := ParseOne("ALTER TABLE tbl SET (SYSTEM_VERSIONING=OFF)", "tsql"); err == nil {
-		t.Error("a T-SQL property list was read as settings")
+	// T-SQL puts the whole SET inside parentheses of the syntax's own, and
+	// reads what is inside them as table PROPERTIES -- each with a class of
+	// its own -- rather than as a list of equalities. A name it has no
+	// property for stays the equality it was written as.
+	for _, c := range []struct{ sql, want string }{
+		{"ALTER TABLE tbl SET (SYSTEM_VERSIONING=OFF)",
+			"ALTER TABLE tbl SET (SYSTEM_VERSIONING=OFF)"},
+		{"ALTER TABLE tbl SET (DATA_DELETION=ON)", "ALTER TABLE tbl SET (DATA_DELETION=ON)"},
+		{"ALTER TABLE tbl SET (DATA_DELETION=ON(FILTER_COLUMN=col, RETENTION_PERIOD=5 MONTHS))",
+			"ALTER TABLE tbl SET (DATA_DELETION=ON(FILTER_COLUMN=col, RETENTION_PERIOD=5 MONTHS))"},
+		{"ALTER TABLE tbl SET (FILESTREAM_ON = 'test')",
+			"ALTER TABLE tbl SET (FILESTREAM_ON = 'test')"},
+		{"ALTER TABLE tbl SET (SYSTEM_VERSIONING=ON(HISTORY_TABLE=db.h, HISTORY_RETENTION_PERIOD=INFINITE))",
+			"ALTER TABLE tbl SET (SYSTEM_VERSIONING=ON(HISTORY_TABLE=db.h, HISTORY_RETENTION_PERIOD=INFINITE))"},
+		{"ALTER TABLE tbl SET (DATA_DELETION=OFF)", "ALTER TABLE tbl SET (DATA_DELETION=OFF)"},
+	} {
+		tree, err := ParseOne(c.sql, "tsql")
+		if err != nil {
+			t.Errorf("ParseOne(%q): %v", c.sql, err)
+			continue
+		}
+		got, gerr := Generate(tree, "tsql")
+		if gerr != nil {
+			t.Errorf("Generate(%q): %v", c.sql, gerr)
+			continue
+		}
+		if got != c.want {
+			t.Errorf("%s\n got  %s\n want %s", c.sql, got, c.want)
+		}
 	}
 	if _, err := ParseOne("ALTER TABLE t1 SET SOMETHING", "postgres"); err == nil {
 		t.Error("an unknown SET was read")

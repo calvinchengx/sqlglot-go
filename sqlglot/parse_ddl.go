@@ -2924,6 +2924,19 @@ func (p *parser) parseAlterSet() (*Expression, error) {
 			return nil, err
 		}
 		node.Set("access_method", name)
+	case p.at(TokL_PAREN) && p.tables.AlterSetIsWrapped:
+		// The parentheses are the SYNTAX's here, not a list's: what is inside
+		// them is read as table PROPERTIES, each with a class of its own,
+		// rather than as a list of equalities.
+		p.advance()
+		items, err := p.parseAlterSetProperties()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed ALTER TABLE SET")
+		}
+		node.Set("expressions", items)
 	case p.at(TokL_PAREN):
 		// T-SQL reads the same words as table PROPERTIES, each with a class
 		// of its own, rather than as equalities.
@@ -2944,6 +2957,22 @@ func (p *parser) parseAlterSet() (*Expression, error) {
 		return nil, p.unsupported("an ALTER TABLE SET this port does not read")
 	}
 	return node, nil
+}
+
+// parseAlterSetProperties reads what a wrapped ALTER TABLE SET holds. A name
+// the reference has a property for becomes one, gathered under a Properties of
+// its own; anything else is the equality it was written as.
+func (p *parser) parseAlterSetProperties() ([]*Expression, error) {
+	if prop, own, err := p.parseBespokeProperty(false); err != nil {
+		return nil, err
+	} else if own {
+		return []*Expression{New("Properties", Arg{"expressions", []*Expression{prop}})}, nil
+	}
+	setting, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	return []*Expression{setting}, nil
 }
 
 // parseColumnType reads the type of a COLUMN, where a fixed-size array is a

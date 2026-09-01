@@ -4633,6 +4633,10 @@ def main() -> int:
         "\t// PartitionSQL is how a table\'s PARTITION clause is written, with\n\t// {members} where its members go.\n\tPartitionSQL string\n",
         "\t// AlterSetOptionWritten: an `ALTER TABLE ... SET` keeps the words that\n\t// say WHAT it sets, and AlterSetWrapsOptions whether a list of\n\t// settings is written in parentheses.\n\tAlterSetOptionWritten bool\n\tAlterSetWrapsOptions  bool\n",
         "\t// AlterSetListIsSettings: `ALTER TABLE t SET (k = v)` is a list of\n\t// settings here rather than of table properties.\n\tAlterSetListIsSettings bool\n",
+        "\t// AlterSetIsWrapped: `ALTER TABLE t SET (...)` puts the whole SET\n"
+        "\t// inside parentheses of the syntax's own, and what is inside them\n"
+        "\t// is read as PROPERTIES rather than as settings.\n"
+        "\tAlterSetIsWrapped bool\n",
         "\t// KeyConstraintOptions are the words that may follow a REFERENCES or a\n\t// key, and what may follow each of them.\n\tKeyConstraintOptions map[string][]string\n",
         "\t// WithDataWritten: `WITH NO DATA` survives here. It says whether the\n\t// table is FILLED from the query or only shaped by it.\n\tWithDataWritten bool\n",
         "\t// IdentityShortSQL is the short spelling of an identity column, with\n\t// {start} and {increment} in it, and empty where the dialect writes\n\t// the whole GENERATED form instead.\n\tIdentityShortSQL string\n",
@@ -5478,6 +5482,16 @@ def main() -> int:
         out.append("\t\tAlterSetOptionWritten: %s,\n" % str(_aso).lower())
         out.append("\t\tAlterSetWrapsOptions: %s,\n" % str(_asw).lower())
         out.append("\t\tAlterSetListIsSettings: %s,\n" % str(alter_set_list_is_settings(name)).lower())
+        try:
+            _set = _sg.parse_one(
+                "ALTER TABLE t SET (DATA_DELETION=ON)", read=name or None
+            ).args["actions"][0]
+            _wrapped = any(
+                type(x).__name__ == "Properties" for x in (_set.args.get("expressions") or [])
+            )
+        except Exception:  # noqa: BLE001 -- a dialect that will not read it
+            _wrapped = False
+        out.append(f"\t\tAlterSetIsWrapped: {str(_wrapped).lower()},\n")
         _ccs, _cct = computed_column_spelling(name)
         out.append(f"\t\tComputedColumnSpelling: {gostr(_ccs)},\n")
         out.append("\t\tComputedKeepsType: %s,\n" % str(_cct).lower())

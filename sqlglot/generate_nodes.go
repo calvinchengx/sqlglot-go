@@ -78,6 +78,7 @@ func init() {
 		"StoredProcedure":                     (*generator).writeStoredProcedure,
 		"EndStatement":                        (*generator).writeEndStatement,
 		"Property":                            (*generator).writeProperty,
+		"Properties":                          (*generator).writePropertyList,
 		"Alter":                               (*generator).writeAlter,
 		"AlterRename":                         (*generator).writeAlterRename,
 		"RenameColumn":                        (*generator).writeRenameColumn,
@@ -2447,6 +2448,19 @@ func (g *generator) writeStoredProcedure(e *Expression) string {
 		return this + "(" + written + ")"
 	}
 	return this + " " + written
+}
+
+// writePropertyList writes a Properties node standing on its own, which is how
+// an ALTER TABLE SET holds what it sets. The statement writes its own
+// parentheses round them, so the properties are written one after another with
+// nothing added here.
+func (g *generator) writePropertyList(e *Expression) string {
+	items, _ := e.Args["expressions"].([]*Expression)
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, g.node(item))
+	}
+	return strings.Join(parts, " ")
 }
 
 // writeProperty writes a plain key and value -- the property with no word of

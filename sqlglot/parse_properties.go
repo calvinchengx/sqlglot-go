@@ -79,11 +79,9 @@ func (p *parser) parseWrappedProperties() ([]*Expression, error) {
 		// One property carries the WITH it was written inside: the reference
 		// records `WITH(SYSTEM_VERSIONING=ON)` as a single property with a
 		// flag saying so, and writes the word back itself.
-		if p.atWords("SYSTEM_VERSIONING") {
-			prop, err := p.parseSystemVersioning(true)
-			if err != nil {
-				return nil, err
-			}
+		if prop, own, err := p.parseBespokeProperty(true); err != nil {
+			return nil, err
+		} else if own {
 			out = append(out, prop)
 			if !p.match(TokCOMMA) {
 				break
@@ -115,6 +113,94 @@ func (p *parser) parseWrappedProperties() ([]*Expression, error) {
 		return nil, p.unsupported("unclosed property list")
 	}
 	return out, nil
+}
+
+// parseBespokeProperty reads the two properties whose grammar is their own
+// rather than one of the shapes the probe records: each takes ON or OFF and
+// may carry a parenthesised list of settings under it.
+//
+// The reference reads the settings with a loop that advances only when it
+// recognises one, so anything else in there never returns -- see
+// docs/upstream-issues.md. This refuses instead.
+func (p *parser) parseBespokeProperty(inWith bool) (*Expression, bool, error) {
+	switch {
+	case p.atWords("SYSTEM_VERSIONING"):
+		prop, err := p.parseSystemVersioning(inWith)
+		return prop, true, err
+	case p.atWords("DATA_DELETION"):
+		prop, err := p.parseDataDeletion()
+		return prop, true, err
+	}
+	return nil, false, nil
+}
+
+// parseDataDeletion reads `DATA_DELETION=ON`, `=OFF`, and the settings that
+// say which column dates a row and how long it is kept.
+func (p *parser) parseDataDeletion() (*Expression, error) {
+	p.advance() // DATA_DELETION
+	p.match(TokEQ)
+	// ON where it says so and where it says nothing; only OFF turns it off.
+	on := true
+	switch {
+	case p.at(TokON):
+		p.advance()
+	case p.atWords("OFF"):
+		p.advance()
+		on = false
+	}
+	prop := New("DataDeletionProperty", Arg{"on", on})
+	if !p.match(TokL_PAREN) {
+		return prop, nil
+	}
+	for !p.at(TokR_PAREN) {
+		switch {
+		case p.atWords("FILTER_COLUMN"):
+			p.advance()
+			if !p.match(TokEQ) {
+				return nil, p.unsupported("FILTER_COLUMN without a column")
+			}
+			column, err := p.parseColumn()
+			if err != nil {
+				return nil, err
+			}
+			prop.Set("filter_column", column)
+		case p.atWords("RETENTION_PERIOD"):
+			p.advance()
+			if !p.match(TokEQ) {
+				return nil, p.unsupported("RETENTION_PERIOD without a period")
+			}
+			period, err := p.parseRetentionPeriod()
+			if err != nil {
+				return nil, err
+			}
+			prop.Set("retention_period", period)
+		default:
+			return nil, p.unsupported("a DATA_DELETION setting this port does not read")
+		}
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed DATA_DELETION settings")
+	}
+	return prop, nil
+}
+
+// parseRetentionPeriod reads `5 MONTHS` or `INFINITE`, which the reference
+// keeps as one Var holding both words.
+func (p *parser) parseRetentionPeriod() (*Expression, error) {
+	text := ""
+	if c := p.curr(); c != nil && c.Type == TokNUMBER {
+		p.advance()
+		text = c.Text + " "
+	}
+	unit := p.curr()
+	if unit == nil {
+		return nil, p.unsupported("a retention period with no unit")
+	}
+	p.advance()
+	return New("Var", Arg{"this", text + unit.Text}), nil
 }
 
 // parseSystemVersioning reads `SYSTEM_VERSIONING=ON`, `=OFF`, and the
@@ -159,6 +245,16 @@ func (p *parser) parseSystemVersioning(inWith bool) (*Expression, error) {
 			}
 			p.advance()
 			prop.Set("data_consistency", strings.ToUpper(c.Text))
+		case p.atWords("HISTORY_RETENTION_PERIOD"):
+			p.advance()
+			if !p.match(TokEQ) {
+				return nil, p.unsupported("HISTORY_RETENTION_PERIOD without a period")
+			}
+			period, err := p.parseRetentionPeriod()
+			if err != nil {
+				return nil, err
+			}
+			prop.Set("retention_period", period)
 		default:
 			return nil, p.unsupported("a SYSTEM_VERSIONING setting this port does not read")
 		}

@@ -555,6 +555,10 @@ type ParserTables struct {
 	// AlterSetListIsSettings: `ALTER TABLE t SET (k = v)` is a list of
 	// settings here rather than of table properties.
 	AlterSetListIsSettings bool
+	// AlterSetIsWrapped: `ALTER TABLE t SET (...)` puts the whole SET
+	// inside parentheses of the syntax's own, and what is inside them
+	// is read as PROPERTIES rather than as settings.
+	AlterSetIsWrapped bool
 	// KeyConstraintOptions are the words that may follow a REFERENCES or a
 	// key, and what may follow each of them.
 	KeyConstraintOptions map[string][]string
@@ -5123,6 +5127,7 @@ var parserTables = map[string]*ParserTables{
 		AlterSetOptionWritten:    false,
 		AlterSetWrapsOptions:     false,
 		AlterSetListIsSettings:   true,
+		AlterSetIsWrapped:        false,
 		ComputedColumnSpelling:   "AS {expr}",
 		ComputedKeepsType:        true,
 		IdentityWritten:          true,
@@ -10011,6 +10016,7 @@ var parserTables = map[string]*ParserTables{
 		AlterSetOptionWritten:    false,
 		AlterSetWrapsOptions:     true,
 		AlterSetListIsSettings:   false,
+		AlterSetIsWrapped:        true,
 		ComputedColumnSpelling:   "AS {expr}",
 		ComputedKeepsType:        false,
 		IdentityWritten:          false,
@@ -14937,6 +14943,7 @@ var parserTables = map[string]*ParserTables{
 		AlterSetOptionWritten:    true,
 		AlterSetWrapsOptions:     true,
 		AlterSetListIsSettings:   true,
+		AlterSetIsWrapped:        false,
 		ComputedColumnSpelling:   "GENERATED ALWAYS AS ({expr}) STORED",
 		ComputedKeepsType:        true,
 		IdentityWritten:          true,
@@ -20093,6 +20100,7 @@ var parserTables = map[string]*ParserTables{
 		AlterSetOptionWritten:    false,
 		AlterSetWrapsOptions:     false,
 		AlterSetListIsSettings:   true,
+		AlterSetIsWrapped:        false,
 		ComputedColumnSpelling:   "AS {expr}",
 		ComputedKeepsType:        true,
 		IdentityWritten:          true,
@@ -25340,6 +25348,7 @@ var parserTables = map[string]*ParserTables{
 		AlterSetOptionWritten:    false,
 		AlterSetWrapsOptions:     false,
 		AlterSetListIsSettings:   true,
+		AlterSetIsWrapped:        false,
 		ComputedColumnSpelling:   "GENERATED ALWAYS AS ({expr})",
 		ComputedKeepsType:        true,
 		IdentityWritten:          true,
