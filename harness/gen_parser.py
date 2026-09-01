@@ -881,7 +881,7 @@ def _create_body(kind: str) -> str:
         return ""
     if kind == "TABLE":
         return " (a INT)"
-    if kind == "FUNCTION":
+    if kind in ("FUNCTION", "PROCEDURE"):
         return "() AS \'b\'"
     if kind == "INDEX":
         return " ON zztbl(zzc)"
@@ -899,7 +899,10 @@ def create_exists_written(dialect: str) -> dict:
     import sqlglot
 
     out = {}
-    for kind in ("TABLE", "VIEW", "INDEX", "SCHEMA"):
+    # Every kind the port reads, not only the four a table takes: a PROCEDURE
+    # carries the guard as readily as a TABLE does, and a kind left out of the
+    # probe was refused for a fact nobody had asked about.
+    for kind in ("TABLE", "VIEW", "INDEX", "SCHEMA", "FUNCTION", "PROCEDURE"):
         body = _create_body(kind)
         try:
             guarded = sqlglot.parse_one(

@@ -8716,3 +8716,39 @@ func TestJSONPathThatIsNotALeaf(t *testing.T) {
 		t.Error(`"[[a], [b]]" is one list`)
 	}
 }
+
+// Three narrowings, each a fact the port had refused for want of asking.
+func TestRefusalsNarrowed(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		// A format written the dialect's way, kept where mapping out and
+		// back in again lands on what was stored.
+		{"a parse format", "databricks", "SELECT TO_TIMESTAMP('2016-12-31', 'yyyy-MM-dd')",
+			"SELECT TO_TIMESTAMP('2016-12-31', 'yyyy-MM-dd')"},
+		{"a longer parse format", "databricks",
+			"SELECT TO_TIMESTAMP('2016-12-31 03:04:05', 'yyyy-MM-dd HH:mm:ss')",
+			"SELECT TO_TIMESTAMP('2016-12-31 03:04:05', 'yyyy-MM-dd HH:mm:ss')"},
+		// A NOT binds looser than the arrow, so it takes brackets on the
+		// right the same way an operator does.
+		{"a negated path", "postgres", "SELECT JSON_EXTRACT(a, NOT x)", "SELECT a -> (NOT x)"},
+		// Every kind of CREATE carries the guard, not only the four a table
+		// takes: the probe had asked about TABLE, VIEW, INDEX and SCHEMA and
+		// nothing else, so a PROCEDURE was refused for a fact nobody had
+		// looked up.
+		{"a guarded procedure", "", "CREATE PROCEDURE IF NOT EXISTS a.b.c() AS 'DECLARE BEGIN; END'",
+			"CREATE PROCEDURE IF NOT EXISTS a.b.c() AS 'DECLARE BEGIN; END'"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}

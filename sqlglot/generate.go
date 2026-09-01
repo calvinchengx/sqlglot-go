@@ -137,8 +137,17 @@ func (g *generator) node(e *Expression) string {
 				// A table of the dialect's own: Databricks spells a TO_DATE
 				// format `yyyy-M-d` and a DATE_FORMAT one `yyyy-MM-dd`, both
 				// from the stored `%Y-%m-%d`. Writing either spelling for the
-				// other says something else, so this one is declined.
-				return g.fail(e.Class + " whose format this dialect spells its own way")
+				// other says something else -- so the port writes only what
+				// it can VERIFY, by mapping out and back in again and keeping
+				// the result where it lands on what was stored.
+				text, _ := format.Args["this"].(string)
+				spelled := formatTime(text, g.tables.InverseTimeMapping)
+				if spelled == text || formatTime(spelled, g.tables.TimeMapping) != text {
+					return g.fail(e.Class + " whose format this dialect spells its own way")
+				}
+				e = e.shallowCopy()
+				e.Set("format", New("Literal",
+					Arg{"this", spelled}, Arg{"is_string", true}))
 			}
 		}
 	}

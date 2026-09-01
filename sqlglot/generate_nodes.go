@@ -2035,14 +2035,17 @@ func (g *generator) writeJSONOperand(e *Expression, form string) string {
 	// several -- and both carry their own delimiters, so neither needs
 	// brackets beside an operator.
 	text := g.node(path)
-	if !isAtomForOperator(path) && !writesAsACall(text) && !writesAsAList(text) {
+	if !isAtomForOperator(path) && !writesAsACall(text) && !writesAsAList(text) &&
+		path.Class != "Not" {
 		return g.fail(e.Class + " over a compound path")
 	}
 	// The RIGHT operand is parenthesised where the left is not: the reference
 	// writes `a -> (b * c)` but `POWER(0, 0) -> '$'`. That is what
 	// left-associativity looks like written down -- the left side cannot
 	// re-associate and the right side can.
-	if isA("Binary", path) {
+	if isA("Binary", path) || path.Class == "Not" {
+		// A NOT binds looser than the arrow too, so it takes the same
+		// brackets on the right that an operator does.
 		text = "(" + text + ")"
 	}
 	out := strings.ReplaceAll(form, "{this}", g.node(this))
