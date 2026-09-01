@@ -1936,6 +1936,20 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 	// A dialect with no single path literal writes one operator -- or one
 	// argument -- PER PART, so the node has to be folded rather than spelled.
 	if per, ok := g.tables.JSONPerPartSQL[e.Class]; ok {
+		// A path that is not a PATH has no parts to spread, so the per-part
+		// form has nothing to do with it: the reference writes the ordinary
+		// operator there instead, and only reaches for the call when there
+		// are parts -- or further keys beside the first.
+		path, _ := e.Args["expression"].(*Expression)
+		extras, _ := e.Args["expressions"].([]*Expression)
+		if len(extras) == 0 && (path == nil ||
+			(path.Class != "JSONPath" && path.Class != "Variadic")) {
+			// The chain template spells one key; with the quotes off it is
+			// the operator itself, which is what stands between the value
+			// and whatever was written where a path would go.
+			return g.writeJSONOperand(e,
+				strings.ReplaceAll(per.Chain, "'{part}'", "{path}"))
+		}
 		return g.writeJSONPerPart(e, per)
 	}
 	form, ok := g.tables.JSONExtractSQL[e.Class]
@@ -1950,7 +1964,7 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 		form = over.Form
 	}
 	this, _ := e.Args["this"].(*Expression)
-	if !isAtomForOperator(this) {
+	if !isAtomForOperator(this) && !writesAsACall(g.node(this)) {
 		return g.fail(e.Class + " over a compound expression")
 	}
 	path, _ := e.Args["expression"].(*Expression)
@@ -1961,9 +1975,6 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 	// operand has to be an atom, because the form around it is an operator
 	// and a template substitutes text knowing no precedence.
 	if path != nil && path.Class != "JSONPath" {
-		if !isAtomForOperator(path) {
-			return g.fail(e.Class + " over a compound path")
-		}
 		// A call whose path form QUOTES its argument needs the other form
 		// here, or a column comes out as the string `'$path_col'`.
 		if over, ok := g.tables.JSONPathByClass[e.Class]; ok {
@@ -1972,16 +1983,7 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 			}
 			form = over.PlainForm
 		}
-		// The RIGHT operand is parenthesised where the left is not: the
-		// reference writes `a -> (b * c)` but `POWER(0, 0) -> '$'`. That is
-		// what left-associativity looks like written down -- the left side
-		// cannot re-associate and the right side can.
-		text := g.node(path)
-		if isA("Binary", path) {
-			text = "(" + text + ")"
-		}
-		out := strings.ReplaceAll(form, "{this}", g.node(this))
-		return strings.ReplaceAll(out, "{path}", text)
+		return g.writeJSONOperand(e, form)
 	}
 	if path == nil || path.Class != "JSONPath" {
 		return g.fail(e.Class + " without a path")
@@ -1994,6 +1996,36 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 	g.pathOwner = e.Class
 	text := g.node(path)
 	g.pathOwner = saved
+	return strings.ReplaceAll(out, "{path}", text)
+}
+
+// writeJSONOperand writes an extraction whose right-hand side is an ORDINARY
+// expression rather than a path -- `'{"x": 1}' -> c` keeps the column, and a
+// path the reference could not read stays the string it was written as.
+//
+// The operand has to be an atom, because the form around it is an operator and
+// a template substitutes text knowing no precedence.
+func (g *generator) writeJSONOperand(e *Expression, form string) string {
+	this, _ := e.Args["this"].(*Expression)
+	path, _ := e.Args["expression"].(*Expression)
+	if !isAtomForOperator(this) && !writesAsACall(g.node(this)) {
+		return g.fail(e.Class + " over a compound expression")
+	}
+	if path == nil {
+		return g.fail(e.Class + " without a path")
+	}
+	if !isAtomForOperator(path) {
+		return g.fail(e.Class + " over a compound path")
+	}
+	// The RIGHT operand is parenthesised where the left is not: the reference
+	// writes `a -> (b * c)` but `POWER(0, 0) -> '$'`. That is what
+	// left-associativity looks like written down -- the left side cannot
+	// re-associate and the right side can.
+	text := g.node(path)
+	if isA("Binary", path) {
+		text = "(" + text + ")"
+	}
+	out := strings.ReplaceAll(form, "{this}", g.node(this))
 	return strings.ReplaceAll(out, "{path}", text)
 }
 
@@ -2029,6 +2061,36 @@ func isAtomForOperator(e *Expression) bool {
 		return true
 	}
 	return isA("Unary", e) && e.Class != "Not"
+}
+
+// writesAsACall reports whether a rendering is a name and one parenthesised
+// group -- `JSON('{"a": 1}')` -- and so needs no brackets beside an operator.
+//
+// Asked of the TEXT rather than of the class because what makes a call
+// self-delimiting is its own parentheses, and every dialect spells its calls
+// under names of its own. Enumerating the classes meant a JSON extraction over
+// `JSON(...)` or `PARSE_JSON(...)` was refused for being compound when the
+// parentheses around it already said it was not.
+func writesAsACall(text string) bool {
+	open := strings.Index(text, "(")
+	if open <= 0 || !strings.HasSuffix(text, ")") || !isBareIdentifier(text[:open]) {
+		return false
+	}
+	// The first parenthesis must be the one the last closes, or the text is
+	// two things side by side rather than one call.
+	depth := 0
+	for i, r := range text {
+		switch r {
+		case '(':
+			depth++
+		case ')':
+			depth--
+			if depth == 0 {
+				return i == len(text)-1
+			}
+		}
+	}
+	return false
 }
 
 // writeUnnest writes the call and then its alias. The function spelling comes
@@ -2122,17 +2184,27 @@ func isSafeLeadingOperand(g *generator, e *Expression) bool {
 // same flag the parser read off the reference.
 func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
 	this, _ := e.Args["this"].(*Expression)
-	if !isAtomForOperator(this) {
+	if !isAtomForOperator(this) && !writesAsACall(g.node(this)) {
 		return g.fail(e.Class + " over a compound expression")
 	}
 	path, _ := e.Args["expression"].(*Expression)
 	if path == nil || path.Class != "JSONPath" {
-		// There are no PARTS to fold when the operand was never a path. This
-		// form exists to spread one across several operators or arguments,
-		// and it has nothing to say about a column.
-		return g.fail(e.Class + " without a path")
+		// No PARTS to spread, but arguments all the same: the reference
+		// writes the call over whatever the node carries -- a key that is a
+		// column, a VARIADIC array, and any further keys beside them.
+		return g.writeJSONPlainCall(e, per)
 	}
 	parts, _ := path.Args["expressions"].([]*Expression)
+	// A path that names only the ROOT has no parts to spread, and the call
+	// takes an empty array in their place: `JSON_EXTRACT_PATH_TEXT(a,
+	// VARIADIC '{}')` is how the reference asks for the whole value.
+	if len(parts) == 1 && parts[0].Class == "JSONPathRoot" {
+		e = e.shallowCopy()
+		e.Set("expression", New("Variadic",
+			Arg{"this", New("Literal", Arg{"this", "{}"}, Arg{"is_string", true})}))
+		return g.writeJSONPlainCall(e, per)
+	}
+	onlyJSON, _ := e.Args["only_json_types"].(bool)
 	names := make([]string, 0, len(parts))
 	for _, part := range parts {
 		switch part.Class {
@@ -2151,7 +2223,22 @@ func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
 			if escaped != name {
 				return g.fail(e.Class + " over a key holding a quote")
 			}
-			names = append(names, escaped)
+			names = append(names, "'"+escaped+"'")
+		case "JSONPathSubscript":
+			// A number naming a position in an array. The CALL form quotes it
+			// like any other part; the operator chain writes it bare, which
+			// is the difference between `JSON_EXTRACT_PATH(x, '0')` and
+			// `x -> 0` -- and is what the reference means by not quoting an
+			// index in the form that keeps the arrow.
+			index, ok := jsonSubscriptIndex(part)
+			if !ok {
+				return g.fail(e.Class + " over a " + part.Class + " that names no position")
+			}
+			if onlyJSON {
+				names = append(names, index)
+			} else {
+				names = append(names, "'"+index+"'")
+			}
 		default:
 			return g.fail(e.Class + " over a " + part.Class)
 		}
@@ -2159,7 +2246,6 @@ func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
 	if len(names) == 0 {
 		return g.fail(e.Class + " with an empty path")
 	}
-	onlyJSON, _ := e.Args["only_json_types"].(bool)
 	if !onlyJSON {
 		// The function form takes every part as an argument.
 		out := strings.ReplaceAll(per.Call, "{this}", g.node(this))
@@ -2167,7 +2253,7 @@ func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
 		if !found {
 			return g.fail(e.Class)
 		}
-		return head + "'" + strings.Join(names, "', '") + "'" + tail
+		return head + strings.Join(names, ", ") + tail
 	}
 	out := g.node(this)
 	for _, name := range names {
@@ -2180,13 +2266,50 @@ func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
 		// port being narrower, not the reference being wrong -- so it refuses
 		// rather than emitting what it cannot re-read. Found by the generator
 		// fuzzer on `0->''`.
-		if name == "" {
+		if name == "''" {
 			return g.fail(e.Class + " over a key with no name")
 		}
-		step := strings.ReplaceAll(per.Chain, "{this}", out)
-		out = strings.ReplaceAll(step, "{part}", name)
+		head, tail, found := strings.Cut(per.Chain, "'{part}'")
+		if !found {
+			return g.fail(e.Class)
+		}
+		out = strings.ReplaceAll(head, "{this}", out) + name + tail
 	}
 	return out
+}
+
+// jsonSubscriptIndex is the position a path subscript names, as text.
+func jsonSubscriptIndex(part *Expression) (string, bool) {
+	// A whole number, held as one rather than as a node: the path reader
+	// stores what it counted rather than a literal it would have to read
+	// back out.
+	if v, ok := part.Args["this"].(int); ok {
+		return strconv.Itoa(v), true
+	}
+	return "", false
+}
+
+// writeJSONPlainCall writes the extraction as an ordinary call over the
+// arguments the node carries, for the dialects that spell it as one.
+//
+// It is what the reference falls back to where the path is not a path it can
+// take apart: `JSON_EXTRACT_PATH(x, k1, 'k2')` names its first key with a
+// column, and `JSON_EXTRACT_PATH(a, VARIADIC '{}')` names the whole root with
+// an empty array.
+func (g *generator) writeJSONPlainCall(e *Expression, per JSONPerPart) string {
+	name := templateName(per.Call)
+	if name == "" {
+		return g.fail(e.Class)
+	}
+	args := []string{g.child(e, "this")}
+	if path, _ := e.Args["expression"].(*Expression); path != nil {
+		args = append(args, g.node(path))
+	}
+	extras, _ := e.Args["expressions"].([]*Expression)
+	for _, extra := range extras {
+		args = append(args, g.node(extra))
+	}
+	return name + "(" + strings.Join(args, ", ") + ")"
 }
 
 // templateName is the function name a syntax template writes, or "" where the

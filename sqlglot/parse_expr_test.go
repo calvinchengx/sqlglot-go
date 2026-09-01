@@ -163,9 +163,6 @@ func TestJSONExtractAsOperand(t *testing.T) {
 // two apart.
 func TestJSONPathFunctionsReadButNotWritten(t *testing.T) {
 	for _, tc := range []struct{ name, dialect, sql, why string }{
-		{"a subscript inside a folded path", "postgres",
-			"SELECT JSON_EXTRACT_PATH(x, 'y', '0', 'z')",
-			"the per-part form spells keys, not indexes"},
 		{"the whole document", "tsql", "SELECT JSON_QUERY(x)",
 			"T-SQL writes an extraction as two calls around an ISNULL"},
 	} {
@@ -178,6 +175,31 @@ func TestJSONPathFunctionsReadButNotWritten(t *testing.T) {
 				t.Errorf("Generate wrote %q; %s, so it should refuse", got, tc.why)
 			}
 		})
+	}
+}
+
+// A path SUBSCRIPT names a position in an array, and the two forms spell it
+// differently: the call quotes it like any other part and the operator chain
+// writes it bare. `x -> 'y' -> 0 -> 'z'` and
+// `JSON_EXTRACT_PATH(x, 'y', '0', 'z')` are the same path in the two forms.
+func TestJSONPathSubscript(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"x -> 'y' -> 0 -> 'z'", "x -> 'y' -> 0 -> 'z'"},
+		{"JSON_EXTRACT_PATH(x, 'y', '0', 'z')", "JSON_EXTRACT_PATH(x, 'y', '0', 'z')"},
+		{"'[1,2,3]'::json->2", "CAST('[1,2,3]' AS JSON) -> 2"},
+		{"'[1,2,3]'::json->>2", "CAST('[1,2,3]' AS JSON) ->> 2"},
+		// A path naming only the ROOT has no parts to spread, and the call
+		// takes an empty array in their place.
+		{"SELECT JSON_EXTRACT_SCALAR(a, '$') FROM t",
+			"SELECT JSON_EXTRACT_PATH_TEXT(a, VARIADIC '{}') FROM t"},
+	} {
+		e, err := ParseOne(tc.sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "postgres"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
 	}
 }
 
@@ -5344,15 +5366,17 @@ func TestVariadic(t *testing.T) {
 // with an argument it cannot fold into a path.
 //
 // The reference lays the arguments out where they were written rather than
-// building a path, and the port now reads that shape. It does not WRITE it:
-// PostgreSQL spells the extraction one argument per part and quotes each one,
-// so a part that is a column has no form to go into.
+// building a path, and writes them back the same way: an extraction whose key
+// is a COLUMN has no parts to spread across one argument each, so the call is
+// written over whatever the node carries.
 func TestJSONPathFunctionPositionalForm(t *testing.T) {
 	for _, sql := range []string{
 		"SELECT JSON_EXTRACT_PATH(x, k1, k2) FROM t",
 		"SELECT JSON_EXTRACT_PATH(x, k1, 'k2') FROM t",
+		"SELECT JSON_EXTRACT_PATH(x, 'k1', k2) FROM t",
 		"SELECT JSON_EXTRACT_PATH(a, VARIADIC '{}') FROM t",
 		"SELECT JSON_EXTRACT_PATH_TEXT(x, k1, k2) FROM t",
+		"SELECT JSON_EXTRACT_PATH_TEXT(a, VARIADIC '{}') FROM t",
 	} {
 		e, err := ParseOne(sql, "postgres")
 		if err != nil {
@@ -5364,8 +5388,28 @@ func TestJSONPathFunctionPositionalForm(t *testing.T) {
 		if _, ok := e.Args["expressions"]; !ok {
 			t.Fatalf("%q: no projections", sql)
 		}
-		if _, refused := Generate(e, "postgres"); refused == nil {
-			t.Errorf("%q was written back; the port has no form for it", sql)
+		got, err := Generate(e, "postgres")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("got %q, want %q", got, sql)
+		}
+	}
+	// A single key that is not a path at all keeps the OPERATOR: there are no
+	// parts to spread, so the call has nothing to do with it.
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT a -> (1 + 2)", "SELECT a -> (1 + 2)"},
+		{"SELECT a -> (NOT x)", "SELECT a -> (NOT x)"},
+		{"SELECT a -> ('x' || 'y')", "SELECT a -> ('x' || 'y')"},
+		{"SELECT JSON_EXTRACT(a, 1 + 2)", "SELECT a -> (1 + 2)"},
+	} {
+		e, err := ParseOne(tc.sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "postgres"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
 		}
 	}
 }
@@ -8275,5 +8319,52 @@ func TestDateAndRegexpGuards(t *testing.T) {
 	safe := New("TsOrDsToDate", Arg{"this", column("x")}, Arg{"safe", true})
 	if got, err := Generate(safe, "tsql"); err != nil || got != "TRY_CAST(x AS DATE)" {
 		t.Errorf("wrote %q (%v), want TRY_CAST(x AS DATE)", got, err)
+	}
+}
+
+// The guards on the JSON extraction writers, over shapes the corpus does not
+// reach.
+func TestJSONExtractGuards(t *testing.T) {
+	column := func(name string) *Expression {
+		return New("Column", Arg{"this", New("Identifier", Arg{"this", name})})
+	}
+	path := func(parts ...*Expression) *Expression {
+		return New("JSONPath", Arg{"expressions", parts})
+	}
+	extract := func(this, p *Expression) *Expression {
+		return New("JSONExtract", Arg{"this", this}, Arg{"expression", p})
+	}
+	// A path part the port has no spelling for.
+	weird := extract(column("x"), path(New("JSONPathWildcard")))
+	if got, err := Generate(weird, "postgres"); err == nil {
+		t.Errorf("wrote %q over a wildcard", got)
+	}
+	// A subscript naming no position.
+	empty := extract(column("x"), path(New("JSONPathSubscript")))
+	if got, err := Generate(empty, "postgres"); err == nil {
+		t.Errorf("wrote %q over a subscript naming nothing", got)
+	}
+	// A path with no parts at all.
+	none := extract(column("x"), path())
+	if got, err := Generate(none, "postgres"); err == nil {
+		t.Errorf("wrote %q over a path with no parts", got)
+	}
+	// A left side that is neither an atom nor a call.
+	loose := extract(New("Or",
+		Arg{"this", column("a")}, Arg{"expression", column("b")}), path(
+		New("JSONPathKey", Arg{"this", "k"})))
+	if got, err := Generate(loose, "postgres"); err == nil {
+		t.Errorf("wrote %q over a connector", got)
+	}
+	// And one whose path is a compound expression rather than a path.
+	compound := New("JSONExtract", Arg{"this", column("a")},
+		Arg{"expression", New("Or",
+			Arg{"this", column("b")}, Arg{"expression", column("c")})})
+	if got, err := Generate(compound, "postgres"); err == nil {
+		t.Errorf("wrote %q over a compound path", got)
+	}
+	// A JSON extraction with no path at all.
+	if got, err := Generate(New("JSONExtract", Arg{"this", column("a")}), "duckdb"); err == nil {
+		t.Errorf("wrote %q with no path", got)
 	}
 }
