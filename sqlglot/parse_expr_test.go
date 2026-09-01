@@ -1730,6 +1730,54 @@ func TestCreateTable(t *testing.T) {
 		// in Databricks, and the struct inside a column keeps its own.
 		{"a struct column", "databricks", "CREATE TABLE t (a STRUCT<c: MAP<STRING, STRING>>)",
 			"CREATE TABLE t (a STRUCT<c: MAP<STRING, STRING>>)"},
+		// Postgres slices a table by an EXPRESSION over the key rather than
+		// by a list of columns, so the property need carry no list at all.
+		{"partitioned by a field", "", "CREATE TABLE t (a INT) PARTITIONED BY b",
+			"CREATE TABLE t (a INT) WITH (PARTITIONED_BY=b)"},
+		// A table made from another table rather than from columns or a
+		// query. SHALLOW says the rows are shared until one side writes.
+		{"a shallow clone", "databricks", "CREATE TABLE target SHALLOW CLONE source",
+			"CREATE TABLE target SHALLOW CLONE source"},
+		{"a clone", "databricks", "CREATE TABLE target CLONE source",
+			"CREATE TABLE target CLONE source"},
+		// Postgres's `PARTITION OF` says the table holds one slice of
+		// another's rows, in one of three spellings for which slice.
+		{"a default partition", "postgres", "CREATE TABLE p PARTITION OF cities DEFAULT",
+			"CREATE TABLE p PARTITION OF cities DEFAULT"},
+		{"a hash partition", "postgres",
+			"CREATE TABLE p PARTITION OF customers FOR VALUES WITH (MODULUS 3, REMAINDER 2)",
+			"CREATE TABLE p PARTITION OF customers FOR VALUES WITH (MODULUS 3, REMAINDER 2)"},
+		{"a range partition", "postgres",
+			"CREATE TABLE p PARTITION OF m FOR VALUES FROM ('2016-07-01') TO ('2016-08-01')",
+			"CREATE TABLE p PARTITION OF m FOR VALUES FROM ('2016-07-01') TO ('2016-08-01')"},
+		// The ends of the key's ORDER rather than values in it: words, not
+		// columns, so that they refer to nothing.
+		{"a range with open ends", "postgres",
+			"CREATE TABLE p PARTITION OF m FOR VALUES FROM (MINVALUE, MINVALUE) TO (2016, 11)",
+			"CREATE TABLE p PARTITION OF m FOR VALUES FROM (MINVALUE, MINVALUE) TO (2016, 11)"},
+		{"a range with a closed top", "postgres",
+			"CREATE TABLE p PARTITION OF m FOR VALUES FROM (2016, 11) TO (MAXVALUE, MAXVALUE)",
+			"CREATE TABLE p PARTITION OF m FOR VALUES FROM (2016, 11) TO (MAXVALUE, MAXVALUE)"},
+		{"a list partition", "postgres",
+			"CREATE TABLE p PARTITION OF cities FOR VALUES IN ('a', 'b')",
+			"CREATE TABLE p PARTITION OF cities FOR VALUES IN ('a', 'b')"},
+		// The parent may be named with the columns this slice OVERRIDES --
+		// a name and a constraint, with no type restated.
+		{"a partition that overrides a column", "postgres",
+			"CREATE TABLE p PARTITION OF m (unitsales DEFAULT 0) FOR VALUES IN (1)",
+			"CREATE TABLE p PARTITION OF m (unitsales DEFAULT 0) FOR VALUES IN (1)"},
+		{"a partition that adds a constraint", "postgres",
+			"CREATE TABLE p PARTITION OF cities (CONSTRAINT c CHECK (city_id <> 0)) " +
+				"FOR VALUES IN ('a', 'b')",
+			"CREATE TABLE p PARTITION OF cities (CONSTRAINT c CHECK (city_id <> 0)) " +
+				"FOR VALUES IN ('a', 'b')"},
+		// A table may be a slice of its parent AND be sliced further itself.
+		{"a partition that is partitioned", "postgres",
+			"CREATE TABLE p PARTITION OF cities FOR VALUES IN ('a') PARTITION BY RANGE(population)",
+			"CREATE TABLE p PARTITION OF cities FOR VALUES IN ('a') PARTITION BY RANGE(population)"},
+		// A column need not name a type at all.
+		{"a typeless column", "postgres", "CREATE TABLE t (a DEFAULT 0)",
+			"CREATE TABLE t (a DEFAULT 0)"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)
@@ -1766,7 +1814,6 @@ func TestCreateTable(t *testing.T) {
 		// read. Each is refused whole rather than read in part.
 		"CREATE TABLE t (a INT) FORMAT",
 		"CREATE TABLE t (a INT) FORMAT = 1",
-		"CREATE TABLE t (a INT) PARTITIONED BY b",
 		"CREATE TABLE t (a INT) CLUSTER BY c",
 		"CREATE TABLE t (a INT) CLUSTER BY (c",
 		"CREATE TABLE t (a INT) INHERITS (t1",

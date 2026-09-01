@@ -16,6 +16,16 @@ import (
 func (p *parser) parseTableProperties() ([]*Expression, error) {
 	var out []*Expression
 	for {
+		// `PARTITION OF` is not in the generated table of property words: it
+		// carries a whole grammar of its own rather than a word and a shape.
+		if p.atWords("PARTITION", "OF") {
+			prop, err := p.parsePartitionedOf()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, prop)
+			continue
+		}
 		spec, consumed, ok := p.atProperty()
 		if !ok {
 			return out, nil
@@ -322,6 +332,16 @@ func (p *parser) parseProperty(spec PropertySpec) (*Expression, error) {
 		if spec.Equals {
 			p.match(TokEQ)
 		}
+		// The property need not carry a LIST at all: Postgres slices a table
+		// by an expression over the key -- `PARTITION BY RANGE(population)`
+		// -- and what stands there is then a field rather than a schema.
+		if !p.at(TokL_PAREN) {
+			field, err := p.parseBitwise()
+			if err != nil {
+				return nil, err
+			}
+			return New(spec.Class, Arg{"this", field}), nil
+		}
 		// The columns keep their types where they were written with them:
 		// `PARTITIONED BY (a INT)` is a Schema of ColumnDefs, and the same
 		// property over bare names is a Schema of Identifiers.
@@ -421,4 +441,144 @@ func (p *parser) parseSchemaProperty() ([]*Expression, error) {
 		return nil, p.unsupported("unclosed property column list")
 	}
 	return out, nil
+}
+
+// parseWrappedCSV reads `(a, b, c)` where each member is read by the caller's
+// own function. The list is the shape; what a member MAY be differs from one
+// clause to the next, which is why the reader is passed in.
+func (p *parser) parseWrappedCSV(member func() (*Expression, error)) ([]*Expression, error) {
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("a list without its parentheses")
+	}
+	var out []*Expression
+	for {
+		e, err := member()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed list")
+	}
+	return out, nil
+}
+
+// parsePartitionedOf reads Postgres's `PARTITION OF <parent> <bound>`, which
+// says the table being created holds one slice of another table's rows.
+//
+// It is a property rather than a clause of its own because the reference keeps
+// it beside PARTITIONED BY in the same list -- and a table may carry both, the
+// first saying which slice of its parent it is and the second saying how it is
+// sliced further.
+func (p *parser) parsePartitionedOf() (*Expression, error) {
+	p.advance() // PARTITION
+	p.advance() // OF
+
+	parent, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+	// The parent may be named WITH columns -- `PARTITION OF measurement
+	// (unitsales DEFAULT 0)` -- which are this slice's overrides of the
+	// parent's definitions. They hang off the parent, not off the new table.
+	this := parent
+	if p.at(TokL_PAREN) {
+		columns, err := p.parseColumnDefs()
+		if err != nil {
+			return nil, err
+		}
+		this = New("Schema", Arg{"this", parent}, Arg{"expressions", columns})
+	}
+
+	var bound *Expression
+	switch {
+	case p.match(TokDEFAULT):
+		// The slice that takes whatever the other slices do not.
+		bound = New("Var", Arg{"this", "DEFAULT"})
+	case p.atWords("FOR", "VALUES"):
+		p.advance()
+		p.advance()
+		if bound, err = p.parsePartitionBoundSpec(); err != nil {
+			return nil, err
+		}
+	default:
+		return nil, p.unsupported("PARTITION OF without DEFAULT or FOR VALUES")
+	}
+	return New("PartitionedOfProperty", Arg{"this", this}, Arg{"expression", bound}), nil
+}
+
+// parsePartitionBoundSpec reads which rows a partition holds, in one of the
+// three spellings Postgres allows: a list of values, a half-open range, or a
+// hash of the key. One node carries all three, and which of its four arguments
+// are set says which spelling was written.
+func (p *parser) parsePartitionBoundSpec() (*Expression, error) {
+	// The bounds of a range may be the ends of the key's order rather than
+	// values in it. MINVALUE and MAXVALUE are words, not columns -- reading
+	// them as columns would make them refer to something.
+	bound := func() (*Expression, error) {
+		for _, word := range []string{"MINVALUE", "MAXVALUE"} {
+			if p.atWords(word) {
+				p.advance()
+				return New("Var", Arg{"this", word}), nil
+			}
+		}
+		return p.parseBitwise()
+	}
+
+	switch {
+	case p.match(TokIN):
+		values, err := p.parseWrappedCSV(p.parseBitwise)
+		if err != nil {
+			return nil, err
+		}
+		return New("PartitionBoundSpec", Arg{"this", values}), nil
+
+	case p.match(TokFROM):
+		from, err := p.parseWrappedCSV(bound)
+		if err != nil {
+			return nil, err
+		}
+		if !p.atWords("TO") {
+			return nil, p.unsupported("a partition range without TO")
+		}
+		p.advance()
+		to, err := p.parseWrappedCSV(bound)
+		if err != nil {
+			return nil, err
+		}
+		return New("PartitionBoundSpec",
+			Arg{"from_expressions", from}, Arg{"to_expressions", to}), nil
+
+	case p.atWords("WITH"):
+		// `WITH (MODULUS 3, REMAINDER 2)`: the two numbers name a slice of a
+		// hash rather than a range of the key. The words between them are
+		// fixed, so the node keeps only the numbers.
+		p.advance()
+		if !p.match(TokL_PAREN) || !p.atWords("MODULUS") {
+			return nil, p.unsupported("a hash partition without MODULUS")
+		}
+		p.advance()
+		modulus, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokCOMMA) || !p.atWords("REMAINDER") {
+			return nil, p.unsupported("a hash partition without REMAINDER")
+		}
+		p.advance()
+		remainder, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed hash partition")
+		}
+		return New("PartitionBoundSpec",
+			Arg{"this", modulus}, Arg{"expression", remainder}), nil
+	}
+	return nil, p.unsupported("a partition bound this port does not read")
 }

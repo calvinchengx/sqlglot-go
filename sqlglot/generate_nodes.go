@@ -90,6 +90,9 @@ func init() {
 		"Opclass":                             (*generator).writeOpclass,
 		"ColumnPosition":                      (*generator).writeColumnPosition,
 		"WithDataProperty":                    (*generator).writeWithDataProperty,
+		"PartitionedOfProperty":               (*generator).writePartitionedOfProperty,
+		"PartitionBoundSpec":                  (*generator).writePartitionBoundSpec,
+		"Clone":                               (*generator).writeClone,
 		"AlterSet":                            (*generator).writeAlterSet,
 		"Partition":                           (*generator).writePartition,
 		"OnConflict":                          (*generator).writeOnConflict,
@@ -2409,7 +2412,20 @@ func (g *generator) writeCreate(e *Expression) string {
 			}
 		}
 	}
+	if clone := g.child(e, "clone"); clone != "" {
+		out += " " + clone
+	}
 	return out
+}
+
+// writeClone writes `[SHALLOW] CLONE <table>` -- the table this one is made
+// from.
+func (g *generator) writeClone(e *Expression) string {
+	out := ""
+	if shallow, _ := e.Args["shallow"].(bool); shallow {
+		out = "SHALLOW "
+	}
+	return out + "CLONE " + g.child(e, "this")
 }
 
 // writeBlock writes what a procedure DOES: its statements, one after another,
@@ -4363,4 +4379,41 @@ func (g *generator) writeCopy(e *Expression) string {
 		return out + " WITH (" + joined + ")"
 	}
 	return out + " " + joined
+}
+
+// writePartitionedOfProperty writes `PARTITION OF <parent> <bound>`.
+func (g *generator) writePartitionedOfProperty(e *Expression) string {
+	out := "PARTITION OF " + g.child(e, "this")
+	// A DEFAULT partition carries the bare word; every other spelling is a
+	// bound spec, and only those take the FOR VALUES in front.
+	bound, _ := e.Args["expression"].(*Expression)
+	if bound != nil && bound.Class == "PartitionBoundSpec" {
+		return out + " FOR VALUES " + g.node(bound)
+	}
+	return out + " DEFAULT"
+}
+
+// writePartitionBoundSpec writes which rows a partition holds. Which of the
+// node's arguments are set says which of the three spellings was written.
+func (g *generator) writePartitionBoundSpec(e *Expression) string {
+	if values, ok := e.Args["this"].([]*Expression); ok {
+		return "IN (" + g.joined(values) + ")"
+	}
+	if modulus := g.child(e, "this"); modulus != "" {
+		return "WITH (MODULUS " + modulus + ", REMAINDER " + g.child(e, "expression") + ")"
+	}
+	from, _ := e.Args["from_expressions"].([]*Expression)
+	to, _ := e.Args["to_expressions"].([]*Expression)
+	return "FROM (" + g.joined(from) + ") TO (" + g.joined(to) + ")"
+}
+
+// joined writes a list of nodes separated by commas -- the shape a clause
+// takes when its members are held under a key of their own rather than under
+// the `expressions` that list() reads.
+func (g *generator) joined(items []*Expression) string {
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, g.node(item))
+	}
+	return strings.Join(parts, ", ")
 }

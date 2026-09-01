@@ -142,9 +142,10 @@ func (p *parser) parseCreate() (*Expression, error) {
 			return nil, err
 		}
 		expression = query
-	case p.curr() == nil:
+	case p.curr() == nil, p.atWords("SHALLOW", "CLONE"), p.atWords("CLONE"):
 		// A table with no columns and no query: the statement makes the name
-		// and nothing else. `CREATE TABLE a` is a whole statement.
+		// and nothing else. `CREATE TABLE a` is a whole statement, and so is
+		// one whose shape comes from the table it CLONES.
 		this = table
 	default:
 		return nil, p.unsupported("CREATE " + kind + " without columns or a query")
@@ -182,6 +183,24 @@ func (p *parser) parseCreate() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	// `CLONE other` makes the new table from an existing one rather than from
+	// columns or a query. SHALLOW says the rows are shared until one side
+	// writes to them.
+	var clone *Expression
+	shallow := false
+	if p.atWords("SHALLOW", "CLONE") {
+		p.advance()
+		shallow = true
+	}
+	if p.atWords("CLONE") {
+		p.advance()
+		source, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		clone = New("Clone",
+			Arg{"this", source}, Arg{"shallow", shallow}, Arg{"copy", false})
+	}
 	if p.curr() != nil {
 		return nil, p.unsupported("CREATE " + kind + " with more than this port reads")
 	}
@@ -218,7 +237,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 		Arg{"indexes", []*Expression{}},
 		Arg{"no_schema_binding", nil},
 		Arg{"begin", nil},
-		Arg{"clone", nil},
+		Arg{"clone", clone},
 		Arg{"concurrently", false},
 		Arg{"clustered", nil},
 	), nil
@@ -263,9 +282,16 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// A column need not name a TYPE: `(a DEFAULT 0)` is a name and a
+		// constraint, which is how a partition overrides one of its parent's
+		// definitions without restating what it holds. What follows the name
+		// is a type if it reads as one, and a constraint otherwise -- there
+		// is no word that tells the two apart, so it is tried and undone.
+		mark := p.index
 		kind, err := p.parseColumnType()
 		if err != nil {
-			return nil, err
+			p.index = mark
+			kind = nil
 		}
 		constraints, err := p.parseColumnConstraints()
 		if err != nil {
