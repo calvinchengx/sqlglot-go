@@ -1672,6 +1672,36 @@ def strips_ts_or_ds(dialect: str) -> list:
     return out
 
 
+def regexp_flag_args(dialect: str) -> dict:
+    """Which argument of each regexp call holds the FLAGS.
+
+    A flag says what the match does -- every occurrence, ignore case -- and the
+    reference names the slot differently in each class: `modifiers` on a
+    replacement, `parameters` on an extraction, `flag` on a test. The names are
+    the class definitions rather than a guess, so they are read off rather than
+    probed; what each DIALECT then does with them is probed separately.
+    """
+    from sqlglot import exp
+
+    named = ("modifiers", "parameters", "flag")
+    out = {}
+    for name in (
+        "RegexpReplace",
+        "RegexpExtract",
+        "RegexpExtractAll",
+        "RegexpLike",
+        "RegexpCount",
+    ):
+        cls = getattr(exp, name, None)
+        if cls is None:
+            continue
+        for key in cls.arg_types:
+            if key in named:
+                out[name] = key
+                break
+    return out
+
+
 def regexp_flags(dialect: str) -> tuple:
     """Which flags a REGEXP_REPLACE may carry here, and in what form.
 
@@ -5066,6 +5096,7 @@ def main() -> int:
         "\t// PercentileClasses are the ordered-set aggregates whose ARGUMENTS a\n\t// dialect writing the order inside reshuffles: the key becomes the\n\t// first and the fraction slides right.\n\tPercentileClasses map[string]struct{}\n",
         "\t// IgnoreNullsInFunc: `IGNORE NULLS` is written INSIDE the call's\n\t// argument list here rather than after the call.\n\tIgnoreNullsInFunc bool\n",
         "\t// TableSample is how a sampling clause is written: the words that\n\t// open it, whether the METHOD is written, whether a bare size counts\n\t// ROWS or a percentage, and what the repeatable seed is called.\n\tTableSample TableSampleSQL\n",
+        "\t// RegexpFlagArgs names which argument of each regexp call holds the\n\t// FLAGS: `modifiers` on a replacement, `parameters` on an extraction.\n\tRegexpFlagArgs map[string]string\n",
         "\t// RegexpFlags are the flag characters a REGEXP_REPLACE may carry\n\t// here, and RegexpFlagsNeedLiteral whether they have to be written as\n\t// a string. An empty RegexpFlags means the dialect writes whatever it\n\t// is given; a dialect that writes none at all has\n\t// RegexpFlagsWritten false and the port refuses rather than dropping\n\t// them, because a flag says what the replacement DOES.\n\tRegexpFlags            string\n\tRegexpFlagsWritten     bool\n\tRegexpFlagsNeedLiteral bool\n",
         "\t// IgnoreNullsWindowFuncs are the calls that KEEP their null\n\t// treatment where the dialect writes it inside; IgnoreNullsDropped\n\t// are the ones it drops silently because they ignore nulls anyway.\n\t// Anything else the dialect calls unsupported, and so does the port.\n\tIgnoreNullsWindowFuncs map[string]struct{}\n\tIgnoreNullsDropped     map[string]struct{}\n",
         "\t// WithinGroupPercentile is what a PERCENTILE under a WITHIN GROUP\n\t// becomes: \"outside\" keeps the clause, \"inside\" folds it into the\n\t// call and reshuffles the arguments, and empty means the dialect\n\t// writes a different function and the port refuses.\n\tWithinGroupPercentile string\n",
@@ -6147,6 +6178,11 @@ def main() -> int:
             ),
         ):
             out.append(f"\t\t\t{field}: {value},\n")
+        out.append("\t\t},\n")
+        _rfa = regexp_flag_args(name)
+        out.append("\t\tRegexpFlagArgs: map[string]string{\n")
+        for cls_key in sorted(_rfa):
+            out.append(f"\t\t\t{gostr(cls_key)}: {gostr(_rfa[cls_key])},\n")
         out.append("\t\t},\n")
         flags, written, need_literal = regexp_flags(name)
         out.append(f"\t\tRegexpFlags: {gostr(flags)},\n")

@@ -70,6 +70,12 @@ type generator struct {
 	// a later bare name holding one would pair with it; see
 	// lexesBackAsOneName.
 	wroteDollar bool
+	// spellKeepsZeros holds while a PART of a call is being written: the
+	// arguments after it are still to come, so an argument the dialect would
+	// drop from a SHORTER call has to stay. DuckDB writes
+	// `REGEXP_EXTRACT(a, p)` for a zero group and
+	// `REGEXP_EXTRACT(a, p, 0, 'i')` for the same group beside a flag.
+	spellKeepsZeros bool
 }
 
 // fail records the first failure. Later writers keep running and return empty
@@ -313,6 +319,24 @@ func (g *generator) parserWouldRefuse(name string) bool {
 	return custom
 }
 
+// dropsAnArgument reports whether this spelling leaves out an argument the
+// node actually carries: a key it names as a CONSTANT rather than writing.
+func (f FuncSQL) dropsAnArgument(e *Expression) bool {
+	written := map[string]bool{}
+	for _, key := range f.Keys {
+		written[key] = true
+	}
+	for _, c := range f.Consts {
+		if written[c.Key] {
+			continue
+		}
+		if child, _ := e.Args[c.Key].(*Expression); child != nil {
+			return true
+		}
+	}
+	return false
+}
+
 // listLength is how many members the keys hold between them, counting a
 // single node as one.
 func listLength(e *Expression, keys []string) int {
@@ -357,6 +381,14 @@ func (g *generator) functionSpelling(e *Expression) (FuncSQL, bool) {
 		// does not carry, so no spelling was recorded for the one-argument
 		// form. Applying the two-argument spelling anyway silently wrote
 		// `LISTAGG(x)` -- a shorter call than the reference emits.
+		// While a PART of a call is being written, a spelling that leaves an
+		// argument OUT is the wrong one: the arguments after it are still to
+		// come, and something has to hold its place. DuckDB records
+		// `REGEXP_EXTRACT(a, p)` for a zero group, which is right on its own
+		// and wrong in front of a flag.
+		if g.spellKeepsZeros && candidate.dropsAnArgument(e) {
+			continue
+		}
 		// A spelling recorded for calls of at least N arguments does not
 		// apply to a narrower one: T-SQL writes `CONCAT(a, b)` for two and
 		// just `a` for one, and writing the call form for one would put a
@@ -487,6 +519,9 @@ func argCount(e *Expression) int {
 // dropsThisZero reports whether this argument is a literal zero the dialect
 // leaves out entirely: DuckDB writes `REGEXP_EXTRACT(x, p)` for a zero group.
 func (g *generator) dropsThisZero(e *Expression, arity int, key string) bool {
+	if g.spellKeepsZeros {
+		return false
+	}
 	for _, dropped := range g.tables.DropsZeroArgs[e.Class][arity] {
 		if dropped == key {
 			child, _ := e.Args[key].(*Expression)

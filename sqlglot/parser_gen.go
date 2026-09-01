@@ -724,6 +724,9 @@ type ParserTables struct {
 	// open it, whether the METHOD is written, whether a bare size counts
 	// ROWS or a percentage, and what the repeatable seed is called.
 	TableSample TableSampleSQL
+	// RegexpFlagArgs names which argument of each regexp call holds the
+	// FLAGS: `modifiers` on a replacement, `parameters` on an extraction.
+	RegexpFlagArgs map[string]string
 	// RegexpFlags are the flag characters a REGEXP_REPLACE may carry
 	// here, and RegexpFlagsNeedLiteral whether they have to be written as
 	// a string. An empty RegexpFlags means the dialect writes whatever it
@@ -5426,6 +5429,13 @@ var parserTables = map[string]*ParserTables{
 			SizeIsRows:     true,
 			RequiresParens: true,
 			SizeIsPercent:  false,
+		},
+		RegexpFlagArgs: map[string]string{
+			"RegexpCount":      "parameters",
+			"RegexpExtract":    "parameters",
+			"RegexpExtractAll": "parameters",
+			"RegexpLike":       "flag",
+			"RegexpReplace":    "modifiers",
 		},
 		RegexpFlags:            "",
 		RegexpFlagsWritten:     true,
@@ -10401,6 +10411,13 @@ var parserTables = map[string]*ParserTables{
 			RequiresParens: true,
 			SizeIsPercent:  false,
 		},
+		RegexpFlagArgs: map[string]string{
+			"RegexpCount":      "parameters",
+			"RegexpExtract":    "parameters",
+			"RegexpExtractAll": "parameters",
+			"RegexpLike":       "flag",
+			"RegexpReplace":    "modifiers",
+		},
 		RegexpFlags:            "",
 		RegexpFlagsWritten:     true,
 		RegexpFlagsNeedLiteral: false,
@@ -15363,6 +15380,13 @@ var parserTables = map[string]*ParserTables{
 			SizeIsRows:     false,
 			RequiresParens: true,
 			SizeIsPercent:  true,
+		},
+		RegexpFlagArgs: map[string]string{
+			"RegexpCount":      "parameters",
+			"RegexpExtract":    "parameters",
+			"RegexpExtractAll": "parameters",
+			"RegexpLike":       "flag",
+			"RegexpReplace":    "modifiers",
 		},
 		RegexpFlags:            "",
 		RegexpFlagsWritten:     true,
@@ -20656,6 +20680,13 @@ var parserTables = map[string]*ParserTables{
 			SizeIsRows:     true,
 			RequiresParens: true,
 			SizeIsPercent:  false,
+		},
+		RegexpFlagArgs: map[string]string{
+			"RegexpCount":      "parameters",
+			"RegexpExtract":    "parameters",
+			"RegexpExtractAll": "parameters",
+			"RegexpLike":       "flag",
+			"RegexpReplace":    "modifiers",
 		},
 		RegexpFlags:            "cimsg",
 		RegexpFlagsWritten:     true,
@@ -25971,6 +26002,13 @@ var parserTables = map[string]*ParserTables{
 			SizeIsRows:     true,
 			RequiresParens: true,
 			SizeIsPercent:  false,
+		},
+		RegexpFlagArgs: map[string]string{
+			"RegexpCount":      "parameters",
+			"RegexpExtract":    "parameters",
+			"RegexpExtractAll": "parameters",
+			"RegexpLike":       "flag",
+			"RegexpReplace":    "modifiers",
 		},
 		RegexpFlags:            "",
 		RegexpFlagsWritten:     false,

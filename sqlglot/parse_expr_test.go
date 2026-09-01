@@ -8205,6 +8205,34 @@ func TestOrderedSetGuards(t *testing.T) {
 	}
 }
 
+// The flags an EXTRACTION carries, which live under a different key from a
+// replacement's and are written the same way.
+//
+// An argument the dialect would leave out of a shorter call has to stay while
+// the flags are appended: DuckDB drops a zero group from
+// `REGEXP_EXTRACT(a, p)` and keeps it in `REGEXP_EXTRACT(a, p, 0, 'i')`,
+// because the flags come after it and something has to hold its place.
+func TestRegexpExtractFlags(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT REGEXP_EXTRACT(a, 'pattern', 2, 'i')", "SELECT REGEXP_EXTRACT(a, 'pattern', 2, 'i')"},
+		{"SELECT REGEXP_EXTRACT(a, 'pattern', 0, 'i')", "SELECT REGEXP_EXTRACT(a, 'pattern', 0, 'i')"},
+		{"SELECT REGEXP_EXTRACT(a, 'pattern', 1, 'i')", "SELECT REGEXP_EXTRACT(a, 'pattern', 1, 'i')"},
+		// Without the flags the zero group goes, which is the spelling the
+		// dialect records for the shorter call.
+		{"SELECT REGEXP_EXTRACT(a, 'pattern', 0)", "SELECT REGEXP_EXTRACT(a, 'pattern')"},
+		{"SELECT REGEXP_EXTRACT_ALL(s, 'pattern', 0, 'i')",
+			"SELECT REGEXP_EXTRACT_ALL(s, 'pattern', 0, 'i')"},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+}
+
 // The flags a REGEXP_REPLACE carries, and what each dialect does with them.
 //
 // A flag says what the replacement DOES -- whether it replaces every match,
@@ -8262,7 +8290,11 @@ func TestRegexpReplaceFlags(t *testing.T) {
 		Arg{"this", New("Column", Arg{"this", New("Identifier", Arg{"this", "a"})})},
 		Arg{"expression", New("Column", Arg{"this", New("Identifier", Arg{"this", "b"})})},
 		Arg{"replacement", New("Column", Arg{"this", New("Identifier", Arg{"this", "c"})})},
-		Arg{"modifiers", New("Column", Arg{"this", New("Identifier", Arg{"this", "f"})})})
+		Arg{"modifiers", New("Column", Arg{"this", New("Identifier", Arg{"this", "f"})})},
+		// The flag every parsed replacement carries: without it the
+		// reference writes a second `g` of its own, which is a different
+		// statement and not this one written another way.
+		Arg{"single_replace", true})
 	if got, err := Generate(column, "duckdb"); err == nil {
 		t.Errorf("DuckDB wrote %q; it cannot read flags out of a column", got)
 	}

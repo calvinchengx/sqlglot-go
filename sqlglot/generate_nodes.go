@@ -96,7 +96,9 @@ func init() {
 		"MacroOverloads":                      (*generator).writeMacroOverloads,
 		"TableSample":                         (*generator).writeTableSample,
 		"WithinGroup":                         (*generator).writeWithinGroup,
-		"RegexpReplace":                       (*generator).writeRegexpReplace,
+		"RegexpReplace":                       (*generator).writeRegexpFlagged,
+		"RegexpExtract":                       (*generator).writeRegexpFlagged,
+		"RegexpExtractAll":                    (*generator).writeRegexpFlagged,
 		"IgnoreNulls":                         (*generator).writeIgnoreNulls,
 		"RespectNulls":                        (*generator).writeRespectNulls,
 		"TriggerProperties":                   (*generator).writeTriggerProperties,
@@ -4826,52 +4828,74 @@ func (g *generator) nullTreatmentInsideCall(e, call *Expression, words string) s
 	return out[:len(out)-1] + " " + words + ")"
 }
 
-// writeRegexpReplace writes a replacement and the FLAGS that say how it is
-// done -- whether it replaces every match, ignores case, and so on.
+// writeRegexpFlagged writes a regexp call and the FLAGS that say how the match
+// is done -- whether it takes every occurrence, ignores case, and so on.
 //
 // The flags are an argument like any other where a dialect writes them
-// through. DuckDB keeps only the ones it knows and only from a string
-// literal; Databricks writes none at all. A flag says what the replacement
-// DOES, so where one cannot be written the statement is refused rather than
-// written without it.
-func (g *generator) writeRegexpReplace(e *Expression) string {
-	modifiers, _ := e.Args["modifiers"].(*Expression)
-	if modifiers == nil {
+// through. DuckDB keeps only the ones it knows and only from a string literal;
+// Databricks writes none. A flag says what the call DOES, so where one cannot
+// be written the statement is refused rather than written without it.
+func (g *generator) writeRegexpFlagged(e *Expression) string {
+	key, named := g.tables.RegexpFlagArgs[e.Class]
+	if !named {
+		return g.spell(e)
+	}
+	flags, _ := e.Args[key].(*Expression)
+	if flags == nil {
 		return g.spell(e)
 	}
 	if !g.tables.RegexpFlagsWritten {
 		return g.fail(e.Class + " with flags, which this dialect writes nowhere")
 	}
-	if !g.tables.RegexpFlagsNeedLiteral {
-		return g.regexpReplaceWithFlags(e, g.node(modifiers))
-	}
-	// A flag the dialect reads out of a string, so a column standing there is
-	// a flag it cannot read: the reference drops it and says so.
-	text, _ := modifiers.Args["this"].(string)
-	if modifiers.Class != "Literal" || modifiers.Args["is_string"] != true {
-		return g.fail(e.Class + " whose flags are not a string, which this dialect cannot read")
-	}
-	for _, r := range text {
-		if !strings.ContainsRune(g.tables.RegexpFlags, r) {
-			return g.fail(e.Class + " with the flag " + string(r) + ", which this dialect drops")
+	if g.tables.RegexpFlagsNeedLiteral {
+		// A flag the dialect reads out of a string, so a column standing
+		// there is a flag it cannot read: the reference drops it and says so.
+		text, _ := flags.Args["this"].(string)
+		if flags.Class != "Literal" || flags.Args["is_string"] != true {
+			return g.fail(e.Class + " whose flags are not a string, which this dialect cannot read")
+		}
+		for _, r := range text {
+			if !strings.ContainsRune(g.tables.RegexpFlags, r) {
+				return g.fail(e.Class + " with the flag " + string(r) + ", which this dialect drops")
+			}
 		}
 	}
-	return g.regexpReplaceWithFlags(e, g.node(modifiers))
+	return g.regexpCallWithFlags(e, key)
 }
 
-// regexpReplaceWithFlags writes the call with the flags as its last argument.
-func (g *generator) regexpReplaceWithFlags(e *Expression, flags string) string {
+// regexpCallWithFlags writes the call with the flags as its last argument.
+//
+// The arguments in front of them are the ones the dialect's own spelling would
+// have written, so the spelling is asked for and the flags appended inside its
+// closing parenthesis. A slot the spelling does not name -- a POSITION or an
+// OCCURRENCE, which say WHICH match to take -- has nowhere to go, and the call
+// is refused rather than written without it.
+func (g *generator) regexpCallWithFlags(e *Expression, flagKey string) string {
 	for _, key := range []string{"position", "occurrence"} {
 		if arg, _ := e.Args[key].(*Expression); arg != nil {
 			return g.fail(e.Class + " with a " + key + ", which this port does not place")
 		}
 	}
-	replacement, _ := e.Args["replacement"].(*Expression)
-	if replacement == nil {
-		return g.fail(e.Class + " with flags but nothing to put in place of the match")
+	// The call is spelled WITHOUT its flags and they are appended inside its
+	// closing parenthesis. An argument the dialect would leave out of a
+	// shorter call has to stay while that happens: DuckDB drops a zero group
+	// from `REGEXP_EXTRACT(a, p)` and keeps it in
+	// `REGEXP_EXTRACT(a, p, 0, 'i')`, because the flags come after it and
+	// something has to hold their place.
+	bare := New(e.Class)
+	for _, key := range e.Keys {
+		if key != flagKey {
+			bare.Set(key, e.Args[key])
+		}
 	}
-	return "REGEXP_REPLACE(" + g.child(e, "this") + ", " + g.child(e, "expression") +
-		", " + g.node(replacement) + ", " + flags + ")"
+	wasKeeping := g.spellKeepsZeros
+	g.spellKeepsZeros = true
+	out := g.spell(bare)
+	g.spellKeepsZeros = wasKeeping
+	if !strings.HasSuffix(out, ")") {
+		return g.fail(e.Class + " whose spelling is not a call")
+	}
+	return out[:len(out)-1] + ", " + g.child(e, flagKey) + ")"
 }
 
 // castsToDate reports whether a node is already a cast to DATE, which is what
