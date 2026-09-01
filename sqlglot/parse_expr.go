@@ -1139,7 +1139,11 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	// operators, and it takes a whole arithmetic expression -- `@col + 1` is
 	// ABS(col + 1). Keyed by the characters, because the same token type is
 	// the parameter marker here too.
-	if class, ok := p.tables.PrefixCalls[c.Text]; ok {
+	// A name written in QUOTES is a name, never punctuation: `"@"` is a
+	// column called @, and reading it as the operator turned `"@":x` into
+	// ABS of a parameter -- SQL the port then could not read back. The
+	// generator fuzzer found it.
+	if class, ok := p.tables.PrefixCalls[c.Text]; ok && !isQuotedName(c) {
 		p.advance()
 		inner, err := p.parseBitwise()
 		if err != nil {
@@ -1419,12 +1423,46 @@ func (p *parser) parseDataType() (*Expression, error) {
 	return p.parseArraySuffix(dt)
 }
 
+// parseCollatedDataType reads a type that may name the COLLATION its values
+// are compared under: `ARRAY<STRING COLLATE UTF8_BINARY>`.
+//
+// Only the members of a nested type may say it. A type standing on its own
+// takes no collation here, because COLLATE after one is the COLUMN's rather
+// than the type's, and reading it here would take it off the column.
+func (p *parser) parseCollatedDataType() (*Expression, error) {
+	dt, err := p.parseDataType()
+	if err != nil {
+		return nil, err
+	}
+	if dt == nil || !p.match(TokCOLLATE) {
+		return dt, nil
+	}
+	// A COLUMN rather than an identifier: the reference reads a quoted name
+	// as one and everything else as the other, and an unquoted collation
+	// name goes down the second path.
+	name, err := p.parseColumn()
+	if err != nil {
+		return nil, err
+	}
+	dt.Set("collate", name)
+	return dt, nil
+}
+
 func (p *parser) parseBaseDataType() (*Expression, error) {
 	c := p.curr()
 	if c == nil {
 		return nil, p.unsupported("type")
 	}
 	kind, ok := p.tables.TypeTokens[c.Type]
+	if !ok {
+		// A type may be written in QUOTES -- T-SQL brackets one, `[a] [int]`
+		// -- which makes it an identifier to the tokenizer rather than a type
+		// word. The reference lexes the identifier's TEXT again and takes the
+		// type from that, so the same name works quoted or bare.
+		if quoted, name := p.quotedTypeName(c); quoted {
+			kind, ok = name, true
+		}
+	}
 	if !ok {
 		return nil, p.unsupported("type " + c.Text)
 	}
@@ -1461,7 +1499,7 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 			case isStruct:
 				param, err = p.parseStructField()
 			case nested:
-				param, err = p.parseDataType()
+				param, err = p.parseCollatedDataType()
 			default:
 				param, err = p.parseTypeSize()
 			}
@@ -1605,7 +1643,17 @@ func (p *parser) parseStructField() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	return New("ColumnDef", Arg{"this", name}, Arg{"kind", kind}), nil
+	def := New("ColumnDef", Arg{"this", name}, Arg{"kind", kind})
+	// A field of a struct is a COLUMN definition, so it may say the same
+	// things about itself a column may -- `STRUCT<a: DOUBLE COMMENT 'aaa'>`.
+	constraints, err := p.parseColumnConstraints()
+	if err != nil {
+		return nil, err
+	}
+	if len(constraints) > 0 {
+		def.Set("constraints", constraints)
+	}
+	return def, nil
 }
 
 // parseArraySuffix wraps a type in as many ARRAY layers as it has bracket
@@ -3060,4 +3108,27 @@ func (p *parser) parseNextValueFor() (*Expression, error) {
 	}
 	node.Set("order", order)
 	return node, nil
+}
+
+// quotedTypeName reports whether a QUOTED identifier names a type, and which.
+//
+// The quotes are the tokenizer's business, not the type's: T-SQL brackets a
+// type name the same way it brackets a column name, so the word arrives here
+// as an identifier. The reference lexes the identifier's text again and asks
+// what the first token is; this does the same, so `[int]` and `int` name the
+// same type.
+func (p *parser) quotedTypeName(c *Token) (bool, string) {
+	if c.Type != TokIDENTIFIER {
+		return false, ""
+	}
+	tk, err := NewTokenizer(p.dialect)
+	if err != nil {
+		return false, ""
+	}
+	toks, err := tk.Tokenize(c.Text)
+	if err != nil || len(toks) != 1 {
+		return false, ""
+	}
+	kind, ok := p.tables.TypeTokens[toks[0].Type]
+	return ok, kind
 }

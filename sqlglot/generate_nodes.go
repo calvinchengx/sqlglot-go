@@ -1109,6 +1109,21 @@ func (g *generator) writeDataType(e *Expression) string {
 	if !ok {
 		return g.fail("DataType." + string(kind))
 	}
+	// The collation a type's values are compared under, where one was named.
+	// It hangs off the TYPE and is written after everything else it carries.
+	collate := ""
+	if c, _ := e.Args["collate"].(*Expression); c != nil {
+		collate = " COLLATE " + g.node(c)
+	}
+	if collate != "" {
+		bare := New("DataType")
+		for _, k := range e.Keys {
+			if k != "collate" {
+				bare.Set(k, e.Args[k])
+			}
+		}
+		return g.node(bare) + collate
+	}
 	params := g.list(e)
 	// An ENUM's members are its VALUES rather than its parameters, and
 	// PostgreSQL spells them apart from every other parameterised type: a
@@ -2880,7 +2895,24 @@ func (g *generator) writeComputedConstraint(e *Expression) string {
 	if spelling == "" {
 		return g.fail(e.Class + ", which this dialect writes another way")
 	}
-	return strings.ReplaceAll(spelling, "{expr}", g.child(e, "this"))
+	out := strings.ReplaceAll(spelling, "{expr}", g.child(e, "this"))
+	persisted, _ := e.Args["persisted"].(bool)
+	notNull, _ := e.Args["not_null"].(bool)
+	if !persisted && !notNull {
+		return out
+	}
+	// Whether the value is written down rather than recomputed, and whether
+	// it may be null. Only the dialects that spell the constraint with a bare
+	// AS have anywhere to put the words -- the others wrap the expression in
+	// a GENERATED of their own, which has no room for them and would drop
+	// what the column SAYS rather than how it is spelled.
+	if !strings.HasPrefix(spelling, "AS ") {
+		return g.fail(e.Class + " PERSISTED, which this dialect writes nowhere")
+	}
+	if notNull {
+		return out + " PERSISTED NOT NULL"
+	}
+	return out + " PERSISTED"
 }
 
 // writeGeneratedAsIdentity writes a column the engine numbers for itself.

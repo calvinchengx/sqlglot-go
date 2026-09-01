@@ -302,6 +302,27 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// A column may be COMPUTED from the others rather than stored:
+		// `b AS (a * 2) PERSISTED NOT NULL`. It names no type -- the type is
+		// whatever the expression yields -- so this is read before the type
+		// is looked for.
+		if p.at(TokALIAS) {
+			computed, err := p.parseComputedColumn()
+			if err != nil {
+				return nil, err
+			}
+			rest, err := p.parseColumnConstraints()
+			if err != nil {
+				return nil, err
+			}
+			def := New("ColumnDef", Arg{"this", name},
+				Arg{"constraints", append([]*Expression{computed}, rest...)})
+			out = append(out, def)
+			if !p.match(TokCOMMA) {
+				break
+			}
+			continue
+		}
 		// A column need not name a TYPE: `(a DEFAULT 0)` is a name and a
 		// constraint, which is how a partition overrides one of its parent's
 		// definitions without restating what it holds. What follows the name
@@ -954,7 +975,10 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			if p.tables.ColumnDefaultAfterEquals && p.at(TokEQ) {
 				return out, nil
 			}
-			if p.curr() != nil && !p.at(TokCOMMA) && !p.at(TokR_PAREN) {
+			// A `>` ends the list too: the fields of a STRUCT are column
+			// definitions, and what closes them is the angle bracket the
+			// type was opened with rather than a parenthesis.
+			if p.curr() != nil && !p.at(TokCOMMA) && !p.at(TokR_PAREN) && !p.at(TokGT) {
 				return nil, p.unsupported("a column constraint this port does not read")
 			}
 			return out, nil
@@ -4843,4 +4867,34 @@ func (p *parser) parseTriggerEvents() ([]*Expression, error) {
 		}
 	}
 	return out, nil
+}
+
+// parseComputedColumn reads `AS <expr> [PERSISTED|STORED|VIRTUAL] [NOT NULL]`,
+// the column whose value is worked out from the others rather than stored.
+//
+// PERSISTED and STORED say the same thing in two dialects' words -- the value
+// is written down rather than recomputed -- and VIRTUAL says the opposite. One
+// flag carries all three.
+func (p *parser) parseComputedColumn() (*Expression, error) {
+	p.advance() // AS
+	value, err := p.parseDisjunction()
+	if err != nil {
+		return nil, err
+	}
+	persisted := false
+	switch {
+	case p.atWords("PERSISTED"), p.atWords("STORED"):
+		p.advance()
+		persisted = true
+	case p.atWords("VIRTUAL"):
+		p.advance()
+	}
+	notNull := false
+	if p.atWords("NOT", "NULL") {
+		p.advance()
+		p.advance()
+		notNull = true
+	}
+	return New("ColumnConstraint", Arg{"kind", New("ComputedColumnConstraint",
+		Arg{"this", value}, Arg{"persisted", persisted}, Arg{"not_null", notNull})}), nil
 }

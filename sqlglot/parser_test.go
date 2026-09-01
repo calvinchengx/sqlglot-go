@@ -346,6 +346,23 @@ func TestRefusals(t *testing.T) {
 			"CREATE TRIGGER t BEFORE UPDATE OF SELECT ON x EXECUTE FUNCTION f()", "postgres"},
 		// A join hint with no JOIN after it.
 		{"a hint without a join", "SELECT x FROM a INNER HASH b", "tsql"},
+		// A computed column whose expression is not one, and a bracketed
+		// name that is not a type -- the port has no user-defined types, so
+		// a name it does not know stays refused.
+		{"a computed column with no expression", "CREATE TABLE t (b AS SELECT)", "tsql"},
+		{"a bracketed name that is not a type", "SELECT CAST(x AS [nope])", "tsql"},
+		{"a collation that is not a name",
+			"CREATE TABLE t (a ARRAY<STRING COLLATE SELECT>)", "databricks"},
+		// A bracketed name whose text is not ONE word names no type: the
+		// reference lexes it again and takes the type from the first token
+		// only where there is nothing after it.
+		{"a bracketed name of two words", "SELECT CAST(x AS [a b])", "tsql"},
+		// Every way a struct's field can fail to be a column definition.
+		{"a struct field with a bad constraint", "CREATE TABLE t (a STRUCT<x: INT DEFAULT>)",
+			"databricks"},
+		{"a struct field that is not a name", "CREATE TABLE t (a STRUCT<SELECT: INT>)",
+			"databricks"},
+		{"an array member that is not a type", "CREATE TABLE t (a ARRAY<SELECT>)", "databricks"},
 		{"LAMBDA without its colon", "SELECT LIST_TRANSFORM(a, LAMBDA x x)", "duckdb"},
 		{"LAMBDA without a parameter", "SELECT LIST_TRANSFORM(a, LAMBDA : x)", "duckdb"},
 	} {

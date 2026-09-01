@@ -1834,6 +1834,40 @@ func TestCreateTable(t *testing.T) {
 		{"a trigger instead of", "postgres",
 			"CREATE TRIGGER t INSTEAD OF INSERT ON v FOR EACH ROW EXECUTE FUNCTION f()",
 			"CREATE TRIGGER t INSTEAD OF INSERT ON v FOR EACH ROW EXECUTE FUNCTION F()"},
+		// A column may be COMPUTED from the others rather than stored. It
+		// names no type -- the type is whatever the expression yields.
+		{"a computed column", "tsql", "CREATE TABLE t (a INT, b AS (a * 2) PERSISTED NOT NULL)",
+			"CREATE TABLE t (a INTEGER, b AS (a * 2) PERSISTED NOT NULL)"},
+		{"computed columns, persisted and not", "tsql",
+			"CREATE TABLE tbl (a AS (x + 1) PERSISTED, b AS (y + 2), c AS (y / 3) PERSISTED NOT NULL)",
+			"CREATE TABLE tbl (a AS (x + 1) PERSISTED, b AS (y + 2), c AS (y / 3) PERSISTED NOT NULL)"},
+		// T-SQL brackets a TYPE name the same way it brackets a column name,
+		// so the word arrives as an identifier. Quoted or bare, it names the
+		// same type -- and it is written back bare.
+		{"a bracketed type", "tsql", "CREATE TABLE t([a] [int])", "CREATE TABLE t ([a] INTEGER)"},
+		{"bracketed types with a size", "tsql",
+			"CREATE TABLE test_table([ID] [BIGINT] NOT NULL,[EffectiveFrom] [DATETIME2] (3) NOT NULL)",
+			"CREATE TABLE test_table ([ID] BIGINT NOT NULL, [EffectiveFrom] DATETIME2(3) NOT NULL)"},
+		{"a bracketed type in a cast", "tsql", "SELECT CAST(x AS [int])", "SELECT CAST(x AS INTEGER)"},
+		// The members of a nested type may name the collation their values
+		// are compared under, and a struct's fields are column definitions,
+		// so they may say what a column may.
+		{"a collated array member", "databricks",
+			"CREATE TABLE foo (my_arr ARRAY<STRING COLLATE UTF8_BINARY>)",
+			"CREATE TABLE foo (my_arr ARRAY<STRING COLLATE UTF8_BINARY>)"},
+		{"a collated map member", "databricks",
+			"CREATE TABLE foo (m MAP<STRING, STRING COLLATE UTF8_BINARY>)",
+			"CREATE TABLE foo (m MAP<STRING, STRING COLLATE UTF8_BINARY>)"},
+		{"a struct field with a comment", "databricks",
+			"CREATE TABLE t (c STRUCT<interval: DOUBLE COMMENT 'aaa'>)",
+			"CREATE TABLE t (c STRUCT<interval: DOUBLE COMMENT 'aaa'>)"},
+		{"a struct field that may not be null", "databricks",
+			"CREATE TABLE t (a STRUCT<x: INT NOT NULL>)",
+			"CREATE TABLE t (a STRUCT<x: INT NOT NULL>)"},
+		// VIRTUAL is the opposite of PERSISTED -- the value is recomputed --
+		// and neither word is written where the flag is false.
+		{"a computed column that is virtual", "tsql", "CREATE TABLE t (b AS (a) VIRTUAL)",
+			"CREATE TABLE t (b AS (a))"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)
@@ -7842,5 +7876,79 @@ func TestJoinHintsAndStraightJoin(t *testing.T) {
 	}
 	if want := "SELECT * FROM a STRAIGHT_JOIN b"; got != want {
 		t.Errorf("got %q, want %q", got, want)
+	}
+}
+
+// PERSISTED says the computed value is written down rather than recomputed,
+// and NOT NULL says it may not be null. Only the dialects that spell the
+// constraint with a bare AS have anywhere to put the words.
+//
+// The reference wraps the expression in a GENERATED of its own elsewhere and
+// drops them silently, which changes what the column IS rather than how it is
+// spelled. The port refuses instead.
+func TestAComputedColumnThatIsPersisted(t *testing.T) {
+	e, err := ParseOne("CREATE TABLE t (b AS (a * 2) PERSISTED NOT NULL)", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	for _, dialect := range []string{"tsql", "duckdb", ""} {
+		got, err := Generate(e, dialect)
+		if err != nil {
+			t.Errorf("Generate(%q): %v", dialect, err)
+			continue
+		}
+		if want := "CREATE TABLE t (b AS (a * 2) PERSISTED NOT NULL)"; got != want {
+			t.Errorf("%q wrote %q, want %q", dialect, got, want)
+		}
+	}
+	// PostgreSQL and Databricks write a GENERATED with no room for the words.
+	for _, dialect := range []string{"postgres", "databricks"} {
+		if got, err := Generate(e, dialect); err == nil {
+			t.Errorf("%q wrote %q; it has nowhere to say PERSISTED", dialect, got)
+		}
+	}
+	// A computed column that says neither is written everywhere.
+	e, err = ParseOne("CREATE TABLE t (b AS (a * 2))", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "postgres"); err != nil ||
+		got != "CREATE TABLE t (b GENERATED ALWAYS AS ((a * 2)) STORED)" {
+		t.Errorf("PostgreSQL wrote %q (%v)", got, err)
+	}
+}
+
+// A name written in quotes is a name, never punctuation.
+//
+// DuckDB spells ABS as a `@` in front of its argument, and the port matches
+// that by the CHARACTERS because the same token type is the parameter marker.
+// A quoted `"@"` has the same characters and is a column: reading it as the
+// operator turned `"@":x` into ABS of a parameter, which the port could not
+// read back. The generator fuzzer found it.
+func TestAQuotedNameThatSpellsAnOperator(t *testing.T) {
+	e, err := ParseOne(`SELECT "@"`, "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	got, err := Generate(e, "duckdb")
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	if want := `SELECT "@"`; got != want {
+		t.Errorf("got %q, want %q", got, want)
+	}
+	// The bare form is still the operator, and still takes a whole
+	// arithmetic expression.
+	for _, tc := range []struct{ sql, want string }{
+		{"@x", "ABS(x)"},
+		{"SELECT @a + 1", "SELECT ABS(a + 1)"},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
 	}
 }
