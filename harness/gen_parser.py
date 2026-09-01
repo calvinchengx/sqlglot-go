@@ -1616,6 +1616,106 @@ def key_constraint_options(dialect: str) -> dict:
     return out
 
 
+def ignore_nulls_dropped(dialect: str) -> list:
+    """Which calls lose their IGNORE NULLS here without the reference minding.
+
+    DuckDB writes the words inside the call for the window functions that take
+    them, drops them for the calls that ignore nulls anyway, and calls every
+    other use unsupported. The first two are worth reproducing and the third is
+    not, so the set is found by generating with unsupported raised: whatever
+    comes back WITHOUT the words, and without complaint, is dropped on purpose.
+    """
+    import sqlglot
+    from sqlglot import exp
+
+    probes = [
+        # Without the words too: a call the dialect READS as already ignoring
+        # them carries the node whether or not they were written, and writing
+        # them out again is what it calls unsupported.
+        "SELECT ANY_VALUE(x)",
+        "SELECT ANY_VALUE(x IGNORE NULLS)",
+        "SELECT SUM(x IGNORE NULLS)",
+        "SELECT MIN(x IGNORE NULLS)",
+        "SELECT MAX(x IGNORE NULLS)",
+        "SELECT COUNT(x IGNORE NULLS)",
+        "SELECT AVG(x IGNORE NULLS)",
+        "SELECT ARRAY_AGG(x IGNORE NULLS)",
+        "SELECT FIRST(x IGNORE NULLS)",
+    ]
+    out = set()
+    for probe in probes:
+        try:
+            node = sqlglot.parse_one(probe, read=dialect or None)
+        except Exception:
+            continue
+        wrapped = node.find(exp.IgnoreNulls)
+        if wrapped is None or wrapped.this is None:
+            continue
+        try:
+            text = node.sql(dialect=dialect or None, unsupported_level=sqlglot.ErrorLevel.RAISE)
+        except Exception:
+            continue
+        # Dropped means the words went and NOTHING else changed. A call the
+        # dialect rewrites instead -- ARRAY_AGG into a FILTER, FIRST into
+        # ANY_VALUE -- also comes back without them, and that is a different
+        # tree rather than the same one spelled shorter.
+        bare = node.copy()
+        target = bare.find(exp.IgnoreNulls)
+        target.replace(target.this)
+        try:
+            plain = bare.sql(dialect=dialect or None, unsupported_level=sqlglot.ErrorLevel.RAISE)
+        except Exception:
+            continue
+        if text == plain and "IGNORE NULLS" not in text.upper():
+            out.add(type(wrapped.this).__name__)
+    return sorted(out)
+
+
+def within_group_inside(dialect: str) -> bool:
+    """Whether the ordering is written INSIDE the call rather than after it.
+
+    `LISTAGG(x, \',\') WITHIN GROUP (ORDER BY y)` keeps its own clause almost
+    everywhere; DuckDB folds the ordering into the call. Probed with LISTAGG
+    rather than a percentile because a percentile may be rewritten into a
+    different function altogether, which is a third thing -- see
+    within_group_percentile.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("LISTAGG(x, \',\') WITHIN GROUP (ORDER BY y)").sql(
+            dialect=dialect or None
+        )
+    except Exception:
+        return False
+    return "WITHIN GROUP" not in text
+
+
+def within_group_percentile(dialect: str) -> str:
+    """What a PERCENTILE under a WITHIN GROUP becomes here.
+
+    Three answers. "outside" keeps the clause where it was written. "inside"
+    is DuckDB, which folds the ordering into the call AND moves the order key
+    into the first argument, sliding the fraction right. An empty string is a
+    dialect that writes a DIFFERENT function -- Databricks turns the pair into
+    PERCENTILE_APPROX -- which is a rewrite rather than a spelling, and the
+    port refuses those.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one(
+            "SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x)"
+        ).sql(dialect=dialect or None)
+    except Exception:
+        return ""
+    if "WITHIN GROUP" in text:
+        return "outside"
+    if "ORDER BY" in text:
+        return "inside"
+    return ""
+
+
 def enum_type_sql(dialect: str) -> str:
     """How an ENUM type's members are written, with {members} standing in.
 
@@ -4791,6 +4891,11 @@ def main() -> int:
         "\tJoinSides   map[TokenType]struct{}\n",
         "\tJoinKinds   map[TokenType]struct{}\n",
         "\tJoinMethods map[TokenType]struct{}\n",
+        "\t// WithinGroupInside: the ordering an ordered-set aggregate is\n\t// computed over is written INSIDE the call here rather than after it\n\t// in a WITHIN GROUP of its own. DuckDB is the only one, and it moves\n\t// a percentile's order key into the call's first argument as well.\n\tWithinGroupInside bool\n",
+        "\t// PercentileClasses are the ordered-set aggregates whose ARGUMENTS a\n\t// dialect writing the order inside reshuffles: the key becomes the\n\t// first and the fraction slides right.\n\tPercentileClasses map[string]struct{}\n",
+        "\t// IgnoreNullsInFunc: `IGNORE NULLS` is written INSIDE the call's\n\t// argument list here rather than after the call.\n\tIgnoreNullsInFunc bool\n",
+        "\t// IgnoreNullsWindowFuncs are the calls that KEEP their null\n\t// treatment where the dialect writes it inside; IgnoreNullsDropped\n\t// are the ones it drops silently because they ignore nulls anyway.\n\t// Anything else the dialect calls unsupported, and so does the port.\n\tIgnoreNullsWindowFuncs map[string]struct{}\n\tIgnoreNullsDropped     map[string]struct{}\n",
+        "\t// WithinGroupPercentile is what a PERCENTILE under a WITHIN GROUP\n\t// becomes: \"outside\" keeps the clause, \"inside\" folds it into the\n\t// call and reshuffles the arguments, and empty means the dialect\n\t// writes a different function and the port refuses.\n\tWithinGroupPercentile string\n",
         "\t// JoinHints are the words a dialect allows between the KIND and the\n\t// JOIN, naming how the engine should do it: `INNER HASH JOIN`. They\n\t// are words rather than tokens, and a dialect that names none writes\n\t// none -- the reference drops a hint where the target has no hints.\n\tJoinHints map[string]struct{}\n",
         "\t// RangeTokens are the operators the reference handles at the range\n",
         "\t// level -- IS, IN, BETWEEN, the LIKE family and a dozen operators\n",
@@ -4987,6 +5092,7 @@ def main() -> int:
     ]
     for name in DIALECTS:
         P = Dialect.get_or_raise(name or None).parser_class
+        G = Dialect.get_or_raise(name or None).generator_class
         named = set(P.FUNCTIONS) | set(P.FUNCTION_PARSERS)
         out.append(f"\t{gostr(name)}: {{\n")
         out.append(ttset("IDVarTokens", P.ID_VAR_TOKENS))
@@ -5819,6 +5925,22 @@ def main() -> int:
         out.append(ttset("JoinKinds", P.JOIN_KINDS))
         out.append(ttset("JoinMethods", P.JOIN_METHODS))
         out.append(strset("JoinHints", P.JOIN_HINTS))
+        out.append("\t\tWithinGroupInside: %s,\n" % str(within_group_inside(name)).lower())
+        out.append(f"\t\tWithinGroupPercentile: {gostr(within_group_percentile(name))},\n")
+        out.append("\t\tIgnoreNullsInFunc: %s,\n" % str(bool(G.IGNORE_NULLS_IN_FUNC)).lower())
+        out.append(
+            strset(
+                "IgnoreNullsWindowFuncs",
+                [
+                    c.__name__
+                    for c in getattr(G, "IGNORE_RESPECT_NULLS_WINDOW_FUNCTIONS", ())
+                ],
+            )
+        )
+        out.append(strset("IgnoreNullsDropped", ignore_nulls_dropped(name)))
+        from sqlglot import exp as _exp
+
+        out.append(strset("PercentileClasses", [c.__name__ for c in _exp.PERCENTILES]))
         out.append(ttset("RangeTokens", P.RANGE_PARSERS))
         units = "".join(
             f"\t\t\t{gostr(u)}: {{}},\n" for u in sorted(d.VALID_INTERVAL_UNITS)

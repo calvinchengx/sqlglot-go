@@ -7952,3 +7952,160 @@ func TestAQuotedNameThatSpellsAnOperator(t *testing.T) {
 		}
 	}
 }
+
+// The ordering an ordered-set aggregate is computed over, and where each
+// dialect puts it.
+//
+// Almost everywhere it stands outside the call in a WITHIN GROUP of its own.
+// DuckDB folds it into the call, and for a percentile also moves the order key
+// into the first argument and slides the fraction right. Databricks turns the
+// pair into a different function altogether, which is a rewrite rather than a
+// spelling, and is refused.
+func TestWithinGroup(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"a percentile", "", "SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x)",
+			"SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x)"},
+		{"a listagg", "", "SELECT LISTAGG(x) WITHIN GROUP (ORDER BY x) AS y",
+			"SELECT LISTAGG(x) WITHIN GROUP (ORDER BY x) AS y"},
+		{"a mode", "postgres", "SELECT MODE() WITHIN GROUP (ORDER BY x) FROM t",
+			"SELECT MODE() WITHIN GROUP (ORDER BY x) FROM t"},
+		// DuckDB's percentile takes the order key first and the fraction
+		// second, with the ordering still inside the call.
+		{"a percentile, folded in", "duckdb",
+			"SELECT PERCENTILE_CONT(0.25) WITHIN GROUP (ORDER BY y DESC) FROM t",
+			"SELECT QUANTILE_CONT(y, 0.25 ORDER BY y DESC) FROM t"},
+		// A call with no arguments leaves the space its empty list had, which
+		// is what the reference writes too.
+		{"a mode, folded in", "duckdb",
+			"SELECT MODE() WITHIN GROUP (ORDER BY col) FILTER (WHERE b < 3) FROM t",
+			"SELECT MODE( ORDER BY col) FILTER(WHERE b < 3) FROM t"},
+		{"a listagg, left alone", "databricks", "LISTAGG(x, z) WITHIN GROUP (ORDER BY y)",
+			"LISTAGG(x, z) WITHIN GROUP (ORDER BY y)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// Databricks writes PERCENTILE_APPROX instead, which is a different
+	// function rather than a different spelling.
+	e, err := ParseOne("SELECT PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "databricks"); err == nil {
+		t.Errorf("Databricks wrote %q; it writes another function there", got)
+	}
+}
+
+// What a call does with the rows whose value is missing, and where the words
+// go.
+//
+// Almost everywhere they follow the call. DuckDB writes them INSIDE the
+// argument list, and only for the window functions that take them: a call that
+// ignores nulls anyway loses the words with nothing else changed, and every
+// other use it calls unsupported. The port refuses exactly there, because
+// dropping the words off a SUM changes what the call counts.
+func TestNullTreatment(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"a first value", "duckdb",
+			"SELECT FIRST_VALUE(c IGNORE NULLS) OVER (PARTITION BY gb ORDER BY ob) FROM t",
+			"SELECT FIRST_VALUE(c IGNORE NULLS) OVER (PARTITION BY gb ORDER BY ob) FROM t"},
+		{"an nth value", "duckdb",
+			"SELECT NTH_VALUE(is_deleted, 2 IGNORE NULLS) OVER (PARTITION BY id) AS n FROM t",
+			"SELECT NTH_VALUE(is_deleted, 2 IGNORE NULLS) OVER (PARTITION BY id) AS n FROM t"},
+		// The words go after an ordering that is inside the call with them.
+		{"a last value over an ordering", "duckdb",
+			"SELECT LAST_VALUE(x ORDER BY x IGNORE NULLS) OVER (ORDER BY x) FROM t",
+			"SELECT LAST_VALUE(x ORDER BY x IGNORE NULLS) OVER (ORDER BY x) FROM t"},
+		// ANY_VALUE ignores nulls of its own accord, so the node is there
+		// whether or not the words were written -- and they are not written
+		// back, because the call already says it.
+		{"a call that ignores them anyway", "duckdb", "SELECT ANY_VALUE(sample_col)",
+			"SELECT ANY_VALUE(sample_col)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// Dropping the words off a SUM changes what it counts.
+	e, err := ParseOne("SELECT SUM(x IGNORE NULLS) AS x", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "duckdb"); err == nil {
+		t.Errorf("DuckDB wrote %q; it does not take IGNORE NULLS on a SUM", got)
+	}
+	// Everywhere else the words simply follow the call.
+	if got, err := Generate(e, ""); err != nil || got != "SELECT SUM(x) IGNORE NULLS AS x" {
+		t.Errorf("neutral wrote %q (%v)", got, err)
+	}
+}
+
+// The guards on both writers, over trees no statement produces.
+//
+// A WITHIN GROUP or a null treatment stands over a CALL, and the writers reach
+// inside the call's parentheses to put the words among its arguments. A node
+// carrying something else -- or nothing -- has no parentheses to reach into,
+// and is refused rather than written into the middle of whatever is there.
+func TestOrderedSetGuards(t *testing.T) {
+	column := New("Column", Arg{"this", New("Identifier", Arg{"this", "x"}, Arg{"quoted", false})})
+	order := New("Order", Arg{"expressions", []*Expression{New("Ordered", Arg{"this", column})}})
+
+	for _, tc := range []struct {
+		name string
+		node *Expression
+	}{
+		{"a within group over nothing", New("WithinGroup", Arg{"expression", order})},
+		{"a within group over a column",
+			New("WithinGroup", Arg{"this", column}, Arg{"expression", order})},
+		{"a null treatment over nothing", New("IgnoreNulls")},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got, err := Generate(tc.node, "duckdb"); err == nil {
+				t.Errorf("wrote %q; there is no call to write into", got)
+			}
+		})
+	}
+	// A percentile whose ordering names no key, or none at all, keeps its
+	// arguments where they were: there is nothing to move into the first one.
+	for _, tc := range []struct {
+		name, want string
+		node       *Expression
+	}{
+		{"no ordering at all", "QUANTILE_CONT(x )",
+			New("WithinGroup", Arg{"this", New("PercentileCont", Arg{"this", column})})},
+		{"an ordering with no members", "QUANTILE_CONT(x ORDER BY )",
+			New("WithinGroup", Arg{"this", New("PercentileCont", Arg{"this", column})},
+				Arg{"expression", New("Order")})},
+		{"an ordering that names no key", "QUANTILE_CONT(x ORDER BY )",
+			New("WithinGroup", Arg{"this", New("PercentileCont", Arg{"this", column})},
+				Arg{"expression", New("Order",
+					Arg{"expressions", []*Expression{New("Ordered")}})})},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			if got, err := Generate(tc.node, "duckdb"); err != nil || got != tc.want {
+				t.Errorf("wrote %q (%v), want %q", got, err, tc.want)
+			}
+		})
+	}
+}

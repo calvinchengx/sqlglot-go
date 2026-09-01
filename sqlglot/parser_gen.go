@@ -703,6 +703,29 @@ type ParserTables struct {
 	JoinSides   map[TokenType]struct{}
 	JoinKinds   map[TokenType]struct{}
 	JoinMethods map[TokenType]struct{}
+	// WithinGroupInside: the ordering an ordered-set aggregate is
+	// computed over is written INSIDE the call here rather than after it
+	// in a WITHIN GROUP of its own. DuckDB is the only one, and it moves
+	// a percentile's order key into the call's first argument as well.
+	WithinGroupInside bool
+	// PercentileClasses are the ordered-set aggregates whose ARGUMENTS a
+	// dialect writing the order inside reshuffles: the key becomes the
+	// first and the fraction slides right.
+	PercentileClasses map[string]struct{}
+	// IgnoreNullsInFunc: `IGNORE NULLS` is written INSIDE the call's
+	// argument list here rather than after the call.
+	IgnoreNullsInFunc bool
+	// IgnoreNullsWindowFuncs are the calls that KEEP their null
+	// treatment where the dialect writes it inside; IgnoreNullsDropped
+	// are the ones it drops silently because they ignore nulls anyway.
+	// Anything else the dialect calls unsupported, and so does the port.
+	IgnoreNullsWindowFuncs map[string]struct{}
+	IgnoreNullsDropped     map[string]struct{}
+	// WithinGroupPercentile is what a PERCENTILE under a WITHIN GROUP
+	// becomes: "outside" keeps the clause, "inside" folds it into the
+	// call and reshuffles the arguments, and empty means the dialect
+	// writes a different function and the port refuses.
+	WithinGroupPercentile string
 	// JoinHints are the words a dialect allows between the KIND and the
 	// JOIN, naming how the engine should do it: `INNER HASH JOIN`. They
 	// are words rather than tokens, and a dialect that names none writes
@@ -5343,7 +5366,16 @@ var parserTables = map[string]*ParserTables{
 			TokNATURAL:    {},
 			TokPOSITIONAL: {},
 		},
-		JoinHints: map[string]struct{}{},
+		JoinHints:              map[string]struct{}{},
+		WithinGroupInside:      false,
+		WithinGroupPercentile:  "outside",
+		IgnoreNullsInFunc:      false,
+		IgnoreNullsWindowFuncs: map[string]struct{}{},
+		IgnoreNullsDropped:     map[string]struct{}{},
+		PercentileClasses: map[string]struct{}{
+			"PercentileCont": {},
+			"PercentileDisc": {},
+		},
 		RangeTokens: map[TokenType]struct{}{
 			TokAT_QMARK:   {},
 			TokLT_AT:      {},
@@ -10254,6 +10286,15 @@ var parserTables = map[string]*ParserTables{
 			"LOOP":   {},
 			"MERGE":  {},
 			"REMOTE": {},
+		},
+		WithinGroupInside:      false,
+		WithinGroupPercentile:  "outside",
+		IgnoreNullsInFunc:      false,
+		IgnoreNullsWindowFuncs: map[string]struct{}{},
+		IgnoreNullsDropped:     map[string]struct{}{},
+		PercentileClasses: map[string]struct{}{
+			"PercentileCont": {},
+			"PercentileDisc": {},
 		},
 		RangeTokens: map[TokenType]struct{}{
 			TokDCOLON:     {},
@@ -15171,7 +15212,16 @@ var parserTables = map[string]*ParserTables{
 			TokNATURAL:    {},
 			TokPOSITIONAL: {},
 		},
-		JoinHints: map[string]struct{}{},
+		JoinHints:              map[string]struct{}{},
+		WithinGroupInside:      false,
+		WithinGroupPercentile:  "outside",
+		IgnoreNullsInFunc:      false,
+		IgnoreNullsWindowFuncs: map[string]struct{}{},
+		IgnoreNullsDropped:     map[string]struct{}{},
+		PercentileClasses: map[string]struct{}{
+			"PercentileCont": {},
+			"PercentileDisc": {},
+		},
 		RangeTokens: map[TokenType]struct{}{
 			TokDAT:        {},
 			TokAT_QMARK:   {},
@@ -20336,7 +20386,24 @@ var parserTables = map[string]*ParserTables{
 			TokNATURAL:    {},
 			TokPOSITIONAL: {},
 		},
-		JoinHints: map[string]struct{}{},
+		JoinHints:             map[string]struct{}{},
+		WithinGroupInside:     true,
+		WithinGroupPercentile: "inside",
+		IgnoreNullsInFunc:     true,
+		IgnoreNullsWindowFuncs: map[string]struct{}{
+			"FirstValue": {},
+			"Lag":        {},
+			"LastValue":  {},
+			"Lead":       {},
+			"NthValue":   {},
+		},
+		IgnoreNullsDropped: map[string]struct{}{
+			"AnyValue": {},
+		},
+		PercentileClasses: map[string]struct{}{
+			"PercentileCont": {},
+			"PercentileDisc": {},
+		},
 		RangeTokens: map[TokenType]struct{}{
 			TokCARET_AT:   {},
 			TokTILDE:      {},
@@ -25598,7 +25665,16 @@ var parserTables = map[string]*ParserTables{
 			TokNATURAL:    {},
 			TokPOSITIONAL: {},
 		},
-		JoinHints: map[string]struct{}{},
+		JoinHints:              map[string]struct{}{},
+		WithinGroupInside:      false,
+		WithinGroupPercentile:  "",
+		IgnoreNullsInFunc:      false,
+		IgnoreNullsWindowFuncs: map[string]struct{}{},
+		IgnoreNullsDropped:     map[string]struct{}{},
+		PercentileClasses: map[string]struct{}{
+			"PercentileCont": {},
+			"PercentileDisc": {},
+		},
 		RangeTokens: map[TokenType]struct{}{
 			TokAT_QMARK:   {},
 			TokLT_AT:      {},

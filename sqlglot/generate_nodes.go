@@ -94,6 +94,9 @@ func init() {
 		"PartitionBoundSpec":                  (*generator).writePartitionBoundSpec,
 		"Clone":                               (*generator).writeClone,
 		"MacroOverloads":                      (*generator).writeMacroOverloads,
+		"WithinGroup":                         (*generator).writeWithinGroup,
+		"IgnoreNulls":                         (*generator).writeIgnoreNulls,
+		"RespectNulls":                        (*generator).writeRespectNulls,
 		"TriggerProperties":                   (*generator).writeTriggerProperties,
 		"TriggerEvent":                        (*generator).writeTriggerEvent,
 		"TriggerExecute":                      (*generator).writeTriggerExecute,
@@ -4553,4 +4556,124 @@ func (g *generator) writeTriggerEvent(e *Expression) string {
 // writes only the one spelling.
 func (g *generator) writeTriggerExecute(e *Expression) string {
 	return "EXECUTE FUNCTION " + g.child(e, "this")
+}
+
+// writeWithinGroup writes the ordering an ordered-set aggregate is computed
+// over -- `PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x)`.
+//
+// Almost everywhere it stands outside the call in a clause of its own. DuckDB
+// folds it INTO the call instead, and for a percentile also moves the order
+// key into the first argument, sliding the fraction right: the same tree
+// becomes `QUANTILE_CONT(x, 0.5 ORDER BY x)`. Databricks turns the pair into
+// PERCENTILE_APPROX, which is a different function rather than a different
+// spelling, and is refused.
+func (g *generator) writeWithinGroup(e *Expression) string {
+	call, _ := e.Args["this"].(*Expression)
+	if call == nil {
+		return g.fail(e.Class + " over nothing")
+	}
+	_, isPercentile := g.tables.PercentileClasses[call.Class]
+	if isPercentile {
+		switch g.tables.WithinGroupPercentile {
+		case "outside":
+			return g.child(e, "this") + " WITHIN GROUP (" + g.child(e, "expression") + ")"
+		case "inside":
+			return g.withinGroupInsideCall(g.percentileOverOrderKey(e, call), e)
+		}
+		return g.fail(e.Class + " over a percentile, which this dialect writes another way")
+	}
+	if g.tables.WithinGroupInside {
+		return g.withinGroupInsideCall(call, e)
+	}
+	return g.child(e, "this") + " WITHIN GROUP (" + g.child(e, "expression") + ")"
+}
+
+// percentileOverOrderKey moves a percentile's ORDER KEY into its first
+// argument and slides the fraction right, which is how DuckDB's QUANTILE
+// takes the pair: `PERCENTILE_CONT(0.5) WITHIN GROUP (ORDER BY x)` is
+// `QUANTILE_CONT(x, 0.5 ...)`. A copy, so the tree the caller holds is left
+// as it was written.
+func (g *generator) percentileOverOrderKey(e, call *Expression) *Expression {
+	order, _ := e.Args["expression"].(*Expression)
+	if order == nil {
+		return call
+	}
+	items, _ := order.Args["expressions"].([]*Expression)
+	if len(items) == 0 {
+		return call
+	}
+	key, _ := items[0].Args["this"].(*Expression)
+	if key == nil {
+		return call
+	}
+	moved := New(call.Class)
+	for _, k := range call.Keys {
+		moved.Set(k, call.Args[k])
+	}
+	moved.Set("expression", call.Args["this"])
+	moved.Set("this", key)
+	return moved
+}
+
+// withinGroupInsideCall writes the ordering among the call's arguments, by
+// reopening the call's closing parenthesis. The reference reaches the same
+// place the same way, which is why `MODE()` comes back as `MODE( ORDER BY x)`
+// with the space its empty argument list left behind.
+func (g *generator) withinGroupInsideCall(call, e *Expression) string {
+	out := g.node(call)
+	if !strings.HasSuffix(out, ")") {
+		return g.fail(e.Class + " over something that is not a call")
+	}
+	return out[:len(out)-1] + " " + g.child(e, "expression") + ")"
+}
+
+// writeIgnoreNulls and writeRespectNulls write what a call does with the rows
+// whose value is missing.
+func (g *generator) writeIgnoreNulls(e *Expression) string {
+	return g.writeNullTreatment(e, "IGNORE NULLS")
+}
+
+func (g *generator) writeRespectNulls(e *Expression) string {
+	return g.writeNullTreatment(e, "RESPECT NULLS")
+}
+
+// writeNullTreatment writes the words in the place this dialect puts them.
+//
+// Almost everywhere they follow the call: `FIRST_VALUE(x) IGNORE NULLS`.
+// DuckDB writes them INSIDE the argument list instead, and only for the window
+// functions that take them -- a call that ignores nulls anyway loses the words
+// with nothing else changed, and every other use it calls unsupported. The
+// port refuses exactly where the reference does, because dropping the words
+// off a SUM changes what the call counts.
+func (g *generator) writeNullTreatment(e *Expression, words string) string {
+	call, _ := e.Args["this"].(*Expression)
+	if call == nil {
+		return g.fail(e.Class + " over nothing")
+	}
+	if !g.tables.IgnoreNullsInFunc {
+		return g.child(e, "this") + " " + words
+	}
+	if _, ok := g.tables.IgnoreNullsWindowFuncs[call.Class]; ok {
+		return g.nullTreatmentInsideCall(e, call, words)
+	}
+	if _, ok := g.tables.IgnoreNullsDropped[call.Class]; ok {
+		// The call ignores nulls of its own accord here, so the words say
+		// nothing the call does not already say.
+		return g.child(e, "this")
+	}
+	return g.fail(e.Class + " over " + call.Class + ", which this dialect does not take it on")
+}
+
+// nullTreatmentInsideCall writes the words among the call's arguments, by
+// reopening its closing parenthesis.
+//
+// They attach to the LAST argument, after an ordering that is inside the call
+// with them -- `LAST_VALUE(x ORDER BY x IGNORE NULLS)`. Only DuckDB writes
+// them inside at all, and it writes them there.
+func (g *generator) nullTreatmentInsideCall(e, call *Expression, words string) string {
+	out := g.node(call)
+	if !strings.HasSuffix(out, ")") {
+		return g.fail(e.Class + " over something that is not a call")
+	}
+	return out[:len(out)-1] + " " + words + ")"
 }
