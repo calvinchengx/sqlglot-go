@@ -86,6 +86,7 @@ func init() {
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
+		"Opclass":                             (*generator).writeOpclass,
 		"ColumnPosition":                      (*generator).writeColumnPosition,
 		"WithDataProperty":                    (*generator).writeWithDataProperty,
 		"AlterSet":                            (*generator).writeAlterSet,
@@ -3566,12 +3567,26 @@ func (g *generator) writeIndex(e *Expression) string {
 	if params == nil {
 		return g.fail(e.Class + " over no columns")
 	}
+	// The METHOD the index is built with, where one was named.
+	if using, _ := params.Args["using"].(*Expression); using != nil {
+		out += " USING " + g.node(using)
+	}
 	columns, _ := params.Args["columns"].([]*Expression)
 	parts := make([]string, 0, len(columns))
 	for _, column := range columns {
 		parts = append(parts, g.node(column))
 	}
-	return out + "(" + strings.Join(parts, ", ") + ")"
+	out += "(" + strings.Join(parts, ", ") + ")"
+	// A PARTIAL index covers only the rows a condition picks out.
+	if where, _ := params.Args["where"].(*Expression); where != nil {
+		out += " " + g.node(where)
+	}
+	return out
+}
+
+// writeOpclass writes a column and the operator class it is indexed with.
+func (g *generator) writeOpclass(e *Expression) string {
+	return g.child(e, "this") + " " + g.child(e, "expression")
 }
 
 // escapeControlCharacters turns the control characters a C-style escape can

@@ -2,7 +2,9 @@ package sqlglot
 
 import (
 	"errors"
+	"strings"
 	"testing"
+	"time"
 )
 
 // A builder that supplies a CONSTANT node -- one holding no argument at all --
@@ -3180,15 +3182,61 @@ func TestCreateIndex(t *testing.T) {
 		t.Errorf("wrote %q for T-SQL, which writes a conditional EXEC", got)
 	}
 	for _, sql := range []string{
-		"CREATE INDEX abc ON t USING GIST(a)",
-		"CREATE INDEX abc ON t(a) WHERE a > 1",
 		"CREATE INDEX abc ON t",
 		"CREATE INDEX abc ON t(a",
+		"CREATE INDEX abc ON t USING",
 		"CREATE TEMPORARY INDEX abc ON t(a)",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
 		}
+	}
+	// The method an index is built with, the rows it covers, and the operator
+	// class one of its columns is indexed with.
+	for _, c := range []struct{ sql, want string }{
+		{"CREATE INDEX abc ON t USING GIST(a)", "CREATE INDEX abc ON t USING GIST(a)"},
+		{"CREATE INDEX abc ON t USING btree(a) WHERE a > 1",
+			"CREATE INDEX abc ON t USING btree(a) WHERE a > 1"},
+		{"CREATE INDEX abc ON t USING btree(col1 varchar_pattern_ops ASC, col2)",
+			"CREATE INDEX abc ON t USING btree(col1 varchar_pattern_ops ASC, col2)"},
+	} {
+		tree, err := ParseOne(c.sql, "postgres")
+		if err != nil {
+			t.Errorf("ParseOne(%q): %v", c.sql, err)
+			continue
+		}
+		got, gerr := Generate(tree, "postgres")
+		if gerr != nil {
+			t.Errorf("Generate(%q): %v", c.sql, gerr)
+			continue
+		}
+		if got != c.want {
+			t.Errorf("%s\n got  %s\n want %s", c.sql, got, c.want)
+		}
+	}
+}
+
+// TestDeepNestingIsLinear pins the cost of rewriting a column chain into dots.
+// The rewrite copies the node it is at and then recurses into the children; a
+// DEEP copy at each level copies the whole subtree again one level down, which
+// is quadratic in the depth. A few thousand nested operators took a second,
+// and the generator fuzzer's own worker was killed for hanging on one.
+func TestDeepNestingIsLinear(t *testing.T) {
+	cost := func(depth int) time.Duration {
+		sql := "(" + strings.Repeat("!", depth) + "(0)).A()"
+		start := time.Now()
+		if _, err := ParseOne(sql, "tsql"); err != nil {
+			t.Fatalf("ParseOne at depth %d: %v", depth, err)
+		}
+		return time.Since(start)
+	}
+	// Warm, then compare a doubling. Linear work doubles; the quadratic
+	// version took four times as long, and a factor of three leaves room for
+	// a slow machine without letting that back in.
+	cost(400)
+	small, large := cost(800), cost(1600)
+	if large > 3*small+10*time.Millisecond {
+		t.Errorf("doubling the depth cost %v against %v: more than linear", large, small)
 	}
 }
 

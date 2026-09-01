@@ -165,6 +165,11 @@ type ParserTables struct {
 	// this port refuses rather than writing a column that takes nulls
 	// when the statement said it must not.
 	AlterColumnNullabilityWritten bool
+	// OpclassFollowWords and OpclassFollowTokens are what may follow an
+	// indexed column WITHOUT being an operator class for it: a word
+	// that orders the column, or the punctuation that ends it.
+	OpclassFollowWords  map[string]struct{}
+	OpclassFollowTokens map[TokenType]struct{}
 	// TypedDivision and SafeDivision are recorded on every Div node; the
 	// reference reads them off the dialect, so they are not always false.
 	TypedDivision bool
@@ -2727,11 +2732,21 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_ROLE:      {},
 			TokCURRENT_CATALOG:   {},
 		},
-		BareProcedureWrapper:          "",
-		ColumnDefaultAfterEquals:      false,
-		IfIsAStatement:                false,
-		AlterCollateIsVar:             false,
-		AlterColumnTypeTakesNull:      false,
+		BareProcedureWrapper:     "",
+		ColumnDefaultAfterEquals: false,
+		IfIsAStatement:           false,
+		AlterCollateIsVar:        false,
+		AlterColumnTypeTakesNull: false,
+		OpclassFollowWords: map[string]struct{}{
+			"ASC":   {},
+			"DESC":  {},
+			"NULLS": {},
+			"WITH":  {},
+		},
+		OpclassFollowTokens: map[TokenType]struct{}{
+			TokR_PAREN: {},
+			TokCOMMA:   {},
+		},
 		AlterColumnNullabilityWritten: false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",
@@ -7502,11 +7517,21 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_USER:      {},
 			TokCURRENT_ROLE:      {},
 		},
-		BareProcedureWrapper:          "StoredProcedure",
-		ColumnDefaultAfterEquals:      true,
-		IfIsAStatement:                true,
-		AlterCollateIsVar:             true,
-		AlterColumnTypeTakesNull:      true,
+		BareProcedureWrapper:     "StoredProcedure",
+		ColumnDefaultAfterEquals: true,
+		IfIsAStatement:           true,
+		AlterCollateIsVar:        true,
+		AlterColumnTypeTakesNull: true,
+		OpclassFollowWords: map[string]struct{}{
+			"ASC":   {},
+			"DESC":  {},
+			"NULLS": {},
+			"WITH":  {},
+		},
+		OpclassFollowTokens: map[TokenType]struct{}{
+			TokR_PAREN: {},
+			TokCOMMA:   {},
+		},
 		AlterColumnNullabilityWritten: true,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":         "ViewAttributeProperty",
@@ -12394,11 +12419,21 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_ROLE:      {},
 			TokCURRENT_CATALOG:   {},
 		},
-		BareProcedureWrapper:          "",
-		ColumnDefaultAfterEquals:      false,
-		IfIsAStatement:                false,
-		AlterCollateIsVar:             false,
-		AlterColumnTypeTakesNull:      false,
+		BareProcedureWrapper:     "",
+		ColumnDefaultAfterEquals: false,
+		IfIsAStatement:           false,
+		AlterCollateIsVar:        false,
+		AlterColumnTypeTakesNull: false,
+		OpclassFollowWords: map[string]struct{}{
+			"ASC":   {},
+			"DESC":  {},
+			"NULLS": {},
+			"WITH":  {},
+		},
+		OpclassFollowTokens: map[TokenType]struct{}{
+			TokR_PAREN: {},
+			TokCOMMA:   {},
+		},
 		AlterColumnNullabilityWritten: false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",
@@ -17367,11 +17402,21 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_ROLE:      {},
 			TokCURRENT_CATALOG:   {},
 		},
-		BareProcedureWrapper:          "",
-		ColumnDefaultAfterEquals:      false,
-		IfIsAStatement:                false,
-		AlterCollateIsVar:             false,
-		AlterColumnTypeTakesNull:      false,
+		BareProcedureWrapper:     "",
+		ColumnDefaultAfterEquals: false,
+		IfIsAStatement:           false,
+		AlterCollateIsVar:        false,
+		AlterColumnTypeTakesNull: false,
+		OpclassFollowWords: map[string]struct{}{
+			"ASC":   {},
+			"DESC":  {},
+			"NULLS": {},
+			"WITH":  {},
+		},
+		OpclassFollowTokens: map[TokenType]struct{}{
+			TokR_PAREN: {},
+			TokCOMMA:   {},
+		},
 		AlterColumnNullabilityWritten: false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",
@@ -22516,11 +22561,21 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_USER:      {},
 			TokCURRENT_ROLE:      {},
 		},
-		BareProcedureWrapper:          "",
-		ColumnDefaultAfterEquals:      false,
-		IfIsAStatement:                false,
-		AlterCollateIsVar:             false,
-		AlterColumnTypeTakesNull:      false,
+		BareProcedureWrapper:     "",
+		ColumnDefaultAfterEquals: false,
+		IfIsAStatement:           false,
+		AlterCollateIsVar:        false,
+		AlterColumnTypeTakesNull: false,
+		OpclassFollowWords: map[string]struct{}{
+			"ASC":   {},
+			"DESC":  {},
+			"NULLS": {},
+			"WITH":  {},
+		},
+		OpclassFollowTokens: map[TokenType]struct{}{
+			TokR_PAREN: {},
+			TokCOMMA:   {},
+		},
 		AlterColumnNullabilityWritten: false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",

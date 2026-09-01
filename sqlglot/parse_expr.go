@@ -2897,7 +2897,12 @@ func columnsToDots(e *Expression) *Expression {
 		}
 		return out
 	}
-	out := e.Copy()
+	// A SHALLOW copy, rewritten child by child. A deep one here copies the
+	// whole subtree at every level and then throws each copy away when the
+	// level below copies it again -- quadratic in the depth of the tree, and
+	// slow enough on a few thousand nested operators that the fuzzer's own
+	// worker gave up on it.
+	out := e.shallowCopy()
 	for key, arg := range out.Args {
 		switch v := arg.(type) {
 		case *Expression:

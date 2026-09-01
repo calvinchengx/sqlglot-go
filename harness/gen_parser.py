@@ -4324,6 +4324,11 @@ def main() -> int:
         "\t// this port refuses rather than writing a column that takes nulls\n",
         "\t// when the statement said it must not.\n",
         "\tAlterColumnNullabilityWritten bool\n",
+        "\t// OpclassFollowWords and OpclassFollowTokens are what may follow an\n",
+        "\t// indexed column WITHOUT being an operator class for it: a word\n",
+        "\t// that orders the column, or the punctuation that ends it.\n",
+        "\tOpclassFollowWords  map[string]struct{}\n",
+        "\tOpclassFollowTokens map[TokenType]struct{}\n",
         "\t// TypedDivision and SafeDivision are recorded on every Div node; the\n",
         "\t// reference reads them off the dialect, so they are not always false.\n",
         "\tTypedDivision bool\n",
@@ -5008,6 +5013,8 @@ def main() -> int:
         except Exception:  # noqa: BLE001
             _takes_null = False
         out.append(f"\t\tAlterColumnTypeTakesNull: {str(_takes_null).lower()},\n")
+        out.append(strset("OpclassFollowWords", P.OPCLASS_FOLLOW_KEYWORDS))
+        out.append(ttset("OpclassFollowTokens", P.OPTYPE_FOLLOW_TOKENS))
         out.append(
             "\t\tAlterColumnNullabilityWritten: %s,\n"
             % str(

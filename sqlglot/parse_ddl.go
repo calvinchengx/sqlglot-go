@@ -2103,17 +2103,35 @@ func (p *parser) parseIndexRest(replace, unique, temporary bool) (*Expression, e
 		return nil, err
 	}
 	index.Set("table", table)
+	params := New("IndexParameters")
+	// `USING gin(...)` names the method the index is built with. The word
+	// after it is kept as a bare Var whatever it is.
+	if p.at(TokUSING) {
+		p.advance()
+		method := p.curr()
+		if method == nil {
+			return nil, p.unsupported("USING without a method")
+		}
+		p.advance()
+		params.Set("using", New("Var", Arg{"this", method.Text}))
+	}
 	if !p.at(TokL_PAREN) {
-		// `USING gin(...)` names the method the index is built with, and the
-		// rest of that vocabulary -- INCLUDE, WHERE, an operator class -- is
-		// not read here either.
 		return nil, p.unsupported("CREATE INDEX with more than columns")
 	}
 	columns, err := p.parseIndexColumns()
 	if err != nil {
 		return nil, err
 	}
-	params := New("IndexParameters", Arg{"columns", columns})
+	params.Set("columns", columns)
+	// A PARTIAL index covers only the rows a condition picks out.
+	if p.at(TokWHERE) {
+		p.advance()
+		condition, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		params.Set("where", New("Where", Arg{"this", condition}))
+	}
 	params.Set("with_storage", false)
 	index.Set("params", params)
 	if p.curr() != nil {
@@ -2140,11 +2158,37 @@ func (p *parser) parseIndexRest(replace, unique, temporary bool) (*Expression, e
 
 // parseIndexColumns reads the `(a, b DESC NULLS LAST)` an index is over. Each
 // member is an Ordered, whether or not it says anything about order.
+// parseIndexedColumn reads one member of an index: a column, and the operator
+// CLASS it is indexed with where one is named. The class is told from what
+// follows the column -- a word that orders it, or the punctuation that ends
+// the member, means there is none.
+func (p *parser) parseIndexedColumn() (*Expression, error) {
+	this, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	if c := p.curr(); c != nil {
+		if _, orders := p.tables.OpclassFollowWords[strings.ToUpper(c.Text)]; orders {
+			return this, nil
+		}
+		if _, ends := p.tables.OpclassFollowTokens[c.Type]; ends {
+			return this, nil
+		}
+	} else {
+		return this, nil
+	}
+	class, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+	return New("Opclass", Arg{"this", this}, Arg{"expression", class}), nil
+}
+
 func (p *parser) parseIndexColumns() ([]*Expression, error) {
 	p.advance() // the opening parenthesis
 	var out []*Expression
 	for {
-		column, err := p.parseColumn()
+		column, err := p.parseIndexedColumn()
 		if err != nil {
 			return nil, err
 		}
