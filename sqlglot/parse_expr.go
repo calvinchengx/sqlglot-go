@@ -2987,6 +2987,14 @@ func parameterName(n *Token) *Expression {
 	if n.Type == TokNUMBER {
 		return New("Literal", Arg{"this", n.Text}, Arg{"is_string", false})
 	}
+	// A name written in QUOTES stays quoted: the reference reads an
+	// identifier here before it reads anything else, and only what is not one
+	// becomes a Var. Reading `${`$$`}` as a Var dropped the quotes when it
+	// was written back, leaving `${$$}` -- which the port could no longer
+	// read, because a bare $$ is not a name. The generator fuzzer found it.
+	if isQuotedName(n) {
+		return New("Identifier", Arg{"this", n.Text}, Arg{"quoted", true})
+	}
 	return New("Var", Arg{"this", n.Text})
 }
 

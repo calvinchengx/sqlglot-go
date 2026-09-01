@@ -1046,10 +1046,23 @@ func (g *generator) writeParameter(e *Expression) string {
 	// makes SQL nothing can read -- `SET @<nul> = 0` written for PostgreSQL
 	// is `SET $<nul> = 0`, where the dollar opens a quote that never closes.
 	// The same rule turns a Placeholder away. The generator fuzzer found it.
-	if !readableAsABareName(name) {
+	// A name written in QUOTES is readable whatever is in it -- the quotes
+	// are what make it so. Only a bare one has to look like a name.
+	quoted, _ := this.Args["quoted"].(bool)
+	if !quoted && !readableAsABareName(name) {
 		return g.fail(e.Class + " whose name is not a name")
 	}
 	out := strings.ReplaceAll(g.tables.Placeholder.Parameter, "{name}", name)
+	// The dollar a spelling puts in FRONT of the name can pair with one
+	// inside it, and the two together open a dollar-quote: `@A$` written for
+	// PostgreSQL is `$A$`, a quote tag rather than a parameter, and what
+	// follows it is swallowed until a matching tag that never comes. A quoted
+	// name is safe -- the quotes keep the dollars apart. The generator fuzzer
+	// found it.
+	if !quoted && strings.Contains(g.tables.Placeholder.Parameter, "$") &&
+		strings.Contains(name, "$") {
+		return g.fail(e.Class + " whose name would close the quote its dollar opens")
+	}
 	// A parameter written with a dollar leaves one behind that a later dollar
 	// can pair with; see lexesBackAsOneName.
 	if strings.Contains(out, "$") {

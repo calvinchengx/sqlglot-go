@@ -7736,3 +7736,46 @@ func TestTimeFormatArguments(t *testing.T) {
 		t.Errorf("wrote %q, %v", got, err)
 	}
 }
+
+// A parameter whose name is QUOTED keeps its quotes, and one whose bare name
+// holds a dollar is refused where the spelling puts a dollar in front of it.
+//
+// The two are the same defect from either side. `${`$$`}` was read as a Var
+// and written back as `${$$}`, which the port could no longer read; `@A$`
+// written for PostgreSQL is `$A$`, which is not a parameter at all but a
+// dollar-quote tag, and what follows it is swallowed until a matching tag that
+// never comes. Both were found by the generator fuzzer.
+func TestAParameterWhoseNameHoldsADollar(t *testing.T) {
+	// The quotes are what make the name readable, so they survive.
+	e, err := ParseOne("${`$$`}", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	name, _ := e.Args["this"].(*Expression)
+	if name == nil || name.Class != "Identifier" {
+		t.Fatalf("the name is %v, want a quoted Identifier", name)
+	}
+	if quoted, _ := name.Args["quoted"].(bool); !quoted {
+		t.Error("the name lost its quotes")
+	}
+	got, err := Generate(e, "databricks")
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	if want := "${`$$`}"; got != want {
+		t.Errorf("wrote %q, want %q", got, want)
+	}
+
+	// A bare name holding a dollar is fine where the spelling writes an @,
+	// and refused where it writes a $.
+	e, err = ParseOne("@A$", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "tsql"); err != nil || got != "@A$" {
+		t.Errorf("T-SQL wrote %q (%v), want %q", got, err, "@A$")
+	}
+	if got, err := Generate(e, "postgres"); err == nil {
+		t.Errorf("PostgreSQL wrote %q; $A$ opens a quote that never closes", got)
+	}
+}
