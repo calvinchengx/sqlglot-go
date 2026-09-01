@@ -1173,14 +1173,34 @@ func TestUsingSample(t *testing.T) {
 			}
 		})
 	}
-	// A row count reads, and the writer declines: DuckDB forces RESERVOIR
-	// there whatever the node says, so the shape has no template of its own.
-	e, err := ParseOne("SELECT * FROM tbl USING SAMPLE 5", "duckdb")
+	// A discrete count of ROWS, which DuckDB writes with the method spelled
+	// out and the word ROWS after the number.
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT * FROM tbl USING SAMPLE 5", "SELECT * FROM tbl USING SAMPLE RESERVOIR (5 ROWS)"},
+		{"SELECT * FROM tbl USING SAMPLE reservoir(50 ROWS) REPEATABLE (100)",
+			"SELECT * FROM tbl USING SAMPLE RESERVOIR (50 ROWS) REPEATABLE (100)"},
+		// A sample hanging off the TABLE is the same node under the other
+		// word: DuckDB says USING SAMPLE for the query and TABLESAMPLE here.
+		{"SELECT * FROM example TABLESAMPLE RESERVOIR (3 ROWS) REPEATABLE (82)",
+			"SELECT * FROM example TABLESAMPLE RESERVOIR (3 ROWS) REPEATABLE (82)"},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	// A row count can only be taken one way, so a method named beside one is
+	// REPLACED by the reference -- which says something the statement did
+	// not, and the port refuses instead.
+	e, err := ParseOne("SELECT * FROM tbl USING SAMPLE 5 (bernoulli)", "duckdb")
 	if err != nil {
 		t.Fatalf("ParseOne: %v", err)
 	}
 	if got, err := Generate(e, "duckdb"); err == nil {
-		t.Errorf("wrote %q; the row-count shape has no spelling recorded", got)
+		t.Errorf("wrote %q; DuckDB counts rows by RESERVOIR whatever it was told", got)
 	}
 	for _, sql := range []string{
 		"SELECT * FROM tbl USING SAMPLE",
@@ -7570,19 +7590,37 @@ func constraintKind(create *Expression) string {
 	return kind.Class
 }
 
-// TestArrayOverAQuery covers the one thing an array literal will not hold.
+// TestArrayOverAQuery covers the one thing an array literal is not.
 func TestArrayOverAQuery(t *testing.T) {
-	// DuckDB writes `ARRAY((SELECT ...))` for an array over a query and
-	// `[1, 2]` for one over values -- a different spelling for a different
-	// thing -- so the port declines to write the first with the second's
-	// brackets.
-	for _, sql := range []string{"SELECT [(SELECT 1)]", "SELECT ARRAY((SELECT 1))"} {
-		e, err := ParseOne(sql, "duckdb")
+	// An array built from a QUERY is a different thing from a list of
+	// values, and is written the same way everywhere -- `ARRAY(...)` --
+	// whatever the dialect brackets a list with. DuckDB writes `[1, 2]` for
+	// the list and `ARRAY(SELECT 1)` for the query, so the two spellings of
+	// the query form meet in the middle.
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT [(SELECT 1)]", "SELECT ARRAY((SELECT 1))"},
+		{"SELECT ARRAY((SELECT 1))", "SELECT ARRAY((SELECT 1))"},
+		{"SELECT ARRAY(SELECT id FROM t)", "SELECT ARRAY(SELECT id FROM t)"},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
 		if err != nil {
-			t.Fatalf("ParseOne(%q): %v", sql, err)
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
 		}
-		if got, err := Generate(e, "duckdb"); err == nil {
-			t.Errorf("%q wrote %q", sql, got)
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	// And a list of values keeps the dialect's own brackets.
+	for _, tc := range []struct{ dialect, sql string }{
+		{"duckdb", "SELECT [1, 2]"},
+		{"postgres", "SELECT ARRAY[1, 2]"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.sql {
+			t.Errorf("%q wrote %q (%v)", tc.sql, got, err)
 		}
 	}
 	// A bracketed expression that is not a query is written as it stands.
@@ -8433,5 +8471,83 @@ func TestArgumentShapeGuards(t *testing.T) {
 	}
 	if got, err := Generate(minded, "duckdb"); err == nil {
 		t.Errorf("wrote %q; DuckDB rounds a non-integer into a BIT_OR", got)
+	}
+}
+
+// A call whose only argument is a LIST takes as many members as it is given,
+// and each count may be spelled differently.
+//
+// T-SQL writes `CONCAT(a, b)` for two and just `a` for one -- the call
+// disappears there, which is a rewrite rather than a spelling -- so the call
+// form belongs to the wider counts alone and the narrow one is refused.
+func TestConcatByArgumentCount(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql, want string }{
+		{"tsql", "SELECT CONCAT(column1, column2)", "SELECT CONCAT(column1, column2)"},
+		{"tsql", "SELECT CONCAT(a, b, c)", "SELECT CONCAT(a, b, c)"},
+		{"databricks", "SELECT CONCAT(a, b)", "SELECT CONCAT(a, b)"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	e, err := ParseOne("CONCAT(a)", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "tsql"); err == nil {
+		t.Errorf("wrote %q; T-SQL writes one argument without the call", got)
+	}
+}
+
+// How much of a table a query reads. Every part of the spelling is the
+// dialect's: the words that open it, whether the sampling METHOD is written,
+// whether a bare number counts rows or a percentage, and what the repeatable
+// seed is called.
+func TestTableSampleSpelling(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql, want string }{
+		{"postgres", "SELECT * FROM t TABLESAMPLE SYSTEM (10)",
+			"SELECT * FROM t TABLESAMPLE SYSTEM (10)"},
+		{"tsql", "SELECT * FROM t TABLESAMPLE (10 PERCENT)",
+			"SELECT * FROM t TABLESAMPLE (10 PERCENT)"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+}
+
+// A name written in quotes is a name, never the word it spells.
+//
+// T-SQL brackets a name the same way it brackets any other, so `[IF]` is a
+// column called IF -- and reading it as the keyword that opens an IF statement
+// left the port unable to read back what it had written. The generator fuzzer
+// found it.
+func TestAQuotedNameThatSpellsAKeyword(t *testing.T) {
+	for _, sql := range []string{"[IF]", `"IF"`, "[SELECT]", "[FROM]", "[WHERE]"} {
+		e, err := ParseOne(sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "tsql")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if _, err := ParseOne(got, "tsql"); err != nil {
+			t.Errorf("%q wrote %q, which reads back as: %v", sql, got, err)
+		}
+	}
+	// The bare word still opens the statement it names.
+	if e, err := ParseOne("IF 1 = 1 SELECT 1", "tsql"); err != nil {
+		t.Errorf(`ParseOne("IF 1 = 1 SELECT 1"): %v`, err)
+	} else if e.Class != "IfBlock" {
+		t.Errorf("a bare IF read as %s, want IfBlock", e.Class)
 	}
 }

@@ -313,6 +313,23 @@ func (g *generator) parserWouldRefuse(name string) bool {
 	return custom
 }
 
+// listLength is how many members the keys hold between them, counting a
+// single node as one.
+func listLength(e *Expression, keys []string) int {
+	n := 0
+	for _, key := range keys {
+		switch v := e.Args[key].(type) {
+		case *Expression:
+			if v != nil {
+				n++
+			}
+		case []*Expression:
+			n += len(v)
+		}
+	}
+	return n
+}
+
 func (g *generator) functionSpelling(e *Expression) (FuncSQL, bool) {
 	for _, candidate := range g.tables.FunctionSQL[e.Class] {
 		// Never write a call the PARSER would refuse to read. T-SQL spells a
@@ -340,6 +357,13 @@ func (g *generator) functionSpelling(e *Expression) (FuncSQL, bool) {
 		// does not carry, so no spelling was recorded for the one-argument
 		// form. Applying the two-argument spelling anyway silently wrote
 		// `LISTAGG(x)` -- a shorter call than the reference emits.
+		// A spelling recorded for calls of at least N arguments does not
+		// apply to a narrower one: T-SQL writes `CONCAT(a, b)` for two and
+		// just `a` for one, and writing the call form for one would put a
+		// call where the reference puts none.
+		if candidate.MinArgs > 0 && listLength(e, candidate.Keys) < candidate.MinArgs {
+			continue
+		}
 		for _, key := range candidate.Keys {
 			switch v := e.Args[key].(type) {
 			case nil:

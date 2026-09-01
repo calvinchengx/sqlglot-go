@@ -2544,6 +2544,13 @@ func (p *parser) atWords(words ...string) bool {
 		return false
 	}
 	for i, w := range words {
+		// A name written in QUOTES is a name, never the word it spells:
+		// `[IF]` is a column called IF, and reading it as the keyword left
+		// the port unable to read back what it had written. The generator
+		// fuzzer found it.
+		if p.tokens[p.index+i].Type == TokIDENTIFIER {
+			return false
+		}
 		if !strings.EqualFold(p.tokens[p.index+i].Text, w) {
 			return false
 		}

@@ -94,6 +94,7 @@ func init() {
 		"PartitionBoundSpec":                  (*generator).writePartitionBoundSpec,
 		"Clone":                               (*generator).writeClone,
 		"MacroOverloads":                      (*generator).writeMacroOverloads,
+		"TableSample":                         (*generator).writeTableSample,
 		"WithinGroup":                         (*generator).writeWithinGroup,
 		"RegexpReplace":                       (*generator).writeRegexpReplace,
 		"IgnoreNulls":                         (*generator).writeIgnoreNulls,
@@ -1384,13 +1385,14 @@ func isPlainName(s string) bool {
 // writeArray uses the dialect's own delimiters: `[1, 2]` in DuckDB,
 // `ARRAY[1, 2]` in PostgreSQL, `ARRAY(1, 2)` elsewhere.
 func (g *generator) writeArray(e *Expression) string {
-	// The delimiters are for a literal list. Over a QUERY, DuckDB writes
-	// `ARRAY((SELECT ...))` rather than `[(SELECT ...)]` -- a different
-	// spelling for a different thing -- so that form is refused.
+	// The delimiters are for a literal LIST. An array built from a QUERY is
+	// a different thing and is written the same way everywhere -- `ARRAY(...)`
+	// -- whatever the dialect brackets a list with. DuckDB writes `[1, 2]`
+	// for the list and `ARRAY(SELECT 1)` for the query.
 	items, _ := e.Args["expressions"].([]*Expression)
 	for _, item := range items {
 		if holdsAQuery(item) {
-			return g.fail("array over a query")
+			return "ARRAY(" + g.list(e) + ")"
 		}
 	}
 	return g.tables.ArrayOpen + g.list(e) + g.tables.ArrayClose
@@ -4884,4 +4886,64 @@ func castsToDate(e *Expression) bool {
 	}
 	kind, _ := to.Args["this"].(DataTypeKind)
 	return string(kind) == "DATE"
+}
+
+// writeTableSample writes how much of a table a query reads: `USING SAMPLE
+// RESERVOIR (5 ROWS)` in DuckDB, `TABLESAMPLE (5 PERCENT)` elsewhere.
+//
+// Every part of the spelling is the dialect's -- the words that open it,
+// whether the sampling METHOD is written, whether a bare number counts rows or
+// a percentage, and what the repeatable seed is called.
+func (g *generator) writeTableSample(e *Expression) string {
+	sample := g.tables.TableSample
+	method := ""
+	if m := g.child(e, "method"); m != "" && sample.WithMethod {
+		method = m + " "
+	}
+	expr := ""
+	if numerator := g.child(e, "bucket_numerator"); numerator != "" {
+		expr = "BUCKET " + numerator + " OUT OF " + g.child(e, "bucket_denominator")
+		if field := g.child(e, "bucket_field"); field != "" {
+			expr += " ON " + field
+		}
+	}
+	if percent := g.child(e, "percent"); percent != "" {
+		if !sample.SizeIsPercent {
+			percent += " PERCENT"
+		}
+		expr += percent
+	}
+	if size := g.child(e, "size"); size != "" {
+		// A discrete count of ROWS can only be taken one way -- keep the
+		// first n you see -- so a dialect that names another method beside
+		// one REPLACES it, which says something the statement did not. The
+		// port refuses rather than following.
+		if m, _ := e.Args["method"].(*Expression); m != nil && sample.SizeIsRows {
+			if name, _ := m.Args["this"].(string); !strings.EqualFold(name, "RESERVOIR") {
+				return g.fail(e.Class + " counting rows by " + name +
+					", which this dialect writes as RESERVOIR")
+			}
+		}
+		if sample.SizeIsRows {
+			size += " ROWS"
+		}
+		expr += size
+	}
+	if sample.RequiresParens {
+		expr = "(" + expr + ")"
+	}
+	// The word is the TABLE form, with the space in front the table writer
+	// expects. A sample hanging off the QUERY is the same node under a
+	// different word, and the select writer swaps it.
+	word := sample.Keywords
+	if g.tables.TableSampleWord != "" {
+		word = g.tables.TableSampleWord
+	}
+	out := " " + word + " " + method + expr
+	// The seed makes the sample REPEATABLE: the same rows come back every
+	// time it is run.
+	if seed := g.child(e, "seed"); seed != "" {
+		out += " " + sample.SeedKeyword + " (" + seed + ")"
+	}
+	return out
 }

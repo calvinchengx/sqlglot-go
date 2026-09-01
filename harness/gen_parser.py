@@ -3904,6 +3904,38 @@ def render_functions(P, exp, dialect, funcs):
         # one argument is MAX; of two, PostgreSQL writes GREATEST. Each
         # narrower form records the keys that must be absent for it to apply.
         candidates = out.setdefault(cls_name, [])
+        # A call whose only positional argument is a LIST takes as many as it
+        # is given, and each count may be spelled differently: T-SQL writes
+        # `CONCAT(a, b)` for two and just `a` for one. One-element probes
+        # recorded only the empty form, so the list is widened here.
+        if len(positional) == 1 and "varlen" in positional[0][1]:
+            key = positional[0][0]
+            # Widest first, and the NARROWEST count that still writes the
+            # plain call is what the spelling is recorded for: T-SQL drops the
+            # call at one argument, so its spelling applies from two.
+            lowest = 0
+            for count in range(4, 0, -1):
+                members = [exp.column(f"__probe_{i}") for i in range(count)]
+                narrowed = dict(consts)
+                narrowed.update({k: n for k, n, _ in nodes})
+                narrowed[key] = members
+                try:
+                    rendered = cls(**narrowed).sql(dialect=dialect or None)
+                except Exception:  # noqa: BLE001
+                    continue
+                expected = name + "(" + ", ".join(m.sql() for m in members) + ")"
+                if rendered == expected:
+                    lowest = count
+            if lowest:
+                entry = (
+                    name,
+                    [key],
+                    consts + [(k, text) for k, _, text in nodes],
+                    False,
+                    lowest,
+                )
+                if entry not in candidates:
+                    candidates.append(entry)
         for width in range(len(keys), -1, -1):
             narrowed = dict(consts)
             narrowed.update({k: n for k, n, _ in nodes})
@@ -3938,11 +3970,13 @@ def render_functions(P, exp, dialect, funcs):
     # held to every key any spelling of the class mentions, so a key it does
     # not write has to be absent for it to apply.
     for cls_name, candidates in out.items():
-        known = {k for _, keys, consts, _ in candidates for k in list(keys) + [c[0] for c in consts]}
-        for i, (keyword, keys, consts, no_parens) in enumerate(candidates):
+        known = {k for cand in candidates for k in list(cand[1]) + [c[0] for c in cand[2]]}
+        for i, cand in enumerate(candidates):
+            keyword, keys, consts, no_parens = cand[:4]
+            min_args = cand[4] if len(cand) > 4 else 0
             named = set(keys) | {c[0] for c in consts}
             extra = [(k, None) for k in sorted(known - named)]
-            candidates[i] = (keyword, keys, consts + extra, no_parens)
+            candidates[i] = (keyword, keys, consts + extra, no_parens, min_args)
         seen, unique = set(), []
         for cand in candidates:
             mark = repr(cand)
@@ -3954,7 +3988,7 @@ def render_functions(P, exp, dialect, funcs):
     # Most constrained first, so a node with a flag set matches the spelling
     # that flag selects rather than the general one.
     for candidates in out.values():
-        candidates.sort(key=lambda c: -len(c[2]))
+        candidates.sort(key=lambda c: (-len(c[2]), -(c[4] if len(c) > 4 else 0)))
     return out
 
 
@@ -3962,12 +3996,14 @@ def sqlmap(name: str, rendered) -> str:
     lines = []
     for cls in sorted(rendered):
         entries = []
-        for keyword, keys, consts, no_parens in rendered[cls]:
+        for entry in rendered[cls]:
+            keyword, keys, consts, no_parens = entry[:4]
+            min_args = entry[4] if len(entry) > 4 else 0
             arg_keys = ", ".join(gostr(k) for k in keys)
             const_parts = ", ".join(f"{{{gostr(k)}, {goconst(v)}}}" for k, v in consts)
             entries.append(
                 f"{{{gostr(keyword)}, []string{{{arg_keys}}}, "
-                f"[]FuncConst{{{const_parts}}}, {str(no_parens).lower()}}}"
+                f"[]FuncConst{{{const_parts}}}, {str(no_parens).lower()}, {min_args}}}"
             )
         lines.append(f"\t\t\t{gostr(cls)}: {{{', '.join(entries)}}},\n")
     return f"\t\t{name}: map[string][]FuncSQL{{\n{''.join(lines)}\t\t}},\n"
@@ -5029,6 +5065,7 @@ def main() -> int:
         "\t// WithinGroupInside: the ordering an ordered-set aggregate is\n\t// computed over is written INSIDE the call here rather than after it\n\t// in a WITHIN GROUP of its own. DuckDB is the only one, and it moves\n\t// a percentile's order key into the call's first argument as well.\n\tWithinGroupInside bool\n",
         "\t// PercentileClasses are the ordered-set aggregates whose ARGUMENTS a\n\t// dialect writing the order inside reshuffles: the key becomes the\n\t// first and the fraction slides right.\n\tPercentileClasses map[string]struct{}\n",
         "\t// IgnoreNullsInFunc: `IGNORE NULLS` is written INSIDE the call's\n\t// argument list here rather than after the call.\n\tIgnoreNullsInFunc bool\n",
+        "\t// TableSample is how a sampling clause is written: the words that\n\t// open it, whether the METHOD is written, whether a bare size counts\n\t// ROWS or a percentage, and what the repeatable seed is called.\n\tTableSample TableSampleSQL\n",
         "\t// RegexpFlags are the flag characters a REGEXP_REPLACE may carry\n\t// here, and RegexpFlagsNeedLiteral whether they have to be written as\n\t// a string. An empty RegexpFlags means the dialect writes whatever it\n\t// is given; a dialect that writes none at all has\n\t// RegexpFlagsWritten false and the port refuses rather than dropping\n\t// them, because a flag says what the replacement DOES.\n\tRegexpFlags            string\n\tRegexpFlagsWritten     bool\n\tRegexpFlagsNeedLiteral bool\n",
         "\t// IgnoreNullsWindowFuncs are the calls that KEEP their null\n\t// treatment where the dialect writes it inside; IgnoreNullsDropped\n\t// are the ones it drops silently because they ignore nulls anyway.\n\t// Anything else the dialect calls unsupported, and so does the port.\n\tIgnoreNullsWindowFuncs map[string]struct{}\n\tIgnoreNullsDropped     map[string]struct{}\n",
         "\t// WithinGroupPercentile is what a PERCENTILE under a WITHIN GROUP\n\t// becomes: \"outside\" keeps the clause, \"inside\" folds it into the\n\t// call and reshuffles the arguments, and empty means the dialect\n\t// writes a different function and the port refuses.\n\tWithinGroupPercentile string\n",
@@ -5102,6 +5139,7 @@ def main() -> int:
         "\tKeys     []string\n",
         "\tConsts   []FuncConst\n",
         "\tNoParens bool\n",
+        "\t// MinArgs is how many members a LIST argument must hold for this\n\t// spelling to apply. T-SQL writes CONCAT(a, b) for two and just `a`\n\t// for one, so the call form belongs to the wider counts alone.\n\tMinArgs  int\n",
         "}\n\n",
         "// FuncConst is an argument that must hold this value for the spelling\n",
         "// beside it to apply.\n",
@@ -5131,6 +5169,15 @@ def main() -> int:
         "\n",
         "// JSONPerPart is how one path part is written, folded left over the\n",
         "// parts: Chain for the operator form, Call for the function form.\n",
+        "// TableSampleSQL is how a sampling clause is written.\n",
+        "type TableSampleSQL struct {\n",
+        "\tKeywords       string\n",
+        "\tSeedKeyword    string\n",
+        "\tWithMethod     bool\n",
+        "\tSizeIsRows     bool\n",
+        "\tRequiresParens bool\n",
+        "\tSizeIsPercent  bool\n",
+        "}\n\n",
         "type JSONPerPart struct {\n",
         "\tChain string\n",
         "\tCall  string\n",
@@ -6087,6 +6134,20 @@ def main() -> int:
             )
         )
         out.append(strset("IgnoreNullsDropped", ignore_nulls_dropped(name)))
+        out.append("\t\tTableSample: TableSampleSQL{\n")
+        for field, value in (
+            ("Keywords", gostr(getattr(G, "TABLESAMPLE_KEYWORDS", "TABLESAMPLE"))),
+            ("SeedKeyword", gostr(getattr(G, "TABLESAMPLE_SEED_KEYWORD", "SEED"))),
+            ("WithMethod", str(bool(getattr(G, "TABLESAMPLE_WITH_METHOD", True))).lower()),
+            ("SizeIsRows", str(bool(getattr(G, "TABLESAMPLE_SIZE_IS_ROWS", True))).lower()),
+            ("RequiresParens", str(bool(getattr(G, "TABLESAMPLE_REQUIRES_PARENS", True))).lower()),
+            (
+                "SizeIsPercent",
+                str(bool(getattr(_DG.get_or_raise(name or None), "TABLESAMPLE_SIZE_IS_PERCENT", False))).lower(),
+            ),
+        ):
+            out.append(f"\t\t\t{field}: {value},\n")
+        out.append("\t\t},\n")
         flags, written, need_literal = regexp_flags(name)
         out.append(f"\t\tRegexpFlags: {gostr(flags)},\n")
         out.append("\t\tRegexpFlagsWritten: %s,\n" % str(written).lower())
