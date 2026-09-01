@@ -157,15 +157,47 @@ func TestJSONExtractAsOperand(t *testing.T) {
 	}
 }
 
+// A dialect with no ONE call that reads both an object and a scalar out of
+// JSON asks both and takes whichever is not null.
+//
+// `ISNULL(JSON_QUERY(x, p), JSON_VALUE(x, p))` is one node written as two
+// calls, so the value and the path each appear twice. That makes reading such
+// a statement back give a COALESCE of two extractions rather than the one it
+// was written from -- and each of those is then written as a pair of its own.
+// The reference does the same; the doubling is the spelling, not a fault in
+// it.
+func TestJSONExtractWrittenTwice(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT JSON_QUERY(x)", "SELECT ISNULL(JSON_QUERY(x, '$'), JSON_VALUE(x, '$'))"},
+		{"SELECT JSON_VALUE(x, '$.y')", "SELECT ISNULL(JSON_QUERY(x, '$.y'), JSON_VALUE(x, '$.y'))"},
+		{`SELECT JSON_QUERY(x, '$."a b"')`,
+			`SELECT ISNULL(JSON_QUERY(x, '$."a b"'), JSON_VALUE(x, '$."a b"'))`},
+		{"SELECT JSON_QUERY(x, '$.y[0].z')",
+			"SELECT ISNULL(JSON_QUERY(x, '$.y[0].z'), JSON_VALUE(x, '$.y[0].z'))"},
+	} {
+		e, err := ParseOne(tc.sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "tsql"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	// An extraction with no path at all has nothing to write into either
+	// call, so the pair is refused rather than written half-formed.
+	bare := New("JSONExtract",
+		Arg{"this", New("Column", Arg{"this", New("Identifier", Arg{"this", "x"})})})
+	if got, err := Generate(bare, "tsql"); err == nil {
+		t.Errorf("wrote %q with no path", got)
+	}
+}
+
 // Shapes the parser now READS and the writer still declines. They are recorded
 // because a refusal is the safe outcome and a silent wrong spelling is not:
 // each is a generator gap, not a parser one, and naming them here keeps the
 // two apart.
 func TestJSONPathFunctionsReadButNotWritten(t *testing.T) {
-	for _, tc := range []struct{ name, dialect, sql, why string }{
-		{"the whole document", "tsql", "SELECT JSON_QUERY(x)",
-			"T-SQL writes an extraction as two calls around an ISNULL"},
-	} {
+	for _, tc := range []struct{ name, dialect, sql, why string }{} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)
 			if err != nil {
@@ -8581,5 +8613,30 @@ func TestAQuotedNameThatSpellsAKeyword(t *testing.T) {
 		t.Errorf(`ParseOne("IF 1 = 1 SELECT 1"): %v`, err)
 	} else if e.Class != "IfBlock" {
 		t.Errorf("a bare IF read as %s, want IfBlock", e.Class)
+	}
+}
+
+// The pair spelling writes its operand TWICE, so an operand that is itself
+// written twice doubles again.
+//
+// A chain of twenty extractions would come out a million times over. The
+// reference does exactly that and the fuzzer ran out of memory on it; the port
+// declines rather than emitting SQL whose size grows like that.
+func TestJSONExtractOverAnother(t *testing.T) {
+	e, err := ParseOne("''->''->''->''->''", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "tsql"); err == nil {
+		t.Errorf("wrote %d characters for a chain of five", len(got))
+	}
+	// One on its own is still written.
+	one, err := ParseOne("SELECT JSON_VALUE(x, '$.y')", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(one, "tsql"); err != nil ||
+		got != "SELECT ISNULL(JSON_QUERY(x, '$.y'), JSON_VALUE(x, '$.y'))" {
+		t.Errorf("wrote %q (%v)", got, err)
 	}
 }

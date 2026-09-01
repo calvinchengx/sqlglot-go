@@ -1672,6 +1672,42 @@ def strips_ts_or_ds(dialect: str) -> list:
     return out
 
 
+def json_extract_twice(dialect: str) -> dict:
+    """The spelling a dialect uses when it writes the value TWICE.
+
+    T-SQL has no one call that reads both an object and a scalar out of JSON,
+    so it asks both and takes whichever is not null:
+    `ISNULL(JSON_QUERY(x, p), JSON_VALUE(x, p))`. That is one node written as
+    two calls -- a spelling rather than a rewrite -- and the template it makes
+    is measured here rather than written down.
+    """
+    from sqlglot import exp
+
+    out = {}
+    for name in ("JSONExtract", "JSONExtractScalar"):
+        cls = getattr(exp, name, None)
+        if cls is None:
+            continue
+        node = cls(
+            this=exp.column("ZZTHISZZ"),
+            expression=exp.JSONPath(
+                expressions=[exp.JSONPathRoot(), exp.JSONPathKey(this="ZZKEYZZ")]
+            ),
+        )
+        try:
+            text = node.sql(dialect=dialect or None)
+        except Exception:
+            continue
+        # Twice, and only twice: one appearance is the ordinary form and this
+        # template has nothing to say about it.
+        if text.count("ZZTHISZZ") != 2 or text.count("ZZKEYZZ") != 2:
+            continue
+        out[name] = text.replace("ZZTHISZZ", "{this}").replace(
+            "'$.ZZKEYZZ'", "{path}"
+        ).replace("ZZKEYZZ", "{key}")
+    return out
+
+
 def regexp_flag_args(dialect: str) -> dict:
     """Which argument of each regexp call holds the FLAGS.
 
@@ -5096,6 +5132,7 @@ def main() -> int:
         "\t// PercentileClasses are the ordered-set aggregates whose ARGUMENTS a\n\t// dialect writing the order inside reshuffles: the key becomes the\n\t// first and the fraction slides right.\n\tPercentileClasses map[string]struct{}\n",
         "\t// IgnoreNullsInFunc: `IGNORE NULLS` is written INSIDE the call's\n\t// argument list here rather than after the call.\n\tIgnoreNullsInFunc bool\n",
         "\t// TableSample is how a sampling clause is written: the words that\n\t// open it, whether the METHOD is written, whether a bare size counts\n\t// ROWS or a percentage, and what the repeatable seed is called.\n\tTableSample TableSampleSQL\n",
+        "\t// JSONExtractTwiceSQL is how a dialect that writes the value TWICE\n\t// spells an extraction: T-SQL asks JSON_QUERY for an object and\n\t// JSON_VALUE for a scalar and takes whichever is not null. Empty where\n\t// the dialect writes the value once.\n\tJSONExtractTwiceSQL map[string]string\n",
         "\t// RegexpFlagArgs names which argument of each regexp call holds the\n\t// FLAGS: `modifiers` on a replacement, `parameters` on an extraction.\n\tRegexpFlagArgs map[string]string\n",
         "\t// RegexpFlags are the flag characters a REGEXP_REPLACE may carry\n\t// here, and RegexpFlagsNeedLiteral whether they have to be written as\n\t// a string. An empty RegexpFlags means the dialect writes whatever it\n\t// is given; a dialect that writes none at all has\n\t// RegexpFlagsWritten false and the port refuses rather than dropping\n\t// them, because a flag says what the replacement DOES.\n\tRegexpFlags            string\n\tRegexpFlagsWritten     bool\n\tRegexpFlagsNeedLiteral bool\n",
         "\t// IgnoreNullsWindowFuncs are the calls that KEEP their null\n\t// treatment where the dialect writes it inside; IgnoreNullsDropped\n\t// are the ones it drops silently because they ignore nulls anyway.\n\t// Anything else the dialect calls unsupported, and so does the port.\n\tIgnoreNullsWindowFuncs map[string]struct{}\n\tIgnoreNullsDropped     map[string]struct{}\n",
@@ -6178,6 +6215,11 @@ def main() -> int:
             ),
         ):
             out.append(f"\t\t\t{field}: {value},\n")
+        out.append("\t\t},\n")
+        _jet = json_extract_twice(name)
+        out.append("\t\tJSONExtractTwiceSQL: map[string]string{\n")
+        for cls_key in sorted(_jet):
+            out.append(f"\t\t\t{gostr(cls_key)}: {gostr(_jet[cls_key])},\n")
         out.append("\t\t},\n")
         _rfa = regexp_flag_args(name)
         out.append("\t\tRegexpFlagArgs: map[string]string{\n")

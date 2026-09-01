@@ -724,6 +724,11 @@ type ParserTables struct {
 	// open it, whether the METHOD is written, whether a bare size counts
 	// ROWS or a percentage, and what the repeatable seed is called.
 	TableSample TableSampleSQL
+	// JSONExtractTwiceSQL is how a dialect that writes the value TWICE
+	// spells an extraction: T-SQL asks JSON_QUERY for an object and
+	// JSON_VALUE for a scalar and takes whichever is not null. Empty where
+	// the dialect writes the value once.
+	JSONExtractTwiceSQL map[string]string
 	// RegexpFlagArgs names which argument of each regexp call holds the
 	// FLAGS: `modifiers` on a replacement, `parameters` on an extraction.
 	RegexpFlagArgs map[string]string
@@ -5430,6 +5435,7 @@ var parserTables = map[string]*ParserTables{
 			RequiresParens: true,
 			SizeIsPercent:  false,
 		},
+		JSONExtractTwiceSQL: map[string]string{},
 		RegexpFlagArgs: map[string]string{
 			"RegexpCount":      "parameters",
 			"RegexpExtract":    "parameters",
@@ -10411,6 +10417,10 @@ var parserTables = map[string]*ParserTables{
 			RequiresParens: true,
 			SizeIsPercent:  false,
 		},
+		JSONExtractTwiceSQL: map[string]string{
+			"JSONExtract":       "ISNULL(JSON_QUERY({this}, {path}), JSON_VALUE({this}, {path}))",
+			"JSONExtractScalar": "ISNULL(JSON_QUERY({this}, {path}), JSON_VALUE({this}, {path}))",
+		},
 		RegexpFlagArgs: map[string]string{
 			"RegexpCount":      "parameters",
 			"RegexpExtract":    "parameters",
@@ -15381,6 +15391,7 @@ var parserTables = map[string]*ParserTables{
 			RequiresParens: true,
 			SizeIsPercent:  true,
 		},
+		JSONExtractTwiceSQL: map[string]string{},
 		RegexpFlagArgs: map[string]string{
 			"RegexpCount":      "parameters",
 			"RegexpExtract":    "parameters",
@@ -20681,6 +20692,7 @@ var parserTables = map[string]*ParserTables{
 			RequiresParens: true,
 			SizeIsPercent:  false,
 		},
+		JSONExtractTwiceSQL: map[string]string{},
 		RegexpFlagArgs: map[string]string{
 			"RegexpCount":      "parameters",
 			"RegexpExtract":    "parameters",
@@ -26003,6 +26015,7 @@ var parserTables = map[string]*ParserTables{
 			RequiresParens: true,
 			SizeIsPercent:  false,
 		},
+		JSONExtractTwiceSQL: map[string]string{},
 		RegexpFlagArgs: map[string]string{
 			"RegexpCount":      "parameters",
 			"RegexpExtract":    "parameters",

@@ -1942,6 +1942,13 @@ func (g *generator) writeJSONPath(e *Expression) string {
 // a template substitutes text knowing none, so anything that could need
 // brackets is refused rather than written flat.
 func (g *generator) writeJSONExtractOp(e *Expression) string {
+	// A dialect with no ONE call that reads both an object and a scalar out
+	// of JSON asks both and takes whichever is not null, writing the value
+	// and the path twice. One node, two calls: a spelling rather than a
+	// rewrite, so the template carries the operand in both places.
+	if twice, ok := g.tables.JSONExtractTwiceSQL[e.Class]; ok && twice != "" {
+		return g.writeJSONExtractTwice(e, twice)
+	}
 	// A dialect with no single path literal writes one operator -- or one
 	// argument -- PER PART, so the node has to be folded rather than spelled.
 	if per, ok := g.tables.JSONPerPartSQL[e.Class]; ok {
@@ -2036,6 +2043,59 @@ func (g *generator) writeJSONOperand(e *Expression, form string) string {
 	}
 	out := strings.ReplaceAll(form, "{this}", g.node(this))
 	return strings.ReplaceAll(out, "{path}", text)
+}
+
+// writeJSONExtractTwice writes the extraction as the pair of calls a dialect
+// needs when neither alone will do.
+//
+// Both calls take the same value and the same path, so the operand is written
+// once and substituted twice -- and it must be one a CALL can hold, which
+// anything can, so nothing is refused here for its shape.
+func (g *generator) writeJSONExtractTwice(e *Expression, form string) string {
+	path, _ := e.Args["expression"].(*Expression)
+	if path == nil {
+		return g.fail(e.Class + " without a path")
+	}
+	this, _ := e.Args["this"].(*Expression)
+	// The value is written TWICE, so an operand that is itself written twice
+	// doubles again: a chain of twenty extractions would be written a million
+	// times over. The reference does that too and the fuzzer ran out of
+	// memory on it; the port declines rather than emitting SQL whose size
+	// grows like that.
+	if holdsAnExtraction(this) {
+		return g.fail(e.Class + " over another, which this dialect would write twice over")
+	}
+	saved := g.pathOwner
+	g.pathOwner = e.Class
+	text := g.node(path)
+	g.pathOwner = saved
+	out := strings.ReplaceAll(form, "{this}", g.child(e, "this"))
+	return strings.ReplaceAll(out, "{path}", text)
+}
+
+// holdsAnExtraction reports whether a node is, or contains, a JSON extraction.
+func holdsAnExtraction(e *Expression) bool {
+	if e == nil {
+		return false
+	}
+	if e.Class == "JSONExtract" || e.Class == "JSONExtractScalar" {
+		return true
+	}
+	for _, key := range e.Keys {
+		switch v := e.Args[key].(type) {
+		case *Expression:
+			if holdsAnExtraction(v) {
+				return true
+			}
+		case []*Expression:
+			for _, item := range v {
+				if holdsAnExtraction(item) {
+					return true
+				}
+			}
+		}
+	}
+	return false
 }
 
 // isAtomForOperator reports whether a node needs no parentheses beside an
