@@ -1065,8 +1065,13 @@ func (g *generator) writeParameter(e *Expression) string {
 	// is `SET $<nul> = 0`, where the dollar opens a quote that never closes.
 	// The same rule turns a Placeholder away. The generator fuzzer found it.
 	// A name written in QUOTES is readable whatever is in it -- the quotes
-	// are what make it so. Only a bare one has to look like a name.
+	// are what make it so. Only a bare one has to look like a name, and a
+	// name written as a STRING carries its own quotes just as an identifier
+	// does.
 	quoted, _ := this.Args["quoted"].(bool)
+	if this.Class == "Literal" && this.Args["is_string"] == true {
+		quoted = true
+	}
 	if !quoted && !readableAsABareName(name) {
 		return g.fail(e.Class + " whose name is not a name")
 	}

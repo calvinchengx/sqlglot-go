@@ -7866,6 +7866,19 @@ func TestAParameterWhoseNameHoldsADollar(t *testing.T) {
 		t.Errorf("wrote %q, want %q", got, want)
 	}
 
+	// A name written as a STRING keeps its quotes too, for the same reason.
+	e, err = ParseOne("${'######'}", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	name, _ = e.Args["this"].(*Expression)
+	if name == nil || name.Class != "Literal" || name.Args["is_string"] != true {
+		t.Fatalf("the name is %v, want a string Literal", name)
+	}
+	if got, err := Generate(e, "databricks"); err != nil || got != "${'######'}" {
+		t.Errorf("wrote %q (%v), want ${'######'}", got, err)
+	}
+
 	// A bare name holding a dollar is fine where the spelling writes an @,
 	// and refused where it writes a $.
 	e, err = ParseOne("@A$", "tsql")
@@ -8366,5 +8379,59 @@ func TestJSONExtractGuards(t *testing.T) {
 	// A JSON extraction with no path at all.
 	if got, err := Generate(New("JSONExtract", Arg{"this", column("a")}), "duckdb"); err == nil {
 		t.Errorf("wrote %q with no path", got)
+	}
+}
+
+// A slot is not sensitive to casting as such, but to being cast to particular
+// TYPES -- and a literal in a sensitive slot may still be one the dialect has
+// a name for.
+//
+// Both guards exist because the reference sometimes rewrites a call around an
+// argument whose type it can see. Refusing every cast and every literal in
+// those slots turned away calls that render exactly as they were written.
+func TestArgumentShapeGuards(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		// DuckDB wraps a non-text argument to a string function in a cast to
+		// TEXT, and leaves one that is already TEXT alone.
+		{"a cast the call does not mind", "duckdb", "SELECT UPPER(CAST('true' AS TEXT))",
+			"SELECT UPPER(CAST('true' AS TEXT))"},
+		{"a replace over text", "duckdb", "SELECT REPLACE(CAST(x AS TEXT), '-', '')",
+			"SELECT REPLACE(CAST(x AS TEXT), '-', '')"},
+		{"a hash over a blob", "duckdb", "SELECT SHA1(CAST(UNHEX('002A') AS BLOB))",
+			"SELECT SHA1(CAST(UNHEX('002A') AS BLOB))"},
+		// PostgreSQL's ROUND wraps a DOUBLE in a cast to DECIMAL and leaves a
+		// DECIMAL alone.
+		{"a round over a decimal", "postgres", "SELECT ROUND(CAST(x AS DECIMAL), 4)",
+			"SELECT ROUND(CAST(x AS DECIMAL), 4)"},
+		{"a round over a sized decimal", "postgres", "SELECT ROUND(CAST(x AS DECIMAL(18, 3)), 4)",
+			"SELECT ROUND(CAST(x AS DECIMAL(18, 3)), 4)"},
+		// The scale of a unix timestamp picks the call's NAME where the
+		// dialect has one for it.
+		{"a scale with a name", "duckdb", "SELECT EPOCH_MS(10) AS t", "SELECT EPOCH_MS(10) AS t"},
+		{"another scale with a name", "duckdb", "SELECT MAKE_TIMESTAMP(10) AS t",
+			"SELECT MAKE_TIMESTAMP(10) AS t"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// And the refusals that remain: a cast to a type the call DOES mind, and
+	// a scale the dialect turns into arithmetic rather than a name.
+	minded, err := ParseOne("SELECT BIT_OR(CAST(val AS FLOAT)) FROM t", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(minded, "duckdb"); err == nil {
+		t.Errorf("wrote %q; DuckDB rounds a non-integer into a BIT_OR", got)
 	}
 }

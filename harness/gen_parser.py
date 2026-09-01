@@ -3375,8 +3375,22 @@ def _record(sensitive, name, arity, index, keyof):
         bucket.append(key)
 
 
+CAST_PROBE_TYPES = (
+    "DOUBLE",
+    "DECIMAL",
+    "REAL",
+    "FLOAT",
+    "BOOLEAN",
+    "TEXT",
+    "BLOB",
+    "DATE",
+    "TIMESTAMP",
+    "BIGINT",
+)
+
+
 def _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive, keyof=None,
-                vanished=None):
+                vanished=None, cast_type=None, types=None):
     """One substitution for cast_sensitive_args, recorded per ARITY.
 
     DuckDB's ROUND wraps its second argument in CAST(... AS INT) when the call
@@ -3391,6 +3405,7 @@ def _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive, ke
         got = call_builder(builder, swapped, dialect).sql(dialect=dialect or None)
     except Exception:  # noqa: BLE001 -- this argument is invalid here
         _record(sensitive, name, len(plain), i, keyof)
+        _record_type(types, name, len(plain), i, keyof, cast_type)
         return
     token = f"__probeArg{chr(65 + i)}"
     if base_sql.count(token) != 1:
@@ -3403,11 +3418,30 @@ def _cast_probe(builder, plain, base_sql, i, probe, dialect, name, sensitive, ke
             _record(vanished, name, len(plain), i, keyof)
             return
         _record(sensitive, name, len(plain), i, keyof)
+        _record_type(types, name, len(plain), i, keyof, cast_type)
         return
     if got.count(probe_sql) != 1:
         return
     if got != base_sql.replace(token, probe_sql, 1):
         _record(sensitive, name, len(plain), i, keyof)
+        _record_type(types, name, len(plain), i, keyof, cast_type)
+
+
+def _record_type(types, name, arity, index, keyof, cast_type):
+    """Record WHICH cast target moved the rendering, beside the key it moved.
+
+    A slot is not sensitive to casting as such: it is sensitive to being cast
+    to particular types. DuckDB wraps a non-text argument to UPPER in a cast to
+    TEXT, and leaves one that is already TEXT alone.
+    """
+    if types is None or cast_type is None:
+        return
+    key = (keyof or {}).get(index)
+    if key is None:
+        return
+    bucket = types.setdefault(name, {}).setdefault(arity, {}).setdefault(key, [])
+    if cast_type not in bucket:
+        bucket.append(cast_type)
 
 
 def cast_sensitive_args(P, exp, dialect, funcs):
@@ -3429,6 +3463,7 @@ def cast_sensitive_args(P, exp, dialect, funcs):
     """
     probe = exp.column("__probe_0")
     sensitive: dict[str, dict[int, list[str]]] = {}
+    cast_types: dict[str, dict[int, dict[str, list[str]]]] = {}
     zero_sensitive: dict[str, dict[int, list[str]]] = {}
     # Where a literal ZERO simply DISAPPEARS and the rest of the call is
     # untouched. That is a rule to follow, not a reason to refuse -- and
@@ -3472,11 +3507,17 @@ def cast_sensitive_args(P, exp, dialect, funcs):
                 # number, and refusing on both because one was observed turned
                 # away 25 statements that render perfectly well.
                 cls_name = type(base).__name__
-                _cast_probe(
-                    builder, plain, base_sql, i,
-                    exp.cast(exp.column(f"__probeArg{chr(65 + i)}"), "DOUBLE"),
-                    dialect, cls_name, sensitive, keyof,
-                )
+                # Every type worth asking about, not just one. A slot that
+                # moves for a DOUBLE need not move for a TEXT, and refusing
+                # both because one was observed turned away
+                # `UPPER(CAST(x AS TEXT))`, which renders exactly as written.
+                for target in CAST_PROBE_TYPES:
+                    _cast_probe(
+                        builder, plain, base_sql, i,
+                        exp.cast(exp.column(f"__probeArg{chr(65 + i)}"), target),
+                        dialect, cls_name, sensitive, keyof,
+                        cast_type=target, types=cast_types,
+                    )
                 _cast_probe(
                     builder, plain, base_sql, i, exp.Literal.number(0),
                     dialect, cls_name, zero_sensitive, keyof, drops_zero,
@@ -3516,7 +3557,7 @@ def cast_sensitive_args(P, exp, dialect, funcs):
     def tidy(d):
         return {n: {a: sorted(set(v)) for a, v in by.items()} for n, by in d.items()}
 
-    return tidy(sensitive), tidy(zero_sensitive), tidy(drops_zero)
+    return tidy(sensitive), tidy(zero_sensitive), tidy(drops_zero), cast_types
 
 
 def class_candidates(P, exp, dialect):
@@ -4661,6 +4702,7 @@ def main() -> int:
         "\tInverseTimeMapping map[string]string\n",
         "\tFormatTimeMapping  map[string]string\n",
         "\tCastSensitiveArgs map[string]map[int][]string\n",
+        "\t// CastSensitiveTypes says WHICH cast targets move the rendering in\n\t// each of those positions. A slot is not sensitive to casting as\n\t// such: DuckDB wraps a non-text argument to UPPER in a cast to TEXT,\n\t// and leaves one that is already TEXT alone.\n\tCastSensitiveTypes map[string]map[int]map[string][]string\n",
         "\t// DropsZeroArgs are the argument keys a literal ZERO simply\n",
         "\t// DISAPPEARS from -- DuckDB writes REGEXP_EXTRACT(x, p) for a\n",
         "\t// zero group. A rule to FOLLOW, unlike the two below, and kept\n",
@@ -5389,7 +5431,22 @@ def main() -> int:
                 joined = ", ".join(str(i) for i in _tfa[fname])
                 out.append(f"\t\t\t{gostr(fname)}: {{{joined}}},\n")
             out.append("\t\t},\n")
-        casts, zeros, drops = cast_sensitive_args(P, exp, name, render_input)
+        casts, zeros, drops, cast_types = cast_sensitive_args(P, exp, name, render_input)
+        if cast_types:
+            out.append("\t\tCastSensitiveTypes: map[string]map[int]map[string][]string{\n")
+            for fname in sorted(cast_types):
+                per_arity = []
+                for arity in sorted(cast_types[fname]):
+                    keys = cast_types[fname][arity]
+                    inner = ", ".join(
+                        "%s: {%s}" % (gostr(k), ", ".join(gostr(t) for t in sorted(keys[k])))
+                        for k in sorted(keys)
+                    )
+                    per_arity.append("%d: {%s}" % (arity, inner))
+                out.append(
+                    f"\t\t\t{gostr(fname)}: {{{', '.join(per_arity)}}},\n"
+                )
+            out.append("\t\t},\n")
         for field, table in (("ZeroSensitiveArgs", zeros), ("CastSensitiveArgs", casts),
                              ("DropsZeroArgs", drops)):
             if not table:

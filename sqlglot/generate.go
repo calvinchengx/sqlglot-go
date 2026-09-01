@@ -399,10 +399,20 @@ func (g *generator) sameConst(got, want any) bool {
 func (g *generator) refuseSensitive(e *Expression) bool {
 	arity := argCount(e)
 	for _, key := range g.tables.CastSensitiveArgs[e.Class][arity] {
-		if child, _ := e.Args[key].(*Expression); isCastToNonInteger(child) {
-			g.fail("cast argument to " + e.Class)
-			return true
+		child, _ := e.Args[key].(*Expression)
+		if !isCastToNonInteger(child) {
+			continue
 		}
+		// A slot is not sensitive to casting as such, but to being cast to
+		// particular TYPES: DuckDB wraps a non-text argument to UPPER in a
+		// cast to TEXT and leaves one that is already TEXT alone. Where the
+		// types are known, only those are refused.
+		if types := g.tables.CastSensitiveTypes[e.Class][arity][key]; len(types) > 0 &&
+			!castsToOneOf(child, types) {
+			continue
+		}
+		g.fail("cast argument to " + e.Class)
+		return true
 	}
 	// A zero this dialect DROPS is not a refusal: it is written by leaving
 	// the argument out, which namedFunction does below. Checked before the
@@ -414,10 +424,20 @@ func (g *generator) refuseSensitive(e *Expression) bool {
 		}
 	}
 	for _, key := range g.tables.ZeroSensitiveArgs[e.Class][arity] {
-		if child, _ := e.Args[key].(*Expression); isLiteral(child) {
-			g.fail("literal argument to " + e.Class)
-			return true
+		if child, _ := e.Args[key].(*Expression); !isLiteral(child) {
+			continue
 		}
+		// A literal in one of these slots may still be one the dialect has a
+		// SPELLING for: DuckDB's UnixToTime writes EPOCH_MS at scale 3 and
+		// MAKE_TIMESTAMP at 6, and only the scales it has no name for become
+		// a division the port cannot write. A spelling whose constants match
+		// this node was measured against a real rendering of exactly this
+		// shape, so it is trusted; where none does, the refusal stands.
+		if _, ok := g.functionSpelling(e); ok {
+			continue
+		}
+		g.fail("literal argument to " + e.Class)
+		return true
 	}
 	return false
 }
@@ -503,6 +523,21 @@ func isLiteral(e *Expression) bool {
 
 // isCastToNonInteger reports whether an argument asserts a type that is not an
 // integer -- the trigger the reference itself uses.
+// castsToOneOf reports whether a cast's target is one of the named types.
+func castsToOneOf(e *Expression, types []string) bool {
+	to, _ := e.Args["to"].(*Expression)
+	if to == nil {
+		return false
+	}
+	kind, _ := to.Args["this"].(DataTypeKind)
+	for _, want := range types {
+		if string(kind) == want {
+			return true
+		}
+	}
+	return false
+}
+
 func isCastToNonInteger(e *Expression) bool {
 	if e == nil || (e.Class != "Cast" && e.Class != "TryCast") {
 		return false

@@ -3043,6 +3043,13 @@ func parameterName(n *Token) *Expression {
 	if isQuotedName(n) {
 		return New("Identifier", Arg{"this", n.Text}, Arg{"quoted", true})
 	}
+	// A name written as a STRING stays a string, for the same reason: the
+	// braces take whatever stands between them, and `${'######'}` written
+	// back as `${######}` was a name the port could no longer read. The
+	// generator fuzzer found this one too.
+	if n.Type == TokSTRING {
+		return New("Literal", Arg{"this", n.Text}, Arg{"is_string", true})
+	}
 	return New("Var", Arg{"this", n.Text})
 }
 
