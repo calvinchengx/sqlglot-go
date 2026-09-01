@@ -703,6 +703,11 @@ type ParserTables struct {
 	JoinSides   map[TokenType]struct{}
 	JoinKinds   map[TokenType]struct{}
 	JoinMethods map[TokenType]struct{}
+	// JoinHints are the words a dialect allows between the KIND and the
+	// JOIN, naming how the engine should do it: `INNER HASH JOIN`. They
+	// are words rather than tokens, and a dialect that names none writes
+	// none -- the reference drops a hint where the target has no hints.
+	JoinHints map[string]struct{}
 	// RangeTokens are the operators the reference handles at the range
 	// level -- IS, IN, BETWEEN, the LIKE family and a dozen operators
 	// specific to one dialect. The ones not handled are refused here
@@ -5338,6 +5343,7 @@ var parserTables = map[string]*ParserTables{
 			TokNATURAL:    {},
 			TokPOSITIONAL: {},
 		},
+		JoinHints: map[string]struct{}{},
 		RangeTokens: map[TokenType]struct{}{
 			TokAT_QMARK:   {},
 			TokLT_AT:      {},
@@ -10242,6 +10248,12 @@ var parserTables = map[string]*ParserTables{
 			TokASOF:       {},
 			TokNATURAL:    {},
 			TokPOSITIONAL: {},
+		},
+		JoinHints: map[string]struct{}{
+			"HASH":   {},
+			"LOOP":   {},
+			"MERGE":  {},
+			"REMOTE": {},
 		},
 		RangeTokens: map[TokenType]struct{}{
 			TokDCOLON:     {},
@@ -15159,6 +15171,7 @@ var parserTables = map[string]*ParserTables{
 			TokNATURAL:    {},
 			TokPOSITIONAL: {},
 		},
+		JoinHints: map[string]struct{}{},
 		RangeTokens: map[TokenType]struct{}{
 			TokDAT:        {},
 			TokAT_QMARK:   {},
@@ -20323,6 +20336,7 @@ var parserTables = map[string]*ParserTables{
 			TokNATURAL:    {},
 			TokPOSITIONAL: {},
 		},
+		JoinHints: map[string]struct{}{},
 		RangeTokens: map[TokenType]struct{}{
 			TokCARET_AT:   {},
 			TokTILDE:      {},
@@ -25584,6 +25598,7 @@ var parserTables = map[string]*ParserTables{
 			TokNATURAL:    {},
 			TokPOSITIONAL: {},
 		},
+		JoinHints: map[string]struct{}{},
 		RangeTokens: map[TokenType]struct{}{
 			TokAT_QMARK:   {},
 			TokLT_AT:      {},

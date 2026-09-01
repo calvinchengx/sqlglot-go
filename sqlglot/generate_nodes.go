@@ -94,6 +94,9 @@ func init() {
 		"PartitionBoundSpec":                  (*generator).writePartitionBoundSpec,
 		"Clone":                               (*generator).writeClone,
 		"MacroOverloads":                      (*generator).writeMacroOverloads,
+		"TriggerProperties":                   (*generator).writeTriggerProperties,
+		"TriggerEvent":                        (*generator).writeTriggerEvent,
+		"TriggerExecute":                      (*generator).writeTriggerExecute,
 		"MacroOverload":                       (*generator).writeMacroOverload,
 		"AlterSet":                            (*generator).writeAlterSet,
 		"Partition":                           (*generator).writePartition,
@@ -446,6 +449,12 @@ func (g *generator) writeJoin(e *Expression) string {
 			words = append(words, s)
 		}
 	}
+	// A hint says how the engine should do the join. A dialect that names
+	// none writes none: the reference drops the word rather than writing one
+	// the target does not have.
+	if hint, ok := e.Args["hint"].(string); ok && hint != "" && len(g.tables.JoinHints) > 0 {
+		words = append(words, hint)
+	}
 	usingColumns, _ := e.Args["using"].([]*Expression)
 	if len(words) == 0 && len(usingColumns) == 0 {
 		if _, hasOn := e.Args["on"].(*Expression); !hasOn {
@@ -458,7 +467,12 @@ func (g *generator) writeJoin(e *Expression) string {
 			return ", " + this
 		}
 	}
-	words = append(words, "JOIN", this)
+	// STRAIGHT_JOIN carries its own JOIN and takes no second one.
+	if len(words) == 1 && words[0] == "STRAIGHT_JOIN" {
+		words = append(words, this)
+	} else {
+		words = append(words, "JOIN", this)
+	}
 	if on := g.child(e, "on"); on != "" {
 		words = append(words, "ON", on)
 	}
@@ -2430,7 +2444,7 @@ func (g *generator) writeCreate(e *Expression) string {
 		items, _ := properties.Args["expressions"].([]*Expression)
 		for _, item := range items {
 			switch item.Class {
-			case "WithDataProperty", "SequenceProperties":
+			case "WithDataProperty", "SequenceProperties", "TriggerProperties":
 				out += " " + g.node(item)
 			}
 		}
@@ -4469,4 +4483,42 @@ func (g *generator) writeMacroOverload(e *Expression) string {
 		out += "TABLE "
 	}
 	return out + g.child(e, "this")
+}
+
+// writeTriggerProperties writes everything a trigger says about itself: when
+// it fires, on what, over which rows, and what it runs.
+func (g *generator) writeTriggerProperties(e *Expression) string {
+	events, _ := e.Args["events"].([]*Expression)
+	names := make([]string, 0, len(events))
+	for _, event := range events {
+		names = append(names, g.node(event))
+	}
+	timing, _ := e.Args["timing"].(string)
+	parts := []string{strings.TrimSpace(timing + " " + strings.Join(names, " OR "))}
+	parts = append(parts, "ON", g.child(e, "table"))
+	if forEach, _ := e.Args["for_each"].(string); forEach != "" {
+		parts = append(parts, "FOR EACH "+forEach)
+	}
+	if when, _ := e.Args["when"].(*Expression); when != nil {
+		parts = append(parts, "WHEN ("+g.node(when)+")")
+	}
+	return strings.Join(append(parts, g.child(e, "execute")), " ")
+}
+
+// writeTriggerEvent writes one of the things that make a trigger fire, and the
+// columns an UPDATE watches where it names any.
+func (g *generator) writeTriggerEvent(e *Expression) string {
+	this, _ := e.Args["this"].(string)
+	columns, _ := e.Args["columns"].([]*Expression)
+	if len(columns) == 0 {
+		return this
+	}
+	return this + " OF " + g.joined(columns)
+}
+
+// writeTriggerExecute writes what the trigger runs. The word is always
+// FUNCTION: `EXECUTE PROCEDURE f()` names the same thing and the reference
+// writes only the one spelling.
+func (g *generator) writeTriggerExecute(e *Expression) string {
+	return "EXECUTE FUNCTION " + g.child(e, "this")
 }

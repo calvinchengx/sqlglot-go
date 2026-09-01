@@ -4791,6 +4791,7 @@ def main() -> int:
         "\tJoinSides   map[TokenType]struct{}\n",
         "\tJoinKinds   map[TokenType]struct{}\n",
         "\tJoinMethods map[TokenType]struct{}\n",
+        "\t// JoinHints are the words a dialect allows between the KIND and the\n\t// JOIN, naming how the engine should do it: `INNER HASH JOIN`. They\n\t// are words rather than tokens, and a dialect that names none writes\n\t// none -- the reference drops a hint where the target has no hints.\n\tJoinHints map[string]struct{}\n",
         "\t// RangeTokens are the operators the reference handles at the range\n",
         "\t// level -- IS, IN, BETWEEN, the LIKE family and a dozen operators\n",
         "\t// specific to one dialect. The ones not handled are refused here\n",
@@ -5817,6 +5818,7 @@ def main() -> int:
         out.append(ttset("JoinSides", P.JOIN_SIDES))
         out.append(ttset("JoinKinds", P.JOIN_KINDS))
         out.append(ttset("JoinMethods", P.JOIN_METHODS))
+        out.append(strset("JoinHints", P.JOIN_HINTS))
         out.append(ttset("RangeTokens", P.RANGE_PARSERS))
         units = "".join(
             f"\t\t\t{gostr(u)}: {{}},\n" for u in sorted(d.VALID_INTERVAL_UNITS)

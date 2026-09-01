@@ -73,8 +73,21 @@ func (p *parser) parseJoin() (*Expression, error) {
 		p.advance()
 		return p.parseApply(kind.Type == TokCROSS)
 	}
-	if !p.match(TokJOIN) {
-		if side != nil || kind != nil {
+	// A hint names how the engine should do the join rather than which rows
+	// it keeps -- `INNER HASH JOIN` -- and stands between the kind and the
+	// JOIN. Only T-SQL has any.
+	hint := ""
+	if c2 := p.curr(); c2 != nil {
+		if _, ok := p.tables.JoinHints[strings.ToUpper(c2.Text)]; ok {
+			hint = strings.ToUpper(c2.Text)
+			p.advance()
+		}
+	}
+	// STRAIGHT_JOIN is the word AND the join: it carries its own JOIN, so
+	// none follows it.
+	straight := kind != nil && kind.Type == TokSTRAIGHT_JOIN
+	if !p.match(TokJOIN) && !straight {
+		if side != nil || kind != nil || hint != "" {
 			return nil, p.unsupported("join without JOIN")
 		}
 		return nil, nil
@@ -90,6 +103,9 @@ func (p *parser) parseJoin() (*Expression, error) {
 	}
 	if kind != nil {
 		join.Set("kind", strings.ToUpper(kind.Text))
+	}
+	if hint != "" {
+		join.Set("hint", hint)
 	}
 	switch {
 	case p.match(TokON):

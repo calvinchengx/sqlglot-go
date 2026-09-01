@@ -325,6 +325,27 @@ func TestRefusals(t *testing.T) {
 		// Every way a macro's overloads can stop being overloads part-way.
 		{"an overload with no AS", "CREATE MACRO m (a) AS a, (a, b) x", "duckdb"},
 		{"an overload with no body", "CREATE MACRO m (a) AS a, (a), (b) AS b", "duckdb"},
+		// Every way a trigger can fail to say one of the things it must.
+		{"a trigger with no timing", "CREATE TRIGGER t ON x FOR EACH ROW EXECUTE FUNCTION f()",
+			"postgres"},
+		{"a trigger event this port does not read",
+			"CREATE TRIGGER t BEFORE SELECT ON x EXECUTE FUNCTION f()", "postgres"},
+		{"a trigger with no table", "CREATE TRIGGER t BEFORE INSERT x EXECUTE FUNCTION f()",
+			"postgres"},
+		{"a trigger for each of something else",
+			"CREATE TRIGGER t BEFORE INSERT ON x FOR EACH THING EXECUTE FUNCTION f()", "postgres"},
+		{"a trigger condition without parentheses",
+			"CREATE TRIGGER t BEFORE INSERT ON x WHEN a > 1 EXECUTE FUNCTION f()", "postgres"},
+		{"an unclosed trigger condition",
+			"CREATE TRIGGER t BEFORE INSERT ON x WHEN (a > 1 EXECUTE FUNCTION f()", "postgres"},
+		{"a trigger that runs nothing", "CREATE TRIGGER t BEFORE INSERT ON x FOR EACH ROW",
+			"postgres"},
+		{"EXECUTE without FUNCTION or PROCEDURE",
+			"CREATE TRIGGER t BEFORE INSERT ON x EXECUTE f()", "postgres"},
+		{"an UPDATE OF that names no column",
+			"CREATE TRIGGER t BEFORE UPDATE OF SELECT ON x EXECUTE FUNCTION f()", "postgres"},
+		// A join hint with no JOIN after it.
+		{"a hint without a join", "SELECT x FROM a INNER HASH b", "tsql"},
 		{"LAMBDA without its colon", "SELECT LIST_TRANSFORM(a, LAMBDA x x)", "duckdb"},
 		{"LAMBDA without a parameter", "SELECT LIST_TRANSFORM(a, LAMBDA : x)", "duckdb"},
 	} {

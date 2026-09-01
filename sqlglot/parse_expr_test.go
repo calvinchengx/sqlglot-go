@@ -1812,6 +1812,28 @@ func TestCreateTable(t *testing.T) {
 		{"overloads over tables", "duckdb",
 			"CREATE MACRO tbl (a) AS TABLE (SELECT a AS x), (a, b) AS TABLE (SELECT a AS x, b AS y)",
 			"CREATE MACRO tbl (a) AS TABLE (SELECT a AS x), (a, b) AS TABLE (SELECT a AS x, b AS y)"},
+		// A trigger names itself and then says everything about itself in
+		// properties: when it fires, on what, over which rows, and what it
+		// runs. The word after EXECUTE is not kept -- PROCEDURE and FUNCTION
+		// name the same thing, and the reference writes only the one.
+		{"a trigger", "postgres",
+			"CREATE TRIGGER t BEFORE INSERT ON users FOR EACH ROW EXECUTE PROCEDURE log_changes()",
+			"CREATE TRIGGER t BEFORE INSERT ON users FOR EACH ROW EXECUTE FUNCTION LOG_CHANGES()"},
+		{"a trigger with quoted names", "postgres",
+			`CREATE TRIGGER "MyTrigger" BEFORE INSERT ON "MyTable" FOR EACH ROW ` +
+				"EXECUTE FUNCTION MYFUNCTION()",
+			`CREATE TRIGGER "MyTrigger" BEFORE INSERT ON "MyTable" FOR EACH ROW ` +
+				"EXECUTE FUNCTION MYFUNCTION()"},
+		// Several events joined by OR, an UPDATE naming the columns it
+		// watches, and a condition on which rows it fires for.
+		{"a trigger over several events", "postgres",
+			"CREATE TRIGGER t AFTER UPDATE OF a, b OR DELETE ON x FOR EACH STATEMENT " +
+				"WHEN (a > 1) EXECUTE FUNCTION f()",
+			"CREATE TRIGGER t AFTER UPDATE OF a, b OR DELETE ON x FOR EACH STATEMENT " +
+				"WHEN (a > 1) EXECUTE FUNCTION F()"},
+		{"a trigger instead of", "postgres",
+			"CREATE TRIGGER t INSTEAD OF INSERT ON v FOR EACH ROW EXECUTE FUNCTION f()",
+			"CREATE TRIGGER t INSTEAD OF INSERT ON v FOR EACH ROW EXECUTE FUNCTION F()"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)
@@ -7777,5 +7799,48 @@ func TestAParameterWhoseNameHoldsADollar(t *testing.T) {
 	}
 	if got, err := Generate(e, "postgres"); err == nil {
 		t.Errorf("PostgreSQL wrote %q; $A$ opens a quote that never closes", got)
+	}
+}
+
+// A join may name HOW the engine should do it, and one join carries its own
+// JOIN in the word itself.
+//
+// The hint stands between the kind and the JOIN -- `INNER HASH JOIN` -- and
+// only T-SQL has any. A dialect that names none writes none: the reference
+// drops the word rather than writing one the target does not have, which is
+// why the same tree comes back without it elsewhere.
+func TestJoinHintsAndStraightJoin(t *testing.T) {
+	for _, hint := range []string{"HASH", "LOOP", "MERGE", "REMOTE"} {
+		sql := "SELECT x FROM a INNER " + hint + " JOIN b ON b.id = a.id"
+		e, err := ParseOne(sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "tsql")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("got %q, want %q", got, sql)
+		}
+		// The same tree written for a dialect with no hints loses the word.
+		if got, err := Generate(e, "postgres"); err != nil ||
+			got != "SELECT x FROM a INNER JOIN b ON b.id = a.id" {
+			t.Errorf("PostgreSQL wrote %q (%v); it has no join hints", got, err)
+		}
+	}
+
+	// STRAIGHT_JOIN is the word AND the join: no second JOIN follows it, and
+	// none is written back.
+	e, err := ParseOne("SELECT * FROM a STRAIGHT_JOIN b", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	got, err := Generate(e, "")
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	if want := "SELECT * FROM a STRAIGHT_JOIN b"; got != want {
+		t.Errorf("got %q, want %q", got, want)
 	}
 }

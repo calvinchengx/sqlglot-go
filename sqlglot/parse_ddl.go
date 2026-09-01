@@ -61,13 +61,21 @@ func (p *parser) parseCreate() (*Expression, error) {
 	kind := strings.ToUpper(kindToken.Text)
 	if kind != "TABLE" && kind != "VIEW" && kind != "FUNCTION" && kind != "PROCEDURE" &&
 		kind != "INDEX" && kind != "SCHEMA" && kind != "SEQUENCE" && kind != "TYPE" &&
-		kind != "MACRO" {
+		kind != "MACRO" && kind != "TRIGGER" {
 		return nil, p.unsupported("CREATE " + kind)
 	}
 	p.advance()
 
 	if kind == "INDEX" {
 		return p.parseIndexRest(replace, unique, temporary)
+	}
+
+	// A TRIGGER names itself and then says everything about itself in
+	// properties: when it fires, on what, over which rows, and what it runs.
+	// The name is a bare Identifier rather than a Table -- a trigger lives on
+	// a table rather than being one.
+	if kind == "TRIGGER" {
+		return p.parseTriggerRest(replace)
 	}
 
 	exists := false
@@ -4672,4 +4680,167 @@ func (p *parser) parseMacroBody() (*Expression, bool, error) {
 		return nil, false, err
 	}
 	return body, isTable, nil
+}
+
+// parseTriggerRest reads `CREATE TRIGGER t <timing> <events> ON <table>
+// [FOR EACH ROW] [WHEN (cond)] EXECUTE FUNCTION f()`.
+//
+// The reference hands the whole statement to its Command fallback wherever it
+// cannot read one of these parts, which is what it does with every T-SQL
+// trigger -- those put the timing after the table and a whole block after AS.
+// The port refuses them instead, for the reason parseCommand gives.
+func (p *parser) parseTriggerRest(replace bool) (*Expression, error) {
+	name, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+
+	// INSTEAD OF is two words for one timing; BEFORE and AFTER are one each.
+	timing := ""
+	switch {
+	case p.atWords("INSTEAD", "OF"):
+		p.advance()
+		p.advance()
+		timing = "INSTEAD OF"
+	case p.atWords("BEFORE"), p.atWords("AFTER"):
+		timing = strings.ToUpper(p.curr().Text)
+		p.advance()
+	default:
+		return nil, p.unsupported("a trigger without BEFORE, AFTER or INSTEAD OF")
+	}
+
+	events, err := p.parseTriggerEvents()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokON) {
+		return nil, p.unsupported("a trigger with no table to fire on")
+	}
+	table, err := p.parseTableName()
+	if err != nil {
+		return nil, err
+	}
+
+	forEach := ""
+	if p.atWords("FOR", "EACH") {
+		p.advance()
+		p.advance()
+		if !p.atWords("ROW") && !p.atWords("STATEMENT") {
+			return nil, p.unsupported("FOR EACH something other than a ROW or a STATEMENT")
+		}
+		forEach = strings.ToUpper(p.curr().Text)
+		p.advance()
+	}
+	var when *Expression
+	if p.atWords("WHEN") {
+		p.advance()
+		if !p.match(TokL_PAREN) {
+			return nil, p.unsupported("a trigger condition without parentheses")
+		}
+		condition, err := p.parseDisjunction()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed trigger condition")
+		}
+		when = condition
+	}
+
+	// The word after EXECUTE is not kept: the reference writes FUNCTION
+	// whichever of the two was written, so `EXECUTE PROCEDURE f()` comes back
+	// as `EXECUTE FUNCTION f()`. Both name the same thing.
+	if !p.match(TokEXECUTE) {
+		return nil, p.unsupported("a trigger with nothing to execute")
+	}
+	if !p.atWords("FUNCTION") && !p.atWords("PROCEDURE") {
+		return nil, p.unsupported("EXECUTE without FUNCTION or PROCEDURE")
+	}
+	p.advance()
+	// The reference reads a COLUMN here, which is what a call to a function
+	// with no arguments comes back as when the name is followed by an empty
+	// argument list. The port's column reader stops at the name, so the call
+	// is read as the primary it is.
+	call, err := p.parsePrimary()
+	if err != nil {
+		return nil, err
+	}
+
+	// Built in the order the reference builds it, which is the order the
+	// arguments are declared rather than the order they were WRITTEN: what
+	// the trigger runs comes before how often it runs. A tree whose keys are
+	// in another order is a different tree to the differential.
+	props := New("TriggerProperties",
+		Arg{"table", table}, Arg{"timing", timing}, Arg{"events", events},
+		Arg{"execute", New("TriggerExecute", Arg{"this", call})},
+		// Present and false where the statement said nothing about them: an
+		// absent argument is a different tree from a false one.
+		Arg{"constraint", false})
+	if forEach != "" {
+		props.Set("for_each", forEach)
+	}
+	if when != nil {
+		props.Set("when", when)
+	} else {
+		props.Set("when", false)
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("CREATE TRIGGER with more than this port reads")
+	}
+	return New("Create",
+		Arg{"this", name},
+		Arg{"kind", "TRIGGER"},
+		Arg{"replace", replace},
+		Arg{"refresh", false},
+		Arg{"unique", false},
+		Arg{"exists", false},
+		Arg{"properties", New("Properties", Arg{"expressions", []*Expression{props}})},
+		Arg{"indexes", []*Expression{}},
+		Arg{"no_schema_binding", nil},
+		Arg{"begin", nil},
+		Arg{"clone", nil},
+		Arg{"concurrently", false},
+		Arg{"clustered", nil},
+	), nil
+}
+
+// parseTriggerEvents reads what makes the trigger fire: one of INSERT, UPDATE,
+// DELETE or TRUNCATE, or several joined by OR. An UPDATE may name the columns
+// it watches.
+func (p *parser) parseTriggerEvents() ([]*Expression, error) {
+	var out []*Expression
+	for {
+		word := ""
+		for _, w := range []string{"INSERT", "UPDATE", "DELETE", "TRUNCATE"} {
+			if p.atWords(w) {
+				word = w
+				break
+			}
+		}
+		if word == "" {
+			return nil, p.unsupported("a trigger event this port does not read")
+		}
+		p.advance()
+		event := New("TriggerEvent", Arg{"this", word})
+		if word == "UPDATE" && p.atWords("OF") {
+			p.advance()
+			var columns []*Expression
+			for {
+				column, err := p.parseColumn()
+				if err != nil {
+					return nil, err
+				}
+				columns = append(columns, column)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			event.Set("columns", columns)
+		}
+		out = append(out, event)
+		if !p.match(TokOR) {
+			break
+		}
+	}
+	return out, nil
 }
