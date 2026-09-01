@@ -390,6 +390,23 @@ func TestGenerateShapes(t *testing.T) {
 		{"an if whose condition swallows what follows it",
 			"if not exists (select * from t) exec('create schema foo')", "tsql",
 			"IF NOT EXISTS(SELECT * FROM t) AS exec BEGIN ('create schema foo')"},
+		// A retyped column: both words that introduce the type are optional,
+		// and the type may be followed by a collation and by whether the
+		// column still takes nulls.
+		{"a retyped column", "alter table a alter column b integer", "tsql",
+			"ALTER TABLE a ALTER COLUMN b INTEGER"},
+		{"a retyped column that takes no nulls", "alter table a alter column b int not null",
+			"tsql", "ALTER TABLE a ALTER COLUMN b INTEGER NOT NULL"},
+		{"a retyped column that takes nulls", "alter table a alter column b int null", "tsql",
+			"ALTER TABLE a ALTER COLUMN b INTEGER NULL"},
+		{"a retyped column with a collation",
+			"alter table a alter column b varchar(10) collate Latin1_General_CI_AS not null",
+			"tsql", "ALTER TABLE a ALTER COLUMN b VARCHAR(10) COLLATE Latin1_General_CI_AS NOT NULL"},
+		{"a retyped column the long way", "alter table a alter column b set data type int",
+			"postgres", "ALTER TABLE a ALTER COLUMN b SET DATA TYPE INT"},
+		{"a constraint added but not checked",
+			"alter table t add constraint c unique (a) not valid", "postgres",
+			"ALTER TABLE t ADD CONSTRAINT c UNIQUE (a) NOT VALID"},
 		// A path key holding the very quote that delimits it. The reference
 		// escapes it with a backslash; without that the key ends early and
 		// the port could not read back what it had just written.

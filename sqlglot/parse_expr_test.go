@@ -2598,10 +2598,35 @@ func TestTableConstraints(t *testing.T) {
 		"CREATE TABLE z (a INT, CHECK a > 0)",
 		"CREATE TABLE z (a INT, CHECK (a > 0)",
 		"CREATE TABLE z (a INT, EXCLUDE USING gin(a WITH &&))",
-		"ALTER TABLE t ADD PRIMARY KEY (x, y) NOT ENFORCED",
+		"ALTER TABLE t ADD PRIMARY KEY (x, y) NOT ENFORCEABLE",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+	// The words a key may carry after it, and the condition a CHECK may say
+	// is enforced. Both are read by the vocabulary the reference keeps for a
+	// REFERENCES, which is where the port already had the reader.
+	for _, c := range []struct{ sql, want string }{
+		{"ALTER TABLE t ADD PRIMARY KEY (x, y) NOT ENFORCED",
+			"ALTER TABLE t ADD PRIMARY KEY (x, y) NOT ENFORCED"},
+		{"ALTER TABLE t ADD CONSTRAINT c PRIMARY KEY (x) NOT ENFORCED DEFERRABLE INITIALLY DEFERRED NORELY",
+			"ALTER TABLE t ADD CONSTRAINT c PRIMARY KEY (x) NOT ENFORCED DEFERRABLE INITIALLY DEFERRED NORELY"},
+		{"ALTER TABLE t ADD CONSTRAINT c CHECK (id > 1) ENFORCED",
+			"ALTER TABLE t ADD CONSTRAINT c CHECK (id > 1) ENFORCED"},
+	} {
+		tree, err := ParseOne(c.sql, "")
+		if err != nil {
+			t.Errorf("ParseOne(%q): %v", c.sql, err)
+			continue
+		}
+		got, gerr := Generate(tree, "")
+		if gerr != nil {
+			t.Errorf("Generate(%q): %v", c.sql, gerr)
+			continue
+		}
+		if got != c.want {
+			t.Errorf("%s\n got  %s\n want %s", c.sql, got, c.want)
 		}
 	}
 }

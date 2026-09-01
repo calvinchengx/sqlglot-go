@@ -916,6 +916,13 @@ func (p *parser) parseAlter() (*Expression, error) {
 			return nil, err
 		}
 	}
+	// A constraint added NOT VALID is not checked against the rows already
+	// there. It is recorded on the statement rather than on the constraint.
+	notValid := p.atWords("NOT", "VALID")
+	if notValid {
+		p.advance()
+		p.advance()
+	}
 	if p.curr() != nil {
 		return nil, p.unsupported("ALTER with more than this port reads")
 	}
@@ -927,7 +934,7 @@ func (p *parser) parseAlter() (*Expression, error) {
 		Arg{"only", only},
 		Arg{"options", []*Expression{}},
 		Arg{"cluster", nil},
-		Arg{"not_valid", false},
+		Arg{"not_valid", notValid},
 		Arg{"check", false},
 		Arg{"cascade", false},
 		Arg{"iceberg", false},
@@ -1120,6 +1127,21 @@ func (p *parser) parseAddedColumn(exists bool) (*Expression, error) {
 // parseAlteredColumn reads what an `ALTER COLUMN` says about one column: a new
 // type, a new default, the removal of one, or a comment. Each lands in a slot
 // of its own on the node rather than in a shared one.
+// parseAlterCollation reads the name a COLLATE gives. The reference wraps it
+// in a Column either way and one dialect keeps the name inside as a Var rather
+// than as an Identifier, which is probed rather than named.
+func (p *parser) parseAlterCollation() (*Expression, error) {
+	name, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	if p.tables.AlterCollateIsVar {
+		text, _ := name.Args["this"].(string)
+		return New("Column", Arg{"this", New("Var", Arg{"this", text})}), nil
+	}
+	return New("Column", Arg{"this", name}), nil
+}
+
 func (p *parser) parseAlteredColumn() (*Expression, error) {
 	name, err := p.parseIdentifier()
 	if err != nil {
@@ -1127,32 +1149,6 @@ func (p *parser) parseAlteredColumn() (*Expression, error) {
 	}
 	action := New("AlterColumn", Arg{"this", name})
 	switch {
-	case p.atWords("SET", "DATA", "TYPE"), p.atWords("TYPE"):
-		if p.atWords("TYPE") {
-			p.advance()
-		} else {
-			p.advance()
-			p.advance()
-			p.advance()
-		}
-		kind, err := p.parseDataType()
-		if err != nil {
-			return nil, err
-		}
-		action.Set("dtype", kind)
-		// Both are on the node whenever a type is, whether or not the
-		// statement said anything about them.
-		action.Set("collate", false)
-		if p.at(TokUSING) {
-			p.advance()
-			using, err := p.parseExpression()
-			if err != nil {
-				return nil, err
-			}
-			action.Set("using", using)
-		} else {
-			action.Set("using", false)
-		}
 	case p.atWords("SET", "DEFAULT"):
 		p.advance()
 		p.advance()
@@ -1175,7 +1171,57 @@ func (p *parser) parseAlteredColumn() (*Expression, error) {
 		action.Set("comment",
 			New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}))
 	default:
-		return nil, p.unsupported("an ALTER COLUMN action this port does not read")
+		// Everything else is a RETYPE, and both words that introduce the type
+		// are optional: `ALTER COLUMN b INTEGER` says what `ALTER COLUMN b
+		// SET DATA TYPE INTEGER` says. The reference falls through to this
+		// after every action it knows, so this port does too.
+		if p.atWords("SET", "DATA") {
+			p.advance()
+			p.advance()
+		}
+		if p.atWords("TYPE") {
+			p.advance()
+		}
+		kind, err := p.parseDataType()
+		if err != nil {
+			return nil, err
+		}
+		action.Set("dtype", kind)
+		// Both are on the node whenever a type is, whether or not the
+		// statement said anything about them.
+		if p.at(TokCOLLATE) {
+			p.advance()
+			collation, err := p.parseAlterCollation()
+			if err != nil {
+				return nil, err
+			}
+			action.Set("collate", collation)
+		} else {
+			action.Set("collate", false)
+		}
+		if p.at(TokUSING) {
+			p.advance()
+			using, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			action.Set("using", using)
+		} else {
+			action.Set("using", false)
+		}
+		// A retyped column may say whether it now takes nulls, where the
+		// dialect reads it there.
+		if p.tables.AlterColumnTypeTakesNull {
+			switch {
+			case p.atWords("NOT", "NULL"):
+				p.advance()
+				p.advance()
+				action.Set("allow_null", false)
+			case p.at(TokNULL):
+				p.advance()
+				action.Set("allow_null", true)
+			}
+		}
 	}
 	return action, nil
 }
@@ -1334,6 +1380,15 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		// The parameters are on the node whether or not anything was said
 		// about them, holding only the flag that says so.
 		key.Set("include", New("IndexParameters", Arg{"with_storage", false}))
+		// `PRIMARY KEY (x, y) NOT ENFORCED DEFERRABLE` -- the same vocabulary
+		// a reference takes, read by the same reader.
+		options, err := p.parseKeyConstraintOptions()
+		if err != nil {
+			return nil, err
+		}
+		if len(options) > 0 {
+			key.Set("options", options)
+		}
 		return key, nil
 	case p.at(TokFOREIGN_KEY):
 		p.advance()
@@ -1379,9 +1434,16 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 			return nil, p.unsupported("unclosed CHECK")
 		}
 		return New("CheckColumnConstraint",
-			Arg{"this", condition}, Arg{"enforced", false}), nil
+			Arg{"this", condition}, Arg{"enforced", p.atWords("ENFORCED") && p.advanced()}), nil
 	}
 	return nil, p.unsupported("a table constraint this port does not read")
+}
+
+// advanced consumes the current token and reports true, so a match and a
+// consume can stand in one condition.
+func (p *parser) advanced() bool {
+	p.advance()
+	return true
 }
 
 // parseKeyColumns reads the `(a, b)` a key is over.

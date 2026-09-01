@@ -225,6 +225,8 @@ func TestRefusals(t *testing.T) {
 		// A parameter name is written back with nothing round it, so one that
 		// would need quotes is refused rather than written unreadably.
 		{"a COPY parameter needing quotes", "COPY INTO t FROM f WITH (`a b` = 1)", "databricks"},
+		{"a retyped column with no type", "ALTER TABLE a ALTER COLUMN b", "tsql"},
+		{"a collation that is not a name", "ALTER TABLE a ALTER COLUMN b INT COLLATE 1", "tsql"},
 		{"LAMBDA without its colon", "SELECT LIST_TRANSFORM(a, LAMBDA x x)", "duckdb"},
 		{"LAMBDA without a parameter", "SELECT LIST_TRANSFORM(a, LAMBDA : x)", "duckdb"},
 	} {

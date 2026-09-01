@@ -4314,6 +4314,16 @@ def main() -> int:
         "\t// IfIsAStatement says a bare IF opens a STATEMENT in this dialect --\n",
         "\t// `IF <cond> BEGIN ... END` -- rather than being a call or a name.\n",
         "\tIfIsAStatement bool\n",
+        "\t// AlterCollateIsVar says the name a COLLATE gives is kept as a Var\n",
+        "\t// rather than as an Identifier, and AlterColumnTypeTakesNull that a\n",
+        "\t// retyped column may say NOT NULL or NULL after its new type.\n",
+        "\tAlterCollateIsVar        bool\n",
+        "\tAlterColumnTypeTakesNull bool\n",
+        "\t// AlterColumnNullabilityWritten says a retyped column's NOT NULL is\n",
+        "\t// written back. Where it is not, the reference drops the words and\n",
+        "\t// this port refuses rather than writing a column that takes nulls\n",
+        "\t// when the statement said it must not.\n",
+        "\tAlterColumnNullabilityWritten bool\n",
         "\t// TypedDivision and SafeDivision are recorded on every Div node; the\n",
         "\t// reference reads them off the dialect, so they are not always false.\n",
         "\tTypedDivision bool\n",
@@ -4981,6 +4991,32 @@ def main() -> int:
         except Exception:  # noqa: BLE001 -- a dialect that will not read it
             _if_statement = False
         out.append(f"\t\tIfIsAStatement: {str(_if_statement).lower()},\n")
+        try:
+            _alt = _sg.parse_one(
+                "ALTER TABLE a ALTER COLUMN b CHAR(10) COLLATE abc", read=name or None
+            ).args["actions"][0]
+            _collate = _alt.args.get("collate")
+            _is_var = type(getattr(_collate, "this", None)).__name__ == "Var"
+        except Exception:  # noqa: BLE001 -- a dialect that will not read it
+            _is_var = False
+        out.append(f"\t\tAlterCollateIsVar: {str(_is_var).lower()},\n")
+        try:
+            _nn = _sg.parse_one(
+                "ALTER TABLE a ALTER COLUMN b INT NOT NULL", read=name or None
+            ).args["actions"][0]
+            _takes_null = _nn.args.get("allow_null") is not None
+        except Exception:  # noqa: BLE001
+            _takes_null = False
+        out.append(f"\t\tAlterColumnTypeTakesNull: {str(_takes_null).lower()},\n")
+        out.append(
+            "\t\tAlterColumnNullabilityWritten: %s,\n"
+            % str(
+                bool(
+                    Dialect.get_or_raise(name or None).generator_class.
+                    SUPPORTS_ALTER_COLUMN_NULLABILITY
+                )
+            ).lower()
+        )
         if _with:
             out.append("\t\tProcedureWithOptions: map[string]string{\n")
             for _word in sorted(_with):

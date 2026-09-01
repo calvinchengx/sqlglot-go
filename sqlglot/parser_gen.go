@@ -155,6 +155,16 @@ type ParserTables struct {
 	// IfIsAStatement says a bare IF opens a STATEMENT in this dialect --
 	// `IF <cond> BEGIN ... END` -- rather than being a call or a name.
 	IfIsAStatement bool
+	// AlterCollateIsVar says the name a COLLATE gives is kept as a Var
+	// rather than as an Identifier, and AlterColumnTypeTakesNull that a
+	// retyped column may say NOT NULL or NULL after its new type.
+	AlterCollateIsVar        bool
+	AlterColumnTypeTakesNull bool
+	// AlterColumnNullabilityWritten says a retyped column's NOT NULL is
+	// written back. Where it is not, the reference drops the words and
+	// this port refuses rather than writing a column that takes nulls
+	// when the statement said it must not.
+	AlterColumnNullabilityWritten bool
 	// TypedDivision and SafeDivision are recorded on every Div node; the
 	// reference reads them off the dialect, so they are not always false.
 	TypedDivision bool
@@ -2717,9 +2727,12 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_ROLE:      {},
 			TokCURRENT_CATALOG:   {},
 		},
-		BareProcedureWrapper:     "",
-		ColumnDefaultAfterEquals: false,
-		IfIsAStatement:           false,
+		BareProcedureWrapper:          "",
+		ColumnDefaultAfterEquals:      false,
+		IfIsAStatement:                false,
+		AlterCollateIsVar:             false,
+		AlterColumnTypeTakesNull:      false,
+		AlterColumnNullabilityWritten: false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",
 			"SCHEMABINDING": "ViewAttributeProperty",
@@ -7489,9 +7502,12 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_USER:      {},
 			TokCURRENT_ROLE:      {},
 		},
-		BareProcedureWrapper:     "StoredProcedure",
-		ColumnDefaultAfterEquals: true,
-		IfIsAStatement:           true,
+		BareProcedureWrapper:          "StoredProcedure",
+		ColumnDefaultAfterEquals:      true,
+		IfIsAStatement:                true,
+		AlterCollateIsVar:             true,
+		AlterColumnTypeTakesNull:      true,
+		AlterColumnNullabilityWritten: true,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":         "ViewAttributeProperty",
 			"NATIVE_COMPILATION": "WithProcedureOptions",
@@ -12378,9 +12394,12 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_ROLE:      {},
 			TokCURRENT_CATALOG:   {},
 		},
-		BareProcedureWrapper:     "",
-		ColumnDefaultAfterEquals: false,
-		IfIsAStatement:           false,
+		BareProcedureWrapper:          "",
+		ColumnDefaultAfterEquals:      false,
+		IfIsAStatement:                false,
+		AlterCollateIsVar:             false,
+		AlterColumnTypeTakesNull:      false,
+		AlterColumnNullabilityWritten: false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",
 			"SCHEMABINDING": "ViewAttributeProperty",
@@ -17348,9 +17367,12 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_ROLE:      {},
 			TokCURRENT_CATALOG:   {},
 		},
-		BareProcedureWrapper:     "",
-		ColumnDefaultAfterEquals: false,
-		IfIsAStatement:           false,
+		BareProcedureWrapper:          "",
+		ColumnDefaultAfterEquals:      false,
+		IfIsAStatement:                false,
+		AlterCollateIsVar:             false,
+		AlterColumnTypeTakesNull:      false,
+		AlterColumnNullabilityWritten: false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",
 			"SCHEMABINDING": "ViewAttributeProperty",
@@ -22494,9 +22516,12 @@ var parserTables = map[string]*ParserTables{
 			TokCURRENT_USER:      {},
 			TokCURRENT_ROLE:      {},
 		},
-		BareProcedureWrapper:     "",
-		ColumnDefaultAfterEquals: false,
-		IfIsAStatement:           false,
+		BareProcedureWrapper:          "",
+		ColumnDefaultAfterEquals:      false,
+		IfIsAStatement:                false,
+		AlterCollateIsVar:             false,
+		AlterColumnTypeTakesNull:      false,
+		AlterColumnNullabilityWritten: false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",
 			"SCHEMABINDING": "ViewAttributeProperty",

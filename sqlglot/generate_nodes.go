@@ -2758,7 +2758,12 @@ func (g *generator) writeUniqueConstraint(e *Expression) string {
 
 // writePrimaryKey writes a key over the columns of the whole table.
 func (g *generator) writePrimaryKey(e *Expression) string {
-	return "PRIMARY KEY (" + g.list(e) + ")"
+	out := "PRIMARY KEY (" + g.list(e) + ")"
+	// The words the key carries after it, in the order they were written.
+	if options, _ := e.Args["options"].([]string); len(options) > 0 {
+		out += " " + strings.Join(options, " ")
+	}
+	return out
 }
 
 // writeForeignKey writes the columns that point at another table, and where.
@@ -2855,7 +2860,11 @@ func (g *generator) writeGeneratedAsIdentity(e *Expression) string {
 }
 
 func (g *generator) writeCheckConstraint(e *Expression) string {
-	return "CHECK (" + g.child(e, "this") + ")"
+	out := "CHECK (" + g.child(e, "this") + ")"
+	if enforced, _ := e.Args["enforced"].(bool); enforced {
+		out += " ENFORCED"
+	}
+	return out
 }
 
 func (g *generator) writeCommentConstraint(e *Expression) string {
@@ -2928,7 +2937,13 @@ func (g *generator) writeAlter(e *Expression) string {
 		}
 	}
 	g.inColumnList = was
-	return out + " " + strings.Join(parts, ", ")
+	out += " " + strings.Join(parts, ", ")
+	// A constraint added NOT VALID is not checked against the rows already
+	// there, and the words go after everything the statement does.
+	if notValid, _ := e.Args["not_valid"].(bool); notValid {
+		out += " NOT VALID"
+	}
+	return out
 }
 
 // writeAddConstraint writes the constraints an ALTER adds. They are a LIST on
@@ -2963,8 +2978,25 @@ func (g *generator) writeAlterColumn(e *Expression) string {
 			out += " " + word
 		}
 		out += " " + g.child(e, "dtype")
+		if collate := g.child(e, "collate"); collate != "" {
+			out += " COLLATE " + collate
+		}
 		if using := g.child(e, "using"); using != "" {
 			out += " USING " + using
+		}
+		// Whether the column still takes nulls. Where the dialect does not
+		// write the words the reference drops them, which would say the
+		// opposite of what the statement said -- so the port refuses instead.
+		if allowNull, said := e.Args["allow_null"].(bool); said {
+			if !g.tables.AlterColumnNullabilityWritten {
+				return g.fail(e.Class + " that says whether nulls are allowed, " +
+					"which this dialect writes nowhere")
+			}
+			if allowNull {
+				out += " NULL"
+			} else {
+				out += " NOT NULL"
+			}
 		}
 	case e.Args["default"] != nil:
 		out += " SET DEFAULT " + g.child(e, "default")
