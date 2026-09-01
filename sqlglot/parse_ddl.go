@@ -60,7 +60,8 @@ func (p *parser) parseCreate() (*Expression, error) {
 	}
 	kind := strings.ToUpper(kindToken.Text)
 	if kind != "TABLE" && kind != "VIEW" && kind != "FUNCTION" && kind != "PROCEDURE" &&
-		kind != "INDEX" && kind != "SCHEMA" && kind != "SEQUENCE" {
+		kind != "INDEX" && kind != "SCHEMA" && kind != "SEQUENCE" && kind != "TYPE" &&
+		kind != "MACRO" {
 		return nil, p.unsupported("CREATE " + kind)
 	}
 	p.advance()
@@ -90,8 +91,13 @@ func (p *parser) parseCreate() (*Expression, error) {
 		}
 	}
 
-	if kind == "FUNCTION" {
-		return p.parseFunctionRest(table, replace, exists, temporary)
+	// DuckDB's MACRO is a function under another word: the tokenizer gives
+	// it the same token, and only the text it was written with tells them
+	// apart. It carries one thing a FUNCTION does not -- several bodies, one
+	// per parameter list -- which parseFunctionRest reads where the word
+	// allows it.
+	if kind == "FUNCTION" || kind == "MACRO" {
+		return p.parseFunctionRest(table, kind, replace, exists, temporary)
 	}
 	if kind == "PROCEDURE" {
 		return p.parseProcedureRest(table, replace, exists)
@@ -101,6 +107,12 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// which numbers it hands out.
 	if kind == "SEQUENCE" {
 		return p.parseSequenceRest(table, replace, exists)
+	}
+
+	// A TYPE names a shape rather than a place to put rows: either a list of
+	// the values it may take, or the fields it is made of.
+	if kind == "TYPE" {
+		return p.parseTypeRest(table, replace)
 	}
 
 	var this, expression *Expression
@@ -1589,7 +1601,7 @@ func (p *parser) parseKeyColumns() ([]*Expression, error) {
 // reference keeps them in the order they were WRITTEN rather than in the order
 // it knows them by. So there is one loop, and each turn of it reads whichever
 // part is next.
-func (p *parser) parseFunctionRest(name *Expression, replace, exists, temporary bool) (*Expression, error) {
+func (p *parser) parseFunctionRest(name *Expression, kind string, replace, exists, temporary bool) (*Expression, error) {
 	this := name
 	if p.at(TokL_PAREN) {
 		params, err := p.parseFunctionParams()
@@ -1609,6 +1621,33 @@ func (p *parser) parseFunctionRest(name *Expression, replace, exists, temporary 
 	var properties []*Expression
 	if temporary {
 		properties = append(properties, New("TemporaryProperty"))
+	}
+	// A macro may carry SEVERAL bodies, one per parameter list, and which one
+	// runs is chosen by how it is called. The shape is only recognisable from
+	// the comma and parenthesis that follow the FIRST body, so it is read
+	// speculatively and undone when they do not appear.
+	if this.Class == "UserDefinedFunction" {
+		overloads, err := p.parseMacroOverloads(this)
+		if err != nil {
+			return nil, err
+		}
+		if overloads != nil {
+			if p.curr() != nil {
+				return nil, p.unsupported("CREATE " + kind + " with more than this port reads")
+			}
+			return New("Create",
+				Arg{"this", this}, Arg{"kind", kind}, Arg{"replace", replace},
+				Arg{"refresh", false}, Arg{"unique", false},
+				Arg{"expression", overloads}, Arg{"exists", exists},
+				Arg{"properties", nil}, Arg{"indexes", []*Expression{}},
+				Arg{"no_schema_binding", nil},
+				// No `begin` at all: the reference never reaches the line
+				// that sets it, because the overloads are read in front of
+				// the body it belongs to.
+				Arg{"begin", nil}, Arg{"clone", nil},
+				Arg{"concurrently", false}, Arg{"clustered", nil},
+			), nil
+		}
 	}
 	var expression *Expression
 	for {
@@ -1636,7 +1675,7 @@ func (p *parser) parseFunctionRest(name *Expression, replace, exists, temporary 
 		}
 	}
 	if p.curr() != nil {
-		return nil, p.unsupported("CREATE FUNCTION with more than this port reads")
+		return nil, p.unsupported("CREATE " + kind + " with more than this port reads")
 	}
 
 	var props *Expression
@@ -1649,7 +1688,7 @@ func (p *parser) parseFunctionRest(name *Expression, replace, exists, temporary 
 	}
 	return New("Create",
 		Arg{"this", this},
-		Arg{"kind", "FUNCTION"},
+		Arg{"kind", kind},
 		Arg{"replace", replace},
 		Arg{"refresh", false},
 		Arg{"unique", false},
@@ -4479,4 +4518,158 @@ func (p *parser) parseCreateLike() (*Expression, error) {
 		node.Set("expressions", options)
 	}
 	return node, nil
+}
+
+// parseTypeRest reads what follows the name in `CREATE TYPE t AS ...`: either
+// the values the type may take or the fields it is made of.
+//
+// The reference reads only those two and hands the rest to its Command
+// fallback -- `CREATE TYPE widget`, which names a type and says nothing about
+// it, and `AS RANGE (...)`, which says something this port has no node for.
+// Both are refused here rather than kept verbatim, for the reason parseCommand
+// gives: a Command built where the port gives up is not the Command the
+// reference built.
+func (p *parser) parseTypeRest(table *Expression, replace bool) (*Expression, error) {
+	if !p.match(TokALIAS) {
+		return nil, p.unsupported("CREATE TYPE without AS")
+	}
+	var expression *Expression
+	switch {
+	case p.match(TokENUM):
+		expression = New("DataType", Arg{"this", DataTypeKind("ENUM")})
+		// An ENUM of NO members is a type all the same, and the reference
+		// records it as one carrying nothing -- so the empty list is read
+		// here rather than by the list reader, which everywhere else in this
+		// port would be reading an empty list into an absent one.
+		if p.at(TokL_PAREN) && p.next() != nil && p.next().Type == TokR_PAREN {
+			p.advance()
+			p.advance()
+			break
+		}
+		// The members are STRINGS -- the values the type may take -- rather
+		// than the parameters a sized type carries.
+		members, err := p.parseWrappedCSV(p.parseTypeMember)
+		if err != nil {
+			return nil, err
+		}
+		expression.Set("expressions", members)
+	case p.at(TokL_PAREN):
+		columns, err := p.parseColumnDefs()
+		if err != nil {
+			return nil, err
+		}
+		// A Schema with no `this`: the fields belong to the type being made,
+		// which is already named on the statement.
+		expression = New("Schema", Arg{"expressions", columns})
+	default:
+		return nil, p.unsupported("CREATE TYPE as something this port does not read")
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("CREATE TYPE with more than this port reads")
+	}
+	return New("Create",
+		Arg{"this", table},
+		Arg{"kind", "TYPE"},
+		Arg{"replace", replace},
+		Arg{"refresh", false},
+		Arg{"unique", false},
+		Arg{"expression", expression},
+		Arg{"exists", false},
+		Arg{"properties", nil},
+		Arg{"indexes", []*Expression{}},
+		Arg{"no_schema_binding", nil},
+		Arg{"begin", nil},
+		Arg{"clone", nil},
+		Arg{"concurrently", false},
+		Arg{"clustered", nil},
+	), nil
+}
+
+// parseTypeMember reads one value an ENUM may take. They are strings, and a
+// list of none of them is allowed.
+func (p *parser) parseTypeMember() (*Expression, error) {
+	c := p.curr()
+	if c == nil || c.Type != TokSTRING {
+		return nil, p.unsupported("an ENUM member that is not a string")
+	}
+	p.advance()
+	return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
+}
+
+// parseMacroOverloads reads a macro's several bodies, one per parameter list:
+// `CREATE MACRO m (a) AS a, (a, b) AS a + b`.
+//
+// Nothing in front of the first body says there will be more than one, so the
+// first is read and the tokens after it are what decide: a comma opening
+// another parameter list means these are overloads, and anything else means
+// this was an ordinary function body, which is put back untouched.
+//
+// It returns nil, and consumes nothing, where the statement is not one of
+// these -- which is every CREATE FUNCTION outside DuckDB, and most inside it.
+func (p *parser) parseMacroOverloads(udf *Expression) (*Expression, error) {
+	if wrapped, _ := udf.Args["wrapped"].(bool); !wrapped {
+		return nil, nil
+	}
+	mark := p.index
+	undo := func() (*Expression, error) { p.index = mark; return nil, nil }
+
+	if !p.match(TokALIAS) {
+		return undo()
+	}
+	first, isTable, err := p.parseMacroBody()
+	if err != nil || first == nil {
+		return undo()
+	}
+	// The comma and the parenthesis together. A comma alone follows plenty of
+	// ordinary bodies, and reading one as an overload would take the rest of
+	// the statement with it.
+	if !p.at(TokCOMMA) || p.next() == nil || p.next().Type != TokL_PAREN {
+		return undo()
+	}
+
+	// The first overload's parameters are the ones written after the NAME, so
+	// they move off the function and onto the overload that used them. What
+	// is left names the macro and nothing else.
+	params, _ := udf.Args["expressions"].([]*Expression)
+	udf.Set("expressions", nil)
+	udf.Set("wrapped", false)
+	overloads := []*Expression{New("MacroOverload",
+		Arg{"this", first}, Arg{"expressions", params}, Arg{"is_table", isTable})}
+
+	for p.match(TokCOMMA) {
+		if !p.at(TokL_PAREN) {
+			break
+		}
+		params, err := p.parseFunctionParams()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokALIAS) {
+			break
+		}
+		body, isTable, err := p.parseMacroBody()
+		if err != nil {
+			return nil, err
+		}
+		overloads = append(overloads, New("MacroOverload",
+			Arg{"this", body}, Arg{"expressions", params}, Arg{"is_table", isTable}))
+	}
+	return New("MacroOverloads", Arg{"expressions", overloads}), nil
+}
+
+// parseMacroBody reads one overload's body, and whether it was written as a
+// TABLE. The word says the body is a query rather than a value; what follows
+// it is read as an ordinary expression either way, so `AS TABLE (SELECT 1)`
+// keeps the parentheses as the Subquery they are.
+func (p *parser) parseMacroBody() (*Expression, bool, error) {
+	isTable := false
+	if p.atWords("TABLE") {
+		p.advance()
+		isTable = true
+	}
+	body, err := p.parseExpression()
+	if err != nil {
+		return nil, false, err
+	}
+	return body, isTable, nil
 }

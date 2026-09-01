@@ -93,6 +93,8 @@ func init() {
 		"PartitionedOfProperty":               (*generator).writePartitionedOfProperty,
 		"PartitionBoundSpec":                  (*generator).writePartitionBoundSpec,
 		"Clone":                               (*generator).writeClone,
+		"MacroOverloads":                      (*generator).writeMacroOverloads,
+		"MacroOverload":                       (*generator).writeMacroOverload,
 		"AlterSet":                            (*generator).writeAlterSet,
 		"Partition":                           (*generator).writePartition,
 		"OnConflict":                          (*generator).writeOnConflict,
@@ -1081,6 +1083,12 @@ func (g *generator) writeDataType(e *Expression) string {
 		return g.fail("DataType." + string(kind))
 	}
 	params := g.list(e)
+	// An ENUM's members are its VALUES rather than its parameters, and
+	// PostgreSQL spells them apart from every other parameterised type: a
+	// space in front of the list, and the parentheses even when it is empty.
+	if kind == "ENUM" && g.tables.EnumTypeSQL != "" {
+		return strings.ReplaceAll(g.tables.EnumTypeSQL, "{members}", params)
+	}
 	if params == "" {
 		// A nested type with no members is written bare: PostgreSQL's ARRAY.
 		return out
@@ -2357,7 +2365,9 @@ func (g *generator) writeCreate(e *Expression) string {
 		}
 		out += "IF NOT EXISTS "
 	}
-	if kind == "FUNCTION" {
+	// A MACRO is a function under DuckDB's word for one, and everything
+	// written after the name is written the same way.
+	if kind == "FUNCTION" || kind == "MACRO" {
 		return g.writeFunctionRest(e, out)
 	}
 	if kind == "VIEW" && !g.tables.ViewColumnCommentWritten && g.viewColumnHasComment(e) {
@@ -3388,6 +3398,11 @@ func (g *generator) writeFunctionRest(e *Expression, out string) string {
 	// Databricks turns a table-valued function's body into a RETURN before
 	// writing it, whatever it was written as, and then writes no AS in front
 	// of one.
+	// A macro's overloads each carry their own AS, so none is written in
+	// front of them.
+	if body.Class == "MacroOverloads" {
+		return out + " " + g.node(body)
+	}
 	isReturn := body.Class == "Return"
 	if !isReturn && g.tables.FunctionWrapsTableBody && g.returnsATable(properties) {
 		return out + " " + g.tables.ReturnWord + " " + g.node(body)
@@ -3531,6 +3546,15 @@ func (g *generator) writeUserDefinedFunction(e *Expression) string {
 		parts = append(parts, g.node(item))
 	}
 	g.inColumnList = was
+	// A function written WITHOUT parentheses keeps none: a macro whose
+	// parameters moved onto its overloads is left naming itself and nothing
+	// else, and writing `()` there would say it takes no arguments.
+	if wrapped, _ := e.Args["wrapped"].(bool); !wrapped {
+		if len(parts) == 0 {
+			return g.child(e, "this")
+		}
+		return g.child(e, "this") + " " + strings.Join(parts, ", ")
+	}
 	return g.child(e, "this") + "(" + strings.Join(parts, ", ") + ")"
 }
 
@@ -4416,4 +4440,20 @@ func (g *generator) joined(items []*Expression) string {
 		parts = append(parts, g.node(item))
 	}
 	return strings.Join(parts, ", ")
+}
+
+// writeMacroOverloads writes a macro's several bodies, one after another. They
+// carry their own AS, which is why the CREATE writes none in front of them.
+func (g *generator) writeMacroOverloads(e *Expression) string {
+	return g.list(e)
+}
+
+// writeMacroOverload writes one of them: `(a, b) AS a + b`.
+func (g *generator) writeMacroOverload(e *Expression) string {
+	params, _ := e.Args["expressions"].([]*Expression)
+	out := "(" + g.joined(params) + ") AS "
+	if isTable, _ := e.Args["is_table"].(bool); isTable {
+		out += "TABLE "
+	}
+	return out + g.child(e, "this")
 }

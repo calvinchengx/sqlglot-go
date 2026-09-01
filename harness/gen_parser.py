@@ -1616,6 +1616,29 @@ def key_constraint_options(dialect: str) -> dict:
     return out
 
 
+def enum_type_sql(dialect: str) -> str:
+    """How an ENUM type's members are written, with {members} standing in.
+
+    PostgreSQL writes `ENUM (\'a\')` -- a space in front of the list, and the
+    parentheses even when the list is empty. Everywhere else it is an ordinary
+    parameterised type, `ENUM(\'a\')`, and vanishes to a bare name when empty.
+    The difference is asked of the reference rather than written down, the same
+    way every other spelling here is.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("CAST(x AS ENUM('a'))", read=dialect or None).sql(
+            dialect=dialect or None
+        )
+    except Exception:
+        return ""
+    start = text.find("ENUM")
+    if start < 0:
+        return ""
+    return text[start:-1].replace("'a'", "{members}")
+
+
 def with_data_written(dialect: str) -> bool:
     """Whether `WITH NO DATA` survives being written.
 
@@ -4639,6 +4662,7 @@ def main() -> int:
         "\tAlterSetIsWrapped bool\n",
         "\t// KeyConstraintOptions are the words that may follow a REFERENCES or a\n\t// key, and what may follow each of them.\n\tKeyConstraintOptions map[string][]string\n",
         "\t// WithDataWritten: `WITH NO DATA` survives here. It says whether the\n\t// table is FILLED from the query or only shaped by it.\n\tWithDataWritten bool\n",
+        "\t// EnumTypeSQL is how an ENUM type's members are written, with\n\t// {members} in it. PostgreSQL puts a space in front of the list and\n\t// writes the parentheses even when the list is empty; everyone else\n\t// spells it as an ordinary parameterised type.\n\tEnumTypeSQL string\n",
         "\t// IdentityShortSQL is the short spelling of an identity column, with\n\t// {start} and {increment} in it, and empty where the dialect writes\n\t// the whole GENERATED form instead.\n\tIdentityShortSQL string\n",
         "\t// AutoIncrementSQL is how an auto-incrementing column is spelled, and\n\t// is empty where the dialect writes nothing and drops the numbering.\n\tAutoIncrementSQL string\n",
         "\t// ValuesTableWrapped: a VALUES clause used as a TABLE is written in\n\t// parentheses here.\n\tValuesTableWrapped bool\n",
@@ -5470,6 +5494,7 @@ def main() -> int:
         out.append(f"\t\tIndexOnWord: {gostr(index_on_word(name))},\n")
         out.append(f"\t\tPartitionSQL: {gostr(partition_sql(name))},\n")
         out.append("\t\tWithDataWritten: %s,\n" % str(with_data_written(name)).lower())
+        out.append(f"\t\tEnumTypeSQL: {gostr(enum_type_sql(name))},\n")
         out.append(f"\t\tIdentityShortSQL: {gostr(identity_short_sql(name))},\n")
         out.append(f"\t\tAutoIncrementSQL: {gostr(auto_increment_sql(name))},\n")
         out.append("\t\tValuesTableWrapped: %s,\n" % str(values_table_wrapped(name)).lower())

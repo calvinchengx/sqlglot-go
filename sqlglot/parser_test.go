@@ -315,6 +315,16 @@ func TestRefusals(t *testing.T) {
 		{"a remainder that is not a number",
 			"CREATE TABLE p PARTITION OF c FOR VALUES WITH (MODULUS 3, REMAINDER SELECT)",
 			"postgres"},
+		// A CREATE TYPE that names a type and says nothing about it, or says
+		// something this port has no node for. The reference keeps both
+		// verbatim as a Command; the port refuses them, for the reason
+		// parseCommand gives.
+		{"a type with no shape", "CREATE TYPE widget", "postgres"},
+		{"a type shaped by a range", "CREATE TYPE t AS RANGE (subtype = float8)", "postgres"},
+		{"an enum member that is not a string", "CREATE TYPE t AS ENUM (1)", "postgres"},
+		// Every way a macro's overloads can stop being overloads part-way.
+		{"an overload with no AS", "CREATE MACRO m (a) AS a, (a, b) x", "duckdb"},
+		{"an overload with no body", "CREATE MACRO m (a) AS a, (a), (b) AS b", "duckdb"},
 		{"LAMBDA without its colon", "SELECT LIST_TRANSFORM(a, LAMBDA x x)", "duckdb"},
 		{"LAMBDA without a parameter", "SELECT LIST_TRANSFORM(a, LAMBDA : x)", "duckdb"},
 	} {

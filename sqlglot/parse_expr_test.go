@@ -1778,6 +1778,40 @@ func TestCreateTable(t *testing.T) {
 		// A column need not name a type at all.
 		{"a typeless column", "postgres", "CREATE TABLE t (a DEFAULT 0)",
 			"CREATE TABLE t (a DEFAULT 0)"},
+		// A TYPE names a shape rather than a place to put rows: the values it
+		// may take, or the fields it is made of.
+		{"an enum type", "postgres", "CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy')",
+			"CREATE TYPE mood AS ENUM ('sad', 'ok', 'happy')"},
+		// PostgreSQL writes an ENUM apart from every other parameterised
+		// type: a space in front of the list, and the parentheses even when
+		// the list is empty.
+		{"an enum of nothing", "postgres", "CREATE TYPE mood AS ENUM ()",
+			"CREATE TYPE mood AS ENUM ()"},
+		{"a qualified enum", "postgres", "CREATE TYPE public.mood AS ENUM ('sad', 'ok')",
+			"CREATE TYPE public.mood AS ENUM ('sad', 'ok')"},
+		{"a composite type", "postgres",
+			"CREATE TYPE inventory_item AS (name TEXT, supplier_id INT, price DECIMAL)",
+			"CREATE TYPE inventory_item AS (name TEXT, supplier_id INT, price DECIMAL)"},
+		// DuckDB's MACRO is a function under another word, and carries one
+		// thing a function does not: several bodies, one per parameter list.
+		{"a macro", "duckdb", "CREATE MACRO foo(a TINYINT) AS a = 127",
+			"CREATE MACRO foo(a TINYINT) AS a = 127"},
+		{"a macro with two bodies", "duckdb", "CREATE MACRO add_x (a, b) AS a + b, (a, b, c) AS a + b + c",
+			"CREATE MACRO add_x (a, b) AS a + b, (a, b, c) AS a + b + c"},
+		// The parameters written after the NAME move onto the overload that
+		// used them, leaving the macro naming itself and nothing else -- so
+		// it is written without parentheses, not with empty ones.
+		{"a macro with three", "duckdb",
+			"CREATE OR REPLACE MACRO foo (a) AS a, (a, b) AS a + b, (a, b, c) AS a + b + c",
+			"CREATE OR REPLACE MACRO foo (a) AS a, (a, b) AS a + b, (a, b, c) AS a + b + c"},
+		{"overloads that differ by type", "duckdb",
+			"CREATE MACRO foo (a TINYINT) AS a + 1, (a INT) AS a + 2",
+			"CREATE MACRO foo (a TINYINT) AS a + 1, (a INT) AS a + 2"},
+		// A body written as a TABLE is a query, and the parentheses around it
+		// stay the Subquery they were written as.
+		{"overloads over tables", "duckdb",
+			"CREATE MACRO tbl (a) AS TABLE (SELECT a AS x), (a, b) AS TABLE (SELECT a AS x, b AS y)",
+			"CREATE MACRO tbl (a) AS TABLE (SELECT a AS x), (a, b) AS TABLE (SELECT a AS x, b AS y)"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)
