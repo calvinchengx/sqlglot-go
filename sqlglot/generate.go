@@ -484,9 +484,19 @@ func (g *generator) refuseSensitive(e *Expression) bool {
 		// particular TYPES: DuckDB wraps a non-text argument to UPPER in a
 		// cast to TEXT and leaves one that is already TEXT alone. Where the
 		// types are known, only those are refused.
-		if types := g.tables.CastSensitiveTypes[e.Class][arity][key]; len(types) > 0 &&
-			!castsToOneOf(child, types) {
-			continue
+		if types := g.tables.CastSensitiveTypes[e.Class][arity][key]; len(types) > 0 {
+			if !castsToOneOf(child, types) {
+				continue
+			}
+			// The coercion the dialect applies here is IDEMPOTENT where the
+			// argument already carries it: DuckDB writes
+			// `BOOL_OR(CAST(x AS BOOLEAN))` whatever it is given, so an
+			// argument that IS that cast leaves it nothing to add. The
+			// spelling recorded for exactly that shape writes it as it
+			// stands, so this is not a refusal.
+			if types := g.tables.CastIdempotentTypes[e.Class][key]; castsToOneOf(child, types) {
+				continue
+			}
 		}
 		g.fail("cast argument to " + e.Class)
 		return true

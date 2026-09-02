@@ -1669,6 +1669,15 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 		if g.parserWouldRefuse(templateName(candidate.Template)) {
 			continue
 		}
+		// A template recorded for an argument that already carries the
+		// dialect's own coercion writes it as it stands, which is exact for
+		// those arguments and SHORT for every other: DuckDB writes
+		// `BOOL_OR(CAST(x AS BOOLEAN))` whatever it is given, and this
+		// template would write `BOOL_OR(x)` for an argument that had no cast
+		// to absorb it.
+		if !g.castsAreAlreadyThere(e) {
+			continue
+		}
 		// A template that starts with an argument writes it with nothing in
 		// front, so an operand that would need brackets is refused rather than
 		// written flat -- the template knows no precedence.
@@ -1718,6 +1727,16 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 			switch v := e.Args[key].(type) {
 			case *Expression:
 				text = g.node(v)
+				// An operand the dialect brackets by PRECEDENCE: DuckDB
+				// writes `d + INTERVAL 1 DAY` for a literal and
+				// `d + INTERVAL (x) DAY` for anything else. Which keys
+				// those are was measured beside the template; whether THIS
+				// operand needs them is the same question every operator
+				// asks of its right-hand side.
+				if bracketsByPrecedence(candidate.Bracketed, key) && !isAtomForOperator(v) &&
+					!writesAsACall(text) {
+					text = "(" + text + ")"
+				}
 			case []*Expression:
 				parts := make([]string, 0, len(v))
 				for _, item := range v {
@@ -1750,6 +1769,31 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 		return out, true
 	}
 	return "", false
+}
+
+// bracketsByPrecedence reports whether a template wraps this key's operand in
+// parentheses where it is not an atom.
+func bracketsByPrecedence(keys []string, key string) bool {
+	for _, k := range keys {
+		if k == key {
+			return true
+		}
+	}
+	return false
+}
+
+// castsAreAlreadyThere reports whether every argument the dialect coerces here
+// already carries that coercion, so writing the node plainly says everything
+// the dialect would have added.
+func (g *generator) castsAreAlreadyThere(e *Expression) bool {
+	for key, types := range g.tables.CastIdempotentTypes[e.Class] {
+		// An argument the node does not carry asks nothing: there is no
+		// coercion to be missing from a slot that is empty.
+		if child, _ := e.Args[key].(*Expression); child != nil && !castsToOneOf(child, types) {
+			return false
+		}
+	}
+	return true
 }
 
 // writeTableAlias writes the alias and, when it has one, the column list that

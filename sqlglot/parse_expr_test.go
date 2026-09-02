@@ -8596,12 +8596,14 @@ func TestConcatByArgumentCount(t *testing.T) {
 			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
 		}
 	}
+	// One argument is written WITHOUT the call: T-SQL concatenates nothing
+	// with nothing there, so the value stands on its own.
 	e, err := ParseOne("CONCAT(a)", "tsql")
 	if err != nil {
 		t.Fatalf("ParseOne: %v", err)
 	}
-	if got, err := Generate(e, "tsql"); err == nil {
-		t.Errorf("wrote %q; T-SQL writes one argument without the call", got)
+	if got, err := Generate(e, "tsql"); err != nil || got != "a" {
+		t.Errorf("wrote %q (%v), want %q", got, err, "a")
 	}
 }
 
@@ -8750,5 +8752,91 @@ func TestRefusalsNarrowed(t *testing.T) {
 				t.Errorf("got %q, want %q", got, tc.want)
 			}
 		})
+	}
+}
+
+// A coercion the dialect applies whatever it is given is IDEMPOTENT: an
+// argument already carrying that cast leaves it nothing to add.
+//
+// DuckDB writes `BOOL_OR(CAST(x AS BOOLEAN))` for any argument at all, so the
+// probe that feeds it a plain column records a cast it would then apply a
+// second time -- which is why the port used to refuse the whole class. Probed
+// again with the cast already in place, the spelling that comes back is exact
+// for exactly those arguments, and is written only for them.
+func TestAnIdempotentCoercion(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT BOOL_OR(CAST(c1 AS BOOLEAN)), BOOL_OR(CAST(c2 AS BOOLEAN)) FROM test",
+			"SELECT BOOL_OR(CAST(c1 AS BOOLEAN)), BOOL_OR(CAST(c2 AS BOOLEAN)) FROM test"},
+		{"SELECT BOOL_AND(CAST(c1 AS BOOLEAN)) FROM test",
+			"SELECT BOOL_AND(CAST(c1 AS BOOLEAN)) FROM test"},
+		{"SELECT EPOCH(CAST('2009-02-13' AS TIMESTAMP))",
+			"SELECT EPOCH(CAST('2009-02-13' AS TIMESTAMP))"},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	// A slot the dialect coerces but the node does not fill asks nothing of
+	// the argument that is not there: an empty LOGICAL_OR is written by its
+	// own spelling rather than refused for a cast it never had.
+	if got, err := Generate(New("LogicalOr"), "duckdb"); err != nil || got != "BOOL_OR()" {
+		t.Errorf("an argumentless BOOL_OR wrote %q (%v)", got, err)
+	}
+
+	// And an argument with NO cast to absorb it is still refused: writing the
+	// plain spelling there would leave out the coercion the dialect adds.
+	for _, sql := range []string{
+		"SELECT a, LOGICAL_OR(b) FROM foo GROUP BY a",
+		"SELECT TO_VARIANT('1')",
+		"SELECT TIME_STR_TO_UNIX('2009-02-13 23:31:30')",
+	} {
+		e, err := ParseOne(sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err == nil {
+			t.Errorf("%q wrote %q; the coercion would be left out", sql, got)
+		}
+	}
+}
+
+// Where a dialect spells a node as an OPERATOR it brackets an operand by
+// PRECEDENCE, and which operands those are is measured beside the template.
+//
+// DuckDB writes `INTERVAL 1 DAY` for a literal and `INTERVAL (a + b) DAY` for
+// anything else. One probe alone recorded whichever form it happened to see
+// and wrote that for both; two probes tell the operand's own brackets from the
+// template's, and the writer puts them back where the operand needs them.
+func TestAnOperandBracketedByPrecedence(t *testing.T) {
+	// Which keys a template brackets is a list beside it, and the writer asks
+	// that list per key. No dialect the port carries reaches this through a
+	// template today -- the classes that need it have writers of their own --
+	// so the question itself is asked here.
+	if !bracketsByPrecedence([]string{"this", "expression"}, "expression") {
+		t.Error("a key in the list is bracketed")
+	}
+	if bracketsByPrecedence([]string{"this"}, "expression") {
+		t.Error("a key not in the list is not")
+	}
+	if bracketsByPrecedence(nil, "this") {
+		t.Error("a template that brackets nothing brackets nothing")
+	}
+
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT INTERVAL (a + b) DAY", "SELECT INTERVAL (a + b) DAY"},
+		{"SELECT INTERVAL 1 DAY", "SELECT INTERVAL '1' DAY"},
+		{"SELECT INTERVAL a DAY", "SELECT INTERVAL a DAY"},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
 	}
 }

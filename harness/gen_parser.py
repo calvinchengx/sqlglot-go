@@ -875,6 +875,58 @@ def returning_conventions(dialect: str) -> tuple[str, bool]:
     return word, update_last
 
 
+def _recast_probe(exp, cls, kwargs, expr_keys, scalars, dialect):
+    """Re-probe a shape whose operands the reference CASTS, with them cast.
+
+    DuckDB writes `BOOL_OR(CAST(x AS BOOLEAN))` for any operand, so the plain
+    probe records a cast it would then apply a second time. An operand that
+    already carries the cast is written as it stands, and that rendering is a
+    template the port can use -- for those operands and no others.
+    """
+    import re as _re
+
+    args = dict(scalars)
+    types = {}
+    for k in expr_keys:
+        bare = k[:-2] if k.endswith("[]") else k
+        token = f"ZZ{bare.upper()}ZZ"
+        probe = exp.column(token)
+        args[bare] = [probe] if k.endswith("[]") else probe
+    try:
+        plain = _render(exp, cls(**args), dialect)
+    except Exception:  # noqa: BLE001
+        return None
+    for k in expr_keys:
+        bare = k[:-2] if k.endswith("[]") else k
+        token = f"ZZ{bare.upper()}ZZ"
+        m = _re.search(r"CAST\(" + token + r" AS ([A-Z0-9_ ]+)\)", plain)
+        if m:
+            types[bare] = m.group(1)
+    if not types:
+        return None
+    for bare, kind in types.items():
+        try:
+            cast = exp.cast(exp.column(f"ZZ{bare.upper()}ZZ"), kind)
+        except Exception:  # noqa: BLE001 -- a type name this dialect will not parse back
+            return None
+        args[bare] = cast
+    try:
+        text = _render(exp, cls(**args), dialect)
+    except Exception:  # noqa: BLE001
+        return None
+    bracketed = []
+    for k in expr_keys:
+        bare = k[:-2] if k.endswith("[]") else k
+        rendered = args[bare].sql(dialect=dialect or None) if bare in types else None
+        marker = rendered if rendered else f"ZZ{bare.upper()}ZZ"
+        if text.count(marker) != 1:
+            return None
+        text = text.replace(marker, "{" + bare + "}")
+    if "CAST(" in text:
+        return None
+    return text, bracketed, types
+
+
 def _create_body(kind: str) -> str:
     """What follows the name in the canonical CREATE used by the probes below."""
     if kind == "SCHEMA":
@@ -3820,6 +3872,10 @@ def syntax_templates(exp, dialect, repo):
     all arrive without a line of dialect logic.
     """
     out = {}
+    # Which slots carry a coercion that is IDEMPOTENT: the dialect casts them
+    # whatever it is given, so an argument already carrying that cast leaves
+    # nothing to add and the plain spelling is exact.
+    idem: dict = {}
     shapes = observed_shapes(exp, dialect, repo)
     for cls_name, extra in EXTRA_SHAPES.items():
         shapes.setdefault(cls_name, set()).update(extra)
@@ -3850,12 +3906,43 @@ def syntax_templates(exp, dialect, repo):
                 text = _render(exp, cls(**kwargs), dialect)
             except Exception:  # noqa: BLE001 -- this dialect will not write that shape
                 continue
+            # The same shape written over LITERALS. Where a dialect spells a
+            # node as an OPERATOR, it brackets an operand by precedence: DuckDB
+            # writes `d + INTERVAL 1 DAY` for a literal and
+            # `d + INTERVAL (x) DAY` for anything else. One probe alone
+            # recorded whichever form it happened to see and wrote that for
+            # both, so the two are compared and the difference recorded as a
+            # property of the KEY rather than baked into the template.
+            plain = {}
+            for k in expr_keys:
+                bare = k[:-2] if k.endswith("[]") else k
+                lit = exp.Literal.number(1)
+                plain[bare] = lit
+                kwargs[bare] = [lit] if k.endswith("[]") else lit
+            try:
+                literal_text = _render(exp, cls(**kwargs), dialect)
+            except Exception:  # noqa: BLE001
+                literal_text = None
             ok = True
+            bracketed = []
             for key in [k[:-2] if k.endswith("[]") else k for k in expr_keys]:
                 token = f"ZZ{key.upper()}ZZ"
                 if text.count(token) != 1:
                     ok = False
                     break
+                # A token the column form wraps in parentheses and the literal
+                # form does not is one the dialect brackets by PRECEDENCE. The
+                # template keeps it bare and the writer puts the brackets back
+                # where the operand needs them.
+                at = text.index(token)
+                wrapped = (
+                    at > 0
+                    and text[at - 1] == "("
+                    and text[at + len(token) : at + len(token) + 1] == ")"
+                )
+                if wrapped and literal_text is not None and "(1)" not in literal_text:
+                    bracketed.append(key)
+                    text = text[: at - 1] + token + text[at + len(token) + 1 :]
                 text = text.replace(token, "{" + key + "}")
             if not ok:
                 continue
@@ -3875,28 +3962,40 @@ def syntax_templates(exp, dialect, repo):
             marked = [k[:-2] if k.endswith("[]") else k for k in expr_keys] + [
                 k for k, _ in scalars if (k, dict(scalars)[k]) not in required
             ]
-            # Infix templates are rejected. `a #> b` needs parentheses around a
-            # child by PRECEDENCE, and a template substitutes text without
-            # knowing any -- the reference writes `a #> (n IN (1, 2))` and a
-            # template would write it flat. A template that begins with an
-            # argument is infix; the classes that need one already have a
-            # writer that knows the precedence table.
-            # A template that BEGINS with a marker and continues with words --
-            # `{this} WITHIN GROUP (...)` -- is a postfix modifier, not an
-            # infix operator: there is no right-hand operand whose precedence
-            # could matter. Only a template that is marker-operator-marker is
-            # rejected here; the writer guards the left operand instead.
-            stripped = text.lstrip()
-            if stripped.startswith("{"):
-                rest = stripped[stripped.find("}") + 1 :].strip()
-                if not rest or not rest[0].isalpha():
-                    continue
+            # An INFIX template -- marker, operator, marker -- is kept now that
+            # the operands it brackets are recorded beside it. `a #> b` needs
+            # parentheses around a child by PRECEDENCE, and the writer puts
+            # them there: the leading operand is guarded by the same rule that
+            # guards every template beginning with a marker, and the rest by
+            # the Bracketed keys above.
             # A CAST the probe did not ask for is a COERCION the reference
             # applies by type: DuckDB writes BOOL_OR(CAST(x AS BOOLEAN)) only
             # when x is not already boolean. The probe feeds plain columns, so
             # any cast here was added, and baking it into the template wrapped
             # an argument that already had one.
             if "CAST(" in text and cls_name not in ("Cast", "TryCast"):
+                # The coercion is IDEMPOTENT, though: an operand that already
+                # carries that cast is written as it stands, because there is
+                # nothing left to add. So the shape is probed again with the
+                # cast already in place, and the template that comes back --
+                # `BOOL_OR({this})` -- is exact for exactly those operands.
+                # Which they are is the cast-sensitivity table's answer, and
+                # the writer asks it before applying this.
+                recast = _recast_probe(exp, cls, kwargs, expr_keys, scalars, dialect)
+                if recast is None:
+                    continue
+                text, bracketed, idempotent = recast
+                for _k, _t in idempotent.items():
+                    idem.setdefault(cls_name, {}).setdefault(_k, set()).add(_t)
+            # An INTERVAL the probe did not ask for is a unit the reference
+            # SUPPLIED, the same way a cast above is a coercion it supplied:
+            # DuckDB writes `d + INTERVAL (x) DAY` for an operand that names
+            # no unit and `d + INTERVAL '1' DAY` for one that does, inventing
+            # the DAY in the first. Baking that in wrote the invented unit
+            # beside an operand that had brought its own.
+            if "INTERVAL" in text and not any(
+                k == "unit" or k == "unit[]" for k in expr_keys
+            ) and not any(k == "unit" for k, _ in scalars):
                 continue
             # A marker inside QUOTES is kept, not rejected: the template is
             # quoting the argument itself, so what belongs there is the
@@ -3909,8 +4008,8 @@ def syntax_templates(exp, dialect, repo):
             keys = [k[:-2] if k.endswith("[]") else k for k in expr_keys] + [
                 k for k, v in scalars if v is not False
             ]
-            out.setdefault(cls_name, []).append((keys, marked, required, text))
-    return out
+            out.setdefault(cls_name, []).append((keys, marked, required, text, bracketed))
+    return out, idem
 
 
 def render_functions(P, exp, dialect, funcs):
@@ -4813,6 +4912,7 @@ def main() -> int:
         "\tInverseTimeMapping map[string]string\n",
         "\tFormatTimeMapping  map[string]string\n",
         "\tCastSensitiveArgs map[string]map[int][]string\n",
+        "\t// CastIdempotentTypes are the slots whose coercion the dialect\n\t// applies whatever it is given, so an argument already carrying that\n\t// cast leaves nothing to add and the plain spelling is exact.\n\tCastIdempotentTypes map[string]map[string][]string\n",
         "\t// CastSensitiveTypes says WHICH cast targets move the rendering in\n\t// each of those positions. A slot is not sensitive to casting as\n\t// such: DuckDB wraps a non-text argument to UPPER in a cast to TEXT,\n\t// and leaves one that is already TEXT alone.\n\tCastSensitiveTypes map[string]map[int]map[string][]string\n",
         "\t// DropsZeroArgs are the argument keys a literal ZERO simply\n",
         "\t// DISAPPEARS from -- DuckDB writes REGEXP_EXTRACT(x, p) for a\n",
@@ -5319,6 +5419,7 @@ def main() -> int:
         "\tMarked   []string\n",
         "\tRequired []FuncConst\n",
         "\tTemplate string\n",
+        "\t// Bracketed are the keys this dialect wraps in parentheses by\n\t// PRECEDENCE where the operand is not an atom: DuckDB writes\n\t// `d + INTERVAL 1 DAY` for a literal and `d + INTERVAL (x) DAY` for\n\t// anything else. The template keeps them bare and the writer puts the\n\t// brackets back where the operand needs them.\n\tBracketed []string\n",
         "}\n",
         "\n",
         "type ClassTrigger struct {\n",
@@ -5515,19 +5616,28 @@ def main() -> int:
                 )
                 out.append(f"\t\t\t{gostr(fname)}: {{{triggers}}},\n")
             out.append("\t\t},\n")
-        syn = syntax_templates(exp, name, pathlib.Path(__file__).resolve().parent.parent)
+        syn, idem = syntax_templates(exp, name, pathlib.Path(__file__).resolve().parent.parent)
+        out.append("\t\tCastIdempotentTypes: map[string]map[string][]string{\n")
+        for cls_key in sorted(idem):
+            inner = ", ".join(
+                "%s: {%s}" % (gostr(k), ", ".join(gostr(t) for t in sorted(idem[cls_key][k])))
+                for k in sorted(idem[cls_key])
+            )
+            out.append(f"\t\t\t{gostr(cls_key)}: {{{inner}}},\n")
+        out.append("\t\t},\n")
         if syn:
             out.append("\t\tSyntaxSQL: map[string][]SyntaxTemplate{\n")
             for cls_name in sorted(syn):
                 entries = "".join(
-                    "{[]string{%s}, []string{%s}, []FuncConst{%s}, %s}, "
+                    "{[]string{%s}, []string{%s}, []FuncConst{%s}, %s, []string{%s}}, "
                     % (
                         ", ".join(gostr(k) for k in keys),
                         ", ".join(gostr(k) for k in marked),
                         "".join("{%s, %s}, " % (gostr(k), goconst(v)) for k, v in required),
                         gostr(text),
+                        ", ".join(gostr(k) for k in bracketed),
                     )
-                    for keys, marked, required, text in syn[cls_name]
+                    for keys, marked, required, text, bracketed in syn[cls_name]
                 )
                 out.append(f"\t\t\t{gostr(cls_name)}: {{{entries}}},\n")
             out.append("\t\t},\n")
