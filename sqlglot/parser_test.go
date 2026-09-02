@@ -122,11 +122,6 @@ func TestRefusals(t *testing.T) {
 		{"no-paren function named, not tokenized", "CURDATE", "databricks"},
 		{"ORDER BY with nothing to order", "SELECT RANK(ORDER BY b) OVER ()", "duckdb"},
 		{"non-numeric type parameter", "a::VARCHAR('x')", "tsql"},
-		// HASHBYTES decides its class by inspecting its first argument, which
-		// the port refuses rather than half-implement -- so it also refuses to
-		// WRITE a node whose only spelling is that call. See
-		// generator.parserWouldRefuse.
-		{"a builder that inspects its arguments", "HASHBYTES('SHA1', x)", "tsql"},
 		{"the ALL quantifier, which the port does not carry", "SELECT ALL x", "databricks"},
 		{"fixed-size array where the dialect has none", "CAST(a AS INT[3])", "databricks"},
 		{"unknown type", "CAST(a AS wat)", ""},
@@ -200,7 +195,7 @@ func TestRefusals(t *testing.T) {
 		{"SELECT INTO a temporary table", "SELECT * INTO TEMPORARY t2 FROM t1", "postgres"},
 		{"over-qualified table function", "SELECT * FROM a.b.c.f()", ""},
 		{"APPLY over an unclosed subquery", "SELECT * FROM a CROSS APPLY (SELECT 1", "tsql"},
-		{"APPLY over a function the port cannot build", "SELECT * FROM a CROSS APPLY HASHBYTES('SHA1', x)", "tsql"},
+		{"APPLY over a function the port cannot build", "SELECT * FROM a CROSS APPLY XMLTABLE('/r' PASSING x)", "tsql"},
 		{"APPLY over a qualified name that is not a call", "SELECT * FROM a CROSS APPLY b.c", "tsql"},
 		{"APPLY over a qualifier followed by a number", "SELECT * FROM a CROSS APPLY dbo.1", "tsql"},
 		{"SELECT INTO nothing", "SELECT * INTO FROM t1", "tsql"},

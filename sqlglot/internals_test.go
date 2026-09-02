@@ -232,8 +232,11 @@ func TestParserWouldRefuse(t *testing.T) {
 		name string
 		want bool
 	}{
-		{"HASHBYTES", true},
 		{"", false},
+		// A name whose class one argument's WORD chooses is read, not
+		// refused: HASHBYTES('SHA1', x) is an SHA. It used to be the one
+		// name this guard caught.
+		{"HASHBYTES", false},
 		{"CONVERT", false}, // a syntax of its own, which the parser handles
 		{"ABS", false},     // a plain signature
 		{"NOT_A_FUNCTION_ANYWHERE", false},
@@ -244,6 +247,22 @@ func TestParserWouldRefuse(t *testing.T) {
 		if got := g.parserWouldRefuse(c.name); got != c.want {
 			t.Errorf("parserWouldRefuse(%q) = %v, want %v", c.name, got, c.want)
 		}
+	}
+	// No name in any of the five dialects reaches the guard's own answer any
+	// more -- every one the reference names has a signature the port can
+	// build. The guard stays because the property it protects does: a
+	// spelling the parser cannot read back is a statement nobody has checked.
+	// So it is put to a name that has none, rather than deleted for want of
+	// one in the tables as they stand today.
+	doctored := *cfg.Tables
+	doctored.NamedFunctions = map[string]struct{}{"ZZ_NO_SIGNATURE": {}}
+	doctored.Functions = nil
+	doctored.FunctionsByArity = nil
+	doctored.ValueDispatchFunctions = nil
+	doctored.SyntaxFunctions = nil
+	blind := &generator{cfg: cfg, tables: &doctored, dialect: "tsql"}
+	if !blind.parserWouldRefuse("ZZ_NO_SIGNATURE") {
+		t.Error("a name with no signature at all did not reach the guard")
 	}
 }
 

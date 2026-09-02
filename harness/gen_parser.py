@@ -203,6 +203,198 @@ def _type_dispatch(exp, builder, args, index, dialect, describe, call_builder):
     return {"index": index, "default": default, "by_type": special}
 
 
+def builder_words(builder):
+    """The string constants a builder COMPARES its arguments against.
+
+    T-SQL's HASHBYTES reads its first argument as the name of a digest -- MD5,
+    SHA, SHA1, SHA2_256, SHA2_512 -- and builds a different class for each.
+    The vocabulary is not something a generic probe can guess, and hand-typing
+    it is hand-transcribing the builder. So it is read off the builder's own
+    code, tuples included: `kind in ("SHA", "SHA1")` keeps its two words in a
+    single constant, and a first attempt that read only the plain strings
+    found MD5 and missed SHA entirely.
+    """
+    code = getattr(builder, "__code__", None)
+    if code is None:
+        return set()
+    out: set = set()
+    stack = [code]
+    while stack:
+        for c in stack.pop().co_consts:
+            if isinstance(c, str):
+                out.add(c)
+            elif isinstance(c, tuple):
+                out |= {v for v in c if isinstance(v, str)}
+            elif hasattr(c, "co_consts"):
+                stack.append(c)
+    return {w for w in out if w and w.replace("_", "").isalnum()}
+
+
+def _predicts(exp, builder, dialect, spec, subst, index, kind, same, rebuild, call_builder):
+    """Whether a spec explains a SECOND argument of the same kind as the first.
+
+    A builder that COMPUTES from what it is handed describes perfectly against
+    one probe and wrongly against every other value. Nothing but a second
+    probe tells that apart from a rule.
+    """
+    other_value = _another(exp, kind)
+    if other_value is None:
+        return True
+    tried = list(subst)
+    tried[index] = other_value
+    try:
+        built = call_builder(builder, list(tried), dialect)
+    except Exception:  # noqa: BLE001
+        return False
+    return isinstance(built, exp.Expr) and same(rebuild(spec, tried), built, tried)
+
+
+def _another(exp, kind):
+    """A second value of the same kind as this probe, or None where there is
+    no second one worth trying."""
+    if isinstance(kind, exp.Literal):
+        text = kind.args.get("this")
+        if not kind.args.get("is_string"):
+            return exp.Literal.number(7 if str(text) != "7" else 3)
+        if isinstance(text, str) and text.isdigit():
+            return exp.Literal.string("7")
+        return exp.Literal.string("zzother")
+    return None
+
+
+def _kind_specs(
+    exp, builder, width, dialect, describe, same, rebuild, call_builder, probe_kind
+):
+    """One arity's shape, per the KIND of one argument.
+
+    PostgreSQL's REGEXP_REPLACE takes `(source, pattern, replacement [, start
+    [, N ]] [, flags ])`, and the only thing telling a `start` from a `flags`
+    is whether the last argument is a string that is not a number. So four
+    arguments are two different shapes, and probed with columns alone the
+    fourth always looked like a `start`.
+
+    Recorded only where every kind either matches the base shape or yields a
+    describable one of its own, and where the alternates for a kind agree with
+    themselves. A builder that varies for some other reason yields nothing and
+    the arity stays unrecorded, as it was.
+    """
+    args = [exp.column(f"__probe_{i}") for i in range(width)]
+    try:
+        base = call_builder(builder, list(args), dialect)
+    except Exception:  # noqa: BLE001 -- not an arity this builder takes
+        return None
+    if not isinstance(base, exp.Expr):
+        return None
+    base_spec = describe(base, args)
+    if base_spec is None:
+        return None
+    alternates: dict = {}
+    # A string that spells a number goes with the rest: it is the one shape
+    # the strict pass never offers, and the one this rule turns on.
+    for kind in probe_substitutions(exp) + [exp.Literal.string("1")]:
+        label = probe_kind(exp, kind)
+        for i in range(width):
+            subst = list(args)
+            subst[i] = kind.copy()
+            try:
+                other = call_builder(builder, list(subst), dialect)
+            except Exception:  # noqa: BLE001
+                continue
+            if not isinstance(other, exp.Expr):
+                return None
+            if other.__class__ is base.__class__ and same(
+                rebuild(base_spec, subst), other, subst
+            ):
+                continue
+            spec = describe(other, subst)
+            if spec is None:
+                return None
+            found = (other.__class__.__name__, spec)
+            # The alternate has to be a RULE, not a reading of this one probe.
+            # T-SQL's DATEDIFF turns a number into a date -- 1 becomes
+            # '1900-01-02' -- and described from a single probe that date came
+            # out as a CONSTANT the port would then write for every number it
+            # was given. So each alternate is put to a second value of the
+            # same kind, and kept only if it predicts that one too.
+            if not _predicts(
+                exp, builder, dialect, spec, subst, i, kind, same, rebuild, call_builder
+            ):
+                return None
+            if alternates.setdefault((i, label), found) != found:
+                return None
+    if not alternates:
+        return None
+    return {
+        "base": (base.__class__.__name__, base_spec),
+        "alternates": alternates,
+    }
+
+
+def _value_dispatch(exp, builder, args, index, dialect, describe, call_builder):
+    """A builder that picks its CLASS from one argument's VALUE.
+
+    The sibling of _type_dispatch, and the same shape: a spec per value rather
+    than per type. What differs is where the candidates come from -- a type
+    can be enumerated, a word cannot, so the words are read out of the
+    builder's own constants.
+
+    Recorded only where the words actually disagree with the default, so a
+    builder that merely happens to hold strings yields nothing.
+    """
+    try:
+        plain = call_builder(builder, list(args), dialect)
+    except Exception:  # noqa: BLE001
+        return None
+    default = (type(plain).__name__, describe(plain, args))
+    if default[1] is None:
+        return None
+    by_value: dict[str, tuple] = {}
+    for word in sorted(builder_words(builder)):
+        subst = list(args)
+        subst[index] = exp.Literal.string(word)
+        try:
+            # The builder may CONSUME the word -- HASHBYTES pops it off -- so
+            # it is handed a list of its own and described against this one.
+            node = call_builder(builder, list(subst), dialect)
+        except Exception:  # noqa: BLE001 -- not a word this builder takes
+            continue
+        if not isinstance(node, exp.Expr):
+            continue
+        if type(node).__name__ == default[0]:
+            # Same class, so whatever changed is not a dispatch. Half the
+            # constants in a builder are not vocabulary at all, and a first
+            # attempt that kept every word whose RESULT differed recorded
+            # T-SQL's DATENAME dispatching on "TSQL" -- the module name, read
+            # as a date part and translated like one.
+            continue
+        spec = describe(node, subst)
+        if spec is None:
+            continue
+        by_value[word.upper()] = (type(node).__name__, spec)
+    if not by_value:
+        return None
+    # A VOCABULARY, or a rule that merely happens to hold strings? T-SQL's
+    # FORMAT picks TimeToStr or NumberToStr by running a REGEX over the format
+    # string, and its constants -- "TSQL", "THIS", "FORMAT" -- are module
+    # names that happen to look like date formats to that regex. Recorded as a
+    # word list it would have read FORMAT(x, 'yyyy') as a number.
+    #
+    # So the list is only a list if words OUTSIDE it take the default. The
+    # controls are shapes a caller actually writes, not nonsense alone.
+    for control in ("ZZQQ", "yyyy", "hh", "d", "0", "#,##0.00"):
+        if control.upper() in by_value:
+            continue
+        subst = list(args)
+        subst[index] = exp.Literal.string(control)
+        try:
+            node = call_builder(builder, list(subst), dialect)
+        except Exception:  # noqa: BLE001
+            continue
+        if isinstance(node, exp.Expr) and type(node).__name__ != default[0]:
+            return None
+    return {"index": index, "default": default, "by_value": by_value}
+
+
 def json_path_functions(P, exp, dialect=""):
     """The names that turn their arguments into a JSON PATH.
 
@@ -446,7 +638,14 @@ def probe_kind(exp, node):
     make the same one at parse time with no reference to hand.
     """
     if isinstance(node, exp.Literal):
-        return "string" if node.args.get("is_string") else "number"
+        if not node.args.get("is_string"):
+            return "number"
+        # A string that spells a NUMBER is its own kind. PostgreSQL's
+        # REGEXP_REPLACE reads a trailing string as flags -- unless it spells
+        # an integer, when it is a position -- so the two cannot share a name
+        # or the port would route `'1'` where `'g'` goes.
+        text = node.args.get("this")
+        return "digits" if isinstance(text, str) and text.isdigit() else "string"
     if isinstance(node, exp.Cast):
         return "cast"
     if isinstance(node, exp.Subquery):
@@ -508,6 +707,8 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
     """
 
     dispatch: dict = {}
+    by_value: dict = {}
+    kind_specs: dict = {}
 
     def placeholders(n):
         return [exp.column(f"__probe_{i}") for i in range(n)]
@@ -537,7 +738,20 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
         for key, value in node.args.items():
             at = position(value)
             if at is not None:
-                out.append((key, {"index": at}))
+                how = {"index": at}
+                # The builder may ANNOTATE the argument it was handed rather
+                # than wrap it: PostgreSQL marks REGEXP_REPLACE's flags as a
+                # VARCHAR. It shows in no SQL and in no argument, only in the
+                # dump -- so only the differential ever saw it missing.
+                # A CAST annotates itself -- its target IS its type -- so an
+                # annotation there is the caller's, not the builder's, and
+                # recording it made one spec per cast target and no agreement
+                # between them. Every other class carries none of its own, so
+                # an annotation on one is the builder's doing.
+                annot = None if isinstance(value, exp.Cast) else annot_of(value)
+                if annot is not None:
+                    how["annot"] = annot
+                out.append((key, how))
             elif isinstance(value, list):
                 indexes = [position(v) for v in value]
                 if not value:
@@ -656,7 +870,13 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                     else None
                 )
             elif "index" in how:
-                out[key] = args[how["index"]] if how["index"] < len(args) else None
+                held = args[how["index"]] if how["index"] < len(args) else None
+                if held is not None and "annot" in how:
+                    held = held.copy()
+                    held.type = getattr(exp, how["annot"]["node"])(
+                        **dict(how["annot"]["extras"])
+                    )
+                out[key] = held
             elif "varlen" in how:
                 out[key] = args[how["varlen"] :]
             else:
@@ -685,6 +905,11 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
             elif isinstance(value, exp.Expr) and isinstance(actual, exp.Expr):
                 # A wrapped node is rebuilt, not carried, so identity is the
                 # wrong test -- compare what it is instead.
+                if type(value) is not type(actual) or value.args != actual.args:
+                    return False
+                if getattr(value, "type", None) != getattr(actual, "type", None):
+                    return False
+            elif isinstance(value, exp.Expr) and isinstance(actual, exp.Expr):
                 if type(value) is not type(actual) or value.args != actual.args:
                     return False
                 if getattr(value, "type", None) != getattr(actual, "type", None):
@@ -827,6 +1052,17 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
             )
             if entry is not None:
                 dispatch[name] = entry
+        if not ok and name not in dispatch:
+            # A class chosen by a WORD rather than by a type. Every position
+            # is offered, because which one holds the word is the builder's
+            # business, not the probe's.
+            for i in range(len(args)):
+                entry = _value_dispatch(
+                    exp, builder, args, i, dialect, describe, call_builder
+                )
+                if entry is not None:
+                    by_value[name] = entry
+                    break
         for n in range(len(args)) if ok else ():
             fewer = placeholders(n)
             try:
@@ -934,7 +1170,28 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                 aliases = unit_aliases(builder)
                 if aliases:
                     unit_maps[name] = aliases
-    return out, by_arity, unit_maps, dispatch, wraps, root_annots
+        # An arity the loop above left out because ONE argument's kind moves
+        # the shape. Filled here rather than there so the strict pass stays
+        # strict: what this records is an exception it names, not a relaxation.
+        recorded = by_arity.get(name, {})
+        if name not in out:
+            for width in range(13):
+                if width in recorded:
+                    continue
+                found = _kind_specs(
+                    exp, builder, width, dialect, describe, same, rebuild,
+                    call_builder, probe_kind,
+                )
+                if found is None:
+                    continue
+                by_arity.setdefault(name, {})[width] = found["base"]
+                root_annots[(name, width)] = None
+                for (i, label), variant in found["alternates"].items():
+                    kind_specs.setdefault(name, {}).setdefault(width, {})[
+                        (i, label)
+                    ] = variant
+
+    return out, by_arity, unit_maps, dispatch, wraps, root_annots, by_value, kind_specs
 
 
 def reserved_keywords(dialect: str, Dialect) -> list[str]:
@@ -4868,7 +5125,10 @@ def funcargs(spec) -> str:
                 % (gostr(key), how["index"], gostr(how["wrap"]), extras)
             )
         elif "index" in how:
-            parts.append('{%s, %d, false, nil, "", nil, "", nil, nil, nil}' % (gostr(key), how["index"]))
+            parts.append(
+                '{%s, %d, false, nil, "", nil, "", nil, nil, %s}'
+                % (gostr(key), how["index"], goannot(how.get("annot")))
+            )
         elif "varlen" in how:
             parts.append('{%s, %d, true, nil, "", nil, "", nil, nil, nil}' % (gostr(key), how["varlen"]))
         else:
@@ -5853,7 +6113,9 @@ def main() -> int:
         "\t// different shapes, not just two names, which is why each carries\n",
         "\t// a whole spec. Answerable only with a type annotator, which is\n",
         "\t// why these were refused until there was one.\n",
-        "\tTypeDispatchFunctions map[string]TypeDispatch\n",
+        "\tTypeDispatchFunctions map[string]TypeDispatch\n",        "\t// ValueDispatchFunctions are names whose CLASS is chosen by the\n\t// WORD in one argument: T-SQL's HASHBYTES('SHA1', x) is an SHA and\n\t// HASHBYTES('MD5', x) an MD5. A word not listed takes Default.\n\tValueDispatchFunctions map[string]ValueDispatch\n",
+        "\t// ArityKindSpecs are the shapes an arity takes when one argument is\n\t// of a particular kind, beside the plain shape in FunctionsByArity.\n\tArityKindSpecs map[string]map[int][]KindSpec\n",
+
         "\t// ValidIntervalUnits are the words that can follow INTERVAL as a\n",
         "\t// TYPE. Where the next word is not one, the reference builds a\n",
         "\t// bare INTERVAL type instead of reading a unit that is not there.\n",
@@ -5894,6 +6156,24 @@ def main() -> int:
         "\tIndex   int\n",
         "\tDefault FuncSpec\n",
         "\tByType  map[string]FuncSpec\n",
+        "}\n\n",
+        "// ValueDispatch is one name's choice of class by the WORD in an\n",
+        "// argument: HASHBYTES('SHA1', x) is an SHA, HASHBYTES('MD5', x) an\n",
+        "// MD5, and anything else the Default. The words are read off the\n",
+        "// reference builder's own constants, not transcribed.\n",
+        "// KindSpec is the shape one arity takes when the argument at Index is\n",
+        "// of a particular KIND. PostgreSQL's REGEXP_REPLACE reads its last\n",
+        "// argument as flags when it is a string that does not spell a number,\n",
+        "// and as a position when it does -- one arity, two shapes.\n",
+        "type KindSpec struct {\n",
+        "\tIndex int\n",
+        "\tKind  string\n",
+        "\tSpec  FuncSpec\n",
+        "}\n\n",
+        "type ValueDispatch struct {\n",
+        "\tIndex   int\n",
+        "\tDefault FuncSpec\n",
+        "\tByValue map[string]FuncSpec\n",
         "}\n\n",
         "type FuncSpec struct {\n",
         "\tClass string\n",
@@ -6157,7 +6437,16 @@ def main() -> int:
         out.append(strset("SyntaxFunctions", sorted(P.FUNCTION_PARSERS)))
         out.append(strset("TableFunctions", table_functions(name, P)))
         _fmt_args = time_format_args(name, P, exp, list(P.FUNCTIONS))
-        funcs, by_arity, unit_maps, dispatch, string_wraps, root_annots = probe_functions(
+        (
+            funcs,
+            by_arity,
+            unit_maps,
+            dispatch,
+            string_wraps,
+            root_annots,
+            value_dispatch,
+            kind_specs,
+        ) = probe_functions(
             P, exp, name, format_args=_fmt_args
         )
         if string_wraps:
@@ -6184,6 +6473,44 @@ def main() -> int:
                     cls, spec = d["by_type"][ty]
                     out.append(
                         f"\t\t\t\t\t{gostr(ty)}: {{{gostr(cls)}, "
+                        f"[]FuncArg{{{funcargs(spec)}}}, nil}},\n"
+                    )
+                out.append("\t\t\t\t},\n\t\t\t},\n")
+            out.append("\t\t},\n")
+        if kind_specs:
+            out.append(
+                "\t\tArityKindSpecs: map[string]map[int][]KindSpec{\n"
+            )
+            for fn in sorted(kind_specs):
+                out.append(f"\t\t\t{gostr(fn)}: {{\n")
+                for width in sorted(kind_specs[fn]):
+                    forms = kind_specs[fn][width]
+                    parts = []
+                    for (i, label) in sorted(forms):
+                        cls, spec = forms[(i, label)]
+                        parts.append(
+                            "{%d, %s, FuncSpec{%s, []FuncArg{%s}, nil}}"
+                            % (i, gostr(label), gostr(cls), funcargs(spec))
+                        )
+                    out.append(f"\t\t\t\t{width}: {{{', '.join(parts)}}},\n")
+                out.append("\t\t\t},\n")
+            out.append("\t\t},\n")
+        if value_dispatch:
+            out.append("\t\tValueDispatchFunctions: map[string]ValueDispatch{\n")
+            for fn in sorted(value_dispatch):
+                d = value_dispatch[fn]
+                dcls, dspec = d["default"]
+                out.append(f"\t\t\t{gostr(fn)}: {{\n")
+                out.append(f"\t\t\t\tIndex: {d['index']},\n")
+                out.append(
+                    f"\t\t\t\tDefault: FuncSpec{{{gostr(dcls)}, "
+                    f"[]FuncArg{{{funcargs(dspec)}}}, nil}},\n"
+                )
+                out.append("\t\t\t\tByValue: map[string]FuncSpec{\n")
+                for word in sorted(d["by_value"]):
+                    cls, spec = d["by_value"][word]
+                    out.append(
+                        f"\t\t\t\t\t{gostr(word)}: {{{gostr(cls)}, "
                         f"[]FuncArg{{{funcargs(spec)}}}, nil}},\n"
                     )
                 out.append("\t\t\t\t},\n\t\t\t},\n")
@@ -6381,6 +6708,11 @@ def main() -> int:
                     held = nested_index(how)
                     if held is not None:
                         explained.add(held)
+            # And a position whose KIND spec says what a string does there.
+            for width, forms in kind_specs.get(fname, {}).items():
+                for (i, label) in forms:
+                    if label == "string":
+                        explained.add(i)
             kept = [i for i in positions if i not in explained]
             if kept:
                 sensitive[fname] = kept

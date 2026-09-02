@@ -5133,15 +5133,13 @@ func (g *generator) writeRegexpFlagged(e *Expression) string {
 //
 // The arguments in front of them are the ones the dialect's own spelling would
 // have written, so the spelling is asked for and the flags appended inside its
-// closing parenthesis. A slot the spelling does not name -- a POSITION or an
-// OCCURRENCE, which say WHICH match to take -- has nowhere to go, and the call
-// is refused rather than written without it.
+// closing parenthesis.
+//
+// A POSITION and an OCCURRENCE -- which say WHICH match to take -- were once
+// refused here: the port could not READ a call carrying them, so it had no
+// rendering to hold a spelling to. It can now, and they are named like any
+// other argument.
 func (g *generator) regexpCallWithFlags(e *Expression, flagKey string) string {
-	for _, key := range []string{"position", "occurrence"} {
-		if arg, _ := e.Args[key].(*Expression); arg != nil {
-			return g.fail(e.Class + " with a " + key + ", which this port does not place")
-		}
-	}
 	// The call is spelled WITHOUT its flags and they are appended inside its
 	// closing parenthesis. An argument the dialect would leave out of a
 	// shorter call has to stay while that happens: DuckDB drops a zero group

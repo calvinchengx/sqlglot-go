@@ -1813,7 +1813,11 @@ func (p *parser) parseFunction() (*Expression, error) {
 	// of two is not DATEDIFF of three -- has one spec per count instead, and
 	// which one applies cannot be known until the arguments are read.
 	variants, byArity := p.tables.FunctionsByArity[upper]
-	if !named && !byArity && !isJSONPath {
+	// A name whose class one argument's WORD chooses has no single spec and
+	// no spec per count, only one per word -- which is not a builder nobody
+	// can describe, so the refusal below does not apply to it.
+	_, byWord := p.tables.ValueDispatchFunctions[upper]
+	if !named && !byArity && !isJSONPath && !byWord {
 		if _, custom := p.tables.NamedFunctions[upper]; custom {
 			return nil, p.unsupported("function " + upper + " with a builder of its own")
 		}
@@ -1928,10 +1932,22 @@ func (p *parser) parseFunction() (*Expression, error) {
 	if d, ok := p.tables.TypeDispatchFunctions[upper]; ok && d.Index < len(args) {
 		spec, named, byArity = dispatchByType(d, args[d.Index]), true, false
 	}
+	// And a name whose class depends on the WORD in one argument. T-SQL's
+	// HASHBYTES('SHA1', x) is an SHA and HASHBYTES('MD5', x) an MD5; a digest
+	// it does not know stays the plain call it was written as.
+	if d, ok := p.tables.ValueDispatchFunctions[upper]; ok && d.Index < len(args) {
+		spec, named, byArity = dispatchByValue(d, args[d.Index]), true, false
+	}
 	if !named && byArity {
 		byCount, ok := variants[len(args)]
 		if !ok {
 			return nil, p.unsupported("function " + upper + " with this many arguments")
+		}
+		// One arity may be two shapes, told apart by what KIND of thing an
+		// argument is: PostgreSQL reads REGEXP_REPLACE's last argument as
+		// flags when it is a string and as a position when it is a number.
+		if alt, found := kindSpec(p.tables.ArityKindSpecs[upper][len(args)], args); found {
+			byCount = alt
 		}
 		spec, named = byCount, true
 	}
@@ -2123,10 +2139,16 @@ func argumentKind(e *Expression) string {
 	case e == nil:
 		return ""
 	case e.Class == "Literal":
-		if isStringLiteral(e) {
-			return "string"
+		if !isStringLiteral(e) {
+			return "number"
 		}
-		return "number"
+		// A string that spells a NUMBER is its own kind, because at least
+		// one builder tells the two apart: PostgreSQL reads a trailing
+		// string as REGEXP_REPLACE's flags unless it spells an integer.
+		if text, _ := e.Args["this"].(string); isDigits(text) {
+			return "digits"
+		}
+		return "string"
 	case e.Class == "Cast" || e.Class == "TryCast":
 		return "cast"
 	case e.Class == "Subquery":
@@ -2146,12 +2168,31 @@ func escapesWrapper(a FuncArg, arg *Expression) bool {
 		if k == kind {
 			return true
 		}
+		// Digits are a REFINEMENT of string, so a wrapper a string escapes
+		// is escaped by a string that spells a number too. Only the one
+		// builder that tells them apart ever sees the difference.
+		if k == "string" && kind == "digits" {
+			return true
+		}
 		if target, found := strings.CutPrefix(k, "cast:"); found &&
 			castsTo(arg) == target {
 			return true
 		}
 	}
 	return false
+}
+
+// isDigits reports whether every character is a decimal digit.
+func isDigits(text string) bool {
+	if text == "" {
+		return false
+	}
+	for _, r := range text {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+	return true
 }
 
 // castsTo is the type a cast names, or the empty string for anything else.
@@ -2165,6 +2206,29 @@ func castsTo(e *Expression) string {
 	}
 	kind, _ := to.Args["this"].(DataTypeKind)
 	return string(kind)
+}
+
+// kindSpec picks the shape whose argument kind this call matches, if any.
+func kindSpec(forms []KindSpec, args []*Expression) (FuncSpec, bool) {
+	for _, form := range forms {
+		if form.Index < len(args) && argumentKind(args[form.Index]) == form.Kind {
+			return form.Spec, true
+		}
+	}
+	return FuncSpec{}, false
+}
+
+// dispatchByValue picks the spec the word in this argument selects, or the
+// default where the argument is not a word this name knows.
+func dispatchByValue(d ValueDispatch, arg *Expression) FuncSpec {
+	if !isStringLiteral(arg) {
+		return d.Default
+	}
+	text, _ := arg.Args["this"].(string)
+	if spec, ok := d.ByValue[strings.ToUpper(text)]; ok {
+		return spec
+	}
+	return d.Default
 }
 
 func (p *parser) buildFunction(name string, spec FuncSpec, args []*Expression) *Expression {
@@ -2249,11 +2313,19 @@ func (p *parser) buildFromSpec(name, class string, keys []FuncArg, args []*Expre
 			}
 			node.Set(a.Key, rest)
 		case a.Index >= 0:
-			if a.Index < len(args) {
-				node.Set(a.Key, args[a.Index])
-			} else {
+			if a.Index >= len(args) {
 				node.Set(a.Key, nil)
+				break
 			}
+			held := args[a.Index]
+			if a.NestedAnnot != nil {
+				// The builder ANNOTATES the argument it was handed --
+				// PostgreSQL marks REGEXP_REPLACE's flags a VARCHAR. Copied
+				// first: the argument is the caller's, not this node's.
+				held = held.Copy()
+				held.Type = annotation(a.NestedAnnot)
+			}
+			node.Set(a.Key, held)
 		default:
 			node.Set(a.Key, a.Const)
 		}

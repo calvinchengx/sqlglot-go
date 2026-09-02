@@ -396,6 +396,17 @@ func (g *generator) wouldFuse(word, operand string) bool {
 // of one argument rather than GREATEST of two -- and the candidates are
 // ordered most-constrained first, so the first whose constraints all hold is
 // the right one.
+// templateSubstitutes reports whether this dialect has a template for the
+// node that puts the named argument straight into its text.
+func (g *generator) templateSubstitutes(e *Expression, key string) bool {
+	for _, candidate := range g.tables.SyntaxSQL[e.Class] {
+		if strings.Contains(candidate.Template, "{"+key+"}") {
+			return true
+		}
+	}
+	return false
+}
+
 // parserWouldRefuse reports whether the port's parser declines this function
 // name because the reference builds it with something the probe could not
 // read -- a builder that inspects the arguments it is given.
@@ -414,6 +425,12 @@ func (g *generator) parserWouldRefuse(name string) bool {
 		return false
 	}
 	if _, ok := g.tables.FunctionsByArity[name]; ok {
+		return false
+	}
+	// Nor a name whose class one argument's WORD chooses: HASHBYTES is read
+	// by the word in front of what it hashes, which is how the SHA this
+	// guard was written for gets its T-SQL spelling back.
+	if _, ok := g.tables.ValueDispatchFunctions[name]; ok {
 		return false
 	}
 	_, custom := g.tables.NamedFunctions[name]
@@ -614,6 +631,13 @@ func (g *generator) refuseSensitive(e *Expression) bool {
 			if _, known := g.tables.CastCoercions[e.Class][arity][key][castTargetOf(child)]; known {
 				continue
 			}
+		}
+		// Or a TEMPLATE writes the literal into its own TEXT rather than
+		// reading it: T-SQL spells an SHA2 `HASHBYTES('SHA2_{length}', x)`,
+		// where the number goes into the digest's name. Nothing interprets
+		// it, so nothing about it can be got wrong.
+		if g.templateSubstitutes(e, key) {
+			continue
 		}
 		g.fail("literal argument to " + e.Class)
 		return true

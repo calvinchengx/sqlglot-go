@@ -9378,3 +9378,74 @@ func TestWrapperExceptions(t *testing.T) {
 		t.Error("excused a wrapper holding two arguments")
 	}
 }
+
+// A class chosen by the WORD in an argument. T-SQL has no digest classes of
+// its own: it spells them all HASHBYTES, and the word in front says which.
+func TestValueDispatch(t *testing.T) {
+	for _, c := range []struct{ sql, class string }{
+		{"HASHBYTES('SHA1', x)", "SHA"},
+		{"HASHBYTES('MD5', 'x')", "MD5"},
+		{"HASHBYTES('SHA2_256', x)", "SHA2"},
+		{"HASHBYTES('SHA2_512', x)", "SHA2"},
+		// A digest it does not know stays the plain call it was written as.
+		{"HASHBYTES('MD2', 'x')", "Anonymous"},
+		// And so does one whose first argument is not a word at all.
+		{"HASHBYTES(kind, x)", "Anonymous"},
+	} {
+		tree, err := ParseOne(c.sql, "tsql")
+		if err != nil {
+			t.Errorf("%s: %v", c.sql, err)
+			continue
+		}
+		if tree.Class != c.class {
+			t.Errorf("%s built %s, want %s", c.sql, tree.Class, c.class)
+		}
+		got, err := Generate(tree, "tsql")
+		if err != nil || got != c.sql {
+			t.Errorf("%s wrote %q (%v)", c.sql, got, err)
+		}
+	}
+	// Two words for one class, so the pair does not round-trip: SHA and SHA1
+	// are both an SHA, and an SHA is written SHA1. That is the reference's
+	// own normalisation, not a loss here.
+	tree, err := ParseOne("HASHBYTES('SHA', x)", "tsql")
+	if err != nil || tree.Class != "SHA" {
+		t.Fatalf("HASHBYTES('SHA', x) built %v (%v)", tree, err)
+	}
+	if got, _ := Generate(tree, "tsql"); got != "HASHBYTES('SHA1', x)" {
+		t.Errorf("SHA wrote %q", got)
+	}
+}
+
+// One arity, two shapes, told apart by the KIND of the last argument.
+// PostgreSQL reads REGEXP_REPLACE's trailing string as flags -- unless it
+// spells an integer, when it is a position.
+func TestArityKindSpecs(t *testing.T) {
+	for _, c := range []struct{ sql, key string }{
+		{"REGEXP_REPLACE(a, b, c, 'g')", "modifiers"},
+		{"REGEXP_REPLACE(a, b, c, 1)", "position"},
+		{"REGEXP_REPLACE(a, b, c, '1')", "position"},
+		{"REGEXP_REPLACE(a, b, c, d, 'g')", "modifiers"},
+	} {
+		tree, err := ParseOne(c.sql, "postgres")
+		if err != nil {
+			t.Errorf("%s: %v", c.sql, err)
+			continue
+		}
+		if _, ok := tree.Args[c.key]; !ok {
+			t.Errorf("%s built %v, want a %s", c.sql, keysOf(tree), c.key)
+		}
+		got, err := Generate(tree, "postgres")
+		if err != nil || got != c.sql {
+			t.Errorf("%s wrote %q (%v)", c.sql, got, err)
+		}
+	}
+	// A string that spells a number is its own kind, and only that one
+	// builder tells it from any other string.
+	if argumentKind(New("Literal", Arg{"this", "12"}, Arg{"is_string", true})) != "digits" {
+		t.Error("a string of digits was not read as one")
+	}
+	if !isDigits("0") || isDigits("") || isDigits("1a") {
+		t.Error("isDigits disagrees with itself")
+	}
+}
