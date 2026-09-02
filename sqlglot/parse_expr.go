@@ -1474,6 +1474,19 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 		p.advance()
 		return p.parseIntervalType(), nil
 	}
+	// An ENUM carries the VALUES it may take rather than a size: they are
+	// strings, and what a sized type takes there is a number.
+	if c.Type == TokENUM && p.next() != nil && p.next().Type == TokL_PAREN {
+		p.advance()
+		members, err := p.parseWrappedCSV(p.parseTypeMember)
+		if err != nil {
+			return nil, err
+		}
+		return New("DataType",
+			Arg{"this", DataTypeKind(kind)},
+			Arg{"expressions", members},
+			Arg{"nested", false}), nil
+	}
 	p.advance()
 
 	nested := p.tables.NestedTypeKinds[kind]

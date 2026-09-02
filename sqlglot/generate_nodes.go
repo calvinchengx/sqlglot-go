@@ -3256,10 +3256,16 @@ func (g *generator) writeUniqueConstraint(e *Expression) string {
 		// which silently gives up the guarantee the statement was making.
 		return g.fail(e.Class + ", which this dialect writes nowhere")
 	}
+	out := "UNIQUE"
 	if columns, _ := e.Args["this"].(*Expression); columns != nil {
-		return "UNIQUE " + g.node(columns)
+		out += " " + g.node(columns)
 	}
-	return "UNIQUE"
+	// Two NULLs count as equal here, so a second row holding one breaks the
+	// constraint. Dropping the words says the opposite.
+	if nulls, _ := e.Args["nulls"].(bool); nulls {
+		out += " NULLS NOT DISTINCT"
+	}
+	return out
 }
 
 // writePrimaryKey writes a key over the columns of the whole table.

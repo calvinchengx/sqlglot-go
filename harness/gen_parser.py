@@ -4650,10 +4650,14 @@ def observed_shapes(exp, dialect, repo):
                     # probed for it -- so the template that writes only the
                     # pairs matched and silently dropped the clause.
                     scalars.append((key, value))
-            if expr_keys or scalars:
-                shapes.setdefault(type(node).__name__, set()).add(
-                    (tuple(expr_keys), tuple(scalars))
-                )
+            # A node with NO arguments is a shape too, and the commonest
+            # kind of one: a bare property or constraint whose whole meaning
+            # is the word. Skipping those left every one of them without a
+            # spelling -- MaterializedProperty, NotForReplication -- so the
+            # parser could read a statement the writer then refused.
+            shapes.setdefault(type(node).__name__, set()).add(
+                (tuple(expr_keys), tuple(scalars))
+            )
     return shapes
 
 

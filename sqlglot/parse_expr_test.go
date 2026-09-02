@@ -9580,3 +9580,35 @@ func TestFunctionAndViewProperties(t *testing.T) {
 		}
 	}
 }
+
+// Three things said about a column that the port used to refuse: a rule about
+// how NULLs compare, a T-SQL word about replication, and a type that names the
+// values it may take rather than a size.
+func TestMoreColumnConstraints(t *testing.T) {
+	for _, c := range []struct{ sql, dialect string }{
+		{"CREATE TABLE tbl (col INT UNIQUE NULLS NOT DISTINCT DEFAULT 9.99)", "postgres"},
+		{"CREATE TABLE tbl (col INT UNIQUE)", "postgres"},
+		{"CREATE TABLE x (a VARCHAR(5) NULL NOT FOR REPLICATION)", "tsql"},
+		{"CREATE TABLE color (name ENUM('RED', 'GREEN', 'BLUE'))", "duckdb"},
+	} {
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != c.sql {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	// The words have to be all three, and an ENUM takes strings.
+	for _, c := range []struct{ sql, dialect string }{
+		{"CREATE TABLE t (a INT UNIQUE NULLS DISTINCT)", "postgres"},
+		{"CREATE TABLE t (a INT NOT FOR)", "tsql"},
+		{"CREATE TABLE t (a ENUM(1, 2))", "duckdb"},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
+		}
+	}
+}

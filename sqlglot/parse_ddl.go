@@ -888,8 +888,18 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			}
 		case p.atWords("UNIQUE"):
 			p.advance()
+			// `NULLS NOT DISTINCT` makes two NULLs equal for the purpose of
+			// the constraint, so a second row holding one is rejected. The
+			// reference keeps only whether the words were there.
+			nulls := false
+			if p.atWords("NULLS", "NOT", "DISTINCT") {
+				p.advance()
+				p.advance()
+				p.advance()
+				nulls = true
+			}
 			kind = New("UniqueColumnConstraint",
-				Arg{"nulls", false}, Arg{"index_type", false})
+				Arg{"nulls", nulls}, Arg{"index_type", false})
 		case p.atWords("IDENTITY") && p.next() != nil && p.next().Type == TokL_PAREN:
 			// T-SQL's short spelling of an identity column. The reference
 			// records the same node the long `GENERATED ... AS IDENTITY`
@@ -906,6 +916,13 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			kind = New("GeneratedAsIdentityColumnConstraint",
 				Arg{"start", values[0]}, Arg{"increment", values[1]},
 				Arg{"this", false})
+		case p.atWords("NOT", "FOR", "REPLICATION"):
+			// T-SQL: the column is left alone when rows arrive from
+			// replication rather than from a statement.
+			p.advance()
+			p.advance()
+			p.advance()
+			kind = New("NotForReplicationColumnConstraint")
 		case p.atWords("AUTO_INCREMENT"), p.atWords("AUTOINCREMENT"), p.atWords("IDENTITY"):
 			p.advance()
 			kind = New("AutoIncrementColumnConstraint")
