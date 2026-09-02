@@ -1690,14 +1690,11 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 			continue
 		}
 		// A template recorded for an argument that already carries the
-		// dialect's own coercion writes it as it stands, which is exact for
-		// those arguments and SHORT for every other: DuckDB writes
-		// `BOOL_OR(CAST(x AS BOOLEAN))` whatever it is given, and this
-		// template would write `BOOL_OR(x)` for an argument that had no cast
-		// to absorb it.
-		if !g.castsAreAlreadyThere(e) {
-			continue
-		}
+		// dialect's own coercion writes it as it stands. An argument WITHOUT
+		// that cast gets it here: DuckDB writes `BOOL_OR(CAST(x AS BOOLEAN))`
+		// whatever it is given, so adding the cast and writing the plain
+		// template says exactly what the dialect says.
+		e = g.withCoercions(e)
 		// A template that starts with an argument writes it with nothing in
 		// front, so an operand that would need brackets is refused rather than
 		// written flat -- the template knows no precedence.
@@ -1812,18 +1809,27 @@ func bracketsByPrecedence(keys []string, key string) bool {
 	return false
 }
 
-// castsAreAlreadyThere reports whether every argument the dialect coerces here
-// already carries that coercion, so writing the node plainly says everything
-// the dialect would have added.
-func (g *generator) castsAreAlreadyThere(e *Expression) bool {
+// withCoercions is this node with the casts the dialect applies to it already
+// in place, so the spelling recorded for that shape writes it exactly.
+//
+// The dialect adds them whatever it is given -- DuckDB writes
+// `BOOL_OR(CAST(x AS BOOLEAN))` for any argument at all -- so an argument that
+// already carries one is left alone and one that does not is given it. A copy,
+// so the tree the caller holds keeps the arguments it was built with.
+func (g *generator) withCoercions(e *Expression) *Expression {
+	coerced := e
 	for key, types := range g.tables.CastIdempotentTypes[e.Class] {
-		// An argument the node does not carry asks nothing: there is no
-		// coercion to be missing from a slot that is empty.
-		if child, _ := e.Args[key].(*Expression); child != nil && !castsToOneOf(child, types) {
-			return false
+		child, _ := e.Args[key].(*Expression)
+		if child == nil || len(types) == 0 || castsToOneOf(child, types) {
+			continue
 		}
+		if coerced == e {
+			coerced = e.shallowCopy()
+		}
+		coerced.Set(key, New("Cast", Arg{"this", child},
+			Arg{"to", New("DataType", Arg{"this", DataTypeKind(types[0])})}))
 	}
-	return true
+	return coerced
 }
 
 // writeTableAlias writes the alias and, when it has one, the column list that

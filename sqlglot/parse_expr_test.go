@@ -8796,20 +8796,34 @@ func TestAnIdempotentCoercion(t *testing.T) {
 		t.Errorf("an argumentless BOOL_OR wrote %q (%v)", got, err)
 	}
 
-	// And an argument with NO cast to absorb it is still refused: writing the
-	// plain spelling there would leave out the coercion the dialect adds.
-	for _, sql := range []string{
-		"SELECT a, LOGICAL_OR(b) FROM foo GROUP BY a",
-		"SELECT TO_VARIANT('1')",
-		"SELECT TIME_STR_TO_UNIX('2009-02-13 23:31:30')",
+	// And an argument with NO cast to absorb it is GIVEN one: the dialect
+	// adds it whatever it is handed, so adding it and writing the plain
+	// spelling says exactly what the dialect says.
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT a, LOGICAL_OR(b) FROM foo GROUP BY a",
+			"SELECT a, BOOL_OR(CAST(b AS BOOLEAN)) FROM foo GROUP BY a"},
+		{"SELECT TO_VARIANT('1')", "SELECT CAST('1' AS VARIANT)"},
+		{"SELECT TIME_STR_TO_UNIX('2009-02-13 23:31:30')",
+			"SELECT EPOCH(CAST('2009-02-13 23:31:30' AS TIMESTAMP))"},
 	} {
-		e, err := ParseOne(sql, "duckdb")
+		e, err := ParseOne(tc.sql, "duckdb")
 		if err != nil {
-			t.Fatalf("ParseOne(%q): %v", sql, err)
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
 		}
-		if got, err := Generate(e, "duckdb"); err == nil {
-			t.Errorf("%q wrote %q; the coercion would be left out", sql, got)
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
 		}
+	}
+	// The slot absorbs a FAMILY of types, not one: Databricks leaves both a
+	// TIMESTAMP and a TIMESTAMPTZ alone and wraps everything else.
+	tz, err := ParseOne("SELECT DATE_FORMAT(CAST('2024-07-08 13:45:00' AS TIMESTAMP), 'EEE')",
+		"databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(tz, "databricks"); err != nil ||
+		got != "SELECT DATE_FORMAT(CAST('2024-07-08 13:45:00' AS TIMESTAMP), 'EEE')" {
+		t.Errorf("wrote %q (%v)", got, err)
 	}
 }
 

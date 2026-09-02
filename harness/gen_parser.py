@@ -904,12 +904,30 @@ def _recast_probe(exp, cls, kwargs, expr_keys, scalars, dialect):
             types[bare] = m.group(1)
     if not types:
         return None
+    # The dialect absorbs a FAMILY of types, not one: Databricks leaves both
+    # `CAST(x AS TIMESTAMP)` and `CAST(x AS TIMESTAMPTZ)` alone and wraps
+    # everything else. Each candidate is tried and the ones that come back
+    # with no cast added are the ones the slot accepts.
+    absorbed = {}
     for bare, kind in types.items():
-        try:
-            cast = exp.cast(exp.column(f"ZZ{bare.upper()}ZZ"), kind)
-        except Exception:  # noqa: BLE001 -- a type name this dialect will not parse back
+        keep = []
+        for candidate in (kind,) + CAST_PROBE_TYPES:
+            if candidate in keep:
+                continue
+            try:
+                probe = exp.cast(exp.column(f"ZZ{bare.upper()}ZZ"), candidate)
+                trial = dict(args)
+                trial[bare] = probe
+                rendered = _render(exp, cls(**trial), dialect)
+            except Exception:  # noqa: BLE001 -- a type this dialect will not take here
+                continue
+            if rendered.count("CAST(") == 1 and probe.sql(dialect=dialect or None) in rendered:
+                keep.append(candidate)
+        if not keep:
             return None
-        args[bare] = cast
+        absorbed[bare] = keep
+        args[bare] = exp.cast(exp.column(f"ZZ{bare.upper()}ZZ"), keep[0])
+    types = absorbed
     try:
         text = _render(exp, cls(**args), dialect)
     except Exception:  # noqa: BLE001
@@ -917,7 +935,7 @@ def _recast_probe(exp, cls, kwargs, expr_keys, scalars, dialect):
     bracketed = []
     for k in expr_keys:
         bare = k[:-2] if k.endswith("[]") else k
-        rendered = args[bare].sql(dialect=dialect or None) if bare in types else None
+        rendered = args[bare].sql(dialect=dialect or None) if bare in absorbed else None
         marker = rendered if rendered else f"ZZ{bare.upper()}ZZ"
         if text.count(marker) != 1:
             return None
@@ -3549,7 +3567,12 @@ CAST_PROBE_TYPES = (
     "BLOB",
     "DATE",
     "TIMESTAMP",
+    "TIMESTAMPTZ",
+    "TIMESTAMPNTZ",
+    "DATETIME",
     "BIGINT",
+    "INT",
+    "VARIANT",
 )
 
 
@@ -4022,8 +4045,8 @@ def syntax_templates(exp, dialect, repo):
                 if recast is None:
                     continue
                 text, bracketed, idempotent = recast
-                for _k, _t in idempotent.items():
-                    idem.setdefault(cls_name, {}).setdefault(_k, set()).add(_t)
+                for _k, _ts in idempotent.items():
+                    idem.setdefault(cls_name, {}).setdefault(_k, set()).update(_ts)
             # An INTERVAL the probe did not ask for is a unit the reference
             # SUPPLIED, the same way a cast above is a coercion it supplied:
             # DuckDB writes `d + INTERVAL (x) DAY` for an operand that names
