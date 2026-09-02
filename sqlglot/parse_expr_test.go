@@ -9123,3 +9123,42 @@ func TestPlacementGuards(t *testing.T) {
 		t.Errorf("wrote %q for a call with no arguments to flag", got)
 	}
 }
+
+// A date shifted by an interval is written with an OPERATOR where the dialect
+// spells it that way.
+//
+// The amount carries the unit: an interval is written as it stands, and a bare
+// number takes the unit the shift names, defaulting to days -- which is what
+// the reference supplies when the statement named none. A date written as TEXT
+// is cast first, because a string and an interval do not add.
+func TestDateShiftedByAnInterval(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql, want string }{
+		{"duckdb", "SELECT DATE_ADD(d, INTERVAL 1 DAY) FROM t",
+			"SELECT d + INTERVAL '1' DAY FROM t"},
+		{"duckdb", "SELECT DATE_ADD(CAST('2020-01-01' AS DATE), INTERVAL 1 DAY)",
+			"SELECT CAST('2020-01-01' AS DATE) + INTERVAL '1' DAY"},
+		{"postgres", "SELECT date_add(current_date, interval '7' day)",
+			"SELECT CURRENT_DATE + INTERVAL '7 DAY'"},
+		// A bare number takes the unit the shift names, or days where it
+		// named none.
+		{"duckdb", "SELECT DATE_ADD(d, 3)", "SELECT d + INTERVAL 3 DAY"},
+		// And a date written as TEXT is cast, because a string and an
+		// interval do not add.
+		{"duckdb", "SELECT DATE_ADD('2020-01-01', 5)",
+			"SELECT CAST('2020-01-01' AS DATE) + INTERVAL 5 DAY"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, tc.dialect); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	// A shift with nothing to shift by has no interval to write.
+	if got, err := Generate(New("DateAdd",
+		Arg{"this", New("Column", Arg{"this", New("Identifier", Arg{"this", "d"})})}),
+		"duckdb"); err == nil {
+		t.Errorf("wrote %q with nothing to shift by", got)
+	}
+}

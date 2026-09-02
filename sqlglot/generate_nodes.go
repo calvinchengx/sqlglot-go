@@ -94,6 +94,8 @@ func init() {
 		"PartitionBoundSpec":                  (*generator).writePartitionBoundSpec,
 		"Clone":                               (*generator).writeClone,
 		"MacroOverloads":                      (*generator).writeMacroOverloads,
+		"DateAdd":                             (*generator).writeDateAdd,
+		"DateSub":                             (*generator).writeDateSub,
 		"TableSample":                         (*generator).writeTableSample,
 		"WithinGroup":                         (*generator).writeWithinGroup,
 		"RegexpReplace":                       (*generator).writeRegexpFlagged,
@@ -5189,4 +5191,45 @@ func (g *generator) writeTableSample(e *Expression) string {
 		out += " " + sample.SeedKeyword + " (" + seed + ")"
 	}
 	return out
+}
+
+// writeDateAdd and writeDateSub write a date shifted by an interval.
+func (g *generator) writeDateAdd(e *Expression) string {
+	return g.writeDateDelta(e, "+")
+}
+
+func (g *generator) writeDateSub(e *Expression) string {
+	return g.writeDateDelta(e, "-")
+}
+
+// writeDateDelta writes the shift as an OPERATOR where the dialect spells it
+// that way: `d + INTERVAL 1 DAY` rather than `DATEADD(DAY, 1, d)`.
+//
+// The amount carries the unit. Where it is already an interval it is written
+// as it stands; where it is a bare number the unit the shift names is put on
+// it, defaulting to days -- which is what the reference supplies when the
+// statement named none.
+func (g *generator) writeDateDelta(e *Expression, op string) string {
+	if !g.tables.DateDeltaIsAnOperator {
+		return g.spell(e)
+	}
+	amount, _ := e.Args["expression"].(*Expression)
+	if amount == nil {
+		return g.fail(e.Class + " with nothing to shift by")
+	}
+	if amount.Class != "Interval" {
+		unit, _ := e.Args["unit"].(*Expression)
+		if unit == nil {
+			unit = New("Var", Arg{"this", "DAY"})
+		}
+		amount = New("Interval", Arg{"this", amount}, Arg{"unit", unit})
+	}
+	// A date written as TEXT is cast before the arithmetic, because a string
+	// and an interval do not add.
+	this, _ := e.Args["this"].(*Expression)
+	if isStringLiteral(this) {
+		this = New("Cast", Arg{"this", this},
+			Arg{"to", New("DataType", Arg{"this", DataTypeKind("DATE")})})
+	}
+	return g.node(this) + " " + op + " " + g.node(amount)
 }

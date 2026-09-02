@@ -738,6 +738,10 @@ type ParserTables struct {
 	// type and compares against zero instead; empty where the dialect
 	// takes a value as a condition unchanged.
 	ConditionCoercion string
+	// DateDeltaIsAnOperator: a date shifted by an interval is written
+	// with an OPERATOR here -- `d + INTERVAL 1 DAY` -- rather than as a
+	// call. The unit rides on the interval either way.
+	DateDeltaIsAnOperator bool
 	// ColumnCommentWritten: a COMMENT on a column survives here.
 	// PostgreSQL and DuckDB have nowhere to say it in a CREATE and write
 	// nothing, which is what the reference does with it.
@@ -5530,6 +5534,7 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsDropped:     map[string]struct{}{},
 		CommaUnnestJoins:       false,
 		ColumnCommentWritten:   true,
+		DateDeltaIsAnOperator:  false,
 		ConditionCoercion:      "",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
@@ -10597,6 +10602,7 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsDropped:     map[string]struct{}{},
 		CommaUnnestJoins:       false,
 		ColumnCommentWritten:   true,
+		DateDeltaIsAnOperator:  false,
 		ConditionCoercion:      "{value} <> 0",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
@@ -15668,6 +15674,7 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsDropped:     map[string]struct{}{},
 		CommaUnnestJoins:       false,
 		ColumnCommentWritten:   false,
+		DateDeltaIsAnOperator:  true,
 		ConditionCoercion:      "",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
@@ -21133,9 +21140,10 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsDropped: map[string]struct{}{
 			"AnyValue": {},
 		},
-		CommaUnnestJoins:     true,
-		ColumnCommentWritten: false,
-		ConditionCoercion:    "",
+		CommaUnnestJoins:      true,
+		ColumnCommentWritten:  false,
+		DateDeltaIsAnOperator: true,
+		ConditionCoercion:     "",
 		TableSample: TableSampleSQL{
 			Keywords:       "USING SAMPLE",
 			SeedKeyword:    "REPEATABLE",
@@ -26529,6 +26537,7 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsDropped:     map[string]struct{}{},
 		CommaUnnestJoins:       false,
 		ColumnCommentWritten:   true,
+		DateDeltaIsAnOperator:  false,
 		ConditionCoercion:      "",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",

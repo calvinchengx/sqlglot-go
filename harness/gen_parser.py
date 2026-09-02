@@ -2015,6 +2015,24 @@ def condition_coercion(dialect: str) -> str:
     return inner.replace("ZZVALZZ", "{value}")
 
 
+def date_delta_is_an_operator(dialect: str) -> bool:
+    """Whether a date shifted by an interval is written with an operator.
+
+    PostgreSQL and DuckDB write `d + INTERVAL 1 DAY`; T-SQL and Databricks
+    write DATEADD. Asked by rendering the shift and looking for the sign.
+    """
+    from sqlglot import exp
+
+    node = exp.DateAdd(
+        this=exp.column("zzd"),
+        expression=exp.Interval(this=exp.Literal.string("1"), unit=exp.var("DAY")),
+    )
+    try:
+        return node.sql(dialect=dialect or None).startswith("zzd +")
+    except Exception:  # noqa: BLE001
+        return False
+
+
 def column_comment_written(dialect: str) -> bool:
     """Whether a COMMENT on a column survives being written.
 
@@ -5412,6 +5430,7 @@ def main() -> int:
         "\t// PercentileClasses are the ordered-set aggregates whose ARGUMENTS a\n\t// dialect writing the order inside reshuffles: the key becomes the\n\t// first and the fraction slides right.\n\tPercentileClasses map[string]struct{}\n",
         "\t// IgnoreNullsInFunc: `IGNORE NULLS` is written INSIDE the call's\n\t// argument list here rather than after the call.\n\tIgnoreNullsInFunc bool\n",
         "\t// ConditionCoercion is how a value that is not already a condition\n\t// is made into one, with {value} standing for it. T-SQL has no boolean\n\t// type and compares against zero instead; empty where the dialect\n\t// takes a value as a condition unchanged.\n\tConditionCoercion string\n",
+        "\t// DateDeltaIsAnOperator: a date shifted by an interval is written\n\t// with an OPERATOR here -- `d + INTERVAL 1 DAY` -- rather than as a\n\t// call. The unit rides on the interval either way.\n\tDateDeltaIsAnOperator bool\n",
         "\t// ColumnCommentWritten: a COMMENT on a column survives here.\n\t// PostgreSQL and DuckDB have nowhere to say it in a CREATE and write\n\t// nothing, which is what the reference does with it.\n\tColumnCommentWritten bool\n",
         "\t// CommaUnnestJoins: a comma join over an UNNEST is written here as\n\t// an explicit JOIN with `ON TRUE`, because the comma form does not\n\t// bind the unnested rows to the row they came from.\n\tCommaUnnestJoins bool\n",
         "\t// TableSample is how a sampling clause is written: the words that\n\t// open it, whether the METHOD is written, whether a bare size counts\n\t// ROWS or a percentage, and what the repeatable seed is called.\n\tTableSample TableSampleSQL\n",
@@ -6538,6 +6557,10 @@ def main() -> int:
         )
         out.append(
             "\t\tColumnCommentWritten: %s,\n" % str(column_comment_written(name)).lower()
+        )
+        out.append(
+            "\t\tDateDeltaIsAnOperator: %s,\n"
+            % str(date_delta_is_an_operator(name)).lower()
         )
         out.append(f"\t\tConditionCoercion: {gostr(condition_coercion(name))},\n")
         out.append("\t\tTableSample: TableSampleSQL{\n")
