@@ -738,6 +738,14 @@ type ParserTables struct {
 	// type and compares against zero instead; empty where the dialect
 	// takes a value as a condition unchanged.
 	ConditionCoercion string
+	// FileFormatSQL is how the storage format a table is written in is
+	// spelled, with {name} standing for the format. Databricks says
+	// `USING PARQUET` where the rest say `FORMAT=PARQUET`.
+	FileFormatSQL string
+	// TemporarySuffix is what a dialect APPENDS to a temporary object
+	// of each kind: Databricks gives a temporary TABLE a storage format
+	// it was never given.
+	TemporarySuffix map[string]string
 	// DateDeltaIsAnOperator: a date shifted by an interval is written
 	// with an OPERATOR here -- `d + INTERVAL 1 DAY` -- rather than as a
 	// call. The unit rides on the interval either way.
@@ -5535,6 +5543,8 @@ var parserTables = map[string]*ParserTables{
 		CommaUnnestJoins:       false,
 		ColumnCommentWritten:   true,
 		DateDeltaIsAnOperator:  false,
+		FileFormatSQL:          "FORMAT={name}",
+		TemporarySuffix:        map[string]string{},
 		ConditionCoercion:      "",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
@@ -8717,6 +8727,7 @@ var parserTables = map[string]*ParserTables{
 			"Exp":                                 {{[]string{"this"}, []string{"this"}, []FuncConst{}, "EXP({this})", []string{}}},
 			"Extract":                             {{[]string{"this", "expression"}, []string{"this", "expression"}, []FuncConst{}, "DATEPART({this}, {expression})", []string{}}},
 			"Fetch":                               {{[]string{"count", "limit_options", "direction"}, []string{"count", "limit_options", "direction"}, []FuncConst{}, " FETCH {direction} {count}{limit_options}", []string{}}, {[]string{"count", "limit_options", "direction"}, []string{"count", "limit_options", "direction"}, []FuncConst{}, " FETCH {direction} {count}{limit_options}", []string{}}},
+			"FileFormatProperty":                  {{[]string{"this"}, []string{"this"}, []FuncConst{}, "FORMAT={this}", []string{}}},
 			"Filter":                              {{[]string{"this", "expression"}, []string{"this", "expression"}, []FuncConst{}, "{this} FILTER({expression})", []string{}}},
 			"Floor":                               {{[]string{"this", "to"}, []string{"this", "to"}, []FuncConst{}, "FLOOR({this} TO {to})", []string{}}},
 			"ForClause":                           {{[]string{"expressions", "kind"}, []string{"expressions", "kind"}, []FuncConst{}, " FOR {kind} {expressions}", []string{}}, {[]string{"expressions", "kind"}, []string{"expressions", "kind"}, []FuncConst{}, " FOR {kind} {expressions}", []string{}}, {[]string{"kind"}, []string{"kind"}, []FuncConst{}, " FOR {kind}", []string{}}},
@@ -10603,6 +10614,8 @@ var parserTables = map[string]*ParserTables{
 		CommaUnnestJoins:       false,
 		ColumnCommentWritten:   true,
 		DateDeltaIsAnOperator:  false,
+		FileFormatSQL:          "FORMAT={name}",
+		TemporarySuffix:        map[string]string{},
 		ConditionCoercion:      "{value} <> 0",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
@@ -13791,6 +13804,7 @@ var parserTables = map[string]*ParserTables{
 			"ExplodingGenerateSeries":             {{[]string{"start", "end"}, []string{"start", "end"}, []FuncConst{}, "GENERATE_SERIES({start}, {end})", []string{}}, {[]string{"start", "end", "step"}, []string{"start", "end", "step"}, []FuncConst{}, "GENERATE_SERIES({start}, {end}, {step})", []string{}}},
 			"Extract":                             {{[]string{"this", "expression"}, []string{"this", "expression"}, []FuncConst{}, "EXTRACT({this} FROM {expression})", []string{}}},
 			"Fetch":                               {{[]string{"count", "limit_options", "direction"}, []string{"count", "limit_options", "direction"}, []FuncConst{}, " FETCH {direction} {count}{limit_options}", []string{}}, {[]string{"limit_options", "direction"}, []string{"limit_options", "direction"}, []FuncConst{}, " FETCH {direction}{limit_options}", []string{}}},
+			"FileFormatProperty":                  {{[]string{"this"}, []string{"this"}, []FuncConst{}, "FORMAT={this}", []string{}}},
 			"Filter":                              {{[]string{"this", "expression"}, []string{"this", "expression"}, []FuncConst{}, "{this} FILTER({expression})", []string{}}},
 			"FirstValue":                          {{[]string{"this"}, []string{"this"}, []FuncConst{}, "FIRST_VALUE({this})", []string{}}},
 			"Floor":                               {{[]string{"this", "to"}, []string{"this", "to"}, []FuncConst{}, "FLOOR({this} TO {to})", []string{}}},
@@ -15675,6 +15689,8 @@ var parserTables = map[string]*ParserTables{
 		CommaUnnestJoins:       false,
 		ColumnCommentWritten:   false,
 		DateDeltaIsAnOperator:  true,
+		FileFormatSQL:          "FORMAT={name}",
+		TemporarySuffix:        map[string]string{},
 		ConditionCoercion:      "",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
@@ -21143,6 +21159,8 @@ var parserTables = map[string]*ParserTables{
 		CommaUnnestJoins:      true,
 		ColumnCommentWritten:  false,
 		DateDeltaIsAnOperator: true,
+		FileFormatSQL:         "FORMAT={name}",
+		TemporarySuffix:       map[string]string{},
 		ConditionCoercion:     "",
 		TableSample: TableSampleSQL{
 			Keywords:       "USING SAMPLE",
@@ -26538,7 +26556,11 @@ var parserTables = map[string]*ParserTables{
 		CommaUnnestJoins:       false,
 		ColumnCommentWritten:   true,
 		DateDeltaIsAnOperator:  false,
-		ConditionCoercion:      "",
+		FileFormatSQL:          "USING {name}",
+		TemporarySuffix: map[string]string{
+			"TABLE": " USING PARQUET",
+		},
+		ConditionCoercion: "",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
 			SeedKeyword:    "REPEATABLE",

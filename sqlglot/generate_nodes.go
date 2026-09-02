@@ -94,6 +94,7 @@ func init() {
 		"PartitionBoundSpec":                  (*generator).writePartitionBoundSpec,
 		"Clone":                               (*generator).writeClone,
 		"MacroOverloads":                      (*generator).writeMacroOverloads,
+		"FileFormatProperty":                  (*generator).writeFileFormat,
 		"DateAdd":                             (*generator).writeDateAdd,
 		"DateSub":                             (*generator).writeDateSub,
 		"TableSample":                         (*generator).writeTableSample,
@@ -2683,6 +2684,9 @@ func (g *generator) writeGroupConcat(e *Expression) string {
 func (g *generator) writeCreate(e *Expression) string {
 	kind, _ := e.Args["kind"].(string)
 	out := g.withPrefix(e, "CREATE") + " "
+	// What the dialect adds to a TEMPORARY object of this kind, written at the
+	// very end because that is where it measured.
+	temporarySuffix := ""
 	if replace, _ := e.Args["replace"].(bool); replace {
 		out += "OR REPLACE "
 	}
@@ -2700,9 +2704,13 @@ func (g *generator) writeCreate(e *Expression) string {
 		case !g.tables.TemporaryWritten[kind]:
 			// Not every dialect has the modifier, and the ones that do not
 			// say it some other way. Writing the object under a DIFFERENT
-			// NAME is not a spelling difference, and Databricks writes a
-			// temporary TABLE with a storage format it was never given --
-			// both say something the statement did not.
+			// NAME is not a spelling difference; giving it a storage format
+			// it was never given is, and that difference was measured.
+			if suffix, ok := g.tables.TemporarySuffix[kind]; ok {
+				out += "TEMPORARY "
+				temporarySuffix = suffix
+				break
+			}
 			return g.fail(e.Class + " TEMPORARY " + kind + ", which this dialect writes another way")
 		default:
 			out += "TEMPORARY "
@@ -2792,7 +2800,7 @@ func (g *generator) writeCreate(e *Expression) string {
 	if clone := g.child(e, "clone"); clone != "" {
 		out += " " + clone
 	}
-	return out
+	return out + temporarySuffix
 }
 
 // writeClone writes `[SHALLOW] CLONE <table>` -- the table this one is made
@@ -5232,4 +5240,23 @@ func (g *generator) writeDateDelta(e *Expression, op string) string {
 			Arg{"to", New("DataType", Arg{"this", DataTypeKind("DATE")})})
 	}
 	return g.node(this) + " " + op + " " + g.node(amount)
+}
+
+// writeFileFormat writes the storage format a table is written in.
+//
+// The format is a WORD rather than a value -- Databricks says `USING PARQUET`
+// where the rest say `FORMAT=PARQUET` -- so what goes into the spelling is the
+// argument's NAME rather than its rendering.
+func (g *generator) writeFileFormat(e *Expression) string {
+	if g.tables.FileFormatSQL == "" {
+		return g.fail(e.Class + ", which this dialect writes nowhere")
+	}
+	this, _ := e.Args["this"].(*Expression)
+	if this == nil {
+		return g.fail(e.Class + " naming no format")
+	}
+	// The format as it was WRITTEN: a bare word stays bare and a quoted one
+	// keeps its quotes, which is the difference between `USING PARQUET` and
+	// `FORMAT='parquet'`.
+	return strings.ReplaceAll(g.tables.FileFormatSQL, "{name}", g.node(this))
 }

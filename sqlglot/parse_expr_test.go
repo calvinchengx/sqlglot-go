@@ -2088,7 +2088,6 @@ func TestCreateViewAndTemporary(t *testing.T) {
 		{"tsql", "CREATE TEMPORARY VIEW x AS SELECT 1"},
 		{"tsql", "CREATE VIEW IF NOT EXISTS x AS SELECT 1"},
 		{"tsql", "CREATE TABLE IF NOT EXISTS x (a INT)"},
-		{"databricks", "CREATE TEMPORARY TABLE x (a INT)"},
 		{"postgres", "CREATE VIEW z (a, b COMMENT 'b')"},
 		{"duckdb", "CREATE VIEW z (a, b COMMENT 'b')"},
 	} {
@@ -2100,6 +2099,28 @@ func TestCreateViewAndTemporary(t *testing.T) {
 			t.Errorf("[%s] %q wrote %q; this dialect writes something else",
 				tc.dialect, tc.sql, got)
 		}
+	}
+	// Databricks gives a temporary TABLE a storage format it was never given,
+	// and writes it a SECOND time where the statement supplied one. That is
+	// the whole of the difference, so it is written rather than refused.
+	for _, tc := range []struct{ sql, want string }{
+		{"CREATE TEMPORARY TABLE x (a INT)", "CREATE TEMPORARY TABLE x (a INT) USING PARQUET"},
+		{"CREATE TEMPORARY TABLE t (a INT) USING PARQUET",
+			"CREATE TEMPORARY TABLE t (a INT) USING PARQUET USING PARQUET"},
+		// The format is a WORD in Databricks and a value elsewhere.
+		{"CREATE TABLE t (a INT) USING PARQUET", "CREATE TABLE t (a INT) USING PARQUET"},
+	} {
+		e, err := ParseOne(tc.sql, "databricks")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "databricks"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	if got, err := Generate(ParseOrFail(t, "CREATE TABLE z WITH (FORMAT='parquet') AS SELECT 1", ""),
+		""); err != nil || got != "CREATE TABLE z WITH (FORMAT='parquet') AS SELECT 1" {
+		t.Errorf("neutral wrote %q (%v)", got, err)
 	}
 }
 
@@ -9160,5 +9181,17 @@ func TestDateShiftedByAnInterval(t *testing.T) {
 		Arg{"this", New("Column", Arg{"this", New("Identifier", Arg{"this", "d"})})}),
 		"duckdb"); err == nil {
 		t.Errorf("wrote %q with nothing to shift by", got)
+	}
+}
+
+// The storage format guards: a dialect that writes it nowhere, and a property
+// naming no format at all.
+func TestFileFormatGuards(t *testing.T) {
+	format := New("FileFormatProperty", Arg{"this", New("Var", Arg{"this", "PARQUET"})})
+	if got, err := Generate(format, "duckdb"); err != nil || got != "FORMAT=PARQUET" {
+		t.Errorf("DuckDB wrote %q (%v)", got, err)
+	}
+	if got, err := Generate(New("FileFormatProperty"), "databricks"); err == nil {
+		t.Errorf("wrote %q for a property naming no format", got)
 	}
 }

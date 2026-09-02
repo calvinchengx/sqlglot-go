@@ -1103,6 +1103,35 @@ def temporary_written(dialect: str) -> dict:
     return out
 
 
+def temporary_suffix(dialect: str) -> dict:
+    """What a dialect APPENDS to a temporary object of each kind.
+
+    Databricks writes a temporary TABLE with a storage format it was never
+    given -- `CREATE TEMPORARY TABLE t (a INT) USING PARQUET` -- and writes it
+    a second time where the statement supplied one of its own. That is the
+    whole of the difference, so it is measured as a suffix rather than left as
+    a refusal.
+    """
+    import sqlglot
+
+    out = {}
+    for kind in ("TABLE", "VIEW", "FUNCTION"):
+        body = _create_body(kind)
+        try:
+            temp = sqlglot.parse_one(f"CREATE TEMPORARY {kind} zzname{body}").sql(
+                dialect=dialect or None
+            )
+            plain = sqlglot.parse_one(f"CREATE {kind} zzname{body}").sql(
+                dialect=dialect or None
+            )
+        except Exception:  # noqa: BLE001
+            continue
+        head = plain.replace("CREATE ", "CREATE TEMPORARY ", 1)
+        if temp.startswith(head) and temp != head:
+            out[kind] = temp[len(head) :]
+    return out
+
+
 def view_column_comment_written(dialect: str) -> bool:
     """Whether a view column's COMMENT survives being written.
 
@@ -2013,6 +2042,26 @@ def condition_coercion(dialect: str) -> str:
     if inner == "ZZVALZZ":
         return ""
     return inner.replace("ZZVALZZ", "{value}")
+
+
+def file_format_sql(dialect: str) -> str:
+    """How the storage format a table is written in is spelled.
+
+    The format is a WORD rather than a value -- Databricks says `USING PARQUET`
+    and the rest `FORMAT=PARQUET` -- so the template carries its name. The
+    generic probe fills the slot with a column and the dialect writes the
+    column's NAME, which is nothing when there is none, so this one asks with
+    a var.
+    """
+    from sqlglot import exp
+
+    try:
+        text = exp.FileFormatProperty(this=exp.var("ZZFMTZZ")).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return ""
+    if "ZZFMTZZ" not in text:
+        return ""
+    return text.replace("ZZFMTZZ", "{name}")
 
 
 def date_delta_is_an_operator(dialect: str) -> bool:
@@ -4004,6 +4053,14 @@ EXTRA_SHAPES = {
         (("this", "expression"), (("position", "TRAILING"),)),
     ],
     "Substring": [(("this",), ()), (("this", "start"), ()), (("this", "start", "length"), ())],
+    # The storage format a table is written in. The corpus writes it only in
+    # dialects that DROP it, so no shape was observed for the ones that keep
+    # it -- and Databricks says `USING PARQUET` where the rest say
+    # `FORMAT=PARQUET`.
+    "FileFormatProperty": [(("this",), ())],
+    # The EMPTY call. `ARRAY_CONSTRUCT_COMPACT()` becomes a filter over an
+    # empty list, and no shape without arguments was observed for it.
+    "ArrayConstructCompact": [((), ())],
     "StrPosition": [(("this", "substr"), ())],
     "Extract": [(("this", "expression"), ())],
     # The unit a rounding rounds TO. The corpus never writes one, so no shape
@@ -5430,6 +5487,8 @@ def main() -> int:
         "\t// PercentileClasses are the ordered-set aggregates whose ARGUMENTS a\n\t// dialect writing the order inside reshuffles: the key becomes the\n\t// first and the fraction slides right.\n\tPercentileClasses map[string]struct{}\n",
         "\t// IgnoreNullsInFunc: `IGNORE NULLS` is written INSIDE the call's\n\t// argument list here rather than after the call.\n\tIgnoreNullsInFunc bool\n",
         "\t// ConditionCoercion is how a value that is not already a condition\n\t// is made into one, with {value} standing for it. T-SQL has no boolean\n\t// type and compares against zero instead; empty where the dialect\n\t// takes a value as a condition unchanged.\n\tConditionCoercion string\n",
+        "\t// FileFormatSQL is how the storage format a table is written in is\n\t// spelled, with {name} standing for the format. Databricks says\n\t// `USING PARQUET` where the rest say `FORMAT=PARQUET`.\n\tFileFormatSQL string\n",
+        "\t// TemporarySuffix is what a dialect APPENDS to a temporary object\n\t// of each kind: Databricks gives a temporary TABLE a storage format\n\t// it was never given.\n\tTemporarySuffix map[string]string\n",
         "\t// DateDeltaIsAnOperator: a date shifted by an interval is written\n\t// with an OPERATOR here -- `d + INTERVAL 1 DAY` -- rather than as a\n\t// call. The unit rides on the interval either way.\n\tDateDeltaIsAnOperator bool\n",
         "\t// ColumnCommentWritten: a COMMENT on a column survives here.\n\t// PostgreSQL and DuckDB have nowhere to say it in a CREATE and write\n\t// nothing, which is what the reference does with it.\n\tColumnCommentWritten bool\n",
         "\t// CommaUnnestJoins: a comma join over an UNNEST is written here as\n\t// an explicit JOIN with `ON TRUE`, because the comma form does not\n\t// bind the unnested rows to the row they came from.\n\tCommaUnnestJoins bool\n",
@@ -6562,6 +6621,12 @@ def main() -> int:
             "\t\tDateDeltaIsAnOperator: %s,\n"
             % str(date_delta_is_an_operator(name)).lower()
         )
+        out.append(f"\t\tFileFormatSQL: {gostr(file_format_sql(name))},\n")
+        _ts = temporary_suffix(name)
+        out.append("\t\tTemporarySuffix: map[string]string{\n")
+        for _k in sorted(_ts):
+            out.append(f"\t\t\t{gostr(_k)}: {gostr(_ts[_k])},\n")
+        out.append("\t\t},\n")
         out.append(f"\t\tConditionCoercion: {gostr(condition_coercion(name))},\n")
         out.append("\t\tTableSample: TableSampleSQL{\n")
         for field, value in (
