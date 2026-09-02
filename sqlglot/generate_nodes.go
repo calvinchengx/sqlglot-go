@@ -3437,14 +3437,19 @@ func (g *generator) writeAlter(e *Expression) string {
 			}
 			parts = append(parts, lead+g.node(action))
 		case "Drop":
-			// The Drop written here names a COLUMN and takes no kind word of
-			// its own; the statement-level DROP writes one.
+			// A Drop inside an ALTER names one thing on the table -- a COLUMN
+			// or a CONSTRAINT -- and the kind is written the same way the
+			// statement-level DROP writes it.
 			tables, _ := action.Args["tables"].([]*Expression)
 			if len(tables) != 1 {
 				g.inColumnList = was
-				return g.fail(e.Class + " dropping more than one column")
+				return g.fail(e.Class + " dropping more than one thing")
 			}
-			text := "DROP COLUMN "
+			kind, _ := action.Args["kind"].(string)
+			if kind == "" {
+				kind = "COLUMN"
+			}
+			text := "DROP " + kind + " "
 			if exists, _ := action.Args["exists"].(bool); exists {
 				text += "IF EXISTS "
 			}
@@ -4177,6 +4182,11 @@ func (g *generator) writeTruncate(e *Expression) string {
 		parts = append(parts, g.node(table))
 	}
 	out += strings.Join(parts, ", ")
+	// Which slice of the table goes. Written before the rest, and never
+	// dropped: a TRUNCATE that loses its partition empties the whole table.
+	if partition, _ := e.Args["partition"].(*Expression); partition != nil {
+		out += " " + g.node(partition)
+	}
 	if identity, _ := e.Args["identity"].(string); identity != "" {
 		out += " " + identity + " IDENTITY"
 	}
@@ -4284,8 +4294,14 @@ func (g *generator) writeGrantPrincipal(e *Expression) string {
 }
 
 // writeComment writes the note left on a table, a view or a column.
+//
+// MATERIALIZED is not a kind of its own: the reference keeps VIEW as the kind
+// and the word as a flag beside it, so both have to be written.
 func (g *generator) writeComment(e *Expression) string {
 	kind, _ := e.Args["kind"].(string)
+	if materialized, _ := e.Args["materialized"].(bool); materialized {
+		kind = "MATERIALIZED " + kind
+	}
 	return "COMMENT ON " + kind + " " + g.child(e, "this") +
 		" IS " + g.child(e, "expression")
 }

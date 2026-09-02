@@ -64,11 +64,11 @@ Regenerate with `make service`; nothing in it is authored here.
 <!-- coverage:start -->
 | Dialect | Tokens | Trees matched | Of | Unparsed | Mismatched |
 |---|---|---|---|---|---|
-| neutral | 997/997 | 919 | 997 | 78 | 0 |
-| tsql | 597/597 | 550 | 597 | 47 | 0 |
-| postgres | 857/857 | 785 | 857 | 72 | 0 |
+| neutral | 997/997 | 924 | 997 | 73 | 0 |
+| tsql | 597/597 | 551 | 597 | 46 | 0 |
+| postgres | 857/857 | 788 | 857 | 69 | 0 |
 | duckdb | 1631/1631 | 1581 | 1631 | 50 | 0 |
-| databricks | 424/424 | 387 | 424 | 37 | 0 |
+| databricks | 424/424 | 389 | 424 | 35 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number
@@ -76,7 +76,7 @@ that matters** and must be zero: it counts statements the port parsed into a
 *different* tree than the reference. Unparsed is the honest size of the gap.
 
 The port also writes SQL back out, and is held to the reference's own output
-string for string: **4,187 of the statements it parses are written back
+string for string: **4,198 of the statements it parses are written back
 identically, none is written wrongly, and none is refused**, and the guard's own rewrite -- inject a row ceiling, emit --
 lands as `TOP 500` in T-SQL and `LIMIT 500` in DuckDB from the same edit to the
 same node. Where a dialect would transform a statement in a way the port does

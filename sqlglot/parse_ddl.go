@@ -1038,6 +1038,30 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 //
 // The actions are a LIST, because some dialects take several at once, and each
 // is a node of its own -- an ADD is the very ColumnDef a CREATE builds.
+// parseDroppedPartitions reads the `PARTITION (...)` list an ALTER drops.
+// Several may be named at once, each its own Partition.
+func (p *parser) parseDroppedPartitions() ([]*Expression, error) {
+	var out []*Expression
+	for {
+		if !p.atWords("PARTITION") {
+			return nil, p.unsupported("a dropped partition without PARTITION")
+		}
+		p.advance()
+		if !p.at(TokL_PAREN) {
+			return nil, p.unsupported("PARTITION without the values it names")
+		}
+		members, err := p.parseParenthesisedList()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, New("Partition",
+			Arg{"subpartition", false}, Arg{"expressions", members}))
+		if !p.match(TokCOMMA) {
+			return out, nil
+		}
+	}
+}
+
 func (p *parser) parseAlter() (*Expression, error) {
 	p.advance() // ALTER
 
@@ -1173,14 +1197,50 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 		return p.parseAddedColumn(exists)
 	case p.at(TokDROP):
 		p.advance()
+		constraint := false
 		if p.atWords("COLUMN") {
 			p.advance()
+		} else if p.at(TokCONSTRAINT) {
+			// A CONSTRAINT is dropped by NAME, and the reference records the
+			// name as a table reference rather than a column: what is being
+			// named is a thing on the table, not a value in it.
+			p.advance()
+			constraint = true
 		}
 		exists := false
 		if p.atWords("IF", "EXISTS") {
 			p.advance()
 			p.advance()
 			exists = true
+		}
+		// `DROP PARTITION (...)`, one or more, is a node of its own rather
+		// than a Drop: what goes is a slice of the table's rows, not part of
+		// its shape.
+		if p.atWords("PARTITION") {
+			partitions, err := p.parseDroppedPartitions()
+			if err != nil {
+				return nil, err
+			}
+			return New("DropPartition",
+				Arg{"expressions", partitions},
+				Arg{"exists", exists},
+			), nil
+		}
+		if constraint {
+			name, err := p.parseTableName()
+			if err != nil {
+				return nil, err
+			}
+			return New("Drop",
+				Arg{"exists", exists},
+				Arg{"tables", []*Expression{name}},
+				Arg{"kind", "CONSTRAINT"},
+				Arg{"temporary", false}, Arg{"materialized", false},
+				Arg{"cascade", false}, Arg{"restrict", false},
+				Arg{"constraints", false}, Arg{"purge", false},
+				Arg{"concurrently", false},
+				Arg{"sync", false}, Arg{"iceberg", false}, Arg{"force", false},
+			), nil
 		}
 		name, err := p.parseColumn()
 		if err != nil {
@@ -2499,6 +2559,18 @@ func (p *parser) parseTruncate() (*Expression, error) {
 
 	node := New("TruncateTable", Arg{"expressions", tables},
 		Arg{"is_database", false}, Arg{"exists", exists})
+	// Only a slice of the table's rows: `TRUNCATE TABLE t PARTITION(a = 1)`.
+	// What stands inside the parentheses is whatever picks the partition out,
+	// which need not be an equality -- `city LIKE 'LA'` picks one too.
+	if p.atWords("PARTITION") && p.next() != nil && p.next().Type == TokL_PAREN {
+		p.advance()
+		members, err := p.parseParenthesisedList()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("partition", New("Partition",
+			Arg{"subpartition", false}, Arg{"expressions", members}))
+	}
 	switch {
 	case p.atWords("RESTART", "IDENTITY"):
 		p.advance()
@@ -2794,12 +2866,22 @@ func (p *parser) parseComment() (*Expression, error) {
 	if c == nil {
 		return nil, p.unsupported("COMMENT without a kind")
 	}
+	// A MATERIALIZED view is the same kind said twice: the word is a flag on
+	// the node and the kind stays VIEW.
+	materialized := false
+	if strings.EqualFold(c.Text, "MATERIALIZED") {
+		p.advance()
+		materialized = true
+		c = p.curr()
+		if c == nil {
+			return nil, p.unsupported("COMMENT ON MATERIALIZED without a kind")
+		}
+	}
 	kind := strings.ToUpper(c.Text)
 	switch kind {
-	case "TABLE", "VIEW", "COLUMN", "TYPE", "SEQUENCE", "SCHEMA", "DATABASE", "INDEX":
+	case "TABLE", "VIEW", "COLUMN", "TYPE", "SEQUENCE", "SCHEMA", "DATABASE", "INDEX",
+		"PROCEDURE", "FUNCTION":
 	default:
-		// A PROCEDURE or FUNCTION is named with its SIGNATURE, which is a
-		// third shape again.
 		return nil, p.unsupported("COMMENT ON " + kind)
 	}
 	p.advance()
@@ -2814,14 +2896,39 @@ func (p *parser) parseComment() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	// A PROCEDURE or FUNCTION is named with its SIGNATURE, because a name
+	// alone need not say which of them is meant.
+	if p.at(TokL_PAREN) {
+		params, err := p.parseFunctionParams()
+		if err != nil {
+			return nil, err
+		}
+		udf := New("UserDefinedFunction", Arg{"this", this})
+		if len(params) > 0 {
+			udf.Set("expressions", params)
+		}
+		udf.Set("wrapped", true)
+		this = udf
+	}
 	if !p.atWords("IS") {
 		return nil, p.unsupported("COMMENT without IS")
 	}
 	p.advance()
+	// The comment is a string, in any of the spellings the tokenizer tells
+	// apart: a plain one, T-SQL's N'...', PostgreSQL's $$...$$. `IS NULL`
+	// removes the comment instead, which the reference does not read either.
 	text := p.curr()
-	if text == nil || text.Type != TokSTRING {
-		// `IS NULL` removes the comment, which the reference does not read
-		// either.
+	var comment *Expression
+	switch {
+	case text == nil:
+		return nil, p.unsupported("COMMENT without a string")
+	case text.Type == TokSTRING:
+		comment = New("Literal", Arg{"this", text.Text}, Arg{"is_string", true})
+	case text.Type == TokNATIONAL_STRING:
+		comment = New("National", Arg{"this", text.Text})
+	case text.Type == TokRAW_STRING, text.Type == TokHEREDOC_STRING:
+		comment = New("RawString", Arg{"this", text.Text})
+	default:
 		return nil, p.unsupported("COMMENT without a string")
 	}
 	p.advance()
@@ -2831,10 +2938,9 @@ func (p *parser) parseComment() (*Expression, error) {
 	return New("Comment",
 		Arg{"this", this},
 		Arg{"kind", kind},
-		Arg{"expression", New("Literal",
-			Arg{"this", text.Text}, Arg{"is_string", true})},
+		Arg{"expression", comment},
 		Arg{"exists", false},
-		Arg{"materialized", false},
+		Arg{"materialized", materialized},
 	), nil
 }
 

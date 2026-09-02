@@ -2831,7 +2831,6 @@ func TestAlterActions(t *testing.T) {
 		"ALTER TABLE t ALTER COLUMN i SET SOMETHING",
 		"ALTER TABLE t RENAME COLUMN c1 c2",
 		"ALTER TABLE t ADD COLUMN a INT, b",
-		"ALTER TABLE t DROP PARTITION(dt = '2014-05-14')",
 		"ALTER VIEW v",
 		"ALTER TABLE t ALTER COLUMN i COMMENT 1",
 	} {
@@ -3898,7 +3897,6 @@ func TestTruncateUseAndTransactions(t *testing.T) {
 	}
 	for _, sql := range []string{
 		"TRUNCATE t",
-		"TRUNCATE TABLE t1 PARTITION(age = 10)",
 		"USE",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
@@ -3992,7 +3990,6 @@ func TestCommentOn(t *testing.T) {
 	}
 	for _, sql := range []string{
 		// A PROCEDURE is named with its SIGNATURE, which is a third shape.
-		"COMMENT ON PROCEDURE my_proc(integer, integer) IS 'Runs a report'",
 		// And `IS NULL` removes the comment, which the reference does not
 		// read either.
 		"COMMENT ON TABLE t IS NULL",
@@ -9480,5 +9477,68 @@ func TestCreateWords(t *testing.T) {
 	// And a DATABASE with more than a name after it.
 	if _, err := ParseOne("CREATE DATABASE x (a INT)", ""); err == nil {
 		t.Error("a database with columns was read")
+	}
+}
+
+// What an ALTER drops need not be a column: a CONSTRAINT is named the same
+// way and a PARTITION is a slice of the rows rather than part of the shape.
+func TestAlterDrop(t *testing.T) {
+	for _, c := range []struct{ sql, dialect string }{
+		{"ALTER TABLE orders DROP PARTITION(dt = '2014-05-14', country = 'IN')", ""},
+		{"ALTER TABLE orders DROP IF EXISTS PARTITION(dt = '2014-05-14')", ""},
+		{"ALTER TABLE orders DROP PARTITION(dt = '1'), PARTITION(dt = '2')", ""},
+		{"ALTER TABLE dbo.DocExe DROP CONSTRAINT FK_Column_B", "tsql"},
+		{"ALTER TABLE t DROP COLUMN a", ""},
+		// A slice of the rows, which a TRUNCATE that lost it would not leave.
+		{"TRUNCATE TABLE t1 PARTITION(age = 10, name = 'test', address)", "databricks"},
+		{"TRUNCATE TABLE t1 PARTITION(age = 10, city LIKE 'LA')", "databricks"},
+	} {
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != c.sql {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	// A PARTITION naming nothing is not a partition.
+	if _, err := ParseOne("ALTER TABLE t DROP PARTITION", ""); err == nil {
+		t.Error("a partition with no values was read")
+	}
+}
+
+// A COMMENT names what it is left on, and the note itself is a string in any
+// spelling the tokenizer tells apart.
+func TestCommentForms(t *testing.T) {
+	for _, c := range []struct{ sql, want, dialect string }{
+		{"COMMENT ON MATERIALIZED VIEW my_view IS 'this'", "", "postgres"},
+		{"COMMENT ON TABLE my_schema.my_table IS N'National String'", "", ""},
+		{"COMMENT ON PROCEDURE my_proc(integer, integer) IS 'Runs a report'", "", ""},
+		// A dollar-quoted note is written back as an ordinary one, which is
+		// what the reference writes too.
+		{"COMMENT ON TABLE mytable IS $$doc this$$", "COMMENT ON TABLE mytable IS 'doc this'", "postgres"},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != want {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	// `IS NULL` takes the comment off, which the reference does not read.
+	if _, err := ParseOne("COMMENT ON TABLE t IS NULL", ""); err == nil {
+		t.Error("a comment of nothing was read")
+	}
+	if _, err := ParseOne("COMMENT ON MATERIALIZED", ""); err == nil {
+		t.Error("MATERIALIZED naming no kind was read")
 	}
 }
