@@ -513,6 +513,13 @@ func (g *generator) refuseSensitive(e *Expression) bool {
 			if _, known := g.tables.CastCoercions[e.Class][arity][key][castTargetOf(child)]; known {
 				continue
 			}
+			// A coercion the dialect applies to EVERY one of these slots is
+			// absorbed when every one of them already carries it: Databricks
+			// casts both ends of a SEQUENCE to DATE, and a call whose ends
+			// are both DATE casts leaves it nothing to add.
+			if g.everySensitiveSlotIsCast(e, arity) {
+				continue
+			}
 		}
 		g.fail("cast argument to " + e.Class)
 		return true
@@ -633,6 +640,25 @@ func isLiteral(e *Expression) bool {
 
 // isCastToNonInteger reports whether an argument asserts a type that is not an
 // integer -- the trigger the reference itself uses.
+// everySensitiveSlotIsCast reports whether every slot this dialect coerces on
+// this node already carries a cast to a type it coerces to.
+//
+// The dialect applies the coercion across the slots together -- Databricks
+// casts both ends of a SEQUENCE when either is a date -- so it is absorbed
+// only when they all carry it, and the plain spelling then says everything.
+func (g *generator) everySensitiveSlotIsCast(e *Expression, arity int) bool {
+	for _, key := range g.tables.CastSensitiveArgs[e.Class][arity] {
+		// A slot the node leaves empty asks nothing; one it fills has to
+		// carry the cast, or the dialect has something left to add.
+		child, _ := e.Args[key].(*Expression)
+		if child != nil &&
+			!castsToOneOf(child, g.tables.CastSensitiveTypes[e.Class][arity][key]) {
+			return false
+		}
+	}
+	return true
+}
+
 // castTargetOf is the type a cast names, or "" where the node is not one.
 func castTargetOf(e *Expression) string {
 	if e == nil || (e.Class != "Cast" && e.Class != "TryCast") {

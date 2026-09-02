@@ -2008,6 +2008,29 @@ def condition_coercion(dialect: str) -> str:
     return inner.replace("ZZVALZZ", "{value}")
 
 
+def column_comment_written(dialect: str) -> bool:
+    """Whether a COMMENT on a column survives being written.
+
+    PostgreSQL and DuckDB have nowhere to say it in a CREATE and write nothing.
+    Asked by rendering a column that carries one and looking for the word.
+    """
+    from sqlglot import exp
+
+    node = exp.ColumnDef(
+        this=exp.to_identifier("zzc"),
+        kind=exp.DataType.build("INT"),
+        constraints=[
+            exp.ColumnConstraint(
+                kind=exp.CommentColumnConstraint(this=exp.Literal.string("zzhi"))
+            )
+        ],
+    )
+    try:
+        return "zzhi" in node.sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return True
+
+
 def comma_unnest_joins(dialect: str) -> bool:
     """Whether a comma join over an UNNEST becomes an explicit JOIN here.
 
@@ -5382,6 +5405,7 @@ def main() -> int:
         "\t// PercentileClasses are the ordered-set aggregates whose ARGUMENTS a\n\t// dialect writing the order inside reshuffles: the key becomes the\n\t// first and the fraction slides right.\n\tPercentileClasses map[string]struct{}\n",
         "\t// IgnoreNullsInFunc: `IGNORE NULLS` is written INSIDE the call's\n\t// argument list here rather than after the call.\n\tIgnoreNullsInFunc bool\n",
         "\t// ConditionCoercion is how a value that is not already a condition\n\t// is made into one, with {value} standing for it. T-SQL has no boolean\n\t// type and compares against zero instead; empty where the dialect\n\t// takes a value as a condition unchanged.\n\tConditionCoercion string\n",
+        "\t// ColumnCommentWritten: a COMMENT on a column survives here.\n\t// PostgreSQL and DuckDB have nowhere to say it in a CREATE and write\n\t// nothing, which is what the reference does with it.\n\tColumnCommentWritten bool\n",
         "\t// CommaUnnestJoins: a comma join over an UNNEST is written here as\n\t// an explicit JOIN with `ON TRUE`, because the comma form does not\n\t// bind the unnested rows to the row they came from.\n\tCommaUnnestJoins bool\n",
         "\t// TableSample is how a sampling clause is written: the words that\n\t// open it, whether the METHOD is written, whether a bare size counts\n\t// ROWS or a percentage, and what the repeatable seed is called.\n\tTableSample TableSampleSQL\n",
         "\t// JSONExtractTwiceSQL is how a dialect that writes the value TWICE\n\t// spells an extraction: T-SQL asks JSON_QUERY for an object and\n\t// JSON_VALUE for a scalar and takes whichever is not null. Empty where\n\t// the dialect writes the value once.\n\tJSONExtractTwiceSQL map[string]string\n",
@@ -6496,6 +6520,9 @@ def main() -> int:
         out.append(strset("IgnoreNullsDropped", ignore_nulls_dropped(name)))
         out.append(
             "\t\tCommaUnnestJoins: %s,\n" % str(comma_unnest_joins(name)).lower()
+        )
+        out.append(
+            "\t\tColumnCommentWritten: %s,\n" % str(column_comment_written(name)).lower()
         )
         out.append(f"\t\tConditionCoercion: {gostr(condition_coercion(name))},\n")
         out.append("\t\tTableSample: TableSampleSQL{\n")

@@ -8999,3 +8999,72 @@ func TestAnEmptyStringAfterADollar(t *testing.T) {
 		}
 	}
 }
+
+// What a dialect has nowhere to say, it says nothing about.
+//
+// DuckDB writes no storage format and no column comment in a CREATE at all,
+// and the reference drops both rather than inventing a place for them.
+func TestWhatADialectWritesNowhere(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"CREATE TABLE IF NOT EXISTS t (cola INT, colb STRING) USING ICEBERG PARTITIONED BY (colb)",
+			"CREATE TABLE IF NOT EXISTS t (cola INT, colb TEXT)"},
+		{"CREATE TABLE IF NOT EXISTS t (cola INT COMMENT 'cola', colb STRING) USING ICEBERG " +
+			"PARTITIONED BY (colb)",
+			"CREATE TABLE IF NOT EXISTS t (cola INT, colb TEXT)"},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	// Databricks keeps the comment, which is why the flag is asked per
+	// dialect rather than assumed.
+	e, err := ParseOne("CREATE TABLE t (a INT COMMENT 'hi')", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "databricks"); err != nil ||
+		got != "CREATE TABLE t (a INT COMMENT 'hi')" {
+		t.Errorf("Databricks wrote %q (%v)", got, err)
+	}
+}
+
+// A coercion the dialect applies across SLOTS is absorbed when every one of
+// them already carries it: Databricks casts both ends of a SEQUENCE to DATE,
+// and a call whose ends are both DATE casts leaves it nothing to add.
+func TestACoercionAcrossSlots(t *testing.T) {
+	sql := "SELECT * FROM EXPLODE(SEQUENCE(CAST('2020-01-01' AS DATE), " +
+		"CAST('2020-02-01' AS DATE), INTERVAL '1' WEEK))"
+	e, err := ParseOne(sql, "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "databricks"); err != nil || got != sql {
+		t.Errorf("wrote %q (%v)", got, err)
+	}
+}
+
+// The slot-wide absorption asks about EVERY coerced slot, so a call with only
+// one of them, or with one still uncast, is not absorbed.
+func TestACoercionAcrossSlotsIsAllOrNothing(t *testing.T) {
+	// One end cast and the other not: Databricks would cast the second, which
+	// the plain spelling does not say.
+	partial := New("GenerateSeries",
+		Arg{"start", New("Cast",
+			Arg{"this", New("Literal", Arg{"this", "2020-01-01"}, Arg{"is_string", true})},
+			Arg{"to", New("DataType", Arg{"this", DataTypeKind("DATE")})})},
+		Arg{"end", New("Column", Arg{"this", New("Identifier", Arg{"this", "e"})})})
+	if got, err := Generate(partial, "databricks"); err == nil {
+		t.Errorf("wrote %q; the other end would be cast too", got)
+	}
+	// A slot the node leaves EMPTY asks nothing of it.
+	half := New("GenerateSeries", Arg{"start", New("Cast",
+		Arg{"this", New("Literal", Arg{"this", "2020-01-01"}, Arg{"is_string", true})},
+		Arg{"to", New("DataType", Arg{"this", DataTypeKind("DATE")})})})
+	if _, err := Generate(half, "databricks"); err != nil {
+		t.Errorf("a series with one end refused: %v", err)
+	}
+}

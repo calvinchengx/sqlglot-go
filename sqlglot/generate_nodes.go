@@ -1201,7 +1201,11 @@ func (g *generator) writeColumnDef(e *Expression) string {
 				leading = g.node(item) + " "
 				continue
 			}
-			trailing += " " + g.node(item)
+			// A constraint the dialect writes NOWHERE takes its separator
+			// with it, or the column is left with a space it did not earn.
+			if text := g.node(item); text != "" {
+				trailing += " " + text
+			}
 		}
 	}
 	// `= <value>` after the type is the column's DEFAULT, written where it
@@ -2898,6 +2902,10 @@ func (g *generator) writeProperties(e *Expression) (before string, out string, f
 		case "POST_EXPRESSION", "POST_NAME", "POST_ALIAS":
 			// Written elsewhere in the statement, by the code that owns that
 			// place -- TEMPORARY before the kind, WITH DATA after the query.
+		case "UNSUPPORTED":
+			// The dialect has nowhere to say this, and says nothing: DuckDB
+			// writes no storage format at all. Dropping it is the reference's
+			// answer, so it is the port's.
 		default:
 			return "", "", g.fail("a " + item.Class + " this port cannot place")
 		}
@@ -3327,6 +3335,11 @@ func (g *generator) writeCheckConstraint(e *Expression) string {
 }
 
 func (g *generator) writeCommentConstraint(e *Expression) string {
+	// A dialect with nowhere to say it says nothing: PostgreSQL and DuckDB
+	// write no column comment in a CREATE at all.
+	if !g.tables.ColumnCommentWritten {
+		return ""
+	}
 	return "COMMENT " + g.child(e, "this")
 }
 

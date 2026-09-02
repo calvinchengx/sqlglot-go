@@ -738,6 +738,10 @@ type ParserTables struct {
 	// type and compares against zero instead; empty where the dialect
 	// takes a value as a condition unchanged.
 	ConditionCoercion string
+	// ColumnCommentWritten: a COMMENT on a column survives here.
+	// PostgreSQL and DuckDB have nowhere to say it in a CREATE and write
+	// nothing, which is what the reference does with it.
+	ColumnCommentWritten bool
 	// CommaUnnestJoins: a comma join over an UNNEST is written here as
 	// an explicit JOIN with `ON TRUE`, because the comma form does not
 	// bind the unnested rows to the row they came from.
@@ -5519,6 +5523,7 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsWindowFuncs: map[string]struct{}{},
 		IgnoreNullsDropped:     map[string]struct{}{},
 		CommaUnnestJoins:       false,
+		ColumnCommentWritten:   true,
 		ConditionCoercion:      "",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
@@ -10581,6 +10586,7 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsWindowFuncs: map[string]struct{}{},
 		IgnoreNullsDropped:     map[string]struct{}{},
 		CommaUnnestJoins:       false,
+		ColumnCommentWritten:   true,
 		ConditionCoercion:      "{value} <> 0",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
@@ -15639,6 +15645,7 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsWindowFuncs: map[string]struct{}{},
 		IgnoreNullsDropped:     map[string]struct{}{},
 		CommaUnnestJoins:       false,
+		ColumnCommentWritten:   false,
 		ConditionCoercion:      "",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
@@ -21084,8 +21091,9 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsDropped: map[string]struct{}{
 			"AnyValue": {},
 		},
-		CommaUnnestJoins:  true,
-		ConditionCoercion: "",
+		CommaUnnestJoins:     true,
+		ColumnCommentWritten: false,
+		ConditionCoercion:    "",
 		TableSample: TableSampleSQL{
 			Keywords:       "USING SAMPLE",
 			SeedKeyword:    "REPEATABLE",
@@ -26471,6 +26479,7 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsWindowFuncs: map[string]struct{}{},
 		IgnoreNullsDropped:     map[string]struct{}{},
 		CommaUnnestJoins:       false,
+		ColumnCommentWritten:   true,
 		ConditionCoercion:      "",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
