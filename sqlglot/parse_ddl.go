@@ -2012,6 +2012,39 @@ func (p *parser) parseFunctionProperty() (*Expression, error) {
 	case p.atWords("STRICT"):
 		p.advance()
 		return New("StrictProperty"), nil
+	case p.atWords("HANDLER"):
+		// The name of what actually runs, where the body is elsewhere.
+		p.advance()
+		c := p.curr()
+		if c == nil || c.Type != TokSTRING {
+			return nil, p.unsupported("HANDLER without a name")
+		}
+		p.advance()
+		return New("HandlerProperty", Arg{"this",
+			New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})}), nil
+	case p.atWords("PARAMETER", "STYLE"):
+		// How the arguments reach the body: PANDAS hands them over a column
+		// at a time, SCALAR a row at a time.
+		p.advance()
+		p.advance()
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("PARAMETER STYLE without a style")
+		}
+		p.advance()
+		return New("ParameterStyleProperty", Arg{"this", strings.ToUpper(c.Text)}), nil
+	case p.atWords("ENVIRONMENT"):
+		// What the body needs around it, as a parenthesised list of settings.
+		p.advance()
+		if !p.at(TokL_PAREN) {
+			return nil, p.unsupported("ENVIRONMENT without its settings")
+		}
+		settings, err := p.parseParenthesisedList()
+		if err != nil {
+			return nil, err
+		}
+		// The reference spells the class without its second N.
+		return New("EnviromentProperty", Arg{"expressions", settings}), nil
 	case p.atWords("CALLED", "ON", "NULL", "INPUT"):
 		for range 4 {
 			p.advance()

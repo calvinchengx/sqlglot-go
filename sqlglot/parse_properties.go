@@ -37,6 +37,20 @@ func (p *parser) parseTableProperties() ([]*Expression, error) {
 			// The word opens a LIST of other properties and contributes none
 			// of its own: `WITH (FORMAT='parquet')` is a FileFormatProperty
 			// beside the rest, not a property called WITH.
+			//
+			// Except where no list follows it: T-SQL writes `WITH
+			// SCHEMABINDING` on a view, one bare word saying something about
+			// the view rather than a list of settings for it.
+			if !p.at(TokL_PAREN) {
+				attr := p.curr()
+				if attr == nil {
+					return nil, p.unsupported("WITH naming nothing")
+				}
+				p.advance()
+				out = append(out, New("ViewAttributeProperty",
+					Arg{"this", strings.ToUpper(attr.Text)}))
+				continue
+			}
 			inner, err := p.parseWrappedProperties()
 			if err != nil {
 				return nil, err

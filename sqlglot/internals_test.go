@@ -344,3 +344,65 @@ func TestIdentifierFolding(t *testing.T) {
 		t.Errorf("a quoted name folded to %q, want AbC", got)
 	}
 }
+
+// Three small answers the writers and the tokenizer lean on, put to the cases
+// the corpus does not happen to contain.
+func TestSmallHelpers(t *testing.T) {
+	// Python calls four control characters space and Go does not, which is
+	// where a value ends for the reference.
+	for _, r := range []rune{0x1C, 0x1D, 0x1E, 0x1F, ' ', '\t', '\n'} {
+		if !isPythonSpace(r) {
+			t.Errorf("isPythonSpace(%#x) = false", r)
+		}
+	}
+	for _, r := range []rune{'a', '0', 0x1B} {
+		if isPythonSpace(r) {
+			t.Errorf("isPythonSpace(%#x) = true", r)
+		}
+	}
+
+	// How many members a set of keys holds, counting a list as its length and
+	// an absent key as nothing.
+	node := New("Select",
+		Arg{"expressions", []*Expression{New("Star"), New("Star")}},
+		Arg{"from_", New("From")})
+	if got := listLength(node, []string{"expressions", "from_", "where"}); got != 3 {
+		t.Errorf("listLength = %d, want 3", got)
+	}
+
+	cfg, ok := ConfigFor("postgres")
+	if !ok {
+		t.Fatal("no postgres config")
+	}
+	g := &generator{cfg: cfg, tables: cfg.Tables, dialect: "postgres"}
+	// A name reads back as one token, or it does not.
+	for _, c := range []struct {
+		name string
+		want bool
+	}{
+		{"plain", true},
+		{"two words", false},
+		{"", false},
+	} {
+		if got := g.lexesBackAsOneName(c.name); got != c.want {
+			t.Errorf("lexesBackAsOneName(%q) = %v, want %v", c.name, got, c.want)
+		}
+	}
+	// A dollar already written turns the same name into two.
+	g.wroteDollar = true
+	if g.lexesBackAsOneName("a$b") {
+		t.Error("a name holding a dollar was called one token after a dollar")
+	}
+
+	// A cast the reference writes as its own operand, and one it does not.
+	div := New("Cast",
+		Arg{"this", New("IntDiv", Arg{"this", New("Literal", Arg{"this", "4"})},
+			Arg{"expression", New("Literal", Arg{"this", "2"})})},
+		Arg{"to", New("DataType", Arg{"this", DataTypeKind("DECIMAL")})})
+	if _, gone := castElidedOver(cfg.Tables, div); !gone {
+		t.Error("the cast PostgreSQL never writes was kept")
+	}
+	if _, gone := castElidedOver(cfg.Tables, New("Cast")); gone {
+		t.Error("a cast over nothing was dropped")
+	}
+}

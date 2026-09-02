@@ -184,7 +184,10 @@ func (p *parser) parseWith() (*Expression, error) {
 			}
 			cteColumns = cols
 		}
-		if !p.match(TokALIAS) {
+		// The AS is not always written: `WITH x (SELECT 1)` names the query
+		// straight after the alias, and the reference reads it and writes the
+		// word back in.
+		if !p.match(TokALIAS) && !p.at(TokL_PAREN) {
 			return nil, p.unsupported("CTE without AS")
 		}
 		if !p.match(TokL_PAREN) {

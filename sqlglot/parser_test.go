@@ -200,7 +200,6 @@ func TestRefusals(t *testing.T) {
 		{"APPLY over a qualifier followed by a number", "SELECT * FROM a CROSS APPLY dbo.1", "tsql"},
 		{"SELECT INTO nothing", "SELECT * INTO FROM t1", "tsql"},
 		{"a CTE with no body", "WITH a AS SELECT 1 SELECT 2", ""},
-		{"CTE without AS", "WITH a (SELECT 1) SELECT 2", ""},
 		{"CTE without a query", "WITH a AS SELECT 1", ""},
 		{"unclosed CTE", "WITH a AS (SELECT 1 SELECT 2", ""},
 		{"set operation over a value", "SELECT 1 UNION 2", ""},

@@ -3064,8 +3064,6 @@ func TestCreateFunction(t *testing.T) {
 		// statement, and otherwise swallows the rest as raw text.
 		{"postgres", "CREATE FUNCTION x(INT) RETURNS INT SET search_path TO 'p' AS 'y'"},
 		{"postgres", "CREATE FUNCTION x(INT) RETURNS INT SET foo FROM CURRENT"},
-		{"databricks", "CREATE FUNCTION a() HANDLER 'handler_function'"},
-		{"databricks", "CREATE FUNCTION a() PARAMETER STYLE PANDAS"},
 		{"", "CREATE FUNCTION f() RETURNS @foo INT"},
 		{"", "CREATE FUNCTION f(a INT"},
 		{"", "CREATE FUNCTION f() AS 'x' AS 'y'"},
@@ -9540,5 +9538,45 @@ func TestCommentForms(t *testing.T) {
 	}
 	if _, err := ParseOne("COMMENT ON MATERIALIZED", ""); err == nil {
 		t.Error("MATERIALIZED naming no kind was read")
+	}
+}
+
+// What a function may say about itself beyond its body, and the two shapes a
+// WITH takes on a view: a list of settings, or one bare word.
+func TestFunctionAndViewProperties(t *testing.T) {
+	for _, c := range []struct{ sql, want, dialect string }{
+		{"CREATE FUNCTION a() HANDLER 'handler_function'", "", "databricks"},
+		{"CREATE FUNCTION a() PARAMETER STYLE PANDAS", "", "databricks"},
+		{`CREATE FUNCTION a() ENVIRONMENT (dependencies = '["foo1==1"]')`, "", "databricks"},
+		{"CREATE VIEW start WITH SCHEMABINDING AS SELECT a FROM x", "", "tsql"},
+		{"CREATE VIEW v WITH ENCRYPTION AS SELECT a FROM x", "", "tsql"},
+		// A CTE need not write its AS; the reference reads it and puts the
+		// word back.
+		{"WITH x (select 1) SELECT * FROM x", "WITH x AS (SELECT 1) SELECT * FROM x", "databricks"},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != want {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	for _, c := range []struct{ sql, dialect string }{
+		{"CREATE FUNCTION a() HANDLER", "databricks"},
+		{"CREATE FUNCTION a() HANDLER x", "databricks"},
+		{"CREATE FUNCTION a() PARAMETER STYLE", "databricks"},
+		{"CREATE FUNCTION a() ENVIRONMENT x", "databricks"},
+		{"CREATE VIEW v WITH AS SELECT 1", "tsql"},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
+		}
 	}
 }
