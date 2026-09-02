@@ -465,11 +465,13 @@ func (g *generator) writeJoin(e *Expression) string {
 	usingColumns, _ := e.Args["using"].([]*Expression)
 	if len(words) == 0 && len(usingColumns) == 0 {
 		if _, hasOn := e.Args["on"].(*Expression); !hasOn {
-			// A comma join over an UNNEST is rewritten by the reference into
-			// `JOIN ... ON TRUE`, which is a different tree and not a
-			// spelling of this one.
-			if inner, _ := e.Args["this"].(*Expression); inner != nil && inner.Class == "Unnest" {
-				return g.fail("comma join over an UNNEST")
+			// A comma join over an UNNEST is written as an explicit JOIN in
+			// the dialects that need one: the comma form does not bind the
+			// unnested rows to the row they came from, so `ON TRUE` says
+			// what the comma left unsaid.
+			if inner, _ := e.Args["this"].(*Expression); inner != nil && inner.Class == "Unnest" &&
+				g.tables.CommaUnnestJoins {
+				return "JOIN " + this + " ON TRUE"
 			}
 			return ", " + this
 		}
@@ -841,6 +843,13 @@ func (g *generator) writeIdentifier(e *Expression) string {
 func (g *generator) writeLiteral(e *Expression) string {
 	text, _ := e.Args["this"].(string)
 	if e.Args["is_string"] == true {
+		// An EMPTY string after a dollar already written is not a string at
+		// all to the tokenizer: `$1 = ''` reads the two quotes as the tag of
+		// a dollar-quote that never closes, and the reference cannot read it
+		// back either. The generator fuzzer found it.
+		if text == "" && g.wroteDollar {
+			return g.fail(e.Class + " of nothing after a dollar, which reads as a quote")
+		}
 		return "'" + escapeStringBody(text, g.cfg.StringEscapes) + "'"
 	}
 	return text
@@ -1283,14 +1292,25 @@ func (g *generator) writeLike(e *Expression) string {
 
 // writeIs does the same for IS NOT NULL.
 func (g *generator) writeIs(e *Expression) string {
-	// `a IS TRUE` is not `a IS 1`: in a dialect with no boolean the reference
-	// rewrites the whole comparison to `a = 1`, which is a different NODE, not
-	// a spelling of this one.
+	// `a IS TRUE` is not `a IS 1`: a dialect with no boolean compares against
+	// the number it writes one as, so the whole thing becomes `a = 1` -- and
+	// `a IS NOT FALSE` becomes `NOT a = 0`, the negation moving outside the
+	// comparison rather than into the operator.
 	if !g.tables.WritesBooleanLiteral {
 		for _, key := range []string{"this", "expression"} {
-			if child, _ := e.Args[key].(*Expression); child != nil && child.Class == "Boolean" {
-				return g.fail("IS over a boolean in a dialect that has none")
+			child, _ := e.Args[key].(*Expression)
+			if child == nil || child.Class != "Boolean" {
+				continue
 			}
+			other := "expression"
+			if key == "expression" {
+				other = "this"
+			}
+			out := g.child(e, other) + " = " + g.node(child)
+			if e.Args["negate"] == true {
+				out = "NOT " + out
+			}
+			return out
 		}
 	}
 	op := "IS"
@@ -1711,7 +1731,17 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 			continue
 		}
 		out := candidate.Template
-		for _, key := range candidate.Marked {
+		// Left to right, the order the text is READ in. Some of what a writer
+		// records while rendering is positional -- a dollar already written
+		// pairs with the next one and opens a quote -- so filling the markers
+		// in the order they were measured rather than the order they appear
+		// let a later operand be written before an earlier one.
+		marked := append([]string(nil), candidate.Marked...)
+		sort.SliceStable(marked, func(i, j int) bool {
+			return strings.Index(candidate.Template, "{"+marked[i]+"}") <
+				strings.Index(candidate.Template, "{"+marked[j]+"}")
+		})
+		for _, key := range marked {
 			marker := "{" + key + "}"
 			// A marker the template QUOTES wants the argument's name, not its
 			// rendering: `DATE_TRUNC('{unit}', x)` around a string literal
@@ -2696,13 +2726,15 @@ func (g *generator) writeCreate(e *Expression) string {
 		// engine cannot run.
 		return g.fail(e.Class + " as a query, which this dialect writes another way")
 	}
-	// T-SQL writes only two parts of a three-part name, dropping the catalog
-	// -- which names a different object. The same rule turns a DROP away, and
-	// it belongs to the dialect's naming rather than to either statement.
+	// T-SQL writes only two parts of a three-part name, dropping the catalog.
+	// It is the dialect's naming rule rather than either statement's, and it
+	// applies to a CREATE the same way it applies to a DROP.
 	if g.tables.TruncatesCatalog && namesACatalog(e.Args["this"]) {
-		return g.fail(e.Class + " of a three-part name this dialect shortens")
+		this, _ := e.Args["this"].(*Expression)
+		out += g.node(withoutCatalog(this))
+	} else {
+		out += g.child(e, "this")
 	}
-	out += g.child(e, "this")
 	// A procedure's body may be wrapped in BEGIN and END. The BEGIN is
 	// recorded on the statement rather than on the block, so it is written
 	// here; the END is a statement of the block's own. A procedure with an
@@ -2865,6 +2897,25 @@ func (g *generator) writeProperties(e *Expression) (before string, out string, f
 
 // namesACatalog reports whether a CREATE's target carries all three parts of
 // a name. The target may be the table itself or a Schema wrapping it.
+// withoutCatalog is a table name with its first part taken off, which is how
+// a dialect that writes only two parts of a three-part name writes one.
+//
+// A copy, so the tree the caller holds keeps the name it was written with:
+// only the SPELLING drops the part.
+func withoutCatalog(node *Expression) *Expression {
+	out := node.shallowCopy()
+	// A Schema wraps the name it gives columns to, so the part comes off the
+	// table inside it. namesACatalog looked through the same wrapper to find
+	// the part, so there is one there to take off.
+	if node.Class == "Schema" {
+		inner, _ := node.Args["this"].(*Expression)
+		out.Set("this", withoutCatalog(inner))
+		return out
+	}
+	out.Set("catalog", nil)
+	return out
+}
+
 func namesACatalog(target any) bool {
 	node, _ := target.(*Expression)
 	if node == nil {
@@ -3042,7 +3093,7 @@ func (g *generator) writeDrop(e *Expression) string {
 		// refuses rather than writing something that names another object.
 		if catalog, _ := t.Args["catalog"].(*Expression); catalog != nil &&
 			g.tables.TruncatesCatalog {
-			return g.fail(e.Class + " of a three-part name this dialect shortens")
+			t = withoutCatalog(t)
 		}
 		names = append(names, g.node(t))
 	}

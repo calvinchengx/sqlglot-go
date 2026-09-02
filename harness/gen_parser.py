@@ -1891,6 +1891,43 @@ def ignore_nulls_dropped(dialect: str) -> list:
     return sorted(out)
 
 
+def condition_coercion(dialect: str) -> str:
+    """How a value that is not already a condition is made into one.
+
+    T-SQL has no boolean type, so a bare column in a condition is compared
+    against zero: `NOT c` is written `NOT c <> 0`. Everyone else takes the
+    value as it stands, and says so with an empty template.
+    """
+    from sqlglot import exp
+
+    try:
+        text = exp.Not(this=exp.column("ZZVALZZ")).sql(dialect=dialect or None)
+    except Exception:  # noqa: BLE001
+        return ""
+    inner = text[len("NOT ") :] if text.startswith("NOT ") else text
+    if inner == "ZZVALZZ":
+        return ""
+    return inner.replace("ZZVALZZ", "{value}")
+
+
+def comma_unnest_joins(dialect: str) -> bool:
+    """Whether a comma join over an UNNEST becomes an explicit JOIN here.
+
+    DuckDB writes `FROM t JOIN UNNEST(x) AS u(c) ON TRUE` where the statement
+    said `FROM t, UNNEST(x) AS u(c)`: the comma form does not bind the
+    unnested rows to the row they came from. Everyone else keeps the comma.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("SELECT * FROM t1, UNNEST(x) AS u(c)").sql(
+            dialect=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return False
+    return " JOIN UNNEST" in text and " ON TRUE" in text
+
+
 def within_group_inside(dialect: str) -> bool:
     """Whether the ordering is written INSIDE the call rather than after it.
 
@@ -5240,6 +5277,8 @@ def main() -> int:
         "\t// WithinGroupInside: the ordering an ordered-set aggregate is\n\t// computed over is written INSIDE the call here rather than after it\n\t// in a WITHIN GROUP of its own. DuckDB is the only one, and it moves\n\t// a percentile's order key into the call's first argument as well.\n\tWithinGroupInside bool\n",
         "\t// PercentileClasses are the ordered-set aggregates whose ARGUMENTS a\n\t// dialect writing the order inside reshuffles: the key becomes the\n\t// first and the fraction slides right.\n\tPercentileClasses map[string]struct{}\n",
         "\t// IgnoreNullsInFunc: `IGNORE NULLS` is written INSIDE the call's\n\t// argument list here rather than after the call.\n\tIgnoreNullsInFunc bool\n",
+        "\t// ConditionCoercion is how a value that is not already a condition\n\t// is made into one, with {value} standing for it. T-SQL has no boolean\n\t// type and compares against zero instead; empty where the dialect\n\t// takes a value as a condition unchanged.\n\tConditionCoercion string\n",
+        "\t// CommaUnnestJoins: a comma join over an UNNEST is written here as\n\t// an explicit JOIN with `ON TRUE`, because the comma form does not\n\t// bind the unnested rows to the row they came from.\n\tCommaUnnestJoins bool\n",
         "\t// TableSample is how a sampling clause is written: the words that\n\t// open it, whether the METHOD is written, whether a bare size counts\n\t// ROWS or a percentage, and what the repeatable seed is called.\n\tTableSample TableSampleSQL\n",
         "\t// JSONExtractTwiceSQL is how a dialect that writes the value TWICE\n\t// spells an extraction: T-SQL asks JSON_QUERY for an object and\n\t// JSON_VALUE for a scalar and takes whichever is not null. Empty where\n\t// the dialect writes the value once.\n\tJSONExtractTwiceSQL map[string]string\n",
         "\t// RegexpFlagArgs names which argument of each regexp call holds the\n\t// FLAGS: `modifiers` on a replacement, `parameters` on an extraction.\n\tRegexpFlagArgs map[string]string\n",
@@ -6322,6 +6361,10 @@ def main() -> int:
             )
         )
         out.append(strset("IgnoreNullsDropped", ignore_nulls_dropped(name)))
+        out.append(
+            "\t\tCommaUnnestJoins: %s,\n" % str(comma_unnest_joins(name)).lower()
+        )
+        out.append(f"\t\tConditionCoercion: {gostr(condition_coercion(name))},\n")
         out.append("\t\tTableSample: TableSampleSQL{\n")
         for field, value in (
             ("Keywords", gostr(getattr(G, "TABLESAMPLE_KEYWORDS", "TABLESAMPLE"))),

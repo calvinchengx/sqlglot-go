@@ -70,6 +70,9 @@ type generator struct {
 	// a later bare name holding one would pair with it; see
 	// lexesBackAsOneName.
 	wroteDollar bool
+	// coerced holds the nodes standing where a CONDITION is wanted in a
+	// dialect that has no boolean type, so each is compared into one.
+	coerced map[*Expression]bool
 	// spellKeepsZeros holds while a PART of a call is being written: the
 	// arguments after it are still to come, so an argument the dialect would
 	// drop from a SHORTER call has to stay. DuckDB writes
@@ -90,6 +93,12 @@ func (g *generator) fail(what string) string {
 func (g *generator) node(e *Expression) string {
 	if e == nil {
 		return ""
+	}
+	// A value standing where a CONDITION is wanted, in a dialect with no
+	// boolean type: the comparison goes around whatever it renders as.
+	if g.coerced[e] {
+		delete(g.coerced, e)
+		return strings.ReplaceAll(g.tables.ConditionCoercion, "{value}", g.node(e))
 	}
 	// A FORMAT is spelled three ways: through the dialect's own mapping (the
 	// tree stores `%Y-%m-%d` and PostgreSQL writes `YYYY-MM-DD`), as stored,
@@ -644,13 +653,13 @@ func isCastToNonInteger(e *Expression) bool {
 	return true
 }
 
-// requireCondition stops the generator where the dialect would rewrite a value
-// used as a condition into `x <> 0`.
+// requireCondition marks the values standing where a CONDITION is wanted, in a
+// dialect that has no boolean type.
 //
-// The port does not perform that rewrite, and emitting the uncoerced form
-// would not be a near miss -- T-SQL rejects a bare column as a condition. So
-// this refuses, and the guard refuses the statement, which is what a guard is
-// for.
+// T-SQL rejects a bare column there, so the reference compares it into one:
+// `NOT c` is written `NOT c <> 0`. A boolean has a spelling of its own --
+// `(1 = 1)` -- and everything else takes the comparison around whatever it
+// renders as.
 func (g *generator) requireCondition(e *Expression, keys ...string) {
 	if !g.tables.CoercesBooleans {
 		return
@@ -667,8 +676,13 @@ func (g *generator) requireCondition(e *Expression, keys ...string) {
 			g.markCondition(child)
 			continue
 		}
+		// Everything else is COMPARED into one. The mark is on the node, and
+		// the comparison goes around whatever it renders as.
 		if !predicates[child.Class] {
-			g.fail(child.Class + " used as a condition in a dialect that coerces it")
+			if g.coerced == nil {
+				g.coerced = map[*Expression]bool{}
+			}
+			g.coerced[child] = true
 		}
 	}
 }
@@ -756,9 +770,14 @@ func (g *generator) jsonOperator(e *Expression, op string) string {
 	if this == nil || other == nil {
 		return g.fail(e.Class + " written as an operator without two operands")
 	}
+	// Left first, the order the text is READ in. Some of what a writer records
+	// while rendering is positional -- a dollar already written pairs with the
+	// next one and opens a quote -- so rendering the right operand first let a
+	// name that was safe on its own be written where it no longer was.
+	left := g.operand(this)
 	right := g.node(other)
 	if isA("Binary", other) || isA("Predicate", other) || other.Class == "Not" {
 		right = "(" + right + ")"
 	}
-	return g.operand(this) + " " + op + " " + right
+	return left + " " + op + " " + right
 }

@@ -586,17 +586,6 @@ func TestRoundTrip(t *testing.T) {
 }
 
 func TestGenerateRefusals(t *testing.T) {
-	// A dialect with no boolean type writes `x <> 0` for a value used as a
-	// condition. The port does not do that rewrite, and the uncoerced form is
-	// a statement T-SQL rejects -- so it refuses rather than emit it.
-	tree, err := ParseOne("SELECT * FROM t WHERE NOT c", "tsql")
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got, err := Generate(tree, "tsql"); err == nil {
-		t.Errorf("wrote %q where the dialect needs a coercion the port does not do", got)
-	}
-
 	// A node the generator has no writer for stops the rewrite.
 	if _, err := Generate(New("NotARealNode"), ""); err == nil {
 		t.Error("an unknown node should not be written")

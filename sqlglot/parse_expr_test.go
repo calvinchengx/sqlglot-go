@@ -2181,14 +2181,20 @@ func TestInsertAndDrop(t *testing.T) {
 			}
 		})
 	}
-	// T-SQL writes only two parts of a three-part name in a DROP, which names
-	// a different object. Read, and declined.
-	e, err := ParseOne("DROP VIEW a.b.c", "tsql")
-	if err != nil {
-		t.Fatalf("ParseOne: %v", err)
-	}
-	if got, err := Generate(e, "tsql"); err == nil {
-		t.Errorf("wrote %q; T-SQL shortens the name here", got)
+	// T-SQL writes only two parts of a three-part name, dropping the catalog.
+	// It is the dialect's naming rule rather than the statement's, and the
+	// same rule applies to a CREATE.
+	for _, tc := range []struct{ sql, want string }{
+		{"DROP VIEW a.b.c", "DROP VIEW b.c"},
+		{"DROP VIEW a.b.c, a.b.d", "DROP VIEW b.c, b.d"},
+	} {
+		e, err := ParseOne(tc.sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "tsql"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
 	}
 	for _, sql := range []string{
 		"INSERT INTO t", "INSERT t VALUES (1)", "INSERT INTO t VALUES 1",
@@ -4085,13 +4091,16 @@ func TestABareCreate(t *testing.T) {
 			t.Errorf("%q wrote %q", tc.sql, got)
 		}
 	}
-	for _, sql := range []string{"CREATE TABLE a.b.c", "CREATE TABLE a.b.c (x INT)"} {
-		e, err := ParseOne(sql, "")
+	for _, tc := range []struct{ sql, want string }{
+		{"CREATE TABLE a.b.c", "CREATE TABLE b.c"},
+		{"CREATE TABLE a.b.c (x INT)", "CREATE TABLE b.c (x INTEGER)"},
+	} {
+		e, err := ParseOne(tc.sql, "")
 		if err != nil {
-			t.Fatalf("ParseOne(%q): %v", sql, err)
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
 		}
-		if got, err := Generate(e, "tsql"); err == nil {
-			t.Errorf("%q wrote %q for T-SQL, which drops the catalog", sql, got)
+		if got, err := Generate(e, "tsql"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
 		}
 	}
 }
@@ -8836,6 +8845,115 @@ func TestAnOperandBracketedByPrecedence(t *testing.T) {
 			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
 		}
 		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+}
+
+// A dialect with no boolean type compares values into conditions.
+//
+// T-SQL writes `NOT c <> 0` for `NOT c`, and `a = 1` for `a IS TRUE` -- the
+// negation of the second moving outside the comparison rather than into the
+// operator. Both are the dialect's own way of saying what the statement said,
+// so the port writes them rather than refusing.
+func TestBooleanCoercion(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"a IS TRUE", "a = 1"},
+		{"a IS NOT FALSE", "NOT a = 0"},
+		{"SELECT * FROM t WHERE NOT c", "SELECT * FROM t WHERE NOT c <> 0"},
+		{"1 AND true", "1 <> 0 AND (1 = 1)"},
+		{"CAST(x AS int) OR y", "CAST(x AS INTEGER) <> 0 OR y <> 0"},
+		// A value that is ALREADY a condition is left as it stands.
+		{"a = 1 AND b > 2", "a = 1 AND b > 2"},
+	} {
+		e, err := ParseOne(tc.sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "tsql"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	// A dialect that HAS a boolean writes the same tree without any of it.
+	e, err := ParseOne("SELECT * FROM t WHERE NOT c", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "duckdb"); err != nil || got != "SELECT * FROM t WHERE NOT c" {
+		t.Errorf("DuckDB wrote %q (%v)", got, err)
+	}
+}
+
+// A comma join over an UNNEST is written as an explicit JOIN where the dialect
+// needs one: the comma form does not bind the unnested rows to the row they
+// came from, so `ON TRUE` says what the comma left unsaid.
+func TestCommaJoinOverAnUnnest(t *testing.T) {
+	e, err := ParseOne(`SELECT * FROM t1, UNNEST("t1") "t1" ("col")`, "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "duckdb"); err != nil ||
+		got != `SELECT * FROM t1 JOIN UNNEST("t1") AS "t1"("col") ON TRUE` {
+		t.Errorf("DuckDB wrote %q (%v)", got, err)
+	}
+	// PostgreSQL keeps the comma.
+	p, err := ParseOne("SELECT id FROM example_table, UNNEST(scores) AS t(s)", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(p, "postgres"); err != nil ||
+		got != "SELECT id FROM example_table, UNNEST(scores) AS t(s)" {
+		t.Errorf("PostgreSQL wrote %q (%v)", got, err)
+	}
+}
+
+// A dollar already written pairs with the next one and opens a quote, so what
+// a writer records while rendering depends on the ORDER it renders in.
+//
+// PostgreSQL's `?` operator rendered its right operand before its left, so a
+// name ending in a dollar was written before the parameter whose dollar it
+// would pair with -- and `$00 ? ݖ$` came back as an unterminated quote. The
+// generator fuzzer found it.
+func TestOperandsAreWrittenLeftToRight(t *testing.T) {
+	e, err := ParseOne("$ 00?ݖ$-- ", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "postgres"); err == nil {
+		t.Errorf("wrote %q, whose dollars pair into a quote", got)
+	}
+	// The same name with nothing to pair with is written as it stands.
+	alone, err := ParseOne("SELECT a$", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(alone, "postgres"); err != nil || got != "SELECT a$" {
+		t.Errorf("wrote %q (%v)", got, err)
+	}
+}
+
+// An empty string after a dollar already written is not a string to the
+// tokenizer: `$1 = ”` reads the two quotes as the tag of a dollar-quote that
+// never closes, and the reference cannot read it back either.
+func TestAnEmptyStringAfterADollar(t *testing.T) {
+	e, err := ParseOne("SET@0==''", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "postgres"); err == nil {
+		t.Errorf("wrote %q, whose quotes read as a dollar-quote tag", got)
+	}
+	// A string with something in it is fine, and so is an empty one with no
+	// dollar in front of it.
+	for _, tc := range []struct{ sql, want string }{
+		{"SET @1 = 'a'", "SET $1 = 'a'"},
+		{"SELECT ''", "SELECT ''"},
+	} {
+		e, err := ParseOne(tc.sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "postgres"); err != nil || got != tc.want {
 			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
 		}
 	}

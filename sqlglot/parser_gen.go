@@ -728,6 +728,15 @@ type ParserTables struct {
 	// IgnoreNullsInFunc: `IGNORE NULLS` is written INSIDE the call's
 	// argument list here rather than after the call.
 	IgnoreNullsInFunc bool
+	// ConditionCoercion is how a value that is not already a condition
+	// is made into one, with {value} standing for it. T-SQL has no boolean
+	// type and compares against zero instead; empty where the dialect
+	// takes a value as a condition unchanged.
+	ConditionCoercion string
+	// CommaUnnestJoins: a comma join over an UNNEST is written here as
+	// an explicit JOIN with `ON TRUE`, because the comma form does not
+	// bind the unnested rows to the row they came from.
+	CommaUnnestJoins bool
 	// TableSample is how a sampling clause is written: the words that
 	// open it, whether the METHOD is written, whether a bare size counts
 	// ROWS or a percentage, and what the repeatable seed is called.
@@ -5481,6 +5490,8 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsInFunc:      false,
 		IgnoreNullsWindowFuncs: map[string]struct{}{},
 		IgnoreNullsDropped:     map[string]struct{}{},
+		CommaUnnestJoins:       false,
+		ConditionCoercion:      "",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
 			SeedKeyword:    "SEED",
@@ -10502,6 +10513,8 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsInFunc:      false,
 		IgnoreNullsWindowFuncs: map[string]struct{}{},
 		IgnoreNullsDropped:     map[string]struct{}{},
+		CommaUnnestJoins:       false,
+		ConditionCoercion:      "{value} <> 0",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
 			SeedKeyword:    "REPEATABLE",
@@ -15531,6 +15544,8 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsInFunc:      false,
 		IgnoreNullsWindowFuncs: map[string]struct{}{},
 		IgnoreNullsDropped:     map[string]struct{}{},
+		CommaUnnestJoins:       false,
+		ConditionCoercion:      "",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
 			SeedKeyword:    "REPEATABLE",
@@ -20889,6 +20904,8 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsDropped: map[string]struct{}{
 			"AnyValue": {},
 		},
+		CommaUnnestJoins:  true,
+		ConditionCoercion: "",
 		TableSample: TableSampleSQL{
 			Keywords:       "USING SAMPLE",
 			SeedKeyword:    "REPEATABLE",
@@ -26249,6 +26266,8 @@ var parserTables = map[string]*ParserTables{
 		IgnoreNullsInFunc:      false,
 		IgnoreNullsWindowFuncs: map[string]struct{}{},
 		IgnoreNullsDropped:     map[string]struct{}{},
+		CommaUnnestJoins:       false,
+		ConditionCoercion:      "",
 		TableSample: TableSampleSQL{
 			Keywords:       "TABLESAMPLE",
 			SeedKeyword:    "REPEATABLE",
