@@ -9,7 +9,7 @@ import "strings"
 // bare list, which T-SQL alone allows; and no list at all. What a bare name is
 // wrapped in is the dialect's own -- T-SQL puts a StoredProcedure round it and
 // the rest leave the name alone -- and is probed rather than named here.
-func (p *parser) parseProcedureRest(table *Expression, replace, exists bool) (*Expression, error) {
+func (p *parser) parseProcedureRest(table *Expression, kind string, replace, exists bool) (*Expression, error) {
 	this := table
 	var params []*Expression
 	wrapped := false
@@ -93,7 +93,7 @@ func (p *parser) parseProcedureRest(table *Expression, replace, exists bool) (*E
 	}
 	return New("Create",
 		Arg{"this", this},
-		Arg{"kind", "PROCEDURE"},
+		Arg{"kind", kind},
 		Arg{"replace", replace},
 		Arg{"refresh", false},
 		Arg{"unique", false},

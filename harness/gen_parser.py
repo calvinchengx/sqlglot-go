@@ -16,6 +16,7 @@ from __future__ import annotations
 import argparse
 from enum import Enum
 import pathlib
+import re
 import sys
 
 DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks")
@@ -1486,7 +1487,7 @@ def _recast_probe(exp, cls, kwargs, expr_keys, scalars, dialect):
 
 def _create_body(kind: str) -> str:
     """What follows the name in the canonical CREATE used by the probes below."""
-    if kind == "SCHEMA":
+    if kind in ("SCHEMA", "DATABASE", "NAMESPACE"):
         return ""
     if kind == "TABLE":
         return " (a INT)"
@@ -1511,7 +1512,13 @@ def create_exists_written(dialect: str) -> dict:
     # Every kind the port reads, not only the four a table takes: a PROCEDURE
     # carries the guard as readily as a TABLE does, and a kind left out of the
     # probe was refused for a fact nobody had asked about.
-    for kind in ("TABLE", "VIEW", "INDEX", "SCHEMA", "FUNCTION", "PROCEDURE"):
+    # Every kind this dialect creates, taken from the same probe the parser
+    # reads its kinds from, so the two cannot drift: a kind the parser learns
+    # to read and this does not ask about is refused on the way out.
+    kinds = set(create_words(dialect)[1]) | {
+        "TABLE", "VIEW", "INDEX", "SCHEMA", "FUNCTION", "PROCEDURE",
+    }
+    for kind in sorted(kinds):
         body = _create_body(kind)
         try:
             guarded = sqlglot.parse_one(
@@ -4465,6 +4472,141 @@ def class_sensitive_args(P, exp, dialect, funcs):
     return {n: {i: sorted(c) for i, c in sorted(d.items())} for n, d in out.items()}
 
 
+def create_words(dialect: str):
+    """The words that may stand between CREATE and what it creates.
+
+    Three things such a word can be, and which is which is asked rather than
+    listed: a bare PROPERTY (`CREATE MATERIALIZED VIEW` carries a
+    MaterializedProperty), a KIND in its own right (`CREATE DATABASE`), or
+    nothing at all. The candidates are the dialect's own keywords, so a word
+    one dialect knows and another does not sorts itself out.
+
+    The property's class is read off the tree rather than made from the word:
+    Databricks' STREAMING becomes a StreamingTableProperty, which no rule
+    over the spelling would have produced.
+    """
+    import logging
+
+    import sqlglot
+    from sqlglot.dialects.dialect import Dialect
+
+    from sqlglot import expressions as e
+
+    tokenizer = Dialect.get_or_raise(dialect or None).tokenizer_class
+    # Every word the tokenizer knows, including the FIRST word of a phrase --
+    # MATERIALIZED reaches the tokenizer only inside `MATERIALIZED VIEW`, and
+    # a list of single-word keys missed it and three others like it. Beside
+    # them, the words the reference's own property CLASSES are named for, so
+    # a property whose word the tokenizer spells some other way is still put
+    # to the test.
+    words = {
+        k.upper().split(" ")[0]
+        for k in tokenizer.KEYWORDS
+        if k.split(" ")[0].isalpha()
+    }
+    for n in dir(e):
+        if not n.endswith("Property") or n == "Property":
+            continue
+        # Every CamelCase prefix of the class name, not just the whole of it:
+        # Databricks' `CREATE STREAMING TABLE` builds a StreamingTableProperty,
+        # and STREAMINGTABLE is not a word anyone writes.
+        stem = n[: -len("Property")]
+        for m in re.finditer(r"[A-Z][a-z0-9]*", stem):
+            words.add(stem[: m.end()].upper())
+            words.add(m.group(0).upper())
+    words = sorted(words)
+    properties: dict[str, str] = {}
+    kinds: set[str] = set()
+    was = logging.root.manager.disable
+    logging.disable(logging.CRITICAL)
+    try:
+        for word in words:
+            for kind in ("TABLE", "VIEW"):
+                try:
+                    tree = sqlglot.parse_one(
+                        f"CREATE {word} {kind} zzt AS SELECT 1", read=dialect or None
+                    )
+                except Exception:  # noqa: BLE001 -- not a word that stands here
+                    continue
+                if tree.key != "create":
+                    continue
+                built = (tree.args.get("kind") or "").upper()
+                if built != kind:
+                    continue
+                props = tree.args.get("properties")
+                held = list(props.expressions) if props else []
+                if len(held) == 1 and not held[0].args:
+                    properties[word] = type(held[0]).__name__
+                break
+        # A word that is not a modifier at all but a KIND of its own: what
+        # `CREATE DATABASE x` creates is a database, and the word is the kind
+        # rather than something in front of one.
+        for word in words:
+            try:
+                tree = sqlglot.parse_one(f"CREATE {word} zzname", read=dialect or None)
+            except Exception:  # noqa: BLE001 -- not a kind this dialect creates
+                continue
+            if tree.key == "create" and (tree.args.get("kind") or "").upper() == word:
+                kinds.add(word)
+        # And the words after CREATE OR, each of which sets a FLAG rather than
+        # carrying a property: T-SQL's `OR ALTER` is the reference's `replace`,
+        # and Databricks' `OR REFRESH` its `refresh`.
+        flags: dict[str, str] = {}
+        plain = sqlglot.parse_one("CREATE VIEW zzv AS SELECT 1", read=dialect or None)
+        for word in words:
+            try:
+                tree = sqlglot.parse_one(
+                    f"CREATE OR {word} VIEW zzv AS SELECT 1", read=dialect or None
+                )
+            except Exception:  # noqa: BLE001
+                continue
+            if tree.key != "create":
+                continue
+            turned = [
+                k
+                for k, v in tree.args.items()
+                if v is True and plain.args.get(k) is not True
+            ]
+            if len(turned) == 1:
+                flags[word] = turned[0]
+    finally:
+        logging.disable(was)
+    return properties, sorted(kinds), flags
+
+
+def create_replace_words(dialect: str) -> dict:
+    """How this dialect WRITES the flags `CREATE OR ...` turned on.
+
+    Reading and writing are not the same word: T-SQL reads both OR REPLACE and
+    OR ALTER, and writes OR ALTER. Asked by rendering a view with each flag set
+    and reading back what stands between CREATE and VIEW.
+    """
+    import logging
+
+    import sqlglot
+
+    was = logging.root.manager.disable
+    logging.disable(logging.CRITICAL)
+    out = {}
+    try:
+        for flag in ("replace", "refresh"):
+            tree = sqlglot.parse_one("CREATE VIEW zzv AS SELECT 1")
+            tree.set(flag, True)
+            try:
+                text = tree.sql(dialect=dialect or None)
+            except Exception:  # noqa: BLE001
+                continue
+            head, sep, _ = text.partition(" VIEW ")
+            if not sep or not head.startswith("CREATE "):
+                continue
+            words = head[len("CREATE ") :].strip()
+            if words:
+                out[flag] = words
+    finally:
+        logging.disable(was)
+    return out
+
+
 def observed_shapes(exp, dialect, repo):
     """Which nodes the corpus actually contains, and with which arguments set.
 
@@ -4598,6 +4740,11 @@ def syntax_templates(exp, dialect, repo):
     shapes = observed_shapes(exp, dialect, repo)
     for cls_name, extra in EXTRA_SHAPES.items():
         shapes.setdefault(cls_name, set()).update(extra)
+    # Every bare property the parser can now READ needs a spelling to be
+    # written back with. Taking them from the same probe keeps the two halves
+    # together: a word the parser learns cannot become a node nobody can write.
+    for cls_name in set(create_words(dialect)[0].values()):
+        shapes.setdefault(cls_name, set()).add(((), ()))
     for cls_name, variants in sorted(shapes.items()):
         cls = getattr(exp, cls_name, None)
         if cls is None:
@@ -6114,6 +6261,10 @@ def main() -> int:
         "\t// a whole spec. Answerable only with a type annotator, which is\n",
         "\t// why these were refused until there was one.\n",
         "\tTypeDispatchFunctions map[string]TypeDispatch\n",        "\t// ValueDispatchFunctions are names whose CLASS is chosen by the\n\t// WORD in one argument: T-SQL's HASHBYTES('SHA1', x) is an SHA and\n\t// HASHBYTES('MD5', x) an MD5. A word not listed takes Default.\n\tValueDispatchFunctions map[string]ValueDispatch\n",
+        "\t// CreateProperties are the words that may stand between CREATE and\n\t// what it creates, each carrying a bare property of its own:\n\t// MATERIALIZED, UNLOGGED, TRANSIENT. The class is read off the tree,\n\t// not made from the word -- STREAMING becomes a StreamingTableProperty.\n\tCreateProperties map[string]string\n",
+        "\t// CreateKinds are the things this dialect will CREATE. T-SQL alone\n\t// spells a procedure PROC as well as PROCEDURE.\n\tCreateKinds map[string]struct{}\n",
+        "\t// CreateOrFlags are the words after CREATE OR and the flag each\n\t// turns on: REPLACE and T-SQL's ALTER both mean `replace`, and\n\t// Databricks' REFRESH means `refresh`.\n\tCreateOrFlags map[string]string\n",
+        "\t// CreateFlagWords is how each of those flags is WRITTEN, which need\n\t// not be the word it was read from: T-SQL reads OR REPLACE and OR\n\t// ALTER alike and writes OR ALTER.\n\tCreateFlagWords map[string]string\n",
         "\t// ArityKindSpecs are the shapes an arity takes when one argument is\n\t// of a particular kind, beside the plain shape in FunctionsByArity.\n\tArityKindSpecs map[string]map[int][]KindSpec\n",
 
         "\t// ValidIntervalUnits are the words that can follow INTERVAL as a\n",
@@ -6495,6 +6646,25 @@ def main() -> int:
                     out.append(f"\t\t\t\t{width}: {{{', '.join(parts)}}},\n")
                 out.append("\t\t\t},\n")
             out.append("\t\t},\n")
+        create_props, create_kinds, create_flags = create_words(name)
+        replace_words = create_replace_words(name)
+        out.append("\t\tCreateFlagWords: map[string]string{\n")
+        for flag in sorted(replace_words):
+            out.append(f"\t\t\t{gostr(flag)}: {gostr(replace_words[flag])},\n")
+        out.append("\t\t},\n")
+        out.append("\t\tCreateProperties: map[string]string{\n")
+        for word in sorted(create_props):
+            out.append(f"\t\t\t{gostr(word)}: {gostr(create_props[word])},\n")
+        out.append("\t\t},\n")
+        out.append(
+            "\t\tCreateKinds: map[string]struct{}{"
+            + "".join(f"{gostr(k)}: {{}}, " for k in create_kinds)
+            + "},\n"
+        )
+        out.append("\t\tCreateOrFlags: map[string]string{\n")
+        for word in sorted(create_flags):
+            out.append(f"\t\t\t{gostr(word)}: {gostr(create_flags[word])},\n")
+        out.append("\t\t},\n")
         if value_dispatch:
             out.append("\t\tValueDispatchFunctions: map[string]ValueDispatch{\n")
             for fn in sorted(value_dispatch):

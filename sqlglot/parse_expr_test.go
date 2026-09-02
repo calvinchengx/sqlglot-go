@@ -1988,7 +1988,6 @@ func TestCreateTable(t *testing.T) {
 	// dropped constraint changes what the table is.
 	for _, sql := range []string{
 		"CREATE TABLE z (a INT GENERATED ALWAYS AS SOMETHING)",
-		"CREATE MATERIALIZED VIEW v AS SELECT 1",
 		"CREATE TABLE t (a INT",
 		"CREATE TABLE t (a INT) DISTRIBUTED BY HASH (b)",
 		// Every way a property can run out or say something the port cannot
@@ -9447,5 +9446,39 @@ func TestArityKindSpecs(t *testing.T) {
 	}
 	if !isDigits("0") || isDigits("") || isDigits("1a") {
 		t.Error("isDigits disagrees with itself")
+	}
+}
+
+// The words between CREATE and what it creates: a bare property of the
+// reference's own, a kind in its own right, or a flag that `OR` turns on.
+// Which is which is the dialect's, and is read from its table.
+func TestCreateWords(t *testing.T) {
+	for _, c := range []struct{ sql, dialect string }{
+		{"CREATE MATERIALIZED VIEW x.y.z AS SELECT a FROM b", ""},
+		{"CREATE UNLOGGED TABLE foo AS SELECT 1", "postgres"},
+		{"CREATE DATABASE x", ""},
+		{"CREATE DATABASE IF NOT EXISTS y", ""},
+		{"CREATE PROC foo AS SELECT 1", "tsql"},
+		// Read from one word and written as another: T-SQL takes OR REPLACE
+		// and OR ALTER alike, and writes OR ALTER.
+		{"CREATE OR ALTER VIEW a.b AS SELECT 1", "tsql"},
+	} {
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != c.sql {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	// A word no dialect knows here is still refused.
+	if _, err := ParseOne("CREATE ZZWAT TABLE t (a INT)", ""); err == nil {
+		t.Error("a word nobody knows was read as a modifier")
+	}
+	// And a DATABASE with more than a name after it.
+	if _, err := ParseOne("CREATE DATABASE x (a INT)", ""); err == nil {
+		t.Error("a database with columns was read")
 	}
 }

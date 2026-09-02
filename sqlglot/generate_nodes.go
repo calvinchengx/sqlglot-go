@@ -2725,8 +2725,17 @@ func (g *generator) writeCreate(e *Expression) string {
 	// What the dialect adds to a TEMPORARY object of this kind, written at the
 	// very end because that is where it measured.
 	temporarySuffix := ""
-	if replace, _ := e.Args["replace"].(bool); replace {
-		out += "OR REPLACE "
+	// The words a dialect writes for these are not the words it reads them
+	// from: T-SQL reads OR REPLACE and OR ALTER alike and writes OR ALTER.
+	for _, flag := range []string{"replace", "refresh"} {
+		if on, _ := e.Args[flag].(bool); !on {
+			continue
+		}
+		words, ok := g.tables.CreateFlagWords[flag]
+		if !ok {
+			return g.fail(e.Class + " " + flag + ", which this dialect does not write")
+		}
+		out += words + " "
 	}
 	if unique, _ := e.Args["unique"].(bool); unique {
 		out += "UNIQUE "

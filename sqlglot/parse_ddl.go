@@ -24,11 +24,24 @@ import (
 func (p *parser) parseCreate() (*Expression, error) {
 	p.advance() // CREATE
 
-	replace := false
-	if p.atWords("OR", "REPLACE") {
-		p.advance()
-		p.advance()
-		replace = true
+	// `OR <word>` turns on a flag of the reference's own: REPLACE and
+	// T-SQL's ALTER both mean `replace`, Databricks' REFRESH means
+	// `refresh`. Which words a dialect takes, and what each means, is the
+	// dialect's business and is read from its table.
+	replace, refresh := false, false
+	if p.atWords("OR") && p.next() != nil {
+		if flag, ok := p.tables.CreateOrFlags[strings.ToUpper(p.next().Text)]; ok {
+			p.advance()
+			p.advance()
+			switch flag {
+			case "replace":
+				replace = true
+			case "refresh":
+				refresh = true
+			default:
+				return nil, p.unsupported("CREATE OR " + flag)
+			}
+		}
 	}
 	// TEMPORARY is not a flag on the node: the reference keeps it as a
 	// PROPERTY, in a list of them, which is why it needs a node of its own
@@ -45,13 +58,22 @@ func (p *parser) parseCreate() (*Expression, error) {
 		p.advance()
 		unique = true
 	}
-	// The other modifiers are properties too, and none of them is read here;
-	// a statement carrying one is refused rather than built without it.
-	for _, word := range []string{"GLOBAL", "LOCAL",
-		"MATERIALIZED", "EXTERNAL", "SECURE", "TRANSIENT", "UNIQUE"} {
-		if p.atWords(word) {
-			return nil, p.unsupported("CREATE " + word)
+	// The other modifiers are properties too -- MATERIALIZED, UNLOGGED,
+	// TRANSIENT, Databricks' STREAMING -- each carrying a bare node of its
+	// own. Which words those are, and what each builds, is read from the
+	// dialect's table rather than listed here.
+	var modifiers []*Expression
+	for {
+		word := p.curr()
+		if word == nil {
+			break
 		}
+		class, ok := p.tables.CreateProperties[strings.ToUpper(word.Text)]
+		if !ok {
+			break
+		}
+		p.advance()
+		modifiers = append(modifiers, New(class))
 	}
 
 	kindToken := p.curr()
@@ -59,9 +81,11 @@ func (p *parser) parseCreate() (*Expression, error) {
 		return nil, p.unsupported("CREATE without a kind")
 	}
 	kind := strings.ToUpper(kindToken.Text)
-	if kind != "TABLE" && kind != "VIEW" && kind != "FUNCTION" && kind != "PROCEDURE" &&
-		kind != "INDEX" && kind != "SCHEMA" && kind != "SEQUENCE" && kind != "TYPE" &&
-		kind != "MACRO" && kind != "TRIGGER" {
+	// The kinds this dialect creates are its own -- T-SQL alone spells a
+	// procedure PROC -- but only some of them have a body this port knows how
+	// to read, and the rest are refused by name below.
+	if _, ok := p.tables.CreateKinds[kind]; !ok &&
+		kind != "INDEX" && kind != "TYPE" && kind != "MACRO" && kind != "TRIGGER" {
 		return nil, p.unsupported("CREATE " + kind)
 	}
 	p.advance()
@@ -99,6 +123,25 @@ func (p *parser) parseCreate() (*Expression, error) {
 		}
 	}
 
+	// A DATABASE has no columns and no query: the statement is the name and
+	// nothing else. Unlike a SCHEMA, whose name lands on `db`, this one is
+	// an ordinary table reference.
+	if kind == "DATABASE" || kind == "NAMESPACE" {
+		if p.curr() != nil {
+			return nil, p.unsupported("CREATE " + kind + " with more than a name")
+		}
+		return New("Create",
+			Arg{"this", table},
+			Arg{"kind", kind},
+			Arg{"replace", replace},
+			Arg{"refresh", refresh},
+			Arg{"unique", false},
+			Arg{"exists", exists},
+			Arg{"indexes", []*Expression{}},
+			Arg{"concurrently", false},
+		), nil
+	}
+
 	// DuckDB's MACRO is a function under another word: the tokenizer gives
 	// it the same token, and only the text it was written with tells them
 	// apart. It carries one thing a FUNCTION does not -- several bodies, one
@@ -107,8 +150,8 @@ func (p *parser) parseCreate() (*Expression, error) {
 	if kind == "FUNCTION" || kind == "MACRO" {
 		return p.parseFunctionRest(table, kind, replace, exists, temporary)
 	}
-	if kind == "PROCEDURE" {
-		return p.parseProcedureRest(table, replace, exists)
+	if kind == "PROCEDURE" || kind == "PROC" {
+		return p.parseProcedureRest(table, kind, replace, exists)
 	}
 
 	// A SEQUENCE has no columns and no query -- what follows its name says
@@ -232,6 +275,8 @@ func (p *parser) parseCreate() (*Expression, error) {
 	if temporary || namesATemporaryTable(createdTable(this)) {
 		items = append(items, New("TemporaryProperty"))
 	}
+	// The words in front of the kind, in the order they were written.
+	items = append(items, modifiers...)
 	items = append(items, afterName...)
 	items = append(items, afterSchema...)
 	if withData != nil {
@@ -249,7 +294,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 		Arg{"this", this},
 		Arg{"kind", kind},
 		Arg{"replace", replace},
-		Arg{"refresh", false},
+		Arg{"refresh", refresh},
 		Arg{"unique", false},
 		Arg{"expression", expression},
 		Arg{"exists", exists},
