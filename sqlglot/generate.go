@@ -100,6 +100,15 @@ func (g *generator) node(e *Expression) string {
 		delete(g.coerced, e)
 		return strings.ReplaceAll(g.tables.ConditionCoercion, "{value}", g.node(e))
 	}
+	// A cast the reference's own parser put in and its generator takes back
+	// out. Stripping it HERE -- at the node that holds it, before that node
+	// is written -- is what keeps reading and writing symmetrical: T-SQL
+	// reads LEN(x) as a Length over a cast to TEXT and writes it LEN(x).
+	if e = stripElidedCasts(g.tables, e); e.Class == "Cast" {
+		if inner, gone := castElidedOver(g.tables, e); gone {
+			return g.node(inner)
+		}
+	}
 	// A FORMAT is spelled three ways: through the dialect's own mapping (the
 	// tree stores `%Y-%m-%d` and PostgreSQL writes `YYYY-MM-DD`), as stored,
 	// or through a table of the dialect's own that this port does not have.
@@ -164,6 +173,68 @@ func (g *generator) node(e *Expression) string {
 		return fn(g, e)
 	}
 	return g.spell(e)
+}
+
+// stripElidedCasts removes, from the keys this class writes through, a cast
+// the reference's generator does not write. The node is copied rather than
+// changed: the tree belongs to the caller.
+func stripElidedCasts(tables *ParserTables, e *Expression) *Expression {
+	byKey, ok := tables.CastElidedAt[e.Class]
+	if !ok {
+		return e
+	}
+	out := e
+	for key, types := range byKey {
+		held, _ := out.Args[key].(*Expression)
+		if held == nil || held.Class != "Cast" {
+			continue
+		}
+		if !escapes(types, castTarget(held)) {
+			continue
+		}
+		inner, _ := held.Args["this"].(*Expression)
+		if inner == nil {
+			continue
+		}
+		if out == e {
+			out = e.shallowCopy()
+		}
+		out.Set(key, inner)
+	}
+	return out
+}
+
+// castElidedOver reports a cast the reference never writes at all, whatever
+// holds it, together with what it writes instead.
+func castElidedOver(tables *ParserTables, e *Expression) (*Expression, bool) {
+	inner, _ := e.Args["this"].(*Expression)
+	if inner == nil {
+		return nil, false
+	}
+	return inner, escapes(tables.CastElidedOver[castTarget(e)], inner.Class)
+}
+
+// castTarget is the type a cast names.
+func castTarget(e *Expression) string {
+	to, _ := e.Args["to"].(*Expression)
+	if to == nil {
+		return ""
+	}
+	kind, _ := to.Args["this"].(DataTypeKind)
+	return string(kind)
+}
+
+// escapes reports whether a name is in a generated list.
+func escapes(list []string, name string) bool {
+	if name == "" {
+		return false
+	}
+	for _, k := range list {
+		if k == name {
+			return true
+		}
+	}
+	return false
 }
 
 // spell writes a node by the generic routes -- operators, function spellings,

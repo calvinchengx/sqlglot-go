@@ -2393,6 +2393,13 @@ func (g *generator) unnestCall(e, alias *Expression) string {
 }
 
 func (g *generator) writeAtTimeZone(e *Expression) string {
+	// A dialect with a CALL for this writes the call: Databricks spells the
+	// same node FROM_UTC_TIMESTAMP(x, zone). The operator is the fallback,
+	// not the rule -- writing it everywhere put an `AT TIME ZONE` where
+	// Databricks wanted a function name.
+	if len(g.tables.FunctionSQL[e.Class]) > 0 {
+		return g.spell(e)
+	}
 	return g.child(e, "this") + " AT TIME ZONE " + g.child(e, "zone")
 }
 

@@ -2098,8 +2098,92 @@ func namedWhereWrapped(keys []FuncArg, args []*Expression) bool {
 	return true
 }
 
+// heldAlone is the one argument position a nested wrapper holds, where it
+// holds exactly one. A wrapper over several has no single argument whose kind
+// could excuse it.
+func heldAlone(keys []FuncArg) (int, bool) {
+	held := -1
+	for _, a := range keys {
+		if a.Index < 0 || a.VarLen || a.Nested != "" || a.Wrap != "" {
+			continue
+		}
+		if held >= 0 {
+			return 0, false
+		}
+		held = a.Index
+	}
+	return held, held >= 0
+}
+
+// argumentKind names an argument the way the probe named it, so the two agree
+// about which arguments escape a wrapper. The distinctions are only the ones
+// the reference's builders actually branch on.
+func argumentKind(e *Expression) string {
+	switch {
+	case e == nil:
+		return ""
+	case e.Class == "Literal":
+		if isStringLiteral(e) {
+			return "string"
+		}
+		return "number"
+	case e.Class == "Cast" || e.Class == "TryCast":
+		return "cast"
+	case e.Class == "Subquery":
+		return "subquery"
+	}
+	return "call"
+}
+
+// escapesWrapper reports whether this argument is one the wrapper skips.
+//
+// Two shapes of exception: a KIND -- T-SQL's LEN leaves a string alone -- and
+// a cast the argument ALREADY carries, written `cast:TYPE`, because the
+// reference will not cast twice.
+func escapesWrapper(a FuncArg, arg *Expression) bool {
+	kind := argumentKind(arg)
+	for _, k := range a.NestedExcept {
+		if k == kind {
+			return true
+		}
+		if target, found := strings.CutPrefix(k, "cast:"); found &&
+			castsTo(arg) == target {
+			return true
+		}
+	}
+	return false
+}
+
+// castsTo is the type a cast names, or the empty string for anything else.
+func castsTo(e *Expression) string {
+	if e == nil || (e.Class != "Cast" && e.Class != "TryCast") {
+		return ""
+	}
+	to, _ := e.Args["to"].(*Expression)
+	if to == nil {
+		return ""
+	}
+	kind, _ := to.Args["this"].(DataTypeKind)
+	return string(kind)
+}
+
 func (p *parser) buildFunction(name string, spec FuncSpec, args []*Expression) *Expression {
-	return p.buildFromSpec(name, spec.Class, spec.Args, args)
+	node := p.buildFromSpec(name, spec.Class, spec.Args, args)
+	if spec.Annot != nil {
+		// The builder's OWN node carries an annotation: PostgreSQL's DIV is
+		// a Cast over an IntDiv, and a cast records its target twice.
+		node.Type = annotation(spec.Annot)
+	}
+	return node
+}
+
+// annotation builds the type a spec says its node was annotated with.
+func annotation(a *FuncArg) *Expression {
+	args := make([]Arg, 0, len(a.WrapArgs))
+	for _, extra := range a.WrapArgs {
+		args = append(args, Arg(extra))
+	}
+	return New(a.Wrap, args...)
 }
 
 func (p *parser) buildFromSpec(name, class string, keys []FuncArg, args []*Expression) *Expression {
@@ -2110,7 +2194,22 @@ func (p *parser) buildFromSpec(name, class string, keys []FuncArg, args []*Expre
 			// A node built AROUND the arguments: DuckDB's ANY_VALUE is an
 			// IgnoreNulls over an AnyValue, and the arguments belong to the
 			// inner node, not this one.
-			node.Set(a.Key, p.buildFromSpec(name, a.Nested, a.NestedArgs, args))
+			//
+			// Some wrappers have an EXCEPTION -- T-SQL's LEN casts what it
+			// counts to TEXT unless it is already a string -- and the
+			// argument then takes the slot bare.
+			if held, ok := heldAlone(a.NestedArgs); ok && held < len(args) &&
+				escapesWrapper(a, args[held]) {
+				node.Set(a.Key, args[held])
+				continue
+			}
+			made := p.buildFromSpec(name, a.Nested, a.NestedArgs, args)
+			if a.NestedAnnot != nil {
+				// The builder ANNOTATES what it built as well as building
+				// it, and the reference dumps the annotation.
+				made.Type = annotation(a.NestedAnnot)
+			}
+			node.Set(a.Key, made)
 		case a.Wrap != "" && a.Index < 0:
 			// A constant node the builder always supplies, holding no
 			// argument: DuckDB's two-argument REGEXP_EXTRACT_ALL fills

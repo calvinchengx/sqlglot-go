@@ -9324,3 +9324,57 @@ func TestJSONWriterPredicates(t *testing.T) {
 		}
 	}
 }
+
+// A builder's wrapper with an EXCEPTION, read at parse time and taken back off
+// at write time. T-SQL's LEN counts a cast to TEXT -- unless what it counts is
+// already a string -- and writes the call back without the cast either way.
+func TestWrapperExceptions(t *testing.T) {
+	for _, c := range []struct {
+		sql     string
+		dialect string
+	}{
+		{"LEN(x)", "tsql"}, {"LEN('x')", "tsql"}, {"LEN(1)", "tsql"},
+		{"LEFT(x, 1)", "tsql"}, {"RIGHT(x, 1)", "tsql"},
+		// A cast the argument ALREADY carries is not applied twice.
+		{"FROM_UTC_TIMESTAMP(CAST(x AS TIMESTAMP), tz)", "databricks"},
+		// And a cast that is never written around what it holds.
+		{"1 / DIV(4, 2)", "postgres"},
+	} {
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != c.sql {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+
+	// The tree the port builds is the reference's, cast and all -- what the
+	// writer removes is not what the parser leaves out.
+	tree, err := ParseOne("LEN(x)", "tsql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	held, _ := tree.Args["this"].(*Expression)
+	if held == nil || held.Class != "Cast" {
+		t.Fatalf("LEN(x) built %v, want a cast inside", tree.Args["this"])
+	}
+	if held.Type == nil {
+		t.Error("the cast the builder made carries no annotation")
+	}
+
+	// Nothing is a cast, and a cast names its target.
+	if castTarget(New("Cast")) != "" || castsTo(nil) != "" || castsTo(New("Column")) != "" {
+		t.Error("found a cast target where there is no cast")
+	}
+	if argumentKind(nil) != "" || argumentKind(New("Subquery")) != "subquery" ||
+		argumentKind(New("Count")) != "call" {
+		t.Error("named an argument kind wrongly")
+	}
+	// A wrapper over SEVERAL arguments has no one argument to excuse it.
+	if _, ok := heldAlone([]FuncArg{{Index: 0}, {Index: 1}}); ok {
+		t.Error("excused a wrapper holding two arguments")
+	}
+}

@@ -14,6 +14,7 @@ divergence. The pin is enforced here too.
 from __future__ import annotations
 
 import argparse
+from enum import Enum
 import pathlib
 import sys
 
@@ -351,6 +352,141 @@ def string_wrap(exp, spec, subst, index, literal, other, same, rebuild, call_bui
     return None
 
 
+def self_cast_exceptions(exp, spec, args, builder, dialect, same, rebuild, call_builder):
+    """Cast targets an argument may ALREADY carry, which skip the cast.
+
+    `exp.cast` does not cast twice: hand Databricks' FROM_UTC_TIMESTAMP an
+    `x::TIMESTAMP` and it leaves it alone rather than wrapping it again. None
+    of the generic probes can show that, because the type that matters is the
+    wrapper's OWN -- and the dialect's reading of it, which need not be the
+    same word: Databricks reads TIMESTAMP as TIMESTAMPTZ.
+
+    Recorded as `cast:TYPE`, so the port makes the same test on its own tree.
+    """
+    import sqlglot
+
+    for pos, (key, how) in enumerate(spec):
+        if how.get("nested") != "Cast":
+            continue
+        target = None
+        for _, inner in how["spec"]:
+            if inner.get("node") == "DataType":
+                for k, v in inner.get("extras") or ():
+                    if k == "this" and isinstance(v, Enum):
+                        target = v.value
+        held = nested_index(how)
+        if target is None or held is None or held >= len(args):
+            continue
+        # The name as written, and whatever this dialect turns it into.
+        candidates = {target}
+        try:
+            read = sqlglot.parse_one(f"CAST(zz AS {target})", dialect=dialect or None)
+            kind = getattr(read.to.this, "value", None)
+            if isinstance(kind, str):
+                candidates.add(kind)
+        except Exception:  # noqa: BLE001 -- not a type this dialect writes
+            pass
+        stripped = list(spec)
+        stripped[pos] = (key, {"index": held})
+        for kind in sorted(candidates):
+            tried = list(args)
+            tried[held] = exp.cast(exp.column("__already"), kind)
+            try:
+                other = call_builder(builder, tried, dialect)
+            except Exception:  # noqa: BLE001
+                continue
+            if not isinstance(other, exp.Expr):
+                continue
+            if same(rebuild(stripped, tried), other, tried):
+                how.setdefault("except", set()).add("cast:" + kind)
+
+
+def annot_of(node):
+    """The TYPE a builder annotated the node it made with, if it did.
+
+    `exp.cast` records its target on the node as well as inside the cast, and
+    the reference dumps that annotation. It shows in no SQL, so nothing but
+    the differential catches a port that leaves it off.
+    """
+    annot = getattr(node, "type", None)
+    if annot is None or not all(is_scalar(v) for v in annot.args.values()):
+        return None
+    return {"node": type(annot).__name__, "extras": list(annot.args.items())}
+
+
+def goannot(annot) -> str:
+    """An annotation as the FuncArg the port reads it from, or nil."""
+    if not annot:
+        return "nil"
+    extras = "".join(
+        "{%s, %s}, " % (gostr(k), goconst(v)) for k, v in (annot.get("extras") or [])
+    )
+    return '&FuncArg{"this", -1, false, nil, %s, []FuncConst{%s}, "", nil, nil, nil}' % (
+        gostr(annot["node"]),
+        extras,
+    )
+
+
+def is_scalar(v) -> bool:
+    """A value a spec can carry verbatim.
+
+    An ENUM counts. A DataType holds its kind as `DType.TEXT`, which is
+    neither a string nor a node, so every builder that CASTS an argument --
+    T-SQL's LEN, LEFT and RIGHT, Databricks' FROM_UTC_TIMESTAMP -- described
+    down to the cast's target and then stopped, and the whole name was
+    refused as undescribable.
+    """
+    return v is None or isinstance(v, (bool, str, int)) or isinstance(v, Enum)
+
+
+def probe_kind(exp, node):
+    """The argument KIND a builder may branch on, named as the port names it.
+
+    Only distinctions the port can make on its own tree, because it has to
+    make the same one at parse time with no reference to hand.
+    """
+    if isinstance(node, exp.Literal):
+        return "string" if node.args.get("is_string") else "number"
+    if isinstance(node, exp.Cast):
+        return "cast"
+    if isinstance(node, exp.Subquery):
+        return "subquery"
+    return "call"
+
+
+def nested_index(how):
+    """The argument position a nested wrapper holds, if it holds just one."""
+    held = [inner["index"] for _, inner in how["spec"] if "index" in inner]
+    return held[0] if len(held) == 1 else None
+
+
+def nested_exception(spec, subst, index, other, same, rebuild, kind):
+    """A nested wrapper the builder puts on SOME arguments and not others.
+
+    T-SQL's LEN casts its argument to TEXT -- unless the argument is already
+    a string, when it leaves it alone. Probed with a column the cast is part
+    of the spec; probed with a string it is gone, and until now that counted
+    as a builder nobody could describe, so LEN was refused at every arity.
+
+    It is not undescribable, it is a RULE: the wrapper has an exception. What
+    this returns is the position in the spec whose wrapper the substituted
+    argument escaped, so the caller can record which kinds escape it. A
+    difference the stripped spec does not explain is still undescribable, and
+    the name stays refused.
+    """
+    for pos, (key, how) in enumerate(spec):
+        if "nested" not in how:
+            continue
+        if not any(inner.get("index") == index for _, inner in how["spec"]):
+            continue
+        stripped = list(spec)
+        stripped[pos] = (key, {"index": index})
+        if same(rebuild(stripped, subst), other, subst):
+            how.setdefault("except", set()).add(kind)
+            return pos
+    return None
+
+
 def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
     """Work out what each function name builds, by asking the reference.
 
@@ -379,12 +515,31 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
     def describe(node, args):
         """Map each of the node's args to a placeholder position or a constant."""
         by_id = {id(a): i for i, a in enumerate(args)}
+
+        def position(value):
+            """Which argument this is, if it is one.
+
+            Identity is not enough. `exp.cast` COPIES what it casts, so the
+            column inside T-SQL's `LEN(x)` -> `Length(Cast(x, TEXT))` is not
+            the object handed to the builder -- and describing it structurally
+            instead wrote the placeholder's own name into the spec, which is
+            right for the probe and nonsense for real SQL. Every builder that
+            copies an argument into a wrapper was refused over this.
+            """
+            if id(value) in by_id:
+                return by_id[id(value)]
+            for i, a in enumerate(args):
+                if type(a) is type(value) and a == value:
+                    return i
+            return None
+
         out = []
         for key, value in node.args.items():
-            if id(value) in by_id:
-                out.append((key, {"index": by_id[id(value)]}))
+            at = position(value)
+            if at is not None:
+                out.append((key, {"index": at}))
             elif isinstance(value, list):
-                indexes = [by_id.get(id(v)) for v in value]
+                indexes = [position(v) for v in value]
                 if not value:
                     # An empty tail is ambiguous from this probe alone; the
                     # verification pass below settles it.
@@ -395,7 +550,7 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                     out.append((key, {"varlen": indexes[0]}))
                 else:
                     return None
-            elif value is None or isinstance(value, (bool, str, int)):
+            elif is_scalar(value):
                 out.append((key, {"const": value}))
             elif isinstance(value, exp.Expr):
                 # A node built FROM an argument rather than holding it:
@@ -410,9 +565,7 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                 # rejected outright by a check for exactly one argument. The
                 # extras are recorded so they can be rebuilt.
                 extras = [
-                    (k, v)
-                    for k, v in value.args.items()
-                    if k != "this" and (v is None or isinstance(v, (bool, str, int)))
+                    (k, v) for k, v in value.args.items() if k != "this" and is_scalar(v)
                 ]
                 wrapped = None
                 if isinstance(inner, str) and len(extras) == len(value.args) - 1:
@@ -426,10 +579,7 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                             break
                 if wrapped is not None:
                     out.append((key, wrapped))
-                elif all(
-                    v is None or isinstance(v, (bool, str, int))
-                    for v in value.args.values()
-                ):
+                elif all(is_scalar(v) for v in value.args.values()):
                     # No argument reached this node and everything in it is a
                     # scalar: a CONSTANT node the builder always supplies.
                     # DuckDB's two-argument REGEXP_EXTRACT_ALL fills group with
@@ -459,9 +609,16 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                     inner_spec = describe(value, args)
                     if inner_spec is None:
                         return None
-                    out.append(
-                        (key, {"nested": type(value).__name__, "spec": inner_spec})
-                    )
+                    how = {"nested": type(value).__name__, "spec": inner_spec}
+                    # A builder that CASTS also ANNOTATES what it built:
+                    # `exp.cast` records the target on the node as well as in
+                    # the cast. The reference dumps that annotation, so a port
+                    # that only built the cast produced a tree the differential
+                    # called different -- over a field nothing in the SQL shows.
+                    annot = annot_of(value)
+                    if annot is not None:
+                        how["annot"] = annot
+                    out.append((key, how))
             else:
                 return None
         return out
@@ -470,7 +627,23 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
         out = {}
         for key, how in spec:
             if "nested" in how:
-                out[key] = getattr(exp, how["nested"])(**rebuild(how["spec"], args))
+                # A wrapper with an exception is skipped for the argument
+                # kinds that escape it, exactly as the port will skip it.
+                held = nested_index(how)
+                if (
+                    how.get("except")
+                    and held is not None
+                    and held < len(args)
+                    and probe_kind(exp, args[held]) in how["except"]
+                ):
+                    out[key] = args[held]
+                    continue
+                made = getattr(exp, how["nested"])(**rebuild(how["spec"], args))
+                if "annot" in how:
+                    made.type = getattr(exp, how["annot"]["node"])(
+                        **dict(how["annot"]["extras"])
+                    )
+                out[key] = made
             elif "node" in how:
                 out[key] = getattr(exp, how["node"])(**dict(how.get("extras") or []))
             elif "wrap" in how:
@@ -506,13 +679,15 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                     return False
                 if [id(v) for v in value] != [id(v) for v in actual]:
                     return False
-            elif value is None or isinstance(value, (bool, str, int)):
+            elif is_scalar(value):
                 if actual is not value and actual != value:
                     return False
             elif isinstance(value, exp.Expr) and isinstance(actual, exp.Expr):
                 # A wrapped node is rebuilt, not carried, so identity is the
                 # wrong test -- compare what it is instead.
                 if type(value) is not type(actual) or value.args != actual.args:
+                    return False
+                if getattr(value, "type", None) != getattr(actual, "type", None):
                     return False
             elif value is not actual:
                 return False
@@ -550,6 +725,9 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
     out = {}
     by_arity: dict[str, dict[int, tuple]] = {}
     unit_maps: dict[str, dict] = {}
+    # The annotation on the spec's OWN class, where the builder's outermost
+    # node is the cast: PostgreSQL's DIV is a Cast over an IntDiv.
+    root_annots: dict = {}
     wraps: dict[str, dict[int, str]] = {}
     for name, builder in P.FUNCTIONS.items():
         if name in P.FUNCTION_PARSERS:
@@ -612,6 +790,10 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                         if label is not None and wraps.setdefault(name, {}).get(i, label) == label:
                             wraps[name][i] = label
                             continue
+                    if nested_exception(
+                        spec, subst, i, other, same, rebuild, probe_kind(exp, kind)
+                    ) is not None:
+                        continue
                     ok = False
                     break
             if not ok:
@@ -658,7 +840,11 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                 ok = False
                 break
         if ok:
+            self_cast_exceptions(
+                exp, spec, args, builder, dialect, same, rebuild, call_builder
+            )
             out[name] = (node.__class__.__name__, spec)
+            root_annots[name] = annot_of(node)
             aliases = unit_aliases(builder)
             if aliases:
                 unit_maps[name] = aliases
@@ -715,6 +901,11 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                             if label is not None and wraps.setdefault(name, {}).get(i, label) == label:
                                 wraps[name][i] = label
                                 continue
+                        if nested_exception(
+                            narrow_spec, subst, i, other, same, rebuild,
+                            probe_kind(exp, kind),
+                        ) is not None:
+                            continue
                         fine = False
                         break
                 if not fine:
@@ -735,11 +926,15 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                     ):
                         fine = False
             if fine:
+                self_cast_exceptions(
+                    exp, narrow_spec, narrow, builder, dialect, same, rebuild, call_builder
+                )
                 by_arity.setdefault(name, {})[width] = (one.__class__.__name__, narrow_spec)
+                root_annots[(name, width)] = annot_of(one)
                 aliases = unit_aliases(builder)
                 if aliases:
                     unit_maps[name] = aliases
-    return out, by_arity, unit_maps, dispatch, wraps
+    return out, by_arity, unit_maps, dispatch, wraps, root_annots
 
 
 def reserved_keywords(dialect: str, Dialect) -> list[str]:
@@ -4279,6 +4474,105 @@ def syntax_templates(exp, dialect, repo):
     return out, idem
 
 
+def cast_target(how):
+    """The type a nested Cast in a spec casts to, if it is one."""
+    if how.get("nested") != "Cast":
+        return None
+    for _, inner in how["spec"]:
+        if inner.get("node") == "DataType":
+            for k, v in inner.get("extras") or ():
+                if k == "this" and isinstance(v, Enum):
+                    return v.value
+    return None
+
+
+def cast_elisions(exp, dialect, forms):
+    """Casts the reference's GENERATOR does not write.
+
+    The parser puts them there -- T-SQL's LEN(x) is a Length over a cast to
+    TEXT -- and then the generator takes them straight back out, so `LEN(x)`
+    is what goes in and what comes out. A port that built the tree faithfully
+    and wrote it faithfully still differed, because faithful in one direction
+    is not faithful in both.
+
+    Two shapes, and both are asked rather than assumed: a cast at a KEY of
+    some class that the class writes through, and a cast that writes as its
+    own operand whatever holds it. What is probed is only the classes whose
+    own builders make casts, since those are the only ones that can hold a
+    cast nobody wrote.
+    """
+    by_key: dict = {}
+    over: dict = {}
+    seen = set()
+    for _, cls_name, spec in forms:
+        cls = getattr(exp, cls_name, None)
+        if cls is None:
+            continue
+        others = [
+            (k, exp.column(f"__probe_{i}"))
+            for i, (k, how) in enumerate(spec)
+            if "index" in how or "varlen" in how
+        ]
+        for key, how in spec:
+            target = cast_target(how)
+            if target is None or (cls_name, key, target) in seen:
+                continue
+            seen.add((cls_name, key, target))
+            bare = exp.column("__held")
+            try:
+                cast = exp.cast(bare.copy(), target)
+            except Exception:  # noqa: BLE001 -- not a type this dialect knows
+                continue
+            kwargs = {k: v for k, v in others if k != key}
+            try:
+                with_cast = cls(**{**kwargs, key: cast}).sql(dialect=dialect or None)
+                without = cls(**{**kwargs, key: bare.copy()}).sql(dialect=dialect or None)
+            except Exception:  # noqa: BLE001 -- a node that will not render
+                continue
+            if with_cast == without:
+                by_key.setdefault(cls_name, {}).setdefault(key, set()).add(target)
+    return by_key, over
+
+
+def cast_over_elisions(exp, dialect, forms):
+    """Casts that write as their OPERAND, whatever holds them.
+
+    PostgreSQL's DIV builds a Cast to DECIMAL over an IntDiv and then writes
+    just `DIV(4, 2)` -- the cast never appears, at the top of a statement or
+    anywhere inside one. So it is a property of the cast alone, not of what
+    holds it, and it is recorded by the type it casts to and the class it
+    casts.
+    """
+    out: dict = {}
+    seen = set()
+    for _, cls_name, spec in forms:
+        if cls_name != "Cast":
+            continue
+        target = None
+        held = None
+        for key, how in spec:
+            if key == "to" and how.get("node") == "DataType":
+                for k, v in how.get("extras") or ():
+                    if k == "this" and isinstance(v, Enum):
+                        target = v.value
+            if key == "this":
+                held = how.get("nested")
+        if target is None or held is None or (target, held) in seen:
+            continue
+        seen.add((target, held))
+        try:
+            node = getattr(exp, held)(
+                this=exp.column("__a"), expression=exp.column("__b")
+            )
+            whole = exp.cast(node.copy(), target).sql(dialect=dialect or None)
+            alone = node.sql(dialect=dialect or None)
+        except Exception:  # noqa: BLE001 -- a shape this dialect will not render
+            continue
+        if whole == alone:
+            out.setdefault(target, set()).add(held)
+    return out
+
+
 def render_functions(P, exp, dialect, funcs):
     """How the reference WRITES each function node, for the generator.
 
@@ -4304,11 +4598,18 @@ def render_functions(P, exp, dialect, funcs):
         cls = getattr(exp, cls_name, None)
         if cls is None:
             continue
-        # A spec with a nested node describes a call whose ARGUMENTS are not
-        # the node's own, so the plain `NAME(a, b, c)` probe below would
-        # record a spelling for a shape that never occurs.
-        if any("nested" in how for _, how in spec):
-            continue
+        # A spec with a nested node describes a call whose arguments are not
+        # the node's own -- T-SQL's LEN(x) builds Length(Cast(x, TEXT)). For
+        # PARSING that matters; for WRITING it does not, because the writer
+        # puts whatever the key holds where the key goes. So the wrapper is
+        # dropped here and the node probed by its OWN keys, which is how
+        # Databricks' AtTimeZone got its FROM_UTC_TIMESTAMP spelling back:
+        # skipping these left the port writing the `AT TIME ZONE` operator
+        # for a node the reference writes as a call.
+        spec = [
+            (key, {"index": i} if "nested" in how else how)
+            for i, (key, how) in enumerate(spec)
+        ] if any("nested" in how for _, how in spec) else spec
         positional = [kv for kv in spec if "index" in kv[1] or "varlen" in kv[1]]
         keys = [k for k, _ in positional]
         args = [exp.column(f"__probe_{i}") for i in range(len(keys))]
@@ -4513,9 +4814,18 @@ def strstrmap(name: str, table) -> str:
     return f"\t\t{name}: map[string]string{{\n{body}\t\t}},\n"
 
 
+# The Go type each of the reference's enums is spelled with in the port.
+GO_ENUM_TYPES = {"DType": "DataTypeKind"}
+
+
 def goconst(v) -> str:
     if v is None:
         return "nil"
+    if isinstance(v, Enum):
+        # The port names the same enum with a Go type of its own: a cast's
+        # target is a DataTypeKind, not a bare string, and a bare string in
+        # the slot would compare unequal to every kind the port builds.
+        return "%s(%s)" % (GO_ENUM_TYPES.get(type(v).__name__, "string"), gostr(v.value))
     if isinstance(v, bool):
         return str(v).lower()
     if isinstance(v, int):
@@ -4531,9 +4841,13 @@ def funcargs(spec) -> str:
             # the class here, its own arguments described the same way one
             # level down.
             inner = funcargs(how["spec"])
+            escapes = "".join(
+                "%s, " % gostr(k) for k in sorted(how.get("except") or ())
+            )
+            annot_go = goannot(how.get("annot"))
             parts.append(
-                '{%s, -1, false, nil, "", nil, %s, []FuncArg{%s}}'
-                % (gostr(key), gostr(how["nested"]), inner)
+                '{%s, -1, false, nil, "", nil, %s, []FuncArg{%s}, []string{%s}, %s}'
+                % (gostr(key), gostr(how["nested"]), inner, escapes, annot_go)
             )
         elif "node" in how:
             # Index -1 marks a CONSTANT node rather than a wrapper: the class
@@ -4542,7 +4856,7 @@ def funcargs(spec) -> str:
                 "{%s, %s}, " % (gostr(k), goconst(v)) for k, v in (how.get("extras") or [])
             )
             parts.append(
-                '{%s, -1, false, nil, %s, []FuncConst{%s}, "", nil}'
+                '{%s, -1, false, nil, %s, []FuncConst{%s}, "", nil, nil, nil}'
                 % (gostr(key), gostr(how["node"]), extras)
             )
         elif "wrap" in how:
@@ -4550,26 +4864,30 @@ def funcargs(spec) -> str:
                 "{%s, %s}, " % (gostr(k), goconst(v)) for k, v in (how.get("extras") or [])
             )
             parts.append(
-                '{%s, %d, false, nil, %s, []FuncConst{%s}, "", nil}'
+                '{%s, %d, false, nil, %s, []FuncConst{%s}, "", nil, nil, nil}'
                 % (gostr(key), how["index"], gostr(how["wrap"]), extras)
             )
         elif "index" in how:
-            parts.append('{%s, %d, false, nil, "", nil, "", nil}' % (gostr(key), how["index"]))
+            parts.append('{%s, %d, false, nil, "", nil, "", nil, nil, nil}' % (gostr(key), how["index"]))
         elif "varlen" in how:
-            parts.append('{%s, %d, true, nil, "", nil, "", nil}' % (gostr(key), how["varlen"]))
+            parts.append('{%s, %d, true, nil, "", nil, "", nil, nil, nil}' % (gostr(key), how["varlen"]))
         else:
             parts.append(
-                '{%s, -1, false, %s, "", nil, "", nil}' % (gostr(key), goconst(how["const"]))
+                '{%s, -1, false, %s, "", nil, "", nil, nil, nil}' % (gostr(key), goconst(how["const"]))
             )
     return ", ".join(parts)
 
 
-def funcmap(name: str, funcs) -> str:
+def funcmap(name: str, funcs, annots=None) -> str:
     """One spec per name, sharing funcargs so the two tables cannot drift."""
     lines = []
+    annots = annots or {}
     for fn in sorted(funcs):
         cls, spec = funcs[fn]
-        lines.append(f"\t\t\t{gostr(fn)}: {{{gostr(cls)}, []FuncArg{{{funcargs(spec)}}}}},\n")
+        lines.append(
+            f"\t\t\t{gostr(fn)}: {{{gostr(cls)}, []FuncArg{{{funcargs(spec)}}}, "
+            f"{goannot(annots.get(fn))}}},\n"
+        )
     return f"\t\t{name}: map[string]FuncSpec{{\n{''.join(lines)}\t\t}},\n"
 
 
@@ -5181,6 +5499,8 @@ def main() -> int:
         "\tCastSensitiveArgs map[string]map[int][]string\n",
         "\t// CastCoercions is what the dialect wraps an argument in, per the\n\t// type it is cast to: DuckDB rounds a float into a BIT_OR and casts a\n\t// decimal without rounding. A wrapper of `{arg}` alone means the slot\n\t// takes that type as it stands.\n\tCastCoercions map[string]map[int]map[string]map[string]string\n",
         "\t// CastIdempotentTypes are the slots whose coercion the dialect\n\t// applies whatever it is given, so an argument already carrying that\n\t// cast leaves nothing to add and the plain spelling is exact.\n\tCastIdempotentTypes map[string]map[string][]string\n",
+        "\t// CastElidedAt names, per class and per key, the cast TARGETS the\n\t// reference's generator does not write there. Its own parser puts them\n\t// in -- T-SQL's LEN(x) is a Length over a cast to TEXT -- and its\n\t// generator takes them straight back out, so a port faithful in one\n\t// direction and not the other wrote LEN(CAST(x AS VARCHAR(MAX))).\n\tCastElidedAt map[string]map[string][]string\n",
+        "\t// CastElidedOver names, per cast TARGET, the classes a cast to that\n\t// type is never written around: PostgreSQL's DIV is a Cast to DECIMAL\n\t// over an IntDiv, written as just DIV(4, 2).\n\tCastElidedOver map[string][]string\n",
         "\t// CastSensitiveTypes says WHICH cast targets move the rendering in\n\t// each of those positions. A slot is not sensitive to casting as\n\t// such: DuckDB wraps a non-text argument to UPPER in a cast to TEXT,\n\t// and leaves one that is already TEXT alone.\n\tCastSensitiveTypes map[string]map[int]map[string][]string\n",
         "\t// DropsZeroArgs are the argument keys a literal ZERO simply\n",
         "\t// DISAPPEARS from -- DuckDB writes REGEXP_EXTRACT(x, p) for a\n",
@@ -5578,6 +5898,10 @@ def main() -> int:
         "type FuncSpec struct {\n",
         "\tClass string\n",
         "\tArgs  []FuncArg\n",
+        "\t// Annot is the TYPE the builder annotated its OWN node with:\n",
+        "\t// PostgreSQL's DIV is a Cast over an IntDiv, and the cast carries\n",
+        "\t// its target twice. Nil where the builder annotates nothing.\n",
+        "\tAnnot *FuncArg\n",
         "}\n\n",
         "// FuncArg fills one key: a positional argument, a variadic tail that\n",
         "// collects everything from Index onward, or a constant the builder always\n",
@@ -5722,6 +6046,19 @@ def main() -> int:
         "\t// own arguments are described the same way, one level down.\n",
         "\tNested     string\n",
         "\tNestedArgs []FuncArg\n",
+        "\t// NestedExcept names the argument KINDS that ESCAPE that wrapper:\n",
+        "\t// \"string\", \"number\", \"cast\", \"call\", \"subquery\". T-SQL's LEN casts\n",
+        "\t// its argument to TEXT unless it is ALREADY a string, so the cast\n",
+        "\t// belongs in the spec and a string literal is the exception. Every\n",
+        "\t// wrapper used to be unconditional, and a builder with a rule like\n",
+        "\t// this one was refused as undescribable at every arity.\n",
+        "\tNestedExcept []string\n",
+        "\t// NestedAnnot is the TYPE the wrapper is annotated with, where the\n",
+        "\t// builder annotates as well as builds: `exp.cast` records its target\n",
+        "\t// on the node too, and the reference dumps that. A port that built\n",
+        "\t// the cast without it produced a tree the differential called\n",
+        "\t// different over a field no SQL shows.\n",
+        "\tNestedAnnot *FuncArg\n",
 
         "}\n\n",
         "var parserTables = map[string]*ParserTables{\n",
@@ -5820,7 +6157,7 @@ def main() -> int:
         out.append(strset("SyntaxFunctions", sorted(P.FUNCTION_PARSERS)))
         out.append(strset("TableFunctions", table_functions(name, P)))
         _fmt_args = time_format_args(name, P, exp, list(P.FUNCTIONS))
-        funcs, by_arity, unit_maps, dispatch, string_wraps = probe_functions(
+        funcs, by_arity, unit_maps, dispatch, string_wraps, root_annots = probe_functions(
             P, exp, name, format_args=_fmt_args
         )
         if string_wraps:
@@ -5840,14 +6177,14 @@ def main() -> int:
                 out.append(f"\t\t\t\tIndex: {d['index']},\n")
                 out.append(
                     f"\t\t\t\tDefault: FuncSpec{{{gostr(dcls)}, "
-                    f"[]FuncArg{{{funcargs(dspec)}}}}},\n"
+                    f"[]FuncArg{{{funcargs(dspec)}}}, nil}},\n"
                 )
                 out.append("\t\t\t\tByType: map[string]FuncSpec{\n")
                 for ty in sorted(d["by_type"]):
                     cls, spec = d["by_type"][ty]
                     out.append(
                         f"\t\t\t\t\t{gostr(ty)}: {{{gostr(cls)}, "
-                        f"[]FuncArg{{{funcargs(spec)}}}}},\n"
+                        f"[]FuncArg{{{funcargs(spec)}}}, nil}},\n"
                     )
                 out.append("\t\t\t\t},\n\t\t\t},\n")
             out.append("\t\t},\n")
@@ -5859,14 +6196,17 @@ def main() -> int:
                 )
                 out.append(f"\t\t\t{gostr(fname)}: {{{pairs}}},\n")
             out.append("\t\t},\n")
-        out.append(funcmap("Functions", funcs))
+        out.append(funcmap("Functions", funcs, root_annots))
         if by_arity:
             out.append("\t\tFunctionsByArity: map[string]map[int]FuncSpec{\n")
             for fname in sorted(by_arity):
                 out.append(f"\t\t\t{gostr(fname)}: {{\n")
                 for arity in sorted(by_arity[fname]):
                     cls, spec = by_arity[fname][arity]
-                    out.append(f"\t\t\t\t{arity}: {{{gostr(cls)}, []FuncArg{{{funcargs(spec)}}}}},\n")
+                    out.append(
+                        f"\t\t\t\t{arity}: {{{gostr(cls)}, []FuncArg{{{funcargs(spec)}}}, "
+                        f"{goannot(root_annots.get((fname, arity)))}}},\n"
+                    )
                 out.append("\t\t\t},\n")
             out.append("\t\t},\n")
         # The generator needs a spelling for these too. Every arity is
@@ -5881,6 +6221,23 @@ def main() -> int:
             for arity in sorted(variants, reverse=True):
                 cls, spec = variants[arity]
                 render_forms.append((fname, cls, spec))
+        elided = cast_elisions(exp, name, render_forms)[0]
+        elided_over = cast_over_elisions(exp, name, render_forms)
+        if elided:
+            out.append("\t\tCastElidedAt: map[string]map[string][]string{\n")
+            for cls_key in sorted(elided):
+                inner = ", ".join(
+                    "%s: {%s}" % (gostr(k), ", ".join(gostr(t) for t in sorted(elided[cls_key][k])))
+                    for k in sorted(elided[cls_key])
+                )
+                out.append(f"\t\t\t{gostr(cls_key)}: {{{inner}}},\n")
+            out.append("\t\t},\n")
+        if elided_over:
+            out.append("\t\tCastElidedOver: map[string][]string{\n")
+            for ty in sorted(elided_over):
+                inner = ", ".join(gostr(c) for c in sorted(elided_over[ty]))
+                out.append(f"\t\t\t{gostr(ty)}: {{{inner}}},\n")
+            out.append("\t\t},\n")
         classes = class_sensitive_args(P, exp, name, render_input)
         if classes:
             out.append("\t\tClassSensitiveArgs: map[string][]ClassTrigger{\n")
@@ -6006,6 +6363,29 @@ def main() -> int:
                 out.append(f"\t\t\t{gostr(fname)}: {{{inner}}},\n")
             out.append("\t\t},\n")
         sensitive = string_sensitive_args(P, exp, render_input, name)
+        # A position whose spec ALREADY explains what a string does there is
+        # not sensitive any more, it is described: T-SQL's LEN skips its cast
+        # for a string, which the wrapper's own exception records. Left in,
+        # the older mechanism refused `LEN('x')` for a rule the newer one had
+        # just learned.
+        for fname, positions in list(sensitive.items()):
+            explained = set()
+            for cls_spec in [funcs.get(fname)] + [
+                by_arity.get(fname, {}).get(a) for a in by_arity.get(fname, {})
+            ]:
+                if not cls_spec:
+                    continue
+                for _, how in cls_spec[1]:
+                    if "string" not in (how.get("except") or ()):
+                        continue
+                    held = nested_index(how)
+                    if held is not None:
+                        explained.add(held)
+            kept = [i for i in positions if i not in explained]
+            if kept:
+                sensitive[fname] = kept
+            else:
+                del sensitive[fname]
         if sensitive:
             out.append("\t\tStringSensitiveArgs: map[string][]int{\n")
             for fname, indexes in sorted(sensitive.items()):
