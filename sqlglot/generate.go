@@ -506,6 +506,13 @@ func (g *generator) refuseSensitive(e *Expression) bool {
 			if types := g.tables.CastIdempotentTypes[e.Class][key]; castsToOneOf(child, types) {
 				continue
 			}
+			// And where the WRAPPER the dialect puts round an argument of
+			// this type was measured, the port writes that instead of
+			// refusing: DuckDB rounds a float into a BIT_OR and casts a
+			// decimal without rounding, and both are recorded.
+			if _, known := g.tables.CastCoercions[e.Class][arity][key][castTargetOf(child)]; known {
+				continue
+			}
 		}
 		g.fail("cast argument to " + e.Class)
 		return true
@@ -589,7 +596,11 @@ func (g *generator) namedFunction(e *Expression, spec FuncSQL) string {
 		}
 		switch v := e.Args[key].(type) {
 		case *Expression:
-			parts = append(parts, g.node(v))
+			// An argument the dialect WRAPS by its type -- DuckDB rounds a
+			// float into a BIT_OR and casts a decimal without rounding --
+			// takes that wrapper here, where the call's arguments are laid
+			// out.
+			parts = append(parts, g.coerceArgument(e, key, g.node(v)))
 		case []*Expression:
 			for _, item := range v {
 				parts = append(parts, g.node(item))
@@ -622,6 +633,18 @@ func isLiteral(e *Expression) bool {
 
 // isCastToNonInteger reports whether an argument asserts a type that is not an
 // integer -- the trigger the reference itself uses.
+// castTargetOf is the type a cast names, or "" where the node is not one.
+func castTargetOf(e *Expression) string {
+	if e == nil || (e.Class != "Cast" && e.Class != "TryCast") {
+		return ""
+	}
+	if to, _ := e.Args["to"].(*Expression); to != nil {
+		kind, _ := to.Args["this"].(DataTypeKind)
+		return string(kind)
+	}
+	return ""
+}
+
 // castsToOneOf reports whether a cast's target is one of the named types.
 func castsToOneOf(e *Expression, types []string) bool {
 	to, _ := e.Args["to"].(*Expression)

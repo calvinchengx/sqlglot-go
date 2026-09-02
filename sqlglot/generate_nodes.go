@@ -1753,7 +1753,7 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 			var text string
 			switch v := e.Args[key].(type) {
 			case *Expression:
-				text = g.node(v)
+				text = g.coerceArgument(e, key, g.node(v))
 				// An operand the dialect brackets by PRECEDENCE: DuckDB
 				// writes `d + INTERVAL 1 DAY` for a literal and
 				// `d + INTERVAL (x) DAY` for anything else. Which keys
@@ -1830,6 +1830,19 @@ func (g *generator) withCoercions(e *Expression) *Expression {
 			Arg{"to", New("DataType", Arg{"this", DataTypeKind(types[0])})}))
 	}
 	return coerced
+}
+
+// coerceArgument wraps an argument the way this dialect wraps one cast to that
+// type, where the wrapper is more than a cast: DuckDB rounds a float into a
+// BIT_OR and casts a decimal without rounding, so which of the two applies is
+// the argument's own type.
+func (g *generator) coerceArgument(e *Expression, key string, text string) string {
+	child, _ := e.Args[key].(*Expression)
+	wrapper, known := g.tables.CastCoercions[e.Class][argCount(e)][key][castTargetOf(child)]
+	if !known {
+		return text
+	}
+	return strings.ReplaceAll(wrapper, "{arg}", text)
 }
 
 // writeTableAlias writes the alias and, when it has one, the column list that

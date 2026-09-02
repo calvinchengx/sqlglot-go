@@ -875,6 +875,86 @@ def returning_conventions(dialect: str) -> tuple[str, bool]:
     return word, update_last
 
 
+def cast_coercions(exp, dialect, cls_name, keys):
+    """What the dialect WRAPS an argument in, per the type it is cast to.
+
+    DuckDB writes `BIT_OR(CAST(ROUND(CAST(v AS REAL)) AS INT))` for a float and
+    `BIT_OR(CAST(CAST(v AS DECIMAL) AS INT))` for a decimal -- one rounds and
+    the other does not -- and `BIT_OR(CAST(v AS INT))` for an integer, which it
+    leaves alone. So the wrapper is not one template but one per type, and each
+    is read off by rendering the call over an argument of that type and
+    replacing the argument with a marker.
+    """
+    cls = getattr(exp, cls_name, None)
+    if cls is None:
+        return {}
+    out = {}
+    for key in keys:
+        # The SIBLINGS matter. PostgreSQL's ROUND adds its cast only when a
+        # number of decimals was given -- with one argument it returns early
+        # -- so the call is probed both bare and with every other argument
+        # filled, and the shape that shows a wrapper is the one kept.
+        others = {}
+        for k in cls.arg_types:
+            if k == key:
+                continue
+            token = "ZZ" + k.upper() + "ZZ"
+            probe = exp.column(token)
+            try:
+                # A key that does not APPEAR when it is filled is a flag
+                # rather than an argument, and counting it would put the
+                # wrapper under an arity no call ever has.
+                if token not in cls(**{key: exp.column("ZZARGZZ"), k: probe}).sql(
+                    dialect=dialect or None
+                ):
+                    continue
+            except Exception:  # noqa: BLE001
+                continue
+            others[k] = probe
+        for siblings in ({}, others) if others else ({},):
+            found = _wrappers_for(exp, cls, dialect, key, siblings)
+            if not found:
+                continue
+            out.setdefault(1 + len(siblings), {})[key] = found
+    return out
+
+
+def _wrappers_for(exp, cls, dialect, key, siblings):
+    """The wrapper this call puts round one argument, per the type it is cast
+    to, with the other arguments filled as given."""
+    per_type = {}
+    for target in CAST_PROBE_TYPES:
+        try:
+            arg = exp.cast(exp.column("ZZARGZZ"), target)
+            rendered = arg.sql(dialect=dialect or None)
+            text = cls(**siblings, **{key: arg}).sql(dialect=dialect or None)
+        except Exception:  # noqa: BLE001 -- not a type this call takes
+            continue
+        if text.count(rendered) != 1:
+            continue
+        # What is left once the call's own spelling is taken off both
+        # sides is the wrapper, with the argument standing in it.
+        plain = cls(**siblings, **{key: exp.column("ZZARGZZ")})
+        try:
+            bare = plain.sql(dialect=dialect or None)
+        except Exception:  # noqa: BLE001
+            continue
+        head, _, tail = bare.partition("ZZARGZZ")
+        if not text.startswith(head) or not text.endswith(tail):
+            continue
+        middle = text[len(head) : len(text) - len(tail)] if tail else text[len(head) :]
+        wrapper = middle.replace(rendered, "{arg}")
+        # The argument has to be FOUND in what is left, or the wrapper is
+        # the probe's own text rather than a template. That happens where
+        # the call's plain spelling already carries the cast -- the two
+        # renderings cancel and nothing is left to mark -- and those slots
+        # are the idempotent ones, recorded elsewhere.
+        if "{arg}" not in wrapper:
+            continue
+        per_type[target] = wrapper
+    return per_type
+
+
 def _recast_probe(exp, cls, kwargs, expr_keys, scalars, dialect):
     """Re-probe a shape whose operands the reference CASTS, with them cast.
 
@@ -4972,6 +5052,7 @@ def main() -> int:
         "\tInverseTimeMapping map[string]string\n",
         "\tFormatTimeMapping  map[string]string\n",
         "\tCastSensitiveArgs map[string]map[int][]string\n",
+        "\t// CastCoercions is what the dialect wraps an argument in, per the\n\t// type it is cast to: DuckDB rounds a float into a BIT_OR and casts a\n\t// decimal without rounding. A wrapper of `{arg}` alone means the slot\n\t// takes that type as it stands.\n\tCastCoercions map[string]map[int]map[string]map[string]string\n",
         "\t// CastIdempotentTypes are the slots whose coercion the dialect\n\t// applies whatever it is given, so an argument already carrying that\n\t// cast leaves nothing to add and the plain spelling is exact.\n\tCastIdempotentTypes map[string]map[string][]string\n",
         "\t// CastSensitiveTypes says WHICH cast targets move the rendering in\n\t// each of those positions. A slot is not sensitive to casting as\n\t// such: DuckDB wraps a non-text argument to UPPER in a cast to TEXT,\n\t// and leaves one that is already TEXT alone.\n\tCastSensitiveTypes map[string]map[int]map[string][]string\n",
         "\t// DropsZeroArgs are the argument keys a literal ZERO simply\n",
@@ -5728,6 +5809,35 @@ def main() -> int:
                 out.append(f"\t\t\t{gostr(fname)}: {{{joined}}},\n")
             out.append("\t\t},\n")
         casts, zeros, drops, cast_types = cast_sensitive_args(P, exp, name, render_input)
+        _cc = {}
+        for _cls in sorted(casts):
+            _keys = sorted({k for by in casts[_cls].values() for k in by})
+            _per = cast_coercions(exp, name, _cls, _keys)
+            if _per:
+                _cc[_cls] = _per
+        out.append(
+            "\t\tCastCoercions: map[string]map[int]map[string]map[string]string{\n"
+        )
+        for _cls in sorted(_cc):
+            per_arity = ", ".join(
+                "%d: {%s}" % (
+                    arity,
+                    ", ".join(
+                        "%s: {%s}" % (
+                            gostr(k),
+                            ", ".join(
+                                "%s: %s" % (gostr(t), gostr(w))
+                                for t, w in sorted(_cc[_cls][arity][k].items())
+                            ),
+                        )
+                        for k in sorted(_cc[_cls][arity])
+                    ),
+                )
+                for arity in sorted(_cc[_cls])
+            )
+            out.append(f"\t\t\t{gostr(_cls)}: {{{per_arity}}},\n")
+        out.append("\t\t},\n")
+
         if cast_types:
             out.append("\t\tCastSensitiveTypes: map[string]map[int]map[string][]string{\n")
             for fname in sorted(cast_types):

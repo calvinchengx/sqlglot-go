@@ -8574,14 +8574,41 @@ func TestArgumentShapeGuards(t *testing.T) {
 			}
 		})
 	}
-	// And the refusals that remain: a cast to a type the call DOES mind, and
-	// a scale the dialect turns into arithmetic rather than a name.
-	minded, err := ParseOne("SELECT BIT_OR(CAST(val AS FLOAT)) FROM t", "duckdb")
-	if err != nil {
-		t.Fatalf("ParseOne: %v", err)
+	// A cast to a type the call DOES mind takes the WRAPPER the dialect puts
+	// round it, which differs by type: DuckDB rounds a float into a BIT_OR
+	// and casts a decimal without rounding.
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT BIT_OR(CAST(val AS FLOAT)) FROM t",
+			"SELECT BIT_OR(CAST(ROUND(CAST(val AS REAL)) AS INT)) FROM t"},
+		{"SELECT BIT_AND(CAST(val AS DOUBLE)) FROM t",
+			"SELECT BIT_AND(CAST(ROUND(CAST(val AS DOUBLE)) AS INT)) FROM t"},
+		{"SELECT BIT_OR(CAST(val AS DECIMAL(10, 2))) FROM t",
+			"SELECT BIT_OR(CAST(CAST(val AS DECIMAL(10, 2)) AS INT)) FROM t"},
+		// And an INTEGER needs none of it.
+		{"SELECT BIT_OR(CAST(val AS INT)) FROM t", "SELECT BIT_OR(CAST(val AS INT)) FROM t"},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
 	}
-	if got, err := Generate(minded, "duckdb"); err == nil {
-		t.Errorf("wrote %q; DuckDB rounds a non-integer into a BIT_OR", got)
+	// The wrapper belongs to an ARITY as well as a type: PostgreSQL's ROUND
+	// casts its argument only when a number of decimals was given, and takes
+	// an early exit with one argument.
+	for _, tc := range []struct{ sql, want string }{
+		{"ROUND(x::DOUBLE, 4)", "ROUND(CAST(CAST(x AS DOUBLE PRECISION) AS DECIMAL), 4)"},
+		{"ROUND(x::DOUBLE)", "ROUND(CAST(x AS DOUBLE PRECISION))"},
+	} {
+		e, err := ParseOne(tc.sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "postgres"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
 	}
 }
 
