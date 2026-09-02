@@ -9275,3 +9275,52 @@ func TestCreateAsSelectIntoGuards(t *testing.T) {
 		t.Error("found a catalog where there is no table")
 	}
 }
+
+// Two predicates the JSON writers lean on, exercised directly because the
+// corpus reaches only the branches its own statements happen to take.
+func TestJSONWriterPredicates(t *testing.T) {
+	extract := New("JSONExtract",
+		Arg{"this", New("Column",
+			Arg{"this", New("Identifier", Arg{"this", "j"}, Arg{"quoted", false})})})
+	for _, c := range []struct {
+		name string
+		node *Expression
+		want bool
+	}{
+		{"nothing", nil, false},
+		{"the extraction itself", extract, true},
+		// Buried one level down, as a lone child and as one of a list.
+		{"under a child", New("Paren", Arg{"this", extract}), true},
+		{"in a list", New("Select",
+			Arg{"expressions", []*Expression{New("Star"), extract}}), true},
+		{"a list with none", New("Select",
+			Arg{"expressions", []*Expression{New("Star")}}), false},
+	} {
+		if got := holdsAnExtraction(c.node); got != c.want {
+			t.Errorf("%s: holdsAnExtraction = %v, want %v", c.name, got, c.want)
+		}
+	}
+
+	cfg, ok := ConfigFor("postgres")
+	if !ok {
+		t.Fatal("no postgres generator")
+	}
+	g := &generator{cfg: cfg, tables: cfg.Tables, dialect: "postgres"}
+	// An operator on the left of another operator has to be parenthesised to
+	// keep its meaning; a plain column does not.
+	column := New("Column",
+		Arg{"this", New("Identifier", Arg{"this", "a"}, Arg{"quoted", false})})
+	for _, c := range []struct {
+		name string
+		node *Expression
+		want bool
+	}{
+		{"a column", column, true},
+		{"a binary operator", New("Add", Arg{"this", column}, Arg{"expression", column}), false},
+		{"a unary operator", New("Not", Arg{"this", column}), false},
+	} {
+		if got := isSafeLeadingOperand(g, c.node); got != c.want {
+			t.Errorf("%s: isSafeLeadingOperand = %v, want %v", c.name, got, c.want)
+		}
+	}
+}
