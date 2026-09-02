@@ -151,16 +151,15 @@ back Error tokenizing 'SELECT JSON_EXTRACT_PATH(col, 'fr'uit''
 The same key IS escaped when the path is written as one `'$...'` string, so
 this is the per-argument form alone.
 
-**This one the port does NOT reproduce**, which is a departure from the rule
-followed everywhere else here, and the reason is that both alternatives were
-worse. Reproducing it means emitting SQL that does not parse -- from a guard
-whose whole job is to hand an executor something safe to run. Escaping it
-means writing a statement the reference writes differently, which is the one
-thing the differential exists to prevent.
+The port reproduces this. It was refused for a while instead, on the argument
+that a guard should not emit SQL that does not parse -- but refusing is not the
+third option it looked like. It reports a statement as unwritable when the
+reference will happily write it, which is the same divergence in the other
+direction, and one the differential cannot see. Emitting what the reference
+emits keeps the port a faithful account of what the reference would send, and
+leaves the bug visible where it belongs: upstream, and in this file.
 
-So the port REFUSES a folded key holding a quote: `cannot generate SQL for
-JSONExtract over a key holding a quote`. It reads the statement, and declines
-to write it. Two corpus statements land here.
+Two corpus statements land here.
 
 **Reference:** sqlglot @ ceb5111421e9.
 
@@ -461,5 +460,36 @@ The port's probe skips the name rather than waiting on it.
 `_parse_system_versioning_property` has the same loop written the same way, so
 `WITH(SYSTEM_VERSIONING=ON(WHATEVER))` never returns either. The port refuses
 an unexpected setting there rather than looping.
+
+**Reference:** sqlglot @ ceb5111421e9.
+
+---
+
+## sqlglot writes an EMPTY projection for a T-SQL SPLIT_PART it cannot transpile
+
+**Found by:** driving the port's generation refusals to zero.
+
+T-SQL has no `SPLIT_PART`. sqlglot rewrites it as `PARSENAME`, which counts the
+pieces of a DOTTED name from the other end -- so `SPLIT_PART('a.b.c', '.', 1)`
+becomes `PARSENAME('a.b.c', 3)`. That only works where the delimiter is a dot,
+every argument is a literal, and the name has at most the four parts PARSENAME
+counts. Anything else calls `unsupported(...)` and then returns the EMPTY
+STRING, which leaves the projection with nothing in it:
+
+```
+in   SELECT SPLIT_PART('1,2,3', ',', 1)
+out  SELECT
+back Error tokenizing 'SELECT'
+```
+
+```
+in   WITH t AS (SELECT 'a.b.c' AS value, 1 AS idx) SELECT SPLIT_PART(value, '.', idx) FROM t
+out  WITH t AS (SELECT 'a.b.c' AS value, 1 AS idx) SELECT FROM t
+```
+
+`unsupported` is a WARNING by default, so nothing stops: a caller reading the
+returned string without checking the log gets a statement that names no
+columns. The port reproduces both, for the same reason as the JSON path key
+above -- refusing would be a divergence the differential cannot see.
 
 **Reference:** sqlglot @ ceb5111421e9.

@@ -2044,6 +2044,28 @@ def condition_coercion(dialect: str) -> str:
     return inner.replace("ZZVALZZ", "{value}")
 
 
+def split_part_backwards(dialect: str) -> str:
+    """How a dialect that counts a DOTTED name from the other end opens the
+    call it counts with.
+
+    T-SQL has no SPLIT_PART and uses PARSENAME, which numbers the pieces right
+    to left. What is measured is the text in front of the number; the number
+    itself is worked out from the name.
+    """
+    import sqlglot
+
+    try:
+        text = sqlglot.parse_one("SELECT SPLIT_PART('zza.zzb.zzc', '.', 1)").sql(
+            dialect=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return ""
+    if "SPLIT_PART" in text or "'zza.zzb.zzc'" not in text:
+        return ""
+    head, _, _ = text.partition("'zza.zzb.zzc'")
+    return head[len("SELECT ") :] + "{this}, "
+
+
 def file_format_sql(dialect: str) -> str:
     """How the storage format a table is written in is spelled.
 
@@ -5487,6 +5509,7 @@ def main() -> int:
         "\t// PercentileClasses are the ordered-set aggregates whose ARGUMENTS a\n\t// dialect writing the order inside reshuffles: the key becomes the\n\t// first and the fraction slides right.\n\tPercentileClasses map[string]struct{}\n",
         "\t// IgnoreNullsInFunc: `IGNORE NULLS` is written INSIDE the call's\n\t// argument list here rather than after the call.\n\tIgnoreNullsInFunc bool\n",
         "\t// ConditionCoercion is how a value that is not already a condition\n\t// is made into one, with {value} standing for it. T-SQL has no boolean\n\t// type and compares against zero instead; empty where the dialect\n\t// takes a value as a condition unchanged.\n\tConditionCoercion string\n",
+        "\t// SplitPartCountsBackwards is how a dialect that counts the pieces\n\t// of a DOTTED name from the other end opens that call, with {this} in\n\t// it; the number and the closing parenthesis are the writer's. Empty\n\t// where the dialect splits on any delimiter it is given.\n\tSplitPartCountsBackwards string\n",
         "\t// FileFormatSQL is how the storage format a table is written in is\n\t// spelled, with {name} standing for the format. Databricks says\n\t// `USING PARQUET` where the rest say `FORMAT=PARQUET`.\n\tFileFormatSQL string\n",
         "\t// TemporarySuffix is what a dialect APPENDS to a temporary object\n\t// of each kind: Databricks gives a temporary TABLE a storage format\n\t// it was never given.\n\tTemporarySuffix map[string]string\n",
         "\t// DateDeltaIsAnOperator: a date shifted by an interval is written\n\t// with an OPERATOR here -- `d + INTERVAL 1 DAY` -- rather than as a\n\t// call. The unit rides on the interval either way.\n\tDateDeltaIsAnOperator bool\n",
@@ -6622,6 +6645,9 @@ def main() -> int:
             % str(date_delta_is_an_operator(name)).lower()
         )
         out.append(f"\t\tFileFormatSQL: {gostr(file_format_sql(name))},\n")
+        out.append(
+            f"\t\tSplitPartCountsBackwards: {gostr(split_part_backwards(name))},\n"
+        )
         _ts = temporary_suffix(name)
         out.append("\t\tTemporarySuffix: map[string]string{\n")
         for _k in sorted(_ts):

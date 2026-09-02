@@ -1957,15 +1957,32 @@ func TestCreateTable(t *testing.T) {
 			}
 		})
 	}
-	// T-SQL has no CREATE TABLE AS SELECT and the reference REWRITES it into
-	// `SELECT * INTO`. That is a transformation, not a spelling, so the port
-	// reads the statement and declines to write it.
+	// T-SQL has no CREATE TABLE AS SELECT and says the same thing another
+	// way: `SELECT * INTO t FROM (<query>) AS temp`. The query is wrapped so
+	// the columns it names are the ones the new table gets, and the wrapper
+	// takes a name the reference supplies rather than one the statement
+	// carried.
+	for _, tc := range []struct{ sql, want string }{
+		{"CREATE TABLE t AS SELECT 1", "SELECT * INTO t FROM (SELECT 1 AS [1]) AS temp"},
+		{"CREATE TABLE schema.table AS SELECT a, id FROM (SELECT a, id FROM t) x",
+			"SELECT * INTO schema.table FROM (SELECT a AS a, id AS id FROM " +
+				"(SELECT a AS a, id AS id FROM t) AS x) AS temp"},
+	} {
+		e, err := ParseOne(tc.sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "tsql"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	// A dialect that HAS the statement writes it as it stands.
 	e, err := ParseOne("CREATE TABLE t AS SELECT 1", "tsql")
 	if err != nil {
 		t.Fatalf("ParseOne: %v", err)
 	}
-	if got, err := Generate(e, "tsql"); err == nil {
-		t.Errorf("wrote %q; T-SQL writes this another way entirely", got)
+	if got, err := Generate(e, "duckdb"); err != nil || got != "CREATE TABLE t AS SELECT 1" {
+		t.Errorf("DuckDB wrote %q (%v)", got, err)
 	}
 	// Anything the port cannot read WHOLE is refused, not read in part: a
 	// dropped constraint changes what the table is.
@@ -9193,5 +9210,68 @@ func TestFileFormatGuards(t *testing.T) {
 	}
 	if got, err := Generate(New("FileFormatProperty"), "databricks"); err == nil {
 		t.Errorf("wrote %q for a property naming no format", got)
+	}
+}
+
+// T-SQL has no SPLIT_PART: it counts the pieces of a dotted name from the
+// other end with PARSENAME, and writes NOTHING for a split it cannot count
+// that way -- which is exactly what the reference does, unreadable output
+// included. Everywhere else the call keeps its own spelling.
+func TestSplitPartCountsBackwards(t *testing.T) {
+	for _, c := range []struct {
+		sql     string
+		dialect string
+		want    string
+	}{
+		{"SELECT SPLIT_PART('a.b.c', '.', 1)", "tsql", "SELECT PARSENAME('a.b.c', 3)"},
+		{"SELECT SPLIT_PART('a.b.c', '.', 3)", "tsql", "SELECT PARSENAME('a.b.c', 1)"},
+		{"SELECT SPLIT_PART('a.b.c', '.', 1)", "postgres", "SELECT SPLIT_PART('a.b.c', '.', 1)"},
+		// A comma is not a name separator, the column is not a literal, and
+		// five parts are more than PARSENAME counts. All three write nothing.
+		{"SELECT SPLIT_PART('1,2,3', ',', 1)", "tsql", "SELECT"},
+		{"SELECT SPLIT_PART(col, '.', 1)", "tsql", "SELECT"},
+		{"SELECT SPLIT_PART('a.b.c.d.e', '.', 1)", "tsql", "SELECT"},
+	} {
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Fatalf("%s: %v", c.sql, err)
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != c.want {
+			t.Errorf("[%s] %s wrote %q (%v), want %q",
+				c.dialect, c.sql, got, err, c.want)
+		}
+	}
+	// An index that is a literal but not a number is nothing to count to.
+	odd := New("SplitPart",
+		Arg{"this", New("Literal", Arg{"this", "a.b"}, Arg{"is_string", true})},
+		Arg{"delimiter", New("Literal", Arg{"this", "."}, Arg{"is_string", true})},
+		Arg{"part_index", New("Literal", Arg{"this", "x"}, Arg{"is_string", true})})
+	if got, err := Generate(odd, "tsql"); err != nil || got != "" {
+		t.Errorf("counted to a name: %q (%v)", got, err)
+	}
+}
+
+// T-SQL has no CREATE TABLE ... AS SELECT and writes SELECT * INTO instead.
+// The pieces it needs -- a query, and something to name -- have to be there.
+func TestCreateAsSelectIntoGuards(t *testing.T) {
+	if got, err := Generate(New("Create", Arg{"kind", "TABLE"},
+		Arg{"expression", New("Select",
+			Arg{"expressions", []*Expression{New("Star")}})}), "tsql"); err == nil {
+		t.Errorf("wrote %q for a CREATE naming no table", got)
+	}
+	// A query already wrapped keeps its parentheses rather than gaining a
+	// second pair.
+	tree, err := ParseOne("CREATE TABLE t AS (SELECT 1 AS a)", "tsql")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, err := Generate(tree, "tsql")
+	if err != nil || strings.Contains(got, "((") {
+		t.Errorf("wrapped a wrapped query: %q (%v)", got, err)
+	}
+	// Nothing, and a Schema naming nothing, name no catalog.
+	if namesACatalog(nil) || namesACatalog(New("Schema")) {
+		t.Error("found a catalog where there is no table")
 	}
 }

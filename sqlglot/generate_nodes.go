@@ -94,6 +94,7 @@ func init() {
 		"PartitionBoundSpec":                  (*generator).writePartitionBoundSpec,
 		"Clone":                               (*generator).writeClone,
 		"MacroOverloads":                      (*generator).writeMacroOverloads,
+		"SplitPart":                           (*generator).writeSplitPart,
 		"FileFormatProperty":                  (*generator).writeFileFormat,
 		"DateAdd":                             (*generator).writeDateAdd,
 		"DateSub":                             (*generator).writeDateSub,
@@ -1852,6 +1853,39 @@ func (g *generator) coerceArgument(e *Expression, key string, text string) strin
 	return strings.ReplaceAll(wrapper, "{arg}", text)
 }
 
+// writeCreateAsSelectInto writes `CREATE TABLE t AS <query>` the way a dialect
+// that has no such statement says it: `SELECT * INTO t FROM (<query>) AS temp`.
+//
+// The query is wrapped so the columns it names are the ones the new table
+// gets, and the wrapper is called `temp` -- a name the reference supplies, not
+// one the statement carried.
+func (g *generator) writeCreateAsSelectInto(e *Expression) string {
+	query, _ := e.Args["expression"].(*Expression)
+	this, _ := e.Args["this"].(*Expression)
+	target := createdTable(this)
+	if query == nil || target == nil {
+		return g.fail(e.Class + " as a query with nothing to name")
+	}
+	if g.tables.TruncatesCatalog && namesACatalog(target) {
+		target = withoutCatalog(target)
+	}
+	// A query that is not already wrapped becomes a subquery; one that is
+	// stays as it stands.
+	wrapped := query
+	if query.Class != "Subquery" {
+		wrapped = New("Subquery", Arg{"this", query})
+	}
+	wrapped = wrapped.shallowCopy()
+	wrapped.Set("alias", New("TableAlias", Arg{"this",
+		New("Identifier", Arg{"this", "temp"}, Arg{"quoted", false})}))
+	into := New("Into", Arg{"this", target},
+		Arg{"temporary", g.hasTemporaryProperty(e)})
+	return g.node(New("Select",
+		Arg{"expressions", []*Expression{New("Star")}},
+		Arg{"into", into},
+		Arg{"from_", New("From", Arg{"this", wrapped})}))
+}
+
 // writeTableAlias writes the alias and, when it has one, the column list that
 // names what it aliases: `x AS y(a, b)`.
 func (g *generator) writeTableAlias(e *Expression) string {
@@ -2410,17 +2444,14 @@ func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
 			// which is already `this`.
 		case "JSONPathKey":
 			name, _ := part.Args["this"].(string)
-			escaped := escapeStringBody(name, g.cfg.StringEscapes)
-			// A key holding a QUOTE is refused here rather than written. The
-			// reference does not escape it in this form -- it writes
-			// `JSON_EXTRACT_PATH(col, 'fr'uit')` and then cannot read that
-			// back, which is upstream sqlglot bug (8) -- so the two choices
-			// were to reproduce SQL that does not tokenize or to differ from
-			// the reference. Refusing is neither.
-			if escaped != name {
-				return g.fail(e.Class + " over a key holding a quote")
-			}
-			names = append(names, "'"+escaped+"'")
+			// The key is written VERBATIM, quote and all. A key holding a
+			// quote comes out as `JSON_EXTRACT_PATH(col, 'fr'uit')`, which
+			// neither this port nor the reference can read back -- upstream
+			// sqlglot bug (8). It is written anyway, because the contract
+			// here is to say what the reference says: escaping the quote
+			// would be a silent, invisible divergence in the one place the
+			// differential could not warn anyone about it.
+			names = append(names, "'"+name+"'")
 		case "JSONPathSubscript":
 			// A number naming a position in an array. The CALL form quotes it
 			// like any other part; the operator chain writes it bare, which
@@ -2753,11 +2784,10 @@ func (g *generator) writeCreate(e *Expression) string {
 	// dialect writes exactly as it was written.
 	if expr, _ := e.Args["expression"].(*Expression); expr != nil && kind == "TABLE" &&
 		g.tables.RewritesCreateAsSelect {
-		// This dialect has no such statement and the reference turns it into
-		// another one -- `SELECT * INTO x FROM (...)`. That is a rewrite, not
-		// a spelling, and writing the statement as itself would be SQL the
-		// engine cannot run.
-		return g.fail(e.Class + " as a query, which this dialect writes another way")
+		// This dialect has no such statement and says the same thing another
+		// way: `SELECT * INTO x FROM (<query>) AS temp`. The query becomes a
+		// subquery so the columns it names are the ones written.
+		return g.writeCreateAsSelectInto(e)
 	}
 	// T-SQL writes only two parts of a three-part name, dropping the catalog.
 	// It is the dialect's naming rule rather than either statement's, and it
@@ -5259,4 +5289,47 @@ func (g *generator) writeFileFormat(e *Expression) string {
 	// keeps its quotes, which is the difference between `USING PARQUET` and
 	// `FORMAT='parquet'`.
 	return strings.ReplaceAll(g.tables.FileFormatSQL, "{name}", g.node(this))
+}
+
+// writeSplitPart writes the nth piece of a string split on a delimiter.
+//
+// T-SQL has no such call and counts the pieces of a DOTTED name from the other
+// end instead: `SPLIT_PART('a.b.c', '.', 1)` is `PARSENAME('a.b.c', 3)`. That
+// only works where the delimiter is a dot, every argument is a literal, and
+// the name has at most the four parts PARSENAME counts -- so a split on
+// anything else has no spelling here at all.
+func (g *generator) writeSplitPart(e *Expression) string {
+	if g.tables.SplitPartCountsBackwards == "" {
+		return g.spell(e)
+	}
+	this, _ := e.Args["this"].(*Expression)
+	delimiter, _ := e.Args["delimiter"].(*Expression)
+	index, _ := e.Args["part_index"].(*Expression)
+	// Anything PARSENAME cannot count is written as NOTHING -- an empty
+	// projection, `SELECT FROM t`. That is what the reference does, and it
+	// is unreadable in both. Refusing instead would be the safer output but
+	// a different answer than the reference gives, and the port's job is to
+	// be a faithful account of what the reference will send to the engine.
+	if !isLiteral(this) || !isLiteral(delimiter) || !isLiteral(index) {
+		return ""
+	}
+	if text, _ := delimiter.Args["this"].(string); text != "." {
+		return ""
+	}
+	name, _ := this.Args["this"].(string)
+	parts := strings.Count(name, ".") + 1
+	wanted, err := strconv.Atoi(indexText(index))
+	if err != nil || parts > 4 {
+		return ""
+	}
+	// Counted from the OTHER end: PARSENAME numbers a dotted name right to
+	// left, so the piece asked for from the left is the total less it.
+	return strings.ReplaceAll(g.tables.SplitPartCountsBackwards, "{this}", g.node(this)) +
+		strconv.Itoa(parts+1-wanted) + ")"
+}
+
+// indexText is the number a literal names, as text.
+func indexText(e *Expression) string {
+	text, _ := e.Args["this"].(string)
+	return text
 }
