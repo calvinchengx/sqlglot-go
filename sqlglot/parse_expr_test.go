@@ -8221,13 +8221,14 @@ func TestNullTreatment(t *testing.T) {
 			}
 		})
 	}
-	// Dropping the words off a SUM changes what it counts.
+	// A dialect that writes the words NOWHERE on an ordinary aggregate drops
+	// them: DuckDB takes them only on the window functions that accept them.
 	e, err := ParseOne("SELECT SUM(x IGNORE NULLS) AS x", "duckdb")
 	if err != nil {
 		t.Fatalf("ParseOne: %v", err)
 	}
-	if got, err := Generate(e, "duckdb"); err == nil {
-		t.Errorf("DuckDB wrote %q; it does not take IGNORE NULLS on a SUM", got)
+	if got, err := Generate(e, "duckdb"); err != nil || got != "SELECT SUM(x) AS x" {
+		t.Errorf("DuckDB wrote %q (%v)", got, err)
 	}
 	// Everywhere else the words simply follow the call.
 	if got, err := Generate(e, ""); err != nil || got != "SELECT SUM(x) IGNORE NULLS AS x" {
@@ -9066,5 +9067,59 @@ func TestACoercionAcrossSlotsIsAllOrNothing(t *testing.T) {
 		Arg{"to", New("DataType", Arg{"this", DataTypeKind("DATE")})})})
 	if _, err := Generate(half, "databricks"); err != nil {
 		t.Errorf("a series with one end refused: %v", err)
+	}
+}
+
+// A STRING LITERAL is coerced by what it IS rather than by a cast it carries.
+//
+// DuckDB reads a date written as text and casts it, and takes the words about
+// missing rows only on the window functions that accept them -- dropping them
+// elsewhere rather than refusing the call.
+func TestCoercionsByWhatTheArgumentIs(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT DATE_DIFF('QUARTER', '2009-02-13', '2013-09-01')",
+			"SELECT DATE_DIFF('QUARTER', CAST('2009-02-13' AS DATE), " +
+				"CAST('2013-09-01' AS DATE))"},
+		{"SELECT SUM(x IGNORE NULLS) AS x", "SELECT SUM(x) AS x"},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	// A dialect that HAS the words writes them.
+	e, err := ParseOne("SELECT SUM(x IGNORE NULLS) AS x", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(e, "databricks"); err != nil ||
+		got != "SELECT SUM(x) IGNORE NULLS AS x" {
+		t.Errorf("Databricks wrote %q (%v)", got, err)
+	}
+}
+
+// The remaining guards on the property placer and the regexp writer, over
+// shapes the corpus does not reach.
+func TestPlacementGuards(t *testing.T) {
+	// A property the port has nowhere to put is refused rather than dropped.
+	unplaceable := New("Create",
+		Arg{"this", New("Table", Arg{"this", New("Identifier", Arg{"this", "t"})})},
+		Arg{"kind", "TABLE"},
+		Arg{"properties", New("Properties", Arg{"expressions", []*Expression{
+			New("NotAPropertyThisPortPlaces"),
+		}})})
+	if got, err := Generate(unplaceable, "duckdb"); err == nil {
+		t.Errorf("wrote %q for a property with no place", got)
+	}
+	// A regexp call whose spelling is not a call has no closing parenthesis
+	// to put the flags inside.
+	flagged := New("RegexpExtract",
+		Arg{"this", New("Column", Arg{"this", New("Identifier", Arg{"this", "a"})})},
+		Arg{"parameters", New("Literal", Arg{"this", "i"}, Arg{"is_string", true})})
+	if got, err := Generate(flagged, "duckdb"); err == nil {
+		t.Errorf("wrote %q for a call with no arguments to flag", got)
 	}
 }

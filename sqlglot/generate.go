@@ -427,19 +427,10 @@ func (g *generator) functionSpelling(e *Expression) (FuncSQL, bool) {
 			continue
 		}
 		for _, key := range candidate.Keys {
-			switch v := e.Args[key].(type) {
-			case nil:
+			// Absent is absent: Set normalises a nil node and an empty list
+			// to no argument at all, so the one case covers all three.
+			if e.Args[key] == nil {
 				matches = false
-			case *Expression:
-				if v == nil {
-					matches = false
-				}
-			case []*Expression:
-				if len(v) == 0 {
-					matches = false
-				}
-			}
-			if !matches {
 				break
 			}
 		}
@@ -545,6 +536,13 @@ func (g *generator) refuseSensitive(e *Expression) bool {
 		// shape, so it is trusted; where none does, the refusal stands.
 		if _, ok := g.functionSpelling(e); ok {
 			continue
+		}
+		// Or the WRAPPER the dialect puts round a literal of this kind was
+		// measured: DuckDB casts a date written as text into a DATE_DIFF.
+		if child, _ := e.Args[key].(*Expression); child != nil {
+			if _, known := g.tables.CastCoercions[e.Class][arity][key][castTargetOf(child)]; known {
+				continue
+			}
 		}
 		g.fail("literal argument to " + e.Class)
 		return true
@@ -661,7 +659,16 @@ func (g *generator) everySensitiveSlotIsCast(e *Expression, arity int) bool {
 
 // castTargetOf is the type a cast names, or "" where the node is not one.
 func castTargetOf(e *Expression) string {
-	if e == nil || (e.Class != "Cast" && e.Class != "TryCast") {
+	if e == nil {
+		return ""
+	}
+	// A STRING LITERAL is coerced by what it IS rather than by a cast it
+	// carries: DuckDB reads a date written as text and casts it. It answers
+	// under a name of its own, beside the cast targets.
+	if e.Class == "Literal" && e.Args["is_string"] == true {
+		return "STRING_LITERAL"
+	}
+	if e.Class != "Cast" && e.Class != "TryCast" {
 		return ""
 	}
 	if to, _ := e.Args["to"].(*Expression); to != nil {

@@ -923,9 +923,16 @@ def _wrappers_for(exp, cls, dialect, key, siblings):
     """The wrapper this call puts round one argument, per the type it is cast
     to, with the other arguments filled as given."""
     per_type = {}
-    for target in CAST_PROBE_TYPES:
+    # A STRING LITERAL is coerced by what it IS rather than by a cast it
+    # carries: DuckDB writes `DATE_DIFF('QUARTER', b, CAST('2009-02-13' AS
+    # DATE))` for a date written as text. It is asked about under a name of
+    # its own, beside the cast targets.
+    for target in ("STRING_LITERAL",) + CAST_PROBE_TYPES:
         try:
-            arg = exp.cast(exp.column("ZZARGZZ"), target)
+            if target == "STRING_LITERAL":
+                arg = exp.Literal.string("ZZARGZZ")
+            else:
+                arg = exp.cast(exp.column("ZZARGZZ"), target)
             rendered = arg.sql(dialect=dialect or None)
             text = cls(**siblings, **{key: arg}).sql(dialect=dialect or None)
         except Exception:  # noqa: BLE001 -- not a type this call takes
@@ -5834,8 +5841,16 @@ def main() -> int:
             out.append("\t\t},\n")
         casts, zeros, drops, cast_types = cast_sensitive_args(P, exp, name, render_input)
         _cc = {}
-        for _cls in sorted(casts):
-            _keys = sorted({k for by in casts[_cls].values() for k in by})
+        # Both buckets: a slot may be sensitive to a CAST it carries or to
+        # being a LITERAL, and the wrapper is the same question either way.
+        _sensitive = {}
+        for _src in (casts, zeros):
+            for _cls, _by in _src.items():
+                _sensitive.setdefault(_cls, set()).update(
+                    k for keys in _by.values() for k in keys
+                )
+        for _cls in sorted(_sensitive):
+            _keys = sorted(_sensitive[_cls])
             _per = cast_coercions(exp, name, _cls, _keys)
             if _per:
                 _cc[_cls] = _per

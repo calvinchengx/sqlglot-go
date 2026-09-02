@@ -5026,7 +5026,11 @@ func (g *generator) writeNullTreatment(e *Expression, words string) string {
 		// nothing the call does not already say.
 		return g.child(e, "this")
 	}
-	return g.fail(e.Class + " over " + call.Class + ", which this dialect does not take it on")
+	// Everything left writes the words NOWHERE. Only a dialect that spells
+	// them INSIDE the call reaches here at all -- the others wrote them after
+	// it and returned above -- and such a dialect takes them on the window
+	// functions alone, dropping them from every other call.
+	return g.child(e, "this")
 }
 
 // nullTreatmentInsideCall writes the words among the call's arguments, by
