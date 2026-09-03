@@ -1321,6 +1321,11 @@ func (g *generator) writeIn(e *Expression) string {
 	if q, ok := e.Args["query"].(*Expression); ok && q != nil {
 		return g.childOperand(e) + " IN " + g.node(q)
 	}
+	// A FIELD rather than a list: `'red' IN flags` asks whether the value is
+	// in the list that column holds, and takes no parentheses of its own.
+	if field, _ := e.Args["field"].(*Expression); field != nil {
+		return g.childOperand(e) + " IN " + g.node(field)
+	}
 	return g.childOperand(e) + " IN (" + g.list(e) + ")"
 }
 

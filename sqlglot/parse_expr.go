@@ -145,10 +145,25 @@ func (p *parser) parseRange() (*Expression, error) {
 			// shapes of their own and are matched above, before this.
 			class := p.tables.BinaryRangeOps[c.Type]
 			p.advance()
+			_, swapped := p.tables.SwappedRangeOps[c.Type]
+			_, listed := p.tables.ListedRangeOps[c.Type]
 			var right *Expression
 			right, err = p.parseJSONArrow()
 			if err == nil {
-				this = New(class, Arg{"this", this}, Arg{"expression", right})
+				left := this
+				if swapped {
+					// The operands go the other way round: `x @@ y` is a
+					// match of y over x.
+					left, right = right, left
+				}
+				if listed {
+					// One operand is held as a LIST of one, which is the
+					// reference's shape rather than a second operand.
+					this = New(class,
+						Arg{"this", left}, Arg{"expressions", []*Expression{right}})
+				} else {
+					this = New(class, Arg{"this", left}, Arg{"expression", right})
+				}
 			}
 		default:
 			if _, isRange := p.tables.RangeTokens[c.Type]; isRange {
@@ -257,6 +272,16 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 
 func (p *parser) parseIn(this *Expression) (*Expression, error) {
 	if !p.match(TokL_PAREN) {
+		// `'red' IN flags` asks whether the value is in the LIST that column
+		// holds, rather than in a list written here. The reference keeps
+		// what follows under a key of its own.
+		if p.startsATable(p.curr()) {
+			field, err := p.parseBitwise()
+			if err != nil {
+				return nil, err
+			}
+			return New("In", Arg{"this", this}, Arg{"field", field}), nil
+		}
 		return nil, p.unsupported("IN without a parenthesised list")
 	}
 	// `a IN (SELECT 1)`: the reference records the query under `query` rather

@@ -3949,10 +3949,31 @@ def binary_range_ops(dialect: str, P, tokenizer_keywords) -> dict:
                 node = sqlglot.parse_one(f"a {text} b", read=dialect or None)
             except Exception:  # noqa: BLE001 -- not a spelling this dialect has
                 continue
-            if sorted(node.args) != ["expression", "this"]:
+            listed = False
+            if sorted(node.args) == ["expression", "this"]:
+                left, right = node.args["this"], node.args["expression"]
+            elif sorted(node.args) == ["expressions", "this"]:
+                # One operand held as a LIST of one: PostgreSQL's `x @@ y` is
+                # a MatchAgainst of y over [x]. Still a binary as far as
+                # anyone writing SQL is concerned, and the list is the
+                # reference's own shape rather than a second operand.
+                held = node.args["expressions"]
+                if not isinstance(held, list) or len(held) != 1:
+                    continue
+                left, right = node.args["this"], held[0]
+                listed = True
+            else:
                 continue
-            left, right = node.args["this"], node.args["expression"]
-            if getattr(left, "name", None) != "a" or getattr(right, "name", None) != "b":
+            names = (getattr(left, "name", None), getattr(right, "name", None))
+            # Some operators put the operands the other way round:
+            # PostgreSQL's `x @@ y` is a MatchAgainst of y over x. The order
+            # is recorded rather than assumed, and an operator whose operands
+            # are neither way round is not a plain binary at all.
+            if names == ("a", "b"):
+                swapped = False
+            elif names == ("b", "a"):
+                swapped = True
+            else:
                 continue
             # The class AND how this dialect writes it back. The two are not
             # the same fact: `~*` reads as RegexpILike here and PostgreSQL
@@ -3961,7 +3982,12 @@ def binary_range_ops(dialect: str, P, tokenizer_keywords) -> dict:
             written = node.sql(dialect=dialect or None)
             head, sep, tail = written.partition("a ")
             op = tail.rpartition(" b")[0] if sep else ""
-            out[token.name] = {"class": type(node).__name__, "op": op}
+            out[token.name] = {
+                "class": type(node).__name__,
+                "op": op,
+                "swapped": swapped,
+                "listed": listed,
+            }
             break
     return out
 
@@ -6323,6 +6349,8 @@ def main() -> int:
         "\t// really a plain two-argument binary; IS, IN and BETWEEN have\n",
         "\t// shapes of their own and are not here.\n",
         "\tBinaryRangeOps map[TokenType]string\n",
+        "\t// SwappedRangeOps are the ones whose operands go the OTHER way\n\t// round: PostgreSQL's `x @@ y` is a MatchAgainst of y over x.\n\tSwappedRangeOps map[TokenType]struct{}\n",
+        "\t// ListedRangeOps hold one operand as a LIST of one, which is the\n\t// reference's shape for `@@` rather than a second operand.\n\tListedRangeOps map[TokenType]struct{}\n",
         "\t// BinaryRangeSQL is how each of those is written back.\n",
         "\tBinaryRangeSQL map[string]string\n",
         "\t// JSONOperatorsAtBitwise are the operators this dialect reads\n",
@@ -7641,6 +7669,18 @@ def main() -> int:
             f"\t\t\tTok{k}: {gostr(v['class'])},\n" for k, v in sorted(_br.items())
         )
         out.append(f"\t\tBinaryRangeOps: map[TokenType]string{{\n{body}\t\t}},\n")
+        body = "".join(
+            f"\t\t\tTok{k}: {{}},\n" for k, v in sorted(_br.items()) if v["swapped"]
+        )
+        out.append(
+            f"\t\tSwappedRangeOps: map[TokenType]struct{{}}{{\n{body}\t\t}},\n"
+        )
+        body = "".join(
+            f"\t\t\tTok{k}: {{}},\n" for k, v in sorted(_br.items()) if v["listed"]
+        )
+        out.append(
+            f"\t\tListedRangeOps: map[TokenType]struct{{}}{{\n{body}\t\t}},\n"
+        )
         spellings = {v["class"]: v["op"] for v in _br.values() if v["op"]}
         body = "".join(f"\t\t\t{gostr(k)}: {gostr(v)},\n" for k, v in sorted(spellings.items()))
         out.append(f"\t\tBinaryRangeSQL: map[string]string{{\n{body}\t\t}},\n")

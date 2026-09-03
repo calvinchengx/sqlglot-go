@@ -862,6 +862,12 @@ type ParserTables struct {
 	// really a plain two-argument binary; IS, IN and BETWEEN have
 	// shapes of their own and are not here.
 	BinaryRangeOps map[TokenType]string
+	// SwappedRangeOps are the ones whose operands go the OTHER way
+	// round: PostgreSQL's `x @@ y` is a MatchAgainst of y over x.
+	SwappedRangeOps map[TokenType]struct{}
+	// ListedRangeOps hold one operand as a LIST of one, which is the
+	// reference's shape for `@@` rather than a second operand.
+	ListedRangeOps map[TokenType]struct{}
 	// BinaryRangeSQL is how each of those is written back.
 	BinaryRangeSQL map[string]string
 	// JSONOperatorsAtBitwise are the operators this dialect reads
@@ -5880,6 +5886,8 @@ var parserTables = map[string]*ParserTables{
 			TokRLIKE:      "RegexpLike",
 			TokSIMILAR_TO: "SimilarTo",
 		},
+		SwappedRangeOps: map[TokenType]struct{}{},
+		ListedRangeOps:  map[TokenType]struct{}{},
 		BinaryRangeSQL: map[string]string{
 			"Adjacent":     "-|-",
 			"ExtendsLeft":  "&<",
@@ -11107,6 +11115,8 @@ var parserTables = map[string]*ParserTables{
 			TokRLIKE:      "RegexpLike",
 			TokSIMILAR_TO: "SimilarTo",
 		},
+		SwappedRangeOps: map[TokenType]struct{}{},
+		ListedRangeOps:  map[TokenType]struct{}{},
 		BinaryRangeSQL: map[string]string{
 			"Adjacent":     "-|-",
 			"ExtendsLeft":  "&<",
@@ -16272,6 +16282,7 @@ var parserTables = map[string]*ParserTables{
 			TokAT_GT:      "ArrayContainsAll",
 			TokAT_QMARK:   "JSONBPathExists",
 			TokDAMP:       "ArrayOverlaps",
+			TokDAT:        "MatchAgainst",
 			TokGLOB:       "Glob",
 			TokHASH_DASH:  "JSONBDeleteAtPath",
 			TokILIKE:      "ILike",
@@ -16284,6 +16295,12 @@ var parserTables = map[string]*ParserTables{
 			TokQMARK_PIPE: "JSONBContainsAnyTopKeys",
 			TokRLIKE:      "RegexpLike",
 			TokSIMILAR_TO: "SimilarTo",
+		},
+		SwappedRangeOps: map[TokenType]struct{}{
+			TokDAT: {},
+		},
+		ListedRangeOps: map[TokenType]struct{}{
+			TokDAT: {},
 		},
 		BinaryRangeSQL: map[string]string{
 			"Adjacent":                "-|-",
@@ -16300,6 +16317,7 @@ var parserTables = map[string]*ParserTables{
 			"JSONBDeleteAtPath":       "#-",
 			"JSONBPathExists":         "@?",
 			"Like":                    "LIKE",
+			"MatchAgainst":            "@@",
 			"Overlaps":                "OVERLAPS",
 			"RegexpILike":             "~*",
 			"RegexpLike":              "~",
@@ -21825,6 +21843,8 @@ var parserTables = map[string]*ParserTables{
 			TokRLIKE:      "RegexpLike",
 			TokSIMILAR_TO: "SimilarTo",
 		},
+		SwappedRangeOps: map[TokenType]struct{}{},
+		ListedRangeOps:  map[TokenType]struct{}{},
 		BinaryRangeSQL: map[string]string{
 			"Adjacent":         "-|-",
 			"ArrayContainedBy": "<@",
@@ -27345,6 +27365,8 @@ var parserTables = map[string]*ParserTables{
 			TokRLIKE:      "RegexpLike",
 			TokSIMILAR_TO: "SimilarTo",
 		},
+		SwappedRangeOps: map[TokenType]struct{}{},
+		ListedRangeOps:  map[TokenType]struct{}{},
 		BinaryRangeSQL: map[string]string{
 			"Adjacent":     "-|-",
 			"ExtendsLeft":  "&<",

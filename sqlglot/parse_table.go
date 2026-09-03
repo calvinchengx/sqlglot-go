@@ -53,7 +53,11 @@ func (p *parser) parseJoin() (*Expression, error) {
 	// kept: NATURAL joins on every column the two tables share.
 	var method *Token
 	if _, isMethod := p.tables.JoinMethods[c.Type]; isMethod {
-		if !strings.EqualFold(c.Text, "NATURAL") {
+		// NATURAL joins on every column the two tables share; POSITIONAL on
+		// the row's position in each. Both are the method rather than the
+		// side or the kind, and both are written back the same way.
+		if !strings.EqualFold(c.Text, "NATURAL") &&
+			!strings.EqualFold(c.Text, "POSITIONAL") {
 			return nil, p.unsupported("join method " + c.Text)
 		}
 		method = c

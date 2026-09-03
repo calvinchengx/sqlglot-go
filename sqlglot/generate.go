@@ -321,6 +321,14 @@ func (g *generator) binary(e *Expression, op string) string {
 	// statement the reference simply refuses.
 	this, _ := e.Args["this"].(*Expression)
 	other, _ := e.Args["expression"].(*Expression)
+	// One operand may be held as a LIST of one, and the two may be the other
+	// way round: PostgreSQL's `x @@ y` is a MatchAgainst of y over [x]. Both
+	// facts were probed beside the spelling.
+	if other == nil {
+		if held, _ := e.Args["expressions"].([]*Expression); len(held) == 1 {
+			this, other = held[0], this
+		}
+	}
 	if this == nil || other == nil {
 		return g.fail(e.Class + " written as an operator without two operands")
 	}

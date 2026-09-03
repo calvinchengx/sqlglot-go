@@ -10154,3 +10154,42 @@ func TestTeradataConstraintsAndSetOps(t *testing.T) {
 		}
 	}
 }
+
+// Three shapes a range operator, a join and an IN may take beyond the plain
+// one: operands the other way round and held as a list of one, a join matched
+// by position, and an IN over a column that holds the list.
+func TestRangeOpsJoinsAndIn(t *testing.T) {
+	for _, c := range []struct{ sql, want, dialect string }{
+		{"x @@ y", "", "postgres"},
+		{"(col1 @@ 'abc' OR col2 @@ 'abc' OR col3 @@ 'abc')", "", "postgres"},
+		{"x @> y", "", "postgres"},
+		{"SELECT df1.*, df2.* FROM df1 POSITIONAL JOIN df2", "", "duckdb"},
+		{"'red' IN flags", "", "duckdb"},
+		{"'red' IN tbl.flags", "", "duckdb"},
+		{"'red' IN (1, 2)", "", "duckdb"},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != want {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	// A method the port does not read is still refused, and so is an IN over
+	// something that is not a name.
+	for _, c := range []struct{ sql, dialect string }{
+		{"SELECT a FROM t1 ASOF JOIN t2", "duckdb"},
+		{"a IN 1", ""},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
+		}
+	}
+}

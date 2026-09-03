@@ -134,7 +134,7 @@ func TestRefusals(t *testing.T) {
 		{"WHEN without THEN", "CASE WHEN a END", ""},
 		{"CASE without END", "CASE WHEN a THEN 1", ""},
 		{"dangling CASE subject", "CASE", ""},
-		{"IN without parentheses", "a IN b", ""},
+		{"IN without parentheses", "a IN 1", ""},
 		{"unclosed IN list", "a IN (1", ""},
 		{"dangling IS", "a IS", ""},
 		{"dangling BETWEEN", "a BETWEEN", ""},
