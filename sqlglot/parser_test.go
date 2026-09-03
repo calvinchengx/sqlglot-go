@@ -208,7 +208,7 @@ func TestRefusals(t *testing.T) {
 		{"APPLY over a column", "SELECT * FROM a CROSS APPLY b", "tsql"},
 		{"APPLY over a literal", "SELECT * FROM a CROSS APPLY 1", "tsql"},
 		{"LEFT APPLY", "SELECT * FROM a LEFT OUTER APPLY (SELECT 1) t", "tsql"},
-		{"SELECT INTO a temporary table", "SELECT * INTO TEMPORARY t2 FROM t1", "postgres"},
+		{"SELECT INTO a temporary table with no name", "SELECT * INTO TEMPORARY FROM t1", "postgres"},
 		{"over-qualified table function", "SELECT * FROM a.b.c.f()", ""},
 		{"APPLY over an unclosed subquery", "SELECT * FROM a CROSS APPLY (SELECT 1", "tsql"},
 		{"APPLY over a function the port cannot build", "SELECT * FROM a CROSS APPLY XMLTABLE('/r' PASSING x)", "tsql"},

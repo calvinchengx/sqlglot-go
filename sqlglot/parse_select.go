@@ -476,11 +476,10 @@ func (p *parser) parseSelect() (*Expression, error) {
 	// SELECT … INTO is a query that writes. The guard refuses it as such, and
 	// only the tree says so, so it is parsed rather than merely recognised.
 	if p.match(TokINTO) {
-		if p.atAny(TokTEMPORARY) {
-			return nil, p.unsupported("SELECT INTO with a table kind")
-		}
-		// `INTO UNLOGGED foo` names a KIND before the table. Reading it as the
-		// table name made UNLOGGED the target of the write.
+		// `INTO TEMPORARY foo` and `INTO UNLOGGED foo` name a KIND before the
+		// table. Reading either as the table name made the word the target
+		// of the write.
+		temporary := p.match(TokTEMPORARY)
 		unlogged := false
 		if c := p.curr(); c != nil && c.Type == TokVAR && strings.EqualFold(c.Text, "UNLOGGED") {
 			p.advance()
@@ -493,7 +492,8 @@ func (p *parser) parseSelect() (*Expression, error) {
 		// T-SQL's # marks the TABLE as temporary, and the reference promotes
 		// that up onto the INTO as well as leaving it on the name.
 		sel.Set("into", New("Into", Arg{"this", target},
-			Arg{"temporary", namesATemporaryTable(target)}, Arg{"unlogged", unlogged}))
+			Arg{"temporary", temporary || namesATemporaryTable(target)},
+			Arg{"unlogged", unlogged}))
 	}
 
 	if p.at(TokFROM) {

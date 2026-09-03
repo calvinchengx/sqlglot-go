@@ -10193,3 +10193,49 @@ func TestRangeOpsJoinsAndIn(t *testing.T) {
 		}
 	}
 }
+
+// A DROP named by its signature, a SELECT INTO that names the kind of table it
+// writes, and a COMMIT that says whether it waits for the log.
+func TestDropSignatureIntoKindAndDurability(t *testing.T) {
+	for _, c := range []struct{ sql, dialect string }{
+		{"DROP FUNCTION a.b.c (INT)", ""},
+		{"DROP PROCEDURE a.b.c (INT)", ""},
+		{"DROP TABLE t", ""},
+		{"WITH t(c) AS (SELECT 1) SELECT c INTO TEMPORARY foo FROM t", "postgres"},
+		{"SELECT c INTO foo FROM t", "postgres"},
+		{"SELECT c INTO UNLOGGED foo FROM t", "postgres"},
+		// T-SQL says the kind in the NAME, and the name writes it itself.
+		{"WITH t(c) AS (SELECT 1) SELECT c INTO #foo FROM t", "tsql"},
+		{"COMMIT TRANSACTION transaction_name WITH (DELAYED_DURABILITY = OFF)", "tsql"},
+		{"COMMIT TRANSACTION @tran_name_variable WITH (DELAYED_DURABILITY = ON)", "tsql"},
+		// A signature naming several types.
+		{"DROP FUNCTION a (INT, TEXT)", ""},
+	} {
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != c.sql {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	for _, c := range []struct{ sql, dialect string }{
+		{"DROP FUNCTION a (INT", ""},
+		{"SELECT * INTO TEMPORARY FROM t1", "postgres"},
+		{"COMMIT TRANSACTION a WITH", "tsql"},
+		{"COMMIT TRANSACTION a WITH (SOMETHING = ON)", "tsql"},
+		{"COMMIT TRANSACTION a WITH (DELAYED_DURABILITY = MAYBE)", "tsql"},
+		{"COMMIT TRANSACTION a WITH (DELAYED_DURABILITY = ON", "tsql"},
+		{"COMMIT TRANSACTION a WITH (DELAYED_DURABILITY)", "tsql"},
+		// A durability with no name in front of it, which the reference
+		// refuses too.
+		{"COMMIT WITH (DELAYED_DURABILITY = ON)", "tsql"},
+		{"DROP FUNCTION a (wat)", ""},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
+		}
+	}
+}

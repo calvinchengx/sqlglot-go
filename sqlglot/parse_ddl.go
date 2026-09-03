@@ -910,6 +910,26 @@ func (p *parser) parseDrop() (*Expression, error) {
 		}
 	}
 
+	// A FUNCTION or a PROCEDURE may be named with its SIGNATURE, because a
+	// name alone need not say which of them is meant.
+	var signature []*Expression
+	if p.at(TokL_PAREN) && (kind == "FUNCTION" || kind == "PROCEDURE") {
+		p.advance()
+		for !p.at(TokR_PAREN) {
+			dt, err := p.parseDataType()
+			if err != nil {
+				return nil, err
+			}
+			signature = append(signature, dt)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed signature")
+		}
+	}
+
 	// The words after the names, in the order the reference reads them.
 	cascade := p.matchUnquotedWord("CASCADE")
 	restrict := false
@@ -927,7 +947,7 @@ func (p *parser) parseDrop() (*Expression, error) {
 	return New("Drop",
 		Arg{"exists", exists},
 		Arg{"tables", tables},
-		Arg{"expressions", nil},
+		Arg{"expressions", signature},
 		Arg{"kind", kind},
 		Arg{"temporary", temporary}, Arg{"materialized", materialized},
 		Arg{"cascade", cascade}, Arg{"restrict", restrict},
@@ -3218,6 +3238,37 @@ func (p *parser) parseTransaction() (*Expression, error) {
 			name = name.This()
 		}
 		node.Set("this", name)
+	}
+	// `WITH (DELAYED_DURABILITY = ON)` says the commit need not wait for the
+	// log to reach disk. The reference keeps only whether it was on.
+	if p.at(TokWITH) && verb == "COMMIT" {
+		p.advance()
+		if !p.match(TokL_PAREN) {
+			return nil, p.unsupported("COMMIT WITH nothing in parentheses")
+		}
+		if !p.atWords("DELAYED_DURABILITY") {
+			return nil, p.unsupported("COMMIT WITH something other than a durability")
+		}
+		p.advance()
+		if !p.match(TokEQ) {
+			return nil, p.unsupported("DELAYED_DURABILITY without a setting")
+		}
+		on := p.curr()
+		if on == nil {
+			return nil, p.unsupported("DELAYED_DURABILITY without a setting")
+		}
+		switch strings.ToUpper(on.Text) {
+		case "ON":
+			node.Set("durability", true)
+		case "OFF":
+			node.Set("durability", false)
+		default:
+			return nil, p.unsupported("DELAYED_DURABILITY = " + on.Text)
+		}
+		p.advance()
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed COMMIT WITH")
+		}
 	}
 	if p.curr() != nil {
 		return nil, p.unsupported(verb + " with more than this port reads")

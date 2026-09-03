@@ -623,6 +623,14 @@ func (g *generator) writeHaving(e *Expression) string { return "HAVING " + g.chi
 // writeInto keeps the table KIND that sits before the name: `INTO UNLOGGED foo`.
 func (g *generator) writeInto(e *Expression) string {
 	out := "INTO "
+	// The KIND of table written into, where the dialect names one. T-SQL says
+	// it in the NAME instead, and the name writes it itself -- so the word is
+	// written only where the name does not already carry the mark.
+	target, _ := e.Args["this"].(*Expression)
+	if temporary, _ := e.Args["temporary"].(bool); temporary &&
+		!namesATemporaryTable(target) {
+		out += "TEMPORARY "
+	}
 	if unlogged, _ := e.Args["unlogged"].(bool); unlogged && g.tables.WritesIntoUnlogged {
 		out += "UNLOGGED "
 	}
@@ -3273,6 +3281,15 @@ func (g *generator) writeDrop(e *Expression) string {
 		names = append(names, g.node(t))
 	}
 	out += strings.Join(names, ", ")
+	// A FUNCTION or a PROCEDURE may be named with its SIGNATURE, because a
+	// name alone need not say which of them is meant.
+	if signature, _ := e.Args["expressions"].([]*Expression); len(signature) > 0 {
+		parts := make([]string, 0, len(signature))
+		for _, t := range signature {
+			parts = append(parts, g.node(t))
+		}
+		out += " (" + strings.Join(parts, ", ") + ")"
+	}
 	for _, flag := range []struct{ key, word string }{
 		{"cascade", "CASCADE"}, {"restrict", "RESTRICT"},
 		{"constraints", "CONSTRAINTS"}, {"purge", "PURGE"},
@@ -4470,11 +4487,23 @@ func (g *generator) writeTransaction(e *Expression) string {
 	if word := g.tables.TransactionWord; word != "" {
 		verb += " " + word
 	}
+	// Whether the commit waits for the log to reach disk. Dropping the words
+	// says it does, which is the opposite of what was asked for.
+	durability := ""
+	if on, said := e.Args["durability"].(bool); said {
+		durability = " WITH (DELAYED_DURABILITY = OFF)"
+		if on {
+			durability = " WITH (DELAYED_DURABILITY = ON)"
+		}
+	}
 	if name := g.child(e, "this"); name != "" {
 		if !g.tables.TransactionNameWritten {
 			return g.fail(e.Class + " with a name, which this dialect writes away")
 		}
-		return verb + " " + name
+		return verb + " " + name + durability
+	}
+	if durability != "" {
+		return verb + durability
 	}
 	// A COMMIT may say whether a new transaction starts where it ended. Both
 	// spellings of that are templates the reference produced, so they are
