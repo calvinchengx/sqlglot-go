@@ -1331,6 +1331,24 @@ func TestWithRecursive(t *testing.T) {
 	}
 }
 
+// TestCTEWithUsingKey covers DuckDB's dedup key on a RECURSIVE CTE, written
+// between the alias's own column list and AS: `tbl(a, b) USING KEY (a)`.
+func TestCTEWithUsingKey(t *testing.T) {
+	for _, sql := range []string{
+		"WITH RECURSIVE tbl(a, b) USING KEY (a) AS (SELECT a, b FROM x) SELECT * FROM tbl",
+		"WITH RECURSIVE tbl(a, b) USING KEY (a, b) AS (SELECT a, b FROM x) SELECT * FROM tbl",
+	} {
+		e, err := ParseOne(sql, "duckdb")
+		if err != nil {
+			t.Errorf("ParseOne(%q): %v", sql, err)
+			continue
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != sql {
+			t.Errorf("%s wrote %q (%v)", sql, got, err)
+		}
+	}
+}
+
 // CUBE, ROLLUP and GROUPING SETS look like calls but land on their OWN args of
 // Group rather than in its expression list, and any of them may sit beside
 // plain columns. The reference writes them in a fixed order whatever order

@@ -203,6 +203,19 @@ func (p *parser) parseWith() (*Expression, error) {
 			}
 			cteColumns = cols
 		}
+		// DuckDB names a RECURSIVE CTE's dedup key before the query: `tbl(a,
+		// b) USING KEY (a) AS (...)`. Ordinary columns still come from the
+		// alias's own list; this is a second, narrower one.
+		var keyExpressions []*Expression
+		if p.atWords("USING", "KEY") {
+			p.advance()
+			p.advance()
+			keys, err := p.parseWrappedCSV(p.parseIdentifier)
+			if err != nil {
+				return nil, err
+			}
+			keyExpressions = keys
+		}
 		// The AS is not always written: `WITH x (SELECT 1)` names the query
 		// straight after the alias, and the reference reads it and writes the
 		// word back in.
@@ -223,7 +236,7 @@ func (p *parser) parseWith() (*Expression, error) {
 			Arg{"this", inner},
 			Arg{"alias", New("TableAlias", Arg{"this", alias}, Arg{"columns", cteColumns})},
 			Arg{"materialized", nil},
-			Arg{"key_expressions", nil},
+			Arg{"key_expressions", keyExpressions},
 		))
 		if !p.match(TokCOMMA) {
 			break

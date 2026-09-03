@@ -374,6 +374,15 @@ func (g *generator) writeWith(e *Expression) string {
 func (g *generator) writeCTE(e *Expression) string {
 	alias := g.child(e, "alias")
 	g.qualifyDerivedOutputs(e)
+	// DuckDB names a RECURSIVE CTE's dedup key between the alias and AS:
+	// `tbl(a, b) USING KEY (a) AS (...)`.
+	if keys, _ := e.Args["key_expressions"].([]*Expression); len(keys) > 0 {
+		parts := make([]string, 0, len(keys))
+		for _, k := range keys {
+			parts = append(parts, g.node(k))
+		}
+		alias += " USING KEY (" + strings.Join(parts, ", ") + ")"
+	}
 	return alias + " AS (" + g.child(e, "this") + ")"
 }
 

@@ -180,6 +180,8 @@ func TestRefusals(t *testing.T) {
 		{"unclosed struct", "SELECT {'a': 1", ""},
 		{"a type parameter with nothing after it", "SELECT CAST(a AS VARCHAR(", ""},
 		{"an unclosed COLUMNS unpacked into a call", "SELECT COALESCE(*COLUMNS(*", "duckdb"},
+		{"a CTE without AS", "WITH t SELECT 1", ""},
+		{"an unclosed CTE dedup key", "WITH RECURSIVE tbl(a, b) USING KEY (a AS (SELECT a, b FROM x) SELECT * FROM tbl", "duckdb"},
 		{"over-qualified table", "SELECT 1 FROM a.b.c.d", ""},
 		{"trailing tokens", "SELECT 1 FROM t )", ""},
 		{"unclosed parenthesis", "SELECT (1", ""},
