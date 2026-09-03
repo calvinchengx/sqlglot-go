@@ -3455,7 +3455,10 @@ func (p *parser) parseParameter() *Expression {
 		return nil
 	}
 	n := p.next()
-	if !isParameterName(n) {
+	// A QUOTED name counts here too: `@"x"` is a Parameter named `x`, an
+	// Identifier rather than the Var a bare word would give -- and `$"foo"`
+	// the same Placeholder a bare `$foo` would, its quotes just dropped.
+	if !isParameterName(n) && !isQuotedName(n) {
 		return nil
 	}
 	class := ""

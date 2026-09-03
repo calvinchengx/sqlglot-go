@@ -3247,6 +3247,29 @@ func TestAQuotedColonParameter(t *testing.T) {
 	}
 }
 
+// TestAQuotedAtOrDollarParameter covers the same quoted-name shape one level
+// up: `@"x"` and `$"foo"` open a parameter or a placeholder exactly as their
+// bare-word spellings do, the quotes just dropped -- or kept as an
+// Identifier's own, where the class is one that carries one at all.
+func TestAQuotedAtOrDollarParameter(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql, want string }{
+		{"postgres", `SELECT @"x"`, `SELECT $"x"`},
+		{"duckdb", `SELECT $"foo"`, "SELECT $foo"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q, %s): %v", tc.sql, tc.dialect, err)
+		}
+		got, err := Generate(e, tc.dialect)
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.want {
+			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
+		}
+	}
+}
+
 // A name the tokenizer would not give back is refused rather than written.
 //
 // The port builds one only from a token the tokenizer could not classify --
