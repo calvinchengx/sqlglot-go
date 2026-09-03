@@ -3930,10 +3930,14 @@ func (g *generator) writeDelete(e *Expression) string {
 // T-SQL calls it OUTPUT; writeUpdate and writeDelete put it where the dialect
 // wants it.
 func (g *generator) writeReturning(e *Expression) string {
+	out := g.tables.ReturningWord + " " + g.list(e)
+	// T-SQL's OUTPUT writes the rows somewhere as well as returning them --
+	// a table variable or a plain name, and no other dialect's RETURNING
+	// takes one at all.
 	if into, _ := e.Args["into"].(*Expression); into != nil {
-		return g.fail(e.Class + " with an INTO")
+		out += " INTO " + g.node(into)
 	}
-	return g.tables.ReturningWord + " " + g.list(e)
+	return out
 }
 
 // writeMerge writes `MERGE INTO <target> USING <source> ON <cond> WHEN ...`.

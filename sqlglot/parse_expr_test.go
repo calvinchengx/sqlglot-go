@@ -2236,6 +2236,15 @@ func TestInsertAndDrop(t *testing.T) {
 		// and drops it silently everywhere else. T-SQL loses the whole
 		// clause, and the port loses it too.
 		{"default values, dropped", "tsql", "INSERT INTO t DEFAULT VALUES", "INSERT INTO t"},
+		// T-SQL's OUTPUT writes the rows somewhere as well as returning
+		// them: a table variable, read the same way one is anywhere else,
+		// or a plain name. No other dialect's RETURNING takes one at all.
+		{"output into a table variable", "tsql",
+			"UPDATE x SET y = 1 OUTPUT x.a, x.b INTO @y FROM y",
+			"UPDATE x SET y = 1 OUTPUT x.a, x.b INTO @y FROM y"},
+		{"output into a plain name", "tsql",
+			"INSERT INTO x (y) OUTPUT x.a, x.b INTO l SELECT * FROM z",
+			"INSERT INTO x (y) OUTPUT x.a, x.b INTO l SELECT * FROM z"},
 		// Postgres names the target again so ON CONFLICT can refer to it.
 		{"an aliased target", "postgres",
 			"INSERT INTO newtable AS t(a, b, c) VALUES (1, 2, 3) " +
@@ -2289,6 +2298,12 @@ func TestInsertAndDrop(t *testing.T) {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
 		}
+	}
+	// OUTPUT's INTO with nothing after it is left to name itself: the
+	// reference silently drops the whole clause and reads as if INTO had
+	// not been written at all, a leniency this port does not reproduce.
+	if _, err := ParseOne("UPDATE x SET y = 1 OUTPUT x.a INTO", "tsql"); err == nil {
+		t.Error("UPDATE x SET y = 1 OUTPUT x.a INTO was read; it should be refused")
 	}
 }
 
@@ -2704,12 +2719,6 @@ func TestDMLCorners(t *testing.T) {
 			Arg{"this", New("Table", Arg{"this", New("Identifier", Arg{"this", "x"})})},
 			Arg{"tables", []*Expression{New("Table",
 				Arg{"this", New("Identifier", Arg{"this", "y"})})}})},
-		{"a returning that also writes elsewhere", New("Delete",
-			Arg{"this", New("Table", Arg{"this", New("Identifier", Arg{"this", "x"})})},
-			Arg{"returning", New("Returning",
-				Arg{"expressions", []*Expression{New("Star")}},
-				Arg{"into", New("Table", Arg{"this", New("Identifier", Arg{"this", "t"})})})},
-		)},
 		{"a merge branch that does nothing at all", New("Merge",
 			Arg{"this", New("Table", Arg{"this", New("Identifier", Arg{"this", "x"})})},
 			Arg{"using", New("Table", Arg{"this", New("Identifier", Arg{"this", "y"})})},
@@ -2756,11 +2765,10 @@ func TestDMLRefusalsAreCarried(t *testing.T) {
 		{"", "UPDATE t SET a = 1 FROM 1"},
 		{"", "UPDATE t SET a = 1 WHERE FROM"},
 		{"postgres", "UPDATE t SET a = 1 RETURNING FROM"},
-		{"postgres", "UPDATE t SET a = 1 RETURNING a INTO b"},
 		{"", "DELETE FROM 1"},
 		{"", "DELETE FROM x USING 1"},
 		{"", "DELETE FROM x WHERE FROM"},
-		{"postgres", "DELETE FROM x RETURNING a INTO b"},
+		{"postgres", "DELETE FROM x RETURNING FROM"},
 		{"", "MERGE INTO 1 USING s ON a = b WHEN MATCHED THEN DELETE"},
 		{"", "MERGE INTO t USING 1 ON a = b WHEN MATCHED THEN DELETE"},
 		{"", "MERGE INTO t USING s ON FROM WHEN MATCHED THEN DELETE"},
@@ -2769,7 +2777,7 @@ func TestDMLRefusalsAreCarried(t *testing.T) {
 		{"", "MERGE INTO t USING s ON a = b WHEN MATCHED THEN UPDATE SET FROM"},
 		{"", "MERGE INTO t USING s ON a = b WHEN NOT MATCHED THEN INSERT (FROM) VALUES (1)"},
 		{"", "MERGE INTO t USING s ON a = b WHEN NOT MATCHED THEN INSERT (a) VALUES (FROM)"},
-		{"postgres", "MERGE INTO t USING s ON a = b WHEN MATCHED THEN DELETE RETURNING a INTO b"},
+		{"postgres", "MERGE INTO t USING s ON a = b WHEN MATCHED THEN DELETE RETURNING FROM"},
 	} {
 		if _, err := ParseOne(tc.sql, tc.dialect); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", tc.sql)

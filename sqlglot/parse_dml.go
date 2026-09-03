@@ -116,12 +116,22 @@ func (p *parser) parseReturning() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	if p.at(TokINTO) {
-		// `OUTPUT ... INTO @t` writes the rows somewhere as well as returning
-		// them, which is a second thing the statement does.
-		return nil, p.unsupported("a RETURNING clause with an INTO")
+	// `OUTPUT ... INTO @t` writes the rows somewhere as well as returning
+	// them -- a table variable, read the same way one is anywhere else, or a
+	// plain name.
+	var into any = false
+	if p.match(TokINTO) {
+		if param := p.parseParameter(); param != nil {
+			into = param
+		} else {
+			target, err := p.parseTablePart()
+			if err != nil {
+				return nil, err
+			}
+			into = target
+		}
 	}
-	return New("Returning", Arg{"expressions", items}, Arg{"into", false}), nil
+	return New("Returning", Arg{"expressions", items}, Arg{"into", into}), nil
 }
 
 // parseDelete reads `DELETE FROM <table> [USING ...] [WHERE ...]
