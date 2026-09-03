@@ -286,7 +286,12 @@ func (p *parser) parseIn(this *Expression) (*Expression, error) {
 	}
 	// `a IN (SELECT 1)`: the reference records the query under `query` rather
 	// than as a one-item expression list, and it DOES wrap it in a Subquery.
-	if p.at(TokSELECT) || p.at(TokWITH) {
+	// A parenthesised query that OPENS with another parenthesis is a query
+	// too: `IN ((SELECT 1) EXCEPT (SELECT 2))` names a set operation.
+	p.index--
+	opensAQuery := p.opensAParenthesisedQuery()
+	p.index++
+	if p.at(TokSELECT) || p.at(TokWITH) || opensAQuery {
 		inner, err := p.parseQuery()
 		if err != nil {
 			return nil, err
@@ -2127,7 +2132,14 @@ func (p *parser) parseFunction() (*Expression, error) {
 		// keeps the node instead, which is a different tree. Refused here
 		// rather than built from an empty name.
 		if !namedWhereWrapped(spec.Args, args) {
-			return nil, p.unsupported("unnamed argument where " + upper + " wants a word")
+			// A wrap takes the argument's NAME, so an argument with no name
+			// -- a cast, a subquery -- is one the reference does not name
+			// either: it keeps the node. Where that is what the reference
+			// does, the node is kept here too; where it is not, the call is
+			// refused rather than built from an empty name.
+			if _, keeps := p.tables.KeepsUnnamedWrapped[upper]; !keeps {
+				return nil, p.unsupported("unnamed argument where " + upper + " wants a word")
+			}
 		}
 		// A string literal in one of these slots makes the reference build
 		// something else -- an Interval step, a `modifiers` argument that
@@ -2450,6 +2462,15 @@ func (p *parser) buildFromSpec(name, class string, keys []FuncArg, args []*Expre
 			// Var(args[i].name upper-cased), and the argument node itself does
 			// not appear in the result at all.
 			if a.Index < len(args) {
+				// An argument with no NAME to take is kept as the node it is,
+				// where that is what the reference does: PostgreSQL's
+				// DATE_BIN puts a subquery straight into its unit slot.
+				if args[a.Index].Name() == "" {
+					if _, keeps := p.tables.KeepsUnnamedWrapped[strings.ToUpper(name)]; keeps {
+						node.Set(a.Key, args[a.Index])
+						continue
+					}
+				}
 				word := strings.ToUpper(args[a.Index].Name())
 				// A unit spelling the name normalises: T-SQL records
 				// DATEADD(qq, ...) as QUARTER, not QQ.

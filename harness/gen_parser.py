@@ -4521,6 +4521,54 @@ def projection_shape(dialect: str, sql: str) -> str:
     return type(held[0]).__name__ if held else ""
 
 
+def keeps_unnamed_wrapped(dialect: str, funcs) -> list:
+    """Names whose WRAPPED slot keeps the node when the argument has no name.
+
+    A wrap takes the argument's NAME -- DATEADD records unit=Var(DAY) -- so an
+    argument with no name to take is usually one the reference builds some
+    other way, and the port refuses rather than guess. But some builders
+    simply keep whatever they were handed: PostgreSQL's DATE_BIN puts a
+    subquery straight into its unit slot. Which do is asked rather than
+    assumed.
+    """
+    import logging
+
+    import sqlglot
+    from sqlglot import expressions as e
+
+    was = logging.root.manager.disable
+    logging.disable(logging.CRITICAL)
+    out = []
+    try:
+        for name, (_cls, spec) in funcs.items():
+            wrapped = [how["index"] for _, how in spec if "wrap" in how]
+            if not wrapped:
+                continue
+            width = max(wrapped) + 1
+            args = ["zza"] * width
+            for i in wrapped:
+                args[i] = "(SELECT 1)"
+            try:
+                tree = sqlglot.parse_one(
+                    f"SELECT {name}({', '.join(args)})", read=dialect or None
+                )
+            except Exception:  # noqa: BLE001
+                continue
+            held = tree.args.get("expressions") or []
+            if not held or type(held[0]).__name__ != _cls:
+                continue
+            # Every wrapped slot holds the SUBQUERY itself rather than a name
+            # made from it.
+            keys = [key for key, how in spec if "wrap" in how]
+            if all(
+                isinstance(held[0].args.get(k), e.Subquery) for k in keys
+            ):
+                out.append(name)
+    finally:
+        logging.disable(was)
+    return out
+
+
 def special_type_words(dialect: str) -> list:
     """Words a CAST reads as something OTHER than a user-defined type.
 
@@ -6402,6 +6450,7 @@ def main() -> int:
         "\tTypeDispatchFunctions map[string]TypeDispatch\n",        "\t// ValueDispatchFunctions are names whose CLASS is chosen by the\n\t// WORD in one argument: T-SQL's HASHBYTES('SHA1', x) is an SHA and\n\t// HASHBYTES('MD5', x) an MD5. A word not listed takes Default.\n\tValueDispatchFunctions map[string]ValueDispatch\n",
         "\t// CreateProperties are the words that may stand between CREATE and\n\t// what it creates, each carrying a bare property of its own:\n\t// MATERIALIZED, UNLOGGED, TRANSIENT. The class is read off the tree,\n\t// not made from the word -- STREAMING becomes a StreamingTableProperty.\n\tCreateProperties map[string]string\n",
         "\t// SpecialTypeWords are the words a CAST reads as something OTHER\n\t// than a user-defined type: PostgreSQL's `oid` is an ObjectIdentifier\n\t// and Databricks reads VOID as the null type. A word here is refused\n\t// rather than read as a name.\n\tSpecialTypeWords map[string]struct{}\n",
+        "\t// KeepsUnnamedWrapped are the names whose wrapped slot keeps the\n\t// NODE where the argument has no name to take, rather than building\n\t// something else: PostgreSQL's DATE_BIN takes a subquery as its unit.\n\tKeepsUnnamedWrapped map[string]struct{}\n",
         "\t// UserDefinedTypeIsIdentifier wraps such a type's NAME in an\n\t// Identifier. PostgreSQL does and the rest keep the word as it\n\t// stands, which is a difference the dump shows and nothing else does.\n\tUserDefinedTypeIsIdentifier bool\n",
         "\t// CreateKinds are the things this dialect will CREATE. T-SQL alone\n\t// spells a procedure PROC as well as PROCEDURE.\n\tCreateKinds map[string]struct{}\n",
         "\t// CreateOrFlags are the words after CREATE OR and the flag each\n\t// turns on: REPLACE and T-SQL's ALTER both mean `replace`, and\n\t// Databricks' REFRESH means `refresh`.\n\tCreateOrFlags map[string]string\n",
@@ -6855,6 +6904,7 @@ def main() -> int:
                 )
                 out.append(f"\t\t\t{gostr(fname)}: {{{pairs}}},\n")
             out.append("\t\t},\n")
+        out.append(strset("KeepsUnnamedWrapped", keeps_unnamed_wrapped(name, funcs)))
         out.append(funcmap("Functions", funcs, root_annots))
         if by_arity:
             out.append("\t\tFunctionsByArity: map[string]map[int]FuncSpec{\n")

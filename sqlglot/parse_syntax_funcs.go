@@ -176,11 +176,39 @@ func (p *parser) parseTrim() (*Expression, error) {
 func (p *parser) parseSubstring() (*Expression, error) {
 	p.advance()
 	p.advance()
-	this, err := p.parseExpression()
+	// parseBitwise, not parseExpression, for the same reason the bounds use
+	// it: `'Thomas' FOR 3` reads FOR as a range operator at the full
+	// expression level, and the FOR never arrives here.
+	this, err := p.parseBitwise()
 	if err != nil {
 		return nil, err
 	}
 	var start, length *Expression
+	// The two may be written the other way round: `SUBSTRING(x FOR 3 FROM 2)`
+	// says the length first and the reference writes it back the usual way.
+	if p.match(TokFOR) {
+		e, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		length = e
+		if p.match(TokFROM) {
+			e, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			start = e
+		} else {
+			// A length with no start begins at the FIRST character, which
+			// the reference records rather than leaving to the engine.
+			start = New("Literal", Arg{"this", "1"}, Arg{"is_string", false})
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed SUBSTRING")
+		}
+		return New("Substring",
+			Arg{"this", this}, Arg{"start", start}, Arg{"length", length}), nil
+	}
 	if p.match(TokFROM) || p.match(TokCOMMA) {
 		// parseBitwise, not parseExpression: `1 FOR 2` reads FOR as a range
 		// operator at the full expression level and the FOR never arrives here.

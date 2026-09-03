@@ -10314,3 +10314,49 @@ func TestUserDefinedTypes(t *testing.T) {
 		t.Errorf(`1::"udt" wrote %q`, got)
 	}
 }
+
+// Four shapes read the other way round or one level deeper than the plain
+// one: a temporal clause where an alias would go, a length before a start, a
+// set operation inside an IN, and an argument with no name to take.
+func TestReorderedAndNestedShapes(t *testing.T) {
+	for _, c := range []struct{ sql, want, dialect string }{
+		{"SELECT * FROM my_ducklake.demo AT (VERSION => 2)", "", "duckdb"},
+		{"SELECT * FROM t1 AS a AT (VERSION => 3)", "", "duckdb"},
+		{"SELECT * FROM t AS at", "", "duckdb"},
+		// The reference writes the two the usual way round.
+		{"SELECT SUBSTRING('Thomas' FOR 3 FROM 2)", "SELECT SUBSTRING('Thomas' FROM 2 FOR 3)", "postgres"},
+		{"SELECT SUBSTRING('Thomas' FOR 3)", "SELECT SUBSTRING('Thomas' FROM 1 FOR 3)", "postgres"},
+		{"SELECT SUBSTRING('Thomas' FROM 2 FOR 3)", "", "postgres"},
+		{"SELECT * FROM x WHERE y IN ((SELECT 1) EXCEPT (SELECT 2))", "", ""},
+		{"SELECT * FROM x WHERE y IN ((SELECT 1) UNION (SELECT 2) OFFSET 2)", "", ""},
+		{"SELECT * FROM x WHERE y IN (SELECT 1)", "", ""},
+		{"SELECT * FROM x WHERE y IN ((1), (2))", "", ""},
+		// A wrapped slot keeps the NODE where the argument has no name.
+		{"SELECT DATE_BIN('30 days', a, (SELECT 1)) FROM t", "", "postgres"},
+		{"SELECT DATEADD(DAY, 1, a)", "", "tsql"},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != want {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	for _, c := range []struct{ sql, dialect string }{
+		{"SELECT SUBSTRING('a' FOR", "postgres"},
+		{"SELECT SUBSTRING('a' FOR 1 FROM", "postgres"},
+		{"SELECT SUBSTRING('a' FOR 1 FROM 2", "postgres"},
+		{"SELECT * FROM t AT (", "duckdb"},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
+		}
+	}
+}

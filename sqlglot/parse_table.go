@@ -426,6 +426,16 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 		table.Set("version", New("Version",
 			Arg{"this", word}, Arg{"expression", at}, Arg{"kind", "AS OF"}))
 	}
+	// `AT (VERSION => 3)` may stand where an alias would, and AT is a word an
+	// implicit alias would otherwise take: `demo AT (VERSION => 2)` would
+	// name the table AT with a column list. Claimed here, before the alias.
+	if p.atWords("AT") && p.next() != nil && p.next().Type == TokL_PAREN {
+		when, err := p.parseHistoricalData()
+		if err != nil {
+			return nil, err
+		}
+		table.Set("when", when)
+	}
 	alias, err := p.parseTableAlias()
 	if err != nil {
 		return nil, err
@@ -433,8 +443,7 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 	if alias != nil {
 		table.Set("alias", alias)
 	}
-	// And `AT (VERSION => 3)` says the same thing another way -- after the
-	// alias rather than before it, and under a key of its own.
+	// And it may stand AFTER the alias too.
 	if p.atWords("AT") && p.next() != nil && p.next().Type == TokL_PAREN {
 		when, err := p.parseHistoricalData()
 		if err != nil {
