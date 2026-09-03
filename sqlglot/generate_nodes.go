@@ -457,7 +457,9 @@ func (g *generator) writeJoin(e *Expression) string {
 		}
 	}
 	words := []string{}
-	for _, key := range []string{"side", "kind"} {
+	// The METHOD comes first: NATURAL says HOW the rows are matched, and the
+	// side and kind say which of them are kept.
+	for _, key := range []string{"method", "side", "kind"} {
 		if s, ok := e.Args[key].(string); ok && s != "" {
 			words = append(words, s)
 		}
@@ -789,6 +791,12 @@ func (g *generator) writeNull(*Expression) string { return "NULL" }
 // writeDistinct serves both `SELECT DISTINCT`, where the node is bare, and
 // `COUNT(DISTINCT a)`, where it carries the arguments it distinguishes.
 func (g *generator) writeDistinct(e *Expression) string {
+	// `DISTINCT ON (x)` keeps the FIRST row of each group rather than one row
+	// per distinct projection, so the columns it groups by are part of what
+	// the statement means and are never dropped.
+	if on, _ := e.Args["on"].(*Expression); on != nil {
+		return "DISTINCT ON " + g.node(on)
+	}
 	if items := g.list(e); items != "" {
 		return "DISTINCT " + items
 	}

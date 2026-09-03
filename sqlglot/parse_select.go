@@ -364,8 +364,16 @@ func (p *parser) parseSelect() (*Expression, error) {
 	}
 
 	distinct := p.match(TokDISTINCT)
+	// `DISTINCT ON (x)` keeps the FIRST row of each group rather than one row
+	// per distinct projection, so what it is distinct ON is part of the node.
+	var distinctOn *Expression
 	if distinct && p.at(TokON) {
-		return nil, p.unsupported("DISTINCT ON")
+		p.advance()
+		members, err := p.parseParenthesisedList()
+		if err != nil {
+			return nil, err
+		}
+		distinctOn = New("Tuple", Arg{"expressions", members})
 	}
 	// `SELECT ALL x` is the quantifier, which this port does not carry. But
 	// `SELECT All` with nothing after it is a COLUMN called All, and the
@@ -393,7 +401,7 @@ func (p *parser) parseSelect() (*Expression, error) {
 		sel.Set(k, nil)
 	}
 	if distinct {
-		sel.Set("distinct", New("Distinct", Arg{"on", nil}))
+		sel.Set("distinct", New("Distinct", Arg{"on", distinctOn}))
 	}
 	sel.Set("expressions", projections)
 	if top != nil {

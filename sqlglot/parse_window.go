@@ -158,7 +158,9 @@ func (p *parser) parseFrameBound() (any, any, error) {
 		p.advance()
 		bound = "UNBOUNDED"
 	} else {
-		e, err := p.parseExpression()
+		// Below AND: `BETWEEN 1 AND 3` names two bounds, and an expression
+		// reader would take the whole of it as the first.
+		e, err := p.parseBitwise()
 		if err != nil {
 			return nil, nil, err
 		}
@@ -167,7 +169,13 @@ func (p *parser) parseFrameBound() (any, any, error) {
 	s := p.curr()
 	if s == nil || s.Type != TokVAR ||
 		(!strings.EqualFold(s.Text, "PRECEDING") && !strings.EqualFold(s.Text, "FOLLOWING")) {
-		return nil, nil, p.unsupported("frame bound without PRECEDING or FOLLOWING")
+		// A bound may say only how FAR: `RANGE BETWEEN 1 AND 3` names two
+		// distances and no direction, and the reference records the bound
+		// with no side beside it.
+		if _, named := bound.(string); named {
+			return nil, nil, p.unsupported("frame bound without PRECEDING or FOLLOWING")
+		}
+		return bound, nil, nil
 	}
 	p.advance()
 	return bound, strings.ToUpper(s.Text), nil

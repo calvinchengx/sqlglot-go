@@ -14,7 +14,7 @@ func TestAnUnsupportedStatementNamesItsConstruct(t *testing.T) {
 	for _, tc := range []struct {
 		sql, dialect, construct string
 	}{
-		{"SELECT a FROM t1 NATURAL JOIN t2", "tsql", "join method NATURAL"},
+		{"SELECT a FROM t1 POSITIONAL JOIN t2", "duckdb", "join method POSITIONAL"},
 		{"SELECT a FROM t1 JOIN t2 USING", "tsql", "USING without a column list"},
 		{"SELECT a FROM t GROUP BY ROLLUP", "tsql", "a grouping without its arguments"},
 	} {

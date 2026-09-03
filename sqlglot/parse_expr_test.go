@@ -9647,3 +9647,43 @@ func TestIndexParameters(t *testing.T) {
 		}
 	}
 }
+
+// Three things a query may say that the port used to refuse: which rows a
+// DISTINCT keeps, how a join matches its rows, and a frame bound that names
+// only a distance.
+func TestDistinctOnNaturalAndFrames(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT DISTINCT ON (x) x, y FROM z",
+		"SELECT DISTINCT ON (x, y + 1) * FROM z",
+		"SELECT DISTINCT ON (x.y) * FROM z",
+		"SELECT DISTINCT x FROM z",
+		"SELECT 1 FROM a NATURAL JOIN b",
+		"SELECT 1 FROM a NATURAL LEFT JOIN b",
+		"SELECT 1 FROM a NATURAL LEFT OUTER JOIN b",
+		// `BETWEEN 1 AND 3` names two distances and no direction, so the
+		// bound has to be read below AND or the first would swallow the rest.
+		"SELECT SUM(x) OVER (PARTITION BY a RANGE BETWEEN 1 AND 3)",
+		"SELECT SUM(x) OVER (PARTITION BY a RANGE BETWEEN 1 FOLLOWING AND 3)",
+		"SELECT SUM(x) OVER (PARTITION BY a ROWS BETWEEN UNBOUNDED PRECEDING AND PRECEDING)",
+	} {
+		tree, err := ParseOne(sql, "")
+		if err != nil {
+			t.Errorf("%s: %v", sql, err)
+			continue
+		}
+		got, err := Generate(tree, "")
+		if err != nil || got != sql {
+			t.Errorf("%s wrote %q (%v)", sql, got, err)
+		}
+	}
+	for _, sql := range []string{
+		"SELECT DISTINCT ON x FROM z",
+		"SELECT 1 FROM a NATURAL",
+		// UNBOUNDED says a direction and nothing else, so it still needs one.
+		"SELECT SUM(x) OVER (PARTITION BY a ROWS BETWEEN UNBOUNDED AND 1 FOLLOWING)",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("%s was read; it should be refused", sql)
+		}
+	}
+}

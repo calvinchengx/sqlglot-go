@@ -49,8 +49,19 @@ func (p *parser) parseJoin() (*Expression, error) {
 	if c == nil {
 		return nil, nil
 	}
+	// A METHOD says how the rows are matched rather than which of them are
+	// kept: NATURAL joins on every column the two tables share.
+	var method *Token
 	if _, isMethod := p.tables.JoinMethods[c.Type]; isMethod {
-		return nil, p.unsupported("join method " + c.Text)
+		if !strings.EqualFold(c.Text, "NATURAL") {
+			return nil, p.unsupported("join method " + c.Text)
+		}
+		method = c
+		p.advance()
+		c = p.curr()
+		if c == nil {
+			return nil, p.unsupported("a join method with no join")
+		}
 	}
 
 	var side, kind *Token
@@ -98,6 +109,11 @@ func (p *parser) parseJoin() (*Expression, error) {
 		return nil, err
 	}
 	join := New("Join", Arg{"this", table})
+	// The reference sets the method before the side, and a dump compares key
+	// order.
+	if method != nil {
+		join.Set("method", strings.ToUpper(method.Text))
+	}
 	if side != nil {
 		join.Set("side", strings.ToUpper(side.Text))
 	}
