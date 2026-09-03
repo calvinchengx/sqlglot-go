@@ -663,9 +663,10 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 		if p.at(TokFILTER) && p.next() != nil && p.next().Type == TokL_PAREN {
 			p.advance()
 			p.advance()
-			if !p.match(TokWHERE) {
-				return nil, p.unsupported("FILTER without WHERE")
-			}
+			// The WHERE is not always written: `SUM(x) FILTER (x = 1)`
+			// names the condition straight after the parenthesis, and the
+			// reference still wraps it in a Where.
+			p.match(TokWHERE)
 			pred, err := p.parseExpression()
 			if err != nil {
 				return nil, err

@@ -9953,6 +9953,10 @@ func TestDialectShapedSyntax(t *testing.T) {
 		{"SELECT * FROM {df}", "", "databricks"},
 		{"SELECT * FROM {df} WHERE id > :foo", "", "databricks"},
 		{"SELECT {'a': 1}", "SELECT STRUCT(1 AS a)", "databricks"},
+		// The WHERE is not always written: `SUM(x) FILTER (x = 1)` names
+		// the condition straight after the parenthesis, and the reference
+		// still wraps it in a Where.
+		{"SELECT SUM(x) FILTER (x = 1)", "SELECT SUM(x) FILTER(WHERE x = 1)", ""},
 		// A bare field with no name of its own is written positionally only
 		// where the whole struct is spelled `{'k': v}` -- DuckDB's own
 		// template. Elsewhere it is `STRUCT(v AS k, ...)`, and a field with
