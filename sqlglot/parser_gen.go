@@ -286,7 +286,11 @@ type ParserTables struct {
 	DatePartMapping    map[string]string
 	InverseTimeMapping map[string]string
 	FormatTimeMapping  map[string]string
-	CastSensitiveArgs  map[string]map[int][]string
+	// FullFormatTimeMapping is TimeMapping with a dialect's OWN full-word
+	// spellings layered over it -- T-SQL's DATENAME(mm, x) wants the full
+	// month name, not the two-digit one TimeMapping's "mm" gives FORMAT.
+	FullFormatTimeMapping map[string]string
+	CastSensitiveArgs     map[string]map[int][]string
 	// CastCoercions is what the dialect wraps an argument in, per the
 	// type it is cast to: DuckDB rounds a float into a BIT_OR and casts a
 	// decimal without rounding. A wrapper of `{arg}` alone means the slot
@@ -9418,6 +9422,51 @@ var parserTables = map[string]*ParserTables{
 			"t": "%-I:%M",
 			"u": "%Y-%M-%D %H:%M:%S%z",
 			"y": "%B %Y",
+		},
+		FullFormatTimeMapping: map[string]string{
+			"H":           "%-H",
+			"HH":          "%H",
+			"M":           "%-m",
+			"MM":          "%m",
+			"MMM":         "%b",
+			"MMMM":        "%B",
+			"Y":           "%Y",
+			"YY":          "%y",
+			"YYYY":        "%Y",
+			"d":           "%-d",
+			"day":         "%d",
+			"dayofyear":   "%j",
+			"dd":          "%d",
+			"dddd":        "%A",
+			"dw":          "%A",
+			"dy":          "%d",
+			"ffffff":      "%f",
+			"h":           "%-I",
+			"hh":          "%I",
+			"hour":        "%h",
+			"iso_week":    "%V",
+			"isowk":       "%V",
+			"isoww":       "%V",
+			"m":           "%B",
+			"mi":          "%M",
+			"millisecond": "%f",
+			"minute":      "%M",
+			"mm":          "%B",
+			"month":       "%B",
+			"ms":          "%f",
+			"n":           "%M",
+			"s":           "%-S",
+			"second":      "%S",
+			"ss":          "%S",
+			"w":           "%A",
+			"week":        "%W",
+			"weekday":     "%A",
+			"wk":          "%W",
+			"ww":          "%W",
+			"y":           "%Y",
+			"year":        "%Y",
+			"yy":          "%y",
+			"yyyy":        "%Y",
 		},
 		TimeFormatArgs: map[string][]int{
 			"FORMAT": {1},

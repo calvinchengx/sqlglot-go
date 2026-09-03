@@ -10349,6 +10349,54 @@ func TestNamedTypeWords(t *testing.T) {
 	}
 }
 
+// TestDateDiffAndDateName covers T-SQL's DATEDIFF, DATEDIFF_BIG and DATENAME,
+// each read by a builder of its own rather than a generic signature: the
+// probe driving builders with placeholder columns could not see a decision
+// this only makes once it has real arguments in hand.
+func TestDateDiffAndDateName(t *testing.T) {
+	// DATENAME's own spelling, `mm` for a full month name and `dw` for a
+	// full weekday, is rewritten into the reference's FORMAT on the way in
+	// -- there is no DateName node to hold it in.
+	for _, c := range []struct{ sql, want string }{
+		{"SELECT DATEDIFF(WEEK, d2, d1)", "SELECT DATEDIFF(WEEK, CAST(d2 AS DATETIME2), CAST(d1 AS DATETIME2))"},
+		{"SELECT DATEDIFF(YEAR, 'start', 'end')", "SELECT DATEDIFF(YEAR, CAST('start' AS DATETIME2), CAST('end' AS DATETIME2))"},
+		{"SELECT DATEDIFF(WEEK, '2009-01-01', '2009-12-31')", "SELECT DATEDIFF(WEEK, CAST('2009-01-01' AS DATETIME2), CAST('2009-12-31' AS DATETIME2))"},
+		{"SELECT DATEDIFF(HOUR, 1.5, '2021-01-01')", "SELECT DATEDIFF(HOUR, 1.5, '2021-01-01')"},
+		{"SELECT DATEDIFF_BIG(WEEK, d2, d1)", "SELECT DATEDIFF_BIG(WEEK, CAST(d2 AS DATETIME2), CAST(d1 AS DATETIME2))"},
+		{"SELECT DATEDIFF(zzz, d2, d1)", "SELECT DATEDIFF(ZZZ, CAST(d2 AS DATETIME2), CAST(d1 AS DATETIME2))"},
+		{"SELECT DATENAME(mm, '1970-01-01')", "SELECT FORMAT(CAST('1970-01-01' AS DATETIME2), 'MMMM')"},
+		{"SELECT DATENAME(dw, '1970-01-01')", "SELECT FORMAT(CAST('1970-01-01' AS DATETIME2), 'dddd')"},
+		// The IGNORE/RESPECT NULLS modifier is read after any call, this one
+		// included, and wraps the node the builder returns rather than
+		// being dropped on the floor.
+		{"SELECT DATEDIFF(WEEK, d2, d1) IGNORE NULLS", "SELECT DATEDIFF(WEEK, CAST(d2 AS DATETIME2), CAST(d1 AS DATETIME2)) IGNORE NULLS"},
+		{"SELECT DATENAME(mm, x) RESPECT NULLS", "SELECT FORMAT(CAST(x AS DATETIME2), 'MMMM') RESPECT NULLS"},
+	} {
+		tree, err := ParseOne(c.sql, "tsql")
+		if err != nil {
+			t.Errorf("%s: %v", c.sql, err)
+			continue
+		}
+		if got, err := Generate(tree, "tsql"); err != nil || got != c.want {
+			t.Errorf("%s wrote %q (%v)", c.sql, got, err)
+		}
+	}
+	// DATEDIFF's start date, read as an INTEGER rather than a date-like
+	// string, is a shape the reference builds by counting days from 1900:
+	// not yet implemented, and refused rather than approximated.
+	if _, err := ParseOne("SELECT DATEDIFF(HOUR, 1, '2021-01-01')", "tsql"); err == nil {
+		t.Error("DATEDIFF over an integer date was read; it should be refused")
+	}
+	for _, c := range []struct{ sql, dialect string }{
+		{"SELECT DATEDIFF(WEEK, d2)", "tsql"},
+		{"SELECT DATENAME(mm)", "tsql"},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read with too few arguments; it should be refused", c.dialect, c.sql)
+		}
+	}
+}
+
 // Four shapes read the other way round or one level deeper than the plain
 // one: a temporal clause where an alias would go, a length before a start, a
 // set operation inside an IN, and an argument with no name to take.

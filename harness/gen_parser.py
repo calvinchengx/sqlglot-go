@@ -140,6 +140,28 @@ def unit_aliases(builder) -> dict:
     return {}
 
 
+def full_format_time_mapping(dialect: str) -> dict:
+    """TIME_MAPPING with T-SQL's own full-word spellings layered over it.
+
+    T-SQL's DATENAME(mm, x) reads its first argument through TIME_MAPPING
+    merged with a second table, FULL_FORMAT_TIME_MAPPING, so `mm` gives the
+    full month name rather than FORMAT's two-digit one. That second table is
+    a plain module dict behind the parser, not a Dialect attribute the other
+    time tables are read off, so it is imported directly; dialects with no
+    such table return the empty map TimeMapping alone would produce anyway.
+    """
+    from sqlglot.dialects.dialect import Dialect
+
+    d = Dialect.get_or_raise(dialect or None)
+    try:
+        from sqlglot.parsers.tsql import FULL_FORMAT_TIME_MAPPING
+    except ImportError:
+        return {}
+    if type(d).__name__ != "TSQL":
+        return {}
+    return {**(d.TIME_MAPPING or {}), **FULL_FORMAT_TIME_MAPPING}
+
+
 def call_builder(builder, args, dialect):
     """Run one of sqlglot's function builders.
 
@@ -6046,6 +6068,10 @@ def main() -> int:
         "\tDatePartMapping map[string]string\n",
         "\tInverseTimeMapping map[string]string\n",
         "\tFormatTimeMapping  map[string]string\n",
+        "\t// FullFormatTimeMapping is TimeMapping with a dialect's OWN full-word\n",
+        "\t// spellings layered over it -- T-SQL's DATENAME(mm, x) wants the full\n",
+        "\t// month name, not the two-digit one TimeMapping's \"mm\" gives FORMAT.\n",
+        "\tFullFormatTimeMapping map[string]string\n",
         "\tCastSensitiveArgs map[string]map[int][]string\n",
         "\t// CastCoercions is what the dialect wraps an argument in, per the\n\t// type it is cast to: DuckDB rounds a float into a BIT_OR and casts a\n\t// decimal without rounding. A wrapper of `{arg}` alone means the slot\n\t// takes that type as it stands.\n\tCastCoercions map[string]map[int]map[string]map[string]string\n",
         "\t// CastIdempotentTypes are the slots whose coercion the dialect\n\t// applies whatever it is given, so an argument already carrying that\n\t// cast leaves nothing to add and the plain spelling is exact.\n\tCastIdempotentTypes map[string]map[string][]string\n",
@@ -6950,6 +6976,12 @@ def main() -> int:
             out.append(f"\t\t{field}: map[string]string{{\n")
             for k in sorted(_m):
                 out.append(f"\t\t\t{gostr(k)}: {gostr(_m[k])},\n")
+            out.append("\t\t},\n")
+        _fftm = full_format_time_mapping(name)
+        if _fftm:
+            out.append("\t\tFullFormatTimeMapping: map[string]string{\n")
+            for k in sorted(_fftm):
+                out.append(f"\t\t\t{gostr(k)}: {gostr(_fftm[k])},\n")
             out.append("\t\t},\n")
         _tfa = time_format_args(name, P, exp, render_input)
         if _tfa:

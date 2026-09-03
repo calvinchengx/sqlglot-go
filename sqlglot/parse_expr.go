@@ -2095,6 +2095,17 @@ func (p *parser) parseFunction() (*Expression, error) {
 	// probe drives builders with placeholder columns and cannot see such a
 	// decision, so the recorded signature describes a node the reference does
 	// not actually build; these are written out in parse_builders.go.
+	// Neither takes IGNORE/RESPECT NULLS inside its own parentheses -- that
+	// is an aggregate's shape, and a data agent has no reason to write it
+	// here -- so `inner`, read above for calls that do, goes unused by both.
+	if upper == "DATEDIFF" || upper == "DATEDIFF_BIG" {
+		if _, ok := p.tables.UnitAliases[upper]; ok {
+			return p.buildDateDiff(upper, args, upper == "DATEDIFF_BIG")
+		}
+	}
+	if upper == "DATENAME" && len(p.tables.FullFormatTimeMapping) > 0 {
+		return p.buildDateName(args)
+	}
 	if upper == "FORMAT" && len(p.tables.FormatTimeMapping) > 0 {
 		built, err := p.buildFormat(args)
 		if err != nil {

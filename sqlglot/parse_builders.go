@@ -61,6 +61,61 @@ func hasDateField(s string) bool {
 	return strings.ContainsAny(s, "dDmMyYhHsS")
 }
 
+// buildDateDiff is T-SQL's DATEDIFF and DATEDIFF_BIG:
+// DATEDIFF(unit, start, end) reads as DateDiff(this=end, expression=start,
+// unit=Var(unit)) -- the two dates SWAP position, and each is wrapped in
+// TimeStrToTime -- except where start is a non-integer NUMBER, which the
+// reference keeps bare and does not swap either, the one shape a probe run
+// with placeholder columns could never see.
+func (p *parser) buildDateDiff(upper string, args []*Expression, bigInt bool) (*Expression, error) {
+	if len(args) != 3 {
+		return nil, p.unsupported("function " + upper + " with this many arguments")
+	}
+	unit := args[0]
+	start, end := args[1], args[2]
+	word := strings.ToUpper(unit.Name())
+	if aliases, ok := p.tables.UnitAliases[upper]; ok {
+		if full, ok := aliases[word]; ok {
+			word = full
+		}
+	}
+	unitVar := New("Var", Arg{"this", word})
+	if start != nil && start.Class == "Literal" {
+		if isString, _ := start.Args["is_string"].(bool); !isString {
+			if isIntegerLiteral(start) {
+				return nil, p.unsupported("function " + upper + " over an integer date")
+			}
+			return New("DateDiff",
+				Arg{"this", end}, Arg{"expression", start},
+				Arg{"unit", unitVar}, Arg{"big_int", bigInt}), nil
+		}
+	}
+	return New("DateDiff",
+		Arg{"this", New("TimeStrToTime", Arg{"this", end})},
+		Arg{"expression", New("TimeStrToTime", Arg{"this", start})},
+		Arg{"unit", unitVar}, Arg{"big_int", bigInt}), nil
+}
+
+// buildDateName is T-SQL's DATENAME(part, date): the part is read through
+// TimeMapping merged with FullFormatTimeMapping, so `mm` gives the full month
+// name rather than FORMAT's two-digit one, and the date is cast to DATETIME2
+// rather than left as written.
+func (p *parser) buildDateName(args []*Expression) (*Expression, error) {
+	if len(args) != 2 {
+		return nil, p.unsupported("function DATENAME with this many arguments")
+	}
+	part, this := args[0], args[1]
+	spelled := formatTime(strings.ToLower(part.Name()), p.tables.FullFormatTimeMapping)
+	to := New("DataType", Arg{"this", DataTypeKind("DATETIME2")})
+	cast := New("Cast", Arg{"this", this}, Arg{"to", to})
+	// A cast the port BUILDS carries its type already, as every cast the
+	// reference builds does; see wrapStringArgument.
+	cast.Type = to
+	return New("TimeToStr",
+		Arg{"this", cast},
+		Arg{"format", New("Literal", Arg{"this", spelled}, Arg{"is_string", true})}), nil
+}
+
 func argAt(args []*Expression, i int) *Expression {
 	if i < len(args) {
 		return args[i]
