@@ -1667,15 +1667,64 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 			Arg{"reference", reference[0].Args["kind"]}), nil
 	case p.atWords("UNIQUE"):
 		p.advance()
+		// Two NULLs count as equal, so a second row holding one breaks the
+		// rule.
+		nulls := false
+		if p.atWords("NULLS", "NOT", "DISTINCT") {
+			p.advance()
+			p.advance()
+			p.advance()
+			nulls = true
+		}
+		// T-SQL says HOW the index behind the rule is built, and what
+		// follows is an ordered column list rather than a plain one.
+		if p.atWords("NONCLUSTERED") || p.atWords("CLUSTERED") {
+			word := strings.ToUpper(p.curr().Text)
+			p.advance()
+			if !p.at(TokL_PAREN) {
+				return nil, p.unsupported("UNIQUE " + word + " without its columns")
+			}
+			members, err := p.parseIndexColumns()
+			if err != nil {
+				return nil, err
+			}
+			class := "NonClusteredColumnConstraint"
+			if word == "CLUSTERED" {
+				class = "ClusteredColumnConstraint"
+			}
+			return New("UniqueColumnConstraint",
+				Arg{"this", New(class, Arg{"this", members})}), nil
+		}
+		// A rule may be NAMED, and the name stands before the columns. It may
+		// also name nothing but an index that already exists, in which case
+		// there are no columns at all.
+		var name *Expression
+		if !p.at(TokL_PAREN) {
+			read, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
+			}
+			name = read
+		}
+		if !p.at(TokL_PAREN) {
+			return New("UniqueColumnConstraint",
+				Arg{"nulls", nulls},
+				Arg{"this", name},
+				Arg{"index_type", false}), nil
+		}
 		columns, err := p.parseInsertColumns()
 		if err != nil {
 			return nil, err
 		}
+		schema := New("Schema", Arg{"expressions", columns})
+		if name != nil {
+			schema = New("Schema", Arg{"this", name}, Arg{"expressions", columns})
+		}
 		// The arguments are in the order the reference assigns them, which is
 		// not the order they are written in.
 		return New("UniqueColumnConstraint",
-			Arg{"nulls", false},
-			Arg{"this", New("Schema", Arg{"expressions", columns})},
+			Arg{"nulls", nulls},
+			Arg{"this", schema},
 			Arg{"index_type", false}), nil
 	case p.atWords("PERIOD", "FOR", "SYSTEM_TIME"):
 		// The two columns that say when a row was current. They are named

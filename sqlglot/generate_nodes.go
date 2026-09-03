@@ -3267,13 +3267,14 @@ func (g *generator) writeUniqueConstraint(e *Expression) string {
 		return g.fail(e.Class + ", which this dialect writes nowhere")
 	}
 	out := "UNIQUE"
-	if columns, _ := e.Args["this"].(*Expression); columns != nil {
-		out += " " + g.node(columns)
-	}
 	// Two NULLs count as equal here, so a second row holding one breaks the
-	// constraint. Dropping the words says the opposite.
+	// constraint. Dropping the words says the opposite. They stand between
+	// the word and the columns, where there are any.
 	if nulls, _ := e.Args["nulls"].(bool); nulls {
 		out += " NULLS NOT DISTINCT"
+	}
+	if columns, _ := e.Args["this"].(*Expression); columns != nil {
+		out += " " + g.node(columns)
 	}
 	return out
 }

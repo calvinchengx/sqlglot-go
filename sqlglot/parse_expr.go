@@ -996,6 +996,18 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		if n := p.next(); n == nil || n.Type != TokDOT {
 			return p.parseCase()
 		}
+	case TokDOT:
+		// A number written without its leading zero: the tokenizer gives a
+		// dot and a number, and the reference joins them and puts the zero
+		// back -- `.5` is `0.5`, in the tree and on the way out.
+		n := p.next()
+		if n == nil || n.Type != TokNUMBER {
+			break
+		}
+		p.advance()
+		p.advance()
+		return New("Literal",
+			Arg{"this", "0." + n.Text}, Arg{"is_string", false}), nil
 	case TokNUMBER:
 		p.advance()
 		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", false}), nil
@@ -1197,6 +1209,14 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			return p.parseFunction()
 		}
 		return p.parseColumn()
+	}
+	// A word that is an OPERATOR here may still name a call: `ILIKE(x, 'z')`
+	// and `XOR(a, b)` are the same names read the other way, and the token
+	// table already says which of them may name one.
+	if n := p.next(); n != nil && n.Type == TokL_PAREN {
+		if _, canName := p.tables.FuncTokens[c.Type]; canName {
+			return p.parseFunction()
+		}
 	}
 	return nil, p.unsupported("expression")
 }
@@ -2635,7 +2655,14 @@ func (p *parser) jsonPathFor(arg *Expression) *Expression {
 		}})
 	}
 	if !isString {
-		return arg
+		// A number that is not a whole one is not a position either: the
+		// reference makes it a KEY, spelled as it was written. Carrying it
+		// through wrote `0 -> 0.5`, which reads back as a number rather than
+		// as the key it names -- the generator fuzzer found it.
+		return New("JSONPath", Arg{"expressions", []*Expression{
+			New("JSONPathRoot"),
+			New("JSONPathKey", Arg{"this", text}),
+		}})
 	}
 	if !p.tables.JSONPathIsParsed {
 		// PostgreSQL keeps the whole string as one key.

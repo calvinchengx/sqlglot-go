@@ -9687,3 +9687,73 @@ func TestDistinctOnNaturalAndFrames(t *testing.T) {
 		}
 	}
 }
+
+// A number without its leading zero, a rule named before its columns, a
+// partition scheme named before the column it splits by, and two operator
+// words used as call names.
+func TestSmallSyntaxGaps(t *testing.T) {
+	for _, c := range []struct{ sql, want, dialect string }{
+		{"SELECT .5, 1.5", "SELECT 0.5, 1.5", ""},
+		{`CREATE TABLE t (a INT, UNIQUE "key" (a))`, "", ""},
+		{"CREATE TABLE tbl (col UUID, UNIQUE NULLS NOT DISTINCT (col))", "", "postgres"},
+		{"ALTER TABLE s_ut ADD CONSTRAINT s_ut_uq UNIQUE hajo", "", ""},
+		{"CREATE TABLE x (a INT) ON b (c)", "CREATE TABLE x (a INTEGER) ON b (c)", "tsql"},
+		{"CREATE TABLE x (a INT) ON PRIMARY", "CREATE TABLE x (a INTEGER) ON PRIMARY", "tsql"},
+		{"ILIKE(x, 'z')", "", ""},
+		{"XOR(a, b)", "", "duckdb"},
+		{"SELECT a ILIKE 'z'", "", "postgres"},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != want {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	// A dot with no number after it is not a number.
+	if _, err := ParseOne("SELECT .", ""); err == nil {
+		t.Error("a lone dot was read as a number")
+	}
+	// And a word that cannot name a call still does not.
+	if _, err := ParseOne("SELECT AND(a, b)", ""); err == nil {
+		t.Error("AND was read as a call")
+	}
+}
+
+// What stands on the right of a JSON arrow: a whole number is a POSITION and
+// is written bare, and anything else is a KEY and is quoted. A number that is
+// not whole used to be carried through untouched, which wrote `0 -> 0.5` --
+// a number again on the way back in, not the key it names. The generator
+// fuzzer found it, once a leading-dot number could be read at all.
+func TestJSONArrowKeys(t *testing.T) {
+	for _, c := range []struct{ sql, want string }{
+		{"0->5", "0 -> 5"},
+		{"0->.5", "0 -> '0.5'"},
+		{"0->1.5", "0 -> '1.5'"},
+		{"0->1e5", "0 -> '1e5'"},
+		{"0->-1", "0 -> -1"},
+		{"0->'a'", "0 -> 'a'"},
+	} {
+		tree, err := ParseOne(c.sql, "postgres")
+		if err != nil {
+			t.Errorf("%s: %v", c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, "postgres")
+		if err != nil || got != c.want {
+			t.Errorf("%s wrote %q (%v), want %q", c.sql, got, err, c.want)
+			continue
+		}
+		// And what it wrote reads back, which is the property that failed.
+		if _, err := ParseOne(got, "postgres"); err != nil {
+			t.Errorf("%s wrote %q, which cannot be read back: %v", c.sql, got, err)
+		}
+	}
+}

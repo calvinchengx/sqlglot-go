@@ -5495,13 +5495,30 @@ def property_specs(dialect: str) -> dict[str, dict]:
                 # would answer yes to its own class.
                 nested = one(name, " (COMMENT='sss')")
                 if nested is not None and type(nested).__name__ == "SchemaCommentProperty":
-                    out[name] = {"class": "", "shape": "wrapped-properties", "eq": False}
+                    out[name] = {
+                        "class": "",
+                        "shape": "wrapped-properties",
+                        "eq": False,
+                        "named": False,
+                    }
                 continue
             if node is None:
                 continue
+            # Whether the word takes a NAME before its list: T-SQL's `ON b (c)`
+            # names a partition scheme and the column it splits by, and the
+            # reference builds a Schema over both. A word that does not is
+            # handed the whole of `b (c)` as one call -- which is what the
+            # port wrote it back as, upper-cased and without its space.
+            named = False
+            if shape == "schema":
+                both = one(name, " zzb (zzc)")
+                if both is not None:
+                    inner = both.args.get("this")
+                    named = isinstance(inner, e.Schema) and inner.args.get("this") is not None
             out[name] = {
                 "class": type(node).__name__,
                 "shape": shape,
+                "named": named,
                 # Whether an equals sign may stand between the word and what
                 # follows it. Asked of the shape's OWN spelling: a value takes
                 # `FORMAT='parquet'` and a schema takes
@@ -6365,6 +6382,10 @@ def main() -> int:
         "\tClass string\n",
         "\tShape string\n",
         "\tEquals bool\n",
+        "\t// Named marks a word that takes a NAME before its list: T-SQL's\n",
+        "\t// `ON b (c)` names a partition scheme and the column it splits by.\n",
+        "\t// A word without it is handed the whole of `b (c)` as one call.\n",
+        "\tNamed bool\n",
         "}\n\n",
         "// ClassTrigger names the classes that, at Index, make a builder produce\n",
         "// something other than what the probe recorded.\n",
@@ -6970,7 +6991,8 @@ def main() -> int:
                 _spec = _props[_word]
                 out.append(
                     f"\t\t\t{gostr(_word)}: {{{gostr(_spec['class'])}, "
-                    f"{gostr(_spec['shape'])}, {str(_spec['eq']).lower()}}},\n"
+                    f"{gostr(_spec['shape'])}, {str(_spec['eq']).lower()}, "
+                    f"{str(_spec.get('named', False)).lower()}}},\n"
                 )
             out.append("\t\t},\n")
         _gen = Dialect.get_or_raise(name or None).generator_class

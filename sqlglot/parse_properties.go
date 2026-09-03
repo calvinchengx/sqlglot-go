@@ -403,6 +403,25 @@ func (p *parser) parseProperty(spec PropertySpec) (*Expression, error) {
 		// by an expression over the key -- `PARTITION BY RANGE(population)`
 		// -- and what stands there is then a field rather than a schema.
 		if !p.at(TokL_PAREN) {
+			// A word that takes a NAME before its list reads the name here
+			// and the list below: `ON b (c)` names a partition scheme and
+			// the column it splits by, and reading the whole of it as one
+			// call wrote it back upper-cased and without its space.
+			if spec.Named {
+				name, err := p.parseIdentifier()
+				if err != nil {
+					return nil, err
+				}
+				if !p.at(TokL_PAREN) {
+					return New(spec.Class, Arg{"this", name}), nil
+				}
+				columns, err := p.parseSchemaProperty()
+				if err != nil {
+					return nil, err
+				}
+				return New(spec.Class, Arg{"this",
+					New("Schema", Arg{"this", name}, Arg{"expressions", columns})}), nil
+			}
 			field, err := p.parseBitwise()
 			if err != nil {
 				return nil, err
