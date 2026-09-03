@@ -725,6 +725,13 @@ func (g *generator) writeOrder(e *Expression) string {
 	if this := g.child(e, "this"); this != "" {
 		return this + " ORDER BY " + g.list(e)
 	}
+	// An ordering that IS a call's argument keeps the leading space the
+	// reference's own clause carries: `RANK( ORDER BY foo)`, one space after
+	// the parenthesis. Nothing on the node says so -- it is the POSITION,
+	// which the writer already knows.
+	if g.inCallArgs {
+		return " ORDER BY " + g.list(e)
+	}
 	return "ORDER BY " + g.list(e)
 }
 

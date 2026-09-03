@@ -120,7 +120,9 @@ func TestClauseOrderFollowsTheSource(t *testing.T) {
 func TestRefusals(t *testing.T) {
 	for _, c := range []struct{ name, sql, dialect string }{
 		{"no-paren function named, not tokenized", "CURDATE", "databricks"},
-		{"ORDER BY with nothing to order", "SELECT RANK(ORDER BY b) OVER ()", "duckdb"},
+		{"a quantity modifier inside a call", "SELECT COUNT(ALL x)", "duckdb"},
+		{"an ordering inside a call that never closes", "SELECT RANK( ORDER BY", "duckdb"},
+		{"an ordering with nothing to order", "SELECT RANK( ORDER BY)", "duckdb"},
 		{"non-numeric type parameter", "a::VARCHAR('x')", "tsql"},
 		{"the ALL quantifier, which the port does not carry", "SELECT ALL x", "databricks"},
 		{"fixed-size array where the dialect has none", "CAST(a AS INT[3])", "databricks"},

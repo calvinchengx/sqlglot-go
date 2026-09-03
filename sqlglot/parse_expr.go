@@ -1931,7 +1931,22 @@ func (p *parser) parseFunction() (*Expression, error) {
 	p.inCallArgs = true
 	if !p.at(TokR_PAREN) {
 		for {
-			// ORDER BY and named arguments inside a call also change the node
+			// An ORDER BY with nothing in front of it IS the argument:
+			// `RANK( ORDER BY foo)` passes the ordering itself, where
+			// `ARRAY_AGG(x ORDER BY y)` orders the argument it follows.
+			if p.at(TokORDER_BY) && len(args) == 0 {
+				p.advance()
+				o, oerr := p.parseOrder()
+				if oerr != nil {
+					return nil, oerr
+				}
+				args = append(args, o)
+				if !p.match(TokCOMMA) {
+					break
+				}
+				continue
+			}
+			// DISTINCT and named arguments inside a call also change the node
 			// the reference builds; neither is handled here.
 			if p.atAny(TokDISTINCT, TokORDER_BY, TokALL) {
 				return nil, p.unsupported("modifier inside a function call")

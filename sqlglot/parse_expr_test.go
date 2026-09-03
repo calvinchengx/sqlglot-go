@@ -10078,3 +10078,35 @@ func TestCreateTableTails(t *testing.T) {
 		t.Errorf("a filegroup wrote %q", got)
 	}
 }
+
+// An ORDER BY with nothing in front of it IS the argument, where one that
+// follows an argument orders that argument instead. The reference writes the
+// first with the leading space its own clause carries.
+func TestOrderAsACallArgument(t *testing.T) {
+	for _, c := range []struct{ sql, want string }{
+		{"SELECT RANK( ORDER BY foo) OVER (ORDER BY 1) FROM (SELECT 1 AS foo)", ""},
+		{"SELECT CUME_DIST( ORDER BY foo) OVER (ORDER BY 1) FROM (SELECT 1 AS foo)", ""},
+		{"SELECT PERCENT_RANK( ORDER BY foo) OVER (ORDER BY 1) FROM (SELECT 1 AS foo)", ""},
+		{"SELECT ARRAY_AGG(ORDER BY b, x) FROM t", "SELECT ARRAY_AGG( ORDER BY b, x) FROM t"},
+		// One that FOLLOWS an argument orders it, and takes no space.
+		{"SELECT ARRAY_AGG(x ORDER BY y) FROM t", ""},
+		// And a query's own ORDER BY is not in a call at all.
+		{"SELECT x FROM t ORDER BY y", ""},
+		// An ordering that IS the argument and is followed by nothing.
+		{"SELECT ARRAY_AGG( ORDER BY b) FROM t", ""},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, "duckdb")
+		if err != nil {
+			t.Errorf("%s: %v", c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, "duckdb")
+		if err != nil || got != want {
+			t.Errorf("%s wrote %q (%v)", c.sql, got, err)
+		}
+	}
+}
