@@ -326,14 +326,29 @@ func TestJSONObject(t *testing.T) {
 // RETURNING is refused rather than guessed at: it builds the return type out
 // of an Anonymous call or a FormatJson, shapes this port does not model, and a
 // wrong tree behind a statement that reads fine is the one thing to avoid.
-func TestJSONObjectRefusesReturning(t *testing.T) {
+// TestJSONObjectReturning covers RETURNING, read as an ordinary expression
+// rather than a type: `VARCHAR(100)` is an Anonymous call, and a bare word
+// with no parentheses a Column, which FORMAT JSON then wraps -- the
+// reference's own reading, not a type the port would have to model.
+func TestJSONObjectReturning(t *testing.T) {
 	for _, sql := range []string{
 		"JSON_OBJECT('x': 1 RETURNING VARCHAR(100))",
 		"JSON_OBJECT('x': 1 RETURNING VARBINARY FORMAT JSON ENCODING UTF8)",
 	} {
-		if _, err := ParseOne(sql, ""); err == nil {
-			t.Errorf("ParseOne(%q) was read; RETURNING should be refused", sql)
+		tree, err := ParseOne(sql, "")
+		if err != nil {
+			t.Errorf("ParseOne(%q): %v", sql, err)
+			continue
 		}
+		if got, err := Generate(tree, ""); err != nil || got != sql {
+			t.Errorf("%s wrote %q (%v)", sql, got, err)
+		}
+	}
+	// RETURNING with nothing after it is left to name itself: the reference
+	// silently reads the statement as if RETURNING had not been written at
+	// all, a leniency this port does not reproduce.
+	if _, err := ParseOne("JSON_OBJECT('x': 1 RETURNING)", ""); err == nil {
+		t.Error("JSON_OBJECT('x': 1 RETURNING) was read; it should be refused")
 	}
 }
 

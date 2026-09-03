@@ -467,15 +467,39 @@ func (p *parser) parseJSONObject() (*Expression, error) {
 		p.advance()
 		args = append(args, Arg{"unique_keys", true})
 	}
+	// Both are always ON the node, false where RETURNING never appeared.
+	var returnType any = false
+	var encoding any = false
 	if p.atWords("RETURNING") {
-		return nil, p.unsupported("JSON_OBJECT with a RETURNING type")
+		p.advance()
+		// The type is read as an ordinary expression, not a type: a bare
+		// word is a Column and one followed by parentheses an Anonymous
+		// call -- `VARCHAR(100)` never becomes a DataType here, which is
+		// the reference's own reading, not an approximation of it.
+		rt, err := p.parsePostfix()
+		if err != nil {
+			return nil, err
+		}
+		if p.atWords("FORMAT", "JSON") {
+			p.advance()
+			p.advance()
+			rt = New("FormatJson", Arg{"this", rt})
+		}
+		returnType = rt
+		if p.atWords("ENCODING") {
+			p.advance()
+			word := p.curr()
+			if word == nil {
+				return nil, p.unsupported("ENCODING without a name")
+			}
+			p.advance()
+			encoding = New("Var", Arg{"this", word.Text})
+		}
 	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed JSON_OBJECT")
 	}
-	// Both are always ON the node, and always false unless RETURNING set
-	// them -- which is refused above.
-	args = append(args, Arg{"return_type", false}, Arg{"encoding", false})
+	args = append(args, Arg{"return_type", returnType}, Arg{"encoding", encoding})
 	return New("JSONObject", args...), nil
 }
 
