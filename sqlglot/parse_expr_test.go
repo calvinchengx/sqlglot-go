@@ -10360,3 +10360,56 @@ func TestReorderedAndNestedShapes(t *testing.T) {
 		}
 	}
 }
+
+// An alias whose columns name their types, a VALUES that is a query on its
+// own, and a FROM-first query on either side of a set operation.
+func TestTypedAliasesAndBodylessQueries(t *testing.T) {
+	for _, c := range []struct{ sql, want, dialect string }{
+		{`SELECT * FROM JSON_TO_RECORDSET(z) AS y("rank" INT)`, "", "postgres"},
+		{"SELECT * FROM t AS y(a, b)", "", "postgres"},
+		{"WITH t AS (VALUES ('foo_val') AS t(foo1)) SELECT foo1 FROM t",
+			"WITH t AS (SELECT * FROM VALUES ('foo_val') AS t(foo1)) SELECT foo1 FROM t", "databricks"},
+		{"FROM (FROM t1 UNION FROM t2)",
+			"SELECT * FROM (SELECT * FROM t1 UNION SELECT * FROM t2)", "duckdb"},
+		{"SELECT 1 UNION SELECT 2", "", ""},
+		// A bracketed type name is lexed again, and the FIRST token settles
+		// it -- `[INT 0]` is an INT, with the number written nowhere.
+		{"CAST(0 AS [INT 0])", "CAST(0 AS INTEGER)", "tsql"},
+		{"CAST(0 AS [a b])", "CAST(0 AS a b)", "tsql"},
+		// A VALUES that carries its own modifiers.
+		{"WITH t AS (VALUES (1), (2) ORDER BY 1) SELECT * FROM t",
+			"WITH t AS (SELECT * FROM VALUES (1), (2) ORDER BY 1) SELECT * FROM t", "databricks"},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != want {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	for _, c := range []struct{ sql, dialect string }{
+		// A VALUES on the far side of a set operation is a shape of its own
+		// -- the reference gives it an alias of its own making -- and stays
+		// refused rather than half-built.
+		{"WITH t AS (VALUES (1) UNION VALUES (2)) SELECT * FROM t", "databricks"},
+		{`SELECT * FROM t AS y(a wat wat)`, "postgres"},
+		{`SELECT * FROM t AS y(a 3)`, "postgres"},
+		{"SELECT 1 UNION UPDATE t SET a = 1", ""},
+		{"WITH t AS (VALUES (1)", "databricks"},
+		{"WITH t AS (VALUES (1) ORDER BY", "databricks"},
+		{"FROM t1 SELECT )", "duckdb"},
+		{"FROM (FROM t1 UNION FROM", "duckdb"},
+		{"CAST(0 AS [", "tsql"},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
+		}
+	}
+}

@@ -3535,9 +3535,12 @@ func (p *parser) quotedTypeName(c *Token) (bool, string) {
 		return false, ""
 	}
 	toks, err := tk.Tokenize(c.Text)
-	if err != nil || len(toks) != 1 {
+	if err != nil || len(toks) == 0 {
 		return false, ""
 	}
+	// The FIRST token settles it, and the rest are dropped: T-SQL's
+	// `[INT 0]` is an INT to the reference, with the number written nowhere.
+	// The generator fuzzer found the port writing the whole text back out.
 	kind, ok := p.tables.TypeTokens[toks[0].Type]
 	return ok, kind
 }

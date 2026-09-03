@@ -584,3 +584,35 @@ func TestNamesAType(t *testing.T) {
 		t.Error("a name was refused for want of a tokenizer to ask")
 	}
 }
+
+// A quoted TYPE name is lexed again, and the first token settles it. Text that
+// lexes to nothing, or whose first token is not a type, is not one.
+func TestQuotedTypeName(t *testing.T) {
+	cfg, ok := ConfigFor("tsql")
+	if !ok {
+		t.Fatal("no tsql config")
+	}
+	p := &parser{cfg: cfg, tables: cfg.Tables, dialect: "tsql"}
+	for _, c := range []struct {
+		text string
+		want string
+	}{
+		{"INT", "INT"},
+		{"INT 0", "INT"},
+		{"nope", ""},
+		{"", ""},
+	} {
+		got, kind := p.quotedTypeName(&Token{Type: TokIDENTIFIER, Text: c.text})
+		if (c.want == "") == got {
+			t.Errorf("quotedTypeName(%q) named a type = %v", c.text, got)
+			continue
+		}
+		if got && kind != c.want {
+			t.Errorf("quotedTypeName(%q) = %q, want %q", c.text, kind, c.want)
+		}
+	}
+	// A token that is not quoted at all is not a quoted name.
+	if got, _ := p.quotedTypeName(&Token{Type: TokVAR, Text: "INT"}); got {
+		t.Error("an unquoted token was read as a quoted type name")
+	}
+}

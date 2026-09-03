@@ -1039,7 +1039,19 @@ func (p *parser) parseAliasColumns() ([]*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		columns = append(columns, id)
+		// A column may name its TYPE as well as itself, where what is being
+		// aliased returns rows the caller has to describe:
+		// `JSON_TO_RECORDSET(z) AS y("rank" INT)`.
+		if !p.at(TokCOMMA) && !p.at(TokR_PAREN) {
+			kind, err := p.parseDataType()
+			if err != nil {
+				return nil, err
+			}
+			columns = append(columns,
+				New("ColumnDef", Arg{"this", id}, Arg{"kind", kind}))
+		} else {
+			columns = append(columns, id)
+		}
 		if !p.match(TokCOMMA) {
 			break
 		}

@@ -103,6 +103,25 @@ func (p *parser) parseQueryBody() (*Expression, error) {
 		}
 		return p.parseSetOperations(this)
 	}
+	// A bare VALUES is a query too: `WITH t AS (VALUES ('x') AS t(a))` names
+	// rows without selecting them, and the reference wraps them in a Select
+	// over the VALUES.
+	if p.at(TokVALUES) {
+		values, err := p.parseValuesTable()
+		if err != nil {
+			return nil, err
+		}
+		sel := New("Select")
+		for _, k := range selectPrefix {
+			sel.Set(k, nil)
+		}
+		sel.Set("expressions", []*Expression{newStar()})
+		sel.Set("from_", New("From", Arg{"this", values}))
+		if err := p.parseQueryModifiers(sel); err != nil {
+			return nil, err
+		}
+		return p.parseSetOperations(sel)
+	}
 	if !p.at(TokSELECT) {
 		return nil, p.unsupported("query without SELECT")
 	}
@@ -288,6 +307,11 @@ func (p *parser) liftSetOpModifiers(setOp, right *Expression) {
 func (p *parser) parseSelectOrParenthesised() (*Expression, error) {
 	if p.opensAParenthesisedQuery() {
 		return p.parseScalarSubquery()
+	}
+	// A FROM-first query stands on either side of a set operation too:
+	// `FROM t1 UNION FROM t2` unions the two.
+	if p.at(TokFROM) {
+		return p.parseFromFirst()
 	}
 	if !p.at(TokSELECT) {
 		return nil, p.unsupported("set operation over something other than a SELECT")
