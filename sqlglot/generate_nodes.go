@@ -194,6 +194,8 @@ func init() {
 		"Version":                             (*generator).writeVersion,
 		"HistoricalData":                      (*generator).writeHistoricalData,
 		"TimeseriesKey":                       (*generator).writeTimeseriesKey,
+		"Directory":                           (*generator).writeDirectory,
+		"RowFormatDelimitedProperty":          (*generator).writeRowFormatDelimited,
 		"Tuple":                               (*generator).writeTuple,
 		"ToMap":                               (*generator).writeToMap,
 		"GroupConcat":                         (*generator).writeGroupConcat,
@@ -3136,10 +3138,21 @@ func (g *generator) writeSchema(e *Expression) string {
 // writeInsert writes `INSERT [OVERWRITE] INTO <target> <values-or-query>`.
 func (g *generator) writeInsert(e *Expression) string {
 	out := g.withPrefix(e, "INSERT") + " "
-	if overwrite, _ := e.Args["overwrite"].(bool); overwrite {
-		out += "OVERWRITE TABLE "
-	} else {
-		out += "INTO "
+	// What is written may not be a table at all: a DIRECTORY names the files
+	// and says so itself, so neither word belongs in front of it.
+	into, _ := e.Args["this"].(*Expression)
+	writesFiles := into != nil && into.Class == "Directory"
+	switch {
+	case writesFiles:
+		if overwrite, _ := e.Args["overwrite"].(bool); overwrite {
+			out += "OVERWRITE "
+		}
+	default:
+		if overwrite, _ := e.Args["overwrite"].(bool); overwrite {
+			out += "OVERWRITE TABLE "
+		} else {
+			out += "INTO "
+		}
 	}
 	exists := ""
 	if yes, _ := e.Args["exists"].(bool); yes {
@@ -3347,6 +3360,38 @@ func (g *generator) writePrimaryKey(e *Expression) string {
 	return out
 }
 
+// writeDirectory writes the FILES a statement writes into rather than a table:
+// `INSERT OVERWRITE LOCAL DIRECTORY 'x'`.
+func (g *generator) writeDirectory(e *Expression) string {
+	out := "DIRECTORY " + g.child(e, "this")
+	if local, _ := e.Args["local"].(bool); local {
+		out = "LOCAL " + out
+	}
+	if format := g.child(e, "row_format"); format != "" {
+		out += " " + format
+	}
+	return out
+}
+
+// writeRowFormatDelimited writes how the rows and the values in them are
+// separated in those files.
+func (g *generator) writeRowFormatDelimited(e *Expression) string {
+	out := "ROW FORMAT DELIMITED"
+	for _, clause := range []struct{ key, words string }{
+		{"fields", "FIELDS TERMINATED BY"},
+		{"escaped", "ESCAPED BY"},
+		{"collection_items", "COLLECTION ITEMS TERMINATED BY"},
+		{"map_keys", "MAP KEYS TERMINATED BY"},
+		{"lines", "LINES TERMINATED BY"},
+		{"null", "NULL DEFINED AS"},
+	} {
+		if text := g.child(e, clause.key); text != "" {
+			out += " " + clause.words + " " + text
+		}
+	}
+	return out
+}
+
 // writeTimeseriesKey writes a key member that holds the TIME a row belongs to
 // rather than anything to sort by.
 func (g *generator) writeTimeseriesKey(e *Expression) string {
@@ -3497,6 +3542,15 @@ func (g *generator) writeAlter(e *Expression) string {
 		out += "ONLY "
 	}
 	out += g.child(e, "this")
+	// Whether the rows already there are tested against what is being added.
+	// Three states: the words CHECK, the word NOCHECK, and neither -- so an
+	// absent argument is not the same as a false one.
+	switch e.Args["check"] {
+	case true:
+		out += " WITH CHECK"
+	case nil:
+		out += " WITH NOCHECK"
+	}
 	actions, _ := e.Args["actions"].([]*Expression)
 	was := g.inColumnList
 	g.inColumnList = true
@@ -3688,6 +3742,11 @@ func clauses(parts ...string) string {
 func (g *generator) writeDelete(e *Expression) string {
 	this := g.child(e, "this")
 	if this == "" {
+		// A DELETE inside an ALTER names no table of its own: the ALTER has
+		// already named it, and what is left is which rows go.
+		if where := g.child(e, "where"); where != "" {
+			return "DELETE " + where
+		}
 		return g.fail(e.Class + " with no table")
 	}
 	if tables, _ := e.Args["tables"].([]*Expression); len(tables) > 0 {

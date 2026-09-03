@@ -545,6 +545,48 @@ func (p *parser) parseInsert() (*Expression, error) {
 		p.advance()
 		overwrite = true
 	}
+	// What is written need not be a TABLE at all: `INSERT OVERWRITE
+	// DIRECTORY 'x'` writes files, and the target is a Directory naming the
+	// path, whether it is on the local machine or not.
+	local := false
+	if p.atWords("LOCAL") && p.nextWords("DIRECTORY") {
+		p.advance()
+		local = true
+	}
+	if p.atWords("DIRECTORY") {
+		p.advance()
+		path := p.curr()
+		if path == nil || path.Type != TokSTRING {
+			return nil, p.unsupported("DIRECTORY without a path")
+		}
+		p.advance()
+		directory := New("Directory",
+			Arg{"this", New("Literal",
+				Arg{"this", path.Text}, Arg{"is_string", true})},
+			Arg{"local", local})
+		// How the rows are laid out in those files.
+		if p.atWords("ROW", "FORMAT", "DELIMITED") {
+			format, err := p.parseRowFormatDelimited()
+			if err != nil {
+				return nil, err
+			}
+			directory.Set("row_format", format)
+		}
+		query, err := p.parseQuery()
+		if err != nil {
+			return nil, err
+		}
+		return New("Insert",
+			Arg{"this", directory},
+			Arg{"stored", false}, Arg{"by_name", false}, Arg{"exists", false},
+			Arg{"partition", false}, Arg{"settings", false},
+			Arg{"default", false},
+			Arg{"expression", query},
+			Arg{"overwrite", overwrite},
+			Arg{"ignore", false}, Arg{"source", false},
+		), nil
+	}
+
 	// INTO is optional after OVERWRITE, where TABLE takes its place.
 	if !p.match(TokINTO) && !p.atWords("TABLE") {
 		return nil, p.unsupported("INSERT without INTO")
@@ -742,6 +784,42 @@ func (p *parser) parseInsertColumns() ([]*Expression, error) {
 		return nil, p.unsupported("unclosed column list")
 	}
 	return out, nil
+}
+
+// parseRowFormatDelimited reads how rows and the values in them are separated
+// in the files a statement writes: `ROW FORMAT DELIMITED FIELDS TERMINATED BY
+// ',' LINES TERMINATED BY '\n'`, and the three others like them.
+func (p *parser) parseRowFormatDelimited() (*Expression, error) {
+	p.advance()
+	p.advance()
+	p.advance()
+	format := New("RowFormatDelimitedProperty")
+	for _, clause := range []struct {
+		words []string
+		key   string
+	}{
+		{[]string{"FIELDS", "TERMINATED", "BY"}, "fields"},
+		{[]string{"ESCAPED", "BY"}, "escaped"},
+		{[]string{"COLLECTION", "ITEMS", "TERMINATED", "BY"}, "collection_items"},
+		{[]string{"MAP", "KEYS", "TERMINATED", "BY"}, "map_keys"},
+		{[]string{"LINES", "TERMINATED", "BY"}, "lines"},
+		{[]string{"NULL", "DEFINED", "AS"}, "null"},
+	} {
+		if !p.atWords(clause.words...) {
+			continue
+		}
+		for range clause.words {
+			p.advance()
+		}
+		text := p.curr()
+		if text == nil || text.Type != TokSTRING {
+			return nil, p.unsupported(clause.words[0] + " without a separator")
+		}
+		p.advance()
+		format.Set(clause.key, New("Literal",
+			Arg{"this", text.Text}, Arg{"is_string", true}))
+	}
+	return format, nil
 }
 
 // parseValues reads `VALUES (1, 2), (3, 4)` -- a list of rows.
@@ -1167,6 +1245,21 @@ func (p *parser) parseAlter() (*Expression, error) {
 		return nil, err
 	}
 
+	// `WITH CHECK` says the rows already there are to be tested against what
+	// is being added. NOCHECK says they are not, and the reference records
+	// NEITHER word as absent rather than as false -- three states, not two.
+	check := any(false)
+	switch {
+	case p.atWords("WITH", "CHECK"):
+		p.advance()
+		p.advance()
+		check = true
+	case p.atWords("WITH", "NOCHECK"):
+		p.advance()
+		p.advance()
+		check = nil
+	}
+
 	var actions []*Expression
 	if kind == "VIEW" {
 		// A view is altered by being GIVEN a new query, and the query itself
@@ -1204,7 +1297,7 @@ func (p *parser) parseAlter() (*Expression, error) {
 		Arg{"options", []*Expression{}},
 		Arg{"cluster", nil},
 		Arg{"not_valid", notValid},
-		Arg{"check", false},
+		Arg{"check", check},
 		Arg{"cascade", false},
 		Arg{"iceberg", false},
 	), nil
@@ -1247,6 +1340,32 @@ func (p *parser) atAlterActionWord() bool {
 // parseAlterAction reads one thing this ALTER does.
 func (p *parser) parseAlterAction() (*Expression, error) {
 	switch {
+	case p.atWords("DELETE"):
+		// Rows go rather than anything about the table's shape, which is
+		// still an ALTER as far as the reference is concerned.
+		p.advance()
+		if !p.at(TokWHERE) {
+			return nil, p.unsupported("ALTER DELETE without a condition")
+		}
+		p.advance()
+		condition, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		return New("Delete", Arg{"where", New("Where", Arg{"this", condition})}), nil
+	case p.atWords("CLUSTER BY"):
+		// One TOKEN, not two words: the tokenizer joins them. How the rows
+		// are laid out on disk; NONE takes the clustering off.
+		p.advance()
+		word := p.curr()
+		if word == nil {
+			return nil, p.unsupported("CLUSTER BY without columns")
+		}
+		if strings.EqualFold(word.Text, "NONE") {
+			p.advance()
+			return New("ClusterProperty", Arg{"this", "NONE"}), nil
+		}
+		return nil, p.unsupported("CLUSTER BY " + strings.ToUpper(word.Text))
 	case p.atWords("ADD"):
 		p.advance()
 		// A constraint added to the table is wrapped in an AddConstraint,
@@ -1676,8 +1795,8 @@ func (p *parser) parseTableConstraint() (*Expression, error) {
 		// The key may be followed by HOW the index behind it is built, which
 		// the reference records as a SECOND kind beside the first rather
 		// than as anything on it -- so a named constraint may hold two.
-		if p.at(TokPRIMARY_KEY) && p.nextWords(1, "CLUSTERED") ||
-			p.at(TokPRIMARY_KEY) && p.nextWords(1, "NONCLUSTERED") {
+		if p.at(TokPRIMARY_KEY) && p.nextWords("CLUSTERED") ||
+			p.at(TokPRIMARY_KEY) && p.nextWords("NONCLUSTERED") {
 			p.advance()
 			held, err := p.parseIndexTypeConstraint()
 			if err != nil {

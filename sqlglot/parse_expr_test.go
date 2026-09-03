@@ -10010,3 +10010,40 @@ func TestKeyConstraints(t *testing.T) {
 		}
 	}
 }
+
+// Three ALTER actions, and an INSERT whose target is FILES rather than a
+// table.
+func TestAlterActionsAndDirectories(t *testing.T) {
+	for _, c := range []struct{ sql, dialect string }{
+		{"ALTER TABLE mydataset.mytable DELETE WHERE x = 1", ""},
+		{"ALTER TABLE t CLUSTER BY NONE", "databricks"},
+		{"ALTER TABLE t1 WITH CHECK ADD CONSTRAINT ctr FOREIGN KEY (c1) REFERENCES t2 (c2)", "tsql"},
+		{"ALTER TABLE t1 WITH NOCHECK ADD CONSTRAINT c FOREIGN KEY (a) REFERENCES u (b)", "tsql"},
+		{"ALTER TABLE t ADD COLUMN a INT", "postgres"},
+		{"INSERT OVERWRITE DIRECTORY 'x' SELECT 1", ""},
+		{"INSERT OVERWRITE LOCAL DIRECTORY 'x' SELECT 1", ""},
+		{"INSERT OVERWRITE LOCAL DIRECTORY 'x' ROW FORMAT DELIMITED FIELDS TERMINATED BY '1' COLLECTION ITEMS TERMINATED BY '2' MAP KEYS TERMINATED BY '3' LINES TERMINATED BY '4' NULL DEFINED AS '5' SELECT 1", ""},
+		{"INSERT INTO t SELECT 1", ""},
+	} {
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != c.sql {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	for _, c := range []struct{ sql, dialect string }{
+		{"ALTER TABLE t DELETE", ""},
+		{"ALTER TABLE t CLUSTER BY a", "databricks"},
+		{"ALTER TABLE t CLUSTER BY", "databricks"},
+		{"INSERT OVERWRITE DIRECTORY SELECT 1", ""},
+		{"INSERT OVERWRITE DIRECTORY 'x' ROW FORMAT DELIMITED FIELDS TERMINATED BY SELECT 1", ""},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
+		}
+	}
+}

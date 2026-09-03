@@ -410,7 +410,7 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 	}
 	// `TIMESTAMP AS OF '...'` and `VERSION AS OF 3` read the table as it
 	// stood then rather than as it stands now, and go before the alias.
-	if (p.atWords("TIMESTAMP") || p.atWords("VERSION")) && p.nextWords(1, "AS", "OF") {
+	if (p.atWords("TIMESTAMP") || p.atWords("VERSION")) && p.nextWords("AS", "OF") {
 		word := strings.ToUpper(p.curr().Text)
 		p.advance()
 		p.advance()
