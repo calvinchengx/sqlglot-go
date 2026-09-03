@@ -1590,6 +1590,18 @@ func TestNamedArguments(t *testing.T) {
 		// decided by the immediate parent, not by how deep the call is.
 		{"a struct inside a call", "SELECT CARDINALITY(CAST({'a': 1} AS MAP(TEXT, INT)))",
 			"SELECT CARDINALITY(CAST({'a': 1} AS MAP(TEXT, INT)))"},
+		// A field with no name of its own takes the key from its OWN `this`
+		// when that is an Identifier -- a bare column names itself -- and a
+		// positional one, `_0`, `_1`..., when it has none at all: a literal,
+		// or `*COLUMNS(...)`, DuckDB's own unpack of every column a pattern
+		// matches into the call it stands inside.
+		{"a bare column names itself", "SELECT STRUCT(x, x AS y)", "SELECT {'x': x, 'y': x}"},
+		{"a bare qualified column names itself", "SELECT STRUCT(a.b, 1)", "SELECT {'b': a.b, '_1': 1}"},
+		{"a bare literal has no name of its own", "SELECT STRUCT_PACK(1)", "SELECT {'_0': 1}"},
+		{"COLUMNS unpacked into a call", "SELECT COALESCE(*COLUMNS(*)) FROM t",
+			"SELECT COALESCE(*COLUMNS(*)) FROM t"},
+		{"COLUMNS unpacked into a struct field", `SELECT STRUCT_PACK(*COLUMNS('m\d')) FROM m`,
+			`SELECT {'_0': *COLUMNS('m\d')} FROM m`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, "duckdb")
@@ -9872,6 +9884,12 @@ func TestDialectShapedSyntax(t *testing.T) {
 		{"SELECT * FROM {df}", "", "databricks"},
 		{"SELECT * FROM {df} WHERE id > :foo", "", "databricks"},
 		{"SELECT {'a': 1}", "SELECT STRUCT(1 AS a)", "databricks"},
+		// A bare field with no name of its own is written positionally only
+		// where the whole struct is spelled `{'k': v}` -- DuckDB's own
+		// template. Elsewhere it is `STRUCT(v AS k, ...)`, and a field with
+		// no name stays bare rather than being given one it never had.
+		{"SELECT STRUCT(x, x AS y)", "", ""},
+		{"SELECT ARRAY_AGG(STRUCT(x, x AS y) ORDER BY z DESC) AS x", "", ""},
 	} {
 		want := c.want
 		if want == "" {

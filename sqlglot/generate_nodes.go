@@ -2028,7 +2028,31 @@ func (g *generator) writeTableAlias(e *Expression) string {
 func (g *generator) writeStruct(e *Expression) string {
 	was := g.inCallArgs
 	g.inCallArgs = false
-	out := strings.ReplaceAll(g.tables.StructTemplate, "{fields}", g.list(e))
+	// Every field needs a KEY only where the dialect spells the whole thing
+	// `{'k': v}` -- DuckDB's own field template quotes the name, which is
+	// how it is told apart from `STRUCT({value} AS {key})` elsewhere, where
+	// a field with no name of its own is written bare, positionally.
+	quotesKeys := strings.Contains(g.tables.StructFieldTemplate, "{name}")
+	items, _ := e.Args["expressions"].([]*Expression)
+	parts := make([]string, 0, len(items))
+	for i, item := range items {
+		if quotesKeys && item != nil && item.Class != "PropertyEQ" {
+			// A field with no name of its own takes the key from its OWN
+			// `this`, when that is an Identifier -- a bare column names
+			// itself, `x` and `a.b` alike. Anything else -- a literal, a
+			// call like `*COLUMNS(...)` -- has none, and gets a positional
+			// one instead: `_0`, `_1` and so on, the same as the reference.
+			name := "_" + strconv.Itoa(i)
+			if this, _ := item.Args["this"].(*Expression); this != nil && this.Class == "Identifier" {
+				name = this.Name()
+			}
+			item = New("PropertyEQ",
+				Arg{"this", New("Identifier", Arg{"this", name}, Arg{"quoted", false})},
+				Arg{"expression", item})
+		}
+		parts = append(parts, g.node(item))
+	}
+	out := strings.ReplaceAll(g.tables.StructTemplate, "{fields}", strings.Join(parts, ", "))
 	g.inCallArgs = was
 	return out
 }

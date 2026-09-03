@@ -1115,6 +1115,20 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return New("Null"), nil
 	case TokSTAR:
 		p.advance()
+		// `*COLUMNS(...)` unpacks the columns COLUMNS returns into the call
+		// it stands inside -- an argument list rather than a star with
+		// modifiers of its own, which is the only other thing a `*` here
+		// can mean.
+		if p.atWords("COLUMNS") && p.next() != nil && p.next().Type == TokL_PAREN {
+			call, err := p.parseFunction()
+			if err != nil {
+				return nil, err
+			}
+			if call.Class == "Columns" {
+				call.Set("unpack", true)
+			}
+			return call, nil
+		}
 		return p.starModifiers(newStar())
 	}
 

@@ -179,6 +179,7 @@ func TestRefusals(t *testing.T) {
 		{"a struct entry with no colon", "SELECT {'a' 1}", ""},
 		{"unclosed struct", "SELECT {'a': 1", ""},
 		{"a type parameter with nothing after it", "SELECT CAST(a AS VARCHAR(", ""},
+		{"an unclosed COLUMNS unpacked into a call", "SELECT COALESCE(*COLUMNS(*", "duckdb"},
 		{"over-qualified table", "SELECT 1 FROM a.b.c.d", ""},
 		{"trailing tokens", "SELECT 1 FROM t )", ""},
 		{"unclosed parenthesis", "SELECT (1", ""},
