@@ -10202,6 +10202,14 @@ func TestRangeOpsJoinsAndIn(t *testing.T) {
 		{"'red' IN flags", "", "duckdb"},
 		{"'red' IN tbl.flags", "", "duckdb"},
 		{"'red' IN (1, 2)", "", "duckdb"},
+		// DuckDB's `~` is a single CHARACTER, read through the tokenizer's
+		// SINGLE_TOKENS table rather than a multi-character keyword -- which
+		// is why the probe that found every other range operator missed it.
+		{"SELECT x ~ y", "SELECT REGEXP_FULL_MATCH(x, y)", "duckdb"},
+		{"SELECT x !~ y", "SELECT NOT REGEXP_FULL_MATCH(x, y)", "duckdb"},
+		// The very same character is a UNARY operator elsewhere -- bitwise
+		// NOT -- and stays one; only the binary, infix spelling is DuckDB's.
+		{"SELECT ~x", "", "duckdb"},
 	} {
 		want := c.want
 		if want == "" {

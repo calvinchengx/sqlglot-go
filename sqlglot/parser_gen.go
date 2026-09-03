@@ -22009,6 +22009,7 @@ var parserTables = map[string]*ParserTables{
 			TokOVERLAPS:   "Overlaps",
 			TokRLIKE:      "RegexpLike",
 			TokSIMILAR_TO: "SimilarTo",
+			TokTILDE:      "RegexpFullMatch",
 		},
 		SwappedRangeOps: map[TokenType]struct{}{},
 		ListedRangeOps:  map[TokenType]struct{}{},

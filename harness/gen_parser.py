@@ -7798,7 +7798,15 @@ def main() -> int:
             f"\t\tValidIntervalUnits: map[string]struct{{}}{{\n{units}\t\t}},\n"
         )
         texts = {}
-        for text, token in Dialect.get_or_raise(name or None).tokenizer_class.KEYWORDS.items():
+        _tokenizer_cls = Dialect.get_or_raise(name or None).tokenizer_class
+        for text, token in _tokenizer_cls.KEYWORDS.items():
+            texts.setdefault(token, []).append(text)
+        # A single-character operator -- DuckDB's `~`, read through
+        # SINGLE_TOKENS rather than the multi-character KEYWORDS table -- is
+        # as much a spelling as any other, and was missing from every probe
+        # keyed off KEYWORDS alone: DuckDB's own regex match operator, found
+        # only once its OWN corpus statement asked for it.
+        for text, token in _tokenizer_cls.SINGLE_TOKENS.items():
             texts.setdefault(token, []).append(text)
         _br = binary_range_ops(name, P, texts)
         body = "".join(
