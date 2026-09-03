@@ -10271,14 +10271,8 @@ func TestUserDefinedTypes(t *testing.T) {
 			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
 		}
 	}
-	// PostgreSQL's `oid` is an ObjectIdentifier, not a type called oid, and
-	// Databricks reads VOID as the null type. Neither is a name.
+	// A keyword or a number where a type goes is neither a type nor a name.
 	for _, c := range []struct{ sql, dialect string }{
-		{"x::oid", "postgres"},
-		{"x::regclass", "postgres"},
-		{"SELECT CAST(NULL AS VOID)", "databricks"},
-		// And a keyword or a number where a type goes is neither a type nor
-		// a name.
 		{"SELECT CAST(x AS SELECT)", "tsql"},
 		{"SELECT CAST(x AS 3)", "tsql"},
 	} {
@@ -10312,6 +10306,46 @@ func TestUserDefinedTypes(t *testing.T) {
 		t.Errorf("a quoted user-defined type was refused: %v", err)
 	} else if got, _ := Generate(tree, "postgres"); got != `CAST(1 AS "udt")` {
 		t.Errorf(`1::"udt" wrote %q`, got)
+	}
+}
+
+// TestNamedTypeWords covers the type words that are not USER-DEFINED types at
+// all: PostgreSQL's OID and its `reg*` family name a slot in the catalog
+// (ObjectIdentifier), CSTRING is a PseudoType one level down, and
+// Databricks reads VOID as the ordinary NULL type -- neither carries a
+// DataType.Type member of its own.
+func TestNamedTypeWords(t *testing.T) {
+	for _, c := range []struct{ sql, want, dialect string }{
+		{"x::cstring", "CAST(x AS CSTRING)", "postgres"},
+		{"x::oid", "CAST(x AS OID)", "postgres"},
+		{"x::regclass", "CAST(x AS REGCLASS)", "postgres"},
+		{"x::regcollation", "CAST(x AS REGCOLLATION)", "postgres"},
+		{"x::regconfig", "CAST(x AS REGCONFIG)", "postgres"},
+		{"x::regdictionary", "CAST(x AS REGDICTIONARY)", "postgres"},
+		{"x::regnamespace", "CAST(x AS REGNAMESPACE)", "postgres"},
+		{"x::regoper", "CAST(x AS REGOPER)", "postgres"},
+		{"x::regoperator", "CAST(x AS REGOPERATOR)", "postgres"},
+		{"x::regproc", "CAST(x AS REGPROC)", "postgres"},
+		{"x::regprocedure", "CAST(x AS REGPROCEDURE)", "postgres"},
+		{"x::regrole", "CAST(x AS REGROLE)", "postgres"},
+		{"x::regtype", "CAST(x AS REGTYPE)", "postgres"},
+		{"SELECT CAST(NULL AS VOID)", "SELECT CAST(NULL AS VOID)", "databricks"},
+		// A quoted spelling re-lexes to the same keyword, in whichever
+		// dialect has it -- DuckDB has none of PostgreSQL's OID family, so
+		// the quoted word names a USER-DEFINED type there instead.
+		{`x::"oid"`, "CAST(x AS OID)", "postgres"},
+		{`x::"regclass"`, "CAST(x AS REGCLASS)", "postgres"},
+		{`x::"cstring"`, "CAST(x AS CSTRING)", "postgres"},
+		{`x::"oid"`, "CAST(x AS oid)", "duckdb"},
+	} {
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		if got, err := Generate(tree, c.dialect); err != nil || got != c.want {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
 	}
 }
 

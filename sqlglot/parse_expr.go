@@ -1557,6 +1557,23 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 	if c == nil {
 		return nil, p.unsupported("type")
 	}
+	// PostgreSQL's OID and its `reg*` family name a slot in the catalog
+	// rather than a value's shape, so the reference reads each as its own
+	// ObjectIdentifier node, keyed by nothing but the word itself; CSTRING
+	// is the same idea one level down, a PseudoType rather than a real one.
+	// Databricks' VOID is read as the ordinary NULL type instead -- there is
+	// no word for it in the generated DataType.
+	switch c.Type {
+	case TokPSEUDO_TYPE:
+		p.advance()
+		return New("PseudoType", Arg{"this", strings.ToUpper(c.Text)}), nil
+	case TokOBJECT_IDENTIFIER:
+		p.advance()
+		return New("ObjectIdentifier", Arg{"this", strings.ToUpper(c.Text)}), nil
+	case TokVOID:
+		p.advance()
+		return New("DataType", Arg{"this", DataTypeKind("NULL")}), nil
+	}
 	kind, ok := p.tables.TypeTokens[c.Type]
 	if !ok {
 		// A type may be written in QUOTES -- T-SQL brackets one, `[a] [int]`
@@ -1565,18 +1582,23 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 		// type from that, so the same name works quoted or bare.
 		if quoted, name := p.quotedTypeName(c); quoted {
 			kind, ok = name, true
+		} else if named := p.quotedNamedTypeWord(c); named != nil {
+			// A quoted `"oid"` re-lexes to the very keyword an unquoted one
+			// does -- an ObjectIdentifier or PseudoType, not a name -- in
+			// whichever dialect has that keyword at all; DuckDB has none of
+			// PostgreSQL's, so `x::"oid"` names a USER-DEFINED type there
+			// instead, same as any other unrecognized word.
+			p.advance()
+			return named, nil
 		}
 	}
 	if !ok {
 		// A word the dialect has no type for is a USER-DEFINED one, named by
 		// the word itself. The reference reads any name that way rather than
-		// refusing, which is how a schema's own types reach a cast.
-		if _, special := p.tables.SpecialTypeWords[strings.ToUpper(c.Text)]; special {
-			// A word the reference reads as something other than a name:
-			// PostgreSQL's `oid` is an ObjectIdentifier, not a type called
-			// oid. Refused rather than read as a user-defined one.
-			return nil, p.unsupported("type " + c.Text)
-		}
+		// refusing, which is how a schema's own types reach a cast. The
+		// words read specially instead of as a name -- PostgreSQL's OID
+		// family, CSTRING, Databricks' VOID -- are caught above, by token
+		// type, before this fallback is ever reached.
 		// Only a plain NAME, never a keyword: `CREATE TABLE t (a DEFAULT 0)`
 		// declares a typeless column with a default, and reading DEFAULT as
 		// the name of a type made the constraint disappear into it.
@@ -3543,4 +3565,30 @@ func (p *parser) quotedTypeName(c *Token) (bool, string) {
 	// The generator fuzzer found the port writing the whole text back out.
 	kind, ok := p.tables.TypeTokens[toks[0].Type]
 	return ok, kind
+}
+
+// quotedNamedTypeWord is quotedTypeName's counterpart for the two keywords
+// that name no DataType.Type member at all: a quoted `"oid"` re-lexes the
+// same as a bare one, and reads as an ObjectIdentifier or PseudoType rather
+// than a name -- but only where this dialect's tokenizer has that keyword;
+// elsewhere the re-lex comes back a plain word and this returns nil.
+func (p *parser) quotedNamedTypeWord(c *Token) *Expression {
+	if c.Type != TokIDENTIFIER {
+		return nil
+	}
+	tk, err := NewTokenizer(p.dialect)
+	if err != nil {
+		return nil
+	}
+	toks, err := tk.Tokenize(c.Text)
+	if err != nil || len(toks) != 1 {
+		return nil
+	}
+	switch toks[0].Type {
+	case TokPSEUDO_TYPE:
+		return New("PseudoType", Arg{"this", strings.ToUpper(c.Text)})
+	case TokOBJECT_IDENTIFIER:
+		return New("ObjectIdentifier", Arg{"this", strings.ToUpper(c.Text)})
+	}
+	return nil
 }

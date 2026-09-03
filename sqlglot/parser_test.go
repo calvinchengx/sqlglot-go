@@ -126,7 +126,6 @@ func TestRefusals(t *testing.T) {
 		{"non-numeric type parameter", "a::VARCHAR('x')", "tsql"},
 		{"the ALL quantifier, which the port does not carry", "SELECT ALL x", "databricks"},
 		{"fixed-size array where the dialect has none", "CAST(a AS INT[3])", "databricks"},
-		{"a type word the reference reads specially", "x::oid", "postgres"},
 		{"CAST without AS", "CAST(a INT)", ""},
 		{"unclosed CAST", "CAST(a AS INT", ""},
 		{"unclosed type parameters", "CAST(a AS VARCHAR(10)", ""},

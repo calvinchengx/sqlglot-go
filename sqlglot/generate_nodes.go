@@ -68,6 +68,8 @@ func init() {
 		"Cast":                                (*generator).writeCast,
 		"TryCast":                             (*generator).writeCast,
 		"DataType":                            (*generator).writeDataType,
+		"PseudoType":                          (*generator).writeNamedTypeWord,
+		"ObjectIdentifier":                    (*generator).writeNamedTypeWord,
 		"DataTypeParam":                       (*generator).writeChildThis,
 		"Placeholder":                         (*generator).writePlaceholder,
 		"Escape":                              (*generator).writeEscape,
@@ -1174,6 +1176,13 @@ func (g *generator) writeParameter(e *Expression) string {
 // this port configures spells it the same way.
 func (g *generator) writeEscape(e *Expression) string {
 	return g.child(e, "this") + " ESCAPE " + g.child(e, "expression")
+}
+
+// writeNamedTypeWord writes a PseudoType or ObjectIdentifier -- neither
+// carries a DataType.Type member, only the word it was read from.
+func (g *generator) writeNamedTypeWord(e *Expression) string {
+	s, _ := e.Args["this"].(string)
+	return s
 }
 
 func (g *generator) writeDataType(e *Expression) string {
