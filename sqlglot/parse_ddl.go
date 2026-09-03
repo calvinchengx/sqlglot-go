@@ -3319,9 +3319,21 @@ func (p *parser) parseGrant() (*Expression, error) {
 			break
 		}
 	}
-	securable, err := p.parseTableName()
-	if err != nil {
-		return nil, err
+	// `ON FUNCTION calculate_bonus(integer)` names a CALL, not a bare name,
+	// and the reference reads the securable through its general table
+	// parser -- which reads a call too -- rather than a name-only one.
+	var securable *Expression
+	if p.namesAFunctionCall() {
+		fn, ferr := p.parseFunction()
+		if ferr != nil {
+			return nil, ferr
+		}
+		securable = New("Table", Arg{"this", fn})
+	} else {
+		securable, err = p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
 	}
 	node.Set("securable", securable)
 

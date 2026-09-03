@@ -3982,6 +3982,11 @@ func TestTruncateUseAndTransactions(t *testing.T) {
 func TestGrantAndRevoke(t *testing.T) {
 	for _, tc := range []struct{ name, sql, want string }{
 		{"one privilege", "GRANT SELECT ON TABLE tbl TO user", "GRANT SELECT ON TABLE tbl TO user"},
+		// A FUNCTION securable names a CALL, not a bare name, and is read
+		// through the general table parser -- which reads a call too --
+		// rather than a name-only one.
+		{"a function securable, with its own arguments", "GRANT EXECUTE ON FUNCTION calculate_bonus(integer) TO analyst",
+			"GRANT EXECUTE ON FUNCTION CALCULATE_BONUS(integer) TO analyst"},
 		{"several", "GRANT SELECT, INSERT ON FUNCTION tbl TO user",
 			"GRANT SELECT, INSERT ON FUNCTION tbl TO user"},
 		{"no kind word", "GRANT SELECT ON orders TO ROLE PUBLIC",
