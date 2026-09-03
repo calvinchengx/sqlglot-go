@@ -87,6 +87,7 @@ func init() {
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
+		"Hint":                                (*generator).writeHint,
 		"ExcludeColumnConstraint":             (*generator).writeExcludeConstraint,
 		"WithOperator":                        (*generator).writeWithOperator,
 		"Opclass":                             (*generator).writeOpclass,
@@ -236,6 +237,9 @@ func (g *generator) writeSelect(e *Expression) string {
 		}
 	}
 
+	// What the engine is told about HOW to run the query, before anything
+	// about what it selects.
+	add(g.child(e, "hint"))
 	add(g.child(e, "distinct"))
 
 	// T-SQL says TOP here; every other dialect says LIMIT at the end. The
@@ -790,6 +794,12 @@ func (g *generator) writeNull(*Expression) string { return "NULL" }
 
 // writeDistinct serves both `SELECT DISTINCT`, where the node is bare, and
 // `COUNT(DISTINCT a)`, where it carries the arguments it distinguishes.
+// writeHint writes what the engine is told about running the query, back
+// inside the comment it was written in.
+func (g *generator) writeHint(e *Expression) string {
+	return "/*+ " + g.list(e) + " */"
+}
+
 func (g *generator) writeDistinct(e *Expression) string {
 	// `DISTINCT ON (x)` keeps the FIRST row of each group rather than one row
 	// per distinct projection, so the columns it groups by are part of what

@@ -355,12 +355,65 @@ var selectPrefix = []string{
 	"kind", "hint", "distinct", "expressions", "limit", "exclude", "operation_modifiers",
 }
 
+// parseHint reads what stands inside `/*+ ... */`: a comma-separated list of
+// calls, each naming something the engine should do. The body is tokenized
+// and parsed on its own, because the tokenizer keeps the comment whole.
+func (p *parser) parseHint(text string) (*Expression, error) {
+	body := strings.TrimSpace(text)
+	body = strings.TrimPrefix(body, "/*+")
+	body = strings.TrimSuffix(body, "*/")
+	body = strings.TrimSpace(body)
+	if body == "" {
+		return nil, p.unsupported("a hint that says nothing")
+	}
+	tk, err := NewTokenizer(p.dialect)
+	if err != nil {
+		return nil, err
+	}
+	toks, err := tk.Tokenize(body)
+	if err != nil {
+		return nil, p.unsupported("a hint this port cannot read")
+	}
+	inner := &parser{tokens: toks, cfg: p.cfg, tables: p.tables, dialect: p.dialect}
+	var items []*Expression
+	for {
+		item, err := inner.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		// A bare WORD is a word rather than a column: `/*+ REBALANCE */`
+		// names something to do, and nothing is being selected here.
+		if item != nil && item.Class == "Column" {
+			if name, ok := bareColumnName(item); ok {
+				item = New("Var", Arg{"this", name})
+			}
+		}
+		items = append(items, item)
+		if !inner.match(TokCOMMA) {
+			break
+		}
+	}
+	if inner.curr() != nil {
+		return nil, p.unsupported("a hint with more than this port reads")
+	}
+	return New("Hint", Arg{"expressions", items}), nil
+}
+
 // parseSelect is entered with the SELECT token current; parseStatement checked.
 func (p *parser) parseSelect() (*Expression, error) {
 	p.advance()
 
+	// A HINT tells the engine HOW to run the query. The tokenizer hands over
+	// the whole comment as one token; what is inside it is an ordinary list
+	// of calls, read by a parser of its own over that text.
+	var hint *Expression
 	if p.at(TokHINT) {
-		return nil, p.unsupported("hint")
+		read, err := p.parseHint(p.curr().Text)
+		if err != nil {
+			return nil, err
+		}
+		p.advance()
+		hint = read
 	}
 
 	distinct := p.match(TokDISTINCT)
@@ -399,6 +452,9 @@ func (p *parser) parseSelect() (*Expression, error) {
 	sel := New("Select")
 	for _, k := range selectPrefix {
 		sel.Set(k, nil)
+	}
+	if hint != nil {
+		sel.Set("hint", hint)
 	}
 	if distinct {
 		sel.Set("distinct", New("Distinct", Arg{"on", distinctOn}))

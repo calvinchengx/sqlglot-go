@@ -7221,6 +7221,10 @@ func TestPercentPlaceholder(t *testing.T) {
 		"SELECT %s",
 		// A placeholder can be qualified like anything else.
 		"SELECT %(name)s.a",
+		// A percent that opens nothing a placeholder could be named by
+		// falls back to arithmetic, and each of these is read that way.
+		"SELECT a % (b)",
+		"SELECT a % b",
 	} {
 		e, err := ParseOne(sql, "postgres")
 		if err != nil {
@@ -9755,5 +9759,75 @@ func TestJSONArrowKeys(t *testing.T) {
 		if _, err := ParseOne(got, "postgres"); err != nil {
 			t.Errorf("%s wrote %q, which cannot be read back: %v", c.sql, got, err)
 		}
+	}
+}
+
+// Four more: a collation on the type inside a CAST, a stream of a table, a
+// TRIM that says which ends and nothing to trim from, and a hint.
+func TestCollateStreamTrimAndHints(t *testing.T) {
+	for _, c := range []struct{ sql, want, dialect string }{
+		{`CAST('a' AS TEXT COLLATE "de_DE")`, "", "postgres"},
+		{"SELECT CAST('a' AS VARCHAR COLLATE foo)", "", "postgres"},
+		{"SELECT CAST('a' AS STRING COLLATE UTF8_BINARY)", "", "databricks"},
+		{"SELECT * FROM STREAM t", "", "databricks"},
+		// A bare `stream` is a table called stream, which is how the
+		// reference reads it too.
+		{"SELECT * FROM stream", "", "databricks"},
+		// The reference keeps the position and writes it nowhere.
+		{"SELECT TRIM(BOTH ' XXX ')", "SELECT TRIM(' XXX ')", "postgres"},
+		{"SELECT TRIM(BOTH 'x' FROM y)", "", "postgres"},
+		{"SELECT /*+ SOME_HINT(foo) */ 1", "", ""},
+		{"SELECT /*+ REBALANCE */ * FROM foo", "", ""},
+		{"SELECT /*+ HINT(t) */ 1 FROM t", "", ""},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != want {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	for _, c := range []struct{ sql, dialect string }{
+		{"SELECT /*+ */ 1", ""},
+		{"SELECT /*+ a b */ 1", ""},
+		{"CAST('a' AS TEXT COLLATE)", "postgres"},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
+		}
+	}
+}
+
+// The kinds a CREATE may name that carry nothing but a name.
+func TestCreateNamespace(t *testing.T) {
+	for _, c := range []struct{ sql, want, dialect string }{
+		{"CREATE NAMESPACE x", "", ""},
+		{"CREATE DATABASE IF NOT EXISTS y", "", ""},
+		{"CREATE OR REFRESH STREAMING TABLE t AS SELECT 1", "", "databricks"},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != want {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	// REFRESH is Databricks' word alone; elsewhere the OR is left standing.
+	if _, err := ParseOne("CREATE OR REFRESH VIEW v AS SELECT 1", "postgres"); err == nil {
+		t.Error("OR REFRESH was read in a dialect that has no such word")
 	}
 }

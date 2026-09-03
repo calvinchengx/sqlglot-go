@@ -151,7 +151,11 @@ func (p *parser) parseTrim() (*Expression, error) {
 			target, chars = first, second
 		}
 	case position != "":
-		return nil, p.unsupported("TRIM with a position but no FROM")
+		// A position with nothing to trim FROM: `TRIM(BOTH ' XXX ')` says
+		// which ends to trim and gives only the string. The reference keeps
+		// the position and writes it nowhere, so the words are lost on the
+		// way out -- which is its answer, not a gap here.
+		target = first
 	default:
 		target = first
 	}

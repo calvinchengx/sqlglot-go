@@ -460,3 +460,43 @@ func TestSettingValues(t *testing.T) {
 		t.Errorf("an EXCLUDE over nothing wrote %q", out)
 	}
 }
+
+// Which tokens could begin a table name, which settles words that are a
+// keyword in one position and a name in another.
+func TestStartsATable(t *testing.T) {
+	cfg, ok := ConfigFor("databricks")
+	if !ok {
+		t.Fatal("no databricks config")
+	}
+	p := &parser{cfg: cfg, tables: cfg.Tables, dialect: "databricks"}
+	for _, c := range []struct {
+		tok  *Token
+		want bool
+	}{
+		{nil, false},
+		{&Token{Type: TokVAR, Text: "t"}, true},
+		{&Token{Type: TokIDENTIFIER, Text: "t"}, true},
+		{&Token{Type: TokL_PAREN, Text: "("}, true},
+		{&Token{Type: TokWHERE, Text: "WHERE"}, false},
+		{&Token{Type: TokCOMMA, Text: ","}, false},
+	} {
+		if got := p.startsATable(c.tok); got != c.want {
+			t.Errorf("startsATable(%v) = %v, want %v", c.tok, got, c.want)
+		}
+	}
+}
+
+// A class whose only spelling is a template, put to a shape no template
+// covers: the writer refuses rather than inventing one.
+func TestSyntaxFunctionWithoutATemplate(t *testing.T) {
+	cfg, ok := ConfigFor("duckdb")
+	if !ok {
+		t.Fatal("no duckdb config")
+	}
+	g := &generator{cfg: cfg, tables: cfg.Tables, dialect: "duckdb"}
+	// StrPosition is written by template in every dialect; over no arguments
+	// at all there is no template to fill.
+	if out := g.writeSyntaxFunction(New("StrPosition")); g.err == nil {
+		t.Errorf("a shape with no template wrote %q", out)
+	}
+}

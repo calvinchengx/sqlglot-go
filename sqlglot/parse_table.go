@@ -235,6 +235,22 @@ func (p *parser) parseQualifiedCall() (*Expression, error) {
 	}
 }
 
+// startsATable reports whether a token could begin the name of a table. It
+// settles words that are a KEYWORD in one position and a name in another:
+// `FROM STREAM t` reads a stream of t, and `FROM stream` a table called
+// stream.
+func (p *parser) startsATable(t *Token) bool {
+	if t == nil {
+		return false
+	}
+	switch t.Type {
+	case TokVAR, TokIDENTIFIER, TokL_PAREN:
+		return true
+	}
+	_, name := p.tables.IDVarTokens[t.Type]
+	return name
+}
+
 func (p *parser) parseTable() (*Expression, error) {
 	// DuckDB names a relation in FRONT of it too: `FROM foo: bar` is
 	// `FROM bar AS foo`, the same prefix alias the projection list takes.
@@ -271,10 +287,17 @@ func (p *parser) parseTable() (*Expression, error) {
 		return p.parseSubqueryTable()
 	}
 
-	// STREAM t reads a table as a stream in some dialects; it is a different
-	// node, not a table called STREAM.
-	if p.at(TokSTREAM) {
-		return nil, p.unsupported("STREAM table")
+	// `STREAM t` reads a table as a stream of changes rather than as the rows
+	// it holds now. It is a node of its own around the table -- and only when
+	// something FOLLOWS the word: a bare `stream` is a table called stream,
+	// which is what the reference reads it as.
+	if p.at(TokSTREAM) && p.next() != nil && p.startsATable(p.next()) {
+		p.advance()
+		inner, err := p.parseTable()
+		if err != nil {
+			return nil, err
+		}
+		return New("Stream", Arg{"this", inner}), nil
 	}
 
 	// T-SQL declares a TABLE VARIABLE and then selects from it by name:

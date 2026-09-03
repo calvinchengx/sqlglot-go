@@ -1405,7 +1405,9 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 	if !p.match(TokALIAS) {
 		return nil, p.unsupported("CAST without AS")
 	}
-	to, err := p.parseDataType()
+	// The collation belongs to the TYPE here, not to a column: inside a cast
+	// there is no column for it to belong to.
+	to, err := p.parseCollatedDataType()
 	if err != nil {
 		return nil, err
 	}
@@ -1457,10 +1459,15 @@ func (p *parser) parseCollatedDataType() (*Expression, error) {
 	if dt == nil || !p.match(TokCOLLATE) {
 		return dt, nil
 	}
-	// A COLUMN rather than an identifier: the reference reads a quoted name
-	// as one and everything else as the other, and an unquoted collation
-	// name goes down the second path.
-	name, err := p.parseColumn()
+	// A QUOTED name is an identifier and an unquoted one a column: the
+	// reference reads the two down different paths, and reading both as a
+	// column built a tree that differed over nothing the SQL shows.
+	var name *Expression
+	if c := p.curr(); c != nil && c.Type == TokIDENTIFIER {
+		name, err = p.parseIdentifier()
+	} else {
+		name, err = p.parseColumn()
+	}
 	if err != nil {
 		return nil, err
 	}
