@@ -257,6 +257,15 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 			Arg{"this", this}, Arg{"distinct", distinct}, Arg{"by_name", nil},
 			Arg{"expression", right}, Arg{"side", nil}, Arg{"kind", nil}, Arg{"on", nil})
 		p.liftSetOpModifiers(this, right)
+		// A PARENTHESISED right-hand side keeps nothing to lift: the closing
+		// parenthesis ended it, so a trailing ORDER BY, LIMIT or OFFSET was
+		// never read into it. It belongs to the set operation, and is read
+		// here where the operation is the thing being built.
+		if right != nil && right.Class == "Subquery" {
+			if err := p.parseQueryModifiers(this); err != nil {
+				return nil, err
+			}
+		}
 	}
 }
 

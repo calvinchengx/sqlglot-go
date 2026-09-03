@@ -964,6 +964,35 @@ func asDatabaseReference(table *Expression) (*Expression, error) {
 	return out, nil
 }
 
+// parseVarOrString reads a value written either as a quoted string or as a
+// bare word, which is what the reference's own reader takes in these slots.
+func (p *parser) parseVarOrString() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("a constraint with no value")
+	}
+	p.advance()
+	if c.Type == TokSTRING {
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
+	}
+	return New("Var", Arg{"this", c.Text}), nil
+}
+
+// startsAColumnConstraintValue reports whether what stands here is a value a
+// constraint may carry rather than the next constraint or the end of the
+// column. COMPRESS takes one or none, and nothing but the token says which.
+func (p *parser) startsAColumnConstraintValue() bool {
+	c := p.curr()
+	if c == nil {
+		return false
+	}
+	switch c.Type {
+	case TokSTRING, TokNUMBER:
+		return true
+	}
+	return false
+}
+
 // parseIndexTypeConstraint reads T-SQL's CLUSTERED or NONCLUSTERED and the
 // ordered columns that follow it, which say how the index behind a key is
 // built rather than anything about the key itself.
@@ -1065,6 +1094,72 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			kind = New("GeneratedAsIdentityColumnConstraint",
 				Arg{"start", values[0]}, Arg{"increment", values[1]},
 				Arg{"this", false})
+		case p.atWords("FORMAT"):
+			// How the column's values are written and read back -- a date
+			// format rather than a storage format.
+			p.advance()
+			text, err := p.parseVarOrString()
+			if err != nil {
+				return nil, err
+			}
+			kind = New("DateFormatColumnConstraint", Arg{"this", text})
+		case p.atWords("TITLE"):
+			// What a report calls the column, which is not its name.
+			p.advance()
+			text, err := p.parseVarOrString()
+			if err != nil {
+				return nil, err
+			}
+			kind = New("TitleColumnConstraint", Arg{"this", text})
+		case p.atWords("INLINE", "LENGTH"):
+			p.advance()
+			p.advance()
+			n := p.curr()
+			if n == nil || n.Type != TokNUMBER {
+				return nil, p.unsupported("INLINE LENGTH without a length")
+			}
+			p.advance()
+			kind = New("InlineLengthColumnConstraint", Arg{"this",
+				New("Literal", Arg{"this", n.Text}, Arg{"is_string", false})})
+		case p.atWords("COMPRESS"):
+			// Which values are stored short. A list, one value, or nothing
+			// at all -- and the reference keeps whichever was written.
+			p.advance()
+			kind = New("CompressColumnConstraint")
+			switch {
+			case p.at(TokL_PAREN):
+				values, err := p.parseParenthesisedList()
+				if err != nil {
+					return nil, err
+				}
+				kind.Set("this", values)
+			case p.startsAColumnConstraintValue():
+				value, err := p.parsePrimary()
+				if err != nil {
+					return nil, err
+				}
+				kind.Set("this", value)
+			}
+		case p.atWords("CHARACTER", "SET"):
+			p.advance()
+			p.advance()
+			set := p.curr()
+			if set == nil {
+				return nil, p.unsupported("CHARACTER SET without a set")
+			}
+			p.advance()
+			kind = New("CharacterSetColumnConstraint",
+				Arg{"this", New("Var", Arg{"this", set.Text})})
+		case p.atWords("UPPERCASE"):
+			p.advance()
+			kind = New("UppercaseColumnConstraint")
+		case p.atWords("NOT", "CASESPECIFIC"):
+			p.advance()
+			p.advance()
+			kind = New("CaseSpecificColumnConstraint", Arg{"not_", true})
+		case p.atWords("CASESPECIFIC"):
+			p.advance()
+			kind = New("CaseSpecificColumnConstraint", Arg{"not_", false})
 		case p.atWords("NOT", "FOR", "REPLICATION"):
 			// T-SQL: the column is left alone when rows arrive from
 			// replication rather than from a statement.

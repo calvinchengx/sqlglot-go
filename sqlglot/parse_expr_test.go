@@ -2297,7 +2297,7 @@ func TestColumnConstraints(t *testing.T) {
 		"CREATE TABLE z (a INT GENERATED ALWAYS AS IDENTITY (WOBBLE))",
 		"CREATE TABLE z (a INT CHECK a > 0)",
 		"CREATE TABLE z (a INT CHECK (a > 0)",
-		"CREATE TABLE z (a INT CHARACTER SET utf8)",
+		"CREATE TABLE z (a INT CHARACTER SET)",
 		"CREATE TABLE z (a INT COMMENT 1)",
 		"CREATE TABLE z (a INT COLLATE)",
 		"CREATE TABLE z (a INT REFERENCES p (b) ON DELETE PANIC)",
@@ -10107,6 +10107,50 @@ func TestOrderAsACallArgument(t *testing.T) {
 		got, err := Generate(tree, "duckdb")
 		if err != nil || got != want {
 			t.Errorf("%s wrote %q (%v)", c.sql, got, err)
+		}
+	}
+}
+
+// Six more things said about a column, and a set operation whose right side
+// is parenthesised -- where a trailing ORDER BY belongs to the operation
+// rather than to the query inside the parentheses.
+func TestTeradataConstraintsAndSetOps(t *testing.T) {
+	for _, sql := range []string{
+		"CREATE TABLE foo (baz CHAR(4) CHARACTER SET LATIN UPPERCASE NOT CASESPECIFIC COMPRESS 'a')",
+		"CREATE TABLE db.foo (id INT NOT NULL, valid_date DATE FORMAT 'YYYY-MM-DD', measurement INT COMPRESS)",
+		"CREATE TABLE foo (baz DATE FORMAT 'YYYY/MM/DD' TITLE 'title' INLINE LENGTH 1 COMPRESS ('a', 'b'))",
+		"CREATE TABLE t (a INT CASESPECIFIC)",
+		"CREATE TABLE t (a INT COMPRESS 5)",
+		// A bare word rather than a quoted one, which the reference takes in
+		// these slots too.
+		"CREATE TABLE t (a DATE FORMAT YYYY)",
+		"CREATE TABLE t (a INT TITLE why)",
+		"SELECT ((SELECT 0) UNION (SELECT 1) ORDER BY 1)",
+		"SELECT ((SELECT 0) UNION (SELECT 1))",
+		"(SELECT 0) UNION (SELECT 1) ORDER BY 1",
+	} {
+		tree, err := ParseOne(sql, "")
+		if err != nil {
+			t.Errorf("%s: %v", sql, err)
+			continue
+		}
+		got, err := Generate(tree, "")
+		if err != nil || got != sql {
+			t.Errorf("%s wrote %q (%v)", sql, got, err)
+		}
+	}
+	for _, sql := range []string{
+		"CREATE TABLE t (a INT INLINE LENGTH)",
+		"CREATE TABLE t (a INT INLINE LENGTH x)",
+		"CREATE TABLE t (a INT CHARACTER SET)",
+		"CREATE TABLE t (a INT FORMAT)",
+		"CREATE TABLE t (a INT COMPRESS (",
+		"CREATE TABLE t (a INT COMPRESS",
+		"CREATE TABLE t (a INT FORMAT",
+		"(SELECT 0) UNION (SELECT 1) ORDER BY",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("%s was read; it should be refused", sql)
 		}
 	}
 }

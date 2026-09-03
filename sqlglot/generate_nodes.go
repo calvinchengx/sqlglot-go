@@ -196,6 +196,8 @@ func init() {
 		"TimeseriesKey":                       (*generator).writeTimeseriesKey,
 		"Directory":                           (*generator).writeDirectory,
 		"OnCommitProperty":                    (*generator).writeOnCommitProperty,
+		"CompressColumnConstraint":            (*generator).writeCompressConstraint,
+		"CaseSpecificColumnConstraint":        (*generator).writeCaseSpecificConstraint,
 		"RowFormatDelimitedProperty":          (*generator).writeRowFormatDelimited,
 		"Tuple":                               (*generator).writeTuple,
 		"ToMap":                               (*generator).writeToMap,
@@ -3367,6 +3369,33 @@ func (g *generator) writePrimaryKey(e *Expression) string {
 		out += " " + strings.Join(options, " ")
 	}
 	return out
+}
+
+// writeCompressConstraint writes which of a column's values are stored short:
+// a list, one value, or nothing at all.
+func (g *generator) writeCompressConstraint(e *Expression) string {
+	switch v := e.Args["this"].(type) {
+	case []*Expression:
+		parts := make([]string, 0, len(v))
+		for _, item := range v {
+			parts = append(parts, g.node(item))
+		}
+		return "COMPRESS (" + strings.Join(parts, ", ") + ")"
+	case *Expression:
+		if v != nil {
+			return "COMPRESS " + g.node(v)
+		}
+	}
+	return "COMPRESS"
+}
+
+// writeCaseSpecificConstraint writes whether the column's values are compared
+// with their case or without it.
+func (g *generator) writeCaseSpecificConstraint(e *Expression) string {
+	if not, _ := e.Args["not_"].(bool); not {
+		return "NOT CASESPECIFIC"
+	}
+	return "CASESPECIFIC"
 }
 
 // writeOnCommitProperty writes what happens to a temporary table's rows when
