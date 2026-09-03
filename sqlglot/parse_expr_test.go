@@ -9959,3 +9959,54 @@ func TestFrameExclusionAndAny(t *testing.T) {
 		}
 	}
 }
+
+// What a key may carry beyond its columns: an index's own vocabulary, a
+// member that holds the time a row belongs to, and how the index behind it is
+// built -- which the reference records as a second constraint, not as
+// anything on the key.
+func TestKeyConstraints(t *testing.T) {
+	for _, c := range []struct{ sql, want, dialect string }{
+		{"CREATE TABLE t (i INT, a TEXT, PRIMARY KEY (i) INCLUDE (a))", "", "postgres"},
+		{"CREATE TABLE t (a INT, b TIMESTAMP, PRIMARY KEY (a, b TIMESERIES))", "", "databricks"},
+		{"CREATE TABLE t (a INT, PRIMARY KEY (a))", "", "postgres"},
+		{"CREATE TABLE t (a INT, CONSTRAINT c PRIMARY KEY NONCLUSTERED (a DESC))",
+			"CREATE TABLE t (a INTEGER, CONSTRAINT c PRIMARY KEY NONCLUSTERED (a DESC))", "tsql"},
+		// One ADD may name several, and the comma is part of the ADD.
+		{"ALTER TABLE tbl ADD CONSTRAINT cnstr PRIMARY KEY CLUSTERED (ID), CONSTRAINT cnstr2 UNIQUE CLUSTERED (ID)", "", "tsql"},
+		{"ALTER TABLE tbl ADD CONSTRAINT a PRIMARY KEY (x)", "", "tsql"},
+		// T-SQL orders a key's members, so a TIMESERIES one is read on that
+		// path as well as on the plain one.
+		{"CREATE TABLE t (a INT, b DATETIME2, PRIMARY KEY (a, b TIMESERIES))",
+			"CREATE TABLE t (a INTEGER, b DATETIME2, PRIMARY KEY (a, b TIMESERIES))", "tsql"},
+		// And the same words on a COLUMN rather than in a named constraint.
+		{"CREATE TABLE t (a INT PRIMARY KEY CLUSTERED (a))",
+			"CREATE TABLE t (a INTEGER PRIMARY KEY CLUSTERED (a))", "tsql"},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != want {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	for _, c := range []struct{ sql, dialect string }{
+		{"CREATE TABLE t (a INT, CONSTRAINT c PRIMARY KEY CLUSTERED)", "tsql"},
+		{"CREATE TABLE t (a INT, UNIQUE CLUSTERED)", "tsql"},
+		{"CREATE TABLE t (a INT, PRIMARY KEY (a", "postgres"},
+		{"CREATE TABLE t (a INT, PRIMARY KEY a)", "postgres"},
+		{"CREATE TABLE t (a INT, PRIMARY KEY a)", "tsql"},
+		{"CREATE TABLE t (a INT, PRIMARY KEY (a", "tsql"},
+		{"CREATE TABLE t (a INT, CONSTRAINT c PRIMARY KEY CLUSTERED a)", "tsql"},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
+		}
+	}
+}

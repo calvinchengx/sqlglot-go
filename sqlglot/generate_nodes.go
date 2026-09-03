@@ -193,6 +193,7 @@ func init() {
 		"Pivot":                               (*generator).writePivot,
 		"Version":                             (*generator).writeVersion,
 		"HistoricalData":                      (*generator).writeHistoricalData,
+		"TimeseriesKey":                       (*generator).writeTimeseriesKey,
 		"Tuple":                               (*generator).writeTuple,
 		"ToMap":                               (*generator).writeToMap,
 		"GroupConcat":                         (*generator).writeGroupConcat,
@@ -3334,11 +3335,22 @@ func (g *generator) writeUniqueConstraint(e *Expression) string {
 // writePrimaryKey writes a key over the columns of the whole table.
 func (g *generator) writePrimaryKey(e *Expression) string {
 	out := "PRIMARY KEY (" + g.list(e) + ")"
+	// An index's own vocabulary may follow the columns: `PRIMARY KEY (i)
+	// INCLUDE (a)` carries a column alongside the key rather than in it.
+	if params, _ := e.Args["include"].(*Expression); params != nil {
+		out += g.writeIndexParameters(params)
+	}
 	// The words the key carries after it, in the order they were written.
 	if options, _ := e.Args["options"].([]string); len(options) > 0 {
 		out += " " + strings.Join(options, " ")
 	}
 	return out
+}
+
+// writeTimeseriesKey writes a key member that holds the TIME a row belongs to
+// rather than anything to sort by.
+func (g *generator) writeTimeseriesKey(e *Expression) string {
+	return g.child(e, "this") + " TIMESERIES"
 }
 
 // writeForeignKey writes the columns that point at another table, and where.

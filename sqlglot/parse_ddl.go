@@ -692,6 +692,35 @@ func (p *parser) parseInsert() (*Expression, error) {
 	), nil
 }
 
+// parseKeyNames reads a key's members where the dialect does not order them:
+// bare names, except for one that says it holds the TIME a row belongs to.
+func (p *parser) parseKeyNames() ([]*Expression, error) {
+	if !p.at(TokL_PAREN) {
+		return nil, p.unsupported("a key without its columns")
+	}
+	p.advance()
+	var out []*Expression
+	for {
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		if p.atWords("TIMESERIES") {
+			p.advance()
+			out = append(out, New("TimeseriesKey", Arg{"this", id}))
+		} else {
+			out = append(out, id)
+		}
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed column list")
+	}
+	return out, nil
+}
+
 // parseInsertColumns reads the `(a, b)` naming which columns are written. They
 // are bare identifiers, not the definitions a CREATE takes.
 func (p *parser) parseInsertColumns() ([]*Expression, error) {
@@ -846,6 +875,26 @@ func asDatabaseReference(table *Expression) (*Expression, error) {
 	return out, nil
 }
 
+// parseIndexTypeConstraint reads T-SQL's CLUSTERED or NONCLUSTERED and the
+// ordered columns that follow it, which say how the index behind a key is
+// built rather than anything about the key itself.
+func (p *parser) parseIndexTypeConstraint() (*Expression, error) {
+	word := strings.ToUpper(p.curr().Text)
+	p.advance()
+	class := "NonClusteredColumnConstraint"
+	if word == "CLUSTERED" {
+		class = "ClusteredColumnConstraint"
+	}
+	if !p.at(TokL_PAREN) {
+		return nil, p.unsupported(word + " without its columns")
+	}
+	members, err := p.parseIndexColumns()
+	if err != nil {
+		return nil, err
+	}
+	return New(class, Arg{"this", members}), nil
+}
+
 // parseColumnConstraints reads what may follow a column's type. Each is a
 // ColumnConstraint wrapping a node of its own kind, which is how the reference
 // keeps them: the wrapper is uniform and the kind carries the meaning.
@@ -885,6 +934,17 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			case p.atWords("DESC"):
 				p.advance()
 				kind.Set("desc", true)
+			}
+			// T-SQL says HOW the index behind the key is built, and the
+			// reference records that as a SECOND constraint beside this one
+			// rather than as anything on it.
+			if p.atWords("CLUSTERED") || p.atWords("NONCLUSTERED") {
+				clustered, err := p.parseIndexTypeConstraint()
+				if err != nil {
+					return nil, err
+				}
+				out = append(out, New("ColumnConstraint", Arg{"kind", kind}))
+				kind = clustered
 			}
 		case p.atWords("UNIQUE"):
 			p.advance()
@@ -1192,12 +1252,23 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 		// A constraint added to the table is wrapped in an AddConstraint,
 		// which holds a LIST of them; a column is not wrapped at all.
 		if p.atTableConstraint() {
-			constraint, err := p.parseTableConstraint()
-			if err != nil {
-				return nil, err
+			// One ADD may name SEVERAL, and they go in the one wrapper: the
+			// comma between them is part of the ADD rather than a second
+			// action.
+			var constraints []*Expression
+			for {
+				constraint, err := p.parseTableConstraint()
+				if err != nil {
+					return nil, err
+				}
+				constraints = append(constraints, constraint)
+				if !p.at(TokCOMMA) || p.next() == nil ||
+					p.next().Type != TokCONSTRAINT {
+					break
+				}
+				p.advance()
 			}
-			return New("AddConstraint",
-				Arg{"expressions", []*Expression{constraint}}), nil
+			return New("AddConstraint", Arg{"expressions", constraints}), nil
 		}
 		// The word COLUMN is optional: T-SQL writes it nowhere and reads it
 		// anywhere.
@@ -1602,6 +1673,21 @@ func (p *parser) parseTableConstraint() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// The key may be followed by HOW the index behind it is built, which
+		// the reference records as a SECOND kind beside the first rather
+		// than as anything on it -- so a named constraint may hold two.
+		if p.at(TokPRIMARY_KEY) && p.nextWords(1, "CLUSTERED") ||
+			p.at(TokPRIMARY_KEY) && p.nextWords(1, "NONCLUSTERED") {
+			p.advance()
+			held, err := p.parseIndexTypeConstraint()
+			if err != nil {
+				return nil, err
+			}
+			return New("Constraint",
+				Arg{"this", name},
+				Arg{"expressions", []*Expression{
+					New("PrimaryKeyColumnConstraint"), held}}), nil
+		}
 		kind, err := p.parseTableConstraintKind()
 		if err != nil {
 			return nil, err
@@ -1634,8 +1720,14 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		}
 		key := New("PrimaryKey", Arg{"expressions", members})
 		// The parameters are on the node whether or not anything was said
-		// about them, holding only the flag that says so.
-		key.Set("include", New("IndexParameters", Arg{"with_storage", false}))
+		// about them, holding only the flag that says so -- and where
+		// something WAS said, it is an index's own vocabulary: `PRIMARY KEY
+		// (i) INCLUDE (a)` carries a column alongside the key.
+		params, err := p.parseIndexParameters(false)
+		if err != nil {
+			return nil, err
+		}
+		key.Set("include", params)
 		// `PRIMARY KEY (x, y) NOT ENFORCED DEFERRABLE` -- the same vocabulary
 		// a reference takes, read by the same reader.
 		options, err := p.parseKeyConstraintOptions()
@@ -1679,21 +1771,11 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		// T-SQL says HOW the index behind the rule is built, and what
 		// follows is an ordered column list rather than a plain one.
 		if p.atWords("NONCLUSTERED") || p.atWords("CLUSTERED") {
-			word := strings.ToUpper(p.curr().Text)
-			p.advance()
-			if !p.at(TokL_PAREN) {
-				return nil, p.unsupported("UNIQUE " + word + " without its columns")
-			}
-			members, err := p.parseIndexColumns()
+			held, err := p.parseIndexTypeConstraint()
 			if err != nil {
 				return nil, err
 			}
-			class := "NonClusteredColumnConstraint"
-			if word == "CLUSTERED" {
-				class = "ClusteredColumnConstraint"
-			}
-			return New("UniqueColumnConstraint",
-				Arg{"this", New(class, Arg{"this", members})}), nil
+			return New("UniqueColumnConstraint", Arg{"this", held}), nil
 		}
 		// A rule may be NAMED, and the name stands before the columns. It may
 		// also name nothing but an index that already exists, in which case
@@ -1773,7 +1855,7 @@ func (p *parser) advanced() bool {
 // everywhere else. Same statement, two shapes, and the dialect decides.
 func (p *parser) parseKeyColumns() ([]*Expression, error) {
 	if !p.tables.PrimaryKeyMembersOrdered {
-		return p.parseInsertColumns()
+		return p.parseKeyNames()
 	}
 	if !p.match(TokL_PAREN) {
 		return nil, p.unsupported("a key without its columns")
@@ -1783,6 +1865,17 @@ func (p *parser) parseKeyColumns() ([]*Expression, error) {
 		column, err := p.parseColumn()
 		if err != nil {
 			return nil, err
+		}
+		// A member may say it holds the TIME the row belongs to rather than
+		// anything to sort by, and the reference wraps it rather than
+		// ordering it.
+		if p.atWords("TIMESERIES") {
+			p.advance()
+			out = append(out, New("TimeseriesKey", Arg{"this", column}))
+			if !p.match(TokCOMMA) {
+				break
+			}
+			continue
 		}
 		member := New("Ordered", Arg{"this", column})
 		desc := false
