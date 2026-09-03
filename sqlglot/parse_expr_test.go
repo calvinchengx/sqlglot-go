@@ -9855,6 +9855,10 @@ func TestDialectShapedSyntax(t *testing.T) {
 		// The star says "and everything that inherits from it", which is the
 		// default -- so it is read and written nowhere.
 		{"SELECT * FROM t1*", "SELECT * FROM t1", "postgres"},
+		// T-SQL skips the schema by writing nothing between two dots: the
+		// db comes back as the EMPTY STRING, not absent the way a plain
+		// `a.b` leaves it, so the dot it named is still there on the way out.
+		{"SELECT * FROM a..b", "", "tsql"},
 	} {
 		want := c.want
 		if want == "" {

@@ -325,6 +325,15 @@ func (p *parser) parseTable() (*Expression, error) {
 	parts := []*Expression{}
 	var fn *Expression
 	for {
+		// T-SQL skips the schema by writing nothing between two dots:
+		// `a..b` is catalog `a`, table `b`, and a db of the EMPTY STRING --
+		// not absent, the way a plain `a.b` leaves it -- which is what marks
+		// the skip rather than a name that merely was not written.
+		if p.at(TokDOT) {
+			parts = append(parts, nil)
+			p.advance()
+			continue
+		}
 		// A callable in a FROM clause is a table function, not a table. The
 		// port builds it rather than refusing: the guard has to SEE that the
 		// relation is a function to say so, and a statement it could not read
@@ -380,10 +389,21 @@ func (p *parser) parseTable() (*Expression, error) {
 		if len(parts) > 3 {
 			return nil, p.unsupported("over-qualified table")
 		}
-		// this is the table; the parts before it are db then catalog.
+		// this is the table; the parts before it are db then catalog. The
+		// last part is never the empty slot pushed above: the loop only
+		// breaks right after a REAL part, so a name ending in a dot is
+		// refused earlier still, by parseTablePart reading past the end.
 		table = New("Table", Arg{"this", parts[len(parts)-1]})
 		for i := len(parts) - 2; i >= 0; i-- {
-			table.Set(names[len(parts)-2-i], parts[i])
+			// A skipped part was pushed as nil above, and is set as the
+			// EMPTY STRING here -- an Identifier the port never builds, but
+			// exactly what the reference records for a `.` that named
+			// nothing.
+			var val any = parts[i]
+			if parts[i] == nil {
+				val = ""
+			}
+			table.Set(names[len(parts)-2-i], val)
 		}
 	}
 

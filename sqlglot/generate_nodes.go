@@ -381,6 +381,13 @@ func (g *generator) writeFrom(e *Expression) string { return "FROM " + g.child(e
 func (g *generator) writeTable(e *Expression) string {
 	parts := []string{}
 	for _, key := range []string{"catalog", "db", "this"} {
+		// T-SQL's `a..b` records db as the EMPTY STRING, not absent -- the
+		// skipped part still needs its dot, or a name meant to be qualified
+		// three ways reads back qualified only two.
+		if s, isStr := e.Args[key].(string); isStr && key != "this" {
+			parts = append(parts, s)
+			continue
+		}
 		if s := g.child(e, key); s != "" {
 			parts = append(parts, s)
 		}
