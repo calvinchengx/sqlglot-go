@@ -9859,6 +9859,12 @@ func TestDialectShapedSyntax(t *testing.T) {
 		// db comes back as the EMPTY STRING, not absent the way a plain
 		// `a.b` leaves it, so the dot it named is still there on the way out.
 		{"SELECT * FROM a..b", "", "tsql"},
+		// `AS (a, b)` names MULTIPLE columns at once: POSEXPLODE returns
+		// more than one, and the reference builds an Aliases node rather
+		// than a plain Alias for any expression at all.
+		{`SELECT POSEXPLODE("x") AS ("a", "b")`, "SELECT POSEXPLODE('x') AS (`a`, `b`)", "databricks"},
+		{`SELECT POSEXPLODE("x") AS ("a", "b", "c")`, "SELECT POSEXPLODE('x') AS (`a`, `b`, `c`)", "databricks"},
+		{"SELECT f(x) AS (a, b)", "SELECT F(x) AS (a, b)", "databricks"},
 	} {
 		want := c.want
 		if want == "" {

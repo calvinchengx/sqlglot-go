@@ -68,6 +68,7 @@ func init() {
 		"Cast":                                (*generator).writeCast,
 		"TryCast":                             (*generator).writeCast,
 		"DataType":                            (*generator).writeDataType,
+		"Aliases":                             (*generator).writeAliases,
 		"PseudoType":                          (*generator).writeNamedTypeWord,
 		"ObjectIdentifier":                    (*generator).writeNamedTypeWord,
 		"DataTypeParam":                       (*generator).writeChildThis,
@@ -1190,6 +1191,16 @@ func (g *generator) writeEscape(e *Expression) string {
 func (g *generator) writeNamedTypeWord(e *Expression) string {
 	s, _ := e.Args["this"].(string)
 	return s
+}
+
+// writeAliases writes `AS (a, b)` -- an expression naming MULTIPLE columns
+// at once, the way a table-generating call like POSEXPLODE returns more
+// than one. Written directly rather than through the per-dialect template
+// table: the reference spells it the same way in every dialect, and the
+// probe that fills that table happens to have recorded it only once, under
+// the neutral entry.
+func (g *generator) writeAliases(e *Expression) string {
+	return g.child(e, "this") + " AS (" + g.list(e) + ")"
 }
 
 func (g *generator) writeDataType(e *Expression) string {

@@ -678,6 +678,17 @@ func (p *parser) parseProjection() (*Expression, error) {
 // parseAlias attaches an explicit or implicit column alias.
 func (p *parser) parseAlias(this *Expression) (*Expression, error) {
 	explicit := p.match(TokALIAS)
+	// `AS (a, b)` names MULTIPLE columns at once: a table-generating call
+	// like POSEXPLODE returns more than one, and the reference builds an
+	// Aliases node rather than a plain Alias -- ANY word may name one of
+	// them, the same as a single alias's own name below.
+	if explicit && p.at(TokL_PAREN) {
+		names, err := p.parseWrappedCSV(p.parseAnyName)
+		if err != nil {
+			return nil, err
+		}
+		return New("Aliases", Arg{"this", this}, Arg{"expressions", names}), nil
+	}
 	if !explicit && !p.atAliasName() {
 		return this, nil
 	}
