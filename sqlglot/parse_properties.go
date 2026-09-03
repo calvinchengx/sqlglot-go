@@ -314,11 +314,64 @@ func (p *parser) parseKeyValueProperty() (*Expression, error) {
 	if !p.match(TokEQ) {
 		return nil, p.unsupported("property without a value")
 	}
-	value, err := p.parseExpression()
+	// A value that is a WORD is a Var, not a column: `WITH (allow_page_locks
+	// = on)` says a setting is on, and ON is a keyword the expression reader
+	// will not take at all. Only a LITERAL is read as one.
+	value, err := p.parseSettingValue()
 	if err != nil {
 		return nil, err
 	}
 	return New("Property", Arg{"this", key}, Arg{"value", value}), nil
+}
+
+// parseSettingValue reads what a SETTING is set to: a literal as itself, and
+// anything else as the bare word it was written as, in the case it was written
+// in. Its sibling parsePropertyValue upper-cases the word, because the
+// properties it reads are ones the reference upper-cases.
+func (p *parser) parseSettingValue() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("property without a value")
+	}
+	// Read it as an expression first: a string, a number, TRUE and NULL are
+	// all values in their own right. What comes back as a bare COLUMN is not
+	// one -- nothing is being selected here -- so the word is kept instead.
+	mark := p.index
+	value, err := p.parseExpression()
+	if err != nil {
+		p.index = mark
+		if word := p.curr(); word != nil && word.Type != TokL_PAREN &&
+			word.Type != TokCOMMA && word.Type != TokR_PAREN {
+			p.advance()
+			return New("Var", Arg{"this", word.Text}), nil
+		}
+		return nil, p.unsupported("property whose value is not a word")
+	}
+	if value != nil && value.Class == "Column" {
+		if name, ok := bareColumnName(value); ok {
+			return New("Var", Arg{"this", name}), nil
+		}
+	}
+	return value, nil
+}
+
+// bareColumnName is the text of a column that names nothing but itself -- no
+// table, no database, no quotes -- which is the shape a bare WORD takes.
+func bareColumnName(e *Expression) (string, bool) {
+	for _, key := range []string{"table", "db", "catalog"} {
+		if part, _ := e.Args[key].(*Expression); part != nil {
+			return "", false
+		}
+	}
+	id, _ := e.Args["this"].(*Expression)
+	if id == nil || id.Class != "Identifier" {
+		return "", false
+	}
+	if quoted, _ := id.Args["quoted"].(bool); quoted {
+		return "", false
+	}
+	name, _ := id.Args["this"].(string)
+	return name, name != ""
 }
 
 // parseProperty reads what follows a property's word, in the shape the probe

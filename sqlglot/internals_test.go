@@ -406,3 +406,57 @@ func TestSmallHelpers(t *testing.T) {
 		t.Error("a cast over nothing was dropped")
 	}
 }
+
+// A setting's value is whatever it was written as: a literal stays one, and a
+// bare word is a word rather than a column, because nothing is being selected.
+func TestSettingValues(t *testing.T) {
+	for _, c := range []struct{ sql, class, text string }{
+		{"CREATE INDEX i ON t(a) WITH (k=on)", "Var", "on"},
+		{"CREATE INDEX i ON t(a) WITH (k=OFF)", "Var", "OFF"},
+		{"CREATE INDEX i ON t(a) WITH (k=b)", "Var", "b"},
+		{"CREATE INDEX i ON t(a) WITH (k=1)", "Literal", "1"},
+		{"CREATE INDEX i ON t(a) WITH (k='x')", "Literal", "x"},
+		{"CREATE INDEX i ON t(a) WITH (k=TRUE)", "Boolean", ""},
+	} {
+		tree, err := ParseOne(c.sql, "postgres")
+		if err != nil {
+			t.Errorf("%s: %v", c.sql, err)
+			continue
+		}
+		index, _ := tree.Args["this"].(*Expression)
+		params, _ := index.Args["params"].(*Expression)
+		storage, _ := params.Args["with_storage"].([]*Expression)
+		if len(storage) != 1 {
+			t.Errorf("%s: %d settings, want 1", c.sql, len(storage))
+			continue
+		}
+		value, _ := storage[0].Args["value"].(*Expression)
+		if value == nil || value.Class != c.class {
+			t.Errorf("%s: value is %v, want %s", c.sql, value, c.class)
+			continue
+		}
+		if c.text != "" {
+			if got, _ := value.Args["this"].(string); got != c.text {
+				t.Errorf("%s: value is %q, want %q", c.sql, got, c.text)
+			}
+		}
+	}
+	// A name with a qualifier or quotes is not a bare word.
+	for _, e := range []*Expression{
+		New("Column", Arg{"this", New("Identifier", Arg{"this", "a"}, Arg{"quoted", true})}),
+		New("Column",
+			Arg{"this", New("Identifier", Arg{"this", "a"}, Arg{"quoted", false})},
+			Arg{"table", New("Identifier", Arg{"this", "t"}, Arg{"quoted", false})}),
+		New("Column"),
+	} {
+		if _, ok := bareColumnName(e); ok {
+			t.Errorf("%v was called a bare word", e.Args)
+		}
+	}
+	// An EXCLUDE over nothing has nothing to write.
+	cfg, _ := ConfigFor("postgres")
+	g := &generator{cfg: cfg, tables: cfg.Tables, dialect: "postgres"}
+	if out := g.writeExcludeConstraint(New("ExcludeColumnConstraint")); g.err == nil {
+		t.Errorf("an EXCLUDE over nothing wrote %q", out)
+	}
+}

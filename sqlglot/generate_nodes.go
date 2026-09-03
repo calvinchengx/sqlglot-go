@@ -87,6 +87,8 @@ func init() {
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
+		"ExcludeColumnConstraint":             (*generator).writeExcludeConstraint,
+		"WithOperator":                        (*generator).writeWithOperator,
 		"Opclass":                             (*generator).writeOpclass,
 		"ColumnPosition":                      (*generator).writeColumnPosition,
 		"WithDataProperty":                    (*generator).writeWithDataProperty,
@@ -4119,21 +4121,76 @@ func (g *generator) writeIndex(e *Expression) string {
 	if params == nil {
 		return g.fail(e.Class + " over no columns")
 	}
-	// The METHOD the index is built with, where one was named.
+	written := g.writeIndexParameters(params)
+	// The columns follow the table with nothing between them -- `ON t(a)` --
+	// and a method is a word of its own.
+	if !strings.HasPrefix(written, "(") {
+		out += " "
+	}
+	return out + written
+}
+
+// writeIndexParameters writes everything that says HOW an index is built, in
+// the order the reference writes them -- which is not the order it reads them
+// in. The same parts describe an EXCLUDE constraint.
+func (g *generator) writeIndexParameters(params *Expression) string {
+	out := ""
+	// The METHOD the index is built with, where one was named. No space in
+	// front of it: what goes there is the caller's, because `ON t(a)` takes
+	// none and `EXCLUDE (a)` takes one.
 	if using, _ := params.Args["using"].(*Expression); using != nil {
-		out += " USING " + g.node(using)
+		out += "USING " + g.node(using)
 	}
-	columns, _ := params.Args["columns"].([]*Expression)
-	parts := make([]string, 0, len(columns))
-	for _, column := range columns {
-		parts = append(parts, g.node(column))
+	if columns, _ := params.Args["columns"].([]*Expression); len(columns) > 0 {
+		parts := make([]string, 0, len(columns))
+		for _, column := range columns {
+			parts = append(parts, g.node(column))
+		}
+		out += "(" + strings.Join(parts, ", ") + ")"
 	}
-	out += "(" + strings.Join(parts, ", ") + ")"
+	// Columns carried alongside the index rather than indexed.
+	if include, _ := params.Args["include"].([]*Expression); len(include) > 0 {
+		names := make([]string, 0, len(include))
+		for _, name := range include {
+			names = append(names, g.node(name))
+		}
+		out += " INCLUDE (" + strings.Join(names, ", ") + ")"
+	}
+	// How it is stored. A bare false says the WITH was never written.
+	if storage, _ := params.Args["with_storage"].([]*Expression); len(storage) > 0 {
+		settings := make([]string, 0, len(storage))
+		for _, setting := range storage {
+			settings = append(settings, g.node(setting))
+		}
+		out += " WITH (" + strings.Join(settings, ", ") + ")"
+	}
+	if space, _ := params.Args["tablespace"].(*Expression); space != nil {
+		out += " USING INDEX TABLESPACE " + g.node(space)
+	}
 	// A PARTIAL index covers only the rows a condition picks out.
 	if where, _ := params.Args["where"].(*Expression); where != nil {
 		out += " " + g.node(where)
 	}
+	if on, _ := params.Args["on"].(*Expression); on != nil {
+		out += " ON " + g.node(on)
+	}
 	return out
+}
+
+// writeExcludeConstraint writes the rule that no two rows may both satisfy a
+// set of comparisons. What follows the word is an index's own parameters.
+func (g *generator) writeExcludeConstraint(e *Expression) string {
+	params, _ := e.Args["this"].(*Expression)
+	if params == nil {
+		return g.fail(e.Class + " over nothing")
+	}
+	return "EXCLUDE " + g.writeIndexParameters(params)
+}
+
+// writeWithOperator writes an index member and the operator it is compared
+// with: `col WITH &&`.
+func (g *generator) writeWithOperator(e *Expression) string {
+	return g.child(e, "this") + " WITH " + g.child(e, "op")
 }
 
 // writeOpclass writes a column and the operator class it is indexed with.

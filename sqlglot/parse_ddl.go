@@ -1587,7 +1587,7 @@ func (p *parser) parseViewColumns() ([]*Expression, error) {
 func (p *parser) atTableConstraint() bool {
 	return p.at(TokCONSTRAINT) || p.at(TokPRIMARY_KEY) ||
 		p.at(TokFOREIGN_KEY) || p.atWords("UNIQUE") || p.atWords("CHECK") ||
-		p.atWords("PERIOD", "FOR", "SYSTEM_TIME")
+		p.atWords("EXCLUDE") || p.atWords("PERIOD", "FOR", "SYSTEM_TIME")
 }
 
 // parseTableConstraint reads one constraint on the table as a whole.
@@ -1616,6 +1616,16 @@ func (p *parser) parseTableConstraint() (*Expression, error) {
 // parseTableConstraintKind reads the constraint itself, named or not.
 func (p *parser) parseTableConstraintKind() (*Expression, error) {
 	switch {
+	case p.atWords("EXCLUDE"):
+		// A rule that no two rows may BOTH satisfy: each member names the
+		// operator it is compared with, which makes this an index by another
+		// name -- and it reads the same parts one does.
+		p.advance()
+		params, err := p.parseIndexParameters(false)
+		if err != nil {
+			return nil, err
+		}
+		return New("ExcludeColumnConstraint", Arg{"this", params}), nil
 	case p.at(TokPRIMARY_KEY):
 		p.advance()
 		members, err := p.parseKeyColumns()
@@ -2440,36 +2450,10 @@ func (p *parser) parseIndexRest(replace, unique, temporary bool) (*Expression, e
 		return nil, err
 	}
 	index.Set("table", table)
-	params := New("IndexParameters")
-	// `USING gin(...)` names the method the index is built with. The word
-	// after it is kept as a bare Var whatever it is.
-	if p.at(TokUSING) {
-		p.advance()
-		method := p.curr()
-		if method == nil {
-			return nil, p.unsupported("USING without a method")
-		}
-		p.advance()
-		params.Set("using", New("Var", Arg{"this", method.Text}))
-	}
-	if !p.at(TokL_PAREN) {
-		return nil, p.unsupported("CREATE INDEX with more than columns")
-	}
-	columns, err := p.parseIndexColumns()
+	params, err := p.parseIndexParameters(true)
 	if err != nil {
 		return nil, err
 	}
-	params.Set("columns", columns)
-	// A PARTIAL index covers only the rows a condition picks out.
-	if p.at(TokWHERE) {
-		p.advance()
-		condition, err := p.parseExpression()
-		if err != nil {
-			return nil, err
-		}
-		params.Set("where", New("Where", Arg{"this", condition}))
-	}
-	params.Set("with_storage", false)
 	index.Set("params", params)
 	if p.curr() != nil {
 		return nil, p.unsupported("CREATE INDEX with more than this port reads")
@@ -2491,6 +2475,116 @@ func (p *parser) parseIndexRest(replace, unique, temporary bool) (*Expression, e
 		Arg{"concurrently", concurrently},
 		Arg{"clustered", nil},
 	), nil
+}
+
+// parseIndexParameters reads everything that says HOW an index is built, in
+// the one order the reference reads them: the method, the columns, what is
+// carried alongside them, where they are stored, which rows they cover, and
+// what they are put on.
+//
+// The same parts describe an EXCLUDE constraint, which is why this is not
+// inside the CREATE INDEX reader: a constraint that names a method and a set
+// of operators is an index by another name.
+func (p *parser) parseIndexParameters(needColumns bool) (*Expression, error) {
+	// Read in the order they are WRITTEN and set in the order the reference
+	// BUILDS them, which is not the same: the where comes after the storage
+	// on the page and before it in the node, and a dump compares key order.
+	params := New("IndexParameters")
+	var using, where, tablespace, on *Expression
+	var columns, include []*Expression
+	var storage any = false
+	// `USING gin(...)` names the method the index is built with. The word
+	// after it is kept as a bare Var whatever it is.
+	if p.at(TokUSING) {
+		p.advance()
+		method := p.curr()
+		if method == nil {
+			return nil, p.unsupported("USING without a method")
+		}
+		p.advance()
+		using = New("Var", Arg{"this", method.Text})
+	}
+	if p.at(TokL_PAREN) {
+		read, err := p.parseIndexColumns()
+		if err != nil {
+			return nil, err
+		}
+		columns = read
+	} else if needColumns {
+		return nil, p.unsupported("CREATE INDEX with more than columns")
+	}
+	// Columns carried ALONGSIDE the index rather than indexed: they are there
+	// to be read without going back to the table.
+	if p.atWords("INCLUDE") {
+		p.advance()
+		names, err := p.parseWrappedCSV(p.parseIdentifier)
+		if err != nil {
+			return nil, err
+		}
+		include = names
+	}
+	// How the index is STORED, as a list of settings under one WITH.
+	if p.at(TokWITH) {
+		p.advance()
+		read, err := p.parseWrappedProperties()
+		if err != nil {
+			return nil, err
+		}
+		// Absent is FALSE rather than nothing: the reference records the
+		// match itself, and an absent key is a different tree.
+		storage = read
+	}
+	if p.atWords("USING", "INDEX", "TABLESPACE") {
+		p.advance()
+		p.advance()
+		p.advance()
+		space := p.curr()
+		if space == nil {
+			return nil, p.unsupported("TABLESPACE without a name")
+		}
+		p.advance()
+		tablespace = New("Var", Arg{"this", space.Text})
+	}
+	// A PARTIAL index covers only the rows a condition picks out.
+	if p.at(TokWHERE) {
+		p.advance()
+		condition, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		where = New("Where", Arg{"this", condition})
+	}
+	// What the index is put ON: a filegroup by name, or a partition scheme
+	// with the column it is partitioned by.
+	if p.atWords("ON") {
+		p.advance()
+		read, err := p.parseIndexOn()
+		if err != nil {
+			return nil, err
+		}
+		on = read
+	}
+	params.Set("using", using)
+	params.Set("columns", columns)
+	params.Set("include", include)
+	params.Set("where", where)
+	params.Set("with_storage", storage)
+	params.Set("tablespace", tablespace)
+	params.Set("on", on)
+	return params, nil
+}
+
+// parseIndexOn reads what an index is stored on: `ON PRIMARY` names a
+// filegroup, `ON scheme([col])` a partition scheme and the column it splits by.
+func (p *parser) parseIndexOn() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("ON without a filegroup")
+	}
+	if p.next() != nil && p.next().Type == TokL_PAREN {
+		return p.parseFunction()
+	}
+	return p.parseIdentifier()
 }
 
 // parseIndexColumns reads the `(a, b DESC NULLS LAST)` an index is over. Each
@@ -2552,7 +2646,20 @@ func (p *parser) parseIndexColumns() ([]*Expression, error) {
 		default:
 			member.Set("nulls_first", p.nullsFirst(desc))
 		}
-		out = append(out, member)
+		// `WITH &&` names the OPERATOR the member is compared with, which is
+		// what makes an EXCLUDE an exclusion rather than a uniqueness rule.
+		if p.at(TokWITH) {
+			p.advance()
+			op := p.curr()
+			if op == nil {
+				return nil, p.unsupported("WITH without an operator")
+			}
+			p.advance()
+			out = append(out, New("WithOperator",
+				Arg{"this", member}, Arg{"op", New("Var", Arg{"this", op.Text})}))
+		} else {
+			out = append(out, member)
+		}
 		if !p.match(TokCOMMA) {
 			break
 		}

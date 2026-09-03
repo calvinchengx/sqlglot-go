@@ -2434,7 +2434,6 @@ func TestAlterTable(t *testing.T) {
 	}
 	for _, sql := range []string{
 		"ALTER TABLE t SET TBLPROPERTIES ('a' = 'b')",
-		"ALTER TABLE t ADD CONSTRAINT c EXCLUDE USING gin(a WITH &&)",
 		"ALTER TABLE t ALTER COLUMN a SET NOT NULL",
 		"ALTER INDEX i RENAME TO j",
 		"ALTER TABLE t",
@@ -2913,7 +2912,6 @@ func TestTableConstraints(t *testing.T) {
 		"CREATE TABLE z (a INT, FOREIGN KEY (a))",
 		"CREATE TABLE z (a INT, CHECK a > 0)",
 		"CREATE TABLE z (a INT, CHECK (a > 0)",
-		"CREATE TABLE z (a INT, EXCLUDE USING gin(a WITH &&))",
 		"ALTER TABLE t ADD PRIMARY KEY (x, y) NOT ENFORCEABLE",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
@@ -9606,6 +9604,43 @@ func TestMoreColumnConstraints(t *testing.T) {
 		{"CREATE TABLE t (a INT UNIQUE NULLS DISTINCT)", "postgres"},
 		{"CREATE TABLE t (a INT NOT FOR)", "tsql"},
 		{"CREATE TABLE t (a ENUM(1, 2))", "duckdb"},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
+		}
+	}
+}
+
+// Everything that says HOW an index is built -- and an EXCLUDE constraint,
+// which is an index by another name and reads the same parts.
+func TestIndexParameters(t *testing.T) {
+	for _, c := range []struct{ sql, dialect string }{
+		{"CREATE INDEX et_vid_idx ON et(vid) INCLUDE (fid)", "postgres"},
+		{"CREATE INDEX [x] ON [y]([z] ASC) WITH (allow_page_locks=on) ON PRIMARY", "tsql"},
+		{"CREATE INDEX [x] ON [y]([z] ASC) WITH (allow_page_locks=on) ON X([y])", "tsql"},
+		{"CREATE INDEX i ON t(a)", "postgres"},
+		{"CREATE INDEX i ON t USING gin(a) WHERE b > 1", "postgres"},
+		{"CREATE TABLE t (i INT, EXCLUDE USING gin(col1 WITH &&, col2 WITH ||) USING INDEX TABLESPACE tablespace WHERE (id > 5))", "postgres"},
+		{"CREATE TABLE t (i INT, EXCLUDE USING btree(INT4RANGE(vid, nid, '[]') ASC NULLS FIRST WITH &&) INCLUDE (col1, col2))", "postgres"},
+		// No method, so the columns follow the word with a space; with one
+		// they follow the method with none.
+		{"CREATE TABLE t (i INT, EXCLUDE (a WITH &&))", "postgres"},
+	} {
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != c.sql {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	for _, c := range []struct{ sql, dialect string }{
+		{"CREATE INDEX i ON t(a) INCLUDE", "postgres"},
+		{"CREATE INDEX i ON t(a) USING INDEX TABLESPACE", "postgres"},
+		{"CREATE INDEX i ON t(a) ON", "tsql"},
+		{"CREATE TABLE t (i INT, EXCLUDE USING gin(a WITH))", "postgres"},
 	} {
 		if _, err := ParseOne(c.sql, c.dialect); err == nil {
 			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
