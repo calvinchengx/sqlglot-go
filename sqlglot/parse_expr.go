@@ -916,6 +916,13 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		}
 	}
 
+	// Databricks reads `{name}` as a notebook WIDGET, a Placeholder rather
+	// than the Struct a brace opens everywhere else -- the one dialect where
+	// this shape means something else entirely.
+	if widget := p.parseWidgetPlaceholder(); widget != nil {
+		return p.dotted(widget), nil
+	}
+
 	// `{'a': 1, 'b': x}` is a Struct whose items are PropertyEQ: the key is an
 	// IDENTIFIER even though it is written as a string.
 	if c.Type == TokL_BRACE {
@@ -3375,6 +3382,27 @@ func columnsToDots(e *Expression) *Expression {
 		}
 	}
 	return out
+}
+
+// parseWidgetPlaceholder reads Databricks' `{name}`, a notebook widget
+// reference -- the one dialect where a brace opens a placeholder rather
+// than a struct literal -- and returns nil where the cursor opens neither.
+func (p *parser) parseWidgetPlaceholder() *Expression {
+	if !p.tables.Placeholder.WidgetPlaceholder || !p.at(TokL_BRACE) {
+		return nil
+	}
+	n := p.next()
+	if n == nil || (n.Type != TokVAR && n.Type != TokIDENTIFIER) {
+		return nil
+	}
+	if close := p.peekAt(2); close == nil || close.Type != TokR_BRACE {
+		return nil
+	}
+	p.advance()
+	p.advance()
+	p.advance()
+	name := New("Identifier", Arg{"this", n.Text}, Arg{"quoted", n.Type == TokIDENTIFIER})
+	return New("Placeholder", Arg{"this", name}, Arg{"widget", true})
 }
 
 // parseParameter reads a bound parameter or a placeholder written with the

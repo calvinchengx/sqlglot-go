@@ -3936,7 +3936,25 @@ def placeholder_sql(dialect: str) -> dict[str, str]:
         "AnonymousJDBC": bool(
             (sqlglot.parse_one("?", read=d).args or {}).get("jdbc")
         ),
+        # Databricks reads `{name}` as a notebook widget, a Placeholder with
+        # a flag of its own -- the one dialect where a brace opens a
+        # placeholder rather than a struct literal.
+        "WidgetPlaceholder": _reads_as(
+            "SELECT {zzname}", d, "Placeholder"
+        ),
     }
+
+
+def _reads_as(sql: str, dialect, class_name: str) -> bool:
+    """Whether `sql` parses in this dialect to a lone value of this CLASS."""
+    import sqlglot
+
+    try:
+        tree = sqlglot.parse_one(sql, read=dialect)
+    except Exception:  # noqa: BLE001 -- not readable at all
+        return False
+    value = tree.expressions[0] if getattr(tree, "expressions", None) else None
+    return value is not None and type(value).__name__ == class_name
 
 
 def _form_class(_unused: str, sql: str, dialect) -> str:
@@ -6596,6 +6614,11 @@ def main() -> int:
         "\t// writes that node back as `?` where a plain one is `%s`.\n",
         "\tAnonymousJDBC    bool\n",
         "\tAnonymousJDBCSQL string\n",
+        "\t// WidgetPlaceholder: Databricks reads `{name}` as a notebook\n",
+        "\t// widget reference, a Placeholder with a flag of its own -- the\n",
+        "\t// one dialect where a brace opens a placeholder rather than a\n",
+        "\t// struct literal.\n",
+        "\tWidgetPlaceholder bool\n",
         "}\n",
         "\n",
         "// JSONPathSQL is the text around each piece of a JSON path.\n",
@@ -7643,6 +7666,9 @@ def main() -> int:
                   "AtName", "PercentNamed", "PercentAnonymous", "AnonymousJDBCSQL"):
             out.append(f"\t\t\t{k}: {gostr(_ph[k])},\n")
         out.append(f"\t\t\tAnonymousJDBC: {str(_ph['AnonymousJDBC']).lower()},\n")
+        out.append(
+            f"\t\t\tWidgetPlaceholder: {str(_ph['WidgetPlaceholder']).lower()},\n"
+        )
         out.append("\t\t},\n")
         _qq = quantifier_query_sql(name)
         out.append("\t\tQuantifierQuerySQL: map[string]string{\n")

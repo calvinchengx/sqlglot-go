@@ -317,6 +317,12 @@ func (p *parser) parseTable() (*Expression, error) {
 	if param := p.parseParameter(); param != nil {
 		return p.tableRest(New("Table", Arg{"this", param}))
 	}
+	// Databricks reads a bare `{df}` in a FROM clause as a notebook widget
+	// naming the table, the same Placeholder any other expression reads it
+	// as.
+	if widget := p.parseWidgetPlaceholder(); widget != nil {
+		return p.tableRest(New("Table", Arg{"this", widget}))
+	}
 
 	// PostgreSQL's ONLY says not to read the tables that inherit from this
 	// one. It is a flag on the table rather than anything wrapping it.

@@ -1093,6 +1093,13 @@ func (g *generator) writeCast(e *Expression) string {
 // writePlaceholder writes a bound parameter. The spelling is the dialect's:
 // `$name` in DuckDB, `%(name)s` in PostgreSQL, `:name` elsewhere.
 func (g *generator) writePlaceholder(e *Expression) string {
+	// A notebook WIDGET writes `{name}` and nothing else the ordinary
+	// spellings below carry -- no dollar sign, no colon, and the raw NAME
+	// rather than however an Identifier would otherwise be quoted.
+	if widget, _ := e.Args["widget"].(bool); widget {
+		this, _ := e.Args["this"].(*Expression)
+		return "{" + this.Name() + "}"
+	}
 	// The name is a bare string in most dialects and an IDENTIFIER in
 	// PostgreSQL, whose `%(name)s` form the reference reads that way. Handling
 	// only the string dropped every PostgreSQL name and wrote `%s`.

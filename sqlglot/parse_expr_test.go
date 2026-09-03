@@ -9865,6 +9865,13 @@ func TestDialectShapedSyntax(t *testing.T) {
 		{`SELECT POSEXPLODE("x") AS ("a", "b")`, "SELECT POSEXPLODE('x') AS (`a`, `b`)", "databricks"},
 		{`SELECT POSEXPLODE("x") AS ("a", "b", "c")`, "SELECT POSEXPLODE('x') AS (`a`, `b`, `c`)", "databricks"},
 		{"SELECT f(x) AS (a, b)", "SELECT F(x) AS (a, b)", "databricks"},
+		// A notebook WIDGET, `{name}`, is a Placeholder wherever a value or
+		// a table goes -- the one dialect where a brace opens this instead
+		// of a struct literal.
+		{"SELECT {df}", "", "databricks"},
+		{"SELECT * FROM {df}", "", "databricks"},
+		{"SELECT * FROM {df} WHERE id > :foo", "", "databricks"},
+		{"SELECT {'a': 1}", "SELECT STRUCT(1 AS a)", "databricks"},
 	} {
 		want := c.want
 		if want == "" {
