@@ -6370,6 +6370,12 @@ def main() -> int:
         "\t// Where it is not, the reference RETREATS and reads the\n",
         "\t// brackets as a subscript of the cast instead.\n",
         "\tSupportsFixedSizeArrays bool\n",
+        "\t// SupportsBetweenFlags: whether SYMMETRIC and ASYMMETRIC survive\n",
+        "\t// on a BETWEEN as words of their own. Where they do not, a TRUE\n",
+        "\t// SYMMETRIC needs expanding into two BETWEENs joined by OR --\n",
+        "\t// not yet ported, so it is refused rather than half-written; an\n",
+        "\t// ASYMMETRIC there is simply dropped, meaning the same thing.\n",
+        "\tSupportsBetweenFlags bool\n",
         "\tCompositeType           CompositeTypeSQL\n",
         "\t// Boolean is how TRUE and FALSE are written, and the two\n",
         "\t// positions can differ: T-SQL writes 1 where a value is wanted\n",
@@ -7649,6 +7655,10 @@ def main() -> int:
             out.append(f"\t\t{field}: map[string]bool{{\n{body}\t\t}},\n")
         out.append(
             f"\t\tSupportsFixedSizeArrays: {str(bool(d.SUPPORTS_FIXED_SIZE_ARRAYS)).lower()},\n"
+        )
+        out.append(
+            "\t\tSupportsBetweenFlags: "
+            f"{str(bool(d.generator_class.SUPPORTS_BETWEEN_FLAGS)).lower()},\n"
         )
         _ct = composite_type_sql(name)
         out.append("\t\tCompositeType: CompositeTypeSQL{\n")

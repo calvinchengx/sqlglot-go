@@ -1397,7 +1397,24 @@ func (g *generator) writeIn(e *Expression) string {
 }
 
 func (g *generator) writeBetween(e *Expression) string {
-	return g.child(e, "this") + " BETWEEN " + g.child(e, "low") + " AND " + g.child(e, "high")
+	this, low, high := g.child(e, "this"), g.child(e, "low"), g.child(e, "high")
+	symmetric, isBool := e.Args["symmetric"].(bool)
+	// A dialect that cannot WRITE the word needs a TRUE SYMMETRIC expanded
+	// into two BETWEENs joined by OR -- not yet ported, so it is refused
+	// rather than half-written. An ASYMMETRIC there means the same thing
+	// either way, and is simply dropped.
+	if isBool && symmetric && !g.tables.SupportsBetweenFlags {
+		return g.fail(e.Class + " that needs expanding into an OR")
+	}
+	flag := ""
+	if isBool {
+		if symmetric {
+			flag = " SYMMETRIC"
+		} else if g.tables.SupportsBetweenFlags {
+			flag = " ASYMMETRIC"
+		}
+	}
+	return this + " BETWEEN" + flag + " " + low + " AND " + high
 }
 
 // writeDot joins a qualifier to what it qualifies. A call written after a dot

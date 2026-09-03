@@ -10254,6 +10254,48 @@ func TestTeradataConstraintsAndSetOps(t *testing.T) {
 	}
 }
 
+// TestBetweenSymmetric covers SYMMETRIC and ASYMMETRIC, read by TEXT in every
+// dialect regardless of whether that dialect can write the word back:
+// PostgreSQL writes it as it stands, and elsewhere ASYMMETRIC -- the
+// default meaning either way -- is simply dropped. A TRUE SYMMETRIC
+// elsewhere would need expanding into two BETWEENs joined by OR, which is
+// not yet ported, so it stays refused there instead.
+func TestBetweenSymmetric(t *testing.T) {
+	for _, c := range []struct{ sql, want, dialect string }{
+		{"SELECT x BETWEEN ASYMMETRIC 10 AND 2", "", "postgres"},
+		{"SELECT x BETWEEN SYMMETRIC 10 AND 2", "", "postgres"},
+		{"SELECT x BETWEEN 1 AND 2", "", "postgres"},
+		{"SELECT x BETWEEN ASYMMETRIC 10 AND 2", "SELECT x BETWEEN 10 AND 2", "duckdb"},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		if got, err := Generate(tree, c.dialect); err != nil || got != want {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	// A word read as a name, not a keyword, where it is quoted -- and a TRUE
+	// SYMMETRIC where the dialect cannot write it back, needing the OR
+	// expansion this port does not have.
+	for _, c := range []struct{ sql, dialect string }{
+		{`SELECT a BETWEEN "symmetric" AND b`, "duckdb"},
+		{"SELECT x BETWEEN SYMMETRIC 10 AND 2", "duckdb"},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err != nil {
+			t.Errorf("[%s] %s was refused: %v", c.dialect, c.sql, err)
+		}
+	}
+	if _, err := Generate(ParseOrFail(t, "SELECT x BETWEEN SYMMETRIC 10 AND 2", "duckdb"), "duckdb"); err == nil {
+		t.Error("a TRUE SYMMETRIC was written where the dialect cannot write the word back")
+	}
+}
+
 // Three shapes a range operator, a join and an IN may take beyond the plain
 // one: operands the other way round and held as a list of one, a join matched
 // by position, and an IN over a column that holds the list.

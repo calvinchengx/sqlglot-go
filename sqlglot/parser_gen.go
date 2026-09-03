@@ -693,7 +693,13 @@ type ParserTables struct {
 	// Where it is not, the reference RETREATS and reads the
 	// brackets as a subscript of the cast instead.
 	SupportsFixedSizeArrays bool
-	CompositeType           CompositeTypeSQL
+	// SupportsBetweenFlags: whether SYMMETRIC and ASYMMETRIC survive
+	// on a BETWEEN as words of their own. Where they do not, a TRUE
+	// SYMMETRIC needs expanding into two BETWEENs joined by OR --
+	// not yet ported, so it is refused rather than half-written; an
+	// ASYMMETRIC there is simply dropped, meaning the same thing.
+	SupportsBetweenFlags bool
+	CompositeType        CompositeTypeSQL
 	// Boolean is how TRUE and FALSE are written, and the two
 	// positions can differ: T-SQL writes 1 where a value is wanted
 	// and (1 = 1) where a condition is.
@@ -5634,6 +5640,7 @@ var parserTables = map[string]*ParserTables{
 			"UNION":  true,
 		},
 		SupportsFixedSizeArrays: false,
+		SupportsBetweenFlags:    false,
 		CompositeType: CompositeTypeSQL{
 			ArrayTemplate:      "ARRAY<{inner}>",
 			ArraySizedTemplate: "ARRAY<{inner}>[{size}]",
@@ -10915,6 +10922,7 @@ var parserTables = map[string]*ParserTables{
 			"UNION":  true,
 		},
 		SupportsFixedSizeArrays: false,
+		SupportsBetweenFlags:    false,
 		CompositeType: CompositeTypeSQL{
 			ArrayTemplate:      "ARRAY<{inner}>",
 			ArraySizedTemplate: "ARRAY<{inner}>[{size}]",
@@ -16129,6 +16137,7 @@ var parserTables = map[string]*ParserTables{
 			"UNION":  true,
 		},
 		SupportsFixedSizeArrays: false,
+		SupportsBetweenFlags:    true,
 		CompositeType: CompositeTypeSQL{
 			ArrayTemplate:      "{inner}[]",
 			ArraySizedTemplate: "{inner}[{size}]",
@@ -21696,6 +21705,7 @@ var parserTables = map[string]*ParserTables{
 			"UNION":  true,
 		},
 		SupportsFixedSizeArrays: true,
+		SupportsBetweenFlags:    false,
 		CompositeType: CompositeTypeSQL{
 			ArrayTemplate:      "{inner}[]",
 			ArraySizedTemplate: "{inner}[{size}]",
@@ -27257,6 +27267,7 @@ var parserTables = map[string]*ParserTables{
 			"UNION":  true,
 		},
 		SupportsFixedSizeArrays: false,
+		SupportsBetweenFlags:    false,
 		CompositeType: CompositeTypeSQL{
 			ArrayTemplate:      "ARRAY<{inner}>",
 			ArraySizedTemplate: "ARRAY<{inner}>[{size}]",

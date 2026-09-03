@@ -329,22 +329,23 @@ func (p *parser) parseBetween(this *Expression) (*Expression, error) {
 	// PostgreSQL's SYMMETRIC swaps the bounds when they arrive the wrong way
 	// round, so `BETWEEN SYMMETRIC 10 AND 2` matches where the plain form
 	// matches nothing. Neither word is a keyword token -- the reference
-	// matches them by text -- and reading them as the lower bound turned the
-	// whole predicate into an And over two comparisons.
-	// PostgreSQL's SYMMETRIC swaps the bounds when they arrive the wrong way
-	// round, so `BETWEEN SYMMETRIC 10 AND 2` matches where the plain form
-	// matches nothing. Reading the word as the lower bound turned the whole
-	// predicate into an And over two comparisons -- a silently different
-	// question. Only PostgreSQL WRITES the keyword back; every other dialect
-	// expands it to an OR of two BETWEENs, a transform this port does not
-	// have, so the construct is refused rather than half-supported.
+	// matches them by text, in every dialect, regardless of whether that
+	// dialect can WRITE the word back -- and reading either as the lower
+	// bound turned the whole predicate into an And over two comparisons.
 	//
 	// TokVAR only: `SELECT a BETWEEN "symmetric" AND b` is a column with that
 	// name, and matching on text alone read the caller's own identifier as a
 	// keyword.
-	if c := p.curr(); c != nil && c.Type == TokVAR &&
-		(strings.EqualFold(c.Text, "SYMMETRIC") || strings.EqualFold(c.Text, "ASYMMETRIC")) {
-		return nil, p.unsupported("BETWEEN " + strings.ToUpper(c.Text))
+	var symmetric any
+	if c := p.curr(); c != nil && c.Type == TokVAR {
+		switch {
+		case strings.EqualFold(c.Text, "SYMMETRIC"):
+			symmetric = true
+			p.advance()
+		case strings.EqualFold(c.Text, "ASYMMETRIC"):
+			symmetric = false
+			p.advance()
+		}
 	}
 	low, err := p.parseBitwise()
 	if err != nil {
@@ -356,7 +357,7 @@ func (p *parser) parseBetween(this *Expression) (*Expression, error) {
 		return nil, err
 	}
 	return New("Between", Arg{"this", this}, Arg{"low", low}, Arg{"high", high},
-		Arg{"symmetric", nil}), nil
+		Arg{"symmetric", symmetric}), nil
 }
 
 // parseJSONArrow reads `j -> '$.a'` and `j ->> '$.a'`.
