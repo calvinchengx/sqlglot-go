@@ -2785,6 +2785,17 @@ func (p *parser) atNullsModifier() string {
 
 // atWords reports whether the next tokens are these words, whatever the
 // tokenizer made of them.
+// nextWords is atWords started a given number of tokens further on, for a
+// clause whose FIRST word is ambiguous and whose next ones settle it:
+// `TIMESTAMP AS OF` is a temporal clause and a bare TIMESTAMP is a type.
+func (p *parser) nextWords(skip int, words ...string) bool {
+	was := p.index
+	p.index += skip
+	ok := p.index <= len(p.tokens) && p.atWords(words...)
+	p.index = was
+	return ok
+}
+
 func (p *parser) atWords(words ...string) bool {
 	if p.index+len(words) > len(p.tokens) {
 		return false

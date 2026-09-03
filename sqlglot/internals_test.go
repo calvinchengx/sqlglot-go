@@ -500,3 +500,35 @@ func TestSyntaxFunctionWithoutATemplate(t *testing.T) {
 		t.Errorf("a shape with no template wrote %q", out)
 	}
 }
+
+// The refusals the temporal clauses reach, and the shapes that are not one.
+func TestHistoricalDataEdges(t *testing.T) {
+	for _, c := range []struct{ sql, dialect string }{
+		{"SELECT * FROM t AT (", "duckdb"},
+		{"SELECT * FROM t AT (VERSION 3)", "duckdb"},
+		{"SELECT * FROM t AT (VERSION => )", "duckdb"},
+		{"SELECT * FROM t AT (VERSION => 3", "duckdb"},
+		{"SELECT * FROM (SELECT 1) AS", "duckdb"},
+		{"SELECT * FROM t TIMESTAMP AS OF", "databricks"},
+		{"SELECT * FROM t VERSION AS OF", "databricks"},
+		{"SELECT * FROM (SELECT 1) AS t TABLESAMPLE", "duckdb"},
+		{"SELECT * FROM (SELECT 1) AS t (", "duckdb"},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
+		}
+	}
+	// A bare AT with nothing parenthesised after it is not a temporal clause
+	// at all: the word names the table's alias.
+	if tree, err := ParseOne("SELECT * FROM t AS at", "duckdb"); err != nil {
+		t.Errorf("an alias called at was refused: %v", err)
+	} else if got, _ := Generate(tree, "duckdb"); got != "SELECT * FROM t AS at" {
+		t.Errorf("an alias called at wrote %q", got)
+	}
+	// A clause naming no point in time has nothing to write.
+	cfg, _ := ConfigFor("duckdb")
+	g := &generator{cfg: cfg, tables: cfg.Tables, dialect: "duckdb"}
+	if out := g.writeHistoricalData(New("HistoricalData")); g.err == nil {
+		t.Errorf("a clause naming no point in time wrote %q", out)
+	}
+}

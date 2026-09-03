@@ -192,6 +192,7 @@ func init() {
 		"JSONKeyValue":                        (*generator).writeJSONKeyValue,
 		"Pivot":                               (*generator).writePivot,
 		"Version":                             (*generator).writeVersion,
+		"HistoricalData":                      (*generator).writeHistoricalData,
 		"Tuple":                               (*generator).writeTuple,
 		"ToMap":                               (*generator).writeToMap,
 		"GroupConcat":                         (*generator).writeGroupConcat,
@@ -400,6 +401,11 @@ func (g *generator) writeTable(e *Expression) string {
 			out += " " + version
 		}
 	}
+	// And `AT (VERSION => 3)` says the same as a temporal clause the other
+	// way round, AFTER the alias rather than before it.
+	if when := g.child(e, "when"); when != "" {
+		out += " " + when
+	}
 	// The partition names WHICH partition is written, and hangs off the table
 	// because it is part of naming the target.
 	if partition := g.child(e, "partition"); partition != "" {
@@ -572,6 +578,12 @@ func (g *generator) writeSubquery(e *Expression) string {
 	// comma onto the joined table, which already had one.
 	if alias := g.child(e, "alias"); alias != "" {
 		out += " AS " + alias
+	}
+	// And so does a SAMPLE, which says how much of it is read. Dropping it
+	// would read all of the rows where the statement asked for some.
+	if sample, _ := e.Args["sample"].(*Expression); sample != nil {
+		// The sample carries its own leading space, as the pivots do.
+		out += g.node(sample)
 	}
 	// A pivot hangs off a subquery the same way it hangs off a table, and
 	// carries its own leading space.
@@ -2652,6 +2664,17 @@ func (g *generator) writePivot(e *Expression) string {
 	return out
 }
 
+// writeHistoricalData writes `AT (VERSION => 3)`, which names the state of a
+// table at some point rather than its state now.
+func (g *generator) writeHistoricalData(e *Expression) string {
+	word, _ := e.Args["this"].(string)
+	kind, _ := e.Args["kind"].(string)
+	if word == "" || kind == "" {
+		return g.fail(e.Class + " naming no point in time")
+	}
+	return word + " (" + kind + " => " + g.child(e, "expression") + ")"
+}
+
 // writeVersion writes FOR SYSTEM_TIME. The template table holds the shape, but
 // a RANGE cannot go through it: the two bounds are held as a Tuple, which
 // would render `(c, d)`, and the dialect writes `c TO d` or `c AND d`
@@ -2674,6 +2697,12 @@ func (g *generator) writeVersion(e *Expression) string {
 			continue
 		}
 		out := strings.ReplaceAll(candidate.Template, "{kind}", kind)
+		// The WORD the clause opens with, where the dialect names one:
+		// Databricks writes `TIMESTAMP AS OF x` and T-SQL puts FOR
+		// SYSTEM_TIME in the template itself.
+		if this, _ := e.Args["this"].(string); this != "" {
+			out = strings.ReplaceAll(out, "{this}", this)
+		}
 		return strings.ReplaceAll(out, "{expression}", rendered)
 	}
 	return g.fail(e.Class)

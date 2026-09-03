@@ -408,12 +408,35 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 		}
 		table.Set("version", version)
 	}
+	// `TIMESTAMP AS OF '...'` and `VERSION AS OF 3` read the table as it
+	// stood then rather than as it stands now, and go before the alias.
+	if (p.atWords("TIMESTAMP") || p.atWords("VERSION")) && p.nextWords(1, "AS", "OF") {
+		word := strings.ToUpper(p.curr().Text)
+		p.advance()
+		p.advance()
+		p.advance()
+		at, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		table.Set("version", New("Version",
+			Arg{"this", word}, Arg{"expression", at}, Arg{"kind", "AS OF"}))
+	}
 	alias, err := p.parseTableAlias()
 	if err != nil {
 		return nil, err
 	}
 	if alias != nil {
 		table.Set("alias", alias)
+	}
+	// And `AT (VERSION => 3)` says the same thing another way -- after the
+	// alias rather than before it, and under a key of its own.
+	if p.atWords("AT") && p.next() != nil && p.next().Type == TokL_PAREN {
+		when, err := p.parseHistoricalData()
+		if err != nil {
+			return nil, err
+		}
+		table.Set("when", when)
 	}
 	// T-SQL's locking hints come after the alias: `FROM a AS b WITH (NOLOCK)`.
 	if p.at(TokWITH) && p.next() != nil && p.next().Type == TokL_PAREN {
@@ -836,7 +859,12 @@ func (p *parser) parseSubqueryTable() (*Expression, error) {
 	sub := New("Subquery", Arg{"this", inner})
 	// An alias written BEFORE the pivot is the subquery's; one written after
 	// belongs to the pivot, which takes it itself.
-	alias, err := p.parseTableAlias()
+	//
+	// More KEYWORDS may name a subquery than may name a column -- `(SELECT 1)
+	// apply` names it apply -- and which they are is the dialect's. The wider
+	// set is used only here: a bare table takes an implicit alias in a
+	// position where the same words still start clauses.
+	alias, err := p.parseWideTableAlias()
 	if err != nil {
 		return nil, err
 	}
@@ -850,7 +878,15 @@ func (p *parser) parseSubqueryTable() (*Expression, error) {
 		sub.Set("pivots", pivots)
 	}
 	sub.Set("alias", alias)
-	sub.Set("sample", nil)
+	// A subquery may be SAMPLED like any other relation.
+	var sample *Expression
+	if p.at(TokTABLE_SAMPLE) {
+		sample, err = p.parseTableSample()
+		if err != nil {
+			return nil, err
+		}
+	}
+	sub.Set("sample", sample)
 	return sub, nil
 }
 
@@ -929,6 +965,51 @@ func (p *parser) parseTableAlias() (*Expression, error) {
 		return nil, err
 	}
 	return New("TableAlias", Arg{"this", id}, Arg{"columns", columns}), nil
+}
+
+// parseWideTableAlias reads an alias that may be named by a keyword as well
+// as by a plain word.
+func (p *parser) parseWideTableAlias() (*Expression, error) {
+	explicit := p.match(TokALIAS)
+	if !explicit && !p.atTableAliasName() {
+		return nil, nil
+	}
+	id, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	columns, err := p.parseAliasColumns()
+	if err != nil {
+		return nil, err
+	}
+	return New("TableAlias", Arg{"this", id}, Arg{"columns", columns}), nil
+}
+
+// atTableAliasName reports whether the word here may name a TABLE. More
+// keywords may than may name a column, and which they are is the dialect's:
+// `FROM (SELECT 1) apply` names the subquery apply. The table is a strict
+// subset already -- a word that can start a clause is left out of it, or an
+// alias written without AS would swallow the clause.
+func (p *parser) atTableAliasName() bool {
+	c := p.curr()
+	if c == nil {
+		return false
+	}
+	if c.Type == TokVAR || c.Type == TokIDENTIFIER {
+		return true
+	}
+	// The generated set leaves out the words that start a clause in the
+	// reference, but not the ones that start a clause HERE: a pivot, an
+	// unpivot and a sample all follow a relation, and reading PIVOT as the
+	// name of one turned `(SELECT 1) PIVOT(...)` into a subquery called
+	// PIVOT with a column list. These are the port's own grammar rather
+	// than anything about the dialect, so they are named rather than probed.
+	switch c.Type {
+	case TokPIVOT, TokUNPIVOT, TokTABLE_SAMPLE:
+		return false
+	}
+	_, ok := p.tables.TableAliasTokens[c.Type]
+	return ok
 }
 
 // parseAliasColumns reads the `(a, b)` that may follow an alias, naming the
@@ -1108,6 +1189,32 @@ func (p *parser) parseSystemTime() (*Expression, error) {
 		Arg{"this", "TIMESTAMP"},
 		Arg{"expression", expression},
 		Arg{"kind", kind}), nil
+}
+
+// parseHistoricalData reads `AT (VERSION => 3)` or `AT (TIMESTAMP => x)`,
+// which names the state of a table at some point rather than its state now.
+func (p *parser) parseHistoricalData() (*Expression, error) {
+	word := strings.ToUpper(p.curr().Text)
+	p.advance()
+	p.advance() // the opening parenthesis
+	kindToken := p.curr()
+	if kindToken == nil {
+		return nil, p.unsupported(word + " naming no kind of history")
+	}
+	kind := strings.ToUpper(kindToken.Text)
+	p.advance()
+	if !p.match(TokFARROW) {
+		return nil, p.unsupported(word + " " + kind + " without a value")
+	}
+	at, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed " + word)
+	}
+	return New("HistoricalData",
+		Arg{"this", word}, Arg{"kind", kind}, Arg{"expression", at}), nil
 }
 
 // LATERAL over a subquery or a function, which is a relation that may refer to

@@ -9875,3 +9875,44 @@ func TestDialectShapedSyntax(t *testing.T) {
 		t.Error("a hash naming no position was read")
 	}
 }
+
+// What may follow a relation: a keyword that names it, a sample of it, and
+// two ways of asking for the state it was in at some point.
+func TestTableClauses(t *testing.T) {
+	for _, c := range []struct{ sql, want, dialect string }{
+		// More keywords may name a SUBQUERY than may name a column.
+		{"SELECT * FROM (SELECT 1 AS col) apply", "SELECT * FROM (SELECT 1 AS col) AS apply", "postgres"},
+		{"SELECT * FROM (SELECT 1 AS col) apply", "SELECT * FROM (SELECT 1 AS col) AS apply", "duckdb"},
+		// A subquery may be sampled like any other relation.
+		{"SELECT * FROM (SELECT * FROM t) AS t1 TABLESAMPLE RESERVOIR (1 ROWS)", "", "duckdb"},
+		// The state a table was in, before the alias and after it.
+		{"SELECT * FROM foo TIMESTAMP AS OF '2020-01-01' AS bar", "", "databricks"},
+		{"SELECT * FROM t1 AS a AT (VERSION => 3)", "", "duckdb"},
+		{"SELECT * FROM t1 AS a AT (TIMESTAMP => CAST('2024-01-01' AS TIMESTAMP))", "", "duckdb"},
+		// A word that opens a clause here still opens one.
+		{"SELECT a FROM (SELECT a, b FROM test) PIVOT(SUM(x) FOR y IN ('z'))", "", "duckdb"},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != want {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	for _, c := range []struct{ sql, dialect string }{
+		{"SELECT * FROM t AT (VERSION 3)", "duckdb"},
+		{"SELECT * FROM t AT (VERSION =>)", "duckdb"},
+		{"SELECT * FROM t AT (VERSION => 3", "duckdb"},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
+		}
+	}
+}
