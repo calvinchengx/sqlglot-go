@@ -9916,3 +9916,46 @@ func TestTableClauses(t *testing.T) {
 		}
 	}
 }
+
+// Which rows near the current one a frame leaves out, and ANY wherever it
+// stands rather than only after a comparison.
+func TestFrameExclusionAndAny(t *testing.T) {
+	for _, c := range []struct{ sql, want, dialect string }{
+		{"SELECT SUM(X) OVER (PARTITION BY x RANGE BETWEEN 1 PRECEDING AND CURRENT ROW EXCLUDE NO OTHERS)", "", "postgres"},
+		{"SELECT SUM(X) OVER (ROWS BETWEEN 1 PRECEDING AND CURRENT ROW EXCLUDE TIES)", "", "postgres"},
+		{"SELECT SUM(X) OVER (ROWS BETWEEN 1 PRECEDING AND CURRENT ROW EXCLUDE GROUP)", "", "postgres"},
+		{"SELECT SUM(X) OVER (ROWS BETWEEN 1 PRECEDING AND CURRENT ROW EXCLUDE CURRENT ROW)", "", "postgres"},
+		{"SELECT SUM(X) OVER (ROWS BETWEEN 1 PRECEDING AND CURRENT ROW)", "", "postgres"},
+		// ANY quantifies whatever follows it, parenthesised or not.
+		{"ANY(x) OVER (PARTITION BY x)", "", ""},
+		{"SELECT * FROM x WHERE name LIKE ANY XXX('a', 'b')", "", ""},
+		{"SELECT * FROM x WHERE name ILIKE ANY XXX('a', 'b')", "", ""},
+		{"any(ARRAY[1]) <> x", "ANY(ARRAY[1]) <> x", "postgres"},
+		{"SELECT * FROM x WHERE a = ANY (SELECT 1)", "", ""},
+		{"SELECT ANY(col) FROM VALUES (TRUE), (FALSE) AS tab(col)", "", "databricks"},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != want {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	for _, c := range []struct{ sql, dialect string }{
+		{"SELECT SUM(x) OVER (ROWS BETWEEN 1 PRECEDING AND CURRENT ROW EXCLUDE)", "postgres"},
+		{"SELECT SUM(x) OVER (ROWS BETWEEN 1 PRECEDING AND CURRENT ROW EXCLUDE WAT)", "postgres"},
+		// ANY with nothing to quantify is an error in the reference too.
+		{"SELECT ANY", ""},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
+		}
+	}
+}

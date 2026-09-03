@@ -471,9 +471,14 @@ func TestGenerateShapes(t *testing.T) {
 			"SELECT INTERVAL '1 year 2 months'"},
 		{"window partition order", "select sum(x) over (partition by a order by b)", "",
 			"SELECT SUM(x) OVER (PARTITION BY a ORDER BY b)"},
+		// The frame's own words keep the CASE they were written in, which is
+		// what the reference keeps -- only the words the writer supplies
+		// itself, BETWEEN and CURRENT ROW, are its own.
 		{"window frame", "select sum(x) over (rows between unbounded preceding and current row)", "",
-			"SELECT SUM(x) OVER (ROWS BETWEEN UNBOUNDED PRECEDING AND CURRENT ROW)"},
+			"SELECT SUM(x) OVER (rows BETWEEN UNBOUNDED preceding AND CURRENT ROW)"},
 		{"window single bound normalises", "select sum(x) over (rows 3 preceding)", "",
+			"SELECT SUM(x) OVER (rows BETWEEN 3 preceding AND CURRENT ROW)"},
+		{"window frame upper", "SELECT SUM(x) OVER (ROWS BETWEEN 3 PRECEDING AND CURRENT ROW)", "",
 			"SELECT SUM(x) OVER (ROWS BETWEEN 3 PRECEDING AND CURRENT ROW)"},
 		{"count distinct many", "select count(distinct a, b) from t", "", "SELECT COUNT(DISTINCT a, b) FROM t"},
 		{"array literal", "select [1, 2, 3]", "duckdb", "SELECT [1, 2, 3]"},

@@ -89,18 +89,19 @@ func (p *parser) windowBody(this *Expression, over any) (*Expression, error) {
 
 // frameKind consumes ROWS, RANGE or GROUPS and reports which, or "" if the
 // current token is none of them.
+// The word is kept in the CASE it was written in, which is what the reference
+// keeps: `range offset preceding` stores `range`, and the writer upper-cases
+// it on the way out.
 func (p *parser) frameKind() string {
 	switch {
-	case p.at(TokROWS):
+	case p.at(TokROWS), p.at(TokRANGE):
+		word := p.curr().Text
 		p.advance()
-		return "ROWS"
-	case p.at(TokRANGE):
-		p.advance()
-		return "RANGE"
+		return word
 	}
 	if c := p.curr(); c != nil && c.Type == TokVAR && strings.EqualFold(c.Text, "GROUPS") {
 		p.advance()
-		return "GROUPS"
+		return c.Text
 	}
 	return ""
 }
@@ -131,8 +132,38 @@ func (p *parser) parseWindowSpec(kind string) (*Expression, error) {
 			Arg{"start", start}, Arg{"start_side", side},
 			Arg{"end", nil}, Arg{"end_side", nil})
 	}
-	args = append(args, Arg{"exclude", nil})
+	// `EXCLUDE NO OTHERS` and its three siblings say which rows near the
+	// current one are left OUT of the frame. Two of them are two words, and
+	// the reference keeps whichever was written as one Var.
+	var exclude *Expression
+	if p.atWords("EXCLUDE") {
+		p.advance()
+		word, err := p.parseFrameExclusion()
+		if err != nil {
+			return nil, err
+		}
+		exclude = word
+	}
+	args = append(args, Arg{"exclude", exclude})
 	return New("WindowSpec", args...), nil
+}
+
+// parseFrameExclusion reads what follows EXCLUDE in a frame: NO OTHERS,
+// CURRENT ROW, GROUP or TIES. Two of them are two words and the reference
+// keeps either as one name.
+func (p *parser) parseFrameExclusion() (*Expression, error) {
+	for _, words := range [][]string{
+		{"NO", "OTHERS"}, {"CURRENT", "ROW"}, {"GROUP"}, {"TIES"},
+	} {
+		if !p.atWords(words...) {
+			continue
+		}
+		for range words {
+			p.advance()
+		}
+		return New("Var", Arg{"this", strings.Join(words, " ")}), nil
+	}
+	return nil, p.unsupported("EXCLUDE without rows to leave out")
 }
 
 // parseFrameBound reads one side of a frame: `UNBOUNDED PRECEDING`,
@@ -178,5 +209,5 @@ func (p *parser) parseFrameBound() (any, any, error) {
 		return bound, nil, nil
 	}
 	p.advance()
-	return bound, strings.ToUpper(s.Text), nil
+	return bound, s.Text, nil
 }

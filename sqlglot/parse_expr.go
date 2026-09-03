@@ -949,6 +949,25 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return New(class, Arg{"this", inner}), nil
 	}
 
+	// ANY is a quantifier WHEREVER it stands, not only after a comparison:
+	// `ANY(x) OVER (...)` quantifies over x and `name LIKE ANY XXX('a')` over
+	// the call. What follows may be parenthesised or not -- the reference
+	// takes whatever expression is there and wraps nothing of its own.
+	//
+	// ALL is left alone: `SELECT ALL x` is the quantity modifier rather than
+	// a quantifier, and `ALL()` is a Tuple.
+	if p.at(TokANY) && p.next() != nil && !endsSelectExpression(p.next()) {
+		p.advance()
+		inner, err := p.parsePrimary()
+		if err != nil {
+			return nil, err
+		}
+		if inner == nil {
+			return nil, p.unsupported("ANY over nothing")
+		}
+		return New("Any", Arg{"this", inner}), nil
+	}
+
 	// `ARRAY[1, 2]` is an Array too -- the keyword is part of the literal, not
 	// a column being subscripted, which is what the postfix rule would make of
 	// it.

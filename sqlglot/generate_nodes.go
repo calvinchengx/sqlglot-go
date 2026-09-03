@@ -1609,7 +1609,13 @@ func (g *generator) writeWindowSpec(e *Expression) string {
 	if start == "" {
 		return g.fail("WindowSpec without a start")
 	}
-	return kind + " BETWEEN " + start + " AND " + end
+	out := kind + " BETWEEN " + start + " AND " + end
+	// Which rows near the current one are left OUT of the frame. Dropping
+	// the words puts them back in, which is a different answer.
+	if exclude := g.child(e, "exclude"); exclude != "" {
+		out += " EXCLUDE " + exclude
+	}
+	return out
 }
 
 func (g *generator) frameBound(e *Expression, key, sideKey string) string {
