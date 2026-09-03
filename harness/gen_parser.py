@@ -4521,6 +4521,73 @@ def projection_shape(dialect: str, sql: str) -> str:
     return type(held[0]).__name__ if held else ""
 
 
+def special_type_words(dialect: str) -> list:
+    """Words a CAST reads as something OTHER than a user-defined type.
+
+    A word the dialect has no type for is a user-defined one named by itself,
+    which is how a schema's own types reach a cast. But a handful are read
+    specially and are not types at all: PostgreSQL's `oid` and its `reg*`
+    family are ObjectIdentifiers, and Databricks reads VOID as the null type.
+    Reading those as user-defined names built a tree the reference never
+    makes, so they are asked for and refused rather than guessed at.
+    """
+    import logging
+
+    import sqlglot
+    from sqlglot import expressions as e
+    from sqlglot.dialects.dialect import Dialect
+
+    tokenizer = Dialect.get_or_raise(dialect or None).tokenizer_class
+    words = sorted(
+        {k.upper() for k in tokenizer.KEYWORDS if k.split(" ")[0].isalpha()}
+    )
+    was = logging.root.manager.disable
+    logging.disable(logging.CRITICAL)
+    out = []
+    try:
+        for word in words:
+            try:
+                tree = sqlglot.parse_one(
+                    f"CAST(zzx AS {word})", read=dialect or None
+                )
+            except Exception:  # noqa: BLE001 -- not a word that stands there
+                continue
+            if not isinstance(tree, e.Cast):
+                continue
+            to = tree.args.get("to")
+            if isinstance(to, e.DataType) and getattr(
+                to.this, "name", ""
+            ) == "USERDEFINED":
+                continue
+            out.append(word)
+    finally:
+        logging.disable(was)
+    return out
+
+
+def user_defined_type_is_identifier(dialect: str) -> bool:
+    """Whether a user-defined type's NAME is wrapped in an Identifier.
+
+    PostgreSQL wraps it and the rest keep the word as it stands, which is a
+    difference the dump shows and nothing else does.
+    """
+    import logging
+
+    import sqlglot
+    from sqlglot import expressions as e
+
+    was = logging.root.manager.disable
+    logging.disable(logging.CRITICAL)
+    try:
+        tree = sqlglot.parse_one("CAST(zzx AS zzudt)", read=dialect or None)
+    except Exception:  # noqa: BLE001
+        return False
+    finally:
+        logging.disable(was)
+    to = tree.args.get("to")
+    return isinstance(to, e.DataType) and isinstance(to.args.get("kind"), e.Identifier)
+
+
 def create_words(dialect: str):
     """The words that may stand between CREATE and what it creates.
 
@@ -6334,6 +6401,8 @@ def main() -> int:
         "\t// why these were refused until there was one.\n",
         "\tTypeDispatchFunctions map[string]TypeDispatch\n",        "\t// ValueDispatchFunctions are names whose CLASS is chosen by the\n\t// WORD in one argument: T-SQL's HASHBYTES('SHA1', x) is an SHA and\n\t// HASHBYTES('MD5', x) an MD5. A word not listed takes Default.\n\tValueDispatchFunctions map[string]ValueDispatch\n",
         "\t// CreateProperties are the words that may stand between CREATE and\n\t// what it creates, each carrying a bare property of its own:\n\t// MATERIALIZED, UNLOGGED, TRANSIENT. The class is read off the tree,\n\t// not made from the word -- STREAMING becomes a StreamingTableProperty.\n\tCreateProperties map[string]string\n",
+        "\t// SpecialTypeWords are the words a CAST reads as something OTHER\n\t// than a user-defined type: PostgreSQL's `oid` is an ObjectIdentifier\n\t// and Databricks reads VOID as the null type. A word here is refused\n\t// rather than read as a name.\n\tSpecialTypeWords map[string]struct{}\n",
+        "\t// UserDefinedTypeIsIdentifier wraps such a type's NAME in an\n\t// Identifier. PostgreSQL does and the rest keep the word as it\n\t// stands, which is a difference the dump shows and nothing else does.\n\tUserDefinedTypeIsIdentifier bool\n",
         "\t// CreateKinds are the things this dialect will CREATE. T-SQL alone\n\t// spells a procedure PROC as well as PROCEDURE.\n\tCreateKinds map[string]struct{}\n",
         "\t// CreateOrFlags are the words after CREATE OR and the flag each\n\t// turns on: REPLACE and T-SQL's ALTER both mean `replace`, and\n\t// Databricks' REFRESH means `refresh`.\n\tCreateOrFlags map[string]string\n",
         "\t// CreateFlagWords is how each of those flags is WRITTEN, which need\n\t// not be the word it was read from: T-SQL reads OR REPLACE and OR\n\t// ALTER alike and writes OR ALTER.\n\tCreateFlagWords map[string]string\n",
@@ -6732,6 +6801,13 @@ def main() -> int:
                     out.append(f"\t\t\t\t{width}: {{{', '.join(parts)}}},\n")
                 out.append("\t\t\t},\n")
             out.append("\t\t},\n")
+        out.append(
+            strset("SpecialTypeWords", special_type_words(name))
+        )
+        out.append(
+            "\t\tUserDefinedTypeIsIdentifier: "
+            f"{str(user_defined_type_is_identifier(name)).lower()},\n"
+        )
         create_props, create_kinds, create_flags = create_words(name)
         replace_words = create_replace_words(name)
         out.append("\t\tCreateFlagWords: map[string]string{\n")

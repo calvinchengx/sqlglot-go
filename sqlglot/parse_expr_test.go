@@ -10210,6 +10210,7 @@ func TestDropSignatureIntoKindAndDurability(t *testing.T) {
 		{"COMMIT TRANSACTION @tran_name_variable WITH (DELAYED_DURABILITY = ON)", "tsql"},
 		// A signature naming several types.
 		{"DROP FUNCTION a (INT, TEXT)", ""},
+		{"DROP FUNCTION a (some_udt)", ""},
 	} {
 		tree, err := ParseOne(c.sql, c.dialect)
 		if err != nil {
@@ -10232,10 +10233,84 @@ func TestDropSignatureIntoKindAndDurability(t *testing.T) {
 		// A durability with no name in front of it, which the reference
 		// refuses too.
 		{"COMMIT WITH (DELAYED_DURABILITY = ON)", "tsql"},
-		{"DROP FUNCTION a (wat)", ""},
 	} {
 		if _, err := ParseOne(c.sql, c.dialect); err == nil {
 			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)
 		}
+	}
+}
+
+// A word the dialect has no type for is a USER-DEFINED one named by itself,
+// which is how a schema's own types reach a cast. A handful of words are read
+// specially and are refused rather than guessed at.
+func TestUserDefinedTypes(t *testing.T) {
+	for _, c := range []struct{ sql, dialect string }{
+		{"CAST(x AS some_udt)", "postgres"},
+		{"CAST(x AS some_udt)", "tsql"},
+		{"CAST(x AS FOO)", "duckdb"},
+
+		{"CREATE TABLE t (a wat)", ""},
+		{"CAST(x AS INT)", ""},
+		// A typeless column with a default is not a column of type DEFAULT.
+		{"CREATE TABLE t (a DEFAULT 0)", ""},
+		{"CAST(a AS wat)", ""},
+		// A user-defined type in a T-SQL declaration, and one named with
+		// brackets rather than a bare word.
+		{"DECLARE @X UserDefinedTableType", "tsql"},
+		{`CAST(x AS "quoted udt")`, "postgres"},
+
+		// T-SQL's brackets are a name's, and the reference drops them here.
+	} {
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != c.sql {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	// PostgreSQL's `oid` is an ObjectIdentifier, not a type called oid, and
+	// Databricks reads VOID as the null type. Neither is a name.
+	for _, c := range []struct{ sql, dialect string }{
+		{"x::oid", "postgres"},
+		{"x::regclass", "postgres"},
+		{"SELECT CAST(NULL AS VOID)", "databricks"},
+		// And a keyword or a number where a type goes is neither a type nor
+		// a name.
+		{"SELECT CAST(x AS SELECT)", "tsql"},
+		{"SELECT CAST(x AS 3)", "tsql"},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("[%s] %s was read as a name; it should be refused", c.dialect, c.sql)
+		}
+	}
+	// A cast written with the short spelling comes back the long way, which
+	// is what the reference writes too.
+	// A quoted name of several WORDS is still a name, and DuckDB writes it
+	// back without the quotes -- as the reference does.
+	if tree, err := ParseOne(`CAST(x AS "a b")`, "duckdb"); err != nil {
+		t.Errorf(`CAST(x AS "a b") was refused: %v`, err)
+	} else if got, _ := Generate(tree, "duckdb"); got != "CAST(x AS a b)" {
+		t.Errorf(`CAST(x AS "a b") wrote %q`, got)
+	}
+	// A quoted name holding something the tokenizer cannot read at all names
+	// nothing, and the reference falls back to the UNKNOWN type. The
+	// generator fuzzer found the port writing the characters back out.
+	if tree, err := ParseOne("0::\"``\"", "duckdb"); err != nil {
+		t.Errorf("a quoted name of backticks was refused: %v", err)
+	} else if got, _ := Generate(tree, "duckdb"); got != "CAST(0 AS UNKNOWN)" {
+		t.Errorf("a quoted name of backticks wrote %q", got)
+	}
+	if tree, err := ParseOne("SELECT CAST(x AS [nope])", "tsql"); err != nil {
+		t.Errorf("a bracketed type name was refused: %v", err)
+	} else if got, _ := Generate(tree, "tsql"); got != "SELECT CAST(x AS nope)" {
+		t.Errorf("a bracketed type name wrote %q", got)
+	}
+	if tree, err := ParseOne(`1::"udt"`, "postgres"); err != nil {
+		t.Errorf("a quoted user-defined type was refused: %v", err)
+	} else if got, _ := Generate(tree, "postgres"); got != `CAST(1 AS "udt")` {
+		t.Errorf(`1::"udt" wrote %q`, got)
 	}
 }

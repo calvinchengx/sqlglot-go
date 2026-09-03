@@ -126,7 +126,7 @@ func TestRefusals(t *testing.T) {
 		{"non-numeric type parameter", "a::VARCHAR('x')", "tsql"},
 		{"the ALL quantifier, which the port does not carry", "SELECT ALL x", "databricks"},
 		{"fixed-size array where the dialect has none", "CAST(a AS INT[3])", "databricks"},
-		{"unknown type", "CAST(a AS wat)", ""},
+		{"a type word the reference reads specially", "x::oid", "postgres"},
 		{"CAST without AS", "CAST(a INT)", ""},
 		{"unclosed CAST", "CAST(a AS INT", ""},
 		{"unclosed type parameters", "CAST(a AS VARCHAR(10)", ""},
@@ -359,13 +359,13 @@ func TestRefusals(t *testing.T) {
 		// name that is not a type -- the port has no user-defined types, so
 		// a name it does not know stays refused.
 		{"a computed column with no expression", "CREATE TABLE t (b AS SELECT)", "tsql"},
-		{"a bracketed name that is not a type", "SELECT CAST(x AS [nope])", "tsql"},
+		{"a keyword where a type goes", "SELECT CAST(x AS SELECT)", "tsql"},
 		{"a collation that is not a name",
 			"CREATE TABLE t (a ARRAY<STRING COLLATE SELECT>)", "databricks"},
 		// A bracketed name whose text is not ONE word names no type: the
 		// reference lexes it again and takes the type from the first token
 		// only where there is nothing after it.
-		{"a bracketed name of two words", "SELECT CAST(x AS [a b])", "tsql"},
+		{"a number where a type goes", "SELECT CAST(x AS 3)", "tsql"},
 		// Every way a struct's field can fail to be a column definition.
 		{"a struct field with a bad constraint", "CREATE TABLE t (a STRUCT<x: INT DEFAULT>)",
 			"databricks"},

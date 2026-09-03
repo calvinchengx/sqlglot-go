@@ -532,3 +532,55 @@ func TestHistoricalDataEdges(t *testing.T) {
 		t.Errorf("a clause naming no point in time wrote %q", out)
 	}
 }
+
+// A user-defined type whose name is missing has nothing to write: the name IS
+// the spelling, so there is no kind to fall back on.
+func TestUserDefinedTypeWithoutAName(t *testing.T) {
+	cfg, ok := ConfigFor("postgres")
+	if !ok {
+		t.Fatal("no postgres config")
+	}
+	g := &generator{cfg: cfg, tables: cfg.Tables, dialect: "postgres"}
+	bare := New("DataType", Arg{"this", DataTypeKind("USER-DEFINED")})
+	if out := g.writeDataType(bare); g.err == nil {
+		t.Errorf("a user-defined type naming nothing wrote %q", out)
+	}
+	// A name held as a plain string writes as itself, which is the shape
+	// every dialect but PostgreSQL builds.
+	g2 := &generator{cfg: cfg, tables: cfg.Tables, dialect: "postgres"}
+	named := New("DataType",
+		Arg{"this", DataTypeKind("USER-DEFINED")}, Arg{"kind", "some_udt"})
+	if got := g2.writeDataType(named); got != "some_udt" {
+		t.Errorf("a user-defined type wrote %q", got)
+	}
+}
+
+// Whether the text inside a quoted type name names anything. The tokenizer's
+// own failure modes are the answer, so they are put to it directly.
+func TestNamesAType(t *testing.T) {
+	cfg, ok := ConfigFor("duckdb")
+	if !ok {
+		t.Fatal("no duckdb config")
+	}
+	p := &parser{cfg: cfg, tables: cfg.Tables, dialect: "duckdb"}
+	for _, c := range []struct {
+		text string
+		want bool
+	}{
+		{"a", true},
+		{"a b", true},
+		{"", true},
+		{"``", false},
+		{"`a`", false},
+	} {
+		if got := p.namesAType(c.text); got != c.want {
+			t.Errorf("namesAType(%q) = %v, want %v", c.text, got, c.want)
+		}
+	}
+	// A dialect the port does not have takes the benefit of the doubt: there
+	// is no tokenizer to ask.
+	blind := &parser{cfg: cfg, tables: cfg.Tables, dialect: "no-such-dialect"}
+	if !blind.namesAType("``") {
+		t.Error("a name was refused for want of a tokenizer to ask")
+	}
+}

@@ -1190,6 +1190,22 @@ func (g *generator) writeDataType(e *Expression) string {
 		return "INTERVAL " + g.node(unit)
 	}
 	kind, _ := e.Args["this"].(DataTypeKind)
+	// A USER-DEFINED type is named by the word it was written with, which the
+	// node carries beside the kind. No dialect has a spelling for the kind
+	// itself, because the name IS the spelling.
+	if kind == "USER-DEFINED" {
+		switch named := e.Args["kind"].(type) {
+		case *Expression:
+			if named != nil {
+				return g.node(named)
+			}
+		case string:
+			if named != "" {
+				return named
+			}
+		}
+		return g.fail("DataType.USER-DEFINED naming nothing")
+	}
 	out, ok := g.tables.TypeSQL[string(kind)]
 	if !ok {
 		return g.fail("DataType." + string(kind))

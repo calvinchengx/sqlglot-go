@@ -1563,6 +1563,39 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 		}
 	}
 	if !ok {
+		// A word the dialect has no type for is a USER-DEFINED one, named by
+		// the word itself. The reference reads any name that way rather than
+		// refusing, which is how a schema's own types reach a cast.
+		if _, special := p.tables.SpecialTypeWords[strings.ToUpper(c.Text)]; special {
+			// A word the reference reads as something other than a name:
+			// PostgreSQL's `oid` is an ObjectIdentifier, not a type called
+			// oid. Refused rather than read as a user-defined one.
+			return nil, p.unsupported("type " + c.Text)
+		}
+		// Only a plain NAME, never a keyword: `CREATE TABLE t (a DEFAULT 0)`
+		// declares a typeless column with a default, and reading DEFAULT as
+		// the name of a type made the constraint disappear into it.
+		if c.Type == TokVAR || c.Type == TokIDENTIFIER {
+			p.advance()
+			// A QUOTED name is lexed again to see whether it names anything
+			// at all: `"``"` is not a name in any dialect, and the reference
+			// falls back to the UNKNOWN type rather than making one. Written
+			// as a name it came back out unreadable -- the generator fuzzer
+			// found it.
+			if c.Type == TokIDENTIFIER && !p.namesAType(c.Text) {
+				return New("DataType",
+					Arg{"this", DataTypeKind("UNKNOWN")},
+					Arg{"nested", false}), nil
+			}
+			var named any = c.Text
+			if p.tables.UserDefinedTypeIsIdentifier {
+				named = New("Identifier",
+					Arg{"this", c.Text}, Arg{"quoted", c.Type == TokIDENTIFIER})
+			}
+			return New("DataType",
+				Arg{"this", DataTypeKind("USER-DEFINED")},
+				Arg{"kind", named}), nil
+		}
 		return nil, p.unsupported("type " + c.Text)
 	}
 	// INTERVAL as a type carries a UNIT, and the DataType's `this` is an
@@ -3447,6 +3480,31 @@ func (p *parser) parseNextValueFor() (*Expression, error) {
 // as an identifier. The reference lexes the identifier's text again and asks
 // what the first token is; this does the same, so `[int]` and `int` name the
 // same type.
+// namesAType reports whether the text inside a QUOTED type name names
+// anything at all.
+//
+// It does not when the text holds something the tokenizer cannot read at all:
+// `"“"` is a pair of quotes round two characters DuckDB has no token for, and
+// the reference falls back to the UNKNOWN type rather than making a name of
+// them. Text that lexes to several WORDS is still a name -- `"a b"` names a
+// type called `a b`.
+func (p *parser) namesAType(text string) bool {
+	tk, err := NewTokenizer(p.dialect)
+	if err != nil {
+		return true
+	}
+	toks, err := tk.Tokenize(text)
+	if err != nil {
+		return true
+	}
+	for _, t := range toks {
+		if t.Type == TokUNKNOWN {
+			return false
+		}
+	}
+	return true
+}
+
 func (p *parser) quotedTypeName(c *Token) (bool, string) {
 	if c.Type != TokIDENTIFIER {
 		return false, ""
