@@ -175,6 +175,13 @@ type ParserTables struct {
 	// trim before the string they are trimmed from.
 	TrimTypes        map[string]struct{}
 	TrimPatternFirst bool
+	// ProjectionEqualsIsAlias reads `SELECT a = 1` as `1 AS a` rather
+	// than as a comparison. Only T-SQL does, and it is the same text
+	// meaning two different things, so nothing but the dialect settles it.
+	ProjectionEqualsIsAlias bool
+	// PositionalColumns reads `#2` as the SECOND output column rather
+	// than as anything to do with a hash.
+	PositionalColumns bool
 	// TypedDivision and SafeDivision are recorded on every Div node; the
 	// reference reads them off the dialect, so they are not always false.
 	TypedDivision bool
@@ -2958,6 +2965,8 @@ var parserTables = map[string]*ParserTables{
 			"TRAILING": {},
 		},
 		TrimPatternFirst:              false,
+		ProjectionEqualsIsAlias:       false,
+		PositionalColumns:             false,
 		AlterColumnNullabilityWritten: false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",
@@ -7940,6 +7949,8 @@ var parserTables = map[string]*ParserTables{
 			"TRAILING": {},
 		},
 		TrimPatternFirst:              false,
+		ProjectionEqualsIsAlias:       true,
+		PositionalColumns:             false,
 		AlterColumnNullabilityWritten: true,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":         "ViewAttributeProperty",
@@ -13159,6 +13170,8 @@ var parserTables = map[string]*ParserTables{
 			"TRAILING": {},
 		},
 		TrimPatternFirst:              false,
+		ProjectionEqualsIsAlias:       false,
+		PositionalColumns:             false,
 		AlterColumnNullabilityWritten: false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",
@@ -18413,6 +18426,8 @@ var parserTables = map[string]*ParserTables{
 			"TRAILING": {},
 		},
 		TrimPatternFirst:              false,
+		ProjectionEqualsIsAlias:       false,
+		PositionalColumns:             true,
 		AlterColumnNullabilityWritten: false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",
@@ -23956,6 +23971,8 @@ var parserTables = map[string]*ParserTables{
 			"TRAILING": {},
 		},
 		TrimPatternFirst:              true,
+		ProjectionEqualsIsAlias:       false,
+		PositionalColumns:             false,
 		AlterColumnNullabilityWritten: false,
 		ProcedureWithOptions: map[string]string{
 			"ENCRYPTION":    "ViewAttributeProperty",

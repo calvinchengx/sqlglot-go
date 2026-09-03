@@ -9831,3 +9831,47 @@ func TestCreateNamespace(t *testing.T) {
 		t.Error("OR REFRESH was read in a dialect that has no such word")
 	}
 }
+
+// Four shapes that are the same text meaning different things: an equals in a
+// projection, a hash before a number, strings written next to each other, and
+// a star after a table name.
+func TestDialectShapedSyntax(t *testing.T) {
+	for _, c := range []struct{ sql, want, dialect string }{
+		// T-SQL names the column with the LEFT-hand side.
+		{"SELECT a = 1", "SELECT 1 AS a", "tsql"},
+		{"SELECT a = 1 UNION ALL SELECT a = b", "SELECT 1 AS a UNION ALL SELECT b AS a", "tsql"},
+		// Only where the LEFT is a bare name: a chain of equals is a chain of
+		// comparisons in the reference too. The generator fuzzer found this.
+		{"SELECT A = A = 0", "", "tsql"},
+		{"SELECT A = 0 - A = L", "", "tsql"},
+		// Everywhere else the same text is a comparison.
+		{"SELECT a = 1", "", "postgres"},
+		// DuckDB reads `#2` as the second output column.
+		{"SELECT #2, #1 FROM (VALUES (1, 'foo'))", "", "duckdb"},
+		{"SELECT #2 AS a, #1 AS b FROM (VALUES (1, 'foo'))", "", "duckdb"},
+		// Strings written next to each other are one string.
+		{"'x' 'y' 'z'", "CONCAT('x', 'y', 'z')", "postgres"},
+		{"SELECT 'x'", "", "postgres"},
+		// The star says "and everything that inherits from it", which is the
+		// default -- so it is read and written nowhere.
+		{"SELECT * FROM t1*", "SELECT * FROM t1", "postgres"},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != want {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	// A hash with no number after it names no position.
+	if _, err := ParseOne("SELECT #a FROM t", "duckdb"); err == nil {
+		t.Error("a hash naming no position was read")
+	}
+}

@@ -386,6 +386,11 @@ func (p *parser) parseTable() (*Expression, error) {
 	if only {
 		table.Set("only", true)
 	}
+	// `t1*` says this table AND everything that inherits from it, which is
+	// the default -- the star is written and recorded nowhere.
+	if p.at(TokSTAR) {
+		p.advance()
+	}
 	markTemporaryTable(table, p.dialect)
 	return p.tableRest(table)
 }

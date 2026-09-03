@@ -1013,7 +1013,24 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", false}), nil
 	case TokSTRING:
 		p.advance()
-		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
+		first := New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
+		// Strings written NEXT TO each other are one string: `'x' 'y' 'z'`
+		// is a concatenation, which is what the reference builds.
+		if n := p.curr(); n != nil && n.Type == TokSTRING {
+			items := []*Expression{first}
+			for {
+				n := p.curr()
+				if n == nil || n.Type != TokSTRING {
+					break
+				}
+				p.advance()
+				items = append(items,
+					New("Literal", Arg{"this", n.Text}, Arg{"is_string", true}))
+			}
+			return New("Concat",
+				Arg{"expressions", items}, Arg{"coalesce", true}), nil
+		}
+		return first, nil
 	// The tokenizer already tells these apart -- a raw string, a byte string,
 	// a unicode string, a hex or bit literal -- and each is a class of its
 	// own rather than a Literal with a flag, because what a dialect WRITES
@@ -1169,6 +1186,17 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	// in T-SQL begins with a #, so the token settles it on its own.
 	if p.dialect == "tsql" && p.at(TokHASH) {
 		return p.parseColumn()
+	}
+	// `#2` is the SECOND output column, in the dialect that reads it as one.
+	if p.tables.PositionalColumns && p.at(TokHASH) {
+		n := p.next()
+		if n == nil || n.Type != TokNUMBER {
+			return nil, p.unsupported("a positional column with no position")
+		}
+		p.advance()
+		p.advance()
+		return New("PositionalColumn", Arg{"this",
+			New("Literal", Arg{"this", n.Text}, Arg{"is_string", false})}), nil
 	}
 	if p.atIdentifier() {
 		// These names have a PARSER of their own in the reference, not a

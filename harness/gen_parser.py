@@ -4472,6 +4472,29 @@ def class_sensitive_args(P, exp, dialect, funcs):
     return {n: {i: sorted(c) for i, c in sorted(d.items())} for n, d in out.items()}
 
 
+def projection_shape(dialect: str, sql: str) -> str:
+    """The class of the first projection this dialect reads a statement into.
+
+    Two shapes below are the same TEXT meaning different things in different
+    dialects -- `SELECT a = 1` is an alias in T-SQL and a comparison
+    everywhere else -- so which it is has to be asked rather than assumed.
+    """
+    import logging
+
+    import sqlglot
+
+    was = logging.root.manager.disable
+    logging.disable(logging.CRITICAL)
+    try:
+        tree = sqlglot.parse_one(sql, read=dialect or None)
+    except Exception:  # noqa: BLE001 -- not a shape this dialect reads at all
+        return ""
+    finally:
+        logging.disable(was)
+    held = tree.args.get("expressions") or []
+    return type(held[0]).__name__ if held else ""
+
+
 def create_words(dialect: str):
     """The words that may stand between CREATE and what it creates.
 
@@ -5818,6 +5841,8 @@ def main() -> int:
         "\t// trim before the string they are trimmed from.\n",
         "\tTrimTypes        map[string]struct{}\n",
         "\tTrimPatternFirst bool\n",
+        "\t// ProjectionEqualsIsAlias reads `SELECT a = 1` as `1 AS a` rather\n\t// than as a comparison. Only T-SQL does, and it is the same text\n\t// meaning two different things, so nothing but the dialect settles it.\n\tProjectionEqualsIsAlias bool\n",
+        "\t// PositionalColumns reads `#2` as the SECOND output column rather\n\t// than as anything to do with a hash.\n\tPositionalColumns bool\n",
         "\t// TypedDivision and SafeDivision are recorded on every Div node; the\n",
         "\t// reference reads them off the dialect, so they are not always false.\n",
         "\tTypedDivision bool\n",
@@ -6590,6 +6615,14 @@ def main() -> int:
         out.append(ttset("OpclassFollowTokens", P.OPTYPE_FOLLOW_TOKENS))
         out.append(strset("TrimTypes", P.TRIM_TYPES))
         out.append(f"\t\tTrimPatternFirst: {str(bool(P.TRIM_PATTERN_FIRST)).lower()},\n")
+        out.append(
+            "\t\tProjectionEqualsIsAlias: "
+            f"{str(projection_shape(name, 'SELECT zza = 1') == 'Alias').lower()},\n"
+        )
+        out.append(
+            "\t\tPositionalColumns: "
+            f"{str(projection_shape(name, 'SELECT #2 FROM zzt') == 'PositionalColumn').lower()},\n"
+        )
         out.append(
             "\t\tAlterColumnNullabilityWritten: %s,\n"
             % str(

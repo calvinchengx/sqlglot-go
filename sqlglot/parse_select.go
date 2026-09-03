@@ -598,13 +598,6 @@ func (p *parser) parseProjections() ([]*Expression, error) {
 }
 
 func (p *parser) parseProjection() (*Expression, error) {
-	// T-SQL's `alias = expression` names a column with the left-hand side,
-	// which is the opposite of what the same tokens mean anywhere else.
-	if p.dialect == "tsql" && p.atAliasName() {
-		if n := p.next(); n != nil && n.Type == TokEQ {
-			return nil, p.unsupported("T-SQL alias assignment")
-		}
-	}
 	// DuckDB names a projection in FRONT of it: `SELECT foo: 1` is
 	// `SELECT 1 AS foo`. Claimed only when a NAME is followed by the colon,
 	// so a slice or a parameter elsewhere in the expression is untouched.
@@ -626,14 +619,25 @@ func (p *parser) parseProjection() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	// In T-SQL a top-level `=` in a projection is ALWAYS an alias assignment
-	// and never a comparison, so anything that parsed as one here has been
-	// read the wrong way round. The token peek above catches the plain
-	// spelling; this catches the rest -- `SELECT +TOP=A` reaches the parser
-	// as a unary plus and would otherwise become an equality the reference
-	// never meant. Refusing beats diverging.
-	if p.dialect == "tsql" && e != nil && e.Class == "EQ" {
-		return nil, p.unsupported("T-SQL alias assignment")
+	// `alias = expression` names a column with the LEFT-hand side, which is
+	// the opposite of what the same tokens mean anywhere else. Only T-SQL
+	// reads it that way, and which dialects do is asked rather than assumed.
+	//
+	// Only where the left is a BARE NAME: `A = A = 0` is a chain of
+	// comparisons in the reference too, because what stands left of the
+	// outer equals is an equality rather than a name. The whole expression
+	// is read first and turned round after, which is how that falls out
+	// rather than having to be tested for.
+	if p.tables.ProjectionEqualsIsAlias && e != nil && e.Class == "EQ" {
+		if left, _ := e.Args["this"].(*Expression); left != nil && left.Class == "Column" {
+			if name, ok := bareColumnName(left); ok {
+				right, _ := e.Args["expression"].(*Expression)
+				return New("Alias",
+					Arg{"this", right},
+					Arg{"alias", New("Identifier",
+						Arg{"this", name}, Arg{"quoted", false})}), nil
+			}
+		}
 	}
 	return p.parseAlias(e)
 }

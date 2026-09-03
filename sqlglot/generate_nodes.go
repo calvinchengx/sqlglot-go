@@ -88,6 +88,7 @@ func init() {
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
 		"Hint":                                (*generator).writeHint,
+		"PositionalColumn":                    (*generator).writePositionalColumn,
 		"ExcludeColumnConstraint":             (*generator).writeExcludeConstraint,
 		"WithOperator":                        (*generator).writeWithOperator,
 		"Opclass":                             (*generator).writeOpclass,
@@ -794,6 +795,12 @@ func (g *generator) writeNull(*Expression) string { return "NULL" }
 
 // writeDistinct serves both `SELECT DISTINCT`, where the node is bare, and
 // `COUNT(DISTINCT a)`, where it carries the arguments it distinguishes.
+// writePositionalColumn writes a reference to an output column by its
+// POSITION rather than its name: `#2` is the second one.
+func (g *generator) writePositionalColumn(e *Expression) string {
+	return "#" + g.child(e, "this")
+}
+
 // writeHint writes what the engine is told about running the query, back
 // inside the comment it was written in.
 func (g *generator) writeHint(e *Expression) string {
