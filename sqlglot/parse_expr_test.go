@@ -10047,3 +10047,34 @@ func TestAlterActionsAndDirectories(t *testing.T) {
 		}
 	}
 }
+
+// What a CREATE TABLE may carry beyond its columns: settings between the
+// columns and the query, two words whose branches the property table cannot
+// describe, and a query that is a set operation.
+func TestCreateTableTails(t *testing.T) {
+	for _, sql := range []string{
+		"CREATE TABLE z (z INT) WITH (PARTITIONED_BY=(x INT)) AS SELECT 1",
+		"CREATE TABLE a (b INT) ON COMMIT PRESERVE ROWS",
+		"CREATE TABLE a (b INT) ON COMMIT DELETE ROWS",
+		"CREATE TABLE a.b AS (SELECT 1) NO PRIMARY INDEX",
+		"CREATE TABLE foo AS (SELECT 1) UNION ALL (SELECT 2)",
+		"CREATE TABLE foo AS (SELECT 1)",
+	} {
+		tree, err := ParseOne(sql, "")
+		if err != nil {
+			t.Errorf("%s: %v", sql, err)
+			continue
+		}
+		got, err := Generate(tree, "")
+		if err != nil || got != sql {
+			t.Errorf("%s wrote %q (%v)", sql, got, err)
+		}
+	}
+	// The word ON still names a filegroup on its other branch, where the
+	// dialect writes one.
+	if tree, err := ParseOne("CREATE TABLE x (a INTEGER) ON b (c)", "tsql"); err != nil {
+		t.Errorf("a filegroup was refused: %v", err)
+	} else if got, _ := Generate(tree, "tsql"); got != "CREATE TABLE x (a INTEGER) ON b (c)" {
+		t.Errorf("a filegroup wrote %q", got)
+	}
+}

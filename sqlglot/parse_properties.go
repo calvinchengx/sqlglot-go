@@ -26,6 +26,16 @@ func (p *parser) parseTableProperties() ([]*Expression, error) {
 			out = append(out, prop)
 			continue
 		}
+		// A word whose branches the generated table cannot describe: ON opens
+		// both `ON COMMIT PRESERVE ROWS` and `ON <filegroup>`, and NO both a
+		// missing index and a promise not to run any SQL. Asked BEFORE the
+		// table, or the word's other branch would take the statement.
+		if prop, own, err := p.parseBespokeProperty(false); err != nil {
+			return nil, err
+		} else if own {
+			out = append(out, prop)
+			continue
+		}
 		spec, consumed, ok := p.atProperty()
 		if !ok {
 			return out, nil
@@ -154,6 +164,31 @@ func (p *parser) parseBespokeProperty(inWith bool) (*Expression, bool, error) {
 	case p.atWords("DATA_DELETION"):
 		prop, err := p.parseDataDeletion()
 		return prop, true, err
+	// `ON COMMIT PRESERVE ROWS` and `ON COMMIT DELETE ROWS` say what happens
+	// to a temporary table's rows when the transaction ends. The word ON
+	// opens a property whose OTHER branch names a filegroup, so only this
+	// spelling is claimed here.
+	case p.atWords("ON", "COMMIT", "PRESERVE", "ROWS"):
+		for range 4 {
+			p.advance()
+		}
+		return New("OnCommitProperty"), true, nil
+	case p.atWords("ON", "COMMIT", "DELETE", "ROWS"):
+		for range 4 {
+			p.advance()
+		}
+		return New("OnCommitProperty", Arg{"delete", true}), true, nil
+	// And NO opens one whose branches are a missing index and a promise not
+	// to run any SQL.
+	case p.atWords("NO", "PRIMARY", "INDEX"):
+		for range 3 {
+			p.advance()
+		}
+		return New("NoPrimaryIndexProperty"), true, nil
+	case p.atWords("NO", "SQL"):
+		p.advance()
+		p.advance()
+		return New("SqlReadWriteProperty", Arg{"this", "NO SQL"}), true, nil
 	}
 	return nil, false, nil
 }

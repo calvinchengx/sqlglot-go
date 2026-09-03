@@ -167,6 +167,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 	}
 
 	var this, expression *Expression
+	var afterColumns []*Expression
 	// Some of what a statement says about its table stands between the name
 	// and the columns -- `CREATE TABLE z WITH (FORMAT='parquet') AS SELECT 1`
 	// -- and some after them. Both are read, in the order they were written,
@@ -190,6 +191,13 @@ func (p *parser) parseCreate() (*Expression, error) {
 			return nil, err
 		}
 		this = New("Schema", Arg{"this", table}, Arg{"expressions", columns})
+		// What the statement says ABOUT the table may stand between the
+		// columns and the query: `CREATE TABLE z (z INT) WITH (...) AS
+		// SELECT 1`. Read here so the AS below still finds itself.
+		afterColumns, err = p.parseTableProperties()
+		if err != nil {
+			return nil, err
+		}
 		// A view may name its columns AND supply the query.
 		if p.match(TokALIAS) {
 			query, err := p.parseCreateBody()
@@ -246,6 +254,9 @@ func (p *parser) parseCreate() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Whatever stood between the columns and the query comes first, in the
+	// order it was written.
+	afterSchema = append(afterColumns, afterSchema...)
 	// `CLONE other` makes the new table from an existing one rather than from
 	// columns or a query. SHALLOW says the rows are shared until one side
 	// writes to them.
@@ -2668,7 +2679,9 @@ func (p *parser) parseCreateBody() (*Expression, error) {
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed query")
 	}
-	return New("Subquery", Arg{"this", inner}), nil
+	// A parenthesised query may be the LEFT of a set operation: `CREATE TABLE
+	// t AS (SELECT 1) UNION ALL (SELECT 2)` makes the table from both.
+	return p.parseSetOperations(New("Subquery", Arg{"this", inner}))
 }
 
 // parseIndexRest reads everything after `CREATE [UNIQUE] INDEX`.

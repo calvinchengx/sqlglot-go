@@ -195,6 +195,7 @@ func init() {
 		"HistoricalData":                      (*generator).writeHistoricalData,
 		"TimeseriesKey":                       (*generator).writeTimeseriesKey,
 		"Directory":                           (*generator).writeDirectory,
+		"OnCommitProperty":                    (*generator).writeOnCommitProperty,
 		"RowFormatDelimitedProperty":          (*generator).writeRowFormatDelimited,
 		"Tuple":                               (*generator).writeTuple,
 		"ToMap":                               (*generator).writeToMap,
@@ -2903,7 +2904,8 @@ func (g *generator) writeCreate(e *Expression) string {
 		items, _ := properties.Args["expressions"].([]*Expression)
 		for _, item := range items {
 			switch item.Class {
-			case "WithDataProperty", "SequenceProperties", "TriggerProperties":
+			case "WithDataProperty", "SequenceProperties", "TriggerProperties",
+				"OnCommitProperty", "NoPrimaryIndexProperty":
 				out += " " + g.node(item)
 			}
 		}
@@ -3358,6 +3360,15 @@ func (g *generator) writePrimaryKey(e *Expression) string {
 		out += " " + strings.Join(options, " ")
 	}
 	return out
+}
+
+// writeOnCommitProperty writes what happens to a temporary table's rows when
+// the transaction ends.
+func (g *generator) writeOnCommitProperty(e *Expression) string {
+	if drop, _ := e.Args["delete"].(bool); drop {
+		return "ON COMMIT DELETE ROWS"
+	}
+	return "ON COMMIT PRESERVE ROWS"
 }
 
 // writeDirectory writes the FILES a statement writes into rather than a table:
