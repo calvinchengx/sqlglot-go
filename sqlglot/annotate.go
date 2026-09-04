@@ -76,6 +76,17 @@ func annotateNode(e *Expression, dialect string) *Expression {
 		return annotateScalarSubquery(e, dialect)
 	case "Not":
 		return dataType("BOOLEAN")
+	case "Rank", "DenseRank":
+		// The probe that fills funcReturns never recorded these: they take
+		// no scalar argument, so the "run over an INT / DOUBLE / VARCHAR"
+		// check had nothing to move. The return is fixed and needs no
+		// schema -- Databricks writes INT, everyone else BIGINT.
+		if dialect == "databricks" {
+			return dataType("INT")
+		}
+		return dataType("BIGINT")
+	case "PercentRank", "CumeDist":
+		return dataType("DOUBLE")
 	case "Array":
 		return annotateArray(e, dialect)
 	case "Case":

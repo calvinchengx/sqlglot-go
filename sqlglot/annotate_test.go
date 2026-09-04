@@ -83,6 +83,9 @@ func TestAnnotateShapes(t *testing.T) {
 		{"promotion leaves other types alone", "SUM(CAST(1 AS DECIMAL(18, 2)))", "",
 			"DECIMAL(18, 2)"},
 		{"a function that wraps in an array", "ARRAY_AGG(1)", "", "ARRAY<INT>"},
+		{"rank is a bigint without a schema", "RANK() OVER (ORDER BY 1)", "", "BIGINT"},
+		{"databricks writes rank as int", "RANK() OVER (ORDER BY 1)", "databricks", "INT"},
+		{"percent rank is a double", "PERCENT_RANK() OVER (ORDER BY 1)", "", "DOUBLE"},
 		// A column resolves to UNKNOWN rather than to nothing: that IS the
 		// reference's answer without a schema, and it is what lets a caller
 		// tell an honest UNKNOWN from a gap in the port.

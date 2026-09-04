@@ -73,11 +73,14 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 		}
 	}
 	out = simplifyLiterals(out, parent)
+	out = simplifyCoalesce(out, parent)
 	out = simplifyNot(out, parent, dialect)
 	out = absorb(out, parent)
 	out = simplifyConnectors(out, parent)
 	out = simplifyParens(out, parent)
 	out = sortComparison(out)
+	out = simplifyEquality(out)
+	out = simplifyStartsWith(out)
 	return out
 }
 
@@ -143,6 +146,15 @@ var nullOK = map[string]bool{"NullSafeEQ": true, "NullSafeNEQ": true, "PropertyE
 // here: folding them means doing calendar arithmetic, and a port that got that
 // subtly wrong would return the wrong rows rather than the wrong spelling.
 func simplifyLiterals(e, parent *Expression) *Expression {
+	// Double negation of a value, not of a boolean: `--500` is `500`.
+	// The boolean case (`NOT NOT x`) is simplifyNot, and needs a type.
+	if e.Class == "Neg" {
+		this := childOf(e, "this")
+		if this != nil && this.Class == "Neg" {
+			return childOf(this, "this")
+		}
+		return e
+	}
 	if !isA("Binary", e) || isA("Connector", e) || nullOK[e.Class] {
 		return e
 	}
@@ -370,10 +382,64 @@ func sortComparison(e *Expression) *Expression {
 	return e
 }
 
-// isConstant is the reference's `_is_constant`: a literal, a boolean or NULL.
+// inverseArithmetic is what moving a constant across a comparison does:
+// `x + 1 = 3` becomes `x = 3 - 1`. Only Add and Sub -- Mul and Div are
+// not in the reference's INVERSE_OPS, and date/interval arithmetic is
+// left alone until a fold can be checked on a calendar, not a string.
+var inverseArithmetic = map[string]string{"Add": "Sub", "Sub": "Add"}
+
+// simplifyEquality is the reference's `simplify_equality`: move a constant
+// across + or - so the column stands alone. Subtraction is not commutative,
+// so `5 - x = 2` inverts the comparison (`x < 3` when it was `>`).
+func simplifyEquality(e *Expression) *Expression {
+	if !comparisons[e.Class] || e.Class == "Is" {
+		return e
+	}
+	left, right := childOf(e, "this"), childOf(e, "expression")
+	if left == nil || right == nil || inverseArithmetic[left.Class] == "" {
+		return e
+	}
+	if !isNumberLiteral(right) {
+		return e
+	}
+	a, b := childOf(left, "this"), childOf(left, "expression")
+	if a == nil || b == nil {
+		return e
+	}
+	switch {
+	case !isNumberLiteral(a) && isNumberLiteral(b):
+		// x + 1 = 3  →  x = 3 - 1
+	case !isNumberLiteral(b) && isNumberLiteral(a):
+		if left.Class == "Sub" {
+			// 5 - x = 2  →  x < 3  (comparison inverted, 5 - 2)
+			to, ok := inverseComparison[e.Class]
+			if !ok {
+				return e
+			}
+			return New(to, Arg{"this", b.Copy()}, Arg{
+				"expression", New("Sub", Arg{"this", a.Copy()}, Arg{"expression", right.Copy()}),
+			})
+		}
+		a, b = b, a
+	default:
+		return e
+	}
+	return New(e.Class, Arg{"this", a.Copy()}, Arg{
+		"expression", New(inverseArithmetic[left.Class],
+			Arg{"this", right.Copy()}, Arg{"expression", b.Copy()}),
+	})
+}
+
+// isConstant is the reference's `_is_constant`: a literal, a boolean, NULL,
+// or a Neg of one. `-500` is Neg(Literal), not a Literal whose text begins
+// with a minus, and without counting it a comparison against it would not
+// flip to put the column on the left.
 func isConstant(e *Expression) bool {
 	if e == nil {
 		return false
+	}
+	if e.Class == "Neg" {
+		return isConstant(childOf(e, "this"))
 	}
 	switch e.Class {
 	case "Literal", "Boolean", "Null":
@@ -612,12 +678,17 @@ func chainOperands(e *Expression, class string) []*Expression {
 //
 //	A AND (A OR B) -> A
 //	A OR (A AND B) -> A
+//	A OR (NOT A AND B) -> A OR B   (only where A cannot be NULL)
+//	A AND (NOT A OR B) -> A AND B  (only where A cannot be NULL)
+//
+// The first two hold even when A is NULL. The complement forms do not:
+// `NULL OR (NOT NULL AND B)` is NULL, while `NULL OR B` follows B. They
+// are applied only where A is known never-null without a schema -- an IS
+// predicate is BOOLEAN and never SQL NULL, which is the case COALESCE
+// comparison rewrites into (`x IS NULL`).
 //
 // The ELIMINATION half -- `(A AND B) OR (A AND NOT B)` down to A -- is not
-// here. It holds only where B is known non-null, and that knowledge comes
-// from the type annotator, which is not ported. Folding it without the
-// nullability check would be wrong exactly when B can be NULL, which is the
-// case nobody tests by hand.
+// here. It holds only where B is known non-null, and a column is not.
 func absorb(e, parent *Expression) *Expression {
 	if e.Class != "And" && e.Class != "Or" {
 		return e
@@ -630,7 +701,11 @@ func absorb(e, parent *Expression) *Expression {
 	if len(ops) < 2 {
 		return e
 	}
+	if out := removeComplements(e.Class, ops); out != nil {
+		return out
+	}
 
+	changed := false
 	kept := make([]*Expression, 0, len(ops))
 	for i, op := range ops {
 		inner := unnest(op)
@@ -638,32 +713,246 @@ func absorb(e, parent *Expression) *Expression {
 			kept = append(kept, op)
 			continue
 		}
+		subs := chainOperands(inner, opposite)
 		// `A AND (A OR B)`: the parenthesised operand is absorbed when one of
 		// ITS operands is already being required alongside it.
 		absorbed := false
-		for _, sub := range chainOperands(inner, opposite) {
+		var leftover []*Expression
+		for _, sub := range subs {
+			u := unnest(sub)
+			drop := false
 			for j, other := range ops {
-				if i != j && unnest(other).Equal(unnest(sub)) {
+				if i == j {
+					continue
+				}
+				o := unnest(other)
+				if o.Equal(u) {
 					absorbed = true
+					drop = true
+					break
+				}
+				// A OR (NOT A AND B): drop NOT A, keep B, only when A cannot
+				// be NULL. Without that guard the rewrite follows B when A
+				// is NULL and the original does not.
+				if u != nil && u.Class == "Not" {
+					target := unnest(childOf(u, "this"))
+					if isKnownNonnull(target) && o.Equal(target) {
+						changed = true
+						drop = true
+						break
+					}
 				}
 			}
+			if !drop {
+				leftover = append(leftover, sub)
+			}
 		}
-		if !absorbed {
+		switch {
+		case absorbed:
+			changed = true
+		case len(leftover) == len(subs):
 			kept = append(kept, op)
+		case len(leftover) == 0:
+			changed = true
+		case len(leftover) == 1:
+			changed = true
+			kept = append(kept, leftover[0])
+		default:
+			changed = true
+			rebuilt := leftover[0]
+			for _, s := range leftover[1:] {
+				rebuilt = New(opposite, Arg{"this", rebuilt}, Arg{"expression", s})
+			}
+			kept = append(kept, rebuilt)
 		}
 	}
-	if len(kept) == len(ops) || len(kept) == 0 {
+	if !changed || len(kept) == 0 {
 		return e
 	}
+	return rebuildConnector(e.Class, kept, parent)
+}
 
-	rebuilt := kept[len(kept)-1]
-	for i := len(kept) - 2; i >= 0; i-- {
-		rebuilt = New(e.Class, Arg{"this", kept[i]}, Arg{"expression", rebuilt})
+// removeComplements folds A AND NOT A to FALSE and A OR NOT A to TRUE,
+// only where A cannot be NULL. `x IS NULL AND NOT x IS NULL` is FALSE;
+// `x AND NOT x` is left alone, because a NULL column makes both NULL.
+func removeComplements(class string, ops []*Expression) *Expression {
+	for i, op := range ops {
+		inner := unnest(op)
+		if inner == nil || inner.Class != "Not" {
+			continue
+		}
+		target := unnest(childOf(inner, "this"))
+		if !isKnownNonnull(target) {
+			continue
+		}
+		for j, other := range ops {
+			if i != j && unnest(other).Equal(target) {
+				if class == "And" {
+					return boolLit(false)
+				}
+				return boolLit(true)
+			}
+		}
+	}
+	return nil
+}
+
+func rebuildConnector(class string, ops []*Expression, parent *Expression) *Expression {
+	rebuilt := ops[len(ops)-1]
+	for i := len(ops) - 2; i >= 0; i-- {
+		rebuilt = New(class, Arg{"this", ops[i]}, Arg{"expression", rebuilt})
 	}
 	if rebuilt.Class == "And" || rebuilt.Class == "Or" {
 		return rebuilt
 	}
 	return keepCondition(unnest(rebuilt), parent)
+}
+
+// isKnownNonnull is the part of the annotator's `nonnull` flag that needs
+// no schema. An IS predicate is never SQL NULL; neither is a literal or a
+// boolean. A column is not, even when it is compared -- `x = 1` is NULL
+// when x is.
+func isKnownNonnull(e *Expression) bool {
+	e = unnest(e)
+	if e == nil {
+		return false
+	}
+	switch e.Class {
+	case "Is", "Literal", "Boolean":
+		return true
+	case "Not":
+		return isKnownNonnull(childOf(e, "this"))
+	}
+	return false
+}
+
+// simplifyCoalesce is the reference's `simplify_coalesce`.
+//
+// COALESCE(x) is x, and COALESCE(1, …) is 1. A comparison of COALESCE against
+// a constant becomes a disjunction: either the first argument is present and
+// the comparison uses it, or it is NULL and the comparison uses the first
+// constant fallback. Existing connector and literal folds then produce
+// `NOT x IS NULL AND x = 2` or `x = 1 OR x IS NULL`.
+//
+// Redshift is the only dialect that refuses this rewrite, and it is not
+// configured here. A comparison whose other side is not a constant is left
+// alone -- the rewrite is valid but does no work.
+func simplifyCoalesce(e, parent *Expression) *Expression {
+	if e.Class == "Coalesce" {
+		if parent != nil && parent.Class == "Hint" {
+			return e
+		}
+		this := childOf(e, "this")
+		if this == nil {
+			return e
+		}
+		// COALESCE(1, 2) is 1. COALESCE(x) is x when x is a column.
+		// A Star or COLUMNS expansion inside COALESCE is not: DuckDB
+		// accepts COALESCE(*COLUMNS(*)) and rejects a bare *COLUMNS(*)
+		// at the root, so unwrapping it would emit SQL that does not run.
+		if isNonnullConstant(this) {
+			return this
+		}
+		if len(coalesceArgs(e)) == 0 && this.Class == "Column" {
+			return this
+		}
+		return e
+	}
+	if !comparisons[e.Class] {
+		return e
+	}
+	left, right := childOf(e, "this"), childOf(e, "expression")
+	var coalesce, other *Expression
+	switch {
+	case left != nil && left.Class == "Coalesce":
+		coalesce, other = left, right
+	case right != nil && right.Class == "Coalesce":
+		coalesce, other = right, left
+	default:
+		return e
+	}
+	if !isConstant(other) {
+		return e
+	}
+	args := coalesceArgs(coalesce)
+	argIndex := -1
+	var fallback *Expression
+	for i, arg := range args {
+		if isConstant(arg) {
+			argIndex, fallback = i, arg
+			break
+		}
+	}
+	if argIndex < 0 {
+		return e
+	}
+	remaining := args[:argIndex]
+	var this *Expression
+	if len(remaining) == 0 {
+		this = childOf(coalesce, "this")
+	} else {
+		this = New("Coalesce",
+			Arg{"this", childOf(coalesce, "this").Copy()},
+			Arg{"expressions", copyExpressions(remaining)})
+	}
+	if this == nil {
+		return e
+	}
+	replaced := e.shallowCopy()
+	constCmp := e.shallowCopy()
+	if left != nil && left.Class == "Coalesce" {
+		replaced.Set("this", this.Copy())
+		constCmp.Set("this", fallback.Copy())
+	} else {
+		replaced.Set("expression", this.Copy())
+		constCmp.Set("expression", fallback.Copy())
+	}
+	isNull := New("Is", Arg{"this", this.Copy()}, Arg{"expression", New("Null")})
+	notNull := New("Not", Arg{"this", isNull})
+	present := New("And", Arg{"this", notNull}, Arg{"expression", replaced})
+	absent := New("And", Arg{"this", isNull.Copy()}, Arg{"expression", constCmp})
+	return parenthesizeNestedConnector(
+		New("Or", Arg{"this", present}, Arg{"expression", absent}), parent)
+}
+
+func coalesceArgs(e *Expression) []*Expression {
+	args, _ := e.Args["expressions"].([]*Expression)
+	return args
+}
+
+func copyExpressions(in []*Expression) []*Expression {
+	out := make([]*Expression, len(in))
+	for i, e := range in {
+		out[i] = e.Copy()
+	}
+	return out
+}
+
+// simplifyStartsWith folds a prefix check whose both sides are string
+// literals: STARTS_WITH('foo', 'f') is TRUE. A column on either side is
+// left alone -- whether it starts with a prefix is not knowable here.
+func simplifyStartsWith(e *Expression) *Expression {
+	if e.Class != "StartsWith" {
+		return e
+	}
+	this, prefix := childOf(e, "this"), childOf(e, "expression")
+	if !isStringLiteral(this) || !isStringLiteral(prefix) {
+		return e
+	}
+	s, _ := this.Args["this"].(string)
+	p, _ := prefix.Args["this"].(string)
+	return boolLit(strings.HasPrefix(s, p))
+}
+
+func isNonnullConstant(e *Expression) bool {
+	if e == nil {
+		return false
+	}
+	switch e.Class {
+	case "Literal", "Boolean":
+		return true
+	}
+	return false
 }
 
 // parenthesizeNestedConnector is the reference's rule, and its comment says
