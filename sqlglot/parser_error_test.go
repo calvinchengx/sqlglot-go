@@ -66,7 +66,6 @@ func TestUnsupportedErrorMessageIsTheLabel(t *testing.T) {
 func TestLabelNamesTheKeywordThatStoppedIt(t *testing.T) {
 	for _, tc := range []struct{ sql, want string }{
 		{"SELECT a FROM t CONNECT BY b = 1", "trailing tokens at CONNECT BY"},
-		{"SELECT a FROM t OPTION(LABEL = 'x')", "trailing tokens at OPTION"},
 	} {
 		_, err := ParseOne(tc.sql, "tsql")
 		var u *UnsupportedError

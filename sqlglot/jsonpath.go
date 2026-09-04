@@ -124,6 +124,18 @@ func errUnsupportedJSONPath(what string) error {
 // which stays a refusal.
 var errNotAJSONPath = &UnsupportedError{Construct: "not a JSON path"}
 
+// jsonPathKeptAsLiteral reports the SQL/JSON mode prefixes the reference
+// keeps as written. `lax $.b` and `strict $.b` are not path syntax: the
+// tokenizer fails on them and to_json_path hands the original string back
+// rather than parsing `$` after the mode word. A path this port cannot
+// read for any other reason is still refused in a function argument --
+// Databricks turns `$.x-y` into a key, and keeping a Literal there would
+// be a different tree.
+func jsonPathKeptAsLiteral(text string) bool {
+	s := strings.TrimLeftFunc(text, unicode.IsSpace)
+	return strings.HasPrefix(s, "lax") || strings.HasPrefix(s, "strict")
+}
+
 // isJSONPathVarByte reports whether a byte can appear in a bare key. The
 // reference tokenizes anything else as its own token and then has nowhere to
 // put it -- which is how `/duck/0` and `en-US` end up as plain literals.

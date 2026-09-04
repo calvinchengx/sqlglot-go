@@ -178,6 +178,12 @@ func TestJSONExtractWrittenTwice(t *testing.T) {
 			`SELECT ISNULL(JSON_QUERY(x, '$."a b"'), JSON_VALUE(x, '$."a b"'))`},
 		{"SELECT JSON_QUERY(x, '$.y[0].z')",
 			"SELECT ISNULL(JSON_QUERY(x, '$.y[0].z'), JSON_VALUE(x, '$.y[0].z'))"},
+		// A mode word is not path syntax. The reference keeps the string,
+		// and the first consumer writes `lax $.b`.
+		{"SELECT JSON_QUERY(a, 'lax $.b') FROM dbo.t",
+			"SELECT ISNULL(JSON_QUERY(a, 'lax $.b'), JSON_VALUE(a, 'lax $.b')) FROM dbo.t"},
+		{"SELECT JSON_VALUE(a, 'strict $.b') FROM dbo.t",
+			"SELECT ISNULL(JSON_QUERY(a, 'strict $.b'), JSON_VALUE(a, 'strict $.b')) FROM dbo.t"},
 	} {
 		e, err := ParseOne(tc.sql, "tsql")
 		if err != nil {
@@ -187,6 +193,21 @@ func TestJSONExtractWrittenTwice(t *testing.T) {
 			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
 		}
 	}
+	// The mode word stays a string, not a path: folding `lax` into a key
+	// would be a different extraction.
+	lax, err := ParseOne("SELECT JSON_QUERY(a, 'lax $.b') FROM dbo.t", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne(lax): %v", err)
+	}
+	extracts := lax.FindAll("JSONExtract")
+	if len(extracts) != 1 {
+		t.Fatalf("JSONExtract count = %d, want 1", len(extracts))
+	}
+	if path, _ := extracts[0].Args["expression"].(*Expression); path == nil ||
+		path.Class != "Literal" || path.Args["this"] != "lax $.b" {
+		t.Errorf("the path is %v, want the string lax $.b", extracts[0].Args["expression"])
+	}
+
 	// An extraction with no path at all has nothing to write into either
 	// call, so the pair is refused rather than written half-formed.
 	bare := New("JSONExtract",
@@ -1015,6 +1036,81 @@ func TestForClauseEdges(t *testing.T) {
 	}
 	if got, _ := Generate(twice, "postgres"); got != "SELECT a FROM tbl FOR UPDATE FOR SHARE" {
 		t.Errorf("got %q, want both locks kept", got)
+	}
+}
+
+// T-SQL's OPTION (...) is advice about how to run the query, and it hangs
+// off the query the way FOR JSON does -- after every clause that names
+// rows. The first consumer writes `WITH (NOLOCK) OPTION (RECOMPILE)`; the
+// reference's own fixture is `OPTION(LABEL = 'foo')`.
+func TestQueryHintOptions(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"a flag", "SELECT col FROM t OPTION(RECOMPILE)",
+			"SELECT col FROM t OPTION(RECOMPILE)"},
+		{"a labelled query", "SELECT col FROM t OPTION(LABEL = 'foo')",
+			"SELECT col FROM t OPTION(LABEL = 'foo')"},
+		{"a value without an equals", "SELECT col FROM t OPTION(MAXDOP 2)",
+			"SELECT col FROM t OPTION(MAXDOP 2)"},
+		{"paired words", "SELECT col FROM t OPTION(HASH JOIN)",
+			"SELECT col FROM t OPTION(HASH JOIN)"},
+		{"several", "SELECT col FROM t OPTION(RECOMPILE, MAXDOP 2)",
+			"SELECT col FROM t OPTION(RECOMPILE, MAXDOP 2)"},
+		{"three words", "SELECT col FROM t OPTION(OPTIMIZE FOR UNKNOWN)",
+			"SELECT col FROM t OPTION(OPTIMIZE FOR UNKNOWN)"},
+		{"after a locking hint", "SELECT * FROM dbo.t WITH (NOLOCK) OPTION (RECOMPILE)",
+			"SELECT * FROM dbo.t WITH (NOLOCK) OPTION(RECOMPILE)"},
+		{"on an update", "UPDATE t SET c = 1 OPTION(RECOMPILE)",
+			"UPDATE t SET c = 1 OPTION(RECOMPILE)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "tsql")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, "tsql")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	e, err := ParseOne("SELECT col FROM t OPTION(LABEL = 'foo')", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	options, _ := e.Args["options"].([]*Expression)
+	if len(options) != 1 || options[0].Class != "QueryOption" {
+		t.Fatalf("options = %v, want one QueryOption", options)
+	}
+	if this := options[0].This(); this == nil || this.Class != "Var" || this.Args["this"] != "LABEL" {
+		t.Errorf("the option is %v, want a Var named LABEL", options[0].This())
+	}
+	if value, _ := options[0].Args["expression"].(*Expression); value == nil ||
+		value.Class != "Literal" || value.Args["this"] != "foo" {
+		t.Errorf("the value is %v, want the string foo", options[0].Args["expression"])
+	}
+	// A dialect that has no OPTION writes nothing of the kind, and refusing
+	// is better than dropping the clause.
+	if _, err := Generate(e, "postgres"); err == nil {
+		t.Error("PostgreSQL wrote a T-SQL OPTION; it has none")
+	}
+}
+
+// The malformed OPTION shapes, held still because a half-read hint would put
+// a wrong tree behind a statement that reads fine.
+func TestQueryHintOptionsMalformed(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT col FROM t OPTION",
+		"SELECT col FROM t OPTION()",
+		"SELECT col FROM t OPTION(RECOMPILE",
+		"SELECT col FROM t OPTION(NOT_A_HINT)",
+		"SELECT col FROM t OPTION(HASH)",
+	} {
+		if _, err := ParseOne(sql, "tsql"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
 	}
 }
 

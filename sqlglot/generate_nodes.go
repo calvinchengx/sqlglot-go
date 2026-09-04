@@ -328,6 +328,9 @@ func (g *generator) writeSelect(e *Expression) string {
 	for _, lateral := range laterals {
 		add(g.node(lateral))
 	}
+	// T-SQL's OPTION (...) sits after the query's own clauses and before
+	// FOR XML / FOR JSON, which is the reference's own order.
+	add(g.writeQueryHintOptions(e))
 	// FOR XML / FOR JSON / FOR BROWSE comes after the query's own clauses.
 	add(g.child(e, "for_"))
 	// Row locking comes last, and there may be more than one of them.
@@ -2854,8 +2857,36 @@ func (g *generator) writeForClause(e *Expression) string {
 	return "FOR " + kind + " " + strings.Join(parts, ", ")
 }
 
-// A QueryOption is a wrapper and writes whatever it holds.
-func (g *generator) writeQueryOption(e *Expression) string { return g.child(e, "this") }
+// A QueryOption is a wrapper. FOR XML writes only what it holds; T-SQL's
+// OPTION writes the value too, with `=` on the names that require it.
+func (g *generator) writeQueryOption(e *Expression) string {
+	this := g.child(e, "this")
+	value := g.child(e, "expression")
+	if value == "" {
+		return this
+	}
+	if _, need := g.tables.QueryHintOptionsNeedEqual[this]; need {
+		return this + " = " + value
+	}
+	return this + " " + value
+}
+
+// writeQueryHintOptions writes T-SQL's `OPTION(...)`. A dialect that has
+// none refuses rather than drop the clause.
+func (g *generator) writeQueryHintOptions(e *Expression) string {
+	options, _ := e.Args["options"].([]*Expression)
+	if len(options) == 0 {
+		return ""
+	}
+	if len(g.tables.QueryHintOptions) == 0 {
+		return g.fail("query OPTION")
+	}
+	parts := make([]string, 0, len(options))
+	for _, option := range options {
+		parts = append(parts, g.node(option))
+	}
+	return "OPTION(" + strings.Join(parts, ", ") + ")"
+}
 
 // An option written as a WORD, or a word with a parenthesised string after it.
 func (g *generator) writeXMLKeyValueOption(e *Expression) string {
@@ -3887,11 +3918,12 @@ func (g *generator) writeUpdate(e *Expression) string {
 	returning := g.child(e, "returning")
 	from := g.child(e, "from_")
 	where := g.child(e, "where")
+	options := g.writeQueryHintOptions(e)
 	if g.tables.ReturningEnd {
-		return clauses(head, from, where, returning)
+		return clauses(head, from, where, returning, options)
 	}
 	// T-SQL writes it here, between the assignments and the FROM.
-	return clauses(head, returning, from, where)
+	return clauses(head, returning, from, where, options)
 }
 
 // clauses joins what a statement is made of, skipping the parts it has none

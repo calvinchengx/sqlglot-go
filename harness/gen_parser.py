@@ -3024,6 +3024,66 @@ def for_clause_options(dialect: str) -> dict:
     return out
 
 
+def query_hint_options(dialect: str) -> dict:
+    """The vocabulary of T-SQL's `OPTION (...)` query hints.
+
+    Each word, and the words that may follow it -- `HASH JOIN`, `OPTIMIZE
+    FOR UNKNOWN`. A word with no followers is a flag, or takes a value the
+    parser reads separately (`MAXDOP 2`, `LABEL = 'foo'`). Empty for every
+    dialect that has none.
+
+    Read off the reference's own table rather than transcribed, and only
+    where the dialect's query-modifier table actually names OPTION. Another
+    module-level OPTIONS would be a different thing.
+    """
+    from sqlglot.tokens import TokenType
+
+    try:
+        from sqlglot.dialects.dialect import Dialect
+
+        parsers = Dialect.get_or_raise(dialect or None).parser_class.QUERY_MODIFIER_PARSERS
+    except Exception:  # noqa: BLE001 -- no dialect, or no modifier table
+        return {}
+    if TokenType.OPTION not in parsers:
+        return {}
+    import importlib
+
+    try:
+        module = importlib.import_module("sqlglot.parsers." + (dialect or "_"))
+        table = getattr(module, "OPTIONS", None)
+    except Exception:  # noqa: BLE001 -- no parser module for this dialect
+        table = None
+    if not table:
+        return {}
+    out = {}
+    for word, follows in table.items():
+        sequences = []
+        for item in follows:
+            if isinstance(item, str):
+                sequences.append([item])
+            else:
+                sequences.append(list(item))
+        out[word] = sequences
+    return out
+
+
+def query_hint_options_need_equal(dialect: str) -> list:
+    """The OPTION names T-SQL writes with `=` before their value.
+
+    LABEL, MAX_GRANT_PERCENT and MIN_GRANT_PERCENT. MAXDOP takes a value
+    too, and writes it without the sign. Empty where there is no OPTION.
+    """
+    if not query_hint_options(dialect):
+        return []
+    import importlib
+
+    try:
+        module = importlib.import_module("sqlglot.parsers." + (dialect or "_"))
+        return list(getattr(module, "OPTIONS_THAT_REQUIRE_EQUAL", ()))
+    except Exception:  # noqa: BLE001 -- no parser module for this dialect
+        return []
+
+
 def version_range_separators(dialect: str, exp) -> dict:
     """The word between the two bounds of a FOR SYSTEM_TIME range.
 
@@ -6248,6 +6308,11 @@ def main() -> int:
         "\t// ForClauseOptions is the option vocabulary of FOR XML and FOR JSON,\n",
         "\t// by kind: each word, and the second word it may take after it.\n",
         "\tForClauseOptions map[string]map[string][]string\n",
+        "\t// QueryHintOptions is T-SQL's OPTION (...) vocabulary: each word,\n",
+        "\t// and the words that may follow it. QueryHintOptionsNeedEqual are\n",
+        "\t// the ones written with `=` before their value.\n",
+        "\tQueryHintOptions          map[string][][]string\n",
+        "\tQueryHintOptionsNeedEqual map[string]struct{}\n",
         "\t// TableSampleWord and SelectSampleWord are what a sample is called\n",
         "\t// after a TABLE and after the QUERY: DuckDB says TABLESAMPLE for the\n",
         "\t// one and USING SAMPLE for the other, for the very same node.\n",
@@ -7536,6 +7601,23 @@ def main() -> int:
                     out.append(f"\t\t\t\t{gostr(word)}: {{{follows}}},\n")
                 out.append("\t\t\t},\n")
             out.append("\t\t},\n")
+        _qh = query_hint_options(name)
+        if _qh:
+            out.append("\t\tQueryHintOptions: map[string][][]string{\n")
+            for word in sorted(_qh):
+                sequences = _qh[word]
+                if not sequences:
+                    out.append(f"\t\t\t{gostr(word)}: {{}},\n")
+                else:
+                    parts = []
+                    for seq in sequences:
+                        inner = ", ".join(gostr(w) for w in seq)
+                        parts.append("{" + inner + "}")
+                    out.append(f"\t\t\t{gostr(word)}: {{{', '.join(parts)}}},\n")
+            out.append("\t\t},\n")
+        _qhe = query_hint_options_need_equal(name)
+        if _qhe:
+            out.append(strset("QueryHintOptionsNeedEqual", _qhe))
         _vr = version_range_separators(name, exp)
         if _vr:
             out.append("\t\tVersionRangeSep: map[string]string{\n")

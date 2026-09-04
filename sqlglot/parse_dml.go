@@ -61,6 +61,15 @@ func (p *parser) parseUpdate() (*Expression, error) {
 	if err := p.readReturning(node); err != nil {
 		return nil, err
 	}
+	if p.at(TokOPTION) {
+		options, err := p.parseQueryHintOptions()
+		if err != nil {
+			return nil, err
+		}
+		if len(options) > 0 {
+			node.Set("options", options)
+		}
+	}
 	if p.curr() != nil {
 		return nil, p.unsupported("UPDATE with more than this port reads")
 	}

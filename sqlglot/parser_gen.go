@@ -459,6 +459,11 @@ type ParserTables struct {
 	// ForClauseOptions is the option vocabulary of FOR XML and FOR JSON,
 	// by kind: each word, and the second word it may take after it.
 	ForClauseOptions map[string]map[string][]string
+	// QueryHintOptions is T-SQL's OPTION (...) vocabulary: each word,
+	// and the words that may follow it. QueryHintOptionsNeedEqual are
+	// the ones written with `=` before their value.
+	QueryHintOptions          map[string][][]string
+	QueryHintOptionsNeedEqual map[string]struct{}
 	// TableSampleWord and SelectSampleWord are what a sample is called
 	// after a TABLE and after the QUERY: DuckDB says TABLESAMPLE for the
 	// one and USING SAMPLE for the other, for the very same node.
@@ -10880,6 +10885,38 @@ var parserTables = map[string]*ParserTables{
 				"EXPLICIT": {},
 				"TYPE":     {},
 			},
+		},
+		QueryHintOptions: map[string][][]string{
+			"CONCAT":                                {{"UNION"}},
+			"DISABLE":                               {{"EXTERNALPUSHDOWN"}, {"SCALEOUTEXECUTION"}},
+			"DISABLE_OPTIMIZED_PLAN_FORCING":        {},
+			"EXPAND":                                {{"VIEWS"}},
+			"FAST":                                  {},
+			"FORCE":                                 {{"EXTERNALPUSHDOWN"}, {"ORDER"}, {"SCALEOUTEXECUTION"}},
+			"HASH":                                  {{"GROUP"}, {"JOIN"}, {"UNION"}},
+			"IGNORE_NONCLUSTERED_COLUMNSTORE_INDEX": {},
+			"KEEP":                                  {{"PLAN"}},
+			"KEEPFIXED":                             {{"PLAN"}},
+			"LABEL":                                 {},
+			"LOOP":                                  {{"JOIN"}},
+			"MAXDOP":                                {},
+			"MAXRECURSION":                          {},
+			"MAX_GRANT_PERCENT":                     {},
+			"MERGE":                                 {{"JOIN"}, {"UNION"}},
+			"MIN_GRANT_PERCENT":                     {},
+			"NO_PERFORMANCE_SPOOL":                  {},
+			"OPTIMIZE":                              {{"FOR", "UNKNOWN"}},
+			"ORDER":                                 {{"GROUP"}},
+			"PARAMETERIZATION":                      {{"FORCED"}, {"SIMPLE"}},
+			"QUERYTRACEON":                          {},
+			"RECOMPILE":                             {},
+			"ROBUST":                                {{"PLAN"}},
+			"USE":                                   {{"PLAN"}},
+		},
+		QueryHintOptionsNeedEqual: map[string]struct{}{
+			"LABEL":             {},
+			"MAX_GRANT_PERCENT": {},
+			"MIN_GRANT_PERCENT": {},
 		},
 		VersionRangeSep: map[string]string{
 			"BETWEEN": "AND",

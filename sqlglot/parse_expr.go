@@ -3083,13 +3083,21 @@ func (p *parser) buildJSONPathFunction(spec JSONPathFunc, args []*Expression) *E
 		// key the path grammar rejects, so falling back here would build a
 		// Literal where the reference built a path -- a different tree, and
 		// the differential said so.
+		//
+		// The exception is a SQL/JSON mode word: `lax $.b` and `strict $.b`
+		// are not path syntax, and the reference keeps the whole string.
 		if isStringLiteral(args[1]) {
 			text, _ := args[1].Args["this"].(string)
 			parsed, err := parseJSONPath(text)
 			if err != nil {
-				return nil
+				if jsonPathKeptAsLiteral(text) {
+					path = args[1]
+				} else {
+					return nil
+				}
+			} else {
+				path = parsed
 			}
-			path = parsed
 		} else {
 			path = args[1]
 		}

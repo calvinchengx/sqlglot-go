@@ -944,6 +944,18 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			}
 			laterals, _ := sel.Args["laterals"].([]*Expression)
 			sel.Set("laterals", append(laterals, view))
+		case p.at(TokOPTION):
+			options, err := p.parseQueryHintOptions()
+			if err != nil {
+				return err
+			}
+			if len(options) == 0 {
+				return p.unsupported("OPTION without a hint")
+			}
+			if err := p.setOnce(sel, "options", options[0]); err != nil {
+				return err
+			}
+			sel.Set("options", options)
 		case p.atWords("FOR", "XML"), p.atWords("FOR", "JSON"), p.atWords("FOR", "BROWSE"):
 			clause, err := p.parseForClause()
 			if err != nil {
@@ -1387,6 +1399,87 @@ func (p *parser) parseForClause() (*Expression, error) {
 		}
 	}
 	return New("ForClause", Arg{"kind", kind}, Arg{"expressions", options}), nil
+}
+
+// parseQueryHintOptions reads T-SQL's `OPTION (RECOMPILE, MAXDOP 2)`.
+//
+// Each hint is a word from the dialect's own table, some of them a pair
+// (`HASH JOIN`) and some of them a value (`LABEL = 'foo'`, `MAXDOP 2`).
+// A word the table does not have is refused rather than kept as text: the
+// reference raises there, and a made-up hint would silently vanish on write.
+func (p *parser) parseQueryHintOptions() ([]*Expression, error) {
+	if !p.match(TokOPTION) {
+		return nil, nil
+	}
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("OPTION without a hint list")
+	}
+	var options []*Expression
+	for {
+		option, err := p.parseQueryHintOption()
+		if err != nil {
+			return nil, err
+		}
+		if option == nil {
+			return nil, p.unsupported("OPTION without a hint")
+		}
+		options = append(options, option)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed OPTION")
+	}
+	return options, nil
+}
+
+func (p *parser) parseQueryHintOption() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("OPTION without a hint")
+	}
+	upper := strings.ToUpper(c.Text)
+	follows, known := p.tables.QueryHintOptions[upper]
+	if !known {
+		return nil, p.unsupported("unknown query option " + upper)
+	}
+	p.advance()
+	if len(follows) > 0 {
+		matched := false
+		for _, seq := range follows {
+			if p.atWords(seq...) {
+				for range seq {
+					p.advance()
+				}
+				upper += " " + strings.Join(seq, " ")
+				matched = true
+				break
+			}
+		}
+		if !matched {
+			return nil, p.unsupported("unknown query option " + upper)
+		}
+	}
+	p.match(TokEQ)
+	value, err := p.parsePrimaryOrVar()
+	if err != nil {
+		return nil, err
+	}
+	opt := New("QueryOption", Arg{"this", New("Var", Arg{"this", upper})})
+	if value != nil {
+		opt.Set("expression", value)
+	}
+	return opt, nil
+}
+
+// parsePrimaryOrVar is a primary when one is there, and nothing at a list
+// boundary -- the value of MAXDOP or LABEL, and the absence after RECOMPILE.
+func (p *parser) parsePrimaryOrVar() (*Expression, error) {
+	if p.curr() == nil || p.at(TokR_PAREN) || p.at(TokCOMMA) {
+		return nil, nil
+	}
+	return p.parsePrimary()
 }
 
 // LATERAL VIEW [OUTER] <call> [alias] [AS <column>[, <column>]]
