@@ -1,6 +1,7 @@
 package sqlglot
 
 import (
+	"errors"
 	"fmt"
 	"strings"
 )
@@ -18,14 +19,24 @@ import (
 // let the two executors disagree about a query while both believing they had
 // agreed.
 
-// generateError reports a node the generator does not know how to write.
+// ErrGenerate reports a tree the generator cannot write.
 //
 // A guard that rewrote a statement and then emitted something subtly different
 // would be worse than one that refused, so an unknown node stops the rewrite
 // rather than producing an approximation.
-type generateError struct{ what string }
+var ErrGenerate = errors.New("sqlglot-go: cannot generate SQL")
 
-func (e *generateError) Error() string { return "sqlglot-go: cannot generate SQL for " + e.what }
+// GenerateError names what the generator could not write.
+//
+// What is vocabulary -- a node class, a clause, a dialect limitation -- never
+// a caller's identifier. Error() is safe to log; a caller that needs the
+// name without scraping the message reads the field.
+type GenerateError struct{ What string }
+
+func (e *GenerateError) Error() string { return ErrGenerate.Error() + " for " + e.What }
+
+// Is makes errors.Is(err, ErrGenerate) hold for this error too.
+func (e *GenerateError) Is(target error) bool { return target == ErrGenerate }
 
 // Generate renders a tree as SQL in a dialect.
 func Generate(e *Expression, dialect string) (string, error) {
@@ -85,7 +96,7 @@ type generator struct {
 // strings; Generate reports the failure rather than the half-written text.
 func (g *generator) fail(what string) string {
 	if g.err == nil {
-		g.err = &generateError{what: what}
+		g.err = &GenerateError{What: what}
 	}
 	return ""
 }

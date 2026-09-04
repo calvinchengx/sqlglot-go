@@ -460,6 +460,46 @@ func TestPrecedenceLevelsThatAreEasyToCollapse(t *testing.T) {
 	}
 }
 
+// The JSON arrows sit at two different tiers depending on the dialect.
+// Neutral, T-SQL and Databricks read them as accessors, tighter than
+// arithmetic; PostgreSQL and DuckDB read them level with `||`. Mixing the
+// tiers is how you tell them apart, and no corpus statement does.
+func TestJSONArrowBindsAtTheDialectsTier(t *testing.T) {
+	for _, c := range []struct{ name, sql, dialect, want string }{
+		{"accessor: addition swallows the arrow", "1 + x -> 'y'", "", "Add"},
+		{"accessor: addition on the right stays outside", "x -> 'y' + 1", "", "Add"},
+		{"accessor: multiplication stays outside", "a -> b * c", "", "Mul"},
+		{"accessor: bitwise stays outside", "a & b -> c", "", "BitwiseAnd"},
+		{"accessor: bitwise on the right stays outside", "a -> b & c", "", "BitwiseAnd"},
+		{"accessor: darrow too", "1 + x ->> 'y'", "", "Add"},
+		{"accessor: a cast wraps the extract", "a -> b::INT", "", "Cast"},
+		{"accessor: a bracket after the extract wraps it", "x -> y[1]", "", "Bracket"},
+		{"accessor: a bracket on the left is the value", "x[1] -> y", "", "JSONExtract"},
+		{"tsql accessor", "1 + x -> 'y'", "tsql", "Add"},
+		{"databricks accessor", "1 + x -> 'y'", "databricks", "Add"},
+		{"postgres: the arrow swallows addition", "1 + x -> 'y'", "postgres", "JSONExtract"},
+		{"postgres: addition on the right is the path", "x -> 'y' + 1", "postgres", "JSONExtract"},
+		{"postgres: multiplication is the path", "a -> b * c", "postgres", "JSONExtract"},
+		{"postgres: the arrow swallows bitwise", "a & b -> c", "postgres", "JSONExtract"},
+		{"postgres: darrow too", "1 + x ->> 'y'", "postgres", "JSONExtractScalar"},
+		{"postgres: a cast is in the path", "a -> b::INT", "postgres", "JSONExtract"},
+		{"postgres: a bracket on the right is the path", "x -> y[1]", "postgres", "JSONExtract"},
+		{"duckdb: the arrow swallows addition", "1 + x -> 'y'", "duckdb", "JSONExtract"},
+		{"duckdb: addition on the right is the path", "x -> 'y' + 1", "duckdb", "JSONExtract"},
+		{"duckdb: multiplication is the path", "a -> b * c", "duckdb", "JSONExtract"},
+		{"duckdb: the arrow swallows bitwise", "a & b -> c", "duckdb", "JSONExtract"},
+		{"a unary path is still an extract", "x -> -1", "", "JSONExtract"},
+		{"a NOT path is still an extract", "x -> NOT y", "", "JSONExtract"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			got := parse(t, c.sql, c.dialect).Class
+			if got != c.want {
+				t.Errorf("ParseOne(%q, %q).Class = %s, want %s", c.sql, c.dialect, got, c.want)
+			}
+		})
+	}
+}
+
 func TestOperators(t *testing.T) {
 	for _, c := range []struct{ name, sql, want string }{
 		{"bitwise or", "a | b", "BitwiseOr Column Identifier Column Identifier"},
@@ -847,6 +887,9 @@ func TestMoreThanOneStatement(t *testing.T) {
 	if !errors.Is(err, ErrMultipleStatements) {
 		t.Errorf("failed with %v, want ErrMultipleStatements", err)
 	}
+	if err != nil && strings.Contains(err.Error(), "fct_sales") {
+		t.Errorf("Error() carried the second statement: %q", err)
+	}
 	// One statement with a trailing semicolon is still one statement.
 	if _, err := ParseOne("SELECT 1;", ""); err != nil {
 		t.Errorf("a trailing semicolon should be fine: %v", err)
@@ -919,6 +962,9 @@ func TestSelectInto(t *testing.T) {
 	if got := into.This().Name(); got != "copy" {
 		t.Errorf("INTO target is %q, want copy", got)
 	}
+	if !IsWrite(tree) {
+		t.Error("IsWrite(SELECT … INTO) = false; it writes a table")
+	}
 }
 
 // A write that PARSES is still a write, and says so. This is the replacement
@@ -947,6 +993,9 @@ func TestWritesAreNamedWhenTheyParse(t *testing.T) {
 		// reason a guard exists: the file is outside the database.
 		"COPY t FROM 'file'",
 		"COPY t TO 'file'",
+		// SELECT … INTO is still a Select. The class is not a write; the
+		// clause is. Asking only the root class lets this one through.
+		"SELECT * INTO dbo.copy FROM dbo.fct_sales",
 	} {
 		e, err := ParseOne(sql, "tsql")
 		if err != nil {
@@ -963,5 +1012,50 @@ func TestWritesAreNamedWhenTheyParse(t *testing.T) {
 	}
 	if IsWrite(q) {
 		t.Error("IsWrite(SELECT 1) = true")
+	}
+}
+
+// A write that is not the root is still a write. UNION and WITH keep Class
+// Select off the top node, and a DESCRIBE of an INSERT already had to look
+// one level down; walking is the same answer in every position.
+func TestIsWriteSeesANestedQueryWrite(t *testing.T) {
+	for _, c := range []struct{ sql, dialect string }{
+		{"SELECT 1 UNION SELECT * INTO copy FROM t", "tsql"},
+		{"WITH a AS (SELECT 1 AS x) SELECT * INTO copy FROM a", "tsql"},
+		{"WITH a AS (SELECT * INTO copy FROM t) SELECT * FROM a", "tsql"},
+		{"SELECT * INTO copy FROM t", "postgres"},
+	} {
+		e, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q, %q): %v", c.sql, c.dialect, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; a Select in it writes", c.sql)
+		}
+	}
+}
+
+// INTO on a Pivot or Unpivot names a column, not a table. Walking every
+// `into` argument would call those writes.
+func TestIsWriteDoesNotTreatUnpivotIntoAsAWrite(t *testing.T) {
+	e, err := ParseOne("UNPIVOT monthly_sales ON jan, feb INTO NAME month VALUE sales", "duckdb")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if IsWrite(e) {
+		t.Error("IsWrite(UNPIVOT … INTO NAME) = true; it reshapes columns")
+	}
+}
+
+// SHOW … INTO OUTFILE is not parsed yet, but the tree already has the slot.
+// A constructed node with it filled is a write the same way SELECT … INTO is.
+func TestIsWriteSeesShowIntoOutfile(t *testing.T) {
+	show := New("Show", Arg{"this", "TABLES"})
+	if IsWrite(show) {
+		t.Error("IsWrite(SHOW TABLES) = true; it asks a question")
+	}
+	show.Set("into_outfile", New("Literal", Arg{"this", "out.csv"}, Arg{"is_string", true}))
+	if !IsWrite(show) {
+		t.Error("IsWrite(SHOW … INTO OUTFILE) = false; it writes a file")
 	}
 }

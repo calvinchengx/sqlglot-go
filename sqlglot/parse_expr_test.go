@@ -140,6 +140,10 @@ func TestJSONExtractAsOperand(t *testing.T) {
 			"SELECT a -> '$.b' -> '$.c'"},
 		{"but its right is", "duckdb", "SELECT a -> b * c",
 			"SELECT a -> (b * c)"},
+		{"accessor: multiplication stays outside", "", "SELECT a -> b * c",
+			"SELECT JSON_EXTRACT(a, b) * c"},
+		{"accessor: a bracket wraps the extract", "", "SELECT x -> y[1]",
+			"SELECT JSON_EXTRACT(x, y)[1]"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)

@@ -1,9 +1,8 @@
 package harness
 
 import (
-	"regexp"
+	"errors"
 	"sort"
-	"strings"
 	"testing"
 
 	"github.com/calvinchengx/sqlglot-go/sqlglot"
@@ -22,9 +21,9 @@ func TestGapReport(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	// Refusals read "unsupported: <reason> at <token>"; the token is incidental.
-	reason := regexp.MustCompile(`unsupported statement: (.*?) at "`)
-
+	// Label() is the bucket: a window function and a PIVOT both stop at
+	// "trailing tokens", and only the keyword tells them apart. The token
+	// itself is not in Error(), so scraping the message cannot do this.
 	counts := map[string]int{}
 	examples := map[string][]string{}
 	total := 0
@@ -34,9 +33,11 @@ func TestGapReport(t *testing.T) {
 		} else {
 			total++
 			key := "other"
-			if m := reason.FindStringSubmatch(perr.Error()); m != nil {
-				key = m[1]
-			} else if strings.Contains(perr.Error(), "Error tokenizing") {
+			var unsupported *sqlglot.UnsupportedError
+			var token *sqlglot.TokenError
+			if errors.As(perr, &unsupported) {
+				key = unsupported.Label()
+			} else if errors.As(perr, &token) {
 				key = "tokenizer refused the statement"
 			}
 			counts[key]++

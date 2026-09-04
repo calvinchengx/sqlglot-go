@@ -145,8 +145,12 @@ func (e *Expression) Name() string {
 }
 
 // Walk visits the node and every descendant, depth first, in arg-key order
-// so traversal is deterministic. Returning false from fn stops descent into
-// that node's children.
+// so traversal is deterministic. The type annotation is visited too, when it
+// is not already a child: a cast stores the same DataType in Args["to"] and
+// Type, but a builder can stamp Type alone, and FindAll("DataType") has to
+// see that. The reference's walk does not; this one does because a guard
+// looking for types would otherwise miss them. Returning false from fn stops
+// descent into that node's children.
 func (e *Expression) Walk(fn func(*Expression) bool) {
 	if e == nil {
 		return
@@ -154,15 +158,25 @@ func (e *Expression) Walk(fn func(*Expression) bool) {
 	if !fn(e) {
 		return
 	}
+	typeInArgs := false
 	for _, key := range e.Keys {
 		switch v := e.Args[key].(type) {
 		case *Expression:
+			if v == e.Type {
+				typeInArgs = true
+			}
 			v.Walk(fn)
 		case []*Expression:
 			for _, c := range v {
+				if c == e.Type {
+					typeInArgs = true
+				}
 				c.Walk(fn)
 			}
 		}
+	}
+	if e.Type != nil && e.Type != e && !typeInArgs {
+		e.Type.Walk(fn)
 	}
 }
 

@@ -529,19 +529,38 @@ var writeClasses = map[string]bool{
 // "this is a write" only because a write could not be READ. Now that they can
 // be read, the fact has to be asked for, and a caller that keeps using the
 // error will see a CREATE go past as though it were a query.
+//
+// The class of the root is not enough. SELECT … INTO is still a Select, and
+// a write can sit under a UNION, a CTE or a DESCRIBE. Walking is the same
+// answer the first consumer already has to give; asking only the root lets
+// those through. INTO on a Pivot or Unpivot names a column, not a table, so
+// only a Select's into -- and a Show's into_outfile -- count as a write slot.
 func IsWrite(e *Expression) bool {
 	if e == nil {
 		return false
 	}
-	// A DESCRIBE is a question about the thing it names, and asking it
-	// changes nothing -- except that what it names may itself be a whole
-	// statement. `DESCRIBE INSERT INTO t VALUES (1)` carries an Insert, and
-	// what a guard has to answer about is the Insert.
-	if e.Class == "Describe" {
-		subject, _ := e.Args["this"].(*Expression)
-		return IsWrite(subject)
+	found := false
+	e.Walk(func(n *Expression) bool {
+		if writeClasses[n.Class] || queryWriteSlot(n) {
+			found = true
+			return false
+		}
+		return true
+	})
+	return found
+}
+
+// queryWriteSlot reports a write that lives on a query-class node rather than
+// as a statement class of its own.
+func queryWriteSlot(n *Expression) bool {
+	switch n.Class {
+	case "Select":
+		return n.Args["into"] != nil
+	case "Show":
+		return n.Args["into_outfile"] != nil
+	default:
+		return false
 	}
-	return writeClasses[e.Class]
 }
 
 // parseInsert reads `INSERT [OVERWRITE] INTO <table> [(cols)] <values-or-query>`.

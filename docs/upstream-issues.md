@@ -376,10 +376,7 @@ A[0*0*0* ... *0]      2000 terms, postgres:   3.2s  ->  7ms
 
 ---
 
-## A note on tiers: the JSON ARROW is read one level out in three dialects
-
-**Not an upstream issue -- a limit of this port, found while adding the
-operators beside it.**
+## JSON arrows bind at the dialect's own tier
 
 sqlglot reads `->` and `->>` in two different places depending on the dialect.
 In the base parser they are COLUMN_OPERATORS, an accessor tier binding tighter
@@ -387,27 +384,18 @@ than arithmetic. PostgreSQL and DuckDB move them into JSON_OPERATORS, read
 level with `||`. The difference is visible whenever arithmetic is next to one:
 
 ```
-1 + x -> 'y'      neutral:   1 + (x -> 'y')      port: (1 + x) -> 'y'
-x -> 'y' + 1      neutral:   (x -> 'y') + 1      port: x -> ('y' + 1)
-a & b -> c        neutral:   a & (b -> c)        port: (a & b) -> c
+1 + x -> 'y'      accessor: 1 + (x -> 'y')      bitwise: (1 + x) -> 'y'
+x -> 'y' + 1      accessor: (x -> 'y') + 1      bitwise: x -> ('y' + 1)
+a & b -> c        accessor: a & (b -> c)        bitwise: (a & b) -> c
 ```
 
-The port reads them at the bitwise tier in EVERY dialect, so it agrees with
-PostgreSQL and DuckDB and is one tier out in the neutral dialect, T-SQL and
-Databricks. No statement in the corpus mixes the tiers, which is why the
-differential has never said so.
+The port used to read them at the bitwise tier in every dialect. The probe
+`JSONOperatorsAtBitwise` now includes the arrows, and `parseColumnOps` takes
+the accessor-tier reading wherever the probe does not. `TestJSONArrowBindsAtTheDialectsTier`
+holds both.
 
-The three operators added beside them -- `#>`, `#>>` and `?` -- are NOT read
-that way. Which dialect reads which at the bitwise tier is probed
-(`JSONOperatorsAtBitwise`, one entry per operator per dialect), and elsewhere
-they are refused rather than read one tier out. Extending the existing
-divergence to three more operators would have been the easy half of this
-change and the wrong half.
-
-Fixing the arrows means giving the port the accessor tier the reference has,
-and gating the arrows on the same probe. It is a change to `parsePostfix`
-rather than to a table, which is why it is written down here rather than done
-alongside.
+The three operators beside them -- `#>`, `#>>` and `?` -- stay on the same
+probe and are refused rather than read one tier out where they do not belong.
 
 **Reference:** sqlglot @ ceb5111421e9.
 

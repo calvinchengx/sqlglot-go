@@ -890,13 +890,15 @@ type ParserTables struct {
 	BinaryRangeSQL map[string]string
 	// JSONOperatorsAtBitwise are the operators this dialect reads
 	// level with `||` rather than as an accessor binding tighter
-	// than arithmetic. Probed by the asymmetry: `1 + x #> 'y'` is
-	// `(1 + x) #> 'y'` where the operator is here, and
-	// `1 + (x #> 'y')` where it is not.
+	// than arithmetic. Probed by the asymmetry: `1 + x <op> 'y'` is
+	// `(1 + x) <op> 'y'` where the operator is here, and
+	// `1 + (x <op> 'y')` where it is not. Includes `->` / `->>` in
+	// PostgreSQL and DuckDB, and `#>` / `#>>` / `?` in PostgreSQL.
 	JSONOperatorsAtBitwise map[TokenType]string
-	// JSONOperatorSQL is how each of those is written back, which
-	// is only ever in the dialect that reads it there: elsewhere
-	// the same node is a function call.
+	// JSONOperatorSQL is how each of those is written back -- except
+	// the arrows, which have a path-aware writer of their own. Only
+	// ever in the dialect that reads the operator at this tier:
+	// elsewhere the same node is a function call.
 	JSONOperatorSQL map[string]string
 	// TypeTokens maps a type keyword to the DataType.Type member the
 	// reference records. A few type tokens have no member and are absent,
@@ -16475,14 +16477,16 @@ var parserTables = map[string]*ParserTables{
 			"SimilarTo":               "SIMILAR TO",
 		},
 		JSONOperatorsAtBitwise: map[TokenType]string{
+			TokARROW:       "JSONExtract",
+			TokDARROW:      "JSONExtractScalar",
 			TokDHASH_ARROW: "JSONBExtractScalar",
 			TokHASH_ARROW:  "JSONBExtract",
 			TokPLACEHOLDER: "JSONBContainsTopKey",
 		},
 		JSONOperatorSQL: map[string]string{
-			"JSONBContainsTopKey": "?",
-			"JSONBExtract":        "#>",
 			"JSONBExtractScalar":  "#>>",
+			"JSONBExtract":        "#>",
+			"JSONBContainsTopKey": "?",
 		},
 		TypeTokens: map[TokenType]string{
 			TokBIT:                     "BIT",
@@ -22037,8 +22041,11 @@ var parserTables = map[string]*ParserTables{
 			"Overlaps":         "OVERLAPS",
 			"SimilarTo":        "SIMILAR TO",
 		},
-		JSONOperatorsAtBitwise: map[TokenType]string{},
-		JSONOperatorSQL:        map[string]string{},
+		JSONOperatorsAtBitwise: map[TokenType]string{
+			TokARROW:  "JSONExtract",
+			TokDARROW: "JSONExtractScalar",
+		},
+		JSONOperatorSQL: map[string]string{},
 		TypeTokens: map[TokenType]string{
 			TokBIT:                     "BIT",
 			TokBOOLEAN:                 "BOOLEAN",

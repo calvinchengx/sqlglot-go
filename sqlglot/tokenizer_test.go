@@ -141,6 +141,27 @@ func TestTokenizeErrors(t *testing.T) {
 		}
 	})
 
+	t.Run("the message does not carry the statement", func(t *testing.T) {
+		secret := "hunter2-should-not-be-logged"
+		_, err := Tokenize("SELECT '"+secret, "")
+		if err == nil {
+			t.Fatal("want an error for an unterminated string")
+		}
+		if strings.Contains(err.Error(), secret) {
+			t.Errorf("Error() leaked the statement: %q", err)
+		}
+		var te *TokenError
+		if !errors.As(err, &te) {
+			t.Fatalf("want a *TokenError, got %T", err)
+		}
+		if te.Snippet == "" {
+			t.Error("Snippet is empty; a caller that needs the window has nowhere to look")
+		}
+		if !strings.Contains(te.Snippet, "hunter2") {
+			t.Errorf("Snippet = %q, want it to hold the statement window", te.Snippet)
+		}
+	})
+
 	t.Run("unterminated identifier", func(t *testing.T) {
 		if _, err := Tokenize(`SELECT "oops`, ""); err == nil {
 			t.Error("want an error for an unterminated quoted identifier")

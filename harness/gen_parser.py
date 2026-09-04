@@ -2871,11 +2871,18 @@ def json_operators_at_bitwise(dialect: str) -> dict:
     The probe is the asymmetry itself: parse `1 + x <op> 'y'` and look at
     what ended up on top. The operator's own class means it swallowed the
     sum, which is the bitwise tier; an Add means it bound tighter.
+
+    `->` and `->>` are in the same table. The port used to read them at the
+    bitwise tier in every dialect, which agreed with PostgreSQL and DuckDB
+    and was one tier out in the rest. Gating them here is what lets
+    parseColumnOps take the accessor-tier reading.
     """
     import sqlglot
 
     out = {}
     for token, text in (
+        ("ARROW", "->"),
+        ("DARROW", "->>"),
         ("HASH_ARROW", "#>"),
         ("DHASH_ARROW", "#>>"),
         ("PLACEHOLDER", "?"),
@@ -6478,13 +6485,15 @@ def main() -> int:
         "\tBinaryRangeSQL map[string]string\n",
         "\t// JSONOperatorsAtBitwise are the operators this dialect reads\n",
         "\t// level with `||` rather than as an accessor binding tighter\n",
-        "\t// than arithmetic. Probed by the asymmetry: `1 + x #> 'y'` is\n",
-        "\t// `(1 + x) #> 'y'` where the operator is here, and\n",
-        "\t// `1 + (x #> 'y')` where it is not.\n",
+        "\t// than arithmetic. Probed by the asymmetry: `1 + x <op> 'y'` is\n",
+        "\t// `(1 + x) <op> 'y'` where the operator is here, and\n",
+        "\t// `1 + (x <op> 'y')` where it is not. Includes `->` / `->>` in\n",
+        "\t// PostgreSQL and DuckDB, and `#>` / `#>>` / `?` in PostgreSQL.\n",
         "\tJSONOperatorsAtBitwise map[TokenType]string\n",
-        "\t// JSONOperatorSQL is how each of those is written back, which\n",
-        "\t// is only ever in the dialect that reads it there: elsewhere\n",
-        "\t// the same node is a function call.\n",
+        "\t// JSONOperatorSQL is how each of those is written back -- except\n",
+        "\t// the arrows, which have a path-aware writer of their own. Only\n",
+        "\t// ever in the dialect that reads the operator at this tier:\n",
+        "\t// elsewhere the same node is a function call.\n",
         "\tJSONOperatorSQL map[string]string\n",
         "\t// TypeTokens maps a type keyword to the DataType.Type member the\n",
         "\t// reference records. A few type tokens have no member and are absent,\n",
@@ -7845,9 +7854,12 @@ def main() -> int:
         out.append(
             f"\t\tJSONOperatorsAtBitwise: map[TokenType]string{{\n{body}\t\t}},\n"
         )
+        # The arrows have a path-aware writer; putting them in this table
+        # would spell JSONExtract as a generic binary and skip the path.
         body = "".join(
             f"\t\t\t{gostr(v[0])}: {gostr(v[1])},\n"
-            for v in sorted(_jb.values())
+            for k, v in sorted(_jb.items())
+            if k not in ("ARROW", "DARROW")
         )
         out.append(f"\t\tJSONOperatorSQL: map[string]string{{\n{body}\t\t}},\n")
         types = {t: exp.DType[t.name] for t in P.TYPE_TOKENS if t.name in exp.DType.__members__}

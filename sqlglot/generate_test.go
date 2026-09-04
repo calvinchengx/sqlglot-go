@@ -147,6 +147,22 @@ func TestGenerateShapes(t *testing.T) {
 		{"and tighter than AND", "SELECT 1 WHERE a->'x' AND b", "duckdb",
 			"SELECT 1 WHERE (a -> '$.x') AND b"},
 		{"and chains left", "SELECT a->'x'->'y'", "duckdb", "SELECT a -> '$.x' -> '$.y'"},
+		// Neutral, T-SQL and Databricks read the arrows as accessors, tighter
+		// than arithmetic. The duckdb cases above pin the other tier.
+		{"the arrow binds tighter than addition", "SELECT 1 + x -> 'y'", "",
+			"SELECT 1 + JSON_EXTRACT(x, '$.y')"},
+		{"and tighter on the right too", "SELECT x -> 'y' + 1", "",
+			"SELECT JSON_EXTRACT(x, '$.y') + 1"},
+		{"and tighter than multiplication", "SELECT a -> b * c", "",
+			"SELECT JSON_EXTRACT(a, b) * c"},
+		{"databricks spells the tighter arrow as a colon", "SELECT 1 + x -> 'y'", "databricks",
+			"SELECT 1 + x:y"},
+		{"postgres swallows the addition", "SELECT 1 + x -> 'y'", "postgres",
+			"SELECT 1 + x -> 'y'"},
+		{"postgres keeps addition on the right in the path", "SELECT x -> 'y' + 1", "postgres",
+			"SELECT x -> ('y' + 1)"},
+		{"duckdb swallows the addition", "SELECT 1 + x -> 'y'", "duckdb",
+			"SELECT 1 + x -> '$.y'"},
 		// A subquery's alias names the subquery; the joins come after it.
 		{"an alias before its joins", "SELECT 0 FROM ((A) A, A A)", "duckdb",
 			"SELECT 0 FROM ((A) AS A, A AS A)"},
@@ -592,21 +608,33 @@ func TestRoundTrip(t *testing.T) {
 
 func TestGenerateRefusals(t *testing.T) {
 	// A node the generator has no writer for stops the rewrite.
-	if _, err := Generate(New("NotARealNode"), ""); err == nil {
-		t.Error("an unknown node should not be written")
-	} else if !strings.Contains(err.Error(), "NotARealNode") {
-		t.Errorf("the error should name the node: %v", err)
+	_, err := Generate(New("NotARealNode"), "")
+	if err == nil {
+		t.Fatal("an unknown node should not be written")
+	}
+	if !errors.Is(err, ErrGenerate) {
+		t.Errorf("errors.Is(err, ErrGenerate) is false: %v", err)
+	}
+	var named *GenerateError
+	if !errors.As(err, &named) || named.What != "NotARealNode" {
+		t.Errorf("GenerateError.What = %#v, want NotARealNode", named)
+	}
+	if want := `sqlglot-go: cannot generate SQL for NotARealNode`; err.Error() != want {
+		t.Errorf("Error() = %q, want %q", err.Error(), want)
 	}
 
-	if _, err := Generate(New("Select"), "oracle"); err == nil {
-		t.Error("an unknown dialect should not be written")
+	_, err = Generate(New("Select"), "oracle")
+	if err == nil {
+		t.Fatal("an unknown dialect should not be written")
+	}
+	if errors.Is(err, ErrGenerate) {
+		t.Errorf("a missing dialect is not a generate failure: %v", err)
 	}
 
 	// Nil is nothing, not an error: an absent clause writes as empty.
 	if got, err := Generate(nil, ""); err != nil || got != "" {
 		t.Errorf("Generate(nil) = %q, %v", got, err)
 	}
-	_ = errors.New
 }
 
 // T-SQL will not accept an unnamed column in a derived table, so the reference

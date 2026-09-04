@@ -38,13 +38,18 @@ func TestAnUnsupportedStatementNamesItsConstruct(t *testing.T) {
 	}
 }
 
-// The message is what a human reads in a refusal, and callers already match on
-// it. Changing the error to a struct must not have changed a byte of it.
-func TestTheUnsupportedMessageIsUnchanged(t *testing.T) {
+// Error() is Label() with the sentinel in front. Token stays on the struct
+// for a caller that has a reason to inspect it; putting it in the message
+// would undo Label().
+func TestUnsupportedErrorMessageIsTheLabel(t *testing.T) {
 	err := &UnsupportedError{Construct: "PIVOT", Token: "PIVOT"}
-	want := `sqlglot-go: unsupported statement: PIVOT at "PIVOT"`
+	want := "sqlglot-go: unsupported statement: PIVOT"
 	if err.Error() != want {
 		t.Errorf("Error() = %q, want %q", err.Error(), want)
+	}
+	narrow := &UnsupportedError{Construct: "trailing tokens", Token: "OVER", TokenIsKeyword: true}
+	if got, want := narrow.Error(), "sqlglot-go: unsupported statement: trailing tokens at OVER"; got != want {
+		t.Errorf("Error() = %q, want %q", got, want)
 	}
 }
 
@@ -93,6 +98,9 @@ func TestLabelNeverCarriesWhatTheCallerWrote(t *testing.T) {
 		for _, secret := range secrets {
 			if strings.Contains(strings.ToLower(u.Label()), strings.ToLower(secret)) {
 				t.Errorf("Label() = %q leaked %q", u.Label(), secret)
+			}
+			if strings.Contains(strings.ToLower(u.Error()), strings.ToLower(secret)) {
+				t.Errorf("Error() = %q leaked %q", u.Error(), secret)
 			}
 		}
 	}

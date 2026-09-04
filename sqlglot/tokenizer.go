@@ -28,12 +28,17 @@ func (t Token) String() string {
 }
 
 // TokenError reports a statement the tokenizer cannot lex -- an unterminated
-// string, most often. It carries the surrounding text, as the reference does,
-// because the offset alone is rarely enough to see what went wrong.
+// string, most often.
+//
+// Snippet is a window of the statement around the failure, the same window
+// the reference puts in its message. It is caller text: a table name, a
+// literal, whatever stood there. Error() does not include it, so logging the
+// error cannot leak it; a caller that needs the window reads the field.
 type TokenError struct {
-	Msg   string
-	Start int
-	End   int
+	Msg     string
+	Start   int
+	End     int
+	Snippet string
 }
 
 func (e *TokenError) Error() string { return e.Msg }
@@ -101,9 +106,10 @@ func (t *Tokenizer) Tokenize(sql string) (toks []Token, err error) {
 			start := max(t.current-50, 0)
 			end := max(min(t.current+50, t.size-1), start)
 			err = &TokenError{
-				Msg:   fmt.Sprintf("Error tokenizing '%s': %v", string(t.sql[start:end]), r),
-				Start: start,
-				End:   end,
+				Msg:     fmt.Sprintf("Error tokenizing: %v", r),
+				Start:   start,
+				End:     end,
+				Snippet: string(t.sql[start:end]),
 			}
 			toks = nil
 		}

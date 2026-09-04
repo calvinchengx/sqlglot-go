@@ -100,6 +100,29 @@ func TestWalkAndFindAll(t *testing.T) {
 	nilExpr.Walk(func(*Expression) bool { t.Error("Walk on nil visited a node"); return true })
 }
 
+// A type annotation that is not also a child is still in the tree. Skipping
+// Type made FindAll("DataType") miss every annotation that lives only there.
+func TestWalkVisitsATypeThatLivesOnlyThere(t *testing.T) {
+	annot := New("DataType", Arg{"this", DataTypeKind("INT")})
+	lit := New("Literal", Arg{"this", "1"}, Arg{"is_string", false})
+	lit.Type = annot
+	got := lit.FindAll("DataType")
+	if len(got) != 1 || got[0] != annot {
+		t.Fatalf("FindAll(DataType) = %d nodes, want the annotation", len(got))
+	}
+
+	// A cast stores the same DataType in Args["to"] and Type. Visiting it
+	// twice would make every CAST look like two types.
+	to := New("DataType", Arg{"this", DataTypeKind("INT")})
+	cast := New("Cast",
+		Arg{"this", New("Column", Arg{"this", New("Identifier", Arg{"this", "a"})})},
+		Arg{"to", to})
+	cast.Type = to
+	if n := len(cast.FindAll("DataType")); n != 1 {
+		t.Errorf("FindAll(DataType) on CAST = %d, want 1", n)
+	}
+}
+
 func TestDumpMatchesTheReferenceFormat(t *testing.T) {
 	// Shape taken from the reference: leaves are their own records carrying
 	// "v", list elements are marked "a", and every record but the root names

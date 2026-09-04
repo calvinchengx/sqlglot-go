@@ -28,8 +28,9 @@ var specialConstruction = map[string]bool{
 	"DPipe": true,
 	// Databricks' `a:b` reads the right-hand side as a JSON PATH, not as the
 	// column the generic operator rule produces. `->` and `->>` are handled
-	// directly in parsePostfix and never reach here; the colon form has its
-	// own grammar which is not ported, so it stays refused.
+	// in parseColumnOps or parseBitwise according to the probe, and never
+	// reach here; the colon form has its own grammar which is not ported, so
+	// it stays refused.
 	"JSONExtract":       true,
 	"JSONExtractScalar": true,
 	// Databricks' `a:b` reads the right-hand side as a JSON PATH, not as the
@@ -360,21 +361,62 @@ func (p *parser) parseBetween(this *Expression) (*Expression, error) {
 		Arg{"symmetric", symmetric}), nil
 }
 
-// parseJSONArrow reads `j -> '$.a'` and `j ->> '$.a'`.
+// parseJSONArrow is the range-level entry for `j -> '$.a'` and `j ->> '$.a'`.
 //
-// These sit between the range operators and the bitwise ones: LOOSER than
-// arithmetic, a cast or a unary minus, and TIGHTER than a comparison, IS,
-// LIKE or AND. The port had them at the tightest level of all, with the
-// postfix operators, which read `0 ^ 0 -> ”` as `0 ^ (0 -> ”)` where the
-// reference reads `(0 ^ 0) -> ”`. Same tokens, different question, and no
-// corpus statement happened to contain the combination -- the generator
-// fuzzer found it.
+// Which tier they sit at is a dialect fact. PostgreSQL and DuckDB read them
+// level with `||`, so `1 + x -> 'y'` is `(1 + x) -> 'y'` there. Everywhere
+// else they are accessors, tighter than arithmetic: `1 + (x -> 'y')`. The
+// probe JSONOperatorsAtBitwise is that asymmetry; parseBitwise and
+// parseColumnOps each take the reading that matches.
 //
 // The right-hand side is a path STRING parsed into a JSONPath, not an
 // expression, which is why this is not simply another binary level.
 func (p *parser) parseJSONArrow() (*Expression, error) {
-	// The arrow lives INSIDE the bitwise level rather than above it -- see
-	// parseBitwise, where it is one more case in the same loop.
+	return p.parseBitwise()
+}
+
+// consumeJSONArrow reads one `->` or `->>` whose left operand is already in
+// hand. The right-hand side is supplied by the caller: a TERM at the bitwise
+// tier (`a -> b + c` keeps `b + c`) and a field-or-bitwise at the accessor
+// tier (`x -> 'y' + 1` keeps the addition outside).
+func (p *parser) consumeJSONArrow(this *Expression, rhs func() (*Expression, error)) (*Expression, error) {
+	c := p.curr()
+	class := "JSONExtract"
+	if c.Type == TokDARROW {
+		class = "JSONExtractScalar"
+	}
+	p.advance()
+	operand, err := rhs()
+	if err != nil {
+		return nil, err
+	}
+	path := p.jsonPathFor(operand)
+	args := []Arg{{"this", this}, {"expression", path}}
+	// The flag is stamped by the BUILDER, and PostgreSQL's returns
+	// before it gets there when the operand is not a path it can read.
+	if path == nil || path.Class == "JSONPath" || p.tables.JSONArrowTypesWithoutPath {
+		args = append(args, Arg{"only_json_types", p.tables.JSONArrowOnlyJSONTypes})
+	}
+	if class == "JSONExtractScalar" && p.tables.JSONArrowSetsScalarOnly {
+		// PostgreSQL leaves this arg OFF the node; the others set it
+		// false. An arg present-but-false is a different tree from an
+		// arg absent, so whether to set it is probed, not the value.
+		args = append(args, Arg{"scalar_only", false})
+	}
+	return New(class, args...), nil
+}
+
+// parseJSONArrowAccessorRHS is the reference's `_parse_column_reference() or
+// _parse_bitwise()`. A field or literal binds tighter than arithmetic, so
+// `x -> 'y' + 1` keeps the addition outside. A unary or a parenthesised
+// expression is still a valid path; those go through bitwise.
+func (p *parser) parseJSONArrowAccessorRHS() (*Expression, error) {
+	saved := p.index
+	this, err := p.parsePrimary()
+	if err == nil {
+		return this, nil
+	}
+	p.index = saved
 	return p.parseBitwise()
 }
 
@@ -392,8 +434,16 @@ func (p *parser) parseBitwise() (*Expression, error) {
 		// there: `1 + x #> 'y'` is `(1 + x) #> 'y'` in PostgreSQL and
 		// `1 + (x #> 'y')` everywhere else, which is the asymmetry the
 		// generator probes for. Elsewhere they are refused rather than read
-		// one tier out.
+		// one tier out. The arrows join them in PostgreSQL and DuckDB; in
+		// every other dialect parseColumnOps takes them at the accessor tier.
 		if class, ok := p.tables.JSONOperatorsAtBitwise[c.Type]; ok {
+			if c.Type == TokARROW || c.Type == TokDARROW {
+				this, err = p.consumeJSONArrow(this, p.parseTerm)
+				if err != nil {
+					return nil, err
+				}
+				continue
+			}
 			p.advance()
 			right, err := p.parseTerm()
 			if err != nil {
@@ -403,36 +453,6 @@ func (p *parser) parseBitwise() (*Expression, error) {
 			continue
 		}
 		switch {
-		case c.Type == TokARROW || c.Type == TokDARROW:
-			// The JSON arrow is one of these operators, not a level of its
-			// own, and the asymmetry is what proves it: `a & b -> c` reads as
-			// `(a & b) -> c` while `a -> b & c` reads as `(a -> b) & c`. Only
-			// a left-associative loop shared with the bitwise operators does
-			// both. Its right-hand side is a TERM -- arithmetic binds tighter
-			// (`a -> b + c` keeps `b + c`) and `&` does not.
-			class := "JSONExtract"
-			if c.Type == TokDARROW {
-				class = "JSONExtractScalar"
-			}
-			p.advance()
-			operand, err := p.parseTerm()
-			if err != nil {
-				return nil, err
-			}
-			path := p.jsonPathFor(operand)
-			args := []Arg{{"this", this}, {"expression", path}}
-			// The flag is stamped by the BUILDER, and PostgreSQL's returns
-			// before it gets there when the operand is not a path it can read.
-			if path == nil || path.Class == "JSONPath" || p.tables.JSONArrowTypesWithoutPath {
-				args = append(args, Arg{"only_json_types", p.tables.JSONArrowOnlyJSONTypes})
-			}
-			if class == "JSONExtractScalar" && p.tables.JSONArrowSetsScalarOnly {
-				// PostgreSQL leaves this arg OFF the node; the others set it
-				// false. An arg present-but-false is a different tree from an
-				// arg absent, so whether to set it is probed, not the value.
-				args = append(args, Arg{"scalar_only", false})
-			}
-			this = New(class, args...)
 		case p.tables.Bitwise[c.Type] != "":
 			class := p.tables.Bitwise[c.Type]
 			p.advance()
@@ -605,6 +625,18 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 				Arg{"variant_extract", true},
 				Arg{"requires_json", false})
 			continue
+		}
+		// `->` / `->>` at the accessor tier, binding tighter than arithmetic.
+		// Dialects that read them level with `||` leave them for parseBitwise.
+		if c := p.curr(); c != nil && (c.Type == TokARROW || c.Type == TokDARROW) {
+			if _, atBitwise := p.tables.JSONOperatorsAtBitwise[c.Type]; !atBitwise {
+				var err error
+				this, err = p.consumeJSONArrow(this, p.parseJSONArrowAccessorRHS)
+				if err != nil {
+					return nil, err
+				}
+				continue
+			}
 		}
 		// `x[1]`, `x[1:2]` and `x[1][2]` are Brackets over what precedes them.
 		// In T-SQL `[` opens a quoted identifier and the tokenizer has already

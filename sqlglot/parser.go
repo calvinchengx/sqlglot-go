@@ -2,7 +2,6 @@ package sqlglot
 
 import (
 	"errors"
-	"fmt"
 	"strings"
 )
 
@@ -145,7 +144,7 @@ func (p *parser) match(tt TokenType) bool {
 // keyword, never with a caller's identifier. Token is the opposite -- it is
 // whatever the statement said at the point of failure, which can be a table
 // or column name -- so it is available to a caller that has a reason for it
-// and is deliberately not part of what this package encourages logging.
+// and is not part of Error().
 type UnsupportedError struct {
 	Construct string
 	Token     string
@@ -173,7 +172,7 @@ func (e *UnsupportedError) Label() string {
 }
 
 func (e *UnsupportedError) Error() string {
-	return fmt.Sprintf("%s: %s at %q", ErrUnsupported.Error(), e.Construct, e.Token)
+	return ErrUnsupported.Error() + ": " + e.Label()
 }
 
 // Is makes errors.Is(err, ErrUnsupported) hold for this error too.
@@ -202,7 +201,7 @@ func (p *parser) parseOne() (*Expression, error) {
 		return nil, err
 	}
 	if p.match(TokSEMICOLON) && p.curr() != nil {
-		return nil, fmt.Errorf("%w: %s", ErrMultipleStatements, p.curr().Text)
+		return nil, ErrMultipleStatements
 	}
 	if p.curr() != nil {
 		return nil, p.unsupported("trailing tokens")
