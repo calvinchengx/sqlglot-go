@@ -889,7 +889,7 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			if p.tables.LimitAllMeansNoLimit && p.match(TokALL) {
 				continue
 			}
-			e, err := p.parseExpression()
+			e, err := p.parseLimitCount()
 			if err != nil {
 				return err
 			}
@@ -1692,6 +1692,21 @@ func (p *parser) opensASetOperation() bool {
 	}
 	_, isSetOp := setOperations[after.Type]
 	return isSetOp
+}
+
+// parseLimitCount reads the number (or expression) after LIMIT. Parsing
+// `LIMIT 10%` as a term builds a Mod and then fails for want of a right-hand
+// side -- or, with OFFSET after it, consumes `%` and leaves a leftover. The
+// reference backtracks, reads a factor, and leaves `%` for parseLimitOptions,
+// so `10%` and `10 PERCENT` are the same tree.
+func (p *parser) parseLimitCount() (*Expression, error) {
+	mark := p.index
+	e, err := p.parseTerm()
+	if err != nil || (e != nil && e.Class == "Mod") {
+		p.index = mark
+		return p.parseFactor()
+	}
+	return e, nil
 }
 
 // parseLimitOptions reads what may follow a LIMIT's count: `PERCENT` says the

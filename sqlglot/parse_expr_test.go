@@ -6793,6 +6793,26 @@ func TestLimitOptions(t *testing.T) {
 		}
 	}
 
+	// `%` is the same percent flag. The generator writes the word, which is
+	// what the reference writes too.
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT * FROM t LIMIT 10%", "SELECT * FROM t LIMIT 10 PERCENT"},
+		{"SELECT * FROM t LIMIT 10% OFFSET 1", "SELECT * FROM t LIMIT 10 PERCENT OFFSET 1"},
+	} {
+		e, err := ParseOne(tc.sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		limit, _ := e.Args["limit"].(*Expression)
+		opts, _ := limit.Args["limit_options"].(*Expression)
+		if opts == nil || opts.Args["percent"] != true {
+			t.Errorf("%q did not record percent: %v", tc.sql, opts)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q, want %q (%v)", tc.sql, got, tc.want, err)
+		}
+	}
+
 	// ROWS, ONLY and WITH TIES are recorded too, each in its own slot.
 	for _, sql := range []string{
 		"SELECT * FROM t LIMIT 10 ROWS ONLY",
