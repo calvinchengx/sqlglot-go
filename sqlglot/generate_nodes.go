@@ -358,6 +358,9 @@ func (g *generator) writeSetOperation(e *Expression) string {
 	if e.Args["distinct"] == false {
 		word += " ALL"
 	}
+	if e.Args["by_name"] == true {
+		word += " BY NAME"
+	}
 	parts := []string{g.child(e, "this"), word, g.child(e, "expression")}
 	for _, key := range []string{"order", "limit", "offset"} {
 		if s := g.child(e, key); s != "" {
@@ -392,24 +395,33 @@ func (g *generator) writeCTE(e *Expression) string {
 func (g *generator) writeFrom(e *Expression) string { return "FROM " + g.child(e, "this") }
 
 func (g *generator) writeTable(e *Expression) string {
-	parts := []string{}
-	for _, key := range []string{"catalog", "db", "this"} {
-		// T-SQL's `a..b` records db as the EMPTY STRING, not absent -- the
-		// skipped part still needs its dot, or a name meant to be qualified
-		// three ways reads back qualified only two.
-		if s, isStr := e.Args[key].(string); isStr && key != "this" {
-			parts = append(parts, s)
-			continue
+	var out string
+	if rows, _ := e.Args["rows_from"].([]*Expression); len(rows) > 0 {
+		parts := make([]string, 0, len(rows))
+		for _, row := range rows {
+			parts = append(parts, g.node(row))
 		}
-		if s := g.child(e, key); s != "" {
-			parts = append(parts, s)
+		out = "ROWS FROM (" + strings.Join(parts, ", ") + ")"
+	} else {
+		parts := []string{}
+		for _, key := range []string{"catalog", "db", "this"} {
+			// T-SQL's `a..b` records db as the EMPTY STRING, not absent -- the
+			// skipped part still needs its dot, or a name meant to be qualified
+			// three ways reads back qualified only two.
+			if s, isStr := e.Args[key].(string); isStr && key != "this" {
+				parts = append(parts, s)
+				continue
+			}
+			if s := g.child(e, key); s != "" {
+				parts = append(parts, s)
+			}
 		}
-	}
-	out := strings.Join(parts, ".")
-	// PostgreSQL's ONLY says not to read the tables that inherit from this
-	// one; it stands in front of the name.
-	if e.Args["only"] == true {
-		out = "ONLY " + out
+		out = strings.Join(parts, ".")
+		// PostgreSQL's ONLY says not to read the tables that inherit from this
+		// one; it stands in front of the name.
+		if e.Args["only"] == true {
+			out = "ONLY " + out
+		}
 	}
 	// WITH ORDINALITY numbers the rows a table function returns, and it takes
 	// the ALIAS with it: the words go where the alias would, and the alias
@@ -4913,8 +4925,11 @@ func (g *generator) writeInstall(e *Expression) string {
 func (g *generator) writeCommand(e *Expression) string {
 	this, _ := e.Args["this"].(string)
 	payload := ""
-	if lit, ok := e.Args["expression"].(*Expression); ok {
-		payload, _ = lit.Args["this"].(string)
+	switch v := e.Args["expression"].(type) {
+	case string:
+		payload = v
+	case *Expression:
+		payload, _ = v.Args["this"].(string)
 	}
 	if payload = strings.TrimSpace(payload); payload == "" {
 		return this

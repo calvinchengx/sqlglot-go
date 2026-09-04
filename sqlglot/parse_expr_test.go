@@ -2592,10 +2592,16 @@ func TestAlterTable(t *testing.T) {
 	if got, err := Generate(e, "tsql"); err == nil {
 		t.Errorf("wrote %q; T-SQL calls sp_rename", got)
 	}
+	idx, err := ParseOne("ALTER INDEX i RENAME TO j", "postgres")
+	if err != nil {
+		t.Fatalf("ALTER INDEX: %v", err)
+	}
+	if got, err := Generate(idx, "postgres"); err != nil || got != "ALTER INDEX i RENAME TO j" {
+		t.Errorf("ALTER INDEX wrote %q (%v)", got, err)
+	}
 	for _, sql := range []string{
 		"ALTER TABLE t SET TBLPROPERTIES ('a' = 'b')",
 		"ALTER TABLE t ALTER COLUMN a SET NOT NULL",
-		"ALTER INDEX i RENAME TO j",
 		"ALTER TABLE t",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
@@ -5815,6 +5821,29 @@ func TestLoadData(t *testing.T) {
 	} {
 		if e, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) read %s", sql, e.Class)
+		}
+	}
+}
+
+// TestRowsFrom covers PostgreSQL's ROWS FROM (f(), g()), which zips
+// table functions into one relation. The functions, their column aliases
+// and WITH ORDINALITY all hang off a Table whose name is the clause.
+func TestRowsFrom(t *testing.T) {
+	for _, sql := range []string{
+		`SELECT * FROM ROWS FROM (FUNC1(col1, col2))`,
+		`SELECT * FROM ROWS FROM (FUNC1(col1) AS alias1("col1" TEXT), FUNC2(col2) AS alias2("col2" INT)) WITH ORDINALITY`,
+		`SELECT * FROM table1, ROWS FROM (FUNC1(col1) AS alias1("col1" TEXT)) WITH ORDINALITY AS alias3("col3" INT, "col4" TEXT)`,
+	} {
+		e, err := ParseOne(sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "postgres")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if got != sql {
+			t.Errorf("%q wrote %q", sql, got)
 		}
 	}
 }

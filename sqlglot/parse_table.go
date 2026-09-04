@@ -290,6 +290,12 @@ func (p *parser) parseTable() (*Expression, error) {
 	if p.at(TokL_PAREN) {
 		return p.parseSubqueryTable()
 	}
+	// PostgreSQL's ROWS FROM (f(), g()) zips table functions into one
+	// relation. It is a Table whose rows_from holds those functions,
+	// not a name -- FROM ROWS would be a table called ROWS.
+	if p.atWords("ROWS", "FROM") {
+		return p.parseRowsFrom()
+	}
 
 	// `STREAM t` reads a table as a stream of changes rather than as the rows
 	// it holds now. It is a node of its own around the table -- and only when
@@ -423,6 +429,22 @@ func (p *parser) parseTable() (*Expression, error) {
 	}
 	markTemporaryTable(table, p.dialect)
 	return p.tableRest(table)
+}
+
+// parseRowsFrom reads `ROWS FROM (f(), g() AS t(c INT))`. Each member is a
+// table (usually a function), and WITH ORDINALITY plus the outer alias
+// belong to the ROWS FROM table, not to the last function.
+func (p *parser) parseRowsFrom() (*Expression, error) {
+	p.advance() // ROWS
+	p.advance() // FROM
+	tables, err := p.parseWrappedCSV(p.parseTable)
+	if err != nil {
+		return nil, err
+	}
+	if len(tables) == 0 {
+		return nil, p.unsupported("ROWS FROM without a function")
+	}
+	return p.tableRest(New("Table", Arg{"rows_from", tables}))
 }
 
 // tableRest reads everything that may FOLLOW a table's name -- its temporal

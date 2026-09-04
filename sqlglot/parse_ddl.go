@@ -22,6 +22,7 @@ import (
 // there are columns, so `CREATE TABLE t (a INT)` and `CREATE TABLE t AS
 // SELECT` differ in what `this` holds, not just in what follows it.
 func (p *parser) parseCreate() (*Expression, error) {
+	start := *p.curr()
 	p.advance() // CREATE
 
 	// `OR <word>` turns on a flag of the reference's own: REPLACE and
@@ -99,7 +100,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// The name is a bare Identifier rather than a Table -- a trigger lives on
 	// a table rather than being one.
 	if kind == "TRIGGER" {
-		return p.parseTriggerRest(replace)
+		return p.parseTriggerRest(replace, start)
 	}
 
 	exists := false
@@ -1363,6 +1364,7 @@ func (p *parser) parseDroppedPartitions() ([]*Expression, error) {
 }
 
 func (p *parser) parseAlter() (*Expression, error) {
+	start := *p.curr()
 	p.advance() // ALTER
 
 	kindToken := p.curr()
@@ -1370,7 +1372,7 @@ func (p *parser) parseAlter() (*Expression, error) {
 		return nil, p.unsupported("ALTER without a kind")
 	}
 	kind := strings.ToUpper(kindToken.Text)
-	if kind != "TABLE" && kind != "VIEW" {
+	if kind != "TABLE" && kind != "VIEW" && kind != "INDEX" {
 		return nil, p.unsupported("ALTER " + kind)
 	}
 	p.advance()
@@ -1407,6 +1409,13 @@ func (p *parser) parseAlter() (*Expression, error) {
 
 	var actions []*Expression
 	if kind == "VIEW" {
+		// T-SQL's WITH SCHEMABINDING / ENCRYPTION / VIEW_METADATA is a
+		// property the reference does not finish reading on ALTER VIEW, so
+		// it emits a Command. Matching that tree is the only match; a
+		// finished Alter would be a different tree.
+		if p.at(TokWITH) && !p.atWords("WITH", "CHECK") && !p.atWords("WITH", "NOCHECK") {
+			return p.parseAsCommand(start), nil
+		}
 		// A view is altered by being GIVEN a new query, and the query itself
 		// is the action.
 		if !p.match(TokALIAS) {
@@ -4124,6 +4133,40 @@ func (p *parser) parseInstall() (*Expression, error) {
 // asked of it: which tables it touches, whether it writes, whether the payload
 // is even SQL. IsWrite says true for that reason -- not because EXPLAIN
 // changes anything, but because nothing here can show that it does not.
+// parseAsCommand is the reference's `_parse_as_command`: keep the keyword
+// and the rest of the statement as text. Only used where the reference
+// itself emits a Command -- a Command built from a different give-up is a
+// different tree.
+func (p *parser) parseAsCommand(start Token) *Expression {
+	for p.curr() != nil {
+		p.advance()
+	}
+	end := start.End
+	if n := len(p.tokens); n > 0 {
+		end = p.tokens[n-1].End
+	}
+	text := sliceRunes(p.sql, start.Start, end+1)
+	size := len(start.Text)
+	if size > len(text) {
+		size = len(text)
+	}
+	return New("Command", Arg{"this", text[:size]}, Arg{"expression", text[size:]})
+}
+
+func sliceRunes(s string, start, end int) string {
+	runes := []rune(s)
+	if start < 0 {
+		start = 0
+	}
+	if end > len(runes) {
+		end = len(runes)
+	}
+	if start >= end {
+		return ""
+	}
+	return string(runes[start:end])
+}
+
 func (p *parser) parseCommand() (*Expression, error) {
 	c := p.curr()
 	p.advance()
@@ -5471,8 +5514,8 @@ func (p *parser) parseMacroBody() (*Expression, bool, error) {
 // The reference hands the whole statement to its Command fallback wherever it
 // cannot read one of these parts, which is what it does with every T-SQL
 // trigger -- those put the timing after the table and a whole block after AS.
-// The port refuses them instead, for the reason parseCommand gives.
-func (p *parser) parseTriggerRest(replace bool) (*Expression, error) {
+// Those are emitted as the same Command.
+func (p *parser) parseTriggerRest(replace bool, start Token) (*Expression, error) {
 	name, err := p.parseIdentifier()
 	if err != nil {
 		return nil, err
@@ -5489,6 +5532,12 @@ func (p *parser) parseTriggerRest(replace bool) (*Expression, error) {
 		timing = strings.ToUpper(p.curr().Text)
 		p.advance()
 	default:
+		// T-SQL writes ON <table> before the timing, and a block after AS.
+		// The reference gives up and emits a Command; matching that is the
+		// only tree that agrees.
+		if p.at(TokON) && p.dialect == "tsql" {
+			return p.parseAsCommand(start), nil
+		}
 		return nil, p.unsupported("a trigger without BEFORE, AFTER or INSTEAD OF")
 	}
 

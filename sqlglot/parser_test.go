@@ -228,7 +228,6 @@ func TestRefusals(t *testing.T) {
 		{"CTE without a query", "WITH a AS SELECT 1", ""},
 		{"unclosed CTE", "WITH a AS (SELECT 1 SELECT 2", ""},
 		{"set operation over a value", "SELECT 1 UNION 2", ""},
-		{"UNION BY NAME", "SELECT 1 UNION BY NAME SELECT 2", "duckdb"},
 		{"TOP without a count", "SELECT TOP a FROM t", "tsql"},
 		{"a call named by a word that cannot name one", "SELECT asc(1)", ""},
 		{"unclosed scalar subquery", "SELECT (SELECT 1", ""},
@@ -1057,5 +1056,20 @@ func TestIsWriteSeesShowIntoOutfile(t *testing.T) {
 	show.Set("into_outfile", New("Literal", Arg{"this", "out.csv"}, Arg{"is_string", true}))
 	if !IsWrite(show) {
 		t.Error("IsWrite(SHOW … INTO OUTFILE) = false; it writes a file")
+	}
+}
+
+func TestUnionByName(t *testing.T) {
+	sql := "SELECT 1 AS x UNION ALL BY NAME SELECT 2 AS x"
+	e := parse(t, sql, "duckdb")
+	if e.Class != "Union" || e.Args["by_name"] != true {
+		t.Fatalf("by_name = %v, want true on a Union", e.Args["by_name"])
+	}
+	got, err := Generate(e, "duckdb")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got != sql {
+		t.Errorf("wrote %q", got)
 	}
 }

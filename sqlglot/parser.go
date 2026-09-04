@@ -48,7 +48,7 @@ func ParseOne(sql, dialect string) (*Expression, error) {
 		return nil, err
 	}
 	cfg := tk.Config()
-	p := &parser{tokens: toks, cfg: cfg, tables: cfg.Tables, dialect: dialect}
+	p := &parser{tokens: toks, cfg: cfg, tables: cfg.Tables, dialect: dialect, sql: sql}
 	return p.parseOne()
 }
 
@@ -66,6 +66,9 @@ type parser struct {
 	index          int
 	cfg            *Config
 	tables         *ParserTables
+	// sql is the statement as written, so a Command the reference builds by
+	// giving up can keep the exact text after the keyword.
+	sql string
 	// inColumnType marks the type of a COLUMN being read, where a fixed-size
 	// array is a type in every dialect -- outside one, only the dialects that
 	// have them read `INT[3]` that way.

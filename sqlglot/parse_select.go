@@ -277,8 +277,11 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 		case p.match(TokDISTINCT):
 			distinct = true
 		}
-		if c := p.curr(); c != nil && strings.EqualFold(c.Text, "BY") {
-			return nil, p.unsupported("set operation BY NAME")
+		var byName any
+		if p.atWords("BY", "NAME") {
+			p.advance()
+			p.advance()
+			byName = true
 		}
 
 		right, err := p.parseSelectOrParenthesised()
@@ -286,7 +289,7 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 			return nil, err
 		}
 		this = New(class,
-			Arg{"this", this}, Arg{"distinct", distinct}, Arg{"by_name", nil},
+			Arg{"this", this}, Arg{"distinct", distinct}, Arg{"by_name", byName},
 			Arg{"expression", right}, Arg{"side", nil}, Arg{"kind", nil}, Arg{"on", nil})
 		p.liftSetOpModifiers(this, right)
 		// A PARENTHESISED right-hand side keeps nothing to lift: the closing
