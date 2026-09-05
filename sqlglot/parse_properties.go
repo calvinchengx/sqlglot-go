@@ -343,6 +343,20 @@ func (p *parser) parseKeyValueProperty() (*Expression, error) {
 	case p.atIdentifier():
 		p.advance()
 		key = New("Var", Arg{"this", c.Text})
+		// A DOTTED key -- `TBLPROPERTIES (a.b = 1)` -- reads as any other
+		// column would, and only a ONE-part name folds into a bare Var; more
+		// than one keeps the DOTS as a chain of Identifiers instead.
+		if p.at(TokDOT) {
+			dotted := New("Identifier", Arg{"this", c.Text}, Arg{"quoted", c.Type == TokIDENTIFIER})
+			for n := p.next(); p.at(TokDOT) && n != nil &&
+				(n.Type == TokVAR || n.Type == TokIDENTIFIER); n = p.next() {
+				p.advance()
+				p.advance()
+				dotted = New("Dot", Arg{"this", dotted}, Arg{"expression",
+					New("Identifier", Arg{"this", n.Text}, Arg{"quoted", n.Type == TokIDENTIFIER})})
+			}
+			key = dotted
+		}
 	default:
 		return nil, p.unsupported("property whose name is not a word")
 	}

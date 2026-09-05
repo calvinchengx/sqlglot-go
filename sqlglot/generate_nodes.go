@@ -3254,6 +3254,10 @@ func (g *generator) writePropertyList(e *Expression) string {
 // quotes keys puts them back on both.
 func (g *generator) writeProperty(e *Expression) string {
 	key, _ := e.Args["this"].(*Expression)
+	// A DOTTED key writes as the dots it is, never quoted or bare-named.
+	if key != nil && key.Class == "Dot" {
+		return g.node(key) + "=" + g.child(e, "value")
+	}
 	name := ""
 	if key != nil {
 		name, _ = key.Args["this"].(string)

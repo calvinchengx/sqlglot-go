@@ -2499,6 +2499,12 @@ func TestTableProperties(t *testing.T) {
 			"CREATE TABLE z WITH (FORMAT='parquet') AS SELECT 1"},
 		{"a key and value with no word of its own", "CREATE TABLE t TBLPROPERTIES ('a.b'=15)",
 			"databricks", "CREATE TABLE t TBLPROPERTIES ('a.b'=15)"},
+		// An UNQUOTED dotted key reads as any other column would, and keeps
+		// the DOTS rather than folding into one bare word -- a one-part name
+		// still folds into a Var, which is why the plain case above is not
+		// written the same way.
+		{"a dotted key with no quotes", "CREATE TABLE my_table TBLPROPERTIES (a.b=15)",
+			"", "CREATE TABLE my_table WITH (a.b=15)"},
 		{"a schema inside a WITH list", "CREATE TABLE z (z INT) WITH (PARTITIONED_BY=(x INT))", "",
 			"CREATE TABLE z (z INT) WITH (PARTITIONED_BY=(x INT))"},
 		// POST_SCHEMA: each stands on its own after the columns.
