@@ -227,6 +227,9 @@ func TestGenerateShapes(t *testing.T) {
 		// here. A string parameter comes back QUOTED.
 		{"a string names a lambda parameter", "SELECT A('abc' -> x)", "databricks",
 			"SELECT A(`abc` -> x)"},
+		// A number names one too, and comes back unquoted.
+		{"a number names a lambda parameter", "SELECT A(0 -> x)", "databricks",
+			"SELECT A(0 -> x)"},
 		{"an empty one too", "SELECT ``(\"\" -> \"\")", "databricks",
 			"SELECT ``(`` -> '')"},
 		{"and a quoted one reads back", "SELECT A(`abc` -> x)", "databricks",

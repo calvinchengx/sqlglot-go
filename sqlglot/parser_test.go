@@ -287,7 +287,6 @@ func TestRefusals(t *testing.T) {
 			"CREATE TABLE t (a INT) WITH(SYSTEM_VERSIONING=OFF", "tsql"},
 		// A lambda that runs out before its body, in each spelling.
 		{"an unclosed lambda parameter list", "FILTER(a, (x, y -> x)", ""},
-		{"a lambda parameter that is not a name", "FILTER(a, (1) -> x)", ""},
 		{"a lambda with no body", "FILTER(a, x ->)", ""},
 		{"a LAMBDA with no body", "SELECT LIST_TRANSFORM(a, LAMBDA x :)", "duckdb"},
 		{"an arrow after an empty pair", "() -> 0", "duckdb"},

@@ -3396,6 +3396,17 @@ func TestALambdaInAQualifiedCall(t *testing.T) {
 		{"F(A -> B)", "F(A -> B)", "Anonymous"},
 		// And outside a call the same tokens still extract from JSON.
 		{"A -> B", "A:B", "JSONExtract"},
+		// ALL is a keyword, but a keyword usable as a bare name still names a
+		// lambda parameter in argument position -- the reference's lambda-arg
+		// reader is its general id-var reader, which takes ALL along with
+		// every other such keyword. Reading it as a JSON extraction over a
+		// Column called ALL instead produced a tree the generator could not
+		// write back as SQL that reparses, nested inside another JSON-arrow
+		// chain: the fuzzer found `A.A(A->A.A(A->0).A(ALL->A.A(A->0)))`.
+		{"A.A(A -> A.A(A -> 0).A(ALL -> A.A(A -> 0)))",
+			"A.A(A -> A.A(A -> 0).A(ALL -> A.A(A -> 0)))", "Dot"},
+		// The same keyword inside a parenthesised parameter list.
+		{"A((ALL, B) -> B)", "A((ALL, B) -> B)", "Anonymous"},
 	} {
 		e, err := ParseOne(tc.sql, "databricks")
 		if err != nil {
@@ -3410,6 +3421,61 @@ func TestALambdaInAQualifiedCall(t *testing.T) {
 		}
 		if got != tc.want {
 			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
+		}
+		// What the generator writes must itself be readable, and reparsing it
+		// must be a fixed point -- the property the round-trip fuzzer checks.
+		if _, err := ParseOne(got, "databricks"); err != nil {
+			t.Errorf("%q generated %q, which does not reparse: %v", tc.sql, got, err)
+		}
+	}
+}
+
+// T-SQL writes `->` its own way -- as a call to ISNULL(JSON_QUERY(...),
+// JSON_VALUE(...)) -- so the ALL-as-lambda-parameter fix above is checked
+// again here, on the dialect whose own JSON-arrow writer once mistook the
+// nested chain for a genuine JSON extraction over a Column called ALL.
+func TestALambdaNamedALLRoundTripsOnTSQL(t *testing.T) {
+	const sql = "A.A(A -> A.A(A -> 0).A(ALL -> A.A(A -> 0)))"
+	e, err := ParseOne(sql, "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", sql, err)
+	}
+	got, err := Generate(e, "tsql")
+	if err != nil {
+		t.Fatalf("Generate(%q): %v", sql, err)
+	}
+	if _, err := ParseOne(got, "tsql"); err != nil {
+		t.Fatalf("%q generated %q, which does not reparse: %v", sql, got, err)
+	}
+}
+
+// atLambda already treats a NUMBER as the start of a lambda -- `A(0 -> x)`
+// reads as a lambda over a parameter called `0`, not a JSON extraction -- but
+// parseLambda's single-parameter branch used to fall through to the ordinary
+// identifier reader, which refuses a bare NUMBER. The reference reads it fine
+// (`Identifier(this=0, quoted=False)`), and so does the parenthesised list
+// form (`A((0, x) -> ...)`), since namesOnly already accepted a NUMBER there.
+func TestANumberNamesALambdaParameter(t *testing.T) {
+	for _, tc := range []struct{ sql, want, class string }{
+		{"A(0 -> x)", "A(0 -> x)", "Anonymous"},
+		{"A((0, x) -> x + 1)", "A((0, x) -> x + 1)", "Anonymous"},
+	} {
+		e, err := ParseOne(tc.sql, "databricks")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if e.Class != tc.class {
+			t.Errorf("%q is a %s, want %s", tc.sql, e.Class, tc.class)
+		}
+		got, err := Generate(e, "databricks")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.want {
+			t.Errorf("%q wrote %q, want %q", tc.sql, got, tc.want)
+		}
+		if _, err := ParseOne(got, "databricks"); err != nil {
+			t.Errorf("%q generated %q, which does not reparse: %v", tc.sql, got, err)
 		}
 	}
 }

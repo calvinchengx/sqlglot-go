@@ -30,8 +30,15 @@ func (p *parser) atLambda() bool {
 	// TokIDENTIFIER too: the port WRITES a string parameter back as a quoted
 	// identifier -- `A('abc' -> x)` becomes ``A(`abc` -> x)`` -- so it has to
 	// be able to read that.
-	if c.Type == TokVAR || c.Type == TokNUMBER || c.Type == TokSTRING ||
-		c.Type == TokIDENTIFIER {
+	//
+	// A keyword usable as a bare name -- ALL among them -- names a lambda
+	// parameter the same way: the reference's own lambda-arg reader is its
+	// general id-var reader, which accepts every keyword in that set, not
+	// just VAR and quoted IDENTIFIER. Checking only those two left
+	// `A(ALL -> x)` read as a JSON extraction with a Column called ALL, which
+	// the generator then could not write back as SQL that reparses -- the
+	// fuzzer found it nested inside another JSON-arrow chain.
+	if p.atIdentifierWhere(false) || c.Type == TokNUMBER || c.Type == TokSTRING {
 		return p.next() != nil && p.next().Type == TokARROW
 	}
 	if c.Type != TokL_PAREN {
@@ -53,7 +60,7 @@ func (p *parser) atLambda() bool {
 				// is a JSON extraction from a parenthesised column, and
 				// reading it as a lambda left the port unable to read back
 				// what it had written. The generator fuzzer found it.
-				return namesOnly(p.tokens[p.index+1 : i])
+				return p.namesOnly(p.tokens[p.index+1 : i])
 			}
 		}
 	}
@@ -62,14 +69,19 @@ func (p *parser) atLambda() bool {
 
 // namesOnly reports whether a run of tokens is a comma-separated list of
 // names and nothing else -- which is all a lambda's parameter list may hold.
-func namesOnly(run []Token) bool {
+// A keyword usable as a bare name -- ALL among them -- counts too, the same
+// as the single-parameter form above: `A((ALL, B) -> B)` is a lambda over two
+// parameters, not a JSON extraction from a tuple.
+func (p *parser) namesOnly(run []Token) bool {
 	wantName := true
 	for _, t := range run {
 		if wantName {
 			switch t.Type {
 			case TokVAR, TokIDENTIFIER, TokNUMBER, TokSTRING:
 			default:
-				return false
+				if _, ok := p.tables.IDVarTokens[t.Type]; !ok {
+					return false
+				}
 			}
 			wantName = false
 			continue
@@ -82,6 +94,27 @@ func namesOnly(run []Token) bool {
 	return !wantName
 }
 
+// parseLambdaParamName reads one lambda parameter's name. A NUMBER or a
+// STRING can name one -- atLambda already treats both as the start of a
+// lambda -- but neither is an identifier anywhere else, so atIdentifierWhere
+// must not be widened to accept them; they are read here instead, before
+// falling back to the ordinary identifier reader for everything else. A
+// string comes back QUOTED, a number does not, matching how the reference
+// builds each one.
+func (p *parser) parseLambdaParamName() (*Expression, error) {
+	c := p.curr()
+	switch {
+	case c != nil && c.Type == TokSTRING:
+		p.advance()
+		return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true}), nil
+	case c != nil && c.Type == TokNUMBER:
+		p.advance()
+		return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", false}), nil
+	default:
+		return p.parseIdentifier()
+	}
+}
+
 func (p *parser) parseLambda() (*Expression, error) {
 	if p.tables.ColonLambdaRead && strings.EqualFold(p.curr().Text, "LAMBDA") {
 		return p.parseColonLambda()
@@ -90,7 +123,7 @@ func (p *parser) parseLambda() (*Expression, error) {
 	if p.at(TokL_PAREN) {
 		p.advance()
 		for !p.at(TokR_PAREN) {
-			id, err := p.parseIdentifier()
+			id, err := p.parseLambdaParamName()
 			if err != nil {
 				return nil, err
 			}
@@ -102,12 +135,8 @@ func (p *parser) parseLambda() (*Expression, error) {
 		if !p.match(TokR_PAREN) {
 			return nil, p.unsupported("unclosed lambda parameter list")
 		}
-	} else if c := p.curr(); c != nil && c.Type == TokSTRING {
-		// A string that names a parameter becomes a QUOTED identifier.
-		p.advance()
-		params = append(params, New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true}))
 	} else {
-		id, err := p.parseIdentifier()
+		id, err := p.parseLambdaParamName()
 		if err != nil {
 			return nil, err
 		}
