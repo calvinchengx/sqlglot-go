@@ -3962,10 +3962,16 @@ func (g *generator) writeDelete(e *Expression) string {
 		}
 		return g.fail(e.Class + " with no table")
 	}
+	// MySQL's Multiple-Table DELETE names, before the FROM, which of the
+	// tables joined there actually lose rows -- and T-SQL's OUTPUT sits in
+	// that very spot, straight after the verb: `DELETE x OUTPUT x.a FROM z`.
+	tablesWord := ""
 	if tables, _ := e.Args["tables"].([]*Expression); len(tables) > 0 {
-		// `DELETE x FROM z` names the target separately from the source; the
-		// port does not read that shape and does not write it either.
-		return g.fail(e.Class + " naming its target twice")
+		parts := make([]string, 0, len(tables))
+		for _, t := range tables {
+			parts = append(parts, g.node(t))
+		}
+		tablesWord = " " + strings.Join(parts, ", ")
 	}
 	body := "FROM " + this
 	if using, _ := e.Args["using"].([]*Expression); len(using) > 0 {
@@ -3980,7 +3986,7 @@ func (g *generator) writeDelete(e *Expression) string {
 	cluster := g.child(e, "cluster")
 	where := g.child(e, "where")
 	returning := g.child(e, "returning")
-	verb := g.withPrefix(e, "DELETE")
+	verb := g.withPrefix(e, "DELETE"+tablesWord)
 	if g.tables.ReturningEnd {
 		return clauses(verb, body, cluster, where, returning)
 	}

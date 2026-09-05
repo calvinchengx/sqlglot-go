@@ -2694,6 +2694,14 @@ func TestUpdateAndDelete(t *testing.T) {
 			"DELETE FROM event USING sales, bla WHERE event.eventid = sales.eventid"},
 		{"delete returning", "postgres", "DELETE FROM x WHERE y > 1 RETURNING a",
 			"DELETE FROM x WHERE y > 1 RETURNING a"},
+		// MySQL's Multiple-Table DELETE names, before the FROM, which of the
+		// tables joined there actually lose rows. T-SQL's OUTPUT sits in
+		// that very spot too -- straight after the verb -- and is the one
+		// place T-SQL puts it that its own parser can read back.
+		{"multiple-table names the target before FROM", "", "DELETE x, y FROM t",
+			"DELETE x, y FROM t"},
+		{"output straight after the verb", "tsql", "DELETE x OUTPUT x.a FROM z",
+			"DELETE x OUTPUT x.a FROM z"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)
@@ -2877,10 +2885,6 @@ func TestDMLCorners(t *testing.T) {
 		node *Expression
 	}{
 		{"a delete with no table", New("Delete")},
-		{"a delete naming its target twice", New("Delete",
-			Arg{"this", New("Table", Arg{"this", New("Identifier", Arg{"this", "x"})})},
-			Arg{"tables", []*Expression{New("Table",
-				Arg{"this", New("Identifier", Arg{"this", "y"})})}})},
 		{"a merge branch that does nothing at all", New("Merge",
 			Arg{"this", New("Table", Arg{"this", New("Identifier", Arg{"this", "x"})})},
 			Arg{"using", New("Table", Arg{"this", New("Identifier", Arg{"this", "y"})})},

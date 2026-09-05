@@ -152,13 +152,38 @@ func (p *parser) parseReturning() (*Expression, error) {
 func (p *parser) parseDelete() (*Expression, error) {
 	p.advance() // DELETE
 
-	// No RETURNING is read here. T-SQL WRITES one in this position and cannot
-	// read its own output back -- see docs/upstream-issues.md -- so there is
-	// no tree for this port to agree with, and reading one would agree with
-	// nothing.
+	// MySQL's Multiple-Table DELETE names, before the FROM, which of the
+	// tables joined there actually lose rows: `DELETE x, y FROM x JOIN y
+	// ...`. T-SQL's OUTPUT sits in the very same spot -- straight after the
+	// verb -- and IS read here: this is the one place T-SQL puts it that
+	// its own parser can read back. `DELETE OUTPUT a FROM x`, with no name
+	// in front, is the position it cannot -- see docs/upstream-issues.md --
+	// and reading one there would agree with no tree the reference builds.
+	//
+	// The VALUE is read here, but not yet SET on the node: the reference
+	// builds this whole node in one call, with `returning` after `where`
+	// regardless of where in the text it stood, and the dump order follows
+	// that call, not the read order.
+	var tables []*Expression
+	var earlyReturning *Expression
+	if !p.at(TokFROM) {
+		for {
+			t, err := p.parseTable()
+			if err != nil {
+				return nil, err
+			}
+			tables = append(tables, t)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		r, err := p.parseReturning()
+		if err != nil {
+			return nil, err
+		}
+		earlyReturning = r
+	}
 	if !p.match(TokFROM) {
-		// `DELETE x FROM z` names the table twice, once as a target and once
-		// as a source; the reference keeps the first under `tables`.
 		return nil, p.unsupported("DELETE without FROM")
 	}
 	table, err := p.parseTable()
@@ -166,7 +191,11 @@ func (p *parser) parseDelete() (*Expression, error) {
 		return nil, err
 	}
 
-	node := New("Delete", Arg{"this", table})
+	node := New("Delete")
+	if tables != nil {
+		node.Set("tables", tables)
+	}
+	node.Set("this", table)
 	if p.at(TokUSING) {
 		p.advance()
 		source, err := p.parseTable()
@@ -212,7 +241,9 @@ func (p *parser) parseDelete() (*Expression, error) {
 		}
 		node.Set("where", New("Where", Arg{"this", where}))
 	}
-	if err := p.readReturning(node); err != nil {
+	if earlyReturning != nil {
+		node.Set("returning", earlyReturning)
+	} else if err := p.readReturning(node); err != nil {
 		return nil, err
 	}
 	if p.curr() != nil {
