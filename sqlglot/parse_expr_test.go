@@ -6926,6 +6926,28 @@ func TestIgnoreNullsOnTrue(t *testing.T) {
 	}
 }
 
+// TestCurdate covers Databricks' CURDATE, which takes NO argument at all --
+// with or without empty parentheses -- and errors on one rather than keeping
+// it, unlike an ordinary call the probe would otherwise describe it as.
+func TestCurdate(t *testing.T) {
+	for _, sql := range []string{"SELECT CURDATE", "SELECT CURDATE()"} {
+		e, err := ParseOne(sql, "databricks")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		call := e.Args["expressions"].([]*Expression)[0]
+		if call.Class != "CurrentDate" {
+			t.Errorf("%q read as %s, want CurrentDate", sql, call.Class)
+		}
+		if got, err := Generate(e, "databricks"); err != nil || got != "SELECT CURRENT_DATE" {
+			t.Errorf("%q wrote %q (%v), want SELECT CURRENT_DATE", sql, got, err)
+		}
+	}
+	if _, err := ParseOne("SELECT CURDATE(x)", "databricks"); err == nil {
+		t.Error("ParseOne(\"SELECT CURDATE(x)\") was read; it should be refused")
+	}
+}
+
 // TestReducerClauses covers Hive's three ways of saying how rows reach the
 // reducers, which sit between HAVING and ORDER BY.
 func TestReducerClauses(t *testing.T) {

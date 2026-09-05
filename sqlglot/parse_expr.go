@@ -1342,6 +1342,18 @@ func (p *parser) parsePrimary() (*Expression, error) {
 				return p.parseMapLiteral()
 			}
 		}
+		// Databricks' CURDATE takes NO argument, ever -- with or without
+		// parentheses, and it errors on one rather than keeping it. The
+		// probe describes the parenthesised form as taking one, because
+		// what it actually does is match an opening paren and then require
+		// a closing one right after, which a placeholder argument fails.
+		if upper == "CURDATE" && p.dialect == "databricks" {
+			p.advance()
+			if p.match(TokL_PAREN) && !p.match(TokR_PAREN) {
+				return nil, p.unsupported("CURDATE with an argument")
+			}
+			return New("CurrentDate"), nil
+		}
 		empty := p.namesAFunctionCall() && p.atEmptyArgList()
 		if noParen && c.Type != TokCASE && !empty && (!hasSpec || !p.namesAFunctionCall()) &&
 			!p.namesItselfNotACall(c) {

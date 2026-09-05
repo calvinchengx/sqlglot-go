@@ -119,7 +119,6 @@ func TestClauseOrderFollowsTheSource(t *testing.T) {
 
 func TestRefusals(t *testing.T) {
 	for _, c := range []struct{ name, sql, dialect string }{
-		{"no-paren function named, not tokenized", "CURDATE", "databricks"},
 		{"a quantity modifier inside a call", "SELECT COUNT(ALL x)", "duckdb"},
 		{"an ordering inside a call that never closes", "SELECT RANK( ORDER BY", "duckdb"},
 		{"an ordering with nothing to order", "SELECT RANK( ORDER BY)", "duckdb"},
@@ -715,10 +714,9 @@ func TestAWordThatOpensNothingIsAName(t *testing.T) {
 func TestAWordThatDoesOpenSomething(t *testing.T) {
 	for _, c := range []struct{ name, sql, dialect, want string }{
 		// A no-paren parser that never retreats: the reference reads a bare
-		// CURDATE as CURRENT_DATE, taking no argument at all. This port has
-		// no parser for it and refuses -- what matters here is that it does
-		// not quietly become a column instead.
-		{"a name that never retreats", "SELECT curdate", "databricks", ""},
+		// CURDATE as CURRENT_DATE, taking no argument at all -- with or
+		// without empty parentheses, and never a column.
+		{"a name that never retreats", "SELECT curdate", "databricks", "Select CurrentDate"},
 		// IF retreats only when nothing can be its condition. An operand
 		// after it -- even one opening with reserved punctuation -- is one,
 		// so the word still needs the parser this port does not have.
