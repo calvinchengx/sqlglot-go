@@ -87,6 +87,12 @@ func TestJSONPathFunctions(t *testing.T) {
 		{"a column path is carried through", "databricks",
 			"SELECT GET_JSON_OBJECT(col, path_col)",
 			"SELECT GET_JSON_OBJECT(col, path_col)"},
+		// JSON_KEYS with no path hands the reference's own `to_json_path` a
+		// missing second argument, which it hands straight back as absent --
+		// not a ROOT path the way another builder here defaults a missing
+		// one, so the call carries no `expression` at all.
+		{"JSON_KEYS with no path argument at all", "databricks",
+			"SELECT JSON_KEYS(foo)", "SELECT JSON_OBJECT_KEYS(foo)"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)

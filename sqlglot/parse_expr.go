@@ -3198,6 +3198,14 @@ func (p *parser) buildJSONPathFunction(spec JSONPathFunc, args []*Expression) *E
 		}
 		path = p.foldJSONPath(args[1:], spec)
 	case len(args) == 1:
+		// JSON_KEYS with no path argument passes the reference's own
+		// `to_json_path` a missing second argument, which it hands straight
+		// back as nil -- absent, not a ROOT path the way RootDefault's
+		// builders default a missing one. `JSON_KEYS(x)` is JSONKeys(this=x)
+		// alone.
+		if spec.Class == "JSONKeys" {
+			return New(spec.Class, Arg{"this", args[0]})
+		}
 		if !spec.RootDefault {
 			return nil
 		}
