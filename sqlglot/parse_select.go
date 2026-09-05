@@ -952,9 +952,6 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			if err != nil {
 				return err
 			}
-			if len(options) == 0 {
-				return p.unsupported("OPTION without a hint")
-			}
 			if err := p.setOnce(sel, "options", options[0]); err != nil {
 				return err
 			}
@@ -1411,9 +1408,7 @@ func (p *parser) parseForClause() (*Expression, error) {
 // A word the table does not have is refused rather than kept as text: the
 // reference raises there, and a made-up hint would silently vanish on write.
 func (p *parser) parseQueryHintOptions() ([]*Expression, error) {
-	if !p.match(TokOPTION) {
-		return nil, nil
-	}
+	p.advance() // OPTION
 	if !p.match(TokL_PAREN) {
 		return nil, p.unsupported("OPTION without a hint list")
 	}
@@ -1422,9 +1417,6 @@ func (p *parser) parseQueryHintOptions() ([]*Expression, error) {
 		option, err := p.parseQueryHintOption()
 		if err != nil {
 			return nil, err
-		}
-		if option == nil {
-			return nil, p.unsupported("OPTION without a hint")
 		}
 		options = append(options, option)
 		if !p.match(TokCOMMA) {

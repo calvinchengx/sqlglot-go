@@ -412,10 +412,9 @@ func simplifyEquality(e *Expression) *Expression {
 	case !isNumberLiteral(b) && isNumberLiteral(a):
 		if left.Class == "Sub" {
 			// 5 - x = 2  →  x < 3  (comparison inverted, 5 - 2)
-			to, ok := inverseComparison[e.Class]
-			if !ok {
-				return e
-			}
+			// `e.Class` is never "Is" here -- excluded above -- so it is
+			// always one of the six comparisons inverseComparison covers.
+			to := inverseComparison[e.Class]
 			return New(to, Arg{"this", b.Copy()}, Arg{
 				"expression", New("Sub", Arg{"this", a.Copy()}, Arg{"expression", right.Copy()}),
 			})
@@ -763,7 +762,13 @@ func absorb(e, parent *Expression) *Expression {
 			for _, s := range leftover[1:] {
 				rebuilt = New(opposite, Arg{"this", rebuilt}, Arg{"expression", s})
 			}
-			kept = append(kept, rebuilt)
+			// `rebuilt` is the OPPOSITE connector to the chain it is about
+			// to join -- an Or spliced bare into an And read back with AND
+			// binding tighter, which is a different statement than the one
+			// meant. The parentheses are not optional here, the way they
+			// are for parenthesizeNestedConnector's other callers: this one
+			// is ALWAYS a different class from what it joins.
+			kept = append(kept, New("Paren", Arg{"this", rebuilt}))
 		}
 	}
 	if !changed || len(kept) == 0 {

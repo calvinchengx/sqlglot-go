@@ -112,6 +112,8 @@ func TestJSONPathFunctionRefusals(t *testing.T) {
 		// it. Building a Literal instead would be a different tree.
 		{"a key the path grammar cannot read", "databricks",
 			"SELECT GET_JSON_OBJECT(c, '$.x-y')"},
+		{"a key the path grammar cannot read, over a different call",
+			"databricks", "SELECT JSON_EXTRACT(a, '$.x-y')"},
 		// A fold needs every key to be a LITERAL; handed a non-literal the
 		// reference lays the arguments out positionally instead, which the
 		// port now builds. A literal that is not a STRING is the case still
@@ -1095,6 +1097,16 @@ func TestQueryHintOptions(t *testing.T) {
 	// is better than dropping the clause.
 	if _, err := Generate(e, "postgres"); err == nil {
 		t.Error("PostgreSQL wrote a T-SQL OPTION; it has none")
+	}
+	for _, sql := range []string{
+		"SELECT 1 OPTION",
+		"SELECT 1 OPTION (",
+		"SELECT 1 OPTION (ZZZUNKNOWN)",
+		"SELECT 1 OPTION (RECOMPILE",
+	} {
+		if _, err := ParseOne(sql, "tsql"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
 	}
 }
 
@@ -5846,6 +5858,9 @@ func TestRowsFrom(t *testing.T) {
 			t.Errorf("%q wrote %q", sql, got)
 		}
 	}
+	if _, err := ParseOne("SELECT * FROM ROWS FROM (1+", "postgres"); err == nil {
+		t.Error("a malformed member of ROWS FROM was read; it should be refused")
+	}
 }
 
 // TestWithOrdinality covers numbering the rows a relation returns.
@@ -9782,6 +9797,12 @@ func TestFunctionAndViewProperties(t *testing.T) {
 		{`CREATE FUNCTION a() ENVIRONMENT (dependencies = '["foo1==1"]')`, "", "databricks"},
 		{"CREATE VIEW start WITH SCHEMABINDING AS SELECT a FROM x", "", "tsql"},
 		{"CREATE VIEW v WITH ENCRYPTION AS SELECT a FROM x", "", "tsql"},
+		// The reference does not finish reading ALTER VIEW WITH either, and
+		// falls back to a Command the same way; matching that tree is the
+		// only match, since a finished Alter would be a different one.
+		{"ALTER VIEW v WITH SCHEMABINDING AS SELECT * FROM foo WHERE c > 10", "", "tsql"},
+		{"ALTER VIEW v WITH ENCRYPTION AS SELECT * FROM foo WHERE c > 10", "", "tsql"},
+		{"ALTER VIEW v WITH VIEW_METADATA AS SELECT * FROM foo WHERE c > 10", "", "tsql"},
 		// A CTE need not write its AS; the reference reads it and puts the
 		// word back.
 		{"WITH x (select 1) SELECT * FROM x", "WITH x AS (SELECT 1) SELECT * FROM x", "databricks"},
@@ -9989,6 +10010,9 @@ func TestJSONArrowKeys(t *testing.T) {
 		if _, err := ParseOne(got, "postgres"); err != nil {
 			t.Errorf("%s wrote %q, which cannot be read back: %v", c.sql, got, err)
 		}
+	}
+	if _, err := ParseOne("SELECT x ->", "postgres"); err == nil {
+		t.Error("`x ->` with nothing after it was read; it should be refused")
 	}
 }
 

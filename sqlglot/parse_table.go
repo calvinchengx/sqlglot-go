@@ -441,9 +441,6 @@ func (p *parser) parseRowsFrom() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(tables) == 0 {
-		return nil, p.unsupported("ROWS FROM without a function")
-	}
 	return p.tableRest(New("Table", Arg{"rows_from", tables}))
 }
 

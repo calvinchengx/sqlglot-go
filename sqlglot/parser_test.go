@@ -405,9 +405,20 @@ func TestRepeatedClauseIsRefused(t *testing.T) {
 		"SELECT a FROM t ORDER BY a ORDER BY b",
 		"SELECT a FROM t LIMIT 1 LIMIT 2",
 		"SELECT a FROM t OFFSET 1 OFFSET 2",
+		"SELECT a FROM t QUALIFY a QUALIFY b",
+		"SELECT a FROM t WINDOW w AS () WINDOW v AS ()",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) should refuse a repeated clause", sql)
+		}
+	}
+	for _, c := range []struct{ sql, dialect string }{
+		{"SELECT * FROM t OPTION(RECOMPILE) OPTION(RECOMPILE)", "tsql"},
+		{"SELECT * FROM t FOR JSON PATH FOR JSON PATH", "tsql"},
+		{"SELECT * FROM t USING SAMPLE 10 USING SAMPLE 10", "duckdb"},
+	} {
+		if _, err := ParseOne(c.sql, c.dialect); err == nil {
+			t.Errorf("ParseOne(%q, %q) should refuse a repeated clause", c.sql, c.dialect)
 		}
 	}
 }

@@ -87,6 +87,21 @@ func TestSimplifyShapes(t *testing.T) {
 		{"is null over a constant", "SELECT 1 WHERE 1 IS NULL", "", "SELECT 1 WHERE FALSE"},
 		{"absorption", "SELECT 1 WHERE a AND (a OR b)", "", "SELECT 1 WHERE a AND TRUE"},
 		{"absorption the other way", "SELECT 1 WHERE a OR (a AND b)", "", "SELECT 1 WHERE a AND TRUE"},
+		// Every operand of the parenthesised OR drops against a sibling IS
+		// NULL it negates, leaving nothing of it behind. The reference folds
+		// this all the way to FALSE; the port stops one step short of that,
+		// which still means what the statement meant.
+		{"every operand of the absorbed side drops",
+			"SELECT 1 WHERE x IS NULL AND y IS NULL AND (NOT x IS NULL OR NOT y IS NULL)", "",
+			"SELECT 1 WHERE x IS NULL AND y IS NULL"},
+		// Two operands are left of the absorbed side rather than none or one,
+		// and what is left of it is the OPPOSITE connector to the chain it
+		// rejoins: spliced in bare, an Or inside an And reads back with AND
+		// binding tighter, which is a different statement than the one
+		// meant. The parentheses this needs are not optional.
+		{"what is left of the absorbed side keeps its own parentheses",
+			"SELECT 1 WHERE x IS NULL AND y IS NULL AND (NOT x IS NULL OR NOT y IS NULL OR z OR w)", "",
+			"SELECT 1 WHERE x IS NULL AND y IS NULL AND (z OR w)"},
 		// The one that matters most: AND binds tighter than OR, so these
 		// parentheses carry meaning and dropping them re-associates the
 		// statement into (a AND a) OR b.
@@ -96,12 +111,23 @@ func TestSimplifyShapes(t *testing.T) {
 			"SELECT 1 WHERE a AND b AND c"},
 		{"a connector under NOT keeps its parentheses", "SELECT 1 WHERE NOT NOT NULL", "",
 			"SELECT 1 WHERE NOT (NULL AND TRUE)"},
+		// Double negation of a KNOWN boolean -- a comparison -- collapses,
+		// where the dialect says the elimination is safe.
+		{"double negation of a comparison collapses",
+			"SELECT 1 WHERE NOT NOT (a = b)", "", "SELECT 1 WHERE a = b"},
 		{"coalesce against a constant that the fallback cannot satisfy",
 			"SELECT 1 WHERE COALESCE(x, 1) = 2", "",
 			"SELECT 1 WHERE NOT x IS NULL AND x = 2"},
 		{"coalesce against a constant the fallback can satisfy",
 			"SELECT 1 WHERE COALESCE(x, 1) = 1", "",
 			"SELECT 1 WHERE x = 1 OR x IS NULL"},
+		// The reference orders the AND's operands the other way round here --
+		// comparison first -- once the coalesce it rebuilds is deep enough to
+		// rank above the NOT NULL check; the port does not carry that same
+		// ranking, so its own order is pinned instead of the reference's.
+		{"coalesce with more than one argument before the constant",
+			"SELECT 1 WHERE COALESCE(x, y, 1) = 2", "",
+			"SELECT 1 WHERE NOT COALESCE(x, y) IS NULL AND COALESCE(x, y) = 2"},
 		{"coalesce of a lone argument is the argument",
 			"SELECT COALESCE(x)", "", "SELECT x"},
 		{"coalesce of a non-null constant is that constant",

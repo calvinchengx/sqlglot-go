@@ -121,6 +121,18 @@ func TestWalkVisitsATypeThatLivesOnlyThere(t *testing.T) {
 	if n := len(cast.FindAll("DataType")); n != 1 {
 		t.Errorf("FindAll(DataType) on CAST = %d, want 1", n)
 	}
+
+	// The same de-duplication applies when the shared DataType sits inside a
+	// LIST argument rather than a scalar one.
+	elemType := New("DataType", Arg{"this", DataTypeKind("INT")})
+	tuple := New("Tuple", Arg{"expressions", []*Expression{
+		New("Literal", Arg{"this", "1"}, Arg{"is_string", false}),
+		elemType,
+	}})
+	tuple.Type = elemType
+	if n := len(tuple.FindAll("DataType")); n != 1 {
+		t.Errorf("FindAll(DataType) on a list-held type = %d, want 1", n)
+	}
 }
 
 func TestDumpMatchesTheReferenceFormat(t *testing.T) {
