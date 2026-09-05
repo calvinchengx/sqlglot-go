@@ -676,42 +676,48 @@ func (p *parser) parsePivot() (*Expression, error) {
 	if !p.match(TokIN) {
 		return nil, p.unsupported("PIVOT without IN")
 	}
-	if !p.match(TokL_PAREN) {
-		// `IN y_enum` names an enum rather than listing values, which is a
-		// different shape and not read here.
-		return nil, p.unsupported("a PIVOT list that is not parenthesised")
-	}
+	var in *Expression
 	var values []*Expression
-	for {
-		v, err := p.parseUnary()
+	if !p.match(TokL_PAREN) {
+		// `IN y_enum` names an enum rather than listing values: the reference
+		// reads a bare word into its own key, FIELD, and the In carries no
+		// list at all -- not an empty one.
+		name, err := p.parseIdentifier()
 		if err != nil {
 			return nil, err
 		}
-		// `IN (q1 AS `Jan-Mar`)` names the output column. The reference
-		// builds a PivotAlias for it, not the ordinary Alias.
-		if p.match(TokALIAS) {
-			name, err := p.parseIdentifier()
+		in = New("In", Arg{"this", unpivotTarget(field, unpivot)}, Arg{"field", name})
+	} else {
+		for {
+			v, err := p.parseUnary()
 			if err != nil {
 				return nil, err
 			}
-			v = New("PivotAlias", Arg{"this", v}, Arg{"alias", name})
+			// `IN (q1 AS `Jan-Mar`)` names the output column. The reference
+			// builds a PivotAlias for it, not the ordinary Alias.
+			if p.match(TokALIAS) {
+				name, err := p.parseIdentifier()
+				if err != nil {
+					return nil, err
+				}
+				v = New("PivotAlias", Arg{"this", v}, Arg{"alias", name})
+			}
+			values = append(values, v)
+			if !p.match(TokCOMMA) {
+				break
+			}
 		}
-		values = append(values, v)
-		if !p.match(TokCOMMA) {
-			break
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed PIVOT list")
 		}
-	}
-	if !p.match(TokR_PAREN) {
-		return nil, p.unsupported("unclosed PIVOT list")
+		in = New("In", Arg{"this", unpivotTarget(field, unpivot)},
+			Arg{"expressions", values})
 	}
 	if !p.match(TokR_PAREN) {
 		// A GROUP BY or an ORDER BY inside the parentheses lands here; both
 		// are shapes this does not model.
 		return nil, p.unsupported("unclosed PIVOT")
 	}
-
-	in := New("In", Arg{"this", unpivotTarget(field, unpivot)},
-		Arg{"expressions", values})
 	args := []Arg{
 		{"expressions", aggregates},
 		{"fields", []*Expression{in}},

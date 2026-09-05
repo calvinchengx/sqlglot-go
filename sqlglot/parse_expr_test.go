@@ -675,6 +675,11 @@ func TestPivot(t *testing.T) {
 		{"excluding them", "databricks",
 			"SELECT * FROM sales UNPIVOT EXCLUDE NULLS (sales FOR quarter IN (q1))",
 			"SELECT * FROM sales UNPIVOT EXCLUDE NULLS (sales FOR quarter IN (q1))"},
+		// `IN y_enum` names an enum rather than listing values -- a bare
+		// word into its own key, not a one-element list.
+		{"a bare enum name instead of a list", "duckdb",
+			"SELECT * FROM t PIVOT(SUM(y) FOR foo IN y_enum)",
+			"SELECT * FROM t PIVOT(SUM(y) FOR foo IN y_enum)"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)
@@ -746,12 +751,16 @@ func TestPivotRefusals(t *testing.T) {
 	for _, tc := range []struct{ name, dialect, sql string }{
 		{"several aggregates DuckDB would name", "duckdb",
 			"SELECT * FROM t PIVOT(SUM(x), MAX(z) FOR y IN ('a'))"},
-		{"a list that is not parenthesised", "duckdb",
-			"SELECT * FROM t PIVOT(SUM(y) FOR foo IN y_enum)"},
 		{"a GROUP BY inside", "duckdb",
 			"SELECT * FROM cities PIVOT(SUM(population) FOR year IN (2000) GROUP BY country)"},
 		{"no FOR at all", "", "SELECT a FROM t PIVOT(SUM(x))"},
 		{"no specification", "", "SELECT a FROM t PIVOT"},
+		// The bare enum name IN reads is still just an identifier: neither a
+		// number nor a dangling close paren names one.
+		{"a bare enum name that is a number", "duckdb",
+			"SELECT * FROM t PIVOT(SUM(y) FOR foo IN 123)"},
+		{"a bare enum name that never comes", "duckdb",
+			"SELECT * FROM t PIVOT(SUM(y) FOR foo IN )"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if _, err := ParseOne(tc.sql, tc.dialect); err == nil {

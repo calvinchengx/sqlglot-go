@@ -87,7 +87,7 @@ func TestLabelNeverCarriesWhatTheCallerWrote(t *testing.T) {
 	for _, sql := range []string{
 		"SELECT * FROM t WHERE email = 'someone@real.example' garbage_word",
 		"SELECT * FROM patient_ssn_table zzz qqq",
-		"SELECT 'hunter2' FROM patient_ssn_table PIVOT(SUM(y) FOR foo IN y_enum)",
+		"SELECT 'hunter2' FROM patient_ssn_table PIVOT(SUM(y) FOR foo IN ('a') GROUP BY z)",
 	} {
 		_, err := ParseOne(sql, "tsql")
 		var u *UnsupportedError
