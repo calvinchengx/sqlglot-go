@@ -1024,7 +1024,12 @@ func (p *parser) parseSubqueryTable() (*Expression, error) {
 func (p *parser) parseParenthesisedTable() (*Expression, error) {
 	// `FROM (DESCRIBE t)` is a statement inside the parentheses, not a table.
 	// Reading the keyword as a name built a Table called DESCRIBE, which is a
-	// tree the reference never makes.
+	// tree the reference never makes -- DESCRIBE itself reads fine here,
+	// closed by the caller's own parenthesis rather than needing to be the
+	// whole statement.
+	if p.at(TokDESCRIBE) || p.at(TokDESC) {
+		return p.parseDescribeBody()
+	}
 	if c := p.curr(); c != nil {
 		if _, isStatement := p.tables.StatementTokens[c.Type]; isStatement {
 			return nil, p.unsupported("statement where a table goes")

@@ -145,7 +145,7 @@ func TestRefusals(t *testing.T) {
 		{"unclosed type parameters", "a::VARCHAR(10", ""},
 		{"a grouping with no arguments", "SELECT a FROM t GROUP BY ROLLUP", ""},
 		{"a qualified call that never closes", "SELECT x.f(1", ""},
-		{"statement where a table goes", "SELECT 1 FROM (DESCRIBE t)", "duckdb"},
+		{"statement where a table goes", "SELECT 1 FROM (DELETE FROM t)", "duckdb"},
 		{"USING with no columns", "SELECT 1 FROM a JOIN b USING", ""},
 		{"a side with no JOIN", "SELECT 1 FROM a LEFT b", ""},
 		{"unclosed subquery", "SELECT 1 FROM (SELECT 1", ""},

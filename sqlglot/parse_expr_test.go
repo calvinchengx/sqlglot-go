@@ -5566,6 +5566,19 @@ func TestDescribe(t *testing.T) {
 		t.Errorf("wrote %q", got)
 	}
 
+	// A DESCRIBE may also stand where a table goes in a FROM, closed by the
+	// parenthesis around it rather than needing to be the whole statement.
+	fromDescribe, err := ParseOne("SELECT * FROM (DESCRIBE t)", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(fromDescribe, "duckdb"); err != nil || got != "SELECT * FROM (DESCRIBE t)" {
+		t.Errorf("got %q (%v), want the DESCRIBE written back", got, err)
+	}
+	if e, err := ParseOne("SELECT * FROM (DESCRIBE t", "duckdb"); err == nil {
+		t.Errorf("read an unclosed DESCRIBE subquery as %v", e)
+	}
+
 	for _, sql := range []string{
 		// The reference reads the KIND and then writes the statement without
 		// it -- `DESCRIBE VIEW x` comes back as `DESCRIBE x`, which asks

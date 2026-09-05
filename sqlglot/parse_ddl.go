@@ -4363,6 +4363,21 @@ var describeStyles = map[string]bool{
 // FORMAT clause, a PARTITION and trailing properties are not read either;
 // none appears in the corpus and each would be a shape to guess at.
 func (p *parser) parseDescribe() (*Expression, error) {
+	node, err := p.parseDescribeBody()
+	if err != nil {
+		return nil, err
+	}
+	if p.curr() != nil {
+		return nil, p.unsupported("DESCRIBE with more than this port reads")
+	}
+	return node, nil
+}
+
+// parseDescribeBody reads DESCRIBE without requiring it to be the whole
+// statement -- the one place besides the top level it may appear is
+// `FROM (DESCRIBE t)`, a statement standing where a table goes, closed by
+// the caller's own parenthesis rather than by the end of input.
+func (p *parser) parseDescribeBody() (*Expression, error) {
 	p.advance() // DESCRIBE
 	style := ""
 	// A QUOTED name is never one of these words, however it is spelled:
@@ -4392,9 +4407,6 @@ func (p *parser) parseDescribe() (*Expression, error) {
 		asJSON = true
 	}
 	node.Set("as_json", asJSON)
-	if p.curr() != nil {
-		return nil, p.unsupported("DESCRIBE with more than this port reads")
-	}
 	return node, nil
 }
 
