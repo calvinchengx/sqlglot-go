@@ -1487,6 +1487,40 @@ func TestWithRecursive(t *testing.T) {
 	}
 }
 
+// PostgreSQL's MATERIALIZED/NOT MATERIALIZED hints whether a CTE is its own
+// optimisation fence or inlined; the reference stores three states -- true,
+// false and absent -- not two, so leaving the word out must dump differently
+// from writing NOT MATERIALIZED.
+func TestCTEMaterialized(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"WITH t AS MATERIALIZED (SELECT 1) SELECT * FROM t",
+			"WITH t AS MATERIALIZED (SELECT 1) SELECT * FROM t"},
+		{"WITH t AS NOT MATERIALIZED (SELECT 1) SELECT * FROM t",
+			"WITH t AS NOT MATERIALIZED (SELECT 1) SELECT * FROM t"},
+		{"WITH t1 AS MATERIALIZED (SELECT 1), t2 AS NOT MATERIALIZED (SELECT 2) SELECT * FROM t1, t2",
+			"WITH t1 AS MATERIALIZED (SELECT 1), t2 AS NOT MATERIALIZED (SELECT 2) SELECT * FROM t1, t2"},
+		{"WITH t AS (SELECT 1) SELECT * FROM t",
+			"WITH t AS (SELECT 1) SELECT * FROM t"},
+	} {
+		e, err := ParseOne(tc.sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "postgres"); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	plain, err := ParseOne("WITH t AS (SELECT 1) SELECT * FROM t", "postgres")
+	if err != nil {
+		t.Fatal(err)
+	}
+	with, _ := plain.Args["with_"].(*Expression)
+	cte := with.Args["expressions"].([]*Expression)[0]
+	if cte.Args["materialized"] != nil {
+		t.Errorf("materialized = %v on a plain CTE, want it absent", cte.Args["materialized"])
+	}
+}
+
 // TestCTEWithUsingKey covers DuckDB's dedup key on a RECURSIVE CTE, written
 // between the alias's own column list and AS: `tbl(a, b) USING KEY (a)`.
 func TestCTEWithUsingKey(t *testing.T) {

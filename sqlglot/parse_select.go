@@ -222,6 +222,19 @@ func (p *parser) parseWith() (*Expression, error) {
 		if !p.match(TokALIAS) && !p.at(TokL_PAREN) {
 			return nil, p.unsupported("CTE without AS")
 		}
+		// PostgreSQL hints whether the CTE is inlined or its own optimisation
+		// fence: `NOT MATERIALIZED` forces inlining, `MATERIALIZED` forces the
+		// fence, and neither leaves the choice to the planner -- the three
+		// states the reference stores as false, true and absent.
+		var materialized any
+		if p.atWords("NOT", "MATERIALIZED") {
+			p.advance()
+			p.advance()
+			materialized = false
+		} else if p.atWords("MATERIALIZED") {
+			p.advance()
+			materialized = true
+		}
 		if !p.match(TokL_PAREN) {
 			return nil, p.unsupported("CTE without a parenthesised query")
 		}
@@ -235,7 +248,7 @@ func (p *parser) parseWith() (*Expression, error) {
 		ctes = append(ctes, New("CTE",
 			Arg{"this", inner},
 			Arg{"alias", New("TableAlias", Arg{"this", alias}, Arg{"columns", cteColumns})},
-			Arg{"materialized", nil},
+			Arg{"materialized", materialized},
 			Arg{"key_expressions", keyExpressions},
 		))
 		if !p.match(TokCOMMA) {

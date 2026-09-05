@@ -390,7 +390,16 @@ func (g *generator) writeCTE(e *Expression) string {
 		}
 		alias += " USING KEY (" + strings.Join(parts, ", ") + ")"
 	}
-	return alias + " AS (" + g.child(e, "this") + ")"
+	materialized := ""
+	switch m := e.Args["materialized"].(type) {
+	case bool:
+		if m {
+			materialized = "MATERIALIZED "
+		} else {
+			materialized = "NOT MATERIALIZED "
+		}
+	}
+	return alias + " AS " + materialized + "(" + g.child(e, "this") + ")"
 }
 
 func (g *generator) writeFrom(e *Expression) string { return "FROM " + g.child(e, "this") }
