@@ -1928,9 +1928,17 @@ func (p *parser) parseViewColumns() ([]*Expression, error) {
 // atTableConstraint reports whether a constraint on the TABLE starts here
 // rather than a column definition. A column is a name followed by a type; each
 // of these is a keyword the reference reserves in this position.
+//
+// CHECK is the one exception: `CHECK (a > 0)` is the constraint, but a bare
+// `check INT` names a COLUMN called check. Only a `(` right after it opens
+// the constraint; anything else, including a type, leaves the word to name
+// itself.
 func (p *parser) atTableConstraint() bool {
+	if p.atWords("CHECK") {
+		return p.next() != nil && p.next().Type == TokL_PAREN
+	}
 	return p.at(TokCONSTRAINT) || p.at(TokPRIMARY_KEY) ||
-		p.at(TokFOREIGN_KEY) || p.atWords("UNIQUE") || p.atWords("CHECK") ||
+		p.at(TokFOREIGN_KEY) || p.atWords("UNIQUE") ||
 		p.atWords("EXCLUDE") || p.atWords("PERIOD", "FOR", "SYSTEM_TIME")
 }
 

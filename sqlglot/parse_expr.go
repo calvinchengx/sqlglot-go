@@ -1673,6 +1673,21 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 			if p.tables.UserDefinedTypeIsIdentifier {
 				named = New("Identifier",
 					Arg{"this", c.Text}, Arg{"quoted", c.Type == TokIDENTIFIER})
+			} else {
+				// A user-defined type may be SCHEMA-QUALIFIED -- `a.b.c` --
+				// and the reference keeps the whole dotted name as one
+				// string, joining each part's own text whether it was
+				// quoted or not: `"a.b".c` and `a.b.c` both give `a.b.c`.
+				// Read here, or the generator's own dotted names -- another
+				// USER-DEFINED type's own qualifier -- came back unreadable.
+				text, _ := named.(string)
+				for n := p.next(); p.at(TokDOT) && n != nil &&
+					(n.Type == TokVAR || n.Type == TokIDENTIFIER); n = p.next() {
+					p.advance()
+					p.advance()
+					text += "." + n.Text
+				}
+				named = text
 			}
 			return New("DataType",
 				Arg{"this", DataTypeKind("USER-DEFINED")},

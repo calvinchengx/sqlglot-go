@@ -3048,6 +3048,13 @@ func TestTableConstraints(t *testing.T) {
 			"ALTER TABLE t ADD CONSTRAINT c FOREIGN KEY (a) REFERENCES p (b)"},
 		{"a check added", "", "ALTER TABLE t ADD CONSTRAINT c CHECK (a > 0)",
 			"ALTER TABLE t ADD CONSTRAINT c CHECK (a > 0)"},
+		// CHECK is the one keyword here that is also an ordinary word: only
+		// a `(` right after it opens the constraint, and a bare `check` --
+		// with no parenthesised condition following -- names a COLUMN.
+		{"check names a column, not a constraint", "", "CREATE TABLE t (a VARCHAR, check INT)",
+			"CREATE TABLE t (a VARCHAR, check INT)"},
+		{"check as the only column", "", "CREATE TABLE t (check VARCHAR)",
+			"CREATE TABLE t (check VARCHAR)"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)
@@ -10637,6 +10644,30 @@ func TestUserDefinedTypes(t *testing.T) {
 		t.Errorf("a quoted user-defined type was refused: %v", err)
 	} else if got, _ := Generate(tree, "postgres"); got != `CAST(1 AS "udt")` {
 		t.Errorf(`1::"udt" wrote %q`, got)
+	}
+	// A user-defined type may be SCHEMA-QUALIFIED -- `a.b.c` -- and the
+	// reference keeps the whole dotted name as one string, joining each
+	// part's own text whether it was quoted or not. The port wrote this
+	// dotted name back out and could not read it again: the generator
+	// fuzzer found it.
+	for _, c := range []struct{ sql, dialect, want string }{
+		{`CAST(0 AS d_.NNNN_)`, "duckdb", ""},
+		{`CAST(0 AS d_.NNNN_)`, "tsql", ""},
+		{`0::"d_.NNNN_"`, "duckdb", "CAST(0 AS d_.NNNN_)"},
+		{`CAST(0 AS a.b.c)`, "duckdb", ""},
+	} {
+		want := c.want
+		if want == "" {
+			want = c.sql
+		}
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		if got, err := Generate(tree, c.dialect); err != nil || got != want {
+			t.Errorf("[%s] %s wrote %q (%v), want %q", c.dialect, c.sql, got, err, want)
+		}
 	}
 }
 
