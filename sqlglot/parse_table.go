@@ -141,24 +141,50 @@ func (p *parser) parseJoin() (*Expression, error) {
 		// `JOIN b USING (x, y)` joins on the columns both sides share. The
 		// reference keeps them as bare IDENTIFIERS, not columns.
 		p.advance()
-		if !p.match(TokL_PAREN) {
-			return nil, p.unsupported("USING without a column list")
+		columns, err := p.parseUsingColumns()
+		if err != nil {
+			return nil, err
 		}
-		var columns []*Expression
+		join.Set("using", columns)
+	// Neither ON nor USING follows straight away, which is also what a JOIN
+	// with none AT ALL looks like -- `a JOIN b JOIN c ON ... ON ...` reads b
+	// alone here. The reference tries the joins that follow as NESTED under
+	// b, and only keeps that reading if it turns out one of THOSE trailing
+	// words belongs to b's own join after all: `a JOIN (b JOIN c ON b=c) ON
+	// a=b`, the outer condition sitting past the inner one entirely. Method
+	// joins, APPLY and UNNEST never take this shape, so they are not tried.
+	case method == nil && (kind == nil || kind.Type != TokCROSS) && table.Class != "Unnest":
+		mark := p.index
+		var nested []*Expression
 		for {
-			column, err := p.parseIdentifier()
+			j, err := p.parseJoin()
+			if err != nil || j == nil {
+				break
+			}
+			nested = append(nested, j)
+		}
+		switch {
+		case len(nested) > 0 && p.match(TokON):
+			on, err := p.parseDisjunction()
 			if err != nil {
 				return nil, err
 			}
-			columns = append(columns, column)
-			if !p.match(TokCOMMA) {
-				break
+			table.Set("joins", nested)
+			join.Set("on", on)
+		case len(nested) > 0 && p.at(TokUSING):
+			p.advance()
+			columns, err := p.parseUsingColumns()
+			if err != nil {
+				return nil, err
 			}
+			table.Set("joins", nested)
+			join.Set("using", columns)
+		case p.tables.BareJoinIsOnTrue:
+			p.index = mark
+			join.Set("on", New("Boolean", Arg{"this", true}))
+		default:
+			p.index = mark
 		}
-		if !p.match(TokR_PAREN) {
-			return nil, p.unsupported("unclosed USING")
-		}
-		join.Set("using", columns)
 	case p.tables.BareJoinIsOnTrue:
 		// Databricks records a bare JOIN as `ON TRUE` rather than leaving the
 		// slot empty and writing the comma form. The same relation either way,
@@ -168,6 +194,29 @@ func (p *parser) parseJoin() (*Expression, error) {
 	}
 	join.Set("pivots", nil)
 	return join, nil
+}
+
+// parseUsingColumns reads `(x, y)` after USING, already past the word
+// itself. The reference keeps the columns as bare IDENTIFIERS, not columns.
+func (p *parser) parseUsingColumns() ([]*Expression, error) {
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("USING without a column list")
+	}
+	var columns []*Expression
+	for {
+		column, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		columns = append(columns, column)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed USING")
+	}
+	return columns, nil
 }
 
 // parseApply builds the Lateral that CROSS APPLY and OUTER APPLY produce.

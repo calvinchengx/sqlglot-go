@@ -1330,6 +1330,12 @@ func TestJoinUsing(t *testing.T) {
 	for _, tc := range []struct{ sql, want string }{
 		{"SELECT 1 FROM a JOIN b USING (x)", "SELECT 1 FROM a JOIN b USING (x)"},
 		{"SELECT 1 FROM a JOIN b USING (x, y, z)", "SELECT 1 FROM a JOIN b USING (x, y, z)"},
+		// A second USING with nothing between it and the first belongs to
+		// the OUTER join, not a repeat of the inner one: `a JOIN (b JOIN c
+		// USING (id)) USING (id)`, read left to right with no parentheses at
+		// all in the SQL itself.
+		{"SELECT * FROM a JOIN b JOIN c USING (id) USING (id)",
+			"SELECT * FROM a JOIN b JOIN c USING (id) USING (id)"},
 	} {
 		e, err := ParseOne(tc.sql, "")
 		if err != nil {
@@ -1351,6 +1357,33 @@ func TestJoinUsing(t *testing.T) {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
 		}
+	}
+}
+
+// The same nesting TestJoinUsing covers for USING happens for ON: a second
+// ON with nothing between it and the first belongs to the join that reads it
+// SECOND -- the outer one -- not a repeat of the inner join's own condition.
+func TestJoinOnNesting(t *testing.T) {
+	sql := "SELECT 1 FROM a JOIN b JOIN c ON b.id = c.id ON a.id = b.id"
+	e, err := ParseOne(sql, "")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", sql, err)
+	}
+	if got, err := Generate(e, ""); err != nil || got != sql {
+		t.Errorf("got %q (%v), want %q", got, err, sql)
+	}
+	// The nested reading is tried and abandoned here: only one ON follows
+	// the whole chain, which the INNER join keeps, leaving nothing for the
+	// outer one -- so Databricks falls back to its own bare-join spelling
+	// rather than the nested one this shape usually takes.
+	bare := "SELECT 1 FROM a JOIN b JOIN c ON b.id = c.id"
+	wantBare := "SELECT 1 FROM a JOIN b ON TRUE JOIN c ON b.id = c.id"
+	eBare, err := ParseOne(bare, "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", bare, err)
+	}
+	if got, err := Generate(eBare, "databricks"); err != nil || got != wantBare {
+		t.Errorf("got %q (%v), want %q", got, err, wantBare)
 	}
 }
 
