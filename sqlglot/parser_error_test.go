@@ -65,7 +65,7 @@ func TestUnsupportedErrorMessageIsTheLabel(t *testing.T) {
 // whatever is still refused, and they are meant to keep being replaced.
 func TestLabelNamesTheKeywordThatStoppedIt(t *testing.T) {
 	for _, tc := range []struct{ sql, want string }{
-		{"SELECT a FROM t CONNECT BY b = 1", "trailing tokens at CONNECT BY"},
+		{"SELECT * FROM tbl GROUP BY GROUPING SETS (GROUPING SETS (course))", "expression at GROUPING SETS"},
 	} {
 		_, err := ParseOne(tc.sql, "tsql")
 		var u *UnsupportedError
@@ -87,7 +87,7 @@ func TestLabelNeverCarriesWhatTheCallerWrote(t *testing.T) {
 	for _, sql := range []string{
 		"SELECT * FROM t WHERE email = 'someone@real.example' garbage_word",
 		"SELECT * FROM patient_ssn_table zzz qqq",
-		"SELECT 'hunter2' FROM patient_ssn_table CONNECT BY 'hunter2' = 1",
+		"SELECT 'hunter2' FROM patient_ssn_table PIVOT(SUM(y) FOR foo IN y_enum)",
 	} {
 		_, err := ParseOne(sql, "tsql")
 		var u *UnsupportedError

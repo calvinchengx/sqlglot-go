@@ -1387,6 +1387,50 @@ func TestJoinOnNesting(t *testing.T) {
 	}
 }
 
+// CONNECT BY walks a hierarchy, and START WITH may stand in front of it or
+// after -- either way the reference dumps it first, and NOCYCLE stops the
+// walk from looping rather than erroring over a cycle in it.
+func TestConnectBy(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{`SELECT * FROM t CONNECT BY "nocycle" = 1`,
+			`SELECT * FROM t CONNECT BY "nocycle" = 1`},
+		{"SELECT * FROM t START WITH id = 1 CONNECT BY x = y",
+			"SELECT * FROM t START WITH id = 1 CONNECT BY x = y"},
+		// START WITH written AFTER CONNECT BY still dumps first.
+		{"SELECT * FROM t CONNECT BY NOCYCLE x = y START WITH id = 1",
+			"SELECT * FROM t START WITH id = 1 CONNECT BY NOCYCLE x = y"},
+		// START is never an implicit alias when WITH follows -- that would
+		// swallow the beginning of this very clause.
+		{"SELECT * FROM t AS START START WITH id = 1 CONNECT BY x = y",
+			"SELECT * FROM t AS START START WITH id = 1 CONNECT BY x = y"},
+		// The same guard applies to a subquery's own WIDE alias reading.
+		{"SELECT * FROM (SELECT 1) START WITH id = 1 CONNECT BY x = y",
+			"SELECT * FROM (SELECT 1) START WITH id = 1 CONNECT BY x = y"},
+	} {
+		e, err := ParseOne(tc.sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, ""); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	// START WITH names where the walk begins; it does not say how to
+	// continue it, and CONNECT BY is required even where START WITH stood
+	// first. Each of the three conditions this clause takes is refused,
+	// whole, where it is not one.
+	for _, sql := range []string{
+		"SELECT * FROM t START WITH id = 1",
+		"SELECT * FROM t START WITH ) CONNECT BY x = y",
+		"SELECT * FROM t CONNECT BY )",
+		"SELECT * FROM t CONNECT BY x = y START WITH )",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
 // A set operation's OWN operand may carry an alias, same as any other
 // subquery does: `(SELECT 1) AS a UNION ALL (SELECT 2) AS b` names each side
 // on its own, and the whole union is what a further wrap of parentheses

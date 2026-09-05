@@ -878,10 +878,54 @@ func (p *parser) atAliasName() bool {
 	if c == nil {
 		return false
 	}
+	// START is never an implicit alias when WITH follows: that would swallow
+	// the beginning of a START WITH ... CONNECT BY clause, which stands
+	// right where an alias would.
+	if p.atWords("START", "WITH") {
+		return false
+	}
 	if c.Type == TokSTRING {
 		return p.tables.StringAliases
 	}
 	return c.Type == TokVAR || c.Type == TokIDENTIFIER
+}
+
+// parseConnect reads Oracle's hierarchical query clause. START WITH may
+// stand before CONNECT BY or after it -- read here only where it was not
+// found in front -- and NOCYCLE stops the walk from looping on a cycle
+// rather than erroring over it.
+func (p *parser) parseConnect() (*Expression, error) {
+	var start *Expression
+	if p.atWords("START", "WITH") {
+		p.advance()
+		p.advance()
+		s, err := p.parseDisjunction()
+		if err != nil {
+			return nil, err
+		}
+		start = s
+	}
+	if !p.match(TokCONNECT_BY) {
+		return nil, p.unsupported("START WITH without CONNECT BY")
+	}
+	nocycle := p.atWords("NOCYCLE")
+	if nocycle {
+		p.advance()
+	}
+	connect, err := p.parseDisjunction()
+	if err != nil {
+		return nil, err
+	}
+	if start == nil && p.atWords("START", "WITH") {
+		p.advance()
+		p.advance()
+		s, err := p.parseDisjunction()
+		if err != nil {
+			return nil, err
+		}
+		start = s
+	}
+	return New("Connect", Arg{"start", start}, Arg{"connect", connect}, Arg{"nocycle", nocycle}), nil
 }
 
 // parseQueryModifiers reads the trailing clauses in source order, as the
@@ -1079,6 +1123,14 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			}
 			laterals, _ := sel.Args["laterals"].([]*Expression)
 			sel.Set("laterals", append(laterals, view))
+		case p.atWords("START", "WITH"), p.at(TokCONNECT_BY):
+			connect, err := p.parseConnect()
+			if err != nil {
+				return err
+			}
+			if err := p.setOnce(sel, "connect", connect); err != nil {
+				return err
+			}
 		case p.at(TokOPTION):
 			options, err := p.parseQueryHintOptions()
 			if err != nil {

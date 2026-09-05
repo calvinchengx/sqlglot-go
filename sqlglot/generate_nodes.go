@@ -22,6 +22,7 @@ func init() {
 	generators = map[string]func(*generator, *Expression) string{
 		"LowerHex":                            (*generator).writeLowerHex,
 		"RecursiveWithSearch":                 (*generator).writeRecursiveWithSearch,
+		"Connect":                             (*generator).writeConnect,
 		"Select":                              (*generator).writeSelect,
 		"Copy":                                (*generator).writeCopy,
 		"NextValueFor":                        (*generator).writeNextValueFor,
@@ -283,6 +284,7 @@ func (g *generator) writeSelect(e *Expression) string {
 	}
 
 	add(g.child(e, "where"))
+	add(g.child(e, "connect"))
 	add(g.child(e, "group"))
 	add(g.child(e, "having"))
 	// Hive's three reducer clauses sit between HAVING and ORDER BY, in the
@@ -1024,6 +1026,20 @@ func (g *generator) writeNational(e *Expression) string {
 // lowercase check always takes the LOWER branch here.
 func (g *generator) writeLowerHex(e *Expression) string {
 	return "LOWER(HEX(" + g.child(e, "this") + "))"
+}
+
+// writeConnect writes Oracle's hierarchical query clause: START WITH, if the
+// walk has a root, then CONNECT BY and the condition that climbs it.
+func (g *generator) writeConnect(e *Expression) string {
+	out := ""
+	if start := g.child(e, "start"); start != "" {
+		out += " START WITH " + start
+	}
+	nocycle := ""
+	if v, _ := e.Args["nocycle"].(bool); v {
+		nocycle = " NOCYCLE"
+	}
+	return out + " CONNECT BY" + nocycle + " " + g.child(e, "connect")
 }
 
 // writeRecursiveWithSearch writes SEARCH BREADTH/DEPTH FIRST BY, or CYCLE --
