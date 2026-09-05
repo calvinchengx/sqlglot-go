@@ -271,6 +271,11 @@ func TestGenerateShapes(t *testing.T) {
 		{"extract", "select extract(month from d)", "duckdb", "SELECT EXTRACT(MONTH FROM d)"},
 		{"extract tsql spells it datepart", "select extract(month from d)", "tsql",
 			"SELECT DATEPART(MONTH, d)"},
+		// EXTRACT's unit is USUALLY a bare word, but it may be a call: ISO
+		// week timing takes an argument, and the reference tries a function
+		// before falling back to the word.
+		{"extract over a call", "select extract(week(monday) from created_at)", "duckdb",
+			"SELECT EXTRACT(WEEK(monday) FROM created_at)"},
 		{"trim both", "select trim(both 'x' from s)", "postgres", "SELECT TRIM(BOTH 'x' FROM s)"},
 		{"trim duckdb drops the position", "select trim(both 'x' from s)", "duckdb",
 			"SELECT TRIM(s, 'x')"},

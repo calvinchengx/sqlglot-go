@@ -1917,6 +1917,17 @@ func TestQualifiedCall(t *testing.T) {
 	if got, err := Generate(iff, "duckdb"); err != nil || got != "SELECT a.IF(1, 0)" {
 		t.Errorf("got %q (%v), want the call written back", got, err)
 	}
+	// The same again where the dot follows something that is NOT a plain
+	// name -- NULL, a bracket, a call's own result -- which is a different
+	// code path from the one above. The generator fuzzer found this one
+	// writing `NULL.CASE WHEN ... END`, also not SQL.
+	iffAfterNull, err := ParseOne("SELECT NULL.IF(1, 0)", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(iffAfterNull, "duckdb"); err != nil || got != "SELECT NULL.IF(1, 0)" {
+		t.Errorf("got %q (%v), want the call written back", got, err)
+	}
 	// A quoted name after a dot keeps its quoting.
 	q, err := ParseOne(`a."My Func"(1)`, "")
 	if err != nil {

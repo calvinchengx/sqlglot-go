@@ -3403,15 +3403,15 @@ func (p *parser) parseDotField() (*Expression, bool, error) {
 		p.advance()
 		return New("National", Arg{"this", n.Text}), false, nil
 	}
-	// A name with an argument list after it is a CALL, and the call reads
-	// itself -- including the arguments this port gives a class of its own.
-	// Whether it WAS a call is reported rather than asked of the node
-	// afterwards: the reference asks `isinstance(field, exp.Func)`, and the
-	// port has no such base -- a call may come back as any of six hundred
-	// classes.
+	// A name with an argument list after it is a CALL, and it is built
+	// ANONYMOUS -- not dispatched to whatever class that name would build on
+	// its own -- exactly as parseQualifiedName is for the same reason:
+	// `f(x).IF(1, 0)` is a call to a function called IF in some schema, not
+	// the reference's own IF, and the generator fuzzer found this port
+	// writing `f(x).CASE WHEN 1 THEN 0 END`, which is not SQL at all.
 	if after := p.peekAt(2); after != nil && after.Type == TokL_PAREN {
 		p.advance()
-		call, err := p.parseFunction()
+		call, err := p.parseQualifiedName()
 		return call, err == nil, err
 	}
 	mark := p.index

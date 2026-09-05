@@ -91,20 +91,35 @@ func (p *parser) parseExtract() (*Expression, error) {
 	if unit == nil {
 		return nil, p.unsupported("EXTRACT without a unit")
 	}
-	p.advance()
+	// The unit is USUALLY a bare word (DAY, WEEK), read as an uppercased Var.
+	// But it may itself be a call -- `EXTRACT(WEEK(monday) FROM created_at)`
+	// takes ISO week timing from an argument -- and the reference tries a
+	// function first, falling back to the bare word only when that fails.
+	var this *Expression
+	if n := p.next(); n != nil && n.Type == TokL_PAREN {
+		if _, canName := p.tables.FuncTokens[unit.Type]; canName {
+			fn, err := p.parseFunction()
+			if err != nil {
+				return nil, err
+			}
+			this = fn
+		}
+	}
+	if this == nil {
+		p.advance()
+		this = New("Var", Arg{"this", strings.ToUpper(unit.Text)})
+	}
 	if !p.match(TokFROM) {
 		return nil, p.unsupported("EXTRACT without FROM")
 	}
-	this, err := p.parseExpression()
+	expression, err := p.parseExpression()
 	if err != nil {
 		return nil, err
 	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed EXTRACT")
 	}
-	return New("Extract",
-		Arg{"this", New("Var", Arg{"this", strings.ToUpper(unit.Text)})},
-		Arg{"expression", this}), nil
+	return New("Extract", Arg{"this", this}, Arg{"expression", expression}), nil
 }
 
 // TRIM([LEADING|TRAILING|BOTH] [chars] FROM target) -- and plain TRIM(x).
