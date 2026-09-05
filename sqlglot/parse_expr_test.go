@@ -9579,6 +9579,15 @@ func TestBooleanCoercion(t *testing.T) {
 		{"CAST(x AS int) OR y", "CAST(x AS INTEGER) <> 0 OR y <> 0"},
 		// A value that is ALREADY a condition is left as it stands.
 		{"a = 1 AND b > 2", "a = 1 AND b > 2"},
+		// WHERE and HAVING coerce their own operand, the same as a bare
+		// operand of AND/OR/NOT does -- not just what sits under one.
+		{"SELECT 1 FROM t WHERE x", "SELECT 1 FROM t WHERE x <> 0"},
+		{"SELECT 1 FROM t GROUP BY x HAVING x", "SELECT 1 FROM t GROUP BY x HAVING x <> 0"},
+		{"SELECT 1 FROM t WHERE x = 1", "SELECT 1 FROM t WHERE x = 1"},
+		// A JOIN's ON, unlike WHERE and HAVING, is left alone at its own top
+		// level -- only a nested AND/OR/NOT operand is compared into one.
+		{"SELECT 1 FROM t JOIN u ON x", "SELECT 1 FROM t JOIN u ON x"},
+		{"SELECT 1 FROM t JOIN u ON x AND y", "SELECT 1 FROM t JOIN u ON x <> 0 AND y <> 0"},
 	} {
 		e, err := ParseOne(tc.sql, "tsql")
 		if err != nil {
@@ -9589,12 +9598,18 @@ func TestBooleanCoercion(t *testing.T) {
 		}
 	}
 	// A dialect that HAS a boolean writes the same tree without any of it.
-	e, err := ParseOne("SELECT * FROM t WHERE NOT c", "tsql")
-	if err != nil {
-		t.Fatalf("ParseOne: %v", err)
-	}
-	if got, err := Generate(e, "duckdb"); err != nil || got != "SELECT * FROM t WHERE NOT c" {
-		t.Errorf("DuckDB wrote %q (%v)", got, err)
+	for _, sql := range []string{
+		"SELECT * FROM t WHERE NOT c",
+		"SELECT 1 FROM t WHERE x",
+		"SELECT 1 FROM t GROUP BY x HAVING x",
+	} {
+		e, err := ParseOne(sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne: %v", err)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != sql {
+			t.Errorf("DuckDB wrote %q (%v), want %q", got, err, sql)
+		}
 	}
 }
 

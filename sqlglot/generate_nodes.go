@@ -564,7 +564,10 @@ func (g *generator) writeJoin(e *Expression) string {
 		words = append(words, "JOIN", this)
 	}
 	// The ON operand is a condition, same as WHERE's, and a boolean literal
-	// there picks its condition spelling rather than its value one.
+	// there picks its condition spelling rather than its value one. Unlike
+	// WHERE and HAVING, the reference does not coerce a bare non-boolean
+	// value at ON's own top level -- only nested under And/Or/Not, which
+	// spell() already covers.
 	if onExpr, _ := e.Args["on"].(*Expression); onExpr != nil {
 		g.markCondition(onExpr)
 	}
@@ -672,14 +675,17 @@ func (g *generator) writeSubquery(e *Expression) string {
 }
 
 func (g *generator) writeWhere(e *Expression) string {
-	// The WHERE operand is a condition, which is what decides how a boolean
-	// there is written.
-	if child, _ := e.Args["this"].(*Expression); child != nil {
-		g.markCondition(child)
-	}
+	// The WHERE operand is a condition: a boolean there picks its condition
+	// spelling, and a dialect with no boolean type compares anything else
+	// into one.
+	g.requireCondition(e, "this")
 	return "WHERE " + g.child(e, "this")
 }
-func (g *generator) writeHaving(e *Expression) string { return "HAVING " + g.child(e, "this") }
+func (g *generator) writeHaving(e *Expression) string {
+	// Same condition treatment as WHERE's operand.
+	g.requireCondition(e, "this")
+	return "HAVING " + g.child(e, "this")
+}
 
 // writeInto keeps the table KIND that sits before the name: `INTO UNLOGGED foo`.
 func (g *generator) writeInto(e *Expression) string {
