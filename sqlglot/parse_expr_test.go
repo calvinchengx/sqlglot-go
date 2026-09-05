@@ -3772,6 +3772,14 @@ func TestQuotedStringClasses(t *testing.T) {
 		// A quote in the body is escaped the way this dialect escapes one,
 		// because the spelling substitutes the body VERBATIM.
 		{"a quote inside", "postgres", `SELECT U&'a''b''c'`, `SELECT U&'a''b''c'`},
+		// UESCAPE names the character that introduces an escape, instead of
+		// the backslash otherwise read: `!0061` rather than `\0061`.
+		{"a unicode string with its own escape character", "postgres",
+			`SELECT U&'d!0061t!+000061' UESCAPE '!' AS label`,
+			`SELECT U&'d!0061t!+000061' UESCAPE '!' AS label`},
+		{"UESCAPE beside a quote inside the body", "postgres",
+			`SELECT U&'can''t !0061' UESCAPE '!' AS label`,
+			`SELECT U&'can''t !0061' UESCAPE '!' AS label`},
 		// A byte string goes further: a control character comes back as the
 		// two characters that spell it.
 		{"a tab inside", "postgres", `SELECT E'a\tb'`, `SELECT e'a\tb'`},
@@ -3790,6 +3798,12 @@ func TestQuotedStringClasses(t *testing.T) {
 				t.Errorf("got %q, want %q", got, tc.want)
 			}
 		})
+	}
+	// UESCAPE with nothing after it is left to name itself: the reference
+	// silently drops the whole clause and reads as if UESCAPE had not been
+	// written at all, a leniency this port does not reproduce.
+	if e, err := ParseOne("SELECT U&'a' UESCAPE", "postgres"); err == nil {
+		t.Errorf("UESCAPE without a string was read: %v", e)
 	}
 	// The neutral dialect writes a byte string as `''` and a hex literal not
 	// at all, so both are refused rather than written empty.

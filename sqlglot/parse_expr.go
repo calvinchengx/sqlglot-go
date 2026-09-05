@@ -1134,7 +1134,20 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return New("ByteString", Arg{"this", c.Text}), nil
 	case TokUNICODE_STRING:
 		p.advance()
-		return New("UnicodeString", Arg{"this", c.Text}, Arg{"escape", false}), nil
+		// `UESCAPE '!'` names the character that introduces an escape,
+		// instead of the backslash PostgreSQL otherwise reads: `!0061`
+		// rather than `\0061`. The clause is a plain STRING, not a Var.
+		var escape any = false
+		if p.atWords("UESCAPE") {
+			p.advance()
+			s := p.curr()
+			if s == nil || s.Type != TokSTRING {
+				return nil, p.unsupported("UESCAPE without a string")
+			}
+			p.advance()
+			escape = New("Literal", Arg{"this", s.Text}, Arg{"is_string", true})
+		}
+		return New("UnicodeString", Arg{"this", c.Text}, Arg{"escape", escape}), nil
 	case TokHEX_STRING:
 		p.advance()
 		return New("HexString", Arg{"this", c.Text}), nil
