@@ -90,7 +90,7 @@ func carriesComments(tree []map[string]any) bool {
 
 func assertGeneratorFloor(t *testing.T, written int) {
 	t.Helper()
-	const floor = 4405 // raised by hand as the generator grows; never lowered here
+	const floor = 4406 // raised by hand as the generator grows; never lowered here
 	if written < floor {
 		t.Errorf("generator REGRESSED: %d statements written, floor %d", written, floor)
 	}

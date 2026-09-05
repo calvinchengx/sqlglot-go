@@ -6576,6 +6576,50 @@ func TestDistinctArgFunction(t *testing.T) {
 	if e, err := ParseOne("SELECT ARG_MAX(a, b", ""); err == nil {
 		t.Errorf("read an unclosed ARG_MAX as %v", e)
 	}
+
+	// A trailing ORDER BY belongs to the argument it follows, wrapped in an
+	// Order the same way any other call's own argument list wraps one --
+	// this family just reads its arguments with its own loop rather than
+	// the generic one, so it needed the same wrapping added by hand.
+	for _, tc := range []struct{ sql, dialect, class string }{
+		{"SELECT ARG_MAX(a, b, c ORDER BY d)", "duckdb", "ArgMax"},
+		{"SELECT ARG_MIN(a, b, c ORDER BY d)", "duckdb", "ArgMin"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		call := e.Args["expressions"].([]*Expression)[0]
+		count, _ := call.Args["count"].(*Expression)
+		if count == nil || count.Class != "Order" {
+			t.Fatalf("%q: count is %v, want an Order", tc.sql, call)
+		}
+		this, _ := count.Args["this"].(*Expression)
+		if this == nil || this.Class != "Column" {
+			t.Errorf("%q: Order.this is %v, want the wrapped argument", tc.sql, this)
+		}
+		got, err := Generate(e, tc.dialect)
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.sql {
+			t.Errorf("Generate(%q) = %q", tc.sql, got)
+		}
+	}
+
+	if e, err := ParseOne("SELECT ARG_MAX(a, b, c ORDER BY", ""); err == nil {
+		t.Errorf("read an unclosed ORDER BY inside ARG_MAX as %v", e)
+	}
+
+	// A malformed first or later argument fails where the bad expression is,
+	// not silently -- covers both of parseDistinctArgFunction's own argument
+	// parse-error returns.
+	if e, err := ParseOne("SELECT ARG_MAX(", ""); err == nil {
+		t.Errorf("read a bad first ARG_MAX argument as %v", e)
+	}
+	if e, err := ParseOne("SELECT ARG_MAX(a,", ""); err == nil {
+		t.Errorf("read a bad later ARG_MAX argument as %v", e)
+	}
 }
 
 // TestXMLElement covers XMLELEMENT, whose tag is a NAME rather than an

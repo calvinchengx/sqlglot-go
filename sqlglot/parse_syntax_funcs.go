@@ -718,6 +718,18 @@ func (p *parser) parseDistinctArgFunction(class string, distinctIndex int) (*Exp
 		}
 		args = append(args, arg)
 	}
+	// `ARG_MAX(a, b, 3 ORDER BY c)`: the ORDER BY belongs to the argument it
+	// follows, wrapped in an Order the same way any other call's does --
+	// this one just reads its own argument list rather than the generic one.
+	if len(args) > 0 && p.at(TokORDER_BY) {
+		p.advance()
+		order, oerr := p.parseOrder()
+		if oerr != nil {
+			return nil, oerr
+		}
+		order.Set("this", args[len(args)-1])
+		args[len(args)-1] = order
+	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed " + strings.ToUpper(class))
 	}
