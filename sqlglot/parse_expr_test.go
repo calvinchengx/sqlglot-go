@@ -6877,6 +6877,48 @@ func TestNestedBuilder(t *testing.T) {
 	}
 }
 
+// TestIgnoreNullsOnTrue covers Databricks' FIRST, LAST, FIRST_VALUE and
+// LAST_VALUE, whose builder reads its own second argument rather than
+// declaring it: literally TRUE wraps the call in IgnoreNulls, and the
+// wrapper -- not itself a Func -- is what lets the extra argument past the
+// count check that catches every other value there.
+func TestIgnoreNullsOnTrue(t *testing.T) {
+	for _, tc := range []struct{ sql, class, word string }{
+		{"SELECT FIRST(x, TRUE)", "First", "FIRST"},
+		{"SELECT LAST(x, TRUE)", "Last", "LAST"},
+		{"SELECT FIRST_VALUE(x, TRUE)", "FirstValue", "FIRST_VALUE"},
+		{"SELECT LAST_VALUE(x, TRUE)", "LastValue", "LAST_VALUE"},
+	} {
+		e, err := ParseOne(tc.sql, "databricks")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		call := e.Args["expressions"].([]*Expression)[0]
+		if call.Class != "IgnoreNulls" {
+			t.Fatalf("%q read as %s, want IgnoreNulls", tc.sql, call.Class)
+		}
+		inner, _ := call.Args["this"].(*Expression)
+		if inner == nil || inner.Class != tc.class {
+			t.Errorf("%q wrapped a %v, want %s", tc.sql, inner, tc.class)
+		}
+		want := "SELECT " + tc.word + "(x) IGNORE NULLS"
+		if got, err := Generate(e, "databricks"); err != nil || got != want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, want)
+		}
+	}
+	// Every other value past the first argument is still a refusal: the
+	// reference's own arg-count check runs against the bare call, which IS a
+	// Func, whenever the wrap does not happen.
+	for _, sql := range []string{
+		"SELECT FIRST_VALUE(x, FALSE)",
+		"SELECT FIRST_VALUE(x, y)",
+	} {
+		if _, err := ParseOne(sql, "databricks"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
 // TestReducerClauses covers Hive's three ways of saying how rows reach the
 // reducers, which sit between HAVING and ORDER BY.
 func TestReducerClauses(t *testing.T) {

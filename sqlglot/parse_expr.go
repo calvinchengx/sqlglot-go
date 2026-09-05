@@ -2239,8 +2239,13 @@ func (p *parser) parseFunction() (*Expression, error) {
 		// builder only reveals that when argument 1 is literally TRUE. The
 		// probe runs builders with placeholders, so it recorded a signature
 		// that quietly DROPS the flag. Dropping an argument changes what the
-		// statement means, so this is a refusal.
+		// statement means, so this is a refusal -- except for the four names
+		// whose builder this is read from directly, where it is not a drop
+		// but the documented behaviour.
 		if n, bounded := spec.consumes(); bounded && len(args) > n {
+			if wrapped, ok := ignoreNullsOnTrue(p.dialect, upper, args); ok {
+				return wrapped, nil
+			}
 			return nil, p.unsupported("extra arguments to " + name)
 		}
 		// A wrap takes the argument's NAME, so an argument with no name -- a
@@ -2528,6 +2533,42 @@ func dispatchByValue(d ValueDispatch, arg *Expression) FuncSpec {
 		return spec
 	}
 	return d.Default
+}
+
+// ignoreNullsOnTrueClasses names the four Hive-family builders that read
+// their own second argument rather than declaring it: `build_with_ignore_nulls`
+// takes the first argument as `this` and, only where the second is literally
+// TRUE, wraps the call in IgnoreNulls -- any other second argument is simply
+// never stored anywhere. Hive, Spark and Databricks share the one builder;
+// this port speaks only Databricks of the three.
+var ignoreNullsOnTrueClasses = map[string]string{
+	"FIRST":       "First",
+	"LAST":        "Last",
+	"FIRST_VALUE": "FirstValue",
+	"LAST_VALUE":  "LastValue",
+}
+
+// ignoreNullsOnTrue reproduces build_with_ignore_nulls, gated on both the
+// dialect and the name so the probe's own signature for these same names in
+// every OTHER dialect -- where the second argument is an ordinary one, not
+// this flag -- is left alone.
+//
+// A second argument that is NOT literally TRUE is still a refusal, not a
+// silent drop: the reference's own arg-count check runs against whatever the
+// builder returns, and only the WRAPPED shape is exempt from it -- IgnoreNulls
+// is not itself a Func, so the check that catches every other extra argument
+// never sees it. `FIRST_VALUE(c, FALSE)` hits that check nonetheless and
+// raises there, same as it does without this builder at all.
+func ignoreNullsOnTrue(dialect, upper string, args []*Expression) (*Expression, bool) {
+	if dialect != "databricks" || len(args) != 2 || !isBooleanLiteral(args[1], true) {
+		return nil, false
+	}
+	class, ok := ignoreNullsOnTrueClasses[upper]
+	if !ok {
+		return nil, false
+	}
+	call := New(class, Arg{"this", args[0]})
+	return New("IgnoreNulls", Arg{"this", call}), true
 }
 
 func (p *parser) buildFunction(name string, spec FuncSpec, args []*Expression) *Expression {
