@@ -837,17 +837,27 @@ func (p *parser) parseAlias(this *Expression) (*Expression, error) {
 	// INTO. Only an identifier can stand there without the word.
 	alias, err := p.parseIdentifier()
 	if err != nil {
-		// T-SQL reads a bare STRING immediately after an expression as an
-		// implicit alias too -- `SELECT 1 'foo'` names the column foo, the
-		// same as a plain word would, just already quoted -- which is why
-		// this falls through here rather than needing AS to have been
-		// written.
-		if !explicit && (!p.tables.StringAliases || !p.at(TokSTRING)) {
+		// A PLACEHOLDER names one too -- `SELECT ? AS ?` is a bound column
+		// aliased by a bound name, and the reference's own identifier reader
+		// falls back to reading a placeholder the same way an identifier
+		// falls back here.
+		if p.at(TokPLACEHOLDER) {
+			alias, err = p.parsePrimary()
+			if err != nil {
+				return nil, err
+			}
+		} else if !explicit && (!p.tables.StringAliases || !p.at(TokSTRING)) {
+			// T-SQL reads a bare STRING immediately after an expression as an
+			// implicit alias too -- `SELECT 1 'foo'` names the column foo,
+			// the same as a plain word would, just already quoted -- which
+			// is why this falls through here rather than needing AS to have
+			// been written.
 			return nil, err
-		}
-		alias, err = p.parseAnyName()
-		if err != nil {
-			return nil, err
+		} else {
+			alias, err = p.parseAnyName()
+			if err != nil {
+				return nil, err
+			}
 		}
 	}
 	return New("Alias", Arg{"this", this}, Arg{"alias", alias}), nil

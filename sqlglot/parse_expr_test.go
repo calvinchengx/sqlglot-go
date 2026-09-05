@@ -1495,6 +1495,27 @@ func TestSetOperationOperandAlias(t *testing.T) {
 	}
 }
 
+// TestPlaceholderAsAlias covers `AS ?`: a bound name aliasing a bound value.
+// The reference's own identifier reader falls back to a placeholder when the
+// name is not one, and an alias reads its name the same way.
+func TestPlaceholderAsAlias(t *testing.T) {
+	sql := "SELECT ? AS ? FROM x WHERE b BETWEEN ? AND ? GROUP BY ?, 1 LIMIT ?"
+	e, err := ParseOne(sql, "")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", sql, err)
+	}
+	alias := e.Args["expressions"].([]*Expression)[0]
+	if alias.Class != "Alias" {
+		t.Fatalf("expressions[0] is %s, want Alias", alias.Class)
+	}
+	if this, _ := alias.Args["alias"].(*Expression); this == nil || this.Class != "Placeholder" {
+		t.Errorf("alias is %v, want a Placeholder", alias.Args["alias"])
+	}
+	if got, err := Generate(e, ""); err != nil || got != sql {
+		t.Errorf("got %q (%v), want %q", got, err, sql)
+	}
+}
+
 // USING SAMPLE is DuckDB's other sampling spelling, hanging off the QUERY
 // where TABLESAMPLE hangs off the table -- the same node under a different
 // word, and both words are probed.
