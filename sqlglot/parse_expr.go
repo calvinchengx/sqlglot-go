@@ -166,6 +166,30 @@ func (p *parser) parseRange() (*Expression, error) {
 					this = New(class, Arg{"this", left}, Arg{"expression", right})
 				}
 			}
+		case c.Type == TokOPERATOR:
+			// PostgreSQL's `OPERATOR(schema.op)` names a custom operator by
+			// SCHEMA and symbol rather than by a word, and the reference
+			// reads the parenthesised name as raw TEXT -- every token
+			// between the parens, concatenated with none of its own
+			// whitespace -- rather than as an expression.
+			p.advance()
+			if !p.match(TokL_PAREN) {
+				return nil, p.unsupported("OPERATOR without its name")
+			}
+			var op strings.Builder
+			for p.curr() != nil && !p.at(TokR_PAREN) {
+				op.WriteString(p.curr().Text)
+				p.advance()
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed OPERATOR name")
+			}
+			var right *Expression
+			right, err = p.parseBitwise()
+			if err == nil {
+				this = New("Operator",
+					Arg{"this", this}, Arg{"operator", op.String()}, Arg{"expression", right})
+			}
 		default:
 			if _, isRange := p.tables.RangeTokens[c.Type]; isRange {
 				return nil, p.unsupported("range operator " + c.Text)
@@ -549,15 +573,18 @@ func (p *parser) parseBinary(ops map[TokenType]string, next func() (*Expression,
 			return this, nil
 		}
 		p.advance()
-		// COLLATE names a collation, not an expression: a bare word there is
-		// a Var and a quoted one an Identifier, where the generic operand
-		// rule would make a column of either.
+		// COLLATE reads a TERM, the same as `+` and `-` do here, which is
+		// why a SCHEMA-qualified name reads fine: `pg_catalog.default` is a
+		// Column, same as it would be anywhere else. Only an UNQUALIFIED
+		// name is not one -- a bare word there is a Var and a quoted one an
+		// Identifier, where the generic column rule would make one of a
+		// single Identifier either way.
 		if class == "Collate" {
-			name, cerr := p.parseCollation()
+			name, cerr := next()
 			if cerr != nil {
 				return nil, cerr
 			}
-			this = New(class, Arg{"this", this}, Arg{"expression", name})
+			this = New(class, Arg{"this", this}, Arg{"expression", collationName(name)})
 			continue
 		}
 		right, err := next()
@@ -3447,26 +3474,31 @@ func namedArgument(e *Expression) *Expression {
 	return nil
 }
 
-// parseCollation reads what follows COLLATE. A string literal stays a literal,
-// a QUOTED name is an Identifier, and a bare word is a Var -- three shapes for
-// one slot, and the generic operand rule made a column of the last two.
-func (p *parser) parseCollation() (*Expression, error) {
-	c := p.curr()
-	if c == nil {
-		return nil, p.unsupported("COLLATE without a collation")
+// collationName coerces what COLLATE's TERM-level read produced: an
+// UNQUALIFIED column -- one Identifier and nothing else -- names a word
+// rather than selecting one, so it comes back as a Var (unquoted) or the
+// Identifier itself (quoted), the same as any other bare word does where the
+// reference wants a name, not an expression. A SCHEMA-qualified name is left
+// as the Column it already is: `pg_catalog.default` names an object, and the
+// dot is part of that name, not something to unwrap.
+func collationName(e *Expression) *Expression {
+	if e == nil || e.Class != "Column" {
+		return e
 	}
-	switch {
-	case c.Type == TokSTRING:
-		p.advance()
-		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
-	case c.Type == TokIDENTIFIER:
-		p.advance()
-		return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true}), nil
-	case p.atIdentifier():
-		p.advance()
-		return New("Var", Arg{"this", c.Text}), nil
+	for _, key := range []string{"table", "db", "catalog"} {
+		if part, _ := e.Args[key].(*Expression); part != nil {
+			return e
+		}
 	}
-	return nil, p.unsupported("COLLATE without a collation")
+	id, _ := e.Args["this"].(*Expression)
+	if id == nil || id.Class != "Identifier" {
+		return e
+	}
+	if quoted, _ := id.Args["quoted"].(bool); quoted {
+		return id
+	}
+	name, _ := id.Args["this"].(string)
+	return New("Var", Arg{"this", name})
 }
 
 // parseQualifiedName reads the call at the end of a dotted chain. A name AFTER

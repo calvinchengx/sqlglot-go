@@ -2212,6 +2212,44 @@ func TestQualifiedCall(t *testing.T) {
 	}
 }
 
+// PostgreSQL's OPERATOR(schema.op) names a custom operator by SCHEMA and
+// symbol rather than by a word, and the reference reads everything between
+// the parens as raw TEXT rather than as an expression.
+func TestSchemaQualifiedOperator(t *testing.T) {
+	sql := "SELECT a FROM t WHERE a OPERATOR(pg_catalog.~) 'b'"
+	e, err := ParseOne(sql, "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", sql, err)
+	}
+	op := e.Args["where"].(*Expression).Args["this"].(*Expression)
+	if op.Class != "Operator" {
+		t.Fatalf("where is %s, want Operator", op.Class)
+	}
+	if name, _ := op.Args["operator"].(string); name != "pg_catalog.~" {
+		t.Errorf("operator = %q, want %q", name, "pg_catalog.~")
+	}
+	if got, err := Generate(e, "postgres"); err != nil || got != sql {
+		t.Errorf("got %q (%v), want %q", got, err, sql)
+	}
+	// Chained applications read left to right, the same as any other binary
+	// operator at this level does.
+	chained := "SELECT a OPERATOR(pg_catalog.+) b OPERATOR(pg_catalog.+) c"
+	if e, err := ParseOne(chained, "postgres"); err != nil {
+		t.Fatalf("ParseOne(%q): %v", chained, err)
+	} else if got, gerr := Generate(e, "postgres"); gerr != nil || got != chained {
+		t.Errorf("got %q (%v), want %q", got, gerr, chained)
+	}
+	for _, sql := range []string{
+		"SELECT a OPERATOR pg_catalog.~ 'b'",
+		"SELECT a OPERATOR(pg_catalog.~ 'b'",
+		"SELECT a OPERATOR(pg_catalog.~)",
+	} {
+		if e, err := ParseOne(sql, "postgres"); err == nil {
+			t.Errorf("ParseOne(%q) was read as %v; it should be refused", sql, e)
+		}
+	}
+}
+
 // COLLATE names a collation, not an expression: three shapes for one slot,
 // and the generic operand rule made a column of two of them.
 func TestCollate(t *testing.T) {
@@ -2240,8 +2278,13 @@ func TestCollate(t *testing.T) {
 	if _, err := ParseOne("SELECT a COLLATE FROM t", ""); err == nil {
 		t.Error("`COLLATE` with no collation was read; it should be refused")
 	}
-	if _, err := ParseOne("SELECT a COLLATE 1", ""); err == nil {
-		t.Error("`COLLATE 1` was read; a number is not a collation")
+	// COLLATE reads a TERM, the same level `+` and `-` do -- so a NUMBER is
+	// as much a name here as a word is, and the reference keeps it rather
+	// than refusing it.
+	if e, err := ParseOne("SELECT a COLLATE 1", ""); err != nil {
+		t.Errorf("ParseOne: %v", err)
+	} else if got, gerr := Generate(e, ""); gerr != nil || got != "SELECT a COLLATE 1" {
+		t.Errorf("got %q (%v), want %q", got, gerr, "SELECT a COLLATE 1")
 	}
 	// A quoted name is an Identifier where a bare one is a Var.
 	quoted, err := ParseOne(`SELECT a COLLATE "de_DE"`, "postgres")
@@ -2256,6 +2299,19 @@ func TestCollate(t *testing.T) {
 	}
 	if _, err := ParseOne("SELECT a COLLATE", ""); err == nil {
 		t.Error("`COLLATE` at the end was read; it should be refused")
+	}
+	// A SCHEMA-qualified name is left as the Column it already is: the dot
+	// is part of the name, not something the bare-word coercion unwraps.
+	dotted, err := ParseOne("SELECT a COLLATE pg_catalog.default", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	dottedCollate := dotted.Args["expressions"].([]*Expression)[0]
+	if this, _ := dottedCollate.Args["expression"].(*Expression); this == nil || this.Class != "Column" {
+		t.Errorf("a dotted collation is %v, want a Column", dottedCollate.Args["expression"])
+	}
+	if got, gerr := Generate(dotted, "postgres"); gerr != nil || got != "SELECT a COLLATE pg_catalog.default" {
+		t.Errorf("got %q (%v)", got, gerr)
 	}
 }
 
