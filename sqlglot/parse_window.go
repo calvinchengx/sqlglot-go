@@ -38,6 +38,21 @@ func (p *parser) windowBody(this *Expression, over any) (*Expression, error) {
 
 	if p.at(TokL_PAREN) {
 		p.advance()
+		// The parenthesised form may itself EXTEND a named window: `OVER (w
+		// ORDER BY y)` takes the base window w defined elsewhere and adds a
+		// clause this instance carries alone. The base name reads as an
+		// ordinary identifier, so nothing here mistakes PARTITION or ORDER
+		// for one -- neither names an identifier at all. ROWS, RANGE and
+		// GROUPS open a frame with no base window and no PARTITION or ORDER
+		// in front of it, and all three ARE identifier-shaped words, so they
+		// are excluded by name the same way frameKind reads them.
+		if p.atIdentifier() && !p.at(TokROWS) && !p.at(TokRANGE) && !p.atWords("GROUPS") {
+			id, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
+			}
+			alias = id
+		}
 		if p.match(TokPARTITION_BY) {
 			for {
 				e, err := p.parseExpression()

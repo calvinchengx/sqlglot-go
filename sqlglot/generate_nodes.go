@@ -1714,21 +1714,32 @@ func (g *generator) writeWindow(e *Expression) string {
 	if _, over := e.Args["over"].(string); !over {
 		out = g.child(e, "this") + " AS "
 	}
-	if alias := g.child(e, "alias"); alias != "" {
+	alias := g.child(e, "alias")
+	partitionItems, _ := e.Args["partition_by"].([]*Expression)
+	order := g.child(e, "order")
+	spec := g.child(e, "spec")
+	// `OVER w` names a window defined elsewhere and adds nothing of its
+	// own -- bare, with no parentheses at all. `OVER (w ORDER BY y)` names
+	// one and EXTENDS it, and needs both: the base window is the first
+	// thing inside the parens, ahead of whatever this instance adds.
+	if alias != "" && len(partitionItems) == 0 && order == "" && spec == "" {
 		return out + alias
 	}
 	parts := []string{}
-	if items, _ := e.Args["partition_by"].([]*Expression); len(items) > 0 {
-		rendered := make([]string, 0, len(items))
-		for _, item := range items {
+	if alias != "" {
+		parts = append(parts, alias)
+	}
+	if len(partitionItems) > 0 {
+		rendered := make([]string, 0, len(partitionItems))
+		for _, item := range partitionItems {
 			rendered = append(rendered, g.node(item))
 		}
 		parts = append(parts, "PARTITION BY "+strings.Join(rendered, ", "))
 	}
-	if order := g.child(e, "order"); order != "" {
+	if order != "" {
 		parts = append(parts, order)
 	}
-	if spec := g.child(e, "spec"); spec != "" {
+	if spec != "" {
 		parts = append(parts, spec)
 	}
 	return out + "(" + strings.Join(parts, " ") + ")"

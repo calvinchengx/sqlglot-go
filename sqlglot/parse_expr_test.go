@@ -2007,6 +2007,12 @@ func TestNamedWindowAndQualify(t *testing.T) {
 			"SELECT a FROM t WINDOW w AS (PARTITION BY b ORDER BY c), v AS (ORDER BY d)"},
 		{"referred to by an OVER", "", "SELECT SUM(x) OVER w FROM t WINDOW w AS (PARTITION BY b)",
 			"SELECT SUM(x) OVER w FROM t WINDOW w AS (PARTITION BY b)"},
+		// The base window may also be EXTENDED, inside the parens rather than
+		// bare: the name comes first, ahead of whatever this instance adds
+		// of its own.
+		{"an OVER extends the named window", "duckdb",
+			"SELECT SUM(x) OVER (w ORDER BY y) FROM t WINDOW w AS (PARTITION BY z)",
+			"SELECT SUM(x) OVER (w ORDER BY y) FROM t WINDOW w AS (PARTITION BY z)"},
 		{"qualify", "duckdb", "SELECT a FROM t QUALIFY ROW_NUMBER() OVER (PARTITION BY b) = 1",
 			"SELECT a FROM t QUALIFY ROW_NUMBER() OVER (PARTITION BY b) = 1"},
 		// The WINDOW clause comes BEFORE the QUALIFY that refers to its names.
@@ -10432,6 +10438,10 @@ func TestFrameExclusionAndAny(t *testing.T) {
 		{"SELECT SUM(X) OVER (ROWS BETWEEN 1 PRECEDING AND CURRENT ROW EXCLUDE GROUP)", "", "postgres"},
 		{"SELECT SUM(X) OVER (ROWS BETWEEN 1 PRECEDING AND CURRENT ROW EXCLUDE CURRENT ROW)", "", "postgres"},
 		{"SELECT SUM(X) OVER (ROWS BETWEEN 1 PRECEDING AND CURRENT ROW)", "", "postgres"},
+		// GROUPS, unlike ROWS and RANGE, is not a keyword of its own -- it
+		// arrives as a plain word, matched by text the same way frameKind
+		// reads it.
+		{"SELECT SUM(X) OVER (ORDER BY y GROUPS BETWEEN 1 PRECEDING AND CURRENT ROW)", "", "duckdb"},
 		// ANY quantifies whatever follows it, parenthesised or not.
 		{"ANY(x) OVER (PARTITION BY x)", "", ""},
 		{"SELECT * FROM x WHERE name LIKE ANY XXX('a', 'b')", "", ""},
