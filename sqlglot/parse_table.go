@@ -307,6 +307,46 @@ func (p *parser) startsATable(t *Token) bool {
 	return name
 }
 
+// tableQualifiedParts builds a Table's this/db/catalog from a left-to-right
+// dotted sequence, mirroring the reference's own sequential read: catalog and
+// db are filled from the first two positions it fills with something REAL --
+// a T-SQL `a..b` skip (nil here) does not count as filling one -- and
+// everything after that nests in DOTS over the table position instead of
+// ever being refused as over-qualified.
+//
+// A position that is reached but skipped reports as the EMPTY STRING, the
+// same as the reference's own `""` for a `.` that named nothing; a position
+// never reached at all is left absent (Go nil), which is a different thing
+// the dump must tell apart.
+func tableQualifiedParts(seq []*Expression) (this, db, catalog any) {
+	thisExpr := seq[0]
+	var dbExpr, catalogExpr *Expression
+	var dbSet, catalogSet bool
+	catalogTruthy := false
+	for _, next := range seq[1:] {
+		if catalogTruthy {
+			thisExpr = New("Dot", Arg{"this", thisExpr}, Arg{"expression", next})
+			continue
+		}
+		catalogExpr, catalogSet = dbExpr, dbSet
+		dbExpr, dbSet = thisExpr, true
+		thisExpr = next
+		catalogTruthy = catalogExpr != nil
+	}
+	return thisExpr, qualifierValue(dbExpr, dbSet), qualifierValue(catalogExpr, catalogSet)
+}
+
+func qualifierValue(part *Expression, set bool) any {
+	switch {
+	case !set:
+		return nil
+	case part == nil:
+		return ""
+	default:
+		return part
+	}
+}
+
 func (p *parser) parseTable() (*Expression, error) {
 	// DuckDB names a relation in FRONT of it too: `FROM foo: bar` is
 	// `FROM bar AS foo`, the same prefix alias the projection list takes.
@@ -433,43 +473,15 @@ func (p *parser) parseTable() (*Expression, error) {
 		}
 	}
 
-	var table *Expression
-	names := []string{"db", "catalog"}
+	// The dotted sequence is every part read plus, for a table function, the
+	// call itself standing in for the final name -- `a.b.c.f()` qualifies
+	// `f()` exactly the way `a.b.c.d` qualifies `d`.
+	seq := parts
 	if fn != nil {
-		if len(parts) > 2 {
-			return nil, p.unsupported("over-qualified table function")
-		}
-		// A table function always carries both qualifier slots, filled or not.
-		table = New("Table", Arg{"this", fn})
-		for i := len(parts) - 1; i >= 0; i-- {
-			table.Set(names[len(parts)-1-i], parts[i])
-		}
-		for _, n := range names {
-			if _, ok := table.Args[n]; !ok {
-				table.Set(n, nil)
-			}
-		}
-	} else {
-		if len(parts) > 3 {
-			return nil, p.unsupported("over-qualified table")
-		}
-		// this is the table; the parts before it are db then catalog. The
-		// last part is never the empty slot pushed above: the loop only
-		// breaks right after a REAL part, so a name ending in a dot is
-		// refused earlier still, by parseTablePart reading past the end.
-		table = New("Table", Arg{"this", parts[len(parts)-1]})
-		for i := len(parts) - 2; i >= 0; i-- {
-			// A skipped part was pushed as nil above, and is set as the
-			// EMPTY STRING here -- an Identifier the port never builds, but
-			// exactly what the reference records for a `.` that named
-			// nothing.
-			var val any = parts[i]
-			if parts[i] == nil {
-				val = ""
-			}
-			table.Set(names[len(parts)-2-i], val)
-		}
+		seq = append(append([]*Expression{}, parts...), fn)
 	}
+	this, db, catalog := tableQualifiedParts(seq)
+	table := New("Table", Arg{"this", this}, Arg{"db", db}, Arg{"catalog", catalog})
 
 	if only {
 		table.Set("only", true)

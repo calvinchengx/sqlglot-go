@@ -2034,6 +2034,58 @@ func TestNamedArgumentNames(t *testing.T) {
 	}
 }
 
+// TestOverQualifiedTable covers a table name with more than catalog.db.table:
+// the reference only ever fills catalog and db from the first two positions
+// it reads something REAL into -- a T-SQL `a..b` skip does not count as
+// filling one -- and nests everything after that in DOTS over the table
+// position rather than ever refusing it as over-qualified. A table
+// function's own name gets the identical nesting: `a.b.c.f()` qualifies
+// `f()` the way `a.b.c.d` qualifies `d`.
+func TestOverQualifiedTable(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT 1 FROM a.b.c.d", "SELECT 1 FROM a.b.c.d"},
+		{"SELECT 1 FROM a.b.c.d.e", "SELECT 1 FROM a.b.c.d.e"},
+		{"SELECT * FROM a.b.c.f()", "SELECT * FROM a.b.c.f()"},
+	} {
+		e, err := ParseOne(tc.sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		table := e.Args["from_"].(*Expression).Args["this"].(*Expression)
+		if table.Class != "Table" {
+			t.Fatalf("%q: from is %v, want a Table", tc.sql, table)
+		}
+		if this, ok := table.Args["this"].(*Expression); !ok || this.Class != "Dot" {
+			t.Errorf("%q: table.this is %v, want a Dot", tc.sql, table.Args["this"])
+		}
+		got, err := Generate(e, "")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", tc.sql, err)
+		}
+		if got != tc.want {
+			t.Errorf("Generate(%q) = %q, want %q", tc.sql, got, tc.want)
+		}
+	}
+	// A T-SQL skip still counts as a REAL position that has been reached, so
+	// nesting over `this` starts only once catalog and db have each seen one
+	// -- here the skip lands in db, so catalog is filled by `a` alone and
+	// nesting begins one part later than the plain case above does.
+	e, err := ParseOne("SELECT 1 FROM a..c.d", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	table := e.Args["from_"].(*Expression).Args["this"].(*Expression)
+	if db, _ := table.Args["db"].(string); db != "" {
+		t.Errorf("db = %v, want the empty string", table.Args["db"])
+	}
+	if this, ok := table.Args["this"].(*Expression); !ok || this.Class != "Dot" {
+		t.Errorf("table.this is %v, want a Dot", table.Args["this"])
+	}
+	if got, err := Generate(e, "tsql"); err != nil || got != "SELECT 1 FROM a..c.d" {
+		t.Errorf("got %q (%v), want a..c.d unchanged", got, err)
+	}
+}
+
 // `a.b.C()` is a CALL under a chain of dots, not a column, and the chain may
 // be any depth.
 func TestQualifiedCall(t *testing.T) {
