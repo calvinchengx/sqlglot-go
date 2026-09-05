@@ -833,6 +833,21 @@ func TestScalarSubquery(t *testing.T) {
 	}
 }
 
+// A scalar subquery used as a plain VALUE -- a function's own argument, an
+// operand of an arithmetic expression, anywhere a query is not the whole of
+// what stands there -- may still chain into a set operation, the same as one
+// standing on its own does.
+func TestScalarSubqueryChainsIntoASetOperation(t *testing.T) {
+	sql := "SELECT X((SELECT 1) UNION (SELECT 2))"
+	e, err := ParseOne(sql, "")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", sql, err)
+	}
+	if got, err := Generate(e, ""); err != nil || got != sql {
+		t.Errorf("got %q (%v), want %q", got, err, sql)
+	}
+}
+
 // A name after a dot is a name, even when the word is otherwise a value.
 func TestKeywordAfterADot(t *testing.T) {
 	for _, sql := range []string{"t.null", "t.true", "t.false"} {

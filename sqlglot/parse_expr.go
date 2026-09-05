@@ -1213,9 +1213,16 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	case TokL_PAREN:
 		// Past a RUN of parentheses, because a query may be wrapped more than
 		// once and every pair is a Subquery of its own: `((SELECT 1))` is one
-		// inside another, not a Paren around one.
+		// inside another, not a Paren around one. And a query used as a
+		// plain VALUE may still chain into a set operation the same as one
+		// standing anywhere else does: `X((SELECT 1) UNION (SELECT 2))`
+		// unions the function's own argument.
 		if p.opensAParenthesisedQuery() {
-			return p.parseScalarSubquery()
+			sub, err := p.parseScalarSubquery()
+			if err != nil {
+				return nil, err
+			}
+			return p.parseSetOperations(sub)
 		}
 		p.advance()
 		inner, err := p.parseExpression()
