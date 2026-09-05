@@ -3356,6 +3356,15 @@ func TestCreateFunction(t *testing.T) {
 		{"called on null input", "",
 			"CREATE FUNCTION a(x INT) RETURNS INT LANGUAGE SQL CALLED ON NULL INPUT AS 'SELECT 1'",
 			"CREATE FUNCTION a(x INT) RETURNS INT LANGUAGE SQL CALLED ON NULL INPUT AS 'SELECT 1'"},
+		{"no sql", "databricks",
+			"CREATE FUNCTION f() RETURNS INT NO SQL RETURN 1",
+			"CREATE FUNCTION f() RETURNS INT NO SQL RETURN 1"},
+		// DETERMINISTIC is the standard SQL word for what IMMUTABLE says, and
+		// the reference folds it into that property rather than keeping a
+		// class of its own -- so it does not write back as itself.
+		{"deterministic folds into immutable", "databricks",
+			"CREATE FUNCTION f() RETURNS INT DETERMINISTIC RETURN 1",
+			"CREATE FUNCTION f() RETURNS INT IMMUTABLE RETURN 1"},
 		// A second RETURNS, which is how the reference records this phrase.
 		{"returns null on null input", "postgres",
 			"CREATE FUNCTION add(INT) RETURNS INT LANGUAGE SQL RETURNS NULL ON NULL INPUT AS 'x'",

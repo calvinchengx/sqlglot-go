@@ -2459,6 +2459,13 @@ func (p *parser) parseFunctionProperty() (*Expression, error) {
 		p.advance()
 		return New("StabilityProperty",
 			Arg{"this", New("Literal", Arg{"this", word}, Arg{"is_string", true})}), nil
+	// DETERMINISTIC is the standard SQL word for the same thing IMMUTABLE
+	// says, and the reference folds it into that property rather than
+	// keeping a class of its own -- so it is not written back as itself.
+	case p.atWords("DETERMINISTIC"):
+		p.advance()
+		return New("StabilityProperty",
+			Arg{"this", New("Literal", Arg{"this", "IMMUTABLE"}, Arg{"is_string", true})}), nil
 	case p.atWords("STRICT"):
 		p.advance()
 		return New("StrictProperty"), nil
@@ -2514,6 +2521,10 @@ func (p *parser) parseFunctionProperty() (*Expression, error) {
 		p.advance()
 		p.advance()
 		return New("SqlReadWriteProperty", Arg{"this", "CONTAINS SQL"}), nil
+	case p.atWords("NO", "SQL"):
+		p.advance()
+		p.advance()
+		return New("SqlReadWriteProperty", Arg{"this", "NO SQL"}), nil
 	case p.at(TokSET):
 		p.advance()
 		name, err := p.parseColumn()
