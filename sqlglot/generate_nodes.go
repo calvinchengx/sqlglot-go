@@ -560,6 +560,11 @@ func (g *generator) writeJoin(e *Expression) string {
 	} else {
 		words = append(words, "JOIN", this)
 	}
+	// The ON operand is a condition, same as WHERE's, and a boolean literal
+	// there picks its condition spelling rather than its value one.
+	if onExpr, _ := e.Args["on"].(*Expression); onExpr != nil {
+		g.markCondition(onExpr)
+	}
 	if on := g.child(e, "on"); on != "" {
 		words = append(words, "ON", on)
 	}
