@@ -379,6 +379,50 @@ func TestJSONObjectReturning(t *testing.T) {
 	}
 }
 
+// TestMatchAgainst covers MySQL's full-text search predicate, read the same
+// way in every dialect: the columns by name, not as general expressions,
+// and the term as a plain string.
+func TestMatchAgainst(t *testing.T) {
+	sql := `SELECT MATCH("table") AGAINST('x') FROM t`
+	tree, err := ParseOne(sql, "")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", sql, err)
+	}
+	if got, err := Generate(tree, ""); err != nil || got != sql {
+		t.Errorf("%s wrote %q (%v)", sql, got, err)
+	}
+	sql2 := `SELECT MATCH(a, b) AGAINST('x') FROM t`
+	tree2, err := ParseOne(sql2, "")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", sql2, err)
+	}
+	if got, err := Generate(tree2, ""); err != nil || got != sql2 {
+		t.Errorf("%s wrote %q (%v)", sql2, got, err)
+	}
+	// SingleStore's `MATCH(TABLE t)` and AGAINST's own modifier phrase are
+	// not read: no corpus statement has needed either, and this port has no
+	// template to write a modifier back with.
+	for _, s := range []string{
+		"SELECT MATCH(TABLE t) AGAINST('x')",
+		"SELECT MATCH(a) AGAINST('x' IN NATURAL LANGUAGE MODE)",
+		"SELECT MATCH(a) AGAINST('x' IN BOOLEAN MODE)",
+		"SELECT MATCH(a) AGAINST('x' WITH QUERY EXPANSION)",
+		// One malformed input per place a sub-parser is called.
+		"SELECT MATCH(a",
+		"SELECT MATCH(a)",
+		"SELECT MATCH(a) AGAINST",
+		"SELECT MATCH(a) AGAINST(1)",
+		// An unclosed AGAINST is a leniency the reference has and this port
+		// does not reproduce: `AGAINST('x'` with nothing more reads fine
+		// there, matching the term to the call's own closing parenthesis.
+		"SELECT MATCH(a) AGAINST('x'",
+	} {
+		if _, err := ParseOne(s, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", s)
+		}
+	}
+}
+
 // FETCH lands in the same slot as LIMIT, because it is one: the reference
 // keeps a Fetch under `limit`. Everything after the count is a set of FLAGS on
 // a LimitOptions, which is why this clause needed the flag work before it.

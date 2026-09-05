@@ -27,6 +27,8 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseStringAgg()
 	case "JSON_OBJECT":
 		return p.parseJSONObject()
+	case "MATCH":
+		return p.parseMatchAgainst()
 	case "CEIL":
 		return p.parseCeilFloor("Ceil")
 	case "FLOOR":
@@ -501,6 +503,59 @@ func (p *parser) parseJSONObject() (*Expression, error) {
 	}
 	args = append(args, Arg{"return_type", returnType}, Arg{"encoding", encoding})
 	return New("JSONObject", args...), nil
+}
+
+// parseMatchAgainst reads MySQL's full-text search predicate:
+// `MATCH(a, b) AGAINST('term')`. The columns are read by name, not as
+// general expressions, and the term is a plain STRING.
+//
+// Two shapes are not read here: SingleStore's `MATCH(TABLE t)` -- a table
+// rather than a column list -- and AGAINST's own modifier phrase (`IN
+// NATURAL LANGUAGE MODE` and the rest). No corpus statement has needed
+// either, and this port has no template to WRITE a modifier back with, so
+// reading one in would build a tree the generator could not round-trip.
+func (p *parser) parseMatchAgainst() (*Expression, error) {
+	p.advance() // MATCH
+	p.advance() // the opening parenthesis
+	if p.atWords("TABLE") {
+		return nil, p.unsupported("MATCH over a TABLE")
+	}
+	var columns []*Expression
+	for {
+		col, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		columns = append(columns, col)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed MATCH")
+	}
+	if !p.atWords("AGAINST") {
+		return nil, p.unsupported("MATCH without AGAINST")
+	}
+	p.advance()
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("AGAINST without a parenthesised term")
+	}
+	term := p.curr()
+	if term == nil || term.Type != TokSTRING {
+		return nil, p.unsupported("AGAINST without a string")
+	}
+	p.advance()
+	if p.atWords("IN", "NATURAL", "LANGUAGE", "MODE") ||
+		p.atWords("IN", "BOOLEAN", "MODE") || p.atWords("WITH", "QUERY", "EXPANSION") {
+		return nil, p.unsupported("AGAINST with a modifier")
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed AGAINST")
+	}
+	return New("MatchAgainst",
+		Arg{"this", New("Literal", Arg{"this", term.Text}, Arg{"is_string", true})},
+		Arg{"expressions", columns}), nil
 }
 
 // atNullHandling reports the `NULL ON NULL` / `ABSENT ON NULL` clause, which
