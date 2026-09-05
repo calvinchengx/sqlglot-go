@@ -1728,8 +1728,20 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 			}
 			var named any = c.Text
 			if p.tables.UserDefinedTypeIsIdentifier {
-				named = New("Identifier",
+				// A user-defined type may be SCHEMA-QUALIFIED here too, but
+				// kept as a chain of DOTS over identifiers rather than
+				// joined into one string -- `a.b.c` is Dot(Dot(a, b), c),
+				// left-associative the way any other dotted name is.
+				dotted := New("Identifier",
 					Arg{"this", c.Text}, Arg{"quoted", c.Type == TokIDENTIFIER})
+				for n := p.next(); p.at(TokDOT) && n != nil &&
+					(n.Type == TokVAR || n.Type == TokIDENTIFIER); n = p.next() {
+					p.advance()
+					p.advance()
+					dotted = New("Dot", Arg{"this", dotted}, Arg{"expression",
+						New("Identifier", Arg{"this", n.Text}, Arg{"quoted", n.Type == TokIDENTIFIER})})
+				}
+				named = dotted
 			} else {
 				// A user-defined type may be SCHEMA-QUALIFIED -- `a.b.c` --
 				// and the reference keeps the whole dotted name as one

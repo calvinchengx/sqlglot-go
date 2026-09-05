@@ -10985,6 +10985,10 @@ func TestUserDefinedTypes(t *testing.T) {
 		// brackets rather than a bare word.
 		{"DECLARE @X UserDefinedTableType", "tsql"},
 		{`CAST(x AS "quoted udt")`, "postgres"},
+		// A user-defined type may be SCHEMA-QUALIFIED here too, kept as a
+		// chain of DOTS over identifiers rather than joined into one string.
+		{"CAST(x AS sch.udt)", "postgres"},
+		{"CAST(x AS a.b.c)", "postgres"},
 
 		// T-SQL's brackets are a name's, and the reference drops them here.
 	} {
