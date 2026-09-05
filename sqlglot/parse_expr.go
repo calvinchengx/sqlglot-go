@@ -3269,8 +3269,13 @@ func (p *parser) buildJSONPathFunction(spec JSONPathFunc, args []*Expression) *E
 		// are not path syntax, and the reference keeps the whole string.
 		if isStringLiteral(args[1]) {
 			text, _ := args[1].Args["this"].(string)
-			parsed, err := parseJSONPath(text)
-			if err != nil {
+			if p.dialect == "duckdb" && duckdbKeepsJSONPointer(text) {
+				// DuckDB also reads JSON Pointer syntax, where every path
+				// starts with a `/`, and its own `[#-i]` back-of-list
+				// subscript -- neither is JSONPath, so the reference's own
+				// to_json_path skips parsing rather than fail at it.
+				path = args[1]
+			} else if parsed, err := parseJSONPath(text); err != nil {
 				if jsonPathKeptAsLiteral(text) {
 					path = args[1]
 				} else {

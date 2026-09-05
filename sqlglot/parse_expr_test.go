@@ -93,6 +93,15 @@ func TestJSONPathFunctions(t *testing.T) {
 		// one, so the call carries no `expression` at all.
 		{"JSON_KEYS with no path argument at all", "databricks",
 			"SELECT JSON_KEYS(foo)", "SELECT JSON_OBJECT_KEYS(foo)"},
+		// DuckDB also reads JSON Pointer syntax, where every path starts
+		// with `/` -- its own to_json_path skips parsing this as a JSONPath
+		// rather than fail into a warning, and keeps the string as it stands.
+		{"a JSON Pointer path is kept as written", "duckdb",
+			`SELECT JSON_EXTRACT('{"duck": [1, 2, 3]}', '/duck/0')`,
+			`SELECT '{"duck": [1, 2, 3]}' -> '/duck/0'`},
+		{"a back-of-list subscript path is kept as written", "duckdb",
+			`SELECT JSON_EXTRACT(x, '[#-1]')`,
+			`SELECT x -> '[#-1]'`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)

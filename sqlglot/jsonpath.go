@@ -136,6 +136,15 @@ func jsonPathKeptAsLiteral(text string) bool {
 	return strings.HasPrefix(s, "lax") || strings.HasPrefix(s, "strict")
 }
 
+// duckdbKeepsJSONPointer reports whether DuckDB's own to_json_path skips
+// parsing this string as a path at all: a JSON Pointer, where every path
+// starts with `/`, or its `[#-i]` back-of-list subscript. Trying to read
+// either as JSONPath syntax would misread it, so the dialect avoids it
+// entirely rather than fail into a warning.
+func duckdbKeepsJSONPointer(text string) bool {
+	return strings.HasPrefix(text, "/") || strings.Contains(text, "[#")
+}
+
 // isJSONPathVarByte reports whether a byte can appear in a bare key. The
 // reference tokenizes anything else as its own token and then has nowhere to
 // put it -- which is how `/duck/0` and `en-US` end up as plain literals.
