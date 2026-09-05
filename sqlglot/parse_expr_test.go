@@ -7724,9 +7724,20 @@ func TestNamesThatAreNotIdentifiers(t *testing.T) {
 	if e, err := ParseOne("SELECT a AS SELECT", ""); err == nil {
 		t.Errorf("read %v", e)
 	}
-	// And without the word, only an identifier will do.
+	// And without the word, only an identifier will do -- except in T-SQL,
+	// which reads a bare STRING immediately after an expression as an
+	// implicit alias too: `SELECT 1 'foo'` names the column foo, the same
+	// as a plain word would, just already quoted.
 	if e, err := ParseOne("SELECT 1 delete", ""); err == nil {
 		t.Errorf("read %v", e)
+	}
+	if e, err := ParseOne("SELECT 1 'foo'", "duckdb"); err == nil {
+		t.Errorf("a bare string named a column outside T-SQL: %v", e)
+	}
+	if e, err := ParseOne("SELECT 1 'foo'", "tsql"); err != nil {
+		t.Errorf("ParseOne: %v", err)
+	} else if got, err := Generate(e, "tsql"); err != nil || got != "SELECT 1 AS [foo]" {
+		t.Errorf("SELECT 1 'foo' wrote %q (%v)", got, err)
 	}
 
 	// A table, a CTE and a created table are all named the same way, so a

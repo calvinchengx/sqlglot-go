@@ -6231,6 +6231,10 @@ def main() -> int:
         "\t// spelling of `SELECT 1 AS foo`. The same characters are a JSON\n",
         "\t// extraction in Databricks, so the dialect decides, not the shape.\n",
         "\tPrefixAlias bool\n",
+        "\t// StringAliases: `SELECT 1 'foo'` names the column foo, the same\n",
+        "\t// as a bare word would -- the word just came already quoted. T-SQL\n",
+        "\t// has it; most dialects do not, and a bare string stays a value.\n",
+        "\tStringAliases bool\n",
         "\t// NormalizeNotNull: `x NOTNULL` is written NOT x IS NULL here and\n",
         "\t// kept as a negated IS elsewhere -- two trees for one word.\n",
         "\tNormalizeNotNull bool\n",
@@ -7353,6 +7357,10 @@ def main() -> int:
 
         out.append(strset("TsOrDsParents", strips_ts_or_ds(name)))
         out.append(f"\t\tPrefixAlias: {str(prefix_alias(name)).lower()},\n")
+        out.append(
+            "\t\tStringAliases: "
+            f"{str(bool(P.STRING_ALIASES)).lower()},\n"
+        )
         _gen = type(_DG.get_or_raise(name or None)).generator_class
         out.append(
             "\t\tLikeInsideSchema: %s,\n"

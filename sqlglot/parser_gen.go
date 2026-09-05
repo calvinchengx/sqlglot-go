@@ -382,6 +382,10 @@ type ParserTables struct {
 	// spelling of `SELECT 1 AS foo`. The same characters are a JSON
 	// extraction in Databricks, so the dialect decides, not the shape.
 	PrefixAlias bool
+	// StringAliases: `SELECT 1 'foo'` names the column foo, the same
+	// as a bare word would -- the word just came already quoted. T-SQL
+	// has it; most dialects do not, and a bare string stays a value.
+	StringAliases bool
 	// NormalizeNotNull: `x NOTNULL` is written NOT x IS NULL here and
 	// kept as a negated IS elsewhere -- two trees for one word.
 	NormalizeNotNull bool
@@ -5390,6 +5394,7 @@ var parserTables = map[string]*ParserTables{
 		VariantExtractColon:  false,
 		TsOrDsParents:        map[string]struct{}{},
 		PrefixAlias:          false,
+		StringAliases:        false,
 		LikeInsideSchema:     false,
 		SupportsCreateLike:   true,
 		EndCommits:           false,
@@ -10653,6 +10658,7 @@ var parserTables = map[string]*ParserTables{
 			"Year":  {},
 		},
 		PrefixAlias:        false,
+		StringAliases:      true,
 		LikeInsideSchema:   false,
 		SupportsCreateLike: true,
 		EndCommits:         false,
@@ -15908,6 +15914,7 @@ var parserTables = map[string]*ParserTables{
 		VariantExtractColon: false,
 		TsOrDsParents:       map[string]struct{}{},
 		PrefixAlias:         false,
+		StringAliases:       false,
 		LikeInsideSchema:    true,
 		SupportsCreateLike:  true,
 		EndCommits:          true,
@@ -21471,6 +21478,7 @@ var parserTables = map[string]*ParserTables{
 		VariantExtractColon: false,
 		TsOrDsParents:       map[string]struct{}{},
 		PrefixAlias:         true,
+		StringAliases:       false,
 		LikeInsideSchema:    false,
 		SupportsCreateLike:  false,
 		EndCommits:          false,
@@ -27026,6 +27034,7 @@ var parserTables = map[string]*ParserTables{
 			"Year":       {},
 		},
 		PrefixAlias:        false,
+		StringAliases:      false,
 		LikeInsideSchema:   false,
 		SupportsCreateLike: true,
 		EndCommits:         false,

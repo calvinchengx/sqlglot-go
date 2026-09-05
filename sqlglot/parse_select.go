@@ -713,7 +713,12 @@ func (p *parser) parseAlias(this *Expression) (*Expression, error) {
 	// INTO. Only an identifier can stand there without the word.
 	alias, err := p.parseIdentifier()
 	if err != nil {
-		if !explicit {
+		// T-SQL reads a bare STRING immediately after an expression as an
+		// implicit alias too -- `SELECT 1 'foo'` names the column foo, the
+		// same as a plain word would, just already quoted -- which is why
+		// this falls through here rather than needing AS to have been
+		// written.
+		if !explicit && (!p.tables.StringAliases || !p.at(TokSTRING)) {
 			return nil, err
 		}
 		alias, err = p.parseAnyName()
@@ -748,6 +753,9 @@ func (p *parser) atAliasName() bool {
 	c := p.curr()
 	if c == nil {
 		return false
+	}
+	if c.Type == TokSTRING {
+		return p.tables.StringAliases
 	}
 	return c.Type == TokVAR || c.Type == TokIDENTIFIER
 }
