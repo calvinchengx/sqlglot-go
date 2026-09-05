@@ -21,11 +21,15 @@ func (p *parser) parseUpdate() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	if p.at(TokCOMMA) {
-		// `UPDATE t1 AS a, t2 AS b SET ...` updates THROUGH a join, which the
-		// reference records as joins on the node. Reading it as an update of
-		// the first table alone would name a different statement.
-		return nil, p.unsupported("UPDATE of more than one table")
+	// `UPDATE t1 AS a, t2 AS b JOIN t3 AS c ON ... SET ...` updates THROUGH a
+	// join, comma or explicit, which the reference reads exactly as a FROM
+	// clause's and records as joins on the target table.
+	joins, err := p.parseJoins()
+	if err != nil {
+		return nil, err
+	}
+	if len(joins) > 0 {
+		table.Set("joins", joins)
 	}
 	if !p.match(TokSET) {
 		return nil, p.unsupported("UPDATE without SET")

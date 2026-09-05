@@ -2730,6 +2730,12 @@ func TestUpdateAndDelete(t *testing.T) {
 		// after the WHERE. Same node, two places.
 		{"output", "tsql", "UPDATE x SET y = 1 OUTPUT x.a, x.b FROM y",
 			"UPDATE x SET y = 1 OUTPUT x.a, x.b FROM y"},
+		// MySQL's Multiple-Table UPDATE reads the target exactly as a FROM
+		// clause does -- a comma is a join like any other -- and joins land
+		// on the first table rather than on the statement itself.
+		{"multiple tables, comma and explicit joined", "",
+			"UPDATE t1 AS a, t2 AS b, t3 AS c LEFT JOIN t4 AS d ON c.id = d.id SET a.x = 1",
+			"UPDATE t1 AS a, t2 AS b, t3 AS c LEFT JOIN t4 AS d ON c.id = d.id SET a.x = 1"},
 		{"a plain delete", "", "DELETE FROM y", "DELETE FROM y"},
 		{"with a where", "", "DELETE FROM x WHERE y > 1", "DELETE FROM x WHERE y > 1"},
 		{"using", "", "DELETE FROM event USING sales AS s WHERE event.eventid = s.eventid",
@@ -2775,7 +2781,6 @@ func TestUpdateAndDelete(t *testing.T) {
 		t.Error("the subquery a DELETE reads from is not in the tree")
 	}
 	for _, sql := range []string{
-		"UPDATE t1 AS a, t2 AS b SET a.id = 1",
 		"UPDATE t WHERE a = 1",
 		"DELETE x OUTPUT x.a FROM z",
 		"UPDATE t SET a = 1 ORDER BY a",
