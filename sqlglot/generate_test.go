@@ -168,6 +168,11 @@ func TestGenerateShapes(t *testing.T) {
 			"SELECT 0 FROM ((A) AS A, A AS A)"},
 		// A bare ALL is a column; the quantifier needs something to quantify.
 		{"a column called All", "SELECT All", "databricks", "SELECT All"},
+		// ALL followed by a dot is a table named All qualifying a column, not
+		// the quantifier -- the reference only takes the quantifier when a
+		// dot does not follow.
+		{"a table called All qualifying a column", "SELECT All.x FROM All", "",
+			"SELECT All.x FROM All"},
 		{"a dotted parameter", "SELECT :A.a", "databricks", "SELECT :A.a"},
 		{"a string after the dot stays a string", "SELECT $0.'AS'", "duckdb",
 			"SELECT $0.'AS'"},

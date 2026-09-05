@@ -478,10 +478,13 @@ func (p *parser) parseSelect() (*Expression, error) {
 		distinctOn = New("Tuple", Arg{"expressions", members})
 	}
 	// `SELECT ALL x` is the quantifier, which this port does not carry. But
-	// `SELECT All` with nothing after it is a COLUMN called All, and the
-	// reference reads it that way -- so the refusal has to look at what
-	// follows, or the port cannot read back its own `SELECT All`.
-	if p.at(TokALL) && !endsSelectExpression(p.next()) {
+	// `SELECT All` with nothing after it is a COLUMN called All, and so is
+	// `SELECT All.x` -- a table named All qualifying a column -- since the
+	// reference only takes the quantifier when a DOT does not follow. Either
+	// way the refusal has to look at what follows, or the port cannot read
+	// back its own `SELECT All` and `SELECT All.x`.
+	if next := p.next(); p.at(TokALL) && !endsSelectExpression(next) &&
+		(next == nil || next.Type != TokDOT) {
 		return nil, p.unsupported("SELECT ALL")
 	}
 
