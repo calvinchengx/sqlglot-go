@@ -472,6 +472,16 @@ func (p *parser) parseProperty(spec PropertySpec) (*Expression, error) {
 		}
 		return New(spec.Class, Arg{"this", New("Schema", Arg{"expressions", columns})}), nil
 	case "wrapped-columns", "wrapped-tables":
+		// Databricks' CLUSTER BY takes AUTO or NONE in place of the column
+		// list -- the word IS the clustering, not a name it sorts by -- and
+		// only those two, matched before the list is tried at all.
+		if spec.Class == "ClusterProperty" && !p.at(TokL_PAREN) {
+			if p.atWords("AUTO") || p.atWords("NONE") {
+				word := strings.ToUpper(p.curr().Text)
+				p.advance()
+				return New(spec.Class, Arg{"this", word}), nil
+			}
+		}
 		items, err := p.parseWrappedPropertyList(spec.Shape == "wrapped-tables")
 		if err != nil {
 			return nil, err

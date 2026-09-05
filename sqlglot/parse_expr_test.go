@@ -2284,6 +2284,12 @@ func TestTableProperties(t *testing.T) {
 		// POST_SCHEMA: each stands on its own after the columns.
 		{"a wrapped list of columns", "CREATE TABLE t CLUSTER BY (col1, col2)", "databricks",
 			"CREATE TABLE t CLUSTER BY (col1, col2)"},
+		// AUTO and NONE take the place of the column list entirely -- the
+		// word IS the clustering, not a name it sorts by.
+		{"cluster by auto", "CREATE TABLE t CLUSTER BY AUTO", "databricks",
+			"CREATE TABLE t CLUSTER BY AUTO"},
+		{"cluster by none", "CREATE TABLE t CLUSTER BY NONE", "databricks",
+			"CREATE TABLE t CLUSTER BY NONE"},
 		{"a wrapped list of tables", "CREATE TABLE t (c CHAR(2)) INHERITS (t1, t2)", "postgres",
 			"CREATE TABLE t (c CHAR(2)) INHERITS (t1, t2)"},
 		// A name written with no type keeps no ColumnDef around it: the same
