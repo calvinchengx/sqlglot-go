@@ -1303,8 +1303,12 @@ func (g *generator) writeDataType(e *Expression) string {
 	params := g.list(e)
 	// An ENUM's members are its VALUES rather than its parameters, and
 	// PostgreSQL spells them apart from every other parameterised type: a
-	// space in front of the list, and the parentheses even when it is empty.
-	if kind == "ENUM" && g.tables.EnumTypeSQL != "" {
+	// space in front of the list, and the parentheses even when it is empty
+	// -- `CREATE TYPE x AS ENUM ()` needs them to still be a CREATE TYPE.
+	// Every other dialect drops them along with the list, the same as any
+	// other type with nothing between its parentheses: a bare `ENUM`, not
+	// `ENUM()`. The generator fuzzer found this port always keeping them.
+	if kind == "ENUM" && g.tables.EnumTypeSQL != "" && (params != "" || g.dialect == "postgres") {
 		return strings.ReplaceAll(g.tables.EnumTypeSQL, "{members}", params)
 	}
 	if params == "" {

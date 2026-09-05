@@ -2109,6 +2109,13 @@ func TestCreateTable(t *testing.T) {
 			"CREATE TYPE mood AS ENUM ()"},
 		{"a qualified enum", "postgres", "CREATE TYPE public.mood AS ENUM ('sad', 'ok')",
 			"CREATE TYPE public.mood AS ENUM ('sad', 'ok')"},
+		// Everywhere else, a bare ENUM with no members is a type like any
+		// other with nothing between its parentheses: no parentheses at all,
+		// not the empty ones PostgreSQL's CREATE TYPE always carries. The
+		// generator fuzzer found this port writing `ENUM()` here too, which
+		// this port's own CAST parser cannot read back.
+		{"a bare enum cast, no members", "databricks", "SELECT CAST(0 AS ENUM)",
+			"SELECT CAST(0 AS ENUM)"},
 		{"a composite type", "postgres",
 			"CREATE TYPE inventory_item AS (name TEXT, supplier_id INT, price DECIMAL)",
 			"CREATE TYPE inventory_item AS (name TEXT, supplier_id INT, price DECIMAL)"},
@@ -10671,6 +10678,7 @@ func TestRangeOpsJoinsAndIn(t *testing.T) {
 		{"(col1 @@ 'abc' OR col2 @@ 'abc' OR col3 @@ 'abc')", "", "postgres"},
 		{"x @> y", "", "postgres"},
 		{"SELECT df1.*, df2.* FROM df1 POSITIONAL JOIN df2", "", "duckdb"},
+		{"SELECT * FROM foo ASOF LEFT JOIN bar ON a = b", "", "duckdb"},
 		{"'red' IN flags", "", "duckdb"},
 		{"'red' IN tbl.flags", "", "duckdb"},
 		{"'red' IN (1, 2)", "", "duckdb"},
@@ -10697,10 +10705,8 @@ func TestRangeOpsJoinsAndIn(t *testing.T) {
 			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
 		}
 	}
-	// A method the port does not read is still refused, and so is an IN over
-	// something that is not a name.
+	// An IN over something that is not a name is refused.
 	for _, c := range []struct{ sql, dialect string }{
-		{"SELECT a FROM t1 ASOF JOIN t2", "duckdb"},
 		{"a IN 1", ""},
 	} {
 		if _, err := ParseOne(c.sql, c.dialect); err == nil {

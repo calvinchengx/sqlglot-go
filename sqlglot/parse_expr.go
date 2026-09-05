@@ -1720,9 +1720,26 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 	// strings, and what a sized type takes there is a number.
 	if c.Type == TokENUM && p.next() != nil && p.next().Type == TokL_PAREN {
 		p.advance()
-		members, err := p.parseWrappedCSV(p.parseTypeMember)
-		if err != nil {
-			return nil, err
+		p.advance() // the opening parenthesis
+		// `ENUM ()` takes no members at all -- PostgreSQL writes exactly this
+		// for one with none, since it is the one dialect that keeps the
+		// parentheses even when they are empty -- and parseWrappedCSV always
+		// reads at least one, since every OTHER caller's list requires one.
+		var members []*Expression
+		if !p.at(TokR_PAREN) {
+			for {
+				m, err := p.parseTypeMember()
+				if err != nil {
+					return nil, err
+				}
+				members = append(members, m)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed ENUM member list")
 		}
 		return New("DataType",
 			Arg{"this", DataTypeKind(kind)},

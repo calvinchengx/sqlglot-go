@@ -50,14 +50,17 @@ func (p *parser) parseJoin() (*Expression, error) {
 		return nil, nil
 	}
 	// A METHOD says how the rows are matched rather than which of them are
-	// kept: NATURAL joins on every column the two tables share.
+	// kept: NATURAL joins on every column the two tables share, ASOF on the
+	// nearest match rather than an equal one.
 	var method *Token
 	if _, isMethod := p.tables.JoinMethods[c.Type]; isMethod {
 		// NATURAL joins on every column the two tables share; POSITIONAL on
-		// the row's position in each. Both are the method rather than the
-		// side or the kind, and both are written back the same way.
+		// the row's position in each; ASOF on the nearest row rather than an
+		// equal one. All three are the method rather than the side or the
+		// kind, and all three are written back the same way.
 		if !strings.EqualFold(c.Text, "NATURAL") &&
-			!strings.EqualFold(c.Text, "POSITIONAL") {
+			!strings.EqualFold(c.Text, "POSITIONAL") &&
+			!strings.EqualFold(c.Text, "ASOF") {
 			return nil, p.unsupported("join method " + c.Text)
 		}
 		method = c
