@@ -3982,6 +3982,10 @@ func TestCreateIndex(t *testing.T) {
 		"CREATE INDEX abc ON t(a",
 		"CREATE INDEX abc ON t USING",
 		"CREATE TEMPORARY INDEX abc ON t(a)",
+		// Whatever follows a column that is not an order word, WITH, or the
+		// list's own punctuation is read as the opclass -- and a name that
+		// cannot BE one still fails there, not silently.
+		"CREATE INDEX abc ON t(a 1)",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
@@ -3995,6 +3999,10 @@ func TestCreateIndex(t *testing.T) {
 			"CREATE INDEX abc ON t USING btree(a) WHERE a > 1"},
 		{"CREATE INDEX abc ON t USING btree(col1 varchar_pattern_ops ASC, col2)",
 			"CREATE INDEX abc ON t USING btree(col1 varchar_pattern_ops ASC, col2)"},
+		// A name written in QUOTES is a name, never the word it spells --
+		// `"nulls"` here is the opclass, not the NULLS keyword ending the
+		// member, the same rule atWords already applies elsewhere.
+		{`CREATE INDEX i ON t(c "nulls")`, `CREATE INDEX i ON t(c "nulls")`},
 	} {
 		tree, err := ParseOne(c.sql, "postgres")
 		if err != nil {

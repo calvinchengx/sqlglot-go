@@ -3035,8 +3035,13 @@ func (p *parser) parseIndexedColumn() (*Expression, error) {
 		return nil, err
 	}
 	if c := p.curr(); c != nil {
-		if _, orders := p.tables.OpclassFollowWords[strings.ToUpper(c.Text)]; orders {
-			return this, nil
+		// A name written in QUOTES is a name, never the word it spells, so a
+		// quoted "nulls" here is the opclass, not the NULLS keyword ending
+		// the member.
+		if c.Type != TokIDENTIFIER {
+			if _, orders := p.tables.OpclassFollowWords[strings.ToUpper(c.Text)]; orders {
+				return this, nil
+			}
 		}
 		if _, ends := p.tables.OpclassFollowTokens[c.Type]; ends {
 			return this, nil
