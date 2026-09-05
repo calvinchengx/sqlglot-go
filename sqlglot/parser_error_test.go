@@ -65,7 +65,7 @@ func TestUnsupportedErrorMessageIsTheLabel(t *testing.T) {
 // whatever is still refused, and they are meant to keep being replaced.
 func TestLabelNamesTheKeywordThatStoppedIt(t *testing.T) {
 	for _, tc := range []struct{ sql, want string }{
-		{"SELECT * FROM tbl GROUP BY GROUPING SETS (GROUPING SETS (course))", "expression at GROUPING SETS"},
+		{"SELECT * FROM t1 WHERE NOT EXISTS(FROM t2 WHERE t2.id = t1.id)", "expression at FROM"},
 	} {
 		_, err := ParseOne(tc.sql, "tsql")
 		var u *UnsupportedError

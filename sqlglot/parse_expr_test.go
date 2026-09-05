@@ -1736,6 +1736,18 @@ func TestGroupings(t *testing.T) {
 		// `()` is the grouping that groups everything, and is a row of nothing.
 		{"an empty grouping", "SELECT a FROM t GROUP BY GROUPING SETS (a, (b, c), ())",
 			"SELECT a FROM t GROUP BY GROUPING SETS (a, (b, c), ())"},
+		// A member of GROUPING SETS may itself be CUBE, ROLLUP or another
+		// GROUPING SETS -- the same node the top of GROUP BY builds, not a
+		// call this port would otherwise have nowhere to route.
+		{"a cube nested inside grouping sets",
+			"SELECT * FROM t GROUP BY GROUPING SETS ((a + 1, b * 1), c, CUBE(d))",
+			"SELECT * FROM t GROUP BY GROUPING SETS ((a + 1, b * 1), c, CUBE (d))"},
+		{"grouping sets nested inside itself",
+			"SELECT * FROM t GROUP BY GROUPING SETS (GROUPING SETS (course))",
+			"SELECT * FROM t GROUP BY GROUPING SETS (GROUPING SETS (course))"},
+		{"a rollup nested inside grouping sets",
+			"SELECT * FROM t GROUP BY GROUPING SETS (ROLLUP(a, b))",
+			"SELECT * FROM t GROUP BY GROUPING SETS (ROLLUP (a, b))"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, "")
@@ -1755,6 +1767,9 @@ func TestGroupings(t *testing.T) {
 		"SELECT a FROM t GROUP BY ROLLUP",
 		"SELECT a FROM t GROUP BY CUBE(a",
 		"SELECT a FROM t GROUP BY GROUPING SETS a",
+		// A nested CUBE that never closes fails from inside the member
+		// reader, the same as an unclosed one at the top of GROUP BY does.
+		"SELECT a FROM t GROUP BY GROUPING SETS (CUBE(a",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)

@@ -1828,11 +1828,29 @@ func (p *parser) parseParenthesisedList() ([]*Expression, error) {
 	for {
 		// `()` is the EMPTY grouping -- the one that groups everything -- and
 		// it is a Tuple of nothing rather than a missing member.
-		if p.at(TokL_PAREN) && p.next() != nil && p.next().Type == TokR_PAREN {
+		switch {
+		case p.at(TokL_PAREN) && p.next() != nil && p.next().Type == TokR_PAREN:
 			p.advance()
 			p.advance()
 			out = append(out, New("Tuple"))
-		} else {
+		// A member may itself be CUBE, ROLLUP or another GROUPING SETS --
+		// `GROUPING SETS (CUBE(a), GROUPING SETS(b))` -- which lands on its
+		// OWN node the same way it does at the top of GROUP BY, not a call
+		// this port would otherwise have nowhere to route.
+		case p.at(TokCUBE), p.at(TokROLLUP), p.at(TokGROUPING_SETS):
+			class := "Cube"
+			if p.at(TokROLLUP) {
+				class = "Rollup"
+			} else if p.at(TokGROUPING_SETS) {
+				class = "GroupingSets"
+			}
+			p.advance()
+			members, err := p.parseParenthesisedList()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, New(class, Arg{"expressions", members}))
+		default:
 			e, err := p.parseExpression()
 			if err != nil {
 				return nil, err
