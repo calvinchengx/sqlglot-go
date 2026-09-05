@@ -23,6 +23,7 @@ func init() {
 		"LowerHex":                            (*generator).writeLowerHex,
 		"RecursiveWithSearch":                 (*generator).writeRecursiveWithSearch,
 		"Connect":                             (*generator).writeConnect,
+		"JSON":                                (*generator).writeJSON,
 		"Select":                              (*generator).writeSelect,
 		"Copy":                                (*generator).writeCopy,
 		"NextValueFor":                        (*generator).writeNextValueFor,
@@ -1040,6 +1041,28 @@ func (g *generator) writeConnect(e *Expression) string {
 		nocycle = " NOCYCLE"
 	}
 	return out + " CONNECT BY" + nocycle + " " + g.child(e, "connect")
+}
+
+// writeJSON writes the predicate's own right-hand side: `IS JSON`, and the
+// kind, WITH/WITHOUT and UNIQUE KEYS the reference reads onto it -- each
+// dropped where the word was never written rather than defaulted to one.
+func (g *generator) writeJSON(e *Expression) string {
+	out := "JSON"
+	if kind, _ := e.Args["this"].(string); kind != "" {
+		out += " " + kind
+	}
+	switch with_ := e.Args["with_"].(type) {
+	case bool:
+		if with_ {
+			out += " WITH"
+		} else {
+			out += " WITHOUT"
+		}
+	}
+	if unique, _ := e.Args["unique"].(bool); unique {
+		out += " UNIQUE KEYS"
+	}
+	return out
 }
 
 // writeRecursiveWithSearch writes SEARCH BREADTH/DEPTH FIRST BY, or CYCLE --

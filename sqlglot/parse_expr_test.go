@@ -1431,6 +1431,33 @@ func TestConnectBy(t *testing.T) {
 	}
 }
 
+// The SQL/JSON IS JSON predicate: a kind, and WITH/WITHOUT UNIQUE KEYS, each
+// read as false or absent -- not defaulted -- where the word was not
+// written. The kind specifically dumps as `false`, not as nothing, since the
+// reference's own match-and-return short-circuits to the boolean itself.
+func TestIsJSON(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{`SELECT js, js IS JSON AS "json?"`,
+			`SELECT js, js IS JSON AS "json?"`},
+		{`SELECT js IS JSON VALUE AS "scalar?"`,
+			`SELECT js IS JSON VALUE AS "scalar?"`},
+		{`SELECT js IS JSON ARRAY WITH UNIQUE KEYS AS "array w. UK?"`,
+			`SELECT js IS JSON ARRAY WITH UNIQUE KEYS AS "array w. UK?"`},
+		{"SELECT js IS JSON WITHOUT UNIQUE KEYS", "SELECT js IS JSON WITHOUT UNIQUE KEYS"},
+		// The reference itself writes the negation this way: NOT wrapping
+		// the whole Is, not IS NOT JSON.
+		{"SELECT js IS NOT JSON", "SELECT NOT js IS JSON"},
+	} {
+		e, err := ParseOne(tc.sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, ""); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+}
+
 // A set operation's OWN operand may carry an alias, same as any other
 // subquery does: `(SELECT 1) AS a UNION ALL (SELECT 2) AS b` names each side
 // on its own, and the whole union is what a further wrap of parentheses

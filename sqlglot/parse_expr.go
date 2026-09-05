@@ -246,6 +246,31 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 	// dialect's NOT shape below, exactly as `IS NOT NULL` does.
 	if p.match(TokNULL) || p.match(TokUNKNOWN) {
 		expression = New("Null")
+	} else if p.match(TokJSON) {
+		// `x IS JSON [VALUE|SCALAR|ARRAY|OBJECT] [WITH|WITHOUT] [UNIQUE
+		// [KEYS]]`. The kind reads as `false`, not absent, where the word was
+		// not written -- the reference's own `_match_texts(...) and ...`
+		// short-circuits to the boolean itself, which is what the dump then
+		// carries at that key, not nothing.
+		var kind any = false
+		if p.atWords("VALUE") || p.atWords("SCALAR") || p.atWords("ARRAY") || p.atWords("OBJECT") {
+			kind = strings.ToUpper(p.curr().Text)
+			p.advance()
+		}
+		var with_ any
+		switch {
+		case p.atWords("WITH"):
+			p.advance()
+			with_ = true
+		case p.atWords("WITHOUT"):
+			p.advance()
+			with_ = false
+		}
+		unique := p.match(TokUNIQUE)
+		if p.atWords("KEYS") {
+			p.advance()
+		}
+		expression = New("JSON", Arg{"this", kind}, Arg{"with_", with_}, Arg{"unique", unique})
 	} else {
 		var err error
 		expression, err = p.parseBitwise()
