@@ -3988,6 +3988,11 @@ func TestACTEBeforeAWrite(t *testing.T) {
 		{"", "CREATE TABLE t1 AS SELECT c FROM t2", "CREATE TABLE t1 AS SELECT c FROM t2"},
 		{"", "CREATE TABLE z AS (WITH cte AS (SELECT 1) SELECT * FROM cte)",
 			"CREATE TABLE z AS (WITH cte AS (SELECT 1) SELECT * FROM cte)"},
+		// No AS at all names no columns either: the parentheses are the
+		// QUERY's, read as though AS had been written, the ambiguity
+		// INSERT's own column list resolves the same way.
+		{"", "CREATE TABLE x (SELECT 1)", "CREATE TABLE x AS (SELECT 1)"},
+		{"", "CREATE VIEW v (SELECT 1)", "CREATE VIEW v AS (SELECT 1)"},
 	} {
 		e, err := ParseOne(tc.sql, tc.dialect)
 		if err != nil {

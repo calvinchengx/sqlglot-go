@@ -178,6 +178,16 @@ func (p *parser) parseCreate() (*Expression, error) {
 		return nil, err
 	}
 	switch {
+	// `CREATE TABLE x (SELECT 1)` names no columns at all: the parentheses
+	// are the QUERY's, read as though AS had been written, the same
+	// ambiguity INSERT's own column list resolves the same way.
+	case p.at(TokL_PAREN) && p.opensAParenthesisedQuery():
+		this = table
+		body, err := p.parseCreateBody()
+		if err != nil {
+			return nil, err
+		}
+		expression = body
 	case p.at(TokL_PAREN):
 		// A TABLE's columns each carry a type; a VIEW's are names the query's
 		// results are given, and carry only what is said ABOUT them.
