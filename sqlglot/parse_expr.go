@@ -2275,7 +2275,17 @@ func (p *parser) parseFunction() (*Expression, error) {
 			if wrapped, ok := ignoreNullsOnTrue(p.dialect, upper, args); ok {
 				return wrapped, nil
 			}
-			return nil, p.unsupported("extra arguments to " + name)
+			// DATE_TRUNC's builder reads only a unit and a value; a third
+			// argument -- PostgreSQL's own DATE_TRUNC takes a time zone
+			// there -- is never even looked at, dropped the same way in
+			// every dialect that reads this name. Silently losing a real
+			// argument is ordinarily the refusal above, but here it is what
+			// the reference itself does.
+			if _, drops := dateTruncDropsExtra[upper]; drops {
+				args = args[:n]
+			} else {
+				return nil, p.unsupported("extra arguments to " + name)
+			}
 		}
 		// A wrap takes the argument's NAME, so an argument with no name -- a
 		// cast, a subquery -- is one the reference does not name either: it
@@ -2570,6 +2580,16 @@ func dispatchByValue(d ValueDispatch, arg *Expression) FuncSpec {
 // TRUE, wraps the call in IgnoreNulls -- any other second argument is simply
 // never stored anywhere. Hive, Spark and Databricks share the one builder;
 // this port speaks only Databricks of the three.
+// dateTruncDropsExtra names the DATE_TRUNC-family builders that only ever
+// read a unit and a value: `date_trunc_to_time` takes `seq_get(args, 0)` and
+// `seq_get(args, 1)` and nothing past them, in every dialect that names it
+// this way -- so PostgreSQL's own three-argument DATE_TRUNC, with a time
+// zone third, loses that argument the same way here as it does there.
+var dateTruncDropsExtra = map[string]struct{}{
+	"DATE_TRUNC": {},
+	"DATETRUNC":  {},
+}
+
 var ignoreNullsOnTrueClasses = map[string]string{
 	"FIRST":       "First",
 	"LAST":        "Last",

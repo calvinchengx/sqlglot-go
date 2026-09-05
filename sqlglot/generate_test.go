@@ -237,6 +237,13 @@ func TestGenerateShapes(t *testing.T) {
 			"SELECT DATE_TRUNC('DAY', CAST(x AS TIMESTAMP))"},
 		{"date trunc over an untyped column", "SELECT DATE_TRUNC('DAY', x)", "duckdb",
 			"SELECT DATE_TRUNC('DAY', x)"},
+		// A third argument -- PostgreSQL's own DATE_TRUNC takes a time zone
+		// there -- is never read by this builder in any dialect that names
+		// it this way, and is dropped rather than refused, the same as the
+		// reference drops it.
+		{"date trunc drops a time zone this builder never reads",
+			"SELECT DATE_TRUNC('DAY', x, 'UTC')", "postgres",
+			"SELECT DATE_TRUNC('DAY', x)"},
 		// A date PLUS an interval is a date, but not until something annotates
 		// it -- at parse time it is just a sum, and the default applies.
 		{"a sum is not a date at parse time",
