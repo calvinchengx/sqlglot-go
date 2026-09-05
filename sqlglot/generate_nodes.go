@@ -21,6 +21,7 @@ var generators map[string]func(*generator, *Expression) string
 func init() {
 	generators = map[string]func(*generator, *Expression) string{
 		"LowerHex":                            (*generator).writeLowerHex,
+		"RecursiveWithSearch":                 (*generator).writeRecursiveWithSearch,
 		"Select":                              (*generator).writeSelect,
 		"Copy":                                (*generator).writeCopy,
 		"NextValueFor":                        (*generator).writeNextValueFor,
@@ -372,10 +373,18 @@ func (g *generator) writeSetOperation(e *Expression) string {
 }
 
 func (g *generator) writeWith(e *Expression) string {
-	if recursive, _ := e.Args["recursive"].(bool); recursive {
-		return "WITH RECURSIVE " + g.list(e)
+	// SEARCH and CYCLE stand AFTER the whole CTE list, not after the one
+	// recursive CTE they describe -- the same way a UNION's own modifiers
+	// stand after every side of it rather than beside the one they came
+	// from reading.
+	search := ""
+	if s := g.child(e, "search"); s != "" {
+		search = " " + s
 	}
-	return "WITH " + g.list(e)
+	if recursive, _ := e.Args["recursive"].(bool); recursive {
+		return "WITH RECURSIVE " + g.list(e) + search
+	}
+	return "WITH " + g.list(e) + search
 }
 
 func (g *generator) writeCTE(e *Expression) string {
@@ -1010,6 +1019,21 @@ func (g *generator) writeNational(e *Expression) string {
 // lowercase check always takes the LOWER branch here.
 func (g *generator) writeLowerHex(e *Expression) string {
 	return "LOWER(HEX(" + g.child(e, "this") + "))"
+}
+
+// writeRecursiveWithSearch writes SEARCH BREADTH/DEPTH FIRST BY, or CYCLE --
+// CYCLE spells only the word, everything else spells the full three.
+func (g *generator) writeRecursiveWithSearch(e *Expression) string {
+	kind, _ := e.Args["kind"].(string)
+	verb := kind
+	if kind != "CYCLE" {
+		verb = "SEARCH " + kind + " FIRST BY"
+	}
+	using := ""
+	if u := g.child(e, "using"); u != "" {
+		using = " USING " + u
+	}
+	return verb + " " + g.child(e, "this") + " SET " + g.child(e, "expression") + using
 }
 
 // escapeStringBody escapes a quote the way THIS DIALECT escapes it.

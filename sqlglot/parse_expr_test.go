@@ -1541,6 +1541,40 @@ func TestWithRecursive(t *testing.T) {
 	}
 }
 
+// SEARCH and CYCLE choose how a recursive CTE's rows are walked and how a
+// repeat among them is caught, and share one node told apart by `kind`:
+// CYCLE spells only the word, where SEARCH spells its kind and FIRST BY too.
+func TestRecursiveWithSearchAndCycle(t *testing.T) {
+	for _, sql := range []string{
+		"WITH RECURSIVE search_tree(id, link, data) AS (SELECT 1, 2, 3) " +
+			"SEARCH BREADTH FIRST BY id SET ordercol SELECT * FROM search_tree",
+		"WITH RECURSIVE search_tree(id, link, data) AS (SELECT 1, 2, 3) " +
+			"SEARCH DEPTH FIRST BY id SET ordercol SELECT * FROM search_tree",
+		"WITH RECURSIVE search_graph(id, link, data, depth) AS " +
+			"(SELECT g.id, g.link, g.data, 1 FROM graph AS g UNION ALL " +
+			"SELECT g.id, g.link, g.data, sg.depth + 1 FROM graph AS g, search_graph AS sg WHERE g.id = sg.link) " +
+			"CYCLE id SET is_cycle USING path SELECT * FROM search_graph",
+	} {
+		e, err := ParseOne(sql, "postgres")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if got, err := Generate(e, "postgres"); err != nil || got != sql {
+			t.Errorf("got %q (%v), want %q", got, err, sql)
+		}
+	}
+	// Every name a CYCLE clause reads is refused, whole, where it is not one.
+	for _, sql := range []string{
+		"WITH RECURSIVE t(a) AS (SELECT 1) CYCLE 123 SET is_cycle SELECT * FROM t",
+		"WITH RECURSIVE t(a) AS (SELECT 1) CYCLE id SET 123 SELECT * FROM t",
+		"WITH RECURSIVE t(a) AS (SELECT 1) CYCLE id SET is_cycle USING 123 SELECT * FROM t",
+	} {
+		if _, err := ParseOne(sql, "postgres"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
 // PostgreSQL's MATERIALIZED/NOT MATERIALIZED hints whether a CTE is its own
 // optimisation fence or inlined; the reference stores three states -- true,
 // false and absent -- not two, so leaving the word out must dump differently

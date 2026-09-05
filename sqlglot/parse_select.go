@@ -269,8 +269,59 @@ func (p *parser) parseWith() (*Expression, error) {
 	if recursive {
 		recursiveArg = true
 	}
+	search, err := p.parseRecursiveWithSearch()
+	if err != nil {
+		return nil, err
+	}
 	return New("With", Arg{"expressions", ctes}, Arg{"recursive", recursiveArg},
-		Arg{"search", nil}, Arg{"udfs", nil}), nil
+		Arg{"search", search}, Arg{"udfs", nil}), nil
+}
+
+// parseRecursiveWithSearch reads the SEARCH or CYCLE clause that may follow a
+// WITH's CTE list, choosing which of a recursive CTE's rows come first and
+// how a cycle in them is caught: `SEARCH BREADTH FIRST BY col SET seq` orders
+// the walk, and `CYCLE id SET is_cycle USING path` flags a repeat. Both share
+// one node, told apart by `kind`.
+func (p *parser) parseRecursiveWithSearch() (*Expression, error) {
+	if p.atWords("SEARCH") {
+		p.advance()
+	}
+	var kind string
+	switch {
+	case p.atWords("BREADTH"):
+		kind = "BREADTH"
+	case p.atWords("DEPTH"):
+		kind = "DEPTH"
+	case p.atWords("CYCLE"):
+		kind = "CYCLE"
+	default:
+		return nil, nil
+	}
+	p.advance()
+	if p.atWords("FIRST", "BY") {
+		p.advance()
+		p.advance()
+	}
+	this, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	var expression *Expression
+	if p.match(TokSET) {
+		expression, err = p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+	}
+	var using *Expression
+	if p.match(TokUSING) {
+		using, err = p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+	}
+	return New("RecursiveWithSearch",
+		Arg{"kind", kind}, Arg{"this", this}, Arg{"expression", expression}, Arg{"using", using}), nil
 }
 
 // setOperations are the words that chain two queries together.
