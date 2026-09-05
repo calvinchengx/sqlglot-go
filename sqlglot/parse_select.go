@@ -101,6 +101,16 @@ func (p *parser) parseQueryBody() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// This subquery may itself carry an alias, same as the OTHER side of
+		// a set operation does: `(SELECT 1) AS a UNION ALL (SELECT 2) AS b`
+		// names each side on its own.
+		alias, err := p.parseTableAlias()
+		if err != nil {
+			return nil, err
+		}
+		if alias != nil {
+			this.Set("alias", alias)
+		}
 		return p.parseSetOperations(this)
 	}
 	// A bare VALUES is a query too: `WITH t AS (VALUES ('x') AS t(a))` names
@@ -335,7 +345,22 @@ func (p *parser) liftSetOpModifiers(setOp, right *Expression) {
 
 func (p *parser) parseSelectOrParenthesised() (*Expression, error) {
 	if p.opensAParenthesisedQuery() {
-		return p.parseScalarSubquery()
+		sub, err := p.parseScalarSubquery()
+		if err != nil {
+			return nil, err
+		}
+		// A set operation's OWN operand may carry an alias, same as any
+		// other subquery: `(SELECT 1) AS a UNION ALL (SELECT 2) AS b` names
+		// each side, and the whole union is what a further wrap of
+		// parentheses would alias, not either side alone.
+		alias, err := p.parseTableAlias()
+		if err != nil {
+			return nil, err
+		}
+		if alias != nil {
+			sub.Set("alias", alias)
+		}
+		return sub, nil
 	}
 	// A FROM-first query stands on either side of a set operation too:
 	// `FROM t1 UNION FROM t2` unions the two.
@@ -379,7 +404,7 @@ func (p *parser) queryAt(i int) bool {
 		if !p.queryAt(i + 1) {
 			return false
 		}
-		after := p.afterGroup(i + 1)
+		after := p.afterGroupAndAlias(i + 1)
 		if after == nil {
 			return false
 		}
@@ -392,24 +417,56 @@ func (p *parser) queryAt(i int) bool {
 	return false
 }
 
-// afterGroup returns the token following the balanced parenthesis group that
-// begins `i` tokens ahead, or nil where the group does not close.
-func (p *parser) afterGroup(i int) *Token {
+// afterGroupAndAlias returns the token following the balanced parenthesis
+// group that begins `i` tokens ahead, past an ALIAS the group itself may
+// carry: `(SELECT 1) AS a UNION ALL (SELECT 2) AS b` is a set operation, and
+// the word after the first group's own close paren is the alias, not the
+// operator -- queryAt and opensASetOperation both decide by what stands
+// there, and neither used to look past a name that names the group itself
+// rather than continuing past it.
+func (p *parser) afterGroupAndAlias(i int) *Token {
+	end := p.groupEndOffset(i)
+	if end < 0 {
+		return nil
+	}
+	return p.peekAt(p.skipAliasAt(end))
+}
+
+// groupEndOffset returns the offset, from the current position, of the token
+// following the balanced parenthesis group that begins `i` tokens ahead, or
+// -1 where the group does not close.
+func (p *parser) groupEndOffset(i int) int {
 	depth := 0
 	for ; ; i++ {
 		next := p.peekAt(i)
 		if next == nil {
-			return nil
+			return -1
 		}
 		switch next.Type {
 		case TokL_PAREN:
 			depth++
 		case TokR_PAREN:
 			if depth--; depth == 0 {
-				return p.peekAt(i + 1)
+				return i + 1
 			}
 		}
 	}
+}
+
+// skipAliasAt reports the offset past a table alias standing at the given
+// offset, or the same offset where none does. Tried by moving there and
+// reading one, since a set-operation keyword and everything else that is not
+// a name is already excluded from naming one at all.
+func (p *parser) skipAliasAt(offset int) int {
+	mark := p.index
+	p.index += offset
+	_, err := p.parseTableAlias()
+	after := p.index - mark
+	p.index = mark
+	if err != nil {
+		return offset
+	}
+	return after
 }
 
 // selectPrefix is the key order exp.Select is constructed with.
@@ -1702,7 +1759,7 @@ func (p *parser) opensASetOperation() bool {
 	if !p.opensAParenthesisedQuery() {
 		return false
 	}
-	after := p.afterGroup(0)
+	after := p.afterGroupAndAlias(0)
 	if after == nil {
 		return false
 	}

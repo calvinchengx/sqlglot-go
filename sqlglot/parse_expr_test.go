@@ -1387,6 +1387,21 @@ func TestJoinOnNesting(t *testing.T) {
 	}
 }
 
+// A set operation's OWN operand may carry an alias, same as any other
+// subquery does: `(SELECT 1) AS a UNION ALL (SELECT 2) AS b` names each side
+// on its own, and the whole union is what a further wrap of parentheses
+// would alias, not either side alone.
+func TestSetOperationOperandAlias(t *testing.T) {
+	sql := "SELECT * FROM ((SELECT 1) AS a UNION ALL (SELECT 2) AS b)"
+	e, err := ParseOne(sql, "")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", sql, err)
+	}
+	if got, err := Generate(e, ""); err != nil || got != sql {
+		t.Errorf("got %q (%v), want %q", got, err, sql)
+	}
+}
+
 // USING SAMPLE is DuckDB's other sampling spelling, hanging off the QUERY
 // where TABLESAMPLE hangs off the table -- the same node under a different
 // word, and both words are probed.
