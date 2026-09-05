@@ -6741,9 +6741,21 @@ func TestUpperLower(t *testing.T) {
 			}
 		}
 
-		// The branch itself is still refused: it builds a class of its own.
-		if e, err := ParseOne("SELECT LOWER(HEX(x))", dialect); err == nil {
-			t.Errorf("[%s] read LOWER(HEX(x)) as %v", dialect, e)
+		// A HEX argument builds a class of its own: LOWER(HEX(x)) is a
+		// LowerHex, and UPPER(HEX(x)) simplifies straight to a bare Hex,
+		// since HEX already writes uppercase.
+		for _, tc := range []struct{ sql, want string }{
+			{"SELECT LOWER(HEX(x))", "SELECT LOWER(HEX(x))"},
+			{"SELECT UPPER(HEX(x))", "SELECT HEX(x)"},
+		} {
+			e, err := ParseOne(tc.sql, dialect)
+			if err != nil {
+				t.Errorf("[%s] ParseOne(%q): %v", dialect, tc.sql, err)
+				continue
+			}
+			if got, err := Generate(e, dialect); err != nil || got != tc.want {
+				t.Errorf("[%s] %q wrote %q (%v), want %q", dialect, tc.sql, got, err, tc.want)
+			}
 		}
 	}
 }

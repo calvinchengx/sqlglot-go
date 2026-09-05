@@ -20,6 +20,7 @@ var generators map[string]func(*generator, *Expression) string
 // dispatcher, and Go will not let a package-level map close that loop.
 func init() {
 	generators = map[string]func(*generator, *Expression) string{
+		"LowerHex":                            (*generator).writeLowerHex,
 		"Select":                              (*generator).writeSelect,
 		"Copy":                                (*generator).writeCopy,
 		"NextValueFor":                        (*generator).writeNextValueFor,
@@ -993,6 +994,13 @@ func (g *generator) writeQuotedString(e *Expression) string {
 func (g *generator) writeNational(e *Expression) string {
 	text, _ := e.Args["this"].(string)
 	return "N'" + escapeStringBody(text, g.cfg.StringEscapes) + "'"
+}
+
+// writeLowerHex writes HEX(x) wrapped in LOWER: none of this port's dialects
+// spell HEX lowercase on their own, so the reference's LOWER-unless-already-
+// lowercase check always takes the LOWER branch here.
+func (g *generator) writeLowerHex(e *Expression) string {
+	return "LOWER(HEX(" + g.child(e, "this") + "))"
 }
 
 // escapeStringBody escapes a quote the way THIS DIALECT escapes it.

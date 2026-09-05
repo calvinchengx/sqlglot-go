@@ -2302,19 +2302,30 @@ func (p *parser) parseFunction() (*Expression, error) {
 				return nil, p.unsupported("string argument to " + name)
 			}
 		}
-		// The argument's own CLASS can change what is built: LOWER(HEX(x)) is
-		// a LowerHex, LOWER(x) is a Lower. The spec was probed with a
-		// placeholder column and describes only the second, so a call that
-		// nests one of the listed classes is refused rather than built as the
-		// tree the reference never makes.
+		// The argument's own CLASS can change what is built: LOWER(HEX(x))
+		// is a LowerHex, and UPPER(HEX(x)) simplifies straight to a bare
+		// Hex, since HEX already writes uppercase. The spec was probed with
+		// a placeholder column and describes only the plain Lower/Upper, so
+		// this is read from the reference's own builder rather than guessed.
 		for _, t := range p.tables.ClassSensitiveArgs[strings.ToUpper(name)] {
 			if t.Index >= len(args) || args[t.Index] == nil {
 				continue
 			}
 			for _, c := range t.Classes {
-				if args[t.Index].Class == c {
-					return nil, p.unsupported(c + " argument to " + name)
+				if args[t.Index].Class != c {
+					continue
 				}
+				if upper == "LOWER" || upper == "UPPER" {
+					inner := childOf(args[t.Index], "this")
+					if inner == nil {
+						continue
+					}
+					if upper == "LOWER" {
+						return New("LowerHex", Arg{"this", inner}), nil
+					}
+					return New("Hex", Arg{"this", inner}), nil
+				}
+				return nil, p.unsupported(c + " argument to " + name)
 			}
 		}
 		built := p.buildFunction(upper, spec, args)
