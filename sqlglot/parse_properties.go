@@ -430,6 +430,16 @@ func (p *parser) parseProperty(spec PropertySpec) (*Expression, error) {
 	case "bare":
 		return New(spec.Class), nil
 	case "value":
+		// `STORED` has a grammar of its own the probe could not see: an
+		// optional AS, then either an INPUTFORMAT/OUTPUTFORMAT pair or a
+		// single format word -- and BY names a storage handler instead,
+		// carrying no AS and no hive_format flag at all. FORMAT and USING
+		// name the same CLASS but take an `=` and none of this, which is
+		// what tells the two apart: STORED is the only entry of the three
+		// recorded without one.
+		if spec.Class == "FileFormatProperty" && !spec.Equals {
+			return p.parseStoredProperty()
+		}
 		if spec.Equals {
 			p.match(TokEQ)
 		}
@@ -503,6 +513,63 @@ func (p *parser) parseProperty(spec PropertySpec) (*Expression, error) {
 		return New(spec.Class, Arg{"expressions", items}), nil
 	}
 	return nil, p.unsupported("property " + spec.Class)
+}
+
+// parseStoredProperty reads what follows STORED: `BY` names a storage
+// handler by a word or a string, carrying neither AS nor a hive_format flag.
+// Anything else is a FileFormatProperty, hive_format true, whose own value is
+// either an INPUTFORMAT/OUTPUTFORMAT pair of strings or a single format word
+// -- `STORED AS PARQUET` -- read with the case it was written in, the same
+// way any other bare property word is.
+func (p *parser) parseStoredProperty() (*Expression, error) {
+	if p.atWords("BY") {
+		p.advance()
+		handler, err := p.parseVarOrString()
+		if err != nil {
+			return nil, err
+		}
+		return New("StorageHandlerProperty", Arg{"this", handler}), nil
+	}
+	p.match(TokALIAS)
+	var inputFormat, outputFormat *Expression
+	if p.atWords("INPUTFORMAT") {
+		p.advance()
+		f, err := p.parseStoredFormatString()
+		if err != nil {
+			return nil, err
+		}
+		inputFormat = f
+	}
+	if p.atWords("OUTPUTFORMAT") {
+		p.advance()
+		f, err := p.parseStoredFormatString()
+		if err != nil {
+			return nil, err
+		}
+		outputFormat = f
+	}
+	var this *Expression
+	if inputFormat != nil || outputFormat != nil {
+		this = New("InputOutputFormat", Arg{"input_format", inputFormat}, Arg{"output_format", outputFormat})
+	} else {
+		format, err := p.parseVarOrString()
+		if err != nil {
+			return nil, err
+		}
+		this = format
+	}
+	return New("FileFormatProperty", Arg{"this", this}, Arg{"hive_format", true}), nil
+}
+
+// parseStoredFormatString reads the string INPUTFORMAT or OUTPUTFORMAT
+// names its format by.
+func (p *parser) parseStoredFormatString() (*Expression, error) {
+	c := p.curr()
+	if c == nil || c.Type != TokSTRING {
+		return nil, p.unsupported("STORED with a format that is not a string")
+	}
+	p.advance()
+	return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
 }
 
 // parsePropertyValue reads the value a property carries: a string stays a

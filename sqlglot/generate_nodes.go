@@ -21,6 +21,8 @@ var generators map[string]func(*generator, *Expression) string
 func init() {
 	generators = map[string]func(*generator, *Expression) string{
 		"LowerHex":                            (*generator).writeLowerHex,
+		"InputOutputFormat":                   (*generator).writeInputOutputFormat,
+		"StorageHandlerProperty":              (*generator).writeStorageHandlerProperty,
 		"RecursiveWithSearch":                 (*generator).writeRecursiveWithSearch,
 		"Connect":                             (*generator).writeConnect,
 		"JSON":                                (*generator).writeJSON,
@@ -1069,6 +1071,20 @@ func (g *generator) writeJSON(e *Expression) string {
 		out += " UNIQUE KEYS"
 	}
 	return out
+}
+
+// writeInputOutputFormat writes STORED AS's own pair, each half present only
+// where it was read: `STORED AS INPUTFORMAT 'a' OUTPUTFORMAT 'b'` may carry
+// either alone.
+func (g *generator) writeInputOutputFormat(e *Expression) string {
+	var parts []string
+	if input := g.child(e, "input_format"); input != "" {
+		parts = append(parts, "INPUTFORMAT "+input)
+	}
+	if output := g.child(e, "output_format"); output != "" {
+		parts = append(parts, "OUTPUTFORMAT "+output)
+	}
+	return strings.Join(parts, " ")
 }
 
 // writeRecursiveWithSearch writes SEARCH BREADTH/DEPTH FIRST BY, or CYCLE --
@@ -3266,6 +3282,17 @@ func (g *generator) writeProperty(e *Expression) string {
 		name = "'" + escapeStringBody(name, g.cfg.StringEscapes) + "'"
 	}
 	return name + "=" + g.child(e, "value")
+}
+
+// writeStorageHandlerProperty writes STORED BY, which only the Hive family
+// can say at all: the reference itself has no spelling for it anywhere else,
+// so a dialect this port has no record of standing it in front of refuses
+// rather than writing a name at nothing.
+func (g *generator) writeStorageHandlerProperty(e *Expression) string {
+	if g.tables.PropertyLocation["FileFormatProperty"] != "POST_SCHEMA" {
+		return g.fail(e.Class)
+	}
+	return "STORED BY " + g.child(e, "this")
 }
 
 // writeProperties writes what a CREATE says about the thing it makes. Two
@@ -5851,12 +5878,28 @@ func (g *generator) writeDateDelta(e *Expression, op string) string {
 // where the rest say `FORMAT=PARQUET` -- so what goes into the spelling is the
 // argument's NAME rather than its rendering.
 func (g *generator) writeFileFormat(e *Expression) string {
-	if g.tables.FileFormatSQL == "" {
-		return g.fail(e.Class + ", which this dialect writes nowhere")
-	}
 	this, _ := e.Args["this"].(*Expression)
 	if this == nil {
 		return g.fail(e.Class + " naming no format")
+	}
+	// `STORED AS ...` sets this flag, and the HIVE FAMILY spells THAT its own
+	// way regardless of the probed template above -- `STORED AS` for the pair
+	// INPUTFORMAT/OUTPUTFORMAT reads into, or the format's own name
+	// UPPERCASED otherwise. Every other dialect here ignores the flag the
+	// same way the reference's own base writer does, and always uses the
+	// probed template -- which only ever saw the case without the flag for
+	// the one dialect (Databricks) that IS the Hive family here, which is
+	// `USING {name}`. The family is told apart by where the property STANDS:
+	// probed at the top of the statement rather than in the WITH list.
+	if hiveFormat, _ := e.Args["hive_format"].(bool); hiveFormat &&
+		g.tables.PropertyLocation["FileFormatProperty"] == "POST_SCHEMA" {
+		if this.Class == "InputOutputFormat" {
+			return "STORED AS " + g.node(this)
+		}
+		return "STORED AS " + strings.ToUpper(this.Name())
+	}
+	if g.tables.FileFormatSQL == "" {
+		return g.fail(e.Class + ", which this dialect writes nowhere")
 	}
 	// The format as it was WRITTEN: a bare word stays bare and a quoted one
 	// keeps its quotes, which is the difference between `USING PARQUET` and

@@ -2549,6 +2549,19 @@ func TestTableProperties(t *testing.T) {
 		{"a schema of bare names", "CREATE TABLE t (a INT) PARTITIONED BY (b)", "",
 			"CREATE TABLE t (a INT) WITH (PARTITIONED_BY=(b))"},
 		{"a table name", "CREATE TABLE t LIKE other", "", "CREATE TABLE t LIKE other"},
+		// STORED has a grammar of its own: an optional AS, then either an
+		// INPUTFORMAT/OUTPUTFORMAT pair of strings or a single format word --
+		// which the Hive family spells standing on its own, UPPERCASED,
+		// where every other dialect here folds it into the generic WITH
+		// list instead, keeping the case it was written in.
+		{"stored as an input/output format pair", "CREATE TABLE test STORED AS INPUTFORMAT 'foo1' OUTPUTFORMAT 'foo2'",
+			"databricks", "CREATE TABLE test STORED AS INPUTFORMAT 'foo1' OUTPUTFORMAT 'foo2'"},
+		{"stored as a bare format, case folded", "CREATE TABLE test STORED AS parquet",
+			"databricks", "CREATE TABLE test STORED AS PARQUET"},
+		{"stored as a bare format elsewhere, case kept", "CREATE TABLE test STORED AS parquet",
+			"", "CREATE TABLE test WITH (FORMAT=parquet)"},
+		{"stored by a handler", "CREATE TABLE test STORED BY 'org.apache.x'",
+			"databricks", "CREATE TABLE test STORED BY 'org.apache.x'"},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			tree, err := ParseOne(c.sql, c.dialect)
@@ -2563,6 +2576,26 @@ func TestTableProperties(t *testing.T) {
 				t.Errorf("%s\n got  %s\n want %s", c.sql, got, c.want)
 			}
 		})
+	}
+	// STORED BY has no spelling at all outside the Hive family -- the
+	// reference itself cannot write it back either, so this port refuses
+	// rather than naming a handler at nothing.
+	byHandler, err := ParseOne("CREATE TABLE test STORED BY 'x'", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if _, err := Generate(byHandler, ""); err == nil {
+		t.Error("wrote STORED BY for a dialect with no spelling for it")
+	}
+	for _, sql := range []string{
+		"CREATE TABLE test STORED BY",
+		"CREATE TABLE test STORED AS INPUTFORMAT 123",
+		"CREATE TABLE test STORED AS INPUTFORMAT 'x' OUTPUTFORMAT 123",
+		"CREATE TABLE test STORED AS",
+	} {
+		if e, err := ParseOne(sql, "databricks"); err == nil {
+			t.Errorf("ParseOne(%q) was read as %v; it should be refused", sql, e)
+		}
 	}
 }
 
