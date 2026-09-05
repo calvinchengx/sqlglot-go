@@ -1398,7 +1398,10 @@ func (p *parser) parseStatementPivot() (*Expression, error) {
 
 	var on []*Expression
 	for {
-		e, err := p.parseUnary()
+		// The full binary chain, not just an operand: `ON Country || '_' ||
+		// Name` pivots on a concatenation, and reading only a unary level
+		// left the `||` on ahead as trailing tokens.
+		e, err := p.parseBitwise()
 		if err != nil {
 			return nil, err
 		}

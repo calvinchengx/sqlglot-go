@@ -811,6 +811,10 @@ func TestStatementPivot(t *testing.T) {
 			"PIVOT Cities ON Year IN (2000, 2010) USING SUM(Population)"},
 		{"several ON columns", "PIVOT Cities ON Country, Name USING SUM(Population)",
 			"PIVOT Cities ON Country, Name USING SUM(Population)"},
+		// ON takes the full binary chain, not just an operand: a
+		// concatenation pivots on the joined value, not a bare column.
+		{"a concatenation on the ON", "PIVOT Cities ON Country || '_' || Name USING SUM(Population)",
+			"PIVOT Cities ON Country || '_' || Name USING SUM(Population)"},
 		{"several aggregates", "PIVOT Cities ON Year USING SUM(Population) AS total, MAX(Population) AS m",
 			"PIVOT Cities ON Year USING SUM(Population) AS total, MAX(Population) AS m"},
 		// PIVOT_WIDER is the same node and normalises to PIVOT.
