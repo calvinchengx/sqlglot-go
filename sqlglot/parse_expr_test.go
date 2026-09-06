@@ -11404,6 +11404,14 @@ func TestUserDefinedTypes(t *testing.T) {
 		{`CAST(0 AS d_.NNNN_)`, "tsql", ""},
 		{`0::"d_.NNNN_"`, "duckdb", "CAST(0 AS d_.NNNN_)"},
 		{`CAST(0 AS a.b.c)`, "duckdb", ""},
+		// A dotted part that would not read back bare -- because it holds a
+		// character no bare name can carry (a NUL byte, here), or because it
+		// would lex as something other than a NAME (a number) -- is quoted on
+		// the way back out. Writing it bare produced SQL that failed to
+		// reparse with "unclosed CAST at .": found by `make fuzz` against the
+		// Python reference.
+		{"\"\"::\"\x00.0\"", "duckdb", "CAST(\"\" AS \"\x00\".\"0\")"},
+		{"\"\"::\"\x00.0\"", "tsql", "CAST([] AS [\x00].[0])"},
 	} {
 		want := c.want
 		if want == "" {
@@ -11414,8 +11422,13 @@ func TestUserDefinedTypes(t *testing.T) {
 			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
 			continue
 		}
-		if got, err := Generate(tree, c.dialect); err != nil || got != want {
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != want {
 			t.Errorf("[%s] %s wrote %q (%v), want %q", c.dialect, c.sql, got, err, want)
+			continue
+		}
+		if _, err := ParseOne(got, c.dialect); err != nil {
+			t.Errorf("[%s] %s wrote %q, which failed to reparse: %v", c.dialect, c.sql, got, err)
 		}
 	}
 }

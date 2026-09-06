@@ -56,6 +56,7 @@ func init() {
 		"Offset":                              (*generator).writeOffset,
 		"Into":                                (*generator).writeInto,
 		"Star":                                (*generator).writeStar,
+		"VarMap":                              (*generator).writeVarMap,
 		"Column":                              (*generator).writeColumn,
 		"Identifier":                          (*generator).writeIdentifier,
 		"Literal":                             (*generator).writeLiteral,
@@ -757,6 +758,27 @@ func (g *generator) writeStar(e *Expression) string {
 	return out
 }
 
+// writeVarMap is the Hive/Spark family's bare MAP(...) (see buildVarMap):
+// the reference's var_map_sql zips the keys Array and the values Array back
+// into one flat, interleaved argument list rather than writing either array
+// out whole -- `MAP(1, 'a', 2, 'b')`, not `MAP(ARRAY(1, 2), ARRAY('a', 'b'))`.
+// A VarMap whose keys or values is not an Array is not one this port builds,
+// so that shape is refused rather than guessed at.
+func (g *generator) writeVarMap(e *Expression) string {
+	keys, _ := e.Args["keys"].(*Expression)
+	values, _ := e.Args["values"].(*Expression)
+	if keys == nil || keys.Class != "Array" || values == nil || values.Class != "Array" {
+		return g.fail(e.Class + " over arguments that are not arrays")
+	}
+	keyItems, _ := keys.Args["expressions"].([]*Expression)
+	valueItems, _ := values.Args["expressions"].([]*Expression)
+	parts := make([]string, 0, len(keyItems)+len(valueItems))
+	for i := range keyItems {
+		parts = append(parts, g.node(keyItems[i]), g.node(valueItems[i]))
+	}
+	return "MAP(" + strings.Join(parts, ", ") + ")"
+}
+
 // writeToMap writes DuckDB's map literal: the word, then the struct it holds
 // written with braces rather than as a struct.
 func (g *generator) writeToMap(e *Expression) string {
@@ -1341,6 +1363,58 @@ func (g *generator) writeAliases(e *Expression) string {
 	return g.child(e, "this") + " AS (" + g.list(e) + ")"
 }
 
+// writeUserDefinedTypeName writes a USER-DEFINED type's name where the
+// dialect keeps it as a single joined string rather than a chain of
+// Identifier nodes (see UserDefinedTypeIsIdentifier). A DOT here is a
+// schema qualifier -- `a.b.c` -- and each part between the dots is quoted
+// only where it would not read back bare, the same rule writeIdentifier
+// applies to an ordinary name. Without this, a part holding a character a
+// bare name cannot carry (a NUL byte, say) was written unquoted, and a DOT
+// next to it made the result fail to reparse: `CAST(x AS \x00.0)` is read
+// back as an unclosed CAST. Found by `make fuzz` against the Python
+// reference.
+//
+// A name with NO dot at all is left exactly as read, whatever characters it
+// holds -- including ones no bare name could otherwise carry, like a space.
+// It came from a single quoted identifier's own text, not a chain this
+// generator built, and the reference writes it back the same way.
+func (g *generator) writeUserDefinedTypeName(name string) string {
+	if !strings.Contains(name, ".") {
+		return name
+	}
+	parts := strings.Split(name, ".")
+	for i, part := range parts {
+		if !g.lexesBackAsABareVar(part) {
+			open, close := g.tables.IdentifierStart, g.tables.IdentifierEnd
+			parts[i] = open + strings.ReplaceAll(part, close, close+close) + close
+		}
+	}
+	return strings.Join(parts, ".")
+}
+
+// lexesBackAsABareVar reports whether writing this part of a USER-DEFINED
+// type's dotted name without quotes gives back the same NAME token the
+// parser requires there. readableAsABareName and lexesBackAsOneName are not
+// enough on their own: "0" satisfies both (it tokenizes back to itself in one
+// token) yet lexes as a NUMBER, which the dotted-name parser does not accept
+// as a continuation -- only TokVAR or a quoted TokIDENTIFIER are. Reserved
+// keywords fail the same way, tokenizing as their own keyword rather than a
+// name.
+func (g *generator) lexesBackAsABareVar(part string) bool {
+	if !readableAsABareName(part) || g.tables.ReservedKeywords[strings.ToUpper(part)] {
+		return false
+	}
+	tk, err := NewTokenizer(g.dialect)
+	if err != nil {
+		return true
+	}
+	toks, err := tk.Tokenize(part)
+	if err != nil || len(toks) != 1 || toks[0].Type != TokVAR || !strings.EqualFold(toks[0].Text, part) {
+		return false
+	}
+	return !g.wroteDollar || !strings.Contains(part, "$")
+}
+
 func (g *generator) writeDataType(e *Expression) string {
 	// An INTERVAL type's `this` is an Interval NODE carrying the unit, not a
 	// type name: `CAST(x AS INTERVAL DAY)`.
@@ -1366,7 +1440,7 @@ func (g *generator) writeDataType(e *Expression) string {
 			}
 		case string:
 			if named != "" {
-				return named
+				return g.writeUserDefinedTypeName(named)
 			}
 		}
 		return g.fail("DataType.USER-DEFINED naming nothing")
