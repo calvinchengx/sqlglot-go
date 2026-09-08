@@ -116,6 +116,32 @@ func (p *parser) buildDateName(args []*Expression) (*Expression, error) {
 		Arg{"format", New("Literal", Arg{"this", spelled}, Arg{"is_string", true})}), nil
 }
 
+// buildVarMap is Databricks' (standing in for the Hive/Spark family it
+// shares this builder with) bare MAP(...): the reference's build_var_map
+// takes positional arguments in pairs, an even-indexed one a key and the
+// odd-indexed one after it the matching value, and wraps each side in its
+// own Array -- VarMap(keys=Array([...]), values=Array([...])). A single `*`
+// argument builds a StarMap over it instead. An odd argument count crashes
+// the reference outright (IndexError), which the port turns into a refusal
+// rather than reproducing the crash.
+func (p *parser) buildVarMap(args []*Expression) (*Expression, error) {
+	if len(args) == 1 && isStarProjection(args[0]) {
+		return New("StarMap", Arg{"this", args[0]}), nil
+	}
+	if len(args)%2 != 0 {
+		return nil, p.unsupported("MAP with an odd number of arguments")
+	}
+	keys := make([]*Expression, 0, len(args)/2)
+	values := make([]*Expression, 0, len(args)/2)
+	for i := 0; i < len(args); i += 2 {
+		keys = append(keys, args[i])
+		values = append(values, args[i+1])
+	}
+	return New("VarMap",
+		Arg{"keys", New("Array", Arg{"expressions", keys})},
+		Arg{"values", New("Array", Arg{"expressions", values})}), nil
+}
+
 func argAt(args []*Expression, i int) *Expression {
 	if i < len(args) {
 		return args[i]

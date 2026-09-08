@@ -2172,7 +2172,12 @@ func (p *parser) parseFunction() (*Expression, error) {
 	// no spec per count, only one per word -- which is not a builder nobody
 	// can describe, so the refusal below does not apply to it.
 	_, byWord := p.tables.ValueDispatchFunctions[upper]
-	if !named && !byArity && !isJSONPath && !byWord {
+	// Databricks (standing in for the Hive/Spark family it shares this
+	// builder with) builds a bare MAP(...) through its own reference builder
+	// rather than a probeable signature -- see buildVarMap -- so it is not
+	// turned away here despite having none.
+	isVarMap := upper == "MAP" && p.dialect == "databricks"
+	if !named && !byArity && !isJSONPath && !byWord && !isVarMap {
 		if _, custom := p.tables.NamedFunctions[upper]; custom {
 			return nil, p.unsupported("function " + upper + " with a builder of its own")
 		}
@@ -2288,6 +2293,9 @@ func (p *parser) parseFunction() (*Expression, error) {
 	}
 	if upper == "DATENAME" && len(p.tables.FullFormatTimeMapping) > 0 {
 		return p.buildDateName(args)
+	}
+	if isVarMap {
+		return p.buildVarMap(args)
 	}
 	if upper == "FORMAT" && len(p.tables.FormatTimeMapping) > 0 {
 		built, err := p.buildFormat(args)

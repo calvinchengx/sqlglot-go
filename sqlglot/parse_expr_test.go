@@ -1988,6 +1988,70 @@ func TestMapLiteral(t *testing.T) {
 	}
 }
 
+// Databricks' (standing in for the Hive/Spark family it shares this builder
+// with) bare MAP(...) reads through the reference's own build_var_map:
+// positional arguments taken in pairs, an even-indexed one a key and the
+// odd-indexed one after it the matching value, each side wrapped in its own
+// Array -- a shape no probeable signature could describe, since the probe
+// runs a builder with a fixed argument count and this one wants a variable
+// number, paired up.
+func TestDatabricksVarMap(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"one pair", "SELECT MAP(1, 'a')", "SELECT MAP(1, 'a')"},
+		{"two pairs", "SELECT MAP(1, 'a', 2, 'b')", "SELECT MAP(1, 'a', 2, 'b')"},
+		{"no pairs at all", "SELECT MAP()", "SELECT MAP()"},
+		// A single star builds a StarMap instead -- one column of `*` over
+		// the row, not a pair.
+		{"a star", "SELECT MAP(*)", "SELECT MAP(*)"},
+		{"a star beside a struct", "SELECT MAP(*), STRUCT(*) FROM t",
+			"SELECT MAP(*), STRUCT(*) FROM t"},
+		// The whole point of a probeable builder existing at all: an
+		// unrelated call over the result still resolves generically.
+		{"a call over the result", "SELECT TRY_ELEMENT_AT(MAP(1, 'a', 2, 'b'), 2)",
+			"SELECT TRY_ELEMENT_AT(MAP(1, 'a', 2, 'b'), 2)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "databricks")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, "databricks")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+	// An odd argument count crashes the reference's own builder outright
+	// (IndexError, reading past the last key with no value left) -- refused
+	// here rather than reproduced.
+	if e, err := ParseOne("SELECT MAP(1, 'a', 2)", "databricks"); err == nil {
+		t.Errorf("read MAP with an odd argument count as %v", e)
+	}
+	// Elsewhere MAP(...) is still the ordinary two-argument Map class this
+	// port already had -- the Databricks builder does not leak into other
+	// dialects.
+	elsewhere, err := ParseOne("SELECT MAP(1, 'a')", "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	call := elsewhere.Args["expressions"].([]*Expression)[0]
+	if call.Class != "Map" {
+		t.Errorf("DuckDB's MAP(...) read as %s, want Map", call.Class)
+	}
+	if got, err := Generate(elsewhere, "duckdb"); err != nil || got != "SELECT MAP(1, 'a')" {
+		t.Errorf("got %q (%v)", got, err)
+	}
+	// Four positional arguments are one pair too many for the Map class'
+	// own two-argument signature, and this port refuses rather than drop
+	// the extra pair the way build_var_map's family would.
+	if e, err := ParseOne("SELECT MAP(1, 'a', 2, 'b')", "duckdb"); err == nil {
+		t.Errorf("read MAP with 4 arguments in DuckDB as %v", e)
+	}
+}
+
 // The writers refuse what they cannot spell rather than writing part of it.
 func TestStarAndMapWriterEdges(t *testing.T) {
 	// A map over something that is not a struct of pairs.

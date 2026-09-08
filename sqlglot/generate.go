@@ -452,6 +452,12 @@ func (g *generator) parserWouldRefuse(name string) bool {
 	if _, ok := g.tables.ValueDispatchFunctions[name]; ok {
 		return false
 	}
+	// Databricks' bare MAP(...) is buildVarMap's, a builder with no
+	// probeable signature -- see isVarMap in parse_expr.go -- but the
+	// parser reads it all the same, so the generator may write it too.
+	if name == "MAP" && g.dialect == "databricks" {
+		return false
+	}
 	_, custom := g.tables.NamedFunctions[name]
 	return custom
 }
