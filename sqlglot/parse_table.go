@@ -14,6 +14,19 @@ func (p *parser) parseFrom() (*Expression, error) {
 	return New("From", Arg{"this", table}), nil
 }
 
+// bareJoinKind reports whether a join with this KIND -- nil, or a word --
+// takes `ON TRUE` in place of a missing ON at all. The reference's own list
+// is an ALLOW list, not the CROSS/ARRAY it excludes elsewhere: a LEFT, RIGHT,
+// FULL, SEMI or ANTI join with no ON stays exactly as bare as it was written,
+// the same as CROSS and ARRAY do.
+func bareJoinKind(kind *Token) bool {
+	if kind == nil {
+		return true
+	}
+	word := strings.ToUpper(kind.Text)
+	return word == "INNER" || word == "OUTER"
+}
+
 // parseJoins reads every join that follows the FROM clause, comma joins
 // included. A comma join is a join: reading `FROM a, b` as `FROM a` is exactly
 // the bypass that made this port necessary, so the comma is handled here
@@ -179,17 +192,19 @@ func (p *parser) parseJoin() (*Expression, error) {
 			}
 			table.Set("joins", nested)
 			join.Set("using", columns)
-		case p.tables.BareJoinIsOnTrue:
+		case p.tables.BareJoinIsOnTrue && bareJoinKind(kind):
 			p.index = mark
 			join.Set("on", New("Boolean", Arg{"this", true}))
 		default:
 			p.index = mark
 		}
-	case p.tables.BareJoinIsOnTrue:
+	case p.tables.BareJoinIsOnTrue && method == nil && bareJoinKind(kind):
 		// Databricks records a bare JOIN as `ON TRUE` rather than leaving the
 		// slot empty and writing the comma form. The same relation either way,
 		// but a different tree and a different statement to the engine -- so
-		// the two executors would not be sending the same SQL.
+		// the two executors would not be sending the same SQL. Only a plain,
+		// INNER or OUTER join gets this: CROSS and ARRAY joins never take an
+		// ON at all, and one named by its METHOD is not touched either.
 		join.Set("on", New("Boolean", Arg{"this", true}))
 	}
 	join.Set("pivots", nil)
@@ -1057,6 +1072,20 @@ func (p *parser) parseParenthesisedTable() (*Expression, error) {
 	}
 	if len(joins) > 0 {
 		table.Set("joins", joins)
+	}
+	// A LATERAL VIEW inside the parentheses hangs off the TABLE the joins
+	// hang off, the same as outside them it hangs off the SELECT -- the
+	// position, not the clause itself, decides where it lands.
+	var laterals []*Expression
+	for p.atWords("LATERAL", "VIEW") {
+		view, err := p.parseLateralView()
+		if err != nil {
+			return nil, err
+		}
+		laterals = append(laterals, view)
+	}
+	if len(laterals) > 0 {
+		table.Set("laterals", laterals)
 	}
 	return table, nil
 }

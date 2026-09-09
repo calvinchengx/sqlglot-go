@@ -1273,6 +1273,15 @@ func TestLateralView(t *testing.T) {
 			"SELECT tf.* FROM (SELECT 0) AS t LATERAL VIEW STACK(1, 2) tf"},
 		{"another dialect's", "databricks", "SELECT a FROM x LATERAL VIEW POSEXPLODE(y) t AS pos, a",
 			"SELECT a FROM x LATERAL VIEW POSEXPLODE(y) t AS pos, a"},
+		// Inside a parenthesised FROM item, a LATERAL VIEW hangs off the
+		// TABLE the joins hang off, the same as outside them it hangs off
+		// the SELECT -- the position, not the clause, decides where it lands.
+		{"beside a join, inside the parentheses", "databricks",
+			"SELECT * FROM (x CROSS JOIN foo LATERAL VIEW EXPLODE(y))",
+			"SELECT * FROM (x CROSS JOIN foo LATERAL VIEW EXPLODE(y))"},
+		{"alone, inside the parentheses", "databricks",
+			"SELECT * FROM (x LATERAL VIEW EXPLODE(y))",
+			"SELECT * FROM (x LATERAL VIEW EXPLODE(y))"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)
@@ -1406,6 +1415,34 @@ func TestJoinOnNesting(t *testing.T) {
 	}
 	if got, err := Generate(eBare, "databricks"); err != nil || got != wantBare {
 		t.Errorf("got %q (%v), want %q", got, err, wantBare)
+	}
+}
+
+// Databricks' own bare-join spelling excludes a NARROW set: CROSS and ARRAY
+// never take an ON to begin with, and ANTI, SEMI and STRAIGHT_JOIN are their
+// own condition-bearing shapes -- but LEFT, RIGHT and FULL are a SIDE, not
+// the KIND this excludes by, so a plain, INNER, OUTER, LEFT, RIGHT or FULL
+// join with no ON at all still takes the same fallback the bare word does.
+func TestBareJoinIsOnTrue(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT * FROM x JOIN foo", "SELECT * FROM x JOIN foo ON TRUE"},
+		{"SELECT * FROM x INNER JOIN foo", "SELECT * FROM x INNER JOIN foo ON TRUE"},
+		{"SELECT * FROM x OUTER JOIN foo", "SELECT * FROM x OUTER JOIN foo ON TRUE"},
+		{"SELECT * FROM x LEFT JOIN foo", "SELECT * FROM x LEFT JOIN foo ON TRUE"},
+		{"SELECT * FROM x RIGHT JOIN foo", "SELECT * FROM x RIGHT JOIN foo ON TRUE"},
+		{"SELECT * FROM x FULL JOIN foo", "SELECT * FROM x FULL JOIN foo ON TRUE"},
+		// Left as written: neither takes ON TRUE.
+		{"SELECT * FROM x CROSS JOIN foo", "SELECT * FROM x CROSS JOIN foo"},
+		{"SELECT * FROM x ANTI JOIN foo", "SELECT * FROM x ANTI JOIN foo"},
+		{"SELECT * FROM x SEMI JOIN foo", "SELECT * FROM x SEMI JOIN foo"},
+	} {
+		e, err := ParseOne(tc.sql, "databricks")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, "databricks"); err != nil || got != tc.want {
+			t.Errorf("%q: got %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
 	}
 }
 

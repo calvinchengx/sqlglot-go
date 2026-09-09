@@ -495,6 +495,13 @@ func (g *generator) writeTable(e *Expression) string {
 		out += g.node(pivot)
 	}
 	out += g.joins(e)
+	// A LATERAL VIEW inside a parenthesised FROM item hangs off the TABLE
+	// the joins hang off, the same as outside them it hangs off the SELECT.
+	if laterals, _ := e.Args["laterals"].([]*Expression); len(laterals) > 0 {
+		for _, lateral := range laterals {
+			out += " " + g.node(lateral)
+		}
+	}
 	if ordinality {
 		out += " WITH ORDINALITY"
 		if alias != "" {
