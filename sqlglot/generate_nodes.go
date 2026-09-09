@@ -3008,7 +3008,13 @@ func (g *generator) writePivot(e *Expression) string {
 			word += " EXCLUDE NULLS "
 		}
 	}
-	out := " " + word + "(" + strings.Join(parts, ", ") + " FOR " + g.node(fields[0]) + ")"
+	out := " " + word + "(" + strings.Join(parts, ", ") + " FOR " + g.node(fields[0])
+	// DuckDB's own PIVOT may GROUP BY inside its own parentheses, the values
+	// it groups rather than anything the SELECT around it groups.
+	if group, _ := e.Args["group"].(*Expression); group != nil {
+		out += " GROUP BY " + g.list(group)
+	}
+	out += ")"
 	if alias := g.child(e, "alias"); alias != "" {
 		out += " AS " + alias
 	}

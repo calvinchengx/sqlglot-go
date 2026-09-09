@@ -696,6 +696,11 @@ func TestPivot(t *testing.T) {
 		{"a bare enum name instead of a list", "duckdb",
 			"SELECT * FROM t PIVOT(SUM(y) FOR foo IN y_enum)",
 			"SELECT * FROM t PIVOT(SUM(y) FOR foo IN y_enum)"},
+		// DuckDB's own PIVOT may GROUP BY inside its own parentheses, the
+		// values it groups rather than anything the SELECT around it groups.
+		{"a GROUP BY inside", "duckdb",
+			"SELECT * FROM cities PIVOT(SUM(population) FOR year IN (2000, 2010, 2020) GROUP BY country)",
+			"SELECT * FROM cities PIVOT(SUM(population) FOR year IN (2000, 2010, 2020) GROUP BY country)"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)
@@ -767,8 +772,6 @@ func TestPivotRefusals(t *testing.T) {
 	for _, tc := range []struct{ name, dialect, sql string }{
 		{"several aggregates DuckDB would name", "duckdb",
 			"SELECT * FROM t PIVOT(SUM(x), MAX(z) FOR y IN ('a'))"},
-		{"a GROUP BY inside", "duckdb",
-			"SELECT * FROM cities PIVOT(SUM(population) FOR year IN (2000) GROUP BY country)"},
 		{"no FOR at all", "", "SELECT a FROM t PIVOT(SUM(x))"},
 		{"no specification", "", "SELECT a FROM t PIVOT"},
 		// The bare enum name IN reads is still just an identifier: neither a
@@ -795,6 +798,10 @@ func TestPivotMalformed(t *testing.T) {
 		{"no IN", "SELECT a FROM t PIVOT(SUM(x) FOR y)"},
 		{"nothing before FOR", "SELECT a FROM t PIVOT(FOR y IN ('a'))"},
 		{"an alias with no name", "SELECT a FROM t PIVOT(SUM(x) AS FOR y IN ('a'))"},
+		{"a GROUP BY naming nothing",
+			"SELECT * FROM cities PIVOT(SUM(population) FOR year IN (2000) GROUP BY )"},
+		{"a GROUP BY that never closes",
+			"SELECT * FROM cities PIVOT(SUM(population) FOR year IN (2000) GROUP BY country"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if _, err := ParseOne(tc.sql, ""); err == nil {

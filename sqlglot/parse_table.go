@@ -728,9 +728,26 @@ func (p *parser) parsePivot() (*Expression, error) {
 		in = New("In", Arg{"this", unpivotTarget(field, unpivot)},
 			Arg{"expressions", values})
 	}
+	// DuckDB's own PIVOT may GROUP BY inside its own parentheses, the values
+	// it groups rather than anything the SELECT around it groups. An ORDER
+	// BY there is a shape this still does not model.
+	var group *Expression
+	if p.at(TokGROUP_BY) {
+		p.advance()
+		var columns []*Expression
+		for {
+			col, err := p.parseUnary()
+			if err != nil {
+				return nil, err
+			}
+			columns = append(columns, col)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		group = New("Group", Arg{"expressions", columns})
+	}
 	if !p.match(TokR_PAREN) {
-		// A GROUP BY or an ORDER BY inside the parentheses lands here; both
-		// are shapes this does not model.
 		return nil, p.unsupported("unclosed PIVOT")
 	}
 	args := []Arg{
@@ -745,7 +762,7 @@ func (p *parser) parsePivot() (*Expression, error) {
 	}
 	args = append(args,
 		Arg{"default_on_null", false},
-		Arg{"group", nil})
+		Arg{"group", group})
 
 	if unpivot {
 		args = append(args, Arg{"value_columns_first", p.tables.UnpivotValueColumnsFirst})
