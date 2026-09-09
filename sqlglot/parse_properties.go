@@ -572,6 +572,75 @@ func (p *parser) parseStoredFormatString() (*Expression, error) {
 	return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
 }
 
+// parseLockingProperty reads Teradata's own `LOCKING [TABLE t|VIEW t|ROW|
+// DATABASE db] [FOR|IN] [ACCESS|EXCL[USIVE]|SHARE|READ|WRITE|CHECKSUM]
+// [OVERRIDE]`, standing where a CREATE VIEW's own AS is -- before the query
+// it locks, not after it. Every piece is optional, and each is read only
+// where the one before it was: a KIND names a table only for DATABASE,
+// TABLE or VIEW, never for ROW.
+func (p *parser) parseLockingProperty() *Expression {
+	p.advance() // LOCKING
+	var kind string
+	switch {
+	case p.match(TokTABLE):
+		kind = "TABLE"
+	case p.match(TokVIEW):
+		kind = "VIEW"
+	case p.match(TokROW):
+		kind = "ROW"
+	case p.atWords("DATABASE"):
+		p.advance()
+		kind = "DATABASE"
+	}
+	var this *Expression
+	if kind == "DATABASE" || kind == "TABLE" || kind == "VIEW" {
+		if name, err := p.parseTableName(); err == nil {
+			this = name
+		}
+	}
+	var forOrIn string
+	switch {
+	case p.match(TokFOR):
+		forOrIn = "FOR"
+	case p.match(TokIN):
+		forOrIn = "IN"
+	}
+	var lockType string
+	switch {
+	case p.atWords("ACCESS"):
+		lockType = "ACCESS"
+	case p.atWords("EXCL"), p.atWords("EXCLUSIVE"):
+		lockType = "EXCLUSIVE"
+	case p.atWords("SHARE"):
+		lockType = "SHARE"
+	case p.atWords("READ"):
+		lockType = "READ"
+	case p.atWords("WRITE"):
+		lockType = "WRITE"
+	case p.atWords("CHECKSUM"):
+		lockType = "CHECKSUM"
+	}
+	if lockType != "" {
+		p.advance()
+	}
+	override := p.atWords("OVERRIDE")
+	if override {
+		p.advance()
+	}
+	args := []Arg{{"this", this}}
+	if kind != "" {
+		args = append(args, Arg{"kind", kind})
+	}
+	if forOrIn != "" {
+		args = append(args, Arg{"for_or_in", forOrIn})
+	}
+	if lockType != "" {
+		args = append(args, Arg{"lock_type", lockType})
+	}
+	args = append(args, Arg{"override", override})
+	return New("LockingProperty", args...)
+}
+
 // parsePropertyValue reads the value a property carries: a string stays a
 // literal and a bare word becomes a Var, which is what the reference builds
 // for a word that names nothing in particular.

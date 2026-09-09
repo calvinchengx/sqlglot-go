@@ -168,7 +168,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 	}
 
 	var this, expression *Expression
-	var afterColumns []*Expression
+	var afterColumns, locking []*Expression
 	// Some of what a statement says about its table stands between the name
 	// and the columns -- `CREATE TABLE z WITH (FORMAT='parquet') AS SELECT 1`
 	// -- and some after them. Both are read, in the order they were written,
@@ -211,6 +211,12 @@ func (p *parser) parseCreate() (*Expression, error) {
 		}
 		// A view may name its columns AND supply the query.
 		if p.match(TokALIAS) {
+			// Teradata's own LOCKING stands where the query does, before it
+			// rather than after: it says how the QUERY behind the view
+			// takes its lock, not anything about the view itself.
+			if p.atWords("LOCKING") || p.atWords("LOCK") {
+				locking = append(locking, p.parseLockingProperty())
+			}
 			query, err := p.parseCreateBody()
 			if err != nil {
 				return nil, err
@@ -219,6 +225,9 @@ func (p *parser) parseCreate() (*Expression, error) {
 		}
 	case p.match(TokALIAS):
 		this = table
+		if p.atWords("LOCKING") || p.atWords("LOCK") {
+			locking = append(locking, p.parseLockingProperty())
+		}
 		query, err := p.parseCreateBody()
 		if err != nil {
 			return nil, err
@@ -304,6 +313,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 	if withData != nil {
 		items = append(items, withData)
 	}
+	items = append(items, locking...)
 	var properties *Expression
 	if len(items) > 0 {
 		properties = New("Properties", Arg{"expressions", items})

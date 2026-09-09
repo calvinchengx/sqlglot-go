@@ -2864,6 +2864,27 @@ func TestCreateViewAndTemporary(t *testing.T) {
 		{"temporary and replaced", "databricks",
 			"CREATE OR REPLACE TEMPORARY VIEW x AS SELECT *",
 			"CREATE OR REPLACE TEMPORARY VIEW x AS SELECT *"},
+		// Teradata's own LOCKING stands where the query does, before it
+		// rather than after: it says how the query behind the view takes
+		// its lock, not anything about the view itself.
+		{"locking the query behind the view", "tsql",
+			"CREATE VIEW z AS LOCKING ROW FOR ACCESS SELECT a FROM b",
+			"CREATE VIEW z AS LOCKING ROW FOR ACCESS SELECT a FROM b"},
+		{"locking a named table", "tsql",
+			"CREATE VIEW z AS LOCKING TABLE t FOR SHARE SELECT a FROM b",
+			"CREATE VIEW z AS LOCKING TABLE t FOR SHARE SELECT a FROM b"},
+		{"locking a named view, IN rather than FOR", "tsql",
+			"CREATE VIEW z AS LOCKING VIEW v IN EXCLUSIVE SELECT a FROM b",
+			"CREATE VIEW z AS LOCKING VIEW v IN EXCLUSIVE SELECT a FROM b"},
+		{"locking a named database", "tsql",
+			"CREATE VIEW z AS LOCKING DATABASE d FOR READ SELECT a FROM b",
+			"CREATE VIEW z AS LOCKING DATABASE d FOR READ SELECT a FROM b"},
+		{"locking, overridden", "tsql",
+			"CREATE VIEW z AS LOCKING ROW FOR WRITE OVERRIDE SELECT a FROM b",
+			"CREATE VIEW z AS LOCKING ROW FOR WRITE OVERRIDE SELECT a FROM b"},
+		{"locking, a checksum", "tsql",
+			"CREATE VIEW z AS LOCKING ROW FOR CHECKSUM SELECT a FROM b",
+			"CREATE VIEW z AS LOCKING ROW FOR CHECKSUM SELECT a FROM b"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)

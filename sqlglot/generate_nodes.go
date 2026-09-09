@@ -23,6 +23,7 @@ func init() {
 		"LowerHex":                            (*generator).writeLowerHex,
 		"InputOutputFormat":                   (*generator).writeInputOutputFormat,
 		"StorageHandlerProperty":              (*generator).writeStorageHandlerProperty,
+		"LockingProperty":                     (*generator).writeLockingProperty,
 		"RecursiveWithSearch":                 (*generator).writeRecursiveWithSearch,
 		"Connect":                             (*generator).writeConnect,
 		"JSON":                                (*generator).writeJSON,
@@ -3264,7 +3265,19 @@ func (g *generator) writeCreate(e *Expression) string {
 	}
 	out += afterSchema
 	if expression := g.child(e, "expression"); expression != "" {
-		out += " AS " + expression
+		out += " AS "
+		// Teradata's own LOCKING stands where the query does, before it
+		// rather than after: it says how the query behind the view takes
+		// its lock, not anything about the view itself.
+		if properties, _ := e.Args["properties"].(*Expression); properties != nil {
+			items, _ := properties.Args["expressions"].([]*Expression)
+			for _, item := range items {
+				if item.Class == "LockingProperty" {
+					out += g.node(item) + " "
+				}
+			}
+		}
+		out += expression
 	}
 	// The properties written AFTER the query, which is where the words that
 	// say whether it filled the table go.
@@ -3374,6 +3387,29 @@ func (g *generator) writeStorageHandlerProperty(e *Expression) string {
 		return g.fail(e.Class)
 	}
 	return "STORED BY " + g.child(e, "this")
+}
+
+// writeLockingProperty writes Teradata's own LOCKING clause, every piece of
+// it optional and each written only where the one before it was: a NAME
+// stands only after a DATABASE, TABLE or VIEW kind, never after ROW.
+func (g *generator) writeLockingProperty(e *Expression) string {
+	out := "LOCKING"
+	if kind, _ := e.Args["kind"].(string); kind != "" {
+		out += " " + kind
+	}
+	if this := g.child(e, "this"); this != "" {
+		out += " " + this
+	}
+	if forOrIn, _ := e.Args["for_or_in"].(string); forOrIn != "" {
+		out += " " + forOrIn
+	}
+	if lockType, _ := e.Args["lock_type"].(string); lockType != "" {
+		out += " " + lockType
+	}
+	if override, _ := e.Args["override"].(bool); override {
+		out += " OVERRIDE"
+	}
+	return out
 }
 
 // writeProperties writes what a CREATE says about the thing it makes. Two
