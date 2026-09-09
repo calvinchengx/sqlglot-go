@@ -1273,6 +1273,15 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			return cast, nil
 		}
 	}
+	// A nested type opened with `<` cannot also be read as a column or a
+	// call -- neither takes one -- so it is read as the bare TYPE itself:
+	// `STRUCT<a INT>` standing on its own is the same DataType a CAST's
+	// right side would build, not a name that happens to spell one.
+	if kind, isType := p.tables.TypeTokens[c.Type]; isType && p.tables.NestedTypeKinds[kind] {
+		if n := p.next(); n != nil && n.Type == TokLT {
+			return p.parseDataType()
+		}
+	}
 
 	switch c.Type {
 	case TokL_PAREN:
@@ -1998,10 +2007,22 @@ func (p *parser) parseTypeSize() (*Expression, error) {
 	return nil, p.unsupported("non-numeric type parameter")
 }
 
-// parseStructField reads one named field of a STRUCT-like type. The colon is
+// parseStructField reads one member of a STRUCT-like type. The colon is
 // optional: Databricks writes `a: INT` and DuckDB `a INT`, and both arrive as
-// the same ColumnDef.
+// the same ColumnDef -- but a member need not be NAMED at all: `STRUCT<INT,
+// DOUBLE>` lists two bare types, the same shape a nested (non-struct) type's
+// own member list takes. Tried first, at a mark: reading the member as a
+// whole TYPE and finding nothing after it -- the member has ended -- means it
+// was never a name to begin with, and the read stands; anything else and the
+// attempt is undone, because a name is still what most members are.
 func (p *parser) parseStructField() (*Expression, error) {
+	mark := p.index
+	if dt, err := p.parseDataType(); err == nil {
+		if c := p.curr(); c == nil || c.Type == TokCOMMA || c.Type == TokGT || c.Type == TokR_PAREN {
+			return dt, nil
+		}
+	}
+	p.index = mark
 	name, err := p.parseIdentifier()
 	if err != nil {
 		return nil, err

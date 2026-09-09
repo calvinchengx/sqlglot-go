@@ -2314,6 +2314,46 @@ func TestSchemaQualifiedOperator(t *testing.T) {
 	}
 }
 
+// A nested type opened with `<` cannot also be read as a column or a call --
+// neither takes one -- so a statement that is nothing but one is read as the
+// bare TYPE itself, the same DataType a CAST's right side would build.
+func TestBareNestedTypeStatement(t *testing.T) {
+	for _, tc := range []struct{ name, dialect, sql, want string }{
+		{"a struct of named fields", "duckdb", "STRUCT<int INT>", "STRUCT(int INT)"},
+		{"deeply nested, unnamed all the way down", "",
+			"ARRAY<STRUCT<INT, DOUBLE, ARRAY<INT>>>",
+			"ARRAY<STRUCT<INT, DOUBLE, ARRAY<INT>>>"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			if e.Class != "DataType" {
+				t.Errorf("read as %s, want DataType", e.Class)
+			}
+			if got, err := Generate(e, tc.dialect); err != nil || got != tc.want {
+				t.Errorf("got %q (%v), want %q", got, err, tc.want)
+			}
+		})
+	}
+	// A plain type -- no `<` -- is still read the way it always was: a type
+	// keyword alone is a Column and a call-shaped one an Anonymous call,
+	// neither a DataType standing on its own.
+	for _, tc := range []struct{ sql, class string }{
+		{"INT", "Column"},
+		{"VARCHAR(10)", "Anonymous"},
+	} {
+		e, err := ParseOne(tc.sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if e.Class != tc.class {
+			t.Errorf("%q read as %s, want %s", tc.sql, e.Class, tc.class)
+		}
+	}
+}
+
 // COLLATE names a collation, not an expression: three shapes for one slot,
 // and the generic operand rule made a column of two of them.
 func TestCollate(t *testing.T) {
@@ -2586,6 +2626,14 @@ func TestCreateTable(t *testing.T) {
 		{"a struct field that may not be null", "databricks",
 			"CREATE TABLE t (a STRUCT<x: INT NOT NULL>)",
 			"CREATE TABLE t (a STRUCT<x: INT NOT NULL>)"},
+		// A struct's own member need not be NAMED at all: `STRUCT<INT,
+		// DOUBLE>` lists two bare types, the same shape a nested
+		// (non-struct) type's own member list takes -- read at a mark, since
+		// a name is still what most members are.
+		{"a struct of bare types", "databricks", "CREATE TABLE t (a STRUCT<INT, DOUBLE>)",
+			"CREATE TABLE t (a STRUCT<INT, DOUBLE>)"},
+		{"named and bare members together", "databricks", "CREATE TABLE t (a STRUCT<x: INT, DOUBLE>)",
+			"CREATE TABLE t (a STRUCT<x: INT, DOUBLE>)"},
 		// VIRTUAL is the opposite of PERSISTED -- the value is recomputed --
 		// and neither word is written where the flag is false.
 		{"a computed column that is virtual", "tsql", "CREATE TABLE t (b AS (a) VIRTUAL)",
