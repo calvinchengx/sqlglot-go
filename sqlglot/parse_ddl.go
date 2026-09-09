@@ -5148,11 +5148,42 @@ func (p *parser) parseCopyParameter() (*Expression, error) {
 	if _, varlen := p.tables.CopyVarlenOptions[strings.ToUpper(c.Text)]; varlen && p.at(TokL_PAREN) {
 		return nil, p.unsupported("COPY parameter with a list of settings")
 	}
-	value, err := p.parseCopyField()
-	if err != nil {
-		return nil, err
+	// The value is OPTIONAL: a bare setting like `HEADER` carries none, and the
+	// reference leaves the CopyParameter's expression unset rather than
+	// demanding something be there.
+	var value *Expression
+	if p.canStartCopyValue() {
+		v, err := p.parseCopyField()
+		if err != nil {
+			return nil, err
+		}
+		value = v
 	}
 	return New("CopyParameter", Arg{"this", name}, Arg{"expression", value}), nil
+}
+
+// canStartCopyValue reports whether the current token could begin a COPY
+// value, without consuming it. A name and a value are separated by nothing
+// more than whitespace, so the reference tells them apart only by whether the
+// token in second position is one it would accept as a field -- a keyword
+// like AS is not, and is left for the next parameter's name instead.
+func (p *parser) canStartCopyValue() bool {
+	c := p.curr()
+	if c == nil {
+		return false
+	}
+	if p.namesAFunctionCall() {
+		return true
+	}
+	switch c.Type {
+	case TokL_PAREN, TokSTRING, TokNUMBER, TokTRUE, TokFALSE, TokNULL, TokIDENTIFIER, TokNATIONAL_STRING:
+		return true
+	}
+	if atWord(c) {
+		_, ok := p.tables.IDVarTokens[c.Type]
+		return ok
+	}
+	return false
 }
 
 // parseCopyField reads a file name or a parameter's value: a literal, a bare
@@ -5205,8 +5236,14 @@ func (p *parser) parseCopyField() (*Expression, error) {
 		p.advance()
 		return New("National", Arg{"this", c.Text}), nil
 	case atWord(c):
-		p.advance()
-		return New("Var", Arg{"this", c.Text}), nil
+		// A reserved word like AS is a bare word by spelling but not a value
+		// the reference accepts here: it is the separator between a
+		// parameter's name and value, and left alone reads as the NEXT
+		// parameter's name instead. Falls through to the unsupported return.
+		if _, ok := p.tables.IDVarTokens[c.Type]; ok {
+			p.advance()
+			return New("Var", Arg{"this", c.Text}), nil
+		}
 	}
 	return nil, p.unsupported("COPY value this port does not read")
 }
