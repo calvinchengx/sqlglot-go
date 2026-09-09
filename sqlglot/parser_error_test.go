@@ -64,10 +64,10 @@ func TestUnsupportedErrorMessageIsTheLabel(t *testing.T) {
 // DISTRIBUTE BY were the third pair to go the same way. The cases here are
 // whatever is still refused, and they are meant to keep being replaced.
 func TestLabelNamesTheKeywordThatStoppedIt(t *testing.T) {
-	for _, tc := range []struct{ sql, want string }{
-		{"SELECT * FROM t1 WHERE NOT EXISTS(FROM t2 WHERE t2.id = t1.id)", "expression at FROM"},
+	for _, tc := range []struct{ dialect, sql, want string }{
+		{"postgres", "SELECT ([1,2,3])[:-:-1]", "expression at :"},
 	} {
-		_, err := ParseOne(tc.sql, "tsql")
+		_, err := ParseOne(tc.sql, tc.dialect)
 		var u *UnsupportedError
 		if !errors.As(err, &u) {
 			t.Errorf("%q: not unsupported: %v", tc.sql, err)

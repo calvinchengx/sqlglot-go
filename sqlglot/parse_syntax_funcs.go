@@ -760,10 +760,11 @@ func (p *parser) parseCallArgumentAliased(alias bool) (*Expression, error) {
 		return p.parseLambda()
 	case p.atKwarg():
 		return p.parseKwarg()
-	case p.at(TokSELECT), p.at(TokWITH):
+	case p.at(TokSELECT), p.at(TokWITH), p.at(TokFROM):
 		// `EXISTS(SELECT 1)`: the call's own parentheses are the subquery's,
 		// so the argument is the Select ITSELF -- there is no Subquery
-		// wrapper the way there is after `IN`.
+		// wrapper the way there is after `IN`. DuckDB's own FROM-first
+		// query reads here the same way: `EXISTS(FROM t2 WHERE ...)`.
 		return p.parseQuery()
 	default:
 		e, err := p.parseExpression()

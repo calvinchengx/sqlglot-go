@@ -11769,6 +11769,11 @@ func TestTypedAliasesAndBodylessQueries(t *testing.T) {
 			"WITH t AS (SELECT * FROM VALUES ('foo_val') AS t(foo1)) SELECT foo1 FROM t", "databricks"},
 		{"FROM (FROM t1 UNION FROM t2)",
 			"SELECT * FROM (SELECT * FROM t1 UNION SELECT * FROM t2)", "duckdb"},
+		// A FROM-first query is a whole QUERY wherever one goes, including a
+		// call's own argument: `EXISTS(SELECT 1)`'s parentheses are the
+		// subquery's, and `EXISTS(FROM t)` reads the same way.
+		{"SELECT * FROM t1 WHERE NOT EXISTS(FROM t2 WHERE t2.id = t1.id)",
+			"SELECT * FROM t1 WHERE NOT EXISTS(SELECT * FROM t2 WHERE t2.id = t1.id)", "duckdb"},
 		{"SELECT 1 UNION SELECT 2", "", ""},
 		// A bracketed type name is lexed again, and the FIRST token settles
 		// it -- `[INT 0]` is an INT, with the number written nowhere.
