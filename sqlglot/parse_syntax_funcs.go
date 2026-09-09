@@ -890,7 +890,7 @@ func (p *parser) parseJSONBExists() (*Expression, error) {
 		}
 		if isStringLiteral(path) {
 			text, _ := path.Args["this"].(string)
-			folded, err := parseJSONPath(text)
+			folded, err := parseJSONPath(text, p.dialect == "databricks")
 			if err != nil {
 				return nil, p.unsupported("JSONB_EXISTS over a path it cannot fold")
 			}

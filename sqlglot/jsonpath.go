@@ -15,7 +15,12 @@ import (
 // The path always starts with a root, whether or not the string says `$`: the
 // reference canonicalises `'a'` to `'$.a'`, which is why a bare name still
 // produces two parts.
-func parseJSONPath(path string) (*Expression, error) {
+//
+// dashInKeys is the Hive family's own JSON path tokenizer: `-` is a var
+// character there, same as a letter, where the reference's own base
+// tokenizer gives it a token of its own -- so `$.x-y` is the one key `x-y`
+// only for that family, and a genuine parse failure everywhere else.
+func parseJSONPath(path string, dashInKeys bool) (*Expression, error) {
 	parts := []*Expression{New("JSONPathRoot")}
 	i := 0
 	if strings.HasPrefix(path, "$") {
@@ -35,7 +40,7 @@ func parseJSONPath(path string) (*Expression, error) {
 				i++
 				continue
 			}
-			key, next, err := readJSONPathKey(path, i)
+			key, next, err := readJSONPathKey(path, i, dashInKeys)
 			if err != nil {
 				return nil, err
 			}
@@ -50,7 +55,7 @@ func parseJSONPath(path string) (*Expression, error) {
 			i = next
 		default:
 			// A bare leading name, as in `'a'`.
-			key, next, err := readJSONPathKey(path, i)
+			key, next, err := readJSONPathKey(path, i, dashInKeys)
 			if err != nil {
 				return nil, err
 			}
@@ -66,7 +71,7 @@ func parseJSONPath(path string) (*Expression, error) {
 
 // readJSONPathKey reads a key: a double-quoted name, or a bare run up to the
 // next separator. A `*` is a wildcard, which is not supported.
-func readJSONPathKey(path string, i int) (string, int, error) {
+func readJSONPathKey(path string, i int, dashInKeys bool) (string, int, error) {
 	if i < len(path) && path[i] == '"' {
 		end := strings.IndexByte(path[i+1:], '"')
 		if end < 0 {
@@ -79,6 +84,7 @@ func readJSONPathKey(path string, i int) (string, int, error) {
 		switch {
 		case path[i] == '*' || path[i] == '?' || path[i] == '(' || path[i] == '@':
 			return "", 0, errUnsupportedJSONPath("path expression")
+		case path[i] == '-' && dashInKeys:
 		case !isJSONPathVarByte(path[i]):
 			return "", 0, errNotAJSONPath
 		}

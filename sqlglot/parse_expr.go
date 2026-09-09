@@ -3152,7 +3152,7 @@ func (p *parser) jsonPathFor(arg *Expression) *Expression {
 	if _, ok := pythonInt(text); ok {
 		return arg
 	}
-	path, err := parseJSONPath(text)
+	path, err := parseJSONPath(text, p.dialect == "databricks")
 	if err != nil {
 		// ANY path the reference cannot read is handed straight back as the
 		// string it was written as -- not only the ones that are obviously
@@ -3344,7 +3344,7 @@ func (p *parser) buildJSONPathFunction(spec JSONPathFunc, args []*Expression) *E
 				// subscript -- neither is JSONPath, so the reference's own
 				// to_json_path skips parsing rather than fail at it.
 				path = args[1]
-			} else if parsed, err := parseJSONPath(text); err != nil {
+			} else if parsed, err := parseJSONPath(text, p.dialect == "databricks"); err != nil {
 				if jsonPathKeptAsLiteral(text) {
 					path = args[1]
 				} else {

@@ -102,6 +102,14 @@ func TestJSONPathFunctions(t *testing.T) {
 		{"a back-of-list subscript path is kept as written", "duckdb",
 			`SELECT JSON_EXTRACT(x, '[#-1]')`,
 			`SELECT x -> '[#-1]'`},
+		// The Hive family's own JSON path tokenizer takes `-` as a var
+		// character, same as a letter, where the reference's base one gives
+		// it a token of its own -- so a DASH inside a bare key is part of
+		// the name only for Databricks, and a genuine failure elsewhere.
+		{"a dash inside a bare key", "databricks",
+			"SELECT GET_JSON_OBJECT(c, '$.x-y')", `SELECT GET_JSON_OBJECT(c, '$["x-y"]')`},
+		{"a dash inside a bare key, over a different call", "databricks",
+			"SELECT JSON_EXTRACT(a, '$.x-y')", `SELECT a:["x-y"]`},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)
@@ -123,12 +131,6 @@ func TestJSONPathFunctions(t *testing.T) {
 // port cannot be sure of is not built at all.
 func TestJSONPathFunctionRefusals(t *testing.T) {
 	for _, tc := range []struct{ name, dialect, sql string }{
-		// The path grammar rejects a dash, where Databricks' own reader takes
-		// it. Building a Literal instead would be a different tree.
-		{"a key the path grammar cannot read", "databricks",
-			"SELECT GET_JSON_OBJECT(c, '$.x-y')"},
-		{"a key the path grammar cannot read, over a different call",
-			"databricks", "SELECT JSON_EXTRACT(a, '$.x-y')"},
 		// A fold needs every key to be a LITERAL; handed a non-literal the
 		// reference lays the arguments out positionally instead, which the
 		// port now builds. A literal that is not a STRING is the case still
@@ -136,6 +138,11 @@ func TestJSONPathFunctionRefusals(t *testing.T) {
 		// wrongly would build a path the reference did not.
 		{"a fold over a literal that is not a string", "postgres",
 			"SELECT JSON_EXTRACT_PATH(x, 1)"},
+		// The dash-in-key reading is the Hive family's own; DuckDB's path
+		// grammar still rejects one, and building a Literal instead would
+		// be a different tree.
+		{"a key the path grammar cannot read outside the Hive family", "duckdb",
+			"SELECT JSON_EXTRACT(a, '$.x-y')"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if _, err := ParseOne(tc.sql, tc.dialect); err == nil {
