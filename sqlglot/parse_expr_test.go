@@ -8969,6 +8969,12 @@ func TestIntervalIsAlsoAName(t *testing.T) {
 		{"SELECT INTERVAL '1' DAY TO HOUR", "SELECT INTERVAL '1' DAY TO HOUR"},
 		// The TYPE is untouched by any of this.
 		{"SELECT CAST(x AS INTERVAL DAY)", "SELECT CAST(x AS INTERVAL DAY)"},
+		// A NAME in the unit position is tried as a CALL first -- the
+		// reference reads whatever stands there with its own function
+		// reader before falling back to a bare word, so a call keeps its
+		// shape rather than being read as the unit and leaving the rest as
+		// trailing tokens.
+		{"INTERVAL '-31' CAST(GETDATE() AS DATE)", "INTERVAL '-31' CAST(GETDATE() AS DATE)"},
 	} {
 		e, err := ParseOne(tc.sql, "")
 		if err != nil {
@@ -8976,6 +8982,17 @@ func TestIntervalIsAlsoAName(t *testing.T) {
 		}
 		if got, err := Generate(e, ""); err != nil || got != tc.want {
 			t.Errorf("%q wrote %q, want %q (%v)", tc.sql, got, tc.want, err)
+		}
+	}
+
+	// A call in the unit position that never closes fails where the call
+	// does, the same as any other unclosed call would.
+	for _, sql := range []string{
+		"INTERVAL '-31' CAST(GETDATE() AS DATE",
+		"INTERVAL '-31' CAST(",
+	} {
+		if e, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read as %v; it should be refused", sql, e)
 		}
 	}
 

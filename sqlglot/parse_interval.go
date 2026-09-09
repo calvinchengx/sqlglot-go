@@ -45,8 +45,21 @@ func (p *parser) parseInterval() (*Expression, error) {
 	unitIndex := p.index
 	var unit *Expression
 	if c := p.curr(); c != nil && c.Type == TokVAR && !strings.EqualFold(c.Text, "TO") {
-		p.advance()
-		unit = New("Var", Arg{"this", p.normalisedIntervalUnit(c.Text)})
+		// A NAME in this position is tried as a CALL first -- the reference
+		// reads whatever the unit position holds with its own function
+		// reader before falling back to a bare word, so `INTERVAL '1'
+		// CAST(x AS y)` keeps the call rather than reading CAST as the unit
+		// and leaving the rest as trailing tokens.
+		if p.namesAFunctionCall() {
+			u, err := p.parsePostfix()
+			if err != nil {
+				return nil, err
+			}
+			unit = u
+		} else {
+			p.advance()
+			unit = New("Var", Arg{"this", p.normalisedIntervalUnit(c.Text)})
+		}
 	}
 
 	switch {
