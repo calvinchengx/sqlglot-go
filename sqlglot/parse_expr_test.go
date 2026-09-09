@@ -8954,6 +8954,32 @@ func TestCastAfterIs(t *testing.T) {
 	}
 }
 
+// Databricks' own `?::` is `::` spelled for the TRY variant, one token
+// rather than a placeholder followed by a cast.
+func TestDatabricksTryCastOperator(t *testing.T) {
+	sql := "SELECT '20'?::INTEGER"
+	e, err := ParseOne(sql, "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", sql, err)
+	}
+	cast := e.Args["expressions"].([]*Expression)[0]
+	if cast.Class != "TryCast" {
+		t.Fatalf("read as %s, want TryCast", cast.Class)
+	}
+	want := "SELECT TRY_CAST('20' AS INT)"
+	if got, err := Generate(e, "databricks"); err != nil || got != want {
+		t.Errorf("got %q (%v), want %q", got, err, want)
+	}
+	// The operator is Databricks' own -- elsewhere `?` is a bound parameter
+	// and `::` a separate cast, not one token together.
+	if e, err := ParseOne(sql, "duckdb"); err == nil {
+		t.Errorf("read %q in duckdb as %v; it has no ?:: operator", sql, e)
+	}
+	if e, err := ParseOne("SELECT '20'?::", "databricks"); err == nil {
+		t.Errorf("read a ?:: with no type after it as %v", e)
+	}
+}
+
 // TestTimeFormatArguments covers the functions whose second argument is a TIME
 // FORMAT, which the builder rewrites into the reference's own spelling on the
 // way in and the writer spells back on the way out.

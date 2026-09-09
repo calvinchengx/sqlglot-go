@@ -662,6 +662,19 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 			this = cast
 			continue
 		}
+		// Databricks' own `?::` is `::` spelled for the TRY variant: `'20'?::INT`
+		// is a TryCast the same shape a plain `::` casts, one token rather
+		// than a placeholder followed by a cast.
+		if p.dialect == "databricks" && p.match(TokQDCOLON) {
+			to, err := p.parseDataType()
+			if err != nil {
+				return nil, err
+			}
+			cast := New("TryCast", Arg{"this", this}, Arg{"to", to})
+			cast.Type = to
+			this = cast
+			continue
+		}
 		// `c1:item[1].price` is a JSON extraction, the form Databricks writes.
 		// The port WROTE it while refusing to read a single one, so every
 		// extraction it emitted for that dialect was SQL it could not read
