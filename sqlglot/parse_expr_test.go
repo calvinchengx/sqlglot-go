@@ -4953,6 +4953,11 @@ func TestTruncateUseAndTransactions(t *testing.T) {
 		{"the word is optional", "", "", "COMMIT WORK", "COMMIT"},
 		{"and T-SQL writes it", "tsql", "tsql", "COMMIT TRAN", "COMMIT TRANSACTION"},
 		{"begin one, T-SQL", "tsql", "tsql", "BEGIN TRANSACTION", "BEGIN TRANSACTION"},
+		// T-SQL's own MARK leaves a description of the transaction in the
+		// log, found later by it -- and stands only where a name does too.
+		{"begin, named, marked", "tsql", "tsql",
+			"BEGIN TRANSACTION transaction_name WITH MARK 'description'",
+			"BEGIN TRANSACTION transaction_name WITH MARK 'description'"},
 		// T-SQL's OWN partition list, spelled as a property rather than the
 		// generic PARTITION(...) other dialects use: a bare number names one
 		// partition, and `lo TO hi` names a range of them.

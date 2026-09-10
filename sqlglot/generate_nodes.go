@@ -5041,11 +5041,17 @@ func (g *generator) writeTransaction(e *Expression) string {
 			durability = " WITH (DELAYED_DURABILITY = ON)"
 		}
 	}
+	// T-SQL's own MARK leaves a description of the transaction in the log,
+	// found later by it -- and only stands where a name does too.
+	mark := ""
+	if m := g.child(e, "mark"); m != "" {
+		mark = " WITH MARK " + m
+	}
 	if name := g.child(e, "this"); name != "" {
 		if !g.tables.TransactionNameWritten {
 			return g.fail(e.Class + " with a name, which this dialect writes away")
 		}
-		return verb + " " + name + durability
+		return verb + " " + name + durability + mark
 	}
 	if durability != "" {
 		return verb + durability

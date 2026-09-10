@@ -3614,6 +3614,20 @@ func (p *parser) parseTransaction() (*Expression, error) {
 		}
 		node.Set("this", name)
 	}
+	// T-SQL's own BEGIN TRANSACTION may leave a MARK in the log, an optional
+	// description the transaction is later found by.
+	if verb == "BEGIN" && p.dialect == "tsql" && p.atWords("WITH", "MARK") {
+		p.advance()
+		p.advance()
+		if s := p.curr(); s != nil && s.Type == TokSTRING {
+			p.advance()
+			node.Set("mark", New("Literal", Arg{"this", s.Text}, Arg{"is_string", true}))
+		}
+		if p.curr() != nil {
+			return nil, p.unsupported(verb + " with more than this port reads")
+		}
+		return node, nil
+	}
 	// `WITH (DELAYED_DURABILITY = ON)` says the commit need not wait for the
 	// log to reach disk. The reference keeps only whether it was on.
 	if p.at(TokWITH) && verb == "COMMIT" {
