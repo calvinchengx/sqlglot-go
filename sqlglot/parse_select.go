@@ -111,7 +111,21 @@ func (p *parser) parseQueryBody() (*Expression, error) {
 		if alias != nil {
 			this.Set("alias", alias)
 		}
-		return p.parseSetOperations(this)
+		this, err = p.parseSetOperations(this)
+		if err != nil {
+			return nil, err
+		}
+		// The parentheses may close before the query does: `((SELECT 1)
+		// UNION SELECT 2) ORDER BY x LIMIT 1` puts the modifiers on the
+		// Subquery itself, read after its own closing paren -- the same
+		// place a bare statement of this shape reads them, wherever the
+		// whole thing stands (a FROM item, a CTE, another set operation).
+		if takesQueryModifiers[this.Class] {
+			if err := p.parseQueryModifiers(this); err != nil {
+				return nil, err
+			}
+		}
+		return this, nil
 	}
 	// A bare VALUES is a query too: `WITH t AS (VALUES ('x') AS t(a))` names
 	// rows without selecting them, and the reference wraps them in a Select
@@ -1881,8 +1895,13 @@ func (p *parser) parseParenthesisedList() ([]*Expression, error) {
 }
 
 // opensASetOperation reports whether the cursor is on a parenthesised query
-// that a SET OPERATION follows: `((SELECT 1) UNION SELECT 2)` as a FROM item,
-// where the cursor sits on the inner parenthesis.
+// that a SET OPERATION or a trailing query modifier follows:
+// `((SELECT 1) UNION SELECT 2)` as a FROM item, or `((SELECT 1) UNION
+// SELECT 2) ORDER BY x LIMIT 1` where the ORDER BY stands INSIDE a further
+// wrap of parentheses -- `SELECT * FROM (((SELECT 1) UNION SELECT 2) ORDER
+// BY x LIMIT 1 OFFSET 1)` -- so the query closes and the modifiers follow
+// before the enclosing parenthesis does. Either way the cursor sits on the
+// inner parenthesis.
 //
 // The plainer question -- does this parenthesis open a query -- is the wrong
 // one HERE, because a parenthesised JOIN TREE begins the same way:
@@ -1897,8 +1916,14 @@ func (p *parser) opensASetOperation() bool {
 	if after == nil {
 		return false
 	}
-	_, isSetOp := setOperations[after.Type]
-	return isSetOp
+	if _, isSetOp := setOperations[after.Type]; isSetOp {
+		return true
+	}
+	switch after.Type {
+	case TokORDER_BY, TokLIMIT, TokOFFSET:
+		return true
+	}
+	return false
 }
 
 // parseLimitCount reads the number (or expression) after LIMIT. Parsing

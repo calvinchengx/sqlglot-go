@@ -3664,6 +3664,28 @@ func TestANumberNamesALambdaParameter(t *testing.T) {
 	}
 }
 
+// atLambda already reads a PARENTHESISED single parameter named ALL --
+// `A((All) -> ll)` -- but the generator writes a single-parameter lambda back
+// out WITHOUT the parentheses the original may have had: `A(All -> ll)`. That
+// bare form reaches the call-argument loop with ALL as the very first token,
+// where the modifier check used to fire before atLambda got a chance to claim
+// it -- the generator fuzzer found this on the port's own round-trip output.
+func TestBareALLNamesALambdaParameter(t *testing.T) {
+	for _, sql := range []string{"A(All -> ll)", "A(ALL -> ALL)"} {
+		e, err := ParseOne(sql, "tsql")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		got, err := Generate(e, "tsql")
+		if err != nil {
+			t.Fatalf("Generate(%q): %v", sql, err)
+		}
+		if _, err := ParseOne(got, "tsql"); err != nil {
+			t.Errorf("%q generated %q, which does not reparse: %v", sql, got, err)
+		}
+	}
+}
+
 // Everything else an ALTER TABLE does, and the ALTER VIEW that gives a view a
 // new query.
 //
@@ -6359,6 +6381,11 @@ func TestParenthesisedQuery(t *testing.T) {
 		"(SELECT 1 UNION SELECT 2) UNION (SELECT 2 UNION ALL SELECT 3)",
 		"SELECT * FROM ((SELECT 1) UNION SELECT 2) AS t",
 		"SELECT * FROM ((SELECT 1)) AS t",
+		// The parentheses close before the query does: the FROM item is one
+		// more wrap around a query that itself carries modifiers, so they
+		// stand inside the ENCLOSING parenthesis rather than after it.
+		"SELECT * FROM ((SELECT 1) ORDER BY x LIMIT 2)",
+		"SELECT * FROM (((SELECT 1) UNION SELECT 2) ORDER BY x LIMIT 1 OFFSET 1)",
 		// A parenthesised JOIN TREE begins the same way and is not a query.
 		"SELECT * FROM ((SELECT 1 AS x) CROSS JOIN (SELECT 2 AS y)) AS z",
 		"SELECT * FROM (a CROSS JOIN b)",

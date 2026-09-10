@@ -2254,8 +2254,13 @@ func (p *parser) parseFunction() (*Expression, error) {
 				continue
 			}
 			// DISTINCT and named arguments inside a call also change the node
-			// the reference builds; neither is handled here.
-			if p.atAny(TokDISTINCT, TokORDER_BY, TokALL) {
+			// the reference builds; neither is handled here. ALL is also a
+			// keyword usable as a bare lambda parameter -- `A(All -> ll)` --
+			// which atLambda already recognises, so it must be checked before
+			// this refuses ALL as a modifier: the generator writes a
+			// single-parameter lambda over ALL without the parentheses the
+			// original may have had, and reading it back hit this refusal.
+			if p.atAny(TokDISTINCT, TokORDER_BY, TokALL) && !p.atLambda() {
 				return nil, p.unsupported("modifier inside a function call")
 			}
 			// `x -> x > 1` is a lambda ONLY here, in argument position. The
