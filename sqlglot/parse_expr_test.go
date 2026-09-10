@@ -4432,6 +4432,23 @@ func TestCreateIndex(t *testing.T) {
 			`CREATE INDEX "concurrently" ON t(x)`},
 		// Databricks puts the word TABLE between the index and its table.
 		{"on TABLE", "databricks", "CREATE INDEX abc ON t(a)", "CREATE INDEX abc ON TABLE t(a)"},
+		// T-SQL's own CLUSTERED INDEX and NONCLUSTERED INDEX tokenize as one
+		// INDEX keyword whose text is the pair -- the reference keeps that
+		// text as the CREATE's kind rather than folding it down to INDEX.
+		{"clustered", "tsql",
+			"CREATE CLUSTERED INDEX [IX_OfficeTagDetail_TagDetailID] ON [dbo].[OfficeTagDetail]([TagDetailID] ASC)",
+			"CREATE CLUSTERED INDEX [IX_OfficeTagDetail_TagDetailID] ON [dbo].[OfficeTagDetail]([TagDetailID] ASC)"},
+		{"nonclustered", "tsql", "CREATE NONCLUSTERED INDEX ix ON t(a)", "CREATE NONCLUSTERED INDEX ix ON t(a)"},
+		// A COLUMNSTORE index covers the whole table rather than chosen
+		// columns, so it names none -- and bare COLUMNSTORE means the same
+		// thing as NONCLUSTERED COLUMNSTORE, which is the word the reference
+		// always writes back.
+		{"columnstore", "tsql", "CREATE COLUMNSTORE INDEX index_name ON foo.bar",
+			"CREATE NONCLUSTERED COLUMNSTORE INDEX index_name ON foo.bar"},
+		{"nonclustered columnstore", "tsql", "CREATE NONCLUSTERED COLUMNSTORE INDEX ix ON t",
+			"CREATE NONCLUSTERED COLUMNSTORE INDEX ix ON t"},
+		{"clustered columnstore", "tsql", "CREATE CLUSTERED COLUMNSTORE INDEX ix ON t",
+			"CREATE CLUSTERED COLUMNSTORE INDEX ix ON t"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)
@@ -4460,7 +4477,6 @@ func TestCreateIndex(t *testing.T) {
 		t.Errorf("wrote %q for T-SQL, which writes a conditional EXEC", got)
 	}
 	for _, sql := range []string{
-		"CREATE INDEX abc ON t",
 		"CREATE INDEX abc ON t(a",
 		"CREATE INDEX abc ON t USING",
 		"CREATE TEMPORARY INDEX abc ON t(a)",
@@ -4472,6 +4488,14 @@ func TestCreateIndex(t *testing.T) {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
 		}
+	}
+	// The reference never requires a column list: `CREATE INDEX abc ON t`
+	// names an index over none, the same shape a COLUMNSTORE index takes
+	// when it covers the whole table rather than chosen columns.
+	if e, err := ParseOne("CREATE INDEX abc ON t", ""); err != nil {
+		t.Errorf("ParseOne(%q): %v", "CREATE INDEX abc ON t", err)
+	} else if got, err := Generate(e, ""); err != nil || got != "CREATE INDEX abc ON t" {
+		t.Errorf("CREATE INDEX abc ON t: got %q, %v", got, err)
 	}
 	// The method an index is built with, the rows it covers, and the operator
 	// class one of its columns is indexed with.

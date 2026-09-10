@@ -59,6 +59,27 @@ func (p *parser) parseCreate() (*Expression, error) {
 		p.advance()
 		unique = true
 	}
+	// A COLUMNSTORE index is CLUSTERED unless told otherwise -- bare
+	// COLUMNSTORE and NONCLUSTERED COLUMNSTORE both mean the same thing, and
+	// only the CLUSTERED spelling means the other. The words are consumed
+	// here and never kept: the reference records only which one it ended up
+	// being, as a flag on the CREATE, not the words that said so. T-SQL's
+	// OWN "CLUSTERED INDEX" and "NONCLUSTERED INDEX" are a different
+	// spelling entirely -- the tokenizer reads each as one INDEX keyword,
+	// and this flag stays unset for them.
+	var clustered any
+	switch {
+	case p.atWords("CLUSTERED", "COLUMNSTORE"):
+		p.advance()
+		p.advance()
+		clustered = true
+	case p.atWords("NONCLUSTERED", "COLUMNSTORE"), p.atWords("COLUMNSTORE"):
+		if p.atWords("NONCLUSTERED", "COLUMNSTORE") {
+			p.advance()
+		}
+		p.advance()
+		clustered = false
+	}
 	// The other modifiers are properties too -- MATERIALIZED, UNLOGGED,
 	// TRANSIENT, Databricks' STREAMING -- each carrying a bare node of its
 	// own. Which words those are, and what each builds, is read from the
@@ -84,15 +105,18 @@ func (p *parser) parseCreate() (*Expression, error) {
 	kind := strings.ToUpper(kindToken.Text)
 	// The kinds this dialect creates are its own -- T-SQL alone spells a
 	// procedure PROC -- but only some of them have a body this port knows how
-	// to read, and the rest are refused by name below.
+	// to read, and the rest are refused by name below. An INDEX may be TWO
+	// words on the token itself -- T-SQL's "CLUSTERED INDEX" and
+	// "NONCLUSTERED INDEX" tokenize as one INDEX keyword whose text is the
+	// pair -- so the type decides, not the exact text.
 	if _, ok := p.tables.CreateKinds[kind]; !ok &&
-		kind != "INDEX" && kind != "TYPE" && kind != "MACRO" && kind != "TRIGGER" {
+		kindToken.Type != TokINDEX && kind != "TYPE" && kind != "MACRO" && kind != "TRIGGER" {
 		return nil, p.unsupported("CREATE " + kind)
 	}
 	p.advance()
 
-	if kind == "INDEX" {
-		return p.parseIndexRest(replace, unique, temporary)
+	if kindToken.Type == TokINDEX {
+		return p.parseIndexRest(replace, unique, temporary, kind, clustered)
 	}
 
 	// A TRIGGER names itself and then says everything about itself in
@@ -2008,7 +2032,7 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		// operator it is compared with, which makes this an index by another
 		// name -- and it reads the same parts one does.
 		p.advance()
-		params, err := p.parseIndexParameters(false)
+		params, err := p.parseIndexParameters()
 		if err != nil {
 			return nil, err
 		}
@@ -2024,7 +2048,7 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		// about them, holding only the flag that says so -- and where
 		// something WAS said, it is an index's own vocabulary: `PRIMARY KEY
 		// (i) INCLUDE (a)` carries a column alongside the key.
-		params, err := p.parseIndexParameters(false)
+		params, err := p.parseIndexParameters()
 		if err != nil {
 			return nil, err
 		}
@@ -2870,7 +2894,7 @@ func (p *parser) parseCreateBody() (*Expression, error) {
 //
 // The name is OPTIONAL -- PostgreSQL lets the server choose one -- and the
 // columns are ORDERED members, each of which may say where its nulls go.
-func (p *parser) parseIndexRest(replace, unique, temporary bool) (*Expression, error) {
+func (p *parser) parseIndexRest(replace, unique, temporary bool, kind string, clustered any) (*Expression, error) {
 	if temporary {
 		return nil, p.unsupported("CREATE TEMPORARY INDEX")
 	}
@@ -2906,7 +2930,7 @@ func (p *parser) parseIndexRest(replace, unique, temporary bool) (*Expression, e
 		return nil, err
 	}
 	index.Set("table", table)
-	params, err := p.parseIndexParameters(true)
+	params, err := p.parseIndexParameters()
 	if err != nil {
 		return nil, err
 	}
@@ -2917,7 +2941,7 @@ func (p *parser) parseIndexRest(replace, unique, temporary bool) (*Expression, e
 
 	return New("Create",
 		Arg{"this", index},
-		Arg{"kind", "INDEX"},
+		Arg{"kind", kind},
 		Arg{"replace", replace},
 		Arg{"refresh", false},
 		Arg{"unique", unique},
@@ -2929,7 +2953,7 @@ func (p *parser) parseIndexRest(replace, unique, temporary bool) (*Expression, e
 		Arg{"begin", nil},
 		Arg{"clone", nil},
 		Arg{"concurrently", concurrently},
-		Arg{"clustered", nil},
+		Arg{"clustered", clustered},
 	), nil
 }
 
@@ -2941,7 +2965,7 @@ func (p *parser) parseIndexRest(replace, unique, temporary bool) (*Expression, e
 // The same parts describe an EXCLUDE constraint, which is why this is not
 // inside the CREATE INDEX reader: a constraint that names a method and a set
 // of operators is an index by another name.
-func (p *parser) parseIndexParameters(needColumns bool) (*Expression, error) {
+func (p *parser) parseIndexParameters() (*Expression, error) {
 	// Read in the order they are WRITTEN and set in the order the reference
 	// BUILDS them, which is not the same: the where comes after the storage
 	// on the page and before it in the node, and a dump compares key order.
@@ -2960,14 +2984,15 @@ func (p *parser) parseIndexParameters(needColumns bool) (*Expression, error) {
 		p.advance()
 		using = New("Var", Arg{"this", method.Text})
 	}
+	// The reference never requires a column list here: `CREATE INDEX ix ON
+	// t` names an index over none, same as a COLUMNSTORE index that covers
+	// the whole table rather than a chosen set of columns.
 	if p.at(TokL_PAREN) {
 		read, err := p.parseIndexColumns()
 		if err != nil {
 			return nil, err
 		}
 		columns = read
-	} else if needColumns {
-		return nil, p.unsupported("CREATE INDEX with more than columns")
 	}
 	// Columns carried ALONGSIDE the index rather than indexed: they are there
 	// to be read without going back to the table.

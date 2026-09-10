@@ -3163,6 +3163,17 @@ func (g *generator) writeGroupConcat(e *Expression) string {
 func (g *generator) writeCreate(e *Expression) string {
 	kind, _ := e.Args["kind"].(string)
 	out := g.withPrefix(e, "CREATE") + " "
+	// A COLUMNSTORE index is CLUSTERED unless the flag says otherwise, and
+	// the words for which come right after CREATE -- before OR REPLACE,
+	// UNIQUE, or the kind itself. Unset (nil) means the index was never a
+	// COLUMNSTORE one, and nothing is written.
+	if clustered, ok := e.Args["clustered"].(bool); ok {
+		if clustered {
+			out += "CLUSTERED COLUMNSTORE "
+		} else {
+			out += "NONCLUSTERED COLUMNSTORE "
+		}
+	}
 	// What the dialect adds to a TEMPORARY object of this kind, written at the
 	// very end because that is where it measured.
 	temporarySuffix := ""
@@ -4738,8 +4749,10 @@ func (g *generator) writeIndex(e *Expression) string {
 	}
 	written := g.writeIndexParameters(params)
 	// The columns follow the table with nothing between them -- `ON t(a)` --
-	// and a method is a word of its own.
-	if !strings.HasPrefix(written, "(") {
+	// and a method is a word of its own. Nothing at all -- a COLUMNSTORE
+	// index covering the whole table names no columns -- leaves no space to
+	// add either.
+	if written != "" && !strings.HasPrefix(written, "(") {
 		out += " "
 	}
 	return out + written
