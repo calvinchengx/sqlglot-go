@@ -94,6 +94,7 @@ func init() {
 		"AlterRename":                         (*generator).writeAlterRename,
 		"RenameColumn":                        (*generator).writeRenameColumn,
 		"AddConstraint":                       (*generator).writeAddConstraint,
+		"AddPartition":                        (*generator).writeAddPartition,
 		"AlterColumn":                         (*generator).writeAlterColumn,
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
@@ -4118,6 +4119,21 @@ func (g *generator) writeAddConstraint(e *Expression) string {
 		parts = append(parts, g.node(item))
 	}
 	return "ADD " + strings.Join(parts, ", ")
+}
+
+// writeAddPartition writes a slice of the table an ALTER adds -- the
+// PARTITION(...) call itself, an optional IF NOT EXISTS, and an optional
+// LOCATION after it.
+func (g *generator) writeAddPartition(e *Expression) string {
+	out := "ADD "
+	if exists, _ := e.Args["exists"].(bool); exists {
+		out += "IF NOT EXISTS "
+	}
+	out += g.child(e, "this")
+	if location := g.child(e, "location"); location != "" {
+		out += " " + location
+	}
+	return out
 }
 
 // writeRenameColumn writes the new name one column takes.

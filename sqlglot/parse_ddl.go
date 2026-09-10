@@ -1383,6 +1383,35 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 //
 // The actions are a LIST, because some dialects take several at once, and each
 // is a node of its own -- an ADD is the very ColumnDef a CREATE builds.
+// parseAddPartition reads `PARTITION(...) [LOCATION '...']`, the shape an
+// ALTER TABLE ADD takes to name a slice of the table rather than a column.
+// The reference reads the PARTITION(...) part as an ordinary function call
+// rather than through its own dedicated grammar -- an Anonymous named
+// PARTITION, over whatever stands inside the parentheses -- which is why it
+// is built here directly rather than through a call reader that does not
+// expect PARTITION as a name.
+func (p *parser) parseAddPartition(exists bool) (*Expression, error) {
+	p.advance() // PARTITION
+	args, err := p.parseParenthesisedList()
+	if err != nil {
+		return nil, err
+	}
+	this := New("Anonymous", Arg{"this", "PARTITION"}, Arg{"expressions", args})
+	var location any
+	if p.atWords("LOCATION") {
+		p.advance()
+		loc, err := p.parseProperty(p.tables.PropertySpecs["LOCATION"])
+		if err != nil {
+			return nil, err
+		}
+		location = loc
+	}
+	// The reference assigns exists, then this, then location -- the order the
+	// dump compares, not the class's own field order.
+	return New("AddPartition",
+		Arg{"exists", exists}, Arg{"this", this}, Arg{"location", location}), nil
+}
+
 // parseDroppedPartitions reads the `PARTITION (...)` list an ALTER drops.
 // Several may be named at once, each its own Partition.
 func (p *parser) parseDroppedPartitions() ([]*Expression, error) {
@@ -1598,6 +1627,11 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			p.advance()
 			p.advance()
 			exists = true
+		}
+		// `ADD PARTITION(...)` names a slice of the table to add rather than
+		// a column, and takes an optional LOCATION after it.
+		if p.atWords("PARTITION") && p.next() != nil && p.next().Type == TokL_PAREN {
+			return p.parseAddPartition(exists)
 		}
 		return p.parseAddedColumn(exists)
 	case p.at(TokDROP):

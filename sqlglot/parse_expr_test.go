@@ -10831,6 +10831,36 @@ func TestAlterDrop(t *testing.T) {
 	}
 }
 
+// What an ALTER adds need not be a column either: `ADD PARTITION(...)` names
+// a slice of the table to add, read the same way a plain function call is --
+// an Anonymous named PARTITION -- rather than through a grammar of its own,
+// and may carry an optional LOCATION and an IF NOT EXISTS.
+func TestAlterAddPartition(t *testing.T) {
+	for _, c := range []struct{ sql, dialect string }{
+		{"ALTER TABLE db.example_table ADD PARTITION(col_a = 'a') LOCATION 'b'", "databricks"},
+		{"ALTER TABLE t ADD PARTITION(a = 1)", "databricks"},
+		{"ALTER TABLE t ADD IF NOT EXISTS PARTITION(a = 1) LOCATION 'x'", "databricks"},
+	} {
+		tree, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Errorf("[%s] %s: %v", c.dialect, c.sql, err)
+			continue
+		}
+		got, err := Generate(tree, c.dialect)
+		if err != nil || got != c.sql {
+			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
+		}
+	}
+	for _, sql := range []string{
+		"ALTER TABLE t ADD PARTITION(a = 1",
+		"ALTER TABLE t ADD PARTITION(a = 1) LOCATION",
+	} {
+		if _, err := ParseOne(sql, "databricks"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
 // A COMMENT names what it is left on, and the note itself is a string in any
 // spelling the tokenizer tells apart.
 func TestCommentForms(t *testing.T) {
