@@ -95,6 +95,7 @@ func init() {
 		"RenameColumn":                        (*generator).writeRenameColumn,
 		"AddConstraint":                       (*generator).writeAddConstraint,
 		"AddPartition":                        (*generator).writeAddPartition,
+		"Comprehension":                       (*generator).writeComprehension,
 		"AlterColumn":                         (*generator).writeAlterColumn,
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
 		"Reference":                           (*generator).writeReference,
@@ -4156,6 +4157,21 @@ func (g *generator) writeAddPartition(e *Expression) string {
 		out += " " + location
 	}
 	return out
+}
+
+// writeComprehension writes DuckDB's own list comprehension: `x FOR x IN l`,
+// with an optional index name after a comma and an optional IF condition.
+func (g *generator) writeComprehension(e *Expression) string {
+	position := ""
+	if pos, _ := e.Args["position"].(*Expression); pos != nil {
+		position = ", " + g.node(pos)
+	}
+	condition := ""
+	if cond, _ := e.Args["condition"].(*Expression); cond != nil {
+		condition = " IF " + g.node(cond)
+	}
+	return g.child(e, "this") + " FOR " + g.child(e, "expression") + position +
+		" IN " + g.child(e, "iterator") + condition
 }
 
 // writeRenameColumn writes the new name one column takes.

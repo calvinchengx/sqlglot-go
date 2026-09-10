@@ -190,6 +190,28 @@ func (p *parser) parseRange() (*Expression, error) {
 				this = New("Operator",
 					Arg{"this", this}, Arg{"operator", op.String()}, Arg{"expression", right})
 			}
+		case c.Type == TokFOR:
+			// DuckDB's own list comprehension: `[x FOR x IN l]`, or
+			// `[x FOR x, i IN l IF i = 2]` naming the index too. FOR is a
+			// range operator generally -- `SELECT x FOR UPDATE` reaches
+			// here the same way -- so what follows decides: a name (or a
+			// name, a name) and then IN commits to a comprehension, and
+			// anything else retreats to before FOR, leaving it for
+			// whatever reads it elsewhere.
+			mark := p.index
+			p.advance() // FOR
+			comprehension, matched, cerr := p.parseComprehension(this)
+			if cerr != nil {
+				return nil, cerr
+			}
+			if !matched {
+				p.index = mark
+				if negate {
+					p.index--
+				}
+				return this, nil
+			}
+			this = comprehension
 		default:
 			if _, isRange := p.tables.RangeTokens[c.Type]; isRange {
 				return nil, p.unsupported("range operator " + c.Text)
@@ -227,6 +249,47 @@ func (p *parser) parseRange() (*Expression, error) {
 			this = New("Escape", Arg{"this", this}, Arg{"expression", char})
 		}
 	}
+}
+
+// parseComprehension reads what follows a FOR already consumed: a name (or a
+// name, a name naming the index too), then IN and what is iterated, then an
+// optional IF condition. Returning matched=false leaves the cursor where the
+// caller put it (right after FOR) for it to retreat from -- IN never
+// standing where expected means this was not a comprehension at all, the
+// same as the reference's own retreat.
+func (p *parser) parseComprehension(this *Expression) (*Expression, bool, error) {
+	expression, err := p.parseColumn()
+	if err != nil {
+		return nil, false, nil
+	}
+	var position any
+	if p.match(TokCOMMA) {
+		pos, perr := p.parseColumn()
+		if perr != nil {
+			return nil, false, nil
+		}
+		position = pos
+	} else {
+		position = false
+	}
+	if !p.match(TokIN) {
+		return nil, false, nil
+	}
+	iterator, err := p.parseColumn()
+	if err != nil {
+		return nil, false, err
+	}
+	var condition *Expression
+	if p.atWords("IF") {
+		p.advance()
+		condition, err = p.parseDisjunction()
+		if err != nil {
+			return nil, false, err
+		}
+	}
+	return New("Comprehension",
+		Arg{"this", this}, Arg{"expression", expression}, Arg{"position", position},
+		Arg{"iterator", iterator}, Arg{"condition", condition}), true, nil
 }
 
 // negateRange flags a negated LIKE rather than wrapping it, which is what the

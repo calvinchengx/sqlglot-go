@@ -11702,6 +11702,63 @@ func TestRangeOpsJoinsAndIn(t *testing.T) {
 	}
 }
 
+// DuckDB's own list comprehension. FOR is a range operator generally --
+// `SELECT x FOR UPDATE` reaches the very same code -- so what follows a
+// name decides: IN commits to a comprehension, and anything else retreats
+// to before FOR and leaves it there.
+func TestListComprehension(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql, want string }{
+		{"duckdb", "SELECT [x FOR x IN l]", "SELECT [x FOR x IN l]"},
+		{"duckdb", "SELECT [4, 5, 6] AS l, [x FOR x, i IN l IF i = 2] AS filtered",
+			"SELECT [4, 5, 6] AS l, [x FOR x, i IN l IF i = 2] AS filtered"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		got, err := Generate(e, tc.dialect)
+		if err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+	// FOR belonging to something else entirely retreats rather than being
+	// claimed by the comprehension reader: no IN follows UPDATE, so the
+	// cursor goes back to before FOR and the SELECT's own lock clause reads
+	// it from there, same as it always has.
+	e, err := ParseOne("SELECT x FOR UPDATE", "postgres")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", "SELECT x FOR UPDATE", err)
+	}
+	if got, err := Generate(e, "postgres"); err != nil || got != "SELECT x FOR UPDATE" {
+		t.Errorf("SELECT x FOR UPDATE wrote %q (%v)", got, err)
+	}
+	// A malformed comprehension is refused rather than half-built: a name
+	// where the ITERATED expression should be, and a condition with nothing
+	// in it, are both errors this port reports directly rather than
+	// swallowing by retreating -- IN was already matched, so this commits
+	// to being a comprehension.
+	for _, sql := range []string{
+		"SELECT [x FOR y IN 1]",
+		"SELECT [x FOR y IN l IF]",
+	} {
+		if _, err := ParseOne(sql, "duckdb"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+	// A number where the comprehension's own name or index should be is not
+	// a retreat either -- neither is a column, so this cannot be one, but
+	// nothing else can read `1 IN l` as an array element followed by more
+	// array elements, so the whole array is refused.
+	for _, sql := range []string{
+		"SELECT [x FOR 1 IN l]",
+		"SELECT [x FOR y, 1 IN l]",
+	} {
+		if _, err := ParseOne(sql, "duckdb"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
 // A DROP named by its signature, a SELECT INTO that names the kind of table it
 // writes, and a COMMIT that says whether it waits for the log.
 func TestDropSignatureIntoKindAndDurability(t *testing.T) {
