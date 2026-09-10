@@ -90,12 +90,34 @@ func (p *parser) parseCreate() (*Expression, error) {
 		if word == nil {
 			break
 		}
-		class, ok := p.tables.CreateProperties[strings.ToUpper(word.Text)]
-		if !ok {
-			break
+		if class, ok := p.tables.CreateProperties[strings.ToUpper(word.Text)]; ok {
+			p.advance()
+			modifiers = append(modifiers, New(class))
+			continue
 		}
-		p.advance()
-		modifiers = append(modifiers, New(class))
+		// MySQL's own CREATE VIEW preamble: `ALGORITHM=...` and
+		// `DEFINER=user@host`, each a property of its own rather than a
+		// bare word.
+		if p.atWords("ALGORITHM") {
+			if spec, ok := p.tables.PropertySpecs["ALGORITHM"]; ok {
+				p.advance()
+				prop, err := p.parseProperty(spec)
+				if err != nil {
+					return nil, err
+				}
+				modifiers = append(modifiers, prop)
+				continue
+			}
+		}
+		if p.atWords("DEFINER") {
+			prop, err := p.parseDefinerProperty()
+			if err != nil {
+				return nil, err
+			}
+			modifiers = append(modifiers, prop)
+			continue
+		}
+		break
 	}
 
 	kindToken := p.curr()
@@ -1075,6 +1097,38 @@ func (p *parser) startsAColumnConstraintValue() bool {
 		return true
 	}
 	return false
+}
+
+// parseDefinerProperty reads MySQL's own `DEFINER=user@host`, naming who a
+// VIEW or ROUTINE runs as. The reference keeps the whole thing as ONE
+// string rather than a tree -- `this` is the plain text "user@host" -- and
+// the host may be a bare word or the wildcard `%`, which the tokenizer
+// reads as MOD rather than a name.
+func (p *parser) parseDefinerProperty() (*Expression, error) {
+	p.advance() // DEFINER
+	if !p.match(TokEQ) {
+		return nil, p.unsupported("DEFINER without a value")
+	}
+	user, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokPARAMETER) {
+		return nil, p.unsupported("DEFINER without a host")
+	}
+	var host string
+	if p.at(TokMOD) {
+		host = p.curr().Text
+		p.advance()
+	} else {
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		host, _ = id.Args["this"].(string)
+	}
+	name, _ := user.Args["this"].(string)
+	return New("DefinerProperty", Arg{"this", name + "@" + host}), nil
 }
 
 // parseIndexTypeConstraint reads T-SQL's CLUSTERED or NONCLUSTERED and the

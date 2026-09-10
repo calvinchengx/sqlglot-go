@@ -2868,6 +2868,14 @@ func TestCreateViewAndTemporary(t *testing.T) {
 			"CREATE TEMPORARY TABLE x (a INT)"},
 		{"a temporary view", "", "CREATE TEMPORARY VIEW x AS SELECT a FROM d",
 			"CREATE TEMPORARY VIEW x AS SELECT a FROM d"},
+		// MySQL's own CREATE VIEW preamble names who the view runs as, twice
+		// over: ALGORITHM and DEFINER before the kind, SQL SECURITY after
+		// the name -- three properties from two positions, one list.
+		{"algorithm, definer, and sql security", "",
+			"CREATE ALGORITHM=UNDEFINED DEFINER=foo@% VIEW a SQL SECURITY DEFINER AS (SELECT a FROM b)",
+			"CREATE ALGORITHM=UNDEFINED DEFINER=foo@% VIEW a SQL SECURITY DEFINER AS (SELECT a FROM b)"},
+		{"definer without algorithm", "", "CREATE DEFINER=root@localhost VIEW v AS SELECT 1",
+			"CREATE DEFINER=root@localhost VIEW v AS SELECT 1"},
 		{"temporary and replaced", "databricks",
 			"CREATE OR REPLACE TEMPORARY VIEW x AS SELECT *",
 			"CREATE OR REPLACE TEMPORARY VIEW x AS SELECT *"},
@@ -2950,6 +2958,18 @@ func TestCreateViewAndTemporary(t *testing.T) {
 	if got, err := Generate(ParseOrFail(t, "CREATE TABLE z WITH (FORMAT='parquet') AS SELECT 1", ""),
 		""); err != nil || got != "CREATE TABLE z WITH (FORMAT='parquet') AS SELECT 1" {
 		t.Errorf("neutral wrote %q (%v)", got, err)
+	}
+	// DEFINER is refused wherever it does not fully match the shape it
+	// reads: no value at all, a value that cannot name a user, and a value
+	// with no host after it.
+	for _, sql := range []string{
+		"CREATE DEFINER foo@% VIEW a AS SELECT 1",
+		"CREATE DEFINER=1 VIEW a AS SELECT 1",
+		"CREATE DEFINER=foo VIEW a AS SELECT 1",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
 	}
 }
 

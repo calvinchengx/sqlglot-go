@@ -189,6 +189,20 @@ func (p *parser) parseBespokeProperty(inWith bool) (*Expression, bool, error) {
 		p.advance()
 		p.advance()
 		return New("SqlReadWriteProperty", Arg{"this", "NO SQL"}), true, nil
+	// A VIEW or ROUTINE says who it runs as: DEFINER, INVOKER, or NONE. The
+	// tokenizer joins the two words into one keyword of its own.
+	case p.atWords("SQL SECURITY"):
+		p.advance()
+		word := p.curr()
+		if word == nil {
+			return New("SqlSecurityProperty"), true, nil
+		}
+		switch strings.ToUpper(word.Text) {
+		case "DEFINER", "INVOKER", "NONE":
+			p.advance()
+			return New("SqlSecurityProperty", Arg{"this", strings.ToUpper(word.Text)}), true, nil
+		}
+		return New("SqlSecurityProperty"), true, nil
 	}
 	return nil, false, nil
 }
