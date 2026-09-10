@@ -272,6 +272,18 @@ func (p *parser) parseMerge() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	// T-SQL's own locking hint stands BEFORE the alias -- `mytable WITH
+	// (HOLDLOCK) AS T` -- where the generic table reader's own alias attempt
+	// falls on the WITH and finds nothing there, then reads the hint and
+	// stops. The alias is still ahead of the cursor, so MERGE reads for one
+	// again once the table it targets is otherwise done.
+	if p.at(TokALIAS) {
+		alias, err := p.parseTableAlias()
+		if err != nil {
+			return nil, err
+		}
+		target.Set("alias", alias)
+	}
 	if !p.match(TokUSING) {
 		return nil, p.unsupported("MERGE without USING")
 	}

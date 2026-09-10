@@ -4283,12 +4283,31 @@ func (g *generator) writeReturning(e *Expression) string {
 // DuckDB's match is a column list rather than a condition, and it takes the
 // place of the ON entirely rather than sitting beside it.
 func (g *generator) writeMerge(e *Expression) string {
-	this, using := g.child(e, "this"), g.child(e, "using")
 	target, _ := e.Args["this"].(*Expression)
+	using := g.child(e, "using")
 	whens, _ := e.Args["whens"].(*Expression)
-	if this == "" || using == "" || target == nil || whens == nil {
+	if target == nil || using == "" || whens == nil {
 		// All three are what a MERGE IS: two relations and what to do about
 		// how they line up. Writing it without one names no statement.
+		return g.fail(e.Class + " missing what it matches or what it does")
+	}
+	// T-SQL's own locking hint stands BEFORE the target's alias --
+	// `mytable WITH (HOLDLOCK) AS T` -- where the generic table writer would
+	// put the alias first, same as it does everywhere else a table stands.
+	// The alias is pulled off for this one render and appended after, rather
+	// than written where the table writer would put it.
+	targetAlias, hasAlias := target.Args["alias"].(*Expression)
+	hints, _ := target.Args["hints"].([]*Expression)
+	splitAlias := hasAlias && targetAlias != nil && len(hints) > 0 && hints[0].Class == "WithTableHint"
+	var this string
+	if splitAlias {
+		target.Set("alias", nil)
+		this = g.node(target) + " AS " + g.node(targetAlias)
+		target.Set("alias", targetAlias)
+	} else {
+		this = g.node(target)
+	}
+	if this == "" {
 		return g.fail(e.Class + " missing what it matches or what it does")
 	}
 	if g.tables.MergeWithoutTarget {

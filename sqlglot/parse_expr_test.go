@@ -3393,6 +3393,19 @@ func TestMerge(t *testing.T) {
 		{"the target name kept", "duckdb",
 			"MERGE INTO x USING (SELECT id) AS y ON a = b WHEN MATCHED THEN UPDATE SET x.a = y.b",
 			"MERGE INTO x USING (SELECT id) AS y ON a = b WHEN MATCHED THEN UPDATE SET x.a = y.b"},
+		// T-SQL's own locking hint stands BEFORE the target's alias, where
+		// the generic table reader's own alias attempt falls on the WITH and
+		// finds nothing there -- so MERGE reads for one again once the
+		// hint is done, and the WRITER pulls the alias back out from between
+		// the hint and the table name to put it after, matching the source.
+		{"a locking hint before the alias", "",
+			"MERGE INTO mytable WITH (HOLDLOCK) AS T USING m AS S ON T.id = S.id WHEN MATCHED THEN DELETE",
+			"MERGE INTO mytable WITH (HOLDLOCK) AS T USING m AS S ON T.id = S.id WHEN MATCHED THEN DELETE"},
+		// The same hint with no alias to pull out at all: the generic table
+		// writer places it exactly where it belongs on its own.
+		{"a locking hint with no alias", "",
+			"MERGE INTO mytable WITH (HOLDLOCK) USING m AS S ON id = S.id WHEN MATCHED THEN DELETE",
+			"MERGE INTO mytable WITH (HOLDLOCK) USING m AS S ON id = S.id WHEN MATCHED THEN DELETE"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)
@@ -3412,10 +3425,11 @@ func TestMerge(t *testing.T) {
 		})
 	}
 	for _, sql := range []string{
+		"MERGE INTO t ON a = b WHEN MATCHED THEN DELETE",
+		"MERGE INTO t WITH (HOLDLOCK) AS 5 USING s ON a = b WHEN MATCHED THEN DELETE",
 		"MERGE INTO t USING s ON a = b",
 		"MERGE INTO t USING s ON a = b WHEN MATCHED THEN TRUNCATE",
 		"MERGE t USING s ON a = b WHEN MATCHED THEN DELETE",
-		"MERGE INTO mytable WITH (HOLDLOCK) AS T USING m AS S ON T.id = S.id WHEN MATCHED THEN DELETE",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
