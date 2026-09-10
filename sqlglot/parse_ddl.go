@@ -120,6 +120,15 @@ func (p *parser) parseCreate() (*Expression, error) {
 		break
 	}
 
+	// A CONSTRAINT TRIGGER checks its condition at the end of the
+	// transaction rather than immediately; the word is a flag on the
+	// TRIGGER it names, not a kind of its own, so it is stepped over here
+	// and the token that decides the kind is the one after it.
+	constraintTrigger := false
+	if p.at(TokCONSTRAINT) && p.nextWords("TRIGGER") {
+		p.advance()
+		constraintTrigger = true
+	}
 	kindToken := p.curr()
 	if kindToken == nil {
 		return nil, p.unsupported("CREATE without a kind")
@@ -146,7 +155,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// The name is a bare Identifier rather than a Table -- a trigger lives on
 	// a table rather than being one.
 	if kind == "TRIGGER" {
-		return p.parseTriggerRest(replace, start)
+		return p.parseTriggerRest(replace, start, constraintTrigger)
 	}
 
 	exists := false
@@ -5902,7 +5911,7 @@ func (p *parser) parseMacroBody() (*Expression, bool, error) {
 // cannot read one of these parts, which is what it does with every T-SQL
 // trigger -- those put the timing after the table and a whole block after AS.
 // Those are emitted as the same Command.
-func (p *parser) parseTriggerRest(replace bool, start Token) (*Expression, error) {
+func (p *parser) parseTriggerRest(replace bool, start Token, constraintTrigger bool) (*Expression, error) {
 	name, err := p.parseIdentifier()
 	if err != nil {
 		return nil, err
@@ -5938,6 +5947,32 @@ func (p *parser) parseTriggerRest(replace bool, start Token) (*Expression, error
 	table, err := p.parseTableName()
 	if err != nil {
 		return nil, err
+	}
+
+	// A CONSTRAINT TRIGGER may say WHEN its own check happens -- at once, or
+	// deferred to the end of the transaction -- which only makes sense
+	// because it can be deferred at all, so INITIALLY only follows a
+	// DEFERRABLE that was actually written.
+	var deferrable, initially string
+	switch {
+	case p.atWords("NOT", "DEFERRABLE"):
+		p.advance()
+		p.advance()
+		deferrable = "NOT DEFERRABLE"
+	case p.atWords("DEFERRABLE"):
+		p.advance()
+		deferrable = "DEFERRABLE"
+	}
+	if deferrable != "" && p.atWords("INITIALLY") {
+		p.advance()
+		switch {
+		case p.atWords("IMMEDIATE"):
+			p.advance()
+			initially = "IMMEDIATE"
+		case p.atWords("DEFERRED"):
+			p.advance()
+			initially = "DEFERRED"
+		}
 	}
 
 	forEach := ""
@@ -5989,12 +6024,23 @@ func (p *parser) parseTriggerRest(replace bool, start Token) (*Expression, error
 	// arguments are declared rather than the order they were WRITTEN: what
 	// the trigger runs comes before how often it runs. A tree whose keys are
 	// in another order is a different tree to the differential.
+	var deferrableArg, initiallyArg any
+	if deferrable != "" {
+		deferrableArg = deferrable
+	}
+	if initially != "" {
+		initiallyArg = initially
+	}
 	props := New("TriggerProperties",
 		Arg{"table", table}, Arg{"timing", timing}, Arg{"events", events},
 		Arg{"execute", New("TriggerExecute", Arg{"this", call})},
 		// Present and false where the statement said nothing about them: an
 		// absent argument is a different tree from a false one.
-		Arg{"constraint", false})
+		Arg{"constraint", constraintTrigger},
+		Arg{"referenced_table", nil},
+		Arg{"deferrable", deferrableArg},
+		Arg{"initially", initiallyArg},
+		Arg{"referencing", nil})
 	if forEach != "" {
 		props.Set("for_each", forEach)
 	}

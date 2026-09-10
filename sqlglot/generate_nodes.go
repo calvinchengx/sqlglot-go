@@ -3164,6 +3164,20 @@ func (g *generator) writeGroupConcat(e *Expression) string {
 // shape of `this` is what says which spelling this is.
 func (g *generator) writeCreate(e *Expression) string {
 	kind, _ := e.Args["kind"].(string)
+	// A CONSTRAINT TRIGGER checks its condition at the end of the
+	// transaction; the word is carried on the TriggerProperties the
+	// statement's own body holds, not on the CREATE itself, and is folded
+	// into the kind here, where it is written.
+	if kind == "TRIGGER" {
+		if properties, _ := e.Args["properties"].(*Expression); properties != nil {
+			if items, _ := properties.Args["expressions"].([]*Expression); len(items) > 0 &&
+				items[0].Class == "TriggerProperties" {
+				if constraint, _ := items[0].Args["constraint"].(bool); constraint {
+					kind = "CONSTRAINT " + kind
+				}
+			}
+		}
+	}
 	out := g.withPrefix(e, "CREATE") + " "
 	// A COLUMNSTORE index is CLUSTERED unless the flag says otherwise, and
 	// the words for which come right after CREATE -- before OR REPLACE,
@@ -5778,6 +5792,21 @@ func (g *generator) writeTriggerProperties(e *Expression) string {
 	timing, _ := e.Args["timing"].(string)
 	parts := []string{strings.TrimSpace(timing + " " + strings.Join(names, " OR "))}
 	parts = append(parts, "ON", g.child(e, "table"))
+	if referenced := g.child(e, "referenced_table"); referenced != "" {
+		parts = append(parts, "FROM", referenced)
+	}
+	// A CONSTRAINT TRIGGER may say WHEN its own check happens -- DEFERRABLE
+	// (or NOT DEFERRABLE) alone, or with INITIALLY IMMEDIATE or DEFERRED
+	// naming which it starts as.
+	if deferrable, _ := e.Args["deferrable"].(string); deferrable != "" {
+		parts = append(parts, deferrable)
+	}
+	if initially, _ := e.Args["initially"].(string); initially != "" {
+		parts = append(parts, "INITIALLY "+initially)
+	}
+	if referencing := g.child(e, "referencing"); referencing != "" {
+		parts = append(parts, referencing)
+	}
 	if forEach, _ := e.Args["for_each"].(string); forEach != "" {
 		parts = append(parts, "FOR EACH "+forEach)
 	}

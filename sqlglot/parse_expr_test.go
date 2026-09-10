@@ -2647,6 +2647,20 @@ func TestCreateTable(t *testing.T) {
 		{"a trigger instead of", "postgres",
 			"CREATE TRIGGER t INSTEAD OF INSERT ON v FOR EACH ROW EXECUTE FUNCTION f()",
 			"CREATE TRIGGER t INSTEAD OF INSERT ON v FOR EACH ROW EXECUTE FUNCTION F()"},
+		// A CONSTRAINT TRIGGER checks its condition at the end of the
+		// transaction rather than immediately, and may say so explicitly:
+		// DEFERRABLE alone, or with INITIALLY naming which it starts as.
+		// The word is carried on the trigger's own properties, not the
+		// CREATE, and folded into the kind where it is written.
+		{"a constraint trigger", "postgres",
+			"CREATE CONSTRAINT TRIGGER my_trigger AFTER INSERT OR DELETE OR UPDATE OF col_a, col_b ON public.my_table DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION DO_STH()",
+			"CREATE CONSTRAINT TRIGGER my_trigger AFTER INSERT OR DELETE OR UPDATE OF col_a, col_b ON public.my_table DEFERRABLE INITIALLY DEFERRED FOR EACH ROW EXECUTE FUNCTION DO_STH()"},
+		{"not deferrable", "postgres",
+			"CREATE CONSTRAINT TRIGGER t AFTER INSERT ON a NOT DEFERRABLE FOR EACH ROW EXECUTE FUNCTION f()",
+			"CREATE CONSTRAINT TRIGGER t AFTER INSERT ON a NOT DEFERRABLE FOR EACH ROW EXECUTE FUNCTION F()"},
+		{"initially immediate", "postgres",
+			"CREATE CONSTRAINT TRIGGER t AFTER INSERT ON a DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION f()",
+			"CREATE CONSTRAINT TRIGGER t AFTER INSERT ON a DEFERRABLE INITIALLY IMMEDIATE FOR EACH ROW EXECUTE FUNCTION F()"},
 		// A column may be COMPUTED from the others rather than stored. It
 		// names no type -- the type is whatever the expression yields.
 		{"a computed column", "tsql", "CREATE TABLE t (a INT, b AS (a * 2) PERSISTED NOT NULL)",
