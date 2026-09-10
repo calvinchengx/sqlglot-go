@@ -125,9 +125,24 @@ func (p *parser) parseReturning() (*Expression, error) {
 		return nil, nil
 	}
 	p.advance()
-	items, err := p.parseExpressionList()
-	if err != nil {
-		return nil, err
+	// Each item may carry an alias of its own -- `RETURNING price AS
+	// new_price` names the column the same way a SELECT's own projection
+	// does, and the reference reads a RETURNING item through the same
+	// alias-taking expression reader a projection is.
+	var items []*Expression
+	for {
+		e, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		e, err = p.parseAlias(e)
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, e)
+		if !p.match(TokCOMMA) {
+			break
+		}
 	}
 	// `OUTPUT ... INTO @t` writes the rows somewhere as well as returning
 	// them -- a table variable, read the same way one is anywhere else, or a

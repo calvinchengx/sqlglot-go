@@ -3293,6 +3293,11 @@ func TestUpdateAndDelete(t *testing.T) {
 			"UPDATE foo SET a = bar.a FROM bar WHERE foo.id = bar.id"},
 		{"returning", "postgres", "UPDATE tbl SET foo = 123 RETURNING a",
 			"UPDATE tbl SET foo = 123 RETURNING a"},
+		// A RETURNING item takes an alias the same way a SELECT's own
+		// projection does.
+		{"returning with an alias", "postgres",
+			"UPDATE products SET price = price * 1.10 WHERE price <= 99.99 RETURNING name, price AS new_price",
+			"UPDATE products SET price = price * 1.10 WHERE price <= 99.99 RETURNING name, price AS new_price"},
 		// T-SQL calls it OUTPUT and writes it in front of the FROM rather than
 		// after the WHERE. Same node, two places.
 		{"output", "tsql", "UPDATE x SET y = 1 OUTPUT x.a, x.b FROM y",
@@ -3562,6 +3567,7 @@ func TestDMLRefusalsAreCarried(t *testing.T) {
 		{"", "UPDATE t SET a = 1 FROM 1"},
 		{"", "UPDATE t SET a = 1 WHERE FROM"},
 		{"postgres", "UPDATE t SET a = 1 RETURNING FROM"},
+		{"postgres", "UPDATE t SET a = 1 RETURNING a AS +"},
 		{"", "DELETE FROM 1"},
 		{"", "DELETE FROM x USING 1"},
 		{"", "DELETE FROM x WHERE FROM"},
