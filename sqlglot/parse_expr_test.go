@@ -3210,6 +3210,11 @@ func TestColumnConstraints(t *testing.T) {
 			"CREATE TABLE foo (b INT REFERENCES z (i) DEFERRABLE INITIALLY DEFERRED)"},
 		{"CREATE TABLE foo (b INT REFERENCES z (i) MATCH FULL)",
 			"CREATE TABLE foo (b INT REFERENCES z (i) MATCH FULL)"},
+		// MATCH and ON interleave rather than one always coming first: the
+		// options reader has to return to ON after reading MATCH, not stop
+		// there the way a fixed MATCH-then-ON order would let it.
+		{"CREATE TABLE t (a INT, CONSTRAINT c FOREIGN KEY (a) REFERENCES t2 (b) MATCH FULL ON UPDATE CASCADE ON DELETE RESTRICT)",
+			"CREATE TABLE t (a INT, CONSTRAINT c FOREIGN KEY (a) REFERENCES t2 (b) MATCH FULL ON UPDATE CASCADE ON DELETE RESTRICT)"},
 		// A NAMED constraint keeps its name on the wrapper, in front of the
 		// kind it names.
 		{"CREATE TABLE k (s INT CONSTRAINT k_fk REFERENCES szerzo)",

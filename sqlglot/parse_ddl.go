@@ -1990,45 +1990,47 @@ func (p *parser) parseAlteredColumn() (*Expression, error) {
 // and refusing to.
 func (p *parser) parseKeyConstraintOptions() ([]string, error) {
 	var options []string
-	for p.at(TokON) {
-		p.advance()
-		event := p.curr()
-		if event == nil {
-			return nil, p.unsupported("ON without an event")
-		}
-		p.advance()
-		var action string
-		switch {
-		case p.atWords("NO", "ACTION"):
-			p.advance()
-			p.advance()
-			action = "NO ACTION"
-		case p.atWords("CASCADE"):
-			p.advance()
-			action = "CASCADE"
-		case p.atWords("RESTRICT"):
-			p.advance()
-			action = "RESTRICT"
-		case p.at(TokSET) && p.next() != nil && p.next().Type == TokNULL:
-			p.advance()
-			p.advance()
-			action = "SET NULL"
-		case p.at(TokSET) && p.next() != nil && strings.EqualFold(p.next().Text, "DEFAULT"):
-			p.advance()
-			p.advance()
-			action = "SET DEFAULT"
-		default:
-			return nil, p.unsupported("a key constraint action this port does not read")
-		}
-		// The EVENT keeps the case it was written in; only the action is
-		// spelled by the table above.
-		options = append(options, "ON "+event.Text+" "+action)
-	}
-	// The rest of the vocabulary -- DEFERRABLE, INITIALLY DEFERRED, NOT
-	// ENFORCED -- is a table of words and the words that may follow each.
-	// Read off the reference's own rather than transcribed: a word missing
-	// from it is a word the reference refuses.
 	for {
+		if p.at(TokON) {
+			p.advance()
+			event := p.curr()
+			if event == nil {
+				return nil, p.unsupported("ON without an event")
+			}
+			p.advance()
+			var action string
+			switch {
+			case p.atWords("NO", "ACTION"):
+				p.advance()
+				p.advance()
+				action = "NO ACTION"
+			case p.atWords("CASCADE"):
+				p.advance()
+				action = "CASCADE"
+			case p.atWords("RESTRICT"):
+				p.advance()
+				action = "RESTRICT"
+			case p.at(TokSET) && p.next() != nil && p.next().Type == TokNULL:
+				p.advance()
+				p.advance()
+				action = "SET NULL"
+			case p.at(TokSET) && p.next() != nil && strings.EqualFold(p.next().Text, "DEFAULT"):
+				p.advance()
+				p.advance()
+				action = "SET DEFAULT"
+			default:
+				return nil, p.unsupported("a key constraint action this port does not read")
+			}
+			// The EVENT keeps the case it was written in; only the action is
+			// spelled by the table above.
+			options = append(options, "ON "+event.Text+" "+action)
+			continue
+		}
+		// The rest of the vocabulary -- MATCH FULL, DEFERRABLE, INITIALLY
+		// DEFERRED, NOT ENFORCED -- is a table of words and the words that
+		// may follow each, interleaved with ON in whatever order the
+		// statement wrote them: `MATCH FULL ON UPDATE CASCADE` reads MATCH
+		// here and returns to the ON case above for what follows it.
 		c := p.curr()
 		if c == nil {
 			break
