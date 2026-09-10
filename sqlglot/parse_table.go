@@ -436,6 +436,16 @@ func (p *parser) parseTable() (*Expression, error) {
 	if widget := p.parseWidgetPlaceholder(); widget != nil {
 		return p.tableRest(New("Table", Arg{"this", widget}))
 	}
+	// XMLTABLE shreds a document into rows, and stands where a table does --
+	// a function call with a grammar of its own rather than the generic one,
+	// which is why it is claimed here before the generic reader gets it.
+	if p.atWords("XMLTABLE") && p.next() != nil && p.next().Type == TokL_PAREN {
+		xmlTable, err := p.parseXMLTable()
+		if err != nil {
+			return nil, err
+		}
+		return p.tableRest(New("Table", Arg{"this", xmlTable}))
+	}
 
 	// PostgreSQL's ONLY says not to read the tables that inherit from this
 	// one. It is a flag on the table rather than anything wrapping it.
@@ -964,6 +974,140 @@ func bareIdentifier(e *Expression) *Expression {
 		}
 	}
 	return e
+}
+
+// parseXMLTable reads `XMLTABLE([XMLNAMESPACES(...),] 'path' [PASSING [BY
+// VALUE] cols] [RETURNING SEQUENCE BY REF] [COLUMNS coldefs])`, which shreds
+// an XML document into rows -- one PATH-carrying column definition per
+// column, read the same way a table's own are.
+func (p *parser) parseXMLTable() (*Expression, error) {
+	p.advance() // XMLTABLE
+	p.advance() // the opening parenthesis
+
+	var namespaces []*Expression
+	if p.atWords("XMLNAMESPACES") && p.next() != nil && p.next().Type == TokL_PAREN {
+		p.advance()
+		p.advance()
+		for {
+			var value *Expression
+			if p.match(TokDEFAULT) {
+				uri := p.curr()
+				if uri == nil || uri.Type != TokSTRING {
+					return nil, p.unsupported("XMLNAMESPACES DEFAULT without a string")
+				}
+				p.advance()
+				value = New("Literal", Arg{"this", uri.Text}, Arg{"is_string", true})
+			} else {
+				uri := p.curr()
+				if uri == nil || uri.Type != TokSTRING {
+					return nil, p.unsupported("an XML namespace without a URI")
+				}
+				p.advance()
+				literal := New("Literal", Arg{"this", uri.Text}, Arg{"is_string", true})
+				aliased, err := p.parseAlias(literal)
+				if err != nil {
+					return nil, err
+				}
+				value = aliased
+			}
+			namespaces = append(namespaces, New("XMLNamespace", Arg{"this", value}))
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed XMLNAMESPACES")
+		}
+		p.match(TokCOMMA)
+	}
+
+	path := p.curr()
+	if path == nil || path.Type != TokSTRING {
+		return nil, p.unsupported("XMLTABLE without a path")
+	}
+	p.advance()
+	this := New("Literal", Arg{"this", path.Text}, Arg{"is_string", true})
+
+	var passing []*Expression
+	if p.atWords("PASSING") {
+		p.advance()
+		// BY VALUE says nothing a reference has any other way to write: it
+		// is the only way XMLTABLE passes anything.
+		if p.atWords("BY") && p.nextWords("VALUE") {
+			p.advance()
+			p.advance()
+		}
+		for {
+			col, err := p.parseColumn()
+			if err != nil {
+				return nil, err
+			}
+			passing = append(passing, col)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
+
+	byRef := false
+	if p.atWords("RETURNING") && p.nextWords("SEQUENCE") {
+		p.advance()
+		p.advance()
+		if !p.atWords("BY") || !p.nextWords("REF") {
+			return nil, p.unsupported("RETURNING SEQUENCE without BY REF")
+		}
+		p.advance()
+		p.advance()
+		byRef = true
+	}
+
+	var columns []*Expression
+	if p.atWords("COLUMNS") {
+		p.advance()
+		cols, err := p.parseXMLTableColumns()
+		if err != nil {
+			return nil, err
+		}
+		columns = cols
+	}
+
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed XMLTABLE")
+	}
+	return New("XMLTable",
+		Arg{"this", this}, Arg{"namespaces", namespaces}, Arg{"passing", passing},
+		Arg{"columns", columns}, Arg{"by_ref", byRef}), nil
+}
+
+// parseXMLTableColumns reads XMLTABLE's own column list: name, type, and
+// constraints, comma-separated with no parentheses around them -- unlike a
+// CREATE TABLE's, which always stand inside a pair.
+func (p *parser) parseXMLTableColumns() ([]*Expression, error) {
+	var out []*Expression
+	for {
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		mark := p.index
+		kind, kerr := p.parseColumnType()
+		if kerr != nil {
+			p.index = mark
+			kind = nil
+		}
+		constraints, err := p.parseColumnConstraints()
+		if err != nil {
+			return nil, err
+		}
+		def := New("ColumnDef", Arg{"this", name}, Arg{"kind", kind})
+		if len(constraints) > 0 {
+			def.Set("constraints", constraints)
+		}
+		out = append(out, def)
+		if !p.match(TokCOMMA) {
+			return out, nil
+		}
+	}
 }
 
 // parseSubqueryTable reads a parenthesised FROM item.

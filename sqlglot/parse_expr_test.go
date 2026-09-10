@@ -4483,6 +4483,57 @@ func TestACTEBeforeAWrite(t *testing.T) {
 // (or `UNIQUE PRIMARY INDEX`) names the table's own primary index, and any
 // further `[UNIQUE] INDEX` names another. The same Index node a plain
 // CREATE INDEX builds, read and written without an ON.
+// XMLTABLE shreds an XML document into rows and stands where a table does --
+// a function call with a grammar of its own: an optional XMLNAMESPACES list
+// naming what each prefix in a PATH means, the document path itself, an
+// optional PASSING list naming what feeds it, and a COLUMNS list whose own
+// members are read the same way a CREATE TABLE's are, each carrying a PATH
+// constraint saying where in the document it comes from.
+func TestXMLTable(t *testing.T) {
+	for _, sql := range []string{
+		"SELECT id, name FROM xml_data AS t, XMLTABLE('/root/user' PASSING t.xml COLUMNS id INT PATH '@id', name TEXT PATH 'name/text()') AS x",
+		"SELECT id, value FROM xml_content AS t, XMLTABLE(XMLNAMESPACES('http://example.com/ns1' AS ns1, 'http://example.com/ns2' AS ns2), '/root/data' PASSING t.xml COLUMNS id INT PATH '@ns1:id', value TEXT PATH 'ns2:value/text()') AS x",
+		// A namespace named DEFAULT rather than aliased, and no PASSING at
+		// all -- both write back differently from the aliased, PASSING form.
+		"SELECT id FROM t, XMLTABLE(XMLNAMESPACES(DEFAULT 'http://x'), '/a' COLUMNS id INT PATH '@id')",
+		// BY VALUE says nothing new -- it is the only way XMLTABLE passes
+		// anything -- and the reference keeps only the columns it names.
+		"SELECT id FROM t, XMLTABLE('/a' PASSING BY VALUE t.xml COLUMNS id INT PATH '@id')",
+		"SELECT id FROM t, XMLTABLE('/a' RETURNING SEQUENCE BY REF COLUMNS id INT PATH '@id')",
+	} {
+		tree, err := ParseOne(sql, "postgres")
+		if err != nil {
+			t.Errorf("ParseOne(%q): %v", sql, err)
+			continue
+		}
+		got, err := Generate(tree, "postgres")
+		want := sql
+		if sql == "SELECT id FROM t, XMLTABLE('/a' PASSING BY VALUE t.xml COLUMNS id INT PATH '@id')" {
+			want = "SELECT id FROM t, XMLTABLE('/a' PASSING t.xml COLUMNS id INT PATH '@id')"
+		}
+		if err != nil || got != want {
+			t.Errorf("%q wrote %q (%v), want %q", sql, got, err, want)
+		}
+	}
+	// A path that never closes, an XMLNAMESPACES list left open, and each of
+	// the malformed shapes its own parts may not take are all refused
+	// rather than half-read.
+	for _, sql := range []string{
+		"SELECT id FROM t, XMLTABLE('/a' COLUMNS id INT PATH",
+		"SELECT id FROM t, XMLTABLE(XMLNAMESPACES('http://x' AS ns, '/a' COLUMNS id INT PATH '@id')",
+		"SELECT id FROM t, XMLTABLE(XMLNAMESPACES(DEFAULT x), '/a' COLUMNS id INT PATH '@id')",
+		"SELECT id FROM t, XMLTABLE(XMLNAMESPACES(x AS ns), '/a' COLUMNS id INT PATH '@id')",
+		"SELECT id FROM t, XMLTABLE(COLUMNS id INT PATH '@id')",
+		"SELECT id FROM t, XMLTABLE('/a' PASSING 1 COLUMNS id INT PATH '@id')",
+		"SELECT id FROM t, XMLTABLE('/a' RETURNING SEQUENCE COLUMNS id INT PATH '@id')",
+		"SELECT id FROM t, XMLTABLE('/a' COLUMNS id INT PATH '@id'",
+	} {
+		if _, err := ParseOne(sql, "postgres"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
 func TestCreateTableTrailingIndexes(t *testing.T) {
 	for _, sql := range []string{
 		"CREATE TABLE a.b AS (SELECT 1) PRIMARY AMP INDEX index1 (a) UNIQUE INDEX index2 (b)",

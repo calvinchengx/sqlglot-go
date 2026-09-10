@@ -1400,6 +1400,17 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 		case p.atWords("AUTO_INCREMENT"), p.atWords("AUTOINCREMENT"), p.atWords("IDENTITY"):
 			p.advance()
 			kind = New("AutoIncrementColumnConstraint")
+		// XMLTABLE's own columns say where in the document each one comes
+		// from.
+		case p.atWords("PATH"):
+			p.advance()
+			path := p.curr()
+			if path == nil || path.Type != TokSTRING {
+				return nil, p.unsupported("PATH without a string")
+			}
+			p.advance()
+			kind = New("PathColumnConstraint",
+				Arg{"this", New("Literal", Arg{"this", path.Text}, Arg{"is_string", true})})
 		case p.atWords("COMMENT"):
 			p.advance()
 			c := p.curr()

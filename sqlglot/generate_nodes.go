@@ -95,6 +95,8 @@ func init() {
 		"RenameColumn":                        (*generator).writeRenameColumn,
 		"AddConstraint":                       (*generator).writeAddConstraint,
 		"AddPartition":                        (*generator).writeAddPartition,
+		"XMLNamespace":                        (*generator).writeXMLNamespace,
+		"XMLTable":                            (*generator).writeXMLTable,
 		"Comprehension":                       (*generator).writeComprehension,
 		"AlterColumn":                         (*generator).writeAlterColumn,
 		"ColumnConstraint":                    (*generator).writeColumnConstraint,
@@ -4171,6 +4173,39 @@ func (g *generator) writeAddPartition(e *Expression) string {
 		out += " " + location
 	}
 	return out
+}
+
+// writeXMLTable writes `XMLTABLE([XMLNAMESPACES(...),] 'path' [PASSING
+// ...] [RETURNING SEQUENCE BY REF] [COLUMNS ...])`, each optional part
+// carrying its own word and a space in front of it.
+func (g *generator) writeXMLTable(e *Expression) string {
+	out := "XMLTABLE("
+	if namespaces, _ := e.Args["namespaces"].([]*Expression); len(namespaces) > 0 {
+		out += "XMLNAMESPACES(" + g.joined(namespaces) + "), "
+	}
+	out += g.child(e, "this")
+	if passing, _ := e.Args["passing"].([]*Expression); len(passing) > 0 {
+		out += " PASSING " + g.joined(passing)
+	}
+	if byRef, _ := e.Args["by_ref"].(bool); byRef {
+		out += " RETURNING SEQUENCE BY REF"
+	}
+	if columns, _ := e.Args["columns"].([]*Expression); len(columns) > 0 {
+		out += " COLUMNS " + g.joined(columns)
+	}
+	return out + ")"
+}
+
+// writeXMLNamespace writes one of an XMLTABLE's own namespaces: aliased --
+// `'uri' AS ns` -- or, unaliased, the default namespace, which the word
+// DEFAULT says explicitly since nothing else marks it.
+func (g *generator) writeXMLNamespace(e *Expression) string {
+	this, _ := e.Args["this"].(*Expression)
+	written := g.node(this)
+	if this != nil && this.Class == "Alias" {
+		return written
+	}
+	return "DEFAULT " + written
 }
 
 // writeComprehension writes DuckDB's own list comprehension: `x FOR x IN l`,
