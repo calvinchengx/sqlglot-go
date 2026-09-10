@@ -3982,8 +3982,20 @@ func (g *generator) writeGeneratedAsIdentity(e *Expression) string {
 	if increment := g.child(e, "increment"); increment != "" {
 		options = append(options, "INCREMENT BY "+increment)
 	}
-	if cycle, _ := e.Args["cycle"].(bool); cycle {
-		options = append(options, "CYCLE")
+	if minvalue := g.child(e, "minvalue"); minvalue != "" {
+		options = append(options, "MINVALUE "+minvalue)
+	}
+	if maxvalue := g.child(e, "maxvalue"); maxvalue != "" {
+		options = append(options, "MAXVALUE "+maxvalue)
+	}
+	// Unset (nil) means neither CYCLE nor NO CYCLE was written; the two
+	// written forms are otherwise indistinguishable from a plain bool.
+	if cycle, ok := e.Args["cycle"].(bool); ok {
+		if cycle {
+			options = append(options, "CYCLE")
+		} else {
+			options = append(options, "NO CYCLE")
+		}
 	}
 	if len(options) == 0 {
 		return out

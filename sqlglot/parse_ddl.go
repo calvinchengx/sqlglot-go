@@ -2812,8 +2812,8 @@ func (p *parser) parseGenerated() (*Expression, error) {
 		return identity, nil
 	}
 	p.advance()
-	var start, increment *Expression
-	cycle := false
+	var start, increment, minvalue, maxvalue *Expression
+	var cycle any
 	for !p.at(TokR_PAREN) {
 		switch {
 		case p.atWords("START", "WITH"):
@@ -2832,6 +2832,24 @@ func (p *parser) parseGenerated() (*Expression, error) {
 				return nil, err
 			}
 			increment = value
+		case p.atWords("MINVALUE"):
+			p.advance()
+			value, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			minvalue = value
+		case p.atWords("MAXVALUE"):
+			p.advance()
+			value, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			maxvalue = value
+		case p.atWords("NO", "CYCLE"):
+			p.advance()
+			p.advance()
+			cycle = false
 		case p.atWords("CYCLE"):
 			p.advance()
 			cycle = true
@@ -2848,8 +2866,14 @@ func (p *parser) parseGenerated() (*Expression, error) {
 	if increment != nil {
 		identity.Set("increment", increment)
 	}
-	if cycle {
-		identity.Set("cycle", true)
+	if minvalue != nil {
+		identity.Set("minvalue", minvalue)
+	}
+	if maxvalue != nil {
+		identity.Set("maxvalue", maxvalue)
+	}
+	if cycle != nil {
+		identity.Set("cycle", cycle)
 	}
 	return identity, nil
 }

@@ -4312,6 +4312,16 @@ func TestGeneratedColumns(t *testing.T) {
 			"CREATE TABLE t (x BIGINT GENERATED ALWAYS AS IDENTITY (START WITH 10 INCREMENT BY 2))"},
 		{"wrapping round", "", "", "CREATE TABLE t (x BIGINT GENERATED ALWAYS AS IDENTITY (CYCLE))",
 			"CREATE TABLE t (x BIGINT GENERATED ALWAYS AS IDENTITY (CYCLE))"},
+		// NO CYCLE is a THIRD value distinct from CYCLE unwritten -- both mean
+		// the sequence stops rather than wraps, but only one is recorded.
+		{"not wrapping round", "postgres", "postgres",
+			"CREATE TABLE t (x BIGINT GENERATED ALWAYS AS IDENTITY (START WITH 1 NO CYCLE))",
+			"CREATE TABLE t (x BIGINT GENERATED ALWAYS AS IDENTITY (START WITH 1 NO CYCLE))"},
+		// MINVALUE and MAXVALUE bound the sequence, and a negative bound is an
+		// ordinary expression rather than a special form.
+		{"bounded", "postgres", "postgres",
+			"CREATE TABLE customer (pk BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 10 INCREMENT BY 1 MINVALUE -1 MAXVALUE 1 NO CYCLE))",
+			"CREATE TABLE customer (pk BIGINT NOT NULL GENERATED ALWAYS AS IDENTITY (START WITH 10 INCREMENT BY 1 MINVALUE -1 MAXVALUE 1 NO CYCLE))"},
 		// A computed column, and the four spellings one node takes.
 		{"computed, PostgreSQL", "postgres", "postgres",
 			"CREATE TABLE t (a INT GENERATED ALWAYS AS (1 + 2) STORED)",
