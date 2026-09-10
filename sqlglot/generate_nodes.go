@@ -4722,7 +4722,8 @@ func (g *generator) writeStrictProperty(*Expression) string { return "STRICT" }
 // node, so every dialect writes the bare `$$`.
 func (g *generator) writeHeredoc(e *Expression) string {
 	body, _ := e.Args["this"].(string)
-	return "$$" + body + "$$"
+	tag, _ := e.Args["tag"].(string)
+	return "$" + tag + "$" + body + "$" + tag + "$"
 }
 
 // writeSetConfigProperty writes the session setting a function runs under.

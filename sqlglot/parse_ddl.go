@@ -2893,6 +2893,16 @@ func (p *parser) parseFunctionBody() (body, returns *Expression, err error) {
 			p.advance()
 			return New("Heredoc", Arg{"this", c.Text}), nil, nil
 		}
+		// Where a dialect's own `$` is a PARAMETER rather than a heredoc
+		// keyword, the tokenizer never marks the body at all -- so the
+		// reference reconstructs it from raw tokens instead, and this does
+		// the same. Unlike the tokenizer-marked form, this ONE keeps the tag
+		// a TAGGED heredoc carried: `$FOO$ ... $FOO$` writes its FOO back.
+		if heredoc, matched, herr := p.parseDollarHeredoc(); herr != nil {
+			return nil, nil, herr
+		} else if matched {
+			return heredoc, nil, nil
+		}
 		inner, err := p.parseReturnBody()
 		if err != nil {
 			return nil, nil, err
@@ -2900,6 +2910,78 @@ func (p *parser) parseFunctionBody() (body, returns *Expression, err error) {
 		return inner, nil, nil
 	}
 	return nil, nil, nil
+}
+
+// parseDollarHeredoc reads a dollar-quoted body -- `$$ ... $$` or a TAGGED
+// `$FOO$ ... $FOO$` -- for a dialect whose tokenizer reads `$` as PARAMETER
+// rather than opening one itself, so the body was never marked and is
+// reconstructed from raw source text instead. Returning matched=false
+// leaves the cursor where it was: the opening `$` may belong to something
+// else entirely.
+func (p *parser) parseDollarHeredoc() (*Expression, bool, error) {
+	if c := p.curr(); c == nil || c.Text != "$" {
+		return nil, false, nil
+	}
+	mark := p.index
+	p.advance() // the first $
+	if !p.isConnected() || p.curr() == nil {
+		p.index = mark
+		return nil, false, nil
+	}
+	tags := []string{"$", strings.ToUpper(p.curr().Text)}
+	p.advance()
+	var tagText string
+	if tags[1] != "$" {
+		if p.isConnected() && p.curr() != nil && p.curr().Text == "$" {
+			tagText = tags[1]
+			tags = append(tags, "$")
+			p.advance()
+		} else {
+			p.index = mark
+			return nil, false, nil
+		}
+	}
+	if p.curr() == nil {
+		return nil, false, p.unsupported("no closing " + strings.Join(tags, "") + " found")
+	}
+	start := p.curr()
+	for p.curr() != nil {
+		if p.atTagSequence(tags) {
+			text := sliceRunes(p.sql, start.Start, p.tokens[p.index-1].End+1)
+			for range tags {
+				p.advance()
+			}
+			var tagArg any
+			if tagText != "" {
+				tagArg = tagText
+			}
+			return New("Heredoc", Arg{"this", text}, Arg{"tag", tagArg}), true, nil
+		}
+		p.advance()
+	}
+	return nil, false, p.unsupported("no closing " + strings.Join(tags, "") + " found")
+}
+
+// atTagSequence reports whether the tokens starting here spell out tags, one
+// token's text per entry, without consuming them.
+func (p *parser) atTagSequence(tags []string) bool {
+	for i, tag := range tags {
+		idx := p.index + i
+		if idx >= len(p.tokens) || !strings.EqualFold(p.tokens[idx].Text, tag) {
+			return false
+		}
+	}
+	return true
+}
+
+// isConnected reports whether the token just consumed and the one standing
+// now are ADJACENT in the source -- no space between them -- which is how a
+// dollar-quote's own parts are told from an ordinary `$` next to a word.
+func (p *parser) isConnected() bool {
+	if p.index == 0 || p.index >= len(p.tokens) {
+		return false
+	}
+	return p.tokens[p.index-1].End+1 == p.tokens[p.index].Start
 }
 
 // parseReturnBody reads the expression or query a function hands back.

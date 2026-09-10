@@ -4489,6 +4489,56 @@ func TestACTEBeforeAWrite(t *testing.T) {
 // optional PASSING list naming what feeds it, and a COLUMNS list whose own
 // members are read the same way a CREATE TABLE's are, each carrying a PATH
 // constraint saying where in the document it comes from.
+// A dollar-quoted body: `$$ ... $$`, or tagged, `$FOO$ ... $FOO$`. Where the
+// tokenizer marks the body itself (PostgreSQL's own `$`), the tag is not
+// kept -- `$FOO$ ... $FOO$` writes back `$$ ... $$` -- but where a dialect's
+// `$` is a PARAMETER instead (Databricks), the tokenizer never marks it at
+// all, and the port reconstructs the body from raw tokens the same way the
+// reference does -- keeping the tag this time, because that reconstruction
+// is the only place it is read.
+func TestDollarQuotedBody(t *testing.T) {
+	for _, tc := range []struct{ dialect, sql, want string }{
+		{"postgres", "CREATE FUNCTION add_one(x INT) RETURNS INT LANGUAGE PYTHON AS $$ return x + 1 $$",
+			"CREATE FUNCTION add_one(x INT) RETURNS INT LANGUAGE PYTHON AS $$ return x + 1 $$"},
+		{"postgres", "CREATE FUNCTION add_one(x INT) RETURNS INT LANGUAGE PYTHON AS $FOO$ return x + 1 $FOO$",
+			"CREATE FUNCTION add_one(x INT) RETURNS INT LANGUAGE PYTHON AS $$ return x + 1 $$"},
+		{"databricks", "CREATE FUNCTION add_one(x INT) RETURNS INT LANGUAGE PYTHON AS $$def add_one(x):\n  return x+1$$",
+			"CREATE FUNCTION add_one(x INT) RETURNS INT LANGUAGE PYTHON AS $$def add_one(x):\n  return x+1$$"},
+		{"databricks", "CREATE FUNCTION add_one(x INT) RETURNS INT LANGUAGE PYTHON AS $FOO$def add_one(x):\n  return x+1$FOO$",
+			"CREATE FUNCTION add_one(x INT) RETURNS INT LANGUAGE PYTHON AS $FOO$def add_one(x):\n  return x+1$FOO$"},
+	} {
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("[%s] ParseOne(%q): %v", tc.dialect, tc.sql, err)
+		}
+		got, err := Generate(e, tc.dialect)
+		if err != nil || got != tc.want {
+			t.Errorf("[%s] %q wrote %q (%v), want %q", tc.dialect, tc.sql, got, err, tc.want)
+		}
+	}
+	// A `$` with nothing after it, and one whose opening tag never finds a
+	// matching close, both leave the reader with no heredoc to build --
+	// this port retreats rather than half-reading one, and the statement is
+	// refused the same as if `$` had started nothing at all.
+	for _, sql := range []string{
+		"CREATE FUNCTION f() RETURNS INT LANGUAGE PYTHON AS $FOO$unterminated",
+		// A space breaks the connection a dollar-quote's own parts need:
+		// between the opening `$` and what follows it, and between a TAG
+		// and the `$` that would close it.
+		"CREATE FUNCTION f() RETURNS INT LANGUAGE PYTHON AS $ $$foo$$",
+		"CREATE FUNCTION f() RETURNS INT LANGUAGE PYTHON AS $",
+		"CREATE FUNCTION f() RETURNS INT LANGUAGE PYTHON AS $FOO bar$",
+		// A `$$` that opens and finds nothing at all after it -- not even
+		// its own close -- is unterminated the same as a body that never
+		// reaches one.
+		"CREATE FUNCTION f() RETURNS INT LANGUAGE PYTHON AS $$",
+	} {
+		if _, err := ParseOne(sql, "databricks"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
 func TestXMLTable(t *testing.T) {
 	for _, sql := range []string{
 		"SELECT id, name FROM xml_data AS t, XMLTABLE('/root/user' PASSING t.xml COLUMNS id INT PATH '@id', name TEXT PATH 'name/text()') AS x",
