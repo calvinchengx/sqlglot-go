@@ -11373,6 +11373,15 @@ func TestKeyConstraints(t *testing.T) {
 		// And the same words on a COLUMN rather than in a named constraint.
 		{"CREATE TABLE t (a INT PRIMARY KEY CLUSTERED (a))",
 			"CREATE TABLE t (a INTEGER PRIMARY KEY CLUSTERED (a))", "tsql"},
+		// The index behind a named key may go on to say HOW it is stored and
+		// WHERE it lives -- each its own entry beside the key and the index
+		// kind, not anything held on them.
+		{"CREATE TABLE t (a INT, CONSTRAINT c PRIMARY KEY CLUSTERED (a) WITH (PAD_INDEX = ON))",
+			"CREATE TABLE t (a INTEGER, CONSTRAINT c PRIMARY KEY CLUSTERED (a) WITH (PAD_INDEX=ON))", "tsql"},
+		{"CREATE TABLE t (a INT, CONSTRAINT c PRIMARY KEY CLUSTERED (a) ON [SECONDARY])",
+			"CREATE TABLE t (a INTEGER, CONSTRAINT c PRIMARY KEY CLUSTERED (a) ON [SECONDARY])", "tsql"},
+		{"CREATE TABLE x ([zip_cd] VARCHAR(5) NULL NOT FOR REPLICATION, [zip_cd_mkey] VARCHAR(5) NOT NULL, CONSTRAINT [pk_mytable] PRIMARY KEY CLUSTERED ([zip_cd_mkey] ASC) WITH (PAD_INDEX=ON, STATISTICS_NORECOMPUTE=OFF) ON [INDEX]) ON [SECONDARY]",
+			"", "tsql"},
 	} {
 		want := c.want
 		if want == "" {
@@ -11396,6 +11405,8 @@ func TestKeyConstraints(t *testing.T) {
 		{"CREATE TABLE t (a INT, PRIMARY KEY a)", "tsql"},
 		{"CREATE TABLE t (a INT, PRIMARY KEY (a", "tsql"},
 		{"CREATE TABLE t (a INT, CONSTRAINT c PRIMARY KEY CLUSTERED a)", "tsql"},
+		{"CREATE TABLE t (a INT, CONSTRAINT c PRIMARY KEY CLUSTERED (a) WITH (", "tsql"},
+		{"CREATE TABLE t (a INT, CONSTRAINT c PRIMARY KEY CLUSTERED (a) ON 1)", "tsql"},
 	} {
 		if _, err := ParseOne(c.sql, c.dialect); err == nil {
 			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)

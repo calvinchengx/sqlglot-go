@@ -1097,6 +1097,39 @@ func (p *parser) parseIndexTypeConstraint() (*Expression, error) {
 	return New(class, Arg{"this", members}), nil
 }
 
+// parseIndexOptions reads what may follow the column list an index (CLUSTERED
+// or NONCLUSTERED) behind a named key was built over: T-SQL's own WITH (...)
+// storage options and an ON naming the filegroup it lives on. Both are
+// generic constraint vocabulary in the reference, shared with a column's own
+// constraint list, but built here directly and unwrapped -- a table
+// constraint's own entries are not each wrapped in a ColumnConstraint the way
+// a column's are.
+func (p *parser) parseIndexOptions() ([]*Expression, error) {
+	var out []*Expression
+	for {
+		switch {
+		case p.atWords("WITH") && p.next() != nil && p.next().Type == TokL_PAREN:
+			p.advance()
+			props, err := p.parseWrappedProperties()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, New("Properties", Arg{"expressions", props}))
+		// `ON UPDATE` and `ON DELETE` belong to a REFERENCES, read there and
+		// never reaching here; a bare ON names the filegroup instead.
+		case p.atWords("ON") && !p.nextWords("UPDATE") && !p.nextWords("DELETE"):
+			p.advance()
+			name, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, New("OnProperty", Arg{"this", name}))
+		default:
+			return out, nil
+		}
+	}
+}
+
 // parseColumnConstraints reads what may follow a column's type. Each is a
 // ColumnConstraint wrapping a node of its own kind, which is how the reference
 // keeps them: the wrapper is uniform and the kind carries the meaning.
@@ -2042,10 +2075,19 @@ func (p *parser) parseTableConstraint() (*Expression, error) {
 			if err != nil {
 				return nil, err
 			}
+			expressions := []*Expression{New("PrimaryKeyColumnConstraint"), held}
+			// The index behind the key may go on to say WHERE it is built and
+			// HOW it is stored -- T-SQL's own WITH (...) options and an ON
+			// naming the filegroup -- each its own entry beside the first
+			// two rather than anything held on them.
+			options, err := p.parseIndexOptions()
+			if err != nil {
+				return nil, err
+			}
+			expressions = append(expressions, options...)
 			return New("Constraint",
 				Arg{"this", name},
-				Arg{"expressions", []*Expression{
-					New("PrimaryKeyColumnConstraint"), held}}), nil
+				Arg{"expressions", expressions}), nil
 		}
 		kind, err := p.parseTableConstraintKind()
 		if err != nil {

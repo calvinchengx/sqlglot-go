@@ -3893,6 +3893,20 @@ func (g *generator) writeConstraint(e *Expression) string {
 	items, _ := e.Args["expressions"].([]*Expression)
 	parts := make([]string, 0, len(items))
 	for _, item := range items {
+		// A bare Properties entry -- T-SQL's own WITH (PAD_INDEX=ON, ...)
+		// behind a key's index -- wraps its OWN word and parentheses here:
+		// the generic Properties writer is the one the whole CREATE owns,
+		// which places its wrap around properties gathered from the WHOLE
+		// statement rather than around one item standing alone in a list.
+		if item.Class == "Properties" {
+			props, _ := item.Args["expressions"].([]*Expression)
+			rendered := make([]string, 0, len(props))
+			for _, prop := range props {
+				rendered = append(rendered, g.node(prop))
+			}
+			parts = append(parts, "WITH ("+strings.Join(rendered, ", ")+")")
+			continue
+		}
 		parts = append(parts, g.node(item))
 	}
 	return "CONSTRAINT " + g.child(e, "this") + " " + strings.Join(parts, " ")
