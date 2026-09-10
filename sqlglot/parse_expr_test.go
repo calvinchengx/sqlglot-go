@@ -4853,6 +4853,12 @@ func TestTruncateUseAndTransactions(t *testing.T) {
 		{"the word is optional", "", "", "COMMIT WORK", "COMMIT"},
 		{"and T-SQL writes it", "tsql", "tsql", "COMMIT TRAN", "COMMIT TRANSACTION"},
 		{"begin one, T-SQL", "tsql", "tsql", "BEGIN TRANSACTION", "BEGIN TRANSACTION"},
+		// T-SQL's OWN partition list, spelled as a property rather than the
+		// generic PARTITION(...) other dialects use: a bare number names one
+		// partition, and `lo TO hi` names a range of them.
+		{"T-SQL's own partition list", "tsql", "tsql",
+			"TRUNCATE TABLE t1 WITH (PARTITIONS(1, 2 TO 5, 10 TO 20, 84))",
+			"TRUNCATE TABLE t1 WITH (PARTITIONS(1, 2 TO 5, 10 TO 20, 84))"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.read)
@@ -4875,6 +4881,20 @@ func TestTruncateUseAndTransactions(t *testing.T) {
 	// the other thing. The reference keeps the block form as raw text.
 	if _, err := ParseOne("BEGIN", "tsql"); err == nil {
 		t.Error("a T-SQL BEGIN was read as a transaction")
+	}
+	// T-SQL's own partition list is refused wherever it does not fully match
+	// the shape it reads: a WITH the reference itself falls back to a Command
+	// over, a PARTITIONS that never opens its own parentheses, and each of
+	// the two parentheses left unclosed.
+	for _, sql := range []string{
+		"TRUNCATE TABLE t1 WITH x",
+		"TRUNCATE TABLE t1 WITH (PARTITIONS x)",
+		"TRUNCATE TABLE t1 WITH (PARTITIONS(1",
+		"TRUNCATE TABLE t1 WITH (PARTITIONS(1)",
+	} {
+		if _, err := ParseOne(sql, "tsql"); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
 	}
 	// Two different names, and the dialects disagree about them in opposite
 	// directions. T-SQL drops the SAVEPOINT a rollback names -- which would

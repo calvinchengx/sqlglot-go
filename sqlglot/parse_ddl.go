@@ -3213,6 +3213,17 @@ func (p *parser) parseTruncate() (*Expression, error) {
 		}
 		node.Set("partition", New("Partition",
 			Arg{"subpartition", false}, Arg{"expressions", members}))
+	} else if p.dialect == "tsql" && p.atWords("WITH") {
+		// T-SQL's OWN partition list -- `WITH (PARTITIONS(1, 2 TO 5, 84))` --
+		// where a bare number picks one partition and `lo TO hi` picks a
+		// range of them.
+		partition, err := p.parseTSQLTruncatePartitions()
+		if err != nil {
+			return nil, err
+		}
+		if partition != nil {
+			node.Set("partition", partition)
+		}
 	}
 	switch {
 	case p.atWords("RESTART", "IDENTITY"):
@@ -3236,6 +3247,58 @@ func (p *parser) parseTruncate() (*Expression, error) {
 		return nil, p.unsupported("TRUNCATE with more than this port reads")
 	}
 	return node, nil
+}
+
+// parseTSQLTruncatePartitions reads T-SQL's own `WITH (PARTITIONS(...))`, a
+// partition list spelled as its own property rather than the generic
+// `PARTITION(...)` other dialects use. A bare number names one partition;
+// `lo TO hi` names a range of them. Returning (nil, nil) leaves the WITH for
+// something else to read, the same as the generic case leaves a non-PARTITION
+// word alone.
+func (p *parser) parseTSQLTruncatePartitions() (*Expression, error) {
+	if p.next() == nil || p.next().Type != TokL_PAREN {
+		return nil, nil
+	}
+	mark := p.index
+	p.advance() // WITH
+	p.advance() // (
+	if !p.atWords("PARTITIONS") || p.next() == nil || p.next().Type != TokL_PAREN {
+		p.index = mark
+		return nil, nil
+	}
+	p.advance() // PARTITIONS
+	p.advance() // (
+	var members []*Expression
+	for {
+		low, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		if p.atWords("TO") {
+			p.advance()
+			high, err := p.parseBitwise()
+			if err != nil {
+				return nil, err
+			}
+			members = append(members, New("PartitionRange", Arg{"this", low}, Arg{"expression", high}))
+		} else {
+			members = append(members, low)
+		}
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed PARTITIONS")
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed WITH")
+	}
+	// T-SQL's own builder never says SUBPARTITION, so the reference's tree
+	// never carries the key at all -- unlike the generic PARTITION(...)
+	// reader above, which always passes it (false, when the word written was
+	// PARTITION rather than SUBPARTITION).
+	return New("Partition", Arg{"expressions", members}), nil
 }
 
 // parseUse reads `USE [SCHEMA|CATALOG|...] <name>`. The kind is a WORD and
