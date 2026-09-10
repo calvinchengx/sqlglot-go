@@ -3309,6 +3309,14 @@ func (g *generator) writeCreate(e *Expression) string {
 			}
 		}
 	}
+	// Teradata's own trailing indexes -- `PRIMARY AMP INDEX i (a) UNIQUE
+	// INDEX j (b)` -- come after everything the query and its own
+	// properties said, one after another with nothing between them.
+	if indexes, _ := e.Args["indexes"].([]*Expression); len(indexes) > 0 {
+		for _, index := range indexes {
+			out += " " + g.node(index)
+		}
+	}
 	if clone := g.child(e, "clone"); clone != "" {
 		out += " " + clone
 	}
@@ -4794,16 +4802,35 @@ func kindOf(e *Expression) *Expression {
 	return kind
 }
 
-// writeIndex writes an index's name, the table it is on, and the columns.
+// writeIndex writes an index's name, the table it is on, and the columns --
+// or, for Teradata's own trailing index naming a slice of the table it
+// stands inside rather than ON one, its UNIQUE, PRIMARY and AMP flags and
+// the word INDEX itself, which the table-carrying form leaves to whatever
+// wrote the statement's own CREATE INDEX prefix.
 //
 // The name may be absent -- PostgreSQL lets the server choose one -- and
-// Databricks puts the word TABLE between the two.
+// Databricks puts the word TABLE between it and the table.
 func (g *generator) writeIndex(e *Expression) string {
 	out := ""
-	if name := g.child(e, "this"); name != "" {
-		out = name + " "
+	if unique, _ := e.Args["unique"].(bool); unique {
+		out += "UNIQUE "
 	}
-	out += g.tables.IndexOnWord + " " + g.child(e, "table")
+	if primary, _ := e.Args["primary"].(bool); primary {
+		out += "PRIMARY "
+	}
+	if amp, _ := e.Args["amp"].(bool); amp {
+		out += "AMP "
+	}
+	table := g.child(e, "table")
+	if table == "" {
+		out += "INDEX "
+	}
+	if name := g.child(e, "this"); name != "" {
+		out += name + " "
+	}
+	if table != "" {
+		out += g.tables.IndexOnWord + " " + table
+	}
 	params, _ := e.Args["params"].(*Expression)
 	if params == nil {
 		return g.fail(e.Class + " over no columns")
@@ -4813,7 +4840,7 @@ func (g *generator) writeIndex(e *Expression) string {
 	// and a method is a word of its own. Nothing at all -- a COLUMNSTORE
 	// index covering the whole table names no columns -- leaves no space to
 	// add either.
-	if written != "" && !strings.HasPrefix(written, "(") {
+	if written != "" && !strings.HasPrefix(written, "(") && out != "" && !strings.HasSuffix(out, " ") {
 		out += " "
 	}
 	return out + written

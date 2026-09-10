@@ -287,6 +287,23 @@ func (p *parser) parseCreate() (*Expression, error) {
 	default:
 		return nil, p.unsupported("CREATE " + kind + " without columns or a query")
 	}
+	// Teradata's own trailing indexes -- `PRIMARY AMP INDEX i (a) UNIQUE
+	// INDEX j (b)` -- name themselves after the table's own body, one after
+	// another until a word standing there is not one.
+	var indexes []*Expression
+	if kind == "TABLE" {
+		for {
+			index, err := p.parseTrailingIndex()
+			if err != nil {
+				return nil, err
+			}
+			if index == nil {
+				break
+			}
+			indexes = append(indexes, index)
+			p.match(TokCOMMA)
+		}
+	}
 	// `WITH NO DATA` says the table is SHAPED by the query rather than filled
 	// from it, which is the difference between a copy and an empty table.
 	var withData *Expression
@@ -377,13 +394,46 @@ func (p *parser) parseCreate() (*Expression, error) {
 		Arg{"expression", expression},
 		Arg{"exists", exists},
 		Arg{"properties", properties},
-		Arg{"indexes", []*Expression{}},
+		Arg{"indexes", indexes},
 		Arg{"no_schema_binding", nil},
 		Arg{"begin", nil},
 		Arg{"clone", clone},
 		Arg{"concurrently", false},
 		Arg{"clustered", nil},
 	), nil
+}
+
+// parseTrailingIndex reads one of a Teradata TABLE's own trailing indexes:
+// `[UNIQUE] [PRIMARY] [AMP] INDEX name (columns)`. Returning (nil, nil)
+// leaves whatever stands there for something else to read -- the same as the
+// generic Index reader does when what follows is not INDEX after all.
+func (p *parser) parseTrailingIndex() (*Expression, error) {
+	mark := p.index
+	unique := p.match(TokUNIQUE)
+	primary := p.atWords("PRIMARY")
+	if primary {
+		p.advance()
+	}
+	amp := p.atWords("AMP")
+	if amp {
+		p.advance()
+	}
+	if !p.at(TokINDEX) {
+		p.index = mark
+		return nil, nil
+	}
+	p.advance()
+	name, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	params, err := p.parseIndexParameters()
+	if err != nil {
+		return nil, err
+	}
+	return New("Index",
+		Arg{"this", name}, Arg{"table", nil}, Arg{"unique", unique},
+		Arg{"primary", primary}, Arg{"amp", amp}, Arg{"params", params}), nil
 }
 
 // parseColumnDefs reads the parenthesised `(a INT, b TEXT)`. Only NAME TYPE is

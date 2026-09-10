@@ -4464,6 +4464,37 @@ func TestACTEBeforeAWrite(t *testing.T) {
 	}
 }
 
+// Teradata's own trailing indexes stand after a TABLE's own body -- its
+// column list or, here, its query -- one after another: `PRIMARY AMP INDEX`
+// (or `UNIQUE PRIMARY INDEX`) names the table's own primary index, and any
+// further `[UNIQUE] INDEX` names another. The same Index node a plain
+// CREATE INDEX builds, read and written without an ON.
+func TestCreateTableTrailingIndexes(t *testing.T) {
+	for _, sql := range []string{
+		"CREATE TABLE a.b AS (SELECT 1) PRIMARY AMP INDEX index1 (a) UNIQUE INDEX index2 (b)",
+		"CREATE TABLE a.b AS (SELECT 1) UNIQUE PRIMARY INDEX index1 (a) UNIQUE INDEX index2 (b)",
+		"CREATE TABLE t (a INT) INDEX ix (a)",
+	} {
+		tree, err := ParseOne(sql, "")
+		if err != nil {
+			t.Errorf("ParseOne(%q): %v", sql, err)
+			continue
+		}
+		got, err := Generate(tree, "")
+		if err != nil || got != sql {
+			t.Errorf("%q wrote %q (%v)", sql, got, err)
+		}
+	}
+	for _, sql := range []string{
+		"CREATE TABLE t (a INT) INDEX",
+		"CREATE TABLE t (a INT) INDEX ix (a",
+	} {
+		if _, err := ParseOne(sql, ""); err == nil {
+			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
+		}
+	}
+}
+
 // An index over a table's columns. The name is OPTIONAL -- PostgreSQL lets
 // the server choose one -- and each column is an ORDERED member, whether or
 // not it says anything about order.
