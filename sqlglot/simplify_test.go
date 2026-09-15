@@ -368,3 +368,62 @@ func TestSimplifyAlwaysTrueJoin(t *testing.T) {
 		t.Errorf("Simplify(JOIN USING)\n  want %s\n  got  %s", want, got)
 	}
 }
+
+// TestSimplifyConcat covers folding adjacent string literals in CONCAT,
+// CONCAT_WS, and || -- both the merges and the gates that keep one from
+// happening: a non-literal CONCAT_WS separator, and an already-alternating
+// argument list with nothing adjacent to join.
+func TestSimplifyConcat(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"CONCAT of all literals is one literal",
+			"SELECT CONCAT('a', 'b', 'c')", "SELECT 'abc'"},
+		{"CONCAT_WS of all literals joins with the separator and drops the call",
+			"SELECT CONCAT_WS('-', 'a', 'b', 'c')", "SELECT 'a-b-c'"},
+		{"CONCAT merges only the adjacent runs, columns stay where they were",
+			"SELECT CONCAT('a', x, y, 'b', 'c')", "SELECT CONCAT('a', x, y, 'bc')"},
+		{"CONCAT_WS merges only the adjacent runs, the separator stays first",
+			"SELECT CONCAT_WS('-', 'a', x, y, 'b', 'c')",
+			"SELECT CONCAT_WS('-', 'a', x, y, 'b-c')"},
+		{"|| of two literals is one literal", "SELECT 'a' || 'b'", "SELECT 'ab'"},
+		{"|| merges its own leading run and keeps the rest of the chain",
+			"SELECT 'a' || 'b' || x", "SELECT 'ab' || x"},
+		{"|| merges a trailing run too", "SELECT x || 'a' || 'b'", "SELECT x || 'ab'"},
+		{"a lone CONCAT_WS argument needs no merge to still go bare",
+			"SELECT CONCAT_WS('-', 'a')", "SELECT 'a'"},
+		// Nothing adjacent to merge: every argument is left exactly as it
+		// was, and the call itself is untouched rather than rebuilt for no
+		// reason.
+		{"CONCAT with no two literals together is untouched",
+			"SELECT CONCAT(x, 'a', y, 'b')", "SELECT CONCAT(x, 'a', y, 'b')"},
+		{"CONCAT of only columns is untouched", "SELECT CONCAT(x, y)", "SELECT CONCAT(x, y)"},
+		// CONCAT_WS cannot join anything without knowing the separator, so a
+		// non-literal one blocks the rewrite entirely -- even the literal
+		// arguments stay unjoined.
+		{"a non-literal CONCAT_WS separator blocks the rewrite",
+			"SELECT CONCAT_WS(x, 'a', 'b')", "SELECT CONCAT_WS(x, 'a', 'b')"},
+		// A middle run merges and leaves a THIRD result operand on each
+		// side of it, so the || rebuild has to run its own loop more than
+		// once rather than just join two things back together.
+		{"|| merges more than one separate run in the same chain",
+			"SELECT 'a' || 'b' || x || 'c' || 'd'", "SELECT 'ab' || x || 'cd'"},
+		// The port reads this where the reference refuses it outright
+		// (`CONCAT` needs at least one argument there) -- an existing,
+		// separate leniency, not something this fold introduces. What
+		// matters here is that an empty argument list does not crash it.
+		{"CONCAT with no arguments is left alone", "SELECT CONCAT()", "SELECT CONCAT()"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(Simplify(e, ""), "")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("Simplify(%q)\n  want %s\n  got  %s", tc.sql, tc.want, got)
+			}
+		})
+	}
+}

@@ -97,6 +97,7 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 	}
 	out = simplifyLiterals(out, parent)
 	out = simplifyCoalesce(out, parent)
+	out = simplifyConcat(out)
 	out = simplifyNot(out, parent, dialect)
 	out = uniqSort(out, parent, dialect)
 	out = absorb(out, parent)
@@ -1122,6 +1123,109 @@ func simplifyCoalesce(e, parent *Expression) *Expression {
 func coalesceArgs(e *Expression) []*Expression {
 	args, _ := e.Args["expressions"].([]*Expression)
 	return args
+}
+
+// simplifyConcat ports the reference's simplify_concat: a run of ADJACENT
+// string literals inside a CONCAT, CONCAT_WS, or || chain is joined into one
+// literal, leaving every other operand exactly where it was.
+//
+// CONCAT_WS needs its separator known at fold time to join anything at all,
+// and it is the first argument -- a CONCAT_WS whose separator is not itself
+// a literal is left alone entirely, matching the reference, rather than
+// guessed at.
+func simplifyConcat(e *Expression) *Expression {
+	switch e.Class {
+	case "Concat", "ConcatWs":
+		return simplifyConcatArgs(e)
+	case "DPipe":
+		return simplifyDPipeChain(e)
+	}
+	return e
+}
+
+// simplifyConcatArgs handles CONCAT and CONCAT_WS, which carry their operands
+// as one "expressions" list rather than a binary chain.
+func simplifyConcatArgs(e *Expression) *Expression {
+	exprs, _ := e.Args["expressions"].([]*Expression)
+	if len(exprs) == 0 {
+		return e
+	}
+	items := exprs
+	var sepArg *Expression
+	sep := ""
+	if e.Class == "ConcatWs" {
+		sepArg = exprs[0]
+		if !isStringLiteral(sepArg) {
+			return e
+		}
+		sep = sepArg.Name()
+		items = exprs[1:]
+	}
+	folded, changed := foldConcatGroups(items, sep)
+	// A single string survives whether or not anything needed MERGING to
+	// reach it -- `CONCAT_WS('-', 'a')` has nothing to join and is still
+	// bare `'a'`, the separator dropped along with the call.
+	if len(folded) == 1 && isStringLiteral(folded[0]) {
+		return folded[0]
+	}
+	if !changed {
+		return e
+	}
+	if sepArg != nil {
+		folded = append([]*Expression{sepArg}, folded...)
+	}
+	out := e.shallowCopy()
+	out.Set("expressions", folded)
+	return out
+}
+
+// simplifyDPipeChain handles ||, which the parser builds as a binary chain
+// rather than a list: `'a' || 'b' || x` is DPipe(DPipe('a', 'b'), x).
+func simplifyDPipeChain(e *Expression) *Expression {
+	ops := chainOperands(e, "DPipe")
+	if len(ops) < 2 {
+		return e
+	}
+	folded, changed := foldConcatGroups(ops, "")
+	if len(folded) == 1 && isStringLiteral(folded[0]) {
+		return folded[0]
+	}
+	if !changed {
+		return e
+	}
+	safe, _ := e.Args["safe"].(bool)
+	rebuilt := folded[0]
+	for _, op := range folded[1:] {
+		rebuilt = New("DPipe", Arg{"this", rebuilt}, Arg{"expression", op}, Arg{"safe", safe})
+	}
+	return rebuilt
+}
+
+// foldConcatGroups joins each run of two or more ADJACENT string literals in
+// items into one literal, separated by sep, and leaves every other operand --
+// including a run of exactly one literal -- where it was. changed reports
+// whether any run was long enough to actually join something, which is what
+// tells simplifyConcatArgs/simplifyDPipeChain whether rebuilding is worth it.
+func foldConcatGroups(items []*Expression, sep string) (folded []*Expression, changed bool) {
+	for i := 0; i < len(items); {
+		if !isStringLiteral(items[i]) {
+			folded = append(folded, items[i])
+			i++
+			continue
+		}
+		j := i
+		var parts []string
+		for j < len(items) && isStringLiteral(items[j]) {
+			parts = append(parts, items[j].Name())
+			j++
+		}
+		if j-i > 1 {
+			changed = true
+		}
+		folded = append(folded, New("Literal", Arg{"this", strings.Join(parts, sep)}, Arg{"is_string", true}))
+		i = j
+	}
+	return folded, changed
 }
 
 func copyExpressions(in []*Expression) []*Expression {
