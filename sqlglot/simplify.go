@@ -515,7 +515,28 @@ func isConstant(e *Expression) bool {
 // The reference's own predicates, by the names it gives them. Kept separate
 // and tiny because nearly every rule below is built out of them, and getting
 // one subtly wrong would be a rewrite that changes an answer.
-func isNull(e *Expression) bool  { return e != nil && e.Class == "Null" }
+func isNull(e *Expression) bool { return e != nil && e.Class == "Null" }
+
+// isNullShaped is isNull widened to also recognise NULL's own wrapped form,
+// `NULL AND TRUE` -- the shape keepCondition leaves behind when a fold to
+// NULL stands somewhere a bare value cannot. A second rule reading `this` as
+// a value has to see through that wrapper the same way it would see a bare
+// NULL, or the wrapping becomes permanent the moment one rule applies it.
+func isNullShaped(e *Expression) bool {
+	// keepCondition's own wrap can itself come back wrapped in a Paren --
+	// parenthesizeNestedConnector adds one when the parent is a NOT, which is
+	// exactly the position `NOT NOT NULL`'s outer NOT reads this shape from.
+	e = unnest(e)
+	if isNull(e) {
+		return true
+	}
+	if e == nil || e.Class != "And" {
+		return false
+	}
+	left, _ := e.Args["this"].(*Expression)
+	right, _ := e.Args["expression"].(*Expression)
+	return isNull(left) && alwaysTrue(right)
+}
 func isFalse(e *Expression) bool { return isBooleanLiteral(e, false) }
 
 func isBooleanLiteral(e *Expression, want bool) bool {
@@ -615,11 +636,17 @@ func simplifyNot(e, parent *Expression, dialect string) *Expression {
 		return e
 	}
 	// `NOT NULL` is not NULL: the reference keeps it a CONDITION by writing
-	// `NULL AND TRUE`, the same guard it applies whenever a fold would leave a
-	// value where a predicate belongs.
-	if isNull(this) {
-		return parenthesizeNestedConnector(
-			New("And", Arg{"this", New("Null")}, Arg{"expression", boolLit(true)}), parent)
+	// `NULL AND TRUE`, the same guard keepCondition applies whenever a fold
+	// would leave a value where a predicate belongs -- unless the parent is
+	// itself a connector, in which case the value is already there.
+	//
+	// isNullShaped, not isNull: children fold bottom-up, so `NOT NOT NULL`
+	// reaches here with `this` already turned into the wrapped `NULL AND
+	// TRUE` by the INNER NOT's own turn through this same rule. Without
+	// recognising that shape too, the double negation would never re-collapse
+	// -- `this.Class` is "And" by the time the outer NOT sees it, not "Not".
+	if isNullShaped(this) {
+		return keepCondition(New("Null"), parent)
 	}
 	if to, ok := complementComparison[this.Class]; ok {
 		left, _ := this.Args["this"].(*Expression)
@@ -1156,9 +1183,17 @@ func parenthesizeNestedConnector(e, parent *Expression) *Expression {
 // predicate belongs. Reducing `x AND TRUE` to a bare column changes a
 // condition into a column reference, so the reference writes `x AND TRUE` --
 // which is why the contract says `x AND x` becomes `x AND TRUE` and not `x`.
+//
+// Only where the VALUE is about to stand alone, though: once it becomes an
+// operand of a connector ONE LEVEL UP, that connector is the predicate, and
+// wrapping the operand too is a pair of parentheses the reference never
+// writes -- `y = 1 OR (x AND x)` is `x OR y = 1`, not `(x AND TRUE) OR y = 1`.
+// A connector parent means the value is already exactly where a predicate
+// belongs, so it goes back bare and lets that parent's own fold (or the next
+// pass, if it does not fold there) decide what becomes of it.
 func keepCondition(folded, parent *Expression) *Expression {
 	if folded.Class == "And" || folded.Class == "Or" || folded.Class == "Boolean" ||
-		isKnownBoolean(folded) {
+		isKnownBoolean(folded) || isA("Connector", parent) {
 		return folded
 	}
 	return parenthesizeNestedConnector(

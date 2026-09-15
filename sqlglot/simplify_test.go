@@ -94,6 +94,14 @@ func TestSimplifyShapes(t *testing.T) {
 		{"is null over a constant", "SELECT 1 WHERE 1 IS NULL", "", "SELECT 1 WHERE FALSE"},
 		{"absorption", "SELECT 1 WHERE a AND (a OR b)", "", "SELECT 1 WHERE a AND TRUE"},
 		{"absorption the other way", "SELECT 1 WHERE a OR (a AND b)", "", "SELECT 1 WHERE a AND TRUE"},
+		// `x AND TRUE` is the reference's own way of keeping a value in
+		// CONDITION position when it stands alone -- but once it is an
+		// operand of a connector one level up, that connector IS the
+		// predicate, and the value goes back bare rather than wrapped again.
+		{"a fold to a value stays bare as an operand of its parent connector",
+			"SELECT 1 WHERE y = 1 AND (x AND x)", "", "SELECT 1 WHERE x AND y = 1"},
+		{"a fold to NULL stays bare as an operand of its parent connector too",
+			"SELECT 1 WHERE x = 1 AND (1 AND NULL)", "", "SELECT 1 WHERE NULL AND x = 1"},
 		// Every operand of the parenthesised OR drops against a sibling IS
 		// NULL it negates, leaving nothing of it behind. The reference folds
 		// this all the way to FALSE; the port stops one step short of that,
@@ -142,8 +150,20 @@ func TestSimplifyShapes(t *testing.T) {
 		// statement. The arithmetic switch never reaches the Predicate case
 		// the Connector one uses, on purpose.
 		{"a predicate keeps its parens under Sub", "SELECT a - (b < c)", "", "SELECT a - (b < c)"},
-		{"a connector under NOT keeps its parentheses", "SELECT 1 WHERE NOT NOT NULL", "",
-			"SELECT 1 WHERE NOT (NULL AND TRUE)"},
+		// De Morgan is the reference's own way through this -- `NOT (x AND
+		// y)` becomes `NOT x OR NOT y` there -- and is not ported, so the port
+		// keeps the parentheses NOT needs around a connector of a different
+		// class rather than rewrite the structure.
+		{"a connector under NOT keeps its parentheses", "SELECT 1 WHERE NOT (x AND y)", "",
+			"SELECT 1 WHERE NOT (x AND y)"},
+		// `NOT NULL` is itself NULL AND TRUE-shaped once the inner NOT has
+		// already run, and the outer NOT has to see through that wrapper the
+		// same way it would see a bare NULL, or the double negation never
+		// re-collapses.
+		{"double negation of NULL collapses through its own wrapper",
+			"SELECT 1 WHERE NOT NOT NULL", "", "SELECT 1 WHERE NULL AND TRUE"},
+		{"double negation of NULL stays bare under a connector",
+			"SELECT 1 WHERE x = 1 OR NOT NOT NULL", "", "SELECT 1 WHERE NULL OR x = 1"},
 		// Double negation of a KNOWN boolean -- a comparison -- collapses,
 		// where the dialect says the elimination is safe.
 		{"double negation of a comparison collapses",
