@@ -153,7 +153,7 @@ func simplifyParens(e, parent *Expression) *Expression {
 	// Mul-in-Add/Sub by precedence. Sub-in-Sub, Sub-in-Add and anything
 	// under Div beyond a bare literal are NOT associative the same way and
 	// stay untouched.
-	if this.Class == "Literal" && arithmeticParent {
+	if (this.Class == "Literal" || this.Class == "Column") && arithmeticParent {
 		return this
 	}
 	if this.Class == "Add" && parentClass == "Add" {
@@ -193,7 +193,7 @@ func simplifyParens(e, parent *Expression) *Expression {
 	case isA("Predicate", this):
 		// A comparison binds tighter than any connector and than NOT, so its
 		// parentheses are decoration.
-	case this.Class == "Boolean", this.Class == "Null", this.Class == "Literal", this.Class == "Paren":
+	case this.Class == "Boolean", this.Class == "Null", this.Class == "Literal", this.Class == "Column", this.Class == "Paren":
 	default:
 		return e
 	}

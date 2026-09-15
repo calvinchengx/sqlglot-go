@@ -132,6 +132,10 @@ func TestSimplifyShapes(t *testing.T) {
 		// one are always redundant under arithmetic too, the same as under
 		// a connector.
 		{"a literal's parens are always redundant", "SELECT x * (5)", "", "SELECT x * 5"},
+		{"a column's parens are always redundant too", "SELECT x + (y)", "", "SELECT x + y"},
+		{"deeply nested column parens all drop",
+			"SELECT 1 WHERE (((((A) AND B)) AND C)) AND D", "",
+			"SELECT 1 WHERE A AND B AND C AND D"},
 		// A Predicate is NOT atomic to an arithmetic parent the way it is to
 		// a Connector: `<` binds LOOSER than `-`, so `a - (b < c)` dropped to
 		// `a - b < c` would read back as `(a - b) < c`, a different
