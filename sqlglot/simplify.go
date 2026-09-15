@@ -77,7 +77,16 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 	// entirely rather than leave a condition that always passes. Returning
 	// nil here removes it: the caller's own Set("where", nil) is how a Select
 	// drops an argument everywhere else in this tree.
-	if out.Class == "Where" {
+	//
+	// FILTER's own WHERE is a different position -- `AVG(x) FILTER (WHERE
+	// TRUE)` -- and the keyword there is not optional the way a query's own
+	// WHERE is: an empty FILTER() is not SQL a parser will read back. The
+	// reference drops it there too and writes exactly that, which the
+	// execution oracle caught as one more of the reference's own bugs this
+	// port agrees with byte for byte but declines to reproduce, the same way
+	// it already declines to reproduce a give-up Command from a point of its
+	// own the reference never reaches.
+	if out.Class == "Where" && (parent == nil || parent.Class != "Filter") {
 		cond, _ := out.Args["this"].(*Expression)
 		if alwaysTrue(cond) {
 			return nil

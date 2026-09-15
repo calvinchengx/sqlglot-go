@@ -13,6 +13,13 @@ func TestSimplifyShapes(t *testing.T) {
 		{"and with true", "SELECT 1 WHERE x AND TRUE", "", "SELECT 1 WHERE x AND TRUE"},
 		{"and with false", "SELECT 1 WHERE x AND FALSE", "", "SELECT 1 WHERE FALSE"},
 		{"or with true", "SELECT 1 WHERE x OR TRUE", "", "SELECT 1"},
+		// FILTER's own WHERE is not optional -- there is no such thing as a
+		// bare FILTER() -- so this is one of the few places the port declines
+		// to reproduce the reference, which writes exactly that. See
+		// docs/upstream-issues.md.
+		{"a FILTER's own WHERE TRUE is kept, not dropped",
+			"SELECT AVG(x) FILTER (WHERE TRUE) FROM t", "duckdb",
+			"SELECT AVG(x) FILTER(WHERE TRUE) FROM t"},
 		{"not true", "SELECT 1 WHERE NOT TRUE", "", "SELECT 1 WHERE FALSE"},
 		{"not equal folds to complement", "SELECT 1 WHERE NOT x = 1", "", "SELECT 1 WHERE x <> 1"},
 		{"literal arithmetic", "SELECT 1 + 1", "", "SELECT 2"},

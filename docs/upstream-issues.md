@@ -211,10 +211,10 @@ The second is not a table at all. The first is worse in a quieter way: it
 runs, and the table it makes permits duplicates the statement said it should
 not.
 
-The port refuses both rather than reproducing either -- the only place in this
-port that declines to follow the reference. Dropping a constraint is not a
-spelling difference, and a guard that reports "this creates a unique index"
-would be reporting something the emitted SQL does not do.
+The port refuses both rather than reproducing either -- one of the few places
+in this port that declines to follow the reference. Dropping a constraint is
+not a spelling difference, and a guard that reports "this creates a unique
+index" would be reporting something the emitted SQL does not do.
 
 **Reference:** sqlglot @ ceb5111421e9.
 
@@ -479,5 +479,39 @@ out  WITH t AS (SELECT 'a.b.c' AS value, 1 AS idx) SELECT FROM t
 returned string without checking the log gets a statement that names no
 columns. The port reproduces both, for the same reason as the JSON path key
 above -- refusing would be a divergence the differential cannot see.
+
+**Reference:** sqlglot @ ceb5111421e9.
+
+---
+
+## sqlglot's own optimizer writes an aggregate FILTER it cannot read back
+
+**Found by:** the execution oracle, after `uniq_sort`/`WHERE TRUE` landed in
+the port's `Simplify`.
+
+`FILTER (WHERE <cond>)` narrows an aggregate to the rows a condition lets
+through, and the WHERE inside it is not optional the way a query's own WHERE
+is -- there is no such thing as a bare `FILTER()`. sqlglot's `simplify` does
+not know that: it finds every `exp.Where` in the tree, including the one
+inside a `Filter`, and drops any whose condition is always true the same way
+it drops a query's own:
+
+```
+in   SELECT AVG(x) FILTER (WHERE TRUE) FROM t
+out  SELECT AVG(x) FILTER() FROM t
+back Parser Error: syntax error at or near ")"
+```
+
+Both statements parse going IN; only the one coming OUT fails, and only on a
+second pass -- exactly what a tree or string differential against sqlglot
+cannot see, and exactly what the execution oracle exists to catch.
+
+The port's own `WHERE TRUE`-removal rule is more general than sqlglot's own:
+it walks the whole tree the same way, rather than being hand-limited to a
+query's own WHERE. Rather than narrow the rule to the one clause it was
+written for and reintroduce the same gap the next time a WHERE-bearing node is
+added, the port declines to strip the one case where WHERE is mandatory --
+FILTER's own -- checked by the parent it is being removed FROM, not by
+enumerating every node WHERE is optional under.
 
 **Reference:** sqlglot @ ceb5111421e9.
