@@ -119,6 +119,25 @@ func TestSimplifyShapes(t *testing.T) {
 			"SELECT 1 WHERE a AND (b OR c)"},
 		{"parentheses that do not are dropped", "SELECT 1 WHERE a AND (b AND c)", "",
 			"SELECT 1 WHERE a AND b AND c"},
+		// Add/Add and Mul/Mul are associative, so a grouping around either
+		// side carries no meaning once its own contents are done folding.
+		{"nested Add parens fold across", "SELECT x + (1 + 2)", "", "SELECT x + 3"},
+		{"nested Add parens fold across the other side", "SELECT (x + 1) + 2", "", "SELECT x + 3"},
+		{"nested Mul parens fold across", "SELECT (x * 2) * 4", "", "SELECT x * 8"},
+		// Mul binds tighter than Add or Sub, so its own parentheses are
+		// always redundant there, whatever is inside them.
+		{"Mul parens are redundant under Add", "SELECT a + (b * c)", "", "SELECT a + b * c"},
+		{"Mul parens are redundant under Sub", "SELECT a - (b * c)", "", "SELECT a - b * c"},
+		// A bare literal has no operator of its own, so parentheses around
+		// one are always redundant under arithmetic too, the same as under
+		// a connector.
+		{"a literal's parens are always redundant", "SELECT x * (5)", "", "SELECT x * 5"},
+		// A Predicate is NOT atomic to an arithmetic parent the way it is to
+		// a Connector: `<` binds LOOSER than `-`, so `a - (b < c)` dropped to
+		// `a - b < c` would read back as `(a - b) < c`, a different
+		// statement. The arithmetic switch never reaches the Predicate case
+		// the Connector one uses, on purpose.
+		{"a predicate keeps its parens under Sub", "SELECT a - (b < c)", "", "SELECT a - (b < c)"},
 		{"a connector under NOT keeps its parentheses", "SELECT 1 WHERE NOT NOT NULL", "",
 			"SELECT 1 WHERE NOT (NULL AND TRUE)"},
 		// Double negation of a KNOWN boolean -- a comparison -- collapses,

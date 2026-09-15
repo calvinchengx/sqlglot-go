@@ -135,7 +135,48 @@ func simplifyParens(e, parent *Expression) *Expression {
 	if this == nil {
 		return e
 	}
-	if parent != nil && !isA("Connector", parent) && parent.Class != "Not" {
+	parentClass := ""
+	if parent != nil {
+		parentClass = parent.Class
+	}
+	arithmeticParent := parentClass == "Add" || parentClass == "Sub" ||
+		parentClass == "Mul" || parentClass == "Div"
+
+	// Arithmetic is handled in a switch of its OWN, entirely separate from
+	// the boolean-only one below: the two guards were written for different
+	// operators, and widening the shared one to admit an arithmetic parent
+	// would also have widened the Predicate/Connector cases below to fire
+	// under it -- `a - (b < c)` dropping to `a - b < c` reads back as
+	// `(a - b) < c`, a different statement. Only the cases actually verified
+	// against the reference are ported: an atomic operand (nothing left of
+	// it to bind wrong), Add-in-Add and Mul-in-Mul by associativity, and
+	// Mul-in-Add/Sub by precedence. Sub-in-Sub, Sub-in-Add and anything
+	// under Div beyond a bare literal are NOT associative the same way and
+	// stay untouched.
+	if this.Class == "Literal" && arithmeticParent {
+		return this
+	}
+	if this.Class == "Add" && parentClass == "Add" {
+		// `x + (y + z)` is `x + y + z`: Add is associative, so which side of
+		// it the grouping was written on carries no meaning. Once the pair
+		// is gone the child is a direct Add operand of its parent, which is
+		// what lets flatFold see across it on a later pass.
+		return this
+	}
+	if this.Class == "Mul" && parentClass == "Mul" {
+		return this // Same, for Mul.
+	}
+	if this.Class == "Mul" && (parentClass == "Add" || parentClass == "Sub") {
+		// Mul binds tighter than Add or Sub, so its parentheses are always
+		// redundant there -- the same reason a Predicate's are under a
+		// Connector, just one precedence tier down.
+		return this
+	}
+	if arithmeticParent {
+		return e
+	}
+
+	if parent != nil && !isA("Connector", parent) && parentClass != "Not" {
 		return e
 	}
 	switch {
@@ -152,7 +193,7 @@ func simplifyParens(e, parent *Expression) *Expression {
 	case isA("Predicate", this):
 		// A comparison binds tighter than any connector and than NOT, so its
 		// parentheses are decoration.
-	case this.Class == "Boolean", this.Class == "Null", this.Class == "Paren":
+	case this.Class == "Boolean", this.Class == "Null", this.Class == "Literal", this.Class == "Paren":
 	default:
 		return e
 	}
