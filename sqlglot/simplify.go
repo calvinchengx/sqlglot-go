@@ -2,6 +2,7 @@ package sqlglot
 
 import (
 	"math"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -75,6 +76,7 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 	out = simplifyLiterals(out, parent)
 	out = simplifyCoalesce(out, parent)
 	out = simplifyNot(out, parent, dialect)
+	out = uniqSort(out, parent, dialect)
 	out = absorb(out, parent)
 	out = simplifyConnectors(out, parent)
 	out = simplifyParens(out, parent)
@@ -671,6 +673,80 @@ func chainOperands(e *Expression, class string) []*Expression {
 	this, _ := e.Args["this"].(*Expression)
 	expr, _ := e.Args["expression"].(*Expression)
 	return append(chainOperands(this, class), chainOperands(expr, class)...)
+}
+
+// uniqSort ports the reference's uniq_sort: a flattened AND/OR chain is
+// deduplicated by its generated SQL, and put into that same order when it was
+// not written in it already -- `C AND A AND B AND B` becomes `A AND B AND C`.
+//
+// Both halves are purely syntactic: reordering or dropping a REPEATED operand
+// of a connector never changes what the chain means, so -- unlike absorb --
+// this rule needs no nullability guard. A chain reduced to a single operand
+// is not returned bare: the reference rebuilds it as `operand AND TRUE`, and
+// that is matched exactly rather than folded further, because it is the
+// fixture's own committed answer.
+func uniqSort(e, parent *Expression, dialect string) *Expression {
+	if e.Class != "And" && e.Class != "Or" {
+		return e
+	}
+	ops := chainOperands(e, e.Class)
+	if len(ops) < 2 {
+		return e
+	}
+	// The KEY is generated from the operand with its own parentheses
+	// stripped -- `(b OR c)` sorts as `b OR c` would, matching the
+	// reference's flatten(), which unnests before calling gen(). The
+	// wrapper itself is kept on the operand used to rebuild the tree: this
+	// port's generator does not re-insert parentheses precedence requires,
+	// so a compound operand still needs its own on the way back out.
+	keys := make([]string, len(ops))
+	for i, op := range ops {
+		s, err := Generate(unnest(op), dialect)
+		if err != nil {
+			// Cannot key this operand safely; leave the chain as it is.
+			return e
+		}
+		keys[i] = s
+	}
+	// Dedupe first, keeping the FIRST occurrence of each key -- matching
+	// which of two syntactically identical operands it is does not matter.
+	seen := make(map[string]bool, len(ops))
+	deduped := make([]*Expression, 0, len(ops))
+	dedupedKeys := make([]string, 0, len(ops))
+	for i, k := range keys {
+		if seen[k] {
+			continue
+		}
+		seen[k] = true
+		deduped = append(deduped, ops[i])
+		dedupedKeys = append(dedupedKeys, k)
+	}
+	sorted := true
+	for i := 1; i < len(dedupedKeys); i++ {
+		if dedupedKeys[i] < dedupedKeys[i-1] {
+			sorted = false
+			break
+		}
+	}
+	if sorted && len(deduped) == len(ops) {
+		return e
+	}
+	if !sorted {
+		idx := make([]int, len(deduped))
+		for i := range idx {
+			idx[i] = i
+		}
+		sort.SliceStable(idx, func(a, b int) bool { return dedupedKeys[idx[a]] < dedupedKeys[idx[b]] })
+		reordered := make([]*Expression, len(deduped))
+		for i, j := range idx {
+			reordered[i] = deduped[j]
+		}
+		deduped = reordered
+	}
+	if len(deduped) == 1 {
+		return keepCondition(deduped[0], parent)
+	}
+	return rebuildConnector(e.Class, deduped, parent)
 }
 
 // absorb is the absorption half of the reference's absorb_and_eliminate:

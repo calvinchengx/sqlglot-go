@@ -50,11 +50,11 @@ func TestSimplifyShapes(t *testing.T) {
 		{"the looser bound wins under OR", "SELECT 1 WHERE x < 1 OR x < 2", "",
 			"SELECT 1 WHERE x < 2"},
 		{"a satisfiable range is left alone", "SELECT 1 WHERE x > 1 AND x < 5", "",
-			"SELECT 1 WHERE x > 1 AND x < 5"},
+			"SELECT 1 WHERE x < 5 AND x > 1"},
 		// Never TRUE: the shared operand may be NULL, so an OR of complements
 		// is not a tautology.
 		{"complementary bounds under OR are not TRUE", "SELECT 1 WHERE x > 1 OR x <= 1", "",
-			"SELECT 1 WHERE x > 1 OR x <= 1"},
+			"SELECT 1 WHERE x <= 1 OR x > 1"},
 		{"two different columns decide nothing", "SELECT 1 WHERE x > 1 AND y < 1", "",
 			"SELECT 1 WHERE x > 1 AND y < 1"},
 		// A widening cast of a byte-sized integer cannot change the value, so
@@ -83,7 +83,7 @@ func TestSimplifyShapes(t *testing.T) {
 			"postgres", "SELECT 1 WHERE x > 1 AND x IS NOT NULL"},
 		{"a random operand is not the same value twice",
 			"SELECT 1 WHERE RAND() > 1 AND RAND() < 1", "duckdb",
-			"SELECT 1 WHERE RANDOM() > 1 AND RANDOM() < 1"},
+			"SELECT 1 WHERE RANDOM() < 1 AND RANDOM() > 1"},
 		{"is null over a constant", "SELECT 1 WHERE 1 IS NULL", "", "SELECT 1 WHERE FALSE"},
 		{"absorption", "SELECT 1 WHERE a AND (a OR b)", "", "SELECT 1 WHERE a AND TRUE"},
 		{"absorption the other way", "SELECT 1 WHERE a OR (a AND b)", "", "SELECT 1 WHERE a AND TRUE"},
@@ -98,10 +98,13 @@ func TestSimplifyShapes(t *testing.T) {
 		// and what is left of it is the OPPOSITE connector to the chain it
 		// rejoins: spliced in bare, an Or inside an And reads back with AND
 		// binding tighter, which is a different statement than the one
-		// meant. The parentheses this needs are not optional.
+		// meant. The parentheses this needs are not optional. uniqSort then
+		// sorts the rebuilt chain by each operand's own generated SQL with
+		// its OWN parentheses stripped for the comparison, so "(w OR z)"
+		// sorts as "w OR z" would -- before "x IS NULL", not after it.
 		{"what is left of the absorbed side keeps its own parentheses",
 			"SELECT 1 WHERE x IS NULL AND y IS NULL AND (NOT x IS NULL OR NOT y IS NULL OR z OR w)", "",
-			"SELECT 1 WHERE x IS NULL AND y IS NULL AND (z OR w)"},
+			"SELECT 1 WHERE (w OR z) AND x IS NULL AND y IS NULL"},
 		// The one that matters most: AND binds tighter than OR, so these
 		// parentheses carry meaning and dropping them re-associates the
 		// statement into (a AND a) OR b.
@@ -121,13 +124,12 @@ func TestSimplifyShapes(t *testing.T) {
 		{"coalesce against a constant the fallback can satisfy",
 			"SELECT 1 WHERE COALESCE(x, 1) = 1", "",
 			"SELECT 1 WHERE x = 1 OR x IS NULL"},
-		// The reference orders the AND's operands the other way round here --
-		// comparison first -- once the coalesce it rebuilds is deep enough to
-		// rank above the NOT NULL check; the port does not carry that same
-		// ranking, so its own order is pinned instead of the reference's.
+		// Verified against the reference exactly, now that the AND's operands
+		// are sorted by their own generated SQL rather than pinned in the
+		// port's own construction order.
 		{"coalesce with more than one argument before the constant",
 			"SELECT 1 WHERE COALESCE(x, y, 1) = 2", "",
-			"SELECT 1 WHERE NOT COALESCE(x, y) IS NULL AND COALESCE(x, y) = 2"},
+			"SELECT 1 WHERE COALESCE(x, y) = 2 AND NOT COALESCE(x, y) IS NULL"},
 		{"coalesce of a lone argument is the argument",
 			"SELECT COALESCE(x)", "", "SELECT x"},
 		{"coalesce of a non-null constant is that constant",
