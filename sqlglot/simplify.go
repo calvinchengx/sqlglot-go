@@ -1,7 +1,7 @@
 package sqlglot
 
 import (
-	"math"
+	"math/big"
 	"sort"
 	"strconv"
 	"strings"
@@ -299,41 +299,101 @@ func simplifyIs(e, a, b *Expression) *Expression {
 }
 
 func foldNumbers(e, a, b *Expression) *Expression {
+	switch e.Class {
+	case "Add", "Sub", "Mul", "Div":
+		if isIntegerLiteral(a) && isIntegerLiteral(b) {
+			return foldIntegerArithmetic(e.Class, a, b)
+		}
+		return foldDecimalArithmetic(e.Class, a, b)
+	}
 	x, okA := numberOf(a)
 	y, okB := numberOf(b)
 	if !okA || !okB {
 		return nil
 	}
-	bothInt := isIntegerLiteral(a) && isIntegerLiteral(b)
-	// A result too big to be a float is not a number this can write down:
-	// `1E70 * 1E300` overflows, and the literal that came out of it --
-	// `+Inf.0` -- was SQL nothing could read. The reference declines to fold
-	// these too. The generator fuzzer found it.
-	folded := func(v float64) *Expression {
-		if math.IsInf(v, 0) || math.IsNaN(v) {
-			return nil
-		}
-		return numberLit(v, bothInt)
-	}
-	switch e.Class {
-	case "Add":
-		return folded(x + y)
-	case "Mul":
-		return folded(x * y)
-	case "Sub":
-		return folded(x - y)
-	case "Div":
-		// Integer division differs between engines, so the reference declines
-		// to fold it rather than pick one engine's answer.
-		if bothInt || y == 0 {
-			return nil
-		}
-		if q := x / y; !math.IsInf(q, 0) && !math.IsNaN(q) {
-			return numberLit(q, false)
-		}
+	return evalBooleanNumber(e.Class, x, y)
+}
+
+// foldIntegerArithmetic is the float64 path, kept for operands that are both
+// plain integers: no fractional literal can appear on either side, so
+// float64 has nothing to lose that decimal arithmetic would have kept. Both
+// operands fit int64 -- that is what makes them integer literals at all --
+// so Add, Sub and Mul of them never overflow float64 the way a huge
+// fractional literal could; that guard now lives with the decimal path,
+// which is where a literal large enough to need it actually goes.
+func foldIntegerArithmetic(class string, a, b *Expression) *Expression {
+	x, okA := numberOf(a)
+	y, okB := numberOf(b)
+	if !okA || !okB {
 		return nil
 	}
-	return evalBooleanNumber(e.Class, x, y)
+	switch class {
+	case "Add":
+		return numberLit(x+y, true)
+	case "Mul":
+		return numberLit(x*y, true)
+	case "Sub":
+		return numberLit(x-y, true)
+	}
+	// Div: integer division differs between engines, so the reference
+	// declines to fold it rather than pick one engine's answer.
+	return nil
+}
+
+// foldDecimalArithmetic computes Add, Sub, Mul and Div the way the
+// reference does whenever either operand carries a fractional literal:
+// exactly, in decimal, because a SQL numeric literal is `Decimal(text)`
+// there, not a binary float. `0.06` has no exact float64 value at all, so
+// folding `0.06 + 0.01` through one answers a question about a different
+// number than the one written -- `0.06999999999999999`, not `0.07`.
+func foldDecimalArithmetic(class string, a, b *Expression) *Expression {
+	da, okA := decimalOf(a)
+	db, okB := decimalOf(b)
+	if !okA || !okB {
+		return nil
+	}
+	var result *bigDecimal
+	switch class {
+	case "Add":
+		result = da.Add(db)
+	case "Sub":
+		result = da.Sub(db)
+	case "Mul":
+		result = da.Mul(db)
+	case "Div":
+		r, ok := da.Div(db, decimalPrecision)
+		if !ok {
+			return nil // division by zero
+		}
+		result = r
+	default:
+		return nil
+	}
+	// Larger than anything the reference's own contract needs, and past
+	// here the reference may switch to scientific notation, which this
+	// port does not write. Declining costs nothing the contract asks for.
+	if result.digitCount() > maxDecimalDigits {
+		return nil
+	}
+	return decimalLit(result)
+}
+
+// decimalLit writes a bigDecimal the way numberLit writes a float64: a
+// negative value is Neg(Literal) rather than a literal whose text begins
+// with a minus, and a whole result still shows a point, because it came
+// from a fractional literal and the reference marks it as one for that
+// reason alone.
+func decimalLit(d *bigDecimal) *Expression {
+	if d.unscaled.Sign() < 0 {
+		return New("Neg", Arg{"this", decimalLit(&bigDecimal{
+			unscaled: new(big.Int).Abs(d.unscaled), scale: d.scale,
+		})})
+	}
+	text := d.String()
+	if d.scale == 0 {
+		text += ".0"
+	}
+	return New("Literal", Arg{"this", text}, Arg{"is_string", false})
 }
 
 func evalBooleanNumber(class string, a, b float64) *Expression {

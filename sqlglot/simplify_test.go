@@ -282,9 +282,12 @@ func TestDeepChainDoesNotBlowUp(t *testing.T) {
 
 // A number too big to be a float is not one this can write down.
 //
-// `1E70 * 1E300` overflows, and folding it produced the literal `+Inf.0` --
-// SQL nothing could read, including this port. The reference declines to fold
-// these too. The generator fuzzer found it.
+// The reference DOES fold these -- `1E70 * 1E300` becomes `1E+370` there,
+// Decimal has no such ceiling -- but only by switching to scientific
+// notation, which this port does not write; maxDecimalDigits is the port's
+// own line, not one the reference draws. Before decimal arithmetic replaced
+// float64 for these operators, folding one produced the literal `+Inf.0` --
+// SQL nothing could read, including this port. The generator fuzzer found it.
 func TestArithmeticThatOverflows(t *testing.T) {
 	for _, sql := range []string{
 		"SELECT 1E70 * 1E300",
