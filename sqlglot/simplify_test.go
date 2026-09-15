@@ -309,3 +309,62 @@ func TestArithmeticThatOverflows(t *testing.T) {
 		}
 	}
 }
+
+// TestSimplifyAlwaysTrueJoin covers the corners of turning a JOIN whose ON is
+// always true into a CROSS JOIN: the gates that keep it from firing (a USING
+// clause, a join method, a side/kind the reference does not special-case),
+// as well as the successful rewrite in more than one of its shapes.
+func TestSimplifyAlwaysTrueJoin(t *testing.T) {
+	for _, tc := range []struct{ name, sql, dialect, want string }{
+		{"a plain JOIN becomes CROSS", "SELECT x FROM y JOIN z ON TRUE", "",
+			"SELECT x FROM y CROSS JOIN z"},
+		{"an explicit INNER becomes CROSS", "SELECT x FROM y INNER JOIN z ON TRUE", "",
+			"SELECT x FROM y CROSS JOIN z"},
+		{"RIGHT becomes CROSS", "SELECT x FROM y RIGHT JOIN z ON TRUE", "",
+			"SELECT x FROM y CROSS JOIN z"},
+		{"RIGHT OUTER becomes CROSS", "SELECT x FROM y RIGHT OUTER JOIN z ON TRUE", "",
+			"SELECT x FROM y CROSS JOIN z"},
+		// LEFT keeps rows that fail to match, which CROSS does not, so it is
+		// not in the set the reference rewrites.
+		{"LEFT is left alone", "SELECT x FROM y LEFT JOIN z ON TRUE", "",
+			"SELECT x FROM y LEFT JOIN z ON TRUE"},
+		{"FULL is left alone", "SELECT x FROM y FULL JOIN z ON TRUE", "",
+			"SELECT x FROM y FULL JOIN z ON TRUE"},
+		// ASOF matches by nearness rather than by the ON condition, so the
+		// condition being always-true does not make it a CROSS.
+		{"a join method blocks the rewrite", "SELECT x FROM y ASOF JOIN z ON TRUE", "duckdb",
+			"SELECT x FROM y ASOF JOIN z ON TRUE"},
+		// An ON that is not always true never reaches the rewrite at all.
+		{"a real condition is untouched", "SELECT x FROM y JOIN z ON y.a = z.a", "",
+			"SELECT x FROM y JOIN z ON y.a = z.a"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, tc.dialect)
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(Simplify(e, tc.dialect), tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("Simplify(%q)\n  want %s\n  got  %s", tc.sql, tc.want, got)
+			}
+		})
+	}
+	// USING names the columns to match on instead of an ON condition, so
+	// there is no ON to have been always true in the first place -- covered
+	// separately since it takes a different grammar shape than the cases
+	// above (no ON at all, rather than one that folds to TRUE).
+	e, err := ParseOne("SELECT x FROM y JOIN z USING (a)", "")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	got, err := Generate(Simplify(e, ""), "")
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	if want := "SELECT x FROM y JOIN z USING (a)"; got != want {
+		t.Errorf("Simplify(JOIN USING)\n  want %s\n  got  %s", want, got)
+	}
+}
