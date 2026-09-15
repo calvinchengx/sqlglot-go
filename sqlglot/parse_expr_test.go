@@ -3481,6 +3481,47 @@ func TestMerge(t *testing.T) {
 	}
 }
 
+// T-SQL lets a MERGE stand where a table would, its OUTPUT rows feeding an
+// outer query -- the same slot a parenthesised SELECT is read from, wrapped
+// in the same Subquery.
+func TestMergeAsTableSource(t *testing.T) {
+	sql := "INSERT INTO Production.UpdatedInventory SELECT ProductID, LocationID, NewQty, PreviousQty " +
+		"FROM (MERGE INTO Production.ProductInventory AS pi " +
+		"USING (SELECT ProductID, SUM(OrderQty) FROM Sales.SalesOrderDetail AS sod " +
+		"INNER JOIN Sales.SalesOrderHeader AS soh ON sod.SalesOrderID = soh.SalesOrderID " +
+		"AND soh.OrderDate BETWEEN '20030701' AND '20030731' GROUP BY ProductID) AS src(ProductID, OrderQty) " +
+		"ON pi.ProductID = src.ProductID " +
+		"WHEN MATCHED AND pi.Quantity - src.OrderQty >= 0 THEN UPDATE SET pi.Quantity = pi.Quantity - src.OrderQty " +
+		"WHEN MATCHED AND pi.Quantity - src.OrderQty <= 0 THEN DELETE " +
+		"OUTPUT $action, Inserted.ProductID, Inserted.LocationID, Inserted.Quantity AS NewQty, Deleted.Quantity AS PreviousQty) " +
+		"AS Changes(Action, ProductID, LocationID, NewQty, PreviousQty) WHERE Action = 'UPDATE'"
+	e, err := ParseOne(sql, "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", sql, err)
+	}
+	got, err := Generate(e, "tsql")
+	if err != nil {
+		t.Fatalf("Generate: %v", err)
+	}
+	if got != sql {
+		t.Errorf("got %q, want %q", got, sql)
+	}
+
+	// No other dialect reads MERGE where a table goes: the override is
+	// T-SQL's alone.
+	for _, dialect := range []string{"", "postgres", "duckdb", "databricks"} {
+		refused := "SELECT * FROM (MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN DELETE) AS x"
+		if _, err := ParseOne(refused, dialect); err == nil {
+			t.Errorf("ParseOne(%q, %q) was read; MERGE as a table source is T-SQL only", refused, dialect)
+		}
+	}
+	// A MERGE that would be refused on its own is refused nested too --
+	// nesting does not relax MERGE's own grammar, only where it may stand.
+	if _, err := ParseOne("SELECT * FROM (MERGE INTO t USING s ON t.id = s.id) AS x", "tsql"); err == nil {
+		t.Error("a MERGE without a WHEN nested in a table source was read; it should be refused")
+	}
+}
+
 // The refusals and the corners of the DML writers.
 //
 // Some of these trees no statement in the corpus produces: a Delete naming its

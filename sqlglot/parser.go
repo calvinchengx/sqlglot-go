@@ -269,7 +269,7 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 		return p.parseDelete()
 	}
 	if p.at(TokMERGE) {
-		return p.parseMerge()
+		return p.parseMerge(false)
 	}
 	if p.at(TokTRUNCATE) {
 		return p.parseTruncate()

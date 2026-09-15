@@ -277,7 +277,11 @@ func (p *parser) parseDelete() (*Expression, error) {
 // each outcome, so the branches are where the statement's meaning is. DuckDB
 // spells the match `USING (col)` rather than `ON`, and the reference keeps
 // that under a name of its own rather than rewriting it into a condition.
-func (p *parser) parseMerge() (*Expression, error) {
+// nested is true when MERGE stands where a table would -- T-SQL's `FROM
+// (MERGE ... OUTPUT ...) AS x(...)` -- so the closing parenthesis that ends
+// it there is not "more than this port reads"; parseOne's own end-of-input
+// check still catches real trailing tokens once the parentheses close.
+func (p *parser) parseMerge(nested bool) (*Expression, error) {
 	p.advance() // MERGE
 
 	if !p.match(TokINTO) {
@@ -355,7 +359,7 @@ func (p *parser) parseMerge() (*Expression, error) {
 	if err := p.readReturning(node); err != nil {
 		return nil, err
 	}
-	if p.curr() != nil {
+	if !nested && p.curr() != nil {
 		return nil, p.unsupported("MERGE with more than this port reads")
 	}
 	return node, nil

@@ -1139,7 +1139,14 @@ func (p *parser) parseSubqueryTable() (*Expression, error) {
 		}
 		return values, nil
 	}
-	if p.at(TokSELECT) || p.at(TokWITH) || p.at(TokPIVOT) || p.at(TokUNPIVOT) ||
+	if p.dialect == "tsql" && p.at(TokMERGE) {
+		// T-SQL lets a MERGE stand where a table would, its OUTPUT rows
+		// feeding an outer query -- `INSERT ... SELECT ... FROM (MERGE
+		// ... OUTPUT ...) AS Changes(...)`. The reference reads it here,
+		// in the very same slot a parenthesised SELECT is read from, and
+		// wraps it in the same Subquery.
+		inner, err = p.parseMerge(true)
+	} else if p.at(TokSELECT) || p.at(TokWITH) || p.at(TokPIVOT) || p.at(TokUNPIVOT) ||
 		p.at(TokFROM) || p.at(TokSUMMARIZE) || p.opensASetOperation() {
 		// A pivot STATEMENT reached through a FROM item comes out with
 		// unpivot set FALSE, where the very same statement on its own or in
