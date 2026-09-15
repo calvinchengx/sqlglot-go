@@ -73,6 +73,19 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 			out.Set(key, kids)
 		}
 	}
+	// `WHERE TRUE` filters out nothing, and the reference drops the clause
+	// entirely rather than leave a condition that always passes. Returning
+	// nil here removes it: the caller's own Set("where", nil) is how a Select
+	// drops an argument everywhere else in this tree.
+	if out.Class == "Where" {
+		cond, _ := out.Args["this"].(*Expression)
+		if alwaysTrue(cond) {
+			return nil
+		}
+	}
+	if out.Class == "Join" {
+		out = simplifyAlwaysTrueJoin(out)
+	}
 	out = simplifyLiterals(out, parent)
 	out = simplifyCoalesce(out, parent)
 	out = simplifyNot(out, parent, dialect)
@@ -673,6 +686,39 @@ func chainOperands(e *Expression, class string) []*Expression {
 	this, _ := e.Args["this"].(*Expression)
 	expr, _ := e.Args["expression"].(*Expression)
 	return append(chainOperands(this, class), chainOperands(expr, class)...)
+}
+
+// joinKindsThatBecomeCross are the (side, kind) pairs the reference allows to
+// turn into a CROSS JOIN once their ON is always true: a plain, an explicit
+// INNER, a RIGHT, and a RIGHT OUTER. Every one of those already returns every
+// row of its left-hand side matched against every row of its right, which is
+// what CROSS means -- LEFT and FULL do not, because they also keep the rows
+// that fail to match, and there is nothing left to fail once ON is TRUE for
+// a LEFT/FULL only in the degenerate case the reference does not special-case.
+var joinKindsThatBecomeCross = map[[2]string]bool{
+	{"", ""}: true, {"", "INNER"}: true, {"RIGHT", ""}: true, {"RIGHT", "OUTER"}: true,
+}
+
+// simplifyAlwaysTrueJoin turns a JOIN whose ON is always true into a CROSS
+// JOIN: `y JOIN z ON TRUE` becomes `y CROSS JOIN z`, saying the same thing
+// without a condition that can never do anything.
+func simplifyAlwaysTrueJoin(e *Expression) *Expression {
+	on, _ := e.Args["on"].(*Expression)
+	if !alwaysTrue(on) {
+		return e
+	}
+	if e.Args["using"] != nil || e.Args["method"] != nil {
+		return e
+	}
+	side, _ := e.Args["side"].(string)
+	kind, _ := e.Args["kind"].(string)
+	if !joinKindsThatBecomeCross[[2]string{side, kind}] {
+		return e
+	}
+	e.Set("on", nil)
+	e.Set("side", nil)
+	e.Set("kind", "CROSS")
+	return e
 }
 
 // uniqSort ports the reference's uniq_sort: a flattened AND/OR chain is
