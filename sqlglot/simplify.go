@@ -1190,6 +1190,9 @@ func absorb(e, parent *Expression) *Expression {
 	if out := removeComplements(e.Class, ops); out != nil {
 		return out
 	}
+	if out := absorbSupersets(e.Class, opposite, ops, parent); out != nil {
+		return out
+	}
 
 	changed := false
 	kept := make([]*Expression, 0, len(ops))
@@ -1262,6 +1265,70 @@ func absorb(e, parent *Expression) *Expression {
 		return e
 	}
 	return rebuildConnector(e.Class, kept, parent)
+}
+
+// absorbSupersets is the reference's own subset half of absorb_and_eliminate:
+// `(A OR C) AND (A OR C OR B)` is `A OR C`, because whichever of the two
+// disjunctions decides the AND, the SMALLER one already does -- a value that
+// makes `A OR C` true always makes `A OR C OR B` true too, so the larger one
+// contributes nothing the smaller doesn't already say. It generalises the
+// plain `A AND (A OR B)` absorption absorb's own main loop already handles
+// (a bare operand is the size-1 case of the same rule), but ONLY past two
+// operands of the OPPOSITE class, each fully flattened, does the general
+// form find anything that loop does not: comparing LEAVES of one opposite-
+// class operand against another operand's OWN leaves, not against the other
+// operand as a single unit.
+func absorbSupersets(class, opposite string, ops []*Expression, parent *Expression) *Expression {
+	sets := make([][]*Expression, len(ops))
+	for i, op := range ops {
+		inner := unnest(op)
+		if inner != nil && inner.Class == opposite {
+			sets[i] = chainOperands(inner, opposite)
+		} else {
+			sets[i] = []*Expression{inner}
+		}
+	}
+	changed := false
+	kept := make([]*Expression, len(ops))
+	copy(kept, ops)
+	for i, op := range ops {
+		inner := unnest(op)
+		if inner == nil || inner.Class != opposite {
+			continue
+		}
+		for j := range ops {
+			if i != j && isProperSubset(sets[j], sets[i]) {
+				changed = true
+				kept[i] = boolLit(class == "And")
+				break
+			}
+		}
+	}
+	if !changed {
+		return nil
+	}
+	return rebuildConnector(class, kept, parent)
+}
+
+// isProperSubset reports whether every member of a appears in b (by
+// structural equality) and a is strictly smaller.
+func isProperSubset(a, b []*Expression) bool {
+	if len(a) >= len(b) {
+		return false
+	}
+	for _, x := range a {
+		found := false
+		for _, y := range b {
+			if x.Equal(y) {
+				found = true
+				break
+			}
+		}
+		if !found {
+			return false
+		}
+	}
+	return true
 }
 
 // removeComplements folds A AND NOT A to FALSE and A OR NOT A to TRUE,
