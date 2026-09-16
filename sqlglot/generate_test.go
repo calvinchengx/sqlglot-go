@@ -611,6 +611,16 @@ func TestRoundTrip(t *testing.T) {
 		{"SELECT * FROM a, b JOIN c ON c.x = a.x", ""},
 		{"SELECT CASE WHEN a THEN CAST(b AS INT) ELSE NULL END FROM t", ""},
 		{"SELECT a FROM t1 UNION ALL SELECT b FROM t2 LIMIT 5", ""},
+		// A subscript index that MULTIPLIES a literal by a boolean-typed
+		// chain -- `0 * NOT NOT (0 IS 0 IS NULL)` -- typed as INT rather
+		// than BOOLEAN, because the binary annotator coerced its two
+		// operands positionally instead of coercing the non-literal type
+		// into the literal one. That made a boolean index look shiftable,
+		// which corrupted it through applyIndexOffset's Simplify call and
+		// then wrote it back missing its parens, which the port itself
+		// could not read. The generator fuzzer found it on
+		// `(A[0*!0is 0is!`])`.
+		{"(A[0*!0is 0is!`])", "duckdb"},
 	} {
 		first, err := ParseOne(c.sql, c.dialect)
 		if err != nil {

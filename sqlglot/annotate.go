@@ -158,13 +158,51 @@ func annotateNode(e *Expression, dialect string) *Expression {
 	// and answering INT there would be inventing a type from half a
 	// expression. The two look alike and are not, which is what a test of my
 	// own declining cases caught.
+	//
+	// A LITERAL operand and a non-literal one coerce in that fixed order --
+	// the reference asks the non-literal type whether it can become the
+	// literal's, never the reverse -- rather than coercing `this` into
+	// `expression` positionally. The two answers agree whenever both
+	// operands are literal, or neither is, or the non-literal side has type
+	// parameters; they diverge exactly where a literal sits on the side
+	// `coerceTypes` checks first and the two types do not coerce into one
+	// another at all. `0 * (0 IS 0 IS NULL)` is such a case: read
+	// positionally this Mul is INT, which made a boolean subscript index
+	// look shiftable and handed it to the offset shift's Simplify call,
+	// which then folded away a real NOT NOT it had no business seeing. See
+	// the reference's `_annotate_by_args`.
 	if isA("Binary", e) {
-		left := annotate(childOf(e, "this"), dialect)
-		right := annotate(childOf(e, "expression"), dialect)
+		thisNode, exprNode := childOf(e, "this"), childOf(e, "expression")
+		left := annotate(thisNode, dialect)
+		right := annotate(exprNode, dialect)
 		if left == nil || right == nil {
 			return nil
 		}
-		return coerceTypes(left, right)
+		var literalType, nonLiteralType *Expression
+		for _, operand := range [2]struct {
+			node *Expression
+			typ  *Expression
+		}{{thisNode, left}, {exprNode, right}} {
+			if operand.node != nil && operand.node.Class == "Literal" {
+				if literalType == nil {
+					literalType = operand.typ
+				} else {
+					literalType = coerceTypes(literalType, operand.typ)
+				}
+			} else if nonLiteralType == nil {
+				nonLiteralType = operand.typ
+			} else {
+				nonLiteralType = coerceTypes(nonLiteralType, operand.typ)
+			}
+		}
+		switch {
+		case literalType != nil && nonLiteralType != nil:
+			return coerceTypes(nonLiteralType, literalType)
+		case nonLiteralType != nil:
+			return nonLiteralType
+		default:
+			return literalType
+		}
 	}
 	// An ANONYMOUS call whose name the reference does not know either. The
 	// reference answers UNKNOWN for any call it has no builder for, and so

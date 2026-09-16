@@ -18,6 +18,15 @@ func TestAnnotateShapes(t *testing.T) {
 		{"a connector is boolean", "TRUE AND FALSE", "", "BOOLEAN"},
 		{"NOT is boolean", "NOT TRUE", "", "BOOLEAN"},
 		{"binary coerces its operands", "1 + 1.5", "", "DOUBLE"},
+		// A literal and a non-literal operand coerce with the non-literal
+		// asked first: `1 * NOT TRUE` is BOOLEAN, not INT, whichever side
+		// the literal is written on. Reading this positionally -- coercing
+		// `this` into `expression` regardless of which one is the literal --
+		// gave INT here, which wrongly made a boolean subscript index look
+		// shiftable. Found by the fuzzed differential on
+		// `(A[0*!0is 0is!`])`.
+		{"a literal and a non-literal coerce non-literal first", "1 * NOT TRUE", "", "BOOLEAN"},
+		{"and the same with the literal on the other side", "NOT TRUE * 1", "", "BOOLEAN"},
 		{"a NULL operand contributes nothing", "NULL + 1", "", "INT"},
 		{"a bare NULL is UNKNOWN", "NULL", "", "UNKNOWN"},
 		// Databricks is the one dialect of the five with a null type.
