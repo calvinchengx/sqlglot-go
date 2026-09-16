@@ -16,43 +16,65 @@ const (
 )
 
 // extractDateValue reads a date the way the reference's extract_date does,
-// but scoped to the two shapes this port's fixture actually needs: a CAST of
-// a string literal to DATE/DATETIME/TIMESTAMP, and a TS_OR_DS_TO_DATE over a
-// string literal with no format. Both come back as a date-only value: a
-// TS_OR_DS_TO_DATE truncates whatever precision its text carried, and a
-// plain CAST(... AS DATE) never had a time component to keep. isDatetime
-// says whether the CALLER should format the result back with one, which is
-// a property of the CAST's own target type, not of the value.
-func extractDateValue(e *Expression) (t time.Time, isDatetime bool, ok bool) {
+// but scoped to the shapes this port's fixture actually needs: a CAST of a
+// string literal (or of ANOTHER such date expression, nested) to
+// DATE/DATETIME/TIMESTAMP, and a TS_OR_DS_TO_DATE over a string literal with
+// no format. typeName is the OUTERMOST cast's own target type, not the type
+// of the value inside it -- `CAST(CAST('2021-01-01 01:02:03' AS DATETIME) AS
+// DATE)` reads the inner timestamp and reports it as a DATE, truncating the
+// clock away, the same as a TS_OR_DS_TO_DATE does regardless of what its own
+// text carried. DATETIME and TIMESTAMP are kept distinct, not folded into a
+// single "has a time component" flag: the reference writes the result back
+// under whichever of the two names was actually asked for.
+func extractDateValue(e *Expression) (t time.Time, typeName string, ok bool) {
 	switch e.Class {
 	case "Cast":
-		typeName := typeKind(childOf(e, "to"))
+		typeName = typeKind(childOf(e, "to"))
 		switch typeName {
-		case "DATE":
-			isDatetime = false
-		case "DATETIME", "TIMESTAMP":
-			isDatetime = true
+		// DATETIME2 is T-SQL's own higher-precision DATETIME; the fixture
+		// needs exactly this one of the reference's wider TEMPORAL_TYPES
+		// set, so it is the one added rather than the whole set guessed at.
+		case "DATE", "DATETIME", "DATETIME2", "TIMESTAMP":
 		default:
-			return time.Time{}, false, false
+			return time.Time{}, "", false
 		}
 		inner, _ := e.Args["this"].(*Expression)
-		if !isStringLiteral(inner) {
-			return time.Time{}, false, false
+		if inner == nil {
+			return time.Time{}, "", false
 		}
-		t, ok = parseDateText(inner.Name())
-		return t, isDatetime, ok
+		if isStringLiteral(inner) {
+			t, ok = parseDateText(inner.Name())
+		} else if inner.Class == "Cast" || inner.Class == "TsOrDsToDate" {
+			// A CAST of another date expression reads THAT expression's own
+			// value and reports it under the outer CAST's type instead.
+			t, _, ok = extractDateValue(inner)
+		} else {
+			return time.Time{}, "", false
+		}
+		if !ok {
+			return time.Time{}, "", false
+		}
+		// A cast to DATE truncates away any time-of-day the value carries --
+		// whether that came from a full-precision string written directly
+		// where a date was expected, or from an inner value the cast reads
+		// through. Casting a DATETIME down to DATE drops the clock the same
+		// way TS_OR_DS_TO_DATE already does below.
+		if typeName == "DATE" {
+			t = dayOnly(t)
+		}
+		return t, typeName, true
 	case "TsOrDsToDate":
 		if format, _ := e.Args["format"].(*Expression); format != nil {
-			return time.Time{}, false, false
+			return time.Time{}, "", false
 		}
 		inner, _ := e.Args["this"].(*Expression)
 		if !isStringLiteral(inner) {
-			return time.Time{}, false, false
+			return time.Time{}, "", false
 		}
 		t, ok = parseDateText(inner.Name())
-		return t, false, ok
+		return t, "DATE", ok
 	}
-	return time.Time{}, false, false
+	return time.Time{}, "", false
 }
 
 // parseDateText reads either layout this port's date/datetime literals use,
@@ -69,12 +91,15 @@ func parseDateText(text string) (time.Time, bool) {
 }
 
 // dateValueLiteral writes a date value back the way date_literal does: a
-// CAST of a string onto DATE or DATETIME, the string formatted with or
-// without a time-of-day component to match.
-func dateValueLiteral(t time.Time, isDatetime bool) *Expression {
-	layout, typeName := dateLayout, "DATE"
-	if isDatetime {
-		layout, typeName = dateTimeLayout, "DATETIME"
+// CAST of a string onto typeName (DATE, DATETIME or TIMESTAMP), the string
+// formatted with or without a time-of-day component to match. typeName is
+// written back VERBATIM -- DATETIME and TIMESTAMP are two different casts
+// the reference does not treat as interchangeable, so the port does not
+// either.
+func dateValueLiteral(t time.Time, typeName string) *Expression {
+	layout := dateLayout
+	if typeName != "DATE" {
+		layout = dateTimeLayout
 	}
 	to := New("DataType", Arg{"this", DataTypeKind(typeName)}, Arg{"nested", false})
 	cast := New("Cast",
@@ -239,19 +264,19 @@ func foldDateIntervalBinary(e *Expression) *Expression {
 	if left == nil || right == nil {
 		return nil
 	}
-	if date, isDatetime, ok := extractDateValue(left); ok {
+	if date, typeName, ok := extractDateValue(left); ok {
 		if unit, amount, ok := intervalOf(right); ok {
 			if e.Class == "Sub" {
 				amount = -amount
 			}
-			return foldDateResult(date, isDatetime, unit, amount)
+			return foldDateResult(date, typeName, unit, amount)
 		}
 		return nil
 	}
 	if e.Class == "Add" {
-		if date, isDatetime, ok := extractDateValue(right); ok {
+		if date, typeName, ok := extractDateValue(right); ok {
 			if unit, amount, ok := intervalOf(left); ok {
-				return foldDateResult(date, isDatetime, unit, amount)
+				return foldDateResult(date, typeName, unit, amount)
 			}
 		}
 	}
@@ -266,23 +291,23 @@ func foldDateAddFamily(e *Expression) *Expression {
 	if !ok {
 		return nil
 	}
-	dateVal, isDatetime, ok := extractDateValue(date)
+	dateVal, typeName, ok := extractDateValue(date)
 	if !ok {
 		return nil
 	}
 	if sub {
 		amount = -amount
 	}
-	return foldDateResult(dateVal, isDatetime, unit, amount)
+	return foldDateResult(dateVal, typeName, unit, amount)
 }
 
 // foldDateResult applies one calendar step and writes the result back, or
 // declines -- a nil here is what an unsupported unit like FOO looks like
 // all the way out to the statement that never folds it.
-func foldDateResult(date time.Time, isDatetime bool, unit string, amount int) *Expression {
+func foldDateResult(date time.Time, typeName string, unit string, amount int) *Expression {
 	result, ok := addCalendarInterval(date, unit, amount)
 	if !ok {
 		return nil
 	}
-	return dateValueLiteral(result, isDatetime)
+	return dateValueLiteral(result, typeName)
 }

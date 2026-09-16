@@ -100,6 +100,18 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 		if folded := foldDateArithmetic(out); folded != nil {
 			return folded
 		}
+	case "DateTrunc", "TimestampTrunc":
+		if folded := foldDateTruncLiteral(out, dialect); folded != nil {
+			return folded
+		}
+	case "LT", "GT", "LTE", "GTE", "EQ", "NEQ":
+		if folded := foldDateTruncComparison(out, parent, dialect); folded != nil {
+			return folded
+		}
+	case "In":
+		if folded := foldDateTruncIn(out, parent, dialect); folded != nil {
+			return folded
+		}
 	}
 	out = simplifyLiterals(out, parent)
 	out = simplifyCoalesce(out, parent)
@@ -574,6 +586,14 @@ func isConstant(e *Expression) bool {
 	}
 	switch e.Class {
 	case "Literal", "Boolean", "Null":
+		return true
+	}
+	// A date/datetime literal -- `CAST('2021-01-01' AS DATE)` -- is a value
+	// this port can fold arithmetic over the same way a bare Literal is, so
+	// the reference counts it as constant too: without this, `CAST(date) =
+	// DATE_TRUNC(x)` never reorders into the shape simplify_datetrunc reads,
+	// because that check always requires the DATE_TRUNC on the left.
+	if _, _, ok := extractDateValue(e); ok {
 		return true
 	}
 	return false

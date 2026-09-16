@@ -62,6 +62,14 @@
    "note": "DuckDB's + and - between a DATE and an INTERVAL of DAY (or a whole number of days) return TIMESTAMP, not DATE, even though the operand was cast to DATE and the interval never introduces a time component. The reference's own date_literal() keeps the CAST's own target type (extract_type(a)) rather than asking what the runtime actually returns, so the fold's CAST(... AS DATE) is a DATE where the unfolded expression, run as written, is a TIMESTAMP. See docs/upstream-issues.md. NOT worked around: the port reproduces the reference on purpose."
   },
   {
+   "engine": "duckdb",
+   "sql": "SELECT DATE_TRUNC('WEEK', CAST('2008-11-10' AS DATE))",
+   "who": "simplified",
+   "written": "SELECT CAST('2008-11-10' AS DATE)",
+   "why": "[(datetime.datetime(2008, 11, 10, 0, 0),)] != [(datetime.date(2008, 11, 10),)]",
+   "note": "The same DuckDB type promotion as the +/- one above, for DATE_TRUNC instead of arithmetic: truncating a DATE returns TIMESTAMP at runtime even when the truncated value is already date-aligned. sqlglot's datetime_floor()/date_literal() keep the operand's own DATE type rather than asking the runtime. See docs/upstream-issues.md. NOT worked around: the port reproduces the reference on purpose."
+  },
+  {
    "engine": "postgres",
    "sql": "SELECT 0b1010",
    "who": "reference",

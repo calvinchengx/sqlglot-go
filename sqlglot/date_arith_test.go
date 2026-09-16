@@ -255,7 +255,7 @@ func TestFoldDateArithmeticIgnoresOtherClasses(t *testing.T) {
 		Arg{"this", New("Interval",
 			Arg{"this", New("Literal", Arg{"this", "1"}, Arg{"is_string", false})},
 			Arg{"unit", New("Var", Arg{"this", "DAY"})})},
-		Arg{"expression", dateValueLiteral(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), false)})
+		Arg{"expression", dateValueLiteral(time.Date(2021, 1, 1, 0, 0, 0, 0, time.UTC), "DATE")})
 	if out := foldDateArithmetic(intervalMinusDate); out != nil {
 		t.Errorf("foldDateArithmetic(interval - date) = %v, want nil", out)
 	}

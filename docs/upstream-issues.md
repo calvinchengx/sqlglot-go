@@ -551,3 +551,26 @@ port's own fixed test-data rows hit this (`testdata/execution.json`); there
 may be others the corpus does not happen to construct.
 
 **Reference:** sqlglot @ ceb5111421e9.
+
+## Truncating a DATE changes its own type in DuckDB too
+
+**Found by:** the execution oracle, after `DATE_TRUNC` predicate-range
+folding landed in the port's `Simplify`.
+
+The same promotion as the entry above, for `DATE_TRUNC` instead of `+`/`-`:
+
+```
+in   SELECT DATE_TRUNC('WEEK', CAST('2008-11-10' AS DATE))   -> a TIMESTAMP
+out  SELECT CAST('2008-11-10' AS DATE)                       -> a DATE
+```
+
+`DATE_TRUNC` on a DATE returns TIMESTAMP at DuckDB runtime even when the
+truncated value is already day-aligned and the unit itself (WEEK, MONTH,
+...) could never introduce a time-of-day component. sqlglot's
+`datetime_floor()`/`date_literal()` keep the operand's own DATE type rather
+than asking the runtime, the same shortcut as the `+`/`-` case above, and
+the port's fold reproduces it exactly for the same reason: it is a spelling
+change over the reference's own tree, not a re-derivation of what DuckDB
+would actually return.
+
+**Reference:** sqlglot @ ceb5111421e9.
