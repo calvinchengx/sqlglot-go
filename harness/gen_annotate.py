@@ -87,7 +87,7 @@ def classify_returns(sqlglot, exp, dialects):
             name: annotate_types(make(), dialect=d).type.sql(d) for name, make in probes.items()
         }
         per_class = {}
-        for cls in sorted(_annotatable(exp), key=lambda c: c.__name__):
+        for cls in sorted(_annotatable(exp, d), key=lambda c: c.__name__):
             # An unrecognised call gives NO answer rather than a confident
             # UNKNOWN. The reference does answer UNKNOWN, but for the port
             # that would be a claim about a node it did not understand: it
@@ -120,6 +120,19 @@ def classify_returns(sqlglot, exp, dialects):
                     break
                 kinds[name] = kind
             if len(answers) != len(probes):
+                # `_build_call` only ever fills `this` (and `expressions`),
+                # so a class that needs neither -- CURRENT_CATALOG(),
+                # SESSION_USER(), the whole family of zero-argument context
+                # functions -- was never probed above at all: every one of
+                # the three scalar probes returned None before the loop even
+                # got as far as calling annotate_types. Its own return type
+                # can only ever be ONE answer, there being no argument left
+                # to vary it by, so build it bare and record whatever comes
+                # back directly rather than trying to classify a rule from
+                # three probes that were never run.
+                rule = _zero_arg_rule(cls, exp, annotate_types, d)
+                if rule:
+                    per_class[cls.__name__] = rule
                 continue
             rule = _rule_from(answers, kinds, baseline)
             if rule and _survives(cls, rule, checks, baseline, annotate_types, d, exp):
@@ -183,11 +196,63 @@ def _survives(cls, rule, checks, baseline, annotate_types, d, exp):
     return True
 
 
-def _annotatable(exp):
-    """The expression classes the annotator has a rule for."""
+def _zero_arg_rule(cls, exp, annotate_types, d):
+    """The rule for a class none of the scalar probes could build at all.
+
+    `_build_call` only fills `this` (and `expressions`), so a class that
+    needs neither was never even attempted above. Building it bare only
+    means something for a class that ALSO needs nothing else: `arg_types`
+    marks a required argument `True`, and Python's own constructor does not
+    enforce that -- `exp.Abs()` builds happily and reports UNKNOWN, which
+    would record a fixed rule for a function that plainly is not one. So
+    this only fires when nothing in `arg_types` is required at all.
+
+    A class with an OPTIONAL argument still gets one more check: does
+    filling it (a plain integer -- these are seeds and precisions, not
+    arrays or subqueries, so `_survives`'s own checks would be probing a
+    shape the function was never meant to take) change the answer? RANDN's
+    own optional seed does not change what it returns; a class where filling
+    it DOES is not "fixed" and is left unrecorded rather than guessed.
+    """
+    arg_types = getattr(cls, "arg_types", None)
+    if arg_types is None or any(arg_types.values()):
+        return None
+    try:
+        typed = annotate_types(cls(), dialect=d)
+    except Exception:  # noqa: BLE001
+        return None
+    if typed.type is None:
+        return None
+    kind = getattr(typed.type.this, "value", None)
+    if not isinstance(kind, str) or kind == "UNKNOWN":
+        return None
+    rendered = typed.type.sql(d)
+    # See _rule_from: a parameterised rendering (MAP<...>, ARRAY<...>) has
+    # nowhere to go in the port's bare-kind `dataType(rule.Type)`.
+    if "<" in rendered:
+        return None
+    for key in arg_types:
+        try:
+            filled = annotate_types(cls(**{key: exp.Literal.number(1)}), dialect=d)
+        except Exception:  # noqa: BLE001
+            return None
+        if filled.type is None or filled.type.sql(d) != rendered:
+            return None
+    return {"kind": "fixed", "type": kind, "rendered": rendered}
+
+
+def _annotatable(exp, dialect=None):
+    """The expression classes the annotator has a rule for.
+
+    A dialect's own `EXPRESSION_METADATA` extends the base one -- Databricks'
+    LOCALTIMESTAMP or CURRENT_TIMEZONE are never registered on the base
+    `Dialect()`, only on `Dialect.get_or_raise('databricks')` -- so probing
+    only the base set silently skips every class a dialect adds for itself.
+    """
     from sqlglot.dialects.dialect import Dialect
 
-    return [c for c in Dialect().EXPRESSION_METADATA if isinstance(c, type)]
+    d = Dialect.get_or_raise(dialect) if dialect else Dialect()
+    return [c for c in d.EXPRESSION_METADATA if isinstance(c, type)]
 
 
 def _build_call(cls, make):
@@ -216,6 +281,21 @@ def _rule_from(answers, kinds, baseline):
     """Read the rule out of three answers, against this dialect's spellings."""
     values = set(answers.values())
     if len(values) == 1:
+        # A "fixed" rule is recorded as a bare kind -- the port's own
+        # `dataType(rule.Type)` builds a plain, unparameterised DataType from
+        # it. STR_TO_MAP always answers MAP<TEXT, TEXT>, not bare MAP: the
+        # kind matches but the rendering carries a type parameter the port
+        # has nowhere to put, so recording it would be recording MAP and
+        # calling it done. Declining here is honest about what "fixed" can
+        # actually represent; MAP<TEXT, TEXT> itself stays a no-answer gap.
+        #
+        # This is NOT the same gap as a dialect's own spelling of a bare
+        # type -- DuckDB's TEXT for VARCHAR, TSQL's underscored
+        # TIMESTAMP_NTZ -- which is exactly what `kinds` (the canonical
+        # enum name) exists to see past. Only a compound rendering, marked
+        # by the `<...>` a parameterised type always carries, is the gap.
+        if "<" in answers["INT"]:
+            return None
         return {"kind": "fixed", "type": kinds["INT"], "rendered": answers["INT"]}
     if all(answers[k] == baseline[k] for k in answers):
         return {"kind": "args"}
