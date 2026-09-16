@@ -113,6 +113,7 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 			return folded
 		}
 	}
+	out = simplifyConditionals(out, parent)
 	out = simplifyLiterals(out, parent)
 	out = simplifyCoalesce(out, parent)
 	out = simplifyConcat(out)
@@ -121,7 +122,7 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 	out = absorb(out, parent)
 	out = simplifyConnectors(out, parent)
 	out = simplifyParens(out, parent)
-	out = sortComparison(out)
+	out = sortComparison(out, dialect)
 	out = simplifyEquality(out)
 	out = simplifyStartsWith(out)
 	return out
@@ -250,6 +251,15 @@ func simplifyLiterals(e, parent *Expression) *Expression {
 
 	if e.Class == "Is" {
 		return simplifyIs(e, a, b)
+	}
+	// A comparison with a NULL operand keeps its own NULL spelling everywhere
+	// EXCEPT directly inside an IF's own condition (which includes a CASE
+	// WHEN's condition -- one of those is an If node too): there, and only
+	// there, a NULL condition already means "skip this branch" the same way
+	// FALSE does, so folding it to a bare NULL is a spelling change, not a
+	// semantic one. `SELECT x = NULL` must not become `SELECT NULL`.
+	if (isNull(a) || isNull(b)) && parent != nil && parent.Class == "If" {
+		return New("Null")
 	}
 	// The two ASSOCIATIVE operators fold across a whole chain rather than one
 	// pair at a time. `a[CAST(x AS INT)]` is read as `CAST(x AS INT) + -1`
@@ -502,7 +512,7 @@ var inverseComparison = map[string]string{
 // the reference writes `x <= 1`, never `1 >= x`. Without this the complement
 // rule above produces a comparison that is correct and differently spelled,
 // which the contract counts as wrong.
-func sortComparison(e *Expression) *Expression {
+func sortComparison(e *Expression, dialect string) *Expression {
 	to, ok := inverseComparison[e.Class]
 	if !ok {
 		return e
@@ -520,10 +530,26 @@ func sortComparison(e *Expression) *Expression {
 	if (lCol && !rCol) || (rConst && !lConst) || isA("SubqueryPredicate", right) {
 		return e
 	}
-	if (rCol && !lCol) || (lConst && !rConst) {
+	// The final tiebreak, when neither side is a column or a constant --
+	// e.g. two arithmetic expressions freshly built by simplifyConditionals
+	// out of the same CASE subject -- is a plain string-sort of each side's
+	// own SQL, the reference's own `gen(l) > gen(r)`. Reusing this port's
+	// real generator instead of a bespoke bare one changes what a handful of
+	// dialect-specific fringe cases would sort as, but not this rule's own
+	// contract: it only ever breaks a tie neither of the rules above settled.
+	if (rCol && !lCol) || (lConst && !rConst) || genGreater(left, right, dialect) {
 		return New(to, Arg{"this", right}, Arg{"expression", left})
 	}
 	return e
+}
+
+// genGreater reports whether left's own SQL sorts after right's -- the
+// reference's `gen(l) > gen(r)` tiebreak. Either side failing to generate
+// leaves the comparison exactly as written rather than guessing.
+func genGreater(left, right *Expression, dialect string) bool {
+	l, lerr := Generate(left, dialect)
+	r, rerr := Generate(right, dialect)
+	return lerr == nil && rerr == nil && l > r
 }
 
 // inverseArithmetic is what moving a constant across a comparison does:
@@ -1312,6 +1338,102 @@ func foldConcatGroups(items []*Expression, sep string) (folded []*Expression, ch
 		i = j
 	}
 	return folded, changed
+}
+
+// simplifyConditionals is the reference's `simplify_conditionals`: fold a
+// CASE or a standalone IF whose condition is already known, and turn a
+// simple CASE (`CASE x WHEN y THEN ...`) into a searched one (`CASE WHEN x =
+// y THEN ...`) so the rest of the optimizer -- which only ever looks for a
+// bare EQ -- can reach into it.
+//
+// The EQ each WHEN gets is built fresh here and is not itself folded on this
+// visit: bottom-up, this node's children were already simplified before
+// control reached it, so a `CASE 4 WHEN 1 THEN x ...` needs the outer
+// Simplify loop to come back around once more before `4 = 1` becomes FALSE
+// and this rule can drop the branch. That mirrors the reference's own
+// while_changing loop, which does the same thing over more, smaller passes.
+func simplifyConditionals(e, parent *Expression) *Expression {
+	switch e.Class {
+	case "Case":
+		return simplifyCase(e)
+	case "If":
+		// An If that IS a CASE's own WHEN clause is simplifyCase's job: its
+		// "true" arm is read directly as case.args["true"], with no "false"
+		// arm of its own to fall back to the way a standalone IF has.
+		if parent != nil && parent.Class == "Case" {
+			return e
+		}
+		this := childOf(e, "this")
+		if alwaysTrue(this) {
+			return childOf(e, "true")
+		}
+		if alwaysFalse(this) {
+			if f := childOf(e, "false"); f != nil {
+				return f
+			}
+			return New("Null")
+		}
+	}
+	return e
+}
+
+// simplifyCase folds CASE's own WHEN branches: a subject (`CASE x WHEN ...`)
+// rewrites each WHEN's condition into an EQ against a copy of x, consuming x
+// itself once every branch has one; and any WHEN whose (possibly just
+// rewritten) condition is now known drops out -- fully, to the branch's own
+// result, if it is TRUE, replacing the whole CASE; or entirely, if it is
+// FALSE, leaving the rest of the branches to decide it instead.
+func simplifyCase(e *Expression) *Expression {
+	this := childOf(e, "this")
+	ifs, _ := e.Args["ifs"].([]*Expression)
+	kept := make([]*Expression, 0, len(ifs))
+	changed := false
+	for _, ifNode := range ifs {
+		cond := childOf(ifNode, "this")
+		if this != nil {
+			// The reference's own `.eq()` builder parenthesizes a Binary
+			// operand on EITHER side before writing the EQ down --
+			// `CASE x1 + x2 WHEN x3 ...` becomes `x3 = (x1 + x2)`, with the
+			// parens present even though EQ's own precedence would not
+			// need them. It is a property of how the node was BUILT, not
+			// of how it prints, so it has to be added here rather than
+			// left to the generator.
+			cond = New("EQ", Arg{"this", wrapBinary(this.Copy())}, Arg{"expression", wrapBinary(cond)})
+			ifNode.Set("this", cond)
+			changed = true
+		}
+		if alwaysTrue(cond) {
+			return childOf(ifNode, "true")
+		}
+		if alwaysFalse(cond) {
+			changed = true
+			continue
+		}
+		kept = append(kept, ifNode)
+	}
+	if !changed {
+		return e
+	}
+	if this != nil {
+		e.Set("this", nil)
+	}
+	if len(kept) == 0 {
+		if def := childOf(e, "default"); def != nil {
+			return def
+		}
+		return New("Null")
+	}
+	e.Set("ifs", kept)
+	return e
+}
+
+// wrapBinary is the reference's own `_wrap(e, Binary)`: a Binary operand
+// (`x1 + x2`) gets an explicit Paren around it, anything else is untouched.
+func wrapBinary(e *Expression) *Expression {
+	if isA("Binary", e) {
+		return New("Paren", Arg{"this", e})
+	}
+	return e
 }
 
 func copyExpressions(in []*Expression) []*Expression {

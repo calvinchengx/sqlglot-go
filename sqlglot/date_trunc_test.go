@@ -134,16 +134,17 @@ func TestDateTruncEndToEnd(t *testing.T) {
 	}
 }
 
-// TestDateTruncDeclines covers every shape the fold must leave alone: an
-// unrecognised unit, a comparison against a non-literal, a DATE_TRUNC over a
-// column with no literal to read on the other side, and a nested-cast source
-// that is not itself a date literal.
+// TestDateTruncDeclines covers every shape the RANGE fold must leave alone:
+// an unrecognised unit, or a comparison against a date that isn't exactly on
+// a floor. Both of these compare DATE_TRUNC against a date LITERAL, which
+// sort_comparison's own constant check leaves on the right where it was
+// written -- unlike the non-literal cases in TestDateTruncEndToEnd, which
+// still get reordered even though the range fold itself declines the same
+// way.
 func TestDateTruncDeclines(t *testing.T) {
 	for _, sql := range []string{
 		"SELECT * WHERE DATE_TRUNC('quarter', x) = CAST('2021-01-02' AS DATE)",
 		"SELECT * WHERE DATE_TRUNC('year', x) <> CAST('2021-01-02' AS DATE)",
-		"SELECT * WHERE DATE_TRUNC('day', x) = CAST(y AS DATE)",
-		"SELECT * WHERE TIMESTAMP_TRUNC(x, YEAR) = CAST(CAST(y AS DATE) AS DATETIME)",
 	} {
 		t.Run(sql, func(t *testing.T) {
 			e, err := ParseOne(sql, "")
@@ -157,6 +158,35 @@ func TestDateTruncDeclines(t *testing.T) {
 			want, _ := Generate(e, "")
 			if got != want {
 				t.Errorf("Simplify(%q) folded to %q; it should have stayed %q", sql, got, want)
+			}
+		})
+	}
+}
+
+// TestDateTruncComparisonAgainstNonLiteralReorders covers the range fold
+// declining against a non-literal right-hand side -- DATE_TRUNC over a
+// column with no literal to read on the other side, and a nested-cast
+// source that is not itself a date literal -- where sort_comparison's own
+// `gen(l) > gen(r)` tiebreak still reorders the two sides even though
+// neither is a column or a constant, matching the reference exactly.
+func TestDateTruncComparisonAgainstNonLiteralReorders(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT * WHERE DATE_TRUNC('day', x) = CAST(y AS DATE)",
+			"SELECT * WHERE CAST(y AS DATE) = DATE_TRUNC('DAY', x)"},
+		{"SELECT * WHERE TIMESTAMP_TRUNC(x, YEAR) = CAST(CAST(y AS DATE) AS DATETIME)",
+			"SELECT * WHERE CAST(CAST(y AS DATE) AS DATETIME) = TIMESTAMP_TRUNC(x, YEAR)"},
+	} {
+		t.Run(tc.sql, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(Simplify(e, ""), "")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("Simplify(%q)\n  want %s\n  got  %s", tc.sql, tc.want, got)
 			}
 		})
 	}
