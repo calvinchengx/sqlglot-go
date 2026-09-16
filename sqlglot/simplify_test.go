@@ -150,12 +150,11 @@ func TestSimplifyShapes(t *testing.T) {
 		// statement. The arithmetic switch never reaches the Predicate case
 		// the Connector one uses, on purpose.
 		{"a predicate keeps its parens under Sub", "SELECT a - (b < c)", "", "SELECT a - (b < c)"},
-		// De Morgan is the reference's own way through this -- `NOT (x AND
-		// y)` becomes `NOT x OR NOT y` there -- and is not ported, so the port
-		// keeps the parentheses NOT needs around a connector of a different
-		// class rather than rewrite the structure.
-		{"a connector under NOT keeps its parentheses", "SELECT 1 WHERE NOT (x AND y)", "",
-			"SELECT 1 WHERE NOT (x AND y)"},
+		// De Morgan, ported: `NOT (x AND y)` becomes `NOT x OR NOT y`. Neither
+		// operand needs its own parens here -- NOT binds tighter than OR --
+		// and the result needs none either, sitting at the top of a WHERE.
+		{"De Morgan distributes NOT through a parenthesised AND",
+			"SELECT 1 WHERE NOT (x AND y)", "", "SELECT 1 WHERE NOT x OR NOT y"},
 		// `NOT NULL` is itself NULL AND TRUE-shaped once the inner NOT has
 		// already run, and the outer NOT has to see through that wrapper the
 		// same way it would see a bare NULL, or the double negation never

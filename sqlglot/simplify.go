@@ -112,6 +112,8 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 		if folded := foldDateTruncIn(out, parent, dialect); folded != nil {
 			return folded
 		}
+	case "Between":
+		return rewriteBetween(out, parent)
 	}
 	out = simplifyConditionals(out, parent)
 	out = propagateConstants(out, parent)
@@ -196,12 +198,32 @@ func simplifyParens(e, parent *Expression) *Expression {
 	if arithmeticParent {
 		return e
 	}
+	// A Paren directly wrapping another Paren is redundant regardless of
+	// what encloses either of them: two layers of grouping never mean
+	// anything a plain layer would not.
+	if this.Class == "Paren" {
+		return this
+	}
 
-	if parent != nil && !isA("Connector", parent) && parentClass != "Not" {
+	// A parent that is not itself a Condition or a Binary operator -- WHERE,
+	// HAVING, the top of the statement -- needs no grouping around a
+	// boolean-shaped child at all, the same as parent being nil. This is
+	// scoped to a boolean `this` -- a Connector or a Predicate -- rather
+	// than every non-Condition/Binary parent, because a NUMERIC one (an
+	// INTERVAL's own amount, say) is neither Condition nor Binary either,
+	// and DuckDB's own grammar needs the parens THERE kept around a
+	// non-literal amount; the fuzzer found exactly that the one time this
+	// was tried unconditionally. What lets a redundant Paren collapse here
+	// is De Morgan producing a boolean-shaped result that lands directly
+	// under a clause with nothing else to protect it from, not a general
+	// rule about clause wrappers.
+	clauseWrapper := parent != nil && !isA("Condition", parent) && !isA("Binary", parent) &&
+		(isA("Connector", this) || isA("Predicate", this))
+	if parent != nil && !isA("Connector", parent) && parentClass != "Not" && !clauseWrapper {
 		return e
 	}
 	switch {
-	case parent == nil:
+	case parent == nil, clauseWrapper:
 		// Parentheses around the whole statement carry no precedence.
 	case isA("Connector", this):
 		// `A AND (A OR B)` is NOT `A AND A OR B`: AND binds tighter, so
@@ -214,7 +236,7 @@ func simplifyParens(e, parent *Expression) *Expression {
 	case isA("Predicate", this):
 		// A comparison binds tighter than any connector and than NOT, so its
 		// parentheses are decoration.
-	case this.Class == "Boolean", this.Class == "Null", this.Class == "Literal", this.Class == "Column", this.Class == "Paren":
+	case this.Class == "Boolean", this.Class == "Null", this.Class == "Literal", this.Class == "Column":
 	default:
 		return e
 	}
@@ -736,11 +758,53 @@ func safeToEliminateDoubleNegation(dialect string) bool {
 	return t != nil && t.SafeToEliminateDoubleNegation
 }
 
+// negate builds NOT of e the way this file needs it built where a bare
+// `New("Not", ...)` is not safe: as one operand of a De Morgan rewrite,
+// which is a BRAND NEW node this same pass never recurses back into, so a
+// double negation or a plain comparison left unresolved here would stay
+// that way, unprotected, until some LATER pass finally saw it -- and if it
+// is itself a Connector by then, nothing before it in the tree still knows
+// this one needed a NOT in front of it. Resolving the two cheap, purely
+// syntactic shortcuts immediately -- complementing a comparison, cancelling
+// a double negation -- is what keeps every De Morgan step this file takes
+// self-contained and safe to write down on its own.
+func negate(e *Expression, dialect string) *Expression {
+	if to, ok := complementComparison[e.Class]; ok {
+		left, right := childOf(e, "this"), childOf(e, "expression")
+		if left != nil && right != nil && len(e.Keys) == 2 {
+			if flipped, isQuantifier := complementQuantifier[right.Class]; isQuantifier {
+				if inner := childOf(right, "this"); inner != nil {
+					right = New(flipped, Arg{"this", inner})
+				}
+			}
+			return New(to, Arg{"this", left}, Arg{"expression", right})
+		}
+	}
+	if e.Class == "Not" && safeToEliminateDoubleNegation(dialect) {
+		if inner := childOf(e, "this"); isKnownBoolean(inner) {
+			return inner
+		}
+	}
+	// e is itself a Connector: a bare `Not(e)` here would be exactly the
+	// unprotected shape this function exists to avoid ever constructing, so
+	// De Morgan distributes into it immediately too, recursively, rather
+	// than leaving a second application for some later pass to find.
+	if e.Class == "And" || e.Class == "Or" {
+		left, right := childOf(e, "this"), childOf(e, "expression")
+		if left != nil && right != nil {
+			distributed := "Or"
+			if e.Class == "Or" {
+				distributed = "And"
+			}
+			return New("Paren", Arg{"this", New(distributed,
+				Arg{"this", negate(left, dialect)},
+				Arg{"expression", negate(right, dialect)})})
+		}
+	}
+	return New("Not", Arg{"this", e})
+}
+
 // simplifyNot folds a negation whose operand is already decided.
-//
-// De Morgan over a parenthesised connector is the reference's headline case
-// here and is NOT ported yet: it rewrites structure rather than folding a
-// constant, and the nodes it would touch are left alone.
 func simplifyNot(e, parent *Expression, dialect string) *Expression {
 	if e.Class != "Not" {
 		return e
@@ -780,6 +844,28 @@ func simplifyNot(e, parent *Expression, dialect string) *Expression {
 			right = New(flipped, Arg{"this", inner})
 		}
 		return New(to, Arg{"this", left}, Arg{"expression", right})
+	}
+	// De Morgan's law, but only through an explicit Paren: valid SQL always
+	// writes one around an AND/OR directly under NOT, so this is the shape
+	// `NOT (a AND b)` and `NOT BETWEEN`'s own negated rewrite actually take,
+	// not a general distribution rule reached for any bare Connector. A
+	// Paren wrapping NULL (`NOT (NULL)`) needs no case of its own here --
+	// isNullShaped above already unnests a Paren on its way to checking for
+	// NULL, so it has already caught that shape by the time this runs.
+	if this.Class == "Paren" {
+		condition := unnest(this)
+		switch {
+		case condition != nil && condition.Class == "And":
+			left, right := childOf(condition, "this"), childOf(condition, "expression")
+			return New("Paren", Arg{"this", New("Or",
+				Arg{"this", negate(left, dialect)},
+				Arg{"expression", negate(right, dialect)})})
+		case condition != nil && condition.Class == "Or":
+			left, right := childOf(condition, "this"), childOf(condition, "expression")
+			return New("Paren", Arg{"this", New("And",
+				Arg{"this", negate(left, dialect)},
+				Arg{"expression", negate(right, dialect)})})
+		}
 	}
 	if alwaysTrue(this) {
 		return boolLit(false)
@@ -851,12 +937,76 @@ func simplifyConnectors(e, parent *Expression) *Expression {
 	if folded == nil {
 		// Two comparisons of the SAME column can decide each other:
 		// `x > 1 AND x < 1` is FALSE whatever x is.
-		folded = simplifyComparison(e, left, right, e.Class == "Or")
+		folded = simplifyComparison(left, right, e.Class == "Or")
+	}
+	if folded == nil {
+		// The two DIRECT children decide nothing on their own, but a THIRD
+		// operand further down the same chain might: `x > 1 AND x < 2 AND
+		// x > 3` is FALSE, which the pairwise check above can never see
+		// because neither of e's own two children is itself a comparison --
+		// one of them is `x > 1 AND x < 2`. Scanning every pair in the whole
+		// flattened chain is what the reference's own `_flat_simplify` does.
+		if out := flatFoldComparisons(e); out != nil {
+			folded = out
+		}
 	}
 	if folded == nil {
 		return e
 	}
 	return keepCondition(folded, parent)
+}
+
+// flatMerge repeatedly asks merge to combine any two operands, replacing
+// them with the result and trying again, until no pair combines further --
+// the reference's own `_flat_simplify`. It returns nil, not the unchanged
+// input, when nothing combined, so a caller can tell "no change" apart from
+// "collapsed to a single operand" without comparing trees.
+func flatMerge(operands []*Expression, class string, merge func(a, b *Expression) *Expression) *Expression {
+	queue := operands
+	size := len(queue)
+	var kept []*Expression
+	for len(queue) > 0 {
+		a := queue[0]
+		queue = queue[1:]
+		folded := false
+		for i, b := range queue {
+			out := merge(a, b)
+			if out == nil {
+				continue
+			}
+			rest := append([]*Expression{out}, queue[:i]...)
+			queue = append(rest, queue[i+1:]...)
+			folded = true
+			break
+		}
+		if !folded {
+			kept = append(kept, a)
+		}
+	}
+	if len(kept) == size {
+		return nil
+	}
+	out := kept[0]
+	for _, operand := range kept[1:] {
+		out = New(class, Arg{"this", out}, Arg{"expression", operand})
+	}
+	return out
+}
+
+// flatFoldComparisons scans every pair in e's own fully flattened AND/OR
+// chain for a shared-column comparison one of them decides, not just e's
+// own two direct children -- see the comment where this is called.
+func flatFoldComparisons(e *Expression) *Expression {
+	queue := chainOperands(e, e.Class)
+	if len(queue) < 3 {
+		// Two operands is exactly what the caller's own pairwise check just
+		// tried; a flat scan can only find something new past that.
+		return nil
+	}
+	or := e.Class == "Or"
+	return flatMerge(queue, e.Class, func(a, b *Expression) *Expression {
+		return simplifyComparison(a, b, or)
+	})
 }
 
 // unnest strips the parentheses around an operand so it can be compared with
@@ -866,6 +1016,30 @@ func unnest(e *Expression) *Expression {
 		e, _ = e.Args["this"].(*Expression)
 	}
 	return e
+}
+
+// rewriteBetween is the reference's `rewrite_between`: `x BETWEEN y AND z`
+// becomes `x >= y AND x <= z`, because every other comparison-range rule in
+// this file only ever looks for LT/LTE/GT/GTE -- BETWEEN itself is invisible
+// to `x > 3 AND x BETWEEN 0 AND 10` unless it is spoken in those terms first.
+// A BETWEEN directly under NOT keeps its own parentheses on the way out --
+// `NOT x BETWEEN 0 AND 1` needs `NOT (x >= 0 AND x <= 1)`, not
+// `NOT x >= 0 AND x <= 1`, which is a different, unparenthesized question --
+// so simplify_not's own De Morgan step can read it back out again.
+func rewriteBetween(e, parent *Expression) *Expression {
+	this := childOf(e, "this")
+	low := childOf(e, "low")
+	high := childOf(e, "high")
+	if this == nil || low == nil || high == nil {
+		return e
+	}
+	result := New("And",
+		Arg{"this", New("GTE", Arg{"this", this.Copy()}, Arg{"expression", low})},
+		Arg{"expression", New("LTE", Arg{"this", this.Copy()}, Arg{"expression", high})})
+	if parent != nil && parent.Class == "Not" {
+		return New("Paren", Arg{"this", result})
+	}
+	return result
 }
 
 // chainOperands flattens a run of the same connector into its operands:
@@ -1505,8 +1679,23 @@ func parenthesizeNestedConnector(e, parent *Expression) *Expression {
 // belongs, so it goes back bare and lets that parent's own fold (or the next
 // pass, if it does not fold there) decide what becomes of it.
 func keepCondition(folded, parent *Expression) *Expression {
-	if folded.Class == "And" || folded.Class == "Or" || folded.Class == "Boolean" ||
-		isKnownBoolean(folded) || isA("Connector", parent) {
+	// An And/Or result already LOOKS like a condition, so it never needs the
+	// "AND TRUE" wrapping below -- but it can still need PROTECTIVE parens
+	// around it, the same as any other connector standing where a NOT or a
+	// different-class connector is its parent. Skipping that check here is
+	// what let a coalesce fold's own OR -- reduced, on a later pass, down to
+	// a bare AND once its other branch turned out to be FALSE -- come back
+	// as `NOT x AND y`, a different, unparenthesized statement.
+	if folded.Class == "And" || folded.Class == "Or" {
+		return parenthesizeNestedConnector(folded, parent)
+	}
+	// A Paren already wrapping a Connector -- De Morgan's own construction,
+	// which builds its protective parens itself rather than leaving that to
+	// this function -- is exactly as condition-shaped as a bare one.
+	if folded.Class == "Paren" && isA("Connector", childOf(folded, "this")) {
+		return folded
+	}
+	if folded.Class == "Boolean" || isKnownBoolean(folded) || isA("Connector", parent) {
 		return folded
 	}
 	return parenthesizeNestedConnector(
@@ -1537,7 +1726,7 @@ var nondeterministic = map[string]bool{"Rand": true, "Randn": true}
 //
 // Dates are not handled. Comparing them means parsing calendar literals, and
 // a port that got that subtly wrong would fold a range into the wrong answer.
-func simplifyComparison(e, left, right *Expression, or bool) *Expression {
+func simplifyComparison(left, right *Expression, or bool) *Expression {
 	if !comparisons[left.Class] || !comparisons[right.Class] {
 		return nil
 	}
@@ -1572,7 +1761,9 @@ func simplifyComparison(e, left, right *Expression, or bool) *Expression {
 	lOther := otherThan(lArgs, shared)
 	rOther := otherThan(rArgs, shared)
 	if lOther == nil || rOther == nil {
-		return e
+		// A degenerate comparison like `x = x` has no OTHER operand once the
+		// shared one is accounted for. Nothing to compare against.
+		return nil
 	}
 
 	cmp, ok := compareConstants(lOther, rOther)
@@ -1759,32 +1950,8 @@ func withoutWideningCast(e *Expression) *Expression {
 // sum of columns is not re-associated for nothing.
 func flatFold(e *Expression) *Expression {
 	queue := chainOperands(e, e.Class)
-	size := len(queue)
-	var kept []*Expression
-	for len(queue) > 0 {
-		a := queue[0]
-		queue = queue[1:]
-		folded := false
-		for i, b := range queue {
-			out := foldNumbers(e, a, b)
-			if out == nil {
-				continue
-			}
-			rest := append([]*Expression{out}, queue[:i]...)
-			queue = append(rest, queue[i+1:]...)
-			folded = true
-			break
-		}
-		if !folded {
-			kept = append(kept, a)
-		}
+	if out := flatMerge(queue, e.Class, func(a, b *Expression) *Expression { return foldNumbers(e, a, b) }); out != nil {
+		return out
 	}
-	if len(kept) == size {
-		return e
-	}
-	out := kept[0]
-	for _, operand := range kept[1:] {
-		out = New(e.Class, Arg{"this", out}, Arg{"expression", operand})
-	}
-	return out
+	return e
 }

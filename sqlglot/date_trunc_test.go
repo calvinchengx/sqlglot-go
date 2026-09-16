@@ -54,12 +54,12 @@ func TestDateTruncEndToEnd(t *testing.T) {
 		{"EQ's own AND does NOT need parentheses under an OR of the same-or-looser precedence",
 			"SELECT * WHERE DATE_TRUNC('year', x) = CAST('2021-01-01' AS DATE) OR y = 1", "",
 			"SELECT * WHERE (x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)) OR y = 1"},
-		{"EQ's own AND is parenthesised under NOT",
+		{"EQ's own AND, under NOT, is distributed by De Morgan into NEQ's own shape",
 			"SELECT * WHERE NOT DATE_TRUNC('year', x) = CAST('2021-01-01' AS DATE)", "",
-			"SELECT * WHERE NOT (x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE))"},
-		{"and NEQ's own OR the same way",
+			"SELECT * WHERE x < CAST('2021-01-01' AS DATE) OR x >= CAST('2022-01-01' AS DATE)"},
+		{"and NEQ's own OR the same way, into EQ's",
 			"SELECT * WHERE NOT DATE_TRUNC('year', x) <> CAST('2021-01-01' AS DATE)", "",
-			"SELECT * WHERE NOT (x < CAST('2021-01-01' AS DATE) OR x >= CAST('2022-01-01' AS DATE))"},
+			"SELECT * WHERE x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"},
 		{"LTE", "SELECT * WHERE DATE_TRUNC('year', x) <= CAST('2021-01-01' AS DATE)", "",
 			"SELECT * WHERE x < CAST('2022-01-01' AS DATE)"},
 		{"LTE off the floor reads the same next boundary",
@@ -95,16 +95,12 @@ func TestDateTruncEndToEnd(t *testing.T) {
 		{"IN's own OR is parenthesised joining an AND",
 			"SELECT * WHERE DATE_TRUNC('year', x) IN (CAST('2021-01-01' AS DATE), CAST('2023-01-01' AS DATE)) AND y = 1", "",
 			"SELECT * WHERE ((x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)) OR (x < CAST('2024-01-01' AS DATE) AND x >= CAST('2023-01-01' AS DATE))) AND y = 1"},
-		// The reference goes one step further here than this port does --
-		// pushing the NOT through the OR via De Morgan, then through each
-		// AND in turn, to land on the same shape _datetrunc_neq builds
-		// directly. De Morgan over a parenthesised connector is not ported
-		// (see simplifyNot's own doc comment), so the port stops one step
-		// short: it still folds the IN itself, correctly, and merely
-		// leaves the NOT wrapping the result rather than distributing it.
-		{"a NOT wrapping an IN fold is not distributed through it (De Morgan, not ported)",
+		// De Morgan pushes the NOT through the OR, then through each AND in
+		// turn, landing on the same shape _datetrunc_neq builds directly --
+		// each merged range's own OR-of-comparisons, ANDed together.
+		{"a NOT wrapping an IN fold is distributed through it by De Morgan",
 			"SELECT * WHERE NOT DATE_TRUNC('year', x) IN (CAST('2021-01-01' AS DATE), CAST('2023-01-01' AS DATE))", "",
-			"SELECT * WHERE NOT ((x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)) OR (x < CAST('2024-01-01' AS DATE) AND x >= CAST('2023-01-01' AS DATE)))"},
+			"SELECT * WHERE (x < CAST('2021-01-01' AS DATE) OR x >= CAST('2022-01-01' AS DATE)) AND (x < CAST('2023-01-01' AS DATE) OR x >= CAST('2024-01-01' AS DATE))"},
 		{"TIMESTAMP_TRUNC keeps its DATETIME type in the rewritten bounds",
 			"SELECT * WHERE TIMESTAMP_TRUNC(x, YEAR) = CAST('2021-01-01' AS DATETIME)", "",
 			"SELECT * WHERE x < CAST('2022-01-01 00:00:00' AS DATETIME) AND x >= CAST('2021-01-01 00:00:00' AS DATETIME)"},
