@@ -290,10 +290,9 @@ func TestFoldDateArithmeticIgnoresOtherClasses(t *testing.T) {
 
 // TestDateAddFamilyDeclinesNonLiteralAmount covers dateAddFamilyOf's own
 // amount-reading failure directly, at the tree rather than through
-// Generate: DATE_ADD has no dedicated generator writer registered for this
-// shape yet (a separate, pre-existing gap, unrelated to whether the fold
-// itself is right), so asserting through round-tripped SQL would fail for
-// the wrong reason.
+// Generate: it is enough here that the fold leaves the node alone: what
+// Generate then does with that surviving node is covered separately by
+// TestDateAddFamilyNonLiteralAmountGeneration.
 func TestDateAddFamilyDeclinesNonLiteralAmount(t *testing.T) {
 	sql := "SELECT DATE_ADD(CAST('2023-01-02' AS DATE), x, 'DAY')"
 	e, err := ParseOne(sql, "")
@@ -304,5 +303,138 @@ func TestDateAddFamilyDeclinesNonLiteralAmount(t *testing.T) {
 	dateAdds := simplified.FindAll("DateAdd")
 	if len(dateAdds) != 1 {
 		t.Fatalf("Simplify(%q) folded away the DateAdd it should have left alone: %d remain", sql, len(dateAdds))
+	}
+}
+
+// TestDateAddFamilyNonLiteralAmountGeneration covers the generation side of
+// the same gap: once the fold declines (amount not a literal integer, or
+// `this` not reducible to a literal date), DateAdd/DateSub/DatetimeAdd/
+// DatetimeSub must still generate, in the shape each of this port's 5
+// generator dialects ("", tsql, postgres, duckdb, databricks) actually
+// writes it in. Every `want` here was verified against the reference
+// (~/opensource/sqlglot at ceb5111421e9) directly -- either by building the
+// exact AST and calling .sql(dialect=...), or from testdata/simplify.json's
+// own recorded expectations for the parseable ones.
+func TestDateAddFamilyNonLiteralAmountGeneration(t *testing.T) {
+	for _, tc := range []struct {
+		name, sql, dialect, want string
+	}{
+		// The exact case from the bug report, across all 5 dialects.
+		{"bug report case, default dialect",
+			"SELECT DATE_ADD(CAST('2023-01-02' AS DATE), x, 'DAY')", "",
+			"SELECT DATE_ADD(CAST('2023-01-02' AS DATE), x, 'DAY')"},
+		{"bug report case, tsql",
+			"SELECT DATE_ADD(CAST('2023-01-02' AS DATE), x, 'DAY')", "tsql",
+			"SELECT DATEADD(DAY, x, CAST('2023-01-02' AS DATE))"},
+		{"bug report case, postgres",
+			"SELECT DATE_ADD(CAST('2023-01-02' AS DATE), x, 'DAY')", "postgres",
+			"SELECT CAST('2023-01-02' AS DATE) + INTERVAL '1 DAY' * x"},
+		{"bug report case, duckdb",
+			"SELECT DATE_ADD(CAST('2023-01-02' AS DATE), x, 'DAY')", "duckdb",
+			"SELECT CAST('2023-01-02' AS DATE) + INTERVAL (x) DAY"},
+		{"bug report case, databricks",
+			"SELECT DATE_ADD(CAST('2023-01-02' AS DATE), x, 'DAY')", "databricks",
+			"SELECT DATEADD(DAY, x, CAST('2023-01-02' AS DATE))"},
+
+		// DateSub with a column amount, across all 5 dialects.
+		{"DateSub, default dialect",
+			"SELECT DATE_SUB(CAST('2023-01-02' AS DATE), x, 'DAY')", "",
+			"SELECT DATE_SUB(CAST('2023-01-02' AS DATE), x, DAY)"},
+		{"DateSub, tsql",
+			"SELECT DATE_SUB(CAST('2023-01-02' AS DATE), x, 'DAY')", "tsql",
+			"SELECT DATE_SUB(CAST('2023-01-02' AS DATE), x, DAY)"},
+		{"DateSub, postgres",
+			"SELECT DATE_SUB(CAST('2023-01-02' AS DATE), x, 'DAY')", "postgres",
+			"SELECT CAST('2023-01-02' AS DATE) - INTERVAL '1 DAY' * x"},
+		{"DateSub, duckdb",
+			"SELECT DATE_SUB(CAST('2023-01-02' AS DATE), x, 'DAY')", "duckdb",
+			"SELECT CAST('2023-01-02' AS DATE) - INTERVAL (x) DAY"},
+		{"DateSub, databricks",
+			"SELECT DATE_SUB(CAST('2023-01-02' AS DATE), x, 'DAY')", "databricks",
+			"SELECT DATE_ADD(CAST('2023-01-02' AS DATE), x * -1)"},
+
+		// DatetimeAdd with a column amount, across all 5 dialects.
+		{"DatetimeAdd, default dialect",
+			"SELECT DATETIME_ADD(CAST('2023-01-02' AS DATE), x, 'DAY')", "",
+			"SELECT DATETIME_ADD(CAST('2023-01-02' AS DATE), x, DAY)"},
+		{"DatetimeAdd, tsql",
+			"SELECT DATETIME_ADD(CAST('2023-01-02' AS DATE), x, 'DAY')", "tsql",
+			"SELECT DATETIME_ADD(CAST('2023-01-02' AS DATE), x, DAY)"},
+		{"DatetimeAdd, postgres",
+			"SELECT DATETIME_ADD(CAST('2023-01-02' AS DATE), x, 'DAY')", "postgres",
+			"SELECT DATETIME_ADD(CAST('2023-01-02' AS DATE), x, DAY)"},
+		{"DatetimeAdd, duckdb",
+			"SELECT DATETIME_ADD(CAST('2023-01-02' AS DATE), x, 'DAY')", "duckdb",
+			"SELECT CAST('2023-01-02' AS DATE) + INTERVAL (x) DAY"},
+		{"DatetimeAdd, databricks",
+			"SELECT DATETIME_ADD(CAST('2023-01-02' AS DATE), x, 'DAY')", "databricks",
+			"SELECT TIMESTAMPADD(DAY, x, CAST('2023-01-02' AS DATE))"},
+
+		// DatetimeSub with a column amount, across all 5 dialects.
+		{"DatetimeSub, default dialect",
+			"SELECT DATETIME_SUB(CAST('2023-01-02' AS DATE), x, 'DAY')", "",
+			"SELECT DATETIME_SUB(CAST('2023-01-02' AS DATE), x, DAY)"},
+		{"DatetimeSub, tsql",
+			"SELECT DATETIME_SUB(CAST('2023-01-02' AS DATE), x, 'DAY')", "tsql",
+			"SELECT DATETIME_SUB(CAST('2023-01-02' AS DATE), x, DAY)"},
+		{"DatetimeSub, postgres",
+			"SELECT DATETIME_SUB(CAST('2023-01-02' AS DATE), x, 'DAY')", "postgres",
+			"SELECT DATETIME_SUB(CAST('2023-01-02' AS DATE), x, DAY)"},
+		{"DatetimeSub, duckdb",
+			"SELECT DATETIME_SUB(CAST('2023-01-02' AS DATE), x, 'DAY')", "duckdb",
+			"SELECT CAST('2023-01-02' AS DATE) - INTERVAL (x) DAY"},
+		{"DatetimeSub, databricks",
+			"SELECT DATETIME_SUB(CAST('2023-01-02' AS DATE), x, 'DAY')", "databricks",
+			"SELECT TIMESTAMPADD(DAY, x * -1, CAST('2023-01-02' AS DATE))"},
+
+		// databricks' DateSub follows Hive's unit table -- verify each rung.
+		{"DateSub, databricks, MONTH",
+			"SELECT DATE_SUB(CAST('2023-01-02' AS DATE), x, 'MONTH')", "databricks",
+			"SELECT ADD_MONTHS(CAST('2023-01-02' AS DATE), x * -1)"},
+		{"DateSub, databricks, YEAR",
+			"SELECT DATE_SUB(CAST('2023-01-02' AS DATE), x, 'YEAR')", "databricks",
+			"SELECT ADD_MONTHS(CAST('2023-01-02' AS DATE), x * -12)"},
+		{"DateSub, databricks, QUARTER",
+			"SELECT DATE_SUB(CAST('2023-01-02' AS DATE), x, 'QUARTER')", "databricks",
+			"SELECT ADD_MONTHS(CAST('2023-01-02' AS DATE), x * -3)"},
+		{"DateSub, databricks, WEEK",
+			"SELECT DATE_SUB(CAST('2023-01-02' AS DATE), x, 'WEEK')", "databricks",
+			"SELECT DATE_ADD(CAST('2023-01-02' AS DATE), x * -7)"},
+
+		// A literal amount only reaches Generate when `this` doesn't fold
+		// (here, a plain column) -- covers the literal/non-literal branch
+		// that postgres, duckdb and databricks' DateSub each have.
+		{"DateSub, databricks, literal amount, DAY",
+			"SELECT DATE_SUB(d, 5, 'DAY')", "databricks",
+			"SELECT DATE_ADD(d, -5)"},
+		{"DateSub, databricks, literal amount, YEAR",
+			"SELECT DATE_SUB(d, 5, 'YEAR')", "databricks",
+			"SELECT ADD_MONTHS(d, -60)"},
+		{"DateAdd, postgres, literal amount",
+			"SELECT DATE_ADD(d, 5, 'DAY')", "postgres",
+			"SELECT d + INTERVAL '5 DAY'"},
+		{"DateAdd, duckdb, literal amount",
+			"SELECT DATE_ADD(d, 5, 'DAY')", "duckdb",
+			"SELECT d + INTERVAL 5 DAY"},
+		{"DatetimeSub, databricks, literal amount stays unfolded",
+			"SELECT DATETIME_SUB(d, 5, 'DAY')", "databricks",
+			"SELECT TIMESTAMPADD(DAY, 5 * -1, d)"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(Simplify(e, ""), tc.dialect)
+			if err != nil {
+				t.Fatalf("Generate(%q, dialect=%q): %v", tc.sql, tc.dialect, err)
+			}
+			if got != tc.want {
+				t.Errorf("Simplify(%q) generated for %q\n  want %s\n  got  %s", tc.sql, tc.dialect, tc.want, got)
+			}
+			if _, err := ParseOne(got, tc.dialect); err != nil {
+				t.Fatalf("the writer's own output %q does not parse back under %q: %v", got, tc.dialect, err)
+			}
+		})
 	}
 }

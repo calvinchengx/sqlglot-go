@@ -117,6 +117,8 @@ func init() {
 		"FileFormatProperty":                  (*generator).writeFileFormat,
 		"DateAdd":                             (*generator).writeDateAdd,
 		"DateSub":                             (*generator).writeDateSub,
+		"DatetimeAdd":                         (*generator).writeDatetimeAdd,
+		"DatetimeSub":                         (*generator).writeDatetimeSub,
 		"TableSample":                         (*generator).writeTableSample,
 		"WithinGroup":                         (*generator).writeWithinGroup,
 		"RegexpReplace":                       (*generator).writeRegexpFlagged,
@@ -6142,45 +6144,235 @@ func (g *generator) writeTableSample(e *Expression) string {
 	return out
 }
 
-// writeDateAdd and writeDateSub write a date shifted by an interval.
+// writeDateAdd, writeDateSub, writeDatetimeAdd and writeDatetimeSub write a
+// date or datetime shifted by an amount. Each dialect spells this its own
+// way -- an operator (`d + INTERVAL 1 DAY`), a unit-first call
+// (`DATEADD(DAY, 1, d)`), a signed-amount call (`DATE_ADD(d, -1)`), or a
+// plain function call naming all three arguments (`DATE_ADD(d, 1, DAY)`) --
+// and no generic FuncSpec/SyntaxSQL template covers the shape for most of
+// them, so each is written out directly rather than probed for.
 func (g *generator) writeDateAdd(e *Expression) string {
-	return g.writeDateDelta(e, "+")
+	return g.writeDateArith(e, "Date", 1)
 }
 
 func (g *generator) writeDateSub(e *Expression) string {
-	return g.writeDateDelta(e, "-")
+	return g.writeDateArith(e, "Date", -1)
 }
 
-// writeDateDelta writes the shift as an OPERATOR where the dialect spells it
-// that way: `d + INTERVAL 1 DAY` rather than `DATEADD(DAY, 1, d)`.
-//
-// The amount carries the unit. Where it is already an interval it is written
-// as it stands; where it is a bare number the unit the shift names is put on
-// it, defaulting to days -- which is what the reference supplies when the
-// statement named none.
-func (g *generator) writeDateDelta(e *Expression, op string) string {
-	if !g.tables.DateDeltaIsAnOperator {
-		return g.spell(e)
-	}
-	amount, _ := e.Args["expression"].(*Expression)
-	if amount == nil {
-		return g.fail(e.Class + " with nothing to shift by")
-	}
-	if amount.Class != "Interval" {
-		unit, _ := e.Args["unit"].(*Expression)
-		if unit == nil {
-			unit = New("Var", Arg{"this", "DAY"})
-		}
-		amount = New("Interval", Arg{"this", amount}, Arg{"unit", unit})
-	}
-	// A date written as TEXT is cast before the arithmetic, because a string
-	// and an interval do not add.
+func (g *generator) writeDatetimeAdd(e *Expression) string {
+	return g.writeDateArith(e, "Datetime", 1)
+}
+
+func (g *generator) writeDatetimeSub(e *Expression) string {
+	return g.writeDateArith(e, "Datetime", -1)
+}
+
+// writeDateArith dispatches DateAdd/DateSub/DatetimeAdd/DatetimeSub to the
+// shape the current dialect writes them in. domain is "Date" or "Datetime";
+// sign is +1 for the ADD classes and -1 for the SUB classes.
+func (g *generator) writeDateArith(e *Expression, domain string, sign int) string {
 	this, _ := e.Args["this"].(*Expression)
-	if isStringLiteral(this) {
-		this = New("Cast", Arg{"this", this},
-			Arg{"to", New("DataType", Arg{"this", DataTypeKind("DATE")})})
+	amount, _ := e.Args["expression"].(*Expression)
+	unit, _ := e.Args["unit"].(*Expression)
+	if this == nil || amount == nil {
+		return g.fail(e.Class + " with a missing operand")
 	}
-	return g.node(this) + " " + op + " " + g.node(amount)
+	name := strings.ToUpper(domain) + "_" + map[int]string{1: "ADD", -1: "SUB"}[sign]
+
+	switch g.dialect {
+	case "postgres":
+		if domain == "Date" {
+			op := "+"
+			if sign < 0 {
+				op = "-"
+			}
+			return g.dateArithOperator(this, amount, unit, op, true, "")
+		}
+		return g.dateArithGenericFallback(name, this, amount, unit, false)
+	case "duckdb":
+		op := "+"
+		if sign < 0 {
+			op = "-"
+		}
+		castTo := DataTypeKind("DATE")
+		if domain == "Datetime" {
+			castTo = DataTypeKind("TIMESTAMP")
+		}
+		return g.dateArithOperator(this, amount, unit, op, false, castTo)
+	case "databricks":
+		if domain == "Date" {
+			if sign > 0 {
+				return g.dateArithUnitFirst(this, amount, unit, "DATEADD", New("Var", Arg{"this", "DAY"}))
+			}
+			return g.dateArithHiveDelta(this, amount, unit)
+		}
+		if sign > 0 {
+			return g.dateArithUnitFirst(this, amount, unit, "TIMESTAMPADD", nil)
+		}
+		return g.dateArithTimestampSub(this, amount, unit)
+	case "tsql":
+		if domain == "Date" && sign > 0 {
+			return g.dateArithUnitFirst(this, amount, unit, "DATEADD", New("Var", Arg{"this", "DAY"}))
+		}
+		return g.dateArithGenericFallback(name, this, amount, unit, false)
+	default:
+		return g.dateArithGenericFallback(name, this, amount, unit, domain == "Date" && sign > 0)
+	}
+}
+
+// isPlainNumericLiteral reports whether e is a bare, non-string Literal --
+// the strict sense the reference means by isinstance(x, exp.Literal). A
+// negative amount is Neg(Literal(...)) in this port's tree (see numberLit),
+// never Literal("-5"), so Neg is deliberately excluded: the reference's own
+// literal check excludes it the same way, and a Neg amount is written
+// through the same non-literal path as any other expression below.
+func isPlainNumericLiteral(e *Expression) bool {
+	if e == nil || e.Class != "Literal" {
+		return false
+	}
+	isString, _ := e.Args["is_string"].(bool)
+	return !isString
+}
+
+// dateArithGenericFallback writes the plain call shape `NAME(this, expr[,
+// unit])`: the unit is left off entirely when absent -- never defaulted,
+// because a written-in default is a unit the statement never named, and
+// reading that text back builds a tree with an explicit unit where the one
+// generated from had none, which fails this port's round-trip check. Where
+// present, quoteUnit says whether it is written as a quoted string (the
+// default dialect's DateAdd) or bare (everywhere else here).
+func (g *generator) dateArithGenericFallback(name string, this, amount, unit *Expression, quoteUnit bool) string {
+	args := []string{g.node(this), g.node(amount)}
+	if unit != nil {
+		if quoteUnit {
+			args = append(args, "'"+strings.ToUpper(unit.Name())+"'")
+		} else {
+			args = append(args, g.node(unit))
+		}
+	}
+	return name + "(" + strings.Join(args, ", ") + ")"
+}
+
+// dateArithOperator writes the `this OP INTERVAL ...` shape used by
+// postgres and duckdb. A plain numeric literal amount is written directly
+// (quoted into the interval's string where quoteInterval asks for that);
+// any other amount is instead multiplied against a one-unit interval
+// (postgres) or parenthesized inside the interval (duckdb) -- the two
+// dialects diverge here, verified against the reference, not a guess.
+func (g *generator) dateArithOperator(this, amount, unit *Expression, op string, quoteInterval bool, castStringTo DataTypeKind) string {
+	if castStringTo != "" && isStringLiteral(this) {
+		this = New("Cast", Arg{"this", this},
+			Arg{"to", New("DataType", Arg{"this", castStringTo})})
+	}
+	if amount.Class == "Interval" {
+		return g.node(this) + " " + op + " " + g.node(amount)
+	}
+	if quoteInterval {
+		// postgres: a literal amount becomes the interval's own quoted
+		// text (`INTERVAL '5 DAY'`); anything else keeps the amount as a
+		// separate factor multiplied against one unit (`INTERVAL '1 DAY' *
+		// x`) -- the sign lives in op, not in the amount, either way.
+		if isPlainNumericLiteral(amount) {
+			text, _ := amount.Args["this"].(string)
+			interval := New("Interval", Arg{"this", New("Literal", Arg{"this", text}, Arg{"is_string", true})})
+			if unit != nil {
+				interval.Args["unit"] = unit
+			}
+			return g.node(this) + " " + op + " " + g.node(interval)
+		}
+		one := New("Literal", Arg{"this", "1"}, Arg{"is_string", true})
+		oneInterval := New("Interval", Arg{"this", one})
+		if unit != nil {
+			oneInterval.Args["unit"] = unit
+		}
+		mul := New("Mul", Arg{"this", oneInterval}, Arg{"expression", amount})
+		return g.node(this) + " " + op + " " + g.node(mul)
+	}
+	// duckdb: the unit always shows, defaulting to DAY; a literal amount is
+	// written bare, anything else is parenthesized.
+	if unit == nil {
+		unit = New("Var", Arg{"this", "DAY"})
+	}
+	value := amount
+	if !isPlainNumericLiteral(amount) {
+		value = New("Paren", Arg{"this", amount})
+	}
+	interval := New("Interval", Arg{"this", value}, Arg{"unit", unit})
+	return g.node(this) + " " + op + " " + g.node(interval)
+}
+
+// dateArithUnitFirst writes the `FUNC(unit, amount, this)` shape used by
+// tsql/databricks DateAdd and databricks DatetimeAdd. defaultUnit is the
+// unit to assume when the statement named none, or nil where the dialect
+// has no default and simply omits the argument (databricks' TIMESTAMPADD).
+func (g *generator) dateArithUnitFirst(this, amount, unit *Expression, funcName string, defaultUnit *Expression) string {
+	if unit == nil {
+		unit = defaultUnit
+	}
+	args := []string{}
+	if unit != nil {
+		args = append(args, g.node(unit))
+	}
+	args = append(args, g.node(amount), g.node(this))
+	return funcName + "(" + strings.Join(args, ", ") + ")"
+}
+
+// dateArithTimestampSub writes databricks' DatetimeSub: TIMESTAMPADD with
+// the amount always multiplied by -1 -- as a real Mul node, never folded
+// into a signed literal even where the amount already is one. Confirmed
+// against the reference: a literal amount stays `5 * -1`, not `-5`.
+func (g *generator) dateArithTimestampSub(this, amount, unit *Expression) string {
+	mul := New("Mul", Arg{"this", amount}, Arg{"expression", numberLit(-1, true)})
+	args := []string{}
+	if unit != nil {
+		args = append(args, g.node(unit))
+	}
+	args = append(args, g.node(mul), g.node(this))
+	return "TIMESTAMPADD(" + strings.Join(args, ", ") + ")"
+}
+
+// hiveDateDelta maps a unit to the function and per-unit multiplier the
+// Hive family (which databricks' DateSub inherits) folds it through --
+// unrecognized or absent units fall back to (DATE_ADD, 1), same as DAY.
+var hiveDateDelta = map[string]struct {
+	Func       string
+	Multiplier int
+}{
+	"YEAR":    {"ADD_MONTHS", 12},
+	"MONTH":   {"ADD_MONTHS", 1},
+	"QUARTER": {"ADD_MONTHS", 3},
+	"WEEK":    {"DATE_ADD", 7},
+	"DAY":     {"DATE_ADD", 1},
+}
+
+// dateArithHiveDelta writes databricks' DateSub: the unit picks a function
+// and a multiplier (negated, since this is always Sub) from hiveDateDelta,
+// and the unit itself never appears in the output. A plain numeric literal
+// amount is folded straight into a signed literal; anything else is instead
+// multiplied by the signed multiplier as a Mul node.
+func (g *generator) dateArithHiveDelta(this, amount, unit *Expression) string {
+	unitName := ""
+	if unit != nil {
+		unitName = strings.ToUpper(unit.Name())
+	}
+	delta, ok := hiveDateDelta[unitName]
+	if !ok {
+		delta = hiveDateDelta["DAY"]
+	}
+	multiplier := -delta.Multiplier
+
+	var increment *Expression
+	if isPlainNumericLiteral(amount) {
+		value, ok := numberOf(amount)
+		if !ok {
+			return g.fail("DateSub with an unreadable amount")
+		}
+		integral := isIntegerLiteral(amount)
+		increment = numberLit(value*float64(multiplier), integral)
+	} else {
+		increment = New("Mul", Arg{"this", amount}, Arg{"expression", numberLit(float64(multiplier), true)})
+	}
+	return delta.Func + "(" + g.node(this) + ", " + g.node(increment) + ")"
 }
 
 // writeFileFormat writes the storage format a table is written in.
