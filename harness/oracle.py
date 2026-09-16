@@ -102,6 +102,13 @@ EDGE_CORPUS: tuple[tuple[str, str], ...] = (
     ("databricks", "SELECT 1L, 2S, 3Y, 4BD, 5D, 6F"),
     ("databricks", "SELECT `a b` FROM `c d`"),
     ("databricks", "SELECT * FROM t /* nested /* comment */ here */"),
+    # Bare IF (no parens) at the very start of a statement is not a function
+    # call, and Databricks has no real IF statement (unlike T-SQL) -- the
+    # reference gives up and falls back to a Command. Promoted from a fuzz
+    # session by harness/adjudicate.py: the minimized finding was
+    # `IF>''->'\x0b\x0b\x0b'`, which the port misread as a JSON arrow path.
+    ("databricks", "IF>''->'x'"),
+    ("databricks", "IF 1 THEN 2 ELSE 3"),
 )
 
 

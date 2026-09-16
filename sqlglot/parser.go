@@ -240,6 +240,17 @@ func (p *parser) parseStatement() (*Expression, error) {
 	if p.tables.IfIsAStatement && p.atWords("IF") {
 		return p.parseIfStatement()
 	}
+	// A bare IF not immediately followed by "(" is not a function call either
+	// -- in a dialect without a real IF statement, the reference cannot parse
+	// it (NO_PAREN_IF_COMMANDS in _parse_if, gated to the very first token of
+	// the statement) and falls back to a Command. IF(...) is untouched: it is
+	// the ordinary function, parsed generically below.
+	if !p.tables.IfIsAStatement && p.atWords("IF") {
+		if next := p.next(); next == nil || next.Type != TokL_PAREN {
+			start := *p.curr()
+			return p.parseAsCommand(start), nil
+		}
+	}
 	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) || p.at(TokFROM) ||
 		p.at(TokSUMMARIZE) {
 		return p.parseQuery()
