@@ -1,7 +1,7 @@
 {
  "_comment": "Gate for harness/execute.py. Floors sit a little under what is observed (duckdb ~162, postgres ~66) on purpose: non-determinism is DETECTED by running both sides several times and seeing whether each agrees with itself, which is sampling, so a statement near the edge lands in 'nondeterministic' on one run and 'agree' on the next. A real regression is a cliff, not a wobble.",
  "comparable_floor": {
-  "duckdb": 238,
+  "duckdb": 385,
   "postgres": 83
  },
  "known_divergences": [
@@ -12,6 +12,54 @@
    "written": "SELECT ([1, 2, 3])[:-1:-1]",
    "why": "[([3, 2, 1],)] != [([3],)]",
    "note": "sqlglot reads DuckDB's omitted slice bound as -1, turning a reversal into a one-element slice. See docs/upstream-issues.md. NOT worked around: the port reproduces the reference on purpose."
+  },
+  {
+   "engine": "duckdb",
+   "sql": "SELECT CAST('2008-12-25' AS DATE) - INTERVAL '5' DAY",
+   "who": "simplified",
+   "written": "SELECT CAST('2008-12-20' AS DATE)",
+   "why": "[(datetime.datetime(2008, 12, 20, 0, 0),)] != [(datetime.date(2008, 12, 20),)]",
+   "note": "DuckDB's + and - between a DATE and an INTERVAL of DAY (or a whole number of days) return TIMESTAMP, not DATE, even though the operand was cast to DATE and the interval never introduces a time component. The reference's own date_literal() keeps the CAST's own target type (extract_type(a)) rather than asking what the runtime actually returns, so the fold's CAST(... AS DATE) is a DATE where the unfolded expression, run as written, is a TIMESTAMP. See docs/upstream-issues.md. NOT worked around: the port reproduces the reference on purpose."
+  },
+  {
+   "engine": "duckdb",
+   "sql": "SELECT CAST('2018-01-01 00:00:00' AS DATE) + INTERVAL '3' DAY",
+   "who": "simplified",
+   "written": "SELECT CAST('2018-01-04' AS DATE)",
+   "why": "[(datetime.datetime(2018, 1, 4, 0, 0),)] != [(datetime.date(2018, 1, 4),)]",
+   "note": "DuckDB's + and - between a DATE and an INTERVAL of DAY (or a whole number of days) return TIMESTAMP, not DATE, even though the operand was cast to DATE and the interval never introduces a time component. The reference's own date_literal() keeps the CAST's own target type (extract_type(a)) rather than asking what the runtime actually returns, so the fold's CAST(... AS DATE) is a DATE where the unfolded expression, run as written, is a TIMESTAMP. See docs/upstream-issues.md. NOT worked around: the port reproduces the reference on purpose."
+  },
+  {
+   "engine": "duckdb",
+   "sql": "SELECT CAST('2018-01-01 00:00:00' AS DATE) + INTERVAL 3 DAY",
+   "who": "simplified",
+   "written": "SELECT CAST('2018-01-04' AS DATE)",
+   "why": "[(datetime.datetime(2018, 1, 4, 0, 0),)] != [(datetime.date(2018, 1, 4),)]",
+   "note": "DuckDB's + and - between a DATE and an INTERVAL of DAY (or a whole number of days) return TIMESTAMP, not DATE, even though the operand was cast to DATE and the interval never introduces a time component. The reference's own date_literal() keeps the CAST's own target type (extract_type(a)) rather than asking what the runtime actually returns, so the fold's CAST(... AS DATE) is a DATE where the unfolded expression, run as written, is a TIMESTAMP. See docs/upstream-issues.md. NOT worked around: the port reproduces the reference on purpose."
+  },
+  {
+   "engine": "duckdb",
+   "sql": "SELECT CAST('2020-01-01' AS DATE) + INTERVAL '-1' DAY",
+   "who": "simplified",
+   "written": "SELECT CAST('2019-12-31' AS DATE)",
+   "why": "[(datetime.datetime(2019, 12, 31, 0, 0),)] != [(datetime.date(2019, 12, 31),)]",
+   "note": "DuckDB's + and - between a DATE and an INTERVAL of DAY (or a whole number of days) return TIMESTAMP, not DATE, even though the operand was cast to DATE and the interval never introduces a time component. The reference's own date_literal() keeps the CAST's own target type (extract_type(a)) rather than asking what the runtime actually returns, so the fold's CAST(... AS DATE) is a DATE where the unfolded expression, run as written, is a TIMESTAMP. See docs/upstream-issues.md. NOT worked around: the port reproduces the reference on purpose."
+  },
+  {
+   "engine": "duckdb",
+   "sql": "SELECT CAST('2020-05-06' AS DATE) + INTERVAL '5' DAY",
+   "who": "simplified",
+   "written": "SELECT CAST('2020-05-11' AS DATE)",
+   "why": "[(datetime.datetime(2020, 5, 11, 0, 0),)] != [(datetime.date(2020, 5, 11),)]",
+   "note": "DuckDB's + and - between a DATE and an INTERVAL of DAY (or a whole number of days) return TIMESTAMP, not DATE, even though the operand was cast to DATE and the interval never introduces a time component. The reference's own date_literal() keeps the CAST's own target type (extract_type(a)) rather than asking what the runtime actually returns, so the fold's CAST(... AS DATE) is a DATE where the unfolded expression, run as written, is a TIMESTAMP. See docs/upstream-issues.md. NOT worked around: the port reproduces the reference on purpose."
+  },
+  {
+   "engine": "duckdb",
+   "sql": "SELECT CAST('2020-05-06' AS DATE) - INTERVAL '5' DAY",
+   "who": "simplified",
+   "written": "SELECT CAST('2020-05-01' AS DATE)",
+   "why": "[(datetime.datetime(2020, 5, 1, 0, 0),)] != [(datetime.date(2020, 5, 1),)]",
+   "note": "DuckDB's + and - between a DATE and an INTERVAL of DAY (or a whole number of days) return TIMESTAMP, not DATE, even though the operand was cast to DATE and the interval never introduces a time component. The reference's own date_literal() keeps the CAST's own target type (extract_type(a)) rather than asking what the runtime actually returns, so the fold's CAST(... AS DATE) is a DATE where the unfolded expression, run as written, is a TIMESTAMP. See docs/upstream-issues.md. NOT worked around: the port reproduces the reference on purpose."
   },
   {
    "engine": "postgres",

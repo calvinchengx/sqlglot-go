@@ -95,6 +95,12 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 	if out.Class == "Join" {
 		out = simplifyAlwaysTrueJoin(out)
 	}
+	switch out.Class {
+	case "Add", "Sub", "DateAdd", "DateSub", "DatetimeAdd", "DatetimeSub":
+		if folded := foldDateArithmetic(out); folded != nil {
+			return folded
+		}
+	}
 	out = simplifyLiterals(out, parent)
 	out = simplifyCoalesce(out, parent)
 	out = simplifyConcat(out)

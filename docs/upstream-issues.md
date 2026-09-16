@@ -515,3 +515,39 @@ FILTER's own -- checked by the parent it is being removed FROM, not by
 enumerating every node WHERE is optional under.
 
 **Reference:** sqlglot @ ceb5111421e9.
+
+---
+
+## Folding a DATE plus a day-granularity INTERVAL changes its own type in DuckDB
+
+**Found by:** the execution oracle, after date-arithmetic folding landed in
+the port's `Simplify`.
+
+`CAST('2020-05-06' AS DATE) + INTERVAL '5' DAY` and its already-folded form
+`CAST('2020-05-11' AS DATE)` read as the same value everywhere in this
+repository's own tools -- same tree shape once parsed, same string once
+generated back from that shape after folding. Only running them shows a
+difference DuckDB itself introduces:
+
+```
+in   SELECT CAST('2020-05-06' AS DATE) + INTERVAL '5' DAY   -> a TIMESTAMP
+out  SELECT CAST('2020-05-11' AS DATE)                      -> a DATE
+```
+
+DuckDB's own `+`/`-` between a DATE and an INTERVAL returns TIMESTAMP even
+when the interval is a whole number of days and could never introduce a
+time-of-day component -- the type promotion happens regardless of the
+interval's own granularity. sqlglot's `date_literal()` does not ask the
+runtime what it would return; it keeps the CAST's own target type
+(`extract_type(a)`), so the fold's `CAST(... AS DATE)` is a DATE by
+construction, where the unfolded expression, run exactly as written, is a
+TIMESTAMP.
+
+The port's own date-arithmetic fold reproduces this exactly, matching the
+reference statement for statement, because it exists to be a spelling change
+only -- and here the reference's own spelling change is the one that
+happens to disagree with the runtime it is a shortcut for. Six of the
+port's own fixed test-data rows hit this (`testdata/execution.json`); there
+may be others the corpus does not happen to construct.
+
+**Reference:** sqlglot @ ceb5111421e9.
