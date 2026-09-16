@@ -1268,6 +1268,9 @@ func absorb(e, parent *Expression) *Expression {
 	if out := absorbSupersets(e.Class, opposite, ops, parent); out != nil {
 		return out
 	}
+	if out := eliminateComplementPairs(e.Class, opposite, ops, parent); out != nil {
+		return out
+	}
 
 	changed := false
 	kept := make([]*Expression, 0, len(ops))
@@ -1404,6 +1407,77 @@ func isProperSubset(a, b []*Expression) bool {
 		}
 	}
 	return true
+}
+
+// eliminateComplementPairs is absorb_and_eliminate's own elimination half:
+// `(A AND B) OR (A AND NOT B)` is `A`, when B cannot be NULL -- whichever
+// way B goes, the OR is decided by A alone. The OR-of-ANDs case flips to
+// AND-of-ORs the same way absorbSupersets does. Unlike the reference's own
+// version, this does not need a type-annotator's "nonnull" meta flag: the
+// same isKnownNonnull check absorb's main loop already uses for the
+// single-operand absorption case is exactly what this needs too.
+func eliminateComplementPairs(class, opposite string, ops []*Expression, parent *Expression) *Expression {
+	kept := make([]*Expression, len(ops))
+	copy(kept, ops)
+	changed := false
+	for i, opI := range ops {
+		innerI := unnest(opI)
+		if innerI == nil || innerI.Class != opposite {
+			continue
+		}
+		a1, b1 := childOf(innerI, "this"), childOf(innerI, "expression")
+		if a1 == nil || b1 == nil {
+			continue
+		}
+		for j, opJ := range ops {
+			if i == j {
+				continue
+			}
+			innerJ := unnest(opJ)
+			if innerJ == nil || innerJ.Class != opposite {
+				continue
+			}
+			a2, b2 := childOf(innerJ, "this"), childOf(innerJ, "expression")
+			if a2 == nil || b2 == nil {
+				continue
+			}
+			if common, ok := complementaryPair(a1, b1, a2, b2); ok {
+				kept[i] = common
+				kept[j] = common
+				changed = true
+			}
+		}
+	}
+	if !changed {
+		return nil
+	}
+	return rebuildConnector(class, kept, parent)
+}
+
+// complementaryPair checks whether {a1, b1} and {a2, b2} are ("common", x)
+// and ("common", NOT x) in some order, with x known non-null, and returns
+// "common" if so.
+func complementaryPair(a1, b1, a2, b2 *Expression) (*Expression, bool) {
+	for _, pair := range [2][2]*Expression{{a1, b1}, {b1, a1}} {
+		common, other := pair[0], pair[1]
+		var rest *Expression
+		switch {
+		case a2.Equal(common):
+			rest = b2
+		case b2.Equal(common):
+			rest = a2
+		default:
+			continue
+		}
+		if rest.Class != "Not" {
+			continue
+		}
+		inner := childOf(rest, "this")
+		if isKnownNonnull(inner) && inner.Equal(other) {
+			return common, true
+		}
+	}
+	return nil, false
 }
 
 // removeComplements folds A AND NOT A to FALSE and A OR NOT A to TRUE,
