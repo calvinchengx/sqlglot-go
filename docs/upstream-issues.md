@@ -552,25 +552,31 @@ may be others the corpus does not happen to construct.
 
 **Reference:** sqlglot @ ceb5111421e9.
 
-## Truncating a DATE changes its own type in DuckDB too
+## Truncating a DATE changes its own type in DuckDB -- and in Postgres too
 
 **Found by:** the execution oracle, after `DATE_TRUNC` predicate-range
-folding landed in the port's `Simplify`.
+folding landed in the port's `Simplify`. First on DuckDB; the Postgres
+engine was not yet wired into a local run when that half landed, so its own
+copy of the same promotion only surfaced once CI ran both engines.
 
-The same promotion as the entry above, for `DATE_TRUNC` instead of `+`/`-`:
+The same promotion as the `+`/`-` entry above, for `DATE_TRUNC` instead:
 
 ```
-in   SELECT DATE_TRUNC('WEEK', CAST('2008-11-10' AS DATE))   -> a TIMESTAMP
-out  SELECT CAST('2008-11-10' AS DATE)                       -> a DATE
+in   SELECT DATE_TRUNC('WEEK', CAST('2008-11-10' AS DATE))      -- DuckDB:  a TIMESTAMP
+out  SELECT CAST('2008-11-10' AS DATE)                          --          a DATE
+
+in   SELECT DATE_TRUNC('QUARTER', CAST('2025-04-26' AS DATE))   -- Postgres: a timestamptz
+out  SELECT CAST('2025-04-01' AS DATE)                          --           a DATE
 ```
 
-`DATE_TRUNC` on a DATE returns TIMESTAMP at DuckDB runtime even when the
-truncated value is already day-aligned and the unit itself (WEEK, MONTH,
+`DATE_TRUNC` on a DATE returns a wider type at runtime -- TIMESTAMP on
+DuckDB, `timestamp with time zone` on Postgres -- even when the truncated
+value is already aligned to the unit and the unit itself (WEEK, QUARTER,
 ...) could never introduce a time-of-day component. sqlglot's
 `datetime_floor()`/`date_literal()` keep the operand's own DATE type rather
-than asking the runtime, the same shortcut as the `+`/`-` case above, and
-the port's fold reproduces it exactly for the same reason: it is a spelling
-change over the reference's own tree, not a re-derivation of what DuckDB
-would actually return.
+than asking either runtime, the same shortcut as the `+`/`-` case above, and
+the port's fold reproduces it exactly for the same reason on both engines:
+it is a spelling change over the reference's own tree, not a re-derivation
+of what the database would actually return.
 
 **Reference:** sqlglot @ ceb5111421e9.

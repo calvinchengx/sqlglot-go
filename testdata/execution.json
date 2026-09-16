@@ -116,6 +116,14 @@
    "written": "WITH t AS (SELECT ARRAY[1, 2, 3] AS col) SELECT * FROM t WHERE FALSE",
    "why": "[([1, 2, 3],)] != []",
    "note": "sqlglot's range rule reads `1 <= ANY(col)` as `column OP constant` and concludes two satisfiable comparisons contradict. The reference folds this identically. See docs/upstream-issues.md. NOT worked around."
+  },
+  {
+   "engine": "postgres",
+   "sql": "SELECT DATE_TRUNC('QUARTER', CAST('2025-04-26' AS DATE))",
+   "who": "simplified",
+   "written": "SELECT CAST('2025-04-01' AS DATE)",
+   "why": "[(datetime.datetime(2025, 4, 1, 0, 0, tzinfo=datetime.timezone.utc),)] != [(datetime.date(2025, 4, 1),)]",
+   "note": "The same type promotion as DuckDB's DATE_TRUNC divergence above, on postgres instead: DATE_TRUNC on a DATE returns timestamp with time zone at runtime even when the truncated value is already date-aligned. sqlglot's datetime_floor()/date_literal() keep the operand's own DATE type rather than asking the runtime. See docs/upstream-issues.md. NOT worked around: the port reproduces the reference on purpose."
   }
  ]
 }
