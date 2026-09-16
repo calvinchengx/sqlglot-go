@@ -68,11 +68,25 @@ func extractDateValue(e *Expression) (t time.Time, typeName string, ok bool) {
 			return time.Time{}, "", false
 		}
 		inner, _ := e.Args["this"].(*Expression)
-		if !isStringLiteral(inner) {
+		if inner == nil {
 			return time.Time{}, "", false
 		}
-		t, ok = parseDateText(inner.Name())
-		return t, "DATE", ok
+		if isStringLiteral(inner) {
+			t, ok = parseDateText(inner.Name())
+		} else if inner.Class == "Cast" || inner.Class == "TsOrDsToDate" {
+			// TS_OR_DS_TO_DATE(TS_OR_DS_TO_DATE('2021-01-02')) reads through
+			// the inner call the same way a CAST reads through a nested one --
+			// the OUTER call's own DATE truncation still wins, which for
+			// TS_OR_DS_TO_DATE is always DATE, so there is nothing further to
+			// apply here the way a CAST's own target type would need.
+			t, _, ok = extractDateValue(inner)
+		} else {
+			return time.Time{}, "", false
+		}
+		if !ok {
+			return time.Time{}, "", false
+		}
+		return dayOnly(t), "DATE", true
 	}
 	return time.Time{}, "", false
 }

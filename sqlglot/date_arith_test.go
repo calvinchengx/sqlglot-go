@@ -195,6 +195,33 @@ func TestExtractDateValue(t *testing.T) {
 	if _, _, ok := extractDateValue(tsOfColumn); ok {
 		t.Error("extractDateValue(TS_OR_DS_TO_DATE(column)) should be refused")
 	}
+
+	// TS_OR_DS_TO_DATE(TS_OR_DS_TO_DATE('2021-01-02')) reads through the
+	// inner call the same way a nested CAST does.
+	innerTs := New("TsOrDsToDate",
+		Arg{"this", New("Literal", Arg{"this", "2021-01-02"}, Arg{"is_string", true})})
+	nestedTs := New("TsOrDsToDate", Arg{"this", innerTs})
+	tv, typeName, ok := extractDateValue(nestedTs)
+	if !ok || typeName != "DATE" || !tv.Equal(mustParseDate(t, "2021-01-02")) {
+		t.Errorf("extractDateValue(nested TS_OR_DS_TO_DATE) = %v, %q, %v, want 2021-01-02, DATE, true", tv, typeName, ok)
+	}
+
+	// TS_OR_DS_TO_DATE(<something that isn't a literal or another TS_OR_DS_TO_DATE/CAST>)
+	// is refused, same as the bare-column case above but through the
+	// recursive branch instead of the direct one.
+	tsOfAdd := New("TsOrDsToDate", Arg{"this", New("Add", Arg{"this", col}, Arg{"expression", col})})
+	if _, _, ok := extractDateValue(tsOfAdd); ok {
+		t.Error("extractDateValue(TS_OR_DS_TO_DATE(Add(...))) should be refused")
+	}
+}
+
+func mustParseDate(t *testing.T, s string) time.Time {
+	t.Helper()
+	tv, ok := parseDateText(s)
+	if !ok {
+		t.Fatalf("parseDateText(%q) failed", s)
+	}
+	return tv
 }
 
 // TestIntervalAmountAndIntervalOf covers the small readers foldDateArithmetic

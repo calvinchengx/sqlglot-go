@@ -242,11 +242,14 @@ func copyExpr(e *Expression) *Expression {
 }
 
 // foldDateTruncIn handles `DATE_TRUNC(unit, l) IN (<date literal>, ...)`: it
-// declines the WHOLE fold if any member is not itself a literal or not a
-// floor for the unit -- same as the reference, which does not partially
-// fold an IN list -- then merges the surviving ranges the way two adjacent
-// or overlapping years collapse into one wider AND, and ORs together
-// whatever is left.
+// declines the WHOLE fold only if any member is not itself a date literal at
+// all -- the reference's own `_is_datetrunc_predicate` check across the
+// whole list. A member that IS a date literal but off the unit's own floor
+// contributes no range and is simply dropped, the same as a bare EQ against
+// it would decline entirely on its own; it is not a reason to give up on
+// whatever OTHER members are exactly on a floor. The surviving ranges are
+// then merged the way two adjacent or overlapping years collapse into one
+// wider AND, and ORed together.
 func foldDateTruncIn(e, parent *Expression, dialect string) *Expression {
 	if e.Class != "In" {
 		return nil
@@ -268,16 +271,24 @@ func foldDateTruncIn(e, parent *Expression, dialect string) *Expression {
 	for i, m := range members {
 		date, dt, ok := extractDateValue(m)
 		if !ok {
+			// Every member has to be a genuine date literal for the fold to
+			// mean anything at all -- this is the reference's own
+			// `_is_datetrunc_predicate` check across the whole list.
 			return nil
 		}
 		if i == 0 {
 			typeName = dt
 		}
-		r, ok := dateTruncRange(date, unit, dialect)
-		if !ok {
-			return nil
+		// A member that ISN'T exactly on a floor contributes no range of its
+		// own and is silently dropped, the same as a bare EQ against it
+		// would decline entirely -- it is not a reason to give up on the
+		// OTHER members that are.
+		if r, ok := dateTruncRange(date, unit, dialect); ok {
+			ranges = append(ranges, r)
 		}
-		ranges = append(ranges, r)
+	}
+	if len(ranges) == 0 {
+		return nil
 	}
 	merged := mergeDateRanges(ranges)
 	if len(merged) == 1 {
