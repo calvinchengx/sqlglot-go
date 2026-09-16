@@ -576,14 +576,23 @@ func genGreater(left, right *Expression, dialect string) bool {
 }
 
 // inverseArithmetic is what moving a constant across a comparison does:
-// `x + 1 = 3` becomes `x = 3 - 1`. Only Add and Sub -- Mul and Div are
-// not in the reference's INVERSE_OPS, and date/interval arithmetic is
-// left alone until a fold can be checked on a calendar, not a string.
+// `x + 1 = 3` becomes `x = 3 - 1`. Only Add and Sub -- Mul and Div are not
+// in the reference's INVERSE_OPS. DATE_ADD/DATE_SUB and their DATETIME
+// counterparts are in the reference's own INVERSE_DATE_OPS too, moving an
+// interval argument the same way this file's own DATE_ADD family folds --
+// but nothing in the fixture needs that shape, only a plain `x - INTERVAL
+// n unit` (already covered here as Sub), so it is not ported speculatively.
 var inverseArithmetic = map[string]string{"Add": "Sub", "Sub": "Add"}
 
 // simplifyEquality is the reference's `simplify_equality`: move a constant
 // across + or - so the column stands alone. Subtraction is not commutative,
 // so `5 - x = 2` inverts the comparison (`x < 3` when it was `>`).
+//
+// The constant moved is either a NUMBER on both sides, or -- on the
+// comparison's own side -- a date literal opposite an INTERVAL on the
+// Add/Sub's own side: `x - INTERVAL 1 DAY = CAST('2021-01-01' AS DATE)`
+// becomes `x = CAST('2021-01-01' AS DATE) + INTERVAL 1 DAY`, which a LATER
+// pass folds the rest of the way once the new Add is its own node to visit.
 func simplifyEquality(e *Expression) *Expression {
 	if !comparisons[e.Class] || e.Class == "Is" {
 		return e
@@ -592,17 +601,23 @@ func simplifyEquality(e *Expression) *Expression {
 	if left == nil || right == nil || inverseArithmetic[left.Class] == "" {
 		return e
 	}
-	if !isNumberLiteral(right) {
-		return e
-	}
 	a, b := childOf(left, "this"), childOf(left, "expression")
 	if a == nil || b == nil {
 		return e
 	}
+	var aPredicate, bPredicate func(*Expression) bool
 	switch {
-	case !isNumberLiteral(a) && isNumberLiteral(b):
+	case isNumberLiteral(right):
+		aPredicate, bPredicate = isNumberLiteral, isNumberLiteral
+	case isDateLiteral(right):
+		aPredicate, bPredicate = isDateLiteral, isIntervalLiteral
+	default:
+		return e
+	}
+	switch {
+	case !aPredicate(a) && bPredicate(b):
 		// x + 1 = 3  →  x = 3 - 1
-	case !isNumberLiteral(b) && isNumberLiteral(a):
+	case !aPredicate(b) && bPredicate(a):
 		if left.Class == "Sub" {
 			// 5 - x = 2  →  x < 3  (comparison inverted, 5 - 2)
 			// `e.Class` is never "Is" here -- excluded above -- so it is
@@ -620,6 +635,23 @@ func simplifyEquality(e *Expression) *Expression {
 		"expression", New(inverseArithmetic[left.Class],
 			Arg{"this", right.Copy()}, Arg{"expression", b.Copy()}),
 	})
+}
+
+// isDateLiteral is the reference's `_is_date_literal`: whatever
+// extractDateValue can read a calendar value out of.
+func isDateLiteral(e *Expression) bool {
+	_, _, ok := extractDateValue(e)
+	return ok
+}
+
+// isIntervalLiteral is the reference's `_is_interval`: an INTERVAL whose
+// own amount and unit intervalOf can read.
+func isIntervalLiteral(e *Expression) bool {
+	if e == nil || e.Class != "Interval" {
+		return false
+	}
+	_, _, ok := intervalOf(e)
+	return ok
 }
 
 // isConstant is the reference's `_is_constant`: a literal, a boolean, NULL,
