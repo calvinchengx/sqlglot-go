@@ -5,6 +5,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Simplify rewrites a tree the way the reference's optimizer does.
@@ -331,7 +332,40 @@ func simplifyLiterals(e, parent *Expression) *Expression {
 			return out
 		}
 	}
+	// Two date/datetime literals compare directly, the same as two numbers
+	// or two strings do -- `CAST('2023-01-01' AS DATE) = CAST(... AS
+	// DATETIME)` decides itself the moment both sides read as a calendar
+	// value, whatever the two CASTs happened to name their own type as.
+	if isA("Predicate", e) {
+		if ta, _, ok := extractDateValue(a); ok {
+			if tb, _, ok := extractDateValue(b); ok {
+				if out := evalBooleanTime(e.Class, ta, tb); out != nil {
+					return out
+				}
+			}
+		}
+	}
 	return e
+}
+
+// evalBooleanTime is evalBooleanString's own counterpart for two date or
+// datetime values already read out of their CASTs.
+func evalBooleanTime(class string, a, b time.Time) *Expression {
+	switch class {
+	case "EQ":
+		return boolLit(a.Equal(b))
+	case "NEQ":
+		return boolLit(!a.Equal(b))
+	case "GT":
+		return boolLit(a.After(b))
+	case "GTE":
+		return boolLit(a.After(b) || a.Equal(b))
+	case "LT":
+		return boolLit(a.Before(b))
+	case "LTE":
+		return boolLit(a.Before(b) || a.Equal(b))
+	}
+	return nil
 }
 
 // simplifyIs folds `<constant> IS [NOT] NULL`. Nothing else: whether a COLUMN
@@ -1983,6 +2017,17 @@ func compareConstants(a, b *Expression) (int, bool) {
 			return 1, true
 		}
 		return 0, true
+	}
+	if ta, _, ok := extractDateValue(a); ok {
+		if tb, _, ok := extractDateValue(b); ok {
+			switch {
+			case ta.Before(tb):
+				return -1, true
+			case ta.After(tb):
+				return 1, true
+			}
+			return 0, true
+		}
 	}
 	return 0, false
 }
