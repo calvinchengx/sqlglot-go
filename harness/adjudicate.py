@@ -6,13 +6,17 @@
 A fuzzer cannot call the oracle. At a hundred thousand executions a second, a
 Python round trip per input is four orders of magnitude too slow, so the fuzz
 targets in `sqlglot/fuzz_test.go` can only assert properties that hold
-INDEPENDENTLY of sqlglot -- and that is a real limit, not a detail. Three
+INDEPENDENTLY of sqlglot -- and that is a real limit, not a detail. Four
 separate findings turned out to be the reference doing exactly the same thing:
 
     SELECT 1 JOIN a      the joined table moves into the select list
     SELECTa0000(0)A00    the call name is uppercased, so the tree differs
     +Do                  the unary plus is dropped, and a bare `Do` is a
                          Command rather than a column
+    0 ."" (databricks)   writes as `0.''`, which reads back as the float
+                         literal `0.` glued to the string `''`; sqlglot
+                         writes the identical `0.''` and fails the same
+                         reparse
 
 Each cost a manual investigation -- parse it in Python, write it back, look.
 Five times in one afternoon. This is that loop, in a batch: collect candidates

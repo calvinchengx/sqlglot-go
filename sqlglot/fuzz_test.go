@@ -51,7 +51,7 @@ func FuzzParseOneNeverPanics(f *testing.F) {
 // It found four real bugs -- Databricks quote escaping, TOP without its
 // parentheses, parseTop refusing the TOP it writes, and `~ *` fusing into the
 // `~*` operator -- and it will keep finding them. But it cannot be made green,
-// because the property is STRONGER THAN THE REFERENCE'S OWN. Three times now a
+// because the property is STRONGER THAN THE REFERENCE'S OWN. Four times now a
 // failure turned out to be sqlglot doing the same thing:
 //
 //	`SELECT 1 JOIN a` -> `SELECT 1, a`   the joined table moves into the
@@ -61,6 +61,12 @@ func FuzzParseOneNeverPanics(f *testing.F) {
 //	`+Do` -> `Do`                        the unary plus is dropped by both,
 //	                                     and a bare `Do` is a Command, not a
 //	                                     column, in the reference as well
+//	`0 ."" ` (databricks) -> `0.''`      writeDot's `this + "." + expression`
+//	                                     fuses a bare integer into the dot that
+//	                                     follows it, reading back as the float
+//	                                     `0.` glued to the string `''`; sqlglot
+//	                                     writes the identical `0.''` and fails
+//	                                     the same reparse -- adjudicated THEIRS
 //
 // Which is the argument for Tier 1.5's batched differential: only the oracle
 // can say whether a divergence is this port's or sqlglot's, and a fuzzer
