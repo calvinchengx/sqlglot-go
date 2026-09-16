@@ -1531,6 +1531,16 @@ func isKnownNonnull(e *Expression) bool {
 	case "Not":
 		return isKnownNonnull(childOf(e, "this"))
 	}
+	// A Binary operator over two operands that can never themselves be NULL
+	// -- `'abc' ~ 'a'` -- cannot be NULL either: there is no column or
+	// expression left in it for a NULL to come from. `x ~ 'a'` stays
+	// unknown, since x itself might be.
+	if isA("Binary", e) {
+		this, expr := childOf(e, "this"), childOf(e, "expression")
+		if this != nil && expr != nil && isNonnullConstant(this) && isNonnullConstant(expr) {
+			return true
+		}
+	}
 	return false
 }
 
