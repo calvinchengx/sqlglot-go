@@ -114,6 +114,7 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 		}
 	}
 	out = simplifyConditionals(out, parent)
+	out = propagateConstants(out, parent)
 	out = simplifyLiterals(out, parent)
 	out = simplifyCoalesce(out, parent)
 	out = simplifyConcat(out)
