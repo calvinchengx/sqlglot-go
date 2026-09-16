@@ -141,6 +141,13 @@ func TestSimplifyShapes(t *testing.T) {
 		// a connector.
 		{"a literal's parens are always redundant", "SELECT x * (5)", "", "SELECT x * 5"},
 		{"a column's parens are always redundant too", "SELECT x + (y)", "", "SELECT x + y"},
+		// A bare atomic operand sitting directly in a SELECT's own
+		// expression list -- not under any operator at all -- needs no
+		// grouping either.
+		{"a bare column's parens in a select list are redundant",
+			"SELECT (x)", "", "SELECT x"},
+		{"nested parens around a bare column in a select list all drop",
+			"SELECT ((x.a)) FROM x", "", "SELECT x.a FROM x"},
 		{"deeply nested column parens all drop",
 			"SELECT 1 WHERE (((((A) AND B)) AND C)) AND D", "",
 			"SELECT 1 WHERE A AND B AND C AND D"},

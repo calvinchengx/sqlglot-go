@@ -242,11 +242,19 @@ func simplifyParens(e, parent *Expression) *Expression {
 	// part of the call syntax itself -- `ANY(t.value)` is not `ANY t.value`.
 	atomicThis := this.Class == "Boolean" || this.Class == "Null" || this.Class == "Literal" || this.Class == "Column"
 	underPredicate := atomicThis && parent != nil && comparisons[parent.Class]
-	if parent != nil && !isA("Connector", parent) && parentClass != "Not" && !clauseWrapper && !underPredicate {
+	// A bare atomic operand sitting directly in a SELECT's own expression
+	// list needs no grouping either, the same reason it needs none under a
+	// comparison above it: nothing about a Select's list position gives
+	// meaning to parentheses around one of its items. Scoped to the Select
+	// node itself, not every non-Condition/Binary parent -- that wider
+	// version is what regressed the INTERVAL case, because it also caught a
+	// Binary child, which this does not.
+	selectWrapper := atomicThis && parent != nil && parent.Class == "Select"
+	if parent != nil && !isA("Connector", parent) && parentClass != "Not" && !clauseWrapper && !underPredicate && !selectWrapper {
 		return e
 	}
 	switch {
-	case parent == nil, clauseWrapper, underPredicate:
+	case parent == nil, clauseWrapper, underPredicate, selectWrapper:
 		// Parentheses around the whole statement carry no precedence.
 	case isA("Connector", this):
 		// `A AND (A OR B)` is NOT `A AND A OR B`: AND binds tighter, so
