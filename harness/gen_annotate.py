@@ -137,8 +137,38 @@ def classify_returns(sqlglot, exp, dialects):
             rule = _rule_from(answers, kinds, baseline)
             if rule and _survives(cls, rule, checks, baseline, annotate_types, d, exp):
                 per_class[cls.__name__] = rule
+                continue
+            elem_rule = _element_rule(cls, exp, annotate_types, d)
+            if elem_rule:
+                per_class[cls.__name__] = elem_rule
         out[dialect] = per_class
     return out
+
+
+def _element_rule(cls, exp, annotate_types, d):
+    """The rule for a class that reads its type out of `this`'s ARRAY element.
+
+    ARRAY_FIRST and ARRAY_LAST look INTO an ARRAY<T> argument and return the
+    T, not a coercion of the array itself. The scalar probes above (an INT,
+    a DOUBLE, a VARCHAR literal for `this`) are never arrays, so the
+    reference answers UNKNOWN for all three -- indistinguishable, from those
+    probes alone, from a class with no rule at all. Building `this` as an
+    actual ARRAY and checking the answer against the array's own element
+    type is the only way to tell the two apart.
+    """
+    elems = {"INT": exp.Literal.number(1), "VARCHAR": exp.Literal.string("a")}
+    for lit in elems.values():
+        node = _build_call(cls, lambda lit=lit: exp.Array(expressions=[lit]))
+        if node is None:
+            return None
+        try:
+            typed = annotate_types(node, dialect=d)
+        except Exception:  # noqa: BLE001
+            return None
+        want = annotate_types(lit, dialect=d).type
+        if typed.type is None or want is None or typed.type.sql(d) != want.sql(d):
+            return None
+    return {"kind": "element"}
 
 
 def _survives(cls, rule, checks, baseline, annotate_types, d, exp):

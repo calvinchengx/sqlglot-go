@@ -525,6 +525,15 @@ func annotateFunction(e *Expression, dialect string, rule funcReturn) *Expressio
 	case "array":
 		return New("DataType", Arg{"this", DataTypeKind("ARRAY")},
 			Arg{"expressions", []*Expression{coerced}}, Arg{"nested", true})
+	case "element":
+		// ARRAY_FIRST/ARRAY_LAST look INTO their ARRAY<T> argument and
+		// answer T, not a coercion of the array itself.
+		if typeKind(coerced) == "ARRAY" {
+			if params, _ := coerced.Args["expressions"].([]*Expression); len(params) == 1 {
+				return params[0]
+			}
+		}
+		return dataType("UNKNOWN")
 	}
 	return coerced
 }
