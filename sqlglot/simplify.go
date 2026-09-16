@@ -1785,7 +1785,7 @@ func isNonnullConstant(e *Expression) bool {
 	case "Literal", "Boolean":
 		return true
 	}
-	return false
+	return isDateLiteral(e)
 }
 
 // parenthesizeNestedConnector is the reference's rule, and its comment says
