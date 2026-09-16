@@ -63,6 +63,18 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 	}
 	out := e.shallowCopy()
 	for key, arg := range out.Args {
+		// An INTERVAL's own amount is never visited: the reference's own
+		// traversal only ever descends into a node the annotator can type
+		// (Binary, Func, Lambda, Predicate, Unary), and exp.Interval is none
+		// of those, so `extract_interval`'s own `.to_py()` call always sees
+		// exactly the literal that was written, never a folded one -- an
+		// interval written as `INTERVAL (5 - 2) DAY` stays that way even
+		// though `5 - 2` would fold anywhere else. Folding it here anyway
+		// produced a signed bare number DuckDB's own grammar cannot read
+		// back (`INTERVAL -15 MONTH`), found by the execution oracle.
+		if out.Class == "Interval" && key == "this" {
+			continue
+		}
 		switch v := arg.(type) {
 		case *Expression:
 			out.Set(key, simplifyNode(v, out, dialect))
@@ -208,23 +220,33 @@ func simplifyParens(e, parent *Expression) *Expression {
 
 	// A parent that is not itself a Condition or a Binary operator -- WHERE,
 	// HAVING, the top of the statement -- needs no grouping around a
-	// boolean-shaped child at all, the same as parent being nil. This is
-	// scoped to a boolean `this` -- a Connector or a Predicate -- rather
-	// than every non-Condition/Binary parent, because a NUMERIC one (an
-	// INTERVAL's own amount, say) is neither Condition nor Binary either,
-	// and DuckDB's own grammar needs the parens THERE kept around a
-	// non-literal amount; the fuzzer found exactly that the one time this
-	// was tried unconditionally. What lets a redundant Paren collapse here
-	// is De Morgan producing a boolean-shaped result that lands directly
-	// under a clause with nothing else to protect it from, not a general
-	// rule about clause wrappers.
+	// boolean-shaped or Unary `this` at all, the same as parent being nil.
+	// This is scoped to those two cases specifically -- a Connector, a
+	// Predicate, or a Unary (Neg, BitwiseNot; Not and Paren itself are
+	// already handled their own way) -- rather than every non-Condition/
+	// Binary parent, because a NUMERIC Binary child (an INTERVAL's own
+	// amount, say) is neither Condition nor Binary either, and DuckDB's own
+	// grammar needs the parens THERE kept around a non-literal amount; the
+	// fuzzer found exactly that the one time this was tried unconditionally.
+	// A Unary `this`, unlike an arbitrary Binary one, is always safe to drop
+	// here: nothing above a clause wrapper can misread `-x` or `~x` written
+	// without its own parens, the way it could misread a `+`/`-` operand.
 	clauseWrapper := parent != nil && !isA("Condition", parent) && !isA("Binary", parent) &&
-		(isA("Connector", this) || isA("Predicate", this))
-	if parent != nil && !isA("Connector", parent) && parentClass != "Not" && !clauseWrapper {
+		(isA("Connector", this) || isA("Predicate", this) || isA("Unary", this))
+	// An atomic operand -- a bare Column, Literal, Boolean or Null -- binds
+	// tighter than a COMPARISON above it, the same way one already does
+	// under a Connector or a NOT: `(x.a) IS NULL` needs its parens no more
+	// than `x.a IS NULL` alone would, whatever the qualified column's own
+	// dotted path looks like. Scoped to `comparisons`, not the wider
+	// Predicate class: ANY/ALL/SOME are Predicates too, and THEIR parens are
+	// part of the call syntax itself -- `ANY(t.value)` is not `ANY t.value`.
+	atomicThis := this.Class == "Boolean" || this.Class == "Null" || this.Class == "Literal" || this.Class == "Column"
+	underPredicate := atomicThis && parent != nil && comparisons[parent.Class]
+	if parent != nil && !isA("Connector", parent) && parentClass != "Not" && !clauseWrapper && !underPredicate {
 		return e
 	}
 	switch {
-	case parent == nil, clauseWrapper:
+	case parent == nil, clauseWrapper, underPredicate:
 		// Parentheses around the whole statement carry no precedence.
 	case isA("Connector", this):
 		// `A AND (A OR B)` is NOT `A AND A OR B`: AND binds tighter, so
