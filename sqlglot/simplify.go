@@ -236,6 +236,10 @@ func simplifyParens(e, parent *Expression) *Expression {
 	case isA("Predicate", this):
 		// A comparison binds tighter than any connector and than NOT, so its
 		// parentheses are decoration.
+	case this.Class == "Not":
+		// NOT binds tighter than any connector or another NOT above it, so
+		// `NOT (NOT a)` needs its parens no more than `NOT a` alone would --
+		// `NOT NOT a` reads back the same tree either way.
 	case this.Class == "Boolean", this.Class == "Null", this.Class == "Literal", this.Class == "Column":
 	default:
 		return e
@@ -254,10 +258,15 @@ var nullOK = map[string]bool{"NullSafeEQ": true, "NullSafeNEQ": true, "PropertyE
 // here: folding them means doing calendar arithmetic, and a port that got that
 // subtly wrong would return the wrong rows rather than the wrong spelling.
 func simplifyLiterals(e, parent *Expression) *Expression {
-	// Double negation of a value, not of a boolean: `--500` is `500`.
-	// The boolean case (`NOT NOT x`) is simplifyNot, and needs a type.
+	// Double negation of a value, not of a boolean: `--500` is `500`, and so
+	// is `-(-500)` -- a Paren around a Unary operand never changes its own
+	// value, so unnesting through one here before checking is exact, not a
+	// guess: simplify_parens has no path of its own to reach in and drop
+	// THIS particular Paren (Neg is a Condition, which blocks every general
+	// reason simplify_parens has for dropping one), so nothing else ever
+	// will. The boolean case (`NOT NOT x`) is simplifyNot, and needs a type.
 	if e.Class == "Neg" {
-		this := childOf(e, "this")
+		this := unnest(childOf(e, "this"))
 		if this != nil && this.Class == "Neg" {
 			return childOf(this, "this")
 		}
