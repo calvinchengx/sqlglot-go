@@ -293,16 +293,26 @@ def _build_call(cls, make):
     `this` is reading the type of the CONDITION and calling it the rule --
     which recorded `IF(true, 1, NULL)` as UNKNOWN where the reference says
     INT. A class the probe cannot fill is not probed at all.
+
+    CHR and ARRAY_INTERSECT keep their only argument under `expressions`,
+    with no `this` at all -- `arg_types` for both is `{'expressions': True,
+    ...}`. Requiring `this` unconditionally meant this probe never built
+    them, the same shape of gap as the zero-argument functions before it:
+    the class was never even attempted, not attempted and found wanting.
     """
     arg_types = getattr(cls, "arg_types", None)
-    if not arg_types or "this" not in arg_types:
+    if not arg_types:
         return None
 
     try:
-        args = {"this": make()}
-        if "expressions" in arg_types:
-            args["expressions"] = [make()]
-        return cls(**args)
+        if "this" in arg_types:
+            args = {"this": make()}
+            if "expressions" in arg_types:
+                args["expressions"] = [make()]
+            return cls(**args)
+        if arg_types.get("expressions"):
+            return cls(expressions=[make()])
+        return None
     except Exception:  # noqa: BLE001
         return None
 
@@ -392,6 +402,11 @@ def annotate_by_args(dialects) -> dict[str, dict[str, list[str]]]:
     its `true` branch counted: a coercion of an INT and a VARCHAR answers INT,
     so moving the other branch moved nothing. An INT and a REAL coerce to the
     REAL whichever side it is on, so a key that participates always shows.
+
+    `quantile` is here for PERCENTILE/PERCENTILE_APPROX, which Databricks
+    types by that argument (or, for the APPROX form, by `this` with an ARRAY
+    wrapper the two-key move below cannot see) rather than by the generic
+    `this`/`expressions` coercion every other candidate key above names.
     """
     from sqlglot import expressions as e
     from sqlglot.dialects.dialect import Dialect
@@ -411,7 +426,7 @@ def annotate_by_args(dialects) -> dict[str, dict[str, list[str]]]:
             keys = [
                 k
                 for k, required in (getattr(cls, "arg_types", None) or {}).items()
-                if k in ("this", "expression", "true", "false", "expressions")
+                if k in ("this", "expression", "true", "false", "expressions", "quantile")
             ]
             if len(keys) < 2:
                 continue
@@ -445,6 +460,29 @@ def annotate_by_args(dialects) -> dict[str, dict[str, list[str]]]:
                 if typed(build(set(moved)), dialect) != real:
                     continue
             except Exception:  # noqa: BLE001
+                continue
+            # A key that never moves under INT/REAL is not necessarily
+            # uninvolved -- PERCENTILE_APPROX's `quantile` never moves the
+            # two-literal probe (it is scalar either way), yet wrapping IT in
+            # an ARRAY wraps the whole call's answer in one too. Recording
+            # `moved` alone here would claim ApproxQuantile as "coercion of
+            # `this`" unconditionally and be wrong the moment `quantile`
+            # itself is a list. Giving each key IGNORED by `moved` an ARRAY
+            # shape and requiring the answer to hold at the plain baseline
+            # is what catches that before it is recorded.
+            ignored = [k for k in keys if k not in moved]
+            survives = True
+            for key in ignored:
+                try:
+                    node = build(set())
+                    node.set(key, e.Array(expressions=[e.Literal.number(1)]))
+                    if typed(node, dialect) != base:
+                        survives = False
+                        break
+                except Exception:  # noqa: BLE001
+                    survives = False
+                    break
+            if not survives:
                 continue
             per_class[cls.__name__] = moved
         out[dialect] = per_class
