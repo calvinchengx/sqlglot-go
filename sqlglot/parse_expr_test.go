@@ -8590,10 +8590,22 @@ func TestCopy(t *testing.T) {
 		t.Errorf("%q wrote %q, %v", region, got, err)
 	}
 
-	// A Credentials the port did not build is one it cannot write: it reads
-	// none of STORAGE_INTEGRATION or ENCRYPTION, so a node carrying either
-	// is one it can only refuse.
-	for _, key := range []string{"storage", "encryption"} {
+	// STORAGE_INTEGRATION round-trips too, alongside the credentials clause.
+	storage := `COPY t FROM 's3://x' STORAGE_INTEGRATION = my_integration`
+	storageExpr, err := ParseOne(storage, "redshift")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", storage, err)
+	}
+	if got, err := Generate(storageExpr, "redshift"); err != nil || got != storage {
+		t.Errorf("%q wrote %q, %v", storage, got, err)
+	}
+
+	// A CREDENTIALS whose value is a wrapped OPTIONS LIST (Snowflake's own
+	// `CREDENTIALS = (...)` spelling, as opposed to Redshift's bare string)
+	// is one this port does not read at all, so a Credentials node built
+	// that way -- by hand here, since the port's own parser never produces
+	// one -- is one it can only refuse to write.
+	for _, key := range []string{"encryption", "credentials-list"} {
 		withCreds, err := ParseOne("COPY t FROM 'f' WITH (FORMAT x)", "postgres")
 		if err != nil {
 			t.Fatalf("ParseOne: %v", err)
@@ -8603,7 +8615,7 @@ func TestCopy(t *testing.T) {
 		if key == "encryption" {
 			creds.Set(key, []*Expression{value})
 		} else {
-			creds.Set(key, value)
+			creds.Set("credentials", New("Tuple", Arg{"expressions", []*Expression{value}}))
 		}
 		if got, err := Generate(withCreds, "postgres"); err == nil {
 			t.Errorf("wrote credentials the port does not read: %q", got)
@@ -11291,6 +11303,78 @@ func TestDistinctOnNaturalAndFrames(t *testing.T) {
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("%s was read; it should be refused", sql)
+		}
+	}
+}
+
+// Redshift has no DISTINCT ON of its own, and rewrites the whole SELECT into
+// a ROW_NUMBER()-windowed subquery -- with a STAR, with no ORDER BY to move
+// onto the window, and with a name collision between a projection and the
+// alias it would otherwise take.
+func TestDistinctOnEliminatedForRedshift(t *testing.T) {
+	for _, c := range []struct{ sql, want string }{
+		{
+			"SELECT DISTINCT ON (a) a, b FROM x",
+			"SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY a) AS _row_number FROM x) AS _t WHERE _row_number = 1",
+		},
+		{
+			"SELECT DISTINCT ON (a) * FROM x",
+			"SELECT * FROM (SELECT *, ROW_NUMBER() OVER (PARTITION BY a ORDER BY a) AS _row_number FROM x) AS _t WHERE _row_number = 1",
+		},
+		{
+			"SELECT DISTINCT ON (a) a AS x, b AS a FROM t ORDER BY c",
+			"SELECT x, a FROM (SELECT a AS x, b AS a, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c) AS _row_number FROM t) AS _t WHERE _row_number = 1",
+		},
+		{
+			// Two projections that would take the SAME alias -- the second
+			// is deduped with a numbered suffix, in the outer list too.
+			"SELECT DISTINCT ON (a) a, a FROM t",
+			"SELECT a, a_2 FROM (SELECT a AS a, a AS a_2, ROW_NUMBER() OVER (PARTITION BY a ORDER BY a) AS _row_number FROM t) AS _t WHERE _row_number = 1",
+		},
+	} {
+		tree, err := ParseOne(c.sql, "redshift")
+		if err != nil {
+			t.Errorf("ParseOne(%q): %v", c.sql, err)
+			continue
+		}
+		if got, err := Generate(tree, "redshift"); err != nil || got != c.want {
+			t.Errorf("%s wrote %q (%v), want %q", c.sql, got, err, c.want)
+		}
+	}
+}
+
+// Redshift's implicit UNNEST sugar -- a comma-joined dotted name whose first
+// part names an earlier table becomes an UNNEST of that column -- fires even
+// with no alias of its own on the sugar table.
+func TestImplicitUnnestWithNoAlias(t *testing.T) {
+	sql := "SELECT * FROM t, t.arr_col"
+	tree, err := ParseOne(sql, "redshift")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", sql, err)
+	}
+	if got, err := Generate(tree, "redshift"); err != nil || got != sql {
+		t.Errorf("%s wrote %q (%v)", sql, got, err)
+	}
+}
+
+// Redshift's ALTER TABLE ALTER SORTKEY/DISTSTYLE takes a few shapes the
+// pinned corpus does not happen to carry: a column list rather than
+// AUTO/NONE, COMPOUND named explicitly, and DISTSTYLE naming a DISTKEY
+// column through its own KEY DISTKEY phrasing rather than through the
+// bare DISTKEY dispatch word.
+func TestAlterSortKeyAndDistStyleShapes(t *testing.T) {
+	for _, sql := range []string{
+		"ALTER TABLE t ALTER SORTKEY (a, b)",
+		"ALTER TABLE t ALTER COMPOUND SORTKEY (a, b)",
+		"ALTER TABLE t ALTER DISTSTYLE KEY DISTKEY c",
+	} {
+		tree, err := ParseOne(sql, "redshift")
+		if err != nil {
+			t.Errorf("ParseOne(%q): %v", sql, err)
+			continue
+		}
+		if got, err := Generate(tree, "redshift"); err != nil || got != sql {
+			t.Errorf("%s wrote %q (%v)", sql, got, err)
 		}
 	}
 }

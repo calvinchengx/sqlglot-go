@@ -296,7 +296,12 @@ func eliminateDistinctOn(e *Expression) *Expression {
 		Arg{"alias", New("Identifier", Arg{"this", rowNumberAlias}, Arg{"quoted", false})})
 
 	outerSelects := make([]*Expression, 0, len(selects))
-	innerSelects := make([]*Expression, len(selects))
+	// A STAR leaves the inner list UNCHANGED -- the reference only replaces
+	// the outer one and stops looking, so a star reached partway through
+	// still means the earlier items were aliased for nothing a caller ever
+	// reads back; copying `selects` up front and overwriting only what the
+	// loop actually finishes is what keeps that faithful.
+	innerSelects := append([]*Expression{}, selects...)
 	taken := map[string]bool{rowNumberAlias: true}
 	star := false
 	for i, item := range selects {
@@ -5904,8 +5909,11 @@ func (g *generator) writeCredentials(e *Expression) string {
 			return g.fail(e.Class + " CREDENTIALS = (...) options list")
 		}
 	}
-	if storage, _ := e.Args["storage"].(*Expression); storage != nil {
-		return g.fail(e.Class + " STORAGE_INTEGRATION this port does not read")
+	storage := ""
+	if s, _ := e.Args["storage"].(*Expression); s != nil {
+		if rendered := g.node(s); rendered != "" {
+			storage = "STORAGE_INTEGRATION = " + rendered
+		}
 	}
 	if enc, _ := e.Args["encryption"].([]*Expression); len(enc) > 0 {
 		return g.fail(e.Class + " ENCRYPTION this port does not read")
@@ -5922,7 +5930,7 @@ func (g *generator) writeCredentials(e *Expression) string {
 			region = " REGION " + s
 		}
 	}
-	return credentials + iamRole + region
+	return credentials + storage + iamRole + region
 }
 
 // writeCopyParameter writes one of a COPY's settings. Whether an `=` stands
