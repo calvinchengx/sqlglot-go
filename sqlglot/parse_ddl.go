@@ -219,7 +219,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// A TYPE names a shape rather than a place to put rows: either a list of
 	// the values it may take, or the fields it is made of.
 	if kind == "TYPE" {
-		return p.parseTypeRest(table, replace)
+		return p.parseTypeRest(start, table, replace)
 	}
 
 	var this, expression *Expression
@@ -5862,13 +5862,13 @@ func (p *parser) parseCreateLike() (*Expression, error) {
 //
 // The reference reads only those two and hands the rest to its Command
 // fallback -- `CREATE TYPE widget`, which names a type and says nothing about
-// it, and `AS RANGE (...)`, which says something this port has no node for.
-// Both are refused here rather than kept verbatim, for the reason parseCommand
-// gives: a Command built where the port gives up is not the Command the
-// reference built.
-func (p *parser) parseTypeRest(table *Expression, replace bool) (*Expression, error) {
+// it, and `AS RANGE (...)`, which says something this port has no node for --
+// at the exact three points below, which is why matching them with
+// parseAsCommand is safe: it is the reference's own give-up, not a different
+// one the port picked.
+func (p *parser) parseTypeRest(start Token, table *Expression, replace bool) (*Expression, error) {
 	if !p.match(TokALIAS) {
-		return nil, p.unsupported("CREATE TYPE without AS")
+		return p.parseAsCommand(start), nil
 	}
 	var expression *Expression
 	switch {
@@ -5899,10 +5899,10 @@ func (p *parser) parseTypeRest(table *Expression, replace bool) (*Expression, er
 		// which is already named on the statement.
 		expression = New("Schema", Arg{"expressions", columns})
 	default:
-		return nil, p.unsupported("CREATE TYPE as something this port does not read")
+		return p.parseAsCommand(start), nil
 	}
 	if p.curr() != nil {
-		return nil, p.unsupported("CREATE TYPE with more than this port reads")
+		return p.parseAsCommand(start), nil
 	}
 	return New("Create",
 		Arg{"this", table},
