@@ -3776,6 +3776,7 @@ func (p *parser) parseTransaction() (*Expression, error) {
 // the few statements whose whole point is what a caller is allowed to do
 // next -- which is exactly what a guard is for.
 func (p *parser) parseGrant() (*Expression, error) {
+	start := *p.curr()
 	class := "Grant"
 	if p.at(TokREVOKE) {
 		class = "Revoke"
@@ -3892,7 +3893,7 @@ func (p *parser) parseGrant() (*Expression, error) {
 	if p.curr() != nil {
 		// `GRANT ... AS role` says who is doing the granting, and the
 		// reference gives up on it and keeps the raw text.
-		return nil, p.unsupported(class + " with more than this port reads")
+		return p.parseAsCommand(start), nil
 	}
 	return node, nil
 }

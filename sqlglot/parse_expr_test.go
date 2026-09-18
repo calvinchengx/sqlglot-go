@@ -5230,9 +5230,6 @@ func TestGrantAndRevoke(t *testing.T) {
 		})
 	}
 	for _, sql := range []string{
-		// `AS role` says WHO is doing the granting, and the reference gives
-		// up on it and keeps the raw text.
-		"GRANT EXECUTE ON TestProc TO User2 AS TesterRole",
 		"GRANT SELECT ON TABLE t",
 		"REVOKE SELECT ON TABLE t",
 	} {
