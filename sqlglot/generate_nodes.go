@@ -5620,6 +5620,30 @@ func (g *generator) writeCredentials(e *Expression) string {
 // same tree is written both ways.
 func (g *generator) writeCopyParameter(e *Expression) string {
 	name := g.child(e, "this")
+	// A LIST of settings -- FORMAT_OPTIONS, COPY_OPTIONS, CREDENTIAL -- is
+	// parenthesised rather than a single value. The parser interleaves an
+	// EMPTY SequenceProperties between every pair, an artifact of how the
+	// reference's own property reader eats the comma between them; it
+	// writes as "" and drops out of the join exactly where it was inserted,
+	// so what survives is the settings themselves, comma-separated.
+	if items, ok := e.Args["expressions"].([]*Expression); ok && len(items) > 0 {
+		upper := strings.ToUpper(name)
+		sep := ", "
+		if upper == "FILE_FORMAT" {
+			sep = " "
+		}
+		op := " = "
+		if upper == "COPY_OPTIONS" || upper == "FORMAT_OPTIONS" {
+			op = " "
+		}
+		var parts []string
+		for _, item := range items {
+			if s := g.node(item); s != "" {
+				parts = append(parts, s)
+			}
+		}
+		return name + op + "(" + strings.Join(parts, sep) + ")"
+	}
 	value := g.child(e, "expression")
 	if value == "" {
 		return name

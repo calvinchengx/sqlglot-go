@@ -8639,9 +8639,18 @@ func TestCopy(t *testing.T) {
 		t.Errorf("the file is %v, want a call", files)
 	}
 
+	// A setting whose value is a LIST is read a parenthesised group of
+	// key-value settings rather than a single field.
+	varlen, err := ParseOne("COPY t FROM 'f' WITH (FORMAT_OPTIONS ('a'='b'))", "databricks")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
+	}
+	if got, err := Generate(varlen, "databricks"); err != nil ||
+		got != "COPY INTO t FROM 'f' FORMAT_OPTIONS ('a'='b')" {
+		t.Errorf("wrote %q, %v", got, err)
+	}
+
 	for _, tc := range []struct{ sql, dialect string }{
-		// A setting whose value is a LIST is read another way again.
-		{"COPY t FROM 'f' WITH (FORMAT_OPTIONS ('a'='b'))", "databricks"},
 		{"COPY t FROM 'f' WITH (FORMAT JSON", "duckdb"},
 		{"COPY t FROM 'f' WITH (FORMAT JSON) EXTRA", "duckdb"},
 	} {

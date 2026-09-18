@@ -5586,10 +5586,15 @@ func (p *parser) parseCopyParameter() (*Expression, error) {
 	p.match(TokEQ)
 	p.match(TokALIAS)
 
-	// A name whose value is a LIST is read another way again, which this port
-	// does not do -- and the list would otherwise be read as a tuple.
+	// A name whose value is a LIST of settings -- FORMAT_OPTIONS, COPY_OPTIONS,
+	// CREDENTIAL -- is read as one under `expressions` rather than the single
+	// `expression` every other parameter carries.
 	if _, varlen := p.tables.CopyVarlenOptions[strings.ToUpper(c.Text)]; varlen && p.at(TokL_PAREN) {
-		return nil, p.unsupported("COPY parameter with a list of settings")
+		opts, err := p.parseCopyOptionsList()
+		if err != nil {
+			return nil, err
+		}
+		return New("CopyParameter", Arg{"this", name}, Arg{"expressions", opts}), nil
 	}
 	// The value is OPTIONAL: a bare setting like `HEADER` carries none, and the
 	// reference leaves the CopyParameter's expression unset rather than
@@ -5603,6 +5608,39 @@ func (p *parser) parseCopyParameter() (*Expression, error) {
 		value = v
 	}
 	return New("CopyParameter", Arg{"this", name}, Arg{"expression", value}), nil
+}
+
+// parseCopyOptionsList reads a parenthesised, comma-separated list of
+// `key = value` settings -- Databricks' FORMAT_OPTIONS/COPY_OPTIONS, T-SQL's
+// CREDENTIAL.
+//
+// The reference's general property reader tries a key-value pair first and,
+// between two of them, tries its SEQUENCE properties reader before that --
+// which matches nothing here but still eats the comma and returns an EMPTY
+// SequenceProperties rather than nothing at all. That placeholder node
+// between every pair is reproduced here rather than treated as a bug: it is
+// what the reference's own tree holds, and a comma is optional either way --
+// missing one just skips the placeholder, the same leniency the reference
+// falls into by trying and failing to match one first.
+func (p *parser) parseCopyOptionsList() ([]*Expression, error) {
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("COPY parameter's list of settings without (")
+	}
+	var opts []*Expression
+	for p.curr() != nil && !p.at(TokR_PAREN) {
+		if len(opts) > 0 && p.match(TokCOMMA) {
+			opts = append(opts, New("SequenceProperties"))
+		}
+		item, err := p.parseKeyValueProperty()
+		if err != nil {
+			return nil, err
+		}
+		opts = append(opts, item)
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed COPY parameter's list of settings")
+	}
+	return opts, nil
 }
 
 // canStartCopyValue reports whether the current token could begin a COPY
@@ -5619,7 +5657,7 @@ func (p *parser) canStartCopyValue() bool {
 		return true
 	}
 	switch c.Type {
-	case TokL_PAREN, TokSTRING, TokNUMBER, TokTRUE, TokFALSE, TokNULL, TokIDENTIFIER, TokNATIONAL_STRING:
+	case TokL_PAREN, TokL_BRACE, TokSTRING, TokNUMBER, TokTRUE, TokFALSE, TokNULL, TokIDENTIFIER, TokNATIONAL_STRING:
 		return true
 	}
 	if atWord(c) {
@@ -5643,6 +5681,10 @@ func (p *parser) parseCopyField() (*Expression, error) {
 	// own parameter list. The generator fuzzer found it.
 	case p.namesAFunctionCall():
 		return p.parseFunction()
+	// DuckDB's KV_METADATA takes a bare `{...}` struct literal, the same
+	// shape `parsePrimary` already reads everywhere else in this port.
+	case c.Type == TokL_BRACE:
+		return p.parsePrimary()
 	case c.Type == TokL_PAREN:
 		p.advance()
 		var items []*Expression
