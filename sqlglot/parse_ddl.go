@@ -368,6 +368,17 @@ func (p *parser) parseCreate() (*Expression, error) {
 			Arg{"this", source}, Arg{"shallow", shallow}, Arg{"copy", false})
 	}
 	if p.curr() != nil {
+		// A VIEW has no properties of its own left to try after this point --
+		// the reference's own give-up, `CREATE VIEW v AS SELECT ... WITH
+		// CHECK OPTION`, which this port has no node for. A TABLE still has
+		// properties `parseTableProperties` may simply not know yet -- the
+		// reference reads DISTRIBUTED BY HASH into a real property here,
+		// which parseAsCommand would misreport as an unreadable statement
+		// rather than the gap it actually is -- so only VIEW takes the
+		// give-up.
+		if kind == "VIEW" {
+			return p.parseAsCommand(start), nil
+		}
 		return nil, p.unsupported("CREATE " + kind + " with more than this port reads")
 	}
 
