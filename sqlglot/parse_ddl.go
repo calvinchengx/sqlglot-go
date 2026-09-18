@@ -4539,15 +4539,16 @@ func (p *parser) parseAttachOptionValue() (*Expression, error) {
 // which loads an extension into the engine.
 //
 // FORCE is a statement of its own in the reference's grammar and only two
-// words may follow it: INSTALL, which is this, and CHECKPOINT, which the
-// reference keeps as raw text rather than as a tree. This port refuses that
-// second form rather than inventing a shape for it.
+// words may follow it: INSTALL, which is this, and anything else -- CHECKPOINT
+// included -- which the reference's own _parse_force gives up on and keeps as
+// raw text, matched here with parseAsCommand.
 func (p *parser) parseInstall() (*Expression, error) {
 	force := p.at(TokFORCE)
 	if force {
+		start := *p.curr()
 		p.advance()
 		if !p.at(TokINSTALL) {
-			return nil, p.unsupported("FORCE of anything but an INSTALL")
+			return p.parseAsCommand(start), nil
 		}
 	}
 	p.advance() // INSTALL

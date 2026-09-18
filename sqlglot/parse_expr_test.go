@@ -5995,11 +5995,22 @@ func TestInstall(t *testing.T) {
 			t.Errorf("PostgreSQL wrote %q, which it has no INSTALL for", sql)
 		}
 	}
+	// FORCE stands in front of an INSTALL and of nothing else this port
+	// builds a tree for; the reference keeps everything else, bare FORCE
+	// included, as raw text.
+	for _, sql := range []string{"FORCE CHECKPOINT db", "FORCE"} {
+		e, err := ParseOne(sql, "duckdb")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", sql, err)
+		}
+		if e.Class != "Command" {
+			t.Errorf("%q read as %s, want Command", sql, e.Class)
+		}
+		if got, err := Generate(e, "duckdb"); err != nil || got != sql {
+			t.Errorf("%q wrote %q, want %q (%v)", sql, got, sql, err)
+		}
+	}
 	for _, sql := range []string{
-		// FORCE stands in front of an INSTALL and of nothing else this port
-		// reads; the reference keeps `FORCE CHECKPOINT` as raw text.
-		"FORCE CHECKPOINT db",
-		"FORCE",
 		"INSTALL",
 		"INSTALL x FROM y.z",
 		// The reference reads a FROM with nothing after it and drops the
