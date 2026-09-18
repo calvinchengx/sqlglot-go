@@ -8158,6 +8158,9 @@ func TestDeclare(t *testing.T) {
 			"DECLARE @X INTEGER = (SELECT col FROM t WHERE id = 1)"},
 		{"DECLARE @X TABLE (Id INT NOT NULL, Name VARCHAR(100) NOT NULL)", "tsql",
 			"DECLARE @X TABLE (Id INTEGER NOT NULL, Name VARCHAR(100) NOT NULL)"},
+		// TABLE with no columns names no type at all, and the reference
+		// drops the word rather than keeping it with nothing after it.
+		{"DECLARE @X TABLE", "tsql", "DECLARE @X"},
 		{"DECLARE x INT", "databricks", "DECLARE x INT"},
 		// VAR and VARIABLE say nothing and are written back away.
 		{"DECLARE VAR x INT", "databricks", "DECLARE x INT"},
@@ -8201,20 +8204,20 @@ func TestDeclare(t *testing.T) {
 		t.Errorf("a bare DECLARE carries default = %v", items[0].Args["default"])
 	}
 
+	// A cursor is not a type, and trailing tokens after a clean item are not
+	// a second item. The reference keeps the whole statement as raw text
+	// rather than building a Declare, and this port matches that Command
+	// rather than refusing.
 	for _, tc := range []struct{ sql, dialect string }{
-		// A cursor is not a type. The reference keeps the whole statement as
-		// raw text rather than building a Declare, and so does anything the
-		// item parser cannot finish -- which is a shape this port does not
-		// make, so it declines instead.
 		{"DECLARE vendor_cursor CURSOR FOR SELECT a FROM b", "tsql"},
 		{"DECLARE @X INT extra", "tsql"},
-		// The reference reads TABLE with no columns as no type at all and
-		// writes `DECLARE @X`, dropping the word. Refused rather than
-		// reproduced.
-		{"DECLARE @X TABLE", "tsql"},
 	} {
-		if e, err := ParseOne(tc.sql, tc.dialect); err == nil {
-			t.Errorf("read %q as %v, want a refusal", tc.sql, e)
+		e, err := ParseOne(tc.sql, tc.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if e.Class != "Command" {
+			t.Errorf("%q read as %s, want Command", tc.sql, e.Class)
 		}
 	}
 }

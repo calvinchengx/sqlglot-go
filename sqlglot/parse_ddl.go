@@ -5227,6 +5227,7 @@ func (p *parser) parseLoadData() (*Expression, error) {
 // and stopping where a type follows without a comma. That is the same rule
 // here, and it needs no lookahead.
 func (p *parser) parseDeclare() (*Expression, error) {
+	start := *p.curr()
 	p.advance() // DECLARE
 
 	replace := false
@@ -5236,6 +5237,24 @@ func (p *parser) parseDeclare() (*Expression, error) {
 		replace = true
 	}
 
+	// The reference tries its own item parser and CATCHES what it raises --
+	// `PRIMARY KEY CLUSTERED (...)` is a constraint shape this port's own
+	// column-def reader has no case for, and the reference gives up on it
+	// the same way rather than treating it as a broken statement. A failure
+	// retreats to where the items began; leftover tokens after a clean parse
+	// do not, matching the reference's own asymmetry between the two.
+	mark := p.index
+	items, err := p.parseDeclareItems()
+	if err != nil {
+		p.index = mark
+	}
+	if err != nil || len(items) == 0 || p.curr() != nil {
+		return p.parseAsCommand(start), nil
+	}
+	return New("Declare", Arg{"expressions", items}, Arg{"replace", replace}), nil
+}
+
+func (p *parser) parseDeclareItems() ([]*Expression, error) {
 	var items []*Expression
 	for {
 		item, err := p.parseDeclareItem()
@@ -5247,10 +5266,7 @@ func (p *parser) parseDeclare() (*Expression, error) {
 			break
 		}
 	}
-	if p.curr() != nil {
-		return nil, p.unsupported("DECLARE with more than this port reads")
-	}
-	return New("Declare", Arg{"expressions", items}, Arg{"replace", replace}), nil
+	return items, nil
 }
 
 // parseDeclareItem reads one variable, or the several that share a type.
@@ -5277,15 +5293,17 @@ func (p *parser) parseDeclareItem() (*Expression, error) {
 
 	var kind *Expression
 	if p.match(TokTABLE) {
-		if !p.at(TokL_PAREN) {
-			return nil, p.unsupported("DECLARE of a table without columns")
+		// A bare `DECLARE @x TABLE` names no columns at all, and the
+		// reference reads that as a DeclareItem with no kind rather than
+		// refusing it -- kind stays nil, the same absence the dump shows.
+		if p.at(TokL_PAREN) {
+			columns, err := p.parseColumnDefs()
+			if err != nil {
+				return nil, err
+			}
+			// A Schema with no name: the columns are the whole of the type.
+			kind = New("Schema", Arg{"expressions", columns})
 		}
-		columns, err := p.parseColumnDefs()
-		if err != nil {
-			return nil, err
-		}
-		// A Schema with no name: the columns are the whole of the type.
-		kind = New("Schema", Arg{"expressions", columns})
 	} else {
 		var err error
 		kind, err = p.parseDataType()
