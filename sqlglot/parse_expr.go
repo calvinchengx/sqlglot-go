@@ -3220,6 +3220,13 @@ func (p *parser) jsonPathFor(arg *Expression) *Expression {
 	if _, ok := pythonInt(text); ok {
 		return arg
 	}
+	if p.dialect == "duckdb" && duckdbKeepsJSONPointer(text) {
+		// DuckDB also reads JSON Pointer syntax on the arrow, the same as on
+		// its JSON_EXTRACT family: its own to_json_path skips parsing rather
+		// than read `/duck/0` as the (different, and valid) JSONPath it
+		// would otherwise be.
+		return arg
+	}
 	path, err := parseJSONPath(text, p.dialect == "databricks")
 	if err != nil {
 		// ANY path the reference cannot read is handed straight back as the

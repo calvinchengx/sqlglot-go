@@ -261,6 +261,17 @@ func (e *Expression) Dump() []map[string]any {
 					for j := len(v) - 1; j >= 0; j-- {
 						stack = append(stack, frame{node: v[j], parent: i, key: k, isList: true})
 					}
+				case []any:
+					// A list whose members are not all the SAME shape -- a
+					// JSONPathUnion holds a mix of bare ints, strings and
+					// real nodes (Wildcard, Filter), exactly as the
+					// reference keeps them rather than wrapping each in a
+					// node of its own kind. Each item still gets its own
+					// record; the type switch below already knows how to
+					// dump a bare scalar or a node, whichever this one is.
+					for j := len(v) - 1; j >= 0; j-- {
+						stack = append(stack, frame{node: v[j], parent: i, key: k, isList: true})
+					}
 				case nil:
 				default:
 					stack = append(stack, frame{node: v, parent: i, key: k})
