@@ -4098,10 +4098,6 @@ func TestCreateFunction(t *testing.T) {
 	}
 
 	for _, tc := range []struct{ dialect, sql string }{
-		// The reference reads a SET as a setting only when it ENDS the
-		// statement, and otherwise swallows the rest as raw text.
-		{"postgres", "CREATE FUNCTION x(INT) RETURNS INT SET search_path TO 'p' AS 'y'"},
-		{"postgres", "CREATE FUNCTION x(INT) RETURNS INT SET foo FROM CURRENT"},
 		{"", "CREATE FUNCTION f() RETURNS @foo INT"},
 		{"", "CREATE FUNCTION f(a INT"},
 		{"", "CREATE FUNCTION f() AS 'x' AS 'y'"},

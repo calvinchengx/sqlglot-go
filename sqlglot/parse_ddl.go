@@ -2783,6 +2783,7 @@ func (p *parser) parseFunctionProperty() (*Expression, error) {
 		p.advance()
 		return New("SqlReadWriteProperty", Arg{"this", "NO SQL"}), nil
 	case p.at(TokSET):
+		start := *p.curr()
 		p.advance()
 		name, err := p.parseColumn()
 		if err != nil {
@@ -2792,10 +2793,11 @@ func (p *parser) parseFunctionProperty() (*Expression, error) {
 		// -- the item is an equality either way, and the dialect decides how
 		// it is spelled back.
 		if !p.match(TokALIAS) && !p.atWords("TO") && !p.at(TokEQ) {
-			// `SET foo FROM CURRENT` takes its value from the session; the
-			// reference gives up on it and keeps the raw text, which is not
-			// a tree this port can build.
-			return nil, p.unsupported("a function SET this port does not read")
+			// `SET foo FROM CURRENT` takes its value from the session, which
+			// the reference's own SET parser does not read either -- it
+			// retreats to the keyword and keeps the rest of the statement as
+			// raw text, the same give-up parseAsCommand replicates.
+			return New("SetConfigProperty", Arg{"this", p.parseAsCommand(start)}), nil
 		}
 		if p.atWords("TO") || p.at(TokEQ) {
 			p.advance()
@@ -2806,9 +2808,9 @@ func (p *parser) parseFunctionProperty() (*Expression, error) {
 		}
 		if p.curr() != nil {
 			// The reference reads a SET as a setting only when it ENDS the
-			// statement; with anything after it, it gives up and swallows the
-			// rest as raw text. That is not a tree this port builds.
-			return nil, p.unsupported("a function SET with more after it")
+			// statement; with anything after it, it retreats to the keyword
+			// the same way and swallows the rest as raw text.
+			return New("SetConfigProperty", Arg{"this", p.parseAsCommand(start)}), nil
 		}
 		item := New("SetItem", Arg{"this",
 			New("EQ", Arg{"this", name}, Arg{"expression", value})})
