@@ -90,7 +90,12 @@ func init() {
 		"EndStatement":                        (*generator).writeEndStatement,
 		"Property":                            (*generator).writeProperty,
 		"Properties":                          (*generator).writePropertyList,
+		"Concat":                              (*generator).writeConcat,
+		"TsOrDsAdd":                           (*generator).writeTsOrDsAdd,
+		"TsOrDsDiff":                          (*generator).writeTsOrDsDiff,
 		"Alter":                               (*generator).writeAlter,
+		"AlterDistStyle":                      (*generator).writeAlterDistStyle,
+		"AlterSortKey":                        (*generator).writeAlterSortKey,
 		"AlterRename":                         (*generator).writeAlterRename,
 		"RenameColumn":                        (*generator).writeRenameColumn,
 		"AddConstraint":                       (*generator).writeAddConstraint,
@@ -248,7 +253,133 @@ func init() {
 
 func (g *generator) writeChildThis(e *Expression) string { return g.child(e, "this") }
 
+// eliminateDistinctOn rewrites a `SELECT DISTINCT ON (cols) ...` into a
+// `ROW_NUMBER()`-windowed subquery, for a dialect with no `DISTINCT ON` of
+// its own: `SELECT <cols>, ROW_NUMBER() OVER (PARTITION BY <on> ORDER BY
+// ...) AS _row_number FROM (<original, minus DISTINCT>) WHERE _row_number =
+// 1`, mirroring the reference's own `eliminate_distinct_on` preprocessing
+// transform. Returns nil where `e` is not a DISTINCT ON select at all, so
+// the caller's ordinary rendering runs unchanged.
+func eliminateDistinctOn(e *Expression) *Expression {
+	distinct, _ := e.Args["distinct"].(*Expression)
+	if distinct == nil {
+		return nil
+	}
+	on, _ := distinct.Args["on"].(*Expression)
+	if on == nil || on.Class != "Tuple" {
+		return nil
+	}
+	distinctCols, _ := on.Args["expressions"].([]*Expression)
+
+	sel := e.Copy()
+	sel.Set("distinct", nil)
+
+	order, _ := sel.Args["order"].(*Expression)
+	if order != nil {
+		sel.Set("order", nil)
+	} else {
+		order = New("Order", Arg{"expressions", distinctCols})
+	}
+	window := New("Window",
+		Arg{"this", New("RowNumber")},
+		Arg{"partition_by", distinctCols},
+		Arg{"order", order},
+		Arg{"spec", nil},
+		Arg{"alias", nil},
+		Arg{"over", "OVER"},
+		Arg{"first", nil},
+	)
+
+	selects, _ := sel.Args["expressions"].([]*Expression)
+	rowNumberAlias := uniqueSelectName(selects, "_row_number")
+	windowAlias := New("Alias", Arg{"this", window},
+		Arg{"alias", New("Identifier", Arg{"this", rowNumberAlias}, Arg{"quoted", false})})
+
+	outerSelects := make([]*Expression, 0, len(selects))
+	innerSelects := make([]*Expression, len(selects))
+	taken := map[string]bool{rowNumberAlias: true}
+	star := false
+	for i, item := range selects {
+		if item.Class == "Star" {
+			star = true
+			break
+		}
+		var name string
+		if item.Class == "Alias" {
+			if aliasID, _ := item.Args["alias"].(*Expression); aliasID != nil {
+				name = aliasID.Name()
+			}
+			innerSelects[i] = item
+		} else {
+			name = item.Name()
+			if name == "" || taken[name] {
+				name = uniqueSelectName(selects, orDefault(name, "_col"))
+			}
+			innerSelects[i] = New("Alias", Arg{"this", item},
+				Arg{"alias", New("Identifier", Arg{"this", name}, Arg{"quoted", false})})
+		}
+		taken[name] = true
+		outerSelects = append(outerSelects,
+			New("Column", Arg{"this", New("Identifier", Arg{"this", name}, Arg{"quoted", false})}))
+	}
+	if star {
+		outerSelects = []*Expression{New("Star")}
+	}
+	sel.Set("expressions", append(innerSelects, windowAlias))
+
+	subquery := New("Subquery", Arg{"this", sel},
+		Arg{"alias", New("TableAlias", Arg{"this",
+			New("Identifier", Arg{"this", "_t"}, Arg{"quoted", false})})})
+
+	return New("Select",
+		Arg{"expressions", outerSelects},
+		Arg{"from_", New("From", Arg{"this", subquery})},
+		Arg{"where", New("Where", Arg{"this", New("EQ",
+			Arg{"this", New("Column", Arg{"this", New("Identifier",
+				Arg{"this", rowNumberAlias}, Arg{"quoted", false})})},
+			Arg{"expression", New("Literal", Arg{"this", "1"}, Arg{"is_string", false})},
+		)})},
+	)
+}
+
+func orDefault(s, fallback string) string {
+	if s == "" {
+		return fallback
+	}
+	return s
+}
+
+// uniqueSelectName is the reference's `find_new_name`: the given name if
+// nothing already in the select list is named that, else the name with an
+// incrementing suffix.
+func uniqueSelectName(selects []*Expression, want string) string {
+	taken := map[string]bool{}
+	for _, s := range selects {
+		if s.Class == "Alias" {
+			if aliasID, _ := s.Args["alias"].(*Expression); aliasID != nil {
+				taken[aliasID.Name()] = true
+			}
+		} else {
+			taken[s.Name()] = true
+		}
+	}
+	if !taken[want] {
+		return want
+	}
+	for i := 2; ; i++ {
+		candidate := want + "_" + strconv.Itoa(i)
+		if !taken[candidate] {
+			return candidate
+		}
+	}
+}
+
 func (g *generator) writeSelect(e *Expression) string {
+	if g.tables.EliminatesDistinctOn {
+		if rewritten := eliminateDistinctOn(e); rewritten != nil {
+			return g.node(rewritten)
+		}
+	}
 	parts := []string{"SELECT"}
 	add := func(s string) {
 		// A clause that brings its OWN leading separator is joined without a
@@ -273,9 +404,30 @@ func (g *generator) writeSelect(e *Expression) string {
 	limit, _ := e.Args["limit"].(*Expression)
 	// A FETCH lands in the same slot as a LIMIT but is not one: T-SQL writes
 	// a limit as TOP and a fetch where it stands, and writing the fetch as
-	// TOP left the count behind -- `SELECT TOP  *`.
+	// TOP left the count behind -- `SELECT TOP  *`. A LIMIT written as TOP
+	// is fully spent here -- the reference pops it off before anything
+	// later even looks -- so the LIMIT/FETCH conversion below never sees it.
 	if limit != nil && limit.Class == "Limit" && g.tables.LimitIsTop {
 		add(g.writeLimitWord(limit, "TOP "))
+		limit = nil
+	}
+	// Some dialects convert whichever of LIMIT/FETCH the tree holds into the
+	// other at generation time -- Redshift always writes LIMIT even for a
+	// statement it read as FETCH FIRST ... ROWS ONLY, and Oracle the other
+	// way. "FETCH FIRST ROWS ONLY" with no count names one row by the SQL
+	// standard, so a missing count becomes a literal 1, not a bare LIMIT.
+	if limit != nil {
+		switch {
+		case g.tables.LimitFetch == "LIMIT" && limit.Class == "Fetch":
+			count, _ := limit.Args["count"].(*Expression)
+			if count == nil {
+				count = New("Literal", Arg{"this", "1"}, Arg{"is_string", false})
+			}
+			limit = New("Limit", Arg{"expression", count})
+		case g.tables.LimitFetch == "FETCH" && limit.Class == "Limit":
+			count, _ := limit.Args["expression"].(*Expression)
+			limit = New("Fetch", Arg{"direction", "FIRST"}, Arg{"count", count})
+		}
 	}
 
 	add(g.list(e))
@@ -971,7 +1123,18 @@ func (g *generator) writeColumn(e *Expression) string {
 			parts = append(parts, s)
 		}
 	}
-	return strings.Join(parts, ".")
+	out := strings.Join(parts, ".")
+	// Oracle-style `(+)` outer-join syntax, Redshift's own: the parser reads
+	// it into join_mark on whatever _parse_column returned, and it is
+	// written back only where the dialect actually reads it that way too --
+	// elsewhere the reference drops the mark and reports it unsupported.
+	if e.Args["join_mark"] == true {
+		if !g.tables.SupportsColumnJoinMarks {
+			return g.fail(e.Class + " (+) outer-join syntax, which this dialect does not support")
+		}
+		out += " (+)"
+	}
+	return out
 }
 
 func (g *generator) writeIdentifier(e *Expression) string {
@@ -1019,7 +1182,7 @@ func (g *generator) writeLiteral(e *Expression) string {
 		if text == "" && g.wroteDollar {
 			return g.fail(e.Class + " of nothing after a dollar, which reads as a quote")
 		}
-		return "'" + escapeStringBody(text, g.cfg.StringEscapes) + "'"
+		return "'" + escapeStringBody(text, g.cfg.StringEscapePreferred) + "'"
 	}
 	return text
 }
@@ -1044,9 +1207,9 @@ func (g *generator) writeQuotedString(e *Expression) string {
 		// is written back as the two characters that spell it, so the tab a
 		// statement wrote as `\t` comes back as `\t` rather than as a tab.
 		body = escapeControlCharacters(body)
-		body = escapeStringBody(body, g.cfg.StringEscapes)
+		body = escapeStringBody(body, g.cfg.StringEscapePreferred)
 	case "true":
-		body = escapeStringBody(body, g.cfg.StringEscapes)
+		body = escapeStringBody(body, g.cfg.StringEscapePreferred)
 	}
 	out := strings.ReplaceAll(template, "{body}", body)
 	// A unicode string may name the character its escapes start with.
@@ -1063,7 +1226,7 @@ func (g *generator) writeQuotedString(e *Expression) string {
 // generator fuzzer found 55 times in a single run.
 func (g *generator) writeNational(e *Expression) string {
 	text, _ := e.Args["this"].(string)
-	return "N'" + escapeStringBody(text, g.cfg.StringEscapes) + "'"
+	return "N'" + escapeStringBody(text, g.cfg.StringEscapePreferred) + "'"
 }
 
 // writeLowerHex writes HEX(x) wrapped in LOWER: none of this port's dialects
@@ -1147,24 +1310,19 @@ func (g *generator) writeRecursiveWithSearch(e *Expression) string {
 // different value, silently. The reference writes a backslash-escaped quote.
 // Found by fuzzing what the generator writes back through the parser.
 //
-// The set it reads is the TOKENIZER's own, generated per dialect from the
-// reference, so the two halves cannot disagree about what an escape is.
-func escapeStringBody(text string, escapes set) string {
-	if _, doubles := escapes["'"]; doubles || len(escapes) == 0 {
+// preferred is STRING_ESCAPES[0], the TOKENIZER's own ordered list generated
+// per dialect from the reference -- not merely "an escape this dialect
+// reads": Redshift reads BOTH `\` and `'` as escapes but writes only `\`,
+// and a plain set has no order left to prefer one over the other. The
+// reference's own generator picks STRING_ESCAPES[0] for exactly this reason.
+func escapeStringBody(text string, preferred string) string {
+	if preferred == "" || preferred == "'" {
 		return strings.ReplaceAll(text, "'", "''")
 	}
-	// One escape character, chosen deterministically: map iteration order must
-	// never decide what SQL this emits.
-	chars := make([]string, 0, len(escapes))
-	for c := range escapes {
-		chars = append(chars, c)
-	}
-	sort.Strings(chars)
-	escape := chars[0]
 	// The escape escapes itself, and must be done first, or the one written
 	// for a quote below would be escaped in turn.
-	text = strings.ReplaceAll(text, escape, escape+escape)
-	return strings.ReplaceAll(text, "'", escape+"'")
+	text = strings.ReplaceAll(text, preferred, preferred+preferred)
+	return strings.ReplaceAll(text, "'", preferred+"'")
 }
 
 // writeBoolean writes the spelling this dialect uses in this POSITION. T-SQL
@@ -1498,7 +1656,14 @@ func (g *generator) writeDataType(e *Expression) string {
 		// A type carrying PARAMETERS may take a different name from the bare
 		// one: Databricks writes VARCHAR as STRING and VARCHAR(255) as itself.
 		if sized, ok := g.tables.SizedTypeSQL[string(kind)]; ok {
-			return sized + "(" + params + ")"
+			out := sized + "(" + params + ")"
+			// Redshift writes TIMETZ/TIMESTAMPTZ as their bare name plus a
+			// trailing suffix, whatever size the type carries -- the size
+			// stands BETWEEN the name and the words that name the zone.
+			if g.tables.TzToWithTimeZone && (kind == "TIMETZ" || kind == "TIMESTAMPTZ") {
+				out += " WITH TIME ZONE"
+			}
+			return out
 		}
 		return out + "(" + params + ")"
 	}
@@ -1780,6 +1945,13 @@ func (g *generator) writeArray(e *Expression) string {
 			return "ARRAY(" + g.list(e) + ")"
 		}
 	}
+	// Redshift is the one dialect that writes `ARRAY[...]` and `ARRAY(...)`
+	// as genuinely different things rather than two spellings of the same
+	// call; which one is written back is read off the node itself, not off
+	// the dialect's usual (single) choice of bracket.
+	if bracket, _ := e.Args["bracket_notation"].(bool); bracket {
+		return "ARRAY[" + g.list(e) + "]"
+	}
 	return g.tables.ArrayOpen + g.list(e) + g.tables.ArrayClose
 }
 
@@ -1979,7 +2151,7 @@ func (g *generator) writeInterval(e *Expression) string {
 	if g.tables.IntervalUnitInsideString && unit.Class == "Var" &&
 		this != nil && this.Class == "Literal" && this.Args["is_string"] == true {
 		text, _ := this.Args["this"].(string)
-		return "INTERVAL '" + escapeStringBody(text, g.cfg.StringEscapes) +
+		return "INTERVAL '" + escapeStringBody(text, g.cfg.StringEscapePreferred) +
 			" " + g.node(unit) + "'"
 	}
 	return "INTERVAL " + g.node(this) + " " + g.node(unit)
@@ -2126,7 +2298,7 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 			if quoted := strings.Contains(out, "'"+marker+"'"); quoted {
 				if child, _ := e.Args[key].(*Expression); child != nil {
 					out = strings.ReplaceAll(out, marker,
-						escapeStringBody(child.Name(), g.cfg.StringEscapes))
+						escapeStringBody(child.Name(), g.cfg.StringEscapePreferred))
 					continue
 				}
 			}
@@ -2327,7 +2499,7 @@ func (g *generator) writePropertyEQ(e *Expression) string {
 	// names it after, the other writes the key first and quotes it as a
 	// string. Both templates are the reference's, read off a rendered node.
 	out := strings.ReplaceAll(g.tables.StructFieldTemplate, "{value}", g.child(e, "expression"))
-	out = strings.ReplaceAll(out, "{name}", escapeStringBody(name, g.cfg.StringEscapes))
+	out = strings.ReplaceAll(out, "{name}", escapeStringBody(name, g.cfg.StringEscapePreferred))
 	return strings.ReplaceAll(out, "{key}", g.node(key))
 }
 
@@ -2432,7 +2604,7 @@ func (g *generator) writeJSONPath(e *Expression) string {
 				body = strings.ReplaceAll(body, delimiter, "\\"+delimiter)
 			}
 			if escapeQuote {
-				body = escapeStringBody(body, g.cfg.StringEscapes)
+				body = escapeStringBody(body, g.cfg.StringEscapePreferred)
 			}
 			segment := strings.ReplaceAll(form, "{key}", body)
 			// A segment that renders to NOTHING cannot be read back.
@@ -2725,6 +2897,16 @@ func writesAsACall(text string) bool {
 // OUTSIDE the call there and inside it in Databricks, so a dialect that puts it
 // inside is refused rather than written with it in the wrong place.
 func (g *generator) writeUnnest(e *Expression) string {
+	// Redshift never writes the call at all: an UNNEST built from its own
+	// `t, t.arr_col AS x` sugar (always exactly one bare column, no
+	// ordinality) is written straight back as that same sugar --
+	// `t.arr_col AS x` -- not as a function call this dialect's FROM/JOIN
+	// grammar does not actually accept.
+	if g.dialect == "redshift" && e.Args["offset"] != true {
+		if _, named := e.Args["offset"].(*Expression); !named {
+			return g.writeRedshiftUnnestSugar(e)
+		}
+	}
 	// The ordinality is a plain true, or the NAME the column was given. Both
 	// mean the same words are written; a name goes back into the alias's
 	// column list, which is where it was read from.
@@ -2761,6 +2943,29 @@ func (g *generator) writeUnnest(e *Expression) string {
 		out += " AS " + g.node(alias)
 	}
 	return out
+}
+
+// writeRedshiftUnnestSugar writes Redshift's own reading of `UNNEST(x) AS y`
+// back as the bare-column sugar it always means there: `x AS y`.
+func (g *generator) writeRedshiftUnnestSugar(e *Expression) string {
+	items, _ := e.Args["expressions"].([]*Expression)
+	if len(items) != 1 {
+		return g.fail("UNNEST with this many arguments")
+	}
+	out := g.node(items[0])
+	alias, _ := e.Args["alias"].(*Expression)
+	if alias == nil {
+		return out
+	}
+	columns, _ := alias.Args["columns"].([]*Expression)
+	if len(columns) == 0 {
+		return out
+	}
+	names := make([]string, 0, len(columns))
+	for _, c := range columns {
+		names = append(names, g.node(c))
+	}
+	return out + " AS " + strings.Join(names, ", ")
 }
 
 // unnestCall spells an UNNEST and the alias its own spelling carries, by
@@ -3328,6 +3533,9 @@ func (g *generator) writeCreate(e *Expression) string {
 			}
 		}
 	}
+	if noSchemaBinding, _ := e.Args["no_schema_binding"].(bool); noSchemaBinding {
+		out += " WITH NO SCHEMA BINDING"
+	}
 	// Teradata's own trailing indexes -- `PRIMARY AMP INDEX i (a) UNIQUE
 	// INDEX j (b)` -- come after everything the query and its own
 	// properties said, one after another with nothing between them.
@@ -3418,7 +3626,7 @@ func (g *generator) writeProperty(e *Expression) string {
 		name, _ = key.Args["this"].(string)
 	}
 	if g.tables.PropertyNameQuoted {
-		name = "'" + escapeStringBody(name, g.cfg.StringEscapes) + "'"
+		name = "'" + escapeStringBody(name, g.cfg.StringEscapePreferred) + "'"
 	}
 	return name + "=" + g.child(e, "value")
 }
@@ -4280,6 +4488,84 @@ func (g *generator) writeAlterColumn(e *Expression) string {
 }
 
 // writeAlterRename writes the new name a table takes.
+// writeDateDeltaCall writes DATEADD/DATEDIFF(unit, amount|start, date|end) --
+// Redshift's own spelling for TsOrDsAdd/TsOrDsDiff, overriding Postgres's
+// (which these classes would otherwise inherit): the unit as a bare word,
+// then the two operands in the order the tree already holds them.
+func (g *generator) writeDateDeltaCall(name string, e *Expression) string {
+	unit, _ := e.Args["unit"].(*Expression)
+	if unit == nil {
+		unit = New("Var", Arg{"this", "DAY"})
+	}
+	return name + "(" + g.node(unit) + ", " + g.child(e, "expression") + ", " + g.child(e, "this") + ")"
+}
+
+// Databricks builds these same two classes from Spark's own DATE_ADD/
+// DATEDIFF grammar, and writes them a different way entirely -- so this
+// override, Redshift's own simple call spelling, only applies there. Every
+// other dialect falls through to its ordinary probe-generated rendering.
+func (g *generator) writeTsOrDsAdd(e *Expression) string {
+	if g.dialect != "redshift" {
+		return g.spell(e)
+	}
+	return g.writeDateDeltaCall("DATEADD", e)
+}
+
+func (g *generator) writeTsOrDsDiff(e *Expression) string {
+	if g.dialect != "redshift" {
+		return g.spell(e)
+	}
+	return g.writeDateDeltaCall("DATEDIFF", e)
+}
+
+// writeConcat writes CONCAT(a, b, ...). Redshift always writes it as a `||`
+// chain instead, unconditionally -- not dependent on the tree's own
+// `coalesce` flag, which Redshift's own CONCAT() always sets anyway.
+func (g *generator) writeConcat(e *Expression) string {
+	items, _ := e.Args["expressions"].([]*Expression)
+	if len(items) > 0 && g.tables.ConcatAsDPipe {
+		chain := items[0]
+		for _, next := range items[1:] {
+			chain = New("DPipe", Arg{"this", chain}, Arg{"expression", next})
+		}
+		return g.node(chain)
+	}
+	// A single argument is sometimes written bare: `CONCAT(a)` and `a` mean
+	// the same thing, and a dialect that does not accept the one-argument
+	// call at all still has to write something for a tree that holds one.
+	if len(items) == 1 && !g.tables.SupportsSingleArgConcat {
+		return g.node(items[0])
+	}
+	return "CONCAT(" + g.list(e) + ")"
+}
+
+// writeAlterDistStyle writes Redshift's `ALTER DISTSTYLE <style>` or `ALTER
+// DISTSTYLE KEY DISTKEY <column>` -- which of the two depends on what kind
+// of node `this` actually is, not on which keyword read it in: a bare style
+// name parses as a Var, a column as anything else.
+func (g *generator) writeAlterDistStyle(e *Expression) string {
+	this, _ := e.Args["this"].(*Expression)
+	text := g.child(e, "this")
+	if this == nil || this.Class != "Var" {
+		text = "KEY DISTKEY " + text
+	}
+	return "ALTER DISTSTYLE " + text
+}
+
+// writeAlterSortKey writes Redshift's `ALTER [COMPOUND] SORTKEY <AUTO|NONE>`
+// or `... SORTKEY (<columns>)`.
+func (g *generator) writeAlterSortKey(e *Expression) string {
+	out := "ALTER"
+	if compound, _ := e.Args["compound"].(bool); compound {
+		out += " COMPOUND"
+	}
+	out += " SORTKEY "
+	if this := g.child(e, "this"); this != "" {
+		return out + this
+	}
+	return out + "(" + g.list(e) + ")"
+}
+
 func (g *generator) writeAlterRename(e *Expression) string {
 	target, _ := e.Args["this"].(*Expression)
 	if target == nil {
@@ -5600,19 +5886,43 @@ func (g *generator) writeDeclareItem(e *Expression) string {
 	return out
 }
 
-// writeCredentials writes how a COPY authenticates, which for every statement
-// this port reads is nothing at all: the reference builds the node whether or
-// not any were written, and an empty one renders empty.
+// writeCredentials writes how a COPY authenticates: STORAGE_INTEGRATION,
+// CREDENTIALS, ENCRYPTION, IAM_ROLE and REGION, each written only where the
+// statement named it, in that fixed order -- the reference builds the node
+// whether or not any were written, and an empty one renders empty.
 func (g *generator) writeCredentials(e *Expression) string {
-	for _, key := range e.Keys {
-		if value, _ := e.Args[key].(*Expression); value != nil {
-			return g.fail(e.Class + " this port does not read")
-		}
-		if items, _ := e.Args[key].([]*Expression); len(items) > 0 {
-			return g.fail(e.Class + " this port does not read")
+	credentialsVal, _ := e.Args["credentials"].(*Expression)
+	credentials := ""
+	if credentialsVal != nil {
+		if credentialsVal.Class == "Literal" {
+			// Redshift: CREDENTIALS <string>.
+			if s := g.node(credentialsVal); s != "" {
+				credentials = "CREDENTIALS " + s
+			}
+		} else {
+			// Snowflake: CREDENTIALS = (...).
+			return g.fail(e.Class + " CREDENTIALS = (...) options list")
 		}
 	}
-	return ""
+	if storage, _ := e.Args["storage"].(*Expression); storage != nil {
+		return g.fail(e.Class + " STORAGE_INTEGRATION this port does not read")
+	}
+	if enc, _ := e.Args["encryption"].([]*Expression); len(enc) > 0 {
+		return g.fail(e.Class + " ENCRYPTION this port does not read")
+	}
+	iamRole := ""
+	if role, _ := e.Args["iam_role"].(*Expression); role != nil {
+		if s := g.node(role); s != "" {
+			iamRole = "IAM_ROLE " + s
+		}
+	}
+	region := ""
+	if r, _ := e.Args["region"].(*Expression); r != nil {
+		if s := g.node(r); s != "" {
+			region = " REGION " + s
+		}
+	}
+	return credentials + iamRole + region
 }
 
 // writeCopyParameter writes one of a COPY's settings. Whether an `=` stands

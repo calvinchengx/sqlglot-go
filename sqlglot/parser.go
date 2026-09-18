@@ -74,6 +74,15 @@ type parser struct {
 	// have them read `INT[3]` that way.
 	inColumnType bool
 	dialect      string
+	// noJoinMark marks a node built by a path the reference's own
+	// `_parse_column` never reaches -- Redshift's `(+)` stamp belongs only
+	// to what THAT rule returns, and a `TIMESTAMP '...'` typed literal is
+	// built inside parsePrimary's own dispatch, not by it, even though the
+	// Cast it produces is otherwise indistinguishable by class from one
+	// `CAST(x AS T)` builds (which DOES go through the rule). Scratch state
+	// on the parser rather than the tree: it exists only to be read back by
+	// parsePostfix one call later, never serialised.
+	noJoinMark map[*Expression]bool
 }
 
 func (p *parser) curr() *Token {

@@ -8579,9 +8579,21 @@ func TestCopy(t *testing.T) {
 		t.Errorf("%q wrote %q, %v", values, got, err)
 	}
 
+	// REGION round-trips: Redshift's COPY reads it as part of the
+	// credentials clause, alongside IAM_ROLE.
+	region := `COPY t FROM 's3://x' IAM_ROLE default REGION 'eu'`
+	regionExpr, err := ParseOne(region, "redshift")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", region, err)
+	}
+	if got, err := Generate(regionExpr, "redshift"); err != nil || got != region {
+		t.Errorf("%q wrote %q, %v", region, got, err)
+	}
+
 	// A Credentials the port did not build is one it cannot write: it reads
-	// none of them, so an empty node is the only one it can spell.
-	for _, key := range []string{"region", "encryption"} {
+	// none of STORAGE_INTEGRATION or ENCRYPTION, so a node carrying either
+	// is one it can only refuse.
+	for _, key := range []string{"storage", "encryption"} {
 		withCreds, err := ParseOne("COPY t FROM 'f' WITH (FORMAT x)", "postgres")
 		if err != nil {
 			t.Fatalf("ParseOne: %v", err)

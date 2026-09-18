@@ -693,7 +693,101 @@ func (p *parser) parseSelect() (*Expression, error) {
 	if err := p.parseQueryModifiers(sel); err != nil {
 		return nil, err
 	}
+	if p.tables.SupportsImplicitUnnest && sel.Args["from_"] != nil {
+		applyImplicitUnnests(sel)
+	}
 	return sel, nil
+}
+
+// applyImplicitUnnests turns Redshift's `t AS c, c.arr_col AS x` sugar into
+// an explicit `t AS c, UNNEST(c.arr_col) AS x`: a comma- or CROSS-joined
+// table with no ON clause, whose qualified name's FIRST part names an
+// earlier table in this same FROM, is not really a second table at all --
+// it is a nested column of the first, and Redshift lets it stand where a
+// table would. Mirrors the reference's own post-pass over the fully parsed
+// FROM and JOINs, run once query modifiers are done.
+func applyImplicitUnnests(sel *Expression) {
+	fromTable := sel.Args["from_"].(*Expression).This()
+	refs := map[string]bool{strings.ToLower(aliasOrName(fromTable)): true}
+	joinsAny, _ := sel.Args["joins"].([]*Expression)
+	for _, join := range joinsAny {
+		table := join.This()
+		if table == nil {
+			continue
+		}
+		ref := strings.ToLower(aliasOrName(table))
+		if table.Class == "Table" && join.Args["on"] == nil {
+			parts := tableParts(table)
+			if len(parts) > 1 && len(parts) <= 4 && refs[strings.ToLower(parts[0].Name())] {
+				if column := tableToColumn(table); column != nil {
+					unnest := New("Unnest", Arg{"expressions", []*Expression{column}})
+					if alias, ok := table.Args["alias"].(*Expression); ok && alias != nil {
+						if aliasThis, ok2 := alias.Args["this"].(*Expression); ok2 && aliasThis != nil {
+							unnest.Set("alias", New("TableAlias", Arg{"columns", []*Expression{aliasThis}}))
+						}
+					}
+					join.Set("this", unnest)
+				}
+			}
+		}
+		refs[ref] = true
+	}
+}
+
+// aliasOrName is the reference's `.alias_or_name`: a node's own alias where
+// it has one, else its name.
+func aliasOrName(e *Expression) string {
+	if alias, ok := e.Args["alias"].(*Expression); ok && alias != nil {
+		if this, ok2 := alias.Args["this"].(*Expression); ok2 && this != nil {
+			return this.Name()
+		}
+	}
+	return e.Name()
+}
+
+// tableParts is a Table's `.parts`: catalog and db where present, then the
+// table position flattened out of whatever Dot chain a fourth-or-later
+// qualifier left it holding.
+func tableParts(t *Expression) []*Expression {
+	var parts []*Expression
+	if catalog, ok := t.Args["catalog"].(*Expression); ok && catalog != nil {
+		parts = append(parts, catalog)
+	}
+	if db, ok := t.Args["db"].(*Expression); ok && db != nil {
+		parts = append(parts, db)
+	}
+	return append(parts, flattenDotChain(t.This())...)
+}
+
+func flattenDotChain(e *Expression) []*Expression {
+	if e == nil {
+		return nil
+	}
+	if e.Class == "Dot" {
+		left, _ := e.Args["this"].(*Expression)
+		right, _ := e.Args["expression"].(*Expression)
+		return append(flattenDotChain(left), right)
+	}
+	return []*Expression{e}
+}
+
+// tableToColumn is `Table.to_column()` for the (at most four-part) shapes
+// this port's tables actually hold: the LAST part becomes the column, and
+// whatever comes before it fills table/db/catalog, nearest first -- the
+// same positions `column(*reversed(parts))` fills in the reference. A fifth
+// part would need to nest in `fields`, which no dialect this port reads
+// actually produces, so that shape is declined rather than guessed at.
+func tableToColumn(t *Expression) *Expression {
+	parts := tableParts(t)
+	if len(parts) == 0 || len(parts) > 4 {
+		return nil
+	}
+	keys := []string{"this", "table", "db", "catalog"}
+	col := New("Column")
+	for i := range parts {
+		col.Set(keys[i], parts[len(parts)-1-i])
+	}
+	return col
 }
 
 // parseTop reads T-SQL's row limiter. PERCENT is kept rather than refused:

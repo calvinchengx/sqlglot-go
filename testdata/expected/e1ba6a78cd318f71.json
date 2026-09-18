@@ -1,0 +1,1365 @@
+{
+ "dialect": "redshift",
+ "rendered": "WITH RECURSIVE _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_value) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_value) AS DATE) <= CAST('2020-02-01' AS DATE)), dates AS (SELECT * FROM (SELECT date_value FROM _generated_dates) AS _generated_dates) SELECT * FROM dates",
+ "sql": "WITH RECURSIVE _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_value) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_value) AS DATE) <= CAST('2020-02-01' AS DATE)), dates AS (SELECT * FROM (SELECT date_value FROM _generated_dates) AS _generated_dates) SELECT * FROM dates",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 5,
+   "t": "RECURSIVE",
+   "x": "RECURSIVE"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "_generated_dates"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 32,
+   "t": "VAR",
+   "x": "date_value"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 44,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 47,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 48,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 55,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 59,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 60,
+   "t": "STRING",
+   "x": "2020-01-01"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 73,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 76,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 80,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 82,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 85,
+   "t": "VAR",
+   "x": "date_value"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 96,
+   "t": "UNION",
+   "x": "UNION"
+  },
+  {
+   "c": 105,
+   "e": 104,
+   "l": 1,
+   "s": 102,
+   "t": "ALL",
+   "x": "ALL"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 106,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 117,
+   "e": 116,
+   "l": 1,
+   "s": 113,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 118,
+   "e": 117,
+   "l": 1,
+   "s": 117,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 118,
+   "t": "VAR",
+   "x": "DATEADD"
+  },
+  {
+   "c": 126,
+   "e": 125,
+   "l": 1,
+   "s": 125,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 126,
+   "t": "VAR",
+   "x": "WEEK"
+  },
+  {
+   "c": 131,
+   "e": 130,
+   "l": 1,
+   "s": 130,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 133,
+   "e": 132,
+   "l": 1,
+   "s": 132,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 133,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 145,
+   "e": 144,
+   "l": 1,
+   "s": 135,
+   "t": "VAR",
+   "x": "date_value"
+  },
+  {
+   "c": 146,
+   "e": 145,
+   "l": 1,
+   "s": 145,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 149,
+   "e": 148,
+   "l": 1,
+   "s": 147,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 154,
+   "e": 153,
+   "l": 1,
+   "s": 150,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 155,
+   "e": 154,
+   "l": 1,
+   "s": 154,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 160,
+   "e": 159,
+   "l": 1,
+   "s": 156,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 177,
+   "e": 176,
+   "l": 1,
+   "s": 161,
+   "t": "VAR",
+   "x": "_generated_dates"
+  },
+  {
+   "c": 183,
+   "e": 182,
+   "l": 1,
+   "s": 178,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 188,
+   "e": 187,
+   "l": 1,
+   "s": 184,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 189,
+   "e": 188,
+   "l": 1,
+   "s": 188,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 196,
+   "e": 195,
+   "l": 1,
+   "s": 189,
+   "t": "VAR",
+   "x": "DATEADD"
+  },
+  {
+   "c": 197,
+   "e": 196,
+   "l": 1,
+   "s": 196,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 201,
+   "e": 200,
+   "l": 1,
+   "s": 197,
+   "t": "VAR",
+   "x": "WEEK"
+  },
+  {
+   "c": 202,
+   "e": 201,
+   "l": 1,
+   "s": 201,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 204,
+   "e": 203,
+   "l": 1,
+   "s": 203,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 205,
+   "e": 204,
+   "l": 1,
+   "s": 204,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 216,
+   "e": 215,
+   "l": 1,
+   "s": 206,
+   "t": "VAR",
+   "x": "date_value"
+  },
+  {
+   "c": 217,
+   "e": 216,
+   "l": 1,
+   "s": 216,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 220,
+   "e": 219,
+   "l": 1,
+   "s": 218,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 225,
+   "e": 224,
+   "l": 1,
+   "s": 221,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 226,
+   "e": 225,
+   "l": 1,
+   "s": 225,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 229,
+   "e": 228,
+   "l": 1,
+   "s": 227,
+   "t": "LTE",
+   "x": "<="
+  },
+  {
+   "c": 234,
+   "e": 233,
+   "l": 1,
+   "s": 230,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 235,
+   "e": 234,
+   "l": 1,
+   "s": 234,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 247,
+   "e": 246,
+   "l": 1,
+   "s": 235,
+   "t": "STRING",
+   "x": "2020-02-01"
+  },
+  {
+   "c": 250,
+   "e": 249,
+   "l": 1,
+   "s": 248,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 255,
+   "e": 254,
+   "l": 1,
+   "s": 251,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 256,
+   "e": 255,
+   "l": 1,
+   "s": 255,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 257,
+   "e": 256,
+   "l": 1,
+   "s": 256,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 258,
+   "e": 257,
+   "l": 1,
+   "s": 257,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 264,
+   "e": 263,
+   "l": 1,
+   "s": 259,
+   "t": "VAR",
+   "x": "dates"
+  },
+  {
+   "c": 267,
+   "e": 266,
+   "l": 1,
+   "s": 265,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 269,
+   "e": 268,
+   "l": 1,
+   "s": 268,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 275,
+   "e": 274,
+   "l": 1,
+   "s": 269,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 277,
+   "e": 276,
+   "l": 1,
+   "s": 276,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 282,
+   "e": 281,
+   "l": 1,
+   "s": 278,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 284,
+   "e": 283,
+   "l": 1,
+   "s": 283,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 290,
+   "e": 289,
+   "l": 1,
+   "s": 284,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 301,
+   "e": 300,
+   "l": 1,
+   "s": 291,
+   "t": "VAR",
+   "x": "date_value"
+  },
+  {
+   "c": 306,
+   "e": 305,
+   "l": 1,
+   "s": 302,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 323,
+   "e": 322,
+   "l": 1,
+   "s": 307,
+   "t": "VAR",
+   "x": "_generated_dates"
+  },
+  {
+   "c": 324,
+   "e": 323,
+   "l": 1,
+   "s": 323,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 327,
+   "e": 326,
+   "l": 1,
+   "s": 325,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 344,
+   "e": 343,
+   "l": 1,
+   "s": 328,
+   "t": "VAR",
+   "x": "_generated_dates"
+  },
+  {
+   "c": 345,
+   "e": 344,
+   "l": 1,
+   "s": 344,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 352,
+   "e": 351,
+   "l": 1,
+   "s": 346,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 354,
+   "e": 353,
+   "l": 1,
+   "s": 353,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 359,
+   "e": 358,
+   "l": 1,
+   "s": 355,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 365,
+   "e": 364,
+   "l": 1,
+   "s": 360,
+   "t": "VAR",
+   "x": "dates"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 354,
+    "end": 353,
+    "line": 1,
+    "start": 353
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 365,
+    "end": 364,
+    "line": 1,
+    "start": 360
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "dates"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.With",
+   "i": 0,
+   "k": "with_"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.CTE",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Union",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 11,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "2020-01-01"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 12,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 16,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 16,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 12,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "alias",
+   "m": {
+    "col": 95,
+    "end": 94,
+    "line": 1,
+    "start": 85
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "date_value"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "distinct",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 9,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 24,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TsOrDsAdd",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 125,
+    "end": 124,
+    "line": 1,
+    "start": 118
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 26,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "this",
+   "m": {
+    "col": 145,
+    "end": 144,
+    "line": 1,
+    "start": 135
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "date_value"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 27,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 26,
+   "k": "expression",
+   "m": {
+    "col": 133,
+    "end": 132,
+    "line": 1,
+    "start": 132
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 32,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 26,
+   "k": "unit"
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "WEEK"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 26,
+   "k": "return_type"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 37,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "i": 26,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 25,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 40,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 40,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 25,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 24,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 44,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 45,
+   "k": "this",
+   "m": {
+    "col": 177,
+    "end": 176,
+    "line": 1,
+    "start": 161
+   }
+  },
+  {
+   "i": 46,
+   "k": "this",
+   "v": "_generated_dates"
+  },
+  {
+   "i": 46,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 24,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.LTE",
+   "i": 49,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 50,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TsOrDsAdd",
+   "i": 51,
+   "k": "this",
+   "m": {
+    "col": 196,
+    "end": 195,
+    "line": 1,
+    "start": 189
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 52,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 53,
+   "k": "this",
+   "m": {
+    "col": 216,
+    "end": 215,
+    "line": 1,
+    "start": 206
+   }
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "date_value"
+  },
+  {
+   "i": 54,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 53,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 52,
+   "k": "expression",
+   "m": {
+    "col": 204,
+    "end": 203,
+    "line": 1,
+    "start": 203
+   }
+  },
+  {
+   "i": 58,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 58,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 52,
+   "k": "unit"
+  },
+  {
+   "i": 61,
+   "k": "this",
+   "v": "WEEK"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 52,
+   "k": "return_type"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 63,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "i": 52,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 51,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 66,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 66,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 51,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 50,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 70,
+   "k": "this",
+   "m": {
+    "col": 247,
+    "end": 246,
+    "line": 1,
+    "start": 235
+   }
+  },
+  {
+   "i": 71,
+   "k": "this",
+   "v": "2020-02-01"
+  },
+  {
+   "i": 71,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 70,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 74,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 74,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 70,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 8,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 78,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 79,
+   "k": "this",
+   "v": "_generated_dates"
+  },
+  {
+   "i": 79,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 78,
+   "k": "columns",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 82,
+   "k": "this",
+   "v": "date_value"
+  },
+  {
+   "i": 82,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.CTE",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 85,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 86,
+   "k": "expressions",
+   "m": {
+    "col": 277,
+    "end": 276,
+    "line": 1,
+    "start": 276
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 86,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 88,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 89,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 90,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 91,
+   "k": "this",
+   "m": {
+    "col": 301,
+    "end": 300,
+    "line": 1,
+    "start": 291
+   }
+  },
+  {
+   "i": 92,
+   "k": "this",
+   "v": "date_value"
+  },
+  {
+   "i": 92,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 91,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 90,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 96,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 97,
+   "k": "this",
+   "m": {
+    "col": 323,
+    "end": 322,
+    "line": 1,
+    "start": 307
+   }
+  },
+  {
+   "i": 98,
+   "k": "this",
+   "v": "_generated_dates"
+  },
+  {
+   "i": 98,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 89,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 101,
+   "k": "this",
+   "m": {
+    "col": 344,
+    "end": 343,
+    "line": 1,
+    "start": 328
+   }
+  },
+  {
+   "i": 102,
+   "k": "this",
+   "v": "_generated_dates"
+  },
+  {
+   "i": 102,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 85,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 105,
+   "k": "this",
+   "m": {
+    "col": 264,
+    "end": 263,
+    "line": 1,
+    "start": 259
+   }
+  },
+  {
+   "i": 106,
+   "k": "this",
+   "v": "dates"
+  },
+  {
+   "i": 106,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "recursive",
+   "v": true
+  }
+ ]
+}

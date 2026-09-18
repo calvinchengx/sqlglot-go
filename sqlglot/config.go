@@ -22,8 +22,15 @@ type Config struct {
 	Identifiers   map[string]string
 	// Comments maps a start delimiter to its end. An empty end means the
 	// comment runs to end of line -- the reference stores None there.
-	Comments                         map[string]string
-	StringEscapes                    set
+	Comments      map[string]string
+	StringEscapes set
+	// StringEscapePreferred is STRING_ESCAPES[0] -- the reference's generator
+	// always escapes a quote with the FIRST listed escape, not whichever one
+	// a set's own iteration happens to visit first. Redshift reads both `\`
+	// and `'` as escapes but writes only `\`; StringEscapes alone cannot
+	// tell the two apart once order is gone, which is why this exists
+	// alongside it rather than replacing it.
+	StringEscapePreferred            string
 	ByteStringEscapes                set
 	IdentifierEscapes                set
 	EscapeFollowChars                set

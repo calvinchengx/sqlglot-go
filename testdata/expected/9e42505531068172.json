@@ -1,0 +1,78 @@
+{
+ "dialect": "redshift",
+ "rendered": "'abc' SIMILAR TO '(b|c)%'",
+ "sql": "'abc' SIMILAR TO '(b|c)%'",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "STRING",
+   "x": "abc"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 6,
+   "t": "SIMILAR_TO",
+   "x": "SIMILAR TO"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 17,
+   "t": "STRING",
+   "x": "(b|c)%"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.SimilarTo"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 5,
+    "end": 4,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "abc"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "(b|c)%"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

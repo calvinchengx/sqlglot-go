@@ -701,12 +701,52 @@ func (p *parser) parseUnary() (*Expression, error) {
 
 // parsePostfix reads what binds tighter than any operator: the :: cast, which
 // the reference handles among the column operators.
+//
+// This is the reference's own `_parse_column`: a primary, then whatever
+// postfix operators apply to it, and -- for Redshift, where the tokenizer
+// reads Oracle's own `(+)` outer-join mark as a token of its own -- a stamp
+// of whether one followed. Not only when one did: the reference marks EVERY
+// result of this rule, a bare `x` included, and stamps it on WHATEVER it
+// parsed here, a Cast or a call as much as a bare Column.
 func (p *parser) parsePostfix() (*Expression, error) {
 	this, err := p.parsePrimary()
 	if err != nil {
 		return nil, err
 	}
-	return p.parseColumnOps(this)
+	out, err := p.parseColumnOps(this)
+	if err != nil {
+		return nil, err
+	}
+	// A bare LITERAL never reaches the reference's own `_parse_column` at
+	// all -- its fast path is for identifier-shaped things, and the reference
+	// records no join_mark on a plain `1` inside `ROWS BETWEEN 1 PRECEDING`.
+	// A Column, a Cast, a call: everything else this function can return
+	// does go through it, and does carry the mark.
+	if p.tables.SupportsColumnJoinMarks && out != nil && !p.noJoinMark[out] &&
+		out.Class != "Literal" && out.Class != "Boolean" && out.Class != "Null" &&
+		out.Class != "Interval" && out.Class != "Table" && out.Class != "Star" {
+		out.Set("join_mark", p.match(TokJOIN_MARKER))
+	}
+	// AT TIME ZONE is not one of the reference's own COLUMN_OPERATORS --
+	// `_parse_column_ops` is only brackets, dots and `::` casts -- so it is
+	// parsed OUTSIDE `_parse_column`, after whatever join_mark that rule
+	// already stamped on `out`. An AtTimeZone wrapper never carries a mark
+	// of its own; only the thing it wraps might.
+	for p.atAtTimeZone() {
+		p.advance()
+		p.advance()
+		p.advance()
+		// parsePrimary, not parseBitwise: the zone parse recurses back into
+		// this loop, so a chained `AT TIME ZONE 'a' AT TIME ZONE 'b'` had
+		// the second one swallowed into the first one's ZONE -- right
+		// associative, where the reference nests left.
+		zone, zerr := p.parsePrimary()
+		if zerr != nil {
+			return nil, zerr
+		}
+		out = New("AtTimeZone", Arg{"this", out}, Arg{"zone", zone})
+	}
+	return out, nil
 }
 
 // parseColumnOps reads the operators that apply to something already parsed:
@@ -799,23 +839,6 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 				return nil, p.unsupported("unclosed WITHIN GROUP")
 			}
 			this = New("WithinGroup", Arg{"this", this}, Arg{"expression", order})
-			continue
-		}
-		// `x AT TIME ZONE 'UTC'`: three words, of which only TIME is a
-		// keyword, so the phrase is matched by text.
-		if p.atAtTimeZone() {
-			p.advance()
-			p.advance()
-			p.advance()
-			// parsePrimary, not parseBitwise: the zone parse recurses back into
-			// this loop, so a chained `AT TIME ZONE 'a' AT TIME ZONE 'b'` had
-			// the second one swallowed into the first one's ZONE -- right
-			// associative, where the reference nests left.
-			zone, err := p.parsePrimary()
-			if err != nil {
-				return nil, err
-			}
-			this = New("AtTimeZone", Arg{"this", this}, Arg{"zone", zone})
 			continue
 		}
 		// `SUM(x) FILTER(WHERE p)` wraps the aggregate in a Filter carrying a
@@ -1177,7 +1200,11 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		return New("Array", Arg{"expressions", items}), nil
+		arr := New("Array", Arg{"expressions", items})
+		if p.tables.HasDistinctArrayConstructors {
+			arr.Set("bracket_notation", true)
+		}
+		return arr, nil
 	}
 
 	// `[1, 2, 3]` is an Array literal. Same token as the subscript above; the
@@ -1188,7 +1215,11 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		return New("Array", Arg{"expressions", items}), nil
+		arr := New("Array", Arg{"expressions", items})
+		if p.tables.HasDistinctArrayConstructors {
+			arr.Set("bracket_notation", true)
+		}
+		return arr, nil
 	}
 
 	// CURRENT_DATE and friends are calls with no argument list.
@@ -1333,6 +1364,12 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			}
 			cast := New("Cast", Arg{"this", inner}, Arg{"to", kind})
 			cast.Type = kind
+			if p.tables.SupportsColumnJoinMarks {
+				if p.noJoinMark == nil {
+					p.noJoinMark = map[*Expression]bool{}
+				}
+				p.noJoinMark[cast] = true
+			}
 			return cast, nil
 		}
 	}
@@ -2389,7 +2426,14 @@ func (p *parser) parseFunction() (*Expression, error) {
 	// is an aggregate's shape, and a data agent has no reason to write it
 	// here -- so `inner`, read above for calls that do, goes unused by both.
 	if upper == "DATEDIFF" || upper == "DATEDIFF_BIG" {
-		if _, ok := p.tables.UnitAliases[upper]; ok {
+		// T-SQL's DATEDIFF (unit, start, end) swaps the dates, wraps each in
+		// TimeStrToTime, and picks its shape by the FIRST date's literal
+		// kind -- a decision the generic dispatch table below cannot
+		// express. DuckDB and Redshift also build a class named "DateDiff"
+		// (or, for Redshift, "TsOrDsDiff") for this name, but as a plain
+		// reordering the generic path already handles correctly, so T-SQL's
+		// own hand-written shape is the only one this special case is for.
+		if p.dialect == "tsql" {
 			return p.buildDateDiff(upper, args, upper == "DATEDIFF_BIG")
 		}
 	}

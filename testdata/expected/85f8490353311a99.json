@@ -1,0 +1,598 @@
+{
+ "dialect": "redshift",
+ "rendered": "SELECT c_name, orders.o_orderkey AS orderkey, index AS orderkey_index FROM customer_orders_lineitem AS c, c.c_orders AS orders AT index ORDER BY orderkey_index",
+ "sql": "SELECT\n  c_name,\n  orders.o_orderkey AS orderkey,\n  index AS orderkey_index\nFROM customer_orders_lineitem AS c, c.c_orders AS orders AT index\nORDER BY\n  orderkey_index",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 14,
+   "l": 2,
+   "s": 9,
+   "t": "VAR",
+   "x": "c_name"
+  },
+  {
+   "c": 9,
+   "e": 15,
+   "l": 2,
+   "s": 15,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 8,
+   "e": 24,
+   "l": 3,
+   "s": 19,
+   "t": "VAR",
+   "x": "orders"
+  },
+  {
+   "c": 9,
+   "e": 25,
+   "l": 3,
+   "s": 25,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 19,
+   "e": 35,
+   "l": 3,
+   "s": 26,
+   "t": "VAR",
+   "x": "o_orderkey"
+  },
+  {
+   "c": 22,
+   "e": 38,
+   "l": 3,
+   "s": 37,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 31,
+   "e": 47,
+   "l": 3,
+   "s": 40,
+   "t": "VAR",
+   "x": "orderkey"
+  },
+  {
+   "c": 32,
+   "e": 48,
+   "l": 3,
+   "s": 48,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 7,
+   "e": 56,
+   "l": 4,
+   "s": 52,
+   "t": "INDEX",
+   "x": "index"
+  },
+  {
+   "c": 10,
+   "e": 59,
+   "l": 4,
+   "s": 58,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 25,
+   "e": 74,
+   "l": 4,
+   "s": 61,
+   "t": "VAR",
+   "x": "orderkey_index"
+  },
+  {
+   "c": 4,
+   "e": 79,
+   "l": 5,
+   "s": 76,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 29,
+   "e": 104,
+   "l": 5,
+   "s": 81,
+   "t": "VAR",
+   "x": "customer_orders_lineitem"
+  },
+  {
+   "c": 32,
+   "e": 107,
+   "l": 5,
+   "s": 106,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 34,
+   "e": 109,
+   "l": 5,
+   "s": 109,
+   "t": "VAR",
+   "x": "c"
+  },
+  {
+   "c": 35,
+   "e": 110,
+   "l": 5,
+   "s": 110,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 37,
+   "e": 112,
+   "l": 5,
+   "s": 112,
+   "t": "VAR",
+   "x": "c"
+  },
+  {
+   "c": 38,
+   "e": 113,
+   "l": 5,
+   "s": 113,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 46,
+   "e": 121,
+   "l": 5,
+   "s": 114,
+   "t": "VAR",
+   "x": "c_orders"
+  },
+  {
+   "c": 49,
+   "e": 124,
+   "l": 5,
+   "s": 123,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 56,
+   "e": 131,
+   "l": 5,
+   "s": 126,
+   "t": "VAR",
+   "x": "orders"
+  },
+  {
+   "c": 59,
+   "e": 134,
+   "l": 5,
+   "s": 133,
+   "t": "VAR",
+   "x": "AT"
+  },
+  {
+   "c": 65,
+   "e": 140,
+   "l": 5,
+   "s": 136,
+   "t": "INDEX",
+   "x": "index"
+  },
+  {
+   "c": 8,
+   "e": 149,
+   "l": 6,
+   "s": 142,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 16,
+   "e": 166,
+   "l": 7,
+   "s": 153,
+   "t": "VAR",
+   "x": "orderkey_index"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 8,
+    "end": 14,
+    "line": 2,
+    "start": 9
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "c_name"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 35,
+    "line": 3,
+    "start": 26
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "o_orderkey"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "table",
+   "m": {
+    "col": 8,
+    "end": 24,
+    "line": 3,
+    "start": 19
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "orders"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "alias",
+   "m": {
+    "col": 31,
+    "end": 47,
+    "line": 3,
+    "start": 40
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "orderkey"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 7,
+    "end": 56,
+    "line": 4,
+    "start": 52
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "index"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 19,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "alias",
+   "m": {
+    "col": 25,
+    "end": 74,
+    "line": 4,
+    "start": 61
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "orderkey_index"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 104,
+    "line": 5,
+    "start": 81
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "customer_orders_lineitem"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 28,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 109,
+    "line": 5,
+    "start": 109
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 0,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.core.AtIndex",
+   "i": 36,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 37,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 38,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 39,
+   "k": "this",
+   "m": {
+    "col": 46,
+    "end": 121,
+    "line": 5,
+    "start": 114
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "c_orders"
+  },
+  {
+   "i": 40,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 39,
+   "k": "table",
+   "m": {
+    "col": 37,
+    "end": 112,
+    "line": 5,
+    "start": 112
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 38,
+   "k": "alias",
+   "m": {
+    "col": 56,
+    "end": 131,
+    "line": 5,
+    "start": 126
+   }
+  },
+  {
+   "i": 46,
+   "k": "this",
+   "v": "orders"
+  },
+  {
+   "i": 46,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 37,
+   "k": "expression",
+   "m": {
+    "col": 65,
+    "end": 140,
+    "line": 5,
+    "start": 136
+   }
+  },
+  {
+   "i": 49,
+   "k": "this",
+   "v": "index"
+  },
+  {
+   "i": 49,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 0,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 52,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 53,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 54,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 166,
+    "line": 7,
+    "start": 153
+   }
+  },
+  {
+   "i": 55,
+   "k": "this",
+   "v": "orderkey_index"
+  },
+  {
+   "i": 55,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 54,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "i": 53,
+   "k": "nulls_first",
+   "v": false
+  }
+ ]
+}

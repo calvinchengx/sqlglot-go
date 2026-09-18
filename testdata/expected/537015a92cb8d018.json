@@ -1,0 +1,160 @@
+{
+ "dialect": "redshift",
+ "rendered": "REVOKE USAGE ON SCHEMA sales_schema FROM ROLE Analyst_role",
+ "sql": "REVOKE USAGE ON SCHEMA sales_schema FROM ROLE Analyst_role",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "REVOKE",
+   "x": "REVOKE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "USAGE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 13,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 16,
+   "t": "SCHEMA",
+   "x": "SCHEMA"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "sales_schema"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 36,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 41,
+   "t": "VAR",
+   "x": "ROLE"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 46,
+   "t": "VAR",
+   "x": "Analyst_role"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Revoke"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.GrantPrivilege",
+   "i": 0,
+   "k": "privileges"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "USAGE"
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "SCHEMA"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "securable"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "sales_schema"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.GrantPrincipal",
+   "i": 0,
+   "k": "principals"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "Analyst_role"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "kind",
+   "v": "ROLE"
+  },
+  {
+   "i": 0,
+   "k": "grant_option",
+   "v": false
+  }
+ ]
+}

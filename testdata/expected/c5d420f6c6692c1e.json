@@ -1,0 +1,94 @@
+{
+ "dialect": "redshift",
+ "rendered": "CAST(1 AS INTEGER)",
+ "sql": "1::\"int\"",
+ "tokens": [
+  {
+   "c": 1,
+   "e": 0,
+   "l": 1,
+   "s": 0,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 1,
+   "t": "DCOLON",
+   "x": "::"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 3,
+   "t": "IDENTIFIER",
+   "x": "int"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 1,
+    "end": 0,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 0,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 4,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 4,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "join_mark",
+   "v": false
+  }
+ ]
+}

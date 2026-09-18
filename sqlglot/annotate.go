@@ -76,11 +76,19 @@ func annotateNode(e *Expression, dialect string) *Expression {
 		return annotateScalarSubquery(e, dialect)
 	case "Not":
 		return dataType("BOOLEAN")
-	case "Rank", "DenseRank":
+	case "Rank":
 		// The probe that fills funcReturns never recorded these: they take
 		// no scalar argument, so the "run over an INT / DOUBLE / VARCHAR"
 		// check had nothing to move. The return is fixed and needs no
-		// schema -- Databricks writes INT, everyone else BIGINT.
+		// schema -- Databricks and Redshift both write INT for RANK
+		// specifically (Redshift's own DENSE_RANK stays BIGINT, an
+		// asymmetry in the engine itself, not a spelling choice), everyone
+		// else BIGINT.
+		if dialect == "databricks" || dialect == "redshift" {
+			return dataType("INT")
+		}
+		return dataType("BIGINT")
+	case "DenseRank":
 		if dialect == "databricks" {
 			return dataType("INT")
 		}

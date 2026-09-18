@@ -564,6 +564,26 @@
    "dialect": "postgres",
    "sql": "NTILE(4) OVER (ORDER BY 1)",
    "type": "INT"
+  },
+  {
+   "dialect": "redshift",
+   "sql": "RANK() OVER (ORDER BY 1)",
+   "type": "INTEGER"
+  },
+  {
+   "dialect": "redshift",
+   "sql": "DENSE_RANK() OVER (ORDER BY 1)",
+   "type": "BIGINT"
+  },
+  {
+   "dialect": "redshift",
+   "sql": "ROW_NUMBER() OVER (ORDER BY 1)",
+   "type": "BIGINT"
+  },
+  {
+   "dialect": "redshift",
+   "sql": "NTILE(4) OVER (ORDER BY 1)",
+   "type": "BIGINT"
   }
  ],
  "coerces_to": {

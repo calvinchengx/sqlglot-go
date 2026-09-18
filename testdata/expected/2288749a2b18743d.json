@@ -1,0 +1,234 @@
+{
+ "dialect": "redshift",
+ "rendered": "COPY customer FROM 's3://mybucket/mydata' CREDENTIALS 'aws_iam_role=arn:aws:iam::<aws-account-id>:role/<role-name>;master_symmetric_key=<root-key>' emptyasnull blanksasnull timeformat 'YYYY-MM-DD HH:MI:SS'",
+ "sql": "COPY customer FROM 's3://mybucket/mydata' CREDENTIALS 'aws_iam_role=arn:aws:iam::<aws-account-id>:role/<role-name>;master_symmetric_key=<root-key>' emptyasnull blanksasnull timeformat 'YYYY-MM-DD HH:MI:SS'",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "COPY",
+   "x": "COPY"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "customer"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 14,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 19,
+   "t": "STRING",
+   "x": "s3://mybucket/mydata"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 42,
+   "t": "VAR",
+   "x": "CREDENTIALS"
+  },
+  {
+   "c": 147,
+   "e": 146,
+   "l": 1,
+   "s": 54,
+   "t": "STRING",
+   "x": "aws_iam_role=arn:aws:iam::<aws-account-id>:role/<role-name>;master_symmetric_key=<root-key>"
+  },
+  {
+   "c": 159,
+   "e": 158,
+   "l": 1,
+   "s": 148,
+   "t": "VAR",
+   "x": "emptyasnull"
+  },
+  {
+   "c": 172,
+   "e": 171,
+   "l": 1,
+   "s": 160,
+   "t": "VAR",
+   "x": "blanksasnull"
+  },
+  {
+   "c": 183,
+   "e": 182,
+   "l": 1,
+   "s": 173,
+   "t": "VAR",
+   "x": "timeformat"
+  },
+  {
+   "c": 205,
+   "e": 204,
+   "l": 1,
+   "s": 184,
+   "t": "STRING",
+   "x": "YYYY-MM-DD HH:MI:SS"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Copy"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "customer"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.dml.Credentials",
+   "i": 0,
+   "k": "credentials"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "credentials",
+   "m": {
+    "col": 147,
+    "end": 146,
+    "line": 1,
+    "start": 54
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "aws_iam_role=arn:aws:iam::<aws-account-id>:role/<role-name>;master_symmetric_key=<root-key>"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "files",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "s3://mybucket/mydata"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "emptyasnull"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 13,
+   "k": "expression"
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "blanksasnull"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "timeformat"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 18,
+   "k": "expression",
+   "m": {
+    "col": 205,
+    "end": 204,
+    "line": 1,
+    "start": 184
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "YYYY-MM-DD HH:MI:SS"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

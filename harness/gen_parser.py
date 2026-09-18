@@ -19,7 +19,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift")
 
 
 def gostr(s: str) -> str:
@@ -117,7 +117,35 @@ def gofmt(*paths):
     subprocess.run(["gofmt", "-w", *[str(p) for p in paths]], check=True)
 
 
-def unit_aliases(builder) -> dict:
+def concat_as_dpipe(generator_class) -> bool:
+    """Whether this dialect's TRANSFORMS registers CONCAT to always be
+    written as a `||` chain, unconditionally -- Redshift's own choice, kept
+    apart from the generic CONCAT_COALESCE-conditional rendering the base
+    Generator otherwise gives every other dialect that sets that flag."""
+    import sqlglot.expressions as exp
+    from sqlglot.dialects.dialect import concat_to_dpipe_sql
+
+    return generator_class.TRANSFORMS.get(exp.Concat) is concat_to_dpipe_sql
+
+
+def eliminates_distinct_on(generator_class) -> bool:
+    """Whether this dialect's SELECT preprocessing chain includes the
+    reference's own `eliminate_distinct_on` transform, read off the closure
+    of the TRANSFORMS entry rather than named, since it is registered inside
+    a `preprocess([...])` wrapper rather than under a name of its own."""
+    import sqlglot.expressions as exp
+
+    fn = generator_class.TRANSFORMS.get(exp.Select)
+    for cell in getattr(fn, "__closure__", None) or ():
+        value = cell.cell_contents
+        if isinstance(value, list):
+            for item in value:
+                if getattr(item, "__name__", "") == "eliminate_distinct_on":
+                    return True
+    return False
+
+
+def unit_aliases(builder, dialect: str = "") -> dict:
     """The unit spellings a builder normalises, read off its own closure.
 
     T-SQL writes DATEADD(qq, ...) and the reference records the unit as
@@ -137,6 +165,16 @@ def unit_aliases(builder) -> dict:
             and all(isinstance(k, str) and isinstance(v, str) for k, v in value.items())
         ):
             return {k.upper(): v.upper() for k, v in value.items()}
+    # Redshift's DATEADD/DATEDIFF/DATE_ADD/DATE_DIFF read the unit through
+    # map_date_part(), not a plain dict closure -- the mapping lives on the
+    # dialect (DATE_PART_MAPPING) and the builder only names the function.
+    code = getattr(builder, "__code__", None)
+    if code is not None and "map_date_part" in code.co_names:
+        from sqlglot.dialects.dialect import Dialect  # noqa: PLC0415
+
+        mapping = Dialect.get_or_raise(dialect or None).DATE_PART_MAPPING
+        if mapping:
+            return {k.upper(): v.upper() for k, v in mapping.items()}
     return {}
 
 
@@ -1104,7 +1142,7 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
             )
             out[name] = (node.__class__.__name__, spec)
             root_annots[name] = annot_of(node)
-            aliases = unit_aliases(builder)
+            aliases = unit_aliases(builder, dialect)
             if aliases:
                 unit_maps[name] = aliases
             continue
@@ -1190,7 +1228,7 @@ def probe_functions(P, exp, dialect="", branch_classes=None, format_args=None):
                 )
                 by_arity.setdefault(name, {})[width] = (one.__class__.__name__, narrow_spec)
                 root_annots[(name, width)] = annot_of(one)
-                aliases = unit_aliases(builder)
+                aliases = unit_aliases(builder, dialect)
                 if aliases:
                     unit_maps[name] = aliases
         # An arity the loop above left out because ONE argument's kind moves
@@ -5935,6 +5973,29 @@ def main() -> int:
         "\t// be a statement the engine rejects.\n",
         "\tCoercesBooleans bool\n",
         "\tLimitIsTop bool\n",
+        "\t// LimitFetch says which of LIMIT and FETCH this dialect writes: the\n",
+        "\t// port parses either into the class it was written as, and this\n",
+        "\t// dialect converts one into the other at generation time (\"ALL\"\n",
+        "\t// writes each node class as itself, converting neither).\n",
+        "\tLimitFetch string\n",
+        "\t// ConcatAsDPipe says this dialect ALWAYS writes CONCAT(a, b, ...)\n",
+        "\t// as a `||` chain instead -- Redshift's own choice, unconditional\n",
+        "\t// (it does not depend on the tree's own `coalesce` flag the way\n",
+        "\t// other CONCAT_COALESCE dialects' generic rendering does).\n",
+        "\tConcatAsDPipe bool\n",
+        "\t// SupportsSingleArgConcat says a one-argument CONCAT(a) call is\n",
+        "\t// written as itself; where this is false, the call is written\n",
+        "\t// bare -- `a`, not `CONCAT(a)`.\n",
+        "\tSupportsSingleArgConcat bool\n",
+        "\t// TzToWithTimeZone says this dialect writes TIMETZ/TIMESTAMPTZ as\n",
+        "\t// their bare-name equivalent (TIME/TIMESTAMP) plus a trailing\n",
+        "\t// ` WITH TIME ZONE`, appended after any size the type carries\n",
+        "\t// rather than baked into a name of its own.\n",
+        "\tTzToWithTimeZone bool\n",
+        "\t// EliminatesDistinctOn says this dialect has no `DISTINCT ON` of its\n",
+        "\t// own and rewrites the whole SELECT into a `ROW_NUMBER()`-windowed\n",
+        "\t// subquery instead, the way the reference's own preprocessing does.\n",
+        "\tEliminatesDistinctOn bool\n",
         "\t// StatementTokens begin a statement that is not a query -- CREATE,\n",
         "\t// DELETE, INSERT and the rest. Anything else at the top level is\n",
         "\t// parsed as a bare expression, which is what the reference does and\n",
@@ -6288,6 +6349,19 @@ def main() -> int:
         "\tCopyParamsAreCSV  bool\n",
         "\tCopyParamsNeedEQ  bool\n",
         "\tCopyVarlenOptions map[string]struct{}\n",
+        "\t// SupportsColumnJoinMarks says a bare column may carry Oracle-style\n",
+        "\t// `(+)` outer-join syntax -- Redshift's tokenizer maps that literal\n",
+        "\t// text to its own token, the same way the reference reads it as one.\n",
+        "\tSupportsColumnJoinMarks bool\n",
+        "\t// HasDistinctArrayConstructors says ARRAY[1, 2] and ARRAY(1, 2) are\n",
+        "\t// written back differently -- Redshift stamps the node with which\n",
+        "\t// bracket kind built it (bracket_notation) so generation can tell.\n",
+        "\tHasDistinctArrayConstructors bool\n",
+        "\t// SupportsImplicitUnnest says a comma- or CROSS-JOINed table whose\n",
+        "\t// name is DOTTED and whose first part names an earlier table in the\n",
+        "\t// FROM is really a nested column being iterated, not a real table --\n",
+        "\t// Redshift's `t, t.arr_col AS x` sugar for `t, UNNEST(t.arr_col) AS x`.\n",
+        "\tSupportsImplicitUnnest bool\n",
         "\t// UnaryOps is which token opens a PREFIX operator, and what it\n",
         "\t// builds. The empty string is the no-op unary plus.\n",
         "\tUnaryOps map[TokenType]string\n",
@@ -7252,6 +7326,26 @@ def main() -> int:
             "\t\tLimitIsTop: "
             f"{str(bool(Dialect.get_or_raise(name or None).generator_class.LIMIT_IS_TOP)).lower()},\n"
         )
+        out.append(
+            "\t\tLimitFetch: "
+            f"{gostr(Dialect.get_or_raise(name or None).generator_class.LIMIT_FETCH)},\n"
+        )
+        out.append(
+            "\t\tConcatAsDPipe: "
+            f"{str(concat_as_dpipe(Dialect.get_or_raise(name or None).generator_class)).lower()},\n"
+        )
+        out.append(
+            "\t\tSupportsSingleArgConcat: "
+            f"{str(bool(Dialect.get_or_raise(name or None).generator_class.SUPPORTS_SINGLE_ARG_CONCAT)).lower()},\n"
+        )
+        out.append(
+            "\t\tTzToWithTimeZone: "
+            f"{str(bool(Dialect.get_or_raise(name or None).generator_class.TZ_TO_WITH_TIME_ZONE)).lower()},\n"
+        )
+        out.append(
+            "\t\tEliminatesDistinctOn: "
+            f"{str(eliminates_distinct_on(Dialect.get_or_raise(name or None).generator_class)).lower()},\n"
+        )
         tk = Dialect.get_or_raise(name or None).tokenizer_class
         out.append(ttset("StatementTokens", set(P.STATEMENT_PARSERS) | set(tk.COMMANDS)))
         out.append(ttset("FuncTokens", P.FUNC_TOKENS))
@@ -7431,6 +7525,17 @@ def main() -> int:
                                "COPY_PARAMS_EQ_REQUIRED", False))).lower()
         )
         out.append(strset("CopyVarlenOptions", sorted(P.COPY_INTO_VARLEN_OPTIONS)))
+        out.append(
+            "\t\tSupportsColumnJoinMarks: %s,\n"
+            % str(bool("(+)" in _DG.get_or_raise(name or None).tokenizer_class.KEYWORDS)).lower()
+        )
+        out.append(
+            "\t\tHasDistinctArrayConstructors: %s,\n"
+            % str(bool(_DG.get_or_raise(name or None).HAS_DISTINCT_ARRAY_CONSTRUCTORS)).lower()
+        )
+        out.append(
+            "\t\tSupportsImplicitUnnest: %s,\n" % str(bool(P.SUPPORTS_IMPLICIT_UNNEST)).lower()
+        )
         _uo = unary_ops(name, P, exp)
         body = "".join(f"\t\t\tTok{t}: {gostr(c)},\n" for t, c in sorted(_uo.items()))
         out.append(f"\t\tUnaryOps: map[TokenType]string{{\n{body}\t\t}},\n")

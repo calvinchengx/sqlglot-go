@@ -1582,6 +1582,11 @@
    "expected": "NOT x IS NULL AND x = 2"
   },
   {
+   "dialect": "redshift",
+   "sql": "COALESCE(x, 1) = 2",
+   "expected": "COALESCE(x, 1) = 2"
+  },
+  {
    "dialect": "",
    "sql": "2 = COALESCE(x, 1)",
    "expected": "NOT x IS NULL AND x = 2"

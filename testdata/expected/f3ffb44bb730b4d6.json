@@ -1,0 +1,197 @@
+{
+ "dialect": "redshift",
+ "rendered": "COPY test_staging_tbl FROM 's3://your/bucket/prefix/here' IAM_ROLE default FORMAT AS AVRO 'auto'",
+ "sql": "COPY test_staging_tbl FROM 's3://your/bucket/prefix/here' IAM_ROLE default FORMAT AS AVRO 'auto'",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "COPY",
+   "x": "COPY"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "test_staging_tbl"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 22,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 27,
+   "t": "STRING",
+   "x": "s3://your/bucket/prefix/here"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 58,
+   "t": "VAR",
+   "x": "IAM_ROLE"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 67,
+   "t": "DEFAULT",
+   "x": "default"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 75,
+   "t": "FORMAT",
+   "x": "FORMAT"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 82,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 89,
+   "e": 88,
+   "l": 1,
+   "s": 85,
+   "t": "VAR",
+   "x": "AVRO"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 90,
+   "t": "STRING",
+   "x": "auto"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Copy"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "test_staging_tbl"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.dml.Credentials",
+   "i": 0,
+   "k": "credentials"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 6,
+   "k": "iam_role"
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "default"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "files",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "s3://your/bucket/prefix/here"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "FORMAT AS AVRO"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 12,
+   "k": "expression",
+   "m": {
+    "col": 96,
+    "end": 95,
+    "line": 1,
+    "start": 90
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "auto"
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

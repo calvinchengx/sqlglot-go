@@ -1,0 +1,218 @@
+{
+ "dialect": "redshift",
+ "rendered": "COPY customer FROM 's3://mybucket/customer' IAM_ROLE 'arn:aws:iam::0123456789012:role/MyRedshiftRole' REGION 'us-east-1' FORMAT orc",
+ "sql": "COPY customer FROM 's3://mybucket/customer' IAM_ROLE 'arn:aws:iam::0123456789012:role/MyRedshiftRole' REGION 'us-east-1' FORMAT orc",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "COPY",
+   "x": "COPY"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "customer"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 14,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 19,
+   "t": "STRING",
+   "x": "s3://mybucket/customer"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "IAM_ROLE"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 53,
+   "t": "STRING",
+   "x": "arn:aws:iam::0123456789012:role/MyRedshiftRole"
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 102,
+   "t": "VAR",
+   "x": "REGION"
+  },
+  {
+   "c": 120,
+   "e": 119,
+   "l": 1,
+   "s": 109,
+   "t": "STRING",
+   "x": "us-east-1"
+  },
+  {
+   "c": 127,
+   "e": 126,
+   "l": 1,
+   "s": 121,
+   "t": "FORMAT",
+   "x": "FORMAT"
+  },
+  {
+   "c": 131,
+   "e": 130,
+   "l": 1,
+   "s": 128,
+   "t": "VAR",
+   "x": "orc"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Copy"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "customer"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.dml.Credentials",
+   "i": 0,
+   "k": "credentials"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "iam_role",
+   "m": {
+    "col": 101,
+    "end": 100,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "arn:aws:iam::0123456789012:role/MyRedshiftRole"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "region",
+   "m": {
+    "col": 120,
+    "end": 119,
+    "line": 1,
+    "start": 109
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "us-east-1"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "files",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "s3://mybucket/customer"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.CopyParameter",
+   "i": 0,
+   "k": "params"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "FORMAT"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 16,
+   "k": "expression"
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "orc"
+  }
+ ]
+}

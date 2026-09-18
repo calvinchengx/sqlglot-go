@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 4508,
+ "count": 4815,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -4948,6 +4948,11 @@
    "sql": "SELECT purchases, LAST_VALUE(item) OVER item_window AS most_popular FROM Produce WINDOW item_window AS (PARTITION BY purchases ORDER BY purchases NULLS FIRST ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING)"
   },
   {
+   "key": "f8da2bb7366c37f5",
+   "dialect": "redshift",
+   "sql": "SELECT purchases, LAST_VALUE(item) OVER (PARTITION BY purchases ORDER BY purchases NULLS FIRST ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS most_popular FROM Produce"
+  },
+  {
    "key": "5b1b55d19041db56",
    "dialect": "tsql",
    "sql": "SELECT purchases, LAST_VALUE(item) OVER item_window AS most_popular FROM Produce WINDOW item_window AS (PARTITION BY purchases ORDER BY purchases ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING)"
@@ -5013,6 +5018,16 @@
    "sql": "SELECT t.c1, h.c2, s.c3 FROM t1 AS t CROSS JOIN UNNEST(t.t2) AS _t0(h) CROSS JOIN UNNEST(h.t3) AS _t1(s)"
   },
   {
+   "key": "0b149c6dadfdb342",
+   "dialect": "redshift",
+   "sql": "SELECT results FROM Coordinates AS c, c.position AS results"
+  },
+  {
+   "key": "d6b1938b55a1e3ac",
+   "dialect": "redshift",
+   "sql": "SELECT results FROM Coordinates AS c CROSS JOIN c.position AS results"
+  },
+  {
    "key": "e02602e9c6097547",
    "dialect": "duckdb",
    "sql": "CAST(x AS TIMESTAMPTZ)"
@@ -5063,6 +5078,11 @@
    "sql": "SELECT CAST(DATE_TRUNC('MONTH', CAST('2008-11-25' AS DATE)) + INTERVAL '1 MONTH' - INTERVAL '1 DAY' AS DATE)"
   },
   {
+   "key": "f39382dba42470fc",
+   "dialect": "redshift",
+   "sql": "SELECT LAST_DAY(CAST('2008-11-25' AS DATE))"
+  },
+  {
    "key": "160b4a90ef054008",
    "dialect": "tsql",
    "sql": "SELECT EOMONTH(CAST('2008-11-25' AS DATE))"
@@ -5090,6 +5110,11 @@
   {
    "key": "2dd93d59542e1119",
    "dialect": "postgres",
+   "sql": "SELECT CAST('2008-12-25 15:30:00' AS TIME)"
+  },
+  {
+   "key": "6e967e542d08fc66",
+   "dialect": "redshift",
    "sql": "SELECT CAST('2008-12-25 15:30:00' AS TIME)"
   },
   {
@@ -5206,6 +5231,11 @@
    "key": "c45265beadbd899c",
    "dialect": "duckdb",
    "sql": "SHA256(x)"
+  },
+  {
+   "key": "732c5f8ea1bf2a16",
+   "dialect": "redshift",
+   "sql": "SHA2(x, 256)"
   },
   {
    "key": "30e179aac85c59eb",
@@ -5408,6 +5438,11 @@
    "sql": "ARRAY_CAT(ARRAY[1, 2], ARRAY_CAT(ARRAY[3, 4], ARRAY[5, 6]))"
   },
   {
+   "key": "21b30e79bf7ea7d3",
+   "dialect": "redshift",
+   "sql": "ARRAY_CONCAT(ARRAY(1, 2), ARRAY_CONCAT(ARRAY(3, 4), ARRAY(5, 6)))"
+  },
+  {
    "key": "dc6fffe28ba36e70",
    "dialect": "databricks",
    "sql": "CONCAT(ARRAY(1, 2), ARRAY(3, 4), ARRAY(5, 6))"
@@ -5533,14 +5568,29 @@
    "sql": "SELECT * FROM t1, UNNEST(\"t1\") \"t1\" (\"col\")"
   },
   {
+   "key": "cd03c515d1e10b03",
+   "dialect": "redshift",
+   "sql": "SELECT * FROM t1 CROSS JOIN \"t1\" AS \"col\""
+  },
+  {
    "key": "3996a1192b425dec",
    "dialect": "duckdb",
    "sql": "SELECT * FROM t, UNNEST(\"t1\".\"t2\".\"t3\") \"t1\" (\"col\")"
   },
   {
+   "key": "66aaded83d4666d2",
+   "dialect": "redshift",
+   "sql": "SELECT * FROM t CROSS JOIN \"t2\".\"t3\" AS \"col\""
+  },
+  {
    "key": "25df5858944e1469",
    "dialect": "duckdb",
    "sql": "SELECT * FROM t1, UNNEST(\"t1\".\"t2\".\"t3\".\"t4\") \"t3\" (\"col\")"
+  },
+  {
+   "key": "de9bb8211e92988d",
+   "dialect": "redshift",
+   "sql": "SELECT * FROM t1 CROSS JOIN \"t1\".\"t2\".\"t3\".\"t4\" AS \"col\""
   },
   {
    "key": "b531a6afb7b64842",
@@ -7393,6 +7443,11 @@
    "sql": "CAST(a AS TEXT)"
   },
   {
+   "key": "9f45cade101d6536",
+   "dialect": "redshift",
+   "sql": "CAST(a AS VARCHAR(MAX))"
+  },
+  {
    "key": "4125fa1c4f2b6d87",
    "dialect": "tsql",
    "sql": "CAST(a AS VARCHAR(MAX))"
@@ -7408,6 +7463,11 @@
    "sql": "CAST(a AS BYTEA(4))"
   },
   {
+   "key": "cb297eb1fff4c920",
+   "dialect": "redshift",
+   "sql": "CAST(a AS VARBYTE(4))"
+  },
+  {
    "key": "10181eedb8b8f96f",
    "dialect": "postgres",
    "sql": "CAST(a AS TIMESTAMP)"
@@ -7415,6 +7475,11 @@
   {
    "key": "39cf73ee65fa65c5",
    "dialect": "postgres",
+   "sql": "CAST(a AS VARCHAR)"
+  },
+  {
+   "key": "c7135eac512b4d45",
+   "dialect": "redshift",
    "sql": "CAST(a AS VARCHAR)"
   },
   {
@@ -7433,6 +7498,11 @@
    "sql": "CAST(a AS VARCHAR(3))"
   },
   {
+   "key": "bdf4d6ee932ccac0",
+   "dialect": "redshift",
+   "sql": "CAST(a AS VARCHAR(3))"
+  },
+  {
    "key": "d1f389f2a7496fb1",
    "dialect": "tsql",
    "sql": "CAST(a AS VARCHAR(3))"
@@ -7448,8 +7518,18 @@
    "sql": "CAST(a AS SMALLINT)"
   },
   {
+   "key": "e3b66541bb0c16cc",
+   "dialect": "redshift",
+   "sql": "CAST(a AS SMALLINT)"
+  },
+  {
    "key": "2cb91b8dcf53181b",
    "dialect": "postgres",
+   "sql": "CAST(a AS DOUBLE PRECISION)"
+  },
+  {
+   "key": "b286f617e51160ca",
+   "dialect": "redshift",
    "sql": "CAST(a AS DOUBLE PRECISION)"
   },
   {
@@ -7461,6 +7541,21 @@
    "key": "453c0255c7ce2565",
    "dialect": "postgres",
    "sql": "CAST('1 DAY' AS INTERVAL)"
+  },
+  {
+   "key": "b735de96bb694a1e",
+   "dialect": "redshift",
+   "sql": "CAST('1 DAY' AS INTERVAL)"
+  },
+  {
+   "key": "3106191445f524e3",
+   "dialect": "redshift",
+   "sql": "CAST(a AS TIMESTAMP)"
+  },
+  {
+   "key": "34132d262d936d22",
+   "dialect": "redshift",
+   "sql": "CAST(a AS TIMESTAMP WITH TIME ZONE)"
   },
   {
    "key": "31da80972772bc0e",
@@ -7483,6 +7578,11 @@
    "sql": "CREATE TABLE a (LIKE b)"
   },
   {
+   "key": "6b6e6be7f2f13dc8",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE a (LIKE b)"
+  },
+  {
    "key": "1740dcd8cf3bc8f5",
    "dialect": "tsql",
    "sql": "SELECT TOP 0 * INTO a FROM b AS temp"
@@ -7493,9 +7593,19 @@
    "sql": "SELECT CASE WHEN a = 1 THEN 'one' END"
   },
   {
+   "key": "96f65720d8fb7be9",
+   "dialect": "redshift",
+   "sql": "SELECT DECODE(a, 1, 'one')"
+  },
+  {
    "key": "b65dc49b438eb00e",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN a = 1 THEN 'one' ELSE 'default' END"
+  },
+  {
+   "key": "f1f6b048cbe8bda2",
+   "dialect": "redshift",
+   "sql": "SELECT DECODE(a, 1, 'one', 'default')"
   },
   {
    "key": "556982f4d8953e06",
@@ -7503,14 +7613,29 @@
    "sql": "SELECT CASE WHEN a IS NULL THEN 'null' END"
   },
   {
+   "key": "3577691d7d463aac",
+   "dialect": "redshift",
+   "sql": "SELECT DECODE(a, NULL, 'null')"
+  },
+  {
    "key": "5d66ae376475a1b7",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN a = b OR (a IS NULL AND b IS NULL) THEN c END"
   },
   {
+   "key": "8a60a27b8b58cc7c",
+   "dialect": "redshift",
+   "sql": "SELECT DECODE(a, b, c)"
+  },
+  {
    "key": "0efb2db7524fb534",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN tbl.col = 'some_string' THEN 'foo' END"
+  },
+  {
+   "key": "7ae73ad4f1e9a2f8",
+   "dialect": "redshift",
+   "sql": "SELECT DECODE(tbl.col, 'some_string', 'foo')"
   },
   {
    "key": "a7c2d579e19c5fef",
@@ -7526,6 +7651,11 @@
    "key": "a4e6036c5a90da6d",
    "dialect": "databricks",
    "sql": "TO_BINARY('1C', 'HEX')"
+  },
+  {
+   "key": "62548f53d0b93307",
+   "dialect": "redshift",
+   "sql": "SELECT COALESCE(1, NULL) FROM foo"
   },
   {
    "key": "4b920019401d01f0",
@@ -7563,6 +7693,11 @@
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
   },
   {
+   "key": "853946c02eeb741e",
+   "dialect": "redshift",
+   "sql": "SELECT NVL2(a, b, c)"
+  },
+  {
    "key": "d6233c814e5771ee",
    "dialect": "tsql",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
@@ -7583,6 +7718,11 @@
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
   },
   {
+   "key": "df5cd53ab7c2bb96",
+   "dialect": "redshift",
+   "sql": "SELECT NVL2(a, b)"
+  },
+  {
    "key": "4b7c687e1363aa2a",
    "dialect": "tsql",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
@@ -7591,6 +7731,11 @@
    "key": "ba3fefdab19aaa72",
    "dialect": "duckdb",
    "sql": "STRPTIME(x, '%Y-%m-%dT%H:%M:%S')"
+  },
+  {
+   "key": "ff69936bea6b0168",
+   "dialect": "redshift",
+   "sql": "TO_TIMESTAMP(x, 'YYYY-MM-DDTHH24:MI:SS')"
   },
   {
    "key": "cf72cb3a6c6b6314",
@@ -7603,6 +7748,11 @@
    "sql": "TO_TIMESTAMP('2020-01-01', 'YYYY-MM-DD')"
   },
   {
+   "key": "3575ede179ce1ed2",
+   "dialect": "redshift",
+   "sql": "TO_TIMESTAMP('2020-01-01', 'YYYY-MM-DD')"
+  },
+  {
    "key": "45045ab897ccb027",
    "dialect": "duckdb",
    "sql": "STRPTIME(x, '%y')"
@@ -7610,6 +7760,11 @@
   {
    "key": "e36c1461cde1a240",
    "dialect": "postgres",
+   "sql": "TO_TIMESTAMP(x, 'YY')"
+  },
+  {
+   "key": "66bc7691d27ea8f2",
+   "dialect": "redshift",
    "sql": "TO_TIMESTAMP(x, 'YY')"
   },
   {
@@ -7643,6 +7798,11 @@
    "sql": "CAST('2020-01-01' AS TIMESTAMP)"
   },
   {
+   "key": "1d28b87b05cd393d",
+   "dialect": "redshift",
+   "sql": "CAST('2020-01-01' AS TIMESTAMP)"
+  },
+  {
    "key": "174631332eb1510f",
    "dialect": "databricks",
    "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP)"
@@ -7661,6 +7821,11 @@
    "key": "d5f4f41382f77338",
    "dialect": "postgres",
    "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMPTZ)"
+  },
+  {
+   "key": "57bb8a9e675d83fb",
+   "dialect": "redshift",
+   "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP WITH TIME ZONE)"
   },
   {
    "key": "86226c3dcd8d89eb",
@@ -7683,6 +7848,11 @@
    "sql": "CAST(col AS TIMESTAMPTZ)"
   },
   {
+   "key": "8e03b5b913e9fee3",
+   "dialect": "redshift",
+   "sql": "CAST(col AS TIMESTAMP WITH TIME ZONE)"
+  },
+  {
    "key": "ca39de8cbb240024",
    "dialect": "duckdb",
    "sql": "EPOCH(CAST('2020-01-01' AS TIMESTAMP))"
@@ -7698,6 +7868,16 @@
    "sql": "TO_CHAR(x, 'YYYY-MM-DD')"
   },
   {
+   "key": "126e24e470e8b3bf",
+   "dialect": "redshift",
+   "sql": "TO_CHAR(x, 'YYYY-MM-DD')"
+  },
+  {
+   "key": "2006291075ee8940",
+   "dialect": "redshift",
+   "sql": "TO_CHAR(a, 'YYYY-MM-DD HH24:MI:SS.US')"
+  },
+  {
    "key": "7765b960ee71e5ef",
    "dialect": "tsql",
    "sql": "FORMAT(a, 'yyyy-MM-dd HH:mm:ss.ffffff')"
@@ -7706,6 +7886,11 @@
    "key": "7f95120b9ad4f607",
    "dialect": "duckdb",
    "sql": "CAST(x AS TEXT)"
+  },
+  {
+   "key": "e380c1fa588fc828",
+   "dialect": "redshift",
+   "sql": "CAST(x AS VARCHAR(MAX))"
   },
   {
    "key": "0cb9093fafc31cf6",
@@ -7820,6 +8005,11 @@
   {
    "key": "7a5466a6561d655a",
    "dialect": "databricks",
+   "sql": "NEXT_DAY(x, y)"
+  },
+  {
+   "key": "3ccf94eb54a3f908",
+   "dialect": "redshift",
    "sql": "NEXT_DAY(x, y)"
   },
   {
@@ -8003,6 +8193,11 @@
    "sql": "JSON_EXTRACT_PATH(x, 'a b')"
   },
   {
+   "key": "4e1c064a5583224e",
+   "dialect": "redshift",
+   "sql": "JSON_EXTRACT_PATH_TEXT(x, 'a b')"
+  },
+  {
    "key": "07826be64ac180d8",
    "dialect": "tsql",
    "sql": "ISNULL(JSON_QUERY(x, '$.\"a b\"'), JSON_VALUE(x, '$.\"a b\"'))"
@@ -8043,6 +8238,11 @@
    "sql": "x ->> 'y'"
   },
   {
+   "key": "10f95c8d27a73c9a",
+   "dialect": "redshift",
+   "sql": "JSON_EXTRACT_PATH_TEXT(x, 'y')"
+  },
+  {
    "key": "a83326930ad7367a",
    "dialect": "duckdb",
    "sql": "x ->> '$.y'"
@@ -8061,6 +8261,11 @@
    "key": "46c065c84f86cf43",
    "dialect": "postgres",
    "sql": "JSON_EXTRACT_PATH(x, 'y', '0', 'z')"
+  },
+  {
+   "key": "1ff37e77c954e94e",
+   "dialect": "redshift",
+   "sql": "JSON_EXTRACT_PATH_TEXT(x, 'y', '0', 'z')"
   },
   {
    "key": "da1f1912ed26c7c1",
@@ -8128,6 +8333,11 @@
    "sql": "SELECT * FROM a EXCEPT ALL SELECT * FROM b"
   },
   {
+   "key": "cf73ba8a5d164ff6",
+   "dialect": "redshift",
+   "sql": "a || b || c"
+  },
+  {
    "key": "22b666ce7fc1aeb6",
    "dialect": "duckdb",
    "sql": "x ILIKE '%y'"
@@ -8158,6 +8368,11 @@
    "sql": "POSITION(needle in haystack)"
   },
   {
+   "key": "f1fb037868964787",
+   "dialect": "redshift",
+   "sql": "POSITION(needle in haystack)"
+  },
+  {
    "key": "557f43e82843fb51",
    "dialect": "databricks",
    "sql": "POSITION(needle, haystack)"
@@ -8170,6 +8385,11 @@
   {
    "key": "e15c29c0505e93fb",
    "dialect": "postgres",
+   "sql": "STRPOS(haystack, needle)"
+  },
+  {
+   "key": "2219984dfdd3d970",
+   "dialect": "redshift",
    "sql": "STRPOS(haystack, needle)"
   },
   {
@@ -8203,6 +8423,11 @@
    "sql": "POSITION(needle IN haystack)"
   },
   {
+   "key": "75638ee8a8121a58",
+   "dialect": "redshift",
+   "sql": "POSITION(needle IN haystack)"
+  },
+  {
    "key": "489dc039c86347e2",
    "dialect": "databricks",
    "sql": "POSITION(needle, haystack, position)"
@@ -8230,6 +8455,11 @@
   {
    "key": "fcb6698b1d43c49b",
    "dialect": "postgres",
+   "sql": "CASE WHEN POSITION(needle IN SUBSTRING(haystack FROM position)) = 0 THEN 0 ELSE POSITION(needle IN SUBSTRING(haystack FROM position)) + position - 1 END"
+  },
+  {
+   "key": "8c0f3a5477441254",
+   "dialect": "redshift",
    "sql": "CASE WHEN POSITION(needle IN SUBSTRING(haystack FROM position)) = 0 THEN 0 ELSE POSITION(needle IN SUBSTRING(haystack FROM position)) + position - 1 END"
   },
   {
@@ -8328,6 +8558,11 @@
    "sql": "a / b"
   },
   {
+   "key": "7a0c88ef4a72f9ea",
+   "dialect": "redshift",
+   "sql": "CAST(a AS DOUBLE PRECISION) / b"
+  },
+  {
    "key": "64674fb4e310274a",
    "dialect": "tsql",
    "sql": "CAST(a AS FLOAT) / b"
@@ -8358,6 +8593,11 @@
    "sql": "SELECT * FROM t LIMIT 1"
   },
   {
+   "key": "2b76737944131613",
+   "dialect": "redshift",
+   "sql": "SELECT * FROM t LIMIT 1"
+  },
+  {
    "key": "230e3379a90a930f",
    "dialect": "databricks",
    "sql": "WITH t AS (SELECT 1 AS all) SELECT 1 FROM t LIMIT all"
@@ -8376,6 +8616,11 @@
    "key": "cd7588fec4ae91a6",
    "dialect": "tsql",
    "sql": "SELECT TOP 10 x FROM y"
+  },
+  {
+   "key": "0aca9e156c9c3bdc",
+   "dialect": "redshift",
+   "sql": "\"x\" + \"y\""
   },
   {
    "key": "7d0cd2a57902b666",
@@ -8411,6 +8656,11 @@
    "key": "bc6017f8ff1652b3",
    "dialect": "postgres",
    "sql": "CREATE TABLE t (b1 BYTEA, b2 BYTEA(1024), c1 TEXT, c2 TEXT(1024))"
+  },
+  {
+   "key": "c34b2a677af6c3de",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE t (b1 VARBYTE, b2 VARBYTE(1024), c1 VARCHAR(MAX), c2 VARCHAR(1024))"
   },
   {
    "key": "4e8853d9e673d5b1",
@@ -8458,6 +8708,11 @@
    "sql": "BEGIN"
   },
   {
+   "key": "19eece0292610329",
+   "dialect": "redshift",
+   "sql": "BEGIN"
+  },
+  {
    "key": "91473ed91b20c937",
    "dialect": "tsql",
    "sql": "BEGIN TRANSACTION"
@@ -8485,6 +8740,11 @@
   {
    "key": "72e8acf20db48243",
    "dialect": "postgres",
+   "sql": "LOG(x)"
+  },
+  {
+   "key": "5282793aec9907bc",
+   "dialect": "redshift",
    "sql": "LOG(x)"
   },
   {
@@ -8530,6 +8790,11 @@
   {
    "key": "095dbc009f752acd",
    "dialect": "postgres",
+   "sql": "SELECT SUM(CASE WHEN col % 2 = 0 THEN 1 ELSE 0 END) FROM foo"
+  },
+  {
+   "key": "75c39cfa70f90c02",
+   "dialect": "redshift",
    "sql": "SELECT SUM(CASE WHEN col % 2 = 0 THEN 1 ELSE 0 END) FROM foo"
   },
   {
@@ -8618,6 +8883,11 @@
    "sql": "SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq"
   },
   {
+   "key": "d530dbf01867eed1",
+   "dialect": "redshift",
+   "sql": "SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq"
+  },
+  {
    "key": "4bd43e88d0ddcffa",
    "dialect": "tsql",
    "sql": "WITH t AS (SELECT 1 AS c) SELECT * FROM (SELECT c AS c FROM t) AS subq"
@@ -8698,9 +8968,19 @@
    "sql": "SELECT * FROM (SELECT CAST(value AS DATE) FROM GENERATE_SERIES(CAST('2020-01-01' AS DATE), CAST('2020-02-01' AS DATE), INTERVAL '1 WEEK') AS _t(value)) AS _unnested_generate_series"
   },
   {
+   "key": "6b2e37fdea089eea",
+   "dialect": "redshift",
+   "sql": "WITH RECURSIVE _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_value) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_value) AS DATE) <= CAST('2020-02-01' AS DATE)) SELECT * FROM (SELECT date_value FROM _generated_dates) AS _generated_dates"
+  },
+  {
    "key": "d820cde5e58510a7",
    "dialect": "tsql",
    "sql": "WITH _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_value) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_value) AS DATE) <= CAST('2020-02-01' AS DATE)) SELECT * FROM (SELECT date_value AS date_value FROM _generated_dates) AS _generated_dates"
+  },
+  {
+   "key": "e1ba6a78cd318f71",
+   "dialect": "redshift",
+   "sql": "WITH RECURSIVE _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_value) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_value) AS DATE) <= CAST('2020-02-01' AS DATE)), dates AS (SELECT * FROM (SELECT date_value FROM _generated_dates) AS _generated_dates) SELECT * FROM dates"
   },
   {
    "key": "2337ae2236b4a62f",
@@ -8708,9 +8988,19 @@
    "sql": "WITH _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_value) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_value) AS DATE) <= CAST('2020-02-01' AS DATE)), dates AS (SELECT * FROM (SELECT date_value AS date_value FROM _generated_dates) AS _generated_dates) SELECT * FROM dates"
   },
   {
+   "key": "06a7397a5ef8d506",
+   "dialect": "redshift",
+   "sql": "WITH RECURSIVE _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_value) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_value) AS DATE) <= CAST('2020-02-01' AS DATE)), _generated_dates_1(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(MONTH, 1, date_value) AS DATE) FROM _generated_dates_1 WHERE CAST(DATEADD(MONTH, 1, date_value) AS DATE) <= CAST('2020-03-01' AS DATE)), dates1 AS (SELECT * FROM (SELECT date_value FROM _generated_dates) AS _generated_dates), dates2 AS (SELECT * FROM (SELECT date_value FROM _generated_dates_1) AS _generated_dates_1) SELECT * FROM dates1 CROSS JOIN dates2"
+  },
+  {
    "key": "8a09ae3e7fcf1077",
    "dialect": "tsql",
    "sql": "WITH _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_value) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_value) AS DATE) <= CAST('2020-02-01' AS DATE)), _generated_dates_1(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(MONTH, 1, date_value) AS DATE) FROM _generated_dates_1 WHERE CAST(DATEADD(MONTH, 1, date_value) AS DATE) <= CAST('2020-03-01' AS DATE)), dates1 AS (SELECT * FROM (SELECT date_value AS date_value FROM _generated_dates) AS _generated_dates), dates2 AS (SELECT * FROM (SELECT date_value AS date_value FROM _generated_dates_1) AS _generated_dates_1) SELECT * FROM dates1 CROSS JOIN dates2"
+  },
+  {
+   "key": "a102d14a82b2b2d4",
+   "dialect": "redshift",
+   "sql": "WITH RECURSIVE _generated_dates(date_week) AS (SELECT CAST('2020-01-01' AS DATE) AS date_week UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_week) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_week) AS DATE) <= CAST('2020-02-01' AS DATE)) SELECT * FROM (SELECT date_week FROM _generated_dates) AS _generated_dates"
   },
   {
    "key": "05f6021c22bb2c02",
@@ -8818,6 +9108,11 @@
    "sql": "ASCII('A')"
   },
   {
+   "key": "d3f2866d7a87bd3e",
+   "dialect": "redshift",
+   "sql": "ASCII('A')"
+  },
+  {
    "key": "3e1734c510060604",
    "dialect": "tsql",
    "sql": "ASCII('A')"
@@ -8830,6 +9125,11 @@
   {
    "key": "fc3987e4e7aa0408",
    "dialect": "postgres",
+   "sql": "SELECT x BETWEEN 2 AND 10"
+  },
+  {
+   "key": "0f0ec73f0effa031",
+   "dialect": "redshift",
    "sql": "SELECT x BETWEEN 2 AND 10"
   },
   {
@@ -8848,6 +9148,11 @@
    "sql": "SELECT x BETWEEN SYMMETRIC 10 AND 2"
   },
   {
+   "key": "084f76a0a27ea390",
+   "dialect": "redshift",
+   "sql": "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)"
+  },
+  {
    "key": "79ae061d120a337d",
    "dialect": "tsql",
    "sql": "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)"
@@ -8861,6 +9166,11 @@
    "key": "a4e3c391ed880c37",
    "dialect": "postgres",
    "sql": "SELECT x BETWEEN ASYMMETRIC 10 AND 2"
+  },
+  {
+   "key": "1bce2ae26525caa9",
+   "dialect": "redshift",
+   "sql": "SELECT x BETWEEN 10 AND 2"
   },
   {
    "key": "ad29d2f610352241",
@@ -8881,6 +9191,11 @@
    "key": "497148fc7e9d36c5",
    "dialect": "duckdb",
    "sql": "CAST('1970-01-01' AS DATE) + INTERVAL 1 DAY"
+  },
+  {
+   "key": "aa7d36396825004a",
+   "dialect": "redshift",
+   "sql": "DATEADD(DAY, 1, CAST('1970-01-01' AS DATE))"
   },
   {
    "key": "fbcc4ae420a99179",
@@ -8925,6 +9240,11 @@
   {
    "key": "15e38a5c9ab058da",
    "dialect": "tsql",
+   "sql": "REVERSE(x)"
+  },
+  {
+   "key": "65feb96b6b13b17d",
+   "dialect": "redshift",
    "sql": "REVERSE(x)"
   },
   {
@@ -9048,6 +9368,11 @@
    "sql": "TRANSLATE(x, y, z)"
   },
   {
+   "key": "41eb528f8492305a",
+   "dialect": "redshift",
+   "sql": "TRANSLATE(x, y, z)"
+  },
+  {
    "key": "94aab1b3e4e8d28a",
    "dialect": "databricks",
    "sql": "SOUNDEX(x)"
@@ -9060,6 +9385,11 @@
   {
    "key": "5f19d077dd3ca2ec",
    "dialect": "tsql",
+   "sql": "SOUNDEX(x)"
+  },
+  {
+   "key": "fb80d9010f842bf1",
+   "dialect": "redshift",
    "sql": "SOUNDEX(x)"
   },
   {
@@ -9078,9 +9408,24 @@
    "sql": "GROUPING(x)"
   },
   {
+   "key": "e0eafc0670dde44c",
+   "dialect": "redshift",
+   "sql": "GROUPING(x)"
+  },
+  {
    "key": "558ca7bb1cda22d5",
    "dialect": "postgres",
    "sql": "GROUPING(col1, col2, col3)"
+  },
+  {
+   "key": "45d6d5f917cdb17e",
+   "dialect": "redshift",
+   "sql": "GROUPING(col1, col2, col3)"
+  },
+  {
+   "key": "e5c0a1fde4742456",
+   "dialect": "redshift",
+   "sql": "FARMFINGERPRINT64(x)"
   },
   {
    "key": "96b5d5faa27ad1cb",
@@ -9098,6 +9443,11 @@
    "sql": "REGEXP_INSTR(src, reg)"
   },
   {
+   "key": "b411888a5e8e6739",
+   "dialect": "redshift",
+   "sql": "REGEXP_INSTR(src, reg)"
+  },
+  {
    "key": "253e2fa51a9e2a95",
    "dialect": "tsql",
    "sql": "REGEXP_INSTR(src, reg, pos, occ, opt)"
@@ -9108,6 +9458,11 @@
    "sql": "REGEXP_INSTR(src, reg, pos, occ, opt)"
   },
   {
+   "key": "4e08fee6a20c2e82",
+   "dialect": "redshift",
+   "sql": "REGEXP_INSTR(src, reg, pos, occ, opt)"
+  },
+  {
    "key": "fbb770fb022749f3",
    "dialect": "tsql",
    "sql": "REGEXP_INSTR(src, reg, pos, occ, opt, par)"
@@ -9115,6 +9470,11 @@
   {
    "key": "4a043b0505ad2ab7",
    "dialect": "postgres",
+   "sql": "REGEXP_INSTR(src, reg, pos, occ, opt, par)"
+  },
+  {
+   "key": "87e4935f54583c03",
+   "dialect": "redshift",
    "sql": "REGEXP_INSTR(src, reg, pos, occ, opt, par)"
   },
   {
@@ -9153,6 +9513,11 @@
    "sql": "x IS UNKNOWN"
   },
   {
+   "key": "5c3efc9a45795f2f",
+   "dialect": "redshift",
+   "sql": "x IS UNKNOWN"
+  },
+  {
    "key": "0eccc8bb0ddcb3f1",
    "dialect": "duckdb",
    "sql": "x IS UNKNOWN"
@@ -9161,6 +9526,11 @@
    "key": "f9287e28deeaf31b",
    "dialect": "databricks",
    "sql": "x IS UNKNOWN"
+  },
+  {
+   "key": "743b687151e85297",
+   "dialect": "redshift",
+   "sql": "x IS NOT UNKNOWN"
   },
   {
    "key": "46aff66152e325c8",
@@ -9183,6 +9553,11 @@
    "sql": "SELECT col IS NULL::BOOLEAN FROM (SELECT 1 AS col) AS t"
   },
   {
+   "key": "79809d332307d255",
+   "dialect": "redshift",
+   "sql": "SELECT col IS NULL::BOOLEAN FROM (SELECT 1 AS col) AS t"
+  },
+  {
    "key": "ca67a262654220db",
    "dialect": "postgres",
    "sql": "SELECT col IS NULL::BOOLEAN FROM (SELECT 1 AS col) AS t"
@@ -9190,6 +9565,11 @@
   {
    "key": "d102923c5d6ff5bc",
    "dialect": "duckdb",
+   "sql": "SELECT col IS NOT NULL::BOOLEAN FROM (SELECT 1 AS col) AS t"
+  },
+  {
+   "key": "cf70434d076aadc5",
+   "dialect": "redshift",
    "sql": "SELECT col IS NOT NULL::BOOLEAN FROM (SELECT 1 AS col) AS t"
   },
   {
@@ -10613,6 +10993,11 @@
    "sql": "x.abc"
   },
   {
+   "key": "8d4fc0a6d248cb09",
+   "dialect": "redshift",
+   "sql": "x.abc"
+  },
+  {
    "key": "8f15e11387709915",
    "dialect": "duckdb",
    "sql": "STRUCT_EXTRACT(STRUCT_EXTRACT(x, 'y'), 'abc')"
@@ -11576,6 +11961,11 @@
    "key": "7fbc1e54e746cdf1",
    "dialect": "databricks",
    "sql": "SELECT CAST('foo' AS TIMESTAMP_NTZ)"
+  },
+  {
+   "key": "7ea8f7c94f1e14e4",
+   "dialect": "redshift",
+   "sql": "SELECT CAST('foo' AS TIMESTAMP)"
   },
   {
    "key": "15abdbd4e9218a4e",
@@ -12808,6 +13198,11 @@
    "sql": "SELECT department, ALL (age >= 30) AS EVERY FROM employee_table GROUP BY department"
   },
   {
+   "key": "0d7ea0a8915bc7fa",
+   "dialect": "redshift",
+   "sql": "SELECT APPROXIMATE COUNT(DISTINCT y)"
+  },
+  {
    "key": "bc5605c2dcd9d62f",
    "dialect": "tsql",
    "sql": "STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y DESC)"
@@ -12865,6 +13260,11 @@
   {
    "key": "8da1753a46559f86",
    "dialect": "databricks",
+   "sql": "SELECT CONVERT_TIMEZONE('Europe/Berlin', 'America/New_York', '2012-05-10 12:00:00')"
+  },
+  {
+   "key": "2159c8b4dc6dbe60",
+   "dialect": "redshift",
    "sql": "SELECT CONVERT_TIMEZONE('Europe/Berlin', 'America/New_York', '2012-05-10 12:00:00')"
   },
   {
@@ -12951,6 +13351,11 @@
    "key": "a4b1b6242783f472",
    "dialect": "duckdb",
    "sql": "REGEXP_REPLACE(subject, pattern, replacement)"
+  },
+  {
+   "key": "cb2ab06a40123b4a",
+   "dialect": "redshift",
+   "sql": "SELECT CAST(CAST('1999-12-31' AS DATE) AS VARCHAR(MAX)) AS TO_CHAR"
   },
   {
    "key": "86732d12f8a5ca10",
@@ -13118,6 +13523,11 @@
    "sql": "STRFTIME(CAST('2020-01-01' AS TIMESTAMP), '%Y-%m-%d %H:%M:%S')"
   },
   {
+   "key": "5ae7d9aea6ef5d02",
+   "dialect": "redshift",
+   "sql": "DATEADD(DAY, 1, '2020-01-01')"
+  },
+  {
    "key": "c938fbf7f1733308",
    "dialect": "tsql",
    "sql": "DATEADD(DAY, 1, CAST(CAST('2020-01-01' AS DATETIME2) AS DATE))"
@@ -13126,6 +13536,11 @@
    "key": "0e72268294162913",
    "dialect": "duckdb",
    "sql": "CAST('2020-01-01' AS DATE) + INTERVAL (1 * -1) DAY"
+  },
+  {
+   "key": "aa34695299200ebc",
+   "dialect": "redshift",
+   "sql": "DATEADD(DAY, 1 * -1, '2020-01-01')"
   },
   {
    "key": "2f9bc64192b859a2",
@@ -13383,6 +13798,11 @@
    "sql": "CREATE TABLE t (foo VARBINARY)"
   },
   {
+   "key": "b9ce23e05b13c324",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE t (foo VARBYTE)"
+  },
+  {
    "key": "4eb8a0451f186288",
    "dialect": "postgres",
    "sql": "(col1 @@ 'abc' OR col2 @@ 'abc' OR col3 @@ 'abc')"
@@ -13398,6 +13818,11 @@
    "sql": "SELECT STRFTIME(CAST('2007-10-04 22:23:00' AS TIMESTAMP), '%I:%M:%S %p')"
   },
   {
+   "key": "c97cba292b6d0253",
+   "dialect": "redshift",
+   "sql": "SELECT DATEDIFF(DAY, y, x)"
+  },
+  {
    "key": "1b39fd36fd0626d2",
    "dialect": "postgres",
    "sql": "SELECT (CAST(x AS DATE) - CAST(y AS DATE))"
@@ -13406,6 +13831,11 @@
    "key": "2cf00ebebabb0ac4",
    "dialect": "postgres",
    "sql": "SELECT TO_TIMESTAMP(col)"
+  },
+  {
+   "key": "41d093dbe7c39b1c",
+   "dialect": "redshift",
+   "sql": "SELECT (TIMESTAMP 'epoch' + col * INTERVAL '1 SECOND')"
   },
   {
    "key": "11b0baf095af80f0",
@@ -13471,6 +13901,11 @@
    "key": "c50b4580a8ec16cf",
    "dialect": "postgres",
    "sql": "SELECT a FROM tbl FOR UPDATE"
+  },
+  {
+   "key": "5778701f7debaf82",
+   "dialect": "redshift",
+   "sql": "SELECT a FROM tbl"
   },
   {
    "key": "596afae8f0bc3f58",
@@ -13598,6 +14033,11 @@
    "sql": "CAST(a AS DOUBLE PRECISION) / NULLIF(b, 0)"
   },
   {
+   "key": "d916c5ce8b8af4c4",
+   "dialect": "redshift",
+   "sql": "CAST(a AS DOUBLE PRECISION) / NULLIF(b, 0)"
+  },
+  {
    "key": "91a1fafbfb95da13",
    "dialect": "tsql",
    "sql": "CAST(a AS FLOAT) / NULLIF(b, 0)"
@@ -13703,6 +14143,11 @@
    "sql": "CAST(x AS DOUBLE PRECISION)"
   },
   {
+   "key": "2f76c6d0a6591748",
+   "dialect": "redshift",
+   "sql": "CAST(x AS DOUBLE PRECISION)"
+  },
+  {
    "key": "5afae62d3bdf2091",
    "dialect": "databricks",
    "sql": "TO_NUMBER(x, fmt)"
@@ -13710,6 +14155,11 @@
   {
    "key": "6d25ce8987f0fd7e",
    "dialect": "postgres",
+   "sql": "TO_NUMBER(x, fmt)"
+  },
+  {
+   "key": "bec81e882bb89810",
+   "dialect": "redshift",
    "sql": "TO_NUMBER(x, fmt)"
   },
   {
@@ -14748,6 +15198,11 @@
    "sql": "SELECT JSON_EXTRACT_PATH_TEXT(x, k1, k2, k3) FROM t"
   },
   {
+   "key": "176c5a9ad4377e42",
+   "dialect": "redshift",
+   "sql": "SELECT JSON_EXTRACT_PATH_TEXT(x, k1, k2, k3) FROM t"
+  },
+  {
    "key": "8122f4dc4a2f4383",
    "dialect": "postgres",
    "sql": "SELECT JSON_EXTRACT_PATH(x, k1, 'k2') FROM t"
@@ -14813,6 +15268,11 @@
    "sql": "JSON_EXTRACT_PATH('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', 'f4')"
   },
   {
+   "key": "ff31182679007409",
+   "dialect": "redshift",
+   "sql": "JSON_EXTRACT_PATH_TEXT('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', 'f4')"
+  },
+  {
    "key": "a6e29c33aa96e721",
    "dialect": "tsql",
    "sql": "ISNULL(JSON_QUERY('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4'), JSON_VALUE('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4'))"
@@ -14828,6 +15288,11 @@
    "sql": "'{\"farm\": [\"a\", \"b\", \"c\"]}' ->> '$.farm[0]'"
   },
   {
+   "key": "1699ea6cb88a1021",
+   "dialect": "redshift",
+   "sql": "JSON_EXTRACT_PATH_TEXT('{\"farm\": [\"a\", \"b\", \"c\"]}', 'farm', '0')"
+  },
+  {
    "key": "fd0566719ce2d091",
    "dialect": "postgres",
    "sql": "JSON_EXTRACT_PATH(x, 'x', 'y', 'z')"
@@ -14836,6 +15301,11 @@
    "key": "383a0f1e6e952a82",
    "dialect": "duckdb",
    "sql": "x -> '$.x.y.z'"
+  },
+  {
+   "key": "7aed83a8ecac48cc",
+   "dialect": "redshift",
+   "sql": "JSON_EXTRACT_PATH_TEXT(x, 'x', 'y', 'z')"
   },
   {
    "key": "d380e85113f4735c",
@@ -14868,6 +15338,11 @@
    "sql": "SELECT EXTRACT(minute FROM CAST('2023-01-04 04:05:06.789' AS TIMESTAMP))"
   },
   {
+   "key": "295fa0e842c9e9e1",
+   "dialect": "redshift",
+   "sql": "SELECT EXTRACT(minute FROM CAST('2023-01-04 04:05:06.789' AS TIMESTAMP))"
+  },
+  {
    "key": "a11f42b96282d2ee",
    "dialect": "postgres",
    "sql": "SELECT DATE_PART('month', date '20220502')"
@@ -14875,6 +15350,11 @@
   {
    "key": "0cd360e659d5e8c5",
    "dialect": "postgres",
+   "sql": "SELECT EXTRACT(month FROM CAST('20220502' AS DATE))"
+  },
+  {
+   "key": "8ae2762dd2aa51f4",
+   "dialect": "redshift",
    "sql": "SELECT EXTRACT(month FROM CAST('20220502' AS DATE))"
   },
   {
@@ -15103,6 +15583,11 @@
    "sql": "CAST('{\"a\":1,\"b\":2}' AS JSON) -> 'b'"
   },
   {
+   "key": "9c2f8a8a20472141",
+   "dialect": "redshift",
+   "sql": "JSON_EXTRACT_PATH_TEXT('{\"a\":1,\"b\":2}', 'b')"
+  },
+  {
    "key": "4d6236524d2683ed",
    "dialect": "postgres",
    "sql": "merge into x as x using (select id) as y on a = b WHEN matched then update set X.\"A\" = y.b"
@@ -15150,6 +15635,11 @@
   {
    "key": "199bab92f80e0d17",
    "dialect": "postgres",
+   "sql": "CAST(x AS NAME)"
+  },
+  {
+   "key": "b0131a4f506e4609",
+   "dialect": "redshift",
    "sql": "CAST(x AS NAME)"
   },
   {
@@ -15370,6 +15860,11 @@
   {
    "key": "c03e30186b9e87cd",
    "dialect": "postgres",
+   "sql": "SELECT TO_CHAR(foo, bar)"
+  },
+  {
+   "key": "b7bf1f441238accd",
+   "dialect": "redshift",
    "sql": "SELECT TO_CHAR(foo, bar)"
   },
   {
@@ -16523,6 +17018,11 @@
    "sql": "SELECT CAST('10C' AS INTEGER)"
   },
   {
+   "key": "f70ee19b94a46a74",
+   "dialect": "redshift",
+   "sql": "SELECT CAST('10C' AS INTEGER)"
+  },
+  {
    "key": "099f551ee7c0b1b5",
    "dialect": "postgres",
    "sql": "SELECT 'epoch'::TIMESTAMP"
@@ -16558,6 +17058,11 @@
    "sql": "CAST(x AS TIMETZ(5))"
   },
   {
+   "key": "74ceef26f88ad17b",
+   "dialect": "redshift",
+   "sql": "CAST(x AS TIME(5) WITH TIME ZONE)"
+  },
+  {
    "key": "9b27d3e71a6db5b1",
    "dialect": "duckdb",
    "sql": "REPLACE(subject, pattern, '')"
@@ -16591,6 +17096,11 @@
    "key": "9f58994eafd62694",
    "dialect": "duckdb",
    "sql": "STRPTIME(SUBSTRING(x, 1, 10), '%Y-%m-%d')"
+  },
+  {
+   "key": "c575978eb843621b",
+   "dialect": "redshift",
+   "sql": "SELECT DATEADD(DAY, 1, CURRENT_DATE)"
   },
   {
    "key": "a09bef995e48319e",
@@ -16668,6 +17178,11 @@
    "sql": "ANY_VALUE(x)"
   },
   {
+   "key": "3ed60bbbfff871cd",
+   "dialect": "redshift",
+   "sql": "ANY_VALUE(x)"
+  },
+  {
    "key": "475aaeef6151a007",
    "dialect": "duckdb",
    "sql": "ANY_VALUE(x)"
@@ -16681,6 +17196,11 @@
    "key": "ad0d29cca21b1ce1",
    "dialect": "tsql",
    "sql": "MAX(x)"
+  },
+  {
+   "key": "285597dd8eed5983",
+   "dialect": "redshift",
+   "sql": "SELECT LEFT(a, 3), RIGHT(a, 3)"
   },
   {
    "key": "d4d7841fd618b230",
@@ -16748,9 +17268,39 @@
    "sql": "SELECT (ARRAY[1, 2, 3])[4]"
   },
   {
+   "key": "77b75800949f2fdc",
+   "dialect": "redshift",
+   "sql": "SELECT COSH(1.5)"
+  },
+  {
+   "key": "7d609fd7a701d61a",
+   "dialect": "redshift",
+   "sql": "ROUND(CAST(a AS DOUBLE PRECISION) / CAST(b AS DOUBLE PRECISION), 2)"
+  },
+  {
+   "key": "f0f1c92ec41d62d4",
+   "dialect": "redshift",
+   "sql": "SELECT SPLIT_TO_ARRAY('12,345,6789')"
+  },
+  {
    "key": "6393ec190bde3f28",
    "dialect": "postgres",
    "sql": "SELECT STRING_TO_ARRAY('12,345,6789', ',')"
+  },
+  {
+   "key": "5b658228f244ca8b",
+   "dialect": "redshift",
+   "sql": "SELECT SPLIT_TO_ARRAY('12,345,6789', ',')"
+  },
+  {
+   "key": "708064e8087ef1e2",
+   "dialect": "redshift",
+   "sql": "GETDATE()"
+  },
+  {
+   "key": "7de80b36f7b95063",
+   "dialect": "redshift",
+   "sql": "SELECT JSON_EXTRACT_PATH_TEXT('{ \"farm\": {\"barn\": { \"color\": \"red\", \"feed stocked\": true }}}', 'farm', 'barn', 'color')"
   },
   {
    "key": "bfe120a6c78a39e5",
@@ -16761,6 +17311,11 @@
    "key": "2c1d43fb17706892",
    "dialect": "duckdb",
    "sql": "SELECT '{ \"farm\": {\"barn\": { \"color\": \"red\", \"feed stocked\": true }}}' ->> '$.farm.barn.color'"
+  },
+  {
+   "key": "b64593b18071b521",
+   "dialect": "redshift",
+   "sql": "LISTAGG(sellerid, ', ')"
   },
   {
    "key": "c96eebf01c5632ab",
@@ -16783,9 +17338,29 @@
    "sql": "LISTAGG(sellerid, ', ')"
   },
   {
+   "key": "071a02247aee4423",
+   "dialect": "redshift",
+   "sql": "SELECT LISTAGG(x, ',') WITHIN GROUP (ORDER BY y) FILTER (WHERE z > 0) FROM t"
+  },
+  {
+   "key": "5a49481e2c879d9f",
+   "dialect": "redshift",
+   "sql": "x ~* 'pat'"
+  },
+  {
+   "key": "c704370255dcc675",
+   "dialect": "redshift",
+   "sql": "SELECT CAST('01:03:05.124' AS TIME(2) WITH TIME ZONE)"
+  },
+  {
    "key": "2632414cd600c73c",
    "dialect": "postgres",
    "sql": "SELECT CAST('01:03:05.124' AS TIMETZ(2))"
+  },
+  {
+   "key": "c7ef8f43ce5c14c1",
+   "dialect": "redshift",
+   "sql": "SELECT CAST('2020-02-02 01:03:05.124' AS TIMESTAMP(2) WITH TIME ZONE)"
   },
   {
    "key": "e2a384b7d0dad4ce",
@@ -16793,9 +17368,24 @@
    "sql": "SELECT CAST('2020-02-02 01:03:05.124' AS TIMESTAMPTZ(2))"
   },
   {
+   "key": "d866bbbacc106925",
+   "dialect": "redshift",
+   "sql": "SELECT INTERVAL '5 DAYS'"
+  },
+  {
+   "key": "8995d34250604b65",
+   "dialect": "redshift",
+   "sql": "SELECT ADD_MONTHS('2008-03-31', 1)"
+  },
+  {
    "key": "95587268562f25ed",
    "dialect": "duckdb",
    "sql": "SELECT CAST('2008-03-31' AS TIMESTAMP) + INTERVAL 1 MONTH"
+  },
+  {
+   "key": "3c349af19f5db898",
+   "dialect": "redshift",
+   "sql": "SELECT DATEADD(MONTH, 1, '2008-03-31')"
   },
   {
    "key": "4359114a7804108f",
@@ -16803,9 +17393,159 @@
    "sql": "SELECT DATEADD(MONTH, 1, CAST('2008-03-31' AS DATETIME2))"
   },
   {
+   "key": "e84d3c68905d1e4e",
+   "dialect": "redshift",
+   "sql": "SELECT STRTOL('abc', 16)"
+  },
+  {
+   "key": "536d66905d355cc2",
+   "dialect": "redshift",
+   "sql": "SELECT SNAPSHOT, type"
+  },
+  {
+   "key": "2a50382b20d44095",
+   "dialect": "redshift",
+   "sql": "SELECT \"SNAPSHOT\", \"type\""
+  },
+  {
+   "key": "d8bb5d1d55656707",
+   "dialect": "redshift",
+   "sql": "x is true"
+  },
+  {
+   "key": "63e9e383b1c2e963",
+   "dialect": "redshift",
+   "sql": "x IS TRUE"
+  },
+  {
+   "key": "beea98c73c2f649f",
+   "dialect": "redshift",
+   "sql": "x is false"
+  },
+  {
+   "key": "bc6c31f2f3fcbacf",
+   "dialect": "redshift",
+   "sql": "x IS FALSE"
+  },
+  {
+   "key": "b6aa032049044134",
+   "dialect": "redshift",
+   "sql": "x is not false"
+  },
+  {
+   "key": "30ddfa6eadd176da",
+   "dialect": "redshift",
+   "sql": "NOT x IS FALSE"
+  },
+  {
+   "key": "163feda3a3e257a7",
+   "dialect": "redshift",
+   "sql": "LEN(x)"
+  },
+  {
+   "key": "7adda50e6e467f7e",
+   "dialect": "redshift",
+   "sql": "LENGTH(x)"
+  },
+  {
+   "key": "a2eb158fb3fc4277",
+   "dialect": "redshift",
+   "sql": "x LIKE 'abc' || '%'"
+  },
+  {
    "key": "97a446131e3f5ce3",
    "dialect": "duckdb",
    "sql": "STARTS_WITH(x, 'abc')"
+  },
+  {
+   "key": "1f5d4cc4ffdc092b",
+   "dialect": "redshift",
+   "sql": "SELECT SYSDATE"
+  },
+  {
+   "key": "c4ca5b0912c3faf2",
+   "dialect": "redshift",
+   "sql": "SELECT DATE_PART(minute, timestamp '2023-01-04 04:05:06.789')"
+  },
+  {
+   "key": "e172fda84c8a3578",
+   "dialect": "redshift",
+   "sql": "SELECT DATE_PART(month, date '20220502')"
+  },
+  {
+   "key": "d7539ea90f5dae81",
+   "dialect": "redshift",
+   "sql": "create table \"group\" (\"col\" char(10))"
+  },
+  {
+   "key": "901edccaccbb023a",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE \"group\" (\"col\" CHAR(10))"
+  },
+  {
+   "key": "198cec2301b0b055",
+   "dialect": "redshift",
+   "sql": "create table if not exists city_slash_id(\"city/id\" integer not null, state char(2) not null)"
+  },
+  {
+   "key": "836bfb6b78026526",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE IF NOT EXISTS city_slash_id (\"city/id\" INTEGER NOT NULL, state CHAR(2) NOT NULL)"
+  },
+  {
+   "key": "8540fe0de958013f",
+   "dialect": "redshift",
+   "sql": "SELECT ST_AsEWKT(ST_GeomFromEWKT('SRID=4326;POINT(10 20)')::geography)"
+  },
+  {
+   "key": "95b7cc7c66d0f455",
+   "dialect": "redshift",
+   "sql": "SELECT ST_ASEWKT(CAST(ST_GEOMFROMEWKT('SRID=4326;POINT(10 20)') AS GEOGRAPHY))"
+  },
+  {
+   "key": "3b264a262c4446e2",
+   "dialect": "redshift",
+   "sql": "SELECT ST_AsEWKT(ST_GeogFromText('LINESTRING(110 40, 2 3, -10 80, -7 9)')::geometry)"
+  },
+  {
+   "key": "15bc5bd7fcb382b9",
+   "dialect": "redshift",
+   "sql": "SELECT ST_ASEWKT(CAST(ST_GEOGFROMTEXT('LINESTRING(110 40, 2 3, -10 80, -7 9)') AS GEOMETRY))"
+  },
+  {
+   "key": "0528c24d2dd8a3b9",
+   "dialect": "redshift",
+   "sql": "SELECT 'abc'::BINARY"
+  },
+  {
+   "key": "1af5f028804abf6e",
+   "dialect": "redshift",
+   "sql": "SELECT CAST('abc' AS VARBYTE)"
+  },
+  {
+   "key": "29a92ecfc4847807",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE a (b BINARY VARYING(10))"
+  },
+  {
+   "key": "c4ac993f5e80fb8f",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE a (b VARBYTE(10))"
+  },
+  {
+   "key": "86bc471555aa12e7",
+   "dialect": "redshift",
+   "sql": "SELECT 'abc'::CHARACTER"
+  },
+  {
+   "key": "23e9997220fb8175",
+   "dialect": "redshift",
+   "sql": "SELECT CAST('abc' AS CHAR)"
+  },
+  {
+   "key": "689803cf7eb41078",
+   "dialect": "redshift",
+   "sql": "SELECT DISTINCT ON (a) a, b FROM x ORDER BY c DESC"
   },
   {
    "key": "ed7b1f6f3f211166",
@@ -16813,9 +17553,19 @@
    "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
   },
   {
+   "key": "80210941eb722091",
+   "dialect": "redshift",
+   "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC) AS _row_number FROM x) AS _t WHERE _row_number = 1"
+  },
+  {
    "key": "dad49b3c98f9afe8",
    "dialect": "tsql",
    "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY CASE WHEN c IS NULL THEN 1 ELSE 0 END DESC, c DESC) AS _row_number FROM x) AS _t WHERE _row_number = 1"
+  },
+  {
+   "key": "ab8644e083a393f0",
+   "dialect": "redshift",
+   "sql": "DECODE(x, a, b, c, d)"
   },
   {
    "key": "8df3b43e198caabb",
@@ -16823,14 +17573,44 @@
    "sql": "CASE WHEN x = a OR (x IS NULL AND a IS NULL) THEN b WHEN x = c OR (x IS NULL AND c IS NULL) THEN d END"
   },
   {
+   "key": "890207c8a3a06f01",
+   "dialect": "redshift",
+   "sql": "NVL(a, b, c, d)"
+  },
+  {
+   "key": "42de31b58f756ae6",
+   "dialect": "redshift",
+   "sql": "COALESCE(a, b, c, d)"
+  },
+  {
    "key": "ebb06ef452967229",
    "dialect": "postgres",
    "sql": "COALESCE(a, b, c, d)"
   },
   {
+   "key": "c3d32d1f02a4360b",
+   "dialect": "redshift",
+   "sql": "DATEDIFF(days, a, b)"
+  },
+  {
+   "key": "6f99ee35a3b868a1",
+   "dialect": "redshift",
+   "sql": "DATEDIFF('day', a, b)"
+  },
+  {
    "key": "36939c066abb304f",
    "dialect": "duckdb",
    "sql": "DATE_DIFF('DAY', CAST(a AS TIMESTAMP), CAST(b AS TIMESTAMP))"
+  },
+  {
+   "key": "c2c1e6cf9ab12a25",
+   "dialect": "redshift",
+   "sql": "DATEDIFF(DAY, a, b)"
+  },
+  {
+   "key": "3dbe336246480064",
+   "dialect": "redshift",
+   "sql": "SELECT DATEADD(month, 18, '2008-02-28')"
   },
   {
    "key": "8f63ea113c33d86d",
@@ -16843,6 +17623,11 @@
    "sql": "SELECT CAST('2008-02-28' AS TIMESTAMP) + INTERVAL '18 MONTH'"
   },
   {
+   "key": "0fcfba2d168e6544",
+   "dialect": "redshift",
+   "sql": "SELECT DATEADD(MONTH, 18, '2008-02-28')"
+  },
+  {
    "key": "123eed4aebc4d162",
    "dialect": "tsql",
    "sql": "SELECT DATEADD(MONTH, 18, CAST('2008-02-28' AS DATETIME2))"
@@ -16851,6 +17636,11 @@
    "key": "f4d62e2ea33a79d6",
    "dialect": "databricks",
    "sql": "SELECT DATE_ADD(MONTH, 18, '2008-02-28')"
+  },
+  {
+   "key": "f5094077fd565eb1",
+   "dialect": "redshift",
+   "sql": "SELECT DATEDIFF(week, '2009-01-01', '2009-12-31')"
   },
   {
    "key": "c68bac2b5b610830",
@@ -16863,9 +17653,314 @@
    "sql": "SELECT CAST(EXTRACT(days FROM (CAST('2009-12-31' AS TIMESTAMP) - CAST('2009-01-01' AS TIMESTAMP))) / 7 AS BIGINT)"
   },
   {
+   "key": "09cc885071adcd54",
+   "dialect": "redshift",
+   "sql": "SELECT DATEDIFF(WEEK, '2009-01-01', '2009-12-31')"
+  },
+  {
    "key": "56b73c0bf98625c1",
    "dialect": "tsql",
    "sql": "SELECT DATEDIFF(WEEK, '2009-01-01', '2009-12-31')"
+  },
+  {
+   "key": "9c8f2bf793bde7e1",
+   "dialect": "redshift",
+   "sql": "SELECT EXTRACT(EPOCH FROM CURRENT_DATE)"
+  },
+  {
+   "key": "c845b31778024b9d",
+   "dialect": "redshift",
+   "sql": "SELECT VERSION()"
+  },
+  {
+   "key": "92bcf30270f1ac05",
+   "dialect": "redshift",
+   "sql": "SELECT TEXTLEN('hello world')"
+  },
+  {
+   "key": "7cd7fbc1a5cb6708",
+   "dialect": "redshift",
+   "sql": "SELECT GETBIT(FROM_HEX('4d'), 2)"
+  },
+  {
+   "key": "a962229dcacfb4ec",
+   "dialect": "redshift",
+   "sql": "SELECT EXP(1)"
+  },
+  {
+   "key": "8d1a3d00f1a1b152",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE table_name ALTER COLUMN bla TYPE VARCHAR"
+  },
+  {
+   "key": "e73963a1b8656e6c",
+   "dialect": "redshift",
+   "sql": "SELECT CAST(value AS FLOAT(8))"
+  },
+  {
+   "key": "9c79d92e47765d69",
+   "dialect": "redshift",
+   "sql": "1 div"
+  },
+  {
+   "key": "629b8db5dda572ce",
+   "dialect": "redshift",
+   "sql": "LISTAGG(DISTINCT foo, ', ')"
+  },
+  {
+   "key": "8f53e71c757a3d11",
+   "dialect": "redshift",
+   "sql": "CREATE MATERIALIZED VIEW orders AUTO REFRESH YES AS SELECT 1"
+  },
+  {
+   "key": "65741db68064d361",
+   "dialect": "redshift",
+   "sql": "SELECT DATEADD(DAY, 1, 'today')"
+  },
+  {
+   "key": "2ce616d8a96bf8f5",
+   "dialect": "redshift",
+   "sql": "SELECT * FROM #x"
+  },
+  {
+   "key": "09e1a98ee5ec4cf5",
+   "dialect": "redshift",
+   "sql": "SELECT INTERVAL '5 DAY'"
+  },
+  {
+   "key": "5c4fb898e6006c96",
+   "dialect": "redshift",
+   "sql": "SELECT date_col - INTERVAL '30' FROM t"
+  },
+  {
+   "key": "dcbeefe2d3d789d7",
+   "dialect": "redshift",
+   "sql": "SELECT date_col - INTERVAL '1' AS one_second_later"
+  },
+  {
+   "key": "f602a3beb2442a6a",
+   "dialect": "redshift",
+   "sql": "SELECT date_col - INTERVAL '30' DAY FROM t"
+  },
+  {
+   "key": "2fdb41ce46680dba",
+   "dialect": "redshift",
+   "sql": "SELECT date_col - INTERVAL '1' HOUR AS one_hour_later"
+  },
+  {
+   "key": "dad22872d9372611",
+   "dialect": "redshift",
+   "sql": "foo$"
+  },
+  {
+   "key": "7aff6693dc23268d",
+   "dialect": "redshift",
+   "sql": "CAST('bla' AS SUPER)"
+  },
+  {
+   "key": "55c6bc50dbfa932e",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE real1 (realcol REAL)"
+  },
+  {
+   "key": "5342114b01d31d87",
+   "dialect": "redshift",
+   "sql": "CAST('foo' AS HLLSKETCH)"
+  },
+  {
+   "key": "9e42505531068172",
+   "dialect": "redshift",
+   "sql": "'abc' SIMILAR TO '(b|c)%'"
+  },
+  {
+   "key": "2c636f06c198d3b6",
+   "dialect": "redshift",
+   "sql": "'%' SIMILAR TO '^%' ESCAPE '^'"
+  },
+  {
+   "key": "04ff2c61a11fd27b",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE datetable (start_date DATE, end_date DATE)"
+  },
+  {
+   "key": "bceb7c9406454754",
+   "dialect": "redshift",
+   "sql": "SELECT APPROXIMATE AS y"
+  },
+  {
+   "key": "ca64833d7e3718a6",
+   "dialect": "redshift",
+   "sql": "SELECT APPROXIMATE PERCENTILE_DISC(0.5) WITHIN GROUP (ORDER BY totalprice)"
+  },
+  {
+   "key": "ce2f661d8e544e25",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE t (c BIGINT IDENTITY(0, 1))"
+  },
+  {
+   "key": "f3ffb44bb730b4d6",
+   "dialect": "redshift",
+   "sql": "COPY test_staging_tbl FROM 's3://your/bucket/prefix/here' IAM_ROLE default FORMAT AS AVRO 'auto'"
+  },
+  {
+   "key": "fa8acd832b128020",
+   "dialect": "redshift",
+   "sql": "COPY test_staging_tbl FROM 's3://your/bucket/prefix/here' IAM_ROLE default FORMAT AS JSON 's3://jsonpaths_file'"
+  },
+  {
+   "key": "e3c63e92fc99494e",
+   "dialect": "redshift",
+   "sql": "SELECT * FROM venue WHERE (venuecity, venuestate) IN (('Miami', 'FL'), ('Tampa', 'FL')) ORDER BY venueid"
+  },
+  {
+   "key": "d60082ffb65f0ffb",
+   "dialect": "redshift",
+   "sql": "SELECT tablename, \"column\" FROM pg_table_def WHERE \"column\" LIKE '%start\\\\_%' LIMIT 5"
+  },
+  {
+   "key": "ec765e042c788680",
+   "dialect": "redshift",
+   "sql": "SELECT JSON_EXTRACT_PATH_TEXT('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"star\"}', 'f4', 'f6', TRUE)"
+  },
+  {
+   "key": "20ad4938a40ab1db",
+   "dialect": "redshift",
+   "sql": "SELECT CONCAT('abc', 'def')"
+  },
+  {
+   "key": "7f402e128f842099",
+   "dialect": "redshift",
+   "sql": "SELECT TOP 1 x FROM y"
+  },
+  {
+   "key": "27c51d74ca8d0f8e",
+   "dialect": "redshift",
+   "sql": "SELECT DATE_DIFF('month', CAST('2020-02-29 00:00:00' AS TIMESTAMP), CAST('2020-03-02 00:00:00' AS TIMESTAMP))"
+  },
+  {
+   "key": "a5e117699e08c9cb",
+   "dialect": "redshift",
+   "sql": "SELECT * FROM x WHERE y = DATEADD('month', -1, DATE_TRUNC('month', (SELECT y FROM #temp_table)))"
+  },
+  {
+   "key": "9c5e711bef6dc6d4",
+   "dialect": "redshift",
+   "sql": "SELECT 'a''b'"
+  },
+  {
+   "key": "5c624c65e28ea7ac",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE t (c BIGINT GENERATED BY DEFAULT AS IDENTITY (0, 1))"
+  },
+  {
+   "key": "15b26c6dc5558246",
+   "dialect": "redshift",
+   "sql": "SELECT DATEADD(HOUR, 0, CAST('2020-02-02 01:03:05.124' AS TIMESTAMP))"
+  },
+  {
+   "key": "f0758482193a29dd",
+   "dialect": "redshift",
+   "sql": "SELECT DATEDIFF(SECOND, '2020-02-02 00:00:00.000', '2020-02-02 01:03:05.124')"
+  },
+  {
+   "key": "0edc207add82a77e",
+   "dialect": "redshift",
+   "sql": "CREATE OR REPLACE VIEW v1 AS SELECT id, AVG(average_metric1) AS m1, AVG(average_metric2) AS m2 FROM t GROUP BY id WITH NO SCHEMA BINDING"
+  },
+  {
+   "key": "1446c3b226a67e35",
+   "dialect": "redshift",
+   "sql": "SELECT caldate + INTERVAL '1 SECOND' AS dateplus FROM date WHERE caldate = '12-31-2008'"
+  },
+  {
+   "key": "44bd66efd77b7e00",
+   "dialect": "redshift",
+   "sql": "SELECT COUNT(*) FROM event WHERE eventname LIKE '%Ring%' OR eventname LIKE '%Die%'"
+  },
+  {
+   "key": "a606e1e766ac0328",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE SOUP (LIKE other_table) DISTKEY(soup1) SORTKEY(soup2) DISTSTYLE ALL"
+  },
+  {
+   "key": "3b7a7c2653643454",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE sales (salesid INTEGER NOT NULL) DISTKEY(listid) COMPOUND SORTKEY(listid, sellerid) DISTSTYLE AUTO"
+  },
+  {
+   "key": "7cf322aecacdfc29",
+   "dialect": "redshift",
+   "sql": "COPY customer FROM 's3://mybucket/customer' IAM_ROLE 'arn:aws:iam::0123456789012:role/MyRedshiftRole' REGION 'us-east-1' FORMAT orc"
+  },
+  {
+   "key": "2288749a2b18743d",
+   "dialect": "redshift",
+   "sql": "COPY customer FROM 's3://mybucket/mydata' CREDENTIALS 'aws_iam_role=arn:aws:iam::<aws-account-id>:role/<role-name>;master_symmetric_key=<root-key>' emptyasnull blanksasnull timeformat 'YYYY-MM-DD HH:MI:SS'"
+  },
+  {
+   "key": "fd73f7345bbaf1a3",
+   "dialect": "redshift",
+   "sql": "UNLOAD ('select * from venue') TO 's3://mybucket/unload/' IAM_ROLE 'arn:aws:iam::0123456789012:role/MyRedshiftRole'"
+  },
+  {
+   "key": "9170cffcb2283a7e",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE SOUP (SOUP1 VARCHAR(50) NOT NULL ENCODE ZSTD, SOUP2 VARCHAR(70) NULL ENCODE DELTA)"
+  },
+  {
+   "key": "f1681b7253235419",
+   "dialect": "redshift",
+   "sql": "SELECT DATEADD('day', ndays, caldate)"
+  },
+  {
+   "key": "a2905dccae2c7c40",
+   "dialect": "redshift",
+   "sql": "CONVERT(INT, x)"
+  },
+  {
+   "key": "d5e6a2a48fbc0eb2",
+   "dialect": "redshift",
+   "sql": "SELECT DATE_ADD('day', 1, DATE('2023-01-01'))"
+  },
+  {
+   "key": "85f8490353311a99",
+   "dialect": "redshift",
+   "sql": "SELECT\n  c_name,\n  orders.o_orderkey AS orderkey,\n  index AS orderkey_index\nFROM customer_orders_lineitem AS c, c.c_orders AS orders AT index\nORDER BY\n  orderkey_index"
+  },
+  {
+   "key": "34b3dd4fba18acb5",
+   "dialect": "redshift",
+   "sql": "SELECT attr AS attr, JSON_TYPEOF(val) AS value_type FROM customer_orders_lineitem AS c, UNPIVOT c.c_orders[0] WHERE c_custkey = 9451"
+  },
+  {
+   "key": "16cfb2b643b51bd1",
+   "dialect": "redshift",
+   "sql": "SELECT attr AS attr, JSON_TYPEOF(val) AS value_type FROM customer_orders_lineitem AS c, UNPIVOT c.c_orders AS val AT attr WHERE c_custkey = 9451"
+  },
+  {
+   "key": "25279a40325066ed",
+   "dialect": "redshift",
+   "sql": "SELECT JSON_PARSE('[]')"
+  },
+  {
+   "key": "c71fc6408ec8d3d6",
+   "dialect": "redshift",
+   "sql": "SELECT ARRAY(1, 2, 3)"
+  },
+  {
+   "key": "75ccb3ea0bbc568c",
+   "dialect": "redshift",
+   "sql": "SELECT ARRAY[1, 2, 3]"
+  },
+  {
+   "key": "842fc0669d370c19",
+   "dialect": "redshift",
+   "sql": "SELECT CONVERT_TIMEZONE('America/New_York', '2024-08-06 09:10:00.000')"
+  },
+  {
+   "key": "3dce5eef4d58c370",
+   "dialect": "redshift",
+   "sql": "SELECT *, 4 AS col4 EXCLUDE (col2, col3) FROM (SELECT 1 AS col1, 2 AS col2, 3 AS col3)"
   },
   {
    "key": "164ad913013d6f32",
@@ -16873,9 +17968,119 @@
    "sql": "SELECT * EXCLUDE (col2, col3) FROM (SELECT *, 4 AS col4 FROM (SELECT 1 AS col1, 2 AS col2, 3 AS col3))"
   },
   {
+   "key": "bfe02cac7249d8f2",
+   "dialect": "redshift",
+   "sql": "SELECT *, 4 AS col4 EXCLUDE col2, col3 FROM (SELECT 1 AS col1, 2 AS col2, 3 AS col3)"
+  },
+  {
+   "key": "ff2f496da98338ce",
+   "dialect": "redshift",
+   "sql": "SELECT col1, *, col2 EXCLUDE(col3) FROM (SELECT 1 AS col1, 2 AS col2, 3 AS col3)"
+  },
+  {
+   "key": "92fc2f0a5b89199b",
+   "dialect": "redshift",
+   "sql": "SELECT col1, *, col2 EXCLUDE (col3) FROM (SELECT 1 AS col1, 2 AS col2, 3 AS col3)"
+  },
+  {
    "key": "30fb2d51f4e546a1",
    "dialect": "duckdb",
    "sql": "SELECT * EXCLUDE (col3) FROM (SELECT col1, *, col2 FROM (SELECT 1 AS col1, 2 AS col2, 3 AS col3))"
+  },
+  {
+   "key": "d5be8285022a0f58",
+   "dialect": "redshift",
+   "sql": "SELECT 1 EXCLUDE"
+  },
+  {
+   "key": "0e56234a278a23aa",
+   "dialect": "redshift",
+   "sql": "SELECT 1 EXCLUDE FROM t"
+  },
+  {
+   "key": "8fa8d130907737e2",
+   "dialect": "redshift",
+   "sql": "SELECT 1 AS EXCLUDE"
+  },
+  {
+   "key": "e4113fbfc2426413",
+   "dialect": "redshift",
+   "sql": "SELECT * FROM (SELECT 1 AS EXCLUDE) AS t"
+  },
+  {
+   "key": "712e9581f5287fc2",
+   "dialect": "redshift",
+   "sql": "SELECT 1 AS EXCLUDE, 2 AS foo"
+  },
+  {
+   "key": "bc770a7a5de616b8",
+   "dialect": "redshift",
+   "sql": "INSERT INTO t (a) VALUES (1), (2), (3)"
+  },
+  {
+   "key": "f115b2fcbf11ed88",
+   "dialect": "redshift",
+   "sql": "INSERT INTO t (a, b) VALUES (1, 2), (3, 4)"
+  },
+  {
+   "key": "2241051503689a4d",
+   "dialect": "redshift",
+   "sql": "SELECT * FROM (SELECT 1, 2) AS t"
+  },
+  {
+   "key": "71e86195b4ee3054",
+   "dialect": "redshift",
+   "sql": "SELECT * FROM (SELECT 1 AS id) AS t1 CROSS JOIN (SELECT 1 AS id) AS t2"
+  },
+  {
+   "key": "d1ebe0c44732a1f4",
+   "dialect": "redshift",
+   "sql": "SELECT a, b FROM (SELECT 1 AS a, 2 AS b) AS t"
+  },
+  {
+   "key": "4c6847246c9a393a",
+   "dialect": "redshift",
+   "sql": "SELECT a, b FROM (SELECT 1 AS a, 2 AS b UNION ALL SELECT 3, 4) AS \"t\""
+  },
+  {
+   "key": "fd64387b36fe4b69",
+   "dialect": "redshift",
+   "sql": "SELECT a, b FROM (SELECT 1 AS a, 2 AS b UNION ALL SELECT 3, 4 UNION ALL SELECT 5, 6 UNION ALL SELECT 7, 8) AS t"
+  },
+  {
+   "key": "f32b05e0a77da24e",
+   "dialect": "redshift",
+   "sql": "INSERT INTO t (a, b) SELECT a, b FROM (SELECT 1 AS a, 2 AS b UNION ALL SELECT 3, 4) AS t"
+  },
+  {
+   "key": "ce87477e16f84c5c",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE table_backup BACKUP NO AS SELECT * FROM event"
+  },
+  {
+   "key": "2cb48e10add8b932",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE table_backup BACKUP YES AS SELECT * FROM event"
+  },
+  {
+   "key": "aff1d44f0e0913a9",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE table_backup (i INTEGER, b VARCHAR) BACKUP NO"
+  },
+  {
+   "key": "e1ad3a9788a8b72e",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE table_backup (i INTEGER, b VARCHAR) BACKUP YES"
+  },
+  {
+   "key": "dc84c46cf9ee1b5f",
+   "dialect": "redshift",
+   "sql": "select foo, bar from table_1 minus select foo, bar from table_2"
+  },
+  {
+   "key": "e916e71021476d87",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE t1 (LIKE t2)"
   },
   {
    "key": "6b467cd69113c222",
@@ -16883,9 +18088,99 @@
    "sql": "CREATE TABLE t1 (LIKE t2)"
   },
   {
+   "key": "fb5aeb3bed34022b",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE t1 (col VARCHAR, LIKE t2)"
+  },
+  {
    "key": "1a11430bec58f6e2",
    "dialect": "postgres",
    "sql": "CREATE TABLE t1 (col VARCHAR, LIKE t2)"
+  },
+  {
+   "key": "59e6932f17fcac93",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE s.t ALTER SORTKEY (c)"
+  },
+  {
+   "key": "566009c5f73b7338",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE t ALTER SORTKEY AUTO"
+  },
+  {
+   "key": "ce57ab658d97809c",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE t ALTER SORTKEY NONE"
+  },
+  {
+   "key": "169bd9807414d3ea",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE t ALTER SORTKEY (c1, c2)"
+  },
+  {
+   "key": "7f1b28eb39542527",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE t ALTER COMPOUND SORTKEY (c1, c2)"
+  },
+  {
+   "key": "ac4996b522528e51",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE t ALTER DISTSTYLE ALL"
+  },
+  {
+   "key": "abdcac204f258275",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE t ALTER DISTSTYLE EVEN"
+  },
+  {
+   "key": "72bab8e4e935db9a",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE t ALTER DISTSTYLE AUTO"
+  },
+  {
+   "key": "3f9544dca867c409",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE t ALTER DISTSTYLE KEY DISTKEY c"
+  },
+  {
+   "key": "f6352cc27dd29cb3",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE t SET TABLE PROPERTIES ('a' = '5', 'b' = 'c')"
+  },
+  {
+   "key": "d00f67694cc1a387",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE t SET LOCATION 's3://bucket/folder/'"
+  },
+  {
+   "key": "3f116ff09f034277",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE t SET FILE FORMAT AVRO"
+  },
+  {
+   "key": "e3e07b648f376d58",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE t ALTER DISTKEY c"
+  },
+  {
+   "key": "1d50d68fdc473d71",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE db.t1 RENAME TO db.t2"
+  },
+  {
+   "key": "3bf326d2b3a46935",
+   "dialect": "redshift",
+   "sql": "ALTER TABLE db.t1 RENAME TO t2"
+  },
+  {
+   "key": "e6b03bc229c52fc3",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE \"TEST\" (\"cola\" VARCHAR(MAX))"
+  },
+  {
+   "key": "897fde752188c419",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE TEST (cola VARCHAR(max))"
   },
   {
    "key": "b73eb96180e15875",
@@ -16893,14 +18188,174 @@
    "sql": "CREATE TABLE TEST (cola VARCHAR(max))"
   },
   {
+   "key": "9b9f0a40c6fbcd70",
+   "dialect": "redshift",
+   "sql": "CREATE OR REPLACE VIEW v1 AS SELECT cola, colb FROM t1 WITH NO SCHEMA BINDING"
+  },
+  {
+   "key": "03c2dd3042b4e37d",
+   "dialect": "redshift",
+   "sql": "SELECT c.*, o FROM bloo AS c, c.c_orders AS o"
+  },
+  {
+   "key": "d5f33e18cbc4b6a2",
+   "dialect": "redshift",
+   "sql": "SELECT c.*, o, l FROM bloo AS c, c.c_orders AS o, o.o_lineitems AS l"
+  },
+  {
+   "key": "58498f13da3fbabd",
+   "dialect": "redshift",
+   "sql": "select a.foo, b.bar, a.baz from a, b where a.baz = b.baz (+)"
+  },
+  {
+   "key": "f94bff0db62663fc",
+   "dialect": "redshift",
+   "sql": "TIME_TO_STR(a, '%Y-%m-%d %H:%M:%S.%f')"
+  },
+  {
+   "key": "dd3bc5a15893c49b",
+   "dialect": "redshift",
+   "sql": "GRANT SELECT ON TABLE sales TO fred"
+  },
+  {
+   "key": "6eb46f12d9fc8d3d",
+   "dialect": "redshift",
+   "sql": "GRANT ALL ON SCHEMA qa_tickit TO GROUP qa_users"
+  },
+  {
+   "key": "9eb280d4e799683a",
+   "dialect": "redshift",
+   "sql": "GRANT ALL ON TABLE qa_tickit.sales TO GROUP qa_users"
+  },
+  {
+   "key": "2a13aa2e2488b70a",
+   "dialect": "redshift",
+   "sql": "GRANT ALL ON TABLE qa_tickit.sales TO GROUP qa_users, GROUP ro_users"
+  },
+  {
+   "key": "041c1fe4f78de8e6",
+   "dialect": "redshift",
+   "sql": "GRANT ALL ON view_date TO view_user"
+  },
+  {
+   "key": "9a04c83697967265",
+   "dialect": "redshift",
+   "sql": "GRANT SELECT(cust_name, cust_phone), UPDATE(cust_contact_preference) ON cust_profile TO GROUP sales_group"
+  },
+  {
+   "key": "b456a73df1e47d14",
+   "dialect": "redshift",
+   "sql": "GRANT ALL(cust_name, cust_phone, cust_contact_preference) ON cust_profile TO GROUP sales_admin"
+  },
+  {
+   "key": "abd519cd0d48027f",
+   "dialect": "redshift",
+   "sql": "GRANT USAGE ON DATABASE sales_db TO Bob"
+  },
+  {
+   "key": "bc7874924bc23ff7",
+   "dialect": "redshift",
+   "sql": "GRANT USAGE ON SCHEMA sales_schema TO ROLE Analyst_role"
+  },
+  {
+   "key": "fe443fb6c2b0a99a",
+   "dialect": "redshift",
+   "sql": "GRANT SELECT ON sales_db.sales_schema.tickit_sales_redshift TO Bob"
+  },
+  {
+   "key": "76e3dce189b03ccc",
+   "dialect": "redshift",
+   "sql": "REVOKE SELECT ON TABLE sales FROM fred"
+  },
+  {
+   "key": "b7b2dd91c6ce424e",
+   "dialect": "redshift",
+   "sql": "REVOKE ALL ON SCHEMA qa_tickit FROM GROUP qa_users"
+  },
+  {
+   "key": "7f184019f4869e45",
+   "dialect": "redshift",
+   "sql": "REVOKE USAGE ON DATABASE sales_db FROM Bob"
+  },
+  {
+   "key": "537015a92cb8d018",
+   "dialect": "redshift",
+   "sql": "REVOKE USAGE ON SCHEMA sales_schema FROM ROLE Analyst_role"
+  },
+  {
+   "key": "3e75be824bd1daba",
+   "dialect": "redshift",
+   "sql": "ANALYZE TBL(col1, col2)"
+  },
+  {
+   "key": "4ea2625acc1d73f6",
+   "dialect": "redshift",
+   "sql": "ANALYZE VERBOSE TBL"
+  },
+  {
+   "key": "ec72375e8e19647c",
+   "dialect": "redshift",
+   "sql": "ANALYZE TBL PREDICATE COLUMNS"
+  },
+  {
+   "key": "b7c571d7388df475",
+   "dialect": "redshift",
+   "sql": "ANALYZE TBL ALL COLUMNS"
+  },
+  {
+   "key": "68e8fad3412d9c7d",
+   "dialect": "redshift",
+   "sql": "SELECT * FROM t FETCH FIRST 1 ROWS ONLY"
+  },
+  {
    "key": "384232c481a44108",
    "dialect": "postgres",
    "sql": "SELECT * FROM t FETCH FIRST 1 ROWS ONLY"
   },
   {
+   "key": "e591a32603d97904",
+   "dialect": "redshift",
+   "sql": "SELECT LAG(x) IGNORE NULLS OVER (PARTITION BY y ORDER BY z)"
+  },
+  {
+   "key": "ec37c67462199eb3",
+   "dialect": "redshift",
+   "sql": "SELECT LAG(x) RESPECT NULLS OVER (PARTITION BY y ORDER BY z)"
+  },
+  {
+   "key": "f94126716bedde82",
+   "dialect": "redshift",
+   "sql": "SELECT LAG(x IGNORE NULLS) OVER (PARTITION BY y ORDER BY z)"
+  },
+  {
+   "key": "f3ef3378682fa7f4",
+   "dialect": "redshift",
+   "sql": "SELECT LAG(x RESPECT NULLS) OVER (PARTITION BY y ORDER BY z)"
+  },
+  {
+   "key": "e8e0fd2608d9a0f8",
+   "dialect": "redshift",
+   "sql": "SELECT REGEXP_SUBSTR(abc, 'pattern(group)', 2) FROM table"
+  },
+  {
+   "key": "fba9c3f7a20e0923",
+   "dialect": "redshift",
+   "sql": "SELECT REGEXP_SUBSTR(abc, 'pattern(group)', 2) FROM \"table\""
+  },
+  {
    "key": "8e70d7a49b8578e5",
    "dialect": "duckdb",
    "sql": "SELECT REGEXP_EXTRACT(SUBSTRING(abc, 2), 'pattern(group)') FROM \"table\""
+  },
+  {
+   "key": "9e1f676a5d644494",
+   "dialect": "redshift",
+   "sql": "DATE_PART(year, \"somecol\")"
+  },
+  {
+   "key": "c5d420f6c6692c1e",
+   "dialect": "redshift",
+   "sql": "1::\"int\""
   },
   {
    "key": "7ae48d3c5c087106",
@@ -16913,6 +18368,11 @@
    "sql": "SELECT TIME_STR_TO_UNIX('2009-02-13 23:31:30')"
   },
   {
+   "key": "3fd8ac40ce024dc4",
+   "dialect": "redshift",
+   "sql": "SELECT STRTOL('f',16)"
+  },
+  {
    "key": "64949cf2df1eeace",
    "dialect": "postgres",
    "sql": "SELECT 'ABC' ~* 'a.*'"
@@ -16921,6 +18381,11 @@
    "key": "ac32a7791e633a96",
    "dialect": "duckdb",
    "sql": "SELECT DATE_DIFF('QUARTER', '2009-02-13', '2013-09-01')"
+  },
+  {
+   "key": "5f6188b1d4328d61",
+   "dialect": "redshift",
+   "sql": "SELECT datediff(week,'2009-01-01','2009-12-31') AS numweeks"
   },
   {
    "key": "0cdbae4a244a1b19",
@@ -17453,6 +18918,11 @@
    "sql": "POWER(x, 2)"
   },
   {
+   "key": "2571d02431cd390f",
+   "dialect": "redshift",
+   "sql": "POWER(x, 2)"
+  },
+  {
    "key": "79e90ddf1cc623f6",
    "dialect": "tsql",
    "sql": "POWER(x, 2)"
@@ -17508,9 +18978,29 @@
    "sql": "SELECT STRPTIME(col, '%d-%m-%Y %I:%M:%S') FROM t"
   },
   {
+   "key": "9494f6fc37ae9ef2",
+   "dialect": "redshift",
+   "sql": "SELECT (TIMESTAMP 'epoch' + 1659981729 * INTERVAL '1 SECOND')"
+  },
+  {
+   "key": "ee0e773b51499f09",
+   "dialect": "redshift",
+   "sql": "SELECT (TIMESTAMP 'epoch' + (1659981729000 / POWER(10, 3)) * INTERVAL '1 SECOND')"
+  },
+  {
+   "key": "a554a04b1216b45b",
+   "dialect": "redshift",
+   "sql": "SELECT (TIMESTAMP 'epoch' + (16599817290000 / POWER(10, 4)) * INTERVAL '1 SECOND')"
+  },
+  {
    "key": "801923792d4d49e6",
    "dialect": "duckdb",
    "sql": "SELECT TO_TIMESTAMP(1659981729000000000 / POWER(10, 9)) AT TIME ZONE 'UTC'"
+  },
+  {
+   "key": "37a750c57e63bcc9",
+   "dialect": "redshift",
+   "sql": "SELECT (TIMESTAMP 'epoch' + (1659981729000000000 / POWER(10, 9)) * INTERVAL '1 SECOND')"
   },
   {
    "key": "a307de104cc001da",
@@ -17640,6 +19130,11 @@
   {
    "key": "68c819245e6b0ffa",
    "dialect": "databricks",
+   "sql": "SELECT CONVERT_TIMEZONE('America/Los_Angeles', 'America/New_York', '2024-08-06 09:10:00.000')"
+  },
+  {
+   "key": "c6bec476de737a0f",
+   "dialect": "redshift",
    "sql": "SELECT CONVERT_TIMEZONE('America/Los_Angeles', 'America/New_York', '2024-08-06 09:10:00.000')"
   },
   {
@@ -18758,6 +20253,11 @@
    "sql": "SELECT GETBIT(11, 1)"
   },
   {
+   "key": "f362d053576400f0",
+   "dialect": "redshift",
+   "sql": "SELECT GETBIT(11, 1)"
+  },
+  {
    "key": "a2dc4021c20d23d1",
    "dialect": "duckdb",
    "sql": "SELECT ROUND(FLOOR(1.753 * POWER(10, 2)) / POWER(10, 2), 2)"
@@ -19073,6 +20573,11 @@
    "sql": "SELECT CAST('2016-08-31' AS TIMESTAMP) AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC'"
   },
   {
+   "key": "054ab312cef34cca",
+   "dialect": "redshift",
+   "sql": "SELECT CAST('2016-08-31' AS TIMESTAMP) AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC'"
+  },
+  {
    "key": "793905471dfc7762",
    "dialect": "duckdb",
    "sql": "SELECT DATEDIFF('month', CAST('1996-10-30' AS TIMESTAMPTZ), CAST('1997-02-28 10:30:00' AS TIMESTAMPTZ))"
@@ -19086,6 +20591,11 @@
    "key": "00c67f61a964afd5",
    "dialect": "postgres",
    "sql": "SELECT CAST(EXTRACT(days FROM (CAST(CAST('2020-12-31' AS DATE) AS TIMESTAMP) - CAST(CAST('2020-01-01' AS DATE) AS TIMESTAMP))) / 7 AS BIGINT)"
+  },
+  {
+   "key": "f19727562d4d70fb",
+   "dialect": "redshift",
+   "sql": "SELECT DATEDIFF(WEEK, CAST('2020-01-01' AS DATE), CAST('2020-12-31' AS DATE))"
   },
   {
    "key": "67b0ae0cd3f0009f",
@@ -19423,6 +20933,11 @@
    "sql": "ASCII(x)"
   },
   {
+   "key": "54c8ac809eab1429",
+   "dialect": "redshift",
+   "sql": "ASCII(x)"
+  },
+  {
    "key": "12313adf08ca555a",
    "dialect": "duckdb",
    "sql": "SELECT STRFTIME(CAST('2020-01-01 12:05:03' AS TIMESTAMP), '%Y-%m-%d')"
@@ -19503,9 +21018,19 @@
    "sql": "CREATE TABLE a"
   },
   {
+   "key": "1f080537323ab989",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE a"
+  },
+  {
    "key": "84a89a86d3c9f43e",
    "dialect": "tsql",
    "sql": "CREATE TABLE a"
+  },
+  {
+   "key": "adbd34cc44a406f5",
+   "dialect": "redshift",
+   "sql": "CREATE TABLE z (a GEOMETRY(1))"
   },
   {
    "key": "954d312ef8c35ce4",
@@ -21693,6 +23218,11 @@
    "sql": "CAST(DATE_TRUNC('MONTH', CAST(CURRENT_TIMESTAMP AS DATE)) + INTERVAL '1 MONTH' - INTERVAL '1 DAY' AS DATE)"
   },
   {
+   "key": "1880b4a24cf36f1a",
+   "dialect": "redshift",
+   "sql": "LAST_DAY(CAST(GETDATE() AS DATE))"
+  },
+  {
    "key": "8673b005a1c214cb",
    "dialect": "tsql",
    "sql": "EOMONTH(CAST(GETDATE() AS DATE))"
@@ -21711,6 +23241,11 @@
    "key": "3a4671e775524e29",
    "dialect": "postgres",
    "sql": "CAST(DATE_TRUNC('MONTH', CAST(CURRENT_TIMESTAMP AS DATE) + INTERVAL '-1 MONTH') + INTERVAL '1 MONTH' - INTERVAL '1 DAY' AS DATE)"
+  },
+  {
+   "key": "b2fdd2a4c2de6234",
+   "dialect": "redshift",
+   "sql": "LAST_DAY(DATEADD(MONTH, -1, CAST(GETDATE() AS DATE)))"
   },
   {
    "key": "5d02aa503801b69c",

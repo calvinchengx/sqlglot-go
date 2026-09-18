@@ -296,6 +296,18 @@ func (p *parser) parseCreate() (*Expression, error) {
 	default:
 		return nil, p.unsupported("CREATE " + kind + " without columns or a query")
 	}
+	// Redshift's own `WITH NO SCHEMA BINDING` says the view is not checked
+	// against the tables it queries -- a VIEW-only trailer, tried right
+	// where the reference tries it: after the query, before anything a
+	// TABLE might still have.
+	var noSchemaBinding any
+	if kind == "VIEW" && p.atWords("WITH", "NO", "SCHEMA", "BINDING") {
+		p.advance()
+		p.advance()
+		p.advance()
+		p.advance()
+		noSchemaBinding = true
+	}
 	// Teradata's own trailing indexes -- `PRIMARY AMP INDEX i (a) UNIQUE
 	// INDEX j (b)` -- name themselves after the table's own body, one after
 	// another until a word standing there is not one.
@@ -415,7 +427,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 		Arg{"exists", exists},
 		Arg{"properties", properties},
 		Arg{"indexes", indexes},
-		Arg{"no_schema_binding", nil},
+		Arg{"no_schema_binding", noSchemaBinding},
 		Arg{"begin", nil},
 		Arg{"clone", clone},
 		Arg{"concurrently", false},
@@ -1906,6 +1918,22 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			Arg{"this", from}, Arg{"to", to}, Arg{"exists", exists}), nil
 	case p.at(TokALTER):
 		p.advance()
+		// A handful of words name Redshift's own shape rather than a
+		// column: DISTKEY/DISTSTYLE pick how rows are distributed across
+		// nodes, SORTKEY/COMPOUND how they are ordered within one. Tried
+		// before the ALTER [COLUMN] default, matching the reference's own
+		// dispatch table.
+		switch {
+		case p.atWords("DISTKEY"), p.atWords("DISTSTYLE"):
+			p.advance()
+			return p.parseAlterDistStyle()
+		case p.atWords("SORTKEY"):
+			p.advance()
+			return p.parseAlterSortKey(nil)
+		case p.atWords("COMPOUND"):
+			p.advance()
+			return p.parseAlterSortKey(true)
+		}
 		if p.atWords("COLUMN") {
 			p.advance()
 		}
@@ -1957,6 +1985,57 @@ func (p *parser) parseAddedColumn(exists bool) (*Expression, error) {
 		Arg{"constraints", constraints},
 		Arg{"position", position},
 		Arg{"exists", exists}), nil
+}
+
+// parseAlterDistStyle reads Redshift's `ALTER TABLE t ALTER DISTKEY|DISTSTYLE
+// ...`, entered with the dispatch word already consumed. ALL/EVEN/AUTO name
+// the style directly; anything else is the column an explicit KEY DISTKEY
+// names -- the optional phrase only appears after the DISTSTYLE spelling,
+// since a bare DISTKEY dispatch has already consumed that word itself.
+func (p *parser) parseAlterDistStyle() (*Expression, error) {
+	if p.atWords("ALL") || p.atWords("EVEN") || p.atWords("AUTO") {
+		word := strings.ToUpper(p.curr().Text)
+		p.advance()
+		return New("AlterDistStyle", Arg{"this", New("Var", Arg{"this", word})}), nil
+	}
+	if p.atWords("KEY") && p.next() != nil && strings.EqualFold(p.next().Text, "DISTKEY") {
+		p.advance()
+		p.advance()
+	}
+	// _parse_column() in the reference, not the narrower column-only rule:
+	// this is the general postfix path, and Redshift's `(+)` join_mark
+	// applies to whatever it returns.
+	col, err := p.parsePostfix()
+	if err != nil {
+		return nil, err
+	}
+	return New("AlterDistStyle", Arg{"this", col}), nil
+}
+
+// parseAlterSortKey reads Redshift's `ALTER TABLE t ALTER SORTKEY|COMPOUND
+// ...`, entered with the dispatch word already consumed -- except the
+// COMPOUND spelling, which still has its own SORTKEY word ahead of it.
+// `compound` is nil for the plain SORTKEY form (the reference's node then
+// carries no `compound` key at all, not a false one) and true for COMPOUND.
+func (p *parser) parseAlterSortKey(compound any) (*Expression, error) {
+	if compound != nil {
+		if p.atWords("SORTKEY") {
+			p.advance()
+		}
+	}
+	if p.at(TokL_PAREN) {
+		cols, err := p.parseParenthesisedIdentifiers()
+		if err != nil {
+			return nil, err
+		}
+		return New("AlterSortKey", Arg{"expressions", cols}, Arg{"compound", compound}), nil
+	}
+	if !p.atWords("AUTO") && !p.atWords("NONE") {
+		return nil, p.unsupported("ALTER SORTKEY without AUTO, NONE, or a column list")
+	}
+	word := strings.ToUpper(p.curr().Text)
+	p.advance()
+	return New("AlterSortKey", Arg{"this", New("Var", Arg{"this", word})}, Arg{"compound", compound}), nil
 }
 
 // parseAlteredColumn reads what an `ALTER COLUMN` says about one column: a new
@@ -5494,8 +5573,11 @@ func (p *parser) parseCopy() (*Expression, error) {
 	}
 
 	// The credentials are read even where none are written: the reference
-	// always builds the node, empty.
-	credentials := New("Credentials")
+	// always builds the node, empty when nothing after FILES names one.
+	credentials, err := p.parseCredentials()
+	if err != nil {
+		return nil, err
+	}
 
 	p.matchUnquotedWord("WITH")
 	// The parentheses around the settings are OPTIONAL: Databricks writes
@@ -5584,7 +5666,26 @@ func (p *parser) parseCopyParameter() (*Expression, error) {
 	name := New("Var", Arg{"this", c.Text})
 
 	p.match(TokEQ)
-	p.match(TokALIAS)
+	sawAlias := p.match(TokALIAS)
+
+	// Redshift's FORMAT parameter takes AVRO/JSON straight after the AS
+	// rather than as a value: the reference folds the whole "FORMAT AS
+	// AVRO" spelling into the parameter's own name and reads one more
+	// field for whatever follows (e.g. 's3://.../avro.json').
+	if sawAlias && strings.ToUpper(c.Text) == "FORMAT" && (p.atUnquotedWord("AVRO") || p.atUnquotedWord("JSON")) {
+		word := strings.ToUpper(p.curr().Text)
+		p.advance()
+		combined := New("Var", Arg{"this", "FORMAT AS " + word})
+		var value *Expression
+		if p.canStartCopyValue() {
+			v, err := p.parseCopyField()
+			if err != nil {
+				return nil, err
+			}
+			value = v
+		}
+		return New("CopyParameter", Arg{"this", combined}, Arg{"expression", value}), nil
+	}
 
 	// A name whose value is a LIST of settings -- FORMAT_OPTIONS, COPY_OPTIONS,
 	// CREDENTIAL -- is read as one under `expressions` rather than the single
@@ -5665,6 +5766,61 @@ func (p *parser) canStartCopyValue() bool {
 		return ok
 	}
 	return false
+}
+
+// parseCredentials reads the optional STORAGE_INTEGRATION/CREDENTIALS/
+// ENCRYPTION/IAM_ROLE/REGION clauses between a COPY's file list and its
+// WITH-parameters, always building the node even where none of them are
+// written. Each keyword is tried once, in this fixed order -- the reference
+// checks them with separate `if`s rather than a loop, so out-of-order
+// keywords are simply left for whatever reads next (typically the parameter
+// list, or a give-up into Command).
+func (p *parser) parseCredentials() (*Expression, error) {
+	creds := New("Credentials")
+	if p.matchUnquotedWord("STORAGE_INTEGRATION") {
+		p.match(TokEQ)
+		v, err := p.parsePrimary()
+		if err != nil {
+			return nil, err
+		}
+		creds.Set("storage", v)
+	}
+	if p.matchUnquotedWord("CREDENTIALS") {
+		var v *Expression
+		var err error
+		if p.match(TokEQ) {
+			return nil, p.unsupported("CREDENTIALS = (...) options list")
+		}
+		v, err = p.parsePrimary()
+		if err != nil {
+			return nil, err
+		}
+		creds.Set("credentials", v)
+	}
+	if p.matchUnquotedWord("ENCRYPTION") {
+		return nil, p.unsupported("COPY ENCRYPTION options list")
+	}
+	if p.matchUnquotedWord("IAM_ROLE") {
+		if p.at(TokDEFAULT) {
+			word := p.curr().Text
+			p.advance()
+			creds.Set("iam_role", New("Var", Arg{"this", word}))
+		} else {
+			v, err := p.parsePrimary()
+			if err != nil {
+				return nil, err
+			}
+			creds.Set("iam_role", v)
+		}
+	}
+	if p.matchUnquotedWord("REGION") {
+		v, err := p.parsePrimary()
+		if err != nil {
+			return nil, err
+		}
+		creds.Set("region", v)
+	}
+	return creds, nil
 }
 
 // parseCopyField reads a file name or a parameter's value: a literal, a bare
