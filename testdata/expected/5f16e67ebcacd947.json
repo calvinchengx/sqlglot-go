@@ -1,0 +1,477 @@
+{
+ "dialect": "trino",
+ "rendered": "WITH FUNCTION f() RETURNS INTEGER LANGUAGE SQL NOT DETERMINISTIC BEGIN DECLARE x INTEGER DEFAULT 1; RETURN x; END SELECT F()",
+ "sql": "WITH FUNCTION f() RETURNS INTEGER LANGUAGE SQL NOT DETERMINISTIC BEGIN DECLARE x INTEGER DEFAULT 1; RETURN x; END SELECT F()",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 5,
+   "t": "FUNCTION",
+   "x": "FUNCTION"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "f"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "RETURNS"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 26,
+   "t": "INT",
+   "x": "INTEGER"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 34,
+   "t": "VAR",
+   "x": "LANGUAGE"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 43,
+   "t": "VAR",
+   "x": "SQL"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 47,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 51,
+   "t": "VAR",
+   "x": "DETERMINISTIC"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 65,
+   "t": "BEGIN",
+   "x": "BEGIN"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 71,
+   "t": "DECLARE",
+   "x": "DECLARE"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 79,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 88,
+   "e": 87,
+   "l": 1,
+   "s": 81,
+   "t": "INT",
+   "x": "INTEGER"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 89,
+   "t": "DEFAULT",
+   "x": "DEFAULT"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 97,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 98,
+   "t": "SEMICOLON",
+   "x": ";"
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 100,
+   "t": "VAR",
+   "x": "RETURN"
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 107,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 109,
+   "e": 108,
+   "l": 1,
+   "s": 108,
+   "t": "SEMICOLON",
+   "x": ";"
+  },
+  {
+   "c": 113,
+   "e": 112,
+   "l": 1,
+   "s": 110,
+   "t": "END",
+   "x": "END"
+  },
+  {
+   "c": 120,
+   "e": 119,
+   "l": 1,
+   "s": 114,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 122,
+   "e": 121,
+   "l": 1,
+   "s": 121,
+   "t": "VAR",
+   "x": "F"
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 122,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 123,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 122,
+    "end": 121,
+    "line": 1,
+    "start": 121
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "F"
+  },
+  {
+   "c": "sqlglot.expressions.query.With",
+   "i": 0,
+   "k": "with_"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.FunctionSpecification",
+   "i": 3,
+   "k": "udfs"
+  },
+  {
+   "c": "sqlglot.expressions.ddl.UserDefinedFunction",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "f"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 5,
+   "k": "wrapped",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 4,
+   "k": "characteristics"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.ReturnsProperty",
+   "i": 11,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 13,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 13,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 12,
+   "k": "is_table",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.LanguageProperty",
+   "i": 11,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "SQL"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.StabilityProperty",
+   "i": 11,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 20,
+   "k": "this"
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "VOLATILE"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Block",
+   "i": 4,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.Declare",
+   "i": 24,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.DeclareItem",
+   "i": 25,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 80,
+    "end": 79,
+    "line": 1,
+    "start": 79
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 26,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 30,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 30,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 26,
+   "k": "default",
+   "m": {
+    "col": 98,
+    "end": 97,
+    "line": 1,
+    "start": 97
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 33,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 25,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Return",
+   "i": 24,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 37,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 38,
+   "k": "this",
+   "m": {
+    "col": 108,
+    "end": 107,
+    "line": 1,
+    "start": 107
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 39,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.EndStatement",
+   "i": 24,
+   "k": "expressions"
+  },
+  {
+   "i": 24,
+   "k": "begin",
+   "v": true
+  }
+ ]
+}

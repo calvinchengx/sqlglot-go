@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 5523,
+ "count": 5776,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -4903,6 +4903,11 @@
    "sql": "SELECT MATCH(\"table\") AGAINST('x') FROM t"
   },
   {
+   "key": "4a968e025e9ce366",
+   "dialect": "trino",
+   "sql": "SELECT CAST(ds AS VARCHAR) AS ds FROM (VALUES ('2022-01-01')) AS t(ds)"
+  },
+  {
    "key": "b4b6582aa95a9135",
    "dialect": "duckdb",
    "sql": "SELECT ARG_MAX_NULL(fruit, sold) FROM Store"
@@ -4933,6 +4938,11 @@
    "sql": "SELECT SPACE(2)"
   },
   {
+   "key": "75c642d6abe70708",
+   "dialect": "trino",
+   "sql": "SELECT REPEAT(' ', 2)"
+  },
+  {
    "key": "1f44179f35ac9845",
    "dialect": "databricks",
    "sql": "SELECT purchases, LAST_VALUE(item) OVER item_window AS most_popular FROM Produce WINDOW item_window AS (PARTITION BY purchases ORDER BY purchases ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING)"
@@ -4958,6 +4968,11 @@
    "sql": "SELECT purchases, LAST_VALUE(item) OVER (PARTITION BY purchases ORDER BY purchases NULLS FIRST ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS most_popular FROM Produce"
   },
   {
+   "key": "c9b6ceeada8d75d5",
+   "dialect": "trino",
+   "sql": "SELECT purchases, LAST_VALUE(item) OVER item_window AS most_popular FROM Produce WINDOW item_window AS (PARTITION BY purchases ORDER BY purchases NULLS FIRST ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING)"
+  },
+  {
    "key": "5b1b55d19041db56",
    "dialect": "tsql",
    "sql": "SELECT purchases, LAST_VALUE(item) OVER item_window AS most_popular FROM Produce WINDOW item_window AS (PARTITION BY purchases ORDER BY purchases ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING)"
@@ -4976,6 +4991,11 @@
    "key": "d9d0b4ab4e458598",
    "dialect": "duckdb",
    "sql": "SELECT {'_0': 1, '_1': 2, '_2': 3}, {}, {'_0': 'abc'}, {'_0': 1, 'str_col': t.str_col}, {'a': 1, 'b': 'abc'}, {'abc': str_col}"
+  },
+  {
+   "key": "12b77f51be7d9298",
+   "dialect": "trino",
+   "sql": "SELECT ROW(1, 2, 3), ROW(), ROW('abc'), ROW(1, t.str_col), CAST(ROW(1, 'abc') AS ROW(a INTEGER, b VARCHAR)), ROW(str_col)"
   },
   {
    "key": "41ae1e4818ec788f",
@@ -5178,6 +5198,11 @@
    "sql": "SELECT DATE_DIFF('MINUTE', FROM_UNIXTIME(0), FROM_UNIXTIME(60))"
   },
   {
+   "key": "82bb0591992f4d10",
+   "dialect": "trino",
+   "sql": "SELECT DATE_DIFF('MINUTE', FROM_UNIXTIME(0), FROM_UNIXTIME(60))"
+  },
+  {
    "key": "5c8704682937159b",
    "dialect": "databricks",
    "sql": "TIMESTAMPDIFF(month, b, a)"
@@ -5190,6 +5215,11 @@
   {
    "key": "6f272112471fd6f1",
    "dialect": "presto",
+   "sql": "DATE_DIFF('MONTH', b, a)"
+  },
+  {
+   "key": "ce268d9c1b6c33f2",
+   "dialect": "trino",
    "sql": "DATE_DIFF('MONTH', b, a)"
   },
   {
@@ -5223,6 +5253,11 @@
    "sql": "SELECT DATE_DIFF('MONTH', DATE_TRUNC('MONTH', CAST('2021-01-31 00:00:00' AS TIMESTAMP)), DATE_TRUNC('MONTH', CAST('2021-02-01 00:00:00' AS TIMESTAMP)))"
   },
   {
+   "key": "cd8b4cfa891b7e6a",
+   "dialect": "trino",
+   "sql": "SELECT DATE_DIFF('MONTH', DATE_TRUNC('MONTH', CAST('2021-01-31 00:00:00' AS TIMESTAMP)), DATE_TRUNC('MONTH', CAST('2021-02-01 00:00:00' AS TIMESTAMP)))"
+  },
+  {
    "key": "f16bd44a708f52e0",
    "dialect": "duckdb",
    "sql": "SELECT DATE_DIFF('WEEK', DATE_TRUNC('WEEK', CAST('2017-10-14 00:00:00' AS TIMESTAMP) + INTERVAL '1' DAY), DATE_TRUNC('WEEK', CAST('2017-10-15 00:00:00' AS TIMESTAMP) + INTERVAL '1' DAY))"
@@ -5230,6 +5265,11 @@
   {
    "key": "c33f0b6a3eee9d84",
    "dialect": "presto",
+   "sql": "SELECT DATE_DIFF('WEEK', DATE_TRUNC('WEEK', CAST('2017-10-14 00:00:00' AS TIMESTAMP) + INTERVAL '1' DAY), DATE_TRUNC('WEEK', CAST('2017-10-15 00:00:00' AS TIMESTAMP) + INTERVAL '1' DAY))"
+  },
+  {
+   "key": "28d1d5dd5d8fca7f",
+   "dialect": "trino",
    "sql": "SELECT DATE_DIFF('WEEK', DATE_TRUNC('WEEK', CAST('2017-10-14 00:00:00' AS TIMESTAMP) + INTERVAL '1' DAY), DATE_TRUNC('WEEK', CAST('2017-10-15 00:00:00' AS TIMESTAMP) + INTERVAL '1' DAY))"
   },
   {
@@ -5268,6 +5308,11 @@
    "sql": "LOWER(TO_HEX(x))"
   },
   {
+   "key": "b0aebeb0bb0bd907",
+   "dialect": "trino",
+   "sql": "LOWER(TO_HEX(x))"
+  },
+  {
    "key": "3752610c9f3cf280",
    "dialect": "duckdb",
    "sql": "HEX(x)"
@@ -5278,8 +5323,18 @@
    "sql": "TO_HEX(x)"
   },
   {
+   "key": "80af248fc10eb54b",
+   "dialect": "trino",
+   "sql": "TO_HEX(x)"
+  },
+  {
    "key": "594f2255f6ec82e3",
    "dialect": "presto",
+   "sql": "MD5(x)"
+  },
+  {
+   "key": "6ad432268dcef3a8",
+   "dialect": "trino",
    "sql": "MD5(x)"
   },
   {
@@ -5293,8 +5348,18 @@
    "sql": "SELECT LOWER(TO_HEX(MD5(some_string)))"
   },
   {
+   "key": "753d61215a7520ab",
+   "dialect": "trino",
+   "sql": "SELECT LOWER(TO_HEX(MD5(some_string)))"
+  },
+  {
    "key": "534879e0c88ade17",
    "dialect": "presto",
+   "sql": "SHA1(x)"
+  },
+  {
+   "key": "9a1158edc157b0ae",
+   "dialect": "trino",
    "sql": "SHA1(x)"
   },
   {
@@ -5305,6 +5370,11 @@
   {
    "key": "8e8c5b67e8a6779e",
    "dialect": "presto",
+   "sql": "SHA256(x)"
+  },
+  {
+   "key": "450cba496171d1df",
+   "dialect": "trino",
    "sql": "SHA256(x)"
   },
   {
@@ -5330,6 +5400,11 @@
   {
    "key": "ac66e489fe486fb5",
    "dialect": "presto",
+   "sql": "SHA512(x)"
+  },
+  {
+   "key": "aea87f038decb299",
+   "dialect": "trino",
    "sql": "SHA512(x)"
   },
   {
@@ -5450,6 +5525,11 @@
   {
    "key": "59b90d727c04a7ad",
    "dialect": "presto",
+   "sql": "CURRENT_TIME"
+  },
+  {
+   "key": "a3262355800d0b2e",
+   "dialect": "trino",
    "sql": "CURRENT_TIME"
   },
   {
@@ -5643,6 +5723,11 @@
    "sql": "CONCAT(ARRAY[1, 2], ARRAY[3, 4], ARRAY[5, 6])"
   },
   {
+   "key": "63d15a6b32aab9e7",
+   "dialect": "trino",
+   "sql": "CONCAT(ARRAY[1, 2], ARRAY[3, 4], ARRAY[5, 6])"
+  },
+  {
    "key": "e257932c36f6cfa8",
    "dialect": "duckdb",
    "sql": "SELECT GENERATE_SERIES(CAST('2016-10-05 00:00:00' AS TIMESTAMP), CAST('2016-10-07 00:00:00' AS TIMESTAMP), INTERVAL '1' DAY)"
@@ -5698,6 +5783,11 @@
    "sql": "IF(y <> 0, CAST(x AS DOUBLE) / y, NULL)"
   },
   {
+   "key": "db0680f6e6076c61",
+   "dialect": "trino",
+   "sql": "IF(y <> 0, CAST(x AS DOUBLE) / y, NULL)"
+  },
+  {
    "key": "9fff65afac4cbcb4",
    "dialect": "databricks",
    "sql": "TRY_DIVIDE(x, y)"
@@ -5715,6 +5805,11 @@
   {
    "key": "5e0cc6b3f38ddea5",
    "dialect": "presto",
+   "sql": "IF((2 * y) <> 0, CAST((x + 1) AS DOUBLE) / (2 * y), NULL)"
+  },
+  {
+   "key": "8141cdc211cd8fdd",
+   "dialect": "trino",
    "sql": "IF((2 * y) <> 0, CAST((x + 1) AS DOUBLE) / (2 * y), NULL)"
   },
   {
@@ -5843,6 +5938,11 @@
    "sql": "SELECT CAST(UUID() AS VARCHAR)"
   },
   {
+   "key": "d1105b4d3db1d28d",
+   "dialect": "trino",
+   "sql": "SELECT CAST(UUID() AS VARCHAR)"
+  },
+  {
    "key": "1884e2475451e1a8",
    "dialect": "duckdb",
    "sql": "SELECT REPLACE('apple pie', 'pie', 'cobbler') AS result"
@@ -5968,6 +6068,11 @@
    "sql": "SELECT * FROM UNNEST(ARRAY[CAST(ROW('Alice', CAST(ROW(85, 90) AS ROW(math INTEGER, english INTEGER))) AS ROW(name VARCHAR, scores ROW(math INTEGER, english INTEGER))), CAST(ROW('Bob', CAST(ROW(92, 88) AS ROW(math INTEGER, english INTEGER))) AS ROW(name VARCHAR, scores ROW(math INTEGER, english INTEGER)))])"
   },
   {
+   "key": "6973f1f65a04270a",
+   "dialect": "trino",
+   "sql": "SELECT * FROM UNNEST(ARRAY[CAST(ROW('Alice', CAST(ROW(85, 90) AS ROW(math INTEGER, english INTEGER))) AS ROW(name VARCHAR, scores ROW(math INTEGER, english INTEGER))), CAST(ROW('Bob', CAST(ROW(92, 88) AS ROW(math INTEGER, english INTEGER))) AS ROW(name VARCHAR, scores ROW(math INTEGER, english INTEGER)))])"
+  },
+  {
    "key": "59054fa3d0ea1a73",
    "dialect": "databricks",
    "sql": "SELECT * FROM EXPLODE(ARRAY(STRUCT('Alice' AS name, STRUCT(85 AS math, 90 AS english) AS scores), STRUCT('Bob' AS name, STRUCT(92 AS math, 88 AS english) AS scores)))"
@@ -5980,6 +6085,11 @@
   {
    "key": "0855d8d11ec2811b",
    "dialect": "presto",
+   "sql": "SELECT * FROM UNNEST(ARRAY[CAST(ROW('Alice', 85) AS ROW(name VARCHAR, score INTEGER)), CAST(ROW('Bob', 92) AS ROW(name VARCHAR, score INTEGER)), CAST(ROW('Diana', 95) AS ROW(name VARCHAR, score INTEGER))])"
+  },
+  {
+   "key": "377c28e3ddd3c1cf",
+   "dialect": "trino",
    "sql": "SELECT * FROM UNNEST(ARRAY[CAST(ROW('Alice', 85) AS ROW(name VARCHAR, score INTEGER)), CAST(ROW('Bob', 92) AS ROW(name VARCHAR, score INTEGER)), CAST(ROW('Diana', 95) AS ROW(name VARCHAR, score INTEGER))])"
   },
   {
@@ -6028,6 +6138,11 @@
    "sql": "SELECT ARRAY_EXTRACT(REGEXP_EXTRACT_ALL(NULLIF(SUBSTRING(abc, 2), ''), 'pattern(group)', 1), 3) FROM \"table\""
   },
   {
+   "key": "ece854d9d9a04dc6",
+   "dialect": "trino",
+   "sql": "REGEXP_EXTRACT_ALL('a1_a2a3_a4A5a6', 'a[0-9]')"
+  },
+  {
    "key": "52d54892e0bd68f6",
    "dialect": "presto",
    "sql": "REGEXP_EXTRACT_ALL('a1_a2a3_a4A5a6', 'a[0-9]')"
@@ -6041,6 +6156,11 @@
    "key": "558d7b68bd9edce3",
    "dialect": "duckdb",
    "sql": "REGEXP_EXTRACT_ALL('a1_a2a3_a4A5a6', 'a[0-9]')"
+  },
+  {
+   "key": "3316db5baf01dec1",
+   "dialect": "trino",
+   "sql": "REGEXP_EXTRACT_ALL('a1_a2a3_a4A5a6', '(a)[0-9]', 1)"
   },
   {
    "key": "3c08e91eed87348c",
@@ -7913,6 +8033,11 @@
    "sql": "CREATE TABLE a (LIKE b)"
   },
   {
+   "key": "76aeeeafbaccf5b6",
+   "dialect": "trino",
+   "sql": "CREATE TABLE a (LIKE b)"
+  },
+  {
    "key": "1740dcd8cf3bc8f5",
    "dialect": "tsql",
    "sql": "SELECT TOP 0 * INTO a FROM b AS temp"
@@ -8038,6 +8163,11 @@
    "sql": "SELECT NVL2(a, b, c)"
   },
   {
+   "key": "40172a480d99e2d5",
+   "dialect": "trino",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
+  },
+  {
    "key": "d6233c814e5771ee",
    "dialect": "tsql",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
@@ -8066,6 +8196,11 @@
    "key": "df5cd53ab7c2bb96",
    "dialect": "redshift",
    "sql": "SELECT NVL2(a, b)"
+  },
+  {
+   "key": "527378cf9a5d080e",
+   "dialect": "trino",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
   },
   {
    "key": "4b7c687e1363aa2a",
@@ -8178,9 +8313,24 @@
    "sql": "CAST('2020-01-01' AS TIMESTAMP)"
   },
   {
+   "key": "3862a732e471f376",
+   "dialect": "trino",
+   "sql": "CAST('2020-01-01' AS TIMESTAMP)"
+  },
+  {
+   "key": "f89aec211bec3b35",
+   "dialect": "trino",
+   "sql": "CAST('2020-01-01 12:13:14.123456+00:00' AS TIMESTAMP(6))"
+  },
+  {
    "key": "28c4c924d2f7bbd3",
    "dialect": "presto",
    "sql": "CAST('2020-01-01 12:13:14.123456+00:00' AS TIMESTAMP)"
+  },
+  {
+   "key": "25ea729064082cb6",
+   "dialect": "trino",
+   "sql": "CAST('2020-01-01 12:13:14.123-08:00' AS TIMESTAMP(3) WITH TIME ZONE)"
   },
   {
    "key": "4340b9f18797a2e7",
@@ -8213,6 +8363,11 @@
    "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP WITH TIME ZONE)"
   },
   {
+   "key": "b71ab41eead900aa",
+   "dialect": "trino",
+   "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP WITH TIME ZONE)"
+  },
+  {
    "key": "2102db8dee1a04c1",
    "dialect": "presto",
    "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP WITH TIME ZONE)"
@@ -8240,6 +8395,11 @@
   {
    "key": "8e03b5b913e9fee3",
    "dialect": "redshift",
+   "sql": "CAST(col AS TIMESTAMP WITH TIME ZONE)"
+  },
+  {
+   "key": "2b5cbf55101cfdfd",
+   "dialect": "trino",
    "sql": "CAST(col AS TIMESTAMP WITH TIME ZONE)"
   },
   {
@@ -8613,6 +8773,11 @@
    "sql": "CARDINALITY(x)"
   },
   {
+   "key": "f88322b4d055504a",
+   "dialect": "trino",
+   "sql": "REDUCE(ARRAY[1, 2], 0, (acc, x) -> acc + x, acc -> acc)"
+  },
+  {
    "key": "860d25ce7b9a5427",
    "dialect": "duckdb",
    "sql": "LIST_SUM([1, 2])"
@@ -8621,6 +8786,11 @@
    "key": "ccae0d4d160af354",
    "dialect": "presto",
    "sql": "ARRAY_SUM(ARRAY[1, 2])"
+  },
+  {
+   "key": "e047100b0acd2a6f",
+   "dialect": "trino",
+   "sql": "REDUCE(x, 0, (acc, x) -> acc + x, acc -> acc)"
   },
   {
    "key": "08a4e94f519ede9d",
@@ -8635,6 +8805,11 @@
   {
    "key": "f74a849907dc42f9",
    "dialect": "presto",
+   "sql": "ARRAY_INTERSECT(x, y)"
+  },
+  {
+   "key": "3a2447df7f83d8b3",
+   "dialect": "trino",
    "sql": "ARRAY_INTERSECT(x, y)"
   },
   {
@@ -8660,6 +8835,11 @@
   {
    "key": "b0f0a560859328e0",
    "dialect": "presto",
+   "sql": "SLICE(x, 1, 3)"
+  },
+  {
+   "key": "1a164ebe48a8ade7",
+   "dialect": "trino",
    "sql": "SLICE(x, 1, 3)"
   },
   {
@@ -8708,6 +8888,11 @@
    "sql": "array_max(x)"
   },
   {
+   "key": "abb243549c2a49ae",
+   "dialect": "trino",
+   "sql": "array_max(x)"
+  },
+  {
    "key": "b90c7d7d79a376fc",
    "dialect": "databricks",
    "sql": "ARRAY_MAX(x)"
@@ -8720,6 +8905,11 @@
   {
    "key": "9d9fcccbf0f6912a",
    "dialect": "presto",
+   "sql": "ARRAY_MAX(x)"
+  },
+  {
+   "key": "46b449f6e5ca4fee",
+   "dialect": "trino",
    "sql": "ARRAY_MAX(x)"
   },
   {
@@ -8738,6 +8928,11 @@
    "sql": "array_min(x)"
   },
   {
+   "key": "17a3daea3c859c34",
+   "dialect": "trino",
+   "sql": "array_min(x)"
+  },
+  {
    "key": "6072dadfa2f60fb8",
    "dialect": "databricks",
    "sql": "ARRAY_MIN(x)"
@@ -8753,6 +8948,11 @@
    "sql": "ARRAY_MIN(x)"
   },
   {
+   "key": "de2ebf9b2220c8df",
+   "dialect": "trino",
+   "sql": "ARRAY_MIN(x)"
+  },
+  {
    "key": "dc65b29e1b7958f6",
    "dialect": "databricks",
    "sql": "SELECT array_except(array(1, 2, 3), array(2))"
@@ -8761,6 +8961,11 @@
    "key": "f03b08fff3e30963",
    "dialect": "databricks",
    "sql": "SELECT ARRAY_EXCEPT(ARRAY(1, 2, 3), ARRAY(2))"
+  },
+  {
+   "key": "227163257fbe222a",
+   "dialect": "trino",
+   "sql": "SELECT ARRAY_EXCEPT(ARRAY[1, 2, 3], ARRAY[2])"
   },
   {
    "key": "9229290d74619d6b",
@@ -8778,6 +8983,11 @@
    "sql": "SELECT array_position(array(1, 2, 3), 2)"
   },
   {
+   "key": "eb29692f22863406",
+   "dialect": "trino",
+   "sql": "SELECT array_position(array[1, 2, 3], 2)"
+  },
+  {
    "key": "08b05331780b50f2",
    "dialect": "presto",
    "sql": "SELECT array_position(array[1, 2, 3], 2)"
@@ -8786,6 +8996,11 @@
    "key": "8d56d0250f498a83",
    "dialect": "databricks",
    "sql": "SELECT ARRAY_POSITION(ARRAY(1, 2, 3), 2)"
+  },
+  {
+   "key": "8a3d25bfdd34a6b7",
+   "dialect": "trino",
+   "sql": "SELECT ARRAY_POSITION(ARRAY[1, 2, 3], 2)"
   },
   {
    "key": "dec1db00689b88b0",
@@ -8826,6 +9041,11 @@
    "key": "4e1c064a5583224e",
    "dialect": "redshift",
    "sql": "JSON_EXTRACT_PATH_TEXT(x, 'a b')"
+  },
+  {
+   "key": "eb53e496f5a6fbe6",
+   "dialect": "trino",
+   "sql": "JSON_EXTRACT(x, '$[\"a b\"]')"
   },
   {
    "key": "07826be64ac180d8",
@@ -9083,6 +9303,11 @@
    "sql": "LOWER(x) LIKE LOWER('%y')"
   },
   {
+   "key": "1fdbe73b79b0379d",
+   "dialect": "trino",
+   "sql": "LOWER(x) LIKE LOWER('%y')"
+  },
+  {
    "key": "e61887c480401d13",
    "dialect": "postgres",
    "sql": "x NOT ILIKE '%y'"
@@ -9128,6 +9353,11 @@
    "sql": "POSITION(needle in haystack)"
   },
   {
+   "key": "130e6ee49a3323a5",
+   "dialect": "trino",
+   "sql": "POSITION(needle in haystack)"
+  },
+  {
    "key": "557f43e82843fb51",
    "dialect": "databricks",
    "sql": "POSITION(needle, haystack)"
@@ -9150,6 +9380,11 @@
   {
    "key": "2219984dfdd3d970",
    "dialect": "redshift",
+   "sql": "STRPOS(haystack, needle)"
+  },
+  {
+   "key": "c25cf2a63763f124",
+   "dialect": "trino",
    "sql": "STRPOS(haystack, needle)"
   },
   {
@@ -9248,8 +9483,18 @@
    "sql": "CASE WHEN POSITION(needle IN SUBSTRING(haystack FROM position)) = 0 THEN 0 ELSE POSITION(needle IN SUBSTRING(haystack FROM position)) + position - 1 END"
   },
   {
+   "key": "9eff4457606dc0eb",
+   "dialect": "trino",
+   "sql": "IF(STRPOS(SUBSTR(haystack, position), needle) = 0, 0, STRPOS(SUBSTR(haystack, position), needle) + position - 1)"
+  },
+  {
    "key": "a5f6edd9a0009306",
    "dialect": "presto",
+   "sql": "IF(STRPOS(SUBSTR(haystack, position), needle, occurrence) = 0, 0, STRPOS(SUBSTR(haystack, position), needle, occurrence) + position - 1)"
+  },
+  {
+   "key": "0b4df3d8faca9a6e",
+   "dialect": "trino",
    "sql": "IF(STRPOS(SUBSTR(haystack, position), needle, occurrence) = 0, 0, STRPOS(SUBSTR(haystack, position), needle, occurrence) + position - 1)"
   },
   {
@@ -9258,9 +9503,24 @@
    "sql": "CASE WHEN '-' IS NULL OR 'a' IS NULL OR 'b' IS NULL THEN NULL ELSE CONCAT_WS('-', 'a', 'b') END"
   },
   {
+   "key": "e11b370919391d7e",
+   "dialect": "trino",
+   "sql": "CASE WHEN '-' IS NULL OR 'a' IS NULL OR 'b' IS NULL THEN NULL ELSE CONCAT_WS('-', CAST('a' AS VARCHAR), CAST('b' AS VARCHAR)) END"
+  },
+  {
    "key": "ee5f2cfb8f39a8d8",
    "dialect": "duckdb",
    "sql": "CASE WHEN '-' IS NULL OR x IS NULL THEN NULL ELSE CONCAT_WS('-', x) END"
+  },
+  {
+   "key": "f34dd95ad2848cac",
+   "dialect": "trino",
+   "sql": "CASE WHEN '-' IS NULL OR x IS NULL THEN NULL ELSE CONCAT_WS('-', CAST(x AS VARCHAR)) END"
+  },
+  {
+   "key": "ced10e61351d0c2f",
+   "dialect": "trino",
+   "sql": "CAST(a AS VARCHAR)"
   },
   {
    "key": "d8b0b4934d8b38b0",
@@ -9358,6 +9618,11 @@
    "sql": "LEVENSHTEIN_DISTANCE(col1, col2)"
   },
   {
+   "key": "24a14f254ed1c84f",
+   "dialect": "trino",
+   "sql": "LEVENSHTEIN_DISTANCE(col1, col2)"
+  },
+  {
    "key": "1a3288aadc041f51",
    "dialect": "postgres",
    "sql": "LEVENSHTEIN(col1, col2, 1, 2, 3)"
@@ -9401,6 +9666,11 @@
    "key": "7a0c88ef4a72f9ea",
    "dialect": "redshift",
    "sql": "CAST(a AS DOUBLE PRECISION) / b"
+  },
+  {
+   "key": "1c07c2427e87baf9",
+   "dialect": "trino",
+   "sql": "CAST(a AS DOUBLE) / b"
   },
   {
    "key": "64674fb4e310274a",
@@ -9573,6 +9843,11 @@
    "sql": "SELECT * FROM (SELECT 1 AS col) apply"
   },
   {
+   "key": "86cfea584c1fe92e",
+   "dialect": "trino",
+   "sql": "SELECT * FROM (SELECT 1 AS col) apply"
+  },
+  {
    "key": "52d936568e98bbd4",
    "dialect": "postgres",
    "sql": "SELECT a IS NOT DISTINCT FROM b"
@@ -9593,6 +9868,11 @@
    "sql": "START TRANSACTION"
   },
   {
+   "key": "d916119945341df5",
+   "dialect": "trino",
+   "sql": "START TRANSACTION"
+  },
+  {
    "key": "19eece0292610329",
    "dialect": "redshift",
    "sql": "BEGIN"
@@ -9608,14 +9888,34 @@
    "sql": "START TRANSACTION READ WRITE, ISOLATION LEVEL SERIALIZABLE"
   },
   {
+   "key": "e79c44d44ccbbb6a",
+   "dialect": "trino",
+   "sql": "START TRANSACTION READ WRITE, ISOLATION LEVEL SERIALIZABLE"
+  },
+  {
    "key": "ef0385c7e428754b",
    "dialect": "presto",
    "sql": "START TRANSACTION ISOLATION LEVEL REPEATABLE READ"
   },
   {
+   "key": "3b420856bb8d5908",
+   "dialect": "trino",
+   "sql": "START TRANSACTION ISOLATION LEVEL REPEATABLE READ"
+  },
+  {
+   "key": "b1bd27a50d648332",
+   "dialect": "trino",
+   "sql": "MERGE INTO foo AS target USING (SELECT a, b FROM tbl) AS src ON src.a = target.a WHEN MATCHED AND target.a <> src.a THEN UPDATE SET b = 'FOO' WHEN NOT MATCHED THEN INSERT (a, b) VALUES (src.a, src.b)"
+  },
+  {
    "key": "a2e84272ac0f83b0",
    "dialect": "postgres",
    "sql": "MERGE INTO foo AS target USING (SELECT a, b FROM tbl) AS src ON src.a = target.a WHEN MATCHED AND target.a <> src.a THEN UPDATE SET b = 'FOO' WHEN NOT MATCHED THEN INSERT (a, b) VALUES (src.a, src.b)"
+  },
+  {
+   "key": "859fa13d27328592",
+   "dialect": "trino",
+   "sql": "MERGE INTO foo AS target USING (SELECT a, b FROM tbl) AS src ON src.a = target.a WHEN MATCHED THEN UPDATE SET b = COALESCE(src.b, target.b) WHEN NOT MATCHED THEN INSERT (a, b) VALUES (src.a, src.b)"
   },
   {
    "key": "7e79004260ba9327",
@@ -9665,6 +9965,11 @@
   {
    "key": "88fd7b8cd9486216",
    "dialect": "postgres",
+   "sql": "LOG(b, n)"
+  },
+  {
+   "key": "362f91f2386537e6",
+   "dialect": "trino",
    "sql": "LOG(b, n)"
   },
   {
@@ -9803,6 +10108,11 @@
    "sql": "SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq"
   },
   {
+   "key": "7a2a60f8cf034454",
+   "dialect": "trino",
+   "sql": "SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq"
+  },
+  {
    "key": "4bd43e88d0ddcffa",
    "dialect": "tsql",
    "sql": "WITH t AS (SELECT 1 AS c) SELECT * FROM (SELECT c AS c FROM t) AS subq"
@@ -9878,6 +10188,11 @@
    "sql": "ANY_MATCH(arr, x -> pred)"
   },
   {
+   "key": "82f8064198f1171c",
+   "dialect": "trino",
+   "sql": "ANY_MATCH(arr, x -> pred)"
+  },
+  {
    "key": "fc54b25fa44ed0cb",
    "dialect": "databricks",
    "sql": "SELECT * FROM EXPLODE(SEQUENCE(CAST('2020-01-01' AS DATE), CAST('2020-02-01' AS DATE), INTERVAL '1' WEEK))"
@@ -9901,6 +10216,11 @@
    "key": "6b2e37fdea089eea",
    "dialect": "redshift",
    "sql": "WITH RECURSIVE _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_value) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_value) AS DATE) <= CAST('2020-02-01' AS DATE)) SELECT * FROM (SELECT date_value FROM _generated_dates) AS _generated_dates"
+  },
+  {
+   "key": "47ff7ee370004bf9",
+   "dialect": "trino",
+   "sql": "SELECT * FROM UNNEST(SEQUENCE(CAST('2020-01-01' AS DATE), CAST('2020-02-01' AS DATE), (1 * INTERVAL '7' DAY)))"
   },
   {
    "key": "d820cde5e58510a7",
@@ -9950,6 +10270,11 @@
   {
    "key": "90ba546d59333447",
    "dialect": "postgres",
+   "sql": "SELECT 1 EXCEPT ALL SELECT 1"
+  },
+  {
+   "key": "4bceed2ebd433e58",
+   "dialect": "trino",
    "sql": "SELECT 1 EXCEPT ALL SELECT 1"
   },
   {
@@ -10005,6 +10330,11 @@
   {
    "key": "ef44660669bea280",
    "dialect": "presto",
+   "sql": "UUID()"
+  },
+  {
+   "key": "b29b61160f9e24b9",
+   "dialect": "trino",
    "sql": "UUID()"
   },
   {
@@ -10168,6 +10498,11 @@
    "sql": "DATE_ADD('DAY', 1, CAST('1970-01-01' AS DATE))"
   },
   {
+   "key": "3be774d2a7c16218",
+   "dialect": "trino",
+   "sql": "DATE_ADD('DAY', 1, CAST('1970-01-01' AS DATE))"
+  },
+  {
    "key": "fbcc4ae420a99179",
    "dialect": "duckdb",
    "sql": "WEEKOFYEAR(CAST('2025-01-01' AS DATE))"
@@ -10233,6 +10568,11 @@
    "sql": "REVERSE(x)"
   },
   {
+   "key": "4426936e1bc53464",
+   "dialect": "trino",
+   "sql": "REVERSE(x)"
+  },
+  {
    "key": "65feb96b6b13b17d",
    "dialect": "redshift",
    "sql": "REVERSE(x)"
@@ -10255,6 +10595,11 @@
   {
    "key": "f0a0dde4aa044f90",
    "dialect": "presto",
+   "sql": "REGR_COUNT(x, y)"
+  },
+  {
+   "key": "cfb8584582fcb325",
+   "dialect": "trino",
    "sql": "REGR_COUNT(x, y)"
   },
   {
@@ -10315,6 +10660,11 @@
   {
    "key": "7b548192a91b8e98",
    "dialect": "presto",
+   "sql": "REGR_SLOPE(x, y)"
+  },
+  {
+   "key": "18d215296ce6310b",
+   "dialect": "trino",
    "sql": "REGR_SLOPE(x, y)"
   },
   {
@@ -10393,6 +10743,11 @@
    "sql": "TRANSLATE(x, y, z)"
   },
   {
+   "key": "25b0f6b114a5195c",
+   "dialect": "trino",
+   "sql": "TRANSLATE(x, y, z)"
+  },
+  {
    "key": "41eb528f8492305a",
    "dialect": "redshift",
    "sql": "TRANSLATE(x, y, z)"
@@ -10410,6 +10765,11 @@
   {
    "key": "5f19d077dd3ca2ec",
    "dialect": "tsql",
+   "sql": "SOUNDEX(x)"
+  },
+  {
+   "key": "9b21a08be996acc8",
+   "dialect": "trino",
    "sql": "SOUNDEX(x)"
   },
   {
@@ -10458,8 +10818,18 @@
    "sql": "FROM_BASE32(x)"
   },
   {
+   "key": "c574d8848047d926",
+   "dialect": "trino",
+   "sql": "FROM_BASE32(x)"
+  },
+  {
    "key": "c611529232e3064d",
    "dialect": "presto",
+   "sql": "TO_BASE32(x)"
+  },
+  {
+   "key": "0a64cb17101f2079",
+   "dialect": "trino",
    "sql": "TO_BASE32(x)"
   },
   {
@@ -10706,6 +11076,11 @@
    "key": "450774e12a039ff1",
    "dialect": "duckdb",
    "sql": "ALTER TABLE db.t1 RENAME TO t2"
+  },
+  {
+   "key": "28d341583415882b",
+   "dialect": "trino",
+   "sql": "SELECT * FROM t FOR VERSION AS OF '123'"
   },
   {
    "key": "26a10de0a2de0b99",
@@ -11963,6 +12338,11 @@
    "sql": "SELECT DATE_DIFF('DAY', t1.\"A\", t1.\"B\") FROM \"table\" AS t1"
   },
   {
+   "key": "fb8546439fe342c5",
+   "dialect": "trino",
+   "sql": "SELECT DATE_DIFF('DAY', t1.\"A\", t1.\"B\") FROM \"table\" AS t1"
+  },
+  {
    "key": "ceb77b11d58bcef7",
    "dialect": "duckdb",
    "sql": "SELECT DATE_DIFF('day', DATE '2020-01-01', DATE '2020-01-05')"
@@ -11970,6 +12350,11 @@
   {
    "key": "69bb31a4fb8baa27",
    "dialect": "duckdb",
+   "sql": "SELECT DATE_DIFF('DAY', CAST('2020-01-01' AS DATE), CAST('2020-01-05' AS DATE))"
+  },
+  {
+   "key": "d76efab70374bdee",
+   "dialect": "trino",
    "sql": "SELECT DATE_DIFF('DAY', CAST('2020-01-01' AS DATE), CAST('2020-01-05' AS DATE))"
   },
   {
@@ -13115,6 +13500,11 @@
   {
    "key": "75cd39a1ed4125d0",
    "dialect": "presto",
+   "sql": "SELECT CAST('foo' AS TIMESTAMP)"
+  },
+  {
+   "key": "965178847852907e",
+   "dialect": "trino",
    "sql": "SELECT CAST('foo' AS TIMESTAMP)"
   },
   {
@@ -14503,6 +14893,11 @@
    "sql": "ROUND(price, 2, 1)"
   },
   {
+   "key": "7ffe76dc2cfa6a85",
+   "dialect": "trino",
+   "sql": "SELECT CURRENT_USER"
+  },
+  {
    "key": "83b18e4c731481a1",
    "dialect": "databricks",
    "sql": "CREATE OR REPLACE VIEW `schema`.`v` (`col` COMMENT 'desc') AS SELECT `src_col` AS `col`"
@@ -14513,13 +14908,28 @@
    "sql": "LOWER(TO_HEX(MD5(x)))"
   },
   {
+   "key": "355ae6f923a3bd4d",
+   "dialect": "trino",
+   "sql": "LOWER(TO_HEX(MD5(x)))"
+  },
+  {
    "key": "8852a8a1087d73b8",
    "dialect": "presto",
    "sql": "LOWER(TO_HEX(SHA256(x)))"
   },
   {
+   "key": "04aed7bc51c43648",
+   "dialect": "trino",
+   "sql": "LOWER(TO_HEX(SHA256(x)))"
+  },
+  {
    "key": "20f09f0c0eccf03c",
    "dialect": "presto",
+   "sql": "LOWER(TO_HEX(SHA512(x)))"
+  },
+  {
+   "key": "73f9ff581365b1b7",
+   "dialect": "trino",
    "sql": "LOWER(TO_HEX(SHA512(x)))"
   },
   {
@@ -14551,6 +14961,11 @@
    "key": "162bec38de80f4ec",
    "dialect": "presto",
    "sql": "SELECT REGEXP_LIKE(a, '.*x.*')"
+  },
+  {
+   "key": "0f81c1d81d80033b",
+   "dialect": "trino",
+   "sql": "SELECT JSON_VALUE('{\"d\":\"a\"}', '$.d' NULL ON ERROR) AS x"
   },
   {
    "key": "746bbb149604627b",
@@ -15053,6 +15468,11 @@
    "sql": "SELECT a FROM x CROSS JOIN LATERAL (SELECT pos - 1 AS pos, col FROM UNNEST(y) WITH ORDINALITY AS t(col, pos))"
   },
   {
+   "key": "a113ca8a19db1dc4",
+   "dialect": "trino",
+   "sql": "SELECT a FROM x CROSS JOIN LATERAL (SELECT pos - 1 AS pos, col FROM UNNEST(y) WITH ORDINALITY AS t(col, pos))"
+  },
+  {
    "key": "ab7a5ba2b62d2a98",
    "dialect": "duckdb",
    "sql": "SELECT a FROM x CROSS JOIN LATERAL (SELECT pos - 1 AS pos, col FROM UNNEST(y) WITH ORDINALITY AS t(col, pos))"
@@ -15060,6 +15480,11 @@
   {
    "key": "15a001ca905dda63",
    "dialect": "presto",
+   "sql": "SELECT * FROM x CROSS JOIN LATERAL (SELECT pos - 1 AS pos, key, value FROM UNNEST(MAP(ARRAY[col], ARRAY['val'])) WITH ORDINALITY AS t(key, value, pos))"
+  },
+  {
+   "key": "ef92a4667eda6b53",
+   "dialect": "trino",
    "sql": "SELECT * FROM x CROSS JOIN LATERAL (SELECT pos - 1 AS pos, key, value FROM UNNEST(MAP(ARRAY[col], ARRAY['val'])) WITH ORDINALITY AS t(key, value, pos))"
   },
   {
@@ -15221,6 +15646,11 @@
    "key": "05ed11e2d7f2ec88",
    "dialect": "presto",
    "sql": "TO_UNIXTIME(COALESCE(TRY(DATE_PARSE(CAST(x AS VARCHAR), '%Y-%m-%d %H:%i:%s')), PARSE_DATETIME(DATE_FORMAT(x, '%Y-%m-%d %H:%i:%s'), 'yyyy-MM-dd HH:mm:ss')))"
+  },
+  {
+   "key": "c7f14ac23cf6e386",
+   "dialect": "trino",
+   "sql": "SELECT \"1_a\" AS a FROM test_table"
   },
   {
    "key": "19791c84c6309d08",
@@ -15388,6 +15818,11 @@
    "sql": "SET_AGG(x)"
   },
   {
+   "key": "b9fb039c588e10b2",
+   "dialect": "trino",
+   "sql": "ARRAY_AGG(DISTINCT x)"
+  },
+  {
    "key": "d8514ea1aec72fa5",
    "dialect": "presto",
    "sql": "SELECT * FROM x AS foo TABLESAMPLE BERNOULLI (1)"
@@ -15410,6 +15845,11 @@
   {
    "key": "c3d4426f76b5474a",
    "dialect": "presto",
+   "sql": "REGEXP_EXTRACT('abc', '(a)(b)(c)', 1)"
+  },
+  {
+   "key": "0e80d85793193226",
+   "dialect": "trino",
    "sql": "REGEXP_EXTRACT('abc', '(a)(b)(c)', 1)"
   },
   {
@@ -15813,6 +16253,11 @@
    "sql": "(a AND (NOT b)) OR ((NOT a) AND b)"
   },
   {
+   "key": "a9efa48c46fba8ce",
+   "dialect": "trino",
+   "sql": "(a AND (NOT b)) OR ((NOT a) AND b)"
+  },
+  {
    "key": "14f7a9f6c30b9994",
    "dialect": "postgres",
    "sql": "SELECT * FROM test LIMIT 0 + 1 OFFSET 0 + 1"
@@ -15820,6 +16265,11 @@
   {
    "key": "ad812f12364598e6",
    "dialect": "presto",
+   "sql": "SELECT * FROM test OFFSET 1 LIMIT 1"
+  },
+  {
+   "key": "8e37191fdee0a547",
+   "dialect": "trino",
    "sql": "SELECT * FROM test OFFSET 1 LIMIT 1"
   },
   {
@@ -15971,6 +16421,11 @@
    "key": "d916c5ce8b8af4c4",
    "dialect": "redshift",
    "sql": "CAST(a AS DOUBLE PRECISION) / NULLIF(b, 0)"
+  },
+  {
+   "key": "a93019d00b8e27ea",
+   "dialect": "trino",
+   "sql": "CAST(a AS DOUBLE) / NULLIF(b, 0)"
   },
   {
    "key": "91a1fafbfb95da13",
@@ -17278,6 +17733,11 @@
    "sql": "SELECT APPROX_PERCENTILE(amount, 0.5)"
   },
   {
+   "key": "3628ea2b1ae76714",
+   "dialect": "trino",
+   "sql": "SELECT APPROX_PERCENTILE(amount, 0.5)"
+  },
+  {
    "key": "8bc01628f5df34fb",
    "dialect": "postgres",
    "sql": "e'x'"
@@ -17408,6 +17868,11 @@
    "sql": "UNNEST(SEQUENCE(a, b, INTERVAL '2' DAY))"
   },
   {
+   "key": "4e53b5dabec3c74f",
+   "dialect": "trino",
+   "sql": "UNNEST(SEQUENCE(a, b, INTERVAL '2' DAY))"
+  },
+  {
    "key": "6391608ca309d82e",
    "dialect": "postgres",
    "sql": "GENERATE_SERIES('2019-01-01'::TIMESTAMP, NOW(), '1day')"
@@ -17425,6 +17890,11 @@
   {
    "key": "a779c5a69dd9a248",
    "dialect": "presto",
+   "sql": "UNNEST(SEQUENCE(CAST('2019-01-01' AS TIMESTAMP), CAST(CURRENT_TIMESTAMP AS TIMESTAMP), INTERVAL '1' DAY))"
+  },
+  {
+   "key": "209271e23a3c28d5",
+   "dialect": "trino",
    "sql": "UNNEST(SEQUENCE(CAST('2019-01-01' AS TIMESTAMP), CAST(CURRENT_TIMESTAMP AS TIMESTAMP), INTERVAL '1' DAY))"
   },
   {
@@ -17448,6 +17918,11 @@
    "sql": "SELECT * FROM UNNEST(SEQUENCE(a, b))"
   },
   {
+   "key": "f2ab33ad1a2af326",
+   "dialect": "trino",
+   "sql": "SELECT * FROM UNNEST(SEQUENCE(a, b))"
+  },
+  {
    "key": "bf3e3f83f023265d",
    "dialect": "postgres",
    "sql": "SELECT * FROM t CROSS JOIN GENERATE_SERIES(2, 4)"
@@ -17455,6 +17930,11 @@
   {
    "key": "b6d62d19ec5220ef",
    "dialect": "presto",
+   "sql": "SELECT * FROM t CROSS JOIN UNNEST(SEQUENCE(2, 4))"
+  },
+  {
+   "key": "eafb26f5def9cb22",
+   "dialect": "trino",
    "sql": "SELECT * FROM t CROSS JOIN UNNEST(SEQUENCE(2, 4))"
   },
   {
@@ -17470,6 +17950,11 @@
   {
    "key": "df2d024f2d455671",
    "dialect": "presto",
+   "sql": "SELECT * FROM t CROSS JOIN UNNEST(SEQUENCE(2, 4)) AS _u(s)"
+  },
+  {
+   "key": "0c1b770a8ad56569",
+   "dialect": "trino",
    "sql": "SELECT * FROM t CROSS JOIN UNNEST(SEQUENCE(2, 4)) AS _u(s)"
   },
   {
@@ -17595,6 +18080,11 @@
   {
    "key": "b1134a41bfd40488",
    "dialect": "postgres",
+   "sql": "MERGE INTO x AS x USING (SELECT id) AS y ON a = b WHEN MATCHED THEN UPDATE SET \"A\" = y.b"
+  },
+  {
+   "key": "cb50b5986ba21d5c",
+   "dialect": "trino",
    "sql": "MERGE INTO x AS x USING (SELECT id) AS y ON a = b WHEN MATCHED THEN UPDATE SET \"A\" = y.b"
   },
   {
@@ -19098,6 +19588,11 @@
    "sql": "SELECT CAST('2020-05-11T11:15:05' AS TIMESTAMPTZ)"
   },
   {
+   "key": "f8edc4eb5191a362",
+   "dialect": "trino",
+   "sql": "SELECT FROM_ISO8601_TIMESTAMP('2020-05-11T11:15:05')"
+  },
+  {
    "key": "5ee87dd4f70a45af",
    "dialect": "databricks",
    "sql": "SELECT CAST('2020-05-11T11:15:05' AS TIMESTAMP)"
@@ -19111,6 +19606,11 @@
    "key": "84eea5b86303a27f",
    "dialect": "duckdb",
    "sql": "SELECT CAST('2020-05-11' AS DATE)"
+  },
+  {
+   "key": "9ce075c26a2167f2",
+   "dialect": "trino",
+   "sql": "SELECT FROM_ISO8601_DATE('2020-05-11')"
   },
   {
    "key": "12d0133bc0a72973",
@@ -19308,6 +19808,11 @@
    "sql": "STRPOS(haystack, needle, occurrence)"
   },
   {
+   "key": "356af89c4ffa964f",
+   "dialect": "trino",
+   "sql": "STRPOS(haystack, needle, occurrence)"
+  },
+  {
    "key": "e1d821f7968ab0cb",
    "dialect": "presto",
    "sql": "FROM_UNIXTIME(a, b)"
@@ -19330,6 +19835,11 @@
   {
    "key": "8e85ea4dfbb15bc0",
    "dialect": "presto",
+   "sql": "SELECT FROM_UNIXTIME(col) FROM tbl"
+  },
+  {
+   "key": "004c2ea29695f27d",
+   "dialect": "trino",
    "sql": "SELECT FROM_UNIXTIME(col) FROM tbl"
   },
   {
@@ -19513,6 +20023,11 @@
    "sql": "SELECT DATE_ADD('MINUTE', 30, col)"
   },
   {
+   "key": "91f147f9919f020e",
+   "dialect": "trino",
+   "sql": "SELECT DATE_ADD('MINUTE', 30, col)"
+  },
+  {
    "key": "68d761d28f875a69",
    "dialect": "presto",
    "sql": "DATE_ADD('DAY', FLOOR(5), y)"
@@ -19536,6 +20051,11 @@
    "key": "c4b82a8037893c1f",
    "dialect": "presto",
    "sql": "SELECT WEEK(y)"
+  },
+  {
+   "key": "0d9b833e150dcdff",
+   "dialect": "trino",
+   "sql": "SELECT WEEK_OF_YEAR(y)"
   },
   {
    "key": "a5840ed941b212ad",
@@ -19658,6 +20178,11 @@
    "sql": "SELECT SHA256(x)"
   },
   {
+   "key": "60e644162f3d7bfc",
+   "dialect": "trino",
+   "sql": "SELECT SHA256(x)"
+  },
+  {
    "key": "d2abac27f3731a4b",
    "dialect": "duckdb",
    "sql": "SELECT UNHEX(SHA256(x))"
@@ -19665,6 +20190,11 @@
   {
    "key": "aadfde6f35ef445d",
    "dialect": "presto",
+   "sql": "SELECT SHA512(x)"
+  },
+  {
+   "key": "10c57aa4cbddd8b0",
+   "dialect": "trino",
    "sql": "SELECT SHA512(x)"
   },
   {
@@ -19853,6 +20383,11 @@
    "sql": "INTERVAL '1 day'"
   },
   {
+   "key": "492581fc92153d24",
+   "dialect": "trino",
+   "sql": "INTERVAL '1' DAY"
+  },
+  {
    "key": "b0c75fad7038b438",
    "dialect": "presto",
    "sql": "(5 * INTERVAL '7' DAY)"
@@ -19930,6 +20465,11 @@
   {
    "key": "98f1b22c1dcefe13",
    "dialect": "presto",
+   "sql": "ARRAY_AGG(x ORDER BY y DESC)"
+  },
+  {
+   "key": "92f6a3eaef0302ac",
+   "dialect": "trino",
    "sql": "ARRAY_AGG(x ORDER BY y DESC)"
   },
   {
@@ -20098,6 +20638,11 @@
    "sql": "REGEXP_EXTRACT('abc', '(a)(b)(c)')"
   },
   {
+   "key": "07c0f3f2c43863f1",
+   "dialect": "trino",
+   "sql": "REGEXP_EXTRACT('abc', '(a)(b)(c)')"
+  },
+  {
    "key": "273a3d5ed7d34f7a",
    "dialect": "duckdb",
    "sql": "REGEXP_EXTRACT('abc', '(a)(b)(c)')"
@@ -20113,6 +20658,11 @@
    "sql": "CURRENT_USER"
   },
   {
+   "key": "7c211187e681c5a7",
+   "dialect": "trino",
+   "sql": "CURRENT_USER"
+  },
+  {
    "key": "189bedf15b702aaa",
    "dialect": "presto",
    "sql": "SELECT id, FIRST_VALUE(is_deleted) OVER (PARTITION BY id) AS first_is_deleted, NTH_VALUE(is_deleted, 2) OVER (PARTITION BY id) AS nth_is_deleted, LAST_VALUE(is_deleted) OVER (PARTITION BY id) AS last_is_deleted FROM my_table"
@@ -20120,6 +20670,11 @@
   {
    "key": "7a209f2d516a3442",
    "dialect": "presto",
+   "sql": "SELECT NULLABLE FROM system.jdbc.types"
+  },
+  {
+   "key": "71fd52452ee800fb",
+   "dialect": "trino",
    "sql": "SELECT NULLABLE FROM system.jdbc.types"
   },
   {
@@ -20303,13 +20858,28 @@
    "sql": "BITWISE_AND_AGG(x)"
   },
   {
+   "key": "f22f0bedb905f095",
+   "dialect": "trino",
+   "sql": "BITWISE_AND_AGG(x)"
+  },
+  {
    "key": "8ad65b89fa7c35d9",
    "dialect": "presto",
    "sql": "BITWISE_OR_AGG(x)"
   },
   {
+   "key": "3f25e21f75b1e8a0",
+   "dialect": "trino",
+   "sql": "BITWISE_OR_AGG(x)"
+  },
+  {
    "key": "115a4ad565a208a4",
    "dialect": "presto",
+   "sql": "BITWISE_XOR_AGG(x)"
+  },
+  {
+   "key": "945d92787e29f2b2",
+   "dialect": "trino",
    "sql": "BITWISE_XOR_AGG(x)"
   },
   {
@@ -20483,6 +21053,11 @@
    "sql": "SELECT DATEADD(MONTH, 1, '2008-03-31')"
   },
   {
+   "key": "b18740464e571287",
+   "dialect": "trino",
+   "sql": "SELECT DATE_ADD('MONTH', 1, CAST('2008-03-31' AS TIMESTAMP))"
+  },
+  {
    "key": "4359114a7804108f",
    "dialect": "tsql",
    "sql": "SELECT DATEADD(MONTH, 1, CAST('2008-03-31' AS DATETIME2))"
@@ -20491,6 +21066,11 @@
    "key": "e84d3c68905d1e4e",
    "dialect": "redshift",
    "sql": "SELECT STRTOL('abc', 16)"
+  },
+  {
+   "key": "2104d543bafa46fe",
+   "dialect": "trino",
+   "sql": "SELECT FROM_BASE('abc', 16)"
   },
   {
    "key": "536d66905d355cc2",
@@ -20681,6 +21261,11 @@
    "key": "80210941eb722091",
    "dialect": "redshift",
    "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC) AS _row_number FROM x) AS _t WHERE _row_number = 1"
+  },
+  {
+   "key": "b84d189b7be811fa",
+   "dialect": "trino",
+   "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
   },
   {
    "key": "dad49b3c98f9afe8",
@@ -21238,6 +21823,11 @@
    "sql": "CREATE TABLE t1 (LIKE t2)"
   },
   {
+   "key": "b8c6301f8bb73619",
+   "dialect": "trino",
+   "sql": "CREATE TABLE t1 (LIKE t2)"
+  },
+  {
    "key": "fb5aeb3bed34022b",
    "dialect": "redshift",
    "sql": "CREATE TABLE t1 (col VARCHAR, LIKE t2)"
@@ -21250,6 +21840,11 @@
   {
    "key": "b8207efc9c11b8d4",
    "dialect": "presto",
+   "sql": "CREATE TABLE t1 (col VARCHAR, LIKE t2)"
+  },
+  {
+   "key": "06c68ca4a9cb9163",
+   "dialect": "trino",
    "sql": "CREATE TABLE t1 (col VARCHAR, LIKE t2)"
   },
   {
@@ -21743,6 +22338,11 @@
    "sql": "SELECT SKEWNESS(a)"
   },
   {
+   "key": "88228c25afdb1b3d",
+   "dialect": "trino",
+   "sql": "SELECT SKEWNESS(a)"
+  },
+  {
    "key": "64677bf63b852e54",
    "dialect": "duckdb",
    "sql": "SELECT CAST(-9.223372036854776E+18 + RANDOM() * (9.223372036854776e+18 - -9.223372036854776E+18) AS BIGINT)"
@@ -22048,6 +22648,11 @@
    "sql": "SELECT i, p, o FROM (SELECT i, p, o, ROW_NUMBER() OVER (PARTITION BY p ORDER BY o) AS _w FROM qt) AS _t WHERE _w = 1"
   },
   {
+   "key": "b2f93139749fe4c6",
+   "dialect": "trino",
+   "sql": "SELECT i, p, o FROM (SELECT i, p, o, ROW_NUMBER() OVER (PARTITION BY p ORDER BY o) AS _w FROM qt) AS _t WHERE _w = 1"
+  },
+  {
    "key": "9b146405202420c1",
    "dialect": "duckdb",
    "sql": "SELECT NTH_VALUE(is_deleted, 2 IGNORE NULLS) OVER (PARTITION BY id ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) AS nth_is_deleted FROM my_table"
@@ -22155,6 +22760,11 @@
   {
    "key": "2571d02431cd390f",
    "dialect": "redshift",
+   "sql": "POWER(x, 2)"
+  },
+  {
+   "key": "2a3910c19028053e",
+   "dialect": "trino",
    "sql": "POWER(x, 2)"
   },
   {
@@ -22388,9 +22998,19 @@
    "sql": "SELECT (ROUND(2, 0) AND (NOT ROUND(0.3, 0))) OR ((NOT ROUND(2, 0)) AND ROUND(0.3, 0))"
   },
   {
+   "key": "faa63c4bd98df4d6",
+   "dialect": "trino",
+   "sql": "SELECT APPROX_PERCENTILE(a, 1, 0.5, 0.001) FROM t"
+  },
+  {
    "key": "99875a0ac91cbe44",
    "dialect": "presto",
    "sql": "SELECT APPROX_PERCENTILE(a, 1, 0.5, 0.001) FROM t"
+  },
+  {
+   "key": "1e02ab0985c2ef97",
+   "dialect": "trino",
+   "sql": "SELECT APPROX_PERCENTILE(a, 0.5) FROM t"
   },
   {
    "key": "ae34b30894b453cc",
@@ -22440,6 +23060,11 @@
   {
    "key": "08f4a3a9277494c6",
    "dialect": "presto",
+   "sql": "CAST(UUID() AS VARCHAR)"
+  },
+  {
+   "key": "8867fa16b6889027",
+   "dialect": "trino",
    "sql": "CAST(UUID() AS VARCHAR)"
   },
   {
@@ -22518,6 +23143,11 @@
    "sql": "DAY_OF_WEEK(foo)"
   },
   {
+   "key": "b00e958559c0bf8d",
+   "dialect": "trino",
+   "sql": "DAY_OF_WEEK(foo)"
+  },
+  {
    "key": "e67826d90596225f",
    "dialect": "duckdb",
    "sql": "ISODOW(foo)"
@@ -22528,8 +23158,18 @@
    "sql": "DOW(foo)"
   },
   {
+   "key": "2a62fed7974a3f8f",
+   "dialect": "trino",
+   "sql": "DOW(foo)"
+  },
+  {
    "key": "077e076073f4dae9",
    "dialect": "presto",
+   "sql": "DOY(foo)"
+  },
+  {
+   "key": "104570977565cc9c",
+   "dialect": "trino",
    "sql": "DOY(foo)"
   },
   {
@@ -22986,6 +23626,11 @@
    "key": "97d1d100420a2b42",
    "dialect": "databricks",
    "sql": "SELECT CURRENT_VERSION()"
+  },
+  {
+   "key": "a321cf59d9dd9ebd",
+   "dialect": "trino",
+   "sql": "SELECT VERSION()"
   },
   {
    "key": "d6b127af8df25a01",
@@ -23538,6 +24183,11 @@
    "sql": "SELECT JSON_EXTRACT_PATH(col, 'customer''s department')"
   },
   {
+   "key": "85e1c5e013d64c47",
+   "dialect": "trino",
+   "sql": "SELECT 1 ORDER BY 1 OFFSET 0"
+  },
+  {
    "key": "f79726fe647bb98d",
    "dialect": "duckdb",
    "sql": "SELECT ARG_MAX(a, b) FROM t"
@@ -23803,6 +24453,11 @@
    "sql": "CREATE TABLE x WITH (format='ICEBERG', PARTITIONED_BY=ARRAY['MONTHS(y)'])"
   },
   {
+   "key": "d3d9805e6bc330bf",
+   "dialect": "trino",
+   "sql": "CREATE TABLE test WITH (format='PARQUET') AS SELECT 1"
+  },
+  {
    "key": "9afd270625ba620c",
    "dialect": "duckdb",
    "sql": "CREATE TABLE blah (\n  col_a INT\n)"
@@ -23840,6 +24495,11 @@
   {
    "key": "be6c608a64df068c",
    "dialect": "presto",
+   "sql": "SELECT JSON_FORMAT(CAST(CAST(ROW('blah') AS ROW(x VARCHAR)) AS JSON)) AS y"
+  },
+  {
+   "key": "a885033205f7457b",
+   "dialect": "trino",
    "sql": "SELECT JSON_FORMAT(CAST(CAST(ROW('blah') AS ROW(x VARCHAR)) AS JSON)) AS y"
   },
   {
@@ -23971,6 +24631,21 @@
    "key": "b411cba1ae30ca35",
    "dialect": "presto",
    "sql": "SELECT AT_TIMEZONE(CAST('2016-08-31' AS TIMESTAMP), 'Asia/Seoul')"
+  },
+  {
+   "key": "4fe907b761a82ad5",
+   "dialect": "trino",
+   "sql": "MAP(ARRAY[1, 3], ARRAY[2, 4])"
+  },
+  {
+   "key": "6d4ba36fb70efa61",
+   "dialect": "trino",
+   "sql": "MAP()"
+  },
+  {
+   "key": "b972977af697e985",
+   "dialect": "trino",
+   "sql": "MAP(ARRAY[], ARRAY[])"
   },
   {
    "key": "2c56bb74fb2371ee",
@@ -24113,6 +24788,11 @@
    "sql": "SELECT DATE_DIFF('MONTH', CAST(CAST('2020-01-01' AS TIMESTAMP) AS DATE), CAST(CAST('2020-03-05' AS TIMESTAMP) AS DATE))"
   },
   {
+   "key": "70a8c8afe6989573",
+   "dialect": "trino",
+   "sql": "SELECT DATE_DIFF('MONTH', CAST(CAST('2020-01-01' AS TIMESTAMP) AS DATE), CAST(CAST('2020-03-05' AS TIMESTAMP) AS DATE))"
+  },
+  {
    "key": "3e756c7e62c0f9c5",
    "dialect": "databricks",
    "sql": "SELECT * FROM quarterly_sales PIVOT(SUM(amount) amount, 'dummy' bar FOR quarter IN ('2023_Q1'))"
@@ -24121,6 +24801,16 @@
    "key": "9867528c327c6cd3",
    "dialect": "databricks",
    "sql": "SELECT * FROM quarterly_sales PIVOT(SUM(amount) AS amount, 'dummy' AS bar FOR quarter IN ('2023_Q1'))"
+  },
+  {
+   "key": "b8f655afc01449c0",
+   "dialect": "trino",
+   "sql": "CAST(x AS TIMESTAMP(6) WITH TIME ZONE)"
+  },
+  {
+   "key": "be4df7271754b689",
+   "dialect": "trino",
+   "sql": "REDUCE(my_arr, 0, (acc, x) -> acc + x, s -> s * 2)"
   },
   {
    "key": "9349244ddc20decd",
@@ -24195,6 +24885,11 @@
   {
    "key": "1ddce8e2c672632d",
    "dialect": "presto",
+   "sql": "SELECT DATE_ADD('MONTH', 20, col)"
+  },
+  {
+   "key": "6c19986310ad1fc0",
+   "dialect": "trino",
    "sql": "SELECT DATE_ADD('MONTH', 20, col)"
   },
   {
@@ -24553,6 +25248,11 @@
    "sql": "CREATE TABLE a"
   },
   {
+   "key": "5629ed7a9503c65a",
+   "dialect": "trino",
+   "sql": "CREATE TABLE a"
+  },
+  {
    "key": "84a89a86d3c9f43e",
    "dialect": "tsql",
    "sql": "CREATE TABLE a"
@@ -24568,9 +25268,94 @@
    "sql": "TO_DATE('1992-01', 'yyyy-d')"
   },
   {
+   "key": "684d29cde481af9c",
+   "dialect": "trino",
+   "sql": "REFRESH MATERIALIZED VIEW mynamespace.test_view"
+  },
+  {
+   "key": "0c8265ea612ef2b2",
+   "dialect": "trino",
+   "sql": "JSON_QUERY(m.properties, 'lax $.area' OMIT QUOTES NULL ON ERROR)"
+  },
+  {
+   "key": "290c52321a8e64ee",
+   "dialect": "trino",
+   "sql": "JSON_EXTRACT(content, json_path)"
+  },
+  {
+   "key": "656f537c7770fb79",
+   "dialect": "trino",
+   "sql": "JSON_QUERY(content, 'lax $.HY.*')"
+  },
+  {
+   "key": "e04dee86b86af2e7",
+   "dialect": "trino",
+   "sql": "JSON_QUERY(content, 'strict $.HY.*' WITH WRAPPER)"
+  },
+  {
+   "key": "bda53c3a0113d38e",
+   "dialect": "trino",
+   "sql": "JSON_QUERY(content, 'strict $.HY.*' WITH ARRAY WRAPPER)"
+  },
+  {
+   "key": "a03ee3fffdbc98e3",
+   "dialect": "trino",
+   "sql": "JSON_QUERY(content, 'strict $.HY.*' WITH UNCONDITIONAL WRAPPER)"
+  },
+  {
+   "key": "b82f42e65c9719bb",
+   "dialect": "trino",
+   "sql": "JSON_QUERY(content, 'strict $.HY.*' WITHOUT CONDITIONAL WRAPPER)"
+  },
+  {
+   "key": "c74d48dfe0810d47",
+   "dialect": "trino",
+   "sql": "JSON_QUERY(description, 'strict $.comment' KEEP QUOTES)"
+  },
+  {
+   "key": "7972feb1bd28bb68",
+   "dialect": "trino",
+   "sql": "JSON_QUERY(description, 'strict $.comment' OMIT QUOTES ON SCALAR STRING)"
+  },
+  {
+   "key": "b508aab69b8e4f73",
+   "dialect": "trino",
+   "sql": "JSON_QUERY(content, 'strict $.HY.*' WITH UNCONDITIONAL WRAPPER KEEP QUOTES)"
+  },
+  {
+   "key": "976b110f7d3ac62b",
+   "dialect": "trino",
+   "sql": "SELECT TIMESTAMP '2012-10-31 01:00 -2'"
+  },
+  {
+   "key": "90e87cd239a96755",
+   "dialect": "trino",
+   "sql": "SELECT TIMESTAMP '2012-10-31 01:00 +2'"
+  },
+  {
+   "key": "076ef68562ce769d",
+   "dialect": "trino",
+   "sql": "SELECT TIME '01:02:03.456 -08:00'"
+  },
+  {
+   "key": "14c308856311d63f",
+   "dialect": "trino",
+   "sql": "SELECT TIME '01:02:03.456'"
+  },
+  {
    "key": "8c3e680a2f74bc23",
    "dialect": "duckdb",
    "sql": "SELECT CAST('01:02:03.456 -08:00' AS TIMETZ)"
+  },
+  {
+   "key": "63be2e2fb37f24f6",
+   "dialect": "trino",
+   "sql": "SELECT CAST('01:02:03.456 -08:00' AS TIME WITH TIME ZONE)"
+  },
+  {
+   "key": "8a5d4d19b231e72e",
+   "dialect": "trino",
+   "sql": "SELECT FROM_ISO8601_TIMESTAMP_NANOS('2020-05-11T11:15:05.000000000')"
   },
   {
    "key": "0ce9175915fa8250",
@@ -24583,14 +25368,494 @@
    "sql": "SELECT CAST('2020-05-11T11:15:05.000000000' AS TIMESTAMP)"
   },
   {
+   "key": "e340706086847487",
+   "dialect": "trino",
+   "sql": "SELECT TIMESTAMP '2012-10-31 01:00:00 +02:00'"
+  },
+  {
    "key": "24354ab4119d6db9",
    "dialect": "duckdb",
    "sql": "SELECT CAST('2012-10-31 01:00:00 +02:00' AS TIMESTAMPTZ)"
   },
   {
+   "key": "989d58a9c43c97e0",
+   "dialect": "trino",
+   "sql": "SELECT CAST('2012-10-31 01:00:00 +02:00' AS TIMESTAMP WITH TIME ZONE)"
+  },
+  {
+   "key": "35c25aee35393155",
+   "dialect": "trino",
+   "sql": "SELECT FORMAT('%s', 123)"
+  },
+  {
    "key": "f548889048017f41",
    "dialect": "duckdb",
    "sql": "SELECT FORMAT('{}', 123)"
+  },
+  {
+   "key": "aa102285a3a4452e",
+   "dialect": "trino",
+   "sql": "SELECT * FROM tbl MATCH_RECOGNIZE (PARTITION BY id ORDER BY col MEASURES FIRST(col, 2) AS col1, LAST(col, 2) AS col2 PATTERN (B* A) DEFINE A AS col = 1)"
+  },
+  {
+   "key": "bfbc559ce8044507",
+   "dialect": "trino",
+   "sql": "SELECT LISTAGG(DISTINCT col, ',') WITHIN GROUP (ORDER BY col ASC) FROM tbl"
+  },
+  {
+   "key": "914dd60cd1eb11d4",
+   "dialect": "trino",
+   "sql": "SELECT LISTAGG(col, '; ' ON OVERFLOW ERROR) WITHIN GROUP (ORDER BY col ASC) FROM tbl"
+  },
+  {
+   "key": "06dac8840e2d1696",
+   "dialect": "trino",
+   "sql": "SELECT LISTAGG(col, '; ' ON OVERFLOW TRUNCATE WITH COUNT) WITHIN GROUP (ORDER BY col ASC) FROM tbl"
+  },
+  {
+   "key": "260dc6696235b4cc",
+   "dialect": "trino",
+   "sql": "SELECT LISTAGG(col, '; ' ON OVERFLOW TRUNCATE WITHOUT COUNT) WITHIN GROUP (ORDER BY col ASC) FROM tbl"
+  },
+  {
+   "key": "6cf2223ed488f306",
+   "dialect": "trino",
+   "sql": "SELECT LISTAGG(col, '; ' ON OVERFLOW TRUNCATE '...' WITH COUNT) WITHIN GROUP (ORDER BY col ASC) FROM tbl"
+  },
+  {
+   "key": "a73ad69c32dc57fe",
+   "dialect": "trino",
+   "sql": "SELECT LISTAGG(col, '; ' ON OVERFLOW TRUNCATE '...' WITHOUT COUNT) WITHIN GROUP (ORDER BY col ASC) FROM tbl"
+  },
+  {
+   "key": "e6f35b719ad15e7b",
+   "dialect": "trino",
+   "sql": "SELECT LISTAGG(col) WITHIN GROUP (ORDER BY col DESC) FROM tbl"
+  },
+  {
+   "key": "b74a9b46fc12a4bf",
+   "dialect": "trino",
+   "sql": "SELECT TRIM('!' FROM '!foo!')"
+  },
+  {
+   "key": "d02ce08ba492757a",
+   "dialect": "trino",
+   "sql": "SELECT TRIM(BOTH '$' FROM '$var$')"
+  },
+  {
+   "key": "c2351048f6ef482e",
+   "dialect": "trino",
+   "sql": "SELECT TRIM(TRAILING 'ER' FROM UPPER('worker'))"
+  },
+  {
+   "key": "367de8ce9fe6b24b",
+   "dialect": "trino",
+   "sql": "SELECT TRIM(LEADING FROM '  abcd')"
+  },
+  {
+   "key": "a28ffae3679bbd4b",
+   "dialect": "trino",
+   "sql": "SELECT TRIM('!foo!', '!')"
+  },
+  {
+   "key": "6065fe4102de89fb",
+   "dialect": "trino",
+   "sql": "ALTER TABLE users RENAME TO people"
+  },
+  {
+   "key": "dcdace57eff073cf",
+   "dialect": "trino",
+   "sql": "ALTER TABLE IF EXISTS users RENAME TO people"
+  },
+  {
+   "key": "2fc063916fda469f",
+   "dialect": "trino",
+   "sql": "ALTER TABLE users ADD COLUMN zip VARCHAR"
+  },
+  {
+   "key": "60695040bfec1bfa",
+   "dialect": "trino",
+   "sql": "ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS zip VARCHAR"
+  },
+  {
+   "key": "d440f54ddd33d948",
+   "dialect": "trino",
+   "sql": "ALTER TABLE users DROP COLUMN zip"
+  },
+  {
+   "key": "de9725eb71c8c588",
+   "dialect": "trino",
+   "sql": "ALTER TABLE IF EXISTS users DROP COLUMN IF EXISTS zip"
+  },
+  {
+   "key": "fac9da10dfc8b23e",
+   "dialect": "trino",
+   "sql": "ALTER TABLE users RENAME COLUMN id TO user_id"
+  },
+  {
+   "key": "1caa59cf20020bdc",
+   "dialect": "trino",
+   "sql": "ALTER TABLE IF EXISTS users RENAME COLUMN IF EXISTS id TO user_id"
+  },
+  {
+   "key": "c17263590635b85b",
+   "dialect": "trino",
+   "sql": "ALTER TABLE users ALTER COLUMN id SET DATA TYPE BIGINT"
+  },
+  {
+   "key": "b88bde359c538acb",
+   "dialect": "trino",
+   "sql": "ALTER TABLE users ALTER COLUMN id DROP NOT NULL"
+  },
+  {
+   "key": "8fa0d17caea5cc3b",
+   "dialect": "trino",
+   "sql": "ALTER TABLE people SET AUTHORIZATION alice"
+  },
+  {
+   "key": "b13c798c0c478625",
+   "dialect": "trino",
+   "sql": "ALTER TABLE people SET AUTHORIZATION ROLE PUBLIC"
+  },
+  {
+   "key": "cab75cfe8f9fefec",
+   "dialect": "trino",
+   "sql": "ALTER TABLE people SET PROPERTIES x = 'y'"
+  },
+  {
+   "key": "52599b87d74783c2",
+   "dialect": "trino",
+   "sql": "ALTER TABLE people SET PROPERTIES foo = 123, 'foo bar' = 456"
+  },
+  {
+   "key": "4fcb0480e62f076c",
+   "dialect": "trino",
+   "sql": "ALTER TABLE people SET PROPERTIES x = DEFAULT"
+  },
+  {
+   "key": "544da242884c67f9",
+   "dialect": "trino",
+   "sql": "ALTER VIEW people RENAME TO users"
+  },
+  {
+   "key": "7c6550d50471c451",
+   "dialect": "trino",
+   "sql": "ALTER VIEW people SET AUTHORIZATION alice"
+  },
+  {
+   "key": "23ad7eec91d31b36",
+   "dialect": "trino",
+   "sql": "CREATE SCHEMA foo WITH (LOCATION='s3://bucket/foo')"
+  },
+  {
+   "key": "a9e6ea2005eefb73",
+   "dialect": "trino",
+   "sql": "CREATE TABLE foo.bar WITH (LOCATION='s3://bucket/foo/bar') AS SELECT 1"
+  },
+  {
+   "key": "6ee57c0ef3e263d2",
+   "dialect": "trino",
+   "sql": "CREATE TABLE foo (a VARCHAR, b INTEGER, c DATE) WITH (PARTITIONED_BY=ARRAY['a', 'b'])"
+  },
+  {
+   "key": "0d7f9257bf72f277",
+   "dialect": "trino",
+   "sql": "CREATE TABLE \"foo\" (\"a\" VARCHAR, \"b\" INTEGER, \"c\" DATE) WITH (PARTITIONED_BY=ARRAY['a', 'b'])"
+  },
+  {
+   "key": "6d6a753f591425f1",
+   "dialect": "trino",
+   "sql": "CREATE TABLE foo (a VARCHAR, b INTEGER, c DATE) WITH (PARTITIONING=ARRAY['a', 'bucket(4, b)', 'month(c)'])"
+  },
+  {
+   "key": "330f38c6a972979a",
+   "dialect": "trino",
+   "sql": "CREATE TABLE \"foo\" (\"a\" VARCHAR, \"b\" INTEGER, \"c\" DATE) WITH (PARTITIONING=ARRAY['a', 'bucket(4, b)', 'month(c)'])"
+  },
+  {
+   "key": "8c2269ecd3789b1c",
+   "dialect": "trino",
+   "sql": "ANALYZE tbl"
+  },
+  {
+   "key": "f9b97ea200076c80",
+   "dialect": "trino",
+   "sql": "ANALYZE tbl WITH (prop1=val1, prop2=val2)"
+  },
+  {
+   "key": "5528a6702447e52a",
+   "dialect": "trino",
+   "sql": "JSON_VALUE(jl.extra_attributes, 'lax $.amount_source' RETURNING VARCHAR)"
+  },
+  {
+   "key": "1a6cf7f9a17f322c",
+   "dialect": "trino",
+   "sql": "SELECT ARRAY_FIRST(ARRAY['a', 'b']) FROM tbl"
+  },
+  {
+   "key": "2aca9f1631aa5744",
+   "dialect": "trino",
+   "sql": "SELECT ARRAY_FIRST(ARRAY['a', 'b'], x -> x = 'b') FROM tbl"
+  },
+  {
+   "key": "995a63a4918e6145",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f(num INTEGER) RETURNS INTEGER RETURN num SELECT F(1)"
+  },
+  {
+   "key": "4775bb80e4408770",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION hello(name VARCHAR) RETURNS VARCHAR RETURN FORMAT('Hello %s!', name), FUNCTION bye() RETURNS VARCHAR RETURN 'Bye!' SELECT HELLO('Finn') || BYE()"
+  },
+  {
+   "key": "81cbfd74e1906cfb",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION doubled(x INTEGER) RETURNS INTEGER RETURN x * 2 WITH t AS (SELECT 3 AS v) SELECT DOUBLED(v) FROM t"
+  },
+  {
+   "key": "1868fa881b68403f",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f(x INTEGER) RETURNS INTEGER RETURN x WITH RECURSIVE t(n) AS (SELECT 1 AS n) SELECT F(n) FROM t"
+  },
+  {
+   "key": "274627e3de07ab2d",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f(num int)\n    RETURNS int\n    RETURN num\nSELECT f(1)"
+  },
+  {
+   "key": "e824d8f2e97761fd",
+   "dialect": "trino",
+   "sql": "WITH function AS (SELECT 1 AS x) SELECT x FROM function"
+  },
+  {
+   "key": "41ad756e02610c63",
+   "dialect": "trino",
+   "sql": "WITH function(x) AS (SELECT 1) SELECT x FROM function"
+  },
+  {
+   "key": "3baa0c27b5fccad2",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f() RETURNS INTEGER LANGUAGE SQL RETURN 1 SELECT F()"
+  },
+  {
+   "key": "a3b51d357cb78ffd",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f() RETURNS INTEGER DETERMINISTIC RETURN 1 SELECT F()"
+  },
+  {
+   "key": "55e9e5dbcf864156",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f() RETURNS INTEGER NOT DETERMINISTIC RETURN 1 SELECT F()"
+  },
+  {
+   "key": "935b8efd7c56c3fd",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f() RETURNS INTEGER CALLED ON NULL INPUT RETURN 1 SELECT F()"
+  },
+  {
+   "key": "3a579141d544a726",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f() RETURNS INTEGER RETURNS NULL ON NULL INPUT RETURN 1 SELECT F()"
+  },
+  {
+   "key": "79b446e16ad9864a",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f() RETURNS INTEGER COMMENT 'hi' RETURN 1 SELECT F()"
+  },
+  {
+   "key": "c74464675036bfa9",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f() RETURNS INTEGER SECURITY DEFINER RETURN 1 SELECT F()"
+  },
+  {
+   "key": "b69b5d722a812322",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f() RETURNS INTEGER SECURITY INVOKER RETURN 1 SELECT F()"
+  },
+  {
+   "key": "70833f9a97b55999",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f() RETURNS INTEGER WITH (weight=42) RETURN 1 SELECT F()"
+  },
+  {
+   "key": "26c29042a4068b81",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f() RETURNS INTEGER LANGUAGE SQL WITH (weight=42, cost='low') RETURN 1 SELECT F()"
+  },
+  {
+   "key": "68803d95fa7d1213",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION custom_sqrt(a INTEGER) RETURNS DOUBLE COMMENT 'Custom sqrt function' RETURNS NULL ON NULL INPUT NOT DETERMINISTIC LANGUAGE SQL SECURITY DEFINER WITH (weight=42, cost='low') RETURN a SELECT CUSTOM_SQRT(4)"
+  },
+  {
+   "key": "dcae4a23c6c41415",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION meaning_of_life() RETURNS INTEGER BEGIN DECLARE a INTEGER DEFAULT 6; DECLARE b INTEGER DEFAULT 7; RETURN a * b; END SELECT MEANING_OF_LIFE()"
+  },
+  {
+   "key": "6bca2f4ef1272cd1",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION one() RETURNS INTEGER BEGIN DECLARE counter INTEGER DEFAULT 1; SET counter = 0; SET counter = counter + 2; SET counter = counter / counter; RETURN counter; END SELECT ONE()"
+  },
+  {
+   "key": "628d5b90016882fc",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f() RETURNS INTEGER BEGIN DECLARE first_name, last_name, middle_name VARCHAR(25); RETURN 1; END SELECT F()"
+  },
+  {
+   "key": "443836603225dafd",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f() RETURNS INTEGER BEGIN DECLARE x INTEGER DEFAULT 1; BEGIN SET x = x + 1; END; RETURN x; END SELECT F()"
+  },
+  {
+   "key": "568a63e2b8bed64d",
+   "dialect": "trino",
+   "sql": "SELECT declare FROM (VALUES (1), (2)) AS t(declare)"
+  },
+  {
+   "key": "e45acaf474211d85",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION declare() RETURNS INTEGER RETURN 1 SELECT DECLARE()"
+  },
+  {
+   "key": "24106194de7c0745",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION simple_if(a BIGINT) RETURNS VARCHAR BEGIN IF a = 0 THEN RETURN 'zero'; ELSEIF a = 1 THEN RETURN 'one'; ELSE RETURN 'more than one or negative'; END IF; END SELECT SIMPLE_IF(3)"
+  },
+  {
+   "key": "bb265423d8f2d808",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f(a INTEGER) RETURNS VARCHAR BEGIN IF a = 0 THEN RETURN 'zero'; END IF; RETURN 'other'; END SELECT F(1)"
+  },
+  {
+   "key": "2740d94fe60f272e",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f(a INTEGER) RETURNS VARCHAR BEGIN IF a = 0 THEN RETURN 'zero'; ELSEIF a = 1 THEN RETURN 'one'; END IF; RETURN 'other'; END SELECT F(1)"
+  },
+  {
+   "key": "99747b62cb894e60",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f(a INTEGER, b INTEGER) RETURNS VARCHAR BEGIN IF a = 0 THEN IF b = 0 THEN RETURN 'both zero'; ELSE RETURN 'a zero'; END IF; ELSE RETURN 'a nonzero'; END IF; RETURN 'unreachable'; END SELECT F(1, 2)"
+  },
+  {
+   "key": "11c7dc7518dc3c9b",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f(a INTEGER) RETURNS INTEGER BEGIN DECLARE result INTEGER DEFAULT 0; IF a > 0 THEN RETURN CASE WHEN a > 10 THEN 1 ELSE 2 END; ELSE SET result = -1; END IF; RETURN result; END SELECT F(1)"
+  },
+  {
+   "key": "5f16e67ebcacd947",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION f() RETURNS INTEGER LANGUAGE SQL NOT DETERMINISTIC BEGIN DECLARE x INTEGER DEFAULT 1; RETURN x; END SELECT F()"
+  },
+  {
+   "key": "2cbd67ed35958237",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION doubled(x INTEGER) RETURNS INTEGER BEGIN RETURN x * 2; END WITH t AS (SELECT 3 AS v) SELECT DOUBLED(v) FROM t"
+  },
+  {
+   "key": "d771151a973ba083",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION simple_case(a BIGINT) RETURNS VARCHAR BEGIN CASE a WHEN 0 THEN RETURN 'zero'; WHEN 1 THEN RETURN 'one'; ELSE RETURN 'more than one or negative'; END CASE; RETURN NULL; END SELECT SIMPLE_CASE(0)"
+  },
+  {
+   "key": "e0e904b56a828652",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION searched_case(a BIGINT) RETURNS VARCHAR BEGIN CASE WHEN a = 0 THEN RETURN 'zero'; WHEN a = 1 THEN RETURN 'one'; ELSE RETURN 'other'; END CASE; RETURN NULL; END SELECT SEARCHED_CASE(0)"
+  },
+  {
+   "key": "6468ce4ac508da30",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION no_else(a BIGINT) RETURNS VARCHAR BEGIN CASE a WHEN 0 THEN RETURN 'zero'; END CASE; RETURN 'fallthrough'; END SELECT NO_ELSE(0)"
+  },
+  {
+   "key": "e15913874d5dcf1f",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION no_operand_no_else(a INTEGER) RETURNS VARCHAR BEGIN CASE WHEN a = 0 THEN RETURN 'zero'; END CASE; RETURN 'other'; END SELECT NO_OPERAND_NO_ELSE(1)"
+  },
+  {
+   "key": "846027aab5b9c05d",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION nested_case(a BIGINT, b BIGINT) RETURNS VARCHAR BEGIN DECLARE result VARCHAR; CASE WHEN a = 0 THEN CASE b WHEN 0 THEN SET result = 'a0b0'; ELSE SET result = 'a0bN'; END CASE; ELSE SET result = 'aN'; END CASE; RETURN result; END SELECT NESTED_CASE(0, 0)"
+  },
+  {
+   "key": "cc4893d3944c8d81",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION mix(a INTEGER) RETURNS INTEGER BEGIN DECLARE result INTEGER DEFAULT 0; CASE WHEN a > 0 THEN IF a > 10 THEN SET result = 1; ELSE SET result = 2; END IF; ELSE SET result = CASE WHEN a < -10 THEN -1 ELSE -2 END; END CASE; RETURN result; END SELECT MIX(1)"
+  },
+  {
+   "key": "f74faaba3b56bfde",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION last_stmt(a INTEGER) RETURNS VARCHAR BEGIN CASE a WHEN 0 THEN RETURN 'zero'; ELSE RETURN 'other'; END CASE; END SELECT LAST_STMT(1)"
+  },
+  {
+   "key": "1ddc5673e5a4eb96",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION npow(n BIGINT) RETURNS BIGINT BEGIN DECLARE r BIGINT DEFAULT 1; DECLARE p BIGINT DEFAULT n; WHILE p > 1 DO SET r = r * n; SET p = p - 1; END WHILE; RETURN r; END SELECT NPOW(5)"
+  },
+  {
+   "key": "74e913b722725f82",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION npow_labeled(n BIGINT) RETURNS BIGINT BEGIN DECLARE r BIGINT DEFAULT 1; DECLARE p BIGINT DEFAULT n; abc: WHILE p > 1 DO SET r = r * n; SET p = p - 1; END WHILE; RETURN r; END SELECT NPOW_LABELED(5)"
+  },
+  {
+   "key": "d8fa86eafc2c1aef",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION last_stmt(n BIGINT) RETURNS BIGINT BEGIN DECLARE r BIGINT DEFAULT 1; WHILE r < n DO SET r = r + 1; END WHILE; END SELECT LAST_STMT(5)"
+  },
+  {
+   "key": "e678d306468d4dec",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION count_evens(n BIGINT) RETURNS BIGINT BEGIN DECLARE total BIGINT DEFAULT 0; DECLARE i BIGINT DEFAULT 0; WHILE i < n DO SET total = total + 1; IF i = 0 THEN SET total = total + 1; END IF; SET i = i + 1; END WHILE; RETURN total; END SELECT COUNT_EVENS(3)"
+  },
+  {
+   "key": "325ecd2518ad82c5",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION while_case(n BIGINT) RETURNS BIGINT BEGIN DECLARE i BIGINT DEFAULT 0; WHILE i < n DO CASE WHEN i = 0 THEN SET i = 1; ELSE SET i = i + 1; END CASE; END WHILE; RETURN i; END SELECT WHILE_CASE(3)"
+  },
+  {
+   "key": "81293123a6e9721f",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION to_one_hundred(start_value BIGINT, step BIGINT) RETURNS BIGINT BEGIN DECLARE count BIGINT DEFAULT 0; DECLARE current BIGINT DEFAULT 0; SET current = start_value; abc: LOOP IF current >= 100 THEN LEAVE abc; END IF; SET count = count + 1; SET current = current + step; END LOOP; RETURN count; END SELECT TO_ONE_HUNDRED(0, 10)"
+  },
+  {
+   "key": "d8d2e430128a50c7",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION test_repeat(a BIGINT) RETURNS BIGINT BEGIN REPEAT SET a = a + 1; UNTIL a >= 10 END REPEAT; RETURN a; END SELECT TEST_REPEAT(5)"
+  },
+  {
+   "key": "ce5f7cb59a5bfdbd",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION iter_count() RETURNS BIGINT BEGIN DECLARE a BIGINT DEFAULT 0; DECLARE b BIGINT DEFAULT 0; top: REPEAT SET a = a + 1; IF a <= 3 THEN ITERATE top; END IF; SET b = b + 1; UNTIL a >= 10 END REPEAT; RETURN b; END SELECT ITER_COUNT()"
+  },
+  {
+   "key": "1a897065a454e506",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION nested_test(n BIGINT) RETURNS BIGINT BEGIN DECLARE total BIGINT DEFAULT 0; DECLARE i BIGINT DEFAULT 0; DECLARE j BIGINT DEFAULT 0; outer_loop: WHILE i < n DO SET j = 0; inner_loop: LOOP IF j >= 3 THEN LEAVE inner_loop; END IF; SET total = total + 1; SET j = j + 1; END LOOP; SET i = i + 1; END WHILE; RETURN total; END SELECT NESTED_TEST(2)"
+  },
+  {
+   "key": "149559eafc4cb899",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION last_stmt(n BIGINT) RETURNS BIGINT BEGIN DECLARE i BIGINT DEFAULT 0; top: LOOP IF i >= n THEN LEAVE top; END IF; SET i = i + 1; END LOOP; END SELECT LAST_STMT(5)"
+  },
+  {
+   "key": "e37530f9641058d2",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION label_test(n BIGINT) RETURNS BIGINT BEGIN DECLARE i BIGINT DEFAULT 0; iterate: LOOP IF i >= n THEN LEAVE iterate; END IF; SET i = i + 1; END LOOP; RETURN i; END SELECT LABEL_TEST(5)"
+  },
+  {
+   "key": "422e4a72e92a3ab3",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION label_test2(n BIGINT) RETURNS BIGINT BEGIN DECLARE i BIGINT DEFAULT 0; leave: LOOP IF i >= n THEN LEAVE leave; END IF; SET i = i + 1; END LOOP; RETURN i; END SELECT LABEL_TEST2(5)"
+  },
+  {
+   "key": "e87aa131ba26b05a",
+   "dialect": "trino",
+   "sql": "WITH FUNCTION label_test3(n BIGINT) RETURNS BIGINT BEGIN DECLARE i BIGINT DEFAULT 0; set: LOOP IF i >= n THEN LEAVE set; END IF; SET i = i + 1; END LOOP; RETURN i; END SELECT LABEL_TEST3(5)"
+  },
+  {
+   "key": "6245501551bd1b2c",
+   "dialect": "trino",
+   "sql": "SELECT NOT deterministic FROM t"
   },
   {
    "key": "1ff76604cc79c634",

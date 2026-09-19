@@ -1,0 +1,146 @@
+{
+ "dialect": "trino",
+ "rendered": "JSON_QUERY(content, 'strict $.HY.*' WITHOUT CONDITIONAL WRAPPER)",
+ "sql": "JSON_QUERY(content, 'strict $.HY.*' WITHOUT CONDITIONAL WRAPPER)",
+ "tokens": [
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "JSON_QUERY"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "content"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 20,
+   "t": "STRING",
+   "x": "strict $.HY.*"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 36,
+   "t": "VAR",
+   "x": "WITHOUT"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "CONDITIONAL"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 56,
+   "t": "VAR",
+   "x": "WRAPPER"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 63,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.json.JSONExtract"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "content"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "strict $.HY.*"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 0,
+   "k": "option"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "WITHOUT CONDITIONAL WRAPPER"
+  },
+  {
+   "i": 0,
+   "k": "json_query",
+   "v": true
+  }
+ ]
+}

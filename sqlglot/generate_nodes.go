@@ -14,6 +14,15 @@ import (
 // Writers return a string and nothing else: a failure anywhere is recorded on
 // the generator and reported once, by Generate.
 
+// isPrestoFamily reports whether the current dialect inherits Presto's own
+// generator behavior wholesale -- Trino subclasses PrestoGenerator directly
+// and overrides none of the writers this reports for, confirmed against the
+// reference's own TrinoGenerator class body, not assumed from the family
+// name alone.
+func isPrestoFamily(dialect string) bool {
+	return dialect == "presto" || dialect == "trino"
+}
+
 var generators map[string]func(*generator, *Expression) string
 
 // Registered in init rather than as a literal: the writers call back into the
@@ -470,11 +479,11 @@ func (g *generator) writeSelect(e *Expression) string {
 	// writes the pair the other way around from everyone else here --
 	// `OFFSET 1 LIMIT 1` -- its own offset_limit_modifiers override.
 	limitBeforeOffset := limit != nil && !g.tables.LimitIsTop && limit.Class != "Fetch"
-	if limitBeforeOffset && g.dialect != "presto" {
+	if limitBeforeOffset && !isPrestoFamily(g.dialect) {
 		add(g.node(limit))
 	}
 	add(g.child(e, "offset"))
-	if limitBeforeOffset && g.dialect == "presto" {
+	if limitBeforeOffset && isPrestoFamily(g.dialect) {
 		add(g.node(limit))
 	}
 	// A FETCH is written here whatever the dialect does with a LIMIT: T-SQL
@@ -1263,7 +1272,7 @@ func (g *generator) writeNational(e *Expression) string {
 // is TO_HEX rather than HEX.
 func (g *generator) writeLowerHex(e *Expression) string {
 	name := "HEX"
-	if g.dialect == "presto" {
+	if isPrestoFamily(g.dialect) {
 		name = "TO_HEX"
 	}
 	return "LOWER(" + name + "(" + g.child(e, "this") + "))"
@@ -3206,7 +3215,7 @@ func (g *generator) writeAtTimeZone(e *Expression) string {
 	// is the same literal infix text the fallback below writes, but trying
 	// it FIRST would return that text before Fabric's own DATETIMEOFFSET
 	// rewrite below ever ran.
-	if g.dialect == "presto" {
+	if isPrestoFamily(g.dialect) {
 		if out, ok := g.syntaxTemplate(e); ok {
 			return out
 		}
@@ -3650,7 +3659,7 @@ func (g *generator) writeCreate(e *Expression) string {
 	// reference does this by mutating the schema in place before writing it,
 	// which is why the schema's OWN written form -- named tables, casts,
 	// everything else the parser records there -- is untouched here.
-	if g.dialect == "presto" && kind == "VIEW" {
+	if isPrestoFamily(g.dialect) && kind == "VIEW" {
 		if this, _ := e.Args["this"].(*Expression); this != nil && this.Class == "Schema" {
 			if cols, _ := this.Args["expressions"].([]*Expression); len(cols) > 0 {
 				this = this.shallowCopy()
@@ -4083,7 +4092,7 @@ func (g *generator) writeSchema(e *Expression) string {
 	// as a plain schema's parenthesised names -- known by the SCHEMA's own
 	// parent, since the node is the same one the ordinary column-list branch
 	// below writes for every other property and for a table's own columns.
-	if g.dialect == "presto" && e.Parent != nil && e.Parent.Class == "PartitionedByProperty" {
+	if isPrestoFamily(g.dialect) && e.Parent != nil && e.Parent.Class == "PartitionedByProperty" {
 		return g.writePartitionedBySchema(items)
 	}
 	was := g.inColumnList
@@ -5677,7 +5686,7 @@ func (g *generator) writeUse(e *Expression) string {
 func (g *generator) writeTransaction(e *Expression) string {
 	// Presto spells its own BEGIN "START TRANSACTION" outright, never the
 	// word the class name would otherwise suggest.
-	if g.dialect == "presto" && e.Class == "Transaction" {
+	if isPrestoFamily(g.dialect) && e.Class == "Transaction" {
 		return "START TRANSACTION"
 	}
 	verb := map[string]string{
@@ -6888,7 +6897,7 @@ func (g *generator) writeDateArith(e *Expression, domain string, sign int) strin
 			return g.dateArithUnitFirst(this, amount, unit, "DATEADD", New("Var", Arg{"this", "DAY"}))
 		}
 		return g.dateArithGenericFallback(name, this, amount, unit, false)
-	case "presto":
+	case "presto", "trino":
 		if domain == "Date" {
 			return g.dateArithPresto(this, amount, unit, sign)
 		}
@@ -7106,7 +7115,7 @@ func (g *generator) writeFileFormat(e *Expression) string {
 	// `WITH (FORMAT = 'PARQUET')` both read into the same node and write the
 	// same way) -- the harvested template already carries its own quotes,
 	// which double them up against a `this` that is itself a quoted Literal.
-	if g.dialect == "presto" {
+	if isPrestoFamily(g.dialect) {
 		lit := New("Literal", Arg{"this", this.Name()}, Arg{"is_string", true})
 		return "format=" + g.node(lit)
 	}

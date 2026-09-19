@@ -1,0 +1,332 @@
+{
+ "dialect": "trino",
+ "rendered": "WITH FUNCTION f(num INTEGER) RETURNS INTEGER RETURN num SELECT F(1)",
+ "sql": "WITH FUNCTION f(num int)\n    RETURNS int\n    RETURN num\nSELECT f(1)",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 5,
+   "t": "FUNCTION",
+   "x": "FUNCTION"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "f"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "num"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 20,
+   "t": "INT",
+   "x": "int"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 11,
+   "e": 35,
+   "l": 2,
+   "s": 29,
+   "t": "VAR",
+   "x": "RETURNS"
+  },
+  {
+   "c": 15,
+   "e": 39,
+   "l": 2,
+   "s": 37,
+   "t": "INT",
+   "x": "int"
+  },
+  {
+   "c": 10,
+   "e": 50,
+   "l": 3,
+   "s": 45,
+   "t": "VAR",
+   "x": "RETURN"
+  },
+  {
+   "c": 14,
+   "e": 54,
+   "l": 3,
+   "s": 52,
+   "t": "VAR",
+   "x": "num"
+  },
+  {
+   "c": 6,
+   "e": 61,
+   "l": 4,
+   "s": 56,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 63,
+   "l": 4,
+   "s": 63,
+   "t": "VAR",
+   "x": "f"
+  },
+  {
+   "c": 9,
+   "e": 64,
+   "l": 4,
+   "s": 64,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 10,
+   "e": 65,
+   "l": 4,
+   "s": 65,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 11,
+   "e": 66,
+   "l": 4,
+   "s": 66,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 63,
+    "line": 4,
+    "start": 63
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "f"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 10,
+    "end": 65,
+    "line": 4,
+    "start": 65
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.With",
+   "i": 0,
+   "k": "with_"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.FunctionSpecification",
+   "i": 6,
+   "k": "udfs"
+  },
+  {
+   "c": "sqlglot.expressions.ddl.UserDefinedFunction",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "f"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 8,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "num"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 13,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 17,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 17,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 8,
+   "k": "wrapped",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 7,
+   "k": "characteristics"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.ReturnsProperty",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 23,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 23,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 22,
+   "k": "is_table",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Return",
+   "i": 7,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 54,
+    "line": 3,
+    "start": 52
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "num"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

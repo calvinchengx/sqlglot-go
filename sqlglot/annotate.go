@@ -503,7 +503,17 @@ func annotateFunction(e *Expression, dialect string, rule funcReturn) *Expressio
 	// carries a class's STRUCTURAL children (Window's own "order",
 	// "partition_by", "over", none of which are typed), and coercing over
 	// those turned a real answer into no answer at all.
-	for _, key := range []string{"this", "expression", "expressions"} {
+	//
+	// An "element" rule looks INTO its "this" array and never coerces
+	// "expression" at all: ARRAY_FIRST/ARRAY_LAST's own second argument is a
+	// LAMBDA, which has no type of its own, and folding it into this same
+	// loop turned a real answer (the array's element type) into no answer,
+	// the same failure mode "expression" was added here to avoid for Mod.
+	keys := []string{"this", "expression", "expressions"}
+	if rule.Kind == "element" {
+		keys = []string{"this"}
+	}
+	for _, key := range keys {
 		switch v := e.Args[key].(type) {
 		case *Expression:
 			t := annotate(v, dialect)

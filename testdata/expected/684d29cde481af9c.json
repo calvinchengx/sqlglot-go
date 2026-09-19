@@ -1,0 +1,112 @@
+{
+ "dialect": "trino",
+ "rendered": "REFRESH MATERIALIZED VIEW mynamespace.test_view",
+ "sql": "REFRESH MATERIALIZED VIEW mynamespace.test_view",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "REFRESH",
+   "x": "REFRESH"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "MATERIALIZED"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 21,
+   "t": "VIEW",
+   "x": "VIEW"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "mynamespace"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 38,
+   "t": "VAR",
+   "x": "test_view"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Refresh"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "test_view"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "db",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "mynamespace"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "MATERIALIZED VIEW"
+  }
+ ]
+}
