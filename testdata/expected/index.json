@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 4866,
+ "count": 4880,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -8453,6 +8453,11 @@
    "sql": "POSITION(needle in haystack)"
   },
   {
+   "key": "03bd8c6dd45133a2",
+   "dialect": "risingwave",
+   "sql": "POSITION(needle in haystack)"
+  },
+  {
    "key": "557f43e82843fb51",
    "dialect": "databricks",
    "sql": "POSITION(needle, haystack)"
@@ -8513,6 +8518,11 @@
    "sql": "POSITION(needle IN haystack)"
   },
   {
+   "key": "173f764eb36421b1",
+   "dialect": "risingwave",
+   "sql": "POSITION(needle IN haystack)"
+  },
+  {
    "key": "489dc039c86347e2",
    "dialect": "databricks",
    "sql": "POSITION(needle, haystack, position)"
@@ -8550,6 +8560,11 @@
   {
    "key": "8c0f3a5477441254",
    "dialect": "redshift",
+   "sql": "CASE WHEN POSITION(needle IN SUBSTRING(haystack FROM position)) = 0 THEN 0 ELSE POSITION(needle IN SUBSTRING(haystack FROM position)) + position - 1 END"
+  },
+  {
+   "key": "39bd85be0b86f6b5",
+   "dialect": "risingwave",
    "sql": "CASE WHEN POSITION(needle IN SUBSTRING(haystack FROM position)) = 0 THEN 0 ELSE POSITION(needle IN SUBSTRING(haystack FROM position)) + position - 1 END"
   },
   {
@@ -9228,6 +9243,11 @@
    "sql": "SELECT x BETWEEN 2 AND 10"
   },
   {
+   "key": "56037d9897f937d1",
+   "dialect": "risingwave",
+   "sql": "SELECT x BETWEEN 2 AND 10"
+  },
+  {
    "key": "0af2d94f27384bbe",
    "dialect": "tsql",
    "sql": "SELECT x BETWEEN 2 AND 10"
@@ -9253,6 +9273,11 @@
    "sql": "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)"
   },
   {
+   "key": "6aa4b701a5e71696",
+   "dialect": "risingwave",
+   "sql": "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)"
+  },
+  {
    "key": "79ae061d120a337d",
    "dialect": "tsql",
    "sql": "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)"
@@ -9275,6 +9300,11 @@
   {
    "key": "1bce2ae26525caa9",
    "dialect": "redshift",
+   "sql": "SELECT x BETWEEN 10 AND 2"
+  },
+  {
+   "key": "072f961cae0580c0",
+   "dialect": "risingwave",
    "sql": "SELECT x BETWEEN 10 AND 2"
   },
   {
@@ -18611,6 +18641,46 @@
    "key": "c5d420f6c6692c1e",
    "dialect": "redshift",
    "sql": "1::\"int\""
+  },
+  {
+   "key": "c1d13210fb9ee5fb",
+   "dialect": "risingwave",
+   "sql": "SELECT a FROM tbl"
+  },
+  {
+   "key": "1234ab7903d00e3b",
+   "dialect": "risingwave",
+   "sql": "CREATE SOURCE from_kafka (*, gen_i32_field INT AS int32_field + 2, gen_i64_field INT AS int64_field + 2, WATERMARK FOR time_col AS time_col - INTERVAL '5 SECOND') INCLUDE header foo VARCHAR AS myheader INCLUDE key AS mykey WITH (connector='kafka', topic='my_topic') FORMAT PLAIN ENCODE PROTOBUF (A=1, B=2) KEY ENCODE PROTOBUF (A=3, B=4)"
+  },
+  {
+   "key": "c28da678c986180d",
+   "dialect": "risingwave",
+   "sql": "CREATE SINK my_sink AS SELECT * FROM A WITH (connector='kafka', topic='my_topic') FORMAT PLAIN ENCODE PROTOBUF (A=1, B=2) KEY ENCODE PROTOBUF (A=3, B=4)"
+  },
+  {
+   "key": "291aed2a01dfd4dc",
+   "dialect": "risingwave",
+   "sql": "WITH t1 AS MATERIALIZED (SELECT 1), t2 AS NOT MATERIALIZED (SELECT 2) SELECT * FROM t1, t2"
+  },
+  {
+   "key": "1276c294f70b6f79",
+   "dialect": "risingwave",
+   "sql": "SELECT CAST(NULL AS MAP(VARCHAR, INT)) AS map_column"
+  },
+  {
+   "key": "765c021f75a8e36a",
+   "dialect": "risingwave",
+   "sql": "SELECT NULL::MAP<VARCHAR, INT> AS map_column"
+  },
+  {
+   "key": "233c47caf8d95c3d",
+   "dialect": "risingwave",
+   "sql": "CREATE TABLE t (map_col MAP(VARCHAR, INT))"
+  },
+  {
+   "key": "b73266c8f22f7fc9",
+   "dialect": "risingwave",
+   "sql": "CREATE TABLE t (map_col MAP<VARCHAR, INT>)"
   },
   {
    "key": "7ae48d3c5c087106",
