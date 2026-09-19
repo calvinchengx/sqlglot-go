@@ -1,6 +1,10 @@
 package sqlglot
 
-import "strings"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 // Builders that READ the arguments they are handed.
 //
@@ -232,4 +236,114 @@ func (p *parser) wrapStringArgument(arg *Expression, how string) (*Expression, e
 		return interval, nil
 	}
 	return nil, p.unsupported("a string argument this port cannot rewrite")
+}
+
+// buildToCharOrTimeToStr is Dremio's own `to_char_is_numeric_handler`,
+// itself wrapping the reference's shared `build_timetostr_or_tochar`:
+// a call of exactly two arguments has its first argument's TYPE recorded
+// on the node itself (the same way a built cast always carries one), and
+// where that type is temporal the call builds TimeToStr instead of ToChar,
+// its format run through the dialect's own forward TimeMapping the same
+// way DATE_FORMAT's format argument already is. Everything else builds
+// ToChar, marked `is_numeric` when its format is a string literal naming
+// a `#` pattern.
+func (p *parser) buildToCharOrTimeToStr(args []*Expression) (*Expression, error) {
+	this := argAt(args, 0)
+	if this == nil {
+		return nil, p.unsupported("TO_CHAR with no arguments")
+	}
+	format := argAt(args, 1)
+	if len(args) == 2 {
+		// The reference's `annotate_types` walks and stamps the WHOLE
+		// subtree, not just this node -- a Column argument's own Identifier
+		// carries a recorded UNKNOWN too, which is what AnnotateFully (built
+		// for exactly this) reproduces.
+		AnnotateFully(this, p.dialect)
+		if temporalTypes[DataTypeKind(typeKind(this.Type))] {
+			text, _ := format.Args["this"].(string)
+			spelled := text
+			if isStringLiteral(format) {
+				spelled = formatTime(text, p.tables.TimeMapping)
+			}
+			return New("TimeToStr",
+				Arg{"this", this},
+				Arg{"format", New("Literal", Arg{"this", spelled}, Arg{"is_string", true})}), nil
+		}
+	}
+	node := New("ToChar", Arg{"this", this}, Arg{"format", format}, Arg{"nlsparam", argAt(args, 2)})
+	if format != nil {
+		if text, _ := format.Args["this"].(string); isStringLiteral(format) && strings.Contains(text, "#") {
+			node.Set("is_numeric", true)
+		}
+	}
+	return node, nil
+}
+
+// buildDremioCurrentDateUTC is Dremio's `CURRENT_DATE_UTC()`: not a plain
+// call at all, but a fixed shape -- today's date read out of a timestamp
+// pinned to UTC -- the reference's `_parse_current_date_utc` builds
+// whatever the parentheses do or don't hold.
+func buildDremioCurrentDateUTC() *Expression {
+	to := New("DataType", Arg{"this", DataTypeKind("DATE")})
+	cast := New("Cast",
+		Arg{"this", New("AtTimeZone",
+			Arg{"this", New("CurrentTimestamp")},
+			Arg{"zone", New("Literal", Arg{"this", "UTC"}, Arg{"is_string", true})})},
+		Arg{"to", to})
+	cast.Type = to
+	return cast
+}
+
+// buildDremioDateDeltaWithCastInterval is Dremio's own
+// `build_date_delta_with_cast_interval`: DATE_ADD/DATE_SUB's second
+// argument, when it is a CAST to an INTERVAL type, is not read as a cast
+// at all -- the value being cast becomes the delta itself and the
+// interval's own unit moves onto the call, dropping the cast and its type
+// entirely. Any other second argument falls through to the generic
+// builder untouched, which is why this returns nil rather than a refusal.
+func buildDremioDateDeltaWithCastInterval(class string, args []*Expression) *Expression {
+	if len(args) != 2 {
+		return nil
+	}
+	dateArg, intervalArg := args[0], args[1]
+	if intervalArg.Class != "Cast" {
+		return nil
+	}
+	to, _ := intervalArg.Args["to"].(*Expression)
+	if to == nil || to.Class != "DataType" {
+		return nil
+	}
+	interval, _ := to.Args["this"].(*Expression)
+	if interval == nil || interval.Class != "Interval" {
+		return nil
+	}
+	inner, _ := intervalArg.Args["this"].(*Expression)
+	unit, _ := interval.Args["unit"].(*Expression)
+	return New(class, Arg{"this", dateArg}, Arg{"expression", inner}, Arg{"unit", unit})
+}
+
+// buildDremioDateType is Dremio's `DATETYPE(year, month, day)` where all
+// three arguments are plain integer literals: the reference's own
+// `datetype_handler` folds them straight into a zero-padded date STRING
+// rather than building a Concat -- `DATETYPE(2024, 2, 2)` reads the same as
+// `DATE '2024-02-02'`. Where any argument is not a bare integer Literal, the
+// reference instead builds a CAST of a CONCAT chain, a shape no statement in
+// the pinned corpus exercises; this returns nil there rather than guess it,
+// the same way an unverified branch elsewhere in this port declines.
+func buildDremioDateType(args []*Expression) *Expression {
+	if len(args) != 3 {
+		return nil
+	}
+	year, month, day := args[0], args[1], args[2]
+	for _, arg := range []*Expression{year, month, day} {
+		text, _ := arg.Args["this"].(string)
+		if arg.Class != "Literal" || !isIntegerText(text) {
+			return nil
+		}
+	}
+	yv, _ := strconv.Atoi(year.Args["this"].(string))
+	mv, _ := strconv.Atoi(month.Args["this"].(string))
+	dv, _ := strconv.Atoi(day.Args["this"].(string))
+	dateStr := fmt.Sprintf("%04d-%02d-%02d", yv, mv, dv)
+	return New("Date", Arg{"this", New("Literal", Arg{"this", dateStr}, Arg{"is_string", true})})
 }

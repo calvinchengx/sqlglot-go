@@ -2369,7 +2369,12 @@ func (p *parser) parseFunction() (*Expression, error) {
 	// rather than a probeable signature -- see buildVarMap -- so it is not
 	// turned away here despite having none.
 	isVarMap := upper == "MAP" && p.dialect == "databricks"
-	if !named && !byArity && !isJSONPath && !byWord && !isVarMap {
+	// Dremio's DATETYPE has no generic fallback shape at all -- unlike
+	// DATE_ADD/DATE_SUB's cast-interval builder, which still probes fine
+	// through its own fallback_builder -- so it is not turned away here
+	// either, the same exemption isVarMap gets.
+	isDremioDateType := upper == "DATETYPE" && p.dialect == "dremio"
+	if !named && !byArity && !isJSONPath && !byWord && !isVarMap && !isDremioDateType {
 		if _, custom := p.tables.NamedFunctions[upper]; custom {
 			return nil, p.unsupported("function " + upper + " with a builder of its own")
 		}
@@ -2500,6 +2505,29 @@ func (p *parser) parseFunction() (*Expression, error) {
 	}
 	if upper == "MOD" && len(args) == 2 {
 		return p.buildMod(args), nil
+	}
+	if p.dialect == "dremio" {
+		switch {
+		case upper == "TO_CHAR":
+			return p.buildToCharOrTimeToStr(args)
+		case upper == "CURRENT_DATE_UTC" && len(args) == 0:
+			return buildDremioCurrentDateUTC(), nil
+		case upper == "DATE_ADD" || upper == "DATE_SUB":
+			if built := buildDremioDateDeltaWithCastInterval(map[string]string{
+				"DATE_ADD": "DateAdd", "DATE_SUB": "DateSub",
+			}[upper], args); built != nil {
+				return built, nil
+			}
+		case upper == "DATETYPE":
+			if built := buildDremioDateType(args); built != nil {
+				return built, nil
+			}
+			// The CONCAT-of-strings branch for a non-integer argument is
+			// unverified against the pinned corpus (see buildDremioDateType);
+			// DATETYPE has no generic fallback shape of its own to fall
+			// through to, so this refuses rather than building Anonymous.
+			return nil, p.unsupported("function DATETYPE with a non-integer argument")
+		}
 	}
 	if isVarMap {
 		return p.buildVarMap(args)

@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 5776,
+ "count": 5837,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -6358,6 +6358,11 @@
    "sql": "BIT_AND(x)"
   },
   {
+   "key": "1ced756d6f0a8e78",
+   "dialect": "dremio",
+   "sql": "BIT_AND(x)"
+  },
+  {
    "key": "44af8d93c939916a",
    "dialect": "duckdb",
    "sql": "BIT_AND(x)"
@@ -6370,6 +6375,11 @@
   {
    "key": "71493832dbef3cde",
    "dialect": "databricks",
+   "sql": "BIT_OR(x)"
+  },
+  {
+   "key": "bd2fd0025fcf41f5",
+   "dialect": "dremio",
    "sql": "BIT_OR(x)"
   },
   {
@@ -8143,6 +8153,11 @@
    "sql": "SELECT NVL2(a, b, c)"
   },
   {
+   "key": "6fea352a1b1499d4",
+   "dialect": "dremio",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
+  },
+  {
    "key": "ce55540c098a126c",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
@@ -8176,6 +8191,11 @@
    "key": "136e436623bd2ed9",
    "dialect": "databricks",
    "sql": "SELECT NVL2(a, b)"
+  },
+  {
+   "key": "ec87776a9d1a7ac0",
+   "dialect": "dremio",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
   },
   {
    "key": "203e7c5b2629a801",
@@ -8588,6 +8608,11 @@
    "sql": "CAST(SUBSTR(REPLACE(CAST(x AS VARCHAR), '-', ''), 1, 8) AS INT)"
   },
   {
+   "key": "e0fbcbb068716a7b",
+   "dialect": "dremio",
+   "sql": "DATE_ADD(x, 1)"
+  },
+  {
    "key": "4f3a442d3f5a3d69",
    "dialect": "duckdb",
    "sql": "x + INTERVAL 1 DAY"
@@ -8731,6 +8756,11 @@
    "key": "76086c9c521a0fc2",
    "dialect": "presto",
    "sql": "DATE_ADD('DAY', 1, CAST('2020-01-01' AS DATE))"
+  },
+  {
+   "key": "42f75d4be0db2624",
+   "dialect": "dremio",
+   "sql": "DATE_ADD(CAST('2020-01-01' AS DATE), 1)"
   },
   {
    "key": "3fae1b0e9948a27f",
@@ -9943,6 +9973,11 @@
    "sql": "LOG(x)"
   },
   {
+   "key": "bac3626182822873",
+   "dialect": "dremio",
+   "sql": "LOG(x)"
+  },
+  {
    "key": "2c501bc7c86f6b51",
    "dialect": "databricks",
    "sql": "LOG(x)"
@@ -10383,6 +10418,11 @@
    "sql": "ASCII('A')"
   },
   {
+   "key": "a6516b39075e31e2",
+   "dialect": "dremio",
+   "sql": "SELECT x BETWEEN 2 AND 10"
+  },
+  {
    "key": "af4ffef7da5b1ba8",
    "dialect": "duckdb",
    "sql": "SELECT x BETWEEN 2 AND 10"
@@ -10413,6 +10453,11 @@
    "sql": "SELECT x BETWEEN 2 AND 10"
   },
   {
+   "key": "1617bd4b04f406c7",
+   "dialect": "dremio",
+   "sql": "SELECT x BETWEEN SYMMETRIC 10 AND 2"
+  },
+  {
    "key": "feb95438c8a4ec0a",
    "dialect": "duckdb",
    "sql": "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)"
@@ -10441,6 +10486,11 @@
    "key": "79ae061d120a337d",
    "dialect": "tsql",
    "sql": "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)"
+  },
+  {
+   "key": "2ae76e7fe7e8c0d1",
+   "dialect": "dremio",
+   "sql": "SELECT x BETWEEN ASYMMETRIC 10 AND 2"
   },
   {
    "key": "ca895f7d411fe64f",
@@ -10768,6 +10818,11 @@
    "sql": "SOUNDEX(x)"
   },
   {
+   "key": "153aba757378269e",
+   "dialect": "dremio",
+   "sql": "SOUNDEX(x)"
+  },
+  {
    "key": "9b21a08be996acc8",
    "dialect": "trino",
    "sql": "SOUNDEX(x)"
@@ -11078,9 +11133,199 @@
    "sql": "ALTER TABLE db.t1 RENAME TO t2"
   },
   {
+   "key": "ece4d086b698cf09",
+   "dialect": "dremio",
+   "sql": "CAST(x AS SMALLINT)"
+  },
+  {
+   "key": "3aa1ae6fdb0ee038",
+   "dialect": "dremio",
+   "sql": "CAST(x AS TINYINT)"
+  },
+  {
+   "key": "0ff2bf920596c0b1",
+   "dialect": "dremio",
+   "sql": "CAST(x AS BINARY)"
+  },
+  {
+   "key": "ef5a40a9444dac0f",
+   "dialect": "dremio",
+   "sql": "CAST(x AS TEXT)"
+  },
+  {
+   "key": "78ecff041cad38c9",
+   "dialect": "dremio",
+   "sql": "CAST(x AS NCHAR)"
+  },
+  {
+   "key": "d30967fa6e04811b",
+   "dialect": "dremio",
+   "sql": "CAST(x AS CHAR)"
+  },
+  {
+   "key": "c7e76c02c01429fa",
+   "dialect": "dremio",
+   "sql": "CAST(x AS TIMESTAMPNTZ)"
+  },
+  {
+   "key": "139abc132c0f4113",
+   "dialect": "dremio",
+   "sql": "CAST(x AS DATETIME)"
+  },
+  {
+   "key": "1ed86f4cf24d388e",
+   "dialect": "dremio",
+   "sql": "CAST(x AS ARRAY)"
+  },
+  {
+   "key": "fcaa13ffe88f2a42",
+   "dialect": "dremio",
+   "sql": "CAST(x AS BIT)"
+  },
+  {
+   "key": "68b56f66ff74fcdb",
+   "dialect": "dremio",
+   "sql": "SELECT CONCAT('a', NULL)"
+  },
+  {
+   "key": "7790b546c7119040",
+   "dialect": "dremio",
+   "sql": "SELECT * FROM t ORDER BY a NULLS LAST"
+  },
+  {
+   "key": "fa275a11c22dca8d",
+   "dialect": "dremio",
+   "sql": "SELECT * FROM t ORDER BY a DESC NULLS LAST"
+  },
+  {
+   "key": "4b6af860c3b27383",
+   "dialect": "dremio",
+   "sql": "SELECT * FROM t ORDER BY a NULLS FIRST"
+  },
+  {
+   "key": "032fc5765de85740",
+   "dialect": "dremio",
+   "sql": "SELECT * FROM t ORDER BY a DESC NULLS FIRST"
+  },
+  {
+   "key": "6d0b5a3d8539f128",
+   "dialect": "dremio",
+   "sql": "SELECT * FROM t AT SNAPSHOT '4132119532727284872'"
+  },
+  {
+   "key": "f2f4cf433068354a",
+   "dialect": "dremio",
+   "sql": "SELECT * FROM t AT TIMESTAMP '2024-01-01 12:00:00.000'"
+  },
+  {
+   "key": "2df5a64d8c587466",
+   "dialect": "dremio",
+   "sql": "SELECT * FROM t AT SNAPSHOT '4132119532727284872' AS a"
+  },
+  {
+   "key": "614bf0cd7a20e523",
+   "dialect": "dremio",
+   "sql": "SELECT * FROM t AT SNAPSHOT '123'"
+  },
+  {
    "key": "28d341583415882b",
    "dialect": "trino",
    "sql": "SELECT * FROM t FOR VERSION AS OF '123'"
+  },
+  {
+   "key": "dd537fb88901d696",
+   "dialect": "dremio",
+   "sql": "SELECT * FROM t AT TIMESTAMP '2024-01-01'"
+  },
+  {
+   "key": "21986405e024d1f0",
+   "dialect": "dremio",
+   "sql": "SELECT CONVERT_TIMEZONE('America/Chicago', DateColumn)"
+  },
+  {
+   "key": "f8958893af6071b2",
+   "dialect": "dremio",
+   "sql": "INTERVAL '7' DAYS"
+  },
+  {
+   "key": "c6625d2b4ff073f7",
+   "dialect": "dremio",
+   "sql": "SELECT * FROM t LIMIT 1 + 1"
+  },
+  {
+   "key": "b2e80425b958b49f",
+   "dialect": "dremio",
+   "sql": "SELECT COUNT(DISTINCT a, b) FROM t"
+  },
+  {
+   "key": "a5f885722e5707fa",
+   "dialect": "dremio",
+   "sql": "SELECT DATE_ADD(col, 1)"
+  },
+  {
+   "key": "3545e324e166a965",
+   "dialect": "dremio",
+   "sql": "SELECT DATE_ADD(col, CAST(1 AS INTERVAL HOUR))"
+  },
+  {
+   "key": "908816c40e0e2224",
+   "dialect": "dremio",
+   "sql": "SELECT DATE_ADD(TIMESTAMP '2022-01-01 12:00:00', CAST(-1 AS INTERVAL HOUR))"
+  },
+  {
+   "key": "262d4041a3ec2d71",
+   "dialect": "dremio",
+   "sql": "SELECT DATE_SUB(col, 1)"
+  },
+  {
+   "key": "b891b7f2bb6581aa",
+   "dialect": "dremio",
+   "sql": "SELECT DATE_SUB(col, CAST(1 AS INTERVAL HOUR))"
+  },
+  {
+   "key": "e32424845a53b8d4",
+   "dialect": "dremio",
+   "sql": "SELECT DATE_SUB(TIMESTAMP '2022-01-01 12:00:00', CAST(-1 AS INTERVAL HOUR))"
+  },
+  {
+   "key": "2d11433107bba1f9",
+   "dialect": "dremio",
+   "sql": "SELECT DATE_FORMAT(CAST('2025-08-18 15:30:00' AS TIMESTAMP), 'yyyy-mm-dd')"
+  },
+  {
+   "key": "c1db1219f7e0467f",
+   "dialect": "dremio",
+   "sql": "ARRAY_GENERATE_RANGE(1, 4)"
+  },
+  {
+   "key": "9f0a0218cba0355b",
+   "dialect": "dremio",
+   "sql": "SELECT CURRENT_DATE_UTC"
+  },
+  {
+   "key": "8bf06700206d3289",
+   "dialect": "dremio",
+   "sql": "SELECT CURRENT_DATE_UTC()"
+  },
+  {
+   "key": "09ec9114b00582eb",
+   "dialect": "dremio",
+   "sql": "SELECT REPEAT(x, 5)"
+  },
+  {
+   "key": "31e8e97ce0e8589c",
+   "dialect": "dremio",
+   "sql": "SELECT REPEATSTR(x, 5)"
+  },
+  {
+   "key": "fb01acce767a39a2",
+   "dialect": "dremio",
+   "sql": "REGEXP_MATCHES(x, y)"
+  },
+  {
+   "key": "888c2eaef944547a",
+   "dialect": "dremio",
+   "sql": "REGEXP_LIKE(x, y)"
   },
   {
    "key": "26a10de0a2de0b99",
@@ -11091,6 +11336,66 @@
    "key": "3917bcce8e1e918e",
    "dialect": "presto",
    "sql": "REGEXP_LIKE(x, y)"
+  },
+  {
+   "key": "76176754929bdba1",
+   "dialect": "dremio",
+   "sql": "SELECT DATE_PART('YEAR', date '2021-04-01')"
+  },
+  {
+   "key": "b953db2932476dc6",
+   "dialect": "dremio",
+   "sql": "DATETYPE(2024,2,2)"
+  },
+  {
+   "key": "3bd09d85141d4c9b",
+   "dialect": "dremio",
+   "sql": "DATETYPE(x,y,z)"
+  },
+  {
+   "key": "419ae5139bd8e4ed",
+   "dialect": "dremio",
+   "sql": "SELECT REGEXP_SPLIT(tags, ',', 'ALL', 1000) AS t"
+  },
+  {
+   "key": "e0cb4dca9206fd89",
+   "dialect": "dremio",
+   "sql": "CAST(a AS FLOAT)"
+  },
+  {
+   "key": "efa108400e0bd803",
+   "dialect": "dremio",
+   "sql": "TO_CHAR(5555, '#')"
+  },
+  {
+   "key": "deb964ff58128e75",
+   "dialect": "dremio",
+   "sql": "TO_CHAR(3.14, '#.#')"
+  },
+  {
+   "key": "131530cf0b7a6dae",
+   "dialect": "dremio",
+   "sql": "TO_CHAR(columnname, '#.##')"
+  },
+  {
+   "key": "010d3e408fb89ded",
+   "dialect": "dremio",
+   "sql": "TO_CHAR(5555)"
+  },
+  {
+   "key": "9a63d14a480804bf",
+   "dialect": "dremio",
+   "sql": "TO_CHAR(3.14, columnname)"
+  },
+  {
+   "key": "fa12ff86957c6d91",
+   "dialect": "dremio",
+   "sql": "TO_CHAR(123, 'abcd')"
+  },
+  {
+   "key": "a22e14dcd9725022",
+   "dialect": "dremio",
+   "sql": "TO_CHAR(3.14, UPPER('abcd'))"
   },
   {
    "key": "01f6ef552c186bb6",

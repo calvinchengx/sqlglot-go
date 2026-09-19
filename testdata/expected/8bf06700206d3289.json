@@ -1,0 +1,97 @@
+{
+ "dialect": "dremio",
+ "rendered": "SELECT CURRENT_DATE_UTC",
+ "sql": "SELECT CURRENT_DATE_UTC()",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CURRENT_DATE_UTC"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.AtTimeZone",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentTimestamp",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "zone"
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "UTC"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 7,
+   "k": "this",
+   "v": "DATE"
+  }
+ ]
+}

@@ -1,0 +1,118 @@
+{
+ "dialect": "dremio",
+ "rendered": "SELECT CONCAT('a', NULL)",
+ "sql": "SELECT CONCAT('a', NULL)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CONCAT"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 14,
+   "t": "STRING",
+   "x": "a"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 19,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.Concat",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Null",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "i": 1,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "coalesce",
+   "v": true
+  }
+ ]
+}

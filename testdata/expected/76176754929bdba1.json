@@ -1,0 +1,167 @@
+{
+ "dialect": "dremio",
+ "rendered": "SELECT EXTRACT('YEAR' FROM CAST('2021-04-01' AS DATE))",
+ "sql": "SELECT DATE_PART('YEAR', date '2021-04-01')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "DATE_PART"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 17,
+   "t": "STRING",
+   "x": "YEAR"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 25,
+   "t": "DATE",
+   "x": "date"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 30,
+   "t": "STRING",
+   "x": "2021-04-01"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.Extract",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "YEAR"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "2021-04-01"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 5,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 9,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 9,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

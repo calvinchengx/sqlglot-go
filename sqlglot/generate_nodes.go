@@ -1082,6 +1082,9 @@ func (g *generator) writeLimit(e *Expression) string { return g.writeLimitWord(e
 // writeLimitWord is the same node under either spelling: TOP in front of the
 // projections, LIMIT after the query.
 func (g *generator) writeLimitWord(e *Expression, word string) string {
+	if g.tables.LimitOnlyLiterals {
+		e = g.simplifyLimitOffsetArg(e, "expression")
+	}
 	count := g.child(e, "expression")
 	// T-SQL requires parentheses around a TOP that is not a plain NUMBER, and
 	// the reference writes them: `SELECT TOP (A) 0`, `SELECT TOP ('') 0`.
@@ -1109,6 +1112,9 @@ func (g *generator) writeLimitWord(e *Expression, word string) string {
 }
 
 func (g *generator) writeOffset(e *Expression) string {
+	if g.tables.LimitOnlyLiterals {
+		e = g.simplifyLimitOffsetArg(e, "expression")
+	}
 	out := "OFFSET " + g.child(e, "expression")
 	// T-SQL says ROWS after the count; nobody else does, and the word is on
 	// no node -- the two spellings are the same tree.
@@ -1116,6 +1122,20 @@ func (g *generator) writeOffset(e *Expression) string {
 		out += " " + word
 	}
 	return out
+}
+
+// simplifyLimitOffsetArg is the reference's own `_simplify_unless_literal`:
+// a LIMIT or OFFSET count that is not already a bare Literal is folded down
+// to one via the full simplifier -- `LIMIT 1 + 1` writes as `LIMIT 2`,
+// because this dialect's engine will not accept an expression there at all.
+func (g *generator) simplifyLimitOffsetArg(e *Expression, key string) *Expression {
+	inner, _ := e.Args[key].(*Expression)
+	if inner == nil || inner.Class == "Literal" {
+		return e
+	}
+	e = e.shallowCopy()
+	e.Set(key, Simplify(inner, g.dialect))
+	return e
 }
 
 func (g *generator) writeNull(*Expression) string { return "NULL" }
@@ -1142,6 +1162,20 @@ func (g *generator) writeDistinct(e *Expression) string {
 		return "DISTINCT ON " + g.node(on)
 	}
 	if items := g.list(e); items != "" {
+		exprs, _ := e.Args["expressions"].([]*Expression)
+		if !g.tables.MultiArgDistinct && len(exprs) > 1 {
+			// This dialect has no multi-column DISTINCT: the reference
+			// rewrites it into a CASE that returns NULL the moment any one
+			// argument does, and the original arguments as a row otherwise
+			// -- `DISTINCT a, b` means "distinct (a, b) pairs", and a CASE
+			// is the only way to say that with a single-argument DISTINCT.
+			parts := []string{"CASE"}
+			for _, item := range exprs {
+				parts = append(parts, "WHEN "+g.node(item)+" IS NULL THEN NULL")
+			}
+			parts = append(parts, "ELSE ("+items+") END")
+			return "DISTINCT " + strings.Join(parts, " ")
+		}
 		return "DISTINCT " + items
 	}
 	return "DISTINCT"
@@ -1453,6 +1487,23 @@ func (g *generator) writeCast(e *Expression) string {
 	word := "CAST"
 	if e.Class == "TryCast" {
 		word = "TRY_CAST"
+	}
+	// Dremio's own CURRENT_DATE_UTC() parses into this exact shape (see
+	// buildDremioCurrentDateUTC) and writes back out as the bare word,
+	// never the cast that built it.
+	if g.dialect == "dremio" && e.Class == "Cast" {
+		if to, _ := e.Args["to"].(*Expression); to != nil && to.Args["this"] == DataTypeKind("DATE") {
+			if atz, _ := e.Args["this"].(*Expression); atz != nil && atz.Class == "AtTimeZone" {
+				inner, _ := atz.Args["this"].(*Expression)
+				zone, _ := atz.Args["zone"].(*Expression)
+				if inner != nil && inner.Class == "CurrentTimestamp" && zone != nil && zone.Class == "Literal" {
+					text, _ := zone.Args["this"].(string)
+					if strings.EqualFold(text, "UTC") {
+						return "CURRENT_DATE_UTC"
+					}
+				}
+			}
+		}
 	}
 	// Fabric has no TIMESTAMPTZ of its own -- everywhere else it is written
 	// as DATETIME2, but inside an AT TIME ZONE expression, which needs an
@@ -2347,19 +2398,34 @@ func (g *generator) writeVar(e *Expression) string {
 // writeInterval puts the unit where the dialect puts it: PostgreSQL writes
 // `INTERVAL '1 DAY'`, everyone else `INTERVAL '1' DAY`. A span (HOUR TO
 // SECOND) is never folded into the string.
+// timePartSingulars is the reference's own `TIME_PART_SINGULARS` -- a fixed
+// reference-level constant no dialect overrides, so it is written out once
+// here rather than generated.
+var timePartSingulars = map[string]string{
+	"MICROSECONDS": "MICROSECOND", "SECONDS": "SECOND", "MINUTES": "MINUTE",
+	"HOURS": "HOUR", "DAYS": "DAY", "WEEKS": "WEEK", "MONTHS": "MONTH",
+	"QUARTERS": "QUARTER", "YEARS": "YEAR",
+}
+
 func (g *generator) writeInterval(e *Expression) string {
 	this, _ := e.Args["this"].(*Expression)
 	unit, _ := e.Args["unit"].(*Expression)
 	if unit == nil {
 		return "INTERVAL " + g.node(this)
 	}
+	unitSQL := g.node(unit)
+	if !g.tables.IntervalAllowsPluralForm {
+		if singular, ok := timePartSingulars[unitSQL]; ok {
+			unitSQL = singular
+		}
+	}
 	if g.tables.IntervalUnitInsideString && unit.Class == "Var" &&
 		this != nil && this.Class == "Literal" && this.Args["is_string"] == true {
 		text, _ := this.Args["this"].(string)
 		return "INTERVAL '" + escapeStringBody(text, g.cfg.StringEscapePreferred) +
-			" " + g.node(unit) + "'"
+			" " + unitSQL + "'"
 	}
-	return "INTERVAL " + g.node(this) + " " + g.node(unit)
+	return "INTERVAL " + g.node(this) + " " + unitSQL
 }
 
 func (g *generator) writeIntervalSpan(e *Expression) string {
@@ -6902,6 +6968,11 @@ func (g *generator) writeDateArith(e *Expression, domain string, sign int) strin
 			return g.dateArithPresto(this, amount, unit, sign)
 		}
 		return g.dateArithGenericFallback(name, this, amount, unit, false)
+	case "dremio":
+		if domain == "Date" {
+			return g.dateArithDremio(name, this, amount, unit)
+		}
+		return g.dateArithGenericFallback(name, this, amount, unit, false)
 	default:
 		return g.dateArithGenericFallback(name, this, amount, unit, domain == "Date" && sign > 0)
 	}
@@ -7024,6 +7095,23 @@ func (g *generator) dateArithPresto(this, amount, unit *Expression, sign int) st
 		amount = New("Mul", Arg{"this", amount}, Arg{"expression", numberLit(-1, true)})
 	}
 	return "DATE_ADD('" + unitName + "', " + g.node(amount) + ", " + g.node(this) + ")"
+}
+
+// dateArithDremio writes Dremio's own DATE_ADD/DATE_SUB: a missing unit or a
+// unit of DAY writes the plain two-argument call, and any other unit wraps
+// the amount in `CAST(... AS INTERVAL unit)` -- name is already DATE_ADD or
+// DATE_SUB, chosen by the caller, and neither form ever negates the amount:
+// a SUB's own sign already lives in whatever the parser recorded there (see
+// buildDremioDateDeltaWithCastInterval), not applied again here.
+func (g *generator) dateArithDremio(name string, this, amount, unit *Expression) string {
+	unitName := ""
+	if unit != nil {
+		unitName = strings.ToUpper(unit.Name())
+	}
+	if unitName == "" || unitName == "DAY" {
+		return name + "(" + g.node(this) + ", " + g.node(amount) + ")"
+	}
+	return name + "(" + g.node(this) + ", CAST(" + g.node(amount) + " AS INTERVAL " + unitName + "))"
 }
 
 // dateArithTimestampSub writes databricks' DatetimeSub: TIMESTAMPADD with

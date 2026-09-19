@@ -19,7 +19,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio")
 
 
 def gostr(s: str) -> str:
@@ -6071,6 +6071,23 @@ def main() -> int:
         "\t// be a statement the engine rejects.\n",
         "\tCoercesBooleans bool\n",
         "\tLimitIsTop bool\n",
+        "\t// LimitOnlyLiterals folds a LIMIT/OFFSET that is not already a\n",
+        "\t// plain literal down to one at generation time -- `LIMIT 1 + 1`\n",
+        "\t// writes as `LIMIT 2` -- because this dialect's engine will not\n",
+        "\t// accept an expression there at all.\n",
+        "\tLimitOnlyLiterals bool\n",
+        "\t// MultiArgDistinct says this dialect writes `DISTINCT a, b` as\n",
+        "\t// itself; where this is false, it has no multi-column DISTINCT\n",
+        "\t// and the call is rewritten into a CASE that returns NULL if any\n",
+        "\t// argument is NULL and the arguments as a row otherwise.\n",
+        "\tMultiArgDistinct bool\n",
+        "\t// IntervalAllowsPluralForm says an interval unit is written\n",
+        "\t// whichever way it was: PLURAL where the statement said `DAYS`.\n",
+        "\t// Where this is false, the unit is always singularised on the\n",
+        "\t// way out, through the reference's own fixed TIME_PART_SINGULARS\n",
+        "\t// table -- a reference-level constant no dialect overrides, so\n",
+        "\t// it is written out once in the port rather than harvested here.\n",
+        "\tIntervalAllowsPluralForm bool\n",
         "\t// LimitFetch says which of LIMIT and FETCH this dialect writes: the\n",
         "\t// port parses either into the class it was written as, and this\n",
         "\t// dialect converts one into the other at generation time (\"ALL\"\n",
@@ -7460,6 +7477,19 @@ def main() -> int:
         out.append(
             "\t\tLimitIsTop: "
             f"{str(bool(Dialect.get_or_raise(name or None).generator_class.LIMIT_IS_TOP)).lower()},\n"
+        )
+        _gen_class = Dialect.get_or_raise(name or None).generator_class
+        out.append(
+            "\t\tLimitOnlyLiterals: "
+            f"{str(bool(_gen_class.LIMIT_ONLY_LITERALS)).lower()},\n"
+        )
+        out.append(
+            "\t\tMultiArgDistinct: "
+            f"{str(bool(_gen_class.MULTI_ARG_DISTINCT)).lower()},\n"
+        )
+        out.append(
+            "\t\tIntervalAllowsPluralForm: "
+            f"{str(bool(_gen_class.INTERVAL_ALLOWS_PLURAL_FORM)).lower()},\n"
         )
         out.append(
             "\t\tLimitFetch: "

@@ -1,0 +1,127 @@
+{
+ "dialect": "dremio",
+ "rendered": "SELECT CONVERT_TIMEZONE('America/Chicago', DateColumn)",
+ "sql": "SELECT CONVERT_TIMEZONE('America/Chicago', DateColumn)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CONVERT_TIMEZONE"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 24,
+   "t": "STRING",
+   "x": "America/Chicago"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 43,
+   "t": "VAR",
+   "x": "DateColumn"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.ConvertTimezone",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "target_tz",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "America/Chicago"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "timestamp"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "DateColumn"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}
