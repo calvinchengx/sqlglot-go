@@ -211,6 +211,7 @@ func init() {
 		"Struct":                              (*generator).writeStruct,
 		"Unnest":                              (*generator).writeUnnest,
 		"AtTimeZone":                          (*generator).writeAtTimeZone,
+		"UnixToTime":                          (*generator).writeUnixToTime,
 		"JSONPath":                            (*generator).writeJSONPath,
 		"JSONKeyValue":                        (*generator).writeJSONKeyValue,
 		"Pivot":                               (*generator).writePivot,
@@ -1433,7 +1434,48 @@ func (g *generator) writeCast(e *Expression) string {
 	if e.Class == "TryCast" {
 		word = "TRY_CAST"
 	}
+	// Fabric has no TIMESTAMPTZ of its own -- everywhere else it is written
+	// as DATETIME2, but inside an AT TIME ZONE expression, which needs an
+	// offset-aware value to convert FROM, it is written as DATETIMEOFFSET
+	// instead. The outer AtTimeZone writer supplies the DATETIME2 wrapper
+	// this cast no longer does.
+	if g.dialect == "fabric" {
+		if to, _ := e.Args["to"].(*Expression); to != nil && to.Args["this"] == DataTypeKind("TIMESTAMPTZ") {
+			if nearestAncestor(e, "AtTimeZone", "Select") == "AtTimeZone" {
+				return "CAST(" + g.child(e, "this") + " AS DATETIMEOFFSET(" + cappedPrecisionText(to, 6) + "))"
+			}
+		}
+	}
 	return word + "(" + g.child(e, "this") + " AS " + g.child(e, "to") + ")"
+}
+
+// nearestAncestor is the reference's `find_ancestor`: the class of the
+// nearest node above `e` that is one of `classes`, stopping at the first
+// match regardless of which one it is -- so a Select in between an
+// AtTimeZone and this node means "no", not "keep looking".
+func nearestAncestor(e *Expression, classes ...string) string {
+	for p := e.Parent; p != nil; p = p.Parent {
+		for _, c := range classes {
+			if p.Class == c {
+				return c
+			}
+		}
+	}
+	return ""
+}
+
+// cappedPrecisionText is capDataTypePrecision, read back as the digit string
+// alone -- what a caller writing its own template around the cast, rather
+// than through writeDataType, actually needs.
+func cappedPrecisionText(dt *Expression, max int) string {
+	capped := capDataTypePrecision(dt, max)
+	items, _ := capped.Args["expressions"].([]*Expression)
+	if len(items) == 1 {
+		if inner, _ := items[0].Args["this"].(*Expression); inner != nil {
+			return inner.Name()
+		}
+	}
+	return strconv.Itoa(max)
 }
 
 // writePlaceholder writes a bound parameter. The spelling is the dialect's:
@@ -1608,6 +1650,42 @@ func (g *generator) lexesBackAsABareVar(part string) bool {
 	return !g.wroteDollar || !strings.Contains(part, "$")
 }
 
+// temporalTypes is the reference's own `DataType.TEMPORAL_TYPES` -- a fixed
+// reference-level constant, not a per-dialect fact, so it is written out
+// once here rather than generated.
+var temporalTypes = map[DataTypeKind]bool{
+	"DATE": true, "DATE32": true, "DATETIME": true, "DATETIME2": true,
+	"DATETIME64": true, "SMALLDATETIME": true, "TIME": true, "TIMESTAMP": true,
+	"TIMESTAMPNTZ": true, "TIMESTAMPLTZ": true, "TIMESTAMPTZ": true,
+	"TIMESTAMP_MS": true, "TIMESTAMP_NS": true, "TIMESTAMP_S": true, "TIMETZ": true,
+}
+
+// capDataTypePrecision rebuilds a DataType with its single size parameter
+// capped at `max` -- the reference's own `_cap_data_type_precision`, used
+// only by Fabric. An unparameterised type gets `max` outright.
+func capDataTypePrecision(e *Expression, max int) *Expression {
+	target := max
+	if items, _ := e.Args["expressions"].([]*Expression); len(items) == 1 {
+		lit := items[0]
+		if lit.Class == "DataTypeParam" {
+			if inner, _ := lit.Args["this"].(*Expression); inner != nil {
+				lit = inner
+			}
+		}
+		if lit.Class == "Literal" {
+			if n, err := strconv.Atoi(lit.Name()); err == nil && n < target {
+				target = n
+			}
+		}
+	}
+	return New("DataType",
+		Arg{"this", e.Args["this"]},
+		Arg{"expressions", []*Expression{New("DataTypeParam",
+			Arg{"this", New("Literal", Arg{"this", strconv.Itoa(target)}, Arg{"is_string", false})})}},
+		Arg{"nested", false},
+	)
+}
+
 func (g *generator) writeDataType(e *Expression) string {
 	// An INTERVAL type's `this` is an Interval NODE carrying the unit, not a
 	// type name: `CAST(x AS INTERVAL DAY)`.
@@ -1622,6 +1700,15 @@ func (g *generator) writeDataType(e *Expression) string {
 		return "INTERVAL " + g.node(unit)
 	}
 	kind, _ := e.Args["this"].(DataTypeKind)
+	// Fabric limits every temporal type but DATE to 6 digits of precision --
+	// TIME(7) writes as TIME(6), and an unparameterised one gets 6 by
+	// default. Capped here, once, rather than recursing back through this
+	// same function: the capped value is already within bounds, so a
+	// second pass through the cap would be a no-op, but there is no reason
+	// to pay for one.
+	if g.dialect == "fabric" && temporalTypes[kind] && kind != "DATE" {
+		e = capDataTypePrecision(e, 6)
+	}
 	// A USER-DEFINED type is named by the word it was written with, which the
 	// node carries beside the kind. No dialect has a spelling for the kind
 	// itself, because the name IS the spelling.
@@ -3099,7 +3186,68 @@ func (g *generator) writeAtTimeZone(e *Expression) string {
 	if len(g.tables.FunctionSQL[e.Class]) > 0 {
 		return g.spell(e)
 	}
-	return g.child(e, "this") + " AT TIME ZONE " + g.child(e, "zone")
+	inner := g.child(e, "this") + " AT TIME ZONE " + g.child(e, "zone")
+	// Fabric's own AT TIME ZONE converts a DATETIMEOFFSET back to DATETIME2
+	// (its own TIMESTAMPTZ writes as neither on its own) -- found by a
+	// Cast to TIMESTAMPTZ anywhere in this same scope, matching the writeCast
+	// override that turned that inner cast into DATETIMEOFFSET in the first
+	// place.
+	if g.dialect == "fabric" {
+		if cast := findCastToInScope(e, "TIMESTAMPTZ"); cast != nil {
+			to, _ := cast.Args["to"].(*Expression)
+			return "CAST(" + inner + " AS DATETIME2(" + cappedPrecisionText(to, 6) + "))"
+		}
+	}
+	return inner
+}
+
+// findCastToInScope is the reference's `find_in_scope`: a Cast to `kind`
+// anywhere under `e`, not crossing into a nested SELECT or subquery -- a
+// different scope has its own casts, unrelated to this one.
+func findCastToInScope(e *Expression, kind DataTypeKind) *Expression {
+	var found *Expression
+	e.Walk(func(n *Expression) bool {
+		if found != nil {
+			return false
+		}
+		if n != e && (n.Class == "Select" || n.Class == "Subquery") {
+			return false
+		}
+		if n.Class == "Cast" || n.Class == "TryCast" {
+			if to, _ := n.Args["to"].(*Expression); to != nil && to.Args["this"] == kind {
+				found = n
+				return false
+			}
+		}
+		return true
+	})
+	return found
+}
+
+// writeUnixToTime writes Fabric's own reading of UNIX_TO_TIME: there is no
+// native UNIX-epoch conversion, so it is built from a DATEADD of whole
+// microseconds onto the epoch itself.
+func (g *generator) writeUnixToTime(e *Expression) string {
+	if g.dialect != "fabric" {
+		return g.spell(e)
+	}
+	if scale, _ := e.Args["scale"].(*Expression); scale != nil &&
+		(scale.Class != "Literal" || scale.Name() != "0") {
+		return g.fail(e.Class + " scale this dialect does not support")
+	}
+	timestamp, _ := e.Args["this"].(*Expression)
+	microseconds := New("Mul", Arg{"this", timestamp},
+		Arg{"expression", New("Literal", Arg{"this", "1e6"}, Arg{"is_string", false})})
+	rounded := New("Round", Arg{"this", microseconds},
+		Arg{"decimals", New("Literal", Arg{"this", "0"}, Arg{"is_string", false})})
+	roundedBigint := New("Cast", Arg{"this", rounded},
+		Arg{"to", New("DataType", Arg{"this", DataTypeKind("BIGINT")})})
+	epochStart := New("Cast",
+		Arg{"this", New("Literal", Arg{"this", "1970-01-01"}, Arg{"is_string", true})},
+		Arg{"to", New("DataType", Arg{"this", DataTypeKind("DATETIME2")},
+			Arg{"expressions", []*Expression{New("DataTypeParam",
+				Arg{"this", New("Literal", Arg{"this", "6"}, Arg{"is_string", false})})}})})
+	return "DATEADD(MICROSECONDS, " + g.node(roundedBigint) + ", " + g.node(epochStart) + ")"
 }
 
 // isSafeLeadingOperand reports whether a node can be written at the start of a

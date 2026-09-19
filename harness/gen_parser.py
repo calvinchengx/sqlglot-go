@@ -19,7 +19,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric")
 
 
 def gostr(s: str) -> str:
@@ -175,6 +175,22 @@ def rewrites_serial_to_identity(generator_class) -> bool:
                 if getattr(item, "__name__", "") == "_serial_to_generated":
                     return True
     return False
+
+
+def defaults_unsized_char_types(dialect: str) -> bool:
+    """Whether a bare VARCHAR/CHAR column (no length) in CREATE TABLE is
+    stamped with an implicit length of 1, probed directly against the
+    reference rather than read off a flag -- Fabric does this in its own
+    parser override, not through a class-level setting."""
+    import sqlglot as _sg
+    from sqlglot import expressions as _exp
+
+    tree = _sg.parse_one("CREATE TABLE t (col VARCHAR)", read=dialect or None)
+    if not isinstance(tree, _exp.Create) or not isinstance(tree.this, _exp.Schema):
+        return False
+    col = tree.this.expressions[0]
+    kind = col.kind
+    return bool(kind is not None and kind.expressions)
 
 
 def has_list_constructor(dialect: str) -> bool:
@@ -6456,6 +6472,11 @@ def main() -> int:
         "\t// (unconditionally shared) table, since it is the OUTCOME that\n",
         "\t// differs, not the table.\n",
         "\tHasListConstructor bool\n",
+        "\t// DefaultsUnsizedCharTypes says a CREATE TABLE column typed bare\n",
+        "\t// VARCHAR or CHAR, with no length, is stamped with an implicit\n",
+        "\t// length of 1 -- Fabric's own reading of T-SQL's rule for what a\n",
+        "\t// missing length means (`learn.microsoft.com/.../char-and-varchar`).\n",
+        "\tDefaultsUnsizedCharTypes bool\n",
         "\t// UnaryOps is which token opens a PREFIX operator, and what it\n",
         "\t// builds. The empty string is the no-op unary plus.\n",
         "\tUnaryOps map[TokenType]string\n",
@@ -7642,6 +7663,9 @@ def main() -> int:
         )
         out.append(
             "\t\tHasListConstructor: %s,\n" % str(has_list_constructor(name)).lower()
+        )
+        out.append(
+            "\t\tDefaultsUnsizedCharTypes: %s,\n" % str(defaults_unsized_char_types(name)).lower()
         )
         _uo = unary_ops(name, P, exp)
         body = "".join(f"\t\t\tTok{t}: {gostr(c)},\n" for t, c in sorted(_uo.items()))

@@ -394,6 +394,12 @@ func (p *parser) parseCreate() (*Expression, error) {
 		return nil, p.unsupported("CREATE " + kind + " with more than this port reads")
 	}
 
+	// Fabric's own reading of T-SQL's rule for a missing length: a bare
+	// VARCHAR/CHAR column is really VARCHAR(1)/CHAR(1).
+	if kind == "TABLE" && p.tables.DefaultsUnsizedCharTypes {
+		applyDefaultCharLength(this)
+	}
+
 	var items []*Expression
 	// T-SQL says a table is temporary by writing a # in front of its name
 	// rather than the word TEMPORARY, and the reference records BOTH: the
@@ -5195,6 +5201,40 @@ func namesATemporaryTable(table *Expression) bool {
 	}
 	name, _ := table.Args["this"].(*Expression)
 	return name != nil && name.Args["temporary"] == true
+}
+
+// applyDefaultCharLength stamps a bare VARCHAR/CHAR column of a CREATE
+// TABLE's schema with an implicit length of 1, in place: Fabric's own
+// reading of T-SQL's rule for what a missing length means.
+func applyDefaultCharLength(this *Expression) {
+	if this == nil || this.Class != "Schema" {
+		return
+	}
+	columns, _ := this.Args["expressions"].([]*Expression)
+	for _, col := range columns {
+		if col.Class != "ColumnDef" {
+			continue
+		}
+		kind, _ := col.Args["kind"].(*Expression)
+		if kind == nil || kind.Class != "DataType" {
+			continue
+		}
+		if kind.Args["this"] != DataTypeKind("VARCHAR") && kind.Args["this"] != DataTypeKind("CHAR") {
+			continue
+		}
+		if items, _ := kind.Args["expressions"].([]*Expression); len(items) > 0 {
+			continue
+		}
+		// Rebuilt rather than `.Set()`, which would only APPEND the new key
+		// to a DataType that never had one -- landing "expressions" after
+		// "nested" instead of the canonical order the dump holds it to.
+		nested, _ := kind.Args["nested"].(bool)
+		col.Set("kind", New("DataType",
+			Arg{"this", kind.Args["this"]},
+			Arg{"expressions", []*Expression{New("Literal", Arg{"this", "1"}, Arg{"is_string", false})}},
+			Arg{"nested", nested},
+		))
+	}
 }
 
 // createdTable digs the table out of what a CREATE was given, which is the

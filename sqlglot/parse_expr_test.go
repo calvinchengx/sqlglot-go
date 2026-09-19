@@ -11356,6 +11356,30 @@ func TestDistinctOnEliminatedForRedshift(t *testing.T) {
 // shapes the pinned corpus doesn't happen to carry: a multi-entry bracket
 // map, an unclosed one, LIST's ordinary call form in a dialect that is not
 // Materialize, and SMALLSERIAL/BIGSERIAL alongside plain SERIAL.
+// Fabric's own reading of VARCHAR/CHAR default length, precision capping,
+// and UNIX_TO_TIME, in shapes the pinned corpus doesn't happen to carry:
+// columns that already have a length (so nothing is added), and a scale
+// UNIX_TO_TIME does not support (refused, not silently dropped).
+func TestFabricCharLengthAndUnixToTimeShapes(t *testing.T) {
+	sql := "CREATE TABLE t (a VARCHAR(10), b INT, c CHAR(5))"
+	tree, err := ParseOne(sql, "fabric")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", sql, err)
+	}
+	if got, err := Generate(tree, "fabric"); err != nil || got != sql {
+		t.Errorf("%s wrote %q (%v)", sql, got, err)
+	}
+
+	unsupported := "UNIX_TO_TIME(x, 3)"
+	tree, err = ParseOne(unsupported, "fabric")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", unsupported, err)
+	}
+	if got, err := Generate(tree, "fabric"); err == nil {
+		t.Errorf("%s wrote %q, which says less", unsupported, got)
+	}
+}
+
 func TestMaterializeMapAndSerialShapes(t *testing.T) {
 	for _, c := range []struct{ sql, dialect, want string }{
 		{"SELECT MAP['a' => 1, 'b' => 2]", "materialize", ""},

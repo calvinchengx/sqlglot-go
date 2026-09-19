@@ -72,6 +72,7 @@ Regenerate with `make service`; nothing in it is authored here.
 | redshift | 307/307 | 275 | 307 | 32 | 0 |
 | materialize | 51/51 | 44 | 51 | 7 | 0 |
 | risingwave | 14/14 | 12 | 14 | 2 | 0 |
+| fabric | 47/47 | 47 | 47 | 0 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number
