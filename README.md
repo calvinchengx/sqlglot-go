@@ -70,6 +70,7 @@ Regenerate with `make service`; nothing in it is authored here.
 | duckdb | 1631/1631 | 1629 | 1631 | 2 | 0 |
 | databricks | 426/426 | 426 | 426 | 0 | 0 |
 | redshift | 307/307 | 275 | 307 | 32 | 0 |
+| materialize | 51/51 | 44 | 51 | 7 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number

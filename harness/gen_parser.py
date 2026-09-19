@@ -19,7 +19,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize")
 
 
 def gostr(s: str) -> str:
@@ -126,6 +126,66 @@ def concat_as_dpipe(generator_class) -> bool:
     from sqlglot.dialects.dialect import concat_to_dpipe_sql
 
     return generator_class.TRANSFORMS.get(exp.Concat) is concat_to_dpipe_sql
+
+
+_SUPPRESSIBLE_CANDIDATES = (
+    "AutoIncrementColumnConstraint",
+    "GeneratedAsIdentityColumnConstraint",
+    "PrimaryKeyColumnConstraint",
+    "OnConflict",
+)
+
+
+def suppressed_write_classes(dialect: str) -> set:
+    """Node classes this dialect's generator renders as nothing at all,
+    found by building a bare instance of each candidate and checking the
+    reference actually produces the empty string -- not read off TRANSFORMS
+    by name, since a class can be written as "" through several different
+    mechanisms (a TRANSFORMS lambda, an overridden _sql method, ...) and the
+    OUTCOME is what a probe can check without caring which."""
+    import sqlglot as _sg
+    from sqlglot import expressions as _exp
+
+    gen = _sg.Dialect.get_or_raise(dialect or None).generator_class()
+    out = set()
+    for cls_name in _SUPPRESSIBLE_CANDIDATES:
+        cls = getattr(_exp, cls_name, None)
+        if cls is None:
+            continue
+        try:
+            if gen.generate(cls()) == "":
+                out.add(cls_name)
+        except Exception:  # noqa: BLE001 -- a class this probe cannot build bare
+            continue
+    return out
+
+
+def rewrites_serial_to_identity(generator_class) -> bool:
+    """Whether this dialect's ColumnDef preprocessing chain includes the
+    reference's own `_serial_to_generated` -- SERIAL/SMALLSERIAL/BIGSERIAL
+    expand to a base int type plus GENERATED AS IDENTITY and NOT NULL at
+    write time, the same way `eliminates_distinct_on` finds its transform."""
+    import sqlglot.expressions as exp
+
+    fn = generator_class.TRANSFORMS.get(exp.ColumnDef)
+    for cell in getattr(fn, "__closure__", None) or ():
+        value = cell.cell_contents
+        if isinstance(value, list):
+            for item in value:
+                if getattr(item, "__name__", "") == "_serial_to_generated":
+                    return True
+    return False
+
+
+def has_list_constructor(dialect: str) -> bool:
+    """Whether `LIST[1, 2]` builds a List rather than a subscripted column,
+    probed directly since the shared `ARRAY_CONSTRUCTORS` table says nothing
+    about dialects (DuckDB, T-SQL) that read it some other way first."""
+    import sqlglot as _sg
+    from sqlglot import expressions as _exp
+
+    tree = _sg.parse_one("SELECT LIST[1, 2]", read=dialect or None)
+    return tree.find(_exp.List) is not None
 
 
 def eliminates_distinct_on(generator_class) -> bool:
@@ -3925,11 +3985,23 @@ def composite_type_sql(dialect: str) -> dict[str, str]:
     result["StructClose"] = rest[-1]
     result["StructFieldSep"] = field[len("a") : -len(inner)]
 
-    # MAP reuses the struct delimiters everywhere so far; assert rather than
-    # record a second pair that has never differed.
+    # MAP reuses the struct delimiters in every dialect this port has met so
+    # far but Materialize, which spells it `MAP[key => value]` -- its own
+    # bracket-and-arrow shape, not STRUCT's parens. Recorded as a template
+    # (with the two probe types found and replaced) only where it actually
+    # differs, so every dialect that still matches the old assumption keeps
+    # falling through to StructOpen/StructClose unchanged.
+    key_inner = to("CAST(x AS TEXT)")
     m = to("CAST(x AS MAP(TEXT, INT))")
     if not (m.startswith("MAP" + result["StructOpen"]) and m.endswith(result["StructClose"])):
-        raise SystemExit(f"{dialect}: map type {m!r} does not use the struct delimiters")
+        tmpl = m
+        if key_inner in tmpl:
+            tmpl = tmpl.replace(key_inner, "{key}", 1)
+        if inner in tmpl:
+            tmpl = tmpl.replace(inner, "{value}", 1)
+        if "{key}" not in tmpl or "{value}" not in tmpl:
+            raise SystemExit(f"{dialect}: map type {m!r} could not be turned into a template")
+        result["MapTemplate"] = tmpl
     return result
 
 
@@ -5987,6 +6059,19 @@ def main() -> int:
         "\t// written as itself; where this is false, the call is written\n",
         "\t// bare -- `a`, not `CONCAT(a)`.\n",
         "\tSupportsSingleArgConcat bool\n",
+        "\t// SuppressedWriteClasses names node classes this dialect writes as\n",
+        "\t// nothing at all -- Materialize drops AUTO_INCREMENT, GENERATED AS\n",
+        "\t// IDENTITY, PRIMARY KEY and ON CONFLICT entirely, none of which it\n",
+        "\t// supports -- probed by building a bare instance of each candidate\n",
+        "\t// class and checking the reference actually renders it empty.\n",
+        "\tSuppressedWriteClasses map[string]struct{}\n",
+        "\t// RewritesSerialToIdentity says SERIAL/SMALLSERIAL/BIGSERIAL write\n",
+        "\t// back as the base int type plus GENERATED AS IDENTITY and NOT\n",
+        "\t// NULL, matching how the reference's own Postgres-family write\n",
+        "\t// path expands it -- a dialect that also suppresses\n",
+        "\t// GeneratedAsIdentityColumnConstraint (see SuppressedWriteClasses)\n",
+        "\t// is left with just the NOT NULL, which is correct for it.\n",
+        "\tRewritesSerialToIdentity bool\n",
         "\t// TzToWithTimeZone says this dialect writes TIMETZ/TIMESTAMPTZ as\n",
         "\t// their bare-name equivalent (TIME/TIMESTAMP) plus a trailing\n",
         "\t// ` WITH TIME ZONE`, appended after any size the type carries\n",
@@ -6362,6 +6447,15 @@ def main() -> int:
         "\t// FROM is really a nested column being iterated, not a real table --\n",
         "\t// Redshift's `t, t.arr_col AS x` sugar for `t, UNNEST(t.arr_col) AS x`.\n",
         "\tSupportsImplicitUnnest bool\n",
+        "\t// HasListConstructor says `LIST[1, 2]` builds a List rather than a\n",
+        "\t// column named LIST subscripted by [1, 2] -- true nearly\n",
+        "\t// everywhere `ARRAY_CONSTRUCTORS` maps the word, EXCEPT where the\n",
+        "\t// dialect reads it some other way first: DuckDB's own LIST type\n",
+        "\t// grammar intercepts it, and T-SQL's `[...]` already means a\n",
+        "\t// quoted identifier. Probed directly rather than read off the\n",
+        "\t// (unconditionally shared) table, since it is the OUTCOME that\n",
+        "\t// differs, not the table.\n",
+        "\tHasListConstructor bool\n",
         "\t// UnaryOps is which token opens a PREFIX operator, and what it\n",
         "\t// builds. The empty string is the no-op unary plus.\n",
         "\tUnaryOps map[TokenType]string\n",
@@ -6753,6 +6847,11 @@ def main() -> int:
         "\tStructOpen         string\n",
         "\tStructClose        string\n",
         "\tStructFieldSep     string\n",
+        "\t// MapTemplate is set only where MAP does NOT reuse the struct\n",
+        "\t// delimiters -- Materialize's own `MAP[key => value]` -- and is\n",
+        "\t// empty everywhere else, where MAP falls through to StructOpen/\n",
+        "\t// StructClose like every other nested type.\n",
+        "\tMapTemplate string\n",
         "}\n",
         "\n",
         "// PlaceholderSQL is the text around a bound parameter.\n",
@@ -7338,6 +7437,11 @@ def main() -> int:
             "\t\tSupportsSingleArgConcat: "
             f"{str(bool(Dialect.get_or_raise(name or None).generator_class.SUPPORTS_SINGLE_ARG_CONCAT)).lower()},\n"
         )
+        out.append(strset("SuppressedWriteClasses", suppressed_write_classes(name)))
+        out.append(
+            "\t\tRewritesSerialToIdentity: "
+            f"{str(rewrites_serial_to_identity(Dialect.get_or_raise(name or None).generator_class)).lower()},\n"
+        )
         out.append(
             "\t\tTzToWithTimeZone: "
             f"{str(bool(Dialect.get_or_raise(name or None).generator_class.TZ_TO_WITH_TIME_ZONE)).lower()},\n"
@@ -7535,6 +7639,9 @@ def main() -> int:
         )
         out.append(
             "\t\tSupportsImplicitUnnest: %s,\n" % str(bool(P.SUPPORTS_IMPLICIT_UNNEST)).lower()
+        )
+        out.append(
+            "\t\tHasListConstructor: %s,\n" % str(has_list_constructor(name)).lower()
         )
         _uo = unary_ops(name, P, exp)
         body = "".join(f"\t\t\tTok{t}: {gostr(c)},\n" for t, c in sorted(_uo.items()))
@@ -7868,6 +7975,8 @@ def main() -> int:
         out.append("\t\tCompositeType: CompositeTypeSQL{\n")
         for k in ("ArrayTemplate", "ArraySizedTemplate", "StructOpen", "StructClose", "StructFieldSep"):
             out.append(f"\t\t\t{k}: {gostr(_ct[k])},\n")
+        if _ct.get("MapTemplate"):
+            out.append(f"\t\t\tMapTemplate: {gostr(_ct['MapTemplate'])},\n")
         out.append("\t\t},\n")
         _qw = quantifier_wraps_subquery(name)
         out.append("\t\tQuantifierWrapsSubquery: map[string]bool{\n")

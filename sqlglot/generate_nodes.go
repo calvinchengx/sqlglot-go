@@ -91,6 +91,7 @@ func init() {
 		"Property":                            (*generator).writeProperty,
 		"Properties":                          (*generator).writePropertyList,
 		"Concat":                              (*generator).writeConcat,
+		"List":                                (*generator).writeList,
 		"TsOrDsAdd":                           (*generator).writeTsOrDsAdd,
 		"TsOrDsDiff":                          (*generator).writeTsOrDsDiff,
 		"Alter":                               (*generator).writeAlter,
@@ -954,7 +955,15 @@ func (g *generator) writeVarMap(e *Expression) string {
 // written with braces rather than as a struct.
 func (g *generator) writeToMap(e *Expression) string {
 	inner, _ := e.Args["this"].(*Expression)
-	if inner == nil || inner.Class != "Struct" {
+	if inner == nil {
+		return g.fail(e.Class)
+	}
+	// Materialize's own MAP(SELECT ...) wraps a whole query, unwrapped by
+	// anything below -- it never reaches a Struct at all.
+	if g.dialect == "materialize" && inner.Class == "Select" {
+		return "MAP(" + g.node(inner) + ")"
+	}
+	if inner.Class != "Struct" {
 		return g.fail(e.Class)
 	}
 	items, _ := inner.Args["expressions"].([]*Expression)
@@ -968,7 +977,14 @@ func (g *generator) writeToMap(e *Expression) string {
 		if key == nil || value == nil {
 			return g.fail(e.Class + " with an entry that is not a pair")
 		}
-		parts = append(parts, g.node(key)+": "+g.node(value))
+		if g.dialect == "materialize" {
+			parts = append(parts, g.node(key)+" => "+g.node(value))
+		} else {
+			parts = append(parts, g.node(key)+": "+g.node(value))
+		}
+	}
+	if g.dialect == "materialize" {
+		return "MAP[" + strings.Join(parts, ", ") + "]"
 	}
 	return "MAP {" + strings.Join(parts, ", ") + "}"
 }
@@ -1686,12 +1702,89 @@ func (g *generator) writeDataType(e *Expression) string {
 		}
 		return strings.ReplaceAll(tmpl, "{inner}", params)
 	}
+	// MAP reuses the struct delimiters everywhere but this: Materialize
+	// spells it `MAP[key => value]`, its own bracket-and-arrow shape rather
+	// than STRUCT's parens. A template is only recorded where it actually
+	// differs; everywhere else this stays empty and MAP falls through to
+	// the shared struct delimiters below, unchanged from before.
+	if kind == "MAP" && g.tables.CompositeType.MapTemplate != "" {
+		items, _ := e.Args["expressions"].([]*Expression)
+		if len(items) != 2 {
+			return g.fail("MAP type with other than two type parameters")
+		}
+		tmpl := strings.ReplaceAll(g.tables.CompositeType.MapTemplate, "{key}", g.node(items[0]))
+		return strings.ReplaceAll(tmpl, "{value}", g.node(items[1]))
+	}
 	return out + g.tables.CompositeType.StructOpen + params + g.tables.CompositeType.StructClose
+}
+
+// rewriteSerialToIdentity expands a SERIAL/SMALLSERIAL/BIGSERIAL column into
+// its base int type plus GENERATED AS IDENTITY and NOT NULL, matching the
+// reference's own `_serial_to_generated` write-time transform. Any other
+// column is returned unchanged.
+func rewriteSerialToIdentity(colDef *Expression) *Expression {
+	kind, _ := colDef.Args["kind"].(*Expression)
+	if kind == nil {
+		return colDef
+	}
+	kindStr, _ := kind.Args["this"].(DataTypeKind)
+	constraints, _ := colDef.Args["constraints"].([]*Expression)
+
+	// _auto_increment_to_serial: an explicit AUTO_INCREMENT over a plain
+	// int-family type reads the same as that type's own SERIAL spelling,
+	// so it is normalised to one before the SERIAL expansion below ever
+	// looks at it -- the two transforms run in this fixed order in the
+	// reference too, each seeing what the other already did.
+	autoIdx := -1
+	for i, c := range constraints {
+		if k, _ := c.Args["kind"].(*Expression); k != nil && k.Class == "AutoIncrementColumnConstraint" {
+			autoIdx = i
+			break
+		}
+	}
+	if autoIdx >= 0 {
+		var serial DataTypeKind
+		switch kindStr {
+		case "INT":
+			serial = "SERIAL"
+		case "SMALLINT":
+			serial = "SMALLSERIAL"
+		case "BIGINT":
+			serial = "BIGSERIAL"
+		}
+		if serial != "" {
+			kindStr = serial
+			constraints = append(append([]*Expression{}, constraints[:autoIdx]...), constraints[autoIdx+1:]...)
+		}
+	}
+
+	var base DataTypeKind
+	switch kindStr {
+	case "SERIAL":
+		base = "INT"
+	case "SMALLSERIAL":
+		base = "SMALLINT"
+	case "BIGSERIAL":
+		base = "BIGINT"
+	default:
+		return colDef
+	}
+	out := colDef.shallowCopy()
+	out.Set("kind", New("DataType", Arg{"this", base}))
+	out.Set("constraints", append(append([]*Expression{}, constraints...),
+		New("ColumnConstraint", Arg{"kind",
+			New("GeneratedAsIdentityColumnConstraint", Arg{"this", false})}),
+		New("ColumnConstraint", Arg{"kind", New("NotNullColumnConstraint")}),
+	))
+	return out
 }
 
 // writeColumnDef writes one named field of a STRUCT-like type. The separator
 // is the dialect's: Databricks writes `a: INT` where the others write `a INT`.
 func (g *generator) writeColumnDef(e *Expression) string {
+	if g.tables.RewritesSerialToIdentity {
+		e = rewriteSerialToIdentity(e)
+	}
 	// A COLUMN of a table is `a STRING`; a FIELD of a struct is `a: STRING` in
 	// Databricks. Same node, and the parent says which.
 	sep := g.tables.CompositeType.StructFieldSep
@@ -4521,6 +4614,21 @@ func (g *generator) writeTsOrDsDiff(e *Expression) string {
 		return g.spell(e)
 	}
 	return g.writeDateDeltaCall("DATEDIFF", e)
+}
+
+// writeList writes LIST(a, b, ...), Materialize's own `LIST[a, b, ...]`
+// bracket sugar excepted -- and even Materialize keeps the call form when
+// the single argument is a SELECT, since `LIST[SELECT ...]` is not the
+// syntax it read that shape from.
+func (g *generator) writeList(e *Expression) string {
+	if g.dialect != "materialize" {
+		return g.spell(e)
+	}
+	items, _ := e.Args["expressions"].([]*Expression)
+	if len(items) == 1 && holdsAQuery(items[0]) {
+		return "LIST(" + g.node(items[0]) + ")"
+	}
+	return "LIST[" + g.list(e) + "]"
 }
 
 // writeConcat writes CONCAT(a, b, ...). Redshift always writes it as a `||`

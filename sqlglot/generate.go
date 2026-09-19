@@ -105,6 +105,13 @@ func (g *generator) node(e *Expression) string {
 	if e == nil {
 		return ""
 	}
+	// A class this dialect writes as nothing at all -- Materialize supports
+	// none of AUTO_INCREMENT, GENERATED AS IDENTITY, PRIMARY KEY or ON
+	// CONFLICT, and drops each one entirely rather than refusing the whole
+	// statement over a constraint it simply does not enforce.
+	if _, ok := g.tables.SuppressedWriteClasses[e.Class]; ok {
+		return ""
+	}
 	// A value standing where a CONDITION is wanted, in a dialect with no
 	// boolean type: the comparison goes around whatever it renders as.
 	if g.coerced[e] {

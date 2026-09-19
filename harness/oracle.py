@@ -27,7 +27,7 @@ import sys
 
 # Dialects the executor configures. sqlglot's per-dialect suites supply
 # dialect-specific statements; identity.sql supplies the dialect-neutral core.
-DIALECTS = ("tsql", "postgres", "duckdb", "databricks", "redshift")
+DIALECTS = ("tsql", "postgres", "duckdb", "databricks", "redshift", "materialize")
 
 
 

@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 4815,
+ "count": 4866,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -7438,6 +7438,11 @@
    "sql": "WITH t AS (SELECT '{\"x-y\": \"z\"}' AS c) SELECT get_json_object(c, '$.x-y') FROM t"
   },
   {
+   "key": "316d8891f1acbb39",
+   "dialect": "materialize",
+   "sql": "CAST(a AS TEXT)"
+  },
+  {
    "key": "d15d3052445fca42",
    "dialect": "postgres",
    "sql": "CAST(a AS TEXT)"
@@ -7458,6 +7463,11 @@
    "sql": "CAST(a AS BLOB(4))"
   },
   {
+   "key": "8ccb1fb18391f42c",
+   "dialect": "materialize",
+   "sql": "CAST(a AS BYTEA(4))"
+  },
+  {
    "key": "d44a376bcf135b23",
    "dialect": "postgres",
    "sql": "CAST(a AS BYTEA(4))"
@@ -7471,6 +7481,11 @@
    "key": "10181eedb8b8f96f",
    "dialect": "postgres",
    "sql": "CAST(a AS TIMESTAMP)"
+  },
+  {
+   "key": "ff8c218037e148b5",
+   "dialect": "materialize",
+   "sql": "CAST(a AS VARCHAR)"
   },
   {
    "key": "39cf73ee65fa65c5",
@@ -7493,6 +7508,11 @@
    "sql": "CAST(a AS TEXT(3))"
   },
   {
+   "key": "cbfd4773cbfd9285",
+   "dialect": "materialize",
+   "sql": "CAST(a AS VARCHAR(3))"
+  },
+  {
    "key": "63900ec24dc05a42",
    "dialect": "postgres",
    "sql": "CAST(a AS VARCHAR(3))"
@@ -7510,6 +7530,11 @@
   {
    "key": "ff07ede529314fe2",
    "dialect": "duckdb",
+   "sql": "CAST(a AS SMALLINT)"
+  },
+  {
+   "key": "c0b83090a442bce2",
+   "dialect": "materialize",
    "sql": "CAST(a AS SMALLINT)"
   },
   {
@@ -7536,6 +7561,11 @@
    "key": "96f908b9d981a729",
    "dialect": "duckdb",
    "sql": "CAST(a AS DOUBLE)"
+  },
+  {
+   "key": "eb8a8e10193f606d",
+   "dialect": "materialize",
+   "sql": "CAST(a AS DOUBLE PRECISION)"
   },
   {
    "key": "453c0255c7ce2565",
@@ -7758,6 +7788,11 @@
    "sql": "STRPTIME(x, '%y')"
   },
   {
+   "key": "3510f8ef0765e8d4",
+   "dialect": "materialize",
+   "sql": "TO_TIMESTAMP(x, 'YY')"
+  },
+  {
    "key": "e36c1461cde1a240",
    "dialect": "postgres",
    "sql": "TO_TIMESTAMP(x, 'YY')"
@@ -7863,6 +7898,11 @@
    "sql": "STRFTIME(x, '%Y-%m-%d')"
   },
   {
+   "key": "1e3e18436351838f",
+   "dialect": "materialize",
+   "sql": "TO_CHAR(x, 'YYYY-MM-DD')"
+  },
+  {
    "key": "ea52a9111d4138a9",
    "dialect": "postgres",
    "sql": "TO_CHAR(x, 'YYYY-MM-DD')"
@@ -7908,6 +7948,11 @@
    "sql": "CAST(x AS DATE)"
   },
   {
+   "key": "a005943dbf5343a6",
+   "dialect": "materialize",
+   "sql": "CAST(x AS DATE)"
+  },
+  {
    "key": "23beae268102a2d2",
    "dialect": "postgres",
    "sql": "CAST(x AS DATE)"
@@ -7925,6 +7970,11 @@
   {
    "key": "3beccacee90a51a7",
    "dialect": "duckdb",
+   "sql": "TO_TIMESTAMP(x)"
+  },
+  {
+   "key": "db166832c89e50de",
+   "dialect": "materialize",
    "sql": "TO_TIMESTAMP(x)"
   },
   {
@@ -7958,6 +8008,11 @@
    "sql": "x + INTERVAL 1 DAY"
   },
   {
+   "key": "1d707931c270e925",
+   "dialect": "materialize",
+   "sql": "x + INTERVAL '1 DAY'"
+  },
+  {
    "key": "14f596fe20697aac",
    "dialect": "postgres",
    "sql": "x + INTERVAL '1 DAY'"
@@ -7973,6 +8028,11 @@
    "sql": "DATE_TRUNC('DAY', x)"
   },
   {
+   "key": "842c5f3f787813b6",
+   "dialect": "materialize",
+   "sql": "DATE_TRUNC('DAY', x)"
+  },
+  {
    "key": "36888399e4b9609e",
    "dialect": "postgres",
    "sql": "DATE_TRUNC('DAY', x)"
@@ -7980,6 +8040,11 @@
   {
    "key": "7c479cbc3e54c0ea",
    "dialect": "duckdb",
+   "sql": "DATE_TRUNC('day', x)"
+  },
+  {
+   "key": "55bb4d0264e67499",
+   "dialect": "materialize",
    "sql": "DATE_TRUNC('day', x)"
   },
   {
@@ -7991,6 +8056,11 @@
    "key": "ca56d64fec13d1d6",
    "dialect": "postgres",
    "sql": "DATE_TRUNC('day', x::DATE)"
+  },
+  {
+   "key": "551aa8ac40b8c388",
+   "dialect": "materialize",
+   "sql": "DATE_TRUNC('YEAR', x)"
   },
   {
    "key": "b801319afdd92f5b",
@@ -8031,6 +8101,11 @@
    "key": "3fae1b0e9948a27f",
    "dialect": "duckdb",
    "sql": "DATE_TRUNC('DAY', x AT TIME ZONE 'UTC') AT TIME ZONE 'UTC'"
+  },
+  {
+   "key": "cdfef433bb92056d",
+   "dialect": "materialize",
+   "sql": "DATE_TRUNC('DAY', x, 'UTC')"
   },
   {
    "key": "8227900892bc9e45",
@@ -8363,6 +8438,11 @@
    "sql": "POSITION(needle in haystack)"
   },
   {
+   "key": "e8f91558bd9b9a79",
+   "dialect": "materialize",
+   "sql": "POSITION(needle in haystack)"
+  },
+  {
    "key": "e4ef0393c989ab96",
    "dialect": "postgres",
    "sql": "POSITION(needle in haystack)"
@@ -8418,6 +8498,11 @@
    "sql": "CHARINDEX(needle, haystack)"
   },
   {
+   "key": "a687493247f0604c",
+   "dialect": "materialize",
+   "sql": "POSITION(needle IN haystack)"
+  },
+  {
    "key": "c68e57a2ee09db2d",
    "dialect": "postgres",
    "sql": "POSITION(needle IN haystack)"
@@ -8451,6 +8536,11 @@
    "key": "9021bc31796c5928",
    "dialect": "duckdb",
    "sql": "CASE WHEN STRPOS(SUBSTRING(haystack, position), needle) = 0 THEN 0 ELSE STRPOS(SUBSTRING(haystack, position), needle) + position - 1 END"
+  },
+  {
+   "key": "e46f824ea0a60c60",
+   "dialect": "materialize",
+   "sql": "CASE WHEN POSITION(needle IN SUBSTRING(haystack FROM position)) = 0 THEN 0 ELSE POSITION(needle IN SUBSTRING(haystack FROM position)) + position - 1 END"
   },
   {
    "key": "fcb6698b1d43c49b",
@@ -9123,6 +9213,11 @@
    "sql": "SELECT x BETWEEN 2 AND 10"
   },
   {
+   "key": "2b5bcdf466376424",
+   "dialect": "materialize",
+   "sql": "SELECT x BETWEEN 2 AND 10"
+  },
+  {
    "key": "fc3987e4e7aa0408",
    "dialect": "postgres",
    "sql": "SELECT x BETWEEN 2 AND 10"
@@ -9143,6 +9238,11 @@
    "sql": "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)"
   },
   {
+   "key": "06c26647f7ffb90b",
+   "dialect": "materialize",
+   "sql": "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)"
+  },
+  {
    "key": "019c144b3cc99980",
    "dialect": "postgres",
    "sql": "SELECT x BETWEEN SYMMETRIC 10 AND 2"
@@ -9160,6 +9260,11 @@
   {
    "key": "ca895f7d411fe64f",
    "dialect": "duckdb",
+   "sql": "SELECT x BETWEEN 10 AND 2"
+  },
+  {
+   "key": "5dee240c58ddd54b",
+   "dialect": "materialize",
    "sql": "SELECT x BETWEEN 10 AND 2"
   },
   {
@@ -9208,13 +9313,28 @@
    "sql": "JUSTIFY_DAYS(INTERVAL '1 DAY')"
   },
   {
+   "key": "cf4259b92b6ce0ec",
+   "dialect": "materialize",
+   "sql": "JUSTIFY_DAYS(INTERVAL '1 DAY')"
+  },
+  {
    "key": "950e15a4d0037310",
    "dialect": "postgres",
    "sql": "JUSTIFY_HOURS(INTERVAL '1 HOUR')"
   },
   {
+   "key": "8298240e56813a46",
+   "dialect": "materialize",
+   "sql": "JUSTIFY_HOURS(INTERVAL '1 HOUR')"
+  },
+  {
    "key": "119fb533c2383cb8",
    "dialect": "postgres",
+   "sql": "JUSTIFY_INTERVAL(INTERVAL '1 HOUR')"
+  },
+  {
+   "key": "bac657f1971f7e9c",
+   "dialect": "materialize",
    "sql": "JUSTIFY_INTERVAL(INTERVAL '1 HOUR')"
   },
   {
@@ -13738,9 +13858,29 @@
    "sql": "PERCENTILE(ALL x, 0.5)"
   },
   {
+   "key": "d23c19f68f15f347",
+   "dialect": "materialize",
+   "sql": "CREATE TABLE example (id INT PRIMARY KEY, name TEXT)"
+  },
+  {
+   "key": "6ad1b769a2ce72be",
+   "dialect": "materialize",
+   "sql": "CREATE TABLE example (id INT, name TEXT)"
+  },
+  {
    "key": "6361f281aea66de2",
    "dialect": "postgres",
    "sql": "CREATE TABLE example (id INT PRIMARY KEY, name TEXT)"
+  },
+  {
+   "key": "86553474c7e640b1",
+   "dialect": "materialize",
+   "sql": "INSERT INTO example (id, name) VALUES (1, 'Alice') ON CONFLICT(id) DO NOTHING"
+  },
+  {
+   "key": "8ef2ad8366b8635c",
+   "dialect": "materialize",
+   "sql": "INSERT INTO example (id, name) VALUES (1, 'Alice')"
   },
   {
    "key": "47339198a4bf9235",
@@ -13748,9 +13888,29 @@
    "sql": "INSERT INTO example (id, name) VALUES (1, 'Alice') ON CONFLICT(id) DO NOTHING"
   },
   {
+   "key": "1cf3c8daccd290e2",
+   "dialect": "materialize",
+   "sql": "CREATE TABLE example (id SERIAL, name TEXT)"
+  },
+  {
+   "key": "7103e5300afd9461",
+   "dialect": "materialize",
+   "sql": "CREATE TABLE example (id INT NOT NULL, name TEXT)"
+  },
+  {
    "key": "2f5d86de5842c8a9",
    "dialect": "postgres",
    "sql": "CREATE TABLE example (id INT GENERATED BY DEFAULT AS IDENTITY NOT NULL, name TEXT)"
+  },
+  {
+   "key": "bf93da65f6107fe1",
+   "dialect": "materialize",
+   "sql": "CREATE TABLE example (id INT AUTO_INCREMENT, name TEXT)"
+  },
+  {
+   "key": "739f6cac72dfbe5d",
+   "dialect": "materialize",
+   "sql": "SELECT JSON_EXTRACT_PATH_TEXT('{ \"farm\": {\"barn\": { \"color\": \"red\", \"feed stocked\": true }}}', 'farm', 'barn', 'color')"
   },
   {
    "key": "9f48d14d55e12210",
@@ -13758,9 +13918,104 @@
    "sql": "SELECT JSON_EXTRACT_PATH_TEXT('{ \"farm\": {\"barn\": { \"color\": \"red\", \"feed stocked\": true }}}', 'farm', 'barn', 'color')"
   },
   {
+   "key": "830a68924c225677",
+   "dialect": "materialize",
+   "sql": "SELECT MAP['a' => 1]"
+  },
+  {
    "key": "cb97333768db8488",
    "dialect": "duckdb",
    "sql": "SELECT MAP {'a': 1}"
+  },
+  {
+   "key": "c7b1782d0626c533",
+   "dialect": "materialize",
+   "sql": "CURRENT_TIMESTAMP"
+  },
+  {
+   "key": "a61b7f5613aef2db",
+   "dialect": "materialize",
+   "sql": "NOW()"
+  },
+  {
+   "key": "f7d7c1b5a31971de",
+   "dialect": "materialize",
+   "sql": "MZ_NOW()"
+  },
+  {
+   "key": "088d254d30bf0298",
+   "dialect": "materialize",
+   "sql": "SELECT CAST(1 AS mz_timestamp)"
+  },
+  {
+   "key": "d7e975ed9cf6b17d",
+   "dialect": "materialize",
+   "sql": "CREATE TABLE example (id INT, name LIST)"
+  },
+  {
+   "key": "c39cabb5e5903672",
+   "dialect": "materialize",
+   "sql": "SELECT LIST[]"
+  },
+  {
+   "key": "604ea71fc2e6cf2b",
+   "dialect": "materialize",
+   "sql": "SELECT LIST[1, 2, 3]"
+  },
+  {
+   "key": "612134e39cdf6e08",
+   "dialect": "materialize",
+   "sql": "SELECT LIST[LIST[1], LIST[2], NULL]"
+  },
+  {
+   "key": "3133e7480a3eabb6",
+   "dialect": "materialize",
+   "sql": "SELECT CAST(LIST[1, 2, 3] AS INT LIST)"
+  },
+  {
+   "key": "088145159bdedb5b",
+   "dialect": "materialize",
+   "sql": "SELECT CAST(NULL AS INT LIST)"
+  },
+  {
+   "key": "8f1d541bab49f8c6",
+   "dialect": "materialize",
+   "sql": "SELECT CAST(NULL AS INT LIST LIST LIST)"
+  },
+  {
+   "key": "476aba2dec7e647f",
+   "dialect": "materialize",
+   "sql": "SELECT LIST(SELECT 1)"
+  },
+  {
+   "key": "f9704a805f55fe61",
+   "dialect": "materialize",
+   "sql": "SELECT MAP[]"
+  },
+  {
+   "key": "eb02602dc3626a1b",
+   "dialect": "materialize",
+   "sql": "SELECT MAP['a' => MAP['b' => 'c']]"
+  },
+  {
+   "key": "f91f19a45c756f0f",
+   "dialect": "materialize",
+   "sql": "SELECT CAST(MAP['a' => 1] AS MAP[TEXT => INT])"
+  },
+  {
+   "key": "910a1861f2322691",
+   "dialect": "materialize",
+   "sql": "SELECT CAST(NULL AS MAP[TEXT => INT])"
+  },
+  {
+   "key": "5a9905402ad9a052",
+   "dialect": "materialize",
+   "sql": "SELECT CAST(NULL AS MAP[TEXT => MAP[TEXT => INT]])"
+  },
+  {
+   "key": "35c318fefe2a83ca",
+   "dialect": "materialize",
+   "sql": "SELECT MAP(SELECT 'a', 1)"
   },
   {
    "key": "a7dd6339bbd55221",

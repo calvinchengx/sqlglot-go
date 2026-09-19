@@ -1207,6 +1207,26 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return arr, nil
 	}
 
+	// `LIST[1, 2]` is a List the same way `ARRAY[1, 2]` is an Array -- the
+	// word is part of the literal, not a column being subscripted -- except
+	// where the dialect reads LIST some other way first (DuckDB's own LIST
+	// type grammar, T-SQL's `[...]` already meaning a quoted identifier).
+	// An EMPTY pair -- `LIST[]` -- is not a List with nothing in it: the
+	// reference reads it as the TYPE `ARRAY<LIST>`, the same array-of-type
+	// suffix a bare `INT[]` takes, and leaves this rule for the one shape
+	// that is unambiguously a value: at least one thing between the
+	// brackets.
+	if p.tables.HasListConstructor && p.atPair(TokLIST, TokL_BRACKET) &&
+		p.index+2 < len(p.tokens) && p.tokens[p.index+2].Type != TokR_BRACKET {
+		p.advance()
+		p.advance()
+		items, err := p.parseBracketItems(true)
+		if err != nil {
+			return nil, err
+		}
+		return New("List", Arg{"expressions", items}), nil
+	}
+
 	// `[1, 2, 3]` is an Array literal. Same token as the subscript above; the
 	// difference is position, and only this one begins an expression.
 	if c.Type == TokL_BRACKET {
@@ -1521,6 +1541,15 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		if upper == "MAP" && p.tables.MapBraceLiteral {
 			if n := p.next(); n != nil && n.Type == TokL_BRACE {
 				return p.parseMapLiteral()
+			}
+		}
+		// Materialize's own MAP grammar, entirely its own: `MAP(SELECT ...)`
+		// wraps a whole query, and `MAP[k => v, ...]` a bracketed list of
+		// key/value pairs -- neither is an ordinary call this port's
+		// argument-list reader could make sense of.
+		if upper == "MAP" && p.dialect == "materialize" {
+			if n := p.next(); n != nil && (n.Type == TokL_PAREN || n.Type == TokL_BRACKET) {
+				return p.parseMaterializeMap()
 			}
 		}
 		// Databricks' CURDATE takes NO argument, ever -- with or without
@@ -3603,6 +3632,51 @@ func (p *parser) parseMapLiteral() (*Expression, error) {
 	}
 	if !p.match(TokR_BRACE) {
 		return nil, p.unsupported("unclosed map literal")
+	}
+	return New("ToMap", Arg{"this", New("Struct", Arg{"expressions", items})}), nil
+}
+
+// parseMaterializeMap reads Materialize's own MAP grammar: `MAP(SELECT ...)`
+// wraps a whole query into a ToMap, and `MAP[k => v, ...]` a bracketed list
+// of key/value pairs into a ToMap over a Struct -- entered with MAP already
+// current and the next token confirmed to be `(` or `[`.
+func (p *parser) parseMaterializeMap() (*Expression, error) {
+	p.advance() // MAP
+	if p.match(TokL_PAREN) {
+		if !p.at(TokSELECT) {
+			return nil, p.unsupported("MAP(...) without a SELECT")
+		}
+		query, err := p.parseSelect()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed MAP(...)")
+		}
+		return New("ToMap", Arg{"this", query}), nil
+	}
+	p.advance() // the bracket
+	var items []*Expression
+	for !p.at(TokR_BRACKET) {
+		key, err := p.parsePrimary()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokFARROW) {
+			return nil, p.unsupported("a MAP entry without =>")
+		}
+		value, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, New("PropertyEQ",
+			Arg{"this", key}, Arg{"expression", value}))
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_BRACKET) {
+		return nil, p.unsupported("unclosed MAP[...]")
 	}
 	return New("ToMap", Arg{"this", New("Struct", Arg{"expressions", items})}), nil
 }
