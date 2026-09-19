@@ -1,0 +1,174 @@
+{
+ "dialect": "mysql",
+ "rendered": "ANALYZE tbl UPDATE HISTOGRAM ON col1 USING DATA 'json_data'",
+ "sql": "ANALYZE tbl UPDATE HISTOGRAM ON col1 USING DATA 'json_data'",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "ANALYZE",
+   "x": "ANALYZE"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "tbl"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 12,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "HISTOGRAM"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 29,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 32,
+   "t": "VAR",
+   "x": "col1"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 37,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 43,
+   "t": "VAR",
+   "x": "DATA"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 48,
+   "t": "STRING",
+   "x": "json_data"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Analyze"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "tables"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "tbl"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.AnalyzeHistogram",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "UPDATE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "col1"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.UsingData",
+   "i": 5,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 59,
+    "end": 58,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "json_data"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

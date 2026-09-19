@@ -1,0 +1,80 @@
+{
+ "dialect": "mysql",
+ "rendered": "SHOW ENGINE foo STATUS",
+ "sql": "SHOW ENGINE foo STATUS",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "SHOW",
+   "x": "SHOW"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "ENGINE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "STATUS"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Show"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "ENGINE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 0,
+   "k": "target",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "mutex",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "json",
+   "v": false
+  }
+ ]
+}

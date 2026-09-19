@@ -1,0 +1,169 @@
+{
+ "dialect": "mysql",
+ "rendered": "ORD(CAST(x AS CHAR CHARACTER SET utf32))",
+ "sql": "ORD(CONVERT(x USING utf32))",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "ORD"
+  },
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 3,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 4,
+   "t": "VAR",
+   "x": "CONVERT"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 14,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 20,
+   "t": "VAR",
+   "x": "utf32"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "m": {
+    "col": 3,
+    "end": 2,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "ORD"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "CHARACTER_SET"
+    },
+    {
+     "c": "sqlglot.expressions.core.Var",
+     "i": 0,
+     "k": "kind"
+    },
+    {
+     "i": 2,
+     "k": "this",
+     "v": "utf32"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 7,
+   "k": "this",
+   "v": "CHARACTER_SET"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 7,
+   "k": "kind"
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "utf32"
+  }
+ ]
+}

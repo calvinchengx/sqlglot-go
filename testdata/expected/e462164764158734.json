@@ -1,0 +1,275 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT * FROM t1 USE INDEX FOR JOIN (i1) FORCE INDEX FOR JOIN (i2)",
+ "sql": "SELECT * FROM t1 USE INDEX FOR JOIN (i1) FORCE INDEX FOR JOIN (i2)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "t1"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 17,
+   "t": "USE",
+   "x": "USE"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 21,
+   "t": "INDEX",
+   "x": "INDEX"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 27,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 31,
+   "t": "JOIN",
+   "x": "JOIN"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 37,
+   "t": "VAR",
+   "x": "i1"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 41,
+   "t": "FORCE",
+   "x": "FORCE"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 47,
+   "t": "INDEX",
+   "x": "INDEX"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 53,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 57,
+   "t": "JOIN",
+   "x": "JOIN"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 62,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 63,
+   "t": "VAR",
+   "x": "i2"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 65,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "t1"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.IndexTableHint",
+   "i": 3,
+   "k": "hints"
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "USE"
+  },
+  {
+   "i": 7,
+   "k": "target",
+   "v": "JOIN"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "expressions",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "i1"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.IndexTableHint",
+   "i": 3,
+   "k": "hints"
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "FORCE"
+  },
+  {
+   "i": 13,
+   "k": "target",
+   "v": "JOIN"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "expressions",
+   "m": {
+    "col": 65,
+    "end": 64,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "i2"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

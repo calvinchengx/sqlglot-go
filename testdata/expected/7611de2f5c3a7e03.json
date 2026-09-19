@@ -1,0 +1,142 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT CAST(x AS CHAR CHARACTER SET binary)",
+ "sql": "SELECT CONVERT(x USING `binary`)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CONVERT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 17,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 23,
+   "t": "IDENTIFIER",
+   "x": "binary"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "CHARACTER_SET"
+    },
+    {
+     "c": "sqlglot.expressions.core.Var",
+     "i": 0,
+     "k": "kind"
+    },
+    {
+     "i": 2,
+     "k": "this",
+     "v": "binary"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 6,
+   "k": "this",
+   "v": "CHARACTER_SET"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "binary"
+  }
+ ]
+}

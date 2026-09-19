@@ -1,0 +1,192 @@
+{
+ "dialect": "mysql",
+ "rendered": "GROUP_CONCAT(DISTINCT x ORDER BY y DESC SEPARATOR ',')",
+ "sql": "GROUP_CONCAT(DISTINCT x ORDER BY y DESC SEPARATOR ',')",
+ "tokens": [
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "GROUP_CONCAT"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 13,
+   "t": "DISTINCT",
+   "x": "DISTINCT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 24,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "VAR",
+   "x": "y"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 35,
+   "t": "DESC",
+   "x": "DESC"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 40,
+   "t": "SEPARATOR",
+   "x": "SEPARATOR"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 50,
+   "t": "STRING",
+   "x": ","
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.aggregate.GroupConcat"
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Distinct",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "desc",
+   "v": true
+  },
+  {
+   "i": 7,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "separator",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 50
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": ","
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

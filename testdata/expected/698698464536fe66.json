@@ -1,0 +1,231 @@
+{
+ "dialect": "mysql",
+ "rendered": "SET @total_tax = (SELECT SUM(tax) FROM taxable_transactions)",
+ "sql": "SET @total_tax = (SELECT SUM(tax) FROM taxable_transactions)",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 4,
+   "t": "PARAMETER",
+   "x": "@"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "total_tax"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 18,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 25,
+   "t": "VAR",
+   "x": "SUM"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "tax"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 34,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 39,
+   "t": "VAR",
+   "x": "taxable_transactions"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 59,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Set"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.SetItem",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "total_tax"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 2,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 7,
+   "k": "expressions",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "tax"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 7,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 59,
+    "end": 58,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "taxable_transactions"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unset",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "tag",
+   "v": false
+  }
+ ]
+}

@@ -63,6 +63,14 @@ func (p *parser) parseInterval() (*Expression, error) {
 	}
 
 	switch {
+	case this != nil && this.Class == "Neg":
+		// `INTERVAL -1 DAY`: the sign is read into the STRING itself, never
+		// left as a Neg wrapping a positive one -- the same flattening
+		// `INTERVAL 1 DAY` gets below, just with the minus folded in first.
+		if inner, _ := this.Args["this"].(*Expression); inner != nil && inner.Class == "Literal" {
+			text, _ := inner.Args["this"].(string)
+			this = New("Literal", Arg{"this", "-" + text}, Arg{"is_string", true})
+		}
 	case this != nil && this.Class == "Literal" && this.Args["is_string"] == false:
 		// `INTERVAL 1 DAY`: the reference stores the quantity as a STRING.
 		this.Set("is_string", true)

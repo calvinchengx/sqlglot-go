@@ -64,21 +64,49 @@ func (p *parser) parseAssignment() (*Expression, error) {
 	if p.at(TokCOLON_EQ) {
 		// `f(name := value)` is a NAMED ARGUMENT, and the reference records
 		// the name as a bare identifier -- the same PropertyEQ a struct field
-		// uses. Only in argument position: `:=` anywhere else is an
-		// assignment, which is a statement rather than an expression.
-		if !p.inCallArgs {
-			return nil, p.unsupported("assignment")
+		// uses.
+		if p.inCallArgs {
+			name := namedArgument(this)
+			if name == nil {
+				return nil, p.unsupported("a named argument whose name is not a name")
+			}
+			p.advance()
+			value, err := p.parseDisjunction()
+			if err != nil {
+				return nil, err
+			}
+			return New("PropertyEQ", Arg{"this", name}, Arg{"expression", value}), nil
 		}
-		name := namedArgument(this)
-		if name == nil {
-			return nil, p.unsupported("a named argument whose name is not a name")
+		// Everywhere else, `:=` is the reference's own generic ASSIGNMENT
+		// operator -- `SELECT x := 1` and `SELECT @v := 1` both read as a
+		// PropertyEQ at plain expression level, confirmed universal across
+		// every dialect already landed, not something MySQL alone does; the
+		// restriction to call-argument position above was never something
+		// the reference draws. A single-part, unqualified Column unwraps to
+		// its own Identifier first -- `x := 1` names `x`, not a column
+		// reference to it -- and anything else (a Parameter, a qualified
+		// Column, another PropertyEQ from a longer chain) is kept exactly as
+		// parsed, right-associatively.
+		if this != nil && this.Class == "Column" {
+			unqualified := true
+			for _, key := range []string{"table", "db", "catalog"} {
+				if part, _ := this.Args[key].(*Expression); part != nil {
+					unqualified = false
+					break
+				}
+			}
+			if unqualified {
+				if inner, _ := this.Args["this"].(*Expression); inner != nil {
+					this = inner
+				}
+			}
 		}
 		p.advance()
-		value, err := p.parseDisjunction()
+		value, err := p.parseAssignment()
 		if err != nil {
 			return nil, err
 		}
-		return New("PropertyEQ", Arg{"this", name}, Arg{"expression", value}), nil
+		return New("PropertyEQ", Arg{"this", this}, Arg{"expression", value}), nil
 	}
 	return this, nil
 }
@@ -175,6 +203,23 @@ func (p *parser) parseRange() (*Expression, error) {
 				} else {
 					this = New(class, Arg{"this", left}, Arg{"expression", right})
 				}
+			}
+		case c.Type == TokMEMBER_OF:
+			// `x MEMBER OF(y)`: the right side is PARENTHESISED and
+			// mandatorily so, unlike the generic binary range operators
+			// this port reads through the probed table -- read by hand
+			// rather than folded into that table for exactly that reason.
+			p.advance()
+			if !p.match(TokL_PAREN) {
+				return nil, p.unsupported("MEMBER OF without its parenthesised argument")
+			}
+			var right *Expression
+			right, err = p.parseExpression()
+			if err == nil {
+				if !p.match(TokR_PAREN) {
+					return nil, p.unsupported("unclosed MEMBER OF")
+				}
+				this = New("JSONArrayContains", Arg{"this", this}, Arg{"expression", right})
 			}
 		case c.Type == TokOPERATOR:
 			// PostgreSQL's `OPERATOR(schema.op)` names a custom operator by
@@ -1092,6 +1137,9 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			return p.dotted(node), nil
 		}
 		return node, nil
+	}
+	if p.at(TokSESSION_PARAMETER) {
+		return p.parseSessionParameter()
 	}
 	// PostgreSQL spells it `%(name)s`, or `%s` unnamed -- and records the name
 	// as an IDENTIFIER rather than a string, unlike every other dialect. A
@@ -2374,7 +2422,13 @@ func (p *parser) parseFunction() (*Expression, error) {
 	// through its own fallback_builder -- so it is not turned away here
 	// either, the same exemption isVarMap gets.
 	isDremioDateType := upper == "DATETYPE" && p.dialect == "dremio"
-	if !named && !byArity && !isJSONPath && !byWord && !isVarMap && !isDremioDateType {
+	// MySQL's own DATE_ADD/DATE_SUB builder raises outright when its second
+	// argument is not an INTERVAL -- a placeholder column is not one, so the
+	// probe that fills Functions from a placeholder call never got an
+	// answer to record here either.
+	isMySQLDateDelta := (upper == "DATE_ADD" || upper == "DATE_SUB") && p.dialect == "mysql"
+	if !named && !byArity && !isJSONPath && !byWord && !isVarMap && !isDremioDateType &&
+		!isMySQLDateDelta {
 		if _, custom := p.tables.NamedFunctions[upper]; custom {
 			return nil, p.unsupported("function " + upper + " with a builder of its own")
 		}
@@ -2505,6 +2559,15 @@ func (p *parser) parseFunction() (*Expression, error) {
 	}
 	if upper == "MOD" && len(args) == 2 {
 		return p.buildMod(args), nil
+	}
+	if upper == "STR_TO_DATE" && p.dialect == "mysql" && len(args) == 2 {
+		return p.buildMySQLStrToDate(args), nil
+	}
+	if (upper == "DATE_ADD" || upper == "DATE_SUB") && p.dialect == "mysql" && len(args) == 2 {
+		if built := buildMySQLDateDeltaWithInterval(upper, args); built != nil {
+			return built, nil
+		}
+		return nil, p.unsupported(upper + " with a second argument this port does not read as an INTERVAL")
 	}
 	if p.dialect == "dremio" {
 		switch {
@@ -3984,6 +4047,30 @@ func (p *parser) parseWidgetPlaceholder() *Expression {
 // all of them -- an `@`-only reader in one position was how a table variable
 // came to parse in T-SQL while the `$` form this port WRITES could not be
 // read back anywhere else.
+// parseSessionParameter reads `@@name` and `@@scope.name`: the reference's
+// own `_parse_session_parameter`. The first word is read as a bare
+// identifier; a DOT after it means the word was actually the SCOPE
+// (GLOBAL/SESSION), and what follows is the real name, read as a Var
+// instead -- never quoted, unlike the first read.
+func (p *parser) parseSessionParameter() (*Expression, error) {
+	p.advance() // @@
+	this, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	var kind any
+	if p.match(TokDOT) {
+		kind = this.Name()
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("@@ scope without a name")
+		}
+		p.advance()
+		this = New("Var", Arg{"this", c.Text})
+	}
+	return New("SessionParameter", Arg{"this", this}, Arg{"kind", kind}), nil
+}
+
 func (p *parser) parseParameter() *Expression {
 	c := p.curr()
 	if c == nil || c.Type != TokPARAMETER {

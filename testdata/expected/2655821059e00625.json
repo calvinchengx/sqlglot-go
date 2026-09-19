@@ -1,0 +1,56 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT 1 /* arbitrary content,,, until end-of-line */",
+ "sql": "SELECT 1 # arbitrary content,,, until end-of-line",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "o": [
+    " arbitrary content,,, until end-of-line"
+   ],
+   "s": 7,
+   "t": "NUMBER",
+   "x": "1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   },
+   "o": [
+    " arbitrary content,,, until end-of-line"
+   ]
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

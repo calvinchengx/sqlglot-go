@@ -1,0 +1,303 @@
+{
+ "dialect": "mysql",
+ "rendered": "ALTER TABLE t MODIFY COLUMN c VARCHAR(50) NOT NULL DEFAULT 'foo'",
+ "sql": "ALTER TABLE t MODIFY COLUMN c VARCHAR(50) NOT NULL DEFAULT 'foo'",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "ALTER",
+   "x": "ALTER"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 6,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "t"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "MODIFY"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 21,
+   "t": "COLUMN",
+   "x": "COLUMN"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "c"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 30,
+   "t": "VARCHAR",
+   "x": "VARCHAR"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 38,
+   "t": "NUMBER",
+   "x": "50"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 42,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 46,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 51,
+   "t": "DEFAULT",
+   "x": "DEFAULT"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 59,
+   "t": "STRING",
+   "x": "foo"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Alter"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.ModifyColumn",
+   "i": 0,
+   "k": "actions"
+  },
+  {
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 8,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 12,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 12,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "50"
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 12,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 8,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.NotNullColumnConstraint",
+   "i": 19,
+   "k": "kind"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 8,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.DefaultColumnConstraint",
+   "i": 21,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 64,
+    "end": 63,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 23,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "only",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "not_valid",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "check",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cascade",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  }
+ ]
+}

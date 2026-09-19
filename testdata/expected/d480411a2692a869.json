@@ -1,0 +1,257 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT CURRENT_TIMESTAMP() - INTERVAL '1' YEAR - INTERVAL '2' MONTH - INTERVAL '3' DAY",
+ "sql": "SELECT CURRENT_TIMESTAMP() - INTERVAL 1 YEAR - INTERVAL 2 MONTH - INTERVAL 3 DAY",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 7,
+   "t": "CURRENT_TIMESTAMP",
+   "x": "CURRENT_TIMESTAMP"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 29,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 38,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 40,
+   "t": "YEAR",
+   "x": "YEAR"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 45,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 47,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "NUMBER",
+   "x": "2"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 58,
+   "t": "VAR",
+   "x": "MONTH"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 64,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 66,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 75,
+   "t": "NUMBER",
+   "x": "3"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 77,
+   "t": "VAR",
+   "x": "DAY"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentTimestamp",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 3,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 5,
+   "k": "unit"
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "YEAR"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 2,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 11,
+   "k": "unit"
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "MONTH"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 17,
+   "k": "unit"
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "DAY"
+  }
+ ]
+}

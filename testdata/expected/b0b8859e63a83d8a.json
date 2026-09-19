@@ -1,0 +1,434 @@
+{
+ "dialect": "mysql",
+ "rendered": "UPDATE items, month SET items.price = month.price WHERE items.id = month.id",
+ "sql": "UPDATE items, month SET items.price = month.price WHERE items.id = month.id",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "items"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "month"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 20,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "items"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 30,
+   "t": "VAR",
+   "x": "price"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 38,
+   "t": "VAR",
+   "x": "month"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "price"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 50,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 56,
+   "t": "VAR",
+   "x": "items"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 61,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 62,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 65,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 67,
+   "t": "VAR",
+   "x": "month"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 72,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 73,
+   "t": "VAR",
+   "x": "id"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Update"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "items"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 1,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "month"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "price"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "table",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "items"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 10,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "price"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "table",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "month"
+  },
+  {
+   "i": 22,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 25,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 26,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "this",
+   "m": {
+    "col": 64,
+    "end": 63,
+    "line": 1,
+    "start": 62
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "table",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 56
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "items"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 26,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "this",
+   "m": {
+    "col": 75,
+    "end": 74,
+    "line": 1,
+    "start": 73
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 35,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "table",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 67
+   }
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "month"
+  },
+  {
+   "i": 38,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

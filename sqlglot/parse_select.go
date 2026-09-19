@@ -1063,7 +1063,7 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 		switch {
 		case p.at(TokWHERE):
 			p.advance()
-			e, err := p.parseExpression()
+			e, err := p.parseDisjunction()
 			if err != nil {
 				return err
 			}
@@ -1131,7 +1131,7 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			}
 		case p.at(TokHAVING):
 			p.advance()
-			e, err := p.parseExpression()
+			e, err := p.parseDisjunction()
 			if err != nil {
 				return err
 			}

@@ -1,0 +1,112 @@
+{
+ "dialect": "mysql",
+ "rendered": "SHOW INDEX FROM foo FROM bar",
+ "sql": "SHOW INDEX FROM foo FROM bar",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "SHOW",
+   "x": "SHOW"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 5,
+   "t": "INDEX",
+   "x": "INDEX"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 11,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 20,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 25,
+   "t": "VAR",
+   "x": "bar"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Show"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "INDEX"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 0,
+   "k": "target",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 0,
+   "k": "db",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "bar"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "json",
+   "v": false
+  }
+ ]
+}

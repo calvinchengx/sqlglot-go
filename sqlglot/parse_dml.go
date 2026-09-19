@@ -56,7 +56,7 @@ func (p *parser) parseUpdate() (*Expression, error) {
 	}
 	if p.at(TokWHERE) {
 		p.advance()
-		where, err := p.parseExpression()
+		where, err := p.parseDisjunction()
 		if err != nil {
 			return nil, err
 		}
@@ -254,7 +254,7 @@ func (p *parser) parseDelete() (*Expression, error) {
 
 	if p.at(TokWHERE) {
 		p.advance()
-		where, err := p.parseExpression()
+		where, err := p.parseDisjunction()
 		if err != nil {
 			return nil, err
 		}

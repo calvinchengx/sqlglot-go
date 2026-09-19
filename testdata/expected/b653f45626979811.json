@@ -1,0 +1,177 @@
+{
+ "dialect": "mysql",
+ "rendered": "ALTER TABLE test_table MODIFY COLUMN test_column LONGTEXT",
+ "sql": "ALTER TABLE test_table MODIFY COLUMN test_column LONGTEXT",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "ALTER",
+   "x": "ALTER"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 6,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "test_table"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "MODIFY"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 30,
+   "t": "COLUMN",
+   "x": "COLUMN"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 37,
+   "t": "VAR",
+   "x": "test_column"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 49,
+   "t": "LONGTEXT",
+   "x": "LONGTEXT"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Alter"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "test_table"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.ModifyColumn",
+   "i": 0,
+   "k": "actions"
+  },
+  {
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "test_column"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 8,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 12,
+   "k": "this",
+   "v": "LONGTEXT"
+  },
+  {
+   "i": 12,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "only",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "not_valid",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "check",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cascade",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  }
+ ]
+}

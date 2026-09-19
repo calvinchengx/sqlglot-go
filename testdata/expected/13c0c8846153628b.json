@@ -1,0 +1,111 @@
+{
+ "dialect": "mysql",
+ "rendered": "ANALYZE TABLE t1, t2",
+ "sql": "ANALYZE TABLE t1, t2",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "ANALYZE",
+   "x": "ANALYZE"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 8,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "t1"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "t2"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Analyze"
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "tables"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "t1"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "tables"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "t2"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,273 @@
+{
+ "dialect": "mysql",
+ "rendered": "ALTER TABLE t1 ADD COLUMN x INT, ALGORITHM=INPLACE, LOCK=EXCLUSIVE",
+ "sql": "ALTER TABLE t1 ADD COLUMN x INT, ALGORITHM=INPLACE, LOCK=EXCLUSIVE",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "ALTER",
+   "x": "ALTER"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 6,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "t1"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "ADD"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 19,
+   "t": "COLUMN",
+   "x": "COLUMN"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 28,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 33,
+   "t": "VAR",
+   "x": "ALGORITHM"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 43,
+   "t": "VAR",
+   "x": "INPLACE"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 52,
+   "t": "LOCK",
+   "x": "LOCK"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 57,
+   "t": "VAR",
+   "x": "EXCLUSIVE"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Alter"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "t1"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 0,
+   "k": "actions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 7,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 11,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 11,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "only",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.AlgorithmProperty",
+   "i": 0,
+   "k": "options"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "INPLACE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.LockProperty",
+   "i": 0,
+   "k": "options"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "EXCLUSIVE"
+  },
+  {
+   "i": 0,
+   "k": "not_valid",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "check",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cascade",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  }
+ ]
+}

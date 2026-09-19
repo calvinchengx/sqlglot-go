@@ -1,0 +1,125 @@
+{
+ "dialect": "mysql",
+ "rendered": "SET GLOBAL max_connections = 1000",
+ "sql": "SET GLOBAL max_connections = 1000",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 4,
+   "t": "VAR",
+   "x": "GLOBAL"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "max_connections"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 29,
+   "t": "NUMBER",
+   "x": "1000"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Set"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.SetItem",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "max_connections"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "1000"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "kind",
+   "v": "GLOBAL"
+  },
+  {
+   "i": 0,
+   "k": "unset",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "tag",
+   "v": false
+  }
+ ]
+}

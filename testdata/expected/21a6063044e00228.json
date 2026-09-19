@@ -1,0 +1,109 @@
+{
+ "dialect": "mysql",
+ "rendered": "SET @var1 = 1",
+ "sql": "SET @var1 := 1",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 4,
+   "t": "PARAMETER",
+   "x": "@"
+  },
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "var1"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 10,
+   "t": "COLON_EQ",
+   "x": ":="
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "NUMBER",
+   "x": "1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Set"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.SetItem",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "var1"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unset",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "tag",
+   "v": false
+  }
+ ]
+}

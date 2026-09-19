@@ -347,3 +347,59 @@ func buildDremioDateType(args []*Expression) *Expression {
 	dateStr := fmt.Sprintf("%04d-%02d-%02d", yv, mv, dv)
 	return New("Date", Arg{"this", New("Literal", Arg{"this", dateStr}, Arg{"is_string", true})})
 }
+
+// mysqlTimeSpecifiers is the reference's own `TIME_SPECIFIERS`: the format
+// letters that name a TIME-of-day field rather than a date one, in MySQL's
+// OWN spelling -- checked against the format as WRITTEN, before this port's
+// generic forward-TimeMapping normalization runs on it (which is also why
+// this dispatches before that normalization, not after).
+var mysqlTimeSpecifiers = map[byte]bool{
+	'f': true, 'H': true, 'h': true, 'I': true, 'i': true, 'k': true,
+	'l': true, 'p': true, 'r': true, 'S': true, 's': true, 'T': true,
+}
+
+func mysqlHasTimeSpecifier(format string) bool {
+	for i := 0; i+1 < len(format); i++ {
+		if format[i] == '%' && mysqlTimeSpecifiers[format[i+1]] {
+			return true
+		}
+	}
+	return false
+}
+
+// buildMySQLStrToDate is the reference's own `_str_to_date`: STR_TO_DATE
+// builds StrToTime instead of StrToDate when its format names a time-of-day
+// field, read off the format as WRITTEN, not the normalized spelling this
+// port would otherwise carry into the tree.
+func (p *parser) buildMySQLStrToDate(args []*Expression) *Expression {
+	this, format := args[0], args[1]
+	class := "StrToDate"
+	normalized := format
+	if isStringLiteral(format) {
+		text, _ := format.Args["this"].(string)
+		if mysqlHasTimeSpecifier(text) {
+			class = "StrToTime"
+		}
+		normalized = New("Literal",
+			Arg{"this", formatTime(text, p.tables.TimeMapping)}, Arg{"is_string", true})
+	}
+	return New(class, Arg{"this", this}, Arg{"format", normalized})
+}
+
+// buildMySQLDateDeltaWithInterval is the reference's own
+// `build_date_delta_with_interval`: DATE_ADD/DATE_SUB's second argument is
+// read as a real INTERVAL, and the call unwraps it -- the quantity and unit
+// move onto the call directly, and the interval node itself is discarded.
+// Any other second argument returns nil, matching the reference's own
+// refusal (it raises outright rather than building something; no statement
+// in the pinned corpus exercises the non-INTERVAL shape).
+func buildMySQLDateDeltaWithInterval(upper string, args []*Expression) *Expression {
+	interval := args[1]
+	if interval.Class != "Interval" {
+		return nil
+	}
+	quantity, _ := interval.Args["this"].(*Expression)
+	unit, _ := interval.Args["unit"].(*Expression)
+	class := map[string]string{"DATE_ADD": "DateAdd", "DATE_SUB": "DateSub"}[upper]
+	return New(class, Arg{"this", args[0]}, Arg{"expression", quantity}, Arg{"unit", unit})
+}

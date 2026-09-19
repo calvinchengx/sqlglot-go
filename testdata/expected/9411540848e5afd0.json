@@ -1,0 +1,374 @@
+{
+ "dialect": "mysql",
+ "rendered": "WITH vartab(v) AS (SELECT '[{\"attr\": [{\"name\": \"banana\"}]}]') SELECT JSON_EXTRACT(v, '$[0].attr[0].name') FROM vartab",
+ "sql": "WITH vartab(v) AS (SELECT '[{\"attr\": [{\"name\": \"banana\"}]}]') SELECT JSON_EXTRACT(v, '$[0].attr[0].name') FROM vartab",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "vartab"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "v"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 15,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 19,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 26,
+   "t": "STRING",
+   "x": "[{\"attr\": [{\"name\": \"banana\"}]}]"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 60,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 62,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 69,
+   "t": "VAR",
+   "x": "JSON_EXTRACT"
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 81,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 82,
+   "t": "VAR",
+   "x": "v"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 83,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 85,
+   "t": "STRING",
+   "x": "$[0].attr[0].name"
+  },
+  {
+   "c": 105,
+   "e": 104,
+   "l": 1,
+   "s": 104,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 110,
+   "e": 109,
+   "l": 1,
+   "s": 106,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 117,
+   "e": 116,
+   "l": 1,
+   "s": 111,
+   "t": "VAR",
+   "x": "vartab"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExtract",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 81,
+    "end": 80,
+    "line": 1,
+    "start": 69
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 83,
+    "end": 82,
+    "line": 1,
+    "start": 82
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "v"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathSubscript",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": 0
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "attr"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathSubscript",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": 0
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "name"
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 117,
+    "end": 116,
+    "line": 1,
+    "start": 111
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "vartab"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.With",
+   "i": 0,
+   "k": "with_"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.CTE",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 23,
+   "k": "expressions",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "[{\"attr\": [{\"name\": \"banana\"}]}]"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 22,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "vartab"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "columns",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "v"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,134 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT DATE_ADD(CURRENT_TIMESTAMP(), INTERVAL '-1' QUARTER)",
+ "sql": "SELECT DATE_ADD(CURRENT_TIMESTAMP, INTERVAL -1 QUARTER)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "DATE_ADD"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 16,
+   "t": "CURRENT_TIMESTAMP",
+   "x": "CURRENT_TIMESTAMP"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 35,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 45,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 47,
+   "t": "VAR",
+   "x": "QUARTER"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.DateAdd",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentTimestamp",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "-1"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "unit"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "QUARTER"
+  }
+ ]
+}

@@ -1,0 +1,171 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT @var1 := COUNT(*) FROM t1",
+ "sql": "SELECT @var1 := COUNT(*) FROM t1",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "PARAMETER",
+   "x": "@"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "var1"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 13,
+   "t": "COLON_EQ",
+   "x": ":="
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "COUNT"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 25,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 30,
+   "t": "VAR",
+   "x": "t1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PropertyEQ",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "var1"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Count",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Star",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 5,
+   "k": "big_int",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "t1"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

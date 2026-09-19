@@ -1,0 +1,204 @@
+{
+ "dialect": "mysql",
+ "rendered": "MATCH(col1, col2) AGAINST('abc' IN NATURAL LANGUAGE MODE)",
+ "sql": "MATCH(col1, col2) AGAINST('abc' IN NATURAL LANGUAGE MODE)",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "MATCH"
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 5,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 6,
+   "t": "VAR",
+   "x": "col1"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "col2"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "AGAINST"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 26,
+   "t": "STRING",
+   "x": "abc"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 32,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 35,
+   "t": "NATURAL",
+   "x": "NATURAL"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 43,
+   "t": "VAR",
+   "x": "LANGUAGE"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 52,
+   "t": "VAR",
+   "x": "MODE"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.string.MatchAgainst"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "abc"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 6
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "col1"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "col2"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "modifier",
+   "v": "IN NATURAL LANGUAGE MODE"
+  }
+ ]
+}

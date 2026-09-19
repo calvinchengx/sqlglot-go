@@ -1,0 +1,159 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT CONVERT_TZ('2024-08-06 09:10:00.000', 'America/Los_Angeles', 'America/New_York')",
+ "sql": "SELECT CONVERT_TZ('2024-08-06 09:10:00.000', 'America/Los_Angeles', 'America/New_York')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CONVERT_TZ"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 18,
+   "t": "STRING",
+   "x": "2024-08-06 09:10:00.000"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 45,
+   "t": "STRING",
+   "x": "America/Los_Angeles"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 66,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 68,
+   "t": "STRING",
+   "x": "America/New_York"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 86,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.ConvertTimezone",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "source_tz",
+   "m": {
+    "col": 66,
+    "end": 65,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "America/Los_Angeles"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "target_tz",
+   "m": {
+    "col": 86,
+    "end": 85,
+    "line": 1,
+    "start": 68
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "America/New_York"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "timestamp",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "2024-08-06 09:10:00.000"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

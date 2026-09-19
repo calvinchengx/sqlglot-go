@@ -63,7 +63,12 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseXMLElement()
 	// One parser under four names: DuckDB spells the same aggregate
 	// GROUP_CONCAT, LISTAGG and STRINGAGG as well as STRING_AGG.
-	case "GROUP_CONCAT", "LISTAGG", "STRINGAGG":
+	case "GROUP_CONCAT":
+		if p.dialect == "mysql" {
+			return p.parseMySQLGroupConcat()
+		}
+		return p.parseStringAgg()
+	case "LISTAGG", "STRINGAGG":
 		return p.parseStringAgg()
 	case "CHAR", "CHR":
 		return p.parseChr()
@@ -343,6 +348,109 @@ func (p *parser) parseConvert(safe bool) (*Expression, error) {
 // is GroupConcat(Order(Distinct(x), y), ','). The reference reads the
 // arguments first and then reaches back for the one it belongs to; so does
 // this.
+// mysqlConcatExprs is the reference's own `concat_exprs`, a helper local to
+// `_parse_group_concat`: a DISTINCT holding more than one expression gets
+// them folded into a single CONCAT inside it (`DISTINCT a, b, c` distinguishes
+// whole CONCATenated rows, not three separate things), and a plain list of
+// more than one bare expression is CONCATenated outright. A single
+// expression, distinct or not, passes through unchanged.
+func mysqlConcatExprs(node *Expression, exprs []*Expression) *Expression {
+	if node != nil && node.Class == "Distinct" {
+		if list, _ := node.Args["expressions"].([]*Expression); len(list) > 1 {
+			concat := New("Concat",
+				Arg{"expressions", list}, Arg{"safe", true}, Arg{"coalesce", false})
+			node.Set("expressions", []*Expression{concat})
+			return node
+		}
+		return node
+	}
+	if len(exprs) == 1 {
+		return exprs[0]
+	}
+	return New("Concat", Arg{"expressions", exprs}, Arg{"safe", true}, Arg{"coalesce", false})
+}
+
+// parseMySQLGroupConcat is the reference's own `_parse_group_concat`: unlike
+// STRING_AGG/LISTAGG's separator argument, MySQL's own SEPARATOR is a
+// trailing KEYWORD, not a second item in the comma list, and more than one
+// expression before it is CONCATenated rather than kept as its own list --
+// `GROUP_CONCAT(a, b, c SEPARATOR ',')` joins a, b and c together first, the
+// same as `DISTINCT a, b, c` distinguishes whole concatenated rows.
+func (p *parser) parseMySQLGroupConcat() (*Expression, error) {
+	p.advance() // GROUP_CONCAT
+	p.advance() // (
+
+	distinct := p.match(TokDISTINCT)
+	wasInCallArgs := p.inCallArgs
+	p.inCallArgs = true
+	var args []*Expression
+	if !p.at(TokR_PAREN) {
+		for {
+			arg, err := p.parseExpression()
+			if err != nil {
+				p.inCallArgs = wasInCallArgs
+				return nil, err
+			}
+			args = append(args, arg)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
+	p.inCallArgs = wasInCallArgs
+
+	var this *Expression
+	if len(args) > 0 {
+		var node *Expression
+		if distinct {
+			node = New("Distinct", Arg{"expressions", args})
+		}
+		var order *Expression
+		if p.at(TokORDER_BY) {
+			p.advance()
+			o, err := p.parseOrder()
+			if err != nil {
+				return nil, err
+			}
+			order = o
+		}
+		if order != nil {
+			base := node
+			if base == nil {
+				base = args[0]
+			}
+			order.Set("this", mysqlConcatExprs(base, args))
+			this = order
+		} else if node != nil {
+			this = mysqlConcatExprs(node, args)
+		} else {
+			this = mysqlConcatExprs(nil, args)
+		}
+	}
+
+	var separator *Expression
+	if p.match(TokSEPARATOR) {
+		// The reference's own `_parse_field`: a literal or a call reads as
+		// itself, but a bare word falls all the way to `_parse_id_var` --
+		// an Identifier, never the Column the general expression grammar
+		// would make of it.
+		if c := p.curr(); c != nil && c.Type == TokVAR {
+			p.advance()
+			separator = New("Identifier", Arg{"this", c.Text}, Arg{"quoted", false})
+		} else {
+			sep, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			separator = sep
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed GROUP_CONCAT")
+	}
+	return New("GroupConcat", Arg{"this", this}, Arg{"separator", separator}), nil
+}
+
 func (p *parser) parseStringAgg() (*Expression, error) {
 	p.advance()
 	p.advance()
@@ -862,7 +970,16 @@ func (p *parser) parseChr() (*Expression, error) {
 			return nil, p.unsupported("USING without a character set")
 		}
 		p.advance()
-		node.Set("charset", New("Var", Arg{"this", c.Text}))
+		// A QUOTED name UNWRAPS to a bare Var when it needs no quoting at
+		// all (MySQL's own `_parse_charset_name`: `` `binary` `` reads the
+		// same as bare `binary`) and keeps its Identifier, quoting and all,
+		// only when it does not (`` `my charset` ``, which has a space). A
+		// bare word -- or the BINARY keyword -- is always a Var.
+		if c.Type == TokIDENTIFIER && !isPlainName(c.Text) {
+			node.Set("charset", New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true}))
+		} else {
+			node.Set("charset", New("Var", Arg{"this", c.Text}))
+		}
 	} else {
 		node.Set("charset", false)
 	}

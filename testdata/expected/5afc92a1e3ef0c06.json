@@ -1,0 +1,358 @@
+{
+ "dialect": "mysql",
+ "rendered": "CREATE TRIGGER audit_update AFTER UPDATE ON accounts FOR EACH ROW BEGIN INSERT INTO audit_log (user_id, old_balance, new_balance, changed_at) VALUES (OLD.user_id, OLD.balance, NEW.balance, NOW()) END",
+ "sql": "CREATE TRIGGER audit_update AFTER UPDATE ON accounts FOR EACH ROW BEGIN INSERT INTO audit_log (user_id, old_balance, new_balance, changed_at) VALUES (OLD.user_id, OLD.balance, NEW.balance, NOW()) END",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 7,
+   "t": "TRIGGER",
+   "x": "TRIGGER"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "audit_update"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "AFTER"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 34,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 41,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "accounts"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 53,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 57,
+   "t": "VAR",
+   "x": "EACH"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 62,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 66,
+   "t": "BEGIN",
+   "x": "BEGIN"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 72,
+   "t": "INSERT",
+   "x": "INSERT"
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 79,
+   "t": "INTO",
+   "x": "INTO"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 84,
+   "t": "VAR",
+   "x": "audit_log"
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 94,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 95,
+   "t": "VAR",
+   "x": "user_id"
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 102,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 115,
+   "e": 114,
+   "l": 1,
+   "s": 104,
+   "t": "VAR",
+   "x": "old_balance"
+  },
+  {
+   "c": 116,
+   "e": 115,
+   "l": 1,
+   "s": 115,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 128,
+   "e": 127,
+   "l": 1,
+   "s": 117,
+   "t": "VAR",
+   "x": "new_balance"
+  },
+  {
+   "c": 129,
+   "e": 128,
+   "l": 1,
+   "s": 128,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 140,
+   "e": 139,
+   "l": 1,
+   "s": 130,
+   "t": "VAR",
+   "x": "changed_at"
+  },
+  {
+   "c": 141,
+   "e": 140,
+   "l": 1,
+   "s": 140,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 148,
+   "e": 147,
+   "l": 1,
+   "s": 142,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 150,
+   "e": 149,
+   "l": 1,
+   "s": 149,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 153,
+   "e": 152,
+   "l": 1,
+   "s": 150,
+   "t": "VAR",
+   "x": "OLD"
+  },
+  {
+   "c": 154,
+   "e": 153,
+   "l": 1,
+   "s": 153,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 161,
+   "e": 160,
+   "l": 1,
+   "s": 154,
+   "t": "VAR",
+   "x": "user_id"
+  },
+  {
+   "c": 162,
+   "e": 161,
+   "l": 1,
+   "s": 161,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 166,
+   "e": 165,
+   "l": 1,
+   "s": 163,
+   "t": "VAR",
+   "x": "OLD"
+  },
+  {
+   "c": 167,
+   "e": 166,
+   "l": 1,
+   "s": 166,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 174,
+   "e": 173,
+   "l": 1,
+   "s": 167,
+   "t": "VAR",
+   "x": "balance"
+  },
+  {
+   "c": 175,
+   "e": 174,
+   "l": 1,
+   "s": 174,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 179,
+   "e": 178,
+   "l": 1,
+   "s": 176,
+   "t": "VAR",
+   "x": "NEW"
+  },
+  {
+   "c": 180,
+   "e": 179,
+   "l": 1,
+   "s": 179,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 187,
+   "e": 186,
+   "l": 1,
+   "s": 180,
+   "t": "VAR",
+   "x": "balance"
+  },
+  {
+   "c": 188,
+   "e": 187,
+   "l": 1,
+   "s": 187,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 192,
+   "e": 191,
+   "l": 1,
+   "s": 189,
+   "t": "VAR",
+   "x": "NOW"
+  },
+  {
+   "c": 193,
+   "e": 192,
+   "l": 1,
+   "s": 192,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 194,
+   "e": 193,
+   "l": 1,
+   "s": 193,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 195,
+   "e": 194,
+   "l": 1,
+   "s": 194,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 199,
+   "e": 198,
+   "l": 1,
+   "s": 196,
+   "t": "END",
+   "x": "END"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "CREATE"
+  },
+  {
+   "i": 0,
+   "k": "expression",
+   "v": " TRIGGER audit_update AFTER UPDATE ON accounts FOR EACH ROW BEGIN INSERT INTO audit_log (user_id, old_balance, new_balance, changed_at) VALUES (OLD.user_id, OLD.balance, NEW.balance, NOW()) END"
+  }
+ ]
+}

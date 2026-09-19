@@ -19,7 +19,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql")
 
 
 def gostr(s: str) -> str:
@@ -2091,6 +2091,30 @@ def generated_expression_is_computed(dialect: str) -> bool:
     return any(True for _ in tree.find_all(exp.ComputedColumnConstraint))
 
 
+def generated_stored_sets_persisted(dialect: str) -> bool:
+    """Whether `GENERATED ALWAYS AS (x) STORED` records WHICH of STORED and
+    VIRTUAL it read.
+
+    MySQL's own override sets `persisted` from the word; PostgreSQL's own
+    override rebuilds the same `ComputedColumnConstraint` without ever
+    setting it, since PostgreSQL has no VIRTUAL to distinguish it from --
+    the two overrides read alike up through `STORED` and diverge only here.
+    """
+    import sqlglot
+    from sqlglot import exp
+
+    try:
+        tree = sqlglot.parse_one(
+            "CREATE TABLE t (a INT GENERATED ALWAYS AS (1 + 2) STORED)", read=dialect or None
+        )
+    except Exception:  # noqa: BLE001
+        return False
+    return any(
+        node.args.get("persisted") is not None
+        for node in tree.find_all(exp.ComputedColumnConstraint)
+    )
+
+
 def index_on_word(dialect: str) -> str:
     """The word between an index's name and the table it is on.
 
@@ -3981,20 +4005,32 @@ def composite_type_sql(dialect: str) -> dict[str, str]:
         return written[written.index(" AS ") + 4 : -1]
 
     inner = to("CAST(x AS INT)")
-    array = to("CAST(x AS INT[])")
-    if inner not in array:
-        raise SystemExit(f"{dialect}: array type {array!r} does not contain {inner!r}")
-    result = {"ArrayTemplate": array.replace(inner, "{inner}", 1)}
+    result: dict[str, str] = {}
 
-    # A fixed-size array is its OWN template, not the plain one with a suffix:
-    # DuckDB puts the size inside the brackets it already wrote (`INT[3]`),
-    # Databricks appends a second pair after the angle brackets
-    # (`ARRAY<INT>[3]`). Reading it as a suffix of the plain form got DuckDB
-    # wrong, so both are recorded whole.
-    sized = to("CAST(x AS INT[3])")
-    if inner not in sized or "3" not in sized:
-        raise SystemExit(f"{dialect}: sized array {sized!r} lacks the type or the size")
-    result["ArraySizedTemplate"] = sized.replace(inner, "{inner}", 1).replace("3", "{size}", 1)
+    # A dialect with no real composite types of its own -- MySQL has neither
+    # ARRAY nor STRUCT nor MAP -- still RENDERS one when asked (its own
+    # `unsupported()` call is a warning, not a refusal), but through the
+    # generic base-class fallback rather than through the dialect's own
+    # scalar spelling: MySQL's `CAST(x AS INT)` is `CAST(x AS SIGNED)`, but
+    # its fallback `CAST(x AS INT[])` is `CAST(x AS ARRAY<INT>)`, the INT
+    # never renamed. That mismatch is the signal this dialect has nothing
+    # real here, not a shape this probe does not understand -- skipped
+    # rather than raised, unlike every check below it, which tests a
+    # STRUCTURAL invariant of a template that IS real.
+    array = to("CAST(x AS INT[])")
+    if inner in array:
+        result["ArrayTemplate"] = array.replace(inner, "{inner}", 1)
+        # A fixed-size array is its OWN template, not the plain one with a
+        # suffix: DuckDB puts the size inside the brackets it already wrote
+        # (`INT[3]`), Databricks appends a second pair after the angle
+        # brackets (`ARRAY<INT>[3]`). Reading it as a suffix of the plain
+        # form got DuckDB wrong, so both are recorded whole.
+        sized = to("CAST(x AS INT[3])")
+        if inner not in sized or "3" not in sized:
+            raise SystemExit(f"{dialect}: sized array {sized!r} lacks the type or the size")
+        result["ArraySizedTemplate"] = sized.replace(inner, "{inner}", 1).replace(
+            "3", "{size}", 1
+        )
 
     struct = to("CAST(x AS STRUCT(a INT))")
     # The dialect's own name for STRUCT, not the literal word "STRUCT" --
@@ -4006,7 +4042,11 @@ def composite_type_sql(dialect: str) -> dict[str, str]:
     rest = struct[match.end() :]
     field = rest[1:-1]
     if not field.endswith(inner):
-        raise SystemExit(f"{dialect}: struct field {field!r} does not end with {inner!r}")
+        # Same signal as ARRAY's above: a STRUCT rendered through the
+        # generic fallback rather than the dialect's own scalar spelling
+        # means this dialect has no real STRUCT (or MAP, which reuses these
+        # delimiters below) either.
+        return result
     result["StructOpen"] = rest[0]
     result["StructClose"] = rest[-1]
     result["StructFieldSep"] = field[len("a") : -len(inner)]
@@ -6568,6 +6608,7 @@ def main() -> int:
         "\t// SetItemSeparator sits between a configuration name and its value.\n\tSetItemSeparator string\n",
         "\t// ComputedColumnSpelling is how a computed column is written, with\n\t// {expr} where the expression goes, and ComputedKeepsType whether the\n\t// column\'s declared type survives beside it.\n\tComputedColumnSpelling string\n\tComputedKeepsType      bool\n\t// IdentityWritten: a GENERATED ... AS IDENTITY column keeps that\n\t// spelling here rather than being rewritten into something else.\n\tIdentityWritten bool\n\t// IdentityWidensType: an identity column\'s type is widened to BIGINT.\n\tIdentityWidensType bool\n",
         "\t// GeneratedExpressionIsComputed: `GENERATED ALWAYS AS (x)` with no\n\t// STORED is a COMPUTED column here, not an identity with an\n\t// expression on it.\n\tGeneratedExpressionIsComputed bool\n",
+        "\t// GeneratedStoredSetsPersisted: `GENERATED ALWAYS AS (x) STORED`\n\t// records WHICH of STORED and VIRTUAL it read -- MySQL's own\n\t// override does; PostgreSQL's does not, having no VIRTUAL to tell\n\t// STORED apart from in the first place.\n\tGeneratedStoredSetsPersisted bool\n",
         "\t// IndexOnWord sits between an index and the table it is on.\n\tIndexOnWord string\n",
         "\t// StringClassSQL is how each kind of quoted string is written, keyed by\n\t// class. The value is the template, a tab, and whether the body takes a\n\t// string\'s own escaping. A class missing from the map is one this\n\t// dialect writes in a way that loses the value.\n\tStringClassSQL map[string]string\n",
         "\t// OffsetRowsWord is written after an OFFSET count, and is empty in\n\t// every dialect but T-SQL.\n\tOffsetRowsWord string\n",
@@ -7644,6 +7685,18 @@ def main() -> int:
                 _fmt_classes.add(funcs[fname][0])
             for _, (cls_name, _spec) in by_arity.get(fname, {}).items():
                 _fmt_classes.add(cls_name)
+        # The reference's own generic parser (parser.py, around the DATE/TIME
+        # cast-builder path) rewrites a STR_TO_DATE-shaped builder to
+        # StrToDate or StrToTime depending on the inferred target type --
+        # not a per-dialect choice, so whichever function landed StrToDate
+        # here brings StrToTime and TsOrDsToDate along with it, even though
+        # only STR_TO_DATE itself showed up as a FUNCTIONS name. Confirmed on
+        # MySQL, whose PROMOTE_TO_INFERRED_DATETIME_TYPE flips STR_TO_DATE(x,
+        # '...%T') to a StrToTime node that was otherwise never probed and
+        # silently kept the wrong (un-inverted) format spelling.
+        if "StrToDate" in _fmt_classes:
+            _fmt_classes.add("StrToTime")
+            _fmt_classes.add("TsOrDsToDate")
         _ifc = inverse_format_classes(name, exp, _fmt_classes)
         body = "".join(f"\t\t\t{gostr(k)}: {gostr(v)},\n" for k, v in sorted(_ifc))
         out.append(f"\t\tFormatSpellings: map[string]string{{\n{body}\t\t}},\n")
@@ -7747,6 +7800,10 @@ def main() -> int:
         out.append(
             "\t\tGeneratedExpressionIsComputed: %s,\n"
             % str(generated_expression_is_computed(name)).lower()
+        )
+        out.append(
+            "\t\tGeneratedStoredSetsPersisted: %s,\n"
+            % str(generated_stored_sets_persisted(name)).lower()
         )
         _scs = string_class_sql(name)
         out.append("\t\tStringClassSQL: map[string]string{\n")
@@ -8046,7 +8103,8 @@ def main() -> int:
         _ct = composite_type_sql(name)
         out.append("\t\tCompositeType: CompositeTypeSQL{\n")
         for k in ("ArrayTemplate", "ArraySizedTemplate", "StructOpen", "StructClose", "StructFieldSep"):
-            out.append(f"\t\t\t{k}: {gostr(_ct[k])},\n")
+            if k in _ct:
+                out.append(f"\t\t\t{k}: {gostr(_ct[k])},\n")
         if _ct.get("MapTemplate"):
             out.append(f"\t\t\tMapTemplate: {gostr(_ct['MapTemplate'])},\n")
         out.append("\t\t},\n")
@@ -8104,7 +8162,19 @@ def main() -> int:
         out.append(
             f"\t\tModifiersAttachedToSetOp: {str(bool(P.MODIFIERS_ATTACHED_TO_SET_OP)).lower()},\n"
         )
-        mods = "".join(f"{gostr(m)}, " for m in sorted(P.SET_OP_MODIFIERS))
+        # Order matters here beyond a stable table: the port's own Keys
+        # slice records SET call order, and that is what its tree-dump walks
+        # -- so lifting "limit" onto the set-op before "order" wrote Limit
+        # ahead of Order in the dump wherever a statement lifted both
+        # together, which alphabetical sorting never caught because no
+        # corpus exercised it until MySQL's did. Sorted by the reference's
+        # own arg_types position instead, which is what the dump order
+        # actually follows.
+        union_arg_order = list(exp.Union.arg_types.keys())
+        mods = "".join(
+            f"{gostr(m)}, "
+            for m in sorted(P.SET_OP_MODIFIERS, key=lambda m: union_arg_order.index(m))
+        )
         out.append(f"\t\tSetOpModifiers: []string{{{mods}}},\n")
         for field, table in (
             ("Disjunction", P.DISJUNCTION),

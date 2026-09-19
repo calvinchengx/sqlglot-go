@@ -1,0 +1,121 @@
+{
+ "dialect": "mysql",
+ "rendered": "NOT REGEXP_LIKE('foo', 'bar')",
+ "sql": "NOT REGEXP_LIKE('foo', 'bar')",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 4,
+   "t": "VAR",
+   "x": "REGEXP_LIKE"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 16,
+   "t": "STRING",
+   "x": "foo"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 23,
+   "t": "STRING",
+   "x": "bar"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Not"
+  },
+  {
+   "c": "sqlglot.expressions.core.RegexpLike",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 4
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "bar"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

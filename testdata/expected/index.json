@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 5837,
+ "count": 6475,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -4953,6 +4953,11 @@
    "sql": "SELECT purchases, LAST_VALUE(item) OVER item_window AS most_popular FROM Produce WINDOW item_window AS (PARTITION BY purchases ORDER BY purchases NULLS FIRST ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING)"
   },
   {
+   "key": "f2b55d680ead3258",
+   "dialect": "mysql",
+   "sql": "SELECT purchases, LAST_VALUE(item) OVER item_window AS most_popular FROM Produce WINDOW item_window AS (PARTITION BY purchases ORDER BY purchases ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING)"
+  },
+  {
    "key": "99839199e70b624f",
    "dialect": "postgres",
    "sql": "SELECT purchases, LAST_VALUE(item) OVER item_window AS most_popular FROM Produce WINDOW item_window AS (PARTITION BY purchases ORDER BY purchases NULLS FIRST ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING)"
@@ -5123,6 +5128,11 @@
    "sql": "SELECT LAST_DAY(CAST('2008-11-25' AS DATE))"
   },
   {
+   "key": "837fbabd6c4b5ed5",
+   "dialect": "mysql",
+   "sql": "SELECT LAST_DAY(CAST('2008-11-25' AS DATE))"
+  },
+  {
    "key": "cde962ee1cd5a13d",
    "dialect": "postgres",
    "sql": "SELECT CAST(DATE_TRUNC('MONTH', CAST('2008-11-25' AS DATE)) + INTERVAL '1 MONTH' - INTERVAL '1 DAY' AS DATE)"
@@ -5148,6 +5158,11 @@
    "sql": "SELECT MAKE_TIME(15, 30, 00)"
   },
   {
+   "key": "96bdd94374eeb5f8",
+   "dialect": "mysql",
+   "sql": "SELECT MAKETIME(15, 30, 00)"
+  },
+  {
    "key": "466e0b42a8e13e92",
    "dialect": "postgres",
    "sql": "SELECT MAKE_TIME(15, 30, 00)"
@@ -5160,6 +5175,11 @@
   {
    "key": "73d20ffbfa8c2fd9",
    "dialect": "duckdb",
+   "sql": "SELECT CAST('2008-12-25 15:30:00' AS TIME)"
+  },
+  {
+   "key": "f2c3384b0d2a6e95",
+   "dialect": "mysql",
    "sql": "SELECT CAST('2008-12-25 15:30:00' AS TIME)"
   },
   {
@@ -5208,8 +5228,18 @@
    "sql": "TIMESTAMPDIFF(month, b, a)"
   },
   {
+   "key": "9a45aee701a7a215",
+   "dialect": "mysql",
+   "sql": "TIMESTAMPDIFF(month, b, a)"
+  },
+  {
    "key": "3083d3cca69b5f49",
    "dialect": "databricks",
+   "sql": "TIMESTAMPDIFF(MONTH, b, a)"
+  },
+  {
+   "key": "beefd7bc9647b394",
+   "dialect": "mysql",
    "sql": "TIMESTAMPDIFF(MONTH, b, a)"
   },
   {
@@ -5283,9 +5313,19 @@
    "sql": "SELECT CAST('2008-12-25 15:30:00+00' AS TIMESTAMPTZ) + INTERVAL '10' MINUTE"
   },
   {
+   "key": "7206a588022a4d1d",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_ADD(TIMESTAMP('2008-12-25 15:30:00+00'), INTERVAL '10' MINUTE)"
+  },
+  {
    "key": "250707646d552b48",
    "dialect": "duckdb",
    "sql": "SELECT CAST('2008-12-25 15:30:00+00' AS TIMESTAMPTZ) - INTERVAL '10' MINUTE"
+  },
+  {
+   "key": "44ea16532fa937b4",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_SUB(TIMESTAMP('2008-12-25 15:30:00+00'), INTERVAL '10' MINUTE)"
   },
   {
    "key": "fa3c9b6ef054b47d",
@@ -5303,6 +5343,11 @@
    "sql": "LOWER(HEX(x))"
   },
   {
+   "key": "940317b412fe3a12",
+   "dialect": "mysql",
+   "sql": "LOWER(HEX(x))"
+  },
+  {
    "key": "031edcdee5b57e25",
    "dialect": "presto",
    "sql": "LOWER(TO_HEX(x))"
@@ -5315,6 +5360,11 @@
   {
    "key": "3752610c9f3cf280",
    "dialect": "duckdb",
+   "sql": "HEX(x)"
+  },
+  {
+   "key": "c201d8a79343fedf",
+   "dialect": "mysql",
    "sql": "HEX(x)"
   },
   {
@@ -5411,6 +5461,11 @@
    "key": "1af99c9758fd520a",
    "dialect": "duckdb",
    "sql": "SELECT {'y': ARRAY(SELECT {'b': 1} FROM x)} FROM z"
+  },
+  {
+   "key": "1de240ec74cf5ead",
+   "dialect": "mysql",
+   "sql": "REGEXP_LIKE('foo', '.*')"
   },
   {
    "key": "1b8fa0b0b81a0a9e",
@@ -5613,6 +5668,11 @@
    "sql": "CURRENT_DATE + INTERVAL '-1' DAY"
   },
   {
+   "key": "7bb1d95e4b6631fa",
+   "dialect": "mysql",
+   "sql": "DATE_ADD(CURRENT_DATE, INTERVAL '-1' DAY)"
+  },
+  {
    "key": "2d2c303e9d4a3c7a",
    "dialect": "postgres",
    "sql": "CURRENT_DATE + INTERVAL '-1 DAY'"
@@ -5623,6 +5683,11 @@
    "sql": "DATE_ADD('DAY', CAST('-1' AS BIGINT), CURRENT_DATE)"
   },
   {
+   "key": "068c1698a499cd2b",
+   "dialect": "mysql",
+   "sql": "DATEDIFF(CAST('2010-07-07' AS DATE), CAST('2008-12-25' AS DATE))"
+  },
+  {
    "key": "5c0b6b402ac7e9fb",
    "dialect": "duckdb",
    "sql": "DATE_DIFF('DAY', CAST('2020-01-01' AS DATE), CAST('2021-01-01' AS DATE))"
@@ -5631,6 +5696,11 @@
    "key": "cea70e7b2b991153",
    "dialect": "duckdb",
    "sql": "CAST(CURRENT_TIMESTAMP AT TIME ZONE 'UTC' AS DATE)"
+  },
+  {
+   "key": "f524717041d14ee9",
+   "dialect": "mysql",
+   "sql": "CURRENT_DATE AT TIME ZONE 'UTC'"
   },
   {
    "key": "d298ac8d8e8e4bac",
@@ -6368,6 +6438,11 @@
    "sql": "BIT_AND(x)"
   },
   {
+   "key": "b3bd70dbfa90ffd5",
+   "dialect": "mysql",
+   "sql": "BIT_AND(x)"
+  },
+  {
    "key": "23c3387c27b92a5b",
    "dialect": "postgres",
    "sql": "BIT_AND(x)"
@@ -6388,6 +6463,11 @@
    "sql": "BIT_OR(x)"
   },
   {
+   "key": "75925eeda14f90ab",
+   "dialect": "mysql",
+   "sql": "BIT_OR(x)"
+  },
+  {
    "key": "ee917c1a52267504",
    "dialect": "postgres",
    "sql": "BIT_OR(x)"
@@ -6403,6 +6483,11 @@
    "sql": "BIT_XOR(x)"
   },
   {
+   "key": "54dd1189c4e6c01f",
+   "dialect": "mysql",
+   "sql": "BIT_XOR(x)"
+  },
+  {
    "key": "1e0d8c497680acb0",
    "dialect": "postgres",
    "sql": "BIT_XOR(x)"
@@ -6410,6 +6495,11 @@
   {
    "key": "31ba69284c62673a",
    "dialect": "databricks",
+   "sql": "BIT_COUNT(x)"
+  },
+  {
+   "key": "a4ab8072c98280fa",
+   "dialect": "mysql",
    "sql": "BIT_COUNT(x)"
   },
   {
@@ -6558,6 +6648,11 @@
    "sql": "SELECT SUBSTRING_INDEX('a.b.c.d', '.', 2)"
   },
   {
+   "key": "77567427e48f6d4f",
+   "dialect": "mysql",
+   "sql": "SELECT SUBSTRING_INDEX('a.b.c.d', '.', 2)"
+  },
+  {
    "key": "ae23e8bab1d4011b",
    "dialect": "duckdb",
    "sql": "SELECT LAG(salary, 1, 0) OVER (ORDER BY hire_date) AS prev_sal FROM employees"
@@ -6648,6 +6743,11 @@
    "sql": "SELECT 'ThOmAs' ~* x FROM t"
   },
   {
+   "key": "20d905301543920c",
+   "dialect": "mysql",
+   "sql": "SELECT '\u0000'"
+  },
+  {
    "key": "edd057cd12c0d6e1",
    "dialect": "presto",
    "sql": "DATE_ADD('DAY', 1, x)"
@@ -6656,6 +6756,31 @@
    "key": "53c63e16f1249748",
    "dialect": "presto",
    "sql": "DATE_DIFF('DAY', a, b)"
+  },
+  {
+   "key": "400b338bdb66c245",
+   "dialect": "mysql",
+   "sql": "SELECT 1 XOR 0"
+  },
+  {
+   "key": "cab92b35f66625c5",
+   "dialect": "mysql",
+   "sql": "SELECT 0 XOR 1 XOR (1 XOR 0 XOR 0)"
+  },
+  {
+   "key": "68e97dd4a58c6e08",
+   "dialect": "mysql",
+   "sql": "SELECT 1 XOR 0 XOR 1"
+  },
+  {
+   "key": "7b72ddeed193986e",
+   "dialect": "mysql",
+   "sql": "SELECT (1 XOR 0) XOR 1"
+  },
+  {
+   "key": "2ee33d1215883239",
+   "dialect": "mysql",
+   "sql": "CONCAT(a, b)"
   },
   {
    "key": "ddcdfb320d2f6b87",
@@ -6676,6 +6801,11 @@
    "key": "34ad1be5c654ccd0",
    "dialect": "duckdb",
    "sql": "SELECT quantile(a, [0.5])"
+  },
+  {
+   "key": "eab909ab5b1e58b3",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT(NOW(), '%Y-%m-%d')"
   },
   {
    "key": "d49bde310ec4e9f3",
@@ -6703,6 +6833,11 @@
    "sql": "SELECT LTRIM(s), RTRIM(s), TRIM(s)"
   },
   {
+   "key": "24140b08b0e1c52b",
+   "dialect": "mysql",
+   "sql": "a / b"
+  },
+  {
    "key": "07e4e3b38256ab07",
    "dialect": "postgres",
    "sql": "CAST(a AS DOUBLE PRECISION) / b"
@@ -6726,6 +6861,11 @@
    "key": "91f88f7228109a42",
    "dialect": "duckdb",
    "sql": "DROP SCHEMA x"
+  },
+  {
+   "key": "0d7e3b871c11648b",
+   "dialect": "mysql",
+   "sql": "SELECT GROUP_CONCAT(part_name SEPARATOR ', ') FROM t"
   },
   {
    "key": "77b8c3fb28d966c3",
@@ -7843,6 +7983,11 @@
    "sql": "CAST(a AS TEXT)"
   },
   {
+   "key": "f8d27fa9651e2c1d",
+   "dialect": "mysql",
+   "sql": "CAST(a AS CHAR)"
+  },
+  {
    "key": "d15d3052445fca42",
    "dialect": "postgres",
    "sql": "CAST(a AS TEXT)"
@@ -7873,6 +8018,11 @@
    "sql": "CAST(a AS BYTEA(4))"
   },
   {
+   "key": "81aa16d81df510b7",
+   "dialect": "mysql",
+   "sql": "CAST(a AS BINARY(4))"
+  },
+  {
    "key": "d44a376bcf135b23",
    "dialect": "postgres",
    "sql": "CAST(a AS BYTEA(4))"
@@ -7886,6 +8036,11 @@
    "key": "cb297eb1fff4c920",
    "dialect": "redshift",
    "sql": "CAST(a AS VARBYTE(4))"
+  },
+  {
+   "key": "e09dc7077b51e7bd",
+   "dialect": "mysql",
+   "sql": "CAST(a AS VARBINARY(4))"
   },
   {
    "key": "10181eedb8b8f96f",
@@ -7923,6 +8078,11 @@
    "sql": "CAST(a AS VARCHAR(3))"
   },
   {
+   "key": "5ed3f31749c919d4",
+   "dialect": "mysql",
+   "sql": "CAST(a AS CHAR(3))"
+  },
+  {
    "key": "63900ec24dc05a42",
    "dialect": "postgres",
    "sql": "CAST(a AS VARCHAR(3))"
@@ -7951,6 +8111,11 @@
    "key": "c0b83090a442bce2",
    "dialect": "materialize",
    "sql": "CAST(a AS SMALLINT)"
+  },
+  {
+   "key": "49ebf75dd7e19d6d",
+   "dialect": "mysql",
+   "sql": "CAST(a AS SIGNED)"
   },
   {
    "key": "0a8c99a364177752",
@@ -7988,6 +8153,11 @@
    "sql": "CAST(a AS DOUBLE PRECISION)"
   },
   {
+   "key": "96a69030c8479319",
+   "dialect": "mysql",
+   "sql": "CAST(a AS DOUBLE)"
+  },
+  {
    "key": "ee454b76481c9125",
    "dialect": "presto",
    "sql": "CAST(a AS DOUBLE)"
@@ -8008,9 +8178,19 @@
    "sql": "CAST(a AS TIMESTAMP)"
   },
   {
+   "key": "3b9b698221b98636",
+   "dialect": "mysql",
+   "sql": "CAST(a AS DATETIME)"
+  },
+  {
    "key": "34132d262d936d22",
    "dialect": "redshift",
    "sql": "CAST(a AS TIMESTAMP WITH TIME ZONE)"
+  },
+  {
+   "key": "07f1bc3157b34bcc",
+   "dialect": "mysql",
+   "sql": "TIMESTAMP(a)"
   },
   {
    "key": "31da80972772bc0e",
@@ -8026,6 +8206,11 @@
    "key": "22209aa99e873265",
    "dialect": "duckdb",
    "sql": "CREATE TABLE a AS SELECT * FROM b LIMIT 0"
+  },
+  {
+   "key": "96c58e49765d1810",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE a LIKE b"
   },
   {
    "key": "855b18d353d75c42",
@@ -8128,6 +8313,11 @@
    "sql": "SELECT COALESCE(1, NULL) FROM foo"
   },
   {
+   "key": "96c4e91d6e2f91e1",
+   "dialect": "mysql",
+   "sql": "SELECT COALESCE(1, NULL) FROM foo"
+  },
+  {
    "key": "5be046078ffe194f",
    "dialect": "duckdb",
    "sql": "SELECT COALESCE(1, NULL) FROM foo"
@@ -8136,6 +8326,11 @@
    "key": "ff04fd518c21c90b",
    "dialect": "presto",
    "sql": "SELECT COALESCE(1, NULL) FROM foo"
+  },
+  {
+   "key": "9343b71bf4f79a8f",
+   "dialect": "mysql",
+   "sql": "SELECT REGEXP_LIKE(x, '^[[:ascii:]]*$')"
   },
   {
    "key": "1c97595163f2ed47",
@@ -8160,6 +8355,11 @@
   {
    "key": "ce55540c098a126c",
    "dialect": "duckdb",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
+  },
+  {
+   "key": "4a48bfe9021546c4",
+   "dialect": "mysql",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
   },
   {
@@ -8203,6 +8403,11 @@
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
   },
   {
+   "key": "9a4e5047725325b8",
+   "dialect": "mysql",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
+  },
+  {
    "key": "ec51793bb5e60818",
    "dialect": "postgres",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
@@ -8231,6 +8436,11 @@
    "key": "ba3fefdab19aaa72",
    "dialect": "duckdb",
    "sql": "STRPTIME(x, '%Y-%m-%dT%H:%M:%S')"
+  },
+  {
+   "key": "f43d1b2423344ef2",
+   "dialect": "mysql",
+   "sql": "STR_TO_DATE(x, '%Y-%m-%dT%T')"
   },
   {
    "key": "a42c8a7d44cfedd5",
@@ -8323,6 +8533,11 @@
    "sql": "CAST('2020-01-01' AS DATETIME2)"
   },
   {
+   "key": "4c438496ad65a9e5",
+   "dialect": "mysql",
+   "sql": "CAST('2020-01-01' AS DATETIME)"
+  },
+  {
    "key": "35434e7f2a855578",
    "dialect": "postgres",
    "sql": "CAST('2020-01-01' AS TIMESTAMP)"
@@ -8338,6 +8553,11 @@
    "sql": "CAST('2020-01-01' AS TIMESTAMP)"
   },
   {
+   "key": "f826c0cd4b6a4812",
+   "dialect": "mysql",
+   "sql": "CAST('2020-01-01 12:13:14.123456+00:00' AS DATETIME(6))"
+  },
+  {
    "key": "f89aec211bec3b35",
    "dialect": "trino",
    "sql": "CAST('2020-01-01 12:13:14.123456+00:00' AS TIMESTAMP(6))"
@@ -8346,6 +8566,11 @@
    "key": "28c4c924d2f7bbd3",
    "dialect": "presto",
    "sql": "CAST('2020-01-01 12:13:14.123456+00:00' AS TIMESTAMP)"
+  },
+  {
+   "key": "a47e89aab2354993",
+   "dialect": "mysql",
+   "sql": "TIMESTAMP('2020-01-01 12:13:14.123-08:00')"
   },
   {
    "key": "25ea729064082cb6",
@@ -8371,6 +8596,11 @@
    "key": "bfe4f831e11e8a3c",
    "dialect": "tsql",
    "sql": "CAST('2020-01-01 12:13:14-08:00' AS DATETIMEOFFSET) AT TIME ZONE 'UTC'"
+  },
+  {
+   "key": "0f1ee3ce3b3f9dc7",
+   "dialect": "mysql",
+   "sql": "TIMESTAMP('2020-01-01 12:13:14-08:00')"
   },
   {
    "key": "d5f4f41382f77338",
@@ -8408,6 +8638,11 @@
    "sql": "CAST(col AS DATETIMEOFFSET) AT TIME ZONE 'UTC'"
   },
   {
+   "key": "4397e61308af62a8",
+   "dialect": "mysql",
+   "sql": "TIMESTAMP(col)"
+  },
+  {
    "key": "85b4eaaa566dad5e",
    "dialect": "postgres",
    "sql": "CAST(col AS TIMESTAMPTZ)"
@@ -8431,6 +8666,11 @@
    "key": "ca39de8cbb240024",
    "dialect": "duckdb",
    "sql": "EPOCH(CAST('2020-01-01' AS TIMESTAMP))"
+  },
+  {
+   "key": "2a649ff3cec8903c",
+   "dialect": "mysql",
+   "sql": "UNIX_TIMESTAMP('2020-01-01')"
   },
   {
    "key": "ee7b6257a2fdb463",
@@ -8528,6 +8768,11 @@
    "sql": "CAST(CAST(x AS TIMESTAMP) AS DATE)"
   },
   {
+   "key": "4c690c0a258fd842",
+   "dialect": "mysql",
+   "sql": "DATE(x)"
+  },
+  {
    "key": "81af68b1f3beca39",
    "dialect": "duckdb",
    "sql": "CAST(STRPTIME(x, '%-d') AS DATE)"
@@ -8623,6 +8868,11 @@
    "sql": "x + INTERVAL '1 DAY'"
   },
   {
+   "key": "e4146964d3ca4cb1",
+   "dialect": "mysql",
+   "sql": "DATE_ADD(x, INTERVAL 1 DAY)"
+  },
+  {
    "key": "14f596fe20697aac",
    "dialect": "postgres",
    "sql": "x + INTERVAL '1 DAY'"
@@ -8683,6 +8933,26 @@
    "sql": "DATE_TRUNC('day', x::DATE)"
   },
   {
+   "key": "ef6374b7bde334cc",
+   "dialect": "mysql",
+   "sql": "STR_TO_DATE(CONCAT(YEAR(x), ' ', WEEK(x, 1), ' 1'), '%Y %u %w')"
+  },
+  {
+   "key": "9e74909a30ccaf20",
+   "dialect": "mysql",
+   "sql": "STR_TO_DATE(CONCAT(YEAR(x), ' ', MONTH(x), ' 1'), '%Y %c %e')"
+  },
+  {
+   "key": "90c4ac73f5b44ecc",
+   "dialect": "mysql",
+   "sql": "STR_TO_DATE(CONCAT(YEAR(x), ' ', QUARTER(x) * 3 - 2, ' 1'), '%Y %c %e')"
+  },
+  {
+   "key": "8a8d6cb15a9f257c",
+   "dialect": "mysql",
+   "sql": "STR_TO_DATE(CONCAT(YEAR(x), ' 1 1'), '%Y %c %e')"
+  },
+  {
    "key": "551aa8ac40b8c388",
    "dialect": "materialize",
    "sql": "DATE_TRUNC('YEAR', x)"
@@ -8713,6 +8983,11 @@
    "sql": "CAST(DATE_PARSE(x, '%Y-%m-%dT%T') AS DATE)"
   },
   {
+   "key": "f6fcfab124020a5d",
+   "dialect": "mysql",
+   "sql": "STR_TO_DATE(x, '%Y-%m-%d')"
+  },
+  {
    "key": "35084927dd7be2d6",
    "dialect": "presto",
    "sql": "CAST(DATE_PARSE(x, '%Y-%m-%d') AS DATE)"
@@ -8738,6 +9013,11 @@
    "sql": "DATE_ADD('DAY', 1, CAST(CAST('2021-02-01' AS TIMESTAMP) AS DATE))"
   },
   {
+   "key": "5f1f402197350eb4",
+   "dialect": "mysql",
+   "sql": "DATE_ADD('2021-02-01', INTERVAL 1 DAY)"
+  },
+  {
    "key": "4f542007daf42fa3",
    "dialect": "presto",
    "sql": "DATE_ADD('DAY', 1, CAST(CAST(x AS TIMESTAMP) AS DATE))"
@@ -8761,6 +9041,16 @@
    "key": "42f75d4be0db2624",
    "dialect": "dremio",
    "sql": "DATE_ADD(CAST('2020-01-01' AS DATE), 1)"
+  },
+  {
+   "key": "b0fb85b70fa4c960",
+   "dialect": "mysql",
+   "sql": "CAST('2022-01-01' AS DATETIME)"
+  },
+  {
+   "key": "1d09aad90923f422",
+   "dialect": "mysql",
+   "sql": "TIMESTAMP('2022-01-01')"
   },
   {
    "key": "3fae1b0e9948a27f",
@@ -9058,6 +9348,11 @@
    "sql": "x -> '$.\"a b\"'"
   },
   {
+   "key": "e2e64fd890b5bc0c",
+   "dialect": "mysql",
+   "sql": "JSON_EXTRACT(x, '$.\"a b\"')"
+  },
+  {
    "key": "1327eacebb7e1b3a",
    "dialect": "postgres",
    "sql": "JSON_EXTRACT_PATH(x, 'a b')"
@@ -9086,6 +9381,11 @@
    "key": "634f06847e645e59",
    "dialect": "duckdb",
    "sql": "x -> 'y'"
+  },
+  {
+   "key": "7854106a0abb5793",
+   "dialect": "mysql",
+   "sql": "JSON_EXTRACT(x, '$.y')"
   },
   {
    "key": "825297b36b6d9566",
@@ -9148,6 +9448,11 @@
    "sql": "x -> '$.y[0].z'"
   },
   {
+   "key": "8279c300dc1e0ef4",
+   "dialect": "mysql",
+   "sql": "JSON_EXTRACT(x, '$.y[0].z')"
+  },
+  {
    "key": "6566acd1999f3e07",
    "dialect": "presto",
    "sql": "JSON_EXTRACT(x, '$.y[0].z')"
@@ -9188,6 +9493,11 @@
    "sql": "x -> '$.y[*]'"
   },
   {
+   "key": "335872c8992dec0f",
+   "dialect": "mysql",
+   "sql": "JSON_EXTRACT(x, '$.y[*]')"
+  },
+  {
    "key": "7359d4ed4f0e80ea",
    "dialect": "presto",
    "sql": "JSON_EXTRACT(x, '$.y[*]')"
@@ -9196,6 +9506,11 @@
    "key": "0071eb8068eb2623",
    "dialect": "duckdb",
    "sql": "x -> '$.y.*'"
+  },
+  {
+   "key": "70f25ce5127ee64e",
+   "dialect": "mysql",
+   "sql": "JSON_EXTRACT(x, '$.y.*')"
   },
   {
    "key": "bd586a534b0efef1",
@@ -9328,6 +9643,11 @@
    "sql": "x ILIKE '%y'"
   },
   {
+   "key": "d959d8f90e83006b",
+   "dialect": "mysql",
+   "sql": "LOWER(x) LIKE LOWER('%y')"
+  },
+  {
    "key": "3d283ec70e68ad86",
    "dialect": "presto",
    "sql": "LOWER(x) LIKE LOWER('%y')"
@@ -9360,6 +9680,11 @@
   {
    "key": "e8f91558bd9b9a79",
    "dialect": "materialize",
+   "sql": "POSITION(needle in haystack)"
+  },
+  {
+   "key": "90ab6c98f6f22d7c",
+   "dialect": "mysql",
    "sql": "POSITION(needle in haystack)"
   },
   {
@@ -9428,8 +9753,18 @@
    "sql": "INSTR(haystack, needle)"
   },
   {
+   "key": "e316a04fcd4f24e1",
+   "dialect": "mysql",
+   "sql": "INSTR(haystack, needle)"
+  },
+  {
    "key": "2939663f455832f5",
    "dialect": "databricks",
+   "sql": "LOCATE(needle, haystack)"
+  },
+  {
+   "key": "2d5a1858140a0078",
+   "dialect": "mysql",
    "sql": "LOCATE(needle, haystack)"
   },
   {
@@ -9466,6 +9801,11 @@
    "key": "489dc039c86347e2",
    "dialect": "databricks",
    "sql": "POSITION(needle, haystack, position)"
+  },
+  {
+   "key": "3d6136d1ef294bc3",
+   "dialect": "mysql",
+   "sql": "LOCATE(needle, haystack, position)"
   },
   {
    "key": "ac71c2f4ffe93195",
@@ -9748,6 +10088,11 @@
    "sql": "SELECT * FROM t FETCH FIRST ROWS ONLY"
   },
   {
+   "key": "3f6e9c797d13ed5b",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t LIMIT 1"
+  },
+  {
    "key": "2e9a0f8b6e34e077",
    "dialect": "duckdb",
    "sql": "SELECT * FROM t LIMIT 1"
@@ -9756,6 +10101,11 @@
    "key": "2b76737944131613",
    "dialect": "redshift",
    "sql": "SELECT * FROM t LIMIT 1"
+  },
+  {
+   "key": "fc8a2eeab8bddd19",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t LIMIT 10"
   },
   {
    "key": "230e3379a90a930f",
@@ -9838,6 +10188,11 @@
    "sql": "WITH t AS (SELECT 1 AS x, 2 AS y) SELECT SUM(x) AS y, y AS x FROM t GROUP BY y"
   },
   {
+   "key": "2fb8ac1bd50f6810",
+   "dialect": "mysql",
+   "sql": "SELECT 1 'foo'"
+  },
+  {
    "key": "4e8853d9e673d5b1",
    "dialect": "tsql",
    "sql": "SELECT 1 'foo'"
@@ -9878,6 +10233,11 @@
    "sql": "SELECT * FROM (SELECT 1 AS col) apply"
   },
   {
+   "key": "f92e0d527d1c5d29",
+   "dialect": "mysql",
+   "sql": "SELECT a <=> b"
+  },
+  {
    "key": "52d936568e98bbd4",
    "dialect": "postgres",
    "sql": "SELECT a IS NOT DISTINCT FROM b"
@@ -9886,6 +10246,26 @@
    "key": "03a946d28e219c41",
    "dialect": "postgres",
    "sql": "SELECT a IS DISTINCT FROM b"
+  },
+  {
+   "key": "aed92247bf1dc8fe",
+   "dialect": "mysql",
+   "sql": "SELECT NOT a <=> b"
+  },
+  {
+   "key": "2655821059e00625",
+   "dialect": "mysql",
+   "sql": "SELECT 1 # arbitrary content,,, until end-of-line"
+  },
+  {
+   "key": "b48bb4b58c49272a",
+   "dialect": "mysql",
+   "sql": "SELECT # comment1\n  x, # comment2\n  y # comment3"
+  },
+  {
+   "key": "b6b401458d15b433",
+   "dialect": "mysql",
+   "sql": "BEGIN"
   },
   {
    "key": "866cae687df84766",
@@ -9983,6 +10363,11 @@
    "sql": "LOG(x)"
   },
   {
+   "key": "d0ce0426a594b331",
+   "dialect": "mysql",
+   "sql": "LOG(x)"
+  },
+  {
    "key": "9f92ac612c053e14",
    "dialect": "tsql",
    "sql": "LOG(x)"
@@ -9995,6 +10380,11 @@
   {
    "key": "c75a35de21e3ff9d",
    "dialect": "duckdb",
+   "sql": "LOG(b, n)"
+  },
+  {
+   "key": "c35c06b3cbb1a882",
+   "dialect": "mysql",
    "sql": "LOG(b, n)"
   },
   {
@@ -10073,6 +10463,11 @@
    "sql": "SELECT * FROM t QUALIFY COUNT(*) OVER () > 1"
   },
   {
+   "key": "b71c2a072cf70c82",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM (SELECT *, COUNT(*) OVER () AS _w FROM t) AS _t WHERE _w > 1"
+  },
+  {
    "key": "75f68a67040f7613",
    "dialect": "postgres",
    "sql": "SELECT * FROM (SELECT *, COUNT(*) OVER () AS _w FROM t) AS _t WHERE _w > 1"
@@ -10086,6 +10481,11 @@
    "key": "6dbb6a161bdb658c",
    "dialect": "duckdb",
    "sql": "SELECT \"user id\", some_id, 1 AS other_id, 2 AS \"2 nd id\" FROM t QUALIFY COUNT(*) OVER () > 1"
+  },
+  {
+   "key": "6947f435817751ba",
+   "dialect": "mysql",
+   "sql": "SELECT `user id`, some_id, other_id, `2 nd id` FROM (SELECT `user id`, some_id, 1 AS other_id, 2 AS `2 nd id`, COUNT(*) OVER () AS _w FROM t) AS _t WHERE _w > 1"
   },
   {
    "key": "1442e8d450c9a298",
@@ -10125,6 +10525,11 @@
   {
    "key": "34742dc7bbb889b0",
    "dialect": "duckdb",
+   "sql": "SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq"
+  },
+  {
+   "key": "5637160bad6c0471",
+   "dialect": "mysql",
    "sql": "SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq"
   },
   {
@@ -10188,6 +10593,11 @@
    "sql": "RANDOM()"
   },
   {
+   "key": "0e633acd26515e27",
+   "dialect": "mysql",
+   "sql": "RAND()"
+  },
+  {
    "key": "79793ce489ee7f08",
    "dialect": "postgres",
    "sql": "RANDOM()"
@@ -10238,6 +10648,11 @@
    "sql": "SELECT * FROM UNNEST(CAST(GENERATE_SERIES(CAST('2020-01-01' AS DATE), CAST('2020-02-01' AS DATE), INTERVAL '1' WEEK) AS DATE[]))"
   },
   {
+   "key": "57427704c60a7a7f",
+   "dialect": "mysql",
+   "sql": "WITH RECURSIVE _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATE_ADD(date_value, INTERVAL 1 WEEK) AS DATE) FROM _generated_dates WHERE CAST(DATE_ADD(date_value, INTERVAL 1 WEEK) AS DATE) <= CAST('2020-02-01' AS DATE)) SELECT * FROM (SELECT date_value FROM _generated_dates) AS _generated_dates"
+  },
+  {
    "key": "7bf5d0f1e875376a",
    "dialect": "postgres",
    "sql": "SELECT * FROM (SELECT CAST(value AS DATE) FROM GENERATE_SERIES(CAST('2020-01-01' AS DATE), CAST('2020-02-01' AS DATE), INTERVAL '1 WEEK') AS _t(value)) AS _unnested_generate_series"
@@ -10263,6 +10678,11 @@
    "sql": "WITH _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_value) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_value) AS DATE) <= CAST('2020-02-01' AS DATE)) SELECT * FROM (SELECT date_value AS date_value FROM _generated_dates) AS _generated_dates"
   },
   {
+   "key": "96f474856fc11cf4",
+   "dialect": "mysql",
+   "sql": "WITH RECURSIVE _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATE_ADD(date_value, INTERVAL 1 WEEK) AS DATE) FROM _generated_dates WHERE CAST(DATE_ADD(date_value, INTERVAL 1 WEEK) AS DATE) <= CAST('2020-02-01' AS DATE)), dates AS (SELECT * FROM (SELECT date_value FROM _generated_dates) AS _generated_dates) SELECT * FROM dates"
+  },
+  {
    "key": "e1ba6a78cd318f71",
    "dialect": "redshift",
    "sql": "WITH RECURSIVE _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_value) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_value) AS DATE) <= CAST('2020-02-01' AS DATE)), dates AS (SELECT * FROM (SELECT date_value FROM _generated_dates) AS _generated_dates) SELECT * FROM dates"
@@ -10273,6 +10693,11 @@
    "sql": "WITH _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_value) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_value) AS DATE) <= CAST('2020-02-01' AS DATE)), dates AS (SELECT * FROM (SELECT date_value AS date_value FROM _generated_dates) AS _generated_dates) SELECT * FROM dates"
   },
   {
+   "key": "fb8b8e8245460251",
+   "dialect": "mysql",
+   "sql": "WITH RECURSIVE _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATE_ADD(date_value, INTERVAL 1 WEEK) AS DATE) FROM _generated_dates WHERE CAST(DATE_ADD(date_value, INTERVAL 1 WEEK) AS DATE) <= CAST('2020-02-01' AS DATE)), _generated_dates_1(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATE_ADD(date_value, INTERVAL 1 MONTH) AS DATE) FROM _generated_dates_1 WHERE CAST(DATE_ADD(date_value, INTERVAL 1 MONTH) AS DATE) <= CAST('2020-03-01' AS DATE)), dates1 AS (SELECT * FROM (SELECT date_value FROM _generated_dates) AS _generated_dates), dates2 AS (SELECT * FROM (SELECT date_value FROM _generated_dates_1) AS _generated_dates_1) SELECT * FROM dates1 CROSS JOIN dates2"
+  },
+  {
    "key": "06a7397a5ef8d506",
    "dialect": "redshift",
    "sql": "WITH RECURSIVE _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_value) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_value) AS DATE) <= CAST('2020-02-01' AS DATE)), _generated_dates_1(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(MONTH, 1, date_value) AS DATE) FROM _generated_dates_1 WHERE CAST(DATEADD(MONTH, 1, date_value) AS DATE) <= CAST('2020-03-01' AS DATE)), dates1 AS (SELECT * FROM (SELECT date_value FROM _generated_dates) AS _generated_dates), dates2 AS (SELECT * FROM (SELECT date_value FROM _generated_dates_1) AS _generated_dates_1) SELECT * FROM dates1 CROSS JOIN dates2"
@@ -10281,6 +10706,11 @@
    "key": "8a09ae3e7fcf1077",
    "dialect": "tsql",
    "sql": "WITH _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_value) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_value) AS DATE) <= CAST('2020-02-01' AS DATE)), _generated_dates_1(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATEADD(MONTH, 1, date_value) AS DATE) FROM _generated_dates_1 WHERE CAST(DATEADD(MONTH, 1, date_value) AS DATE) <= CAST('2020-03-01' AS DATE)), dates1 AS (SELECT * FROM (SELECT date_value AS date_value FROM _generated_dates) AS _generated_dates), dates2 AS (SELECT * FROM (SELECT date_value AS date_value FROM _generated_dates_1) AS _generated_dates_1) SELECT * FROM dates1 CROSS JOIN dates2"
+  },
+  {
+   "key": "df38d32f135e9d99",
+   "dialect": "mysql",
+   "sql": "WITH RECURSIVE _generated_dates(date_week) AS (SELECT CAST('2020-01-01' AS DATE) AS date_week UNION ALL SELECT CAST(DATE_ADD(date_week, INTERVAL 1 WEEK) AS DATE) FROM _generated_dates WHERE CAST(DATE_ADD(date_week, INTERVAL 1 WEEK) AS DATE) <= CAST('2020-02-01' AS DATE)) SELECT * FROM (SELECT date_week FROM _generated_dates) AS _generated_dates"
   },
   {
    "key": "a102d14a82b2b2d4",
@@ -10300,6 +10730,11 @@
   {
    "key": "e399ae91a95db17b",
    "dialect": "duckdb",
+   "sql": "SELECT 1 EXCEPT ALL SELECT 1"
+  },
+  {
+   "key": "0f71c3d1d0505ab6",
+   "dialect": "mysql",
    "sql": "SELECT 1 EXCEPT ALL SELECT 1"
   },
   {
@@ -10373,6 +10808,11 @@
    "sql": "UUID()"
   },
   {
+   "key": "357628a154ce60e5",
+   "dialect": "mysql",
+   "sql": "UUID()"
+  },
+  {
    "key": "3b83b4cc8cd268e8",
    "dialect": "postgres",
    "sql": "GEN_RANDOM_UUID()"
@@ -10381,6 +10821,11 @@
    "key": "4be13801d8756683",
    "dialect": "tsql",
    "sql": "NEWID()"
+  },
+  {
+   "key": "c4d723d516598355",
+   "dialect": "mysql",
+   "sql": "SCHEMA()"
   },
   {
    "key": "86d50b0acf6f0f80",
@@ -10400,6 +10845,11 @@
   {
    "key": "55532ae5ffa28846",
    "dialect": "databricks",
+   "sql": "ASCII('A')"
+  },
+  {
+   "key": "be77fff0e6e42c67",
+   "dialect": "mysql",
    "sql": "ASCII('A')"
   },
   {
@@ -10430,6 +10880,11 @@
   {
    "key": "2b5bcdf466376424",
    "dialect": "materialize",
+   "sql": "SELECT x BETWEEN 2 AND 10"
+  },
+  {
+   "key": "ffd094cbfdca2b44",
+   "dialect": "mysql",
    "sql": "SELECT x BETWEEN 2 AND 10"
   },
   {
@@ -10468,6 +10923,11 @@
    "sql": "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)"
   },
   {
+   "key": "3c8e241ff1af0497",
+   "dialect": "mysql",
+   "sql": "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)"
+  },
+  {
    "key": "019c144b3cc99980",
    "dialect": "postgres",
    "sql": "SELECT x BETWEEN SYMMETRIC 10 AND 2"
@@ -10500,6 +10960,11 @@
   {
    "key": "5dee240c58ddd54b",
    "dialect": "materialize",
+   "sql": "SELECT x BETWEEN 10 AND 2"
+  },
+  {
+   "key": "7b3da2a411654d12",
+   "dialect": "mysql",
    "sql": "SELECT x BETWEEN 10 AND 2"
   },
   {
@@ -10558,6 +11023,11 @@
    "sql": "WEEKOFYEAR(CAST('2025-01-01' AS DATE))"
   },
   {
+   "key": "afa166701fe2008e",
+   "dialect": "mysql",
+   "sql": "WEEKOFYEAR(CAST('2025-01-01' AS DATE))"
+  },
+  {
    "key": "f279ff6e10176773",
    "dialect": "postgres",
    "sql": "JUSTIFY_DAYS(INTERVAL '1 DAY')"
@@ -10600,6 +11070,11 @@
   {
    "key": "9f8002225a42e2f9",
    "dialect": "databricks",
+   "sql": "REVERSE(x)"
+  },
+  {
+   "key": "fe7186f651783de0",
+   "dialect": "mysql",
    "sql": "REVERSE(x)"
   },
   {
@@ -10808,6 +11283,11 @@
    "sql": "SOUNDEX(x)"
   },
   {
+   "key": "ff337601b8f6e2cb",
+   "dialect": "mysql",
+   "sql": "SOUNDEX(x)"
+  },
+  {
    "key": "a817b90c00a586fd",
    "dialect": "postgres",
    "sql": "SOUNDEX(x)"
@@ -10838,6 +11318,11 @@
    "sql": "GROUPING(x)"
   },
   {
+   "key": "76b99cf2c1a77467",
+   "dialect": "mysql",
+   "sql": "GROUPING(x)"
+  },
+  {
    "key": "fe3b366ee2a46916",
    "dialect": "postgres",
    "sql": "GROUPING(x)"
@@ -10851,6 +11336,11 @@
    "key": "e0eafc0670dde44c",
    "dialect": "redshift",
    "sql": "GROUPING(x)"
+  },
+  {
+   "key": "b0444b8630b3f5d5",
+   "dialect": "mysql",
+   "sql": "GROUPING(col1, col2, col3)"
   },
   {
    "key": "558ca7bb1cda22d5",
@@ -10898,6 +11388,11 @@
    "sql": "REGEXP_INSTR(src, reg)"
   },
   {
+   "key": "fc411c0e632b2fd9",
+   "dialect": "mysql",
+   "sql": "REGEXP_INSTR(src, reg)"
+  },
+  {
    "key": "d326b52602c3452f",
    "dialect": "postgres",
    "sql": "REGEXP_INSTR(src, reg)"
@@ -10913,6 +11408,11 @@
    "sql": "REGEXP_INSTR(src, reg, pos, occ, opt)"
   },
   {
+   "key": "7cff692a09861ce5",
+   "dialect": "mysql",
+   "sql": "REGEXP_INSTR(src, reg, pos, occ, opt)"
+  },
+  {
    "key": "68ce1f36053c7b8a",
    "dialect": "postgres",
    "sql": "REGEXP_INSTR(src, reg, pos, occ, opt)"
@@ -10925,6 +11425,11 @@
   {
    "key": "fbb770fb022749f3",
    "dialect": "tsql",
+   "sql": "REGEXP_INSTR(src, reg, pos, occ, opt, par)"
+  },
+  {
+   "key": "0d02c03af75f5fab",
+   "dialect": "mysql",
    "sql": "REGEXP_INSTR(src, reg, pos, occ, opt, par)"
   },
   {
@@ -10963,9 +11468,34 @@
    "sql": "FORMAT_STRING('str fmt1 fmt2', 1, 'a')"
   },
   {
+   "key": "420f60b1cfad7b15",
+   "dialect": "mysql",
+   "sql": "JSON_ARRAY_APPEND('[\"a\", \"b\", \"c\"]', '$', 1)"
+  },
+  {
+   "key": "a2d13d2f0ea90389",
+   "dialect": "mysql",
+   "sql": "JSON_ARRAY_INSERT('[\"a\", [\"b\", \"c\"], \"d\"]', '$[1]', 1)"
+  },
+  {
+   "key": "e279f2e4b96a6c17",
+   "dialect": "mysql",
+   "sql": "JSON_REMOVE('[\"a\", [\"b\", \"c\"], \"d\"]', '$[1]', '$[1]')"
+  },
+  {
+   "key": "79d6362e1bf7de0a",
+   "dialect": "mysql",
+   "sql": "JSON_SET('{\"a\": 1}', '$', '{\"b\": 2, \"c\": 3}')"
+  },
+  {
    "key": "1ee950982932ada9",
    "dialect": "postgres",
    "sql": "JSON_STRIP_NULLS(CAST('[{\"f1\":1,\"f2\":null},2,null,3]' AS JSON))"
+  },
+  {
+   "key": "5f9a673fd938f3bc",
+   "dialect": "mysql",
+   "sql": "x IS UNKNOWN"
   },
   {
    "key": "0c0f479f4a3a2fd7",
@@ -10986,6 +11516,11 @@
    "key": "f9287e28deeaf31b",
    "dialect": "databricks",
    "sql": "x IS UNKNOWN"
+  },
+  {
+   "key": "d6fa5b715a2994e4",
+   "dialect": "mysql",
+   "sql": "x IS NOT UNKNOWN"
   },
   {
    "key": "743b687151e85297",
@@ -11043,9 +11578,19 @@
    "sql": "JSON_OBJECT_KEYS(foo)"
   },
   {
+   "key": "2c69401955308226",
+   "dialect": "mysql",
+   "sql": "JSON_KEYS(foo)"
+  },
+  {
    "key": "b4cdd6a5fd6a6079",
    "dialect": "duckdb",
    "sql": "JSON_KEYS(foo)"
+  },
+  {
+   "key": "ed58d51d1d861b81",
+   "dialect": "mysql",
+   "sql": "JSON_KEYS(foo, '$.a')"
   },
   {
    "key": "eb846df272a9958a",
@@ -11071,6 +11616,11 @@
    "key": "496305c5de82b0e5",
    "dialect": "postgres",
    "sql": "SELECT JSON_EXTRACT_PATH(CAST('{\"key\": 1}' AS JSONB), 'key')"
+  },
+  {
+   "key": "7298f5c4aee37156",
+   "dialect": "mysql",
+   "sql": "SELECT GROUP_CONCAT('aa' SEPARATOR ',')"
   },
   {
    "key": "1ff1dda4e31baad0",
@@ -11398,6 +11948,11 @@
    "sql": "TO_CHAR(3.14, UPPER('abcd'))"
   },
   {
+   "key": "d4390222121870c4",
+   "dialect": "mysql",
+   "sql": "SELECT '2021-01-01' + INTERVAL '1' MONTH"
+  },
+  {
    "key": "01f6ef552c186bb6",
    "dialect": "duckdb",
    "sql": "SELECT x ILIKE '%y'"
@@ -11498,6 +12053,11 @@
    "sql": "SELECT FIRST_VALUE(c RESPECT NULLS) OVER (PARTITION BY gb ORDER BY ob) FROM t"
   },
   {
+   "key": "4764d2a836f52a96",
+   "dialect": "mysql",
+   "sql": "SELECT FIRST_VALUE(c) RESPECT NULLS OVER (PARTITION BY gb ORDER BY CASE WHEN ob IS NULL THEN 1 ELSE 0 END, ob) FROM t"
+  },
+  {
    "key": "ce23cad0d3d0af63",
    "dialect": "duckdb",
    "sql": "CAST(x AS UUID)"
@@ -11516,6 +12076,11 @@
    "key": "7ec060b8624b2e1d",
    "dialect": "duckdb",
    "sql": "SELECT straight_join"
+  },
+  {
+   "key": "1a24591eb934170e",
+   "dialect": "mysql",
+   "sql": "SELECT `straight_join`"
   },
   {
    "key": "b99ab117a5e932c8",
@@ -11558,8 +12123,18 @@
    "sql": "SELECT SUM(X) OVER (ORDER BY x)"
   },
   {
+   "key": "7c38659b23c24e57",
+   "dialect": "mysql",
+   "sql": "SELECT SUM(X) OVER (ORDER BY CASE WHEN x IS NULL THEN 1 ELSE 0 END, x)"
+  },
+  {
    "key": "49c02b09768e1bd7",
    "dialect": "duckdb",
+   "sql": "SELECT SUM(X) OVER (ORDER BY x RANGE BETWEEN 1 PRECEDING AND CURRENT ROW)"
+  },
+  {
+   "key": "e162d8ea3f0c5993",
+   "dialect": "mysql",
    "sql": "SELECT SUM(X) OVER (ORDER BY x RANGE BETWEEN 1 PRECEDING AND CURRENT ROW)"
   },
   {
@@ -11570,6 +12145,11 @@
   {
    "key": "d12abcbbc147a4ce",
    "dialect": "duckdb",
+   "sql": "SELECT * FROM x ORDER BY 1"
+  },
+  {
+   "key": "19aa2b28ff9a8b7e",
+   "dialect": "mysql",
    "sql": "SELECT * FROM x ORDER BY 1"
   },
   {
@@ -13683,6 +14263,11 @@
    "sql": "SELECT CAST('2020-01-01' AS DATE) + INTERVAL '-1' DAY"
   },
   {
+   "key": "c1a95d6650335268",
+   "dialect": "mysql",
+   "sql": "SELECT DATE '2020-01-01' + INTERVAL -1 DAY"
+  },
+  {
    "key": "59bc6f9dbde17185",
    "dialect": "duckdb",
    "sql": "SELECT INTERVAL '1 quarter'"
@@ -13706,6 +14291,11 @@
    "key": "1ac4b19a3eb84dbf",
    "dialect": "duckdb",
    "sql": "EPOCH_MS(x)"
+  },
+  {
+   "key": "187a671148896b82",
+   "dialect": "mysql",
+   "sql": "FROM_UNIXTIME(x / POWER(10, 3))"
   },
   {
    "key": "4aadd94592f1a710",
@@ -13786,6 +14376,11 @@
    "key": "33340d3ecfda5459",
    "dialect": "postgres",
    "sql": "SELECT CAST('foo' AS TIMESTAMP)"
+  },
+  {
+   "key": "b8744e7d5f3f4b1d",
+   "dialect": "mysql",
+   "sql": "SELECT CAST('foo' AS DATETIME)"
   },
   {
    "key": "7fbc1e54e746cdf1",
@@ -14091,6 +14686,11 @@
    "key": "134e08eed03e2720",
    "dialect": "duckdb",
    "sql": "SELECT CAST('2020-01-01' AS DATE) + INTERVAL (day_offset) DAY FROM t"
+  },
+  {
+   "key": "f63cc718dad182c6",
+   "dialect": "mysql",
+   "sql": "SELECT DATE '2020-01-01' + INTERVAL day_offset DAY FROM t"
   },
   {
    "key": "3f5925fce84bbef1",
@@ -15018,6 +15618,11 @@
    "sql": "SELECT file[256] FROM GLOB('*')"
   },
   {
+   "key": "b58e254a5a5f1982",
+   "dialect": "mysql",
+   "sql": "SELECT FROM_UNIXTIME(col)"
+  },
+  {
    "key": "a068d69ebbfb3bf5",
    "dialect": "tsql",
    "sql": "CAST(x AS DATETIME2)"
@@ -15026,6 +15631,11 @@
    "key": "01d753f145fc44a4",
    "dialect": "tsql",
    "sql": "CAST(x AS SMALLDATETIME)"
+  },
+  {
+   "key": "e71a2a58bcb2a7d2",
+   "dialect": "mysql",
+   "sql": "SELECT x % 10"
   },
   {
    "key": "6aa9ce7f05dda7f0",
@@ -15103,6 +15713,16 @@
    "sql": "SELECT APPROXIMATE COUNT(DISTINCT y)"
   },
   {
+   "key": "29f571800a413d31",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT('2009-10-04 22:23:00', '%W %M %Y')"
+  },
+  {
+   "key": "f59c0e726485899c",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(DISTINCT x ORDER BY y DESC SEPARATOR ',')"
+  },
+  {
    "key": "bc5605c2dcd9d62f",
    "dialect": "tsql",
    "sql": "STRING_AGG(x, ',') WITHIN GROUP (ORDER BY y DESC)"
@@ -15168,6 +15788,11 @@
    "sql": "TO_DATE(x, 'yyyy')"
   },
   {
+   "key": "f152a079702945ae",
+   "dialect": "mysql",
+   "sql": "SELECT CONVERT_TZ('2012-05-10 12:00:00', 'Europe/Berlin', 'America/New_York')"
+  },
+  {
    "key": "8da1753a46559f86",
    "dialect": "databricks",
    "sql": "SELECT CONVERT_TIMEZONE('Europe/Berlin', 'America/New_York', '2012-05-10 12:00:00')"
@@ -15191,6 +15816,11 @@
    "key": "f25f6af65f1a6af4",
    "dialect": "postgres",
    "sql": "TRUNC(price, 2)"
+  },
+  {
+   "key": "f6d533ce6f277e68",
+   "dialect": "mysql",
+   "sql": "TRUNCATE(price, 2)"
   },
   {
    "key": "cb94c58028162c19",
@@ -15311,6 +15941,56 @@
    "key": "2b1e95410ebb43d1",
    "dialect": "databricks",
    "sql": "SELECT * FROM t GROUP BY ALL"
+  },
+  {
+   "key": "86c6c3076a51808d",
+   "dialect": "mysql",
+   "sql": "USE test"
+  },
+  {
+   "key": "053c21f35cba848b",
+   "dialect": "mysql",
+   "sql": "USE `my_database`"
+  },
+  {
+   "key": "5b0b86ed809ae7cd",
+   "dialect": "mysql",
+   "sql": "SHOW TABLES FROM test"
+  },
+  {
+   "key": "af23daae5e7fc871",
+   "dialect": "mysql",
+   "sql": "SHOW TABLES"
+  },
+  {
+   "key": "a80838adf5e7712e",
+   "dialect": "mysql",
+   "sql": "SHOW DATABASES"
+  },
+  {
+   "key": "e4fd28fca28d0215",
+   "dialect": "mysql",
+   "sql": "SHOW SCHEMAS"
+  },
+  {
+   "key": "734ce099a6c19c1b",
+   "dialect": "mysql",
+   "sql": "SELECT city, COUNT(*) AS cnt FROM t GROUP BY cnt"
+  },
+  {
+   "key": "7bd67168562798de",
+   "dialect": "mysql",
+   "sql": "SELECT YEAR(a_date) AS a_year FROM t GROUP BY a_year"
+  },
+  {
+   "key": "4d864d7001ed4b21",
+   "dialect": "mysql",
+   "sql": "SELECT city, COUNT(*) FROM t GROUP BY city"
+  },
+  {
+   "key": "7c70b9f421786c42",
+   "dialect": "mysql",
+   "sql": "SELECT COUNT(*) AS cnt FROM t HAVING cnt > 1"
   },
   {
    "key": "0e9c06c519abdbb3",
@@ -16408,9 +17088,489 @@
    "sql": "SELECT MAP(SELECT 'a', 1)"
   },
   {
+   "key": "4cff6a196093405b",
+   "dialect": "mysql",
+   "sql": "DROP TEMPORARY TABLE IF EXISTS db.t1, t2 CASCADE"
+  },
+  {
+   "key": "12c78a59e419b408",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE bar (abacate DOUBLE(10, 2) UNSIGNED)"
+  },
+  {
+   "key": "c7764a1207033d7b",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (id DECIMAL(20, 4) UNSIGNED)"
+  },
+  {
+   "key": "e2c93b7bf59059b1",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE foo (a BIGINT, UNIQUE (b) USING BTREE)"
+  },
+  {
+   "key": "76e5b309774c3d70",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE foo (a VARCHAR(32) NOT NULL UNIQUE COMMENT 'test')"
+  },
+  {
+   "key": "2d0187f43d438069",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE foo (id BIGINT)"
+  },
+  {
+   "key": "be04a309af964cda",
+   "dialect": "mysql",
+   "sql": "CREATE VIEW v AS SELECT * FROM start WITH CHECK OPTION"
+  },
+  {
+   "key": "d38d9024406a69ad",
+   "dialect": "mysql",
+   "sql": "CREATE DATABASE db CHARACTER SET=utf8"
+  },
+  {
+   "key": "2fffb05d79466571",
+   "dialect": "mysql",
+   "sql": "CREATE DATABASE db DEFAULT CHARACTER SET=utf8"
+  },
+  {
+   "key": "85cd8bd2cd0cc26a",
+   "dialect": "mysql",
+   "sql": "CREATE SCHEMA db DEFAULT CHARACTER SET=utf8"
+  },
+  {
+   "key": "877b713a1aaca790",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE 00f (1d BIGINT)"
+  },
+  {
+   "key": "39903899ca729f10",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE temp (id SERIAL PRIMARY KEY)"
+  },
+  {
+   "key": "dac3e56452c3a7ef",
+   "dialect": "mysql",
+   "sql": "UPDATE items SET items.price = 0 WHERE items.id >= 5 LIMIT 10"
+  },
+  {
+   "key": "bc6ada9ec05455a8",
+   "dialect": "mysql",
+   "sql": "UPDATE /*+ MAX_EXECUTION_TIME(1) */ t SET a = 1"
+  },
+  {
+   "key": "b043744acb3fa1b0",
+   "dialect": "mysql",
+   "sql": "DELETE FROM t WHERE a <= 10 LIMIT 10"
+  },
+  {
+   "key": "491a31d8a617d4f1",
+   "dialect": "mysql",
+   "sql": "DELETE /*+ MAX_EXECUTION_TIME(1) */ FROM t WHERE a = 1"
+  },
+  {
+   "key": "1f083552c4989aad",
+   "dialect": "mysql",
+   "sql": "DELETE FROM t FORCE INDEX (idx) WHERE a > 5 ORDER BY id"
+  },
+  {
+   "key": "62334e361fe01a7f",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE foo (a BIGINT, INDEX USING BTREE (b))"
+  },
+  {
+   "key": "106a244619afcaea",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE foo (a BIGINT, FULLTEXT INDEX (b))"
+  },
+  {
+   "key": "d69fbe2ef6b1b681",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE foo (a BIGINT, SPATIAL INDEX (b))"
+  },
+  {
+   "key": "9f7fca3105474bf2",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE foo (a INT UNSIGNED ZEROFILL)"
+  },
+  {
+   "key": "b8f276355fe8f441",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE foo (a INT INVISIBLE)"
+  },
+  {
+   "key": "935cdad38e304300",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD COLUMN c INT INVISIBLE"
+  },
+  {
+   "key": "49edfc3fb207f712",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t1 ADD COLUMN x INT, ALGORITHM=INPLACE, LOCK=EXCLUSIVE"
+  },
+  {
+   "key": "373295f4ddd1451f",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD INDEX `i` (`c`)"
+  },
+  {
+   "key": "3e184f05dee7c2b3",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD UNIQUE `i` (`c`)"
+  },
+  {
+   "key": "7de46154169a39aa",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t DROP PRIMARY KEY"
+  },
+  {
+   "key": "8d792945f3915c6a",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t DROP COLUMN c, DROP PRIMARY KEY, DROP INDEX `i`"
+  },
+  {
+   "key": "b653f45626979811",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE test_table MODIFY COLUMN test_column LONGTEXT"
+  },
+  {
+   "key": "28a638b76f2102a5",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t MODIFY COLUMN c INT NOT NULL"
+  },
+  {
+   "key": "e1f82e79fe026196",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t MODIFY COLUMN c INT DEFAULT 5"
+  },
+  {
+   "key": "42da6857c1cdb17f",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t MODIFY COLUMN c INT NOT NULL DEFAULT 5"
+  },
+  {
+   "key": "3c294a1485e371ff",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t MODIFY COLUMN c VARCHAR(50) NOT NULL DEFAULT 'foo'"
+  },
+  {
+   "key": "3f671a4b92e52995",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t MODIFY COLUMN c INT COMMENT 'hi'"
+  },
+  {
+   "key": "d626a42d57e7325f",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t MODIFY COLUMN c INT FIRST"
+  },
+  {
+   "key": "7697559714e6a198",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t MODIFY COLUMN c INT AFTER d"
+  },
+  {
+   "key": "912880a4dbbacc79",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t MODIFY COLUMN c INT NOT NULL AFTER d"
+  },
+  {
+   "key": "8ae7953cb6d2ce46",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t MODIFY c INT NOT NULL"
+  },
+  {
+   "key": "174a20e668c623ef",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t CHANGE COLUMN a b BIGINT NOT NULL"
+  },
+  {
+   "key": "53591d749fa15bd6",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t CHANGE COLUMN b b INT NOT NULL"
+  },
+  {
+   "key": "ce043c1c238cad41",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t CHANGE COLUMN c d VARCHAR(50) DEFAULT 'x'"
+  },
+  {
+   "key": "f45fd4792d10955a",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t CHANGE COLUMN c d INT COMMENT 'hi'"
+  },
+  {
+   "key": "14ac6ff3e3d7578d",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t CHANGE COLUMN c d INT FIRST"
+  },
+  {
+   "key": "72197b3d384cd6d7",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t CHANGE COLUMN c d INT AFTER e"
+  },
+  {
+   "key": "154b1263e4367b57",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t CHANGE COLUMN c d INT NOT NULL AFTER e"
+  },
+  {
+   "key": "9b92aefde973f515",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t CHANGE a b BIGINT NOT NULL"
+  },
+  {
+   "key": "a6fe18ed49c27250",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t AUTO_INCREMENT=3000000000"
+  },
+  {
+   "key": "05bcb946d0479d74",
+   "dialect": "mysql",
+   "sql": "ALTER VIEW v AS SELECT a, b, c, d FROM foo"
+  },
+  {
+   "key": "aad927aa1dddbc7b",
+   "dialect": "mysql",
+   "sql": "ALTER VIEW v AS SELECT * FROM foo WHERE c > 100"
+  },
+  {
+   "key": "0c84cee65629b3fd",
+   "dialect": "mysql",
+   "sql": "ALTER ALGORITHM = MERGE VIEW v AS SELECT * FROM foo"
+  },
+  {
+   "key": "7aa2a3c602a19ebf",
+   "dialect": "mysql",
+   "sql": "ALTER DEFINER = 'admin'@'localhost' VIEW v AS SELECT * FROM foo"
+  },
+  {
+   "key": "1406a124e245390b",
+   "dialect": "mysql",
+   "sql": "CREATE SQL SECURITY INVOKER VIEW id_test (id, foo) AS SELECT 0, foo FROM test"
+  },
+  {
+   "key": "f0b211ddc1606d50",
+   "dialect": "mysql",
+   "sql": "CREATE SQL SECURITY DEFINER VIEW id_test (id, foo) AS SELECT 0, foo FROM test"
+  },
+  {
+   "key": "14c7fbe5e05be5ab",
+   "dialect": "mysql",
+   "sql": "ALTER SQL SECURITY = DEFINER VIEW v AS SELECT * FROM foo"
+  },
+  {
+   "key": "4959064cae9e4d6d",
+   "dialect": "mysql",
+   "sql": "INSERT INTO things (a, b) VALUES (1, 2) AS new_data ON DUPLICATE KEY UPDATE id = LAST_INSERT_ID(id), a = new_data.a, b = new_data.b"
+  },
+  {
+   "key": "e288de07b95127cd",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE `oauth_consumer` (`key` VARCHAR(32) NOT NULL, UNIQUE `OAUTH_CONSUMER_KEY` (`key`))"
+  },
+  {
+   "key": "8c18bfdfc1559eab",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE `x` (`username` VARCHAR(200), PRIMARY KEY (`username`(16)))"
+  },
+  {
+   "key": "14b626488ddd03f6",
+   "dialect": "mysql",
+   "sql": "UPDATE items SET items.price = 0 WHERE items.id >= 5 ORDER BY items.id LIMIT 10"
+  },
+  {
+   "key": "b4bdf604b2d2e4c2",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE foo (a BIGINT, INDEX b USING HASH (c) COMMENT 'd' VISIBLE ENGINE_ATTRIBUTE = 'e' WITH PARSER foo)"
+  },
+  {
+   "key": "9fe7403b5eb47816",
+   "dialect": "mysql",
+   "sql": "DELETE t1 FROM t1 LEFT JOIN t2 ON t1.id = t2.id WHERE t2.id IS NULL"
+  },
+  {
+   "key": "b85a4f419303cc82",
+   "dialect": "mysql",
+   "sql": "DELETE t1, t2 FROM t1 INNER JOIN t2 INNER JOIN t3 WHERE t1.id = t2.id AND t2.id = t3.id"
+  },
+  {
+   "key": "b532448c9d12eebf",
+   "dialect": "mysql",
+   "sql": "DELETE FROM t1, t2 USING t1 INNER JOIN t2 INNER JOIN t3 WHERE t1.id = t2.id AND t2.id = t3.id"
+  },
+  {
+   "key": "00b5d0baa6d1dc54",
+   "dialect": "mysql",
+   "sql": "INSERT IGNORE INTO subscribers (email) VALUES ('john.doe@gmail.com'), ('jane.smith@ibm.com')"
+  },
+  {
+   "key": "fe1b8d2e2e966c21",
+   "dialect": "mysql",
+   "sql": "INSERT INTO t1 (a, b, c) VALUES (1, 2, 3), (4, 5, 6) ON DUPLICATE KEY UPDATE c = VALUES(a) + VALUES(b)"
+  },
+  {
+   "key": "c69fdea63d89deca",
+   "dialect": "mysql",
+   "sql": "INSERT INTO t1 (a, b) SELECT c, d FROM t2 UNION SELECT e, f FROM t3 ON DUPLICATE KEY UPDATE b = b + c"
+  },
+  {
+   "key": "f9a502b443f45b7d",
+   "dialect": "mysql",
+   "sql": "INSERT INTO t1 (a, b, c) VALUES (1, 2, 3) ON DUPLICATE KEY UPDATE c = c + 1"
+  },
+  {
+   "key": "6efbe06c029ab294",
+   "dialect": "mysql",
+   "sql": "INSERT INTO x VALUES (1, 'a', 2.0) ON DUPLICATE KEY UPDATE x.id = 1"
+  },
+  {
+   "key": "c2a42ec9cabdb4fa",
+   "dialect": "mysql",
+   "sql": "INSERT INTO `test_table` SET `test_col_1` = 123, `test_col_2` = '456'"
+  },
+  {
+   "key": "b5a20758effbb24e",
+   "dialect": "mysql",
+   "sql": "INSERT INTO t SET a = DEFAULT, b = 2 AS new ON DUPLICATE KEY UPDATE a = new.a + 1"
+  },
+  {
+   "key": "5ee20b8af678c6f7",
+   "dialect": "mysql",
+   "sql": "CREATE OR REPLACE VIEW my_view AS SELECT column1 AS `boo`, column2 AS `foo` FROM my_table WHERE column3 = 'some_value' UNION SELECT q.* FROM fruits_table, JSON_TABLE(Fruits, '$[*]' COLUMNS(id VARCHAR(255) PATH '$.$id', value VARCHAR(255) PATH '$.value')) AS q"
+  },
+  {
+   "key": "ac8312947f96f879",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE test_table (id INT AUTO_INCREMENT, PRIMARY KEY (id) USING BTREE)"
+  },
+  {
+   "key": "7fa254de7c61e6bd",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE test_table (id INT AUTO_INCREMENT, PRIMARY KEY (id) USING HASH)"
+  },
+  {
+   "key": "fbb3e650ddcb5dbf",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE test (id INT, PRIMARY KEY pk_name (id))"
+  },
+  {
+   "key": "88517e1c460c39e8",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE test (id INT, PRIMARY KEY `pk_name` (id))"
+  },
+  {
+   "key": "1bfc104fd68d5ee5",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE test (id INT, PRIMARY KEY \"pk_name\" (id))"
+  },
+  {
+   "key": "0d30f7f3849a2f20",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE test (id INT, CONSTRAINT pk_name PRIMARY KEY (id))"
+  },
+  {
+   "key": "fee18c3f65d7c842",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE test (a INT, b INT GENERATED ALWAYS AS (a + a) STORED)"
+  },
+  {
+   "key": "feef7de36579438a",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE test (a INT, b INT GENERATED ALWAYS AS (a + a) VIRTUAL)"
+  },
+  {
+   "key": "d8958152afe8ac21",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE test (a INT, b INT AS (a + a) STORED)"
+  },
+  {
+   "key": "fae676b54fe9a1a8",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE test (a INT, b INT AS (a + a) VIRTUAL)"
+  },
+  {
+   "key": "3efe1d312083e0e1",
+   "dialect": "mysql",
+   "sql": "/*left*/ EXPLAIN SELECT /*hint*/ col FROM t1 /*right*/"
+  },
+  {
+   "key": "bf3d7f459f9a7e73",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (name VARCHAR)"
+  },
+  {
+   "key": "001e6f2d58ed8543",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD KEY `i` (`c`)"
+  },
+  {
+   "key": "0328476308137b01",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE `foo` (`id` char(36) NOT NULL DEFAULT (uuid()), PRIMARY KEY (`id`), UNIQUE KEY `id` (`id`))"
+  },
+  {
+   "key": "cacee6d46a2fd7f7",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE IF NOT EXISTS industry_info (a BIGINT(20) NOT NULL AUTO_INCREMENT, b BIGINT(20) NOT NULL, c VARCHAR(1000), PRIMARY KEY (a), UNIQUE KEY d (b), KEY e (b))"
+  },
+  {
+   "key": "ca8d9617d3464e7e",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (a INT, b INT, UNIQUE KEY `Unique` (a, b))"
+  },
+  {
+   "key": "57718f2ce6ba5f81",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (a INT, UNIQUE KEY `Index` (a))"
+  },
+  {
+   "key": "cb71424b0b55121c",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (a INT, UNIQUE KEY `Key` (a))"
+  },
+  {
+   "key": "7ddbd16f87f38af3",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE test (ts TIMESTAMP, ts_tz TIMESTAMPTZ, ts_ltz TIMESTAMPLTZ)"
+  },
+  {
+   "key": "5d13258b58d45164",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE test_table ALTER COLUMN test_column SET DATA TYPE LONGTEXT"
+  },
+  {
+   "key": "794568d151492567",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (c DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC"
+  },
+  {
+   "key": "005d17d4d30ebcaf",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE `foo` (a VARCHAR(10), KEY idx_a (a DESC))"
+  },
+  {
+   "key": "3a76edea6feb17cc",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE `foo` (a VARCHAR(10), UNIQUE INDEX idx_a (a))"
+  },
+  {
+   "key": "86a1bc7c4197891b",
+   "dialect": "mysql",
+   "sql": "insert into t(i) values (default)"
+  },
+  {
    "key": "a7dd6339bbd55221",
    "dialect": "duckdb",
    "sql": "INSERT INTO t (i) VALUES (DEFAULT)"
+  },
+  {
+   "key": "01bfa9969530c833",
+   "dialect": "mysql",
+   "sql": "INSERT INTO t (i) VALUES (DEFAULT)"
+  },
+  {
+   "key": "84febe0f1236590c",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (id INT UNSIGNED)"
   },
   {
    "key": "0291229c0f55de42",
@@ -16418,9 +17578,704 @@
    "sql": "CREATE TABLE t (id UINTEGER)"
   },
   {
+   "key": "4097d07970798c4a",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE z (a INT) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARACTER SET=utf8 COLLATE=utf8_bin COMMENT='x'"
+  },
+  {
    "key": "c0bb34858d302dcd",
    "dialect": "duckdb",
    "sql": "CREATE TABLE z (a INT)"
+  },
+  {
+   "key": "f67c82184e2a7ffb",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE x (id int not null auto_increment, primary key (id))"
+  },
+  {
+   "key": "c92fb697b812c296",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE x (id INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id))"
+  },
+  {
+   "key": "c20f0d40009509f6",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ALTER INDEX i INVISIBLE"
+  },
+  {
+   "key": "6a0bf94de9c77c38",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ALTER INDEX i VISIBLE"
+  },
+  {
+   "key": "c470763e150b74bc",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ALTER COLUMN c SET INVISIBLE"
+  },
+  {
+   "key": "cf8c46cdbac848b4",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ALTER COLUMN c SET VISIBLE"
+  },
+  {
+   "key": "8dc07ffe9636861b",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t RENAME INDEX a TO b"
+  },
+  {
+   "key": "67ce31dd7d34fb61",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t RENAME KEY a TO b"
+  },
+  {
+   "key": "bb3c388abc802acb",
+   "dialect": "mysql",
+   "sql": "UPDATE foo JOIN bar ON TRUE SET foo.a = bar.a WHERE foo.id = bar.id"
+  },
+  {
+   "key": "b0b8859e63a83d8a",
+   "dialect": "mysql",
+   "sql": "UPDATE items, month SET items.price = month.price WHERE items.id = month.id"
+  },
+  {
+   "key": "4e42eecfc216816d",
+   "dialect": "mysql",
+   "sql": "UPDATE a CROSS JOIN b SET a.x = 1"
+  },
+  {
+   "key": "0c40b0649f0a625c",
+   "dialect": "mysql",
+   "sql": "UPDATE a, b LEFT JOIN c ON b.id = c.id SET a.x = 1, b.y = 2, c.z = 3"
+  },
+  {
+   "key": "b4ac389535ce2c1d",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (id INT, created_at DATE) PARTITION BY RANGE (id) (PARTITION p0 VALUES LESS THAN (10), PARTITION p1 VALUES LESS THAN (20), PARTITION p2 VALUES LESS THAN (MAXVALUE))"
+  },
+  {
+   "key": "d43e97ac9b2e154a",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (id INT, name VARCHAR(50)) PARTITION BY RANGE (id) (PARTITION p0 VALUES LESS THAN (100))"
+  },
+  {
+   "key": "669e6a21d0572f6a",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE orders (id INT, order_date DATE) PARTITION BY RANGE (YEAR(order_date)) (PARTITION p2023 VALUES LESS THAN (2024), PARTITION p2024 VALUES LESS THAN (2025), PARTITION pmax VALUES LESS THAN (MAXVALUE))"
+  },
+  {
+   "key": "840a9d2ac0a1fe05",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE sales (id INT, sale_date DATE) PARTITION BY RANGE (MONTH(sale_date)) (PARTITION q1 VALUES LESS THAN (4), PARTITION q2 VALUES LESS THAN (7), PARTITION q3 VALUES LESS THAN (10), PARTITION q4 VALUES LESS THAN (13))"
+  },
+  {
+   "key": "a59bc95213c76632",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (id INT, region VARCHAR(10)) PARTITION BY LIST (id) (PARTITION p_east VALUES IN (1, 2, 3), PARTITION p_west VALUES IN (4, 5, 6))"
+  },
+  {
+   "key": "308e0c6b2b903a63",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (id INT) PARTITION BY LIST (id) (PARTITION p0 VALUES IN (1, 2))"
+  },
+  {
+   "key": "f563749c1b36393d",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE employees (id INT, store_id INT) PARTITION BY LIST (store_id) (PARTITION pNorth VALUES IN (3, 5, 6), PARTITION pSouth VALUES IN (1, 2, 10))"
+  },
+  {
+   "key": "375a756c7fe9b784",
+   "dialect": "mysql",
+   "sql": "CREATE FUNCTION f () RETURNS VARCHAR LANGUAGE SQL SQL SECURITY INVOKER SELECT 'abc'"
+  },
+  {
+   "key": "db0d846812e569ce",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t1 (id INT KEY AUTO_INCREMENT)"
+  },
+  {
+   "key": "44489870d54ad22b",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t1 (id INT AUTO_INCREMENT KEY)"
+  },
+  {
+   "key": "2fddcee7a2d3b56f",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t1 (id INT KEY)"
+  },
+  {
+   "key": "c83d9c6b1f857668",
+   "dialect": "mysql",
+   "sql": "SELECT HIGH_PRIORITY STRAIGHT_JOIN SQL_CALC_FOUND_ROWS * FROM t"
+  },
+  {
+   "key": "98d89f2983ff2aa7",
+   "dialect": "mysql",
+   "sql": "SELECT CAST(COALESCE(`id`, 'NULL') AS CHAR CHARACTER SET binary)"
+  },
+  {
+   "key": "7b553aa2c48a3050",
+   "dialect": "mysql",
+   "sql": "SELECT e.* FROM e STRAIGHT_JOIN p ON e.x = p.y"
+  },
+  {
+   "key": "869da0cb8407fe22",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE test_table ALTER COLUMN test_column SET DEFAULT 1"
+  },
+  {
+   "key": "8c2a8ad364277aa3",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT(NOW(), '%Y-%m-%d %H:%i:00.0000')"
+  },
+  {
+   "key": "7fc2d57addb5224c",
+   "dialect": "mysql",
+   "sql": "SELECT @var1 := 1, @var2"
+  },
+  {
+   "key": "9c4d503a9718190e",
+   "dialect": "mysql",
+   "sql": "UNLOCK TABLES"
+  },
+  {
+   "key": "1992c87dcc71078b",
+   "dialect": "mysql",
+   "sql": "LOCK TABLES `app_fields` WRITE"
+  },
+  {
+   "key": "d575dd289ee38c0f",
+   "dialect": "mysql",
+   "sql": "SELECT 1 && 0"
+  },
+  {
+   "key": "0d66a5494c334f07",
+   "dialect": "mysql",
+   "sql": "SELECT /*+ BKA(t1) NO_BKA(t2) */ * FROM t1 INNER JOIN t2"
+  },
+  {
+   "key": "e6d93d794618a30d",
+   "dialect": "mysql",
+   "sql": "SELECT /*+ MERGE(dt) */ * FROM (SELECT * FROM t1) AS dt"
+  },
+  {
+   "key": "449733c0aac92c0e",
+   "dialect": "mysql",
+   "sql": "SELECT /*+ INDEX(t, i) */ c1 FROM t WHERE c2 = 'value'"
+  },
+  {
+   "key": "35b6c3dd1aef9848",
+   "dialect": "mysql",
+   "sql": "SELECT @a MEMBER OF(@c), @b MEMBER OF(@c)"
+  },
+  {
+   "key": "bd553b648e73a6d9",
+   "dialect": "mysql",
+   "sql": "SELECT JSON_ARRAY(4, 5) MEMBER OF('[[3,4],[4,5]]')"
+  },
+  {
+   "key": "2d126323b10f3340",
+   "dialect": "mysql",
+   "sql": "SELECT CAST('[4,5]' AS JSON) MEMBER OF('[[3,4],[4,5]]')"
+  },
+  {
+   "key": "aac9f0ef4f6f39bd",
+   "dialect": "mysql",
+   "sql": "SELECT 'ab' MEMBER OF('[23, \"abc\", 17, \"ab\", 10]')"
+  },
+  {
+   "key": "2eb55d0ff67c94d1",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM foo WHERE 'ab' MEMBER OF(content)"
+  },
+  {
+   "key": "4bbdf81d5601b754",
+   "dialect": "mysql",
+   "sql": "SELECT CURRENT_TIMESTAMP(6)"
+  },
+  {
+   "key": "ffc50a23b8a42a4a",
+   "dialect": "mysql",
+   "sql": "SELECT CURRENT_ROLE()"
+  },
+  {
+   "key": "d04f4c143242897d",
+   "dialect": "mysql",
+   "sql": "SELECT CURTIME()"
+  },
+  {
+   "key": "80d79c8f137fe731",
+   "dialect": "mysql",
+   "sql": "x ->> '$.name'"
+  },
+  {
+   "key": "c7d5db15933f57c6",
+   "dialect": "mysql",
+   "sql": "SELECT CAST(`a`.`b` AS CHAR) FROM foo"
+  },
+  {
+   "key": "d6416320c360e824",
+   "dialect": "mysql",
+   "sql": "SELECT TRIM(LEADING 'bla' FROM ' XXX ')"
+  },
+  {
+   "key": "4935d8799461fabe",
+   "dialect": "mysql",
+   "sql": "SELECT TRIM(TRAILING 'bla' FROM ' XXX ')"
+  },
+  {
+   "key": "654632c7715dc3d1",
+   "dialect": "mysql",
+   "sql": "SELECT TRIM(BOTH 'bla' FROM ' XXX ')"
+  },
+  {
+   "key": "cf58102ec9a4edbf",
+   "dialect": "mysql",
+   "sql": "SELECT TRIM('bla' FROM ' XXX ')"
+  },
+  {
+   "key": "d816614576c80769",
+   "dialect": "mysql",
+   "sql": "@@GLOBAL.max_connections"
+  },
+  {
+   "key": "16b70ca89f27955b",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE A LIKE B"
+  },
+  {
+   "key": "4a41307b80a9f505",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t1, t2 FOR SHARE OF t1, t2 SKIP LOCKED"
+  },
+  {
+   "key": "026fd2ee3ad51677",
+   "dialect": "mysql",
+   "sql": "SELECT a || b"
+  },
+  {
+   "key": "21d7a3324a0b4e54",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM source, JSON_TABLE(source.links, '$.org[*]' COLUMNS(row_id FOR ORDINALITY, link VARCHAR(255) PATH '$.link')) AS links"
+  },
+  {
+   "key": "1e9437325a267e1d",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM x ORDER BY BINARY a"
+  },
+  {
+   "key": "236ec1b302339b3f",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM foo WHERE 3 MEMBER OF(JSON_EXTRACT(info, '$.value'))"
+  },
+  {
+   "key": "69bc11b8e9a97212",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t1, t2, t3 FOR SHARE OF t1 NOWAIT FOR UPDATE OF t2, t3 SKIP LOCKED"
+  },
+  {
+   "key": "805189c61ac057d1",
+   "dialect": "mysql",
+   "sql": "REPLACE INTO table SELECT id FROM table2 WHERE cnt > 100"
+  },
+  {
+   "key": "6e4e204500d7a29b",
+   "dialect": "mysql",
+   "sql": "CAST(x AS VARCHAR)"
+  },
+  {
+   "key": "d269e282a3315ba2",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM foo WHERE 3 MEMBER OF(info->'$.value')"
+  },
+  {
+   "key": "15a3ae64f2b31467",
+   "dialect": "mysql",
+   "sql": "SELECT 1 AS row"
+  },
+  {
+   "key": "ea99a0554d5bbfcf",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM table1 USE INDEX (col1_index, col2_index) WHERE col1 = 1 AND col2 = 2 AND col3 = 3"
+  },
+  {
+   "key": "e2770c1f20c1c4a8",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM table1 IGNORE INDEX (col3_index) WHERE col1 = 1 AND col2 = 2 AND col3 = 3"
+  },
+  {
+   "key": "ba0eb1b609bf3571",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t1 USE INDEX (i1) IGNORE INDEX FOR ORDER BY (i2) ORDER BY a"
+  },
+  {
+   "key": "b904fe17e49b5164",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t1 USE INDEX (i1) USE INDEX (i1, i1)"
+  },
+  {
+   "key": "e462164764158734",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t1 USE INDEX FOR JOIN (i1) FORCE INDEX FOR JOIN (i2)"
+  },
+  {
+   "key": "e72d25bd1935feac",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t1 USE INDEX () IGNORE INDEX (i2) USE INDEX (i1) USE INDEX (i2)"
+  },
+  {
+   "key": "5ba9e0bca0e459b6",
+   "dialect": "mysql",
+   "sql": "SET @var_name = expr"
+  },
+  {
+   "key": "7148e880f5edc384",
+   "dialect": "mysql",
+   "sql": "SET @name = 43"
+  },
+  {
+   "key": "698698464536fe66",
+   "dialect": "mysql",
+   "sql": "SET @total_tax = (SELECT SUM(tax) FROM taxable_transactions)"
+  },
+  {
+   "key": "50a419b6eba055b9",
+   "dialect": "mysql",
+   "sql": "SET GLOBAL max_connections = 1000"
+  },
+  {
+   "key": "3a9359a31d97d49b",
+   "dialect": "mysql",
+   "sql": "SET @@GLOBAL.max_connections = 1000"
+  },
+  {
+   "key": "54b49c4fb0daf77a",
+   "dialect": "mysql",
+   "sql": "SET SESSION sql_mode = 'TRADITIONAL'"
+  },
+  {
+   "key": "1d674a416080ed59",
+   "dialect": "mysql",
+   "sql": "SET LOCAL sql_mode = 'TRADITIONAL'"
+  },
+  {
+   "key": "0386e77186e8f2da",
+   "dialect": "mysql",
+   "sql": "SET @@SESSION.sql_mode = 'TRADITIONAL'"
+  },
+  {
+   "key": "e3b8658a08724522",
+   "dialect": "mysql",
+   "sql": "SET @@LOCAL.sql_mode = 'TRADITIONAL'"
+  },
+  {
+   "key": "7bf65a31ccf80701",
+   "dialect": "mysql",
+   "sql": "SET @@sql_mode = 'TRADITIONAL'"
+  },
+  {
+   "key": "f634343ba37fc181",
+   "dialect": "mysql",
+   "sql": "SET sql_mode = 'TRADITIONAL'"
+  },
+  {
+   "key": "68fca623245c2466",
+   "dialect": "mysql",
+   "sql": "SET PERSIST max_connections = 1000"
+  },
+  {
+   "key": "8833bd3ffaa77437",
+   "dialect": "mysql",
+   "sql": "SET @@PERSIST.max_connections = 1000"
+  },
+  {
+   "key": "8b9a283397b103e7",
+   "dialect": "mysql",
+   "sql": "SET PERSIST_ONLY back_log = 100"
+  },
+  {
+   "key": "a98dc361a8ff24ad",
+   "dialect": "mysql",
+   "sql": "SET @@PERSIST_ONLY.back_log = 100"
+  },
+  {
+   "key": "d426e0fe58f2fb3e",
+   "dialect": "mysql",
+   "sql": "SET @@SESSION.max_join_size = DEFAULT"
+  },
+  {
+   "key": "780608dee775264d",
+   "dialect": "mysql",
+   "sql": "SET @@SESSION.max_join_size = @@GLOBAL.max_join_size"
+  },
+  {
+   "key": "1240a316484dd02b",
+   "dialect": "mysql",
+   "sql": "SET @x = 1, SESSION sql_mode = ''"
+  },
+  {
+   "key": "d63053717e6312cb",
+   "dialect": "mysql",
+   "sql": "SET GLOBAL max_connections = 1000, sort_buffer_size = 1000000"
+  },
+  {
+   "key": "f2f71bce7ce4d417",
+   "dialect": "mysql",
+   "sql": "SET @@GLOBAL.sort_buffer_size = 50000, sort_buffer_size = 1000000"
+  },
+  {
+   "key": "6418059579b4d7f9",
+   "dialect": "mysql",
+   "sql": "SET CHARACTER SET 'utf8'"
+  },
+  {
+   "key": "1a6dfa75774cb936",
+   "dialect": "mysql",
+   "sql": "SET CHARACTER SET utf8"
+  },
+  {
+   "key": "4a5d3e0e165db405",
+   "dialect": "mysql",
+   "sql": "SET CHARACTER SET DEFAULT"
+  },
+  {
+   "key": "c90aa22fa6839c39",
+   "dialect": "mysql",
+   "sql": "SET NAMES 'utf8'"
+  },
+  {
+   "key": "01dfdd254c9c7bd0",
+   "dialect": "mysql",
+   "sql": "SET NAMES DEFAULT"
+  },
+  {
+   "key": "1b1db0f65f222f21",
+   "dialect": "mysql",
+   "sql": "SET NAMES 'utf8' COLLATE 'utf8_unicode_ci'"
+  },
+  {
+   "key": "9ce531d08df22fd7",
+   "dialect": "mysql",
+   "sql": "SET NAMES utf8 COLLATE utf8_unicode_ci"
+  },
+  {
+   "key": "74d9b4c9657e9cce",
+   "dialect": "mysql",
+   "sql": "SET autocommit = ON"
+  },
+  {
+   "key": "c04ee82e0c245674",
+   "dialect": "mysql",
+   "sql": "SET GLOBAL TRANSACTION ISOLATION LEVEL SERIALIZABLE"
+  },
+  {
+   "key": "98d9a7fb65763237",
+   "dialect": "mysql",
+   "sql": "SET TRANSACTION READ ONLY"
+  },
+  {
+   "key": "94454419867bedcb",
+   "dialect": "mysql",
+   "sql": "SET GLOBAL TRANSACTION ISOLATION LEVEL REPEATABLE READ, READ WRITE"
+  },
+  {
+   "key": "cd1f00308b14dfa8",
+   "dialect": "mysql",
+   "sql": "DATABASE()"
+  },
+  {
+   "key": "74b94d0de02a2e0e",
+   "dialect": "mysql",
+   "sql": "SET GLOBAL sort_buffer_size = 1000000, SESSION sort_buffer_size = 1000000"
+  },
+  {
+   "key": "7c9548f54445f5cc",
+   "dialect": "mysql",
+   "sql": "SET @@GLOBAL.sort_buffer_size = 1000000, @@LOCAL.sort_buffer_size = 1000000"
+  },
+  {
+   "key": "1f6f6527c6852d4b",
+   "dialect": "mysql",
+   "sql": "INTERVAL '1' YEAR"
+  },
+  {
+   "key": "004aee440f62cce0",
+   "dialect": "mysql",
+   "sql": "DATE_ADD(x, INTERVAL '1' YEAR)"
+  },
+  {
+   "key": "63712c7d421b6967",
+   "dialect": "mysql",
+   "sql": "CHAR(0)"
+  },
+  {
+   "key": "790c0139b9e34b3a",
+   "dialect": "mysql",
+   "sql": "CHAR(77, 121, 83, 81, '76')"
+  },
+  {
+   "key": "900db73d058eafc6",
+   "dialect": "mysql",
+   "sql": "CHAR(77, 77.3, '77.3' USING utf8mb4)"
+  },
+  {
+   "key": "8b3aa09b5978a537",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t1 PARTITION(p0)"
+  },
+  {
+   "key": "9b88749ff42b37d0",
+   "dialect": "mysql",
+   "sql": "SELECT @var1, @var2 := @var1"
+  },
+  {
+   "key": "99cbc12a86b014dc",
+   "dialect": "mysql",
+   "sql": "SELECT @var1 := COUNT(*) FROM t1"
+  },
+  {
+   "key": "21a6063044e00228",
+   "dialect": "mysql",
+   "sql": "SET @var1 := 1"
+  },
+  {
+   "key": "b316afe1ca7c9aca",
+   "dialect": "mysql",
+   "sql": "SELECT DISTINCTROW tbl.col FROM tbl"
+  },
+  {
+   "key": "0f3f28e32ee60b77",
+   "dialect": "mysql",
+   "sql": "ATAN(y, x)"
+  },
+  {
+   "key": "d002ca53ac829839",
+   "dialect": "mysql",
+   "sql": "SELECT 'foo' SOUNDS LIKE 'bar'"
+  },
+  {
+   "key": "6c48238c9748bf53",
+   "dialect": "mysql",
+   "sql": "SELECT a SOUNDS LIKE b | c"
+  },
+  {
+   "key": "c21957eec1b45d6b",
+   "dialect": "mysql",
+   "sql": "SELECT a SOUNDS LIKE b IS NULL"
+  },
+  {
+   "key": "b4c6e19077d18a18",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t WHERE sounds LIKE 'a%'"
+  },
+  {
+   "key": "07470b64b9913c5e",
+   "dialect": "mysql",
+   "sql": "SELECT SUBSTR(1 FROM 2 FOR 3)"
+  },
+  {
+   "key": "4fc755b83cc9e963",
+   "dialect": "mysql",
+   "sql": "SELECT ELT(2, 'foo', 'bar', 'baz') AS Result"
+  },
+  {
+   "key": "79e149bdee55f2c2",
+   "dialect": "mysql",
+   "sql": "SELECT CHARSET(CHAR(100 USING utf8))"
+  },
+  {
+   "key": "09ac59a2c7574d34",
+   "dialect": "mysql",
+   "sql": "SELECT VERSION()"
+  },
+  {
+   "key": "138f5c6b300360db",
+   "dialect": "mysql",
+   "sql": "CAST(x AS ENUM('a', 'b'))"
+  },
+  {
+   "key": "31a01a6b9a948d4b",
+   "dialect": "mysql",
+   "sql": "CAST(x AS SET('a', 'b'))"
+  },
+  {
+   "key": "6b03b9404f401120",
+   "dialect": "mysql",
+   "sql": "CAST(x AS MEDIUMINT) + CAST(y AS YEAR(4))"
+  },
+  {
+   "key": "20c0b335a925d0e3",
+   "dialect": "mysql",
+   "sql": "CAST(x AS TIMESTAMP)"
+  },
+  {
+   "key": "12683f4e893b04d6",
+   "dialect": "mysql",
+   "sql": "CAST(x AS TIMESTAMPTZ)"
+  },
+  {
+   "key": "0cbeb86a2234476c",
+   "dialect": "mysql",
+   "sql": "CAST(x AS TIMESTAMPLTZ)"
+  },
+  {
+   "key": "cc9bafac1139e6ec",
+   "dialect": "mysql",
+   "sql": "CAST(x AS MEDIUMTEXT) + CAST(y AS LONGTEXT) + CAST(z AS TINYTEXT)"
+  },
+  {
+   "key": "9841caf69f82693b",
+   "dialect": "mysql",
+   "sql": "CAST(x AS CHAR) + CAST(y AS CHAR) + CAST(z AS CHAR)"
+  },
+  {
+   "key": "2f270c664f550be8",
+   "dialect": "mysql",
+   "sql": "CAST(x AS MEDIUMBLOB) + CAST(y AS LONGBLOB) + CAST(z AS TINYBLOB)"
+  },
+  {
+   "key": "0f162012c2cb7e48",
+   "dialect": "mysql",
+   "sql": "SELECT LEFT('str', 2)"
+  },
+  {
+   "key": "cb53f7cc7d8ecd51",
+   "dialect": "mysql",
+   "sql": "SELECT INSTR('str', 'substr')"
+  },
+  {
+   "key": "8109aea760c54924",
+   "dialect": "mysql",
+   "sql": "SELECT UCASE('foo')"
+  },
+  {
+   "key": "b457709be54dfac8",
+   "dialect": "mysql",
+   "sql": "SELECT LCASE('foo')"
+  },
+  {
+   "key": "a9dedb0b15841825",
+   "dialect": "mysql",
+   "sql": "SELECT DAY_OF_MONTH('2023-01-01')"
+  },
+  {
+   "key": "2b0c10522236f0fd",
+   "dialect": "mysql",
+   "sql": "SELECT DAY_OF_WEEK('2023-01-01')"
+  },
+  {
+   "key": "c1287c9185db4313",
+   "dialect": "mysql",
+   "sql": "SELECT DAY_OF_YEAR('2023-01-01')"
+  },
+  {
+   "key": "13e5c6b4b41ffe7d",
+   "dialect": "mysql",
+   "sql": "SELECT WEEK_OF_YEAR('2023-01-01')"
+  },
+  {
+   "key": "c8409fb1e1f00fcc",
+   "dialect": "mysql",
+   "sql": "CHAR(10)"
   },
   {
    "key": "689c1aed18f09e14",
@@ -16431,6 +18286,16 @@
    "key": "ca589d7019e4bf89",
    "dialect": "tsql",
    "sql": "CHAR(10)"
+  },
+  {
+   "key": "c45896d54c8dc97e",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (foo VARBINARY(5))"
+  },
+  {
+   "key": "2782f0faa4246e2b",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (foo BLOB)"
   },
   {
    "key": "3b698953764eda31",
@@ -16453,9 +18318,284 @@
    "sql": "CREATE TABLE t (foo VARBYTE)"
   },
   {
+   "key": "0c10e41d8325aee1",
+   "dialect": "mysql",
+   "sql": "'\"abc\"'"
+  },
+  {
+   "key": "90bfbbaece57a2d5",
+   "dialect": "mysql",
+   "sql": "'\\'a'"
+  },
+  {
+   "key": "8f09da80fabd41a8",
+   "dialect": "mysql",
+   "sql": "\"'abc'\""
+  },
+  {
+   "key": "39978a9fb5d871ce",
+   "dialect": "mysql",
+   "sql": "'a \\' b '' '"
+  },
+  {
+   "key": "4df1a39be3f59afb",
+   "dialect": "mysql",
+   "sql": "'a '' b '' '"
+  },
+  {
+   "key": "b5e3b13b6c592a94",
+   "dialect": "mysql",
+   "sql": "'\\\"'"
+  },
+  {
+   "key": "bf2bbb44ec804a54",
+   "dialect": "mysql",
+   "sql": "'\\\\\"a'"
+  },
+  {
+   "key": "9073f742211c6563",
+   "dialect": "mysql",
+   "sql": "'\t'"
+  },
+  {
+   "key": "c89aafa0aa52f014",
+   "dialect": "mysql",
+   "sql": "'\\j'"
+  },
+  {
+   "key": "1f17e099e0ee1b38",
+   "dialect": "mysql",
+   "sql": "_utf8mb4 'hola'"
+  },
+  {
+   "key": "a6c60315276cc252",
+   "dialect": "mysql",
+   "sql": "_utf8mb4'hola'"
+  },
+  {
+   "key": "68fbfc0cd5639195",
+   "dialect": "mysql",
+   "sql": "N'some text'"
+  },
+  {
+   "key": "15f2d6ba45a69fd5",
+   "dialect": "mysql",
+   "sql": "n'some text'"
+  },
+  {
+   "key": "846323f366d3aaff",
+   "dialect": "mysql",
+   "sql": "_latin1 x'4D7953514C'"
+  },
+  {
+   "key": "29c942154a0aa8e7",
+   "dialect": "mysql",
+   "sql": "_latin1 X'4D7953514C'"
+  },
+  {
+   "key": "a84781b2f9c8ce9d",
+   "dialect": "mysql",
+   "sql": "SELECT X'1A'"
+  },
+  {
+   "key": "3d22767c716842b2",
+   "dialect": "mysql",
+   "sql": "SELECT x'1A'"
+  },
+  {
+   "key": "90cebd5712ae5f18",
+   "dialect": "mysql",
+   "sql": "SELECT 0xz"
+  },
+  {
+   "key": "66e888325b607718",
+   "dialect": "mysql",
+   "sql": "SELECT `0xz`"
+  },
+  {
+   "key": "a0a07220ceffaf53",
+   "dialect": "mysql",
+   "sql": "SELECT 0xCC"
+  },
+  {
+   "key": "67a47be52290e366",
+   "dialect": "mysql",
+   "sql": "SELECT 0xCC "
+  },
+  {
+   "key": "af2ab5047f7da8a8",
+   "dialect": "mysql",
+   "sql": "SELECT x'CC'"
+  },
+  {
+   "key": "2ff25c3890bb8e57",
+   "dialect": "mysql",
+   "sql": "SELECT 0x0000CC"
+  },
+  {
+   "key": "60200c07ea0c2cf1",
+   "dialect": "mysql",
+   "sql": "SELECT x'0000CC'"
+  },
+  {
+   "key": "4b857d10298fa1b8",
+   "dialect": "mysql",
+   "sql": "SELECT 0b1011"
+  },
+  {
+   "key": "c8215f7d510f62c0",
+   "dialect": "mysql",
+   "sql": "SELECT b'1011'"
+  },
+  {
+   "key": "7c9b99817568fa36",
+   "dialect": "mysql",
+   "sql": "SELECT \"2021-01-01\" + INTERVAL 1 MONTH"
+  },
+  {
+   "key": "7a23ec159f92aa43",
+   "dialect": "mysql",
+   "sql": "CONVERT(x USING latin1)"
+  },
+  {
+   "key": "6c6c3cd0fe274efe",
+   "dialect": "mysql",
+   "sql": "CAST(x AS CHAR CHARACTER SET latin1)"
+  },
+  {
+   "key": "152aa9136ff49fb2",
+   "dialect": "mysql",
+   "sql": "CONVERT('a' USING binary)"
+  },
+  {
+   "key": "d6c27321aedc59a6",
+   "dialect": "mysql",
+   "sql": "SELECT CONVERT(`col` USING `utf8mb4`)"
+  },
+  {
+   "key": "5f7dd33720003dc2",
+   "dialect": "mysql",
+   "sql": "SELECT CHAR(0xC3A9 USING `utf8mb4`)"
+  },
+  {
+   "key": "056c39dcd97aa257",
+   "dialect": "mysql",
+   "sql": "SELECT CHAR(65 USING BINARY)"
+  },
+  {
+   "key": "01aec8fa219a73d0",
+   "dialect": "mysql",
+   "sql": "SELECT CHAR(65 USING `binary`)"
+  },
+  {
+   "key": "7611de2f5c3a7e03",
+   "dialect": "mysql",
+   "sql": "SELECT CONVERT(x USING `binary`)"
+  },
+  {
+   "key": "9739de385968866c",
+   "dialect": "mysql",
+   "sql": "SELECT CONVERT(x USING `my charset`)"
+  },
+  {
+   "key": "9610b1ea91291480",
+   "dialect": "mysql",
+   "sql": "SELECT CHAR(65 USING `my charset`)"
+  },
+  {
+   "key": "0a31a7fd76e23cc6",
+   "dialect": "mysql",
+   "sql": "MATCH(col1, col2, col3) AGAINST('abc')"
+  },
+  {
    "key": "4eb8a0451f186288",
    "dialect": "postgres",
    "sql": "(col1 @@ 'abc' OR col2 @@ 'abc' OR col3 @@ 'abc')"
+  },
+  {
+   "key": "5e670119da3262ac",
+   "dialect": "mysql",
+   "sql": "MATCH(col1, col2) AGAINST('abc' IN NATURAL LANGUAGE MODE)"
+  },
+  {
+   "key": "cd129c5b6def29bb",
+   "dialect": "mysql",
+   "sql": "MATCH(col1, col2) AGAINST('abc' IN NATURAL LANGUAGE MODE WITH QUERY EXPANSION)"
+  },
+  {
+   "key": "52c5285e3606b0d0",
+   "dialect": "mysql",
+   "sql": "MATCH(col1, col2) AGAINST('abc' IN BOOLEAN MODE)"
+  },
+  {
+   "key": "7d25ecc46db0a901",
+   "dialect": "mysql",
+   "sql": "MATCH(col1, col2) AGAINST('abc' WITH QUERY EXPANSION)"
+  },
+  {
+   "key": "3c7ed0e5a440f34f",
+   "dialect": "mysql",
+   "sql": "MATCH(a.b) AGAINST('abc')"
+  },
+  {
+   "key": "554569870e2b5c0f",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT('2017-06-15', '%Y')"
+  },
+  {
+   "key": "431257f83c2eaf7f",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT('2017-06-15', '%m')"
+  },
+  {
+   "key": "cf46fd36bfbf630f",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT('2017-06-15', '%d')"
+  },
+  {
+   "key": "d2257f8d0842ed44",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT('2017-06-15', '%Y-%m-%d')"
+  },
+  {
+   "key": "7aee0bf067a51778",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT('2017-06-15 22:23:34', '%H')"
+  },
+  {
+   "key": "d1b820494f6042f2",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT('2017-06-15', '%w')"
+  },
+  {
+   "key": "63676ce5c3c7882b",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT('2024-08-22 14:53:12', '%a')"
+  },
+  {
+   "key": "17c19444166d9913",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT('2009-10-04 22:23:00', '%a %M %Y')"
+  },
+  {
+   "key": "88939345f654a81f",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT('2007-10-04 22:23:00', '%H:%i:%s')"
+  },
+  {
+   "key": "c99b653439945f42",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT('2007-10-04 22:23:00', '%T')"
+  },
+  {
+   "key": "bb581a9740adadbc",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT('1900-10-04 22:23:00', '%d %y %a %d %m %b')"
+  },
+  {
+   "key": "5fbdfeac3fd50e97",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT('2021-01-01 22:23:00', '%x')"
   },
   {
    "key": "5528e2b9ccf2154b",
@@ -16463,14 +18603,64 @@
    "sql": "SELECT STRFTIME(CAST('2021-01-01 22:23:00' AS TIMESTAMP), '%G')"
   },
   {
+   "key": "9dc454bcaa7619d6",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT(CAST('2021-01-01 22:23:00' AS DATETIME), '%x')"
+  },
+  {
+   "key": "725b924e697c597d",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT('2007-10-04 22:23:00', '%r')"
+  },
+  {
    "key": "ba66ca6aeab680fe",
    "dialect": "duckdb",
    "sql": "SELECT STRFTIME(CAST('2007-10-04 22:23:00' AS TIMESTAMP), '%I:%M:%S %p')"
   },
   {
+   "key": "8a638d58a0015267",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT(x, '%X-%V')"
+  },
+  {
+   "key": "c6763b08df0f675c",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT(x, '%x-%v')"
+  },
+  {
+   "key": "773e39a78debddc6",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_FORMAT(x, '%U')"
+  },
+  {
+   "key": "b29e0c7352cfbec7",
+   "dialect": "mysql",
+   "sql": "TIME_STR_TO_UNIX(x)"
+  },
+  {
+   "key": "fddac7d3117f3cb9",
+   "dialect": "mysql",
+   "sql": "SELECT FROM_UNIXTIME(1711366265, '%Y %D %M')"
+  },
+  {
+   "key": "7b1e9d41a2489fe7",
+   "dialect": "mysql",
+   "sql": "SELECT TO_DAYS(x)"
+  },
+  {
+   "key": "308527bdceaaeb0f",
+   "dialect": "mysql",
+   "sql": "SELECT (DATEDIFF(x, '0000-01-01') + 1)"
+  },
+  {
    "key": "e9a02d1110a17f18",
    "dialect": "presto",
    "sql": "SELECT (DATE_DIFF('DAY', CAST(CAST('0000-01-01' AS TIMESTAMP) AS DATE), CAST(CAST(x AS TIMESTAMP) AS DATE)) + 1)"
+  },
+  {
+   "key": "23e8bc6965f72e18",
+   "dialect": "mysql",
+   "sql": "SELECT DATEDIFF(x, y)"
   },
   {
    "key": "1eef99e28c7e0fde",
@@ -16493,6 +18683,46 @@
    "sql": "SELECT DATE_DIFF('DAY', DATE_TRUNC('DAY', y), DATE_TRUNC('DAY', x))"
   },
   {
+   "key": "ad71ebe6402491e6",
+   "dialect": "mysql",
+   "sql": "DAYOFYEAR(x)"
+  },
+  {
+   "key": "8f11212ba049a877",
+   "dialect": "mysql",
+   "sql": "DAYOFMONTH(x)"
+  },
+  {
+   "key": "5bc3e56acea4e8f1",
+   "dialect": "mysql",
+   "sql": "DAYOFWEEK(x)"
+  },
+  {
+   "key": "494c9ef21e8535ae",
+   "dialect": "mysql",
+   "sql": "WEEKOFYEAR(x)"
+  },
+  {
+   "key": "852a5816c9dc4afe",
+   "dialect": "mysql",
+   "sql": "DAY(x)"
+  },
+  {
+   "key": "2be584abcb37bcb1",
+   "dialect": "mysql",
+   "sql": "WEEK(x)"
+  },
+  {
+   "key": "525a3c077f15adb5",
+   "dialect": "mysql",
+   "sql": "YEAR(x)"
+  },
+  {
+   "key": "504e346f3bd54121",
+   "dialect": "mysql",
+   "sql": "STR_TO_DATE(x, '%M')"
+  },
+  {
    "key": "2cf00ebebabb0ac4",
    "dialect": "postgres",
    "sql": "SELECT TO_TIMESTAMP(col)"
@@ -16503,9 +18733,64 @@
    "sql": "SELECT (TIMESTAMP 'epoch' + col * INTERVAL '1 SECOND')"
   },
   {
+   "key": "6abc901768102175",
+   "dialect": "mysql",
+   "sql": "SELECT TIME_STR_TO_TIME('2023-01-01 13:14:15.123456+00:00')"
+  },
+  {
+   "key": "40279b57c5e13c83",
+   "dialect": "mysql",
+   "sql": "SELECT TIME_STR_TO_TIME('2023-01-01 13:14:15.123+00:00')"
+  },
+  {
+   "key": "aaca4fabf3505c42",
+   "dialect": "mysql",
+   "sql": "SELECT TIME_STR_TO_TIME('2023-01-01 13:14:15+00:00')"
+  },
+  {
+   "key": "53c317703cc8fef9",
+   "dialect": "mysql",
+   "sql": "SELECT TIME_STR_TO_TIME('2023-01-01 13:14:15-08:00', 'America/Los_Angeles')"
+  },
+  {
+   "key": "3009c04731e15d45",
+   "dialect": "mysql",
+   "sql": "SELECT TIME_STR_TO_TIME('2023-01-01 13:14:15.12345+00:00')"
+  },
+  {
+   "key": "df92c8bf59479c18",
+   "dialect": "mysql",
+   "sql": "SELECT TIME_STR_TO_TIME('2023-01-01 13:14:15.1234+00:00')"
+  },
+  {
+   "key": "eb51ebb3a026219c",
+   "dialect": "mysql",
+   "sql": "SELECT TIME_STR_TO_TIME('2023-01-01 13:14:15.12+00:00')"
+  },
+  {
+   "key": "ace6d143c992684b",
+   "dialect": "mysql",
+   "sql": "SELECT TIME_STR_TO_TIME('2023-01-01 13:14:15.1+00:00')"
+  },
+  {
+   "key": "faf4ec7e0f2277ee",
+   "dialect": "mysql",
+   "sql": "WITH t AS (SELECT CAST('2020-01-10' AS DATE) AS col, 5 AS num_days) SELECT DATE_ADD(col, INTERVAL num_days DAY) FROM t"
+  },
+  {
    "key": "11b0baf095af80f0",
    "dialect": "postgres",
    "sql": "WITH t AS (SELECT CAST('2020-01-10' AS DATE) AS col, 5 AS num_days) SELECT col + INTERVAL '1 DAY' * num_days FROM t"
+  },
+  {
+   "key": "67867e631ca11068",
+   "dialect": "mysql",
+   "sql": "CURDATE()"
+  },
+  {
+   "key": "d7c12bd403a9822b",
+   "dialect": "mysql",
+   "sql": "CURRENT_DATE"
   },
   {
    "key": "c87fbb5c0b1c4d27",
@@ -16513,9 +18798,19 @@
    "sql": "CURRENT_DATE"
   },
   {
+   "key": "b7e0ee6a218069ab",
+   "dialect": "mysql",
+   "sql": "SELECT CONCAT('11', '22')"
+  },
+  {
    "key": "168e6855dbe5c286",
    "dialect": "postgres",
    "sql": "SELECT '11' || '22'"
+  },
+  {
+   "key": "b7c35559825aa65f",
+   "dialect": "mysql",
+   "sql": "SELECT department, GROUP_CONCAT(name) AS employee_names FROM data GROUP BY department"
   },
   {
    "key": "ad2e68a84fe9dc63",
@@ -16523,9 +18818,29 @@
    "sql": "SELECT department, array_agg(name) AS employee_names FROM data GROUP BY department"
   },
   {
+   "key": "ebbdebd48612d44c",
+   "dialect": "mysql",
+   "sql": "SELECT UNIX_TIMESTAMP(CAST('2024-04-29 12:00:00' AS DATETIME))"
+  },
+  {
    "key": "6f488e3a884b8709",
    "dialect": "postgres",
    "sql": "SELECT EXTRACT(epoch FROM TIMESTAMP '2024-04-29 12:00:00')"
+  },
+  {
+   "key": "110e66504ea65631",
+   "dialect": "mysql",
+   "sql": "SELECT JSON_EXTRACT('[10, 20, [30, 40]]', '$[1]')"
+  },
+  {
+   "key": "f1818ec931c7fe0e",
+   "dialect": "mysql",
+   "sql": "SELECT JSON_EXTRACT('[10, 20, [30, 40]]', '$[1]', '$[0]')"
+  },
+  {
+   "key": "80525e19dede5725",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM x LEFT JOIN y ON x.id = y.id UNION ALL SELECT * FROM x RIGHT JOIN y ON x.id = y.id WHERE NOT EXISTS(SELECT 1 FROM x WHERE x.id = y.id) ORDER BY 1 LIMIT 0"
   },
   {
    "key": "f8aa8f6b1f09eaec",
@@ -16533,9 +18848,19 @@
    "sql": "SELECT * FROM x FULL JOIN y ON x.id = y.id ORDER BY 1 LIMIT 0"
   },
   {
+   "key": "802f7fc9aef1d150",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t1 LEFT OUTER JOIN t2 ON t1.x = t2.x UNION ALL SELECT * FROM t1 RIGHT OUTER JOIN t2 ON t1.x = t2.x WHERE NOT EXISTS(SELECT 1 FROM t1 WHERE t1.x = t2.x)"
+  },
+  {
    "key": "7b8ec6ec3de1988a",
    "dialect": "postgres",
    "sql": "SELECT * FROM t1 FULL OUTER JOIN t2 ON t1.x = t2.x"
+  },
+  {
+   "key": "763a3162c0575de7",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t1 LEFT OUTER JOIN t2 USING (x) UNION ALL SELECT * FROM t1 RIGHT OUTER JOIN t2 USING (x) WHERE NOT EXISTS(SELECT 1 FROM t1 WHERE t1.x = t2.x)"
   },
   {
    "key": "c23a4501df4cf231",
@@ -16543,9 +18868,19 @@
    "sql": "SELECT * FROM t1 FULL OUTER JOIN t2 USING (x) "
   },
   {
+   "key": "b2614ed89b23c180",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t1 LEFT OUTER JOIN t2 USING (x, y) UNION ALL SELECT * FROM t1 RIGHT OUTER JOIN t2 USING (x, y) WHERE NOT EXISTS(SELECT 1 FROM t1 WHERE t1.x = t2.x AND t1.y = t2.y)"
+  },
+  {
    "key": "ce6926c94a8570c4",
    "dialect": "postgres",
    "sql": "SELECT * FROM t1 FULL OUTER JOIN t2 USING (x, y) "
+  },
+  {
+   "key": "b862e00418dfa7cd",
+   "dialect": "mysql",
+   "sql": "a XOR b"
   },
   {
    "key": "372490f6acd8cad0",
@@ -16563,6 +18898,16 @@
    "sql": "(a AND (NOT b)) OR ((NOT a) AND b)"
   },
   {
+   "key": "818d936ce2b3f8da",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM test LIMIT 0 + 1, 0 + 1"
+  },
+  {
+   "key": "54b4cd2e3105ce3e",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM test LIMIT 1 OFFSET 1"
+  },
+  {
    "key": "14f7a9f6c30b9994",
    "dialect": "postgres",
    "sql": "SELECT * FROM test LIMIT 0 + 1 OFFSET 0 + 1"
@@ -16576,6 +18921,91 @@
    "key": "8e37191fdee0a547",
    "dialect": "trino",
    "sql": "SELECT * FROM test OFFSET 1 LIMIT 1"
+  },
+  {
+   "key": "1432038eb95d8346",
+   "dialect": "mysql",
+   "sql": "CAST(x AS TEXT)"
+  },
+  {
+   "key": "139dbc9f991f0bb8",
+   "dialect": "mysql",
+   "sql": "CAST(x AS CHAR)"
+  },
+  {
+   "key": "2ee349e604406bde",
+   "dialect": "mysql",
+   "sql": "CAST(x AS SIGNED)"
+  },
+  {
+   "key": "b26e4eacdf44a0ab",
+   "dialect": "mysql",
+   "sql": "CAST(x AS SIGNED INTEGER)"
+  },
+  {
+   "key": "24be457e794b3393",
+   "dialect": "mysql",
+   "sql": "CAST(x AS UNSIGNED)"
+  },
+  {
+   "key": "e133fd664f9b0c96",
+   "dialect": "mysql",
+   "sql": "CAST(x AS UNSIGNED INTEGER)"
+  },
+  {
+   "key": "2dc6f0b572e58ac8",
+   "dialect": "mysql",
+   "sql": "TIME_STR_TO_TIME(x)"
+  },
+  {
+   "key": "96baec1e9c003dd0",
+   "dialect": "mysql",
+   "sql": "CAST(x AS DATETIME)"
+  },
+  {
+   "key": "d501801b4396e1bf",
+   "dialect": "mysql",
+   "sql": "SELECT 17 MEMBER OF('[23, \"abc\", 17, \"ab\", 10]')"
+  },
+  {
+   "key": "e55382a8b158aa06",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_ADD('2023-06-23 12:00:00', INTERVAL 2 * 2 MONTH) FROM foo"
+  },
+  {
+   "key": "29ad4150f1c43ace",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_ADD('2023-06-23 12:00:00', INTERVAL (2 * 2) MONTH) FROM foo"
+  },
+  {
+   "key": "270326739d79fff2",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t LOCK IN SHARE MODE"
+  },
+  {
+   "key": "f125e7146cd6a403",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t FOR SHARE"
+  },
+  {
+   "key": "5676650bda44369a",
+   "dialect": "mysql",
+   "sql": "SELECT DATE(DATE_SUB(`dt`, INTERVAL DAYOFMONTH(`dt`) - 1 DAY)) AS __timestamp FROM tableT"
+  },
+  {
+   "key": "bcc7cb4867b9c3aa",
+   "dialect": "mysql",
+   "sql": "SELECT DATE(DATE_SUB(`dt`, INTERVAL (DAYOFMONTH(`dt`) - 1) DAY)) AS __timestamp FROM tableT"
+  },
+  {
+   "key": "a4180d67d49dcb60",
+   "dialect": "mysql",
+   "sql": "SELECT name FROM temp WHERE name = ? FOR UPDATE"
+  },
+  {
+   "key": "11e816d966988d44",
+   "dialect": "mysql",
+   "sql": "SELECT a FROM tbl FOR UPDATE"
   },
   {
    "key": "c50b4580a8ec16cf",
@@ -16593,14 +19023,29 @@
    "sql": "SELECT a FROM tbl"
   },
   {
+   "key": "5cba6355d9923c05",
+   "dialect": "mysql",
+   "sql": "SELECT a FROM tbl FOR SHARE"
+  },
+  {
    "key": "c64ea153e45d052d",
    "dialect": "postgres",
    "sql": "SELECT a FROM tbl FOR SHARE"
   },
   {
+   "key": "baf15dd9bc7e3a83",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(DISTINCT x ORDER BY y DESC)"
+  },
+  {
    "key": "7f4046926a86f271",
    "dialect": "postgres",
    "sql": "STRING_AGG(DISTINCT x, ',' ORDER BY y DESC NULLS LAST)"
+  },
+  {
+   "key": "524dd2c571eea345",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(x ORDER BY y SEPARATOR z)"
   },
   {
    "key": "087aab8e192ac8d9",
@@ -16618,6 +19063,11 @@
    "sql": "STRING_AGG(x, z ORDER BY y NULLS FIRST)"
   },
   {
+   "key": "ddbd659157ee5ab4",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(DISTINCT x ORDER BY y DESC SEPARATOR '')"
+  },
+  {
    "key": "e5a318311352cec2",
    "dialect": "tsql",
    "sql": "STRING_AGG(x, '') WITHIN GROUP (ORDER BY y DESC)"
@@ -16631,6 +19081,16 @@
    "key": "d93040340c567472",
    "dialect": "postgres",
    "sql": "STRING_AGG(DISTINCT x, '' ORDER BY y DESC NULLS LAST)"
+  },
+  {
+   "key": "0d907f711d13b248",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(a, b, c SEPARATOR ',')"
+  },
+  {
+   "key": "39811e675347deb1",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(CONCAT(a, b, c) SEPARATOR ',')"
   },
   {
    "key": "e73ad036d21c834d",
@@ -16653,6 +19113,16 @@
    "sql": "ARRAY_JOIN(ARRAY_AGG(CONCAT(CAST(a AS VARCHAR), CAST(b AS VARCHAR), CAST(c AS VARCHAR))), ',')"
   },
   {
+   "key": "8b46d72a810fe426",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(a, b, c SEPARATOR '')"
+  },
+  {
+   "key": "f966874e95411538",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(CONCAT(a, b, c) SEPARATOR '')"
+  },
+  {
    "key": "000eea322a5fa1a6",
    "dialect": "tsql",
    "sql": "STRING_AGG(a + b + c, '')"
@@ -16668,6 +19138,16 @@
    "sql": "STRING_AGG(a || b || c, '')"
   },
   {
+   "key": "d6880c901ab46b39",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(DISTINCT a, b, c SEPARATOR '')"
+  },
+  {
+   "key": "84478678e183492d",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(DISTINCT CONCAT(a, b, c) SEPARATOR '')"
+  },
+  {
    "key": "cbc74ef30a3549ee",
    "dialect": "databricks",
    "sql": "LISTAGG(DISTINCT CONCAT(a, b, c), '')"
@@ -16676,6 +19156,16 @@
    "key": "296d79037c4253de",
    "dialect": "postgres",
    "sql": "STRING_AGG(DISTINCT a || b || c, '')"
+  },
+  {
+   "key": "a46d4bef5e5ab993",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(a, b, c ORDER BY d SEPARATOR '')"
+  },
+  {
+   "key": "18512ac14c3f7ad8",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(CONCAT(a, b, c) ORDER BY d SEPARATOR '')"
   },
   {
    "key": "45c89c238f7ffffd",
@@ -16693,6 +19183,16 @@
    "sql": "STRING_AGG(a || b || c, '' ORDER BY d NULLS FIRST)"
   },
   {
+   "key": "def3f822ca656cc5",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(DISTINCT a, b, c ORDER BY d SEPARATOR '')"
+  },
+  {
+   "key": "0163d9e9843859d5",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(DISTINCT CONCAT(a, b, c) ORDER BY d SEPARATOR '')"
+  },
+  {
    "key": "cf68039217a38f01",
    "dialect": "databricks",
    "sql": "LISTAGG(DISTINCT CONCAT(a, b, c), '') WITHIN GROUP (ORDER BY d)"
@@ -16701,6 +19201,146 @@
    "key": "fe2b874fb1c4ccb2",
    "dialect": "postgres",
    "sql": "STRING_AGG(DISTINCT a || b || c, '' ORDER BY d NULLS FIRST)"
+  },
+  {
+   "key": "0ff8e329de908417",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE z (a INT) ENGINE=InnoDB AUTO_INCREMENT=1 CHARACTER SET=utf8 COLLATE=utf8_bin COMMENT='x'"
+  },
+  {
+   "key": "2423e380302b1ea5",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE z (a INT DEFAULT NULL, PRIMARY KEY (a)) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARACTER SET=utf8 COLLATE=utf8_bin COMMENT='x'"
+  },
+  {
+   "key": "733741eec12d0c1a",
+   "dialect": "mysql",
+   "sql": "\n            CREATE TABLE `t_customer_account` (\n              `id` int(11) NOT NULL AUTO_INCREMENT,\n              `customer_id` int(11) DEFAULT NULL COMMENT '\u5ba2\u6237id',\n              `bank` varchar(100) COLLATE utf8_bin DEFAULT NULL COMMENT '\u884c\u522b',\n              `account_no` varchar(100) COLLATE utf8_bin DEFAULT NULL COMMENT '\u8d26\u53f7',\n              PRIMARY KEY (`id`)\n            ) ENGINE=InnoDB AUTO_INCREMENT=1 DEFAULT CHARACTER SET=utf8 COLLATE=utf8_bin COMMENT='\u5ba2\u6237\u8d26\u6237\u8868'\n            "
+  },
+  {
+   "key": "d7e7bde80353edb7",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE `t_customer_account` (\n  `id` INT(11) NOT NULL AUTO_INCREMENT,\n  `customer_id` INT(11) DEFAULT NULL COMMENT '\u5ba2\u6237id',\n  `bank` VARCHAR(100) COLLATE utf8_bin DEFAULT NULL COMMENT '\u884c\u522b',\n  `account_no` VARCHAR(100) COLLATE utf8_bin DEFAULT NULL COMMENT '\u8d26\u53f7',\n  PRIMARY KEY (`id`)\n)\nENGINE=InnoDB\nAUTO_INCREMENT=1\nDEFAULT CHARACTER SET=utf8\nCOLLATE=utf8_bin\nCOMMENT='\u5ba2\u6237\u8d26\u6237\u8868'"
+  },
+  {
+   "key": "22548c44ad4aea65",
+   "dialect": "mysql",
+   "sql": "SHOW COLUMNS FROM tbl_name"
+  },
+  {
+   "key": "14b4e6cc51a0f974",
+   "dialect": "mysql",
+   "sql": "SHOW FULL COLUMNS FROM tbl_name FROM db_name LIKE '%foo%'"
+  },
+  {
+   "key": "bae248cbd102d6c3",
+   "dialect": "mysql",
+   "sql": "SHOW GRANTS FOR foo"
+  },
+  {
+   "key": "fb130f8711e7cb47",
+   "dialect": "mysql",
+   "sql": "SHOW ENGINE foo STATUS"
+  },
+  {
+   "key": "12ca204f51881fdd",
+   "dialect": "mysql",
+   "sql": "SHOW ENGINE foo MUTEX"
+  },
+  {
+   "key": "f6c392ba25019600",
+   "dialect": "mysql",
+   "sql": "SHOW INDEX FROM foo"
+  },
+  {
+   "key": "b8f67ef78f4fe5ef",
+   "dialect": "mysql",
+   "sql": "SHOW INDEX FROM foo FROM bar"
+  },
+  {
+   "key": "f5d2a519812eeedb",
+   "dialect": "mysql",
+   "sql": "SHOW INDEX FROM bar.foo"
+  },
+  {
+   "key": "a29c8689e48c8271",
+   "dialect": "mysql",
+   "sql": "SHOW PROCESSLIST"
+  },
+  {
+   "key": "f24fed1c0087ac53",
+   "dialect": "mysql",
+   "sql": "SHOW FULL PROCESSLIST"
+  },
+  {
+   "key": "4e2311296171f3fd",
+   "dialect": "mysql",
+   "sql": "SHOW PROFILE"
+  },
+  {
+   "key": "e694812b8864c7b8",
+   "dialect": "mysql",
+   "sql": "SHOW PROFILE BLOCK IO"
+  },
+  {
+   "key": "ac61b2313f366f70",
+   "dialect": "mysql",
+   "sql": "SHOW PROFILE BLOCK IO, PAGE FAULTS FOR QUERY 1 OFFSET 2 LIMIT 3"
+  },
+  {
+   "key": "d28399675d512bea",
+   "dialect": "mysql",
+   "sql": "SHOW REPLICA STATUS"
+  },
+  {
+   "key": "fa1a5f6880b62a33",
+   "dialect": "mysql",
+   "sql": "SHOW SLAVE STATUS"
+  },
+  {
+   "key": "528e01b918adad0c",
+   "dialect": "mysql",
+   "sql": "SHOW REPLICA STATUS FOR CHANNEL channel_name"
+  },
+  {
+   "key": "dba16e8f13cf4d50",
+   "dialect": "mysql",
+   "sql": "SHOW FULL TABLES FROM db_name LIKE '%foo%'"
+  },
+  {
+   "key": "9bd30e1dee5705a4",
+   "dialect": "mysql",
+   "sql": "SHOW TABLES IN test"
+  },
+  {
+   "key": "0d6dd5933c193701",
+   "dialect": "mysql",
+   "sql": "SHOW FULL TABLES IN test"
+  },
+  {
+   "key": "72178ce4ecf06017",
+   "dialect": "mysql",
+   "sql": "SELECT JSON_OBJECT('id', 87, 'name', 'carrot')"
+  },
+  {
+   "key": "6de0c9eb55f5ab41",
+   "dialect": "mysql",
+   "sql": "SELECT ISNULL(x)"
+  },
+  {
+   "key": "34289789b3e0bb7a",
+   "dialect": "mysql",
+   "sql": "SELECT (x IS NULL)"
+  },
+  {
+   "key": "e9d213f6bcbbe2a7",
+   "dialect": "mysql",
+   "sql": "MONTHNAME(x)"
+  },
+  {
+   "key": "acc8542426ebca57",
+   "dialect": "mysql",
+   "sql": "DATE_FORMAT(x, '%M')"
   },
   {
    "key": "f99b20ceed8e9b7e",
@@ -16738,9 +19378,24 @@
    "sql": "CAST(a AS FLOAT) / NULLIF(b, 0)"
   },
   {
+   "key": "463b1aefc141849e",
+   "dialect": "mysql",
+   "sql": "EXPLAIN ANALYZE SELECT * FROM t"
+  },
+  {
+   "key": "77be247fc1c14fbb",
+   "dialect": "mysql",
+   "sql": "SELECT FORMAT(12332.123456, 4)"
+  },
+  {
    "key": "1a830a3fc53fe093",
    "dialect": "duckdb",
    "sql": "SELECT FORMAT('{:,.4f}', 12332.123456)"
+  },
+  {
+   "key": "6b580bdf7c207aa2",
+   "dialect": "mysql",
+   "sql": "SELECT FORMAT(12332.1, 4)"
   },
   {
    "key": "8e8cf89823ab05ac",
@@ -16748,9 +19403,74 @@
    "sql": "SELECT FORMAT('{:,.4f}', 12332.1)"
   },
   {
+   "key": "bafcedb41113c150",
+   "dialect": "mysql",
+   "sql": "SELECT FORMAT(12332.2, 0)"
+  },
+  {
    "key": "2187653a8c604760",
    "dialect": "duckdb",
    "sql": "SELECT FORMAT('{:,.0f}', 12332.2)"
+  },
+  {
+   "key": "9fe546235f6c3879",
+   "dialect": "mysql",
+   "sql": "SELECT FORMAT(12332.2, 2, 'de_DE')"
+  },
+  {
+   "key": "2b90d71f3d2ddc03",
+   "dialect": "mysql",
+   "sql": "ANALYZE LOCAL TABLE tbl"
+  },
+  {
+   "key": "0616d4dff38f328e",
+   "dialect": "mysql",
+   "sql": "ANALYZE NO_WRITE_TO_BINLOG TABLE tbl"
+  },
+  {
+   "key": "13c0c8846153628b",
+   "dialect": "mysql",
+   "sql": "ANALYZE TABLE t1, t2"
+  },
+  {
+   "key": "fb04f8caf4e9cb22",
+   "dialect": "mysql",
+   "sql": "ANALYZE LOCAL TABLE db.t1, db.t2, t3"
+  },
+  {
+   "key": "1bc30d5102d1a245",
+   "dialect": "mysql",
+   "sql": "ANALYZE tbl UPDATE HISTOGRAM ON col1"
+  },
+  {
+   "key": "52aca39ad052849c",
+   "dialect": "mysql",
+   "sql": "ANALYZE tbl UPDATE HISTOGRAM ON col1 USING DATA 'json_data'"
+  },
+  {
+   "key": "784df44ed587c8e5",
+   "dialect": "mysql",
+   "sql": "ANALYZE tbl UPDATE HISTOGRAM ON col1 WITH 5 BUCKETS"
+  },
+  {
+   "key": "948c1c9d7ba9473d",
+   "dialect": "mysql",
+   "sql": "ANALYZE tbl UPDATE HISTOGRAM ON col1 WITH 5 BUCKETS AUTO UPDATE"
+  },
+  {
+   "key": "b6fc5b530df97873",
+   "dialect": "mysql",
+   "sql": "ANALYZE tbl UPDATE HISTOGRAM ON col1 WITH 5 BUCKETS MANUAL UPDATE"
+  },
+  {
+   "key": "ceaa0d41ee309da4",
+   "dialect": "mysql",
+   "sql": "ANALYZE tbl DROP HISTOGRAM ON col1"
+  },
+  {
+   "key": "2132db7d0570085c",
+   "dialect": "mysql",
+   "sql": "TRUNCATE(3.14159, 2)"
   },
   {
    "key": "3ada4b16a3655494",
@@ -16758,9 +19478,34 @@
    "sql": "ROUND(3.14159, 2, 1)"
   },
   {
+   "key": "7968392ae40bc6c6",
+   "dialect": "mysql",
+   "sql": "CREATE TRIGGER check_age BEFORE INSERT ON users FOR EACH ROW BEGIN SET NEW.created_at = NOW() END"
+  },
+  {
+   "key": "5afc92a1e3ef0c06",
+   "dialect": "mysql",
+   "sql": "CREATE TRIGGER audit_update AFTER UPDATE ON accounts FOR EACH ROW BEGIN INSERT INTO audit_log (user_id, old_balance, new_balance, changed_at) VALUES (OLD.user_id, OLD.balance, NEW.balance, NOW()) END"
+  },
+  {
+   "key": "a8594aaa04c73502",
+   "dialect": "mysql",
+   "sql": "CREATE TRIGGER track_deletes BEFORE DELETE ON orders FOR EACH ROW BEGIN UPDATE statistics SET delete_count = delete_count + 1 WHERE table_name = 'orders' END"
+  },
+  {
+   "key": "14da14bc08ac3f98",
+   "dialect": "mysql",
+   "sql": "SELECT FIRST_VALUE(col1) OVER (ORDER BY col2 ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) FROM table1"
+  },
+  {
    "key": "333865b6322da3bf",
    "dialect": "postgres",
    "sql": "SELECT FIRST_VALUE(col1) OVER (ORDER BY col2 NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) FROM table1"
+  },
+  {
+   "key": "97910e943ac60f26",
+   "dialect": "mysql",
+   "sql": "SELECT FIRST_VALUE(col1) RESPECT NULLS OVER (ORDER BY col2) FROM table1"
   },
   {
    "key": "ca85720739822a19",
@@ -16768,9 +19513,34 @@
    "sql": "SELECT FIRST_VALUE(col1) OVER (ORDER BY col2 NULLS FIRST) FROM table1"
   },
   {
+   "key": "3b8a275d754d442a",
+   "dialect": "mysql",
+   "sql": "SELECT LAST_VALUE(col1) OVER (PARTITION BY col3 ORDER BY col2 ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) FROM table1"
+  },
+  {
+   "key": "8a2aebc8c7cdf7ed",
+   "dialect": "mysql",
+   "sql": "SELECT LAG(col1) OVER (ORDER BY CASE WHEN col2 IS NULL THEN 1 ELSE 0 END, col2) FROM table1"
+  },
+  {
+   "key": "c4518838df84021c",
+   "dialect": "mysql",
+   "sql": "SELECT LEAD(col1, 1) RESPECT NULLS OVER (ORDER BY col2) FROM table1"
+  },
+  {
+   "key": "b13a4986710b4d47",
+   "dialect": "mysql",
+   "sql": "SELECT e.employee_id FROM employees AS e LEFT JOIN employee_positions AS ep ON e.employee_id = ep.employee_id ORDER BY CASE WHEN e.employee_id IS NULL THEN 1 ELSE 0 END, e.employee_id"
+  },
+  {
    "key": "bebc5bf074b6bc7e",
    "dialect": "duckdb",
    "sql": "SELECT e.employee_id FROM employees e LEFT JOIN employee_positions ep ON e.employee_id = ep.employee_id ORDER BY employee_id"
+  },
+  {
+   "key": "fccf8ef898871b1d",
+   "dialect": "mysql",
+   "sql": "SELECT e.employee_id AS emp FROM employees AS e LEFT JOIN employee_positions AS ep ON TRUE ORDER BY CASE WHEN e.employee_id IS NULL THEN 1 ELSE 0 END, e.employee_id"
   },
   {
    "key": "d9ec96833c9b213c",
@@ -16778,9 +19548,19 @@
    "sql": "SELECT e.employee_id AS emp FROM employees e LEFT JOIN employee_positions ep ON TRUE ORDER BY emp"
   },
   {
+   "key": "78cd7c88f30a20fb",
+   "dialect": "mysql",
+   "sql": "SELECT e.employee_id FROM employees AS e LEFT JOIN employee_positions AS ep ON TRUE ORDER BY CASE WHEN e.employee_id IS NULL THEN 1 ELSE 0 END, e.employee_id"
+  },
+  {
    "key": "ed496cbc9a26b289",
    "dialect": "duckdb",
    "sql": "SELECT e.employee_id FROM employees e LEFT JOIN employee_positions ep ON TRUE ORDER BY e.employee_id"
+  },
+  {
+   "key": "1f44c7e53369b86e",
+   "dialect": "mysql",
+   "sql": "SELECT (-1) * col AS col FROM t1 LEFT JOIN t2 USING (id) ORDER BY CASE WHEN (-1) * col IS NULL THEN 1 ELSE 0 END, (-1) * col"
   },
   {
    "key": "505a2563c707c383",
@@ -16788,9 +19568,19 @@
    "sql": "SELECT (-1) * col AS col FROM t1 LEFT JOIN t2 USING(id) ORDER BY col"
   },
   {
+   "key": "5937ced1680c3264",
+   "dialect": "mysql",
+   "sql": "SELECT t1.x + t2.y AS s FROM t1 JOIN t2 ON t1.id = t2.id ORDER BY CASE WHEN t1.x + t2.y IS NULL THEN 1 ELSE 0 END, t1.x + t2.y"
+  },
+  {
    "key": "c6e47302ffdbecc0",
    "dialect": "duckdb",
    "sql": "SELECT t1.x + t2.y AS s FROM t1 JOIN t2 ON t1.id = t2.id ORDER BY s"
+  },
+  {
+   "key": "2ff56dc04a528b45",
+   "dialect": "mysql",
+   "sql": "SELECT foo AT TIME ZONE 'UTC'"
   },
   {
    "key": "06cc1091e9d71ef9",
@@ -16798,9 +19588,59 @@
    "sql": "SELECT LENGTH('foo')"
   },
   {
+   "key": "37241b16a81c638c",
+   "dialect": "mysql",
+   "sql": "SELECT CHAR_LENGTH('foo')"
+  },
+  {
    "key": "6d3e586c8106d680",
    "dialect": "postgres",
    "sql": "SELECT LENGTH('foo')"
+  },
+  {
+   "key": "8410c97f450f10a2",
+   "dialect": "mysql",
+   "sql": "UTC_TIME()"
+  },
+  {
+   "key": "1d24174240a66b67",
+   "dialect": "mysql",
+   "sql": "UTC_TIME(6)"
+  },
+  {
+   "key": "571dcb90230b2db5",
+   "dialect": "mysql",
+   "sql": "UTC_TIMESTAMP()"
+  },
+  {
+   "key": "19304b551e27c039",
+   "dialect": "mysql",
+   "sql": "UTC_TIMESTAMP(6)"
+  },
+  {
+   "key": "b095ec229c561a44",
+   "dialect": "mysql",
+   "sql": "x % y"
+  },
+  {
+   "key": "51f06719d1747c56",
+   "dialect": "mysql",
+   "sql": "x MOD y"
+  },
+  {
+   "key": "6817b8d9a0c54f49",
+   "dialect": "mysql",
+   "sql": "MOD(x, y)"
+  },
+  {
+   "key": "106ec62800e7c922",
+   "dialect": "mysql",
+   "sql": "TRUNCATE(price, 0)"
+  },
+  {
+   "key": "298f9945ade45188",
+   "dialect": "mysql",
+   "sql": "TRUNC(3.14159, 2)"
   },
   {
    "key": "721d4ceecfe2d8de",
@@ -16833,6 +19673,11 @@
    "sql": "CURRENT_TIMESTAMP BETWEEN TO_DATE(f.C_SDATE, 'YYYY/MM/DD') AND TO_DATE(f.C_EDATE, 'YYYY/MM/DD')"
   },
   {
+   "key": "acb228f47037b44f",
+   "dialect": "mysql",
+   "sql": "CAST(x AS DOUBLE)"
+  },
+  {
    "key": "aa146d0dcc96fd4c",
    "dialect": "postgres",
    "sql": "CAST(x AS DOUBLE PRECISION)"
@@ -16863,6 +19708,11 @@
    "sql": "TO_NUMBER(x, fmt)"
   },
   {
+   "key": "728bc41e17c98ce7",
+   "dialect": "mysql",
+   "sql": "CAST('2022-01-01' AS DATE)"
+  },
+  {
    "key": "0226e970355f3603",
    "dialect": "postgres",
    "sql": "CAST('2022-01-01' AS DATE)"
@@ -16891,6 +19741,11 @@
    "key": "b319a8dc8c71c099",
    "dialect": "postgres",
    "sql": "TRUNC(3.14159)"
+  },
+  {
+   "key": "720db17e772ced2f",
+   "dialect": "mysql",
+   "sql": "TRUNCATE(3.14159)"
   },
   {
    "key": "d1adaf3677cc32aa",
@@ -17788,14 +20643,29 @@
    "sql": "SELECT e'a\\tb'"
   },
   {
+   "key": "a5ee4f3149a82103",
+   "dialect": "mysql",
+   "sql": "SELECT 'a\\tb'"
+  },
+  {
    "key": "58cb7694d7ad6231",
    "dialect": "postgres",
    "sql": "SELECT CAST('2025-02-01 00:00:00' AS TIMESTAMP) - MAKE_INTERVAL(years => 1)"
   },
   {
+   "key": "8905291ec051733f",
+   "dialect": "mysql",
+   "sql": "SELECT CAST('2025-02-01 00:00:00' AS DATETIME) - INTERVAL 1 YEAR"
+  },
+  {
    "key": "6d54151ead7ec2c9",
    "dialect": "postgres",
    "sql": "SELECT NOW() + MAKE_INTERVAL(years => 1, months => 2, days => 3)"
+  },
+  {
+   "key": "82963aaefc49809c",
+   "dialect": "mysql",
+   "sql": "SELECT CURRENT_TIMESTAMP() + INTERVAL 1 YEAR + INTERVAL 2 MONTH + INTERVAL 3 DAY"
   },
   {
    "key": "23b89e5b9fa63270",
@@ -17808,6 +20678,11 @@
    "sql": "SELECT NOW() - MAKE_INTERVAL(years => 1, months => 2, days => 3)"
   },
   {
+   "key": "d480411a2692a869",
+   "dialect": "mysql",
+   "sql": "SELECT CURRENT_TIMESTAMP() - INTERVAL 1 YEAR - INTERVAL 2 MONTH - INTERVAL 3 DAY"
+  },
+  {
    "key": "67eacf6293405537",
    "dialect": "postgres",
    "sql": "SELECT CURRENT_TIMESTAMP - MAKE_INTERVAL(years => 1, months => 2, days => 3)"
@@ -17816,6 +20691,11 @@
    "key": "42d4e5391d489a9a",
    "dialect": "postgres",
    "sql": "SELECT CURRENT_TIMESTAMP + INTERVAL '-3 MONTH'"
+  },
+  {
+   "key": "219d990abe5ceeff",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_ADD(CURRENT_TIMESTAMP, INTERVAL -1 QUARTER)"
   },
   {
    "key": "72dbe4c1b1ac4902",
@@ -17861,6 +20741,11 @@
    "key": "d11f521a871192e5",
    "dialect": "postgres",
    "sql": "CREATE TABLE t (c INT)"
+  },
+  {
+   "key": "db1f31f7fe6b60db",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (c INT COMMENT 'comment 1') COMMENT = 'comment 2'"
   },
   {
    "key": "a68a47b5d0927674",
@@ -17928,9 +20813,19 @@
    "sql": "SELECT JSON_EXTRACT_PATH(a, VARIADIC '{}') FROM t"
   },
   {
+   "key": "a6b294f724c0b5fe",
+   "dialect": "mysql",
+   "sql": "SELECT JSON_EXTRACT(a, '$') FROM t"
+  },
+  {
    "key": "de9418db1a499f76",
    "dialect": "postgres",
    "sql": "SELECT JSON_EXTRACT_PATH_TEXT(a, VARIADIC '{}') FROM t"
+  },
+  {
+   "key": "15fd1304665c31f8",
+   "dialect": "mysql",
+   "sql": "SELECT JSON_EXTRACT_SCALAR(a, '$') FROM t"
   },
   {
    "key": "b21bfe7736289ac8",
@@ -17966,6 +20861,11 @@
    "key": "87942bf7cddf8b3a",
    "dialect": "duckdb",
    "sql": "'{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}' -> '$.f4'"
+  },
+  {
+   "key": "e0b27de38d1de37d",
+   "dialect": "mysql",
+   "sql": "JSON_EXTRACT('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4')"
   },
   {
    "key": "c88a597fbc8268b0",
@@ -18046,6 +20946,11 @@
    "key": "8bc01628f5df34fb",
    "dialect": "postgres",
    "sql": "e'x'"
+  },
+  {
+   "key": "9d28ecdcde60eca6",
+   "dialect": "mysql",
+   "sql": "'x'"
   },
   {
    "key": "46ea23badce8f711",
@@ -18308,6 +21213,11 @@
    "sql": "SELECT TRIM(BOTH ' XXX ')"
   },
   {
+   "key": "b4fb567ed6e50020",
+   "dialect": "mysql",
+   "sql": "SELECT TRIM(' XXX ')"
+  },
+  {
    "key": "b754de9cd76516d6",
    "dialect": "postgres",
    "sql": "SELECT TRIM(' XXX ')"
@@ -18316,6 +21226,11 @@
    "key": "4ee69152fc2dd271",
    "dialect": "postgres",
    "sql": "TRIM(LEADING FROM ' XXX ')"
+  },
+  {
+   "key": "e81bca263f106cd6",
+   "dialect": "mysql",
+   "sql": "LTRIM(' XXX ')"
   },
   {
    "key": "e7b259044a6a0c8c",
@@ -18331,6 +21246,11 @@
    "key": "e8563f26e6144513",
    "dialect": "postgres",
    "sql": "TRIM(TRAILING FROM ' XXX ')"
+  },
+  {
+   "key": "7362a95ea07b2380",
+   "dialect": "mysql",
+   "sql": "RTRIM(' XXX ')"
   },
   {
    "key": "90320712c3716ca6",
@@ -18691,6 +21611,11 @@
    "key": "dfc6704cb0ed69c5",
    "dialect": "postgres",
    "sql": "UPDATE foo SET a = bar.a, b = bar.b FROM bar WHERE foo.id = bar.id"
+  },
+  {
+   "key": "38c6889f9ae7bcf4",
+   "dialect": "mysql",
+   "sql": "UPDATE foo JOIN bar ON TRUE SET foo.a = bar.a, foo.b = bar.b WHERE foo.id = bar.id"
   },
   {
    "key": "d3ae6ff3887b8e80",
@@ -20298,6 +23223,11 @@
    "sql": "CAST(x AS TIMESTAMP)"
   },
   {
+   "key": "def0a827538bfb8e",
+   "dialect": "mysql",
+   "sql": "TIMESTAMP(x)"
+  },
+  {
    "key": "8b67bbca6857c5f6",
    "dialect": "presto",
    "sql": "TIMESTAMP(x, '12:00:00')"
@@ -20640,6 +23570,11 @@
   {
    "key": "699b2170bc621dd4",
    "dialect": "databricks",
+   "sql": "ANY_VALUE(x)"
+  },
+  {
+   "key": "2e13ec93b4ffeca2",
+   "dialect": "mysql",
    "sql": "ANY_VALUE(x)"
   },
   {
@@ -21483,6 +24418,11 @@
    "sql": "CREATE TABLE \"group\" (\"col\" CHAR(10))"
   },
   {
+   "key": "200cc023b80d41cb",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE `group` (`col` CHAR(10))"
+  },
+  {
    "key": "198cec2301b0b055",
    "dialect": "redshift",
    "sql": "create table if not exists city_slash_id(\"city/id\" integer not null, state char(2) not null)"
@@ -21558,6 +24498,11 @@
    "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
   },
   {
+   "key": "013872aeaac127c3",
+   "dialect": "mysql",
+   "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY CASE WHEN c IS NULL THEN 1 ELSE 0 END DESC, c DESC) AS _row_number FROM x) AS _t WHERE _row_number = 1"
+  },
+  {
    "key": "56c84637755f8b95",
    "dialect": "presto",
    "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
@@ -21595,6 +24540,11 @@
   {
    "key": "42de31b58f756ae6",
    "dialect": "redshift",
+   "sql": "COALESCE(a, b, c, d)"
+  },
+  {
+   "key": "5f15b2875166ff16",
+   "dialect": "mysql",
    "sql": "COALESCE(a, b, c, d)"
   },
   {
@@ -21636,6 +24586,11 @@
    "key": "8f63ea113c33d86d",
    "dialect": "duckdb",
    "sql": "SELECT CAST('2008-02-28' AS TIMESTAMP) + INTERVAL 18 MONTH"
+  },
+  {
+   "key": "57fe5d82eae50b4a",
+   "dialect": "mysql",
+   "sql": "SELECT DATE_ADD('2008-02-28', INTERVAL 18 MONTH)"
   },
   {
    "key": "b7067a94d682f408",
@@ -22058,6 +25013,11 @@
    "sql": "SELECT * FROM (SELECT 1, 2) AS t"
   },
   {
+   "key": "fd43350b7306eee8",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM (SELECT 1, 2) AS t"
+  },
+  {
    "key": "5f5f3ed95dba3c6d",
    "dialect": "presto",
    "sql": "SELECT * FROM (SELECT 1, 2) AS t"
@@ -22463,6 +25423,41 @@
    "sql": "SELECT TIME_STR_TO_UNIX('2009-02-13 23:31:30')"
   },
   {
+   "key": "fd58a16cb2894b4b",
+   "dialect": "mysql",
+   "sql": "SELECT JSON_EXTRACT(a, '$.b') FROM t"
+  },
+  {
+   "key": "55e93787fe344356",
+   "dialect": "mysql",
+   "sql": "SELECT JSON_EXTRACT(a, '$.b[2]') FROM t"
+  },
+  {
+   "key": "b5ed603fc8bae73f",
+   "dialect": "mysql",
+   "sql": "SELECT JSONB_EXTRACT(a, 'b') FROM t"
+  },
+  {
+   "key": "f425dad57f629a2b",
+   "dialect": "mysql",
+   "sql": "SELECT JSONB_EXTRACT(a, '$.b') FROM t"
+  },
+  {
+   "key": "16d5b56e3da20c3d",
+   "dialect": "mysql",
+   "sql": "SELECT JSON_VALUE('{\"item\": \"shoes\", \"price\": \"49.95\"}', '$.price' RETURNING DECIMAL(4, 2))"
+  },
+  {
+   "key": "ef7d413f35050b67",
+   "dialect": "mysql",
+   "sql": "SELECT 'a' MEMBER OF ('[\"a\"]')"
+  },
+  {
+   "key": "4ecc48aeb872c4f7",
+   "dialect": "mysql",
+   "sql": "SELECT TRUE XOR FALSE"
+  },
+  {
    "key": "3fd8ac40ce024dc4",
    "dialect": "redshift",
    "sql": "SELECT STRTOL('f',16)"
@@ -22848,6 +25843,11 @@
    "sql": "WITH vartab(v) AS (SELECT JSON('[{\"attr\": [{\"name\": \"banana\"}]}]')) SELECT v -> '$[0].attr[0].name' FROM vartab"
   },
   {
+   "key": "9411540848e5afd0",
+   "dialect": "mysql",
+   "sql": "WITH vartab(v) AS (SELECT '[{\"attr\": [{\"name\": \"banana\"}]}]') SELECT JSON_EXTRACT(v, '$[0].attr[0].name') FROM vartab"
+  },
+  {
    "key": "42d208fa423f6aba",
    "dialect": "presto",
    "sql": "WITH vartab(v) AS (SELECT JSON_PARSE('[{\"attr\": [{\"name\": \"banana\"}]}]')) SELECT JSON_EXTRACT(v, '$[0].attr[0].name') FROM vartab"
@@ -22863,6 +25863,11 @@
    "sql": "WITH vartab(v) AS (SELECT JSON('{\"attr\": [{\"name\": \"banana\"}]}')) SELECT v -> '$.attr[0].name' FROM vartab"
   },
   {
+   "key": "4fef027571cfb9cb",
+   "dialect": "mysql",
+   "sql": "WITH vartab(v) AS (SELECT '{\"attr\": [{\"name\": \"banana\"}]}') SELECT JSON_EXTRACT(v, '$.attr[0].name') FROM vartab"
+  },
+  {
    "key": "5c4f3e987adbd349",
    "dialect": "presto",
    "sql": "WITH vartab(v) AS (SELECT JSON_PARSE('{\"attr\": [{\"name\": \"banana\"}]}')) SELECT JSON_EXTRACT(v, '$.attr[0].name') FROM vartab"
@@ -22876,6 +25881,11 @@
    "key": "8b1fd1a1c5f191f6",
    "dialect": "databricks",
    "sql": "SELECT PARSE_JSON('{\"fruit\":\"banana\"}'):fruit"
+  },
+  {
+   "key": "12b413d88a8e7b51",
+   "dialect": "mysql",
+   "sql": "SELECT JSON_EXTRACT('{\"fruit\":\"banana\"}', '$.fruit')"
   },
   {
    "key": "69b67283f9ab6cee",
@@ -22901,6 +25911,11 @@
    "key": "d0f9ac8ce29d17da",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN UPPER(CAST('T' AS TEXT)) = 'ON' THEN TRUE WHEN UPPER(CAST('T' AS TEXT)) = 'OFF' THEN FALSE WHEN ISNAN(TRY_CAST('T' AS REAL)) OR ISINF(TRY_CAST('T' AS REAL)) THEN ERROR('TO_BOOLEAN: Non-numeric values NaN and INF are not supported') ELSE CAST('T' AS BOOLEAN) END"
+  },
+  {
+   "key": "8265d16ff36d8cf7",
+   "dialect": "mysql",
+   "sql": "SELECT INSERT(a, 0, 0, 'b')"
   },
   {
    "key": "573093e4bb4a6eaf",
@@ -23023,6 +26038,11 @@
    "sql": "SELECT BOOL_AND(c1), BOOL_AND(c2) FROM test"
   },
   {
+   "key": "3cf31336fc93166f",
+   "dialect": "mysql",
+   "sql": "SELECT MIN(c1), MIN(c2) FROM test"
+  },
+  {
    "key": "587064232048fcb8",
    "dialect": "duckdb",
    "sql": "SELECT COUNT_IF(CAST(c1 AS BOOLEAN)) = 1 FROM test"
@@ -23050,6 +26070,11 @@
   {
    "key": "9b4c35f73394aa88",
    "dialect": "duckdb",
+   "sql": "POWER(x, 2)"
+  },
+  {
+   "key": "a0e0c88a25d917d4",
+   "dialect": "mysql",
    "sql": "POWER(x, 2)"
   },
   {
@@ -23151,6 +26176,11 @@
    "key": "dd338e7f17805683",
    "dialect": "duckdb",
    "sql": "SELECT JSON('{\"a\": {\"b c\": \"foo\"}}') -> '$.a.\"b c\"'"
+  },
+  {
+   "key": "fec3aea93e8fb49f",
+   "dialect": "mysql",
+   "sql": "SELECT JSON_EXTRACT('{\"a\": {\"b c\": \"foo\"}}', '$.a.\"b c\"')"
   },
   {
    "key": "23921677041bcd47",
@@ -23263,6 +26293,11 @@
    "sql": "'foo' ~ 'bar'"
   },
   {
+   "key": "11a146fbd2ca87af",
+   "dialect": "mysql",
+   "sql": "REGEXP_LIKE('foo', 'bar')"
+  },
+  {
    "key": "1d8b09b2b6b9eaa8",
    "dialect": "duckdb",
    "sql": "NOT REGEXP_FULL_MATCH('foo', 'bar')"
@@ -23271,6 +26306,11 @@
    "key": "11049157a55a35a6",
    "dialect": "postgres",
    "sql": "NOT 'foo' ~ 'bar'"
+  },
+  {
+   "key": "8611486f4bda373d",
+   "dialect": "mysql",
+   "sql": "NOT REGEXP_LIKE('foo', 'bar')"
   },
   {
    "key": "7188dfd8ffeecd70",
@@ -23346,6 +26386,11 @@
    "key": "c6bec476de737a0f",
    "dialect": "redshift",
    "sql": "SELECT CONVERT_TIMEZONE('America/Los_Angeles', 'America/New_York', '2024-08-06 09:10:00.000')"
+  },
+  {
+   "key": "4841d7dbaae8f359",
+   "dialect": "mysql",
+   "sql": "SELECT CONVERT_TZ('2024-08-06 09:10:00.000', 'America/Los_Angeles', 'America/New_York')"
   },
   {
    "key": "711e75099acf4d96",
@@ -24248,6 +27293,11 @@
    "sql": "CREATE OR REPLACE TABLE a (id INT)"
   },
   {
+   "key": "18597fdd1c499122",
+   "dialect": "mysql",
+   "sql": "CREATE OR REPLACE TABLE a (id INT)"
+  },
+  {
    "key": "b331944d5285f522",
    "dialect": "duckdb",
    "sql": "SELECT * FROM (VALUES ({'a': 1})) AS t(x)"
@@ -24903,6 +27953,11 @@
    "sql": "WITH tbl AS (SELECT 1 AS id, 'eggy' AS name UNION ALL SELECT NULL AS id, 'jake' AS name) SELECT COUNT(DISTINCT CASE WHEN id IS NULL THEN NULL WHEN name IS NULL THEN NULL ELSE (id, name) END) AS cnt FROM tbl"
   },
   {
+   "key": "eca2f887b6c7e875",
+   "dialect": "mysql",
+   "sql": "WITH tbl AS (SELECT 1 AS id, 'eggy' AS name UNION ALL SELECT NULL AS id, 'jake' AS name) SELECT COUNT(DISTINCT id, name) AS cnt FROM tbl"
+  },
+  {
    "key": "e262f43e8c9a508f",
    "dialect": "postgres",
    "sql": "WITH tbl AS (SELECT 1 AS id, 'eggy' AS name UNION ALL SELECT NULL AS id, 'jake' AS name) SELECT COUNT(DISTINCT CASE WHEN id IS NULL THEN NULL WHEN name IS NULL THEN NULL ELSE (id, name) END) AS cnt FROM tbl"
@@ -25383,6 +28438,16 @@
    "sql": "SELECT JSON_EXTRACT_PATH_TEXT(a, 'k') FROM t"
   },
   {
+   "key": "622023e7102bbdb8",
+   "dialect": "mysql",
+   "sql": "SELECT a ->> '$.k' FROM t"
+  },
+  {
+   "key": "4788f2e5eea5a9a3",
+   "dialect": "mysql",
+   "sql": "SELECT CAST('[10, 20, [30, 40]]' AS JSON) ->> '$[1]'"
+  },
+  {
    "key": "7b734db090bd8344",
    "dialect": "duckdb",
    "sql": "SELECT '[10, 20, [30, 40]]' ->> '$[1]'"
@@ -25408,9 +28473,19 @@
    "sql": "SELECT JSON_OBJECT_AGG(name, value) FROM t"
   },
   {
+   "key": "34aeebdecb680567",
+   "dialect": "mysql",
+   "sql": "INSERT IGNORE INTO foo (x, y) VALUES (1, 2)"
+  },
+  {
    "key": "7f0c6218f89b0c86",
    "dialect": "postgres",
    "sql": "GREATEST(x)"
+  },
+  {
+   "key": "998f25fb64ebc205",
+   "dialect": "mysql",
+   "sql": "ORD(CONVERT(x USING utf32))"
   },
   {
    "key": "7e9c70a5f7e40ae5",
@@ -25438,9 +28513,24 @@
    "sql": "CREATE TABLE t (a INT, b AS (a * 2) PERSISTED NOT NULL)"
   },
   {
+   "key": "13d79bb9c4afe0f5",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE z (a INT UNIQUE PRIMARY KEY AUTO_INCREMENT)"
+  },
+  {
    "key": "be96aac851c01eb7",
    "dialect": "postgres",
    "sql": "CREATE TABLE z (a INT GENERATED BY DEFAULT AS IDENTITY NOT NULL UNIQUE PRIMARY KEY)"
+  },
+  {
+   "key": "c47c3d6146aa88d0",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE `x` (`Name` VARCHAR(200) NOT NULL)"
+  },
+  {
+   "key": "1f7bf6f63915cdcd",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE z (a INT PRIMARY KEY AUTO_INCREMENT)"
   },
   {
    "key": "5370fca0223f1130",
@@ -25478,6 +28568,11 @@
    "sql": "CREATE TABLE foo (col1 BIGINT, col2 BIGINT)"
   },
   {
+   "key": "ca6829972d1e8c9a",
+   "dialect": "mysql",
+   "sql": "SELECT REGEXP_LIKE(abc, '%foo%')"
+  },
+  {
    "key": "e85aa0a2773a4b05",
    "dialect": "postgres",
    "sql": "SELECT * FROM UNNEST(ARRAY['John', 'Jane', 'Jim', 'Jamie'], ARRAY[24, 25, 26, 27]) AS t(name, age)"
@@ -25491,6 +28586,11 @@
    "key": "b87cb2580ead601f",
    "dialect": "databricks",
    "sql": "SELECT id, t.type, t.scores FROM example_table LATERAL VIEW INLINE(ARRAYS_ZIP(SPLIT(type, CONCAT('\\\\Q', ';', '\\\\E')), scores)) t AS type, scores"
+  },
+  {
+   "key": "6f9b28dd5daed07e",
+   "dialect": "mysql",
+   "sql": "SELECT * FROM t WHERE a BETWEEN 1 AND 5"
   },
   {
    "key": "1d5de2da3bf19811",
@@ -25528,6 +28628,11 @@
    "sql": "USE tduser"
   },
   {
+   "key": "0dce6f6b789efe94",
+   "dialect": "mysql",
+   "sql": "UPDATE A JOIN `schema`.tableA AS A ON TRUE JOIN (SELECT col1 FROM `schema`.tableA GROUP BY col1) AS B ON TRUE SET A.col2 = '' WHERE A.col1 = B.col1"
+  },
+  {
    "key": "97f640c0964f0ed2",
    "dialect": "databricks",
    "sql": "CREATE TABLE a"
@@ -25535,6 +28640,11 @@
   {
    "key": "81d22e9d94fffe5b",
    "dialect": "duckdb",
+   "sql": "CREATE TABLE a"
+  },
+  {
+   "key": "a02457adeb7cc2df",
+   "dialect": "mysql",
    "sql": "CREATE TABLE a"
   },
   {
@@ -25563,6 +28673,16 @@
    "sql": "CREATE TABLE a"
   },
   {
+   "key": "6822137af8b6c439",
+   "dialect": "mysql",
+   "sql": "a % b"
+  },
+  {
+   "key": "0b3f48f41dadd767",
+   "dialect": "mysql",
+   "sql": "POWER(a, b)"
+  },
+  {
    "key": "adbd34cc44a406f5",
    "dialect": "redshift",
    "sql": "CREATE TABLE z (a GEOMETRY(1))"
@@ -25571,6 +28691,11 @@
    "key": "954d312ef8c35ce4",
    "dialect": "databricks",
    "sql": "TO_DATE('1992-01', 'yyyy-d')"
+  },
+  {
+   "key": "606279b2b6fe3dd2",
+   "dialect": "mysql",
+   "sql": "STR_TO_DATE('1992-01', '%Y-%d')"
   },
   {
    "key": "684d29cde481af9c",
@@ -26393,6 +29518,11 @@
    "sql": "SELECT TRIM(BOTH 'a' FROM a)"
   },
   {
+   "key": "5dcffdd205672eb2",
+   "dialect": "mysql",
+   "sql": "SELECT TRIM(BOTH 'a' FROM a)"
+  },
+  {
    "key": "a7dc3364fce2703a",
    "dialect": "tsql",
    "sql": "SELECT TIMEFROMPARTS(23, 59, 59, 0, 0)"
@@ -26401,6 +29531,11 @@
    "key": "b9b3d8440c7f95e9",
    "dialect": "duckdb",
    "sql": "SELECT MAKE_TIME(23, 59, 59)"
+  },
+  {
+   "key": "258218853e089f84",
+   "dialect": "mysql",
+   "sql": "SELECT MAKETIME(23, 59, 59)"
   },
   {
    "key": "7f30dfcf4e5ecb04",
@@ -26773,6 +29908,11 @@
    "sql": "CONVERT(INT, CONVERT(NUMERIC, '444.75'))"
   },
   {
+   "key": "f8948c009d1e44f8",
+   "dialect": "mysql",
+   "sql": "CAST(CAST('444.75' AS DECIMAL) AS SIGNED)"
+  },
+  {
    "key": "49d172375d80fc7a",
    "dialect": "tsql",
    "sql": "CONVERT(INTEGER, CONVERT(NUMERIC, '444.75'))"
@@ -26781,6 +29921,11 @@
    "key": "87f5d69fc727d810",
    "dialect": "tsql",
    "sql": "STRING_AGG(x, y) WITHIN GROUP (ORDER BY z DESC)"
+  },
+  {
+   "key": "48649cbe83398ded",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(x ORDER BY z DESC SEPARATOR y)"
   },
   {
    "key": "b9200a382e9b27e5",
@@ -26793,6 +29938,11 @@
    "sql": "STRING_AGG(x, '|') WITHIN GROUP (ORDER BY z ASC)"
   },
   {
+   "key": "e78c921bc49a3ac5",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(x ORDER BY z ASC SEPARATOR '|')"
+  },
+  {
    "key": "e3b880c4525fd116",
    "dialect": "postgres",
    "sql": "STRING_AGG(x, '|' ORDER BY z ASC NULLS FIRST)"
@@ -26801,6 +29951,11 @@
    "key": "dde902078c3a0354",
    "dialect": "tsql",
    "sql": "STRING_AGG(x, '|')"
+  },
+  {
+   "key": "ec31001f8c14cf51",
+   "dialect": "mysql",
+   "sql": "GROUP_CONCAT(x SEPARATOR '|')"
   },
   {
    "key": "4fbdeb032c0a7222",
@@ -27453,6 +30608,11 @@
    "sql": "CREATE TABLE tbl (id INTEGER IDENTITY PRIMARY KEY)"
   },
   {
+   "key": "0d7bdacb53abc76f",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE tbl (id INT AUTO_INCREMENT PRIMARY KEY)"
+  },
+  {
    "key": "2ecbbb64e69b535f",
    "dialect": "tsql",
    "sql": "CREATE TABLE tbl (id INTEGER NOT NULL IDENTITY(10, 1) PRIMARY KEY)"
@@ -27536,6 +30696,16 @@
    "key": "a8456abb88ee74c9",
    "dialect": "tsql",
    "sql": "ALTER TABLE a ALTER COLUMN b VARCHAR(10) COLLATE Latin1_General_CI_AS NOT NULL"
+  },
+  {
+   "key": "5ac30e69ff6e7b86",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE a MODIFY COLUMN b INT NOT NULL"
+  },
+  {
+   "key": "935e2079cebeee16",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE a MODIFY COLUMN b INT NULL"
   },
   {
    "key": "17d07c9a95c5f3f6",
@@ -28033,6 +31203,11 @@
    "sql": "SELECT CONVERT(VARCHAR(10), testdb.dbo.test.x, 120) y FROM testdb.dbo.test"
   },
   {
+   "key": "a92b75e9dea1da84",
+   "dialect": "mysql",
+   "sql": "SELECT CAST(DATE_FORMAT(testdb.dbo.test.x, '%Y-%m-%d %T') AS CHAR(10)) AS y FROM testdb.dbo.test"
+  },
+  {
    "key": "9f625f97c1135f4e",
    "dialect": "tsql",
    "sql": "SELECT CONVERT(VARCHAR(10), testdb.dbo.test.x, 120) AS y FROM testdb.dbo.test"
@@ -28041,6 +31216,11 @@
    "key": "f187399cd91931bd",
    "dialect": "tsql",
    "sql": "SELECT CONVERT(VARCHAR(10), y.x) z FROM testdb.dbo.test y"
+  },
+  {
+   "key": "7b376a1954b49004",
+   "dialect": "mysql",
+   "sql": "SELECT CAST(y.x AS CHAR(10)) AS z FROM testdb.dbo.test AS y"
   },
   {
    "key": "3cfd1ce786ce2a69",
@@ -28313,6 +31493,11 @@
    "sql": "LAST_DAY(CAST(CURRENT_TIMESTAMP AS DATE))"
   },
   {
+   "key": "68f429d8d0c20ce7",
+   "dialect": "mysql",
+   "sql": "LAST_DAY(DATE(CURRENT_TIMESTAMP()))"
+  },
+  {
    "key": "3a23fdd144c04b86",
    "dialect": "postgres",
    "sql": "CAST(DATE_TRUNC('MONTH', CAST(CURRENT_TIMESTAMP AS DATE)) + INTERVAL '1 MONTH' - INTERVAL '1 DAY' AS DATE)"
@@ -28341,6 +31526,11 @@
    "key": "e98c6964a97f7dc2",
    "dialect": "duckdb",
    "sql": "LAST_DAY(CAST(CURRENT_TIMESTAMP AS DATE) + INTERVAL (-1) MONTH)"
+  },
+  {
+   "key": "e20b1891af509657",
+   "dialect": "mysql",
+   "sql": "LAST_DAY(DATE_ADD(CURRENT_TIMESTAMP(), INTERVAL -1 MONTH))"
   },
   {
    "key": "3a4671e775524e29",

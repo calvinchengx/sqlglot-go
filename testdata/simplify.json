@@ -247,6 +247,16 @@
    "expected": "(NOT x IS NULL) <> (y IS NULL)"
   },
   {
+   "dialect": "mysql",
+   "sql": "A XOR A",
+   "expected": "A XOR A"
+  },
+  {
+   "dialect": "mysql",
+   "sql": "SELECT DISTINCT GREATEST(EXISTS(SELECT 1 WHERE FALSE), (EXISTS(SELECT 1 WHERE FALSE)) XOR ((0.08) IN ((t1.c0) XOR (t1.c0)))) AS ref0 FROM (SELECT NULL AS c0 UNION ALL SELECT 1 AS c0) AS t1, (SELECT 0.01 AS c1) AS t0",
+   "expected": "SELECT DISTINCT GREATEST(EXISTS(SELECT 1 WHERE FALSE), 0.08 IN (t1.c0 XOR t1.c0) XOR EXISTS(SELECT 1 WHERE FALSE)) AS ref0 FROM (SELECT NULL AS c0 UNION ALL SELECT 1 AS c0) AS t1, (SELECT 0.01 AS c1) AS t0"
+  },
+  {
    "dialect": "",
    "sql": "TRUE AND TRUE OR TRUE AND FALSE",
    "expected": "TRUE"
@@ -520,6 +530,11 @@
    "dialect": "",
    "sql": "A OR D OR B OR E OR F OR G OR E OR A",
    "expected": "A OR B OR D OR E OR F OR G"
+  },
+  {
+   "dialect": "mysql",
+   "sql": "A XOR D XOR B XOR E XOR F XOR G XOR C",
+   "expected": "A XOR B XOR C XOR D XOR E XOR F XOR G"
   },
   {
    "dialect": "",
@@ -2355,6 +2370,16 @@
    "dialect": "",
    "sql": "SELECT NOT(NOT(a)) FROM x",
    "expected": "SELECT NOT NOT a FROM x"
+  },
+  {
+   "dialect": "mysql",
+   "sql": "SELECT NOT(NOT(NOT(NOT t_bool.a))) FROM t_bool",
+   "expected": "SELECT NOT NOT NOT NOT t_bool.a FROM t_bool"
+  },
+  {
+   "dialect": "mysql",
+   "sql": "WITH t0 AS (SELECT 1 AS a, 'foo' AS p) SELECT NOT(NOT(CASE WHEN t0.a > 1 THEN t0.a ELSE t0.p END)) AS res FROM t0",
+   "expected": "WITH t0 AS (SELECT 1 AS a, 'foo' AS p) SELECT NOT NOT CASE WHEN t0.a > 1 THEN t0.a ELSE t0.p END AS res FROM t0"
   },
   {
    "dialect": "",

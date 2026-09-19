@@ -1,0 +1,220 @@
+{
+ "dialect": "mysql",
+ "rendered": "SET @@GLOBAL.sort_buffer_size = 50000, sort_buffer_size = 1000000",
+ "sql": "SET @@GLOBAL.sort_buffer_size = 50000, sort_buffer_size = 1000000",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 4,
+   "t": "SESSION_PARAMETER",
+   "x": "@@"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 6,
+   "t": "VAR",
+   "x": "GLOBAL"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "sort_buffer_size"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 32,
+   "t": "NUMBER",
+   "x": "50000"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 39,
+   "t": "VAR",
+   "x": "sort_buffer_size"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 58,
+   "t": "NUMBER",
+   "x": "1000000"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Set"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.SetItem",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.SessionParameter",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "sort_buffer_size"
+  },
+  {
+   "i": 3,
+   "k": "kind",
+   "v": "GLOBAL"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "50000"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.SetItem",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "sort_buffer_size"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "expression",
+   "m": {
+    "col": 65,
+    "end": 64,
+    "line": 1,
+    "start": 58
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "1000000"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unset",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "tag",
+   "v": false
+  }
+ ]
+}

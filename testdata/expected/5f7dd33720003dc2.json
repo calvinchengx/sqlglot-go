@@ -1,0 +1,101 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT CHAR(x'C3A9' USING utf8mb4)",
+ "sql": "SELECT CHAR(0xC3A9 USING `utf8mb4`)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "CHAR",
+   "x": "CHAR"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 12,
+   "t": "HEX_STRING",
+   "x": "C3A9"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 19,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 25,
+   "t": "IDENTIFIER",
+   "x": "utf8mb4"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 34,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.Chr",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.HexString",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "C3A9"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "charset"
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "utf8mb4"
+  }
+ ]
+}

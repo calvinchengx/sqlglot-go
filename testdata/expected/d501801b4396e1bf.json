@@ -1,0 +1,108 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT 17 MEMBER OF('[23, \"abc\", 17, \"ab\", 10]')",
+ "sql": "SELECT 17 MEMBER OF('[23, \"abc\", 17, \"ab\", 10]')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 7,
+   "t": "NUMBER",
+   "x": "17"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 10,
+   "t": "MEMBER_OF",
+   "x": "MEMBER OF"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 20,
+   "t": "STRING",
+   "x": "[23, \"abc\", 17, \"ab\", 10]"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 47,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONArrayContains",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 9,
+    "end": 8,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "17"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "[23, \"abc\", 17, \"ab\", 10]"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

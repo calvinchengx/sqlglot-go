@@ -1,6 +1,7 @@
 package sqlglot
 
 import (
+	"regexp"
 	"sort"
 	"strconv"
 	"strings"
@@ -45,6 +46,9 @@ func init() {
 		"CopyParameter":                       (*generator).writeCopyParameter,
 		"DeclareItem":                         (*generator).writeDeclareItem,
 		"TsOrDsToDate":                        (*generator).writeTsOrDsToDate,
+		"TimeToStr":                           (*generator).writeTimeToStr,
+		"Show":                                (*generator).writeShow,
+		"TimeStrToTime":                       (*generator).writeTimeStrToTime,
 		"OpenJSONColumnDef":                   (*generator).writeOpenJSONColumnDef,
 		"Union":                               (*generator).writeSetOperation,
 		"Except":                              (*generator).writeSetOperation,
@@ -1253,9 +1257,44 @@ func (g *generator) writeLiteral(e *Expression) string {
 		if text == "" && g.wroteDollar {
 			return g.fail(e.Class + " of nothing after a dollar, which reads as a quote")
 		}
+		if g.supportsEscapedSequences() {
+			preferred := g.cfg.StringEscapePreferred
+			if preferred == "" {
+				preferred = "'"
+			}
+			// The escape character itself is already written by the
+			// sequence step (backslash -> two), so only the quote is left.
+			return "'" + strings.ReplaceAll(g.escapeSequences(text), "'", preferred+"'") + "'"
+		}
 		return "'" + escapeStringBody(text, g.cfg.StringEscapePreferred) + "'"
 	}
 	return text
+}
+
+func (g *generator) supportsEscapedSequences() bool {
+	_, ok := g.cfg.StringEscapes["\\"]
+	return ok && len(g.cfg.UnescapedSequences) > 0
+}
+
+// escapeSequences is the reference's ESCAPED_SEQUENCES step: a dialect whose
+// strings read a backslash as an escape writes a control character (and the
+// backslash itself) back as the two characters that spell it.
+func (g *generator) escapeSequences(text string) string {
+	var out strings.Builder
+	for _, r := range text {
+		written := false
+		for spelled, ch := range g.cfg.UnescapedSequences {
+			if ch == string(r) {
+				out.WriteString(spelled)
+				written = true
+				break
+			}
+		}
+		if !written {
+			out.WriteRune(r)
+		}
+	}
+	return out.String()
 }
 
 // writeQuotedString writes one of the string classes the tokenizer tells
@@ -1517,7 +1556,44 @@ func (g *generator) writeCast(e *Expression) string {
 			}
 		}
 	}
+	// MySQL's CAST() only accepts a small fixed vocabulary of target types
+	// (https://dev.mysql.com/doc/refman/8.0/en/cast-functions.html#function_cast).
+	// TIMESTAMPTZ/TIMESTAMPLTZ have no CAST spelling at all -- MySQL's own
+	// TIMESTAMP() function is used instead -- and everything else in
+	// mysqlCastMapping collapses to one of CHAR/SIGNED/UNSIGNED.
+	if g.dialect == "mysql" {
+		if to, _ := e.Args["to"].(*Expression); to != nil {
+			kind, _ := to.Args["this"].(DataTypeKind)
+			if kind == "TIMESTAMPTZ" || kind == "TIMESTAMPLTZ" {
+				return "TIMESTAMP(" + g.child(e, "this") + ")"
+			}
+			if mapped, ok := mysqlCastMapping[string(kind)]; ok {
+				return word + "(" + g.child(e, "this") + " AS " + mapped + ")"
+			}
+		}
+	}
 	return word + "(" + g.child(e, "this") + " AS " + g.child(e, "to") + ")"
+}
+
+// mysqlCastMapping is the reference's CAST_MAPPING: DataType kinds CAST()
+// cannot name directly, collapsed to the nearest word MySQL's restricted
+// CAST vocabulary does support.
+var mysqlCastMapping = map[string]string{
+	"LONGTEXT":   "CHAR",
+	"LONGBLOB":   "CHAR",
+	"MEDIUMBLOB": "CHAR",
+	"MEDIUMTEXT": "CHAR",
+	"TEXT":       "CHAR",
+	"TINYBLOB":   "CHAR",
+	"TINYTEXT":   "CHAR",
+	"VARCHAR":    "CHAR",
+	"BIGINT":     "SIGNED",
+	"BOOLEAN":    "SIGNED",
+	"INT":        "SIGNED",
+	"SMALLINT":   "SIGNED",
+	"TINYINT":    "SIGNED",
+	"MEDIUMINT":  "SIGNED",
+	"UBIGINT":    "UNSIGNED",
 }
 
 // nearestAncestor is the reference's `find_ancestor`: the class of the
@@ -1800,6 +1876,7 @@ func (g *generator) writeDataType(e *Expression) string {
 	if !ok {
 		return g.fail("DataType." + string(kind))
 	}
+	bareOut := out
 	// The collation a type's values are compared under, where one was named.
 	// It hangs off the TYPE and is written after everything else it carries.
 	collate := ""
@@ -1841,6 +1918,13 @@ func (g *generator) writeDataType(e *Expression) string {
 			// stands BETWEEN the name and the words that name the zone.
 			if g.tables.TzToWithTimeZone && (kind == "TIMETZ" || kind == "TIMESTAMPTZ") {
 				out += " WITH TIME ZONE"
+			}
+			// MySQL's own UNSIGNED numeric kinds are spelled with the suffix
+			// on the BARE name (`BIGINT UNSIGNED`, from TypeSQL) but the
+			// suffix belongs after the parameters on a sized one --
+			// `DOUBLE(10, 2) UNSIGNED`, not `DOUBLE UNSIGNED(10, 2)`.
+			if strings.HasSuffix(bareOut, " UNSIGNED") {
+				out += " UNSIGNED"
 			}
 			return out
 		}
@@ -2425,7 +2509,20 @@ func (g *generator) writeInterval(e *Expression) string {
 		return "INTERVAL '" + escapeStringBody(text, g.cfg.StringEscapePreferred) +
 			" " + unitSQL + "'"
 	}
-	return "INTERVAL " + g.node(this) + " " + unitSQL
+	// The reference's own UNWRAPPED_INTERVAL_VALUES: a plain column, a
+	// literal, a negation or an already-parenthesised expression writes as
+	// itself, and anything else -- `2 * 2` -- is wrapped in parens, since
+	// nothing about INTERVAL's own grammar otherwise says where the
+	// quantity ends and the unit begins.
+	quantitySQL := g.node(this)
+	if this != nil {
+		switch this.Class {
+		case "Column", "Literal", "Neg", "Paren":
+		default:
+			quantitySQL = "(" + quantitySQL + ")"
+		}
+	}
+	return "INTERVAL " + quantitySQL + " " + unitSQL
 }
 
 func (g *generator) writeIntervalSpan(e *Expression) string {
@@ -2765,6 +2862,11 @@ func (g *generator) writePropertyEQ(e *Expression) string {
 	if g.inCallArgs {
 		return g.node(key) + " := " + g.child(e, "expression")
 	}
+	// Only a Struct rewrites its PropertyEQ children (struct_sql); anywhere
+	// else the node is a plain assignment -- `SELECT @v := 1`.
+	if e.Parent != nil && e.Parent.Class != "Struct" {
+		return g.node(key) + " := " + g.child(e, "expression")
+	}
 	// As a FIELD it takes the dialect's own spelling, and the two dialects
 	// disagree about more than punctuation: one writes the value first and
 	// names it after, the other writes the key first and quotes it as a
@@ -2972,7 +3074,16 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 			}
 			form = over.PlainForm
 		}
-		return g.writeJSONOperand(e, form)
+		out := g.writeJSONOperand(e, form)
+		// Further paths beyond the first ride along as extra call arguments.
+		if extras, _ := e.Args["expressions"].([]*Expression); len(extras) > 0 && strings.HasSuffix(out, ")") {
+			parts := make([]string, 0, len(extras))
+			for _, x := range extras {
+				parts = append(parts, g.node(x))
+			}
+			out = out[:len(out)-1] + ", " + strings.Join(parts, ", ") + ")"
+		}
+		return out
 	}
 	if path == nil || path.Class != "JSONPath" {
 		return g.fail(e.Class + " without a path")
@@ -2984,6 +3095,12 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 	saved := g.pathOwner
 	g.pathOwner = e.Class
 	text := g.node(path)
+	// Further paths beyond the first ride along as extra call arguments.
+	if extras, _ := e.Args["expressions"].([]*Expression); len(extras) > 0 && strings.HasSuffix(form, "{path})") {
+		for _, x := range extras {
+			text += ", " + g.node(x)
+		}
+	}
 	g.pathOwner = saved
 	return strings.ReplaceAll(out, "{path}", text)
 }
@@ -3285,6 +3402,11 @@ func (g *generator) writeAtTimeZone(e *Expression) string {
 		if out, ok := g.syntaxTemplate(e); ok {
 			return out
 		}
+	}
+	// MySQL has no AT TIME ZONE at all -- the reference's own override drops
+	// it and writes the bare inner expression.
+	if g.dialect == "mysql" {
+		return g.child(e, "this")
 	}
 	inner := g.child(e, "this") + " AT TIME ZONE " + g.child(e, "zone")
 	// Fabric's own AT TIME ZONE converts a DATETIMEOFFSET back to DATETIME2
@@ -4421,11 +4543,24 @@ func (g *generator) writeUniqueConstraint(e *Expression) string {
 
 // writePrimaryKey writes a key over the columns of the whole table.
 func (g *generator) writePrimaryKey(e *Expression) string {
-	out := "PRIMARY KEY (" + g.list(e) + ")"
+	out := "PRIMARY KEY"
+	// MySQL's own index name, where the statement gave the key one:
+	// `PRIMARY KEY pk_name (id)`.
+	if name := g.child(e, "this"); name != "" {
+		out += " " + name
+	}
+	out += " (" + g.list(e) + ")"
 	// An index's own vocabulary may follow the columns: `PRIMARY KEY (i)
-	// INCLUDE (a)` carries a column alongside the key rather than in it.
+	// INCLUDE (a)` carries a column alongside the key rather than in it, and
+	// `PRIMARY KEY (i) USING BTREE` carries the index method -- the one part
+	// writeIndexParameters writes with no leading space of its own, because
+	// its other callers (Index, EXCLUDE) supply theirs differently.
 	if params, _ := e.Args["include"].(*Expression); params != nil {
-		out += g.writeIndexParameters(params)
+		written := g.writeIndexParameters(params)
+		if written != "" && !strings.HasPrefix(written, " ") {
+			out += " "
+		}
+		out += written
 	}
 	// The words the key carries after it, in the order they were written.
 	if options, _ := e.Args["options"].([]string); len(options) > 0 {
@@ -4836,6 +4971,22 @@ func (g *generator) writeRenameColumn(e *Expression) string {
 // writeAlterColumn writes what an ALTER says about one column. Exactly one of
 // the four slots is filled, and which one it is says what the statement does.
 func (g *generator) writeAlterColumn(e *Expression) string {
+	// MySQL has no ALTER COLUMN ... SET DATA TYPE at all -- a type change is
+	// its own MODIFY COLUMN, carrying only the column and its new type (no
+	// COLLATE, no USING; those never parse for mysql to begin with).
+	if g.dialect == "mysql" {
+		if e.Args["dtype"] != nil {
+			out := "MODIFY COLUMN " + g.child(e, "this") + " " + g.child(e, "dtype")
+			if allowNull, said := e.Args["allow_null"].(bool); said {
+				if allowNull {
+					out += " NULL"
+				} else {
+					out += " NOT NULL"
+				}
+			}
+			return out
+		}
+	}
 	out := "ALTER COLUMN " + g.child(e, "this")
 	switch {
 	case e.Args["dtype"] != nil:
@@ -6270,6 +6421,58 @@ func (g *generator) writeTsOrDsToDate(e *Expression) string {
 		Arg{"to", New("DataType", Arg{"this", DataTypeKind("DATE")})}))
 }
 
+// writeTimeToStr writes DATE_FORMAT and friends. MySQL's own generator
+// strips a bare TsOrDsToTimestamp wrapper off `this` first -- the same
+// `remove_ts_or_ds_to_date` DATE_ADD/DATE_SUB use, scaffolding the PARSER
+// added purely to give the argument a temporal type, not a conversion the
+// statement asked for.
+var isoFractional = regexp.MustCompile(
+	`^\d{4}-\d{2}-\d{2}[T ]\d{2}:\d{2}:\d{2}\.(\d{1,6})(Z|[+-]\d{2}(:?\d{2})?)?$`)
+
+// subsecondPrecision is the reference's subsecond_precision: 0, 3 or 6.
+func subsecondPrecision(literal string) int {
+	m := isoFractional.FindStringSubmatch(literal)
+	if m == nil {
+		return 0
+	}
+	digits := strings.TrimRight(m[1]+strings.Repeat("0", 6-len(m[1])), "0")
+	switch {
+	case len(digits) > 3:
+		return 6
+	case len(digits) > 0:
+		return 3
+	}
+	return 0
+}
+
+// writeTimeStrToTime: MySQL keeps the fractional-second precision of a
+// literal when no zone was given (timestrtotime_sql, include_precision).
+func (g *generator) writeTimeStrToTime(e *Expression) string {
+	if g.dialect == "mysql" && e.Args["zone"] == nil {
+		if lit, _ := e.Args["this"].(*Expression); lit != nil && lit.Class == "Literal" {
+			text, _ := lit.Args["this"].(string)
+			if precision := subsecondPrecision(text); precision > 0 {
+				dt := New("DataType", Arg{"this", DataTypeKind("TIMESTAMP")},
+					Arg{"expressions", []*Expression{New("DataTypeParam",
+						Arg{"this", New("Literal", Arg{"this", strconv.Itoa(precision)}, Arg{"is_string", false})})}})
+				return g.node(New("Cast", Arg{"this", lit}, Arg{"to", dt}))
+			}
+		}
+	}
+	return g.spell(e)
+}
+
+func (g *generator) writeTimeToStr(e *Expression) string {
+	if g.dialect == "mysql" {
+		this, _ := e.Args["this"].(*Expression)
+		if stripped := stripMySQLTsOrDsWrap(this); stripped != this {
+			e = e.shallowCopy()
+			e.Set("this", stripped)
+		}
+	}
+	return g.spell(e)
+}
+
 // writeDeclareItem writes one declared variable: the names, the type, and the
 // value it starts at.
 //
@@ -6973,6 +7176,11 @@ func (g *generator) writeDateArith(e *Expression, domain string, sign int) strin
 			return g.dateArithDremio(name, this, amount, unit)
 		}
 		return g.dateArithGenericFallback(name, this, amount, unit, false)
+	case "mysql":
+		if domain == "Date" {
+			return g.dateArithMySQL(name, this, amount, unit)
+		}
+		return g.dateArithGenericFallback(name, this, amount, unit, false)
 	default:
 		return g.dateArithGenericFallback(name, this, amount, unit, domain == "Date" && sign > 0)
 	}
@@ -7112,6 +7320,39 @@ func (g *generator) dateArithDremio(name string, this, amount, unit *Expression)
 		return name + "(" + g.node(this) + ", " + g.node(amount) + ")"
 	}
 	return name + "(" + g.node(this) + ", CAST(" + g.node(amount) + " AS INTERVAL " + unitName + "))"
+}
+
+// dateArithMySQL writes MySQL's own DATE_ADD/DATE_SUB: the amount and unit
+// are rebuilt into a real Interval node and written through the ordinary
+// Interval writer, rather than as two bare positional arguments -- the
+// reference's own `date_add_sql`. `this` first has a bare TsOrDsToDate or
+// TsOrDsToTimestamp wrapper stripped off it, the reference's own
+// `remove_ts_or_ds_to_date`: the PARSER adds that wrapper purely so the
+// argument annotates with a real temporal type, and a dialect whose own
+// DATE_ADD already accepts anything never needs to see it written back.
+func (g *generator) dateArithMySQL(name string, this, amount, unit *Expression) string {
+	this = stripMySQLTsOrDsWrap(this)
+	interval := New("Interval", Arg{"this", amount}, Arg{"unit", unit})
+	return name + "(" + g.node(this) + ", " + g.node(interval) + ")"
+}
+
+// stripMySQLTsOrDsWrap is the reference's own `remove_ts_or_ds_to_date`: a
+// TsOrDsToDate/TsOrDsToTimestamp wrapper the PARSER added purely to give an
+// argument a temporal type comes back off before writing, but only where it
+// carries no format of its own -- one that does is a real conversion the
+// statement asked for, not scaffolding.
+func stripMySQLTsOrDsWrap(e *Expression) *Expression {
+	if e == nil || (e.Class != "TsOrDsToDate" && e.Class != "TsOrDsToTimestamp") {
+		return e
+	}
+	if e.Args["format"] != nil {
+		return e
+	}
+	inner, _ := e.Args["this"].(*Expression)
+	if inner == nil {
+		return e
+	}
+	return inner
 }
 
 // dateArithTimestampSub writes databricks' DatetimeSub: TIMESTAMPADD with
@@ -7257,4 +7498,92 @@ func (g *generator) writeSplitPart(e *Expression) string {
 func indexText(e *Expression) string {
 	text, _ := e.Args["this"].(string)
 	return text
+}
+
+// writeShow writes MySQL's SHOW statements (the reference's show_sql). Other
+// dialects keep the generic spelling.
+func (g *generator) writeShow(e *Expression) string {
+	if g.dialect != "mysql" {
+		return g.spell(e)
+	}
+	name, _ := e.Args["this"].(string)
+	truthy := func(k string) bool { b, _ := e.Args[k].(bool); return b }
+	prefixed := func(prefix, key string) string {
+		if x, _ := e.Args[key].(*Expression); x != nil {
+			if text := g.node(x); text != "" {
+				return " " + prefix + " " + text
+			}
+		}
+		return ""
+	}
+	full, global := "", ""
+	if truthy("full") {
+		full = " FULL"
+	}
+	if truthy("global_") {
+		global = " GLOBAL"
+	}
+	target := ""
+	if t, _ := e.Args["target"].(*Expression); t != nil {
+		if text := g.node(t); text != "" {
+			target = " " + text
+		}
+	}
+	switch name {
+	case "COLUMNS", "INDEX":
+		target = " FROM" + target
+	case "GRANTS":
+		target = " FOR" + target
+	case "LINKS", "PARTITIONS":
+		if target != "" {
+			target = " ON" + target
+		}
+	case "PROJECTIONS":
+		if target != "" {
+			target = " ON TABLE" + target
+		}
+	}
+	where := ""
+	if w, _ := e.Args["where"].(*Expression); w != nil {
+		where = " " + g.node(w)
+	}
+	types := ""
+	if ts, _ := e.Args["types"].([]*Expression); len(ts) > 0 {
+		parts := make([]string, 0, len(ts))
+		for _, t := range ts {
+			parts = append(parts, g.node(t))
+		}
+		types = " " + strings.Join(parts, ", ")
+	}
+	var offset, limit string
+	if name == "PROFILE" {
+		offset = prefixed("OFFSET", "offset")
+		limit = prefixed("LIMIT", "limit")
+	} else {
+		lim := g.child(e, "limit")
+		off := g.child(e, "offset")
+		if lim != "" {
+			if off != "" {
+				lim = off + ", " + lim
+			}
+			limit = " LIMIT " + lim
+		}
+	}
+	mutexOrStatus := ""
+	if name == "ENGINE" {
+		mutexOrStatus = " STATUS"
+		if truthy("mutex") {
+			mutexOrStatus = " MUTEX"
+		}
+	}
+	json := ""
+	if truthy("json") {
+		json = " JSON"
+	}
+	return "SHOW" + full + global + " " + name + json + target + prefixed("FOR TABLE", "for_table") +
+		types + prefixed("FROM", "db") + prefixed("FOR QUERY", "query") + prefixed("IN", "log") +
+		prefixed("FROM", "position") + prefixed("FOR CHANNEL", "channel") + mutexOrStatus +
+		prefixed("LIKE", "like") + where + offset + limit + prefixed("FOR GROUP", "for_group") +
+		prefixed("FOR USER", "for_user") + prefixed("FOR ROLE", "for_role") +
+		prefixed("INTO OUTFILE", "into_outfile")
 }

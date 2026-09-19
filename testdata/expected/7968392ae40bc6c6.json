@@ -1,0 +1,182 @@
+{
+ "dialect": "mysql",
+ "rendered": "CREATE TRIGGER check_age BEFORE INSERT ON users FOR EACH ROW BEGIN SET NEW.created_at = NOW() END",
+ "sql": "CREATE TRIGGER check_age BEFORE INSERT ON users FOR EACH ROW BEGIN SET NEW.created_at = NOW() END",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 7,
+   "t": "TRIGGER",
+   "x": "TRIGGER"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "check_age"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 25,
+   "t": "VAR",
+   "x": "BEFORE"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 32,
+   "t": "INSERT",
+   "x": "INSERT"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 39,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 42,
+   "t": "VAR",
+   "x": "users"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 48,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 52,
+   "t": "VAR",
+   "x": "EACH"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 57,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 61,
+   "t": "BEGIN",
+   "x": "BEGIN"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 67,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 71,
+   "t": "VAR",
+   "x": "NEW"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 74,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 75,
+   "t": "VAR",
+   "x": "created_at"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 86,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 91,
+   "e": 90,
+   "l": 1,
+   "s": 88,
+   "t": "VAR",
+   "x": "NOW"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 91,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 92,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 97,
+   "e": 96,
+   "l": 1,
+   "s": 94,
+   "t": "END",
+   "x": "END"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "CREATE"
+  },
+  {
+   "i": 0,
+   "k": "expression",
+   "v": " TRIGGER check_age BEFORE INSERT ON users FOR EACH ROW BEGIN SET NEW.created_at = NOW() END"
+  }
+ ]
+}

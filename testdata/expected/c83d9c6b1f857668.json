@@ -1,0 +1,144 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT HIGH_PRIORITY STRAIGHT_JOIN SQL_CALC_FOUND_ROWS * FROM t",
+ "sql": "SELECT HIGH_PRIORITY STRAIGHT_JOIN SQL_CALC_FOUND_ROWS * FROM t",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "HIGH_PRIORITY"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 21,
+   "t": "STRAIGHT_JOIN",
+   "x": "STRAIGHT_JOIN"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 35,
+   "t": "VAR",
+   "x": "SQL_CALC_FOUND_ROWS"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 57,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 62,
+   "t": "VAR",
+   "x": "t"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Var",
+   "i": 0,
+   "k": "operation_modifiers"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "HIGH_PRIORITY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Var",
+   "i": 0,
+   "k": "operation_modifiers"
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "STRAIGHT_JOIN"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Var",
+   "i": 0,
+   "k": "operation_modifiers"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "SQL_CALC_FOUND_ROWS"
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 62
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,555 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT CAST(DATE_FORMAT(testdb.dbo.test.x, '%Y-%m-%d %T') AS CHAR(10)) AS y FROM testdb.dbo.test",
+ "sql": "SELECT CAST(DATE_FORMAT(testdb.dbo.test.x, '%Y-%m-%d %T') AS CHAR(10)) AS y FROM testdb.dbo.test",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "DATE_FORMAT"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "testdb"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 31,
+   "t": "VAR",
+   "x": "dbo"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 34,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 35,
+   "t": "VAR",
+   "x": "test"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 43,
+   "t": "STRING",
+   "x": "%Y-%m-%d %T"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 58,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 61,
+   "t": "CHAR",
+   "x": "CHAR"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 65,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 66,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 68,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 69,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 71,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 74,
+   "t": "VAR",
+   "x": "y"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 76,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 81,
+   "t": "VAR",
+   "x": "testdb"
+  },
+  {
+   "c": 88,
+   "e": 87,
+   "l": 1,
+   "s": 87,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 91,
+   "e": 90,
+   "l": 1,
+   "s": 88,
+   "t": "VAR",
+   "x": "dbo"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 91,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 92,
+   "t": "VAR",
+   "x": "test"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "CHAR"
+    },
+    {
+     "a": true,
+     "c": "sqlglot.expressions.datatypes.DataTypeParam",
+     "i": 0,
+     "k": "expressions"
+    },
+    {
+     "c": "sqlglot.expressions.core.Literal",
+     "i": 2,
+     "k": "this",
+     "m": {
+      "col": 68,
+      "end": 67,
+      "line": 1,
+      "start": 66
+     }
+    },
+    {
+     "i": 3,
+     "k": "this",
+     "v": "10"
+    },
+    {
+     "i": 3,
+     "k": "is_string",
+     "v": false
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TimeToStr",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TsOrDsToTimestamp",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "table",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "db",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "dbo"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "catalog",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "testdb"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "format"
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "%Y-%m-%d %H:%M:%S"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 21,
+   "k": "this",
+   "v": "CHAR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 68,
+    "end": 67,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 21,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 75,
+    "end": 74,
+    "line": 1,
+    "start": 74
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 31,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 96,
+    "end": 95,
+    "line": 1,
+    "start": 92
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "db",
+   "m": {
+    "col": 91,
+    "end": 90,
+    "line": 1,
+    "start": 88
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "dbo"
+  },
+  {
+   "i": 36,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "catalog",
+   "m": {
+    "col": 87,
+    "end": 86,
+    "line": 1,
+    "start": 81
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "testdb"
+  },
+  {
+   "i": 39,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

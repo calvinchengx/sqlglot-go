@@ -1,0 +1,110 @@
+{
+ "dialect": "mysql",
+ "rendered": "ALTER ALGORITHM = MERGE VIEW v AS SELECT * FROM foo",
+ "sql": "ALTER ALGORITHM = MERGE VIEW v AS SELECT * FROM foo",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "ALTER",
+   "x": "ALTER"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 6,
+   "t": "VAR",
+   "x": "ALGORITHM"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 18,
+   "t": "MERGE",
+   "x": "MERGE"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 24,
+   "t": "VIEW",
+   "x": "VIEW"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "v"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 31,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 34,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 43,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 48,
+   "t": "VAR",
+   "x": "foo"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "ALTER"
+  },
+  {
+   "i": 0,
+   "k": "expression",
+   "v": " ALGORITHM = MERGE VIEW v AS SELECT * FROM foo"
+  }
+ ]
+}

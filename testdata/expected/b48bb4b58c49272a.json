@@ -1,0 +1,116 @@
+{
+ "dialect": "mysql",
+ "rendered": "/* comment1 */ SELECT x /* comment2 */, y /* comment3 */",
+ "sql": "SELECT # comment1\n  x, # comment2\n  y # comment3",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "o": [
+    " comment1"
+   ],
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 3,
+   "e": 20,
+   "l": 2,
+   "s": 20,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 4,
+   "e": 21,
+   "l": 2,
+   "o": [
+    " comment2"
+   ],
+   "s": 21,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 3,
+   "e": 36,
+   "l": 3,
+   "o": [
+    " comment3"
+   ],
+   "s": 36,
+   "t": "VAR",
+   "x": "y"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "o": [
+    " comment1"
+   ]
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions",
+   "o": [
+    " comment2"
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 3,
+    "end": 20,
+    "line": 2,
+    "start": 20
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions",
+   "o": [
+    " comment3"
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 3,
+    "end": 36,
+    "line": 3,
+    "start": 36
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

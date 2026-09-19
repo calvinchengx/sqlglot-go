@@ -1,0 +1,54 @@
+{
+ "dialect": "mysql",
+ "rendered": "REPLACE INTO table SELECT id FROM table2 WHERE cnt > 100",
+ "sql": "REPLACE INTO table SELECT id FROM table2 WHERE cnt > 100",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "REPLACE",
+   "x": "REPLACE"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 53,
+   "t": "STRING",
+   "x": "INTO table SELECT id FROM table2 WHERE cnt > 100"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "REPLACE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "INTO table SELECT id FROM table2 WHERE cnt > 100"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

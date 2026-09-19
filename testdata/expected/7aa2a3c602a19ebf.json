@@ -1,0 +1,126 @@
+{
+ "dialect": "mysql",
+ "rendered": "ALTER DEFINER = 'admin'@'localhost' VIEW v AS SELECT * FROM foo",
+ "sql": "ALTER DEFINER = 'admin'@'localhost' VIEW v AS SELECT * FROM foo",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "ALTER",
+   "x": "ALTER"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 6,
+   "t": "VAR",
+   "x": "DEFINER"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 16,
+   "t": "STRING",
+   "x": "admin"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "PARAMETER",
+   "x": "@"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 24,
+   "t": "STRING",
+   "x": "localhost"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 36,
+   "t": "VIEW",
+   "x": "VIEW"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "VAR",
+   "x": "v"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 43,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 46,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 55,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 60,
+   "t": "VAR",
+   "x": "foo"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "ALTER"
+  },
+  {
+   "i": 0,
+   "k": "expression",
+   "v": " DEFINER = 'admin'@'localhost' VIEW v AS SELECT * FROM foo"
+  }
+ ]
+}

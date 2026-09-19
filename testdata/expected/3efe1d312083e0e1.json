@@ -1,0 +1,138 @@
+{
+ "dialect": "mysql",
+ "rendered": "/* left */ DESCRIBE /* hint */ SELECT col FROM t1 /* right */",
+ "sql": "/*left*/ EXPLAIN SELECT /*hint*/ col FROM t1 /*right*/",
+ "tokens": [
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "o": [
+    "left"
+   ],
+   "s": 9,
+   "t": "DESCRIBE",
+   "x": "EXPLAIN"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "o": [
+    "hint"
+   ],
+   "s": 17,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 33,
+   "t": "VAR",
+   "x": "col"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 37,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "o": [
+    "right"
+   ],
+   "s": 42,
+   "t": "VAR",
+   "x": "t1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Describe",
+   "o": [
+    "left"
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "this",
+   "o": [
+    "hint"
+   ]
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 1,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 6,
+   "k": "this",
+   "o": [
+    "right"
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "t1"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "as_json",
+   "v": false
+  }
+ ]
+}

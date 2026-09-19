@@ -212,14 +212,24 @@ func tokenizeWith(t *testing.T, tk *Tokenizer, sql string) []Token {
 }
 
 func TestDialectsAreConfigured(t *testing.T) {
-	want := []string{"", "tsql", "postgres", "duckdb", "databricks"}
+	// Not a fixed list: that went stale for an entire arc of dialect
+	// landings without failing, since Dialects() itself was built from the
+	// same fixed list this test compared it against. Checked structurally
+	// instead -- neutral first, the rest sorted, no duplicates, and every
+	// one of them actually configured -- so a dialect that lands and is
+	// never added here cannot go unnoticed the same way again.
 	got := Dialects()
-	if len(got) != len(want) {
-		t.Fatalf("Dialects() = %q, want %q", got, want)
+	if len(got) == 0 || got[0] != "" {
+		t.Fatalf("Dialects() = %q, want the neutral dialect first", got)
 	}
-	for i := range want {
-		if got[i] != want[i] {
-			t.Errorf("Dialects()[%d] = %q, want %q", i, got[i], want[i])
+	seen := map[string]bool{}
+	for i, d := range got {
+		if seen[d] {
+			t.Errorf("Dialects() repeats %q", d)
+		}
+		seen[d] = true
+		if i > 1 && got[i-1] > d {
+			t.Errorf("Dialects() is not sorted: %q before %q", got[i-1], d)
 		}
 	}
 	for _, d := range got {
@@ -234,7 +244,7 @@ func TestDialectsAreConfigured(t *testing.T) {
 			t.Errorf("%q: empty tables", d)
 		}
 	}
-	if _, ok := ConfigFor("mysql"); ok {
+	if _, ok := ConfigFor("oracle"); ok {
 		t.Error("ConfigFor reported a dialect the port does not have")
 	}
 }

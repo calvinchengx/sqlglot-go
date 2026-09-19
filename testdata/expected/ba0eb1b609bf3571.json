@@ -1,0 +1,312 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT * FROM t1 USE INDEX (i1) IGNORE INDEX FOR ORDER BY (i2) ORDER BY a",
+ "sql": "SELECT * FROM t1 USE INDEX (i1) IGNORE INDEX FOR ORDER BY (i2) ORDER BY a",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "t1"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 17,
+   "t": "USE",
+   "x": "USE"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 21,
+   "t": "INDEX",
+   "x": "INDEX"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "i1"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 32,
+   "t": "IGNORE",
+   "x": "IGNORE"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 39,
+   "t": "INDEX",
+   "x": "INDEX"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 45,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 49,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 59,
+   "t": "VAR",
+   "x": "i2"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 61,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 63,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 72,
+   "t": "VAR",
+   "x": "a"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "t1"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.IndexTableHint",
+   "i": 3,
+   "k": "hints"
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "USE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "expressions",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "i1"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.IndexTableHint",
+   "i": 3,
+   "k": "hints"
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "IGNORE"
+  },
+  {
+   "i": 12,
+   "k": "target",
+   "v": "ORDER BY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "expressions",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "i2"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 0,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 73,
+    "end": 72,
+    "line": 1,
+    "start": 72
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 19,
+   "k": "nulls_first",
+   "v": true
+  }
+ ]
+}

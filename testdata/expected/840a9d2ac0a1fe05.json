@@ -1,0 +1,873 @@
+{
+ "dialect": "mysql",
+ "rendered": "CREATE TABLE sales (id INT, sale_date DATE) PARTITION BY RANGE (MONTH(sale_date)) (PARTITION q1 VALUES LESS THAN (4), PARTITION q2 VALUES LESS THAN (7), PARTITION q3 VALUES LESS THAN (10), PARTITION q4 VALUES LESS THAN (13))",
+ "sql": "CREATE TABLE sales (id INT, sale_date DATE) PARTITION BY RANGE (MONTH(sale_date)) (PARTITION q1 VALUES LESS THAN (4), PARTITION q2 VALUES LESS THAN (7), PARTITION q3 VALUES LESS THAN (10), PARTITION q4 VALUES LESS THAN (13))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "sales"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 20,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 23,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "sale_date"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 38,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 44,
+   "t": "PARTITION_BY",
+   "x": "PARTITION BY"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 57,
+   "t": "RANGE",
+   "x": "RANGE"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 63,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 64,
+   "t": "VAR",
+   "x": "MONTH"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 69,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 70,
+   "t": "VAR",
+   "x": "sale_date"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 79,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 80,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 82,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 83,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 93,
+   "t": "VAR",
+   "x": "q1"
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 96,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 103,
+   "t": "VAR",
+   "x": "LESS"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 108,
+   "t": "VAR",
+   "x": "THAN"
+  },
+  {
+   "c": 114,
+   "e": 113,
+   "l": 1,
+   "s": 113,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 115,
+   "e": 114,
+   "l": 1,
+   "s": 114,
+   "t": "NUMBER",
+   "x": "4"
+  },
+  {
+   "c": 116,
+   "e": 115,
+   "l": 1,
+   "s": 115,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 117,
+   "e": 116,
+   "l": 1,
+   "s": 116,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 127,
+   "e": 126,
+   "l": 1,
+   "s": 118,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 128,
+   "t": "VAR",
+   "x": "q2"
+  },
+  {
+   "c": 137,
+   "e": 136,
+   "l": 1,
+   "s": 131,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 142,
+   "e": 141,
+   "l": 1,
+   "s": 138,
+   "t": "VAR",
+   "x": "LESS"
+  },
+  {
+   "c": 147,
+   "e": 146,
+   "l": 1,
+   "s": 143,
+   "t": "VAR",
+   "x": "THAN"
+  },
+  {
+   "c": 149,
+   "e": 148,
+   "l": 1,
+   "s": 148,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 150,
+   "e": 149,
+   "l": 1,
+   "s": 149,
+   "t": "NUMBER",
+   "x": "7"
+  },
+  {
+   "c": 151,
+   "e": 150,
+   "l": 1,
+   "s": 150,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 152,
+   "e": 151,
+   "l": 1,
+   "s": 151,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 162,
+   "e": 161,
+   "l": 1,
+   "s": 153,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 165,
+   "e": 164,
+   "l": 1,
+   "s": 163,
+   "t": "VAR",
+   "x": "q3"
+  },
+  {
+   "c": 172,
+   "e": 171,
+   "l": 1,
+   "s": 166,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 177,
+   "e": 176,
+   "l": 1,
+   "s": 173,
+   "t": "VAR",
+   "x": "LESS"
+  },
+  {
+   "c": 182,
+   "e": 181,
+   "l": 1,
+   "s": 178,
+   "t": "VAR",
+   "x": "THAN"
+  },
+  {
+   "c": 184,
+   "e": 183,
+   "l": 1,
+   "s": 183,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 186,
+   "e": 185,
+   "l": 1,
+   "s": 184,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 187,
+   "e": 186,
+   "l": 1,
+   "s": 186,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 188,
+   "e": 187,
+   "l": 1,
+   "s": 187,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 198,
+   "e": 197,
+   "l": 1,
+   "s": 189,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 201,
+   "e": 200,
+   "l": 1,
+   "s": 199,
+   "t": "VAR",
+   "x": "q4"
+  },
+  {
+   "c": 208,
+   "e": 207,
+   "l": 1,
+   "s": 202,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 213,
+   "e": 212,
+   "l": 1,
+   "s": 209,
+   "t": "VAR",
+   "x": "LESS"
+  },
+  {
+   "c": 218,
+   "e": 217,
+   "l": 1,
+   "s": 214,
+   "t": "VAR",
+   "x": "THAN"
+  },
+  {
+   "c": 220,
+   "e": 219,
+   "l": 1,
+   "s": 219,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 222,
+   "e": 221,
+   "l": 1,
+   "s": 220,
+   "t": "NUMBER",
+   "x": "13"
+  },
+  {
+   "c": 223,
+   "e": 222,
+   "l": 1,
+   "s": 222,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 224,
+   "e": 223,
+   "l": 1,
+   "s": 223,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "sales"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "sale_date"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 13,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 17,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 17,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionByRangeProperty",
+   "i": 25,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.Month",
+   "i": 26,
+   "k": "partition_expressions",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 64
+   }
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TsOrDsToDate",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 28,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 29,
+   "k": "this",
+   "m": {
+    "col": 79,
+    "end": 78,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "sale_date"
+  },
+  {
+   "i": 30,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 26,
+   "k": "create_expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.PartitionRange",
+   "i": 33,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "this",
+   "m": {
+    "col": 95,
+    "end": 94,
+    "line": 1,
+    "start": 93
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "q1"
+  },
+  {
+   "i": 35,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 34,
+   "k": "expressions",
+   "m": {
+    "col": 115,
+    "end": 114,
+    "line": 1,
+    "start": 114
+   }
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "4"
+  },
+  {
+   "i": 38,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 26,
+   "k": "create_expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.PartitionRange",
+   "i": 41,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 42,
+   "k": "this",
+   "m": {
+    "col": 130,
+    "end": 129,
+    "line": 1,
+    "start": 128
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "q2"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 42,
+   "k": "expressions",
+   "m": {
+    "col": 150,
+    "end": 149,
+    "line": 1,
+    "start": 149
+   }
+  },
+  {
+   "i": 46,
+   "k": "this",
+   "v": "7"
+  },
+  {
+   "i": 46,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 26,
+   "k": "create_expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.PartitionRange",
+   "i": 49,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 50,
+   "k": "this",
+   "m": {
+    "col": 165,
+    "end": 164,
+    "line": 1,
+    "start": 163
+   }
+  },
+  {
+   "i": 51,
+   "k": "this",
+   "v": "q3"
+  },
+  {
+   "i": 51,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 50,
+   "k": "expressions",
+   "m": {
+    "col": 186,
+    "end": 185,
+    "line": 1,
+    "start": 184
+   }
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 54,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 26,
+   "k": "create_expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.PartitionRange",
+   "i": 57,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 58,
+   "k": "this",
+   "m": {
+    "col": 201,
+    "end": 200,
+    "line": 1,
+    "start": 199
+   }
+  },
+  {
+   "i": 59,
+   "k": "this",
+   "v": "q4"
+  },
+  {
+   "i": 59,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 58,
+   "k": "expressions",
+   "m": {
+    "col": 222,
+    "end": 221,
+    "line": 1,
+    "start": 220
+   }
+  },
+  {
+   "i": 62,
+   "k": "this",
+   "v": "13"
+  },
+  {
+   "i": 62,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

@@ -502,7 +502,7 @@ def main() -> int:
     # The dialects the executor configures. The fixture also carries BigQuery
     # cases -- BIGNUMERIC, FLOAT64, ARRAY<STRING> -- and a type the port has no
     # dialect for is not a gap in the port.
-    OURS = {"", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio"}
+    OURS = {"", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql"}
 
     cases = []
     skipped = 0
@@ -520,6 +520,12 @@ def main() -> int:
         try:
             tree = sqlglot.parse_one(sql, read=dialect or None)
         except Exception:  # noqa: BLE001 -- the reference cannot read it either
+            skipped += 1
+            continue
+        if isinstance(tree, exp.Command):
+            # A bare `REPLACE(...)` is MySQL's REPLACE statement, which the
+            # reference itself only reads as an opaque Command; the fixture's
+            # TEXT comes from a run with a schema it has no way to reach.
             skipped += 1
             continue
         if any(True for _ in tree.find_all(exp.Column)):

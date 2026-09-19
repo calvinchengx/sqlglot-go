@@ -1,0 +1,523 @@
+{
+ "dialect": "mysql",
+ "rendered": "CREATE TABLE `foo` (`id` CHAR(36) NOT NULL DEFAULT (UUID()), PRIMARY KEY (`id`), UNIQUE `id` (`id`))",
+ "sql": "CREATE TABLE `foo` (`id` char(36) NOT NULL DEFAULT (uuid()), PRIMARY KEY (`id`), UNIQUE KEY `id` (`id`))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 13,
+   "t": "IDENTIFIER",
+   "x": "foo"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 20,
+   "t": "IDENTIFIER",
+   "x": "id"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 25,
+   "t": "CHAR",
+   "x": "char"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 30,
+   "t": "NUMBER",
+   "x": "36"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 34,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 38,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 43,
+   "t": "DEFAULT",
+   "x": "DEFAULT"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 51,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 52,
+   "t": "UUID",
+   "x": "uuid"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 57,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 59,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 61,
+   "t": "PRIMARY_KEY",
+   "x": "PRIMARY KEY"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 73,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 74,
+   "t": "IDENTIFIER",
+   "x": "id"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 78,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 79,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 81,
+   "t": "UNIQUE",
+   "x": "UNIQUE"
+  },
+  {
+   "c": 91,
+   "e": 90,
+   "l": 1,
+   "s": 88,
+   "t": "KEY",
+   "x": "KEY"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 92,
+   "t": "IDENTIFIER",
+   "x": "id"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 97,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 98,
+   "t": "IDENTIFIER",
+   "x": "id"
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 102,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 103,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "CHAR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "36"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 6,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.NotNullColumnConstraint",
+   "i": 17,
+   "k": "kind"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 6,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.DefaultColumnConstraint",
+   "i": 19,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 20,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Uuid",
+   "i": 21,
+   "k": "this",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.PrimaryKey",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "expressions",
+   "m": {
+    "col": 78,
+    "end": 77,
+    "line": 1,
+    "start": 74
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.constraints.IndexParameters",
+   "i": 23,
+   "k": "include"
+  },
+  {
+   "i": 27,
+   "k": "with_storage",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.UniqueColumnConstraint",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "i": 29,
+   "k": "nulls",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 29,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 31,
+   "k": "this",
+   "m": {
+    "col": 96,
+    "end": 95,
+    "line": 1,
+    "start": 92
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 32,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 31,
+   "k": "expressions",
+   "m": {
+    "col": 102,
+    "end": 101,
+    "line": 1,
+    "start": 98
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 35,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 29,
+   "k": "index_type",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

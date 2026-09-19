@@ -1,0 +1,85 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT DAYOFWEEK('2023-01-01')",
+ "sql": "SELECT DAY_OF_WEEK('2023-01-01')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "DAY_OF_WEEK"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 19,
+   "t": "STRING",
+   "x": "2023-01-01"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.DayOfWeek",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "2023-01-01"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

@@ -1,5 +1,7 @@
 package sqlglot
 
+import "sort"
+
 // FormatString is a prefixed string literal -- x'…', b'…', $$…$$ -- carrying the
 // delimiter that closes it and the token type it produces.
 type FormatString struct {
@@ -73,13 +75,22 @@ func ConfigFor(dialect string) (*Config, bool) {
 	return c, true
 }
 
-// Dialects lists the dialects the port configures, neutral first.
+// Dialects lists the dialects the port configures, neutral first, the rest
+// alphabetically -- every key dialectConfigs actually has, not a fixed list
+// from when there were five of them, which silently stopped growing while
+// the dialects landing here kept going.
 func Dialects() []string {
 	out := make([]string, 0, len(dialectConfigs))
-	for _, d := range []string{"", "tsql", "postgres", "duckdb", "databricks"} {
-		if _, ok := dialectConfigs[d]; ok {
-			out = append(out, d)
+	rest := make([]string, 0, len(dialectConfigs))
+	for d := range dialectConfigs {
+		if d == "" {
+			continue
 		}
+		rest = append(rest, d)
 	}
-	return out
+	sort.Strings(rest)
+	if _, ok := dialectConfigs[""]; ok {
+		out = append(out, "")
+	}
+	return append(out, rest...)
 }

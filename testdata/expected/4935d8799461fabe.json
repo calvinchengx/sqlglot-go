@@ -1,0 +1,129 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT TRIM(TRAILING 'bla' FROM ' XXX ')",
+ "sql": "SELECT TRIM(TRAILING 'bla' FROM ' XXX ')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "TRIM"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "TRAILING"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 21,
+   "t": "STRING",
+   "x": "bla"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 27,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 32,
+   "t": "STRING",
+   "x": " XXX "
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.Trim",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": " XXX "
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "position",
+   "v": "TRAILING"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "bla"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

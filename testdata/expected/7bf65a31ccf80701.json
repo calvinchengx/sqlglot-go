@@ -1,0 +1,120 @@
+{
+ "dialect": "mysql",
+ "rendered": "SET @@sql_mode = 'TRADITIONAL'",
+ "sql": "SET @@sql_mode = 'TRADITIONAL'",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 4,
+   "t": "SESSION_PARAMETER",
+   "x": "@@"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 6,
+   "t": "VAR",
+   "x": "sql_mode"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 17,
+   "t": "STRING",
+   "x": "TRADITIONAL"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Set"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.SetItem",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.SessionParameter",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 6
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "sql_mode"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "TRADITIONAL"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "unset",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "tag",
+   "v": false
+  }
+ ]
+}

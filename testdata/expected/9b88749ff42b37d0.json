@@ -1,0 +1,136 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT @var1, @var2 := @var1",
+ "sql": "SELECT @var1, @var2 := @var1",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "PARAMETER",
+   "x": "@"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "var1"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "PARAMETER",
+   "x": "@"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "var2"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 20,
+   "t": "COLON_EQ",
+   "x": ":="
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "PARAMETER",
+   "x": "@"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "var1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "var1"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PropertyEQ",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "var2"
+  },
+  {
+   "c": "sqlglot.expressions.core.Parameter",
+   "i": 4,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "var1"
+  }
+ ]
+}

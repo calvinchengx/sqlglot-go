@@ -1,0 +1,130 @@
+{
+ "dialect": "mysql",
+ "rendered": "SET @@PERSIST_ONLY.back_log = 100",
+ "sql": "SET @@PERSIST_ONLY.back_log = 100",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 4,
+   "t": "SESSION_PARAMETER",
+   "x": "@@"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 6,
+   "t": "VAR",
+   "x": "PERSIST_ONLY"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "back_log"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 30,
+   "t": "NUMBER",
+   "x": "100"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Set"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.SetItem",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.SessionParameter",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "back_log"
+  },
+  {
+   "i": 3,
+   "k": "kind",
+   "v": "PERSIST_ONLY"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "100"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unset",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "tag",
+   "v": false
+  }
+ ]
+}

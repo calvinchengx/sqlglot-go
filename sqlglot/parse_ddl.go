@@ -1300,6 +1300,13 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 				return nil, err
 			}
 			kind = New("DefaultColumnConstraint", Arg{"this", value})
+		case p.dialect == "mysql" && p.atWords("KEY"):
+			// MySQL's own override: a bare KEY in column-constraint
+			// position is PRIMARY KEY shorthand -- `id INT KEY
+			// AUTO_INCREMENT` -- never the inline INDEX definition the
+			// same word names at schema level (`KEY idx (col)`).
+			p.advance()
+			kind = New("PrimaryKeyColumnConstraint")
 		case p.atWords("PRIMARY KEY"):
 			// One TOKEN, not two words: the tokenizer joins them.
 			p.advance()
@@ -1763,7 +1770,7 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			return nil, p.unsupported("ALTER DELETE without a condition")
 		}
 		p.advance()
-		condition, err := p.parseExpression()
+		condition, err := p.parseDisjunction()
 		if err != nil {
 			return nil, err
 		}
@@ -1949,8 +1956,59 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 	case p.at(TokSET):
 		p.advance()
 		return p.parseAlterSet()
+	case p.atWords("MODIFY"), p.atWords("CHANGE"):
+		rename := p.atWords("CHANGE")
+		p.advance()
+		return p.parseMySQLModifyColumn(rename)
 	}
 	return nil, p.unsupported("an ALTER TABLE action this port does not read")
+}
+
+// parseMySQLModifyColumn is the reference's own `_parse_alter_table_modify`:
+// `MODIFY [COLUMN] name coldef` renames nothing; `CHANGE [COLUMN] old new
+// coldef` reads a SECOND name and carries the first as `rename_from`. Both
+// then read the rest of a column definition the same way ADD COLUMN does.
+func (p *parser) parseMySQLModifyColumn(rename bool) (*Expression, error) {
+	p.match(TokCOLUMN)
+	column, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	var renameFrom *Expression
+	if rename {
+		renameFrom = column
+		column, err = p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+	}
+	kind, err := p.parseColumnType()
+	if err != nil {
+		return nil, err
+	}
+	constraints, err := p.parseColumnConstraints()
+	if err != nil {
+		return nil, err
+	}
+	var position *Expression
+	switch {
+	case p.atWords("FIRST"):
+		p.advance()
+		position = New("ColumnPosition", Arg{"position", "FIRST"})
+	case p.atWords("AFTER"):
+		p.advance()
+		after, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		position = New("ColumnPosition",
+			Arg{"this", after}, Arg{"position", "AFTER"})
+	}
+	columnDef := New("ColumnDef",
+		Arg{"this", column}, Arg{"kind", kind},
+		Arg{"constraints", constraints},
+		Arg{"position", position})
+	return New("ModifyColumn", Arg{"this", columnDef}, Arg{"rename_from", renameFrom}), nil
 }
 
 // parseAddedColumn reads one column definition an ALTER adds.
@@ -2272,6 +2330,10 @@ func (p *parser) atTableConstraint() bool {
 	if p.atWords("CHECK") {
 		return p.next() != nil && p.next().Type == TokL_PAREN
 	}
+	if p.dialect == "mysql" && (p.atWords("INDEX") || p.atWords("KEY") ||
+		p.atWords("FULLTEXT") || p.atWords("SPATIAL")) {
+		return true
+	}
 	return p.at(TokCONSTRAINT) || p.at(TokPRIMARY_KEY) ||
 		p.at(TokFOREIGN_KEY) || p.atWords("UNIQUE") ||
 		p.atWords("EXCLUDE") || p.atWords("PERIOD", "FOR", "SYSTEM_TIME")
@@ -2327,6 +2389,21 @@ func (p *parser) parseTableConstraint() (*Expression, error) {
 // parseTableConstraintKind reads the constraint itself, named or not.
 func (p *parser) parseTableConstraintKind() (*Expression, error) {
 	switch {
+	case p.dialect == "mysql" && p.atWords("FULLTEXT"):
+		p.advance()
+		if p.atWords("INDEX") || p.atWords("KEY") {
+			p.advance()
+		}
+		return p.parseMySQLIndexConstraint("FULLTEXT")
+	case p.dialect == "mysql" && p.atWords("SPATIAL"):
+		p.advance()
+		if p.atWords("INDEX") || p.atWords("KEY") {
+			p.advance()
+		}
+		return p.parseMySQLIndexConstraint("SPATIAL")
+	case p.dialect == "mysql" && (p.atWords("INDEX") || p.atWords("KEY")):
+		p.advance()
+		return p.parseMySQLIndexConstraint("")
 	case p.atWords("EXCLUDE"):
 		// A rule that no two rows may BOTH satisfy: each member names the
 		// operator it is compared with, which makes this an index by another
@@ -2339,11 +2416,29 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		return New("ExcludeColumnConstraint", Arg{"this", params}), nil
 	case p.at(TokPRIMARY_KEY):
 		p.advance()
+		// MySQL's own PRIMARY KEY carries a NAME of its own, with none of
+		// the CONSTRAINT keyword that introduces one everywhere else --
+		// `PRIMARY KEY pk_name (id)`, told from the unnamed form by nothing
+		// but a bare word standing where the column list's own opening
+		// parenthesis would otherwise be.
+		var name *Expression
+		if p.dialect == "mysql" {
+			c := p.curr()
+			n := p.next()
+			if c != nil && (c.Type == TokVAR || c.Type == TokIDENTIFIER) &&
+				n != nil && n.Type == TokL_PAREN {
+				id, err := p.parseIdentifier()
+				if err != nil {
+					return nil, err
+				}
+				name = id
+			}
+		}
 		members, err := p.parseKeyColumns()
 		if err != nil {
 			return nil, err
 		}
-		key := New("PrimaryKey", Arg{"expressions", members})
+		key := New("PrimaryKey", Arg{"this", name}, Arg{"expressions", members})
 		// The parameters are on the node whether or not anything was said
 		// about them, holding only the flag that says so -- and where
 		// something WAS said, it is an index's own vocabulary: `PRIMARY KEY
@@ -2384,6 +2479,12 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 			Arg{"reference", reference[0].Args["kind"]}), nil
 	case p.atWords("UNIQUE"):
 		p.advance()
+		// MySQL (and the reference's own base rule, universally) allows
+		// KEY or INDEX right after UNIQUE, said or not -- `UNIQUE KEY`
+		// names the same constraint `UNIQUE` alone does.
+		if p.atWords("KEY") || p.atWords("INDEX") {
+			p.advance()
+		}
 		// Two NULLs count as equal, so a second row holding one breaks the
 		// rule.
 		nulls := false
@@ -2478,6 +2579,73 @@ func (p *parser) advanced() bool {
 // T-SQL reads them the way it reads an index -- each may carry a direction --
 // so a member is an Ordered over a Column there and a bare Identifier
 // everywhere else. Same statement, two shapes, and the dialect decides.
+// parseMySQLIndexConstraint is the reference's own `_parse_index_constraint`:
+// a schema-level (or ALTER TABLE ADD) index definition, `FULLTEXT`/`SPATIAL`
+// carried in as kind by the caller (having already read the word and its
+// optional trailing INDEX/KEY of its own), and bare INDEX/KEY passing "".
+// The options loop (KEY_BLOCK_SIZE, WITH PARSER, ENGINE_ATTRIBUTE, ...) is
+// declined rather than guessed: nothing in the pinned corpus exercises it.
+func (p *parser) parseMySQLIndexConstraint(kind string) (*Expression, error) {
+	var this *Expression
+	if c := p.curr(); c != nil && (c.Type == TokVAR || c.Type == TokIDENTIFIER) {
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		this = id
+	}
+	var indexType string
+	if p.match(TokUSING) {
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("USING without an index type")
+		}
+		p.advance()
+		indexType = c.Text
+	}
+	members, err := p.parseWrappedOrderedColumns()
+	if err != nil {
+		return nil, err
+	}
+	var kindArg any
+	if kind != "" {
+		kindArg = kind
+	}
+	// index_type is a Python `and`-chain (`self._match(USING) and ... and
+	// self._prev.text`): the LAST falsy operand when USING never matched is
+	// the boolean False itself, not an absent field -- recorded that way
+	// here too, not simply omitted.
+	var indexTypeArg any = false
+	if indexType != "" {
+		indexTypeArg = indexType
+	}
+	node := New("IndexColumnConstraint",
+		Arg{"this", this}, Arg{"expressions", members}, Arg{"kind", kindArg},
+		Arg{"index_type", indexTypeArg})
+	if p.curr() != nil && !p.at(TokCOMMA) && !p.at(TokR_PAREN) {
+		return nil, p.unsupported("an index constraint with options this port does not read")
+	}
+	return node, nil
+}
+
+// parseWrappedOrderedColumns is the reference's own `_parse_wrapped_csv(self
+// ._parse_ordered)`: a parenthesised CSV of columns, each always wrapped in
+// Ordered whatever the dialect -- unlike PRIMARY KEY's own column list
+// (parseKeyColumns), which some dialects keep bare instead.
+func (p *parser) parseWrappedOrderedColumns() ([]*Expression, error) {
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("an index constraint without its columns")
+	}
+	out, err := p.parseOrderedList()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed index column list")
+	}
+	return out, nil
+}
+
 func (p *parser) parseKeyColumns() ([]*Expression, error) {
 	if !p.tables.PrimaryKeyMembersOrdered {
 		return p.parseKeyNames()
@@ -3149,9 +3317,17 @@ func (p *parser) parseGenerated() (*Expression, error) {
 		if !p.match(TokR_PAREN) {
 			return nil, p.unsupported("unclosed generated expression")
 		}
-		if p.atWords("STORED") {
+		if p.atWords("STORED") || p.atWords("VIRTUAL") {
+			// Only some dialects' own override records WHICH of the two was
+			// written -- MySQL's does, PostgreSQL's does not, having no
+			// VIRTUAL to tell STORED apart from in the first place.
+			var persisted any
+			if p.tables.GeneratedStoredSetsPersisted {
+				persisted = strings.EqualFold(p.curr().Text, "STORED")
+			}
 			p.advance()
-			return New("ComputedColumnConstraint", Arg{"this", value}), nil
+			return New("ComputedColumnConstraint",
+				Arg{"this", value}, Arg{"persisted", persisted}), nil
 		}
 		if !always {
 			return nil, p.unsupported("a computed column that is not ALWAYS")
@@ -3437,7 +3613,7 @@ func (p *parser) parseIndexParameters() (*Expression, error) {
 	// A PARTIAL index covers only the rows a condition picks out.
 	if p.at(TokWHERE) {
 		p.advance()
-		condition, err := p.parseExpression()
+		condition, err := p.parseDisjunction()
 		if err != nil {
 			return nil, err
 		}
@@ -4147,14 +4323,126 @@ func (p *parser) parseSet() (*Expression, error) {
 		Arg{"unset", false}, Arg{"tag", false}), nil
 }
 
+// parseMySQLUnquotedField is the reference's own `_parse_unquoted_field`: a
+// quoted string is read as itself, and anything else -- a bare word, or a
+// keyword like DEFAULT -- is read as a Var of its own text instead.
+func (p *parser) parseMySQLUnquotedField() (*Expression, error) {
+	if lit := p.tryParseStringLiteral(); lit != nil {
+		return lit, nil
+	}
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("SET without a value")
+	}
+	p.advance()
+	return New("Var", Arg{"this", c.Text}), nil
+}
+
+// transactionCharacteristicPhrases is the reference's own
+// TRANSACTION_CHARACTERISTICS: a fixed reference-level constant, so it is
+// written out once here rather than generated -- longest phrase in each
+// branch checked first, as every such table in this port is.
+var transactionCharacteristicPhrases = [][]string{
+	{"ISOLATION", "LEVEL", "REPEATABLE", "READ"},
+	{"ISOLATION", "LEVEL", "READ", "COMMITTED"},
+	{"ISOLATION", "LEVEL", "READ", "UNCOMITTED"}, //nolint:misspell // the reference's own spelling
+	{"ISOLATION", "LEVEL", "SERIALIZABLE"},
+	{"READ", "WRITE"},
+	{"READ", "ONLY"},
+}
+
+// parseTransactionCharacteristics is the reference's own
+// `_parse_set_transaction`, minus the leading (optional) TRANSACTION word
+// and the `global_`/`kind` wrapping its caller supplies: a CSV of matched
+// phrases, each one Var of its own whole matched text.
+func (p *parser) parseTransactionCharacteristics() []*Expression {
+	var out []*Expression
+	for {
+		var matched []string
+		for _, phrase := range transactionCharacteristicPhrases {
+			if p.atWords(phrase...) && len(phrase) > len(matched) {
+				matched = phrase
+			}
+		}
+		if matched == nil {
+			break
+		}
+		for range matched {
+			p.advance()
+		}
+		out = append(out, New("Var", Arg{"this", strings.Join(matched, " ")}))
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	return out
+}
+
 // parseSetStatementItem reads one setting, with the scope word that may come
 // in front of it.
 func (p *parser) parseSetStatementItem() (*Expression, error) {
+	// `SET [GLOBAL|SESSION] TRANSACTION ...` is the reference's own base
+	// `_parse_set_transaction`, universal rather than a MySQL-only shape,
+	// even though MySQL's corpus is the first to exercise it here.
+	if p.atWords("TRANSACTION") {
+		p.advance()
+		chars := p.parseTransactionCharacteristics()
+		return New("SetItem",
+			Arg{"expressions", chars}, Arg{"kind", "TRANSACTION"}, Arg{"global_", false}), nil
+	}
+	// MySQL's own `SET CHARACTER SET`/`SET CHARSET`/`SET NAMES` build a
+	// wholly different SetItem shape -- `this` holds the charset directly,
+	// no `EQ` wrapping a name -- not the scope-word-then-assignment form
+	// everything else here reads.
+	if p.dialect == "mysql" {
+		switch {
+		case p.atWords("CHARACTER", "SET"):
+			p.advance()
+			p.advance()
+			this, err := p.parseMySQLUnquotedField()
+			if err != nil {
+				return nil, err
+			}
+			return New("SetItem", Arg{"this", this}, Arg{"kind", "CHARACTER SET"}), nil
+		case p.atWords("CHARSET"):
+			p.advance()
+			this, err := p.parseMySQLUnquotedField()
+			if err != nil {
+				return nil, err
+			}
+			return New("SetItem", Arg{"this", this}, Arg{"kind", "CHARACTER SET"}), nil
+		case p.atWords("NAMES"):
+			p.advance()
+			this, err := p.parseMySQLUnquotedField()
+			if err != nil {
+				return nil, err
+			}
+			var collate *Expression
+			if p.atWords("COLLATE") {
+				p.advance()
+				c, err := p.parseMySQLUnquotedField()
+				if err != nil {
+					return nil, err
+				}
+				collate = c
+			}
+			return New("SetItem",
+				Arg{"this", this}, Arg{"collate", collate}, Arg{"kind", "NAMES"}), nil
+		}
+	}
 	kind := ""
-	for word, records := range map[string]string{
+	scopeWords := map[string]string{
 		"GLOBAL": "GLOBAL", "SESSION": "SESSION", "LOCAL": "LOCAL",
 		"VARIABLE": "VARIABLE", "VAR": "VARIABLE",
-	} {
+	}
+	// PERSIST/PERSIST_ONLY are MySQL's own SET_PARSERS entries, not a fact
+	// the reference's base class carries for every dialect -- gated here
+	// rather than added to the shared map above.
+	if p.dialect == "mysql" {
+		scopeWords["PERSIST"] = "PERSIST"
+		scopeWords["PERSIST_ONLY"] = "PERSIST_ONLY"
+	}
+	for word, records := range scopeWords {
 		c := p.curr()
 		if c == nil || c.Type == TokIDENTIFIER || !p.atWords(word) {
 			continue
@@ -4167,6 +4455,18 @@ func (p *parser) parseSetStatementItem() (*Expression, error) {
 		p.advance()
 		kind = records
 		break
+	}
+
+	// `SET GLOBAL TRANSACTION ...`/`SET SESSION TRANSACTION ...`: the scope
+	// just read belongs to the TRANSACTION statement, not to a name that
+	// follows it -- the reference's own `_parse_set_item_assignment` checks
+	// for this before ever trying to read a name.
+	if (kind == "GLOBAL" || kind == "SESSION") && p.atWords("TRANSACTION") {
+		p.advance()
+		chars := p.parseTransactionCharacteristics()
+		return New("SetItem",
+			Arg{"expressions", chars}, Arg{"kind", "TRANSACTION"},
+			Arg{"global_", kind == "GLOBAL"}), nil
 	}
 
 	var name *Expression
@@ -4311,7 +4611,7 @@ func (p *parser) parseOnConflict() (*Expression, error) {
 		}
 		if p.at(TokWHERE) {
 			p.advance()
-			cond, err := p.parseExpression()
+			cond, err := p.parseDisjunction()
 			if err != nil {
 				return nil, err
 			}
@@ -4341,7 +4641,7 @@ func (p *parser) parseOnConflict() (*Expression, error) {
 		assignments = items
 		if p.at(TokWHERE) {
 			p.advance()
-			cond, err := p.parseExpression()
+			cond, err := p.parseDisjunction()
 			if err != nil {
 				return nil, err
 			}
@@ -4458,12 +4758,33 @@ func (p *parser) parseAlterSetProperties() ([]*Expression, error) {
 // type in every dialect. Outside a column only the dialects that have them
 // read `INT[3]` that way, which is why the position is recorded rather than
 // asked of the type alone.
+// signedToUnsignedTypeKind is the reference's own
+// `SIGNED_TO_UNSIGNED_TYPE_TOKEN`: a fixed reference-level constant, so it is
+// written out once here rather than generated.
+var signedToUnsignedTypeKind = map[DataTypeKind]DataTypeKind{
+	"BIGINT": "UBIGINT", "INT": "UINT", "MEDIUMINT": "UMEDIUMINT",
+	"SMALLINT": "USMALLINT", "TINYINT": "UTINYINT",
+	"DECIMAL": "UDECIMAL", "DOUBLE": "UDOUBLE",
+}
+
 func (p *parser) parseColumnType() (*Expression, error) {
 	was := p.inColumnType
 	p.inColumnType = true
 	kind, err := p.parseDataType()
 	p.inColumnType = was
-	return kind, err
+	if err != nil || kind == nil {
+		return kind, err
+	}
+	if p.atWords("UNSIGNED") {
+		signed, _ := kind.Args["this"].(DataTypeKind)
+		unsigned, ok := signedToUnsignedTypeKind[signed]
+		if !ok {
+			return nil, p.unsupported("UNSIGNED after a type this port cannot make unsigned")
+		}
+		p.advance()
+		kind.Set("this", unsigned)
+	}
+	return kind, nil
 }
 
 // parseAttachDetach reads ATTACH and DETACH, which open a database file for
@@ -5566,6 +5887,12 @@ func (p *parser) parseShow() (*Expression, error) {
 		p.advance()
 	}
 
+	if p.dialect == "mysql" {
+		if spec, ok := mysqlShowKinds[kind]; ok {
+			return p.parseShowMySQL(spec)
+		}
+	}
+
 	node := New("Show", Arg{"this", kind})
 	if p.match(TokFROM) {
 		from, err := p.parseTableName()
@@ -5577,6 +5904,256 @@ func (p *parser) parseShow() (*Expression, error) {
 	if p.curr() != nil {
 		return nil, p.unsupported("SHOW with more than this port reads")
 	}
+	return node, nil
+}
+
+// mysqlShowSpec is one entry of MySQL's own SHOW_PARSERS: the phrase written
+// may differ from the CANONICAL name the tree records (SCHEMAS -> DATABASES,
+// SLAVE STATUS -> REPLICA STATUS), and a TARGET identifier may follow, bare
+// or introduced by a word of its own (FROM, FOR) -- read out of the
+// reference's own dict verbatim rather than probed, since MySQL is the only
+// dialect landed so far with a SHOW this rich.
+type mysqlShowSpec struct {
+	This string
+	// Target is "" for no target at all, "BARE" for one with no introducing
+	// word, or the word itself (FROM, FOR).
+	Target string
+	Full   bool
+	Global bool
+}
+
+var mysqlShowKinds = map[string]mysqlShowSpec{
+	"BINARY LOGS":       {This: "BINARY LOGS"},
+	"MASTER LOGS":       {This: "BINARY LOGS"},
+	"BINLOG EVENTS":     {This: "BINLOG EVENTS"},
+	"CHARACTER SET":     {This: "CHARACTER SET"},
+	"CHARSET":           {This: "CHARACTER SET"},
+	"COLLATION":         {This: "COLLATION"},
+	"FULL COLUMNS":      {This: "COLUMNS", Target: "FROM", Full: true},
+	"COLUMNS":           {This: "COLUMNS", Target: "FROM"},
+	"CREATE DATABASE":   {This: "CREATE DATABASE", Target: "BARE"},
+	"CREATE EVENT":      {This: "CREATE EVENT", Target: "BARE"},
+	"CREATE FUNCTION":   {This: "CREATE FUNCTION", Target: "BARE"},
+	"CREATE PROCEDURE":  {This: "CREATE PROCEDURE", Target: "BARE"},
+	"CREATE TABLE":      {This: "CREATE TABLE", Target: "BARE"},
+	"CREATE TRIGGER":    {This: "CREATE TRIGGER", Target: "BARE"},
+	"CREATE VIEW":       {This: "CREATE VIEW", Target: "BARE"},
+	"DATABASES":         {This: "DATABASES"},
+	"SCHEMAS":           {This: "DATABASES"},
+	"ENGINE":            {This: "ENGINE", Target: "BARE"},
+	"STORAGE ENGINES":   {This: "ENGINES"},
+	"ENGINES":           {This: "ENGINES"},
+	"ERRORS":            {This: "ERRORS"},
+	"EVENTS":            {This: "EVENTS"},
+	"FUNCTION CODE":     {This: "FUNCTION CODE", Target: "BARE"},
+	"FUNCTION STATUS":   {This: "FUNCTION STATUS"},
+	"GRANTS":            {This: "GRANTS", Target: "FOR"},
+	"INDEX":             {This: "INDEX", Target: "FROM"},
+	"MASTER STATUS":     {This: "MASTER STATUS"},
+	"OPEN TABLES":       {This: "OPEN TABLES"},
+	"PLUGINS":           {This: "PLUGINS"},
+	"PROCEDURE CODE":    {This: "PROCEDURE CODE", Target: "BARE"},
+	"PROCEDURE STATUS":  {This: "PROCEDURE STATUS"},
+	"PRIVILEGES":        {This: "PRIVILEGES"},
+	"FULL PROCESSLIST":  {This: "PROCESSLIST", Full: true},
+	"PROCESSLIST":       {This: "PROCESSLIST"},
+	"PROFILE":           {This: "PROFILE"},
+	"PROFILES":          {This: "PROFILES"},
+	"RELAYLOG EVENTS":   {This: "RELAYLOG EVENTS"},
+	"REPLICAS":          {This: "REPLICAS"},
+	"SLAVE HOSTS":       {This: "REPLICAS"},
+	"REPLICA STATUS":    {This: "REPLICA STATUS"},
+	"SLAVE STATUS":      {This: "REPLICA STATUS"},
+	"GLOBAL STATUS":     {This: "STATUS", Global: true},
+	"SESSION STATUS":    {This: "STATUS"},
+	"STATUS":            {This: "STATUS"},
+	"TABLE STATUS":      {This: "TABLE STATUS"},
+	"FULL TABLES":       {This: "TABLES", Full: true},
+	"TABLES":            {This: "TABLES"},
+	"TRIGGERS":          {This: "TRIGGERS"},
+	"GLOBAL VARIABLES":  {This: "VARIABLES", Global: true},
+	"SESSION VARIABLES": {This: "VARIABLES"},
+	"VARIABLES":         {This: "VARIABLES"},
+	"WARNINGS":          {This: "WARNINGS"},
+}
+
+// matchWords consumes every one of words in order if they are ALL present,
+// or none of them if the sequence breaks partway through -- the atomic
+// version of atWords, for a phrase that is only sometimes there.
+func (p *parser) matchWords(words ...string) bool {
+	if !p.atWords(words...) {
+		return false
+	}
+	for range words {
+		p.advance()
+	}
+	return true
+}
+
+func (p *parser) tryParseStringLiteral() *Expression {
+	c := p.curr()
+	if c == nil || c.Type != TokSTRING {
+		return nil
+	}
+	p.advance()
+	return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
+}
+
+func (p *parser) tryParseNumberLiteral() *Expression {
+	c := p.curr()
+	if c == nil || c.Type != TokNUMBER {
+		return nil
+	}
+	p.advance()
+	return New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})
+}
+
+// parseShowMySQL is the reference's own `_parse_show_mysql`: most of what
+// follows the kind is read the same way whatever the kind is (LIKE, WHERE,
+// FOR CHANNEL, the old-style LIMIT/OFFSET pair, FOR TABLE/GROUP/USER/ROLE,
+// INTO OUTFILE); only the TARGET, whether a DB name may follow, and the
+// PROFILE-specific fields vary by kind, and spec already carries what does.
+func (p *parser) parseShowMySQL(spec mysqlShowSpec) (*Expression, error) {
+	json := p.matchUnquotedWord("JSON")
+
+	var targetID *Expression
+	if spec.Target != "" {
+		if spec.Target != "BARE" {
+			p.matchUnquotedWord(spec.Target)
+		}
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		targetID = id
+	}
+
+	var position, db *Expression
+	if spec.This == "BINLOG EVENTS" || spec.This == "RELAYLOG EVENTS" {
+		if p.match(TokFROM) {
+			position = p.tryParseNumberLiteral()
+		}
+	} else if p.match(TokFROM) || p.matchUnquotedWord("IN") {
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		db = id
+	} else if p.match(TokDOT) {
+		db = targetID
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		targetID = id
+	}
+
+	var channel *Expression
+	if p.matchWords("FOR", "CHANNEL") {
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		channel = id
+	}
+
+	var like *Expression
+	if p.matchUnquotedWord("LIKE") {
+		like = p.tryParseStringLiteral()
+		if like == nil {
+			return nil, p.unsupported("SHOW LIKE with a pattern this port does not read")
+		}
+	}
+	var where *Expression
+	if p.at(TokWHERE) {
+		p.advance()
+		cond, err := p.parseDisjunction()
+		if err != nil {
+			return nil, err
+		}
+		where = New("Where", Arg{"this", cond})
+	}
+
+	var offset, limit *Expression
+	if spec.This == "PROFILE" {
+		if p.curr() != nil && !p.matchWords("FOR", "QUERY") && !p.matchUnquotedWord("OFFSET") &&
+			!p.matchUnquotedWord("LIMIT") {
+			return nil, p.unsupported("SHOW PROFILE with more than this port reads")
+		}
+		// The CSV list of profile TYPES and the FOR QUERY/OFFSET/LIMIT trio
+		// that may follow it are declined rather than guessed: no statement
+		// in the pinned corpus exercises them, and the shape a probe never
+		// saw is a shape this port has not measured.
+	} else if p.matchUnquotedWord("LIMIT") {
+		first := p.tryParseNumberLiteral()
+		if first == nil {
+			return nil, p.unsupported("SHOW LIMIT without a count")
+		}
+		if p.match(TokCOMMA) {
+			second := p.tryParseNumberLiteral()
+			if second == nil {
+				return nil, p.unsupported("SHOW LIMIT without a second count")
+			}
+			offset, limit = first, second
+		} else {
+			limit = first
+		}
+	}
+
+	var mutex any
+	if p.matchUnquotedWord("MUTEX") {
+		mutex = true
+	} else if p.matchUnquotedWord("STATUS") {
+		mutex = false
+	}
+
+	var forTable *Expression
+	if p.matchWords("FOR", "TABLE") {
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		forTable = id
+	}
+	var forGroup, forUser, forRole *Expression
+	if p.matchWords("FOR", "GROUP") {
+		forGroup = p.tryParseStringLiteral()
+	}
+	if p.matchWords("FOR", "USER") {
+		forUser = p.tryParseStringLiteral()
+	}
+	if p.matchWords("FOR", "ROLE") {
+		forRole = p.tryParseStringLiteral()
+	}
+	var intoOutfile *Expression
+	if p.matchWords("INTO", "OUTFILE") {
+		intoOutfile = p.tryParseStringLiteral()
+	}
+
+	if p.curr() != nil {
+		return nil, p.unsupported("SHOW with more than this port reads")
+	}
+
+	// full and global_ are None in the reference unless the KIND itself asks
+	// for them (only FULL COLUMNS/PROCESSLIST/TABLES and GLOBAL
+	// STATUS/VARIABLES ever pass True) -- never explicitly False the way
+	// json always is, since _match_text_seq answers a real bool every time
+	// it runs and these two are plain constructor defaults instead.
+	var full, global_ any
+	if spec.Full {
+		full = true
+	}
+	if spec.Global {
+		global_ = true
+	}
+	node := New("Show",
+		Arg{"this", spec.This}, Arg{"target", targetID}, Arg{"full", full},
+		Arg{"log", nil}, Arg{"position", position}, Arg{"db", db},
+		Arg{"channel", channel}, Arg{"like", like}, Arg{"where", where},
+		Arg{"types", nil}, Arg{"query", nil}, Arg{"offset", offset}, Arg{"limit", limit},
+		Arg{"mutex", mutex}, Arg{"for_table", forTable}, Arg{"for_group", forGroup},
+		Arg{"for_user", forUser}, Arg{"for_role", forRole}, Arg{"into_outfile", intoOutfile},
+		Arg{"json", json}, Arg{"global_", global_})
 	return node, nil
 }
 

@@ -1,0 +1,214 @@
+{
+ "dialect": "mysql",
+ "rendered": "CREATE TRIGGER track_deletes BEFORE DELETE ON orders FOR EACH ROW BEGIN UPDATE statistics SET delete_count = delete_count + 1 WHERE table_name = 'orders' END",
+ "sql": "CREATE TRIGGER track_deletes BEFORE DELETE ON orders FOR EACH ROW BEGIN UPDATE statistics SET delete_count = delete_count + 1 WHERE table_name = 'orders' END",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 7,
+   "t": "TRIGGER",
+   "x": "TRIGGER"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "track_deletes"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "BEFORE"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 36,
+   "t": "DELETE",
+   "x": "DELETE"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 43,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 46,
+   "t": "VAR",
+   "x": "orders"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 53,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 57,
+   "t": "VAR",
+   "x": "EACH"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 62,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 66,
+   "t": "BEGIN",
+   "x": "BEGIN"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 72,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  },
+  {
+   "c": 89,
+   "e": 88,
+   "l": 1,
+   "s": 79,
+   "t": "VAR",
+   "x": "statistics"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 90,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 94,
+   "t": "VAR",
+   "x": "delete_count"
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 107,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 121,
+   "e": 120,
+   "l": 1,
+   "s": 109,
+   "t": "VAR",
+   "x": "delete_count"
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 122,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 124,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 131,
+   "e": 130,
+   "l": 1,
+   "s": 126,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 142,
+   "e": 141,
+   "l": 1,
+   "s": 132,
+   "t": "VAR",
+   "x": "table_name"
+  },
+  {
+   "c": 144,
+   "e": 143,
+   "l": 1,
+   "s": 143,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 153,
+   "e": 152,
+   "l": 1,
+   "s": 145,
+   "t": "STRING",
+   "x": "orders"
+  },
+  {
+   "c": 157,
+   "e": 156,
+   "l": 1,
+   "s": 154,
+   "t": "END",
+   "x": "END"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "CREATE"
+  },
+  {
+   "i": 0,
+   "k": "expression",
+   "v": " TRIGGER track_deletes BEFORE DELETE ON orders FOR EACH ROW BEGIN UPDATE statistics SET delete_count = delete_count + 1 WHERE table_name = 'orders' END"
+  }
+ ]
+}

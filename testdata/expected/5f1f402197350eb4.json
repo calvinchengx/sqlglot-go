@@ -1,0 +1,128 @@
+{
+ "dialect": "mysql",
+ "rendered": "DATE_ADD('2021-02-01', INTERVAL '1' DAY)",
+ "sql": "DATE_ADD('2021-02-01', INTERVAL 1 DAY)",
+ "tokens": [
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "DATE_ADD"
+  },
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 8,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 9,
+   "t": "STRING",
+   "x": "2021-02-01"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 23,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 34,
+   "t": "VAR",
+   "x": "DAY"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.DateAdd",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 9
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "2021-02-01"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 0,
+   "k": "unit"
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "DAY"
+  }
+ ]
+}

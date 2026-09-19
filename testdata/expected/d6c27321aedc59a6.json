@@ -1,0 +1,142 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT CAST(`col` AS CHAR CHARACTER SET utf8mb4)",
+ "sql": "SELECT CONVERT(`col` USING `utf8mb4`)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CONVERT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 15,
+   "t": "IDENTIFIER",
+   "x": "col"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 21,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 27,
+   "t": "IDENTIFIER",
+   "x": "utf8mb4"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "CHARACTER_SET"
+    },
+    {
+     "c": "sqlglot.expressions.core.Var",
+     "i": 0,
+     "k": "kind"
+    },
+    {
+     "i": 2,
+     "k": "this",
+     "v": "utf8mb4"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 6,
+   "k": "this",
+   "v": "CHARACTER_SET"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "utf8mb4"
+  }
+ ]
+}

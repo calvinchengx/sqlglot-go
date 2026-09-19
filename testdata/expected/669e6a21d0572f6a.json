@@ -1,0 +1,735 @@
+{
+ "dialect": "mysql",
+ "rendered": "CREATE TABLE orders (id INT, order_date DATE) PARTITION BY RANGE (YEAR(order_date)) (PARTITION p2023 VALUES LESS THAN (2024), PARTITION p2024 VALUES LESS THAN (2025), PARTITION pmax VALUES LESS THAN (MAXVALUE))",
+ "sql": "CREATE TABLE orders (id INT, order_date DATE) PARTITION BY RANGE (YEAR(order_date)) (PARTITION p2023 VALUES LESS THAN (2024), PARTITION p2024 VALUES LESS THAN (2025), PARTITION pmax VALUES LESS THAN (MAXVALUE))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "orders"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 21,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 24,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "order_date"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 40,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 46,
+   "t": "PARTITION_BY",
+   "x": "PARTITION BY"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 59,
+   "t": "RANGE",
+   "x": "RANGE"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 65,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 66,
+   "t": "YEAR",
+   "x": "YEAR"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 70,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 71,
+   "t": "VAR",
+   "x": "order_date"
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 81,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 82,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 84,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 85,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 100,
+   "e": 99,
+   "l": 1,
+   "s": 95,
+   "t": "VAR",
+   "x": "p2023"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 101,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 108,
+   "t": "VAR",
+   "x": "LESS"
+  },
+  {
+   "c": 117,
+   "e": 116,
+   "l": 1,
+   "s": 113,
+   "t": "VAR",
+   "x": "THAN"
+  },
+  {
+   "c": 119,
+   "e": 118,
+   "l": 1,
+   "s": 118,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 119,
+   "t": "NUMBER",
+   "x": "2024"
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 123,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 124,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 135,
+   "e": 134,
+   "l": 1,
+   "s": 126,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 141,
+   "e": 140,
+   "l": 1,
+   "s": 136,
+   "t": "VAR",
+   "x": "p2024"
+  },
+  {
+   "c": 148,
+   "e": 147,
+   "l": 1,
+   "s": 142,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 153,
+   "e": 152,
+   "l": 1,
+   "s": 149,
+   "t": "VAR",
+   "x": "LESS"
+  },
+  {
+   "c": 158,
+   "e": 157,
+   "l": 1,
+   "s": 154,
+   "t": "VAR",
+   "x": "THAN"
+  },
+  {
+   "c": 160,
+   "e": 159,
+   "l": 1,
+   "s": 159,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 164,
+   "e": 163,
+   "l": 1,
+   "s": 160,
+   "t": "NUMBER",
+   "x": "2025"
+  },
+  {
+   "c": 165,
+   "e": 164,
+   "l": 1,
+   "s": 164,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 166,
+   "e": 165,
+   "l": 1,
+   "s": 165,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 176,
+   "e": 175,
+   "l": 1,
+   "s": 167,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 181,
+   "e": 180,
+   "l": 1,
+   "s": 177,
+   "t": "VAR",
+   "x": "pmax"
+  },
+  {
+   "c": 188,
+   "e": 187,
+   "l": 1,
+   "s": 182,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 193,
+   "e": 192,
+   "l": 1,
+   "s": 189,
+   "t": "VAR",
+   "x": "LESS"
+  },
+  {
+   "c": 198,
+   "e": 197,
+   "l": 1,
+   "s": 194,
+   "t": "VAR",
+   "x": "THAN"
+  },
+  {
+   "c": 200,
+   "e": 199,
+   "l": 1,
+   "s": 199,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 208,
+   "e": 207,
+   "l": 1,
+   "s": 200,
+   "t": "VAR",
+   "x": "MAXVALUE"
+  },
+  {
+   "c": 209,
+   "e": 208,
+   "l": 1,
+   "s": 208,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 210,
+   "e": 209,
+   "l": 1,
+   "s": 209,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "orders"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "order_date"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 13,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 17,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 17,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionByRangeProperty",
+   "i": 25,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.Year",
+   "i": 26,
+   "k": "partition_expressions",
+   "m": {
+    "col": 70,
+    "end": 69,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TsOrDsToDate",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 28,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 29,
+   "k": "this",
+   "m": {
+    "col": 81,
+    "end": 80,
+    "line": 1,
+    "start": 71
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "order_date"
+  },
+  {
+   "i": 30,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 26,
+   "k": "create_expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.PartitionRange",
+   "i": 33,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "this",
+   "m": {
+    "col": 100,
+    "end": 99,
+    "line": 1,
+    "start": 95
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "p2023"
+  },
+  {
+   "i": 35,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 34,
+   "k": "expressions",
+   "m": {
+    "col": 123,
+    "end": 122,
+    "line": 1,
+    "start": 119
+   }
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "2024"
+  },
+  {
+   "i": 38,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 26,
+   "k": "create_expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.PartitionRange",
+   "i": 41,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 42,
+   "k": "this",
+   "m": {
+    "col": 141,
+    "end": 140,
+    "line": 1,
+    "start": 136
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "p2024"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 42,
+   "k": "expressions",
+   "m": {
+    "col": 164,
+    "end": 163,
+    "line": 1,
+    "start": 160
+   }
+  },
+  {
+   "i": 46,
+   "k": "this",
+   "v": "2025"
+  },
+  {
+   "i": 46,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 26,
+   "k": "create_expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.PartitionRange",
+   "i": 49,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 50,
+   "k": "this",
+   "m": {
+    "col": 181,
+    "end": 180,
+    "line": 1,
+    "start": 177
+   }
+  },
+  {
+   "i": 51,
+   "k": "this",
+   "v": "pmax"
+  },
+  {
+   "i": 51,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Var",
+   "i": 50,
+   "k": "expressions"
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "MAXVALUE"
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

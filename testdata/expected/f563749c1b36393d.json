@@ -1,0 +1,715 @@
+{
+ "dialect": "mysql",
+ "rendered": "CREATE TABLE employees (id INT, store_id INT) PARTITION BY LIST (store_id) (PARTITION pNorth VALUES IN (3, 5, 6), PARTITION pSouth VALUES IN (1, 2, 10))",
+ "sql": "CREATE TABLE employees (id INT, store_id INT) PARTITION BY LIST (store_id) (PARTITION pNorth VALUES IN (3, 5, 6), PARTITION pSouth VALUES IN (1, 2, 10))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "employees"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 27,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 32,
+   "t": "VAR",
+   "x": "store_id"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 41,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 46,
+   "t": "PARTITION_BY",
+   "x": "PARTITION BY"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 59,
+   "t": "LIST",
+   "x": "LIST"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 64,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 65,
+   "t": "VAR",
+   "x": "store_id"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 73,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 75,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 76,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 86,
+   "t": "VAR",
+   "x": "pNorth"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 93,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 100,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 103,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 105,
+   "e": 104,
+   "l": 1,
+   "s": 104,
+   "t": "NUMBER",
+   "x": "3"
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 105,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 107,
+   "t": "NUMBER",
+   "x": "5"
+  },
+  {
+   "c": 109,
+   "e": 108,
+   "l": 1,
+   "s": 108,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 111,
+   "e": 110,
+   "l": 1,
+   "s": 110,
+   "t": "NUMBER",
+   "x": "6"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 111,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 113,
+   "e": 112,
+   "l": 1,
+   "s": 112,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 114,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 124,
+   "t": "VAR",
+   "x": "pSouth"
+  },
+  {
+   "c": 137,
+   "e": 136,
+   "l": 1,
+   "s": 131,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 140,
+   "e": 139,
+   "l": 1,
+   "s": 138,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 142,
+   "e": 141,
+   "l": 1,
+   "s": 141,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 143,
+   "e": 142,
+   "l": 1,
+   "s": 142,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 144,
+   "e": 143,
+   "l": 1,
+   "s": 143,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 146,
+   "e": 145,
+   "l": 1,
+   "s": 145,
+   "t": "NUMBER",
+   "x": "2"
+  },
+  {
+   "c": 147,
+   "e": 146,
+   "l": 1,
+   "s": 146,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 150,
+   "e": 149,
+   "l": 1,
+   "s": 148,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 151,
+   "e": 150,
+   "l": 1,
+   "s": 150,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 152,
+   "e": 151,
+   "l": 1,
+   "s": 151,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "employees"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "store_id"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 13,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 17,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 17,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionByListProperty",
+   "i": 25,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 26,
+   "k": "partition_expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "this",
+   "m": {
+    "col": 73,
+    "end": 72,
+    "line": 1,
+    "start": 65
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "store_id"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 26,
+   "k": "create_expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionList",
+   "i": 31,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 92,
+    "end": 91,
+    "line": 1,
+    "start": 86
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "pNorth"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 32,
+   "k": "expressions",
+   "m": {
+    "col": 105,
+    "end": 104,
+    "line": 1,
+    "start": 104
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 36,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 32,
+   "k": "expressions",
+   "m": {
+    "col": 108,
+    "end": 107,
+    "line": 1,
+    "start": 107
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "5"
+  },
+  {
+   "i": 39,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 32,
+   "k": "expressions",
+   "m": {
+    "col": 111,
+    "end": 110,
+    "line": 1,
+    "start": 110
+   }
+  },
+  {
+   "i": 42,
+   "k": "this",
+   "v": "6"
+  },
+  {
+   "i": 42,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 26,
+   "k": "create_expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionList",
+   "i": 45,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 46,
+   "k": "this",
+   "m": {
+    "col": 130,
+    "end": 129,
+    "line": 1,
+    "start": 124
+   }
+  },
+  {
+   "i": 47,
+   "k": "this",
+   "v": "pSouth"
+  },
+  {
+   "i": 47,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 46,
+   "k": "expressions",
+   "m": {
+    "col": 143,
+    "end": 142,
+    "line": 1,
+    "start": 142
+   }
+  },
+  {
+   "i": 50,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 50,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 46,
+   "k": "expressions",
+   "m": {
+    "col": 146,
+    "end": 145,
+    "line": 1,
+    "start": 145
+   }
+  },
+  {
+   "i": 53,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 53,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 46,
+   "k": "expressions",
+   "m": {
+    "col": 150,
+    "end": 149,
+    "line": 1,
+    "start": 148
+   }
+  },
+  {
+   "i": 56,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 56,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

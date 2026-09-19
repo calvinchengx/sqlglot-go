@@ -1,0 +1,766 @@
+{
+ "dialect": "mysql",
+ "rendered": "CREATE TABLE t (id INT, region VARCHAR(10)) PARTITION BY LIST (id) (PARTITION p_east VALUES IN (1, 2, 3), PARTITION p_west VALUES IN (4, 5, 6))",
+ "sql": "CREATE TABLE t (id INT, region VARCHAR(10)) PARTITION BY LIST (id) (PARTITION p_east VALUES IN (1, 2, 3), PARTITION p_west VALUES IN (4, 5, 6))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "t"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 19,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "region"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 31,
+   "t": "VARCHAR",
+   "x": "VARCHAR"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 38,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 39,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 44,
+   "t": "PARTITION_BY",
+   "x": "PARTITION BY"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 57,
+   "t": "LIST",
+   "x": "LIST"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 62,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 63,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 65,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 67,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 77,
+   "e": 76,
+   "l": 1,
+   "s": 68,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 78,
+   "t": "VAR",
+   "x": "p_east"
+  },
+  {
+   "c": 91,
+   "e": 90,
+   "l": 1,
+   "s": 85,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 92,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 95,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 97,
+   "e": 96,
+   "l": 1,
+   "s": 96,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 97,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 100,
+   "e": 99,
+   "l": 1,
+   "s": 99,
+   "t": "NUMBER",
+   "x": "2"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 100,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 102,
+   "t": "NUMBER",
+   "x": "3"
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 103,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 105,
+   "e": 104,
+   "l": 1,
+   "s": 104,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 115,
+   "e": 114,
+   "l": 1,
+   "s": 106,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 122,
+   "e": 121,
+   "l": 1,
+   "s": 116,
+   "t": "VAR",
+   "x": "p_west"
+  },
+  {
+   "c": 129,
+   "e": 128,
+   "l": 1,
+   "s": 123,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 132,
+   "e": 131,
+   "l": 1,
+   "s": 130,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 133,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 135,
+   "e": 134,
+   "l": 1,
+   "s": 134,
+   "t": "NUMBER",
+   "x": "4"
+  },
+  {
+   "c": 136,
+   "e": 135,
+   "l": 1,
+   "s": 135,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 138,
+   "e": 137,
+   "l": 1,
+   "s": 137,
+   "t": "NUMBER",
+   "x": "5"
+  },
+  {
+   "c": 139,
+   "e": 138,
+   "l": 1,
+   "s": 138,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 141,
+   "e": 140,
+   "l": 1,
+   "s": 140,
+   "t": "NUMBER",
+   "x": "6"
+  },
+  {
+   "c": 142,
+   "e": 141,
+   "l": 1,
+   "s": 141,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 143,
+   "e": 142,
+   "l": 1,
+   "s": 142,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "region"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 13,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 17,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 17,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 17,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionByListProperty",
+   "i": 29,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 30,
+   "k": "partition_expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 31,
+   "k": "this",
+   "m": {
+    "col": 65,
+    "end": 64,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 32,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 30,
+   "k": "create_expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionList",
+   "i": 35,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 36,
+   "k": "this",
+   "m": {
+    "col": 84,
+    "end": 83,
+    "line": 1,
+    "start": 78
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "p_east"
+  },
+  {
+   "i": 37,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 36,
+   "k": "expressions",
+   "m": {
+    "col": 97,
+    "end": 96,
+    "line": 1,
+    "start": 96
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 40,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 36,
+   "k": "expressions",
+   "m": {
+    "col": 100,
+    "end": 99,
+    "line": 1,
+    "start": 99
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 43,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 36,
+   "k": "expressions",
+   "m": {
+    "col": 103,
+    "end": 102,
+    "line": 1,
+    "start": 102
+   }
+  },
+  {
+   "i": 46,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 46,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 30,
+   "k": "create_expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionList",
+   "i": 49,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 50,
+   "k": "this",
+   "m": {
+    "col": 122,
+    "end": 121,
+    "line": 1,
+    "start": 116
+   }
+  },
+  {
+   "i": 51,
+   "k": "this",
+   "v": "p_west"
+  },
+  {
+   "i": 51,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 50,
+   "k": "expressions",
+   "m": {
+    "col": 135,
+    "end": 134,
+    "line": 1,
+    "start": 134
+   }
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "4"
+  },
+  {
+   "i": 54,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 50,
+   "k": "expressions",
+   "m": {
+    "col": 138,
+    "end": 137,
+    "line": 1,
+    "start": 137
+   }
+  },
+  {
+   "i": 57,
+   "k": "this",
+   "v": "5"
+  },
+  {
+   "i": 57,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 50,
+   "k": "expressions",
+   "m": {
+    "col": 141,
+    "end": 140,
+    "line": 1,
+    "start": 140
+   }
+  },
+  {
+   "i": 60,
+   "k": "this",
+   "v": "6"
+  },
+  {
+   "i": 60,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

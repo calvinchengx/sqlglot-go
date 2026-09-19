@@ -1,0 +1,125 @@
+{
+ "dialect": "mysql",
+ "rendered": "SHOW FULL TABLES FROM db_name LIKE '%foo%'",
+ "sql": "SHOW FULL TABLES FROM db_name LIKE '%foo%'",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "SHOW",
+   "x": "SHOW"
+  },
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 5,
+   "t": "FULL",
+   "x": "FULL"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 10,
+   "t": "VAR",
+   "x": "TABLES"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 17,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 22,
+   "t": "VAR",
+   "x": "db_name"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 30,
+   "t": "LIKE",
+   "x": "LIKE"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 35,
+   "t": "STRING",
+   "x": "%foo%"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Show"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "TABLES"
+  },
+  {
+   "i": 0,
+   "k": "full",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 0,
+   "k": "db",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "db_name"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "like",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "%foo%"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "json",
+   "v": false
+  }
+ ]
+}

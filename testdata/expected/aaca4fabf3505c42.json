@@ -1,0 +1,85 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT CAST('2023-01-01 13:14:15+00:00' AS DATETIME)",
+ "sql": "SELECT TIME_STR_TO_TIME('2023-01-01 13:14:15+00:00')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "TIME_STR_TO_TIME"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 24,
+   "t": "STRING",
+   "x": "2023-01-01 13:14:15+00:00"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 51,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.TimeStrToTime",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "2023-01-01 13:14:15+00:00"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

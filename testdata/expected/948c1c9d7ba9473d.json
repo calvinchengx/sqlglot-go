@@ -1,0 +1,180 @@
+{
+ "dialect": "mysql",
+ "rendered": "ANALYZE tbl UPDATE HISTOGRAM ON col1 WITH 5 BUCKETS AUTO UPDATE",
+ "sql": "ANALYZE tbl UPDATE HISTOGRAM ON col1 WITH 5 BUCKETS AUTO UPDATE",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "ANALYZE",
+   "x": "ANALYZE"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "tbl"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 12,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "HISTOGRAM"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 29,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 32,
+   "t": "VAR",
+   "x": "col1"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 37,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "NUMBER",
+   "x": "5"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "BUCKETS"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 52,
+   "t": "VAR",
+   "x": "AUTO"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 57,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Analyze"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "tables"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "tbl"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.AnalyzeHistogram",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "UPDATE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "col1"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.AnalyzeWith",
+   "i": 5,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "i": 11,
+   "k": "expressions",
+   "v": "5 BUCKETS"
+  },
+  {
+   "i": 5,
+   "k": "update_options",
+   "v": "AUTO"
+  }
+ ]
+}
