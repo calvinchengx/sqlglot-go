@@ -100,6 +100,43 @@ func (p *parser) buildDateDiff(upper string, args []*Expression, bigInt bool) (*
 // TimeMapping merged with FullFormatTimeMapping, so `mm` gives the full month
 // name rather than FORMAT's two-digit one, and the date is cast to DATETIME2
 // rather than left as written.
+// binaryClasses is the reference's own `exp.Binary` subclass set -- a fixed
+// reference-level constant, not a per-dialect fact, so it is written out
+// once here rather than generated.
+var binaryClasses = map[string]bool{
+	"Add": true, "Adjacent": true, "And": true, "ArrayContainedBy": true,
+	"ArrayContains": true, "ArrayContainsAll": true, "ArrayOverlaps": true,
+	"ArrayPosition": true, "BitwiseAnd": true, "BitwiseLeftShift": true,
+	"BitwiseOr": true, "BitwiseRightShift": true, "BitwiseXor": true,
+	"Collate": true, "Connector": true, "Corr": true, "DPipe": true,
+	"Distance": true, "DistanceNd": true, "Div": true, "Dot": true, "EQ": true,
+	"Escape": true, "ExtendsLeft": true, "ExtendsRight": true, "GT": true,
+	"GTE": true, "Glob": true, "ILike": true, "IntDiv": true, "Is": true,
+	"JSONArrayContains": true, "JSONBContains": true, "JSONBContainsAllTopKeys": true,
+	"JSONBContainsAnyTopKeys": true, "JSONBContainsTopKey": true, "JSONBDeleteAtPath": true,
+	"JSONBExtract": true, "JSONBExtractScalar": true, "JSONBPathExists": true,
+	"JSONExtract": true, "JSONExtractScalar": true, "Kwarg": true, "LT": true,
+	"LTE": true, "Like": true, "Match": true, "Mod": true, "Mul": true, "NEQ": true,
+	"NestedJSONSelect": true, "NullSafeEQ": true, "NullSafeNEQ": true, "Operator": true,
+	"Or": true, "Overlaps": true, "Pow": true, "PropertyEQ": true, "RegexpFullMatch": true,
+	"RegexpILike": true, "RegexpLike": true, "SimilarTo": true, "Sub": true, "Xor": true,
+}
+
+// buildMod is the reference's own `build_mod`: MOD(a, b) wraps whichever
+// argument is itself a binary expression in Paren, matching the precedence
+// `%` would give it -- MOD(a + 1, 7) reads the same as (a + 1) % 7 written
+// directly.
+func (p *parser) buildMod(args []*Expression) *Expression {
+	this, expression := args[0], args[1]
+	if binaryClasses[this.Class] {
+		this = New("Paren", Arg{"this", this})
+	}
+	if binaryClasses[expression.Class] {
+		expression = New("Paren", Arg{"this", expression})
+	}
+	return New("Mod", Arg{"this", this}, Arg{"expression", expression})
+}
+
 func (p *parser) buildDateName(args []*Expression) (*Expression, error) {
 	if len(args) != 2 {
 		return nil, p.unsupported("function DATENAME with this many arguments")

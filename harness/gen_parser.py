@@ -19,7 +19,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto")
 
 
 def gostr(s: str) -> str:
@@ -3402,7 +3402,13 @@ def inverse_format_classes(dialect: str, exp, classes) -> list:
     inverse = getattr(D, "INVERSE_TIME_MAPPING", None) or {}
     if not inverse:
         return []
-    probe = "%Y-%m-%d"
+    # A date-only probe never touches a time-of-day token, so a dialect whose
+    # inverse mapping only moves %H/%M/%S-family tokens (Presto's %T for
+    # %H:%M:%S, among others) looked untouched and was wrongly recorded as
+    # needing no inversion at all -- confirmed by probing the reference
+    # directly: %Y-%m-%d %H:%M:%S moves under Presto's own inverse mapping
+    # where %Y-%m-%d alone does not.
+    probe = "%Y-%m-%d %H:%M:%S"
     want = format_time(probe, inverse)
     default_stored = format_time(
         str(getattr(D, "TIME_FORMAT", "") or "").strip("'"),
@@ -3991,9 +3997,13 @@ def composite_type_sql(dialect: str) -> dict[str, str]:
     result["ArraySizedTemplate"] = sized.replace(inner, "{inner}", 1).replace("3", "{size}", 1)
 
     struct = to("CAST(x AS STRUCT(a INT))")
-    head, rest = struct.split("STRUCT", 1)
-    if head:
-        raise SystemExit(f"{dialect}: struct type {struct!r} does not start with STRUCT")
+    # The dialect's own name for STRUCT, not the literal word "STRUCT" --
+    # Presto/Trino spell it ROW, and the delimiters that follow are what
+    # this is actually probing for.
+    match = re.match(r"^[A-Za-z_][A-Za-z0-9_]*", struct)
+    if not match:
+        raise SystemExit(f"{dialect}: struct type {struct!r} does not start with a type name")
+    rest = struct[match.end() :]
     field = rest[1:-1]
     if not field.endswith(inner):
         raise SystemExit(f"{dialect}: struct field {field!r} does not end with {inner!r}")
@@ -6477,6 +6487,11 @@ def main() -> int:
         "\t// length of 1 -- Fabric's own reading of T-SQL's rule for what a\n",
         "\t// missing length means (`learn.microsoft.com/.../char-and-varchar`).\n",
         "\tDefaultsUnsizedCharTypes bool\n",
+        "\t// ZoneAwareTimestampConstructor says a TIMESTAMP/TIME typed\n",
+        "\t// literal carrying a zone offset or name reads as TIMESTAMPTZ/\n",
+        "\t// TIMETZ instead -- Presto's own reading of what the literal\n",
+        "\t// actually names, not the bare word that introduced it.\n",
+        "\tZoneAwareTimestampConstructor bool\n",
         "\t// UnaryOps is which token opens a PREFIX operator, and what it\n",
         "\t// builds. The empty string is the no-op unary plus.\n",
         "\tUnaryOps map[TokenType]string\n",
@@ -7666,6 +7681,9 @@ def main() -> int:
         )
         out.append(
             "\t\tDefaultsUnsizedCharTypes: %s,\n" % str(defaults_unsized_char_types(name)).lower()
+        )
+        out.append(
+            "\t\tZoneAwareTimestampConstructor: %s,\n" % str(bool(P.ZONE_AWARE_TIMESTAMP_CONSTRUCTOR)).lower()
         )
         _uo = unary_ops(name, P, exp)
         body = "".join(f"\t\t\tTok{t}: {gostr(c)},\n" for t, c in sorted(_uo.items()))

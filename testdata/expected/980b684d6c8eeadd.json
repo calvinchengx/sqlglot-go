@@ -1,0 +1,90 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT WEEK_OF_YEAR(y)",
+ "sql": "SELECT WEEK_OF_YEAR(y)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "WEEK_OF_YEAR"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "VAR",
+   "x": "y"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.WeekOfYear",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

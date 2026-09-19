@@ -1,0 +1,159 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT SPLIT_TO_MAP('a:1,b:2,c:3', ',', ':')",
+ "sql": "SELECT SPLIT_TO_MAP('a:1,b:2,c:3', ',', ':')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "SPLIT_TO_MAP"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 20,
+   "t": "STRING",
+   "x": "a:1,b:2,c:3"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 35,
+   "t": "STRING",
+   "x": ","
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 38,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 40,
+   "t": "STRING",
+   "x": ":"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.StrToMap",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "a:1,b:2,c:3"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "pair_delim",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": ","
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "key_value_delim",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": ":"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

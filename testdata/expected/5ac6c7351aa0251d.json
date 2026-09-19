@@ -1,0 +1,267 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT BOOL_OR(a > 10) FROM asd AS T(a)",
+ "sql": "SELECT BOOL_OR(a > 10) FROM asd AS T(a)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "BOOL_OR"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "GT",
+   "x": ">"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 19,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 23,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "asd"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 32,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "VAR",
+   "x": "T"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 38,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.LogicalOr",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.GT",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "asd"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 11,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "T"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "columns",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

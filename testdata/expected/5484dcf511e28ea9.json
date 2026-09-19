@@ -1,0 +1,198 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT DATE_TRUNC('MONTH', TRY_CAST(ds AS TIMESTAMP))",
+ "sql": "SELECT DATE_TRUNC('MONTH', TRY_CAST(ds AS TIMESTAMP))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "DATE_TRUNC"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 18,
+   "t": "STRING",
+   "x": "MONTH"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "TRY_CAST"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 36,
+   "t": "VAR",
+   "x": "ds"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 39,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 42,
+   "t": "TIMESTAMP",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 51,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.TimestampTrunc",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.TryCast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMP"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "ds"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 7,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "i": 7,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 2,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "unit"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "MONTH"
+  }
+ ]
+}

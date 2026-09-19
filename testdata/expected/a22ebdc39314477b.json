@@ -1,0 +1,184 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT REGEXP_EXTRACT('My mail address is my_mail@yahoo.com', '(?i)[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}') AS EMAIL",
+ "sql": "SELECT REGEXP_EXTRACT('My mail address is my_mail@yahoo.com', '(?i)[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}') AS EMAIL",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "REGEXP_EXTRACT"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 22,
+   "t": "STRING",
+   "x": "My mail address is my_mail@yahoo.com"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 60,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 62,
+   "t": "STRING",
+   "x": "(?i)[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 106,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 110,
+   "e": 109,
+   "l": 1,
+   "s": 108,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 116,
+   "e": 115,
+   "l": 1,
+   "s": 111,
+   "t": "VAR",
+   "x": "EMAIL"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.string.RegexpExtract",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "My mail address is my_mail@yahoo.com"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 106,
+    "end": 105,
+    "line": 1,
+    "start": 62
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "(?i)[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "group"
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 2,
+   "k": "null_if_pos_overflow",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 116,
+    "end": 115,
+    "line": 1,
+    "start": 111
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "EMAIL"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

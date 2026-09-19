@@ -1,0 +1,233 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT CAST(ARRAY[1, 23, 456] AS JSON)",
+ "sql": "SELECT CAST(ARRAY[1, 23, 456] AS JSON)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 12,
+   "t": "ARRAY",
+   "x": "ARRAY"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 21,
+   "t": "NUMBER",
+   "x": "23"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 25,
+   "t": "NUMBER",
+   "x": "456"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "R_BRACKET",
+   "x": "]"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 30,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 33,
+   "t": "JSON",
+   "x": "JSON"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "JSON"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "23"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "456"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 12,
+   "k": "this",
+   "v": "JSON"
+  },
+  {
+   "i": 12,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

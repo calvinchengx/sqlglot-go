@@ -136,6 +136,11 @@
    "type": "STRUCT(a INT, b DOUBLE)"
   },
   {
+   "dialect": "presto",
+   "sql": "ROW(1, 2.5, 'foo')",
+   "type": "ROW(INTEGER, DOUBLE, VARCHAR)"
+  },
+  {
    "dialect": "",
    "sql": "1 + (SELECT 2.5 AS c)",
    "type": "DOUBLE"

@@ -1,0 +1,399 @@
+{
+ "dialect": "presto",
+ "rendered": "CREATE TABLE db.example_table (col_a ARRAY(INTEGER), col_b ARRAY(ARRAY(INTEGER)))",
+ "sql": "CREATE TABLE db.example_table (col_a ARRAY(INTEGER), col_b ARRAY(ARRAY(INTEGER)))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "db"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "example_table"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 31,
+   "t": "VAR",
+   "x": "col_a"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 37,
+   "t": "ARRAY",
+   "x": "ARRAY"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 43,
+   "t": "INT",
+   "x": "INTEGER"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 51,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 53,
+   "t": "VAR",
+   "x": "col_b"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 59,
+   "t": "ARRAY",
+   "x": "ARRAY"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 64,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 65,
+   "t": "ARRAY",
+   "x": "ARRAY"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 70,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 71,
+   "t": "INT",
+   "x": "INTEGER"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 78,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 79,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 80,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "example_table"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "db",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "db"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "col_a"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 9,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 13,
+   "k": "this",
+   "v": "ARRAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 13,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 15,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 15,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 13,
+   "k": "nested",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "col_b"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 19,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 23,
+   "k": "this",
+   "v": "ARRAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 23,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 25,
+   "k": "this",
+   "v": "ARRAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 25,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 27,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 27,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 25,
+   "k": "nested",
+   "v": true
+  },
+  {
+   "i": 23,
+   "k": "nested",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,186 @@
+{
+ "dialect": "presto",
+ "rendered": "IF(x > 1, 1, 0)",
+ "sql": "IF(x > 1, 1, 0)",
+ "tokens": [
+  {
+   "c": 2,
+   "e": 1,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "IF"
+  },
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 2,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 3,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 5,
+   "t": "GT",
+   "x": ">"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 8,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.functions.If"
+  },
+  {
+   "c": "sqlglot.expressions.core.GT",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 4,
+    "end": 3,
+    "line": 1,
+    "start": 3
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "true",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 10
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "false",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

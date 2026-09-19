@@ -1,0 +1,179 @@
+{
+ "dialect": "presto",
+ "rendered": "DATE_FORMAT(CAST('2020-01-01' AS TIMESTAMP), '%Y-%m-%d %T')",
+ "sql": "DATE_FORMAT(CAST('2020-01-01' AS TIMESTAMP), '%Y-%m-%d %H:%i:%s')",
+ "tokens": [
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "DATE_FORMAT"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 17,
+   "t": "STRING",
+   "x": "2020-01-01"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 30,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 33,
+   "t": "TIMESTAMP",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 45,
+   "t": "STRING",
+   "x": "%Y-%m-%d %H:%i:%s"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 64,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.TimeToStr",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMP"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "2020-01-01"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 5,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "i": 5,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "format"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "%Y-%m-%d %H:%M:%S"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

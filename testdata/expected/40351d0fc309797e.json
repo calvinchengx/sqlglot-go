@@ -1,0 +1,209 @@
+{
+ "dialect": "presto",
+ "rendered": "LAST_DAY_OF_MONTH(CAST(CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS DATE))",
+ "sql": "LAST_DAY_OF_MONTH(CAST(CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS DATE))",
+ "tokens": [
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "LAST_DAY_OF_MONTH"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 28,
+   "t": "CURRENT_TIMESTAMP",
+   "x": "CURRENT_TIMESTAMP"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 46,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 49,
+   "t": "TIMESTAMP",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 60,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 63,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 67,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 68,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.LastDay",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMP"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentTimestamp",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 4,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "i": 4,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 7,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 7,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

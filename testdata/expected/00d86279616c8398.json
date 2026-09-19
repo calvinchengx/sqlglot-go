@@ -1,0 +1,209 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT DATE_ADD('DAY', 1, CAST(CURRENT_DATE AS TIMESTAMP))",
+ "sql": "SELECT DATE_ADD('DAY', 1, CAST(CURRENT_DATE AS TIMESTAMP))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "DATE_ADD"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 16,
+   "t": "STRING",
+   "x": "DAY"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 31,
+   "t": "CURRENT_DATE",
+   "x": "CURRENT_DATE"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 44,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 47,
+   "t": "TIMESTAMP",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 57,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.DateAdd",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMP"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentDate",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 4,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "i": 4,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "unit"
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "DAY"
+  }
+ ]
+}

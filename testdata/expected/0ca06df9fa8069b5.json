@@ -1,0 +1,145 @@
+{
+ "dialect": "presto",
+ "rendered": "REGEXP_REPLACE('abcd', '[ab]', '')",
+ "sql": "REGEXP_REPLACE('abcd', '[ab]', '')",
+ "tokens": [
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "REGEXP_REPLACE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 15,
+   "t": "STRING",
+   "x": "abcd"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 23,
+   "t": "STRING",
+   "x": "[ab]"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 31,
+   "t": "STRING",
+   "x": ""
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.string.RegexpReplace",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "abcd"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "[ab]"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "replacement",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": ""
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

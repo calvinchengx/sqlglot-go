@@ -264,8 +264,10 @@ func (p *parser) parseCreate() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		// A view may name its columns AND supply the query.
-		if p.match(TokALIAS) {
+		// A view may name its columns AND supply the query -- and the AS
+		// between them is optional wherever a query follows directly: the
+		// reference matches it if there, but reads the query either way.
+		if p.match(TokALIAS) || p.at(TokSELECT) || p.at(TokWITH) || p.at(TokL_PAREN) {
 			// Teradata's own LOCKING stands where the query does, before it
 			// rather than after: it says how the QUERY behind the view
 			// takes its lock, not anything about the view itself.
@@ -3734,6 +3736,12 @@ func (p *parser) parseUse() (*Expression, error) {
 // the transaction it acts on -- and ROLLBACK may name a SAVEPOINT instead,
 // which is a different argument because it is a different action.
 func (p *parser) parseTransaction() (*Expression, error) {
+	// The class comes from the TOKEN, not the word: Presto's "START" tokenizes
+	// as BEGIN the same way T-SQL's own "BEGIN" does, and reads the same
+	// Transaction either way -- the reference dispatches purely on token
+	// type here, with COMMIT/ROLLBACK handled by an entirely separate
+	// function, not by branching on which word this one was written with.
+	tokenType := p.curr().Type
 	verb := strings.ToUpper(p.curr().Text)
 	// PostgreSQL reads a bare END as COMMIT. Everywhere else the word names
 	// something or closes a block, which is why this is asked of the dialect
@@ -3751,9 +3759,9 @@ func (p *parser) parseTransaction() (*Expression, error) {
 		}
 	}
 	p.advance()
-	class := map[string]string{
-		"BEGIN": "Transaction", "COMMIT": "Commit", "ROLLBACK": "Rollback",
-	}[verb]
+	class := map[TokenType]string{
+		TokBEGIN: "Transaction", TokCOMMIT: "Commit", TokROLLBACK: "Rollback", TokEND: "Commit",
+	}[tokenType]
 	node := New(class)
 
 	if verb == "ROLLBACK" && p.atWords("TO") {

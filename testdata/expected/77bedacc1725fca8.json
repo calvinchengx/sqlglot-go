@@ -1,0 +1,408 @@
+{
+ "dialect": "presto",
+ "rendered": "CREATE TABLE IF NOT EXISTS x (\"cola\" INTEGER, \"ds\" VARCHAR) COMMENT 'comment' WITH (PARTITIONED_BY=ARRAY['ds'])",
+ "sql": "CREATE TABLE IF NOT EXISTS x (\"cola\" INTEGER, \"ds\" TEXT) COMMENT 'comment' WITH (PARTITIONED BY=(\"ds\"))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "IF"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 16,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 20,
+   "t": "EXISTS",
+   "x": "EXISTS"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 30,
+   "t": "IDENTIFIER",
+   "x": "cola"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 37,
+   "t": "INT",
+   "x": "INTEGER"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 46,
+   "t": "IDENTIFIER",
+   "x": "ds"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 51,
+   "t": "TEXT",
+   "x": "TEXT"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 57,
+   "t": "COMMENT",
+   "x": "COMMENT"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 65,
+   "t": "STRING",
+   "x": "comment"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 75,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 80,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 81,
+   "t": "PARTITION_BY",
+   "x": "PARTITIONED BY"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 95,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 97,
+   "e": 96,
+   "l": 1,
+   "s": 96,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 97,
+   "t": "IDENTIFIER",
+   "x": "ds"
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 101,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 102,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "cola"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "ds"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 13,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 17,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 17,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.SchemaCommentProperty",
+   "i": 25,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 74,
+    "end": 73,
+    "line": 1,
+    "start": 65
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "comment"
+  },
+  {
+   "i": 27,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionedByProperty",
+   "i": 25,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 30,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 31,
+   "k": "expressions",
+   "m": {
+    "col": 101,
+    "end": 100,
+    "line": 1,
+    "start": 97
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "ds"
+  },
+  {
+   "i": 32,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

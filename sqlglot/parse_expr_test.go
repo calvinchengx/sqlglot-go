@@ -12412,7 +12412,7 @@ func TestTypedAliasesAndBodylessQueries(t *testing.T) {
 		{"CAST(0 AS [a b])", "CAST(0 AS a b)", "tsql"},
 		// A VALUES that carries its own modifiers.
 		{"WITH t AS (VALUES (1), (2) ORDER BY 1) SELECT * FROM t",
-			"WITH t AS (SELECT * FROM VALUES (1), (2) ORDER BY 1) SELECT * FROM t", "databricks"},
+			"WITH t AS (SELECT * FROM VALUES (1), (2) AS _values ORDER BY 1) SELECT * FROM t", "databricks"},
 	} {
 		want := c.want
 		if want == "" {

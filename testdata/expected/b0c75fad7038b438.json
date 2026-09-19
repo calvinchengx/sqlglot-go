@@ -1,0 +1,130 @@
+{
+ "dialect": "presto",
+ "rendered": "(5 * INTERVAL '7' DAY)",
+ "sql": "(5 * INTERVAL '7' DAY)",
+ "tokens": [
+  {
+   "c": 1,
+   "e": 0,
+   "l": 1,
+   "s": 0,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 2,
+   "e": 1,
+   "l": 1,
+   "s": 1,
+   "t": "NUMBER",
+   "x": "5"
+  },
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 3,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 5,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 14,
+   "t": "STRING",
+   "x": "7"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "DAY"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Paren"
+  },
+  {
+   "c": "sqlglot.expressions.core.Mul",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 2,
+    "end": 1,
+    "line": 1,
+    "start": 1
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "5"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "7"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 5,
+   "k": "unit"
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "DAY"
+  }
+ ]
+}

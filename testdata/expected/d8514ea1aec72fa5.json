@@ -1,0 +1,205 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT * FROM x AS foo TABLESAMPLE BERNOULLI (1)",
+ "sql": "SELECT * FROM x AS foo TABLESAMPLE BERNOULLI (1)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 16,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 23,
+   "t": "TABLE_SAMPLE",
+   "x": "TABLESAMPLE"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 35,
+   "t": "VAR",
+   "x": "BERNOULLI"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 45,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 46,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 47,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 3,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableSample",
+   "i": 3,
+   "k": "sample"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 11,
+   "k": "method"
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "BERNOULLI"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "percent",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

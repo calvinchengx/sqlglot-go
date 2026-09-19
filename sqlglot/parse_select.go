@@ -135,6 +135,14 @@ func (p *parser) parseQueryBody() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// A VALUES with no alias of its own is given the reference's own
+		// synthetic one -- `_values` -- the same alias a set operation's
+		// bare VALUES operand takes, so a pushed-down alias (a CTE's own
+		// column list among them) has somewhere real to land.
+		if alias, _ := values.Args["alias"].(*Expression); alias == nil {
+			values.Set("alias", New("TableAlias", Arg{"this",
+				New("Identifier", Arg{"this", "_values"}, Arg{"quoted", false})}))
+		}
 		sel := New("Select")
 		for _, k := range selectPrefix {
 			sel.Set(k, nil)
@@ -396,6 +404,7 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 // right-hand query and onto the set operation. `SELECT a UNION SELECT b LIMIT 1`
 // limits the union, not the second query -- the reference parses it onto the
 // query and then lifts it, and which of the three lift differs per dialect.
+
 func (p *parser) liftSetOpModifiers(setOp, right *Expression) {
 	if !p.tables.ModifiersAttachedToSetOp || right == nil {
 		return

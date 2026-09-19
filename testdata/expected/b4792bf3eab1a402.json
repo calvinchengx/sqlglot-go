@@ -1,0 +1,135 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT JSON_EXTRACT(x, '$[\"a\",\"\"]')",
+ "sql": "SELECT JSON_EXTRACT(x, '$[\"a\",\"\"]')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "JSON_EXTRACT"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 23,
+   "t": "STRING",
+   "x": "$[\"a\",\"\"]"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 34,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExtract",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathUnion",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "i": 8,
+   "k": "expressions",
+   "v": "a"
+  },
+  {
+   "a": true,
+   "i": 8,
+   "k": "expressions",
+   "v": ""
+  }
+ ]
+}

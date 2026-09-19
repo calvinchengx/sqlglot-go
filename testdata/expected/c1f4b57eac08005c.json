@@ -1,0 +1,323 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT results FROM Coordinates CROSS JOIN UNNEST(Coordinates.position) AS _t0(results)",
+ "sql": "SELECT results FROM Coordinates CROSS JOIN UNNEST(Coordinates.position) AS _t0(results)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "results"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 15,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 20,
+   "t": "VAR",
+   "x": "Coordinates"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 32,
+   "t": "CROSS",
+   "x": "CROSS"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 38,
+   "t": "JOIN",
+   "x": "JOIN"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 43,
+   "t": "UNNEST",
+   "x": "UNNEST"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 49,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 50,
+   "t": "VAR",
+   "x": "Coordinates"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 61,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 62,
+   "t": "VAR",
+   "x": "position"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 70,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 72,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 75,
+   "t": "VAR",
+   "x": "_t0"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 78,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 79,
+   "t": "VAR",
+   "x": "results"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 86,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "results"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "Coordinates"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 0,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.array.Unnest",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 11,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 70,
+    "end": 69,
+    "line": 1,
+    "start": 62
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "position"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "table",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 50
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "Coordinates"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 11,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 78,
+    "end": 77,
+    "line": 1,
+    "start": 75
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "_t0"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "columns",
+   "m": {
+    "col": 86,
+    "end": 85,
+    "line": 1,
+    "start": 79
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "results"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 11,
+   "k": "offset",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "kind",
+   "v": "CROSS"
+  }
+ ]
+}

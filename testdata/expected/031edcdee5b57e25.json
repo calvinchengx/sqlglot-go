@@ -1,0 +1,100 @@
+{
+ "dialect": "presto",
+ "rendered": "LOWER(TO_HEX(x))",
+ "sql": "LOWER(TO_HEX(x))",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "LOWER"
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 5,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 6,
+   "t": "VAR",
+   "x": "TO_HEX"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.string.LowerHex",
+   "m": {
+    "col": 5,
+    "end": 4,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

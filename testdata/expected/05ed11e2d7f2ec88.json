@@ -1,0 +1,470 @@
+{
+ "dialect": "presto",
+ "rendered": "TO_UNIXTIME(COALESCE(TRY(DATE_PARSE(CAST(x AS VARCHAR), '%Y-%m-%d %T')), PARSE_DATETIME(DATE_FORMAT(x, '%Y-%m-%d %T'), 'yyyy-MM-dd HH:mm:ss')))",
+ "sql": "TO_UNIXTIME(COALESCE(TRY(DATE_PARSE(CAST(x AS VARCHAR), '%Y-%m-%d %H:%i:%s')), PARSE_DATETIME(DATE_FORMAT(x, '%Y-%m-%d %H:%i:%s'), 'yyyy-MM-dd HH:mm:ss')))",
+ "tokens": [
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "TO_UNIXTIME"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "COALESCE"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 21,
+   "t": "VAR",
+   "x": "TRY"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 25,
+   "t": "VAR",
+   "x": "DATE_PARSE"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 36,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 43,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 46,
+   "t": "VARCHAR",
+   "x": "VARCHAR"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 56,
+   "t": "STRING",
+   "x": "%Y-%m-%d %H:%i:%s"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 75,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 77,
+   "e": 76,
+   "l": 1,
+   "s": 76,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 77,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 79,
+   "t": "VAR",
+   "x": "PARSE_DATETIME"
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 93,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 105,
+   "e": 104,
+   "l": 1,
+   "s": 94,
+   "t": "VAR",
+   "x": "DATE_FORMAT"
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 105,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 106,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 107,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 128,
+   "e": 127,
+   "l": 1,
+   "s": 109,
+   "t": "STRING",
+   "x": "%Y-%m-%d %H:%i:%s"
+  },
+  {
+   "c": 129,
+   "e": 128,
+   "l": 1,
+   "s": 128,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 129,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 152,
+   "e": 151,
+   "l": 1,
+   "s": 131,
+   "t": "STRING",
+   "x": "yyyy-MM-dd HH:mm:ss"
+  },
+  {
+   "c": 153,
+   "e": 152,
+   "l": 1,
+   "s": 152,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 154,
+   "e": 153,
+   "l": 1,
+   "s": 153,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 155,
+   "e": 154,
+   "l": 1,
+   "s": 154,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.TimeToUnix",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Coalesce",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Try",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "c": "sqlglot.expressions.temporal.StrToTime",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 3,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 41
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 4,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 9,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "i": 9,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "format"
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "%Y-%m-%d %H:%M:%S"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.ParseDatetime",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 93,
+    "end": 92,
+    "line": 1,
+    "start": 79
+   }
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TimeToStr",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 105,
+    "end": 104,
+    "line": 1,
+    "start": 94
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 107,
+    "end": 106,
+    "line": 1,
+    "start": 106
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "format"
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "%Y-%m-%d %H:%M:%S"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 15,
+   "k": "format",
+   "m": {
+    "col": 152,
+    "end": 151,
+    "line": 1,
+    "start": 131
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "yyyy-MM-dd HH:mm:ss"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

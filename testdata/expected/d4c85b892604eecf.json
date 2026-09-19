@@ -1,0 +1,107 @@
+{
+ "dialect": "presto",
+ "rendered": "DATE_PARSE(x, '%c/%e/%y %l:%i %p')",
+ "sql": "DATE_PARSE(x, '%c/%e/%y %l:%i %p')",
+ "tokens": [
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "DATE_PARSE"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 14,
+   "t": "STRING",
+   "x": "%c/%e/%y %l:%i %p"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.StrToTime",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "format"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "%-m/%-d/%y %-I:%M %p"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

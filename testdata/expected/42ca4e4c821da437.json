@@ -1,0 +1,395 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT DATE_ADD('DAY', CAST(5 % 2.5 AS BIGINT), y), DATE_ADD('DAY', CAST(CEIL(5.5) AS BIGINT), y)",
+ "sql": "SELECT DATE_ADD('DAY', MOD(5, 2.5), y), DATE_ADD('DAY', CEIL(5.5), y)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "DATE_ADD"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 16,
+   "t": "STRING",
+   "x": "DAY"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "MOD"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "NUMBER",
+   "x": "5"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 30,
+   "t": "NUMBER",
+   "x": "2.5"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 34,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "VAR",
+   "x": "y"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 38,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "DATE_ADD"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 48,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 49,
+   "t": "STRING",
+   "x": "DAY"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 56,
+   "t": "VAR",
+   "x": "CEIL"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 60,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 61,
+   "t": "NUMBER",
+   "x": "5.5"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 64,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 65,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 67,
+   "t": "VAR",
+   "x": "y"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 68,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.DateAdd",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Mod",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "5"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "expression",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "2.5"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "unit"
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "DAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.DateAdd",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 68,
+    "end": 67,
+    "line": 1,
+    "start": 67
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.math.Ceil",
+   "i": 15,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 64,
+    "end": 63,
+    "line": 1,
+    "start": 61
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "5.5"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 15,
+   "k": "unit"
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "DAY"
+  }
+ ]
+}

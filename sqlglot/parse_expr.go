@@ -1,9 +1,19 @@
 package sqlglot
 
 import (
+	"regexp"
 	"strconv"
 	"strings"
 )
+
+// timeZoneRE is the reference's own TIME_ZONE_RE: a colon somewhere in the
+// literal, followed eventually by a letter or a sign -- `11:22:29 Europe/
+// Prague` and `11:22:29+05:00` both match; a plain `11:22:29` does not.
+var timeZoneRE = regexp.MustCompile(`:.*?[a-zA-Z+\-]`)
+
+func timeZoneInLiteral(s string) bool {
+	return timeZoneRE.MatchString(s)
+}
 
 // The expression grammar: precedence climbing, in the reference's shapes.
 //
@@ -1382,6 +1392,25 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			if err != nil {
 				return nil, err
 			}
+			// `JSON '...'` is not a cast at all, in any dialect: the
+			// reference reads it straight into a ParseJSON, the same node
+			// the JSON_PARSE/JSON_VALID family of functions build.
+			if kind.Args["this"] == DataTypeKind("JSON") {
+				return New("ParseJSON", Arg{"this", inner}), nil
+			}
+			// Presto reads a TIMESTAMP/TIME literal carrying a zone offset
+			// or name as TIMESTAMPTZ/TIMETZ instead -- the type the literal
+			// ACTUALLY names, not the bare word that introduced it.
+			if p.tables.ZoneAwareTimestampConstructor && inner.Class == "Literal" {
+				if text, _ := inner.Args["this"].(string); timeZoneInLiteral(text) {
+					switch kind.Args["this"] {
+					case DataTypeKind("TIMESTAMP"):
+						kind = New("DataType", Arg{"this", DataTypeKind("TIMESTAMPTZ")})
+					case DataTypeKind("TIME"):
+						kind = New("DataType", Arg{"this", DataTypeKind("TIMETZ")})
+					}
+				}
+			}
 			cast := New("Cast", Arg{"this", inner}, Arg{"to", kind})
 			cast.Type = kind
 			if p.tables.SupportsColumnJoinMarks {
@@ -2468,6 +2497,9 @@ func (p *parser) parseFunction() (*Expression, error) {
 	}
 	if upper == "DATENAME" && len(p.tables.FullFormatTimeMapping) > 0 {
 		return p.buildDateName(args)
+	}
+	if upper == "MOD" && len(args) == 2 {
+		return p.buildMod(args), nil
 	}
 	if isVarMap {
 		return p.buildVarMap(args)

@@ -1,0 +1,312 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT DATE_FORMAT(CAST(CAST('2020-01-01' AS DATE) AS TIMESTAMP), '%W') AS weekday",
+ "sql": "SELECT DATE_FORMAT(CAST(CAST('2020-01-01' AS DATE) AS TIMESTAMP), '%W') AS weekday",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "DATE_FORMAT"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 29,
+   "t": "STRING",
+   "x": "2020-01-01"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 42,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 45,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 49,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 51,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 54,
+   "t": "TIMESTAMP",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 63,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 64,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 66,
+   "t": "STRING",
+   "x": "%W"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 70,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 72,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 75,
+   "t": "VAR",
+   "x": "weekday"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TimeToStr",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 2,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMP"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 3,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "2020-01-01"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 4,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 8,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 8,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 3,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 11,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "i": 11,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "format"
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "%A"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 82,
+    "end": 81,
+    "line": 1,
+    "start": 75
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "weekday"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

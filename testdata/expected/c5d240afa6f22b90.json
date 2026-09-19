@@ -1,0 +1,261 @@
+{
+ "dialect": "presto",
+ "rendered": "CREATE TABLE x WITH (format='ICEBERG', PARTITIONED_BY=ARRAY['MONTHS(y)'])",
+ "sql": "CREATE TABLE x WITH (format='ICEBERG', PARTITIONED_BY=ARRAY['MONTHS(y)'])",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 15,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 21,
+   "t": "FORMAT",
+   "x": "format"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 28,
+   "t": "STRING",
+   "x": "ICEBERG"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 39,
+   "t": "PARTITION_BY",
+   "x": "PARTITIONED_BY"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 54,
+   "t": "ARRAY",
+   "x": "ARRAY"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 59,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 60,
+   "t": "STRING",
+   "x": "MONTHS(y)"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 71,
+   "t": "R_BRACKET",
+   "x": "]"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 72,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.FileFormatProperty",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "ICEBERG"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionedByProperty",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "expressions",
+   "m": {
+    "col": 71,
+    "end": 70,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "MONTHS(y)"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

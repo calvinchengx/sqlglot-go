@@ -1,0 +1,85 @@
+{
+ "dialect": "presto",
+ "rendered": "REGEXP_REPLACE(col, '(\\w)(\\w*)', x -> UPPER(x[1]) || LOWER(x[2]))",
+ "sql": "INITCAP(col)",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "INITCAP"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "col"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.string.Initcap"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": " \t\n\r\f\u000b!\"#$%&'()*+,\\-./:;<=>?@\\[\\]^_`{|}~"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

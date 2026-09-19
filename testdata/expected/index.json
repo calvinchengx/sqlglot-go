@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 4927,
+ "count": 5523,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -4948,6 +4948,11 @@
    "sql": "SELECT purchases, LAST_VALUE(item) OVER item_window AS most_popular FROM Produce WINDOW item_window AS (PARTITION BY purchases ORDER BY purchases NULLS FIRST ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING)"
   },
   {
+   "key": "307bf0cf0b6ba6ab",
+   "dialect": "presto",
+   "sql": "SELECT purchases, LAST_VALUE(item) OVER (PARTITION BY purchases ORDER BY purchases NULLS FIRST ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS most_popular FROM Produce"
+  },
+  {
    "key": "f8da2bb7366c37f5",
    "dialect": "redshift",
    "sql": "SELECT purchases, LAST_VALUE(item) OVER (PARTITION BY purchases ORDER BY purchases NULLS FIRST ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING) AS most_popular FROM Produce"
@@ -5018,9 +5023,29 @@
    "sql": "SELECT t.c1, h.c2, s.c3 FROM t1 AS t CROSS JOIN UNNEST(t.t2) AS _t0(h) CROSS JOIN UNNEST(h.t3) AS _t1(s)"
   },
   {
+   "key": "c1f4b57eac08005c",
+   "dialect": "presto",
+   "sql": "SELECT results FROM Coordinates CROSS JOIN UNNEST(Coordinates.position) AS _t0(results)"
+  },
+  {
+   "key": "d11d31fa96a4ddeb",
+   "dialect": "presto",
+   "sql": "SELECT results FROM Coordinates CROSS JOIN \"Coordinates\".\"position\" AS results"
+  },
+  {
+   "key": "972c21da5c930e36",
+   "dialect": "presto",
+   "sql": "SELECT results FROM Coordinates AS c, UNNEST(c.position) AS _t(results)"
+  },
+  {
    "key": "0b149c6dadfdb342",
    "dialect": "redshift",
    "sql": "SELECT results FROM Coordinates AS c, c.position AS results"
+  },
+  {
+   "key": "befef12ee86966bd",
+   "dialect": "presto",
+   "sql": "SELECT results FROM Coordinates AS c CROSS JOIN UNNEST(c.position) AS _t0(results)"
   },
   {
    "key": "d6b1938b55a1e3ac",
@@ -5031,6 +5056,11 @@
    "key": "e02602e9c6097547",
    "dialect": "duckdb",
    "sql": "CAST(x AS TIMESTAMPTZ)"
+  },
+  {
+   "key": "07536f0d7d2ec0b3",
+   "dialect": "presto",
+   "sql": "CAST(x AS TIMESTAMP WITH TIME ZONE)"
   },
   {
    "key": "3df2aebb1b346469",
@@ -5076,6 +5106,11 @@
    "key": "cde962ee1cd5a13d",
    "dialect": "postgres",
    "sql": "SELECT CAST(DATE_TRUNC('MONTH', CAST('2008-11-25' AS DATE)) + INTERVAL '1 MONTH' - INTERVAL '1 DAY' AS DATE)"
+  },
+  {
+   "key": "0958141c9d1ecef4",
+   "dialect": "presto",
+   "sql": "SELECT LAST_DAY_OF_MONTH(CAST('2008-11-25' AS DATE))"
   },
   {
    "key": "f39382dba42470fc",
@@ -5138,6 +5173,11 @@
    "sql": "SELECT DATE_DIFF('MINUTE', TO_TIMESTAMP(0), TO_TIMESTAMP(60))"
   },
   {
+   "key": "6283d1f4bf93eca4",
+   "dialect": "presto",
+   "sql": "SELECT DATE_DIFF('MINUTE', FROM_UNIXTIME(0), FROM_UNIXTIME(60))"
+  },
+  {
    "key": "5c8704682937159b",
    "dialect": "databricks",
    "sql": "TIMESTAMPDIFF(month, b, a)"
@@ -5146,6 +5186,11 @@
    "key": "3083d3cca69b5f49",
    "dialect": "databricks",
    "sql": "TIMESTAMPDIFF(MONTH, b, a)"
+  },
+  {
+   "key": "6f272112471fd6f1",
+   "dialect": "presto",
+   "sql": "DATE_DIFF('MONTH', b, a)"
   },
   {
    "key": "1ef1388bc4c29ddd",
@@ -5173,8 +5218,18 @@
    "sql": "SELECT '\n'"
   },
   {
+   "key": "a0d2030e0e6d57cc",
+   "dialect": "presto",
+   "sql": "SELECT DATE_DIFF('MONTH', DATE_TRUNC('MONTH', CAST('2021-01-31 00:00:00' AS TIMESTAMP)), DATE_TRUNC('MONTH', CAST('2021-02-01 00:00:00' AS TIMESTAMP)))"
+  },
+  {
    "key": "f16bd44a708f52e0",
    "dialect": "duckdb",
+   "sql": "SELECT DATE_DIFF('WEEK', DATE_TRUNC('WEEK', CAST('2017-10-14 00:00:00' AS TIMESTAMP) + INTERVAL '1' DAY), DATE_TRUNC('WEEK', CAST('2017-10-15 00:00:00' AS TIMESTAMP) + INTERVAL '1' DAY))"
+  },
+  {
+   "key": "c33f0b6a3eee9d84",
+   "dialect": "presto",
    "sql": "SELECT DATE_DIFF('WEEK', DATE_TRUNC('WEEK', CAST('2017-10-14 00:00:00' AS TIMESTAMP) + INTERVAL '1' DAY), DATE_TRUNC('WEEK', CAST('2017-10-15 00:00:00' AS TIMESTAMP) + INTERVAL '1' DAY))"
   },
   {
@@ -5208,9 +5263,24 @@
    "sql": "LOWER(HEX(x))"
   },
   {
+   "key": "031edcdee5b57e25",
+   "dialect": "presto",
+   "sql": "LOWER(TO_HEX(x))"
+  },
+  {
    "key": "3752610c9f3cf280",
    "dialect": "duckdb",
    "sql": "HEX(x)"
+  },
+  {
+   "key": "58f29cb1b9cc069e",
+   "dialect": "presto",
+   "sql": "TO_HEX(x)"
+  },
+  {
+   "key": "594f2255f6ec82e3",
+   "dialect": "presto",
+   "sql": "MD5(x)"
   },
   {
    "key": "70a94be8d79b2257",
@@ -5218,9 +5288,24 @@
    "sql": "SELECT MD5(some_string)"
   },
   {
+   "key": "4747ae55fdcbc92c",
+   "dialect": "presto",
+   "sql": "SELECT LOWER(TO_HEX(MD5(some_string)))"
+  },
+  {
+   "key": "534879e0c88ade17",
+   "dialect": "presto",
+   "sql": "SHA1(x)"
+  },
+  {
    "key": "3c60cba464057841",
    "dialect": "duckdb",
    "sql": "UNHEX(SHA1(x))"
+  },
+  {
+   "key": "8e8c5b67e8a6779e",
+   "dialect": "presto",
+   "sql": "SHA256(x)"
   },
   {
    "key": "4eacdb1475ff277d",
@@ -5243,6 +5328,11 @@
    "sql": "UNHEX(SHA256(x))"
   },
   {
+   "key": "ac66e489fe486fb5",
+   "dialect": "presto",
+   "sql": "SHA512(x)"
+  },
+  {
    "key": "1af99c9758fd520a",
    "dialect": "duckdb",
    "sql": "SELECT {'y': ARRAY(SELECT {'b': 1} FROM x)} FROM z"
@@ -5253,8 +5343,18 @@
    "sql": "'x'"
   },
   {
+   "key": "f7052ca86d50b792",
+   "dialect": "presto",
+   "sql": "'x'"
+  },
+  {
    "key": "641e4e8e6f4e7be2",
    "dialect": "duckdb",
+   "sql": "'x'''"
+  },
+  {
+   "key": "739d50b732594d2a",
+   "dialect": "presto",
    "sql": "'x'''"
   },
   {
@@ -5268,8 +5368,18 @@
    "sql": "'\\'"
   },
   {
+   "key": "fef5bf91d39aeae0",
+   "dialect": "presto",
+   "sql": "'\\'"
+  },
+  {
    "key": "d26aa6ba9a777acd",
    "dialect": "duckdb",
+   "sql": "'/\\*.*\\*/'"
+  },
+  {
+   "key": "ebc974e16913cb86",
+   "dialect": "presto",
    "sql": "'/\\*.*\\*/'"
   },
   {
@@ -5283,13 +5393,28 @@
    "sql": "CAST(a AS BIGINT)"
   },
   {
+   "key": "ea28e3a4b9ffa598",
+   "dialect": "presto",
+   "sql": "CAST(a AS BIGINT)"
+  },
+  {
    "key": "22cebe61c5602890",
    "dialect": "duckdb",
    "sql": "CAST(a AS BLOB)"
   },
   {
+   "key": "88719ffd92d72b21",
+   "dialect": "presto",
+   "sql": "CAST(a AS VARBINARY)"
+  },
+  {
    "key": "88c7c25c37e5af6d",
    "dialect": "duckdb",
+   "sql": "CAST(a AS DECIMAL)"
+  },
+  {
+   "key": "1becdf72cdd6bb5b",
+   "dialect": "presto",
    "sql": "CAST(a AS DECIMAL)"
   },
   {
@@ -5298,13 +5423,33 @@
    "sql": "[1, 2, 3]"
   },
   {
+   "key": "0c69c772fc784c3f",
+   "dialect": "presto",
+   "sql": "ARRAY[1, 2, 3]"
+  },
+  {
+   "key": "cb3d11e35f35b4e5",
+   "dialect": "presto",
+   "sql": "SELECT * FROM UNNEST(ARRAY['7', '14']) AS _t0(x)"
+  },
+  {
    "key": "8f2c293bec4853d3",
    "dialect": "tsql",
    "sql": "GETDATE()"
   },
   {
+   "key": "500d72fd9c7a8286",
+   "dialect": "presto",
+   "sql": "CURRENT_DATETIME()"
+  },
+  {
    "key": "330948196cef8f71",
    "dialect": "duckdb",
+   "sql": "CURRENT_TIME"
+  },
+  {
+   "key": "59b90d727c04a7ad",
+   "dialect": "presto",
    "sql": "CURRENT_TIME"
   },
   {
@@ -5318,6 +5463,11 @@
    "sql": "CURRENT_TIMESTAMP"
   },
   {
+   "key": "df95e8101427649c",
+   "dialect": "presto",
+   "sql": "CURRENT_TIMESTAMP"
+  },
+  {
    "key": "a63a3b20dce36d10",
    "dialect": "duckdb",
    "sql": "x // y"
@@ -5328,14 +5478,44 @@
    "sql": "CREATE TABLE db.example_table (col_a STRUCT(struct_col_a INT, struct_col_b TEXT))"
   },
   {
+   "key": "c81196c813a590b1",
+   "dialect": "presto",
+   "sql": "CREATE TABLE db.example_table (col_a ROW(struct_col_a INTEGER, struct_col_b VARCHAR))"
+  },
+  {
    "key": "1a1232b748319be1",
    "dialect": "duckdb",
    "sql": "CREATE TABLE db.example_table (col_a STRUCT(struct_col_a BIGINT, struct_col_b STRUCT(nested_col_a TEXT, nested_col_b TEXT)))"
   },
   {
+   "key": "2c8f64303b266bb4",
+   "dialect": "presto",
+   "sql": "CREATE TABLE db.example_table (col_a ROW(struct_col_a BIGINT, struct_col_b ROW(nested_col_a VARCHAR, nested_col_b VARCHAR)))"
+  },
+  {
+   "key": "01a30c7aaccd2ec8",
+   "dialect": "presto",
+   "sql": "DELETE FROM db.example_table WHERE x = 1"
+  },
+  {
+   "key": "594dd8787e6eb95b",
+   "dialect": "presto",
+   "sql": "DELETE FROM db.example_table WHERE example_table.x = 1"
+  },
+  {
+   "key": "89b2d9796d991187",
+   "dialect": "presto",
+   "sql": "DELETE FROM db.t1 WHERE NOT c IN (SELECT c FROM db.t2)"
+  },
+  {
    "key": "41896a728c910395",
    "dialect": "duckdb",
    "sql": "SELECT * FROM a WHERE CASE WHEN [1, 2, 3] IS NULL OR ARRAY_LENGTH([1, 2, 3]) = 0 THEN FALSE WHEN ARRAY_CONTAINS([1, 2, 3], b) THEN TRUE WHEN b IS NULL OR ARRAY_LENGTH([1, 2, 3]) <> LIST_COUNT([1, 2, 3]) THEN NULL ELSE FALSE END"
+  },
+  {
+   "key": "95e223f45e83be11",
+   "dialect": "presto",
+   "sql": "SELECT * FROM a WHERE b IN (SELECT UNNEST(ARRAY[1, 2, 3]))"
   },
   {
    "key": "8c6400471b7483c4",
@@ -5356,6 +5536,11 @@
    "key": "2d2c303e9d4a3c7a",
    "dialect": "postgres",
    "sql": "CURRENT_DATE + INTERVAL '-1 DAY'"
+  },
+  {
+   "key": "f36af444c26ad6e1",
+   "dialect": "presto",
+   "sql": "DATE_ADD('DAY', CAST('-1' AS BIGINT), CURRENT_DATE)"
   },
   {
    "key": "5c0b6b402ac7e9fb",
@@ -5391,6 +5576,11 @@
    "key": "b51ee583f5124d0b",
    "dialect": "duckdb",
    "sql": "CAST(TO_JSON(x) AS TEXT)"
+  },
+  {
+   "key": "2111ab31c0748a33",
+   "dialect": "presto",
+   "sql": "JSON_FORMAT(CAST(x AS JSON))"
   },
   {
    "key": "30579db5f835f506",
@@ -5448,6 +5638,11 @@
    "sql": "CONCAT(ARRAY(1, 2), ARRAY(3, 4), ARRAY(5, 6))"
   },
   {
+   "key": "f5b8bf600794b64b",
+   "dialect": "presto",
+   "sql": "CONCAT(ARRAY[1, 2], ARRAY[3, 4], ARRAY[5, 6])"
+  },
+  {
    "key": "e257932c36f6cfa8",
    "dialect": "duckdb",
    "sql": "SELECT GENERATE_SERIES(CAST('2016-10-05 00:00:00' AS TIMESTAMP), CAST('2016-10-07 00:00:00' AS TIMESTAMP), INTERVAL '1' DAY)"
@@ -5498,6 +5693,11 @@
    "sql": "CASE WHEN y <> 0 THEN x / y ELSE NULL END"
   },
   {
+   "key": "86ea118868612049",
+   "dialect": "presto",
+   "sql": "IF(y <> 0, CAST(x AS DOUBLE) / y, NULL)"
+  },
+  {
    "key": "9fff65afac4cbcb4",
    "dialect": "databricks",
    "sql": "TRY_DIVIDE(x, y)"
@@ -5511,6 +5711,11 @@
    "key": "5d10ceb10c8909a8",
    "dialect": "duckdb",
    "sql": "CASE WHEN (2 * y) <> 0 THEN (x + 1) / (2 * y) ELSE NULL END"
+  },
+  {
+   "key": "5e0cc6b3f38ddea5",
+   "dialect": "presto",
+   "sql": "IF((2 * y) <> 0, CAST((x + 1) AS DOUBLE) / (2 * y), NULL)"
   },
   {
    "key": "8a697de7aeed6cd2",
@@ -5633,6 +5838,11 @@
    "sql": "SELECT CAST(UUID() AS TEXT)"
   },
   {
+   "key": "7e1056f7111135fc",
+   "dialect": "presto",
+   "sql": "SELECT CAST(UUID() AS VARCHAR)"
+  },
+  {
    "key": "1884e2475451e1a8",
    "dialect": "duckdb",
    "sql": "SELECT REPLACE('apple pie', 'pie', 'cobbler') AS result"
@@ -5753,6 +5963,11 @@
    "sql": "SELECT * FROM (SELECT UNNEST([{'name': 'Alice', 'scores': {'math': 85, 'english': 90}}, {'name': 'Bob', 'scores': {'math': 92, 'english': 88}}], max_depth => 2))"
   },
   {
+   "key": "4b37dd626de79835",
+   "dialect": "presto",
+   "sql": "SELECT * FROM UNNEST(ARRAY[CAST(ROW('Alice', CAST(ROW(85, 90) AS ROW(math INTEGER, english INTEGER))) AS ROW(name VARCHAR, scores ROW(math INTEGER, english INTEGER))), CAST(ROW('Bob', CAST(ROW(92, 88) AS ROW(math INTEGER, english INTEGER))) AS ROW(name VARCHAR, scores ROW(math INTEGER, english INTEGER)))])"
+  },
+  {
    "key": "59054fa3d0ea1a73",
    "dialect": "databricks",
    "sql": "SELECT * FROM EXPLODE(ARRAY(STRUCT('Alice' AS name, STRUCT(85 AS math, 90 AS english) AS scores), STRUCT('Bob' AS name, STRUCT(92 AS math, 88 AS english) AS scores)))"
@@ -5761,6 +5976,11 @@
    "key": "d845b7fc3dd2c33c",
    "dialect": "duckdb",
    "sql": "SELECT * FROM (SELECT UNNEST([{'name': 'Alice', 'score': 85}, {'name': 'Bob', 'score': 92}, {'name': 'Diana', 'score': 95}], max_depth => 2))"
+  },
+  {
+   "key": "0855d8d11ec2811b",
+   "dialect": "presto",
+   "sql": "SELECT * FROM UNNEST(ARRAY[CAST(ROW('Alice', 85) AS ROW(name VARCHAR, score INTEGER)), CAST(ROW('Bob', 92) AS ROW(name VARCHAR, score INTEGER)), CAST(ROW('Diana', 95) AS ROW(name VARCHAR, score INTEGER))])"
   },
   {
    "key": "d963bf200075122d",
@@ -5808,6 +6028,11 @@
    "sql": "SELECT ARRAY_EXTRACT(REGEXP_EXTRACT_ALL(NULLIF(SUBSTRING(abc, 2), ''), 'pattern(group)', 1), 3) FROM \"table\""
   },
   {
+   "key": "52d54892e0bd68f6",
+   "dialect": "presto",
+   "sql": "REGEXP_EXTRACT_ALL('a1_a2a3_a4A5a6', 'a[0-9]')"
+  },
+  {
    "key": "5cd118791b6d7b6a",
    "dialect": "databricks",
    "sql": "REGEXP_EXTRACT_ALL('a1_a2a3_a4A5a6', 'a[0-9]', 0)"
@@ -5816,6 +6041,11 @@
    "key": "558d7b68bd9edce3",
    "dialect": "duckdb",
    "sql": "REGEXP_EXTRACT_ALL('a1_a2a3_a4A5a6', 'a[0-9]')"
+  },
+  {
+   "key": "3c08e91eed87348c",
+   "dialect": "presto",
+   "sql": "REGEXP_EXTRACT_ALL('a1_a2a3_a4A5a6', '(a)[0-9]', 1)"
   },
   {
    "key": "542d50fda222f7b2",
@@ -6143,8 +6373,18 @@
    "sql": "SELECT a[2], b[2], c[1], d[2], e[1]"
   },
   {
+   "key": "47b7ceaf1fbfb7e3",
+   "dialect": "presto",
+   "sql": "SELECT a[2], b[2], c[1], ELEMENT_AT(d, 2), ELEMENT_AT(e, 1)"
+  },
+  {
    "key": "575a562f23d8fa89",
    "dialect": "duckdb",
+   "sql": "a[1]"
+  },
+  {
+   "key": "455b49f62d0ade9c",
+   "dialect": "presto",
    "sql": "a[1]"
   },
   {
@@ -6233,6 +6473,11 @@
    "sql": "any(array[1]) <> x"
   },
   {
+   "key": "ce4bcfc5a2225c7a",
+   "dialect": "presto",
+   "sql": "CONTAINS(ARRAY[1], x)"
+  },
+  {
    "key": "b2f1b34e6e9397b3",
    "dialect": "duckdb",
    "sql": "SELECT TIMESTAMP '2020-01-01' + INTERVAL '500 us'"
@@ -6271,6 +6516,16 @@
    "key": "0bfeffe112afce0d",
    "dialect": "postgres",
    "sql": "SELECT 'ThOmAs' ~* x FROM t"
+  },
+  {
+   "key": "edd057cd12c0d6e1",
+   "dialect": "presto",
+   "sql": "DATE_ADD('DAY', 1, x)"
+  },
+  {
+   "key": "53c63e16f1249748",
+   "dialect": "presto",
+   "sql": "DATE_DIFF('DAY', a, b)"
   },
   {
    "key": "ddcdfb320d2f6b87",
@@ -6358,6 +6613,11 @@
    "sql": "DATE_TRUNC('WEEK', x)"
   },
   {
+   "key": "adee55b4f4e4e58d",
+   "dialect": "presto",
+   "sql": "DATE_TRUNC('WEEK', x)"
+  },
+  {
    "key": "660ff4ef286afd90",
    "dialect": "databricks",
    "sql": "TRUNC(x, 'MONTH')"
@@ -6365,6 +6625,11 @@
   {
    "key": "5f9f859fe79489bd",
    "dialect": "duckdb",
+   "sql": "DATE_TRUNC('MONTH', x)"
+  },
+  {
+   "key": "862e8559e98db2f2",
+   "dialect": "presto",
    "sql": "DATE_TRUNC('MONTH', x)"
   },
   {
@@ -6390,6 +6655,11 @@
   {
    "key": "71095753eacec307",
    "dialect": "duckdb",
+   "sql": "SELECT col[1]"
+  },
+  {
+   "key": "25860c27a96ff6d4",
+   "dialect": "presto",
    "sql": "SELECT col[1]"
   },
   {
@@ -7448,6 +7718,11 @@
    "sql": "CAST(a AS TEXT)"
   },
   {
+   "key": "17dfd98d27bc1c71",
+   "dialect": "presto",
+   "sql": "CAST(a AS VARCHAR)"
+  },
+  {
    "key": "9f45cade101d6536",
    "dialect": "redshift",
    "sql": "CAST(a AS VARCHAR(MAX))"
@@ -7471,6 +7746,11 @@
    "key": "d44a376bcf135b23",
    "dialect": "postgres",
    "sql": "CAST(a AS BYTEA(4))"
+  },
+  {
+   "key": "c2fa762bae5062a9",
+   "dialect": "presto",
+   "sql": "CAST(a AS VARBINARY(4))"
   },
   {
    "key": "cb297eb1fff4c920",
@@ -7518,6 +7798,11 @@
    "sql": "CAST(a AS VARCHAR(3))"
   },
   {
+   "key": "423de22c87f9509d",
+   "dialect": "presto",
+   "sql": "CAST(a AS VARCHAR(3))"
+  },
+  {
    "key": "bdf4d6ee932ccac0",
    "dialect": "redshift",
    "sql": "CAST(a AS VARCHAR(3))"
@@ -7540,6 +7825,11 @@
   {
    "key": "0a8c99a364177752",
    "dialect": "postgres",
+   "sql": "CAST(a AS SMALLINT)"
+  },
+  {
+   "key": "07e2fa5a6b22bd1e",
+   "dialect": "presto",
    "sql": "CAST(a AS SMALLINT)"
   },
   {
@@ -7566,6 +7856,11 @@
    "key": "eb8a8e10193f606d",
    "dialect": "materialize",
    "sql": "CAST(a AS DOUBLE PRECISION)"
+  },
+  {
+   "key": "ee454b76481c9125",
+   "dialect": "presto",
+   "sql": "CAST(a AS DOUBLE)"
   },
   {
    "key": "453c0255c7ce2565",
@@ -7605,6 +7900,11 @@
   {
    "key": "855b18d353d75c42",
    "dialect": "postgres",
+   "sql": "CREATE TABLE a (LIKE b)"
+  },
+  {
+   "key": "cfd8785c6bff2ca1",
+   "dialect": "presto",
    "sql": "CREATE TABLE a (LIKE b)"
   },
   {
@@ -7698,6 +7998,11 @@
    "sql": "SELECT COALESCE(1, NULL) FROM foo"
   },
   {
+   "key": "ff04fd518c21c90b",
+   "dialect": "presto",
+   "sql": "SELECT COALESCE(1, NULL) FROM foo"
+  },
+  {
    "key": "1c97595163f2ed47",
    "dialect": "postgres",
    "sql": "SELECT (x ~ '^[[:ascii:]]*$')"
@@ -7720,6 +8025,11 @@
   {
    "key": "d31a7586cca3e7cb",
    "dialect": "postgres",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
+  },
+  {
+   "key": "c7be785fa0f04a05",
+   "dialect": "presto",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
   },
   {
@@ -7748,6 +8058,11 @@
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
   },
   {
+   "key": "f3dab836e0529dc6",
+   "dialect": "presto",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
+  },
+  {
    "key": "df5cd53ab7c2bb96",
    "dialect": "redshift",
    "sql": "SELECT NVL2(a, b)"
@@ -7761,6 +8076,11 @@
    "key": "ba3fefdab19aaa72",
    "dialect": "duckdb",
    "sql": "STRPTIME(x, '%Y-%m-%dT%H:%M:%S')"
+  },
+  {
+   "key": "a42c8a7d44cfedd5",
+   "dialect": "presto",
+   "sql": "DATE_PARSE(x, '%Y-%m-%dT%T')"
   },
   {
    "key": "ff69936bea6b0168",
@@ -7778,6 +8098,11 @@
    "sql": "TO_TIMESTAMP('2020-01-01', 'YYYY-MM-DD')"
   },
   {
+   "key": "5107111d4eb00824",
+   "dialect": "presto",
+   "sql": "DATE_PARSE('2020-01-01', '%Y-%m-%d')"
+  },
+  {
    "key": "3575ede179ce1ed2",
    "dialect": "redshift",
    "sql": "TO_TIMESTAMP('2020-01-01', 'YYYY-MM-DD')"
@@ -7791,6 +8116,11 @@
    "key": "3510f8ef0765e8d4",
    "dialect": "materialize",
    "sql": "TO_TIMESTAMP(x, 'YY')"
+  },
+  {
+   "key": "0b9edab5d42d4cfd",
+   "dialect": "presto",
+   "sql": "DATE_PARSE(x, '%y')"
   },
   {
    "key": "e36c1461cde1a240",
@@ -7808,9 +8138,19 @@
    "sql": "EPOCH(STRPTIME('2020-01-01', '%Y-%m-%d'))"
   },
   {
+   "key": "d809303411f6def2",
+   "dialect": "presto",
+   "sql": "TO_UNIXTIME(COALESCE(TRY(DATE_PARSE(CAST('2020-01-01' AS VARCHAR), '%Y-%m-%d')), PARSE_DATETIME(DATE_FORMAT(CAST('2020-01-01' AS TIMESTAMP), '%Y-%m-%d'), 'yyyy-MM-dd')))"
+  },
+  {
    "key": "ff9587e5af50e2d2",
    "dialect": "duckdb",
    "sql": "CAST('2020-01-01' AS DATE)"
+  },
+  {
+   "key": "5757e5142ea0e576",
+   "dialect": "presto",
+   "sql": "CAST('2020-01-01' AS TIMESTAMP)"
   },
   {
    "key": "1677a3fbf73f4628",
@@ -7838,6 +8178,16 @@
    "sql": "CAST('2020-01-01' AS TIMESTAMP)"
   },
   {
+   "key": "28c4c924d2f7bbd3",
+   "dialect": "presto",
+   "sql": "CAST('2020-01-01 12:13:14.123456+00:00' AS TIMESTAMP)"
+  },
+  {
+   "key": "4340b9f18797a2e7",
+   "dialect": "presto",
+   "sql": "CAST('2020-01-01 12:13:14.123-08:00' AS TIMESTAMP WITH TIME ZONE)"
+  },
+  {
    "key": "174631332eb1510f",
    "dialect": "databricks",
    "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP)"
@@ -7860,6 +8210,11 @@
   {
    "key": "57bb8a9e675d83fb",
    "dialect": "redshift",
+   "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP WITH TIME ZONE)"
+  },
+  {
+   "key": "2102db8dee1a04c1",
+   "dialect": "presto",
    "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP WITH TIME ZONE)"
   },
   {
@@ -7888,9 +8243,19 @@
    "sql": "CAST(col AS TIMESTAMP WITH TIME ZONE)"
   },
   {
+   "key": "d5c0557ef2bee237",
+   "dialect": "presto",
+   "sql": "CAST(col AS TIMESTAMP WITH TIME ZONE)"
+  },
+  {
    "key": "ca39de8cbb240024",
    "dialect": "duckdb",
    "sql": "EPOCH(CAST('2020-01-01' AS TIMESTAMP))"
+  },
+  {
+   "key": "ee7b6257a2fdb463",
+   "dialect": "presto",
+   "sql": "TO_UNIXTIME(DATE_PARSE('2020-01-01', '%Y-%m-%d %T'))"
   },
   {
    "key": "4c408e5bd5aa605e",
@@ -7906,6 +8271,11 @@
    "key": "ea52a9111d4138a9",
    "dialect": "postgres",
    "sql": "TO_CHAR(x, 'YYYY-MM-DD')"
+  },
+  {
+   "key": "7ad3dc29efd2f9d6",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(x, '%Y-%m-%d')"
   },
   {
    "key": "126e24e470e8b3bf",
@@ -7928,6 +8298,11 @@
    "sql": "CAST(x AS TEXT)"
   },
   {
+   "key": "5a9fa7bde5c58890",
+   "dialect": "presto",
+   "sql": "CAST(x AS VARCHAR)"
+  },
+  {
    "key": "e380c1fa588fc828",
    "dialect": "redshift",
    "sql": "CAST(x AS VARCHAR(MAX))"
@@ -7938,9 +8313,19 @@
    "sql": "EPOCH(x)"
   },
   {
+   "key": "705b83dcdae2b78a",
+   "dialect": "presto",
+   "sql": "TO_UNIXTIME(x)"
+  },
+  {
    "key": "7c90e11d03ca0fd6",
    "dialect": "duckdb",
    "sql": "SUBSTRING(CAST(x AS TEXT), 1, 10)"
+  },
+  {
+   "key": "d4d733e2cc526a1f",
+   "dialect": "presto",
+   "sql": "SUBSTR(CAST(x AS VARCHAR), 1, 10)"
   },
   {
    "key": "5a61236313099c6d",
@@ -7958,14 +8343,29 @@
    "sql": "CAST(x AS DATE)"
   },
   {
+   "key": "896ab12792183ddd",
+   "dialect": "presto",
+   "sql": "CAST(CAST(x AS TIMESTAMP) AS DATE)"
+  },
+  {
    "key": "81af68b1f3beca39",
    "dialect": "duckdb",
    "sql": "CAST(STRPTIME(x, '%-d') AS DATE)"
   },
   {
+   "key": "1e9a1a6e0dcf3911",
+   "dialect": "presto",
+   "sql": "CAST(DATE_PARSE(x, '%e') AS DATE)"
+  },
+  {
    "key": "393a7da81aa3f0df",
    "dialect": "duckdb",
    "sql": "STRFTIME(TO_TIMESTAMP(x), y)"
+  },
+  {
+   "key": "7a710a11d0e81a81",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(FROM_UNIXTIME(x), y)"
   },
   {
    "key": "3beccacee90a51a7",
@@ -7983,9 +8383,19 @@
    "sql": "TO_TIMESTAMP(x)"
   },
   {
+   "key": "eaef8e42883cd5c3",
+   "dialect": "presto",
+   "sql": "FROM_UNIXTIME(x)"
+  },
+  {
    "key": "7f06b6db1c1146c4",
    "dialect": "duckdb",
    "sql": "CAST(TO_TIMESTAMP(x) AS TEXT)"
+  },
+  {
+   "key": "f3151edbe0c1a1d2",
+   "dialect": "presto",
+   "sql": "CAST(FROM_UNIXTIME(x) AS VARCHAR)"
   },
   {
    "key": "a9cbd8bf5fbb988d",
@@ -7993,14 +8403,29 @@
    "sql": "CAST(STRFTIME(x, '%Y%m%d') AS INT)"
   },
   {
+   "key": "6367719d1ee4b258",
+   "dialect": "presto",
+   "sql": "CAST(DATE_FORMAT(x, '%Y%m%d') AS INT)"
+  },
+  {
    "key": "e605a2424a401c14",
    "dialect": "duckdb",
    "sql": "CAST(STRPTIME(CAST(x AS TEXT), '%Y%m%d') AS DATE)"
   },
   {
+   "key": "e9de635351ed3bda",
+   "dialect": "presto",
+   "sql": "CAST(DATE_PARSE(CAST(x AS VARCHAR), '%Y%m%d') AS DATE)"
+  },
+  {
    "key": "f7db348fa2d84a8d",
    "dialect": "duckdb",
    "sql": "CAST(SUBSTR(REPLACE(CAST(x AS TEXT), '-', ''), 1, 8) AS INT)"
+  },
+  {
+   "key": "e697aad732f79093",
+   "dialect": "presto",
+   "sql": "CAST(SUBSTR(REPLACE(CAST(x AS VARCHAR), '-', ''), 1, 8) AS INT)"
   },
   {
    "key": "4f3a442d3f5a3d69",
@@ -8028,6 +8453,11 @@
    "sql": "DATE_TRUNC('DAY', x)"
   },
   {
+   "key": "83a4b676ec40e4e4",
+   "dialect": "presto",
+   "sql": "DATE_TRUNC('DAY', x)"
+  },
+  {
    "key": "842c5f3f787813b6",
    "dialect": "materialize",
    "sql": "DATE_TRUNC('DAY', x)"
@@ -8048,9 +8478,19 @@
    "sql": "DATE_TRUNC('day', x)"
   },
   {
+   "key": "63e6a3a88bb845a1",
+   "dialect": "presto",
+   "sql": "DATE_TRUNC('day', x)"
+  },
+  {
    "key": "5905125333738220",
    "dialect": "postgres",
    "sql": "DATE_TRUNC('day', x)"
+  },
+  {
+   "key": "bff4436b98a5ed80",
+   "dialect": "presto",
+   "sql": "DATE_TRUNC('DAY', x::DATE)"
   },
   {
    "key": "ca56d64fec13d1d6",
@@ -8083,6 +8523,21 @@
    "sql": "NEXT_DAY(x, y)"
   },
   {
+   "key": "bf63b80f196cf08c",
+   "dialect": "presto",
+   "sql": "CAST(DATE_PARSE(x, '%Y-%m-%dT%T') AS DATE)"
+  },
+  {
+   "key": "35084927dd7be2d6",
+   "dialect": "presto",
+   "sql": "CAST(DATE_PARSE(x, '%Y-%m-%d') AS DATE)"
+  },
+  {
+   "key": "db2c30471dd4f765",
+   "dialect": "presto",
+   "sql": "CAST(x AS DATE)"
+  },
+  {
    "key": "e34c8df24d69555b",
    "dialect": "tsql",
    "sql": "CAST(x AS DATE)"
@@ -8093,9 +8548,29 @@
    "sql": "CAST('2021-02-01' AS DATE) + INTERVAL 1 DAY"
   },
   {
+   "key": "55910ad2697ad654",
+   "dialect": "presto",
+   "sql": "DATE_ADD('DAY', 1, CAST(CAST('2021-02-01' AS TIMESTAMP) AS DATE))"
+  },
+  {
+   "key": "4f542007daf42fa3",
+   "dialect": "presto",
+   "sql": "DATE_ADD('DAY', 1, CAST(CAST(x AS TIMESTAMP) AS DATE))"
+  },
+  {
+   "key": "b57533e23a96f77a",
+   "dialect": "presto",
+   "sql": "DATE_ADD('DAY', 1, CAST(CAST(CURRENT_DATE AS TIMESTAMP) AS DATE))"
+  },
+  {
    "key": "7a3d85af6c5859dc",
    "dialect": "duckdb",
    "sql": "CAST('2020-01-01' AS DATE) + INTERVAL 1 DAY"
+  },
+  {
+   "key": "76086c9c521a0fc2",
+   "dialect": "presto",
+   "sql": "DATE_ADD('DAY', 1, CAST('2020-01-01' AS DATE))"
   },
   {
    "key": "3fae1b0e9948a27f",
@@ -8123,9 +8598,19 @@
    "sql": "[0, 1, 2]"
   },
   {
+   "key": "35802e46a9edc343",
+   "dialect": "presto",
+   "sql": "ARRAY[0, 1, 2]"
+  },
+  {
    "key": "30d17ed0a61ce9bc",
    "dialect": "duckdb",
    "sql": "ARRAY_LENGTH(x)"
+  },
+  {
+   "key": "4c465ef44b7aa1e5",
+   "dialect": "presto",
+   "sql": "CARDINALITY(x)"
   },
   {
    "key": "860d25ce7b9a5427",
@@ -8133,8 +8618,23 @@
    "sql": "LIST_SUM([1, 2])"
   },
   {
+   "key": "ccae0d4d160af354",
+   "dialect": "presto",
+   "sql": "ARRAY_SUM(ARRAY[1, 2])"
+  },
+  {
+   "key": "08a4e94f519ede9d",
+   "dialect": "presto",
+   "sql": "REDUCE(x, 0, (acc, x) -> acc + x, acc -> acc)"
+  },
+  {
    "key": "6245ac7d64d4a3b5",
    "dialect": "databricks",
+   "sql": "ARRAY_INTERSECT(x, y)"
+  },
+  {
+   "key": "f74a849907dc42f9",
+   "dialect": "presto",
    "sql": "ARRAY_INTERSECT(x, y)"
   },
   {
@@ -8158,9 +8658,19 @@
    "sql": "SLICE(x, 1, 3)"
   },
   {
+   "key": "b0f0a560859328e0",
+   "dialect": "presto",
+   "sql": "SLICE(x, 1, 3)"
+  },
+  {
    "key": "f3431c41c5ab2bb5",
    "dialect": "duckdb",
    "sql": "LIST_SORT(x)"
+  },
+  {
+   "key": "c71734ce9a9499f9",
+   "dialect": "presto",
+   "sql": "ARRAY_SORT(x)"
   },
   {
    "key": "1dc816ce611eff69",
@@ -8193,6 +8703,11 @@
    "sql": "list_max(x)"
   },
   {
+   "key": "c47ec92798f2497d",
+   "dialect": "presto",
+   "sql": "array_max(x)"
+  },
+  {
    "key": "b90c7d7d79a376fc",
    "dialect": "databricks",
    "sql": "ARRAY_MAX(x)"
@@ -8201,6 +8716,11 @@
    "key": "ef401b6809cd6ba9",
    "dialect": "duckdb",
    "sql": "LIST_MAX(x)"
+  },
+  {
+   "key": "9d9fcccbf0f6912a",
+   "dialect": "presto",
+   "sql": "ARRAY_MAX(x)"
   },
   {
    "key": "5f6ff5c3721b5825",
@@ -8213,6 +8733,11 @@
    "sql": "list_min(x)"
   },
   {
+   "key": "ade92e484eb1a470",
+   "dialect": "presto",
+   "sql": "array_min(x)"
+  },
+  {
    "key": "6072dadfa2f60fb8",
    "dialect": "databricks",
    "sql": "ARRAY_MIN(x)"
@@ -8221,6 +8746,11 @@
    "key": "68e8fe65db64efa4",
    "dialect": "duckdb",
    "sql": "LIST_MIN(x)"
+  },
+  {
+   "key": "ac090eda61376dc2",
+   "dialect": "presto",
+   "sql": "ARRAY_MIN(x)"
   },
   {
    "key": "dc65b29e1b7958f6",
@@ -8233,6 +8763,11 @@
    "sql": "SELECT ARRAY_EXCEPT(ARRAY(1, 2, 3), ARRAY(2))"
   },
   {
+   "key": "9229290d74619d6b",
+   "dialect": "presto",
+   "sql": "SELECT ARRAY_EXCEPT(ARRAY[1, 2, 3], ARRAY[2])"
+  },
+  {
    "key": "82a5810caf9f7612",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN [1, 2, 3] IS NULL OR [2] IS NULL THEN NULL ELSE LIST_FILTER(LIST_DISTINCT([1, 2, 3]), e -> LENGTH(LIST_FILTER([2], x -> x IS NOT DISTINCT FROM e)) = 0) END"
@@ -8243,9 +8778,19 @@
    "sql": "SELECT array_position(array(1, 2, 3), 2)"
   },
   {
+   "key": "08b05331780b50f2",
+   "dialect": "presto",
+   "sql": "SELECT array_position(array[1, 2, 3], 2)"
+  },
+  {
    "key": "8d56d0250f498a83",
    "dialect": "databricks",
    "sql": "SELECT ARRAY_POSITION(ARRAY(1, 2, 3), 2)"
+  },
+  {
+   "key": "dec1db00689b88b0",
+   "dialect": "presto",
+   "sql": "SELECT ARRAY_POSITION(ARRAY[1, 2, 3], 2)"
   },
   {
    "key": "a389bff6346c50c9",
@@ -8258,6 +8803,11 @@
    "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC, lname NULLS FIRST"
   },
   {
+   "key": "5cbf3dd708caa852",
+   "dialect": "presto",
+   "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC, lname NULLS FIRST"
+  },
+  {
    "key": "063bc69fa5590674",
    "dialect": "duckdb",
    "sql": "x -> '$.\"a b\"'"
@@ -8266,6 +8816,11 @@
    "key": "1327eacebb7e1b3a",
    "dialect": "postgres",
    "sql": "JSON_EXTRACT_PATH(x, 'a b')"
+  },
+  {
+   "key": "4f62f81dd60a1cc7",
+   "dialect": "presto",
+   "sql": "JSON_EXTRACT(x, '$[\"a b\"]')"
   },
   {
    "key": "4e1c064a5583224e",
@@ -8286,6 +8841,11 @@
    "key": "825297b36b6d9566",
    "dialect": "postgres",
    "sql": "x->'y'"
+  },
+  {
+   "key": "bde8105ed566b278",
+   "dialect": "presto",
+   "sql": "JSON_EXTRACT(x, '$.y')"
   },
   {
    "key": "9fdb8e968e783933",
@@ -8313,6 +8873,11 @@
    "sql": "x ->> 'y'"
   },
   {
+   "key": "87d96157727491c2",
+   "dialect": "presto",
+   "sql": "JSON_EXTRACT_SCALAR(x, '$.y')"
+  },
+  {
    "key": "10f95c8d27a73c9a",
    "dialect": "redshift",
    "sql": "JSON_EXTRACT_PATH_TEXT(x, 'y')"
@@ -8331,6 +8896,11 @@
    "key": "ac265110ebd87181",
    "dialect": "duckdb",
    "sql": "x -> '$.y[0].z'"
+  },
+  {
+   "key": "6566acd1999f3e07",
+   "dialect": "presto",
+   "sql": "JSON_EXTRACT(x, '$.y[0].z')"
   },
   {
    "key": "46c065c84f86cf43",
@@ -8353,6 +8923,11 @@
    "sql": "x ->> '$.y[0].z'"
   },
   {
+   "key": "fb1f013da2d67d66",
+   "dialect": "presto",
+   "sql": "JSON_EXTRACT_SCALAR(x, '$.y[0].z')"
+  },
+  {
    "key": "86fb2c626c669444",
    "dialect": "postgres",
    "sql": "JSON_EXTRACT_PATH_TEXT(x, 'y', '0', 'z')"
@@ -8363,14 +8938,64 @@
    "sql": "x -> '$.y[*]'"
   },
   {
+   "key": "7359d4ed4f0e80ea",
+   "dialect": "presto",
+   "sql": "JSON_EXTRACT(x, '$.y[*]')"
+  },
+  {
    "key": "0071eb8068eb2623",
    "dialect": "duckdb",
    "sql": "x -> '$.y.*'"
   },
   {
+   "key": "bd586a534b0efef1",
+   "dialect": "presto",
+   "sql": "JSON_EXTRACT(x, '$.y.*')"
+  },
+  {
+   "key": "7c06d61934b50ecc",
+   "dialect": "presto",
+   "sql": "SELECT a FROM x CROSS JOIN UNNEST(y) AS t(a)"
+  },
+  {
+   "key": "868a6b84ce6e055c",
+   "dialect": "presto",
+   "sql": "SELECT a, b FROM x CROSS JOIN UNNEST(y, z) AS t(a, b)"
+  },
+  {
+   "key": "de96820a0b0315e9",
+   "dialect": "presto",
+   "sql": "SELECT a FROM x CROSS JOIN UNNEST(y) WITH ORDINALITY AS t(a)"
+  },
+  {
    "key": "351f5c4f2c9c6ed0",
    "dialect": "databricks",
    "sql": "SELECT a FROM x LATERAL VIEW POSEXPLODE(y) t AS pos, a"
+  },
+  {
+   "key": "07bddc1d89a3b646",
+   "dialect": "presto",
+   "sql": "SELECT * FROM x CROSS JOIN UNNEST(y) AS t"
+  },
+  {
+   "key": "431115c5f48e9243",
+   "dialect": "presto",
+   "sql": "SELECT a, b FROM x CROSS JOIN UNNEST(y) AS t(a, b)"
+  },
+  {
+   "key": "abac73b54ebae891",
+   "dialect": "presto",
+   "sql": "SELECT numbers, animals, n, a FROM (SELECT ARRAY[2, 5] AS numbers, ARRAY['dog', 'cat', 'bird'] AS animals UNION ALL SELECT ARRAY[7, 8, 9], ARRAY['cow', 'pig']) AS x CROSS JOIN UNNEST(numbers, animals) AS t(n, a)"
+  },
+  {
+   "key": "8a9ea6264a63b465",
+   "dialect": "presto",
+   "sql": "SELECT a, b, c, d, e FROM x CROSS JOIN UNNEST(y) AS t(a, b, c, d)"
+  },
+  {
+   "key": "4771bb9123c43975",
+   "dialect": "presto",
+   "sql": "SELECT * FROM x CROSS JOIN UNNEST(a) AS j(lista) CROSS JOIN UNNEST(b) AS k(listb) CROSS JOIN UNNEST(c) AS l(listc)"
   },
   {
    "key": "db2951dba7d3f8d1",
@@ -8383,8 +9008,18 @@
    "sql": "SELECT * FROM a UNION SELECT * FROM b"
   },
   {
+   "key": "83c0c5cced3c2f73",
+   "dialect": "presto",
+   "sql": "SELECT * FROM a UNION SELECT * FROM b"
+  },
+  {
    "key": "8167d87f11b63866",
    "dialect": "duckdb",
+   "sql": "SELECT * FROM a UNION ALL SELECT * FROM b"
+  },
+  {
+   "key": "f554f9f2bfd72d4f",
+   "dialect": "presto",
    "sql": "SELECT * FROM a UNION ALL SELECT * FROM b"
   },
   {
@@ -8393,8 +9028,18 @@
    "sql": "SELECT * FROM a INTERSECT SELECT * FROM b"
   },
   {
+   "key": "00666f44545b6319",
+   "dialect": "presto",
+   "sql": "SELECT * FROM a INTERSECT SELECT * FROM b"
+  },
+  {
    "key": "edc65507a00adc0e",
    "dialect": "duckdb",
+   "sql": "SELECT * FROM a EXCEPT SELECT * FROM b"
+  },
+  {
+   "key": "48b9c0e6315480cf",
+   "dialect": "presto",
    "sql": "SELECT * FROM a EXCEPT SELECT * FROM b"
   },
   {
@@ -8403,8 +9048,18 @@
    "sql": "SELECT * FROM a INTERSECT ALL SELECT * FROM b"
   },
   {
+   "key": "f0ed0a6696a953b4",
+   "dialect": "presto",
+   "sql": "SELECT * FROM a INTERSECT ALL SELECT * FROM b"
+  },
+  {
    "key": "ecbc7b70740d5f1e",
    "dialect": "duckdb",
+   "sql": "SELECT * FROM a EXCEPT ALL SELECT * FROM b"
+  },
+  {
+   "key": "c80a9f03a0e44070",
+   "dialect": "presto",
    "sql": "SELECT * FROM a EXCEPT ALL SELECT * FROM b"
   },
   {
@@ -8423,9 +9078,19 @@
    "sql": "x ILIKE '%y'"
   },
   {
+   "key": "3d283ec70e68ad86",
+   "dialect": "presto",
+   "sql": "LOWER(x) LIKE LOWER('%y')"
+  },
+  {
    "key": "e61887c480401d13",
    "dialect": "postgres",
    "sql": "x NOT ILIKE '%y'"
+  },
+  {
+   "key": "e1cea1dae561f96a",
+   "dialect": "presto",
+   "sql": "LOWER(x) NOT LIKE LOWER('%y')"
   },
   {
    "key": "c4f9e061de78b4ad",
@@ -8445,6 +9110,11 @@
   {
    "key": "e4ef0393c989ab96",
    "dialect": "postgres",
+   "sql": "POSITION(needle in haystack)"
+  },
+  {
+   "key": "8d0065d96fca6e43",
+   "dialect": "presto",
    "sql": "POSITION(needle in haystack)"
   },
   {
@@ -8470,6 +9140,11 @@
   {
    "key": "e15c29c0505e93fb",
    "dialect": "postgres",
+   "sql": "STRPOS(haystack, needle)"
+  },
+  {
+   "key": "db3ddd3e516b5ade",
+   "dialect": "presto",
    "sql": "STRPOS(haystack, needle)"
   },
   {
@@ -8558,6 +9233,11 @@
    "sql": "CASE WHEN POSITION(needle IN SUBSTRING(haystack FROM position)) = 0 THEN 0 ELSE POSITION(needle IN SUBSTRING(haystack FROM position)) + position - 1 END"
   },
   {
+   "key": "40d226dfc97f97e5",
+   "dialect": "presto",
+   "sql": "IF(STRPOS(SUBSTR(haystack, position), needle) = 0, 0, STRPOS(SUBSTR(haystack, position), needle) + position - 1)"
+  },
+  {
    "key": "8c0f3a5477441254",
    "dialect": "redshift",
    "sql": "CASE WHEN POSITION(needle IN SUBSTRING(haystack FROM position)) = 0 THEN 0 ELSE POSITION(needle IN SUBSTRING(haystack FROM position)) + position - 1 END"
@@ -8566,6 +9246,11 @@
    "key": "39bd85be0b86f6b5",
    "dialect": "risingwave",
    "sql": "CASE WHEN POSITION(needle IN SUBSTRING(haystack FROM position)) = 0 THEN 0 ELSE POSITION(needle IN SUBSTRING(haystack FROM position)) + position - 1 END"
+  },
+  {
+   "key": "a5f6edd9a0009306",
+   "dialect": "presto",
+   "sql": "IF(STRPOS(SUBSTR(haystack, position), needle, occurrence) = 0, 0, STRPOS(SUBSTR(haystack, position), needle, occurrence) + position - 1)"
   },
   {
    "key": "ca826534da5fb470",
@@ -8603,8 +9288,18 @@
    "sql": "CASE WHEN x > 1 THEN 1 ELSE 0 END"
   },
   {
+   "key": "5f8b7772f819e8d5",
+   "dialect": "presto",
+   "sql": "IF(x > 1, 1, 0)"
+  },
+  {
    "key": "2e45ad3cc01828d2",
    "dialect": "duckdb",
+   "sql": "CASE WHEN 1 THEN x ELSE 0 END"
+  },
+  {
+   "key": "214c3e2246e48ed5",
+   "dialect": "presto",
    "sql": "CASE WHEN 1 THEN x ELSE 0 END"
   },
   {
@@ -8613,8 +9308,18 @@
    "sql": "x[y]"
   },
   {
+   "key": "86e09f412c95064e",
+   "dialect": "presto",
+   "sql": "x[y]"
+  },
+  {
    "key": "8efcb9445c53c756",
    "dialect": "duckdb",
+   "sql": "'[\"x\"]'"
+  },
+  {
+   "key": "1bf3523a31a9b255",
+   "dialect": "presto",
    "sql": "'[\"x\"]'"
   },
   {
@@ -8623,9 +9328,19 @@
    "sql": "TRUE OR NULL AS \"foo\""
   },
   {
+   "key": "524aba0054814c4f",
+   "dialect": "presto",
+   "sql": "TRUE OR NULL AS \"foo\""
+  },
+  {
    "key": "d42b6ac0003644af",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN COALESCE(bar, 0) = 1 THEN TRUE ELSE FALSE END AS foo FROM baz"
+  },
+  {
+   "key": "512441e658d0c2df",
+   "dialect": "presto",
+   "sql": "SELECT IF(COALESCE(bar, 0) = 1, TRUE, FALSE) AS foo FROM baz"
   },
   {
    "key": "3a4e2be809df79b4",
@@ -8636,6 +9351,11 @@
    "key": "2e2d0e94d7696b07",
    "dialect": "postgres",
    "sql": "LEVENSHTEIN(col1, col2)"
+  },
+  {
+   "key": "00494882356ec5a0",
+   "dialect": "presto",
+   "sql": "LEVENSHTEIN_DISTANCE(col1, col2)"
   },
   {
    "key": "1a3288aadc041f51",
@@ -8653,6 +9373,16 @@
    "sql": "LEVENSHTEIN(COALESCE(col1, col2), COALESCE(col2, col1))"
   },
   {
+   "key": "1ba5f51fa1351b93",
+   "dialect": "presto",
+   "sql": "LEVENSHTEIN_DISTANCE(COALESCE(col1, col2), COALESCE(col2, col1))"
+  },
+  {
+   "key": "4cbafbf218410331",
+   "dialect": "presto",
+   "sql": "FILTER(the_array, x -> x > 0)"
+  },
+  {
    "key": "0570d3c45b81566b",
    "dialect": "databricks",
    "sql": "a / b"
@@ -8661,6 +9391,11 @@
    "key": "f90a3e9ced0f74f6",
    "dialect": "duckdb",
    "sql": "a / b"
+  },
+  {
+   "key": "ec6a73dbd7dd6e03",
+   "dialect": "presto",
+   "sql": "CAST(a AS DOUBLE) / b"
   },
   {
    "key": "7a0c88ef4a72f9ea",
@@ -8673,6 +9408,16 @@
    "sql": "CAST(a AS FLOAT) / b"
   },
   {
+   "key": "1fc0aca5e308155d",
+   "dialect": "presto",
+   "sql": "(8 - 1 + 7) % 7"
+  },
+  {
+   "key": "ab6e9cf411812ae6",
+   "dialect": "presto",
+   "sql": "a % (b + 1)"
+  },
+  {
    "key": "17adc7eb68099d2e",
    "dialect": "duckdb",
    "sql": "LIST_FILTER(the_array, _u -> _u <> target)"
@@ -8683,6 +9428,11 @@
    "sql": "ARRAY_REMOVE(the_array, target)"
   },
   {
+   "key": "2bc2f19339b8c709",
+   "dialect": "presto",
+   "sql": "ARRAY_REMOVE(the_array, target)"
+  },
+  {
    "key": "902059c794cd8f8a",
    "dialect": "databricks",
    "sql": "ARRAY_REMOVE(the_array, target)"
@@ -8690,6 +9440,11 @@
   {
    "key": "2406e9d8c2ae9c67",
    "dialect": "postgres",
+   "sql": "SELECT * FROM t FETCH FIRST ROWS ONLY"
+  },
+  {
+   "key": "520c0900700d6daf",
+   "dialect": "presto",
    "sql": "SELECT * FROM t FETCH FIRST ROWS ONLY"
   },
   {
@@ -8710,6 +9465,11 @@
   {
    "key": "e2156bcbefe60c37",
    "dialect": "duckdb",
+   "sql": "WITH t AS (SELECT 1 AS all) SELECT 1 FROM t LIMIT all"
+  },
+  {
+   "key": "fdba5e932aad4664",
+   "dialect": "presto",
    "sql": "WITH t AS (SELECT 1 AS all) SELECT 1 FROM t LIMIT all"
   },
   {
@@ -8768,6 +9528,16 @@
    "sql": "CREATE TABLE t (b1 VARBYTE, b2 VARBYTE(1024), c1 VARCHAR(MAX), c2 VARCHAR(1024))"
   },
   {
+   "key": "59c31bb20cb91701",
+   "dialect": "presto",
+   "sql": "WITH t AS (SELECT 1 AS x, 2 AS y) SELECT x AS x FROM t GROUP BY x"
+  },
+  {
+   "key": "62681275364f3654",
+   "dialect": "presto",
+   "sql": "WITH t AS (SELECT 1 AS x, 2 AS y) SELECT SUM(x) AS y, y AS x FROM t GROUP BY y"
+  },
+  {
    "key": "4e8853d9e673d5b1",
    "dialect": "tsql",
    "sql": "SELECT 1 'foo'"
@@ -8798,6 +9568,11 @@
    "sql": "SELECT * FROM (SELECT 1 AS col) apply"
   },
   {
+   "key": "ec0be1556416b515",
+   "dialect": "presto",
+   "sql": "SELECT * FROM (SELECT 1 AS col) apply"
+  },
+  {
    "key": "52d936568e98bbd4",
    "dialect": "postgres",
    "sql": "SELECT a IS NOT DISTINCT FROM b"
@@ -8813,6 +9588,11 @@
    "sql": "BEGIN"
   },
   {
+   "key": "af9200e3d57dd4e3",
+   "dialect": "presto",
+   "sql": "START TRANSACTION"
+  },
+  {
    "key": "19eece0292610329",
    "dialect": "redshift",
    "sql": "BEGIN"
@@ -8821,6 +9601,16 @@
    "key": "91473ed91b20c937",
    "dialect": "tsql",
    "sql": "BEGIN TRANSACTION"
+  },
+  {
+   "key": "c2641468391c4edd",
+   "dialect": "presto",
+   "sql": "START TRANSACTION READ WRITE, ISOLATION LEVEL SERIALIZABLE"
+  },
+  {
+   "key": "ef0385c7e428754b",
+   "dialect": "presto",
+   "sql": "START TRANSACTION ISOLATION LEVEL REPEATABLE READ"
   },
   {
    "key": "a2e84272ac0f83b0",
@@ -8888,6 +9678,11 @@
    "sql": "SELECT COUNT_IF(col % 2 = 0) FROM foo"
   },
   {
+   "key": "f13f3951ec41e15f",
+   "dialect": "presto",
+   "sql": "SELECT COUNT_IF(col % 2 = 0) FROM foo"
+  },
+  {
    "key": "f154b072aa649263",
    "dialect": "tsql",
    "sql": "SELECT COUNT_IF(col % 2 = 0) FROM foo"
@@ -8913,8 +9708,18 @@
    "sql": "SELECT COUNT_IF(col % 2 = 0) FILTER(WHERE col < 1000) FROM foo"
   },
   {
+   "key": "d5a03fd0e3678a3b",
+   "dialect": "presto",
+   "sql": "SELECT COUNT_IF(col % 2 = 0) FILTER(WHERE col < 1000) FROM foo"
+  },
+  {
    "key": "6d8e51b74720fa2b",
    "dialect": "postgres",
+   "sql": "CAST(x AS some_udt)"
+  },
+  {
+   "key": "48c0835d0773f2cd",
+   "dialect": "presto",
    "sql": "CAST(x AS some_udt)"
   },
   {
@@ -8988,6 +9793,11 @@
    "sql": "SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq"
   },
   {
+   "key": "a903916f2c548684",
+   "dialect": "presto",
+   "sql": "SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq"
+  },
+  {
    "key": "d530dbf01867eed1",
    "dialect": "redshift",
    "sql": "SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq"
@@ -9038,6 +9848,11 @@
    "sql": "RANDOM()"
   },
   {
+   "key": "fcca34f48a579c1a",
+   "dialect": "presto",
+   "sql": "RAND()"
+  },
+  {
    "key": "ac1abc77e948000c",
    "dialect": "tsql",
    "sql": "RAND()"
@@ -9058,6 +9873,11 @@
    "sql": "(ARRAY_LENGTH(arr, 1) = 0 OR ARRAY_LENGTH(ARRAY(SELECT x FROM UNNEST(arr) AS _t0(x) WHERE pred), 1) <> 0)"
   },
   {
+   "key": "75a00ebcceb8419b",
+   "dialect": "presto",
+   "sql": "ANY_MATCH(arr, x -> pred)"
+  },
+  {
    "key": "fc54b25fa44ed0cb",
    "dialect": "databricks",
    "sql": "SELECT * FROM EXPLODE(SEQUENCE(CAST('2020-01-01' AS DATE), CAST('2020-02-01' AS DATE), INTERVAL '1' WEEK))"
@@ -9071,6 +9891,11 @@
    "key": "7bf5d0f1e875376a",
    "dialect": "postgres",
    "sql": "SELECT * FROM (SELECT CAST(value AS DATE) FROM GENERATE_SERIES(CAST('2020-01-01' AS DATE), CAST('2020-02-01' AS DATE), INTERVAL '1 WEEK') AS _t(value)) AS _unnested_generate_series"
+  },
+  {
+   "key": "877204d4636747b0",
+   "dialect": "presto",
+   "sql": "SELECT * FROM UNNEST(SEQUENCE(CAST('2020-01-01' AS DATE), CAST('2020-02-01' AS DATE), (1 * INTERVAL '7' DAY)))"
   },
   {
    "key": "6b2e37fdea089eea",
@@ -9175,6 +10000,11 @@
   {
    "key": "88dd32b887937ed5",
    "dialect": "duckdb",
+   "sql": "UUID()"
+  },
+  {
+   "key": "ef44660669bea280",
+   "dialect": "presto",
    "sql": "UUID()"
   },
   {
@@ -9333,6 +10163,11 @@
    "sql": "DATEADD(DAY, 1, CAST('1970-01-01' AS DATE))"
   },
   {
+   "key": "c8cb7a61757e2d70",
+   "dialect": "presto",
+   "sql": "DATE_ADD('DAY', 1, CAST('1970-01-01' AS DATE))"
+  },
+  {
    "key": "fbcc4ae420a99179",
    "dialect": "duckdb",
    "sql": "WEEKOFYEAR(CAST('2025-01-01' AS DATE))"
@@ -9393,6 +10228,11 @@
    "sql": "REVERSE(x)"
   },
   {
+   "key": "16f43cc478ee32d9",
+   "dialect": "presto",
+   "sql": "REVERSE(x)"
+  },
+  {
    "key": "65feb96b6b13b17d",
    "dialect": "redshift",
    "sql": "REVERSE(x)"
@@ -9413,6 +10253,11 @@
    "sql": "REGR_COUNT(x, y)"
   },
   {
+   "key": "f0a0dde4aa044f90",
+   "dialect": "presto",
+   "sql": "REGR_COUNT(x, y)"
+  },
+  {
    "key": "7a9cb2d635f2007d",
    "dialect": "databricks",
    "sql": "REGR_INTERCEPT(x, y)"
@@ -9425,6 +10270,11 @@
   {
    "key": "dd91cd113bc7a3da",
    "dialect": "postgres",
+   "sql": "REGR_INTERCEPT(x, y)"
+  },
+  {
+   "key": "7753cbdeaf82586a",
+   "dialect": "presto",
    "sql": "REGR_INTERCEPT(x, y)"
   },
   {
@@ -9443,6 +10293,11 @@
    "sql": "REGR_R2(x, y)"
   },
   {
+   "key": "122230cc883e5f0d",
+   "dialect": "presto",
+   "sql": "REGR_R2(x, y)"
+  },
+  {
    "key": "5afee2d16cfd2c07",
    "dialect": "databricks",
    "sql": "REGR_SLOPE(x, y)"
@@ -9455,6 +10310,11 @@
   {
    "key": "11846d7254cded69",
    "dialect": "postgres",
+   "sql": "REGR_SLOPE(x, y)"
+  },
+  {
+   "key": "7b548192a91b8e98",
+   "dialect": "presto",
    "sql": "REGR_SLOPE(x, y)"
   },
   {
@@ -9473,6 +10333,11 @@
    "sql": "REGR_SXX(x, y)"
   },
   {
+   "key": "48091ae70903ee6f",
+   "dialect": "presto",
+   "sql": "REGR_SXX(x, y)"
+  },
+  {
    "key": "b066b547543078f3",
    "dialect": "databricks",
    "sql": "REGR_SXY(x, y)"
@@ -9488,6 +10353,11 @@
    "sql": "REGR_SXY(x, y)"
   },
   {
+   "key": "3c8182fe6bb31977",
+   "dialect": "presto",
+   "sql": "REGR_SXY(x, y)"
+  },
+  {
    "key": "92cf38c46e7be57e",
    "dialect": "databricks",
    "sql": "REGR_SYY(x, y)"
@@ -9500,6 +10370,11 @@
   {
    "key": "eaa059a1d204be60",
    "dialect": "postgres",
+   "sql": "REGR_SYY(x, y)"
+  },
+  {
+   "key": "41b24a28311e44c2",
+   "dialect": "presto",
    "sql": "REGR_SYY(x, y)"
   },
   {
@@ -9576,6 +10451,16 @@
    "key": "e5c0a1fde4742456",
    "dialect": "redshift",
    "sql": "FARMFINGERPRINT64(x)"
+  },
+  {
+   "key": "3ee38bbd4c4d8fa5",
+   "dialect": "presto",
+   "sql": "FROM_BASE32(x)"
+  },
+  {
+   "key": "c611529232e3064d",
+   "dialect": "presto",
+   "sql": "TO_BASE32(x)"
   },
   {
    "key": "96b5d5faa27ad1cb",
@@ -9828,6 +10713,11 @@
    "sql": "REGEXP_MATCHES(x, y)"
   },
   {
+   "key": "3917bcce8e1e918e",
+   "dialect": "presto",
+   "sql": "REGEXP_LIKE(x, y)"
+  },
+  {
    "key": "01f6ef552c186bb6",
    "dialect": "duckdb",
    "sql": "SELECT x ILIKE '%y'"
@@ -9968,6 +10858,11 @@
    "sql": "ARRAY_TO_STRING(arr, delim)"
   },
   {
+   "key": "14785b1de0dc4e71",
+   "dialect": "presto",
+   "sql": "ARRAY_JOIN(arr, delim)"
+  },
+  {
    "key": "c7bf90205b364a8e",
    "dialect": "tsql",
    "sql": "STRING_AGG(arr, delim)"
@@ -10033,9 +10928,19 @@
    "sql": "{'a': 1, 'b': '2'}"
   },
   {
+   "key": "a9683c045d2a688a",
+   "dialect": "presto",
+   "sql": "CAST(ROW(1, '2') AS ROW(a INTEGER, b VARCHAR))"
+  },
+  {
    "key": "5a74dbc7d3726c25",
    "dialect": "duckdb",
    "sql": "struct_pack(a := 1, b := 2)"
+  },
+  {
+   "key": "f3873a14b86fa541",
+   "dialect": "presto",
+   "sql": "CAST(ROW(1, 2) AS ROW(a INTEGER, b INTEGER))"
   },
   {
    "key": "8bcfc005a06706e2",
@@ -10243,9 +11148,19 @@
    "sql": "SELECT UNNEST(ARRAY[1, 2, 3]), UNNEST(ARRAY[4, 5]), UNNEST(ARRAY[6])"
   },
   {
+   "key": "4fda1e0083d2a29d",
+   "dialect": "presto",
+   "sql": "SELECT IF(_u.pos = _u_2.pos_2, _u_2.col) AS col, IF(_u.pos = _u_3.pos_3, _u_3.col_2) AS col_2, IF(_u.pos = _u_4.pos_4, _u_4.col_3) AS col_3 FROM UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(ARRAY[1, 2, 3]), CARDINALITY(ARRAY[4, 5]), CARDINALITY(ARRAY[6])))) AS _u(pos) CROSS JOIN UNNEST(ARRAY[1, 2, 3]) WITH ORDINALITY AS _u_2(col, pos_2) CROSS JOIN UNNEST(ARRAY[4, 5]) WITH ORDINALITY AS _u_3(col_2, pos_3) CROSS JOIN UNNEST(ARRAY[6]) WITH ORDINALITY AS _u_4(col_3, pos_4) WHERE ((_u.pos = _u_2.pos_2 OR (_u.pos > CARDINALITY(ARRAY[1, 2, 3]) AND _u_2.pos_2 = CARDINALITY(ARRAY[1, 2, 3]))) AND (_u.pos = _u_3.pos_3 OR (_u.pos > CARDINALITY(ARRAY[4, 5]) AND _u_3.pos_3 = CARDINALITY(ARRAY[4, 5])))) AND (_u.pos = _u_4.pos_4 OR (_u.pos > CARDINALITY(ARRAY[6]) AND _u_4.pos_4 = CARDINALITY(ARRAY[6])))"
+  },
+  {
    "key": "5fb4ee3a23351b75",
    "dialect": "duckdb",
    "sql": "SELECT UNNEST(ARRAY[1, 2, 3]), UNNEST(ARRAY[4, 5]), UNNEST(ARRAY[6]) FROM x"
+  },
+  {
+   "key": "17427388916fcd16",
+   "dialect": "presto",
+   "sql": "SELECT IF(_u.pos = _u_2.pos_2, _u_2.col) AS col, IF(_u.pos = _u_3.pos_3, _u_3.col_2) AS col_2, IF(_u.pos = _u_4.pos_4, _u_4.col_3) AS col_3 FROM x CROSS JOIN UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(ARRAY[1, 2, 3]), CARDINALITY(ARRAY[4, 5]), CARDINALITY(ARRAY[6])))) AS _u(pos) CROSS JOIN UNNEST(ARRAY[1, 2, 3]) WITH ORDINALITY AS _u_2(col, pos_2) CROSS JOIN UNNEST(ARRAY[4, 5]) WITH ORDINALITY AS _u_3(col_2, pos_3) CROSS JOIN UNNEST(ARRAY[6]) WITH ORDINALITY AS _u_4(col_3, pos_4) WHERE ((_u.pos = _u_2.pos_2 OR (_u.pos > CARDINALITY(ARRAY[1, 2, 3]) AND _u_2.pos_2 = CARDINALITY(ARRAY[1, 2, 3]))) AND (_u.pos = _u_3.pos_3 OR (_u.pos > CARDINALITY(ARRAY[4, 5]) AND _u_3.pos_3 = CARDINALITY(ARRAY[4, 5])))) AND (_u.pos = _u_4.pos_4 OR (_u.pos > CARDINALITY(ARRAY[6]) AND _u_4.pos_4 = CARDINALITY(ARRAY[6])))"
   },
   {
    "key": "96aec21135bd9ee9",
@@ -10998,6 +11913,11 @@
    "sql": "XOR(a, b)"
   },
   {
+   "key": "cbdfc211881e40d4",
+   "dialect": "presto",
+   "sql": "BITWISE_XOR(a, b)"
+  },
+  {
    "key": "52a7d6439f74f812",
    "dialect": "postgres",
    "sql": "a # b"
@@ -11123,6 +12043,11 @@
    "sql": "STR_SPLIT(x, 'a')"
   },
   {
+   "key": "78ecc82a83cdb9d2",
+   "dialect": "presto",
+   "sql": "SPLIT(x, 'a')"
+  },
+  {
    "key": "92151af79903e87d",
    "dialect": "duckdb",
    "sql": "STRING_TO_ARRAY(x, 'a')"
@@ -11133,9 +12058,19 @@
    "sql": "STR_SPLIT_REGEX(x, 'a')"
   },
   {
+   "key": "2471d70cbeec42d0",
+   "dialect": "presto",
+   "sql": "REGEXP_SPLIT(x, 'a')"
+  },
+  {
    "key": "01d70228677f9dd8",
    "dialect": "duckdb",
    "sql": "STRUCT_EXTRACT(x, 'abc')"
+  },
+  {
+   "key": "43048ab0721e6855",
+   "dialect": "presto",
+   "sql": "x.abc"
   },
   {
    "key": "b0ab5d51dfe575b4",
@@ -11153,9 +12088,19 @@
    "sql": "STRUCT_EXTRACT(STRUCT_EXTRACT(x, 'y'), 'abc')"
   },
   {
+   "key": "46f04b322b4b4abb",
+   "dialect": "presto",
+   "sql": "x.y.abc"
+  },
+  {
    "key": "058f956f9f789c26",
    "dialect": "duckdb",
    "sql": "QUANTILE(x, 0.5)"
+  },
+  {
+   "key": "b9fc9f6aa34dc486",
+   "dialect": "presto",
+   "sql": "APPROX_PERCENTILE(x, 0.5)"
   },
   {
    "key": "a07b40c0f26936e2",
@@ -11211,6 +12156,11 @@
    "key": "2beaff513f8eaf27",
    "dialect": "duckdb",
    "sql": "ARRAY_REVERSE_SORT(x)"
+  },
+  {
+   "key": "d6f738fab1418826",
+   "dialect": "presto",
+   "sql": "ARRAY_SORT(x, (a, b) -> CASE WHEN a < b THEN 1 WHEN a > b THEN -1 ELSE 0 END)"
   },
   {
    "key": "1c337941a26c6363",
@@ -11278,6 +12228,11 @@
    "sql": "MONTH('2021-03-01')"
   },
   {
+   "key": "60fa5743843361e5",
+   "dialect": "presto",
+   "sql": "MONTH('2021-03-01')"
+  },
+  {
    "key": "5c814b578293ee97",
    "dialect": "duckdb",
    "sql": "LIST_CONCAT([1, 2], [3, 4])"
@@ -11286,6 +12241,11 @@
    "key": "5dc5335bc56d6aa5",
    "dialect": "postgres",
    "sql": "ARRAY_CAT(ARRAY[1, 2], ARRAY[3, 4])"
+  },
+  {
+   "key": "44bec8be531c8216",
+   "dialect": "presto",
+   "sql": "CONCAT(ARRAY[1, 2], ARRAY[3, 4])"
   },
   {
    "key": "da0aa255c98809f8",
@@ -12048,6 +13008,11 @@
    "sql": "SELECT ((DATE_TRUNC('DAY', CAST(CAST(DATE_TRUNC('DAY', CURRENT_TIMESTAMP) AS DATE) AS TIMESTAMP) + INTERVAL (0 - ((ISODOW(CAST(CAST(DATE_TRUNC('DAY', CURRENT_TIMESTAMP) AS DATE) AS TIMESTAMP)) % 7) - 1 + 7) % 7) DAY) + INTERVAL (-5) WEEK)) AS t1"
   },
   {
+   "key": "394484af2814567a",
+   "dialect": "presto",
+   "sql": "SELECT ((DATE_ADD('week', -5, DATE_TRUNC('DAY', DATE_ADD('day', (0 - MOD((DAY_OF_WEEK(CAST(CAST(DATE_TRUNC('DAY', NOW()) AS DATE) AS TIMESTAMP)) % 7) - 1 + 7, 7)), CAST(CAST(DATE_TRUNC('DAY', NOW()) AS DATE) AS TIMESTAMP)))))) AS t1"
+  },
+  {
    "key": "1ac4b19a3eb84dbf",
    "dialect": "duckdb",
    "sql": "EPOCH_MS(x)"
@@ -12056,6 +13021,11 @@
    "key": "4aadd94592f1a710",
    "dialect": "postgres",
    "sql": "TO_TIMESTAMP(CAST(x AS DOUBLE PRECISION) / POWER(10, 3))"
+  },
+  {
+   "key": "a4ebc7aae79e5879",
+   "dialect": "presto",
+   "sql": "FROM_UNIXTIME(CAST(x AS DOUBLE) / POW(10, 3))"
   },
   {
    "key": "7cbf9733f3314947",
@@ -12068,6 +13038,11 @@
    "sql": "TO_CHAR(x, 'YY-FMMM-SS')"
   },
   {
+   "key": "ba167629fc6477de",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(x, '%y-%c-%s')"
+  },
+  {
    "key": "2406dcd4056cf7d6",
    "dialect": "duckdb",
    "sql": "SHA1(x)"
@@ -12078,14 +13053,29 @@
    "sql": "STRFTIME(x, '%Y-%m-%d %H:%M:%S')"
   },
   {
+   "key": "e78a43ca62412719",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(x, '%Y-%m-%d %T')"
+  },
+  {
    "key": "15a25aeefcdf55ed",
    "dialect": "duckdb",
    "sql": "STRPTIME(x, '%y-%-m')"
   },
   {
+   "key": "f1df37615aad68d4",
+   "dialect": "presto",
+   "sql": "DATE_PARSE(x, '%y-%c')"
+  },
+  {
    "key": "cc764f2dd46fecfa",
    "dialect": "duckdb",
    "sql": "STRPTIME(x, '%-m/%-d/%y %-I:%M %p')"
+  },
+  {
+   "key": "d4c85b892604eecf",
+   "dialect": "presto",
+   "sql": "DATE_PARSE(x, '%c/%e/%y %l:%i %p')"
   },
   {
    "key": "0200ffaca1496fd1",
@@ -12121,6 +13111,11 @@
    "key": "15abdbd4e9218a4e",
    "dialect": "tsql",
    "sql": "SELECT CAST('foo' AS DATETIME2)"
+  },
+  {
+   "key": "75cd39a1ed4125d0",
+   "dialect": "presto",
+   "sql": "SELECT CAST('foo' AS TIMESTAMP)"
   },
   {
    "key": "7d5a00ad0c22f1e9",
@@ -12388,6 +13383,11 @@
    "sql": "CAST(x AS TIME)"
   },
   {
+   "key": "d0477b708a53cac3",
+   "dialect": "presto",
+   "sql": "CAST(x AS TIME(6))"
+  },
+  {
    "key": "9a6b4644928524da",
    "dialect": "duckdb",
    "sql": "SELECT CAST('2020-01-01 12:05:01' AS TIMESTAMP)"
@@ -12483,6 +13483,11 @@
    "sql": "CAST(COL AS BIGINT[])"
   },
   {
+   "key": "2846f5bf86124702",
+   "dialect": "presto",
+   "sql": "CAST(COL AS ARRAY(BIGINT))"
+  },
+  {
    "key": "0f19f908cbbcb7e3",
    "dialect": "postgres",
    "sql": "CAST(COL AS BIGINT[])"
@@ -12503,9 +13508,24 @@
    "sql": "ENCODE(x)"
   },
   {
+   "key": "362b75cd5e7c7263",
+   "dialect": "presto",
+   "sql": "TO_UTF8(x)"
+  },
+  {
    "key": "a4948f3731bd73d1",
    "dialect": "duckdb",
    "sql": "DECODE(x)"
+  },
+  {
+   "key": "ca62f56822562b30",
+   "dialect": "presto",
+   "sql": "FROM_UTF8(x)"
+  },
+  {
+   "key": "3edfdb6ece188da6",
+   "dialect": "presto",
+   "sql": "FROM_UTF8(x, y)"
   },
   {
    "key": "0305194cffdbc4aa",
@@ -13168,6 +14188,11 @@
    "sql": "SELECT some_arr[1] AS first FROM blah"
   },
   {
+   "key": "2b24cfd31081897f",
+   "dialect": "presto",
+   "sql": "SELECT some_arr[1] AS first FROM blah"
+  },
+  {
    "key": "04626040017e4a51",
    "dialect": "duckdb",
    "sql": "[x.STRING_SPLIT(' ')[i] FOR x IN ['1', '2', 3] IF x.CONTAINS('1')]"
@@ -13313,9 +14338,24 @@
    "sql": "SELECT x & 1"
   },
   {
+   "key": "5e74ad84e8077ebe",
+   "dialect": "presto",
+   "sql": "SELECT BITWISE_AND(x, 1)"
+  },
+  {
    "key": "8d24a0cf539b80a0",
    "dialect": "duckdb",
    "sql": "SELECT x | 1"
+  },
+  {
+   "key": "cb9b66223b724258",
+   "dialect": "presto",
+   "sql": "SELECT BITWISE_OR(x, 1)"
+  },
+  {
+   "key": "e59bc12e71c762ab",
+   "dialect": "presto",
+   "sql": "SELECT BITWISE_XOR(x, 1)"
   },
   {
    "key": "0a80ecc3b59ea540",
@@ -13333,14 +14373,29 @@
    "sql": "SELECT ~x"
   },
   {
+   "key": "6743bc99c538c18e",
+   "dialect": "presto",
+   "sql": "SELECT BITWISE_NOT(x)"
+  },
+  {
    "key": "fd67f53814c512e4",
    "dialect": "duckdb",
    "sql": "SELECT x << 1"
   },
   {
+   "key": "497d8e60d5fb60bd",
+   "dialect": "presto",
+   "sql": "SELECT BITWISE_LEFT_SHIFT(x, 1)"
+  },
+  {
    "key": "12b90b5e9925bce7",
    "dialect": "duckdb",
    "sql": "SELECT x >> 1"
+  },
+  {
+   "key": "2f8fa04da206480d",
+   "dialect": "presto",
+   "sql": "SELECT BITWISE_RIGHT_SHIFT(x, 1)"
   },
   {
    "key": "b932fa36eff5041f",
@@ -13361,6 +14416,11 @@
    "key": "2b5235d21a3e1c0e",
    "dialect": "databricks",
    "sql": "LISTAGG(DISTINCT x, ',') WITHIN GROUP (ORDER BY y DESC)"
+  },
+  {
+   "key": "a22ebdc39314477b",
+   "dialect": "presto",
+   "sql": "SELECT REGEXP_EXTRACT('My mail address is my_mail@yahoo.com', '(?i)[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}') AS EMAIL"
   },
   {
    "key": "599592ba03acadc5",
@@ -13403,6 +14463,11 @@
    "sql": "CAST(STRPTIME(x, '%Y') AS DATE)"
   },
   {
+   "key": "a02f39f9fc348a87",
+   "dialect": "presto",
+   "sql": "CAST(DATE_PARSE(x, '%Y') AS DATE)"
+  },
+  {
    "key": "a68bb4dbb85a18c5",
    "dialect": "databricks",
    "sql": "TO_DATE(x, 'yyyy')"
@@ -13443,14 +14508,49 @@
    "sql": "CREATE OR REPLACE VIEW `schema`.`v` (`col` COMMENT 'desc') AS SELECT `src_col` AS `col`"
   },
   {
+   "key": "4c0560d4bc6700f3",
+   "dialect": "presto",
+   "sql": "LOWER(TO_HEX(MD5(x)))"
+  },
+  {
+   "key": "8852a8a1087d73b8",
+   "dialect": "presto",
+   "sql": "LOWER(TO_HEX(SHA256(x)))"
+  },
+  {
+   "key": "20f09f0c0eccf03c",
+   "dialect": "presto",
+   "sql": "LOWER(TO_HEX(SHA512(x)))"
+  },
+  {
+   "key": "b309b097aab87bb8",
+   "dialect": "presto",
+   "sql": "SELECT IF(1 = 0, NULL, 1) AS NIZ1"
+  },
+  {
    "key": "60c183e524030460",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN 1 = 0 THEN NULL ELSE 1 END AS NIZ1"
   },
   {
+   "key": "bc754d150b03a00a",
+   "dialect": "presto",
+   "sql": "SELECT IF(NULL IS NULL, 0, NULL) AS NIZ1"
+  },
+  {
    "key": "feb483ac4b47f07f",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN NULL IS NULL THEN 0 ELSE NULL END AS NIZ1"
+  },
+  {
+   "key": "950879198d97ffa1",
+   "dialect": "presto",
+   "sql": "SELECT REGEXP_LIKE(a, 'x')"
+  },
+  {
+   "key": "162bec38de80f4ec",
+   "dialect": "presto",
+   "sql": "SELECT REGEXP_LIKE(a, '.*x.*')"
   },
   {
    "key": "746bbb149604627b",
@@ -13495,6 +14595,11 @@
   {
    "key": "0e9c06c519abdbb3",
    "dialect": "duckdb",
+   "sql": "SELECT VAR_POP(current_salary)"
+  },
+  {
+   "key": "673bdcb8a8796a1c",
+   "dialect": "presto",
    "sql": "SELECT VAR_POP(current_salary)"
   },
   {
@@ -13778,9 +14883,19 @@
    "sql": "x & 1"
   },
   {
+   "key": "12ddd33ecd4471f0",
+   "dialect": "presto",
+   "sql": "BITWISE_AND(x, 1)"
+  },
+  {
    "key": "d4eb48743b9e9e9b",
    "dialect": "duckdb",
    "sql": "x & 1 > 0"
+  },
+  {
+   "key": "84012c1f2231bc58",
+   "dialect": "presto",
+   "sql": "BITWISE_AND(x, 1) > 0"
   },
   {
    "key": "eafbd04fc3afbf7c",
@@ -13788,9 +14903,19 @@
    "sql": "~x"
   },
   {
+   "key": "c710c6feceef8c38",
+   "dialect": "presto",
+   "sql": "BITWISE_NOT(x)"
+  },
+  {
    "key": "327864eb118e3493",
    "dialect": "duckdb",
    "sql": "x | 1"
+  },
+  {
+   "key": "9ccc83e1b789eb14",
+   "dialect": "presto",
+   "sql": "BITWISE_OR(x, 1)"
   },
   {
    "key": "d9d4a6d97e33f3e4",
@@ -13798,13 +14923,28 @@
    "sql": "x << 1"
   },
   {
+   "key": "3570fc54264e9866",
+   "dialect": "presto",
+   "sql": "BITWISE_LEFT_SHIFT(x, 1)"
+  },
+  {
    "key": "25723debd431b688",
    "dialect": "duckdb",
    "sql": "x >> 1"
   },
   {
+   "key": "e4f95841e531d43c",
+   "dialect": "presto",
+   "sql": "BITWISE_RIGHT_SHIFT(x, 1)"
+  },
+  {
    "key": "8a8c786683e1c5a9",
    "dialect": "duckdb",
+   "sql": "TRY_CAST(1 AS SMALLINT)"
+  },
+  {
+   "key": "0ca71c6b5a7f9b30",
+   "dialect": "presto",
    "sql": "TRY_CAST(1 AS SMALLINT)"
   },
   {
@@ -13813,8 +14953,18 @@
    "sql": "TRY_CAST(1 AS TINYINT)"
   },
   {
+   "key": "3e4b763fb0452180",
+   "dialect": "presto",
+   "sql": "TRY_CAST(1 AS TINYINT)"
+  },
+  {
    "key": "794fb02e1d2d129f",
    "dialect": "duckdb",
+   "sql": "TRY_CAST(1 AS BIGINT)"
+  },
+  {
+   "key": "53c2db400e57e7c6",
+   "dialect": "presto",
    "sql": "TRY_CAST(1 AS BIGINT)"
   },
   {
@@ -13823,9 +14973,24 @@
    "sql": "TRY_CAST(1.0 AS DECIMAL)"
   },
   {
+   "key": "b0c839dc17b9053f",
+   "dialect": "presto",
+   "sql": "TRY_CAST(1.0 AS DECIMAL)"
+  },
+  {
+   "key": "a45dd574d967883b",
+   "dialect": "presto",
+   "sql": "TRY_CAST(1 AS INT)"
+  },
+  {
    "key": "f32cc7f27c6a045c",
    "dialect": "duckdb",
    "sql": "TRY_CAST(1 AS INT)"
+  },
+  {
+   "key": "ec00651f1a9e268d",
+   "dialect": "presto",
+   "sql": "TRY_CAST(1 AS INTEGER)"
   },
   {
    "key": "b96f93d8c141f991",
@@ -13833,9 +14998,19 @@
    "sql": "CREATE TABLE x (w TEXT)"
   },
   {
+   "key": "e54deaee204c023f",
+   "dialect": "presto",
+   "sql": "CREATE TABLE x (w VARCHAR, y INTEGER, z INTEGER) WITH (PARTITIONED_BY=ARRAY['y', 'z'])"
+  },
+  {
    "key": "6f6870041d1c422d",
    "dialect": "duckdb",
    "sql": "CREATE TABLE test AS SELECT 1"
+  },
+  {
+   "key": "4e682e3a934ff6ca",
+   "dialect": "presto",
+   "sql": "CREATE TABLE test WITH (format='parquet', x='1', Z='2') AS SELECT 1"
   },
   {
    "key": "2bf5a41d107ef21a",
@@ -13848,9 +15023,19 @@
    "sql": "CREATE TABLE db.example_table (col_a STRUCT(struct_col_a INT, struct_col_b STRUCT(nested_col_a TEXT, nested_col_b TEXT)))"
   },
   {
+   "key": "bbf5edb5b1474878",
+   "dialect": "presto",
+   "sql": "CREATE TABLE db.example_table (col_a ROW(struct_col_a INTEGER, struct_col_b ROW(nested_col_a VARCHAR, nested_col_b VARCHAR)))"
+  },
+  {
    "key": "e9d1ab8ad00dc800",
    "dialect": "databricks",
    "sql": "ALTER TABLE db.example_table ADD PARTITION(col_a = 'a') LOCATION 'b'"
+  },
+  {
+   "key": "ca16aef4668905bf",
+   "dialect": "presto",
+   "sql": "SELECT a, b FROM x CROSS JOIN UNNEST(y) AS t(a) CROSS JOIN UNNEST(z) AS u(b)"
   },
   {
    "key": "2b29a74e37332ddb",
@@ -13863,9 +15048,24 @@
    "sql": "SELECT a FROM x CROSS JOIN UNNEST(y) AS t(a)"
   },
   {
+   "key": "d4c816ecb4fc0705",
+   "dialect": "presto",
+   "sql": "SELECT a FROM x CROSS JOIN LATERAL (SELECT pos - 1 AS pos, col FROM UNNEST(y) WITH ORDINALITY AS t(col, pos))"
+  },
+  {
    "key": "ab7a5ba2b62d2a98",
    "dialect": "duckdb",
    "sql": "SELECT a FROM x CROSS JOIN LATERAL (SELECT pos - 1 AS pos, col FROM UNNEST(y) WITH ORDINALITY AS t(col, pos))"
+  },
+  {
+   "key": "15a001ca905dda63",
+   "dialect": "presto",
+   "sql": "SELECT * FROM x CROSS JOIN LATERAL (SELECT pos - 1 AS pos, key, value FROM UNNEST(MAP(ARRAY[col], ARRAY['val'])) WITH ORDINALITY AS t(key, value, pos))"
+  },
+  {
+   "key": "8795dc711e57583a",
+   "dialect": "presto",
+   "sql": "SELECT a FROM x CROSS JOIN UNNEST(ARRAY[y]) AS t(a)"
   },
   {
    "key": "de3e05e01fbbcbbe",
@@ -13878,8 +15078,18 @@
    "sql": "''''"
   },
   {
+   "key": "c6465051e250cfab",
+   "dialect": "presto",
+   "sql": "''''"
+  },
+  {
    "key": "b9ca8aadbc163032",
    "dialect": "duckdb",
+   "sql": "'\"x\"'"
+  },
+  {
+   "key": "a2df94bee89ba517",
+   "dialect": "presto",
    "sql": "'\"x\"'"
   },
   {
@@ -13888,8 +15098,18 @@
    "sql": "'''x'''"
   },
   {
+   "key": "e77b305b42846a6a",
+   "dialect": "presto",
+   "sql": "'''x'''"
+  },
+  {
    "key": "a8a67d18b659d0bc",
    "dialect": "duckdb",
+   "sql": "'\\\\a'"
+  },
+  {
+   "key": "410d07aeeb9926a1",
+   "dialect": "presto",
    "sql": "'\\\\a'"
   },
   {
@@ -13898,14 +15118,59 @@
    "sql": "REGEXP_MATCHES(a, 'x')"
   },
   {
+   "key": "347aaee3626f1db1",
+   "dialect": "presto",
+   "sql": "REGEXP_LIKE(a, 'x')"
+  },
+  {
+   "key": "dbddb5ab70753de9",
+   "dialect": "presto",
+   "sql": "DATE_DIFF('millisecond', x, y)"
+  },
+  {
+   "key": "0cb6fb61650b3501",
+   "dialect": "presto",
+   "sql": "DATE_DIFF('second', x, y)"
+  },
+  {
+   "key": "d355314d00e0d4a1",
+   "dialect": "presto",
+   "sql": "DATE_DIFF('minute', x, y)"
+  },
+  {
+   "key": "7831d55e1fa445d8",
+   "dialect": "presto",
+   "sql": "DATE_DIFF('hour', x, y)"
+  },
+  {
+   "key": "beb9864109b8afbb",
+   "dialect": "presto",
+   "sql": "DATE_DIFF('DAY', CAST(CAST(b AS TIMESTAMP) AS DATE), CAST(CAST(a AS TIMESTAMP) AS DATE))"
+  },
+  {
    "key": "e61641062b3dcec6",
    "dialect": "duckdb",
    "sql": "STRFTIME(TO_TIMESTAMP(x), '%Y-%m-%d''T''%H')"
   },
   {
+   "key": "b52be0fc1fc5b581",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(FROM_UNIXTIME(x), '%Y-%m-%d''T''%H')"
+  },
+  {
    "key": "ea6cd5ee9598cd5d",
    "dialect": "duckdb",
    "sql": "STRFTIME(CAST('2020-01-01' AS TIMESTAMP), '%Y-%m-%d %H:%M:%S')"
+  },
+  {
+   "key": "3b3fc924d5160960",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(CAST('2020-01-01' AS TIMESTAMP), '%Y-%m-%d %H:%i:%s')"
+  },
+  {
+   "key": "dd6c5284f3e62a4d",
+   "dialect": "presto",
+   "sql": "DATE_ADD('DAY', 1, CAST(CAST('2020-01-01' AS TIMESTAMP) AS DATE))"
   },
   {
    "key": "5ae7d9aea6ef5d02",
@@ -13923,6 +15188,11 @@
    "sql": "CAST('2020-01-01' AS DATE) + INTERVAL (1 * -1) DAY"
   },
   {
+   "key": "f286d9edfea6d8c3",
+   "dialect": "presto",
+   "sql": "DATE_ADD('DAY', 1 * -1, CAST(CAST('2020-01-01' AS TIMESTAMP) AS DATE))"
+  },
+  {
    "key": "aa34695299200ebc",
    "dialect": "redshift",
    "sql": "DATEADD(DAY, 1 * -1, '2020-01-01')"
@@ -13938,9 +15208,19 @@
    "sql": "DATE_DIFF('DAY', CAST(x AS DATE), TRY_CAST(y AS DATE))"
   },
   {
+   "key": "e8dd215b128ca56f",
+   "dialect": "presto",
+   "sql": "DATE_DIFF('DAY', CAST(CAST(x AS TIMESTAMP) AS DATE), CAST(CAST(CAST(CAST(y AS TIMESTAMP) AS DATE) AS TIMESTAMP) AS DATE))"
+  },
+  {
    "key": "83946ca9f22da4c4",
    "dialect": "duckdb",
    "sql": "EPOCH(STRPTIME(x, '%Y-%m-%d %H:%M:%S'))"
+  },
+  {
+   "key": "05ed11e2d7f2ec88",
+   "dialect": "presto",
+   "sql": "TO_UNIXTIME(COALESCE(TRY(DATE_PARSE(CAST(x AS VARCHAR), '%Y-%m-%d %H:%i:%s')), PARSE_DATETIME(DATE_FORMAT(x, '%Y-%m-%d %H:%i:%s'), 'yyyy-MM-dd HH:mm:ss')))"
   },
   {
    "key": "19791c84c6309d08",
@@ -13963,6 +15243,11 @@
    "sql": "APPROX_COUNT_DISTINCT(a)"
   },
   {
+   "key": "2e5f4e8214f0eb52",
+   "dialect": "presto",
+   "sql": "APPROX_DISTINCT(a)"
+  },
+  {
    "key": "8d42d497fbbdf0ae",
    "dialect": "duckdb",
    "sql": "LIST_HAS(x, 1)"
@@ -13973,8 +15258,18 @@
    "sql": "ARRAY_CONTAINS(x, 1)"
   },
   {
+   "key": "2a6a9237485c3faf",
+   "dialect": "presto",
+   "sql": "CONTAINS(x, 1)"
+  },
+  {
    "key": "65f435e738806686",
    "dialect": "duckdb",
+   "sql": "STRPOS(x, 'a')"
+  },
+  {
+   "key": "17862d82dc65cf6b",
+   "dialect": "presto",
    "sql": "STRPOS(x, 'a')"
   },
   {
@@ -13983,9 +15278,24 @@
    "sql": "CASE WHEN STRPOS(SUBSTRING(x, 3), 'a') = 0 THEN 0 ELSE STRPOS(SUBSTRING(x, 3), 'a') + 3 - 1 END"
   },
   {
+   "key": "cfcf59afa74eb83f",
+   "dialect": "presto",
+   "sql": "IF(STRPOS(SUBSTR(x, 3), 'a') = 0, 0, STRPOS(SUBSTR(x, 3), 'a') + 3 - 1)"
+  },
+  {
    "key": "c0fbb910e96f3e6d",
    "dialect": "duckdb",
    "sql": "SELECT ARRAY_REVERSE_SORT(x)"
+  },
+  {
+   "key": "0d7523894edc29e2",
+   "dialect": "presto",
+   "sql": "SELECT ARRAY_SORT(x, (a, b) -> CASE WHEN a < b THEN 1 WHEN a > b THEN -1 ELSE 0 END)"
+  },
+  {
+   "key": "524e18dcd3640de1",
+   "dialect": "presto",
+   "sql": "JSON_EXTRACT_SCALAR(x, '$.name')"
   },
   {
    "key": "9a7698ee1aa9646c",
@@ -13993,13 +15303,28 @@
    "sql": "MAP([a, c], [b, d])"
   },
   {
+   "key": "e00398c2a984dad9",
+   "dialect": "presto",
+   "sql": "MAP(ARRAY[a, c], ARRAY[b, d])"
+  },
+  {
    "key": "dc1808feaef160c0",
    "dialect": "duckdb",
    "sql": "MAP([a], [b])"
   },
   {
+   "key": "8b068dcf0f12bcdf",
+   "dialect": "presto",
+   "sql": "MAP(ARRAY[a], ARRAY[b])"
+  },
+  {
    "key": "20a70a89aff52715",
    "dialect": "duckdb",
+   "sql": "LN(10)"
+  },
+  {
+   "key": "578e3b3fe62a6375",
+   "dialect": "presto",
    "sql": "LN(10)"
   },
   {
@@ -14008,8 +15333,18 @@
    "sql": "ds = '2020-01-01'"
   },
   {
+   "key": "60adc867b538910c",
+   "dialect": "presto",
+   "sql": "ds = '2020-01-01'"
+  },
+  {
    "key": "224b8f84ca5c0ec5",
    "dialect": "duckdb",
+   "sql": "ds = '1''''2'"
+  },
+  {
+   "key": "fc9a4a9a0f28e90c",
+   "dialect": "presto",
    "sql": "ds = '1''''2'"
   },
   {
@@ -14018,9 +15353,24 @@
    "sql": "x = 1"
   },
   {
+   "key": "e084ea2ee973cb96",
+   "dialect": "presto",
+   "sql": "x = 1"
+  },
+  {
    "key": "7a91bf16ce5e1b3a",
    "dialect": "databricks",
    "sql": "x DIV y"
+  },
+  {
+   "key": "0b96c5d49a53070d",
+   "dialect": "presto",
+   "sql": "CAST(CAST(x AS DOUBLE) / y AS INTEGER)"
+  },
+  {
+   "key": "19de223f48bf05d2",
+   "dialect": "presto",
+   "sql": "ARRAY_AGG(x)"
   },
   {
    "key": "f3ca512dbe947829",
@@ -14028,9 +15378,39 @@
    "sql": "ARRAY_AGG(x) FILTER(WHERE x IS NOT NULL)"
   },
   {
+   "key": "1d5341ae32110422",
+   "dialect": "presto",
+   "sql": "ARRAY_AGG(x) FILTER(WHERE x IS NOT NULL)"
+  },
+  {
+   "key": "79ab52014b47fb38",
+   "dialect": "presto",
+   "sql": "SET_AGG(x)"
+  },
+  {
+   "key": "d8514ea1aec72fa5",
+   "dialect": "presto",
+   "sql": "SELECT * FROM x AS foo TABLESAMPLE BERNOULLI (1)"
+  },
+  {
+   "key": "79abecd54a6dcd47",
+   "dialect": "presto",
+   "sql": "SELECT DATE_TRUNC('MONTH', CAST(ds AS TIMESTAMP))"
+  },
+  {
+   "key": "5484dcf511e28ea9",
+   "dialect": "presto",
+   "sql": "SELECT DATE_TRUNC('MONTH', TRY_CAST(ds AS TIMESTAMP))"
+  },
+  {
    "key": "c035ae3d7bd635ee",
    "dialect": "databricks",
    "sql": "REGEXP_EXTRACT('abc', '(a)(b)(c)')"
+  },
+  {
+   "key": "c3d4426f76b5474a",
+   "dialect": "presto",
+   "sql": "REGEXP_EXTRACT('abc', '(a)(b)(c)', 1)"
   },
   {
    "key": "ec62487ea8980167",
@@ -14298,6 +15678,11 @@
    "sql": "CREATE TABLE z (a INT)"
   },
   {
+   "key": "689c1aed18f09e14",
+   "dialect": "presto",
+   "sql": "CHR(10)"
+  },
+  {
    "key": "ca589d7019e4bf89",
    "dialect": "tsql",
    "sql": "CHAR(10)"
@@ -14338,6 +15723,16 @@
    "sql": "SELECT STRFTIME(CAST('2007-10-04 22:23:00' AS TIMESTAMP), '%I:%M:%S %p')"
   },
   {
+   "key": "e9a02d1110a17f18",
+   "dialect": "presto",
+   "sql": "SELECT (DATE_DIFF('DAY', CAST(CAST('0000-01-01' AS TIMESTAMP) AS DATE), CAST(CAST(x AS TIMESTAMP) AS DATE)) + 1)"
+  },
+  {
+   "key": "1eef99e28c7e0fde",
+   "dialect": "presto",
+   "sql": "SELECT DATE_DIFF('DAY', y, x)"
+  },
+  {
    "key": "c97cba292b6d0253",
    "dialect": "redshift",
    "sql": "SELECT DATEDIFF(DAY, y, x)"
@@ -14346,6 +15741,11 @@
    "key": "1b39fd36fd0626d2",
    "dialect": "postgres",
    "sql": "SELECT (CAST(x AS DATE) - CAST(y AS DATE))"
+  },
+  {
+   "key": "d823c882f1d55e14",
+   "dialect": "presto",
+   "sql": "SELECT DATE_DIFF('DAY', DATE_TRUNC('DAY', y), DATE_TRUNC('DAY', x))"
   },
   {
    "key": "2cf00ebebabb0ac4",
@@ -14418,6 +15818,11 @@
    "sql": "SELECT * FROM test LIMIT 0 + 1 OFFSET 0 + 1"
   },
   {
+   "key": "ad812f12364598e6",
+   "dialect": "presto",
+   "sql": "SELECT * FROM test OFFSET 1 LIMIT 1"
+  },
+  {
    "key": "c50b4580a8ec16cf",
    "dialect": "postgres",
    "sql": "SELECT a FROM tbl FOR UPDATE"
@@ -14488,6 +15893,11 @@
    "sql": "LISTAGG(CONCAT(a, b, c), ',')"
   },
   {
+   "key": "4af095185a51c907",
+   "dialect": "presto",
+   "sql": "ARRAY_JOIN(ARRAY_AGG(CONCAT(CAST(a AS VARCHAR), CAST(b AS VARCHAR), CAST(c AS VARCHAR))), ',')"
+  },
+  {
    "key": "000eea322a5fa1a6",
    "dialect": "tsql",
    "sql": "STRING_AGG(a + b + c, '')"
@@ -14551,6 +15961,11 @@
    "key": "e04775045c67be82",
    "dialect": "postgres",
    "sql": "CAST(a AS DOUBLE PRECISION) / NULLIF(b, 0)"
+  },
+  {
+   "key": "a458dab2fa535503",
+   "dialect": "presto",
+   "sql": "CAST(a AS DOUBLE) / NULLIF(b, 0)"
   },
   {
    "key": "d916c5ce8b8af4c4",
@@ -14663,6 +16078,11 @@
    "sql": "CAST(x AS DOUBLE PRECISION)"
   },
   {
+   "key": "6e9cd894e138492d",
+   "dialect": "presto",
+   "sql": "CAST(x AS DOUBLE)"
+  },
+  {
    "key": "2f76c6d0a6591748",
    "dialect": "redshift",
    "sql": "CAST(x AS DOUBLE PRECISION)"
@@ -14716,6 +16136,11 @@
    "key": "d1adaf3677cc32aa",
    "dialect": "tsql",
    "sql": "ROUND(3.14159, 0, 1)"
+  },
+  {
+   "key": "15bace8b0375088c",
+   "dialect": "presto",
+   "sql": "TRUNCATE(3.14159, 2)"
   },
   {
    "key": "e000bbdd526ab3b2",
@@ -15788,6 +17213,11 @@
    "sql": "JSON_EXTRACT_PATH('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', 'f4')"
   },
   {
+   "key": "59f97fb5055984e8",
+   "dialect": "presto",
+   "sql": "JSON_EXTRACT('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4')"
+  },
+  {
    "key": "ff31182679007409",
    "dialect": "redshift",
    "sql": "JSON_EXTRACT_PATH_TEXT('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', 'f4')"
@@ -15841,6 +17271,11 @@
    "key": "378d9bc2fa62205e",
    "dialect": "databricks",
    "sql": "SELECT PERCENTILE_APPROX(amount, 0.5)"
+  },
+  {
+   "key": "942ca7b8a442b24e",
+   "dialect": "presto",
+   "sql": "SELECT APPROX_PERCENTILE(amount, 0.5)"
   },
   {
    "key": "8bc01628f5df34fb",
@@ -15968,6 +17403,11 @@
    "sql": "GENERATE_SERIES(a, b, INTERVAL '2 DAYS')"
   },
   {
+   "key": "41936e73f0e1ed3d",
+   "dialect": "presto",
+   "sql": "UNNEST(SEQUENCE(a, b, INTERVAL '2' DAY))"
+  },
+  {
    "key": "6391608ca309d82e",
    "dialect": "postgres",
    "sql": "GENERATE_SERIES('2019-01-01'::TIMESTAMP, NOW(), '1day')"
@@ -15981,6 +17421,11 @@
    "key": "149b894f08d907f2",
    "dialect": "postgres",
    "sql": "GENERATE_SERIES(CAST('2019-01-01' AS TIMESTAMP), CURRENT_TIMESTAMP, INTERVAL '1 DAY')"
+  },
+  {
+   "key": "a779c5a69dd9a248",
+   "dialect": "presto",
+   "sql": "UNNEST(SEQUENCE(CAST('2019-01-01' AS TIMESTAMP), CAST(CURRENT_TIMESTAMP AS TIMESTAMP), INTERVAL '1' DAY))"
   },
   {
    "key": "b5851ab6f1cf678e",
@@ -15998,9 +17443,19 @@
    "sql": "SELECT * FROM EXPLODE(SEQUENCE(a, b))"
   },
   {
+   "key": "b105a1ac0aaaa6ce",
+   "dialect": "presto",
+   "sql": "SELECT * FROM UNNEST(SEQUENCE(a, b))"
+  },
+  {
    "key": "bf3e3f83f023265d",
    "dialect": "postgres",
    "sql": "SELECT * FROM t CROSS JOIN GENERATE_SERIES(2, 4)"
+  },
+  {
+   "key": "b6d62d19ec5220ef",
+   "dialect": "presto",
+   "sql": "SELECT * FROM t CROSS JOIN UNNEST(SEQUENCE(2, 4))"
   },
   {
    "key": "ee364e070fd8cc97",
@@ -16011,6 +17466,11 @@
    "key": "7dd0446c13e24d4d",
    "dialect": "postgres",
    "sql": "SELECT * FROM t CROSS JOIN GENERATE_SERIES(2, 4) AS s"
+  },
+  {
+   "key": "df2d024f2d455671",
+   "dialect": "presto",
+   "sql": "SELECT * FROM t CROSS JOIN UNNEST(SEQUENCE(2, 4)) AS _u(s)"
   },
   {
    "key": "c7307f07ba1983d0",
@@ -16028,6 +17488,11 @@
    "sql": "SELECT * FROM x FETCH FIRST 1 ROWS ONLY"
   },
   {
+   "key": "dcbd04289de0565b",
+   "dialect": "presto",
+   "sql": "SELECT * FROM x FETCH FIRST 1 ROWS ONLY"
+  },
+  {
    "key": "aaa3c15fbbeb9aa0",
    "dialect": "postgres",
    "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC NULLS LAST, lname"
@@ -16036,6 +17501,11 @@
    "key": "a526af2e86f61272",
    "dialect": "postgres",
    "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC, fname ASC, lname"
+  },
+  {
+   "key": "2d02a5aa54a0df24",
+   "dialect": "presto",
+   "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC, lname"
   },
   {
    "key": "2ed1d097aa833029",
@@ -16063,6 +17533,11 @@
    "sql": "LTRIM(' XXX ')"
   },
   {
+   "key": "85c59488e52ecb09",
+   "dialect": "presto",
+   "sql": "LTRIM(' XXX ')"
+  },
+  {
    "key": "e8563f26e6144513",
    "dialect": "postgres",
    "sql": "TRIM(TRAILING FROM ' XXX ')"
@@ -16070,6 +17545,11 @@
   {
    "key": "90320712c3716ca6",
    "dialect": "postgres",
+   "sql": "RTRIM(' XXX ')"
+  },
+  {
+   "key": "02b4d611d9679308",
+   "dialect": "presto",
    "sql": "RTRIM(' XXX ')"
   },
   {
@@ -16948,6 +18428,11 @@
    "sql": "CREATE TABLE x (a UUID, b BLOB)"
   },
   {
+   "key": "09a4a5f90ca3230c",
+   "dialect": "presto",
+   "sql": "CREATE TABLE x (a UUID, b VARBINARY)"
+  },
+  {
    "key": "44b7f5b6ae3ae7fb",
    "dialect": "tsql",
    "sql": "CREATE TABLE x (a UNIQUEIDENTIFIER, b VARBINARY)"
@@ -17028,9 +18513,19 @@
    "sql": "SELECT UNNEST(c) FROM t"
   },
   {
+   "key": "685ee6570bd23953",
+   "dialect": "presto",
+   "sql": "SELECT IF(_u.pos = _u_2.pos_2, _u_2.col) AS col FROM t CROSS JOIN UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(c)))) AS _u(pos) CROSS JOIN UNNEST(c) WITH ORDINALITY AS _u_2(col, pos_2) WHERE _u.pos = _u_2.pos_2 OR (_u.pos > CARDINALITY(c) AND _u_2.pos_2 = CARDINALITY(c))"
+  },
+  {
    "key": "142df261d564b165",
    "dialect": "postgres",
    "sql": "SELECT UNNEST(ARRAY[1])"
+  },
+  {
+   "key": "a470fad5fb2e9e6f",
+   "dialect": "presto",
+   "sql": "SELECT IF(_u.pos = _u_2.pos_2, _u_2.col) AS col FROM UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(ARRAY[1])))) AS _u(pos) CROSS JOIN UNNEST(ARRAY[1]) WITH ORDINALITY AS _u_2(col, pos_2) WHERE _u.pos = _u_2.pos_2 OR (_u.pos > CARDINALITY(ARRAY[1]) AND _u_2.pos_2 = CARDINALITY(ARRAY[1]))"
   },
   {
    "key": "6414c5f2a38b3efb",
@@ -17053,9 +18548,19 @@
    "sql": "CONCAT(a, b)"
   },
   {
+   "key": "fadf9ae64cd97ec8",
+   "dialect": "presto",
+   "sql": "CONCAT(COALESCE(CAST(a AS VARCHAR), ''), COALESCE(CAST(b AS VARCHAR), ''))"
+  },
+  {
    "key": "c4ee13db447500f6",
    "dialect": "duckdb",
    "sql": "a || b"
+  },
+  {
+   "key": "408deba6dac23634",
+   "dialect": "presto",
+   "sql": "CONCAT(CAST(a AS VARCHAR), CAST(b AS VARCHAR))"
   },
   {
    "key": "6fca0ceced7907f6",
@@ -17098,9 +18603,19 @@
    "sql": "SELECT U&'Hello winter \\2603 !'"
   },
   {
+   "key": "c43da08c9c16a7c1",
+   "dialect": "presto",
+   "sql": "SELECT U&'Hello winter \\2603 !'"
+  },
+  {
    "key": "981d552c84b94dbd",
    "dialect": "duckdb",
    "sql": "SELECT 'can''t'"
+  },
+  {
+   "key": "ecb776fb3ccc5b72",
+   "dialect": "presto",
+   "sql": "SELECT U&'can''t'"
   },
   {
    "key": "5793a8ddee494f14",
@@ -17196,6 +18711,11 @@
    "key": "0faa758efea3b2bb",
    "dialect": "duckdb",
    "sql": "ARRAY_LENGTH(arr)"
+  },
+  {
+   "key": "49795a2bce433ae1",
+   "dialect": "presto",
+   "sql": "CARDINALITY(arr)"
   },
   {
    "key": "044f35a733a41c32",
@@ -17513,6 +19033,66 @@
    "sql": "x::JSON -> 'duration' ->> -1"
   },
   {
+   "key": "de460ea9a4dc2b62",
+   "dialect": "presto",
+   "sql": "DEALLOCATE PREPARE my_query"
+  },
+  {
+   "key": "736abaeb7a04be97",
+   "dialect": "presto",
+   "sql": "DESCRIBE INPUT x"
+  },
+  {
+   "key": "6d10636d07d7e9c5",
+   "dialect": "presto",
+   "sql": "DESCRIBE OUTPUT x"
+  },
+  {
+   "key": "5a0fa6db149f2cd6",
+   "dialect": "presto",
+   "sql": "SELECT * FROM x qualify"
+  },
+  {
+   "key": "3c986668a2bdf30a",
+   "dialect": "presto",
+   "sql": "CAST(x AS IPADDRESS)"
+  },
+  {
+   "key": "8827dc823ce5808a",
+   "dialect": "presto",
+   "sql": "CAST(x AS IPPREFIX)"
+  },
+  {
+   "key": "b2028df7b9ae9db6",
+   "dialect": "presto",
+   "sql": "CAST(TDIGEST_AGG(1) AS TDIGEST)"
+  },
+  {
+   "key": "9d60390749897117",
+   "dialect": "presto",
+   "sql": "CAST(x AS HYPERLOGLOG)"
+  },
+  {
+   "key": "668db61ee98ccc6a",
+   "dialect": "presto",
+   "sql": "RESET SESSION hive.optimized_reader_enabled"
+  },
+  {
+   "key": "40e0a9b8b585c690",
+   "dialect": "presto",
+   "sql": "TIMESTAMP '2025-06-20 11:22:29 Europe/Prague'"
+  },
+  {
+   "key": "fae6aee8fd21081f",
+   "dialect": "presto",
+   "sql": "CAST(x AS BOOLEAN)"
+  },
+  {
+   "key": "25f11bdccf628977",
+   "dialect": "presto",
+   "sql": "SELECT FROM_ISO8601_TIMESTAMP('2020-05-11T11:15:05')"
+  },
+  {
    "key": "735525274cc4d143",
    "dialect": "duckdb",
    "sql": "SELECT CAST('2020-05-11T11:15:05' AS TIMESTAMPTZ)"
@@ -17521,6 +19101,11 @@
    "key": "5ee87dd4f70a45af",
    "dialect": "databricks",
    "sql": "SELECT CAST('2020-05-11T11:15:05' AS TIMESTAMP)"
+  },
+  {
+   "key": "31623af193e02749",
+   "dialect": "presto",
+   "sql": "SELECT FROM_ISO8601_DATE('2020-05-11')"
   },
   {
    "key": "84eea5b86303a27f",
@@ -17533,6 +19118,21 @@
    "sql": "SELECT CAST('2020-05-11' AS DATE)"
   },
   {
+   "key": "41789ae05e1def3c",
+   "dialect": "presto",
+   "sql": "CAST(x AS INTERVAL YEAR TO MONTH)"
+  },
+  {
+   "key": "b59d846a4c85e32a",
+   "dialect": "presto",
+   "sql": "CAST(x AS INTERVAL DAY TO SECOND)"
+  },
+  {
+   "key": "13f07bfd8117fe9d",
+   "dialect": "presto",
+   "sql": "SELECT CAST('10C' AS INTEGER)"
+  },
+  {
    "key": "b7ce17875c01a397",
    "dialect": "postgres",
    "sql": "SELECT CAST('10C' AS INTEGER)"
@@ -17543,9 +19143,29 @@
    "sql": "SELECT CAST('10C' AS INTEGER)"
   },
   {
+   "key": "27974d12440bb2bb",
+   "dialect": "presto",
+   "sql": "SELECT CAST('1970-01-01 00:00:00' AS TIMESTAMP)"
+  },
+  {
    "key": "099f551ee7c0b1b5",
    "dialect": "postgres",
    "sql": "SELECT 'epoch'::TIMESTAMP"
+  },
+  {
+   "key": "f6dc782afa35f853",
+   "dialect": "presto",
+   "sql": "FROM_BASE64(x)"
+  },
+  {
+   "key": "eded1bd8acc82f4d",
+   "dialect": "presto",
+   "sql": "TO_BASE64(x)"
+  },
+  {
+   "key": "780b56bc684b3c3f",
+   "dialect": "presto",
+   "sql": "CAST(a AS ARRAY(INT))"
   },
   {
    "key": "86f71de488cf06e1",
@@ -17553,9 +19173,24 @@
    "sql": "CAST(a AS INT[])"
   },
   {
+   "key": "23302871b7270bcd",
+   "dialect": "presto",
+   "sql": "CAST(a AS ARRAY(INTEGER))"
+  },
+  {
+   "key": "bacabfbc8c89112b",
+   "dialect": "presto",
+   "sql": "CAST(ARRAY[1, 2] AS ARRAY(BIGINT))"
+  },
+  {
    "key": "a53eaf00b54d8662",
    "dialect": "duckdb",
    "sql": "CAST([1, 2] AS BIGINT[])"
+  },
+  {
+   "key": "ee3540c7766e7e6e",
+   "dialect": "presto",
+   "sql": "CAST(MAP(ARRAY['key'], ARRAY[1]) AS MAP(VARCHAR, INT))"
   },
   {
    "key": "af4685f73799dbe7",
@@ -17563,9 +19198,29 @@
    "sql": "CAST(MAP(['key'], [1]) AS MAP(TEXT, INT))"
   },
   {
+   "key": "30b1e332b0bfdec2",
+   "dialect": "presto",
+   "sql": "CAST(MAP(ARRAY['key'], ARRAY[1]) AS MAP(VARCHAR, INTEGER))"
+  },
+  {
+   "key": "75ee5f5653374c4f",
+   "dialect": "presto",
+   "sql": "CAST(MAP(ARRAY['a','b','c'], ARRAY[ARRAY[1], ARRAY[2], ARRAY[3]]) AS MAP(VARCHAR, ARRAY(INT)))"
+  },
+  {
    "key": "7e3897fb7c5749b0",
    "dialect": "duckdb",
    "sql": "CAST(MAP(['a', 'b', 'c'], [[1], [2], [3]]) AS MAP(TEXT, INT[]))"
+  },
+  {
+   "key": "b0e47320ec6c0dba",
+   "dialect": "presto",
+   "sql": "CAST(MAP(ARRAY['a', 'b', 'c'], ARRAY[ARRAY[1], ARRAY[2], ARRAY[3]]) AS MAP(VARCHAR, ARRAY(INTEGER)))"
+  },
+  {
+   "key": "2fbdfc3fc29326e9",
+   "dialect": "presto",
+   "sql": "CAST(x AS TIME(5) WITH TIME ZONE)"
   },
   {
    "key": "eedc968cf963e208",
@@ -17583,9 +19238,29 @@
    "sql": "CAST(x AS TIME(5) WITH TIME ZONE)"
   },
   {
+   "key": "383d7275deeb96d0",
+   "dialect": "presto",
+   "sql": "CAST(x AS TIMESTAMP(9) WITH TIME ZONE)"
+  },
+  {
+   "key": "32b8108395c51fa2",
+   "dialect": "presto",
+   "sql": "REPLACE(subject, pattern)"
+  },
+  {
    "key": "9b27d3e71a6db5b1",
    "dialect": "duckdb",
    "sql": "REPLACE(subject, pattern, '')"
+  },
+  {
+   "key": "7c6e7004905f92a0",
+   "dialect": "presto",
+   "sql": "REPLACE(subject, pattern, '')"
+  },
+  {
+   "key": "ccd751c889c20f03",
+   "dialect": "presto",
+   "sql": "REPLACE(subject, pattern, replacement)"
   },
   {
    "key": "c4756f283d300995",
@@ -17593,9 +19268,29 @@
    "sql": "REPLACE(subject, pattern, replacement)"
   },
   {
+   "key": "c99d8515e50aaea7",
+   "dialect": "presto",
+   "sql": "REGEXP_REPLACE('abcd', '[ab]')"
+  },
+  {
+   "key": "0ca06df9fa8069b5",
+   "dialect": "presto",
+   "sql": "REGEXP_REPLACE('abcd', '[ab]', '')"
+  },
+  {
+   "key": "58cd3ea8d10309dc",
+   "dialect": "presto",
+   "sql": "SPLIT(x, 'a.')"
+  },
+  {
    "key": "c204fc8a32caef9b",
    "dialect": "duckdb",
    "sql": "STR_SPLIT(x, 'a.')"
+  },
+  {
+   "key": "ba00299461be7a7e",
+   "dialect": "presto",
+   "sql": "REGEXP_SPLIT(x, 'a.')"
   },
   {
    "key": "dbe9d6b7f257e21d",
@@ -17603,9 +19298,64 @@
    "sql": "STR_SPLIT_REGEX(x, 'a.')"
   },
   {
+   "key": "b1eb64e7d4af9970",
+   "dialect": "presto",
+   "sql": "ARRAY_JOIN(x, '-', 'a')"
+  },
+  {
+   "key": "aee5475f8dda40ab",
+   "dialect": "presto",
+   "sql": "STRPOS(haystack, needle, occurrence)"
+  },
+  {
+   "key": "e1d821f7968ab0cb",
+   "dialect": "presto",
+   "sql": "FROM_UNIXTIME(a, b)"
+  },
+  {
+   "key": "b14d96c4fb157781",
+   "dialect": "presto",
+   "sql": "FROM_UNIXTIME(a, b, c)"
+  },
+  {
+   "key": "f427d7ada74c7437",
+   "dialect": "presto",
+   "sql": "TRIM(a, b)"
+  },
+  {
+   "key": "667a1d780d691ed2",
+   "dialect": "presto",
+   "sql": "VAR_POP(a)"
+  },
+  {
+   "key": "8e85ea4dfbb15bc0",
+   "dialect": "presto",
+   "sql": "SELECT FROM_UNIXTIME(col) FROM tbl"
+  },
+  {
+   "key": "fd692e8fa03e98f2",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(x, '%Y-%m-%d %H:%i:%S')"
+  },
+  {
+   "key": "44c82bded2b1e0e3",
+   "dialect": "presto",
+   "sql": "DATE_PARSE(x, '%Y-%m-%d %H:%i:%S')"
+  },
+  {
    "key": "79c4a505b1c544fa",
    "dialect": "duckdb",
    "sql": "STRPTIME(x, '%Y-%m-%d %H:%M:%S')"
+  },
+  {
+   "key": "1cb1a6d74c619d01",
+   "dialect": "presto",
+   "sql": "DATE_PARSE(x, '%Y-%m-%d %T')"
+  },
+  {
+   "key": "f00f412d448c679d",
+   "dialect": "presto",
+   "sql": "DATE_PARSE(x, '%Y-%m-%d')"
   },
   {
    "key": "ad5de8e110bada25",
@@ -17613,9 +19363,39 @@
    "sql": "STRPTIME(x, '%Y-%m-%d')"
   },
   {
+   "key": "19594c42ec389b1a",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(x, '%T')"
+  },
+  {
+   "key": "5a9b92bc0a58d085",
+   "dialect": "presto",
+   "sql": "DATE_PARSE(SUBSTR(x, 1, 10), '%Y-%m-%d')"
+  },
+  {
    "key": "9f58994eafd62694",
    "dialect": "duckdb",
    "sql": "STRPTIME(SUBSTRING(x, 1, 10), '%Y-%m-%d')"
+  },
+  {
+   "key": "e6ca23216ad5fe9d",
+   "dialect": "presto",
+   "sql": "DATE_PARSE(SUBSTRING(x, 1, 10), '%Y-%m-%d')"
+  },
+  {
+   "key": "1d57cef7f486b06d",
+   "dialect": "presto",
+   "sql": "DATE_ADD('DAY', 1 * -1, x)"
+  },
+  {
+   "key": "5ce6ec27c52f94a8",
+   "dialect": "presto",
+   "sql": "NOW()"
+  },
+  {
+   "key": "00d86279616c8398",
+   "dialect": "presto",
+   "sql": "SELECT DATE_ADD('DAY', 1, CAST(CURRENT_DATE AS TIMESTAMP))"
   },
   {
    "key": "c575978eb843621b",
@@ -17623,9 +19403,29 @@
    "sql": "SELECT DATEADD(DAY, 1, CURRENT_DATE)"
   },
   {
+   "key": "6f50968ce8c5314d",
+   "dialect": "presto",
+   "sql": "((DAY_OF_WEEK(CAST(CAST(TRY_CAST('2012-08-08 01:00:00' AS TIMESTAMP WITH TIME ZONE) AS TIMESTAMP) AS DATE)) % 7) + 1)"
+  },
+  {
+   "key": "f93ffaf1320d6601",
+   "dialect": "presto",
+   "sql": "DAY_OF_WEEK(CAST('2012-08-08 01:00:00' AS TIMESTAMP))"
+  },
+  {
    "key": "a09bef995e48319e",
    "dialect": "duckdb",
    "sql": "ISODOW(CAST('2012-08-08 01:00:00' AS TIMESTAMP))"
+  },
+  {
+   "key": "856155c4874c5efb",
+   "dialect": "presto",
+   "sql": "DAY_OF_MONTH(timestamp '2012-08-08 01:00:00')"
+  },
+  {
+   "key": "74955e276297611d",
+   "dialect": "presto",
+   "sql": "DAY_OF_MONTH(CAST('2012-08-08 01:00:00' AS TIMESTAMP))"
   },
   {
    "key": "7639f585b53c0a7d",
@@ -17633,9 +19433,29 @@
    "sql": "DAYOFMONTH(CAST('2012-08-08 01:00:00' AS TIMESTAMP))"
   },
   {
+   "key": "43b177d53bf7cb4d",
+   "dialect": "presto",
+   "sql": "DAY_OF_YEAR(timestamp '2012-08-08 01:00:00')"
+  },
+  {
+   "key": "87e81c587a3a0687",
+   "dialect": "presto",
+   "sql": "DAY_OF_YEAR(CAST('2012-08-08 01:00:00' AS TIMESTAMP))"
+  },
+  {
    "key": "3995726cfee65117",
    "dialect": "duckdb",
    "sql": "DAYOFYEAR(CAST('2012-08-08 01:00:00' AS TIMESTAMP))"
+  },
+  {
+   "key": "5af4df99b5d8a916",
+   "dialect": "presto",
+   "sql": "WEEK_OF_YEAR(timestamp '2012-08-08 01:00:00')"
+  },
+  {
+   "key": "ee9216ac9103f0e6",
+   "dialect": "presto",
+   "sql": "WEEK_OF_YEAR(CAST('2012-08-08 01:00:00' AS TIMESTAMP))"
   },
   {
    "key": "d2ce3f5bc5e5b1b9",
@@ -17643,9 +19463,104 @@
    "sql": "WEEKOFYEAR(CAST('2012-08-08 01:00:00' AS TIMESTAMP))"
   },
   {
+   "key": "3a1c38d9ea685e80",
+   "dialect": "presto",
+   "sql": "SELECT CAST('2012-10-31 00:00' AS TIMESTAMP) AT TIME ZONE 'America/Sao_Paulo'"
+  },
+  {
+   "key": "0a4568f4ad9c7449",
+   "dialect": "presto",
+   "sql": "SELECT AT_TIMEZONE(CAST('2012-10-31 00:00' AS TIMESTAMP), 'America/Sao_Paulo')"
+  },
+  {
+   "key": "da26861760ec3e22",
+   "dialect": "presto",
+   "sql": "SELECT AT_TIMEZONE(CAST('2012-10-31 00:00' AS TIMESTAMP WITH TIME ZONE), 'America/Sao_Paulo')"
+  },
+  {
+   "key": "644503d783036e38",
+   "dialect": "presto",
+   "sql": "CAST(x AS TIMESTAMP)"
+  },
+  {
+   "key": "8b67bbca6857c5f6",
+   "dialect": "presto",
+   "sql": "TIMESTAMP(x, '12:00:00')"
+  },
+  {
    "key": "eecc3f4a423defb5",
    "dialect": "duckdb",
    "sql": "TIMESTAMP(x, '12:00:00')"
+  },
+  {
+   "key": "3288b56777baa24b",
+   "dialect": "presto",
+   "sql": "DATE_ADD('DAY', CAST(x AS BIGINT), y)"
+  },
+  {
+   "key": "27042a8cf0025711",
+   "dialect": "presto",
+   "sql": "DATE_ADD('DAY', x, y)"
+  },
+  {
+   "key": "84f339d748a0be53",
+   "dialect": "presto",
+   "sql": "DATE_ADD('DAY', 1, y)"
+  },
+  {
+   "key": "eb0dd8dfa6f23865",
+   "dialect": "presto",
+   "sql": "SELECT DATE_ADD('MINUTE', 30, col)"
+  },
+  {
+   "key": "68d761d28f875a69",
+   "dialect": "presto",
+   "sql": "DATE_ADD('DAY', FLOOR(5), y)"
+  },
+  {
+   "key": "42ca4e4c821da437",
+   "dialect": "presto",
+   "sql": "SELECT DATE_ADD('DAY', MOD(5, 2.5), y), DATE_ADD('DAY', CEIL(5.5), y)"
+  },
+  {
+   "key": "2d11dae37caac6f8",
+   "dialect": "presto",
+   "sql": "DATE_ADD('MINUTE', CAST(FLOOR(CAST(EXTRACT(MINUTE FROM CURRENT_TIMESTAMP) AS DOUBLE) / NULLIF(30, 0)) * 30 AS BIGINT), col)"
+  },
+  {
+   "key": "980b684d6c8eeadd",
+   "dialect": "presto",
+   "sql": "SELECT WEEK_OF_YEAR(y)"
+  },
+  {
+   "key": "c4b82a8037893c1f",
+   "dialect": "presto",
+   "sql": "SELECT WEEK(y)"
+  },
+  {
+   "key": "a5840ed941b212ad",
+   "dialect": "presto",
+   "sql": "CREATE TABLE test WITH (FORMAT = 'PARQUET') AS SELECT 1"
+  },
+  {
+   "key": "1ed62392646b877c",
+   "dialect": "presto",
+   "sql": "CREATE TABLE test WITH (format='PARQUET') AS SELECT 1"
+  },
+  {
+   "key": "f6eafd39c57577eb",
+   "dialect": "presto",
+   "sql": "CREATE TABLE test STORED AS 'PARQUET' AS SELECT 1"
+  },
+  {
+   "key": "43d9e3b23d764e17",
+   "dialect": "presto",
+   "sql": "CREATE TABLE test WITH (FORMAT = 'PARQUET', X = '1', Z = '2') AS SELECT 1"
+  },
+  {
+   "key": "08c4ea5f2a00873b",
+   "dialect": "presto",
+   "sql": "CREATE TABLE test WITH (format='PARQUET', X='1', Z='2') AS SELECT 1"
   },
   {
    "key": "406c2c7620d08633",
@@ -17653,9 +19568,59 @@
    "sql": "CREATE TABLE x (w TEXT, y INT, z INT)"
   },
   {
+   "key": "ca4164ddd066ca46",
+   "dialect": "presto",
+   "sql": "CREATE TABLE x WITH (bucket_by = ARRAY['y'], bucket_count = 64) AS SELECT 1 AS y"
+  },
+  {
    "key": "bebbd4f696d0e8a0",
    "dialect": "duckdb",
    "sql": "CREATE TABLE x AS SELECT 1 AS y"
+  },
+  {
+   "key": "430120b8f2280667",
+   "dialect": "presto",
+   "sql": "CREATE TABLE x WITH (bucket_by=ARRAY['y'], bucket_count=64) AS SELECT 1 AS y"
+  },
+  {
+   "key": "5207dab312092c7d",
+   "dialect": "presto",
+   "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC NULLS LAST, lname"
+  },
+  {
+   "key": "6f32bcb1144ad40a",
+   "dialect": "presto",
+   "sql": "CREATE OR REPLACE VIEW x (cola) SELECT 1 as cola"
+  },
+  {
+   "key": "01dc4756e99b4dca",
+   "dialect": "presto",
+   "sql": "CREATE OR REPLACE VIEW x AS SELECT 1 AS cola"
+  },
+  {
+   "key": "77bedacc1725fca8",
+   "dialect": "presto",
+   "sql": "CREATE TABLE IF NOT EXISTS x (\"cola\" INTEGER, \"ds\" TEXT) COMMENT 'comment' WITH (PARTITIONED BY=(\"ds\"))"
+  },
+  {
+   "key": "cab7a57a4424ec80",
+   "dialect": "presto",
+   "sql": "CREATE TABLE IF NOT EXISTS x (\"cola\" INTEGER, \"ds\" VARCHAR) COMMENT 'comment' WITH (PARTITIONED_BY=ARRAY['ds'])"
+  },
+  {
+   "key": "4dddef2ad89253c8",
+   "dialect": "presto",
+   "sql": "CREATE OR REPLACE VIEW v SECURITY DEFINER AS SELECT id FROM t"
+  },
+  {
+   "key": "152bf731d1946416",
+   "dialect": "presto",
+   "sql": "CREATE OR REPLACE VIEW v SECURITY INVOKER AS SELECT id FROM t"
+  },
+  {
+   "key": "78ed9a8ce9d9f7f8",
+   "dialect": "presto",
+   "sql": "'''x'"
   },
   {
    "key": "4ef054b6054557dd",
@@ -17663,14 +19628,134 @@
    "sql": "'''x'"
   },
   {
+   "key": "426f9b5c94f92aaa",
+   "dialect": "presto",
+   "sql": "x IN ('a', 'a''b')"
+  },
+  {
    "key": "589fe07ee166420c",
    "dialect": "duckdb",
    "sql": "x IN ('a', 'a''b')"
   },
   {
+   "key": "c4212695c8341cb9",
+   "dialect": "presto",
+   "sql": "SELECT a FROM x CROSS JOIN UNNEST(ARRAY(y)) AS t (a)"
+  },
+  {
+   "key": "a5e948af533fc97f",
+   "dialect": "presto",
+   "sql": "SELECT a FROM x CROSS JOIN UNNEST(ARRAY(y)) AS t (a) CROSS JOIN b"
+  },
+  {
+   "key": "3e3c75b9daf81c4e",
+   "dialect": "presto",
+   "sql": "SELECT a FROM x CROSS JOIN UNNEST(ARRAY[y]) AS t(a) CROSS JOIN b"
+  },
+  {
+   "key": "b596aebdf7a6c4fe",
+   "dialect": "presto",
+   "sql": "SELECT SHA256(x)"
+  },
+  {
    "key": "d2abac27f3731a4b",
    "dialect": "duckdb",
    "sql": "SELECT UNHEX(SHA256(x))"
+  },
+  {
+   "key": "aadfde6f35ef445d",
+   "dialect": "presto",
+   "sql": "SELECT SHA512(x)"
+  },
+  {
+   "key": "6d18e5530d82c790",
+   "dialect": "presto",
+   "sql": "SELECT LOWER(TO_HEX(SHA256(x)))"
+  },
+  {
+   "key": "3d6e0c1464ca3f6d",
+   "dialect": "presto",
+   "sql": "SELECT LOWER(TO_HEX(SHA512(x)))"
+  },
+  {
+   "key": "033f319327c6255d",
+   "dialect": "presto",
+   "sql": "SELECT a FROM t GROUP BY a, ROLLUP (b), ROLLUP (c), ROLLUP (d)"
+  },
+  {
+   "key": "4b9c1f772f9b18e6",
+   "dialect": "presto",
+   "sql": "SELECT a FROM test TABLESAMPLE BERNOULLI (50)"
+  },
+  {
+   "key": "4a6eb0e632e6c9b7",
+   "dialect": "presto",
+   "sql": "SELECT a FROM test TABLESAMPLE SYSTEM (75)"
+  },
+  {
+   "key": "af19417c6c882b31",
+   "dialect": "presto",
+   "sql": "string_agg(x, ',')"
+  },
+  {
+   "key": "f2ad56957ee26da7",
+   "dialect": "presto",
+   "sql": "SELECT * FROM x OFFSET 1 LIMIT 1"
+  },
+  {
+   "key": "f827ea1e10a6c633",
+   "dialect": "presto",
+   "sql": "SELECT * FROM x OFFSET 1 FETCH FIRST 1 ROWS ONLY"
+  },
+  {
+   "key": "5ac6c7351aa0251d",
+   "dialect": "presto",
+   "sql": "SELECT BOOL_OR(a > 10) FROM asd AS T(a)"
+  },
+  {
+   "key": "58775705547a8cae",
+   "dialect": "presto",
+   "sql": "SELECT * FROM (VALUES (1))"
+  },
+  {
+   "key": "0581f2f566272056",
+   "dialect": "presto",
+   "sql": "APPROX_PERCENTILE(a, b, c, d)"
+  },
+  {
+   "key": "e131de8fd3813097",
+   "dialect": "presto",
+   "sql": "SELECT SPLIT_TO_MAP('a:1;b:2;a:3', ';', ':', (k, v1, v2) -> CONCAT(v1, v2))"
+  },
+  {
+   "key": "77e51566311eac6d",
+   "dialect": "presto",
+   "sql": "SELECT * FROM example.testdb.customer_orders FOR VERSION AS OF 8954597067493422955"
+  },
+  {
+   "key": "3baa4f35f5de04fd",
+   "dialect": "presto",
+   "sql": "SELECT * FROM example.testdb.customer_orders FOR TIMESTAMP AS OF CAST('2022-03-23 09:59:29.803 Europe/Vienna' AS TIMESTAMP)"
+  },
+  {
+   "key": "fef2a9287fbb476f",
+   "dialect": "presto",
+   "sql": "SELECT origin_state, destination_state, origin_zip, SUM(package_weight) FROM shipping GROUP BY ALL CUBE (origin_state, destination_state), ROLLUP (origin_state, origin_zip)"
+  },
+  {
+   "key": "79dc95fcf62e8117",
+   "dialect": "presto",
+   "sql": "SELECT origin_state, destination_state, origin_zip, SUM(package_weight) FROM shipping GROUP BY DISTINCT CUBE (origin_state, destination_state), ROLLUP (origin_state, origin_zip)"
+  },
+  {
+   "key": "50a1e38b0201229f",
+   "dialect": "presto",
+   "sql": "SELECT JSON_EXTRACT_SCALAR(CAST(extra AS JSON), '$.value_b'), COUNT(*) FROM table_a GROUP BY DISTINCT (JSON_EXTRACT_SCALAR(CAST(extra AS JSON), '$.value_b'))"
+  },
+  {
+   "key": "b86a745cc9af0ae0",
+   "dialect": "presto",
+   "sql": "SELECT MAX_BY(a.id, a.timestamp) FROM a"
   },
   {
    "key": "375f52af854b5d20",
@@ -17683,14 +19768,39 @@
    "sql": "SELECT ARG_MAX(a.id, a.timestamp) FROM a"
   },
   {
+   "key": "a30775cfb78f1e79",
+   "dialect": "presto",
+   "sql": "SELECT MIN_BY(a.id, a.timestamp, 3) FROM a"
+  },
+  {
    "key": "ed7673bf342d3d26",
    "dialect": "duckdb",
    "sql": "SELECT ARG_MIN(a.id, a.timestamp, 3) FROM a"
   },
   {
+   "key": "51f9ca1f9a416867",
+   "dialect": "presto",
+   "sql": "JSON '\"foo\"'"
+  },
+  {
    "key": "65456fef02242b16",
    "dialect": "postgres",
    "sql": "CAST('\"foo\"' AS JSON)"
+  },
+  {
+   "key": "1a146d04568bc189",
+   "dialect": "presto",
+   "sql": "JSON_PARSE('\"foo\"')"
+  },
+  {
+   "key": "5d51082adfd73094",
+   "dialect": "presto",
+   "sql": "SELECT ROW(1, 2)"
+  },
+  {
+   "key": "086d2938b8c7a11e",
+   "dialect": "presto",
+   "sql": "ARBITRARY(x)"
   },
   {
    "key": "699b2170bc621dd4",
@@ -17718,9 +19828,49 @@
    "sql": "MAX(x)"
   },
   {
+   "key": "74605fbfb7b90559",
+   "dialect": "presto",
+   "sql": "STARTS_WITH('abc', 'a')"
+  },
+  {
+   "key": "ebcca8d8797e9508",
+   "dialect": "presto",
+   "sql": "IS_NAN(x)"
+  },
+  {
+   "key": "f854ed65041cadc6",
+   "dialect": "presto",
+   "sql": "VALUES 1, 2, 3"
+  },
+  {
+   "key": "039bac61422b2afc",
+   "dialect": "presto",
+   "sql": "VALUES (1), (2), (3)"
+  },
+  {
+   "key": "f5bb72dba6272e09",
+   "dialect": "presto",
+   "sql": "INTERVAL '1 day'"
+  },
+  {
+   "key": "b0c75fad7038b438",
+   "dialect": "presto",
+   "sql": "(5 * INTERVAL '7' DAY)"
+  },
+  {
+   "key": "42b47335d6fa6670",
+   "dialect": "presto",
+   "sql": "SELECT SUBSTR(a, 1, 3), SUBSTR(a, LENGTH(a) - (3 - 1))"
+  },
+  {
    "key": "285597dd8eed5983",
    "dialect": "redshift",
    "sql": "SELECT LEFT(a, 3), RIGHT(a, 3)"
+  },
+  {
+   "key": "b1fd5e35a0ff4622",
+   "dialect": "presto",
+   "sql": "WITH RECURSIVE t(n) AS (SELECT 1 AS n UNION ALL SELECT n + 1 AS n FROM t WHERE n < 4) SELECT SUM(n) FROM t"
   },
   {
    "key": "d4d7841fd618b230",
@@ -17728,9 +19878,19 @@
    "sql": "WITH RECURSIVE t AS (SELECT 1 AS n UNION ALL SELECT n + 1 AS n FROM t WHERE n < 4) SELECT SUM(n) FROM t"
   },
   {
+   "key": "fe3332eb7940b00c",
+   "dialect": "presto",
+   "sql": "WITH RECURSIVE t(n, k) AS (SELECT 1 AS n, 2 AS k) SELECT SUM(n) FROM t"
+  },
+  {
    "key": "813418bde9a7bb31",
    "dialect": "postgres",
    "sql": "WITH RECURSIVE t AS (SELECT 1 AS n, 2 as k) SELECT SUM(n) FROM t"
+  },
+  {
+   "key": "1c533efd06f98f02",
+   "dialect": "presto",
+   "sql": "WITH RECURSIVE t1(n) AS (SELECT 1 AS n), t2(n) AS (SELECT 2 AS n) SELECT SUM(t1.n), SUM(t2.n) FROM t1, t2"
   },
   {
    "key": "8bf77d5433527e73",
@@ -17738,9 +19898,19 @@
    "sql": "WITH RECURSIVE t1 AS (SELECT 1 AS n), t2 AS (SELECT 2 AS n) SELECT SUM(t1.n), SUM(t2.n) FROM t1, t2"
   },
   {
+   "key": "d06d9ce2fcfef259",
+   "dialect": "presto",
+   "sql": "WITH RECURSIVE t(n, _c_0) AS (SELECT 1 AS n, (1 + 2)) SELECT * FROM t"
+  },
+  {
    "key": "dcd4c02d82c244c4",
    "dialect": "postgres",
    "sql": "WITH RECURSIVE t AS (SELECT 1 AS n, (1 + 2)) SELECT * FROM t"
+  },
+  {
+   "key": "9f9974f60ae4ca5e",
+   "dialect": "presto",
+   "sql": "WITH RECURSIVE t(n, \"1\") AS (SELECT n, 1 FROM tbl) SELECT * FROM t"
   },
   {
    "key": "c12c3d6625cc138d",
@@ -17748,9 +19918,34 @@
    "sql": "WITH RECURSIVE t AS (SELECT n, 1 FROM tbl) SELECT * FROM t"
   },
   {
+   "key": "92273478f585a775",
+   "dialect": "presto",
+   "sql": "SELECT JSON_OBJECT(KEY 'key1' VALUE 1, KEY 'key2' VALUE TRUE)"
+  },
+  {
+   "key": "383662fda767d22f",
+   "dialect": "presto",
+   "sql": "SELECT JSON_OBJECT('key1': 1, 'key2': TRUE)"
+  },
+  {
+   "key": "98f1b22c1dcefe13",
+   "dialect": "presto",
+   "sql": "ARRAY_AGG(x ORDER BY y DESC)"
+  },
+  {
+   "key": "25fbf75aced75797",
+   "dialect": "presto",
+   "sql": "SELECT a.\"b\" FROM \"foo\""
+  },
+  {
    "key": "38f3074fa9ab6e99",
    "dialect": "duckdb",
    "sql": "SELECT a.\"b\" FROM \"foo\""
+  },
+  {
+   "key": "25022c35e8c3290c",
+   "dialect": "presto",
+   "sql": "SELECT ARRAY[1, 2]"
   },
   {
    "key": "52ad92fe20987315",
@@ -17758,9 +19953,39 @@
    "sql": "SELECT [1, 2]"
   },
   {
+   "key": "5657a450a4dfb70e",
+   "dialect": "presto",
+   "sql": "SELECT APPROX_DISTINCT(a) FROM foo"
+  },
+  {
    "key": "801b345d7e5c4566",
    "dialect": "duckdb",
    "sql": "SELECT APPROX_COUNT_DISTINCT(a) FROM foo"
+  },
+  {
+   "key": "a16cef5f5b428bc2",
+   "dialect": "presto",
+   "sql": "SELECT APPROX_DISTINCT(a, 0.1) FROM foo"
+  },
+  {
+   "key": "d495fb98d413e295",
+   "dialect": "presto",
+   "sql": "SELECT JSON_EXTRACT(x, '$.name')"
+  },
+  {
+   "key": "3753b597d996fb22",
+   "dialect": "presto",
+   "sql": "SELECT JSON_EXTRACT_SCALAR(x, '$.name')"
+  },
+  {
+   "key": "0f1513db13e7a605",
+   "dialect": "presto",
+   "sql": "'\u6bdb'"
+  },
+  {
+   "key": "60035086eaa90852",
+   "dialect": "presto",
+   "sql": "SELECT ARRAY_SORT(x, (left, right) -> -1)"
   },
   {
    "key": "c23a91ff7ac6c0c7",
@@ -17768,9 +19993,109 @@
    "sql": "SELECT ARRAY_SORT(x)"
   },
   {
+   "key": "8056aa3e86f908b6",
+   "dialect": "presto",
+   "sql": "SELECT ARRAY_SORT(x, (\"left\", \"right\") -> -1)"
+  },
+  {
+   "key": "147ff84f0de7f5c4",
+   "dialect": "presto",
+   "sql": "SELECT ARRAY_SORT(x)"
+  },
+  {
+   "key": "f6aeed05c2c95d5d",
+   "dialect": "presto",
+   "sql": "MAP(a, b)"
+  },
+  {
+   "key": "8a55a490df77343b",
+   "dialect": "presto",
+   "sql": "MAP(ARRAY(a, b), ARRAY(c, d))"
+  },
+  {
+   "key": "a99eddcbab993d1e",
+   "dialect": "presto",
+   "sql": "MAP(ARRAY[a, b], ARRAY[c, d])"
+  },
+  {
+   "key": "dfd601ade5471556",
+   "dialect": "presto",
+   "sql": "MAP(ARRAY('a'), ARRAY('b'))"
+  },
+  {
+   "key": "252f793932e69e55",
+   "dialect": "presto",
+   "sql": "MAP(ARRAY['a'], ARRAY['b'])"
+  },
+  {
+   "key": "972cad13e12d302f",
+   "dialect": "presto",
+   "sql": "SELECT * FROM UNNEST(ARRAY['7', '14']) AS x"
+  },
+  {
+   "key": "1c0e72f9b66fe552",
+   "dialect": "presto",
+   "sql": "SELECT * FROM UNNEST(ARRAY['7', '14']) AS x(y)"
+  },
+  {
+   "key": "ae535a1373ac18dc",
+   "dialect": "presto",
+   "sql": "WITH RECURSIVE t(n) AS (VALUES (1) UNION ALL SELECT n+1 FROM t WHERE n < 100 ) SELECT SUM(n) FROM t"
+  },
+  {
+   "key": "911e9f07dc271800",
+   "dialect": "presto",
+   "sql": "WITH RECURSIVE t(n) AS (SELECT * FROM (VALUES (1)) AS _values UNION ALL SELECT n + 1 FROM t WHERE n < 100) SELECT SUM(n) FROM t"
+  },
+  {
+   "key": "f97b269539963af5",
+   "dialect": "presto",
+   "sql": "SELECT a, b, c, d, sum(y) FROM z GROUP BY CUBE(a) ROLLUP(a), GROUPING SETS((b, c)), d"
+  },
+  {
+   "key": "6da496be4e3a5815",
+   "dialect": "presto",
+   "sql": "SELECT a, b, c, d, SUM(y) FROM z GROUP BY d, GROUPING SETS ((b, c)), CUBE (a), ROLLUP (a)"
+  },
+  {
+   "key": "82e570fb1634ffa7",
+   "dialect": "presto",
+   "sql": "JSON_FORMAT(CAST(MAP_FROM_ENTRIES(ARRAY[('action_type', 'at')]) AS JSON))"
+  },
+  {
+   "key": "b7649e249d52620d",
+   "dialect": "presto",
+   "sql": "JSON_FORMAT(x)"
+  },
+  {
+   "key": "b90751be82ad0ca3",
+   "dialect": "presto",
+   "sql": "JSON_FORMAT(JSON '\"x\"')"
+  },
+  {
    "key": "a344476d07473251",
    "dialect": "duckdb",
    "sql": "CAST(TO_JSON(JSON('\"x\"')) AS TEXT)"
+  },
+  {
+   "key": "f9c822368cedff5f",
+   "dialect": "presto",
+   "sql": "JSON_FORMAT(JSON_PARSE('\"x\"'))"
+  },
+  {
+   "key": "189d2e802e924ae7",
+   "dialect": "presto",
+   "sql": "SELECT JSON_FORMAT(JSON '{\"a\": 1, \"b\": \"c\"}')"
+  },
+  {
+   "key": "9bf186025a5ecc61",
+   "dialect": "presto",
+   "sql": "SELECT JSON_FORMAT(JSON '[1, 2, 3]')"
+  },
+  {
+   "key": "4259f5f04c2702a4",
+   "dialect": "presto",
+   "sql": "REGEXP_EXTRACT('abc', '(a)(b)(c)')"
   },
   {
    "key": "273a3d5ed7d34f7a",
@@ -17783,9 +20108,254 @@
    "sql": "REGEXP_EXTRACT('abc', '(a)(b)(c)', 0)"
   },
   {
+   "key": "141df7dff8d30125",
+   "dialect": "presto",
+   "sql": "CURRENT_USER"
+  },
+  {
+   "key": "189bedf15b702aaa",
+   "dialect": "presto",
+   "sql": "SELECT id, FIRST_VALUE(is_deleted) OVER (PARTITION BY id) AS first_is_deleted, NTH_VALUE(is_deleted, 2) OVER (PARTITION BY id) AS nth_is_deleted, LAST_VALUE(is_deleted) OVER (PARTITION BY id) AS last_is_deleted FROM my_table"
+  },
+  {
+   "key": "7a209f2d516a3442",
+   "dialect": "presto",
+   "sql": "SELECT NULLABLE FROM system.jdbc.types"
+  },
+  {
+   "key": "85bba3620e0d73b5",
+   "dialect": "presto",
+   "sql": "SELECT * FROM foo FOR TIMESTAMP AS OF CAST('2020-01-01 00:00:00' AS TIMESTAMP) AS bar"
+  },
+  {
+   "key": "47c80d7b88e2df99",
+   "dialect": "presto",
+   "sql": "ENCODE(x, 'invalid')"
+  },
+  {
+   "key": "308a2fda7c32d5a0",
+   "dialect": "presto",
+   "sql": "DECODE(x, 'invalid')"
+  },
+  {
+   "key": "5facd08212d8c7c1",
+   "dialect": "presto",
+   "sql": "FROM_HEX(x)"
+  },
+  {
+   "key": "32e9eb63e292b460",
+   "dialect": "presto",
+   "sql": "HEX(x)"
+  },
+  {
+   "key": "df976b08f7e50fe1",
+   "dialect": "presto",
+   "sql": "UNHEX(x)"
+  },
+  {
+   "key": "5e65fea7ea80f9d4",
+   "dialect": "presto",
+   "sql": "SELECT JSON_EXTRACT(x, '$[1,0]')"
+  },
+  {
+   "key": "ad0fdc0170824ff8",
+   "dialect": "presto",
+   "sql": "SELECT JSON_EXTRACT_SCALAR(x, '$[1,0]')"
+  },
+  {
+   "key": "b4792bf3eab1a402",
+   "dialect": "presto",
+   "sql": "SELECT JSON_EXTRACT(x, '$[\"a\",\"\"]')"
+  },
+  {
+   "key": "02728447aa8eee1e",
+   "dialect": "presto",
+   "sql": "SELECT JSON_EXTRACT(x, '$[\"\"]')"
+  },
+  {
+   "key": "3e7a23479249a7b4",
+   "dialect": "presto",
+   "sql": "SELECT CAST(JSON '[1,23,456]' AS ARRAY(INTEGER))"
+  },
+  {
+   "key": "0396121877efc997",
+   "dialect": "presto",
+   "sql": "SELECT CAST(JSON_PARSE('[1,23,456]') AS ARRAY(INTEGER))"
+  },
+  {
+   "key": "1ae105b3b8598331",
+   "dialect": "presto",
+   "sql": "SELECT CAST(JSON '{\"k1\":1,\"k2\":23,\"k3\":456}' AS MAP(VARCHAR, INTEGER))"
+  },
+  {
+   "key": "b5b49c3f3feb0db0",
+   "dialect": "presto",
+   "sql": "SELECT CAST(JSON_PARSE('{\"k1\":1,\"k2\":23,\"k3\":456}') AS MAP(VARCHAR, INTEGER))"
+  },
+  {
+   "key": "0527253fb0ec55ba",
+   "dialect": "presto",
+   "sql": "SELECT CAST(ARRAY [1, 23, 456] AS JSON)"
+  },
+  {
+   "key": "85bf951cc9d246c0",
+   "dialect": "presto",
+   "sql": "SELECT CAST(ARRAY[1, 23, 456] AS JSON)"
+  },
+  {
+   "key": "9e5e100c9360f493",
+   "dialect": "presto",
+   "sql": "SELECT\n  *\nFROM orders\nMATCH_RECOGNIZE (\n  PARTITION BY custkey\n  ORDER BY\n    orderdate\n  MEASURES\n    A.totalprice AS starting_price,\n    LAST(B.totalprice) AS bottom_price,\n    LAST(C.totalprice) AS top_price\n  ONE ROW PER MATCH\n  AFTER MATCH SKIP PAST LAST ROW\n  PATTERN (A B+ C+ D+)\n  DEFINE\n    B AS totalprice < PREV(totalprice),\n    C AS totalprice > PREV(totalprice) AND totalprice <= A.totalprice,\n    D AS totalprice > PREV(totalprice),\n    E AS MAX(foo) >= NEXT(bar)\n)"
+  },
+  {
+   "key": "bc4d714267358766",
+   "dialect": "presto",
+   "sql": "TO_CHAR(ts, 'dd')"
+  },
+  {
+   "key": "8297af3f1b03e3cb",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(ts, '%d')"
+  },
+  {
+   "key": "6050ee2e3a29dca3",
+   "dialect": "presto",
+   "sql": "TO_CHAR(ts, 'hh')"
+  },
+  {
+   "key": "31a5f2e7d2f2a8cb",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(ts, '%H')"
+  },
+  {
+   "key": "5be57d3a45805bd9",
+   "dialect": "presto",
+   "sql": "TO_CHAR(ts, 'hh24')"
+  },
+  {
+   "key": "c36f0fdb5bc9859f",
+   "dialect": "presto",
+   "sql": "TO_CHAR(ts, 'mi')"
+  },
+  {
+   "key": "fa379a73e5f20c21",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(ts, '%i')"
+  },
+  {
+   "key": "059dff9964439c27",
+   "dialect": "presto",
+   "sql": "TO_CHAR(ts, 'mm')"
+  },
+  {
+   "key": "5147219585dc54a5",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(ts, '%m')"
+  },
+  {
+   "key": "76113c40255ac85b",
+   "dialect": "presto",
+   "sql": "TO_CHAR(ts, 'ss')"
+  },
+  {
+   "key": "c6543c6792699138",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(ts, '%s')"
+  },
+  {
+   "key": "6c787999d10c1c5e",
+   "dialect": "presto",
+   "sql": "TO_CHAR(ts, 'yyyy')"
+  },
+  {
+   "key": "e585d52ed10a2a3c",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(ts, '%Y')"
+  },
+  {
+   "key": "d36351c5b52e8edd",
+   "dialect": "presto",
+   "sql": "TO_CHAR(ts, 'yy')"
+  },
+  {
+   "key": "6e3284ef1d82e126",
+   "dialect": "presto",
+   "sql": "DATE_FORMAT(ts, '%y')"
+  },
+  {
+   "key": "a371129d9e5aadcd",
+   "dialect": "presto",
+   "sql": "SIGN(x)"
+  },
+  {
+   "key": "2f2f706461793366",
+   "dialect": "presto",
+   "sql": "ANALYZE tbl"
+  },
+  {
+   "key": "4809473ef487d833",
+   "dialect": "presto",
+   "sql": "ANALYZE tbl WITH (prop1=val1, prop2=val2)"
+  },
+  {
+   "key": "836c0018038b6413",
+   "dialect": "presto",
+   "sql": "BITWISE_AND_AGG(x)"
+  },
+  {
+   "key": "8ad65b89fa7c35d9",
+   "dialect": "presto",
+   "sql": "BITWISE_OR_AGG(x)"
+  },
+  {
+   "key": "115a4ad565a208a4",
+   "dialect": "presto",
+   "sql": "BITWISE_XOR_AGG(x)"
+  },
+  {
+   "key": "28781a2640bc3900",
+   "dialect": "presto",
+   "sql": "INITCAP(col)"
+  },
+  {
+   "key": "a925447a6af036cf",
+   "dialect": "presto",
+   "sql": "REGEXP_REPLACE(col, '(\\w)(\\w*)', x -> UPPER(x[1]) || LOWER(x[2]))"
+  },
+  {
+   "key": "43d012c687c0b091",
+   "dialect": "presto",
+   "sql": "U&'Hello winter \\2603 !'"
+  },
+  {
+   "key": "ca5eab9239ad2a5e",
+   "dialect": "presto",
+   "sql": "U&'Hello winter #2603 !' UESCAPE '#'"
+  },
+  {
+   "key": "8bda348268bda416",
+   "dialect": "presto",
+   "sql": "SELECT COALESCE(ELEMENT_AT(MAP_FROM_ENTRIES(ARRAY[(51, '1')]), id), quantity) FROM my_table"
+  },
+  {
+   "key": "53e495c92718224a",
+   "dialect": "presto",
+   "sql": "SELECT ELEMENT_AT(ARRAY[1, 2, 3], 4)"
+  },
+  {
    "key": "1fcbc299002b3ff2",
    "dialect": "postgres",
    "sql": "SELECT (ARRAY[1, 2, 3])[4]"
+  },
+  {
+   "key": "0a7c535f40ba8775",
+   "dialect": "presto",
+   "sql": "SELECT JSON_EXTRACT_SCALAR(TRY(FILTER(CAST(JSON_EXTRACT('{\"k1\": [{\"k2\": \"{\\\"k3\\\": 1}\", \"k4\": \"v\"}]}', '$.k1') AS ARRAY(MAP(VARCHAR, VARCHAR))), x -> x['k4'] = 'v')[1]['k2']), '$.k3')"
+  },
+  {
+   "key": "19a57cc4589978cd",
+   "dialect": "presto",
+   "sql": "TRUNCATE(3.14159)"
   },
   {
    "key": "77b75800949f2fdc",
@@ -17831,6 +20401,11 @@
    "key": "2c1d43fb17706892",
    "dialect": "duckdb",
    "sql": "SELECT '{ \"farm\": {\"barn\": { \"color\": \"red\", \"feed stocked\": true }}}' ->> '$.farm.barn.color'"
+  },
+  {
+   "key": "1fe606feec7b2e75",
+   "dialect": "presto",
+   "sql": "SELECT JSON_EXTRACT_SCALAR('{ \"farm\": {\"barn\": { \"color\": \"red\", \"feed stocked\": true }}}', '$.farm.barn.color')"
   },
   {
    "key": "b64593b18071b521",
@@ -17938,6 +20513,11 @@
    "sql": "x IS TRUE"
   },
   {
+   "key": "bb2f36976a32f324",
+   "dialect": "presto",
+   "sql": "x"
+  },
+  {
    "key": "beea98c73c2f649f",
    "dialect": "redshift",
    "sql": "x is false"
@@ -17946,6 +20526,11 @@
    "key": "bc6c31f2f3fcbacf",
    "dialect": "redshift",
    "sql": "x IS FALSE"
+  },
+  {
+   "key": "23e40faac903ae11",
+   "dialect": "presto",
+   "sql": "NOT x"
   },
   {
    "key": "b6aa032049044134",
@@ -17958,6 +20543,11 @@
    "sql": "NOT x IS FALSE"
   },
   {
+   "key": "65a59c6b13efab4f",
+   "dialect": "presto",
+   "sql": "NOT NOT x"
+  },
+  {
    "key": "163feda3a3e257a7",
    "dialect": "redshift",
    "sql": "LEN(x)"
@@ -17965,6 +20555,11 @@
   {
    "key": "7adda50e6e467f7e",
    "dialect": "redshift",
+   "sql": "LENGTH(x)"
+  },
+  {
+   "key": "2863dbb5a3388ddb",
+   "dialect": "presto",
    "sql": "LENGTH(x)"
   },
   {
@@ -18010,6 +20605,11 @@
   {
    "key": "836bfb6b78026526",
    "dialect": "redshift",
+   "sql": "CREATE TABLE IF NOT EXISTS city_slash_id (\"city/id\" INTEGER NOT NULL, state CHAR(2) NOT NULL)"
+  },
+  {
+   "key": "7252c6a574ced7d4",
+   "dialect": "presto",
    "sql": "CREATE TABLE IF NOT EXISTS city_slash_id (\"city/id\" INTEGER NOT NULL, state CHAR(2) NOT NULL)"
   },
   {
@@ -18073,6 +20673,11 @@
    "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
   },
   {
+   "key": "56c84637755f8b95",
+   "dialect": "presto",
+   "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
+  },
+  {
    "key": "80210941eb722091",
    "dialect": "redshift",
    "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC) AS _row_number FROM x) AS _t WHERE _row_number = 1"
@@ -18128,6 +20733,11 @@
    "sql": "DATEDIFF(DAY, a, b)"
   },
   {
+   "key": "5c09542fd72496d9",
+   "dialect": "presto",
+   "sql": "DATE_DIFF('DAY', CAST(a AS TIMESTAMP), CAST(b AS TIMESTAMP))"
+  },
+  {
    "key": "3dbe336246480064",
    "dialect": "redshift",
    "sql": "SELECT DATEADD(month, 18, '2008-02-28')"
@@ -18141,6 +20751,11 @@
    "key": "b7067a94d682f408",
    "dialect": "postgres",
    "sql": "SELECT CAST('2008-02-28' AS TIMESTAMP) + INTERVAL '18 MONTH'"
+  },
+  {
+   "key": "c1a1b2e8ad37a260",
+   "dialect": "presto",
+   "sql": "SELECT DATE_ADD('MONTH', 18, CAST('2008-02-28' AS TIMESTAMP))"
   },
   {
    "key": "0fcfba2d168e6544",
@@ -18171,6 +20786,11 @@
    "key": "ed824042b928640b",
    "dialect": "postgres",
    "sql": "SELECT CAST(EXTRACT(days FROM (CAST('2009-12-31' AS TIMESTAMP) - CAST('2009-01-01' AS TIMESTAMP))) / 7 AS BIGINT)"
+  },
+  {
+   "key": "edeeb518a117efeb",
+   "dialect": "presto",
+   "sql": "SELECT DATE_DIFF('WEEK', CAST('2009-01-01' AS TIMESTAMP), CAST('2009-12-31' AS TIMESTAMP))"
   },
   {
    "key": "09cc885071adcd54",
@@ -18548,6 +21168,11 @@
    "sql": "SELECT * FROM (SELECT 1, 2) AS t"
   },
   {
+   "key": "5f5f3ed95dba3c6d",
+   "dialect": "presto",
+   "sql": "SELECT * FROM (SELECT 1, 2) AS t"
+  },
+  {
    "key": "71e86195b4ee3054",
    "dialect": "redshift",
    "sql": "SELECT * FROM (SELECT 1 AS id) AS t1 CROSS JOIN (SELECT 1 AS id) AS t2"
@@ -18608,6 +21233,11 @@
    "sql": "CREATE TABLE t1 (LIKE t2)"
   },
   {
+   "key": "1666b9051e03edb6",
+   "dialect": "presto",
+   "sql": "CREATE TABLE t1 (LIKE t2)"
+  },
+  {
    "key": "fb5aeb3bed34022b",
    "dialect": "redshift",
    "sql": "CREATE TABLE t1 (col VARCHAR, LIKE t2)"
@@ -18615,6 +21245,11 @@
   {
    "key": "1a11430bec58f6e2",
    "dialect": "postgres",
+   "sql": "CREATE TABLE t1 (col VARCHAR, LIKE t2)"
+  },
+  {
+   "key": "b8207efc9c11b8d4",
+   "dialect": "presto",
    "sql": "CREATE TABLE t1 (col VARCHAR, LIKE t2)"
   },
   {
@@ -18968,6 +21603,11 @@
    "sql": "CREATE TABLE testTypes (a TIMESTAMP_MS)"
   },
   {
+   "key": "d5e9653b904d1473",
+   "dialect": "presto",
+   "sql": "SELECT U&'d\\0061t\\0061'"
+  },
+  {
    "key": "0bf9593495ab4104",
    "dialect": "postgres",
    "sql": "SELECT MODE() WITHIN GROUP (ORDER BY x) FROM t"
@@ -19303,6 +21943,11 @@
    "sql": "WITH vartab(v) AS (SELECT JSON('[{\"attr\": [{\"name\": \"banana\"}]}]')) SELECT v -> '$[0].attr[0].name' FROM vartab"
   },
   {
+   "key": "42d208fa423f6aba",
+   "dialect": "presto",
+   "sql": "WITH vartab(v) AS (SELECT JSON_PARSE('[{\"attr\": [{\"name\": \"banana\"}]}]')) SELECT JSON_EXTRACT(v, '$[0].attr[0].name') FROM vartab"
+  },
+  {
    "key": "68539d6e9c977933",
    "dialect": "tsql",
    "sql": "WITH vartab(v) AS (SELECT '[{\"attr\": [{\"name\": \"banana\"}]}]') SELECT ISNULL(JSON_QUERY(v, '$[0].attr[0].name'), JSON_VALUE(v, '$[0].attr[0].name')) FROM vartab"
@@ -19313,6 +21958,11 @@
    "sql": "WITH vartab(v) AS (SELECT JSON('{\"attr\": [{\"name\": \"banana\"}]}')) SELECT v -> '$.attr[0].name' FROM vartab"
   },
   {
+   "key": "5c4f3e987adbd349",
+   "dialect": "presto",
+   "sql": "WITH vartab(v) AS (SELECT JSON_PARSE('{\"attr\": [{\"name\": \"banana\"}]}')) SELECT JSON_EXTRACT(v, '$.attr[0].name') FROM vartab"
+  },
+  {
    "key": "20944301c87cd3de",
    "dialect": "tsql",
    "sql": "WITH vartab(v) AS (SELECT '{\"attr\": [{\"name\": \"banana\"}]}') SELECT ISNULL(JSON_QUERY(v, '$.attr[0].name'), JSON_VALUE(v, '$.attr[0].name')) FROM vartab"
@@ -19321,6 +21971,11 @@
    "key": "8b1fd1a1c5f191f6",
    "dialect": "databricks",
    "sql": "SELECT PARSE_JSON('{\"fruit\":\"banana\"}'):fruit"
+  },
+  {
+   "key": "69b67283f9ab6cee",
+   "dialect": "presto",
+   "sql": "SELECT JSON_EXTRACT(JSON_PARSE('{\"fruit\":\"banana\"}'), '$.fruit')"
   },
   {
    "key": "9cd89713048fbfd2",
@@ -19358,9 +22013,19 @@
    "sql": "GENERATE_SERIES(0, 3 - 1)"
   },
   {
+   "key": "f88a90fe43409f51",
+   "dialect": "presto",
+   "sql": "SEQUENCE(0, 2)"
+  },
+  {
    "key": "3ea4898aad34bbf0",
    "dialect": "postgres",
    "sql": "GENERATE_SERIES(0, 3)"
+  },
+  {
+   "key": "37b480949790048a",
+   "dialect": "presto",
+   "sql": "SEQUENCE(0, 3)"
   },
   {
    "key": "21c416e3a0c33b73",
@@ -19376,6 +22041,11 @@
    "key": "b858d3ed1ea28681",
    "dialect": "databricks",
    "sql": "SELECT i, p, o FROM qt QUALIFY ROW_NUMBER() OVER (PARTITION BY p ORDER BY o NULLS LAST) = 1"
+  },
+  {
+   "key": "f0e109891972682e",
+   "dialect": "presto",
+   "sql": "SELECT i, p, o FROM (SELECT i, p, o, ROW_NUMBER() OVER (PARTITION BY p ORDER BY o) AS _w FROM qt) AS _t WHERE _w = 1"
   },
   {
    "key": "9b146405202420c1",
@@ -19478,6 +22148,11 @@
    "sql": "POWER(x, 2)"
   },
   {
+   "key": "f8903b3477e68183",
+   "dialect": "presto",
+   "sql": "POWER(x, 2)"
+  },
+  {
    "key": "2571d02431cd390f",
    "dialect": "redshift",
    "sql": "POWER(x, 2)"
@@ -19493,9 +22168,19 @@
    "sql": "SQUARE(x)"
   },
   {
+   "key": "b5d5f9ad4a032c60",
+   "dialect": "presto",
+   "sql": "IF(bar = 0 AND NOT foo IS NULL, 0, CAST(foo AS DOUBLE) / bar)"
+  },
+  {
    "key": "1a16f3e7055ec701",
    "dialect": "duckdb",
    "sql": "CASE WHEN bar = 0 AND NOT foo IS NULL THEN 0 ELSE foo / bar END"
+  },
+  {
+   "key": "2eac3f2ed4f9ef56",
+   "dialect": "presto",
+   "sql": "IF((c - d) = 0 AND NOT (a - b) IS NULL, 0, CAST((a - b) AS DOUBLE) / (c - d))"
   },
   {
    "key": "0cce917307d0d8a9",
@@ -19503,9 +22188,19 @@
    "sql": "CASE WHEN (c - d) = 0 AND NOT (a - b) IS NULL THEN 0 ELSE (a - b) / (c - d) END"
   },
   {
+   "key": "4a2d51a30a9a9e04",
+   "dialect": "presto",
+   "sql": "IF(bar = 0 OR bar IS NULL, 0, CAST(foo AS DOUBLE) / bar)"
+  },
+  {
    "key": "4ea68c7e9838ad25",
    "dialect": "duckdb",
    "sql": "CASE WHEN bar = 0 OR bar IS NULL THEN 0 ELSE foo / bar END"
+  },
+  {
+   "key": "a8687357f7ed9460",
+   "dialect": "presto",
+   "sql": "IF((c - d) = 0 OR (c - d) IS NULL, 0, CAST((a - b) AS DOUBLE) / (c - d))"
   },
   {
    "key": "e16992f7c69ffbf8",
@@ -19513,9 +22208,19 @@
    "sql": "CASE WHEN (c - d) = 0 OR (c - d) IS NULL THEN 0 ELSE (a - b) / (c - d) END"
   },
   {
+   "key": "17e73dbfa5df6e38",
+   "dialect": "presto",
+   "sql": "IF(foo IS NULL, 0, foo)"
+  },
+  {
    "key": "4b0b03e0cc00566f",
    "dialect": "duckdb",
    "sql": "CASE WHEN foo IS NULL THEN 0 ELSE foo END"
+  },
+  {
+   "key": "7b5fd3618317caa0",
+   "dialect": "presto",
+   "sql": "IF(foo = 0, NULL, foo)"
   },
   {
    "key": "09ac302a4d01c5fd",
@@ -19558,6 +22263,11 @@
    "sql": "SELECT TO_TIMESTAMP(1659981729000000000 / POWER(10, 9)) AT TIME ZONE 'UTC'"
   },
   {
+   "key": "2eb5e09cbe024565",
+   "dialect": "presto",
+   "sql": "SELECT FROM_UNIXTIME(CAST(1659981729000000000 AS DOUBLE) / POW(10, 9))"
+  },
+  {
    "key": "37a750c57e63bcc9",
    "dialect": "redshift",
    "sql": "SELECT (TIMESTAMP 'epoch' + (1659981729000000000 / POWER(10, 9)) * INTERVAL '1 SECOND')"
@@ -19580,6 +22290,11 @@
   {
    "key": "fe5fa5d6c4c4d8ba",
    "dialect": "duckdb",
+   "sql": "SELECT ARRAY_AGG(DISTINCT a) FILTER(WHERE a IS NOT NULL)"
+  },
+  {
+   "key": "ab671e1d4c72cad1",
+   "dialect": "presto",
    "sql": "SELECT ARRAY_AGG(DISTINCT a) FILTER(WHERE a IS NOT NULL)"
   },
   {
@@ -19673,6 +22388,16 @@
    "sql": "SELECT (ROUND(2, 0) AND (NOT ROUND(0.3, 0))) OR ((NOT ROUND(2, 0)) AND ROUND(0.3, 0))"
   },
   {
+   "key": "99875a0ac91cbe44",
+   "dialect": "presto",
+   "sql": "SELECT APPROX_PERCENTILE(a, 1, 0.5, 0.001) FROM t"
+  },
+  {
+   "key": "ae34b30894b453cc",
+   "dialect": "presto",
+   "sql": "SELECT APPROX_PERCENTILE(a, 0.5) FROM t"
+  },
+  {
    "key": "113e5c8a9819a9e5",
    "dialect": "duckdb",
    "sql": "SELECT STRUCT_INSERT(STRUCT_INSERT(STRUCT_INSERT({'key5': 'value5'}, key1 := 5), key2 := 2.2), key3 := 'value3')"
@@ -19711,6 +22436,11 @@
    "key": "b5f4d0295bcd21ed",
    "dialect": "duckdb",
    "sql": "(SELECT LOWER(SUBSTRING(h, 1, 8) || '-' || SUBSTRING(h, 9, 4) || '-' || '5' || SUBSTRING(h, 14, 3) || '-' || FORMAT('{:02x}', CAST('0x' || SUBSTRING(h, 17, 2) AS INT) & 63 | 128) || SUBSTRING(h, 19, 2) || '-' || SUBSTRING(h, 21, 12)) FROM (SELECT SUBSTRING(SHA1(UNHEX(REPLACE('fe971b24-9572-4005-b22f-351e9c09274d', '-', '')) || ENCODE('foo')), 1, 32) AS h))"
+  },
+  {
+   "key": "08f4a3a9277494c6",
+   "dialect": "presto",
+   "sql": "CAST(UUID() AS VARCHAR)"
   },
   {
    "key": "8a3affb1ee0978b8",
@@ -19783,9 +22513,24 @@
    "sql": "SELECT UNHEX('65')"
   },
   {
+   "key": "d00dbe47c13b7352",
+   "dialect": "presto",
+   "sql": "DAY_OF_WEEK(foo)"
+  },
+  {
    "key": "e67826d90596225f",
    "dialect": "duckdb",
    "sql": "ISODOW(foo)"
+  },
+  {
+   "key": "bacad89beb0f9058",
+   "dialect": "presto",
+   "sql": "DOW(foo)"
+  },
+  {
+   "key": "077e076073f4dae9",
+   "dialect": "presto",
+   "sql": "DOY(foo)"
   },
   {
    "key": "fb3a8c718a8d23d3",
@@ -20123,6 +22868,16 @@
    "sql": "SELECT FROM_BASE64(REPLACE(REPLACE(REPLACE(x, '-', '+'), '_', '/'), '+', '='))"
   },
   {
+   "key": "6d8ed62998416a96",
+   "dialect": "presto",
+   "sql": "SELECT CONTAINS(ARRAY['1'], '1')"
+  },
+  {
+   "key": "0256bf2a93352b3c",
+   "dialect": "presto",
+   "sql": "SELECT CONTAINS(ARRAY[DATE '2020-10-10'], DATE '2020-10-10')"
+  },
+  {
    "key": "60ea97664a74330a",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN x IS NULL THEN NULLIF(ARRAY_LENGTH([1, NULL, 3]) <> LIST_COUNT([1, NULL, 3]), FALSE) ELSE ARRAY_CONTAINS([1, NULL, 3], x) END"
@@ -20298,9 +23053,19 @@
    "sql": "SELECT CAST(EPOCH(foo) AS BIGINT) AS ddate FROM table_name"
   },
   {
+   "key": "61564e89452e3c56",
+   "dialect": "presto",
+   "sql": "SELECT TO_UNIXTIME(CAST(foo AS TIMESTAMP)) AS ddate FROM table_name"
+  },
+  {
    "key": "4eff00e8c646e311",
    "dialect": "duckdb",
    "sql": "SELECT EPOCH_MS(foo) AS ddate FROM table_name"
+  },
+  {
+   "key": "09ebdd518fafb24e",
+   "dialect": "presto",
+   "sql": "SELECT TO_UNIXTIME(CAST(foo AS TIMESTAMP)) * 1000 AS ddate FROM table_name"
   },
   {
    "key": "e419c0e0b764766f",
@@ -20553,6 +23318,16 @@
    "sql": "ENDS_WITH('abc', 'c')"
   },
   {
+   "key": "b596a85a514223e3",
+   "dialect": "presto",
+   "sql": "ENDS_WITH('abc', 'c')"
+  },
+  {
+   "key": "f2f8b70a1e721be2",
+   "dialect": "presto",
+   "sql": "REGEXP_EXTRACT(subject, pattern, \"group\")"
+  },
+  {
    "key": "28490ee2e3da6e82",
    "dialect": "databricks",
    "sql": "REGEXP_EXTRACT(subject, pattern)"
@@ -20560,6 +23335,11 @@
   {
    "key": "e5a7355a8dfb963b",
    "dialect": "duckdb",
+   "sql": "REGEXP_EXTRACT(subject, pattern, group)"
+  },
+  {
+   "key": "e1f1a627a81d7396",
+   "dialect": "presto",
    "sql": "REGEXP_EXTRACT(subject, pattern, group)"
   },
   {
@@ -21008,14 +23788,29 @@
    "sql": "CREATE TABLE db.example_table (col_a INT[], col_b INT[][])"
   },
   {
+   "key": "5f82670dac2b3156",
+   "dialect": "presto",
+   "sql": "CREATE TABLE db.example_table (col_a ARRAY(INTEGER), col_b ARRAY(ARRAY(INTEGER)))"
+  },
+  {
    "key": "a4cc3c9b98a4e0ec",
    "dialect": "duckdb",
    "sql": "CREATE TABLE x"
   },
   {
+   "key": "c5d240afa6f22b90",
+   "dialect": "presto",
+   "sql": "CREATE TABLE x WITH (format='ICEBERG', PARTITIONED_BY=ARRAY['MONTHS(y)'])"
+  },
+  {
    "key": "9afd270625ba620c",
    "dialect": "duckdb",
    "sql": "CREATE TABLE blah (\n  col_a INT\n)"
+  },
+  {
+   "key": "1e593adb0ca09201",
+   "dialect": "presto",
+   "sql": "CREATE TABLE blah (\n  col_a INTEGER,\n  date VARCHAR\n)\nCOMMENT 'Test comment: blah'\nWITH (\n  PARTITIONED_BY=ARRAY['date'],\n  format='ICEBERG',\n  x='1'\n)"
   },
   {
    "key": "361d092c1fbf795d",
@@ -21043,9 +23838,19 @@
    "sql": "SELECT * FROM READ_PARQUET('name.parquet')"
   },
   {
+   "key": "be6c608a64df068c",
+   "dialect": "presto",
+   "sql": "SELECT JSON_FORMAT(CAST(CAST(ROW('blah') AS ROW(x VARCHAR)) AS JSON)) AS y"
+  },
+  {
    "key": "6877011f3e32328b",
    "dialect": "databricks",
    "sql": "SELECT TRY_ELEMENT_AT(ARRAY(1, 2, 3), 2)"
+  },
+  {
+   "key": "8a5bcd085a9a4812",
+   "dialect": "presto",
+   "sql": "SELECT ELEMENT_AT(ARRAY[1, 2, 3], 2)"
   },
   {
    "key": "b9bcb663e438921f",
@@ -21073,6 +23878,11 @@
    "sql": "WITH hourlycostagg AS (SELECT 101 AS id, [{'amount': 10.0, 'currency': 'USD'}, {'amount': 20.0, 'currency': 'EUR'}] AS costs, [{'type': 'tax', 'val': 0.15, 'currency': 'EUR'}, {'type': 'fee', 'val': 5.00, 'currency': 'EUR'}] AS adjustments, [{'length': 12.0, 'details': {'tag': 'A', 'score': 98.5}}, {'length': 23.0, 'details': {'tag': 'B', 'score': 99.5}}] AS info) SELECT h.id, amount, currency, type, val, leng FROM hourlycostagg AS h CROSS JOIN LATERAL (SELECT UNNEST(h.costs, max_depth => 2)) AS c CROSS JOIN LATERAL (SELECT UNNEST(h.adjustments, max_depth => 2)) AS _u_1(type, val, curr) CROSS JOIN LATERAL (SELECT UNNEST(h.info, max_depth => 2)) AS exploded(leng, det)"
   },
   {
+   "key": "1ec0bf2aa0f07cb9",
+   "dialect": "presto",
+   "sql": "SELECT id_column, name, age FROM test_table CROSS JOIN UNNEST(struc_column) AS explode_view(name, age)"
+  },
+  {
    "key": "4c1250ab9a038da5",
    "dialect": "duckdb",
    "sql": "SELECT id_column, name, age FROM test_table CROSS JOIN LATERAL (SELECT UNNEST(struc_column, max_depth => 2)) AS explode_view(name, age)"
@@ -21093,6 +23903,11 @@
    "sql": "SELECT ARRAY_AGG(DISTINCT {'col1': 'a'})"
   },
   {
+   "key": "39d5075025c948d0",
+   "dialect": "presto",
+   "sql": "SELECT DATE_FORMAT(CAST(CAST('2020-01-01' AS DATE) AS TIMESTAMP), '%W') AS weekday"
+  },
+  {
    "key": "518f795a9b7fb651",
    "dialect": "databricks",
    "sql": "SELECT TRY_ELEMENT_AT(MAP(1, 'a', 2, 'b'), 2)"
@@ -21106,6 +23921,11 @@
    "key": "b22c9e23cb499c42",
    "dialect": "duckdb",
    "sql": "SELECT STR_SPLIT_REGEX('123|789', '\\|')"
+  },
+  {
+   "key": "ca1987cea244eecc",
+   "dialect": "presto",
+   "sql": "SELECT REGEXP_SPLIT('123|789', '\\|')"
   },
   {
    "key": "a7a8ec203bef7d00",
@@ -21123,6 +23943,11 @@
    "sql": "WITH tbl AS (SELECT 1 AS id, 'eggy' AS name UNION ALL SELECT NULL AS id, 'jake' AS name) SELECT COUNT(DISTINCT CASE WHEN id IS NULL THEN NULL WHEN name IS NULL THEN NULL ELSE (id, name) END) AS cnt FROM tbl"
   },
   {
+   "key": "fb75bf8970b9f71b",
+   "dialect": "presto",
+   "sql": "WITH tbl AS (SELECT 1 AS id, 'eggy' AS name UNION ALL SELECT NULL AS id, 'jake' AS name) SELECT COUNT(DISTINCT CASE WHEN id IS NULL THEN NULL WHEN name IS NULL THEN NULL ELSE (id, name) END) AS cnt FROM tbl"
+  },
+  {
    "key": "ad5db04c5a533fa4",
    "dialect": "duckdb",
    "sql": "SELECT CAST('2016-08-31' AS TIMESTAMP) AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC'"
@@ -21133,9 +23958,24 @@
    "sql": "SELECT CAST('2016-08-31' AS TIMESTAMP) AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC'"
   },
   {
+   "key": "c10073fffc8118d0",
+   "dialect": "presto",
+   "sql": "SELECT WITH_TIMEZONE(CAST('2016-08-31' AS TIMESTAMP), 'Asia/Seoul') AT TIME ZONE 'UTC'"
+  },
+  {
    "key": "054ab312cef34cca",
    "dialect": "redshift",
    "sql": "SELECT CAST('2016-08-31' AS TIMESTAMP) AT TIME ZONE 'Asia/Seoul' AT TIME ZONE 'UTC'"
+  },
+  {
+   "key": "b411cba1ae30ca35",
+   "dialect": "presto",
+   "sql": "SELECT AT_TIMEZONE(CAST('2016-08-31' AS TIMESTAMP), 'Asia/Seoul')"
+  },
+  {
+   "key": "2c56bb74fb2371ee",
+   "dialect": "presto",
+   "sql": "SELECT SPLIT_TO_MAP('a:1,b:2,c:3', ',', ':')"
   },
   {
    "key": "793905471dfc7762",
@@ -21268,6 +24108,11 @@
    "sql": "SELECT DATEDIFF(MONTH, '2020-01-01', '2020-03-05')"
   },
   {
+   "key": "76699a7cb8371087",
+   "dialect": "presto",
+   "sql": "SELECT DATE_DIFF('MONTH', CAST(CAST('2020-01-01' AS TIMESTAMP) AS DATE), CAST(CAST('2020-03-05' AS TIMESTAMP) AS DATE))"
+  },
+  {
    "key": "3e756c7e62c0f9c5",
    "dialect": "databricks",
    "sql": "SELECT * FROM quarterly_sales PIVOT(SUM(amount) amount, 'dummy' bar FOR quarter IN ('2023_Q1'))"
@@ -21278,9 +24123,19 @@
    "sql": "SELECT * FROM quarterly_sales PIVOT(SUM(amount) AS amount, 'dummy' AS bar FOR quarter IN ('2023_Q1'))"
   },
   {
+   "key": "9349244ddc20decd",
+   "dialect": "presto",
+   "sql": "REDUCE(my_arr, 0, (acc, x) -> acc + x, s -> s * 2)"
+  },
+  {
    "key": "3ea0e02ae17cc5ec",
    "dialect": "duckdb",
    "sql": "ARRAY_SORT(x)"
+  },
+  {
+   "key": "3aa36069894efa13",
+   "dialect": "presto",
+   "sql": "ARRAY_SORT(x, (\"left\", \"right\") -> -1)"
   },
   {
    "key": "a03b7b2f38fd8204",
@@ -21293,9 +24148,19 @@
    "sql": "MONTH(CAST('2021-03-01' AS DATE))"
   },
   {
+   "key": "58c8477e3ec1f479",
+   "dialect": "presto",
+   "sql": "MONTH(CAST(CAST('2021-03-01' AS TIMESTAMP) AS DATE))"
+  },
+  {
    "key": "dd7088bae40866e6",
    "dialect": "duckdb",
    "sql": "YEAR(CAST('2021-03-01' AS DATE))"
+  },
+  {
+   "key": "a7f0eb98af410535",
+   "dialect": "presto",
+   "sql": "YEAR(CAST(CAST('2021-03-01' AS TIMESTAMP) AS DATE))"
   },
   {
    "key": "8d08af51ef6ee4d2",
@@ -21308,9 +24173,19 @@
    "sql": "SELECT LEFT(x, 2), RIGHT(x, 2)"
   },
   {
+   "key": "b4fec1b958da2774",
+   "dialect": "presto",
+   "sql": "SELECT SUBSTR(x, 1, 2), SUBSTR(x, LENGTH(x) - (2 - 1))"
+  },
+  {
    "key": "952c74d6fa576eca",
    "dialect": "duckdb",
    "sql": "MAP([1], c)"
+  },
+  {
+   "key": "c613400f6f11aaa1",
+   "dialect": "presto",
+   "sql": "MAP(ARRAY[1], c)"
   },
   {
    "key": "9b98d2f699be25b8",
@@ -21318,9 +24193,19 @@
    "sql": "SELECT DATE_ADD(MONTH, 20, col)"
   },
   {
+   "key": "1ddce8e2c672632d",
+   "dialect": "presto",
+   "sql": "SELECT DATE_ADD('MONTH', 20, col)"
+  },
+  {
    "key": "1f8debaa7c9149ab",
    "dialect": "duckdb",
    "sql": "SELECT ANY_VALUE(col), ANY_VALUE(col), FIRST_VALUE(col IGNORE NULLS) OVER ()"
+  },
+  {
+   "key": "304fc400158aa481",
+   "dialect": "presto",
+   "sql": "SELECT CAST(ROW(1, 2) AS ROW(col1 INTEGER, col2 INTEGER))"
   },
   {
    "key": "dcf1bc55e63995f5",
@@ -21408,9 +24293,39 @@
    "sql": "WITH cte AS (SELECT cola FROM other_table) INSERT OVERWRITE TABLE table SELECT cola FROM cte"
   },
   {
+   "key": "032d99f3bfcda80f",
+   "dialect": "presto",
+   "sql": "SELECT IF(_u.pos = _u_2.pos_2, _u_2.col) AS col FROM tbl CROSS JOIN UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(x)))) AS _u(pos) CROSS JOIN UNNEST(x) WITH ORDINALITY AS _u_2(col, pos_2) WHERE _u.pos = _u_2.pos_2 OR (_u.pos > CARDINALITY(x) AND _u_2.pos_2 = CARDINALITY(x))"
+  },
+  {
+   "key": "826ab2503b61f44f",
+   "dialect": "presto",
+   "sql": "SELECT IF(_u_2.pos = _u_3.pos_2, _u_3.col_2) AS col_2 FROM _u CROSS JOIN UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(col)))) AS _u_2(pos) CROSS JOIN UNNEST(col) WITH ORDINALITY AS _u_3(col_2, pos_2) WHERE _u_2.pos = _u_3.pos_2 OR (_u_2.pos > CARDINALITY(col) AND _u_3.pos_2 = CARDINALITY(col))"
+  },
+  {
+   "key": "00a35479d98538d3",
+   "dialect": "presto",
+   "sql": "SELECT IF(_u.pos = _u_2.pos_2, _u_2.exploded) AS exploded FROM schema.tbl CROSS JOIN UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(col)))) AS _u(pos) CROSS JOIN UNNEST(col) WITH ORDINALITY AS _u_2(exploded, pos_2) WHERE _u.pos = _u_2.pos_2 OR (_u.pos > CARDINALITY(col) AND _u_2.pos_2 = CARDINALITY(col))"
+  },
+  {
+   "key": "539bf786fa801cad",
+   "dialect": "presto",
+   "sql": "SELECT IF(_u.pos = _u_2.pos_2, _u_2.col) AS col FROM UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(ARRAY[1, 2])))) AS _u(pos) CROSS JOIN UNNEST(ARRAY[1, 2]) WITH ORDINALITY AS _u_2(col, pos_2) WHERE _u.pos = _u_2.pos_2 OR (_u.pos > CARDINALITY(ARRAY[1, 2]) AND _u_2.pos_2 = CARDINALITY(ARRAY[1, 2]))"
+  },
+  {
+   "key": "4c006fc8c3fca5b5",
+   "dialect": "presto",
+   "sql": "SELECT IF(_u.pos = _u_2.pos_2, _u_2.x) AS x, IF(_u.pos = _u_2.pos_2, _u_2.pos_2) AS pos_2 FROM UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(ARRAY[2, 3])))) AS _u(pos) CROSS JOIN UNNEST(ARRAY[2, 3]) WITH ORDINALITY AS _u_2(x, pos_2) WHERE _u.pos = _u_2.pos_2 OR (_u.pos > CARDINALITY(ARRAY[2, 3]) AND _u_2.pos_2 = CARDINALITY(ARRAY[2, 3]))"
+  },
+  {
    "key": "83dc92ddfea967cd",
    "dialect": "duckdb",
    "sql": "SELECT GENERATE_SUBSCRIPTS(['a'], 1) - 1 AS pos, UNNEST(['a']) AS col"
+  },
+  {
+   "key": "bc52a6f39396dc62",
+   "dialect": "presto",
+   "sql": "SELECT IF(_u.pos = _u_2.a, _u_2.b) AS b, IF(_u.pos = _u_2.a, _u_2.a) AS a FROM UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(x)))) AS _u(pos) CROSS JOIN UNNEST(x) WITH ORDINALITY AS _u_2(b, a) WHERE _u.pos = _u_2.a OR (_u.pos > CARDINALITY(x) AND _u_2.a = CARDINALITY(x))"
   },
   {
    "key": "bbadff3dbdb5109f",
@@ -21426,6 +24341,16 @@
    "key": "33368a6b2cae3aee",
    "dialect": "duckdb",
    "sql": "SELECT * FROM (SELECT GENERATE_SUBSCRIPTS(['a'], 1) - 1 AS a, UNNEST(['a']) AS b)"
+  },
+  {
+   "key": "e052f73f8174ec6a",
+   "dialect": "presto",
+   "sql": "SELECT IF(_u.pos = _u_2.pos_2, _u_2.col) AS col, IF(_u.pos = _u_2.pos_2, _u_2.pos_2) AS pos_2, IF(_u.pos = _u_3.pos_3, _u_3.col_2) AS col_2 FROM tbl CROSS JOIN UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(ARRAY[2, 3]), CARDINALITY(ARRAY[4, 5, 6])))) AS _u(pos) CROSS JOIN UNNEST(ARRAY[2, 3]) WITH ORDINALITY AS _u_2(col, pos_2) CROSS JOIN UNNEST(ARRAY[4, 5, 6]) WITH ORDINALITY AS _u_3(col_2, pos_3) WHERE (_u.pos = _u_2.pos_2 OR (_u.pos > CARDINALITY(ARRAY[2, 3]) AND _u_2.pos_2 = CARDINALITY(ARRAY[2, 3]))) AND (_u.pos = _u_3.pos_3 OR (_u.pos > CARDINALITY(ARRAY[4, 5, 6]) AND _u_3.pos_3 = CARDINALITY(ARRAY[4, 5, 6])))"
+  },
+  {
+   "key": "bdcc5810425b60db",
+   "dialect": "presto",
+   "sql": "SELECT col, pos, IF(_u_2.pos_2 = _u_3.pos_3, _u_3.col_2) AS col_2, IF(_u_2.pos_2 = _u_3.pos_3, _u_3.pos_3) AS pos_3 FROM _u CROSS JOIN UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(ARRAY[2, 3])))) AS _u_2(pos_2) CROSS JOIN UNNEST(ARRAY[2, 3]) WITH ORDINALITY AS _u_3(col_2, pos_3) WHERE _u_2.pos_2 = _u_3.pos_3 OR (_u_2.pos_2 > CARDINALITY(ARRAY[2, 3]) AND _u_3.pos_3 = CARDINALITY(ARRAY[2, 3]))"
   },
   {
    "key": "8af02e29d235219e",
@@ -21518,9 +24443,19 @@
    "sql": "CREATE TABLE z (a INT GENERATED BY DEFAULT AS IDENTITY NOT NULL UNIQUE PRIMARY KEY)"
   },
   {
+   "key": "5370fca0223f1130",
+   "dialect": "presto",
+   "sql": "SELECT MAX_BY(a, b), MIN_BY(a, b) FROM t"
+  },
+  {
    "key": "692ced2494ff73c3",
    "dialect": "duckdb",
    "sql": "SELECT MAP(['a', 'b'], [1, 2])"
+  },
+  {
+   "key": "18c3688a4a3e7bf5",
+   "dialect": "presto",
+   "sql": "SELECT MAP(ARRAY['a', 'b'], ARRAY[1, 2])"
   },
   {
    "key": "b769652530613f9e",
@@ -21558,6 +24493,36 @@
    "sql": "SELECT id, t.type, t.scores FROM example_table LATERAL VIEW INLINE(ARRAYS_ZIP(SPLIT(type, CONCAT('\\\\Q', ';', '\\\\E')), scores)) t AS type, scores"
   },
   {
+   "key": "1d5de2da3bf19811",
+   "dialect": "presto",
+   "sql": "IF(x = 'a', y, NULL)"
+  },
+  {
+   "key": "60d077b761dcc55a",
+   "dialect": "presto",
+   "sql": "COALESCE(a, 0)"
+  },
+  {
+   "key": "ad348cf8107ca711",
+   "dialect": "presto",
+   "sql": "COUNT(DISTINCT a)"
+  },
+  {
+   "key": "df47e32527f079c3",
+   "dialect": "presto",
+   "sql": "COUNT(DISTINCT(a))"
+  },
+  {
+   "key": "3c1420b163a7d23b",
+   "dialect": "presto",
+   "sql": "COUNT(DISTINCT (a))"
+  },
+  {
+   "key": "9b69614e8820ceb7",
+   "dialect": "presto",
+   "sql": "COUNT(a)"
+  },
+  {
    "key": "4e09ae147eb31d59",
    "dialect": "databricks",
    "sql": "USE tduser"
@@ -21575,6 +24540,11 @@
   {
    "key": "6fefcdd3b1bad56a",
    "dialect": "postgres",
+   "sql": "CREATE TABLE a"
+  },
+  {
+   "key": "2da251f9dc0dcc74",
+   "dialect": "presto",
    "sql": "CREATE TABLE a"
   },
   {
@@ -23778,6 +26748,11 @@
    "sql": "CAST(DATE_TRUNC('MONTH', CAST(CURRENT_TIMESTAMP AS DATE)) + INTERVAL '1 MONTH' - INTERVAL '1 DAY' AS DATE)"
   },
   {
+   "key": "40351d0fc309797e",
+   "dialect": "presto",
+   "sql": "LAST_DAY_OF_MONTH(CAST(CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS DATE))"
+  },
+  {
    "key": "1880b4a24cf36f1a",
    "dialect": "redshift",
    "sql": "LAST_DAY(CAST(GETDATE() AS DATE))"
@@ -23801,6 +26776,11 @@
    "key": "3a4671e775524e29",
    "dialect": "postgres",
    "sql": "CAST(DATE_TRUNC('MONTH', CAST(CURRENT_TIMESTAMP AS DATE) + INTERVAL '-1 MONTH') + INTERVAL '1 MONTH' - INTERVAL '1 DAY' AS DATE)"
+  },
+  {
+   "key": "e7f95b749e9d8bd4",
+   "dialect": "presto",
+   "sql": "LAST_DAY_OF_MONTH(DATE_ADD('MONTH', -1, CAST(CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS DATE)))"
   },
   {
    "key": "b2fdd2a4c2de6234",

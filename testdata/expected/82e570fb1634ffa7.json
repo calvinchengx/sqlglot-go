@@ -1,0 +1,278 @@
+{
+ "dialect": "presto",
+ "rendered": "JSON_FORMAT(CAST(MAP_FROM_ENTRIES(ARRAY[('action_type', 'at')]) AS JSON))",
+ "sql": "JSON_FORMAT(CAST(MAP_FROM_ENTRIES(ARRAY[('action_type', 'at')]) AS JSON))",
+ "tokens": [
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "JSON_FORMAT"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "MAP_FROM_ENTRIES"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 34,
+   "t": "ARRAY",
+   "x": "ARRAY"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 41,
+   "t": "STRING",
+   "x": "action_type"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 56,
+   "t": "STRING",
+   "x": "at"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 60,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 61,
+   "t": "R_BRACKET",
+   "x": "]"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 62,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 64,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 67,
+   "t": "JSON",
+   "x": "JSON"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 71,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 72,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.json.JSONFormat",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "JSON"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.array.MapFromEntries",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 3,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "expressions",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 41
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "action_type"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "expressions",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 56
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "at"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 11,
+   "k": "this",
+   "v": "JSON"
+  },
+  {
+   "i": 11,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "is_json",
+   "v": true
+  }
+ ]
+}

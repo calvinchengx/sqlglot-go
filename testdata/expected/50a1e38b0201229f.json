@@ -1,0 +1,562 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT JSON_EXTRACT_SCALAR(CAST(extra AS JSON), '$.value_b'), COUNT(*) FROM table_a GROUP BY DISTINCT (JSON_EXTRACT_SCALAR(CAST(extra AS JSON), '$.value_b'))",
+ "sql": "SELECT JSON_EXTRACT_SCALAR(CAST(extra AS JSON), '$.value_b'), COUNT(*) FROM table_a GROUP BY DISTINCT (JSON_EXTRACT_SCALAR(CAST(extra AS JSON), '$.value_b'))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "JSON_EXTRACT_SCALAR"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 32,
+   "t": "VAR",
+   "x": "extra"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 38,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 41,
+   "t": "JSON",
+   "x": "JSON"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 45,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 46,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 48,
+   "t": "STRING",
+   "x": "$.value_b"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 59,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 60,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 62,
+   "t": "VAR",
+   "x": "COUNT"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 67,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 68,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 69,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 71,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 76,
+   "t": "VAR",
+   "x": "table_a"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 84,
+   "t": "GROUP_BY",
+   "x": "GROUP BY"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 93,
+   "t": "DISTINCT",
+   "x": "DISTINCT"
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 102,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 122,
+   "e": 121,
+   "l": 1,
+   "s": 103,
+   "t": "VAR",
+   "x": "JSON_EXTRACT_SCALAR"
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 122,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 127,
+   "e": 126,
+   "l": 1,
+   "s": 123,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 128,
+   "e": 127,
+   "l": 1,
+   "s": 127,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 133,
+   "e": 132,
+   "l": 1,
+   "s": 128,
+   "t": "VAR",
+   "x": "extra"
+  },
+  {
+   "c": 136,
+   "e": 135,
+   "l": 1,
+   "s": 134,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 141,
+   "e": 140,
+   "l": 1,
+   "s": 137,
+   "t": "JSON",
+   "x": "JSON"
+  },
+  {
+   "c": 142,
+   "e": 141,
+   "l": 1,
+   "s": 141,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 143,
+   "e": 142,
+   "l": 1,
+   "s": 142,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 155,
+   "e": 154,
+   "l": 1,
+   "s": 144,
+   "t": "STRING",
+   "x": "$.value_b"
+  },
+  {
+   "c": 156,
+   "e": 155,
+   "l": 1,
+   "s": 155,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 157,
+   "e": 156,
+   "l": 1,
+   "s": 156,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExtractScalar",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "JSON"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "extra"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 7,
+   "k": "this",
+   "v": "JSON"
+  },
+  {
+   "i": 7,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "value_b"
+  },
+  {
+   "i": 1,
+   "k": "scalar_only",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.Count",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 62
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Star",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 68
+   }
+  },
+  {
+   "i": 15,
+   "k": "big_int",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 83,
+    "end": 82,
+    "line": 1,
+    "start": 76
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "table_a"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Group",
+   "i": 0,
+   "k": "group"
+  },
+  {
+   "i": 23,
+   "k": "all",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 23,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.json.JSONExtractScalar",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 122,
+    "end": 121,
+    "line": 1,
+    "start": 103
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 26,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "JSON"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 133,
+    "end": 132,
+    "line": 1,
+    "start": 128
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "extra"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 27,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 32,
+   "k": "this",
+   "v": "JSON"
+  },
+  {
+   "i": 32,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 26,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 35,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 35,
+   "k": "expressions"
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "value_b"
+  },
+  {
+   "i": 26,
+   "k": "scalar_only",
+   "v": false
+  }
+ ]
+}

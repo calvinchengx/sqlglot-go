@@ -1,0 +1,476 @@
+{
+ "dialect": "presto",
+ "rendered": "WITH RECURSIVE t(n, k) AS (SELECT 1 AS n, 2 AS k) SELECT SUM(n) FROM t",
+ "sql": "WITH RECURSIVE t(n, k) AS (SELECT 1 AS n, 2 AS k) SELECT SUM(n) FROM t",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 5,
+   "t": "RECURSIVE",
+   "x": "RECURSIVE"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "t"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "n"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "VAR",
+   "x": "k"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 23,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 27,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 34,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 36,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "VAR",
+   "x": "n"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "NUMBER",
+   "x": "2"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 44,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 47,
+   "t": "VAR",
+   "x": "k"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 48,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 50,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 57,
+   "t": "VAR",
+   "x": "SUM"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 60,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 61,
+   "t": "VAR",
+   "x": "n"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 62,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 64,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 69,
+   "t": "VAR",
+   "x": "t"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 61
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "n"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 70,
+    "end": 69,
+    "line": 1,
+    "start": 69
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.With",
+   "i": 0,
+   "k": "with_"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.CTE",
+   "i": 11,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 13,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "alias",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "n"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 13,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 21,
+   "k": "this",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "alias",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "k"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 12,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "columns",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "n"
+  },
+  {
+   "i": 32,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "columns",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "k"
+  },
+  {
+   "i": 35,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 11,
+   "k": "recursive",
+   "v": true
+  }
+ ]
+}

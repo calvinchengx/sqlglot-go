@@ -1,0 +1,286 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT FROM_UNIXTIME(CAST(1659981729000000000 AS DOUBLE) / POWER(10, 9))",
+ "sql": "SELECT FROM_UNIXTIME(CAST(1659981729000000000 AS DOUBLE) / POW(10, 9))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "FROM_UNIXTIME"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 21,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 26,
+   "t": "NUMBER",
+   "x": "1659981729000000000"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 46,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 49,
+   "t": "DOUBLE",
+   "x": "DOUBLE"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 57,
+   "t": "SLASH",
+   "x": "/"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 59,
+   "t": "VAR",
+   "x": "POW"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 62,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 63,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 65,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 67,
+   "t": "NUMBER",
+   "x": "9"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 68,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 69,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.UnixToTime",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Div",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 2,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DOUBLE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "1659981729000000000"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 3,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 7,
+   "k": "this",
+   "v": "DOUBLE"
+  },
+  {
+   "i": 7,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Pow",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 65,
+    "end": 64,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 10,
+   "k": "expression",
+   "m": {
+    "col": 68,
+    "end": 67,
+    "line": 1,
+    "start": 67
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "9"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 2,
+   "k": "typed",
+   "v": true
+  },
+  {
+   "i": 2,
+   "k": "safe",
+   "v": false
+  }
+ ]
+}

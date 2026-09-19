@@ -1,0 +1,320 @@
+{
+ "dialect": "presto",
+ "rendered": "LAST_DAY_OF_MONTH(DATE_ADD('MONTH', -1, CAST(CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS DATE)))",
+ "sql": "LAST_DAY_OF_MONTH(DATE_ADD('MONTH', -1, CAST(CAST(CURRENT_TIMESTAMP AS TIMESTAMP) AS DATE)))",
+ "tokens": [
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "LAST_DAY_OF_MONTH"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "DATE_ADD"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 27,
+   "t": "STRING",
+   "x": "MONTH"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 34,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 38,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 45,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 49,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 50,
+   "t": "CURRENT_TIMESTAMP",
+   "x": "CURRENT_TIMESTAMP"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 68,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 71,
+   "t": "TIMESTAMP",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 80,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 82,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 89,
+   "e": 88,
+   "l": 1,
+   "s": 85,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 89,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 91,
+   "e": 90,
+   "l": 1,
+   "s": 90,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 91,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.LastDay",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.temporal.DateAdd",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 2,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMP"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentTimestamp",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 3,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 5,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "i": 5,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 8,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 8,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Neg",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "unit"
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "MONTH"
+  }
+ ]
+}

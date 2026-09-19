@@ -1,0 +1,144 @@
+{
+ "dialect": "presto",
+ "rendered": "DATE_DIFF('DAY', a, b)",
+ "sql": "DATE_DIFF('DAY', a, b)",
+ "tokens": [
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "DATE_DIFF"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 9,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 10,
+   "t": "STRING",
+   "x": "DAY"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "VAR",
+   "x": "b"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.DateDiff",
+   "m": {
+    "col": 9,
+    "end": 8,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 0,
+   "k": "unit"
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "DAY"
+  }
+ ]
+}

@@ -1,0 +1,183 @@
+{
+ "dialect": "presto",
+ "rendered": "(8 - 1 + 7) % 7",
+ "sql": "(8 - 1 + 7) % 7",
+ "tokens": [
+  {
+   "c": 1,
+   "e": 0,
+   "l": 1,
+   "s": 0,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 2,
+   "e": 1,
+   "l": 1,
+   "s": 1,
+   "t": "NUMBER",
+   "x": "8"
+  },
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 3,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 5,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 9,
+   "t": "NUMBER",
+   "x": "7"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "MOD",
+   "x": "%"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "NUMBER",
+   "x": "7"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Mod"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 2,
+    "end": 1,
+    "line": 1,
+    "start": 1
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "8"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expression",
+   "m": {
+    "col": 6,
+    "end": 5,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 9
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "7"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "7"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

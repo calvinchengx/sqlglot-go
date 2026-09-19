@@ -1,0 +1,102 @@
+{
+ "dialect": "presto",
+ "rendered": "DATE_PARSE('2020-01-01', '%Y-%m-%d')",
+ "sql": "DATE_PARSE('2020-01-01', '%Y-%m-%d')",
+ "tokens": [
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "DATE_PARSE"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 11,
+   "t": "STRING",
+   "x": "2020-01-01"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 25,
+   "t": "STRING",
+   "x": "%Y-%m-%d"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.StrToTime",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "2020-01-01"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "format"
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "%Y-%m-%d"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

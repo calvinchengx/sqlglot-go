@@ -1,0 +1,242 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT CONTAINS(ARRAY[CAST('2020-10-10' AS DATE)], CAST('2020-10-10' AS DATE))",
+ "sql": "SELECT CONTAINS(ARRAY[DATE '2020-10-10'], DATE '2020-10-10')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CONTAINS"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 16,
+   "t": "ARRAY",
+   "x": "ARRAY"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 22,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 27,
+   "t": "STRING",
+   "x": "2020-10-10"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "R_BRACKET",
+   "x": "]"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 42,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 47,
+   "t": "STRING",
+   "x": "2020-10-10"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 59,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.array.ArrayContains",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 2,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "2020-10-10"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 3,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 7,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 7,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 59,
+    "end": 58,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "2020-10-10"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 10,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 14,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 14,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

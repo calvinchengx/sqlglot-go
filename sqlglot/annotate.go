@@ -495,7 +495,15 @@ func annotateFunction(e *Expression, dialect string, rule funcReturn) *Expressio
 
 	var coerced *Expression
 	seen := false
-	for _, key := range []string{"this", "expressions"} {
+	// "expression" (singular) joins "this"/"expressions" here: Mod, Pow, Dot
+	// and the rest of the two-operand classes hold their second operand
+	// under that key, and leaving it out silently coerced over "this" alone
+	// -- `MOD(5, 2.5)` read that way answers INT where the reference answers
+	// DOUBLE. The full classArgKeys list was tried and rejected: it also
+	// carries a class's STRUCTURAL children (Window's own "order",
+	// "partition_by", "over", none of which are typed), and coercing over
+	// those turned a real answer into no answer at all.
+	for _, key := range []string{"this", "expression", "expressions"} {
 		switch v := e.Args[key].(type) {
 		case *Expression:
 			t := annotate(v, dialect)

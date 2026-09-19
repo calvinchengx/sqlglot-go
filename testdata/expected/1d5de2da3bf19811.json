@@ -1,0 +1,175 @@
+{
+ "dialect": "presto",
+ "rendered": "IF(x = 'a', y, NULL)",
+ "sql": "IF(x = 'a', y, NULL)",
+ "tokens": [
+  {
+   "c": 2,
+   "e": 1,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "IF"
+  },
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 2,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 3,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 5,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 7,
+   "t": "STRING",
+   "x": "a"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "y"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 15,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.functions.If"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 4,
+    "end": 3,
+    "line": 1,
+    "start": 3
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "true"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 0,
+   "k": "false"
+  }
+ ]
+}

@@ -1,0 +1,374 @@
+{
+ "dialect": "presto",
+ "rendered": "CREATE TABLE x WITH (bucket_by=ARRAY['y'], bucket_count=64) AS SELECT 1 AS y",
+ "sql": "CREATE TABLE x WITH (bucket_by = ARRAY['y'], bucket_count = 64) AS SELECT 1 AS y",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 15,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 21,
+   "t": "VAR",
+   "x": "bucket_by"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 33,
+   "t": "ARRAY",
+   "x": "ARRAY"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 38,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 39,
+   "t": "STRING",
+   "x": "y"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "R_BRACKET",
+   "x": "]"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 45,
+   "t": "VAR",
+   "x": "bucket_count"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 60,
+   "t": "NUMBER",
+   "x": "64"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 62,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 64,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 67,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 74,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 76,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 79,
+   "t": "VAR",
+   "x": "y"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 75,
+    "end": 74,
+    "line": 1,
+    "start": 74
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "alias",
+   "m": {
+    "col": 80,
+    "end": 79,
+    "line": 1,
+    "start": 79
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "bucket_by"
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 19,
+   "k": "value"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 22,
+   "k": "expressions",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 23,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 26,
+   "k": "this"
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "bucket_count"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 26,
+   "k": "value",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "64"
+  },
+  {
+   "i": 29,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

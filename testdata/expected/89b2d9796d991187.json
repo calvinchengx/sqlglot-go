@@ -1,0 +1,335 @@
+{
+ "dialect": "presto",
+ "rendered": "DELETE FROM db.t1 WHERE NOT c IN (SELECT c FROM db.t2)",
+ "sql": "DELETE FROM db.t1 WHERE NOT c IN (SELECT c FROM db.t2)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "DELETE",
+   "x": "DELETE"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "db"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "t1"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 18,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 24,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "c"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 30,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 34,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "VAR",
+   "x": "c"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 43,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 48,
+   "t": "VAR",
+   "x": "db"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 51,
+   "t": "VAR",
+   "x": "t2"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Delete"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "t1"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "db",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "db"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "using",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cluster",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.Not",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.In",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 12,
+   "k": "query"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 41
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 18,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 23,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "t2"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "db",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "db"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

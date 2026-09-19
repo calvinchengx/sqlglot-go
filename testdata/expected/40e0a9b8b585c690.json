@@ -1,0 +1,71 @@
+{
+ "dialect": "presto",
+ "rendered": "CAST('2025-06-20 11:22:29 Europe/Prague' AS TIMESTAMP WITH TIME ZONE)",
+ "sql": "TIMESTAMP '2025-06-20 11:22:29 Europe/Prague'",
+ "tokens": [
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 0,
+   "t": "TIMESTAMP",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 10,
+   "t": "STRING",
+   "x": "2025-06-20 11:22:29 Europe/Prague"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMPTZ"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 10
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "2025-06-20 11:22:29 Europe/Prague"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 0,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 4,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  }
+ ]
+}

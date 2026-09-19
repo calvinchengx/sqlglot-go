@@ -1,0 +1,225 @@
+{
+ "dialect": "presto",
+ "rendered": "MONTH(CAST(CAST('2021-03-01' AS TIMESTAMP) AS DATE))",
+ "sql": "MONTH(CAST(CAST('2021-03-01' AS TIMESTAMP) AS DATE))",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "MONTH"
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 5,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 6,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 16,
+   "t": "STRING",
+   "x": "2021-03-01"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 29,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 32,
+   "t": "TIMESTAMP",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 43,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 46,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 51,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.Month",
+   "m": {
+    "col": 5,
+    "end": 4,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATE"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMP"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "2021-03-01"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 6,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "i": 6,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 9,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 9,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

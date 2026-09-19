@@ -1,0 +1,493 @@
+{
+ "dialect": "presto",
+ "rendered": "CREATE TABLE db.example_table (col_a ROW(struct_col_a INTEGER, struct_col_b ROW(nested_col_a VARCHAR, nested_col_b VARCHAR)))",
+ "sql": "CREATE TABLE db.example_table (col_a ROW(struct_col_a INTEGER, struct_col_b ROW(nested_col_a VARCHAR, nested_col_b VARCHAR)))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "db"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "example_table"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 31,
+   "t": "VAR",
+   "x": "col_a"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 37,
+   "t": "STRUCT",
+   "x": "ROW"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 41,
+   "t": "VAR",
+   "x": "struct_col_a"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 54,
+   "t": "INT",
+   "x": "INTEGER"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 61,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 63,
+   "t": "VAR",
+   "x": "struct_col_b"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 76,
+   "t": "STRUCT",
+   "x": "ROW"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 79,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 80,
+   "t": "VAR",
+   "x": "nested_col_a"
+  },
+  {
+   "c": 100,
+   "e": 99,
+   "l": 1,
+   "s": 93,
+   "t": "VARCHAR",
+   "x": "VARCHAR"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 100,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 114,
+   "e": 113,
+   "l": 1,
+   "s": 102,
+   "t": "VAR",
+   "x": "nested_col_b"
+  },
+  {
+   "c": 122,
+   "e": 121,
+   "l": 1,
+   "s": 115,
+   "t": "VARCHAR",
+   "x": "VARCHAR"
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 122,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 123,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 124,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "example_table"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "db",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "db"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "col_a"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 9,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 13,
+   "k": "this",
+   "v": "STRUCT"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 13,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 41
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "struct_col_a"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 15,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 19,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 19,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 13,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 75,
+    "end": 74,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "struct_col_b"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 22,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 26,
+   "k": "this",
+   "v": "STRUCT"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 26,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 92,
+    "end": 91,
+    "line": 1,
+    "start": 80
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "nested_col_a"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 28,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 32,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "i": 32,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 26,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 35,
+   "k": "this",
+   "m": {
+    "col": 114,
+    "end": 113,
+    "line": 1,
+    "start": 102
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "nested_col_b"
+  },
+  {
+   "i": 36,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 35,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 39,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "i": 39,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 26,
+   "k": "nested",
+   "v": true
+  },
+  {
+   "i": 13,
+   "k": "nested",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

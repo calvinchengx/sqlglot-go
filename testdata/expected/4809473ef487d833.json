@@ -1,0 +1,192 @@
+{
+ "dialect": "presto",
+ "rendered": "ANALYZE tbl WITH (prop1=val1, prop2=val2)",
+ "sql": "ANALYZE tbl WITH (prop1=val1, prop2=val2)",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "ANALYZE",
+   "x": "ANALYZE"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "tbl"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 12,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "prop1"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "val1"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 30,
+   "t": "VAR",
+   "x": "prop2"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 36,
+   "t": "VAR",
+   "x": "val2"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Analyze"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "tables"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "tbl"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "prop1"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 6,
+   "k": "value"
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "val1"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "prop2"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 11,
+   "k": "value"
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "val2"
+  }
+ ]
+}

@@ -466,11 +466,17 @@ func (g *generator) writeSelect(e *Expression) string {
 
 	// A FETCH is written AFTER the offset where a LIMIT is written before it:
 	// `OFFSET 5 FETCH NEXT 1 ROWS ONLY` but `LIMIT 1 OFFSET 2`. Both live in
-	// the same slot, so it is the CLASS that decides, not the slot.
-	if limit != nil && !g.tables.LimitIsTop && limit.Class != "Fetch" {
+	// the same slot, so it is the CLASS that decides, not the slot. Presto
+	// writes the pair the other way around from everyone else here --
+	// `OFFSET 1 LIMIT 1` -- its own offset_limit_modifiers override.
+	limitBeforeOffset := limit != nil && !g.tables.LimitIsTop && limit.Class != "Fetch"
+	if limitBeforeOffset && g.dialect != "presto" {
 		add(g.node(limit))
 	}
 	add(g.child(e, "offset"))
+	if limitBeforeOffset && g.dialect == "presto" {
+		add(g.node(limit))
+	}
 	// A FETCH is written here whatever the dialect does with a LIMIT: T-SQL
 	// writes a limit as TOP and has no other place to put it, but it writes a
 	// fetch at the end like everyone else.
@@ -1253,9 +1259,14 @@ func (g *generator) writeNational(e *Expression) string {
 
 // writeLowerHex writes HEX(x) wrapped in LOWER: none of this port's dialects
 // spell HEX lowercase on their own, so the reference's LOWER-unless-already-
-// lowercase check always takes the LOWER branch here.
+// lowercase check always takes the LOWER branch here. Presto's own HEX_FUNC
+// is TO_HEX rather than HEX.
 func (g *generator) writeLowerHex(e *Expression) string {
-	return "LOWER(HEX(" + g.child(e, "this") + "))"
+	name := "HEX"
+	if g.dialect == "presto" {
+		name = "TO_HEX"
+	}
+	return "LOWER(" + name + "(" + g.child(e, "this") + "))"
 }
 
 // writeConnect writes Oracle's hierarchical query clause: START WITH, if the
@@ -3186,6 +3197,20 @@ func (g *generator) writeAtTimeZone(e *Expression) string {
 	if len(g.tables.FunctionSQL[e.Class]) > 0 {
 		return g.spell(e)
 	}
+	// Presto spells this AT_TIMEZONE(this, zone), a plain call rather than
+	// an infix operator -- recorded as a SYNTAX template rather than a
+	// function spelling because the call form parses back into a different
+	// node (WITH_TIMEZONE-style), which is exactly what a function spelling
+	// requires and a one-way syntax template does not. Checked here by
+	// dialect, not by trying the template for everyone: Fabric's own entry
+	// is the same literal infix text the fallback below writes, but trying
+	// it FIRST would return that text before Fabric's own DATETIMEOFFSET
+	// rewrite below ever ran.
+	if g.dialect == "presto" {
+		if out, ok := g.syntaxTemplate(e); ok {
+			return out
+		}
+	}
 	inner := g.child(e, "this") + " AT TIME ZONE " + g.child(e, "zone")
 	// Fabric's own AT TIME ZONE converts a DATETIMEOFFSET back to DATETIME2
 	// (its own TIMESTAMPTZ writes as neither on its own) -- found by a
@@ -3619,6 +3644,22 @@ func (g *generator) writeGroupConcat(e *Expression) string {
 // shape of `this` is what says which spelling this is.
 func (g *generator) writeCreate(e *Expression) string {
 	kind, _ := e.Args["kind"].(string)
+	// Presto drops a VIEW's own column list entirely: `CREATE VIEW x (cola)
+	// AS SELECT 1 AS cola` writes as `CREATE VIEW x AS SELECT 1 AS cola`,
+	// the column names carried by the SELECT's own aliases instead. The
+	// reference does this by mutating the schema in place before writing it,
+	// which is why the schema's OWN written form -- named tables, casts,
+	// everything else the parser records there -- is untouched here.
+	if g.dialect == "presto" && kind == "VIEW" {
+		if this, _ := e.Args["this"].(*Expression); this != nil && this.Class == "Schema" {
+			if cols, _ := this.Args["expressions"].([]*Expression); len(cols) > 0 {
+				this = this.shallowCopy()
+				this.Set("expressions", nil)
+				e = e.shallowCopy()
+				e.Set("this", this)
+			}
+		}
+	}
 	// A CONSTRAINT TRIGGER checks its condition at the end of the
 	// transaction; the word is carried on the TriggerProperties the
 	// statement's own body holds, not on the CREATE itself, and is folded
@@ -4038,6 +4079,13 @@ func (g *generator) writeSchema(e *Expression) string {
 	if len(items) == 0 {
 		return g.child(e, "this")
 	}
+	// Presto writes a PARTITIONED BY column list as ARRAY['col', ...], never
+	// as a plain schema's parenthesised names -- known by the SCHEMA's own
+	// parent, since the node is the same one the ordinary column-list branch
+	// below writes for every other property and for a table's own columns.
+	if g.dialect == "presto" && e.Parent != nil && e.Parent.Class == "PartitionedByProperty" {
+		return g.writePartitionedBySchema(items)
+	}
 	was := g.inColumnList
 	g.inColumnList = true
 	parts := make([]string, 0, len(items))
@@ -4053,6 +4101,28 @@ func (g *generator) writeSchema(e *Expression) string {
 		return name + " " + columns
 	}
 	return columns
+}
+
+// writePartitionedBySchema writes Presto's own PARTITIONED_BY column list:
+// ARRAY['col', ...]. A plain column writes as its bare NAME, unquoted; a
+// call or a property (`MONTHS(y)`) writes as its own full rendering --
+// the reference tells the two apart by class, then wraps whichever text
+// came out in a fresh string literal.
+func (g *generator) writePartitionedBySchema(items []*Expression) string {
+	lits := make([]*Expression, 0, len(items))
+	for _, item := range items {
+		var text string
+		if isA("Func", item) || item.Class == "Property" {
+			text = g.node(item)
+		} else {
+			// A plain column is an Identifier here (PARTITIONED BY names a
+			// bare column list, not a typed schema), so its NAME is the
+			// text -- there is no nested `this` node to render.
+			text = item.Name()
+		}
+		lits = append(lits, New("Literal", Arg{"this", text}, Arg{"is_string", true}))
+	}
+	return g.node(New("Array", Arg{"expressions", lits}))
 }
 
 // writeInsert writes `INSERT [OVERWRITE] INTO <target> <values-or-query>`.
@@ -5605,6 +5675,11 @@ func (g *generator) writeUse(e *Expression) string {
 // a `ROLLBACK TO b` written there would roll back everything rather than to
 // the savepoint, which is a different action and is refused instead.
 func (g *generator) writeTransaction(e *Expression) string {
+	// Presto spells its own BEGIN "START TRANSACTION" outright, never the
+	// word the class name would otherwise suggest.
+	if g.dialect == "presto" && e.Class == "Transaction" {
+		return "START TRANSACTION"
+	}
 	verb := map[string]string{
 		"Transaction": "BEGIN", "Commit": "COMMIT", "Rollback": "ROLLBACK",
 	}[e.Class]
@@ -6813,6 +6888,11 @@ func (g *generator) writeDateArith(e *Expression, domain string, sign int) strin
 			return g.dateArithUnitFirst(this, amount, unit, "DATEADD", New("Var", Arg{"this", "DAY"}))
 		}
 		return g.dateArithGenericFallback(name, this, amount, unit, false)
+	case "presto":
+		if domain == "Date" {
+			return g.dateArithPresto(this, amount, unit, sign)
+		}
+		return g.dateArithGenericFallback(name, this, amount, unit, false)
 	default:
 		return g.dateArithGenericFallback(name, this, amount, unit, domain == "Date" && sign > 0)
 	}
@@ -6915,6 +6995,28 @@ func (g *generator) dateArithUnitFirst(this, amount, unit *Expression, funcName 
 	return funcName + "(" + strings.Join(args, ", ") + ")"
 }
 
+// dateArithPresto writes Presto/Trino's DATE_ADD('UNIT', amount, this): the
+// unit always shows, quoted and uppercased, defaulting to DAY when the
+// statement named none -- unit_to_str's own default. The amount is cast to
+// BIGINT when it is not already an integer (the reference's own _to_int,
+// which annotates the amount's type if it doesn't have one yet), and a SUB
+// multiplies by -1 AFTER that cast decision, never before -- the reference's
+// own order, confirmed against the pinned corpus.
+func (g *generator) dateArithPresto(this, amount, unit *Expression, sign int) string {
+	unitName := "DAY"
+	if unit != nil {
+		unitName = strings.ToUpper(unit.Name())
+	}
+	if t := Annotate(amount, g.dialect); !IsIntegerType(t) {
+		amount = New("Cast", Arg{"this", amount},
+			Arg{"to", New("DataType", Arg{"this", DataTypeKind("BIGINT")})})
+	}
+	if sign < 0 {
+		amount = New("Mul", Arg{"this", amount}, Arg{"expression", numberLit(-1, true)})
+	}
+	return "DATE_ADD('" + unitName + "', " + g.node(amount) + ", " + g.node(this) + ")"
+}
+
 // dateArithTimestampSub writes databricks' DatetimeSub: TIMESTAMPADD with
 // the amount always multiplied by -1 -- as a real Mul node, never folded
 // into a signed literal even where the amount already is one. Confirmed
@@ -6998,6 +7100,15 @@ func (g *generator) writeFileFormat(e *Expression) string {
 			return "STORED AS " + g.node(this)
 		}
 		return "STORED AS " + strings.ToUpper(this.Name())
+	}
+	// Presto always writes a fresh quoted string built from the format's
+	// bare NAME, whatever it was written as (`STORED AS 'PARQUET'` and
+	// `WITH (FORMAT = 'PARQUET')` both read into the same node and write the
+	// same way) -- the harvested template already carries its own quotes,
+	// which double them up against a `this` that is itself a quoted Literal.
+	if g.dialect == "presto" {
+		lit := New("Literal", Arg{"this", this.Name()}, Arg{"is_string", true})
+		return "format=" + g.node(lit)
 	}
 	if g.tables.FileFormatSQL == "" {
 		return g.fail(e.Class + ", which this dialect writes nowhere")

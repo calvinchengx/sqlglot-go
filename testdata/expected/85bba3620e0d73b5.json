@@ -1,0 +1,282 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT * FROM foo FOR TIMESTAMP AS OF CAST('2020-01-01 00:00:00' AS TIMESTAMP) AS bar",
+ "sql": "SELECT * FROM foo FOR TIMESTAMP AS OF CAST('2020-01-01 00:00:00' AS TIMESTAMP) AS bar",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 18,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 22,
+   "t": "TIMESTAMP",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 32,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 35,
+   "t": "VAR",
+   "x": "OF"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 38,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 43,
+   "t": "STRING",
+   "x": "2020-01-01 00:00:00"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 65,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 77,
+   "e": 76,
+   "l": 1,
+   "s": 68,
+   "t": "TIMESTAMP",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 77,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 79,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 82,
+   "t": "VAR",
+   "x": "bar"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Version",
+   "i": 3,
+   "k": "version"
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 7,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMP"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 64,
+    "end": 63,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "2020-01-01 00:00:00"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 9,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 13,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "i": 13,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "kind",
+   "v": "AS OF"
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 3,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 85,
+    "end": 84,
+    "line": 1,
+    "start": 82
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "bar"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

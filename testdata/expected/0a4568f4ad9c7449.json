@@ -1,0 +1,206 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT AT_TIMEZONE(CAST('2012-10-31 00:00' AS TIMESTAMP), 'America/Sao_Paulo')",
+ "sql": "SELECT AT_TIMEZONE(CAST('2012-10-31 00:00' AS TIMESTAMP), 'America/Sao_Paulo')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "AT_TIMEZONE"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 24,
+   "t": "STRING",
+   "x": "2012-10-31 00:00"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 43,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 46,
+   "t": "TIMESTAMP",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 77,
+   "e": 76,
+   "l": 1,
+   "s": 58,
+   "t": "STRING",
+   "x": "America/Sao_Paulo"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 77,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "AT_TIMEZONE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMP"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "2012-10-31 00:00"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 3,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 7,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "i": 7,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 77,
+    "end": 76,
+    "line": 1,
+    "start": 58
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "America/Sao_Paulo"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

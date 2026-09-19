@@ -1,0 +1,142 @@
+{
+ "dialect": "presto",
+ "rendered": "DATE_FORMAT(FROM_UNIXTIME(x), '%Y-%m-%d''T''%H')",
+ "sql": "DATE_FORMAT(FROM_UNIXTIME(x), '%Y-%m-%d''T''%H')",
+ "tokens": [
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "DATE_FORMAT"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "FROM_UNIXTIME"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 30,
+   "t": "STRING",
+   "x": "%Y-%m-%d'T'%H"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 47,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.TimeToStr",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.temporal.UnixToTime",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "format"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "%Y-%m-%d'T'%H"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

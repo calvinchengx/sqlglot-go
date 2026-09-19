@@ -1,0 +1,216 @@
+{
+ "dialect": "presto",
+ "rendered": "DATE_PARSE(SUBSTR(x, 1, 10), '%Y-%m-%d')",
+ "sql": "DATE_PARSE(SUBSTR(x, 1, 10), '%Y-%m-%d')",
+ "tokens": [
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "DATE_PARSE"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "SUBSTR"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 24,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 29,
+   "t": "STRING",
+   "x": "%Y-%m-%d"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.StrToTime",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.string.Substring",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "start",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "length",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "format"
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "%Y-%m-%d"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

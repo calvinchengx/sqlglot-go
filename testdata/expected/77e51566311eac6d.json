@@ -1,0 +1,237 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT * FROM example.testdb.customer_orders FOR VERSION AS OF 8954597067493422955",
+ "sql": "SELECT * FROM example.testdb.customer_orders FOR VERSION AS OF 8954597067493422955",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "example"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 22,
+   "t": "VAR",
+   "x": "testdb"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "customer_orders"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 45,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 49,
+   "t": "VAR",
+   "x": "VERSION"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 57,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 60,
+   "t": "VAR",
+   "x": "OF"
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 63,
+   "t": "NUMBER",
+   "x": "8954597067493422955"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "customer_orders"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "db",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "testdb"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "catalog",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "example"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Version",
+   "i": 3,
+   "k": "version"
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "VERSION"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expression",
+   "m": {
+    "col": 82,
+    "end": 81,
+    "line": 1,
+    "start": 63
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "8954597067493422955"
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 13,
+   "k": "kind",
+   "v": "AS OF"
+  }
+ ]
+}

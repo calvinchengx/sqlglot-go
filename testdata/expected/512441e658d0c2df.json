@@ -1,0 +1,340 @@
+{
+ "dialect": "presto",
+ "rendered": "SELECT IF(COALESCE(bar, 0) = 1, TRUE, FALSE) AS foo FROM baz",
+ "sql": "SELECT IF(COALESCE(bar, 0) = 1, TRUE, FALSE) AS foo FROM baz",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "IF"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 9,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 10,
+   "t": "VAR",
+   "x": "COALESCE"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "bar"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 32,
+   "t": "TRUE",
+   "x": "TRUE"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 38,
+   "t": "FALSE",
+   "x": "FALSE"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 45,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 48,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 52,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 57,
+   "t": "VAR",
+   "x": "baz"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.functions.If",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Coalesce",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 10
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "bar"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "expressions",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expression",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 2,
+   "k": "true"
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 2,
+   "k": "false"
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "baz"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}
