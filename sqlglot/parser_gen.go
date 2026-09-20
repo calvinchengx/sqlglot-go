@@ -5816,7 +5816,7 @@ var parserTables = map[string]*ParserTables{
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
 		ModifiersAttachedToSetOp: true,
-		SetOpModifiers:           []string{"order", "limit", "offset"},
+		SetOpModifiers:           []string{"offset", "order", "limit"},
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},
@@ -16382,7 +16382,7 @@ var parserTables = map[string]*ParserTables{
 		IsNotNullWrapsInNot:      false,
 		NullOrdering:             "nulls_are_large",
 		ModifiersAttachedToSetOp: true,
-		SetOpModifiers:           []string{"order", "limit", "offset"},
+		SetOpModifiers:           []string{"offset", "order", "limit"},
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},
@@ -21972,7 +21972,7 @@ var parserTables = map[string]*ParserTables{
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_last",
 		ModifiersAttachedToSetOp: true,
-		SetOpModifiers:           []string{"order", "limit", "offset"},
+		SetOpModifiers:           []string{"offset", "order", "limit"},
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},
@@ -27556,7 +27556,7 @@ var parserTables = map[string]*ParserTables{
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
 		ModifiersAttachedToSetOp: true,
-		SetOpModifiers:           []string{"order", "limit", "offset"},
+		SetOpModifiers:           []string{"offset", "order", "limit"},
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},
@@ -32869,7 +32869,7 @@ var parserTables = map[string]*ParserTables{
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_large",
 		ModifiersAttachedToSetOp: true,
-		SetOpModifiers:           []string{"order", "limit", "offset"},
+		SetOpModifiers:           []string{"offset", "order", "limit"},
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},
@@ -37899,7 +37899,7 @@ var parserTables = map[string]*ParserTables{
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_large",
 		ModifiersAttachedToSetOp: true,
-		SetOpModifiers:           []string{"order", "limit", "offset"},
+		SetOpModifiers:           []string{"offset", "order", "limit"},
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},
@@ -42915,7 +42915,7 @@ var parserTables = map[string]*ParserTables{
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_large",
 		ModifiersAttachedToSetOp: true,
-		SetOpModifiers:           []string{"order", "limit", "offset"},
+		SetOpModifiers:           []string{"offset", "order", "limit"},
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},
@@ -53267,7 +53267,7 @@ var parserTables = map[string]*ParserTables{
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_last",
 		ModifiersAttachedToSetOp: true,
-		SetOpModifiers:           []string{"order", "limit", "offset"},
+		SetOpModifiers:           []string{"offset", "order", "limit"},
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},
@@ -58458,7 +58458,7 @@ var parserTables = map[string]*ParserTables{
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_last",
 		ModifiersAttachedToSetOp: true,
-		SetOpModifiers:           []string{"order", "limit", "offset"},
+		SetOpModifiers:           []string{"offset", "order", "limit"},
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},
@@ -63342,7 +63342,7 @@ var parserTables = map[string]*ParserTables{
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_last",
 		ModifiersAttachedToSetOp: true,
-		SetOpModifiers:           []string{"order", "limit", "offset"},
+		SetOpModifiers:           []string{"offset", "order", "limit"},
 		Disjunction: map[TokenType]string{
 			TokOR: "Or",
 		},
@@ -68719,7 +68719,7 @@ var parserTables = map[string]*ParserTables{
 		IsNotNullWrapsInNot:      true,
 		NullOrdering:             "nulls_are_small",
 		ModifiersAttachedToSetOp: true,
-		SetOpModifiers:           []string{"order", "limit", "offset"},
+		SetOpModifiers:           []string{"offset", "order", "limit"},
 		Disjunction: map[TokenType]string{
 			TokOR:    "Or",
 			TokDPIPE: "Or",

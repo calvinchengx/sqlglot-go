@@ -13,6 +13,18 @@ divergence. The pin is enforced here too.
 
 from __future__ import annotations
 
+# The reference iterates Python SETS in places that decide the ORDER a tree's
+# keys are set in (a set operation's LIMIT/ORDER/OFFSET modifiers), and string
+# hashing is randomised per process -- so the trees this harness records, and
+# the tables it derives from them, would differ from run to run. Pinned here,
+# for every way this script is started, rather than in a Makefile CI bypasses.
+import os as _os
+import sys as _sys
+
+if _os.environ.get("PYTHONHASHSEED") != "0":
+    _os.environ["PYTHONHASHSEED"] = "0"
+    _os.execv(_sys.executable, [_sys.executable, *_sys.argv])
+
 import argparse
 from enum import Enum
 import pathlib
@@ -8162,19 +8174,11 @@ def main() -> int:
         out.append(
             f"\t\tModifiersAttachedToSetOp: {str(bool(P.MODIFIERS_ATTACHED_TO_SET_OP)).lower()},\n"
         )
-        # Order matters here beyond a stable table: the port's own Keys
-        # slice records SET call order, and that is what its tree-dump walks
-        # -- so lifting "limit" onto the set-op before "order" wrote Limit
-        # ahead of Order in the dump wherever a statement lifted both
-        # together, which alphabetical sorting never caught because no
-        # corpus exercised it until MySQL's did. Sorted by the reference's
-        # own arg_types position instead, which is what the dump order
-        # actually follows.
-        union_arg_order = list(exp.Union.arg_types.keys())
-        mods = "".join(
-            f"{gostr(m)}, "
-            for m in sorted(P.SET_OP_MODIFIERS, key=lambda m: union_arg_order.index(m))
-        )
+        # The order is the reference's own set-iteration order under the
+        # pinned hash seed (see the top of this file): the port's Keys slice
+        # records SET call order and the tree dump walks it, so it has to be
+        # the order the reference set them in.
+        mods = "".join(f"{gostr(m)}, " for m in P.SET_OP_MODIFIERS)
         out.append(f"\t\tSetOpModifiers: []string{{{mods}}},\n")
         for field, table in (
             ("Disjunction", P.DISJUNCTION),

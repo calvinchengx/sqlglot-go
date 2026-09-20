@@ -18,6 +18,18 @@ installing it. Regeneration is the only step that needs sqlglot.
 
 from __future__ import annotations
 
+# The reference iterates Python SETS in places that decide the ORDER a tree's
+# keys are set in (a set operation's LIMIT/ORDER/OFFSET modifiers), and string
+# hashing is randomised per process -- so the trees this harness records, and
+# the tables it derives from them, would differ from run to run. Pinned here,
+# for every way this script is started, rather than in a Makefile CI bypasses.
+import os as _os
+import sys as _sys
+
+if _os.environ.get("PYTHONHASHSEED") != "0":
+    _os.environ["PYTHONHASHSEED"] = "0"
+    _os.execv(_sys.executable, [_sys.executable, *_sys.argv])
+
 import argparse
 import hashlib
 import json
