@@ -2427,8 +2427,9 @@ func (p *parser) parseFunction() (*Expression, error) {
 	// probe that fills Functions from a placeholder call never got an
 	// answer to record here either.
 	isMySQLDateDelta := (upper == "DATE_ADD" || upper == "DATE_SUB") && p.dialect == "mysql"
+	isPrestoToChar := upper == "TO_CHAR" && (p.dialect == "presto" || p.dialect == "trino")
 	if !named && !byArity && !isJSONPath && !byWord && !isVarMap && !isDremioDateType &&
-		!isMySQLDateDelta {
+		!isMySQLDateDelta && !isPrestoToChar {
 		if _, custom := p.tables.NamedFunctions[upper]; custom {
 			return nil, p.unsupported("function " + upper + " with a builder of its own")
 		}
@@ -2568,6 +2569,14 @@ func (p *parser) parseFunction() (*Expression, error) {
 			return built, nil
 		}
 		return nil, p.unsupported(upper + " with a second argument this port does not read as an INTERVAL")
+	}
+	if isPrestoToChar {
+		// A TimeToStr needs its format: the reference rejects a bare
+		// TO_CHAR(ts) here rather than build one without.
+		if len(args) < 2 {
+			return nil, p.unsupported("TO_CHAR without a format")
+		}
+		return buildPrestoToChar(args), nil
 	}
 	if p.dialect == "dremio" {
 		switch {

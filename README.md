@@ -73,7 +73,7 @@ Regenerate with `make service`; nothing in it is authored here.
 | materialize | 51/51 | 44 | 51 | 7 | 0 |
 | risingwave | 14/14 | 12 | 14 | 2 | 0 |
 | fabric | 47/47 | 47 | 47 | 0 | 0 |
-| presto | 596/596 | 569 | 596 | 27 | 0 |
+| presto | 596/596 | 577 | 596 | 19 | 0 |
 | trino | 253/253 | 234 | 253 | 19 | 0 |
 | dremio | 61/61 | 54 | 61 | 7 | 0 |
 | mysql | 638/638 | 522 | 638 | 116 | 0 |

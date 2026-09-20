@@ -403,3 +403,32 @@ func buildMySQLDateDeltaWithInterval(upper string, args []*Expression) *Expressi
 	class := map[string]string{"DATE_ADD": "DateAdd", "DATE_SUB": "DateSub"}[upper]
 	return New(class, Arg{"this", args[0]}, Arg{"expression", quantity}, Arg{"unit", unit})
 }
+
+// teradataTimeMapping is Teradata's TIME_MAPPING in the pinned reference.
+// Presto's TO_CHAR is Teradata-compatible and reads its format through THIS
+// table rather than Presto's own, so it is written out here -- Teradata is
+// not a dialect this port configures.
+var teradataTimeMapping = map[string]string{
+	"D": "%-d", "D3": "%j", "DD": "%d", "DDD": "%j",
+	"E": "%a", "E3": "%a", "E4": "%A", "EE": "%a", "EEE": "%a", "EEEE": "%A",
+	"H": "%-H", "HH": "%H", "HH24": "%H",
+	"M": "%-M", "M3": "%b", "M4": "%B", "MI": "%M", "MM": "%m", "MMM": "%b", "MMMM": "%B",
+	"S": "%-S", "SS": "%S", "SSSSSS": "%f",
+	"Y4": "%Y", "YY": "%y", "YYYY": "%Y",
+}
+
+// buildPrestoToChar is Presto's `_build_to_char`: the format is upper-cased
+// (Teradata's keys are), then read through Teradata's mapping into a
+// TimeToStr. Arguments beyond the second are ignored, as in the reference.
+func buildPrestoToChar(args []*Expression) *Expression {
+	format := argAt(args, 1)
+	if format != nil && format.Class == "Literal" {
+		text, _ := format.Args["this"].(string)
+		format = New("Literal", Arg{"this", strings.ToUpper(text)}, Arg{"is_string", format.Args["is_string"]})
+	}
+	if format != nil && isStringLiteral(format) {
+		text, _ := format.Args["this"].(string)
+		format = New("Literal", Arg{"this", formatTime(text, teradataTimeMapping)}, Arg{"is_string", true})
+	}
+	return New("TimeToStr", Arg{"this", argAt(args, 0)}, Arg{"format", format})
+}
