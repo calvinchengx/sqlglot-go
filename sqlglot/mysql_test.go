@@ -191,6 +191,25 @@ func TestMySQLDeclines(t *testing.T) {
 		"SELECT DATE_ADD(x, INTERVAL 1)",
 		"SELECT @a :=",
 		"SELECT CHAR(65 USING)",
+		"CREATE TABLE t (a INT, KEY k ())",
+		"CREATE TABLE t (a INT, KEY k (,))",
+		"CREATE TABLE t (a INT, INDEX (",
+		"CREATE TABLE t (a INT, PRIMARY KEY (,))",
+		"SET CHARSET",
+		"SET CHARSET utf8",
+		"SET CHARACTER SET",
+		"SET NAMES utf8 COLLATE",
+		"SET NAMES",
+		"SET (",
+		"SET )",
+		"SET (a, b) = (1, 2)",
+		"SHOW CREATE TABLE a.",
+		"SHOW COLUMNS a.b.",
+		"SHOW TABLES WHERE )",
+		"SHOW TABLES WHERE",
+		"ALTER TABLE t SET (a = 1)",
+		"ALTER TABLE t SET (",
+		"ALTER TABLE t SET (a)",
 	} {
 		func() {
 			defer func() {
@@ -202,5 +221,47 @@ func TestMySQLDeclines(t *testing.T) {
 				_, _ = Generate(tree, "mysql")
 			}
 		}()
+	}
+}
+
+// TestMySQLShowWriter builds SHOW nodes by hand -- including the kinds and
+// clauses the port does not read -- and holds the writer to the reference's.
+func TestMySQLShowWriter(t *testing.T) {
+	id := func(name string) *Expression {
+		return New("Identifier", Arg{"this", name}, Arg{"quoted", false})
+	}
+	str := func(s string) *Expression {
+		return New("Literal", Arg{"this", s}, Arg{"is_string", true})
+	}
+	num := func(n string) *Expression {
+		return New("Literal", Arg{"this", n}, Arg{"is_string", false})
+	}
+	for _, c := range []struct {
+		want string
+		node *Expression
+	}{
+		{"SHOW PARTITIONS ON t", New("Show", Arg{"this", "PARTITIONS"}, Arg{"target", id("t")})},
+		{"SHOW PARTITIONS", New("Show", Arg{"this", "PARTITIONS"})},
+		{"SHOW LINKS ON t", New("Show", Arg{"this", "LINKS"}, Arg{"target", id("t")})},
+		{"SHOW PROJECTIONS ON TABLE t", New("Show", Arg{"this", "PROJECTIONS"}, Arg{"target", id("t")})},
+		{"SHOW PROJECTIONS", New("Show", Arg{"this", "PROJECTIONS"})},
+		{"SHOW PROFILE OFFSET 1 LIMIT 2",
+			New("Show", Arg{"this", "PROFILE"}, Arg{"offset", num("1")}, Arg{"limit", num("2")})},
+		{"SHOW ENGINE e MUTEX",
+			New("Show", Arg{"this", "ENGINE"}, Arg{"target", id("e")}, Arg{"mutex", true})},
+		{"SHOW FULL GLOBAL STATUS JSON",
+			New("Show", Arg{"this", "STATUS"}, Arg{"full", true}, Arg{"json", true}, Arg{"global_", true})},
+		{"SHOW COLUMNS FROM t FROM d LIKE 'x'",
+			New("Show", Arg{"this", "COLUMNS"}, Arg{"target", id("t")}, Arg{"db", id("d")}, Arg{"like", str("x")})},
+		{"SHOW TABLES FOR TABLE t FOR QUERY 3 IN 'l' FROM 4 FOR CHANNEL c LIMIT 1, 5 FOR GROUP 'g' FOR USER 'u' FOR ROLE 'r' INTO OUTFILE 'f'",
+			New("Show", Arg{"this", "TABLES"}, Arg{"limit", num("5")}, Arg{"offset", num("1")},
+				Arg{"for_table", id("t")}, Arg{"query", num("3")}, Arg{"log", str("l")},
+				Arg{"position", num("4")}, Arg{"channel", id("c")}, Arg{"for_group", str("g")},
+				Arg{"for_user", str("u")}, Arg{"for_role", str("r")}, Arg{"into_outfile", str("f")})},
+	} {
+		got, err := Generate(c.node, "mysql")
+		if err != nil || got != c.want {
+			t.Errorf("want %s\n got %s, %v", c.want, got, err)
+		}
 	}
 }
