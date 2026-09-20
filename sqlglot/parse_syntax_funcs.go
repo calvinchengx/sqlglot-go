@@ -72,6 +72,8 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseStringAgg()
 	case "CHAR", "CHR":
 		return p.parseChr()
+	case "DECODE":
+		return p.parseDecode()
 	case "JSONB_EXISTS":
 		return p.parseJSONBExists()
 	case "JSON_AGG":
@@ -1244,4 +1246,39 @@ func (p *parser) parseOpenJSONColumn() (*Expression, error) {
 	}
 	node.Set("as_json", asJSON)
 	return node, nil
+}
+
+// parseDecode reads DECODE(...): two arguments or fewer are a character-set
+// decode, three or more the Oracle-style value match the reference calls a
+// DecodeCase.
+func (p *parser) parseDecode() (*Expression, error) {
+	p.advance()
+	p.advance()
+	var args []*Expression
+	if !p.at(TokR_PAREN) {
+		for {
+			arg, err := p.parseDisjunction()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, arg)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed DECODE")
+	}
+	if len(args) == 0 {
+		return nil, p.unsupported("DECODE with no arguments")
+	}
+	if len(args) < 3 {
+		node := New("Decode", Arg{"this", args[0]})
+		if len(args) > 1 {
+			node.Set("charset", args[1])
+		}
+		return node, nil
+	}
+	return New("DecodeCase", Arg{"expressions", args}), nil
 }
