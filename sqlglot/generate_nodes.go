@@ -6119,6 +6119,12 @@ func (g *generator) writeOnConflict(e *Expression) string {
 
 // writePartition writes which partition of a table is being written.
 func (g *generator) writePartition(e *Expression) string {
+	// Under MySQL's PARTITION BY RANGE/LIST the node only holds the bound it
+	// carries, and writes as that bound alone.
+	if g.dialect == "mysql" && e.Parent != nil &&
+		(e.Parent.Class == "PartitionByRangeProperty" || e.Parent.Class == "PartitionByListProperty") {
+		return g.list(e)
+	}
 	return strings.ReplaceAll(g.tables.PartitionSQL, "{members}", g.list(e))
 }
 

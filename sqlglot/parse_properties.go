@@ -26,6 +26,14 @@ func (p *parser) parseTableProperties() ([]*Expression, error) {
 			out = append(out, prop)
 			continue
 		}
+		if p.dialect == "mysql" && p.atWords("PARTITION BY") {
+			prop, err := p.parseMySQLPartition()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, prop)
+			continue
+		}
 		// A word whose branches the generated table cannot describe: ON opens
 		// both `ON COMMIT PRESERVE ROWS` and `ON <filegroup>`, and NO both a
 		// missing index and a promise not to run any SQL. Asked BEFORE the
@@ -670,8 +678,13 @@ func (p *parser) parsePropertyValue() (*Expression, error) {
 	if !p.atIdentifier() {
 		return nil, p.unsupported("property whose value is not a word")
 	}
+	// A quoted name stays an Identifier in the reference; only a bare word
+	// becomes a Var, and it keeps the case it was written in.
+	if c.Type == TokIDENTIFIER {
+		return nil, p.unsupported("property whose value is a quoted name")
+	}
 	p.advance()
-	return New("Var", Arg{"this", strings.ToUpper(c.Text)}), nil
+	return New("Var", Arg{"this", c.Text}), nil
 }
 
 // parseWrappedPropertyList reads a parenthesised list of names, as columns or
@@ -876,4 +889,76 @@ func (p *parser) parsePartitionBoundSpec() (*Expression, error) {
 			Arg{"this", modulus}, Arg{"expression", remainder}), nil
 	}
 	return nil, p.unsupported("a partition bound this port does not read")
+}
+
+// parseMySQLPartition reads MySQL's `PARTITION BY RANGE|LIST (<exprs>)
+// (PARTITION <name> VALUES LESS THAN (...) | VALUES IN (...), ...)`, the
+// reference's `_parse_partition_property`. The forms it reads without a
+// partition list after the expressions (Doris and StarRocks' own) are
+// declined here.
+func (p *parser) parseMySQLPartition() (*Expression, error) {
+	p.advance() // PARTITION BY, one token
+	class := ""
+	var value func() (*Expression, error)
+	switch {
+	case p.matchRoutineText("RANGE"):
+		class, value = "PartitionByRangeProperty", p.parsePartitionRangeValue
+	case p.matchRoutineText("LIST"):
+		class, value = "PartitionByListProperty", p.parsePartitionListValue
+	default:
+		return nil, p.unsupported("PARTITION BY other than RANGE or LIST")
+	}
+	expressions, err := p.parseWrappedCSV(p.parseAssignment)
+	if err != nil {
+		return nil, err
+	}
+	if !p.at(TokL_PAREN) || p.next() == nil || !strings.EqualFold(p.next().Text, "PARTITION") {
+		return nil, p.unsupported("PARTITION BY without a partition list")
+	}
+	create, err := p.parseWrappedCSV(value)
+	if err != nil {
+		return nil, err
+	}
+	return New(class, Arg{"partition_expressions", expressions}, Arg{"create_expressions", create}), nil
+}
+
+func (p *parser) parsePartitionRangeValue() (*Expression, error) {
+	p.matchRoutineText("PARTITION")
+	name, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	if !p.atWords("VALUES", "LESS", "THAN") {
+		return name, nil
+	}
+	p.advance()
+	p.advance()
+	p.advance()
+	values, err := p.parseWrappedCSV(p.parseExpression)
+	if err != nil {
+		return nil, err
+	}
+	if len(values) == 1 && values[0].Class == "Column" && strings.EqualFold(values[0].Name(), "MAXVALUE") {
+		values = []*Expression{New("Var", Arg{"this", "MAXVALUE"})}
+	}
+	bound := New("PartitionRange", Arg{"this", name}, Arg{"expressions", values})
+	return New("Partition", Arg{"expressions", []*Expression{bound}}), nil
+}
+
+func (p *parser) parsePartitionListValue() (*Expression, error) {
+	p.matchRoutineText("PARTITION")
+	name, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	if p.atWords("VALUES", "IN") {
+		p.advance()
+		p.advance()
+	}
+	values, err := p.parseWrappedCSV(p.parseExpression)
+	if err != nil {
+		return nil, err
+	}
+	bound := New("PartitionList", Arg{"this", name}, Arg{"expressions", values})
+	return New("Partition", Arg{"expressions", []*Expression{bound}}), nil
 }
