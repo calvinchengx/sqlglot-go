@@ -1874,6 +1874,14 @@ func (g *generator) writeDataType(e *Expression) string {
 		return "INTERVAL " + g.node(unit)
 	}
 	kind, _ := e.Args["this"].(DataTypeKind)
+	// MySQL's CONVERT(x USING charset) is a cast to this pseudo-type.
+	if kind == "CHARACTER_SET" {
+		name := g.child(e, "kind")
+		if name == "" {
+			return g.fail("a CHARACTER SET type with no name")
+		}
+		return "CHAR CHARACTER SET " + name
+	}
 	// Fabric limits every temporal type but DATE to 6 digits of precision --
 	// TIME(7) writes as TIME(6), and an unparameterised one gets 6 by
 	// default. Capped here, once, rather than recursing back through this
@@ -6008,8 +6016,12 @@ func (g *generator) writeUse(e *Expression) string {
 func (g *generator) writeTransaction(e *Expression) string {
 	// Presto spells its own BEGIN "START TRANSACTION" outright, never the
 	// word the class name would otherwise suggest.
+	modes := ""
+	if items, _ := e.Args["modes"].([]string); len(items) > 0 {
+		modes = " " + strings.Join(items, ", ")
+	}
 	if isPrestoFamily(g.dialect) && e.Class == "Transaction" {
-		return "START TRANSACTION"
+		return "START TRANSACTION" + modes
 	}
 	verb := map[string]string{
 		"Transaction": "BEGIN", "Commit": "COMMIT", "Rollback": "ROLLBACK",
@@ -6020,8 +6032,12 @@ func (g *generator) writeTransaction(e *Expression) string {
 		}
 		return verb + " TO " + savepoint
 	}
-	if word := g.tables.TransactionWord; word != "" {
+	// Presto's word is START TRANSACTION, which only opens one.
+	if word := g.tables.TransactionWord; word != "" && !isPrestoFamily(g.dialect) {
 		verb += " " + word
+	}
+	if e.Class == "Transaction" {
+		verb += modes
 	}
 	// Whether the commit waits for the log to reach disk. Dropping the words
 	// says it does, which is the opposite of what was asked for.

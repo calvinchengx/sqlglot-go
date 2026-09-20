@@ -311,6 +311,9 @@ func (p *parser) parseConvert(safe bool) (*Expression, error) {
 	// a grammar the port does not have -- `CONVERT(INT, x)` comes out as
 	// `CAST(INT AS x)`, with the type read off the SECOND argument. Building
 	// a Convert there was a divergence the corpus never happened to contain.
+	if p.dialect == "mysql" {
+		return p.parseMySQLConvert(safe)
+	}
 	if !p.tables.ConvertBuildsConvert {
 		return nil, p.unsupported("CONVERT where it is a CAST written another way")
 	}
@@ -1285,4 +1288,55 @@ func (p *parser) parseDecode() (*Expression, error) {
 		return node, nil
 	}
 	return New("DecodeCase", Arg{"expressions", args}), nil
+}
+
+// parseMySQLConvert reads MySQL's `CONVERT(x USING charset)` and
+// `CONVERT(x, type)`, both of which the reference builds as a CAST.
+func (p *parser) parseMySQLConvert(safe bool) (*Expression, error) {
+	if safe {
+		return nil, p.unsupported("TRY_CONVERT")
+	}
+	p.advance()
+	p.advance()
+	this, err := p.parseBitwise()
+	if err != nil {
+		return nil, err
+	}
+	var to *Expression
+	switch {
+	case p.match(TokUSING):
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("CONVERT USING without a character set")
+		}
+		var name *Expression
+		switch {
+		case c.Type == TokIDENTIFIER && !isPlainName(c.Text):
+			name = New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true})
+		case c.Type == TokIDENTIFIER || c.Type == TokVAR || c.Type == TokBINARY:
+			name = New("Var", Arg{"this", c.Text})
+		default:
+			return nil, p.unsupported("CONVERT USING a character set this port does not read")
+		}
+		p.advance()
+		to = New("DataType", Arg{"this", DataTypeKind("CHARACTER_SET")}, Arg{"kind", name})
+	case p.match(TokCOMMA):
+		to, err = p.parseDataType()
+		if err != nil {
+			return nil, err
+		}
+		// A name that is no type at all (`CONVERT(INT, x)`, the T-SQL order)
+		// reads as a user-defined one, which the reference does not accept.
+		if kind, _ := to.Args["this"].(DataTypeKind); kind == "USER-DEFINED" {
+			return nil, p.unsupported("CONVERT to a type this dialect does not have")
+		}
+	default:
+		return nil, p.unsupported("CONVERT without a target")
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed CONVERT")
+	}
+	cast := New("Cast", Arg{"this", this}, Arg{"to", to})
+	cast.Type = to
+	return cast, nil
 }

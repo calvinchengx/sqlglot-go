@@ -3983,7 +3983,16 @@ func (p *parser) parseTransaction() (*Expression, error) {
 	}
 	// The word is optional and says nothing: `COMMIT` and `COMMIT TRANSACTION`
 	// are the same node, and only T-SQL writes it back.
-	if p.atWords("TRANSACTION") || p.atWords("TRAN") || p.atWords("WORK") {
+	// SQLite-style BEGIN names how the transaction takes its locks; the
+	// reference keeps that word as written, in `this`.
+	if class == "Transaction" && p.dialect != "tsql" && p.dialect != "fabric" &&
+		(p.atWords("DEFERRED") || p.atWords("IMMEDIATE") || p.atWords("EXCLUSIVE")) {
+		node.Set("this", p.curr().Text)
+		p.advance()
+	}
+	// T-SQL takes WORK for the name of a transaction rather than for noise.
+	if p.atWords("TRANSACTION") || p.atWords("TRAN") ||
+		(p.atWords("WORK") && p.dialect != "tsql" && p.dialect != "fabric") {
 		p.advance()
 	}
 	// `AND CHAIN` starts a new transaction where the old one ended, and
@@ -4000,6 +4009,32 @@ func (p *parser) parseTransaction() (*Expression, error) {
 		}
 		if verb == "COMMIT" {
 			node.Set("chain", chain)
+		}
+		if p.curr() != nil {
+			return nil, p.unsupported(verb + " with more than this port reads")
+		}
+		return node, nil
+	}
+	// Outside T-SQL what follows BEGIN is a comma-separated list of transaction
+	// MODES -- `READ WRITE, ISOLATION LEVEL SERIALIZABLE` -- each a run of
+	// words, and nothing names the transaction.
+	if class == "Transaction" && p.dialect != "tsql" && p.dialect != "fabric" && p.curr() != nil {
+		var modes []string
+		for {
+			var words []string
+			for p.at(TokVAR) || p.at(TokNOT) {
+				words = append(words, p.curr().Text)
+				p.advance()
+			}
+			if len(words) > 0 {
+				modes = append(modes, strings.Join(words, " "))
+			}
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if len(modes) > 0 {
+			node.Set("modes", modes)
 		}
 		if p.curr() != nil {
 			return nil, p.unsupported(verb + " with more than this port reads")
