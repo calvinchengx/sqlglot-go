@@ -1317,6 +1317,18 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			// same word names at schema level (`KEY idx (col)`).
 			p.advance()
 			kind = New("PrimaryKeyColumnConstraint")
+		case p.dialect == "mysql" && p.atWords("ZEROFILL"):
+			p.advance()
+			kind = New("ZeroFillColumnConstraint")
+		case p.dialect == "mysql" && p.atWords("INVISIBLE"):
+			p.advance()
+			kind = New("InvisibleColumnConstraint")
+		case p.atWords("ENCODE") && p.next() != nil && p.next().Type == TokVAR:
+			// Redshift's column compression: `ENCODE ZSTD`.
+			p.advance()
+			word := p.curr()
+			p.advance()
+			kind = New("EncodeColumnConstraint", Arg{"this", New("Var", Arg{"this", word.Text})})
 		case p.atWords("PRIMARY KEY"):
 			// One TOKEN, not two words: the tokenizer joins them.
 			p.advance()
@@ -5456,12 +5468,35 @@ func (p *parser) parseAnalyze() (*Expression, error) {
 			Arg{"subpartition", false}, Arg{"expressions", members}))
 	}
 
+	// MySQL's histograms and Redshift's column sets.
+	if p.atWords("UPDATE") || p.atWords("DROP") {
+		histogram, err := p.parseAnalyzeHistogram()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("expression", histogram)
+	} else if p.atWords("ALL") || p.atWords("PREDICATE") {
+		if n := p.next(); n != nil && strings.EqualFold(n.Text, "COLUMNS") {
+			this := strings.ToUpper(p.curr().Text) + " COLUMNS"
+			p.advance()
+			p.advance()
+			node.Set("expression", New("AnalyzeColumns", Arg{"this", this}))
+		}
+	}
 	if p.atUnquotedWord("COMPUTE") || p.atUnquotedWord("ESTIMATE") {
 		statistics, err := p.parseAnalyzeStatistics()
 		if err != nil {
 			return nil, err
 		}
 		node.Set("expression", statistics)
+	}
+	if p.at(TokWITH) && p.next() != nil && p.next().Type == TokL_PAREN {
+		p.advance()
+		items, err := p.parseWrappedProperties()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("properties", New("Properties", Arg{"expressions", items}))
 	}
 	if len(options) > 0 {
 		node.Set("options", options)
@@ -7245,5 +7280,69 @@ func (p *parser) parseOnDuplicateKey() (*Expression, error) {
 		}
 		node.Set("where", New("Where", Arg{"this", cond}))
 	}
+	return node, nil
+}
+
+// parseAnalyzeHistogram reads MySQL's `UPDATE|DROP HISTOGRAM ON <cols> [WITH n
+// BUCKETS] [AUTO|MANUAL UPDATE | USING DATA '<json>']`.
+func (p *parser) parseAnalyzeHistogram() (*Expression, error) {
+	this := strings.ToUpper(p.curr().Text)
+	p.advance()
+	node := New("AnalyzeHistogram", Arg{"this", this})
+	var expressions []*Expression
+	var expression *Expression
+	var updateOptions any
+	if p.atWords("HISTOGRAM", "ON") {
+		p.advance()
+		p.advance()
+		for {
+			column, err := p.parseColumn()
+			if err != nil {
+				return nil, err
+			}
+			expressions = append(expressions, column)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		var withs []string
+		for p.at(TokWITH) {
+			p.advance()
+			if p.atWords("SYNC") || p.atWords("ASYNC") {
+				return nil, p.unsupported("an ANALYZE histogram in SYNC/ASYNC mode")
+			}
+			n := p.curr()
+			if n == nil || n.Type != TokNUMBER {
+				return nil, p.unsupported("an ANALYZE histogram WITH no bucket count")
+			}
+			p.advance()
+			if !p.atWords("BUCKETS") {
+				return nil, p.unsupported("an ANALYZE histogram WITH no BUCKETS")
+			}
+			p.advance()
+			withs = append(withs, n.Text+" BUCKETS")
+		}
+		if len(withs) > 0 {
+			expression = New("AnalyzeWith", Arg{"expressions", withs})
+		}
+		switch {
+		case (p.atWords("MANUAL") || p.atWords("AUTO")) && p.next() != nil && p.next().Type == TokUPDATE:
+			updateOptions = strings.ToUpper(p.curr().Text)
+			p.advance()
+			p.advance()
+		case p.atWords("USING", "DATA"):
+			p.advance()
+			p.advance()
+			c := p.curr()
+			if c == nil || c.Type != TokSTRING {
+				return nil, p.unsupported("USING DATA without a string")
+			}
+			p.advance()
+			expression = New("UsingData", Arg{"this", New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})})
+		}
+	}
+	node.Set("expressions", expressions)
+	node.Set("expression", expression)
+	node.Set("update_options", updateOptions)
 	return node, nil
 }

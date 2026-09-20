@@ -48,6 +48,11 @@ func init() {
 		"TsOrDsToDate":                        (*generator).writeTsOrDsToDate,
 		"TimeToStr":                           (*generator).writeTimeToStr,
 		"Show":                                (*generator).writeShow,
+		"AnalyzeWith":                         (*generator).writeAnalyzeWith,
+		"UsingData":                           (*generator).writeUsingData,
+		"AnalyzeColumns":                      (*generator).writeAnalyzeColumns,
+		"AnalyzeHistogram":                    (*generator).writeAnalyzeHistogram,
+		"OverflowTruncateBehavior":            (*generator).writeOverflowTruncate,
 		"IndexTableHint":                      (*generator).writeIndexTableHint,
 		"JSONExtractQuote":                    (*generator).writeJSONExtractQuote,
 		"OnCondition":                         (*generator).writeOnCondition,
@@ -3882,6 +3887,25 @@ func (g *generator) writeXMLKeyValueOption(e *Expression) string {
 // PostgreSQL attach it to the SEPARATOR), and is refused rather than written
 // in the wrong place.
 func (g *generator) writeGroupConcat(e *Expression) string {
+	// Trino writes the overflow behaviour inside the call, after the
+	// separator; nobody else writes it at all.
+	if overflow := g.child(e, "on_overflow"); overflow != "" {
+		if g.dialect != "trino" {
+			return g.fail(e.Class + " with an overflow behaviour, which this dialect writes away")
+		}
+		plain := e.shallowCopy()
+		plain.Set("on_overflow", nil)
+		out := g.writeGroupConcat(plain)
+		// The call closes where the WITHIN GROUP begins, or at the end.
+		close := strings.Index(out, ") WITHIN GROUP")
+		if close < 0 {
+			close = strings.LastIndex(out, ")")
+		}
+		if close < 0 {
+			return g.fail(e.Class + " whose spelling is not a call")
+		}
+		return out[:close] + " ON OVERFLOW " + overflow + out[close:]
+	}
 	order, _ := e.Args["this"].(*Expression)
 	// Nothing folded in, or a dialect that writes the ordering where it
 	// already is: the ordinary spelling serves.
@@ -4180,7 +4204,14 @@ func (g *generator) writePropertyList(e *Expression) string {
 	}
 	out := strings.Join(root, " ")
 	if len(with) > 0 {
-		clause := g.tables.WithPropertiesPrefix + " (" + strings.Join(with, ", ") + ")"
+		// The reference puts a space between the prefix and the list only when
+		// the prefix says something.
+		prefix := g.tables.WithPropertiesPrefix
+		sep := " "
+		if strings.TrimSpace(prefix) == "" {
+			sep = ""
+		}
+		clause := prefix + sep + "(" + strings.Join(with, ", ") + ")"
 		if out != "" {
 			out += " "
 		}
@@ -6459,6 +6490,9 @@ func (g *generator) writeAnalyze(e *Expression) string {
 	if statistics := g.child(e, "expression"); statistics != "" {
 		out += " " + statistics
 	}
+	if properties := g.child(e, "properties"); properties != "" {
+		out += " " + properties
+	}
 	return out
 }
 
@@ -7923,4 +7957,47 @@ func (g *generator) writeIndexTableHint(e *Expression) string {
 		out += " FOR " + target
 	}
 	return out + " (" + g.list(e) + ")"
+}
+
+func (g *generator) writeOverflowTruncate(e *Expression) string {
+	out := "TRUNCATE"
+	if filler := g.child(e, "this"); filler != "" {
+		out += " " + filler
+	}
+	if withCount, _ := e.Args["with_count"].(bool); withCount {
+		return out + " WITH COUNT"
+	}
+	return out + " WITHOUT COUNT"
+}
+
+// writeAnalyzeHistogram: `UPDATE|DROP HISTOGRAM ON <cols> [WITH n BUCKETS]
+// [AUTO|MANUAL UPDATE]`.
+func (g *generator) writeAnalyzeHistogram(e *Expression) string {
+	this, _ := e.Args["this"].(string)
+	out := this + " HISTOGRAM ON " + g.list(e)
+	if inner := g.child(e, "expression"); inner != "" {
+		out += " " + inner
+	}
+	if option, _ := e.Args["update_options"].(string); option != "" {
+		out += " " + option + " UPDATE"
+	}
+	return out
+}
+
+func (g *generator) writeAnalyzeWith(e *Expression) string {
+	items, _ := e.Args["expressions"].([]string)
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, "WITH "+item)
+	}
+	return strings.Join(parts, " ")
+}
+
+func (g *generator) writeUsingData(e *Expression) string {
+	return "USING DATA " + g.child(e, "this")
+}
+
+func (g *generator) writeAnalyzeColumns(e *Expression) string {
+	this, _ := e.Args["this"].(string)
+	return this
 }

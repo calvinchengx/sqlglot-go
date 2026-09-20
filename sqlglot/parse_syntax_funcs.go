@@ -484,6 +484,39 @@ func (p *parser) parseStringAgg() (*Expression, error) {
 		args = append(args, next)
 	}
 
+	// Trino's `ON OVERFLOW ERROR | TRUNCATE ['...'] [WITH|WITHOUT COUNT]`. The
+	// reference keeps it only on the WITHIN GROUP form and drops it silently
+	// everywhere else, so it is carried to that one place.
+	var onOverflow *Expression
+	if p.atWords("ON", "OVERFLOW") {
+		p.advance()
+		p.advance()
+		if p.atWords("ERROR") {
+			p.advance()
+			onOverflow = New("Var", Arg{"this", "ERROR"})
+		} else {
+			if p.atWords("TRUNCATE") {
+				p.advance()
+			}
+			node := New("OverflowTruncateBehavior")
+			if c := p.curr(); c != nil && c.Type == TokSTRING {
+				p.advance()
+				node.Set("this", New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}))
+			}
+			withCount := true
+			switch {
+			case p.atWords("WITH", "COUNT"):
+				p.advance()
+				p.advance()
+			case p.atWords("WITHOUT", "COUNT"):
+				p.advance()
+				p.advance()
+				withCount = false
+			}
+			node.Set("with_count", withCount)
+			onOverflow = node
+		}
+	}
 	if p.at(TokORDER_BY) {
 		p.advance()
 		order, err := p.parseOrder()
@@ -533,6 +566,11 @@ func (p *parser) parseStringAgg() (*Expression, error) {
 		}
 		order.Set("this", this)
 		this = order
+		node := New("GroupConcat", Arg{"this", this}, Arg{"separator", separator})
+		if onOverflow != nil {
+			node.Set("on_overflow", onOverflow)
+		}
+		return node, nil
 	}
 	return New("GroupConcat", Arg{"this", this}, Arg{"separator", separator}), nil
 }
