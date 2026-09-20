@@ -892,8 +892,18 @@ func (p *parser) parseInsert() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	// MySQL names the inserted row for the ON DUPLICATE KEY clause:
+	// `VALUES (...) AS new`.
+	if expression != nil && expression.Class == "Values" && p.at(TokALIAS) && p.dialect == "mysql" {
+		p.advance()
+		alias, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		expression.Set("alias", New("TableAlias", Arg{"this", alias}))
+	}
 	var conflict *Expression
-	if p.atWords("ON", "CONFLICT") {
+	if p.atWords("ON", "CONFLICT") || p.atWords("ON", "DUPLICATE", "KEY") {
 		conflict, err = p.parseOnConflict()
 		if err != nil {
 			return nil, err
@@ -4599,6 +4609,9 @@ func (p *parser) parsePragma() (*Expression, error) {
 // The keys are ORDERED members, the same shape an index keeps its columns in
 // -- the conflict is decided by an index, and this names which one.
 func (p *parser) parseOnConflict() (*Expression, error) {
+	if p.atWords("ON", "DUPLICATE", "KEY") {
+		return p.parseOnDuplicateKey()
+	}
 	p.advance() // ON
 	p.advance() // CONFLICT
 
@@ -7166,4 +7179,32 @@ func (p *parser) parseComputedColumn() (*Expression, error) {
 	}
 	return New("ColumnConstraint", Arg{"kind", New("ComputedColumnConstraint",
 		Arg{"this", value}, Arg{"persisted", persisted}, Arg{"not_null", notNull})}), nil
+}
+
+// parseOnDuplicateKey reads MySQL's `ON DUPLICATE KEY UPDATE a = 1, ...`, which
+// the reference keeps as an OnConflict flagged `duplicate`.
+func (p *parser) parseOnDuplicateKey() (*Expression, error) {
+	p.advance()
+	p.advance()
+	p.advance()
+	if !p.atWords("UPDATE") {
+		return nil, p.unsupported("ON DUPLICATE KEY without UPDATE")
+	}
+	p.advance()
+	p.match(TokSET)
+	items, err := p.parseAssignments()
+	if err != nil {
+		return nil, err
+	}
+	node := New("OnConflict", Arg{"duplicate", true}, Arg{"expressions", items},
+		Arg{"action", New("Var", Arg{"this", "UPDATE"})})
+	if p.at(TokWHERE) {
+		p.advance()
+		cond, err := p.parseDisjunction()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("where", New("Where", Arg{"this", cond}))
+	}
+	return node, nil
 }

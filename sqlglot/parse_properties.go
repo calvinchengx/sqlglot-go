@@ -26,6 +26,12 @@ func (p *parser) parseTableProperties() ([]*Expression, error) {
 			out = append(out, prop)
 			continue
 		}
+		if prop, err := p.parseCharsetProperty(); err != nil {
+			return nil, err
+		} else if prop != nil {
+			out = append(out, prop)
+			continue
+		}
 		if p.dialect == "mysql" && p.atWords("PARTITION BY") {
 			prop, err := p.parseMySQLPartition()
 			if err != nil {
@@ -675,6 +681,10 @@ func (p *parser) parsePropertyValue() (*Expression, error) {
 		p.advance()
 		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
 	}
+	if c.Type == TokNUMBER {
+		p.advance()
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", false}), nil
+	}
 	if !p.atIdentifier() {
 		return nil, p.unsupported("property whose value is not a word")
 	}
@@ -961,4 +971,57 @@ func (p *parser) parsePartitionListValue() (*Expression, error) {
 	}
 	bound := New("PartitionList", Arg{"this", name}, Arg{"expressions", values})
 	return New("Partition", Arg{"expressions", []*Expression{bound}}), nil
+}
+
+// parseCharsetProperty reads `[DEFAULT] CHARACTER SET|CHARSET [=] <name>` and
+// `DEFAULT COLLATE [=] <name>`. The reference records `default` on the
+// character set always (false when the word is absent) and on a collation only
+// when DEFAULT was written.
+func (p *parser) parseCharsetProperty() (*Expression, error) {
+	start := p.index
+	def := false
+	if p.at(TokDEFAULT) {
+		def = true
+		p.advance()
+	}
+	switch {
+	case p.atWords("CHARACTER", "SET"):
+		p.advance()
+		p.advance()
+	case p.atWords("CHARSET"):
+		p.advance()
+	case def && p.atWords("COLLATE"):
+		p.advance()
+		p.match(TokEQ)
+		value, err := p.parseCharsetValue()
+		if err != nil {
+			return nil, err
+		}
+		return New("CollateProperty", Arg{"this", value}, Arg{"default", true}), nil
+	default:
+		p.index = start
+		return nil, nil
+	}
+	p.match(TokEQ)
+	value, err := p.parseCharsetValue()
+	if err != nil {
+		return nil, err
+	}
+	return New("CharacterSetProperty", Arg{"this", value}, Arg{"default", def}), nil
+}
+
+func (p *parser) parseCharsetValue() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("a character set without a name")
+	}
+	if c.Type == TokSTRING {
+		p.advance()
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
+	}
+	if c.Type == TokIDENTIFIER || !p.atIdentifier() {
+		return nil, p.unsupported("a character set name this port does not read")
+	}
+	p.advance()
+	return New("Var", Arg{"this", c.Text}), nil
 }

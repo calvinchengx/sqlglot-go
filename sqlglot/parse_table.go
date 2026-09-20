@@ -593,6 +593,15 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 		}
 		table.Set("hints", []*Expression{hint})
 	}
+	if p.dialect == "mysql" {
+		hints, err := p.parseIndexTableHints()
+		if err != nil {
+			return nil, err
+		}
+		if len(hints) > 0 {
+			table.Set("hints", hints)
+		}
+	}
 	// TABLESAMPLE hangs off the TABLE, after its alias.
 	if p.at(TokTABLE_SAMPLE) {
 		sample, err := p.parseTableSample()
@@ -1693,4 +1702,54 @@ func (p *parser) parseValuesTable() (*Expression, error) {
 		values.Set("alias", alias)
 	}
 	return values, nil
+}
+
+// parseIndexTableHints reads MySQL's `USE|IGNORE|FORCE INDEX|KEY [FOR <what>]
+// (<index>, ...)`, any number of them in a row.
+func (p *parser) parseIndexTableHints() ([]*Expression, error) {
+	var hints []*Expression
+	for {
+		c := p.curr()
+		n := p.next()
+		if c == nil || n == nil || (!strings.EqualFold(n.Text, "INDEX") && !strings.EqualFold(n.Text, "KEY")) {
+			return hints, nil
+		}
+		word := strings.ToUpper(c.Text)
+		if word != "USE" && word != "IGNORE" && word != "FORCE" {
+			return hints, nil
+		}
+		p.advance()
+		p.advance()
+		hint := New("IndexTableHint", Arg{"this", word})
+		if p.at(TokFOR) {
+			p.advance()
+			target := p.curr()
+			if target == nil {
+				return nil, p.unsupported("an index hint FOR nothing")
+			}
+			p.advance()
+			hint.Set("target", strings.ToUpper(target.Text))
+		}
+		if !p.match(TokL_PAREN) {
+			return nil, p.unsupported("an index hint without its list")
+		}
+		var names []*Expression
+		for !p.at(TokR_PAREN) {
+			name, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
+			}
+			names = append(names, name)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("an unclosed index hint")
+		}
+		if len(names) > 0 {
+			hint.Set("expressions", names)
+		}
+		hints = append(hints, hint)
+	}
 }

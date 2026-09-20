@@ -48,6 +48,7 @@ func init() {
 		"TsOrDsToDate":                        (*generator).writeTsOrDsToDate,
 		"TimeToStr":                           (*generator).writeTimeToStr,
 		"Show":                                (*generator).writeShow,
+		"IndexTableHint":                      (*generator).writeIndexTableHint,
 		"JSONExtractQuote":                    (*generator).writeJSONExtractQuote,
 		"OnCondition":                         (*generator).writeOnCondition,
 		"JSONValue":                           (*generator).writeJSONValue,
@@ -4467,6 +4468,13 @@ func (g *generator) writeInsert(e *Expression) string {
 func (g *generator) writeValues(e *Expression) string {
 	out := "VALUES " + g.list(e)
 	if !standsWhereATableGoes(e) {
+		// An INSERT's rows may still be named: `VALUES (1) AS new`.
+		if alias := g.child(e, "alias"); alias != "" {
+			if g.tables.ValuesTableWrapped {
+				out = "(" + out + ")"
+			}
+			out += " AS " + alias
+		}
 		return out
 	}
 	if g.tables.ValuesTableWrapped {
@@ -5288,11 +5296,13 @@ func (g *generator) writeDelete(e *Expression) string {
 	cluster := g.child(e, "cluster")
 	where := g.child(e, "where")
 	returning := g.child(e, "returning")
+	order := g.child(e, "order")
+	limit := g.child(e, "limit")
 	verb := g.withPrefix(e, "DELETE"+tablesWord)
 	if g.tables.ReturningEnd {
-		return clauses(verb, body, cluster, where, returning)
+		return clauses(verb, body, cluster, where, returning, order, limit)
 	}
-	return clauses(verb, returning, body, cluster, where)
+	return clauses(verb, returning, body, cluster, where, order, limit)
 }
 
 // writeReturning writes the clause that says which rows a write hands back.
@@ -6107,6 +6117,25 @@ func (g *generator) writePragma(e *Expression) string {
 // The keys are written as ORDERED members, which is why one may carry a NULLS
 // clause: the conflict is decided by an index, and this names which one.
 func (g *generator) writeOnConflict(e *Expression) string {
+	if dup, _ := e.Args["duplicate"].(bool); dup {
+		// Only MySQL writes ON DUPLICATE KEY UPDATE, and without SET.
+		if g.dialect != "mysql" {
+			return g.fail(e.Class + " ON DUPLICATE KEY, which this dialect does not write")
+		}
+		action, _ := e.Args["action"].(*Expression)
+		if action == nil {
+			return g.fail(e.Class + " that says nothing to do")
+		}
+		name, _ := action.Args["this"].(string)
+		out := "ON DUPLICATE KEY " + name
+		if items, _ := e.Args["expressions"].([]*Expression); len(items) > 0 {
+			out += " " + g.list(e)
+		}
+		if where := g.child(e, "where"); where != "" {
+			out += " " + where
+		}
+		return out
+	}
 	out := "ON CONFLICT"
 	if constraint := g.child(e, "constraint"); constraint != "" {
 		out += " ON CONSTRAINT " + constraint
@@ -7852,4 +7881,13 @@ func (g *generator) writeJSONValue(e *Expression) string {
 		text += " " + on
 	}
 	return "JSON_VALUE(" + g.child(e, "this") + ", " + text + ")"
+}
+
+func (g *generator) writeIndexTableHint(e *Expression) string {
+	this, _ := e.Args["this"].(string)
+	out := this + " INDEX"
+	if target, _ := e.Args["target"].(string); target != "" {
+		out += " FOR " + target
+	}
+	return out + " (" + g.list(e) + ")"
 }

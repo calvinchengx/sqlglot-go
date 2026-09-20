@@ -2754,7 +2754,6 @@ func TestCreateTable(t *testing.T) {
 		// Every way a property can run out or say something the port cannot
 		// read. Each is refused whole rather than read in part.
 		"CREATE TABLE t (a INT) FORMAT",
-		"CREATE TABLE t (a INT) FORMAT = 1",
 		"CREATE TABLE t (a INT) CLUSTER BY c",
 		"CREATE TABLE t (a INT) CLUSTER BY (c",
 		"CREATE TABLE t (a INT) INHERITS (t1",

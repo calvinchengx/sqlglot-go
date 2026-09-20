@@ -265,6 +265,24 @@ func (p *parser) parseDelete() (*Expression, error) {
 	} else if err := p.readReturning(node); err != nil {
 		return nil, err
 	}
+	// MySQL's single-table DELETE may order and cap the rows it removes.
+	if p.at(TokORDER_BY) {
+		p.advance()
+		ordered, err := p.parseOrderedList()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("order", New("Order", Arg{"expressions", ordered}))
+	}
+	if p.at(TokLIMIT) {
+		p.advance()
+		count, err := p.parseLimitCount()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("limit", New("Limit", Arg{"this", nil}, Arg{"expression", count},
+			Arg{"limit_options", p.parseLimitOptions()}, Arg{"expressions", nil}))
+	}
 	if p.curr() != nil {
 		return nil, p.unsupported("DELETE with more than this port reads")
 	}
