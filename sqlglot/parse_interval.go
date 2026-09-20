@@ -44,7 +44,16 @@ func (p *parser) parseInterval() (*Expression, error) {
 
 	unitIndex := p.index
 	var unit *Expression
-	if c := p.curr(); c != nil && c.Type == TokVAR && !strings.EqualFold(c.Text, "TO") {
+	// A unit is any word -- including the ones the tokenizer makes a keyword
+	// of, like MySQL's YEAR, a type name -- so a known unit is accepted
+	// whatever its token.
+	_, knownUnit := p.tables.ValidIntervalUnits[strings.ToUpper(func() string {
+		if c := p.curr(); c != nil {
+			return c.Text
+		}
+		return ""
+	}())]
+	if c := p.curr(); c != nil && (c.Type == TokVAR || (knownUnit && c.Type != TokIDENTIFIER && c.Type != TokSTRING)) && !strings.EqualFold(c.Text, "TO") {
 		// A NAME in this position is tried as a CALL first -- the reference
 		// reads whatever the unit position holds with its own function
 		// reader before falling back to a bare word, so `INTERVAL '1'

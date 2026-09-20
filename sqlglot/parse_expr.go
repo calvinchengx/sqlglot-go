@@ -2570,6 +2570,15 @@ func (p *parser) parseFunction() (*Expression, error) {
 		}
 		return nil, p.unsupported(upper + " with a second argument this port does not read as an INTERVAL")
 	}
+	// DATE_ADD/DATE_SUB over an INTERVAL argument are rewritten by these
+	// dialects' own builders, which are not ported (the neutral dialect's
+	// empty name stands for itself), so they are declined rather than built
+	// the generic way and written wrongly.
+	if (upper == "DATE_ADD" || upper == "DATE_SUB") && len(args) == 2 &&
+		(p.dialect == "" || strings.Contains(" redshift materialize risingwave fabric ", " "+p.dialect+" ")) &&
+		args[1] != nil && args[1].Class == "Interval" {
+		return nil, p.unsupported(upper + " over an INTERVAL in this dialect")
+	}
 	if isPrestoToChar {
 		// A TimeToStr needs its format: the reference rejects a bare
 		// TO_CHAR(ts) here rather than build one without.

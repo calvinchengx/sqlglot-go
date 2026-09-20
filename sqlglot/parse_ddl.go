@@ -3772,6 +3772,10 @@ func (p *parser) parseIndexColumns() ([]*Expression, error) {
 // parseTruncate reads `TRUNCATE TABLE [IF EXISTS] [ONLY] t[, ...]
 // [RESTART|CONTINUE IDENTITY] [CASCADE|RESTRICT]`.
 func (p *parser) parseTruncate() (*Expression, error) {
+	// TRUNCATE(x, n) is the function, not the statement.
+	if n := p.next(); n != nil && n.Type == TokL_PAREN {
+		return p.parseFunction()
+	}
 	p.advance() // TRUNCATE
 	if !p.atWords("TABLE") {
 		return nil, p.unsupported("TRUNCATE without TABLE")

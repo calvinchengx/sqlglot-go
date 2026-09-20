@@ -2519,6 +2519,23 @@ var timePartSingulars = map[string]string{
 }
 
 func (g *generator) writeInterval(e *Expression) string {
+	// Two dialects rewrite a unit they have no spelling for -- QUARTER as
+	// three months, WEEK as seven days -- which this port does not do, so
+	// the interval is refused there rather than written as it stood.
+	if unit, _ := e.Args["unit"].(*Expression); unit != nil {
+		name, _ := unit.Args["this"].(string)
+		switch strings.ToUpper(name) {
+		case "QUARTER":
+			switch g.dialect {
+			case "postgres", "redshift", "materialize", "risingwave":
+				return g.fail("an INTERVAL in QUARTERs, which this dialect writes as months")
+			}
+		case "WEEK":
+			if isPrestoFamily(g.dialect) {
+				return g.fail("an INTERVAL in WEEKs, which this dialect writes as days")
+			}
+		}
+	}
 	this, _ := e.Args["this"].(*Expression)
 	unit, _ := e.Args["unit"].(*Expression)
 	if unit == nil {
