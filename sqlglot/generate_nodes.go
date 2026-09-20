@@ -4140,11 +4140,27 @@ func (g *generator) writeStoredProcedure(e *Expression) string {
 // nothing added here.
 func (g *generator) writePropertyList(e *Expression) string {
 	items, _ := e.Args["expressions"].([]*Expression)
-	parts := make([]string, 0, len(items))
+	// Like the reference's properties_sql: what sits after the schema is
+	// written bare, what sits after WITH goes inside a `WITH (...)`, and
+	// anywhere else is written elsewhere.
+	var root, with []string
 	for _, item := range items {
-		parts = append(parts, g.node(item))
+		switch g.tables.PropertyLocation[item.Class] {
+		case "POST_WITH":
+			with = append(with, g.node(item))
+		case "POST_SCHEMA":
+			root = append(root, g.node(item))
+		}
 	}
-	return strings.Join(parts, " ")
+	out := strings.Join(root, " ")
+	if len(with) > 0 {
+		clause := g.tables.WithPropertiesPrefix + " (" + strings.Join(with, ", ") + ")"
+		if out != "" {
+			out += " "
+		}
+		out += clause
+	}
+	return out
 }
 
 // writeProperty writes a plain key and value -- the property with no word of
@@ -5040,6 +5056,9 @@ func (g *generator) writeAlterColumn(e *Expression) string {
 		}
 	}
 	out := "ALTER COLUMN " + g.child(e, "this")
+	if visible, _ := e.Args["visible"].(string); visible != "" {
+		return out + " SET " + visible
+	}
 	switch {
 	case e.Args["dtype"] != nil:
 		// The phrase in front of the new type is the dialect's: `SET DATA
@@ -6134,6 +6153,31 @@ func (g *generator) writePartition(e *Expression) string {
 // reference writes a bare `ALTER TABLE t SET`, which sets nothing at all, so
 // the port refuses rather than writing that.
 func (g *generator) writeAlterSet(e *Expression) string {
+	// Redshift writes its table properties, location and file format as
+	// clauses of their own.
+	if g.dialect == "redshift" {
+		out := "SET"
+		if settings, _ := e.Args["expressions"].([]*Expression); len(settings) > 0 {
+			out += " TABLE PROPERTIES (" + g.list(e) + ")"
+		}
+		if location := g.child(e, "location"); location != "" {
+			out += " LOCATION " + location
+		}
+		if formats, _ := e.Args["file_format"].([]*Expression); len(formats) > 0 {
+			parts := make([]string, 0, len(formats))
+			for _, f := range formats {
+				parts = append(parts, g.node(f))
+			}
+			out += " FILE FORMAT " + strings.Join(parts, " ")
+		}
+		if out == "SET" {
+			return g.fail(e.Class + " that sets nothing")
+		}
+		return out
+	}
+	if g.child(e, "location") != "" || e.Args["file_format"] != nil {
+		return g.fail(e.Class + " with a location or file format, which this dialect writes away")
+	}
 	if settings, _ := e.Args["expressions"].([]*Expression); len(settings) > 0 {
 		list := g.list(e)
 		if g.tables.AlterSetWrapsOptions {

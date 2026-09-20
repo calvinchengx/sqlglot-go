@@ -69,14 +69,14 @@ Regenerate with `make service`; nothing in it is authored here.
 | postgres | 857/857 | 857 | 857 | 0 | 0 |
 | duckdb | 1631/1631 | 1629 | 1631 | 2 | 0 |
 | databricks | 426/426 | 426 | 426 | 0 | 0 |
-| redshift | 307/307 | 281 | 307 | 26 | 0 |
+| redshift | 307/307 | 284 | 307 | 23 | 0 |
 | materialize | 51/51 | 44 | 51 | 7 | 0 |
 | risingwave | 14/14 | 12 | 14 | 2 | 0 |
 | fabric | 47/47 | 47 | 47 | 0 | 0 |
 | presto | 596/596 | 577 | 596 | 19 | 0 |
-| trino | 253/253 | 234 | 253 | 19 | 0 |
+| trino | 253/253 | 239 | 253 | 14 | 0 |
 | dremio | 61/61 | 54 | 61 | 7 | 0 |
-| mysql | 638/638 | 529 | 638 | 109 | 0 |
+| mysql | 638/638 | 531 | 638 | 107 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number

@@ -1675,6 +1675,16 @@ func (p *parser) parseAlter() (*Expression, error) {
 		check = nil
 	}
 
+	// SET AUTHORIZATION and SET PROPERTIES are settings the reference has no
+	// grammar for in any dialect that reads the statement at all: it leaves
+	// tokens over and falls back to a Command of the whole statement.
+	if kind == "TABLE" && p.at(TokSET) && p.dialect != "tsql" && p.dialect != "fabric" {
+		if n := p.next(); n != nil &&
+			(strings.EqualFold(n.Text, "AUTHORIZATION") || strings.EqualFold(n.Text, "PROPERTIES")) {
+			return p.parseAsCommand(start), nil
+		}
+	}
+
 	var actions []*Expression
 	if kind == "VIEW" {
 		// T-SQL's WITH SCHEMABINDING / ENCRYPTION / VIEW_METADATA is a
@@ -2141,6 +2151,11 @@ func (p *parser) parseAlteredColumn() (*Expression, error) {
 		p.advance()
 		p.advance()
 		action.Set("drop", true)
+	case p.atWords("SET", "VISIBLE"), p.atWords("SET", "INVISIBLE"):
+		word := strings.ToUpper(p.next().Text)
+		p.advance()
+		p.advance()
+		action.Set("visible", word)
 	case p.atWords("COMMENT"):
 		p.advance()
 		c := p.curr()
@@ -4732,26 +4747,76 @@ func (p *parser) parseAlterSet() (*Expression, error) {
 			}
 		}
 		node.Set("expressions", settings)
+	case p.dialect == "redshift" && p.atWords("TABLE", "PROPERTIES"):
+		p.advance()
+		p.advance()
+		settings, err := p.parseWrappedCSV(p.parseAssignment)
+		if err != nil {
+			return nil, err
+		}
+		node.Set("expressions", settings)
+	case p.dialect == "redshift" && p.atWords("LOCATION"):
+		p.advance()
+		field, err := p.parseAlterSetField()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("location", field)
+	case p.dialect == "redshift" && (p.atWords("FILE", "FORMAT") || p.atWords("FILEFORMAT")):
+		if p.atWords("FILE", "FORMAT") {
+			p.advance()
+		}
+		p.advance()
+		field, err := p.parseAlterSetField()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("file_format", []*Expression{field})
 	default:
 		return nil, p.unsupported("an ALTER TABLE SET this port does not read")
 	}
 	return node, nil
 }
 
+// parseAlterSetField reads what `_parse_field` reads for the redshift SET
+// clauses: a string, or a bare name.
+func (p *parser) parseAlterSetField() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("ALTER TABLE SET without a value")
+	}
+	if c.Type == TokSTRING {
+		p.advance()
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}), nil
+	}
+	if c.Type == TokVAR || c.Type == TokIDENTIFIER {
+		return p.parseIdentifier()
+	}
+	return nil, p.unsupported("an ALTER TABLE SET value this port does not read")
+}
+
 // parseAlterSetProperties reads what a wrapped ALTER TABLE SET holds. A name
 // the reference has a property for becomes one, gathered under a Properties of
 // its own; anything else is the equality it was written as.
 func (p *parser) parseAlterSetProperties() ([]*Expression, error) {
+	if p.atWords("FILESTREAM_ON") {
+		setting, err := p.parseAssignment()
+		if err != nil {
+			return nil, err
+		}
+		return []*Expression{setting}, nil
+	}
 	if prop, own, err := p.parseBespokeProperty(false); err != nil {
 		return nil, err
 	} else if own {
 		return []*Expression{New("Properties", Arg{"expressions", []*Expression{prop}})}, nil
 	}
-	setting, err := p.parseExpression()
+	// Any other name is a plain key = value property, gathered the same way.
+	setting, err := p.parseKeyValueProperty()
 	if err != nil {
 		return nil, err
 	}
-	return []*Expression{setting}, nil
+	return []*Expression{New("Properties", Arg{"expressions", []*Expression{setting}})}, nil
 }
 
 // parseColumnType reads the type of a COLUMN, where a fixed-size array is a
