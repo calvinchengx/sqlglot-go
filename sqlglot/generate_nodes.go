@@ -48,6 +48,14 @@ func init() {
 		"TsOrDsToDate":                        (*generator).writeTsOrDsToDate,
 		"TimeToStr":                           (*generator).writeTimeToStr,
 		"Show":                                (*generator).writeShow,
+		"FunctionSpecification":               (*generator).writeFunctionSpecification,
+		"IfBlock":                             (*generator).writeIfBlock,
+		"CaseStatement":                       (*generator).writeCaseStatement,
+		"WhileBlock":                          (*generator).writeWhileBlock,
+		"LoopBlock":                           (*generator).writeLoopBlock,
+		"RepeatBlock":                         (*generator).writeRepeatBlock,
+		"Leave":                               (*generator).writeLeave,
+		"Iterate":                             (*generator).writeIterate,
 		"TimeStrToTime":                       (*generator).writeTimeStrToTime,
 		"OpenJSONColumnDef":                   (*generator).writeOpenJSONColumnDef,
 		"Union":                               (*generator).writeSetOperation,
@@ -572,10 +580,25 @@ func (g *generator) writeWith(e *Expression) string {
 	if s := g.child(e, "search"); s != "" {
 		search = " " + s
 	}
-	if recursive, _ := e.Args["recursive"].(bool); recursive {
-		return "WITH RECURSIVE " + g.list(e) + search
+	udfs := ""
+	if items, _ := e.Args["udfs"].([]*Expression); len(items) > 0 {
+		parts := make([]string, 0, len(items))
+		for _, item := range items {
+			parts = append(parts, g.node(item))
+		}
+		udfs = "WITH " + strings.Join(parts, ", ")
 	}
-	return "WITH " + g.list(e) + search
+	ctes := ""
+	if list := g.list(e); list != "" {
+		ctes = "WITH " + list + search
+		if recursive, _ := e.Args["recursive"].(bool); recursive {
+			ctes = "WITH RECURSIVE " + list + search
+		}
+	}
+	if udfs != "" && ctes != "" {
+		return udfs + " " + ctes
+	}
+	return udfs + ctes
 }
 
 func (g *generator) writeCTE(e *Expression) string {
@@ -4052,7 +4075,11 @@ func (g *generator) writeBlock(e *Expression) string {
 	for _, item := range items {
 		parts = append(parts, g.node(item))
 	}
-	return strings.Join(parts, "; ")
+	out := strings.Join(parts, "; ")
+	if begin, _ := e.Args["begin"].(bool); begin && out != "" {
+		return "BEGIN " + out
+	}
+	return out
 }
 
 // writeEndStatement writes the END that closed a block. The reference keeps it
@@ -5558,6 +5585,13 @@ func (g *generator) writeStabilityProperty(e *Expression) string {
 		return g.fail(e.Class + " with no word")
 	}
 	word, _ := this.Args["this"].(string)
+	// Trino has only DETERMINISTIC and its negation.
+	if g.dialect == "trino" {
+		if word == "IMMUTABLE" {
+			return "DETERMINISTIC"
+		}
+		return "NOT DETERMINISTIC"
+	}
 	return word
 }
 
@@ -7586,4 +7620,119 @@ func (g *generator) writeShow(e *Expression) string {
 		prefixed("LIKE", "like") + where + offset + limit + prefixed("FOR GROUP", "for_group") +
 		prefixed("FOR USER", "for_user") + prefixed("FOR ROLE", "for_role") +
 		prefixed("INTO OUTFILE", "into_outfile")
+}
+
+// The routine statements below are Trino's own; the reference's base
+// generator declines every one of them, so every other dialect does too.
+
+func (g *generator) routineLabel(e *Expression) string {
+	if label := g.child(e, "label"); label != "" {
+		return label + ": "
+	}
+	return ""
+}
+
+func (g *generator) joinedProperties(e *Expression, key string) []string {
+	props, _ := e.Args[key].(*Expression)
+	if props == nil {
+		return nil
+	}
+	items, _ := props.Args["expressions"].([]*Expression)
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, g.node(item))
+	}
+	return parts
+}
+
+func (g *generator) writeFunctionSpecification(e *Expression) string {
+	if g.dialect != "trino" {
+		return g.fail("an inline function, which this dialect does not write")
+	}
+	characteristics := ""
+	if parts := g.joinedProperties(e, "characteristics"); len(parts) > 0 {
+		characteristics = " " + strings.Join(parts, " ")
+	}
+	with := ""
+	if parts := g.joinedProperties(e, "properties"); len(parts) > 0 {
+		with = " WITH (" + strings.Join(parts, ", ") + ")"
+	}
+	return "FUNCTION " + g.child(e, "this") + characteristics + with + " " + g.child(e, "expression")
+}
+
+func (g *generator) writeIfBlock(e *Expression) string {
+	if g.dialect != "trino" {
+		return g.spell(e)
+	}
+	// ELSEIF chains nest through `false`; write them flat.
+	var branches []string
+	node := e
+	for node != nil && node.Class == "IfBlock" {
+		keyword := "IF"
+		if len(branches) > 0 {
+			keyword = "ELSEIF"
+		}
+		branches = append(branches, keyword+" "+g.child(node, "this")+" THEN "+g.child(node, "true")+";")
+		next, _ := node.Args["false"].(*Expression)
+		node = next
+	}
+	if node != nil {
+		branches = append(branches, "ELSE "+g.node(node)+";")
+	}
+	return strings.Join(branches, " ") + " END IF"
+}
+
+func (g *generator) writeCaseStatement(e *Expression) string {
+	if g.dialect != "trino" {
+		return g.fail("a CASE statement, which this dialect does not write")
+	}
+	head := "CASE"
+	if this := g.child(e, "this"); this != "" {
+		head += " " + this
+	}
+	branches := []string{head}
+	ifs, _ := e.Args["ifs"].([]*Expression)
+	for _, node := range ifs {
+		branches = append(branches, "WHEN "+g.child(node, "this")+" THEN "+g.child(node, "true")+";")
+	}
+	if def := g.child(e, "default"); def != "" {
+		branches = append(branches, "ELSE "+def+";")
+	}
+	branches = append(branches, "END CASE")
+	return strings.Join(branches, " ")
+}
+
+func (g *generator) writeWhileBlock(e *Expression) string {
+	if g.dialect != "trino" {
+		return g.fail("a WHILE block, which this dialect does not write")
+	}
+	return g.routineLabel(e) + "WHILE " + g.child(e, "this") + " DO " + g.child(e, "body") + "; END WHILE"
+}
+
+func (g *generator) writeLoopBlock(e *Expression) string {
+	if g.dialect != "trino" {
+		return g.fail("a LOOP block, which this dialect does not write")
+	}
+	return g.routineLabel(e) + "LOOP " + g.child(e, "body") + "; END LOOP"
+}
+
+func (g *generator) writeRepeatBlock(e *Expression) string {
+	if g.dialect != "trino" {
+		return g.fail("a REPEAT block, which this dialect does not write")
+	}
+	return g.routineLabel(e) + "REPEAT " + g.child(e, "body") + "; UNTIL " + g.child(e, "until") + " END REPEAT"
+}
+
+func (g *generator) writeLeave(e *Expression) string {
+	if g.dialect != "trino" {
+		return g.fail("LEAVE, which this dialect does not write")
+	}
+	return "LEAVE " + g.child(e, "this")
+}
+
+func (g *generator) writeIterate(e *Expression) string {
+	if g.dialect != "trino" {
+		return g.fail("ITERATE, which this dialect does not write")
+	}
+	return "ITERATE " + g.child(e, "this")
 }

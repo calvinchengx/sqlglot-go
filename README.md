@@ -74,7 +74,7 @@ Regenerate with `make service`; nothing in it is authored here.
 | risingwave | 14/14 | 12 | 14 | 2 | 0 |
 | fabric | 47/47 | 47 | 47 | 0 | 0 |
 | presto | 596/596 | 568 | 596 | 28 | 0 |
-| trino | 253/253 | 175 | 253 | 78 | 0 |
+| trino | 253/253 | 223 | 253 | 30 | 0 |
 | dremio | 61/61 | 54 | 61 | 7 | 0 |
 | mysql | 638/638 | 521 | 638 | 117 | 0 |
 <!-- coverage:end -->

@@ -219,8 +219,29 @@ func (p *parser) parseWith() (*Expression, error) {
 	}
 	recursive := p.match(TokRECURSIVE)
 
-	var ctes []*Expression
+	var ctes, udfs []*Expression
 	for {
+		// A `FUNCTION <name>` entry is an inline SQL routine (Trino), not a
+		// CTE that happens to be called "function".
+		if p.dialect == "trino" && p.at(TokFUNCTION) {
+			if n := p.next(); n != nil {
+				if _, ok := p.tables.IDVarTokens[n.Type]; ok {
+					p.advance()
+					spec, err := p.parseFunctionSpecification()
+					if err != nil {
+						return nil, err
+					}
+					udfs = append(udfs, spec)
+					if !p.match(TokCOMMA) && !p.at(TokWITH) {
+						break
+					}
+					if p.match(TokWITH) {
+						recursive = p.match(TokRECURSIVE) || recursive
+					}
+					continue
+				}
+			}
+		}
 		// A CTE is named the way a table is, so a STRING there is a QUOTED
 		// name rather than a literal.
 		alias, err := p.parseTablePart()
@@ -283,8 +304,11 @@ func (p *parser) parseWith() (*Expression, error) {
 			Arg{"materialized", materialized},
 			Arg{"key_expressions", keyExpressions},
 		))
-		if !p.match(TokCOMMA) {
+		if !p.match(TokCOMMA) && (len(udfs) == 0 || !p.match(TokWITH)) {
 			break
+		}
+		if len(udfs) > 0 {
+			recursive = p.match(TokRECURSIVE) || recursive
 		}
 	}
 	var recursiveArg any
@@ -295,8 +319,12 @@ func (p *parser) parseWith() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	var udfArg any
+	if len(udfs) > 0 {
+		udfArg = udfs
+	}
 	return New("With", Arg{"expressions", ctes}, Arg{"recursive", recursiveArg},
-		Arg{"search", search}, Arg{"udfs", nil}), nil
+		Arg{"search", search}, Arg{"udfs", udfArg}), nil
 }
 
 // parseRecursiveWithSearch reads the SEARCH or CYCLE clause that may follow a
