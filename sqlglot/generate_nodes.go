@@ -48,6 +48,9 @@ func init() {
 		"TsOrDsToDate":                        (*generator).writeTsOrDsToDate,
 		"TimeToStr":                           (*generator).writeTimeToStr,
 		"Show":                                (*generator).writeShow,
+		"JSONExtractQuote":                    (*generator).writeJSONExtractQuote,
+		"OnCondition":                         (*generator).writeOnCondition,
+		"JSONValue":                           (*generator).writeJSONValue,
 		"FunctionSpecification":               (*generator).writeFunctionSpecification,
 		"IfBlock":                             (*generator).writeIfBlock,
 		"CaseStatement":                       (*generator).writeCaseStatement,
@@ -3040,6 +3043,28 @@ func (g *generator) writeJSONPath(e *Expression) string {
 // a template substitutes text knowing none, so anything that could need
 // brackets is refused rather than written flat.
 func (g *generator) writeJSONExtractOp(e *Expression) string {
+	// Trino's JSON_QUERY: the same node as an extraction, flagged, with the
+	// wrapper, quote and error clauses written inside the call.
+	if q, _ := e.Args["json_query"].(bool); q {
+		if g.dialect != "trino" {
+			return g.fail("JSON_QUERY, which this dialect does not write")
+		}
+		path, _ := e.Args["expression"].(*Expression)
+		if path == nil {
+			return g.fail("JSON_QUERY without a path")
+		}
+		text := g.node(path)
+		if option := g.child(e, "option"); option != "" {
+			text += " " + option
+		}
+		if quote := g.child(e, "quote"); quote != "" {
+			text += " " + quote
+		}
+		if on := g.child(e, "on_condition"); on != "" {
+			text += " " + on
+		}
+		return "JSON_QUERY(" + g.child(e, "this") + ", " + text + ")"
+	}
 	// A dialect with no ONE call that reads both an object and a scalar out
 	// of JSON asks both and takes whichever is not null, writing the value
 	// and the path twice. One node, two calls: a spelling rather than a
@@ -7735,4 +7760,46 @@ func (g *generator) writeIterate(e *Expression) string {
 		return g.fail("ITERATE, which this dialect does not write")
 	}
 	return "ITERATE " + g.child(e, "this")
+}
+
+func (g *generator) writeJSONExtractQuote(e *Expression) string {
+	option, _ := e.Args["option"].(string)
+	scalar := ""
+	if on, _ := e.Args["scalar"].(bool); on {
+		scalar = " ON SCALAR STRING"
+	}
+	return option + " QUOTES" + scalar
+}
+
+func (g *generator) writeOnCondition(e *Expression) string {
+	part := func(key, on string) string {
+		switch v := e.Args[key].(type) {
+		case *Expression:
+			return "DEFAULT " + g.node(v) + " ON " + on
+		case string:
+			return v
+		}
+		return ""
+	}
+	empty, errorPart := part("empty", "EMPTY"), part("error", "ERROR")
+	if errorPart != "" && empty != "" {
+		errorPart = empty + " " + errorPart
+		empty = ""
+	}
+	null := ""
+	if v, ok := e.Args["null"].(string); ok {
+		null = v
+	}
+	return empty + errorPart + null
+}
+
+func (g *generator) writeJSONValue(e *Expression) string {
+	text := g.child(e, "path")
+	if returning := g.child(e, "returning"); returning != "" {
+		text += " RETURNING " + returning
+	}
+	if on := g.child(e, "on_condition"); on != "" {
+		text += " " + on
+	}
+	return "JSON_VALUE(" + g.child(e, "this") + ", " + text + ")"
 }

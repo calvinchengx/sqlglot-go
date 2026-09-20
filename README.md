@@ -74,9 +74,9 @@ Regenerate with `make service`; nothing in it is authored here.
 | risingwave | 14/14 | 12 | 14 | 2 | 0 |
 | fabric | 47/47 | 47 | 47 | 0 | 0 |
 | presto | 596/596 | 569 | 596 | 27 | 0 |
-| trino | 253/253 | 223 | 253 | 30 | 0 |
+| trino | 253/253 | 234 | 253 | 19 | 0 |
 | dremio | 61/61 | 54 | 61 | 7 | 0 |
-| mysql | 638/638 | 521 | 638 | 117 | 0 |
+| mysql | 638/638 | 522 | 638 | 116 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number

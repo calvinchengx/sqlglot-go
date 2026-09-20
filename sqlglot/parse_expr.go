@@ -3624,6 +3624,14 @@ func (p *parser) buildJSONPathFunction(spec JSONPathFunc, args []*Expression) *E
 			} else {
 				path = parsed
 			}
+		} else if lit := args[1]; lit.Class == "Literal" {
+			// A number is a position: the reference reads `1` as `[1]`.
+			text, _ := lit.Args["this"].(string)
+			parsed, err := parseJSONPath("["+text+"]", p.dialect == "databricks")
+			if err != nil {
+				return nil
+			}
+			path = parsed
 		} else {
 			path = args[1]
 		}

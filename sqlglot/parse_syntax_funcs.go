@@ -74,6 +74,10 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseChr()
 	case "DECODE":
 		return p.parseDecode()
+	case "JSON_QUERY":
+		return p.parseJSONQuery()
+	case "JSON_VALUE":
+		return p.parseJSONValue()
 	case "JSONB_EXISTS":
 		return p.parseJSONBExists()
 	case "JSON_AGG":
