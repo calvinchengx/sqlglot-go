@@ -537,28 +537,18 @@ func (p *parser) parseRowsFrom() (*Expression, error) {
 // clause, its alias, its hints, its sample and its pivots -- in the order the
 // reference reads them, which is the order they are written.
 func (p *parser) tableRest(table *Expression) (*Expression, error) {
-	// T-SQL's temporal clause hangs off the table, BEFORE the alias in the
-	// text and before it on the node.
-	if p.atWords("FOR", "SYSTEM_TIME") {
-		version, err := p.parseSystemTime()
-		if err != nil {
-			return nil, err
+	// The time-travel clause -- T-SQL's FOR SYSTEM_TIME, Databricks' TIMESTAMP
+	// AS OF, Trino's FOR VERSION AS OF -- reads the table as it stood then,
+	// and goes before the alias. BigQuery alone writes it after the alias,
+	// which this does not read.
+	if p.dialect != "bigquery" {
+		if word, ok := p.versionPhrase(); ok {
+			version, err := p.parseVersion(word)
+			if err != nil {
+				return nil, err
+			}
+			table.Set("version", version)
 		}
-		table.Set("version", version)
-	}
-	// `TIMESTAMP AS OF '...'` and `VERSION AS OF 3` read the table as it
-	// stood then rather than as it stands now, and go before the alias.
-	if (p.atWords("TIMESTAMP") || p.atWords("VERSION")) && p.nextWords("AS", "OF") {
-		word := strings.ToUpper(p.curr().Text)
-		p.advance()
-		p.advance()
-		p.advance()
-		at, err := p.parseUnary()
-		if err != nil {
-			return nil, err
-		}
-		table.Set("version", New("Version",
-			Arg{"this", word}, Arg{"expression", at}, Arg{"kind", "AS OF"}))
 	}
 	// `AT (VERSION => 3)` may stand where an alias would, and AT is a word an
 	// implicit alias would otherwise take: `demo AT (VERSION => 2)` would
@@ -1462,11 +1452,8 @@ func (p *parser) parseUnnest() (*Expression, error) {
 //	CONTAINED IN (<a>, <b>)   and another
 //	ALL                       no bound at all
 //
-// The kind is the WORDS, kept as a string; `this` is always TIMESTAMP.
-func (p *parser) parseSystemTime() (*Expression, error) {
-	p.advance() // FOR
-	p.advance() // SYSTEM_TIME
-
+// The kind is the WORDS, kept as a string; `this` is what the phrase pinned, TIMESTAMP or VERSION.
+func (p *parser) parseVersion(word string) (*Expression, error) {
 	var kind string
 	var expression *Expression
 	pair := func(sep TokenType, word string) error {
@@ -1539,10 +1526,21 @@ func (p *parser) parseSystemTime() (*Expression, error) {
 		}
 		expression = New("Tuple", Arg{"expressions", []*Expression{low, high}})
 	default:
-		return nil, p.unsupported("FOR SYSTEM_TIME without a bound")
+		// A point in time; AS OF is optional after a phrase that has not
+		// already said it.
+		if p.atWords("AS", "OF") {
+			p.advance()
+			p.advance()
+		}
+		kind = "AS OF"
+		e, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		expression = e
 	}
 	return New("Version",
-		Arg{"this", "TIMESTAMP"},
+		Arg{"this", word},
 		Arg{"expression", expression},
 		Arg{"kind", kind}), nil
 }
@@ -1752,4 +1750,39 @@ func (p *parser) parseIndexTableHints() ([]*Expression, error) {
 		}
 		hints = append(hints, hint)
 	}
+}
+
+// versionPhrases are the words that open a time-travel clause, in the order
+// the reference tries them, with what each pins: a timestamp or a version.
+// Dremio adds two of its own.
+var versionPhrases = []struct {
+	words []string
+	this  string
+	only  string
+}{
+	{[]string{"FOR", "SYSTEM_TIME"}, "TIMESTAMP", ""},
+	{[]string{"FOR", "SYSTEM", "TIME"}, "TIMESTAMP", ""},
+	{[]string{"FOR", "TIMESTAMP"}, "TIMESTAMP", ""},
+	{[]string{"FOR", "VERSION"}, "VERSION", ""},
+	{[]string{"TIMESTAMP", "AS", "OF"}, "TIMESTAMP", ""},
+	{[]string{"VERSION", "AS", "OF"}, "VERSION", ""},
+	{[]string{"AT", "TIMESTAMP"}, "TIMESTAMP", "dremio"},
+	{[]string{"AT", "SNAPSHOT"}, "VERSION", "dremio"},
+}
+
+// versionPhrase consumes the phrase opening a time-travel clause and returns
+// what it pins.
+func (p *parser) versionPhrase() (string, bool) {
+	for _, ph := range versionPhrases {
+		if ph.only != "" && ph.only != p.dialect {
+			continue
+		}
+		if p.atWords(ph.words...) {
+			for range ph.words {
+				p.advance()
+			}
+			return ph.this, true
+		}
+	}
+	return "", false
 }

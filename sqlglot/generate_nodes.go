@@ -3804,12 +3804,31 @@ func (g *generator) writeHistoricalData(e *Expression) string {
 	return word + " (" + kind + " => " + g.child(e, "expression") + ")"
 }
 
+// baseVersionWriter lists the dialects whose generators do not override the
+// time-travel clause (T-SQL, Fabric, Hive, BigQuery and Dremio do).
+var baseVersionWriter = map[string]bool{
+	"": true, "postgres": true, "duckdb": true, "redshift": true,
+	"materialize": true, "risingwave": true, "mysql": true,
+}
+
 // writeVersion writes FOR SYSTEM_TIME. The template table holds the shape, but
 // a RANGE cannot go through it: the two bounds are held as a Tuple, which
 // would render `(c, d)`, and the dialect writes `c TO d` or `c AND d`
 // depending on the kind. The separating word is probed per kind.
 func (g *generator) writeVersion(e *Expression) string {
 	kind, _ := e.Args["kind"].(string)
+	if g.dialect == "dremio" {
+		// Dremio writes a point in time as `AT SNAPSHOT x` or `AT TIMESTAMP x`
+		// and has no spelling for a range.
+		if kind != "AS OF" {
+			return g.fail("a range of time travel in Dremio")
+		}
+		this, _ := e.Args["this"].(string)
+		if this == "VERSION" {
+			this = "SNAPSHOT"
+		}
+		return "AT " + this + " " + g.child(e, "expression")
+	}
 	rendered := ""
 	if expr, _ := e.Args["expression"].(*Expression); expr != nil {
 		sep := g.tables.VersionRangeSep[kind]
@@ -3825,6 +3844,11 @@ func (g *generator) writeVersion(e *Expression) string {
 		if wantsExpression != (rendered != "") {
 			continue
 		}
+		// A template that fixes the word (T-SQL's FOR SYSTEM_TIME) cannot
+		// stand for a version.
+		if this, _ := e.Args["this"].(string); this == "VERSION" && !strings.Contains(candidate.Template, "{this}") {
+			return g.fail("a version pin in a dialect that names only system time")
+		}
 		out := strings.ReplaceAll(candidate.Template, "{kind}", kind)
 		// The WORD the clause opens with, where the dialect names one:
 		// Databricks writes `TIMESTAMP AS OF x` and T-SQL puts FOR
@@ -3833,6 +3857,14 @@ func (g *generator) writeVersion(e *Expression) string {
 			out = strings.ReplaceAll(out, "{this}", this)
 		}
 		return strings.ReplaceAll(out, "{expression}", rendered)
+	}
+	// A dialect that does not override the writer -- most of them, so none was
+	// probed -- writes the base `FOR {this} {kind} {expression}`. A clause
+	// with no bound (VERSION ALL) leaves that base a trailing space the port
+	// does not model, so it is declined.
+	if rendered != "" && len(g.tables.SyntaxSQL[e.Class]) == 0 && baseVersionWriter[g.dialect] {
+		this, _ := e.Args["this"].(string)
+		return "FOR " + this + " " + kind + " " + rendered
 	}
 	return g.fail(e.Class)
 }
