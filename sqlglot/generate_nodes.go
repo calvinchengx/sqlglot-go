@@ -2926,7 +2926,7 @@ func (g *generator) writePropertyEQ(e *Expression) string {
 	}
 	// Only a Struct rewrites its PropertyEQ children (struct_sql); anywhere
 	// else the node is a plain assignment -- `SELECT @v := 1`.
-	if e.Parent != nil && e.Parent.Class != "Struct" {
+	if e == g.root || (e.Parent != nil && e.Parent.Class != "Struct") {
 		return g.node(key) + " := " + g.child(e, "expression")
 	}
 	// As a FIELD it takes the dialect's own spelling, and the two dialects

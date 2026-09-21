@@ -44,7 +44,7 @@ func Generate(e *Expression, dialect string) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("sqlglot: no generator for dialect %q (have %v)", dialect, Dialects())
 	}
-	g := &generator{cfg: cfg, tables: cfg.Tables, dialect: dialect}
+	g := &generator{cfg: cfg, tables: cfg.Tables, dialect: dialect, root: e}
 	out := g.node(e)
 	if g.err != nil {
 		return "", g.err
@@ -56,6 +56,9 @@ func Generate(e *Expression, dialect string) (string, error) {
 // every writer. Sixty writers each propagating an error they cannot act on is
 // noise that buries the one line in each that says anything.
 type generator struct {
+	// root is the node the write started at: a PropertyEQ that is the whole
+	// statement is an assignment, not a struct field.
+	root    *Expression
 	cfg     *Config
 	tables  *ParserTables
 	dialect string
