@@ -2927,7 +2927,16 @@ func (g *generator) writePropertyEQ(e *Expression) string {
 	// Only a Struct rewrites its PropertyEQ children (struct_sql); anywhere
 	// else the node is a plain assignment -- `SELECT @v := 1`.
 	if e == g.root || (e.Parent != nil && e.Parent.Class != "Struct") {
+		// Materialize spells the assignment `=>`, which this port does not.
+		if g.dialect == "materialize" {
+			return g.fail(e.Class + " assignment, which this dialect writes as =>")
+		}
 		return g.node(key) + " := " + g.child(e, "expression")
+	}
+	// Presto and Trino write a struct with named fields as a CAST to a typed
+	// ROW, which needs the field types this port does not infer.
+	if isPrestoFamily(g.dialect) {
+		return g.fail(e.Class + " named struct field, which this dialect writes as a typed ROW")
 	}
 	// As a FIELD it takes the dialect's own spelling, and the two dialects
 	// disagree about more than punctuation: one writes the value first and
