@@ -73,10 +73,10 @@ Regenerate with `make service`; nothing in it is authored here.
 | materialize | 51/51 | 44 | 51 | 7 | 0 |
 | risingwave | 14/14 | 12 | 14 | 2 | 0 |
 | fabric | 47/47 | 47 | 47 | 0 | 0 |
-| presto | 596/596 | 585 | 596 | 11 | 0 |
+| presto | 596/596 | 587 | 596 | 9 | 0 |
 | trino | 253/253 | 248 | 253 | 5 | 0 |
 | dremio | 61/61 | 59 | 61 | 2 | 0 |
-| mysql | 638/638 | 601 | 638 | 37 | 0 |
+| mysql | 638/638 | 603 | 638 | 35 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number

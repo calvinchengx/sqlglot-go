@@ -85,6 +85,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// own. Which words those are, and what each builds, is read from the
 	// dialect's table rather than listed here.
 	var modifiers []*Expression
+	sqlSecurity := false
 	for {
 		word := p.curr()
 		if word == nil {
@@ -108,6 +109,16 @@ func (p *parser) parseCreate() (*Expression, error) {
 				modifiers = append(modifiers, prop)
 				continue
 			}
+		}
+		// `SQL SECURITY INVOKER` may open the statement, before the kind.
+		if p.atWords("SQL SECURITY") {
+			prop, _, err := p.parseBespokeProperty(false)
+			if err != nil {
+				return nil, err
+			}
+			modifiers = append(modifiers, prop)
+			sqlSecurity = true
+			continue
 		}
 		if p.atWords("DEFINER") {
 			prop, err := p.parseDefinerProperty()
@@ -133,6 +144,11 @@ func (p *parser) parseCreate() (*Expression, error) {
 	if kindToken == nil {
 		return nil, p.unsupported("CREATE without a kind")
 	}
+	// Ahead of the kind, SQL SECURITY belongs to a VIEW; the reference moves
+	// it to other places for a routine, which this does not.
+	if sqlSecurity && !strings.EqualFold(kindToken.Text, "VIEW") {
+		return nil, p.unsupported("CREATE with SQL SECURITY before something other than a VIEW")
+	}
 	kind := strings.ToUpper(kindToken.Text)
 	// The kinds this dialect creates are its own -- T-SQL alone spells a
 	// procedure PROC -- but only some of them have a body this port knows how
@@ -145,6 +161,20 @@ func (p *parser) parseCreate() (*Expression, error) {
 		return nil, p.unsupported("CREATE " + kind)
 	}
 	p.advance()
+
+	// Words in front of the kind (DEFINER=, ALGORITHM=, ...) are read as
+	// properties of the thing made, which only a table or a view carries in
+	// this port: the routes below build their own trees and would drop them.
+	if len(modifiers) > 0 {
+		switch kind {
+		case "FUNCTION", "MACRO", "PROCEDURE", "PROC", "SEQUENCE", "TYPE",
+			"DATABASE", "NAMESPACE", "TRIGGER":
+			return nil, p.unsupported("CREATE " + kind + " with words in front of it")
+		}
+		if kindToken.Type == TokINDEX {
+			return nil, p.unsupported("CREATE INDEX with words in front of it")
+		}
+	}
 
 	if kindToken.Type == TokINDEX {
 		return p.parseIndexRest(replace, unique, temporary, kind, clustered)

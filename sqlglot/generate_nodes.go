@@ -4336,9 +4336,19 @@ func (g *generator) writeProperties(e *Expression) (before string, out string, f
 	items, _ := properties.Args["expressions"].([]*Expression)
 	var root, with []string
 	var beforeKind []string
+	movedSecurity, security := false, ""
 	for _, item := range items {
 		switch g.tables.PropertyLocation[item.Class] {
 		case "POST_SCHEMA":
+			// MySQL writes a VIEW's SQL SECURITY (the first one) after the
+			// other words in front of the kind, not after its name.
+			if g.dialect == "mysql" && item.Class == "SqlSecurityProperty" && !movedSecurity {
+				if kind, _ := e.Args["kind"].(string); kind == "VIEW" {
+					movedSecurity = true
+					security = g.node(item)
+					continue
+				}
+			}
 			root = append(root, g.node(item))
 		case "POST_WITH":
 			with = append(with, g.node(item))
@@ -4365,6 +4375,9 @@ func (g *generator) writeProperties(e *Expression) (before string, out string, f
 	}
 	if len(with) > 0 {
 		out += " " + g.tables.WithPropertiesPrefix + " (" + strings.Join(with, ", ") + ")"
+	}
+	if security != "" {
+		beforeKind = append(beforeKind, security)
 	}
 	if len(beforeKind) > 0 {
 		before = strings.Join(beforeKind, " ") + " "
