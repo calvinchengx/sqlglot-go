@@ -3390,7 +3390,6 @@ func TestUpdateAndDelete(t *testing.T) {
 	for _, sql := range []string{
 		"UPDATE t WHERE a = 1",
 		"DELETE x OUTPUT x.a FROM z",
-		"UPDATE t SET a = 1 ORDER BY a",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)

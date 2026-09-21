@@ -48,6 +48,9 @@ func init() {
 		"TsOrDsToDate":                        (*generator).writeTsOrDsToDate,
 		"TimeToStr":                           (*generator).writeTimeToStr,
 		"Show":                                (*generator).writeShow,
+		"RenameIndex":                         (*generator).writeRenameIndex,
+		"AlterIndex":                          (*generator).writeAlterIndex,
+		"DropPrimaryKey":                      (*generator).writeDropPrimaryKey,
 		"Introducer":                          (*generator).writeIntroducer,
 		"MatchAgainst":                        (*generator).writeMatchAgainst,
 		"AnalyzeWith":                         (*generator).writeAnalyzeWith,
@@ -5319,11 +5322,13 @@ func (g *generator) writeUpdate(e *Expression) string {
 	from := g.child(e, "from_")
 	where := g.child(e, "where")
 	options := g.writeQueryHintOptions(e)
+	order := g.child(e, "order")
+	limit := g.child(e, "limit")
 	if g.tables.ReturningEnd {
-		return clauses(head, from, where, returning, options)
+		return clauses(head, from, where, returning, order, limit, options)
 	}
 	// T-SQL writes it here, between the assignments and the FROM.
-	return clauses(head, returning, from, where, options)
+	return clauses(head, returning, from, where, order, limit, options)
 }
 
 // clauses joins what a statement is made of, skipping the parts it has none
@@ -5374,6 +5379,19 @@ func (g *generator) writeDelete(e *Expression) string {
 	cluster := g.child(e, "cluster")
 	where := g.child(e, "where")
 	returning := g.child(e, "returning")
+	// Presto, Trino and DuckDB rewrite a multi-table DELETE (dropping the
+	// joins, or turning them into a comma list), which this port does not.
+	if g.dialect == "presto" || g.dialect == "trino" || g.dialect == "duckdb" {
+		if target, _ := e.Args["this"].(*Expression); target != nil && target.Args["joins"] != nil {
+			return g.fail(e.Class + " over a join, which this dialect rewrites")
+		}
+		if using, _ := e.Args["using"].([]*Expression); len(using) > 0 && using[0].Args["joins"] != nil {
+			return g.fail(e.Class + " USING a join, which this dialect rewrites")
+		}
+		if tables, _ := e.Args["tables"].([]*Expression); len(tables) > 0 {
+			return g.fail(e.Class + " naming its tables, which this dialect rewrites")
+		}
+	}
 	order := g.child(e, "order")
 	limit := g.child(e, "limit")
 	verb := g.withPrefix(e, "DELETE"+tablesWord)
@@ -8047,3 +8065,20 @@ func (g *generator) writeMatchAgainst(e *Expression) string {
 	}
 	return "MATCH(" + strings.Join(parts, ", ") + ") AGAINST(" + g.child(e, "this") + modifier + ")"
 }
+
+func (g *generator) writeRenameIndex(e *Expression) string {
+	return "RENAME INDEX " + g.child(e, "this") + " TO " + g.child(e, "to")
+}
+
+func (g *generator) writeAlterIndex(e *Expression) string {
+	out := "ALTER INDEX " + g.child(e, "this")
+	if visible, said := e.Args["visible"].(bool); said {
+		if visible {
+			return out + " VISIBLE"
+		}
+		return out + " INVISIBLE"
+	}
+	return out
+}
+
+func (g *generator) writeDropPrimaryKey(*Expression) string { return "DROP PRIMARY KEY" }

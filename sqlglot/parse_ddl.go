@@ -1885,6 +1885,29 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			return p.parseAddPartition(exists)
 		}
 		return p.parseAddedColumn(exists)
+	case p.at(TokDROP) && p.dialect == "mysql" && p.next() != nil && p.next().Type == TokPRIMARY_KEY:
+		p.advance()
+		p.advance()
+		return New("DropPrimaryKey"), nil
+	case p.at(TokDROP) && p.dialect == "mysql" && p.next() != nil &&
+		(strings.EqualFold(p.next().Text, "INDEX") || strings.EqualFold(p.next().Text, "FOREIGN KEY")):
+		p.advance()
+		kind := strings.ToUpper(p.curr().Text)
+		p.advance()
+		name, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		return New("Drop",
+			Arg{"exists", false},
+			Arg{"tables", []*Expression{name}},
+			Arg{"kind", kind},
+			Arg{"temporary", false}, Arg{"materialized", false},
+			Arg{"cascade", false}, Arg{"restrict", false},
+			Arg{"constraints", false}, Arg{"purge", false},
+			Arg{"concurrently", false},
+			Arg{"sync", false}, Arg{"iceberg", false}, Arg{"force", false},
+		), nil
 	case p.at(TokDROP):
 		p.advance()
 		constraint := false
@@ -1956,6 +1979,20 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			Arg{"cluster", nil}, Arg{"concurrently", false},
 			Arg{"sync", false}, Arg{"iceberg", false}, Arg{"force", false},
 		), nil
+	case p.dialect == "mysql" && p.atWords("RENAME") && p.next() != nil &&
+		(strings.EqualFold(p.next().Text, "INDEX") || strings.EqualFold(p.next().Text, "KEY")):
+		p.advance()
+		p.advance()
+		from, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		p.matchUnquotedWord("TO")
+		to, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		return New("RenameIndex", Arg{"this", from}, Arg{"to", to}), nil
 	case p.atWords("RENAME", "TO"):
 		p.advance()
 		p.advance()
@@ -1987,6 +2024,23 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 		}
 		return New("RenameColumn",
 			Arg{"this", from}, Arg{"to", to}, Arg{"exists", exists}), nil
+	case p.at(TokALTER) && p.dialect == "mysql" && p.next() != nil && strings.EqualFold(p.next().Text, "INDEX"):
+		p.advance()
+		p.advance()
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		node := New("AlterIndex", Arg{"this", name})
+		switch {
+		case p.matchUnquotedWord("VISIBLE"):
+			node.Set("visible", true)
+		case p.matchUnquotedWord("INVISIBLE"):
+			node.Set("visible", false)
+		default:
+			return nil, p.unsupported("ALTER INDEX without VISIBLE or INVISIBLE")
+		}
+		return node, nil
 	case p.at(TokALTER):
 		p.advance()
 		// A handful of words name Redshift's own shape rather than a
@@ -2179,6 +2233,12 @@ func (p *parser) parseAlterCollation() (*Expression, error) {
 }
 
 func (p *parser) parseAlteredColumn() (*Expression, error) {
+	// `ALTER INDEX i` is an index action in the dialects that read it, and a
+	// column called INDEX nowhere the reference agrees with -- so the bare
+	// word is not taken for a column name here.
+	if p.dialect != "mysql" && p.atWords("INDEX") && p.next() != nil && p.next().Type != TokDROP {
+		return nil, p.unsupported("ALTER INDEX in this dialect")
+	}
 	name, err := p.parseIdentifier()
 	if err != nil {
 		return nil, err

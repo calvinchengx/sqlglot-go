@@ -65,6 +65,24 @@ func (p *parser) parseUpdate() (*Expression, error) {
 	if err := p.readReturning(node); err != nil {
 		return nil, err
 	}
+	// MySQL's single-table UPDATE may order and cap the rows it changes.
+	if p.at(TokORDER_BY) {
+		p.advance()
+		ordered, err := p.parseOrderedList()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("order", New("Order", Arg{"expressions", ordered}))
+	}
+	if p.at(TokLIMIT) {
+		p.advance()
+		count, err := p.parseLimitCount()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("limit", New("Limit", Arg{"this", nil}, Arg{"expression", count},
+			Arg{"limit_options", p.parseLimitOptions()}, Arg{"expressions", nil}))
+	}
 	if p.at(TokOPTION) {
 		options, err := p.parseQueryHintOptions()
 		if err != nil {
@@ -208,6 +226,14 @@ func (p *parser) parseDelete() (*Expression, error) {
 	table, err := p.parseTable()
 	if err != nil {
 		return nil, err
+	}
+	// The target may itself be joined -- `DELETE t1 FROM t1 LEFT JOIN t2 ...`.
+	joins, err := p.parseJoins()
+	if err != nil {
+		return nil, err
+	}
+	if len(joins) > 0 {
+		table.Set("joins", joins)
 	}
 
 	node := New("Delete")
