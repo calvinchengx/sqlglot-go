@@ -426,9 +426,6 @@ func TestMatchAgainst(t *testing.T) {
 	// template to write a modifier back with.
 	for _, s := range []string{
 		"SELECT MATCH(TABLE t) AGAINST('x')",
-		"SELECT MATCH(a) AGAINST('x' IN NATURAL LANGUAGE MODE)",
-		"SELECT MATCH(a) AGAINST('x' IN BOOLEAN MODE)",
-		"SELECT MATCH(a) AGAINST('x' WITH QUERY EXPANSION)",
 		// One malformed input per place a sub-parser is called.
 		"SELECT MATCH(a",
 		"SELECT MATCH(a)",

@@ -76,7 +76,7 @@ Regenerate with `make service`; nothing in it is authored here.
 | presto | 596/596 | 582 | 596 | 14 | 0 |
 | trino | 253/253 | 247 | 253 | 6 | 0 |
 | dremio | 61/61 | 54 | 61 | 7 | 0 |
-| mysql | 638/638 | 573 | 638 | 65 | 0 |
+| mysql | 638/638 | 590 | 638 | 48 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number

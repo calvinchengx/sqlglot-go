@@ -716,16 +716,40 @@ func (p *parser) parseMatchAgainst() (*Expression, error) {
 		return nil, p.unsupported("AGAINST without a string")
 	}
 	p.advance()
-	if p.atWords("IN", "NATURAL", "LANGUAGE", "MODE") ||
-		p.atWords("IN", "BOOLEAN", "MODE") || p.atWords("WITH", "QUERY", "EXPANSION") {
-		return nil, p.unsupported("AGAINST with a modifier")
+	modifier := ""
+	switch {
+	case p.atWords("IN", "NATURAL", "LANGUAGE", "MODE"):
+		for range 4 {
+			p.advance()
+		}
+		modifier = "IN NATURAL LANGUAGE MODE"
+		if p.atWords("WITH", "QUERY", "EXPANSION") {
+			for range 3 {
+				p.advance()
+			}
+			modifier += " WITH QUERY EXPANSION"
+		}
+	case p.atWords("IN", "BOOLEAN", "MODE"):
+		for range 3 {
+			p.advance()
+		}
+		modifier = "IN BOOLEAN MODE"
+	case p.atWords("WITH", "QUERY", "EXPANSION"):
+		for range 3 {
+			p.advance()
+		}
+		modifier = "WITH QUERY EXPANSION"
 	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed AGAINST")
 	}
-	return New("MatchAgainst",
+	node := New("MatchAgainst",
 		Arg{"this", New("Literal", Arg{"this", term.Text}, Arg{"is_string", true})},
-		Arg{"expressions", columns}), nil
+		Arg{"expressions", columns})
+	if modifier != "" {
+		node.Set("modifier", modifier)
+	}
+	return node, nil
 }
 
 // atNullHandling reports the `NULL ON NULL` / `ABSENT ON NULL` clause, which

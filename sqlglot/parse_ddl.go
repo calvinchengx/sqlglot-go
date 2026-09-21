@@ -727,6 +727,11 @@ func queryWriteSlot(n *Expression) bool {
 func (p *parser) parseInsert() (*Expression, error) {
 	p.advance() // INSERT
 
+	ignore := false
+	if p.dialect == "mysql" && p.atWords("IGNORE") {
+		p.advance()
+		ignore = true
+	}
 	overwrite := false
 	if p.atWords("OVERWRITE") {
 		p.advance()
@@ -927,7 +932,7 @@ func (p *parser) parseInsert() (*Expression, error) {
 		Arg{"expression", expression},
 		Arg{"conflict", conflict}, Arg{"returning", returning},
 		Arg{"overwrite", overwrite}, Arg{"alternative", nil},
-		Arg{"ignore", false}, Arg{"source", false},
+		Arg{"ignore", ignore}, Arg{"source", false},
 	), nil
 }
 
@@ -1293,6 +1298,25 @@ func (p *parser) parseIndexOptions() ([]*Expression, error) {
 // dropping it would lose.
 func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 	var out []*Expression
+	// MySQL's `b INT AS (a + a) [STORED|VIRTUAL]` is a computed column,
+	// ahead of any other constraint.
+	if p.dialect == "mysql" && p.at(TokALIAS) && p.next() != nil && p.next().Type == TokL_PAREN {
+		p.advance()
+		expression, err := p.parseDisjunction()
+		if err != nil {
+			return nil, err
+		}
+		computed := New("ComputedColumnConstraint", Arg{"this", expression})
+		if p.atWords("STORED") || p.atWords("VIRTUAL") {
+			if strings.EqualFold(p.curr().Text, "STORED") {
+				computed.Set("persisted", true)
+			} else {
+				computed.Set("persisted", false)
+			}
+			p.advance()
+		}
+		out = append(out, New("ColumnConstraint", Arg{"kind", computed}))
+	}
 	for {
 		var kind *Expression
 		switch {
@@ -3354,7 +3378,7 @@ func (p *parser) parseGenerated() (*Expression, error) {
 		if !p.match(TokR_PAREN) {
 			return nil, p.unsupported("unclosed generated expression")
 		}
-		if p.atWords("STORED") || p.atWords("VIRTUAL") {
+		if p.atWords("STORED") || (p.atWords("VIRTUAL") && p.dialect == "mysql") {
 			// Only some dialects' own override records WHICH of the two was
 			// written -- MySQL's does, PostgreSQL's does not, having no
 			// VIRTUAL to tell STORED apart from in the first place.

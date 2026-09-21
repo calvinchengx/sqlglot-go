@@ -48,6 +48,8 @@ func init() {
 		"TsOrDsToDate":                        (*generator).writeTsOrDsToDate,
 		"TimeToStr":                           (*generator).writeTimeToStr,
 		"Show":                                (*generator).writeShow,
+		"Introducer":                          (*generator).writeIntroducer,
+		"MatchAgainst":                        (*generator).writeMatchAgainst,
 		"AnalyzeWith":                         (*generator).writeAnalyzeWith,
 		"UsingData":                           (*generator).writeUsingData,
 		"AnalyzeColumns":                      (*generator).writeAnalyzeColumns,
@@ -4449,7 +4451,11 @@ func (g *generator) writePartitionedBySchema(items []*Expression) string {
 
 // writeInsert writes `INSERT [OVERWRITE] INTO <target> <values-or-query>`.
 func (g *generator) writeInsert(e *Expression) string {
-	out := g.withPrefix(e, "INSERT") + " "
+	insertWord := "INSERT"
+	if ignore, _ := e.Args["ignore"].(bool); ignore {
+		insertWord += " IGNORE"
+	}
+	out := g.withPrefix(e, insertWord) + " "
 	// What is written may not be a table at all: a DIRECTORY names the files
 	// and says so itself, so neither word belongs in front of it.
 	into, _ := e.Args["this"].(*Expression)
@@ -4810,6 +4816,22 @@ func (g *generator) writeConstraint(e *Expression) string {
 // spelling is the dialect's whole answer -- PostgreSQL keeps the words
 // GENERATED ALWAYS and STORED, and the neutral dialect writes only `AS x`.
 func (g *generator) writeComputedConstraint(e *Expression) string {
+	// MySQL writes the generated column with the expression unwrapped from
+	// any parentheses it was read with, and always says STORED or VIRTUAL.
+	if g.dialect == "mysql" {
+		this, _ := e.Args["this"].(*Expression)
+		for this != nil && this.Class == "Paren" {
+			this, _ = this.Args["this"].(*Expression)
+		}
+		if this == nil {
+			return g.fail(e.Class + " with no expression")
+		}
+		word := "VIRTUAL"
+		if persisted, _ := e.Args["persisted"].(bool); persisted {
+			word = "STORED"
+		}
+		return "GENERATED ALWAYS AS (" + g.node(this) + ") " + word
+	}
 	spelling := g.tables.ComputedColumnSpelling
 	if spelling == "" {
 		return g.fail(e.Class + ", which this dialect writes another way")
@@ -8000,4 +8022,28 @@ func (g *generator) writeUsingData(e *Expression) string {
 func (g *generator) writeAnalyzeColumns(e *Expression) string {
 	this, _ := e.Args["this"].(string)
 	return this
+}
+
+func (g *generator) writeIntroducer(e *Expression) string {
+	this, _ := e.Args["this"].(string)
+	return this + " " + g.child(e, "expression")
+}
+
+func (g *generator) writeMatchAgainst(e *Expression) string {
+	if g.dialect != "mysql" {
+		if m, _ := e.Args["modifier"].(string); m != "" {
+			return g.fail(e.Class + " with a modifier, which this dialect does not write")
+		}
+		return g.spell(e)
+	}
+	columns, _ := e.Args["expressions"].([]*Expression)
+	parts := make([]string, 0, len(columns))
+	for _, c := range columns {
+		parts = append(parts, g.node(c))
+	}
+	modifier := ""
+	if m, _ := e.Args["modifier"].(string); m != "" {
+		modifier = " " + m
+	}
+	return "MATCH(" + strings.Join(parts, ", ") + ") AGAINST(" + g.child(e, "this") + modifier + ")"
 }

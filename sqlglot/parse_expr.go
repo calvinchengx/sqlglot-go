@@ -155,6 +155,21 @@ func (p *parser) parseRange() (*Expression, error) {
 		// tests. The first is exactly `IS NULL`; the second is a NEGATED Is
 		// in the dialect that keeps one and a Not around an Is in the
 		// dialects that normalise it -- one word, two trees.
+		case p.dialect == "mysql" && p.atWords("SOUNDS", "LIKE"):
+			// `a SOUNDS LIKE b` is SOUNDEX(a) = SOUNDEX(b); MySQL evaluates = and
+			// IS left to right, so a following IS keeps the comparison whole.
+			p.advance()
+			p.advance()
+			var right *Expression
+			right, err = p.parseBitwise()
+			if err == nil {
+				this = New("EQ",
+					Arg{"this", New("Soundex", Arg{"this", this})},
+					Arg{"expression", New("Soundex", Arg{"this", right})})
+				if p.at(TokIS) {
+					this = New("Paren", Arg{"this", this})
+				}
+			}
 		case c.Type == TokISNULL:
 			p.advance()
 			this = New("Is", Arg{"this", this}, Arg{"expression", New("Null")})
@@ -1073,6 +1088,16 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return nil, p.unsupported("expression")
 	}
 
+	// MySQL's `_utf8mb4 'text'`: a character set introducer in front of a literal.
+	if c.Type == TokINTRODUCER {
+		p.advance()
+		literal, err := p.parsePrimary()
+		if err != nil {
+			return nil, err
+		}
+		return New("Introducer", Arg{"this", c.Text}, Arg{"expression", literal}), nil
+	}
+
 	if c.Type == TokINTERVAL {
 		// Nothing back means INTERVAL was a NAME rather than a quantity, and
 		// the index is where it was; the identifier rules below read it.
@@ -1854,6 +1879,30 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 	to, err := p.parseCollatedDataType()
 	if err != nil {
 		return nil, err
+	}
+	// `CAST(x AS CHAR CHARACTER SET latin1)` casts to a character set.
+	if kind, _ := to.Args["this"].(DataTypeKind); kind == "CHAR" && p.dialect == "mysql" && (p.at(TokCHARACTER_SET) || p.atWords("CHARACTER", "SET")) {
+		if p.at(TokCHARACTER_SET) {
+			p.advance()
+		} else {
+			p.advance()
+			p.advance()
+		}
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("CHARACTER SET without a name")
+		}
+		var name *Expression
+		switch c.Type {
+		case TokSTRING:
+			name = New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
+		case TokIDENTIFIER:
+			return nil, p.unsupported("CHARACTER SET a quoted name")
+		default:
+			name = New("Var", Arg{"this", c.Text})
+		}
+		p.advance()
+		to = New("DataType", Arg{"this", DataTypeKind("CHARACTER_SET")}, Arg{"kind", name})
 	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed CAST")
