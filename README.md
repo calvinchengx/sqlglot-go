@@ -70,7 +70,7 @@ Regenerate with `make service`; nothing in it is authored here.
 | duckdb | 1631/1631 | 1629 | 1631 | 2 | 0 |
 | databricks | 426/426 | 426 | 426 | 0 | 0 |
 | redshift | 307/307 | 287 | 307 | 20 | 0 |
-| materialize | 51/51 | 44 | 51 | 7 | 0 |
+| materialize | 51/51 | 50 | 51 | 1 | 0 |
 | risingwave | 14/14 | 12 | 14 | 2 | 0 |
 | fabric | 47/47 | 47 | 47 | 0 | 0 |
 | presto | 596/596 | 587 | 596 | 9 | 0 |

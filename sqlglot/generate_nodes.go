@@ -1605,6 +1605,11 @@ func (g *generator) writeCast(e *Expression) string {
 				return "TIMESTAMP(" + g.child(e, "this") + ")"
 			}
 			if mapped, ok := mysqlCastMapping[string(kind)]; ok {
+				// The mapping renames the type and keeps what it carries:
+				// VARCHAR(3) casts as CHAR(3).
+				if params := g.list(to); params != "" {
+					mapped += "(" + params + ")"
+				}
 				return word + "(" + g.child(e, "this") + " AS " + mapped + ")"
 			}
 		}
@@ -1974,6 +1979,15 @@ func (g *generator) writeDataType(e *Expression) string {
 			return out
 		}
 		return out + "(" + params + ")"
+	}
+	// Materialize writes a list of T after its member, `INT LIST`.
+	if kind == "LIST" && g.dialect == "materialize" {
+		return params + " LIST"
+	}
+	// A dialect whose composite spellings were never probed has none to
+	// write, and writing the parts run together is not one.
+	if g.tables.CompositeType.StructOpen == "" || g.tables.CompositeType.ArrayTemplate == "" {
+		return g.fail("a nested " + string(kind) + " type in a dialect with no spelling for one")
 	}
 	// An ARRAY is the one nested type that does not wrap its name around its
 	// member -- DuckDB suffixes brackets to the member itself -- so it takes a

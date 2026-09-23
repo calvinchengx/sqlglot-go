@@ -1935,7 +1935,104 @@ func (p *parser) parseDataType() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	return p.parseArraySuffix(dt)
+	// Materialize's `INT LIST LIST` -- a list of lists of integers -- is read
+	// by the base parser, so in every dialect, right after the base type and
+	// before any array suffix.
+	for p.at(TokLIST) {
+		p.advance()
+		dt = New("DataType",
+			Arg{"this", DataTypeKind("LIST")},
+			Arg{"expressions", []*Expression{dt}},
+			Arg{"nested", true})
+	}
+	dt, err = p.parseArraySuffix(dt)
+	if err != nil {
+		return nil, err
+	}
+	p.convertType(dt)
+	// Spark reads a cast to CHAR(n) or VARCHAR(n) as a cast to STRING, and
+	// the reference drops the length everywhere but a column's definition,
+	// members of a nested type included.
+	if p.dialect == "databricks" && !p.inColumnType {
+		dt.Walk(func(n *Expression) bool {
+			if n.Class != "DataType" {
+				return true
+			}
+			if k, _ := n.Args["this"].(DataTypeKind); k == "CHAR" || k == "VARCHAR" {
+				n.Set("this", DataTypeKind("TEXT"))
+				n.Set("expressions", nil)
+			}
+			return true
+		})
+	}
+	return dt, nil
+}
+
+// convertType is the reference's TYPE_CONVERTERS, applied as it applies
+// them: to the OUTERMOST type read, after any LIST or array suffix, so the
+// member of `VARCHAR(3)[]` keeps its length where a bare `VARCHAR(3)` does
+// not.
+func (p *parser) convertType(dt *Expression) {
+	if dt == nil || dt.Class != "DataType" {
+		return
+	}
+	kind, _ := dt.Args["this"].(DataTypeKind)
+	if nested, _ := dt.Args["nested"].(bool); nested {
+		return
+	}
+	params, _ := dt.Args["expressions"].([]*Expression)
+	switch {
+	// DuckDB reads every text type as TEXT and drops the length, so
+	// `VARCHAR(5)` is a bare TEXT. Keeping the 5 sent the engine a
+	// different CAST than the Python executor sent.
+	case len(params) > 0 && p.tables.DropsTypeParams[string(kind)]:
+		dt.Set("expressions", nil)
+	// A bare type that this dialect reads as parameterised. DuckDB's
+	// `numeric` is DECIMAL(18, 3), and leaving it bare sent the engine a
+	// different CAST from the one the Python executor sends -- on a
+	// division, a different number rather than a different spelling.
+	case len(params) == 0 && len(p.tables.DefaultTypeParams[string(kind)]) > 0:
+		defaults := p.tables.DefaultTypeParams[string(kind)]
+		params := make([]*Expression, 0, len(defaults))
+		for _, v := range defaults {
+			params = append(params, New("DataTypeParam",
+				Arg{"this", New("Literal", Arg{"this", v}, Arg{"is_string", false})}))
+		}
+		// Right after the kind, where the reference's freshly built node
+		// has it, not after `nested`.
+		dt.Set("expressions", params)
+		keys := []string{"this", "expressions"}
+		for _, k := range dt.Keys {
+			if k != "this" && k != "expressions" {
+				keys = append(keys, k)
+			}
+		}
+		dt.Keys = keys
+	}
+}
+
+// parseBracketedMapType reads Materialize's `MAP[TEXT => INT]`, which the
+// base parser reads in every dialect whose `[` is a bracket. Anything else
+// after the bracket is not this type (nil), and the tokens are left as they
+// were.
+func (p *parser) parseBracketedMapType() *Expression {
+	start := p.index
+	p.advance() // MAP
+	p.advance() // [
+	key, err := p.parseDataType()
+	if err != nil || !p.match(TokFARROW) {
+		p.index = start
+		return nil
+	}
+	value, err := p.parseDataType()
+	if err != nil || !p.match(TokR_BRACKET) {
+		p.index = start
+		return nil
+	}
+	return New("DataType",
+		Arg{"this", DataTypeKind("MAP")},
+		Arg{"expressions", []*Expression{key, value}},
+		Arg{"nested", true})
 }
 
 // parseCollatedDataType reads a type that may name the COLLATION its values
@@ -2068,6 +2165,11 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 		}
 		return nil, p.unsupported("type " + c.Text)
 	}
+	if c.Type == TokMAP && p.next() != nil && p.next().Type == TokL_BRACKET {
+		if dt := p.parseBracketedMapType(); dt != nil {
+			return dt, nil
+		}
+	}
 	// INTERVAL as a type carries a UNIT, and the DataType's `this` is an
 	// Interval node rather than a type name -- `CAST(x AS INTERVAL DAY)` is
 	// DataType(Interval(unit=Var(DAY))). A word that is not a unit means
@@ -2145,23 +2247,6 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 		}
 		if !p.match(close) {
 			return nil, p.unsupported("unclosed type parameters")
-		}
-		// A dialect may discard them: DuckDB reads every text type as TEXT
-		// and drops the length, so `VARCHAR(5)` is a bare TEXT. Keeping the 5
-		// sent the engine a different CAST than the Python executor sent. Only
-		// sizes are dropped -- a nested type's members are the type.
-		if nested || !p.tables.DropsTypeParams[kind] {
-			dt.Set("expressions", params)
-		}
-	} else if defaults := p.tables.DefaultTypeParams[kind]; len(defaults) > 0 {
-		// A bare type that this dialect reads as parameterised. DuckDB's
-		// `numeric` is DECIMAL(18, 3), and leaving it bare sent the engine a
-		// different CAST from the one the Python executor sends -- on a
-		// division, a different number rather than a different spelling.
-		params := make([]*Expression, 0, len(defaults))
-		for _, v := range defaults {
-			params = append(params, New("DataTypeParam",
-				Arg{"this", New("Literal", Arg{"this", v}, Arg{"is_string", false})}))
 		}
 		dt.Set("expressions", params)
 	}

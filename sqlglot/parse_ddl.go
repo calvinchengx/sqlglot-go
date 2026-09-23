@@ -3017,7 +3017,12 @@ func (p *parser) parseFunctionParam() (*Expression, error) {
 	// A parameter's type may be introduced by AS -- `@v1 AS INTEGER` -- which
 	// the reference matches and drops: the word is not part of the tree.
 	p.match(TokALIAS)
+	// A parameter is read as a column definition, so its type is a
+	// schema's: Databricks keeps VARCHAR(3) here where a cast drops the 3.
+	was := p.inColumnType
+	p.inColumnType = true
 	kind, err := p.parseDataType()
+	p.inColumnType = was
 	if err != nil {
 		return nil, err
 	}

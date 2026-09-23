@@ -4012,9 +4012,13 @@ def composite_type_sql(dialect: str) -> dict[str, str]:
 
     def to(sql: str) -> str:
         # Parsed as DuckDB, which spells every one of these forms, and written
-        # in the dialect under test.
-        written = sqlglot.parse_one(sql, read="duckdb").sql(dialect=d)
-        return written[written.index(" AS ") + 4 : -1]
+        # in the dialect under test -- as a COLUMN's type rather than a
+        # cast's, because a cast may rename the scalar (MySQL casts to
+        # SIGNED, not INT) where a column never does, and the templates are
+        # for the type itself. Everywhere else the two agree.
+        type_sql = sql[len("CAST(x AS ") : -1]
+        written = sqlglot.parse_one(f"CREATE TABLE t (x {type_sql})", read="duckdb").sql(dialect=d)
+        return written[len("CREATE TABLE t (x ") : -1]
 
     inner = to("CAST(x AS INT)")
     result: dict[str, str] = {}
@@ -7507,7 +7511,17 @@ def main() -> int:
                 rendered = node.sql(dialect=name or None)
             except Exception:  # noqa: BLE001
                 continue
-            head = rendered.split("(")[0]
+            # Only the parameter list the probe added comes off, cut at the
+            # LAST one: T-SQL's TEXT(10) is VARCHAR(MAX)(10), whose own
+            # parentheses are part of the name, and Redshift's zoned types
+            # carry words after the list. A rendering with no list at all is
+            # not a name plus parameters, and is not recorded.
+            # (Fabric caps the precision, so the number that comes back is
+            # not always the 10 that went in.)
+            cut = rendered.rfind("(")
+            if cut < 0 or not re.match(r"\(\d+\)", rendered[cut:]):
+                continue
+            head = rendered[:cut]
             if head and head != types_sql.get(member.value):
                 sized_sql[member.value] = head
         if sized_sql:
