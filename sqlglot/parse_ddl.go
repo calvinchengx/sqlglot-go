@@ -5264,12 +5264,16 @@ func (p *parser) parseInstall() (*Expression, error) {
 // itself emits a Command -- a Command built from a different give-up is a
 // different tree.
 func (p *parser) parseAsCommand(start Token) *Expression {
-	for p.curr() != nil {
-		p.advance()
-	}
+	// The reference reads a statement at a time, cut at each semicolon, so
+	// the text stops there; what follows is another statement, which the
+	// caller refuses.
 	end := start.End
-	if n := len(p.tokens); n > 0 {
-		end = p.tokens[n-1].End
+	if p.index > 0 && p.index <= len(p.tokens) {
+		end = p.tokens[p.index-1].End
+	}
+	for p.curr() != nil && !p.at(TokSEMICOLON) {
+		end = p.curr().End
+		p.advance()
 	}
 	text := sliceRunes(p.sql, start.Start, end+1)
 	size := len(start.Text)
@@ -7234,7 +7238,9 @@ func (p *parser) parseTriggerRest(replace bool, start Token, constraintTrigger b
 	// whichever of the two was written, so `EXECUTE PROCEDURE f()` comes back
 	// as `EXECUTE FUNCTION f()`. Both name the same thing.
 	if !p.match(TokEXECUTE) {
-		return nil, p.unsupported("a trigger with nothing to execute")
+		// The reference reads no trigger without an EXECUTE, and keeps the
+		// statement as text instead: MySQL's `BEGIN ... END` body is one.
+		return p.parseAsCommand(start), nil
 	}
 	if !p.atWords("FUNCTION") && !p.atWords("PROCEDURE") {
 		return nil, p.unsupported("EXECUTE without FUNCTION or PROCEDURE")

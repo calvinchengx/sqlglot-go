@@ -7078,6 +7078,10 @@ func (g *generator) writeMacroOverload(e *Expression) string {
 // writeTriggerProperties writes everything a trigger says about itself: when
 // it fires, on what, over which rows, and what it runs.
 func (g *generator) writeTriggerProperties(e *Expression) string {
+	// DuckDB has no place to say what a trigger is and writes only its name.
+	if g.tables.PropertyLocation["TriggerProperties"] == "UNSUPPORTED" {
+		return g.fail("a trigger in a dialect that cannot place one")
+	}
 	events, _ := e.Args["events"].([]*Expression)
 	names := make([]string, 0, len(events))
 	for _, event := range events {

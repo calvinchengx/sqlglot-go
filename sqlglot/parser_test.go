@@ -345,8 +345,6 @@ func TestRefusals(t *testing.T) {
 			"CREATE TRIGGER t BEFORE INSERT ON x WHEN a > 1 EXECUTE FUNCTION f()", "postgres"},
 		{"an unclosed trigger condition",
 			"CREATE TRIGGER t BEFORE INSERT ON x WHEN (a > 1 EXECUTE FUNCTION f()", "postgres"},
-		{"a trigger that runs nothing", "CREATE TRIGGER t BEFORE INSERT ON x FOR EACH ROW",
-			"postgres"},
 		{"EXECUTE without FUNCTION or PROCEDURE",
 			"CREATE TRIGGER t BEFORE INSERT ON x EXECUTE f()", "postgres"},
 		{"an UPDATE OF that names no column",
