@@ -106,7 +106,6 @@ func TestListMapTypes(t *testing.T) {
 		{"duckdb", "SELECT CAST(x AS MAP [INT => INT])", "SELECT CAST(x AS MAP(INT, INT))"},
 		{"duckdb", "SELECT CAST(x AS INT LIST ARRAY)", "SELECT CAST(x AS LIST(INT)[])"},
 		{"duckdb", "ALTER TABLE t ALTER COLUMN a TYPE VARCHAR(3)", "ALTER TABLE t ALTER COLUMN a SET DATA TYPE TEXT"},
-		{"duckdb", "CREATE FUNCTION f(a VARCHAR(3)) RETURNS VARCHAR(3) RETURN a", "CREATE FUNCTION f(a TEXT) AS a"},
 		{"databricks", "SELECT CAST(LIST[1, 2, 3] AS INT LIST)", "SELECT CAST(LIST(1, 2, 3) AS LIST<INT>)"},
 		{"databricks", "SELECT CAST(NULL AS INT LIST)", "SELECT CAST(NULL AS LIST<INT>)"},
 		{"databricks", "SELECT CAST(NULL AS INT LIST LIST LIST)", "SELECT CAST(NULL AS LIST<LIST<LIST<INT>>>)"},
@@ -282,10 +281,12 @@ func TestListMapTypes(t *testing.T) {
 	} {
 		tree, err := ParseOne(c[1], c[0])
 		if err != nil {
+			t.Errorf("[%s] ParseOne(%q): %v", c[0], c[1], err)
 			continue
 		}
 		got, err := Generate(tree, c[0])
 		if err != nil {
+			t.Errorf("[%s] Generate(%q): %v", c[0], c[1], err)
 			continue
 		}
 		written++
@@ -293,7 +294,18 @@ func TestListMapTypes(t *testing.T) {
 			t.Errorf("[%s] %s\n  want %s\n  got  %s", c[0], c[1], c[2], got)
 		}
 	}
-	if written < 150 {
-		t.Errorf("only %d statements were written back", written)
+	if written != 268 {
+		t.Errorf("wrote %d statements, want 268", written)
+	}
+	// DuckDB writes a function's return type nowhere. Emitting the function
+	// without RETURNS would promise less than the statement did, so the
+	// generator declines.
+	fn := "CREATE FUNCTION f(a VARCHAR(3)) RETURNS VARCHAR(3) RETURN a"
+	tree, err := ParseOne(fn, "duckdb")
+	if err != nil {
+		t.Fatalf("ParseOne(%q): %v", fn, err)
+	}
+	if _, err := Generate(tree, "duckdb"); err == nil {
+		t.Error("DuckDB wrote a function whose RETURNS it cannot place")
 	}
 }

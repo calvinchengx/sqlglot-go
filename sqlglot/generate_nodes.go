@@ -4171,7 +4171,11 @@ func (g *generator) writeCreate(e *Expression) string {
 			switch item.Class {
 			case "WithDataProperty", "SequenceProperties", "TriggerProperties",
 				"OnCommitProperty", "NoPrimaryIndexProperty":
-				out += " " + g.node(item)
+				// An empty spelling is the property omitted, as DuckDB omits
+				// everything a trigger says about itself and writes the name.
+				if text := g.node(item); text != "" {
+					out += " " + text
+				}
 			}
 		}
 	}
@@ -7092,9 +7096,10 @@ func (g *generator) writeMacroOverload(e *Expression) string {
 // writeTriggerProperties writes everything a trigger says about itself: when
 // it fires, on what, over which rows, and what it runs.
 func (g *generator) writeTriggerProperties(e *Expression) string {
-	// DuckDB has no place to say what a trigger is and writes only its name.
+	// DuckDB has no place to say what a trigger is. The reference omits the
+	// properties and writes only the name.
 	if g.tables.PropertyLocation["TriggerProperties"] == "UNSUPPORTED" {
-		return g.fail("a trigger in a dialect that cannot place one")
+		return ""
 	}
 	events, _ := e.Args["events"].([]*Expression)
 	names := make([]string, 0, len(events))

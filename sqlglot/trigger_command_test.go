@@ -3,9 +3,8 @@ package sqlglot
 import "testing"
 
 // A trigger with nothing to EXECUTE is kept as text, as the reference keeps
-// it (MySQL's BEGIN ... END bodies); the Command stops at a semicolon; and
-// DuckDB, which writes only a trigger's name, is declined. Held to the
-// pinned reference: what the port writes must be what it writes.
+// it (MySQL's BEGIN ... END bodies). DuckDB writes only a trigger's name.
+// A semicolon ends the statement, so the text after it is refused.
 func TestTriggerCommands(t *testing.T) {
 	written := 0
 	for _, c := range [][3]string{
@@ -18,7 +17,6 @@ func TestTriggerCommands(t *testing.T) {
 		{"", "CREATE TRIGGER t AFTER INSERT ON u FOR EACH ROW WHEN (a > 1) BEGIN SELECT 1 END", "CREATE TRIGGER t AFTER INSERT ON u FOR EACH ROW WHEN (a > 1) BEGIN SELECT 1 END"},
 		{"", "CREATE TRIGGER t INSTEAD OF INSERT ON u FOR EACH ROW EXECUTE FUNCTION f()", "CREATE TRIGGER t INSTEAD OF INSERT ON u FOR EACH ROW EXECUTE FUNCTION F()"},
 		{"", "CREATE CONSTRAINT TRIGGER t AFTER INSERT ON u FOR EACH ROW BEGIN SELECT 1 END", "CREATE CONSTRAINT TRIGGER t AFTER INSERT ON u FOR EACH ROW BEGIN SELECT 1 END"},
-		{"", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW BEGIN SELECT 1; END", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW BEGIN SELECT 1"},
 		{"", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW FOLLOWS x SET a = 1", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW FOLLOWS x SET a = 1"},
 		{"", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW -- c\nBEGIN SELECT 1 END", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW -- c\nBEGIN SELECT 1 END"},
 		{"tsql", "CREATE TRIGGER check_age BEFORE INSERT ON users FOR EACH ROW BEGIN SET NEW.created_at = NOW() END", "CREATE TRIGGER check_age BEFORE INSERT ON users FOR EACH ROW BEGIN SET NEW.created_at = NOW() END"},
@@ -30,7 +28,6 @@ func TestTriggerCommands(t *testing.T) {
 		{"tsql", "CREATE TRIGGER t AFTER INSERT ON u FOR EACH ROW WHEN (a > 1) BEGIN SELECT 1 END", "CREATE TRIGGER t AFTER INSERT ON u FOR EACH ROW WHEN (a > 1) BEGIN SELECT 1 END"},
 		{"tsql", "CREATE TRIGGER t INSTEAD OF INSERT ON u FOR EACH ROW EXECUTE FUNCTION f()", "CREATE TRIGGER t INSTEAD OF INSERT ON u FOR EACH ROW EXECUTE FUNCTION F()"},
 		{"tsql", "CREATE CONSTRAINT TRIGGER t AFTER INSERT ON u FOR EACH ROW BEGIN SELECT 1 END", "CREATE CONSTRAINT TRIGGER t AFTER INSERT ON u FOR EACH ROW BEGIN SELECT 1 END"},
-		{"tsql", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW BEGIN SELECT 1; END", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW BEGIN SELECT 1"},
 		{"tsql", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW FOLLOWS x SET a = 1", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW FOLLOWS x SET a = 1"},
 		{"tsql", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW -- c\nBEGIN SELECT 1 END", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW -- c\nBEGIN SELECT 1 END"},
 		{"duckdb", "CREATE TRIGGER check_age BEFORE INSERT ON users FOR EACH ROW BEGIN SET NEW.created_at = NOW() END", "CREATE TRIGGER check_age BEFORE INSERT ON users FOR EACH ROW BEGIN SET NEW.created_at = NOW() END"},
@@ -42,7 +39,6 @@ func TestTriggerCommands(t *testing.T) {
 		{"duckdb", "CREATE TRIGGER t AFTER INSERT ON u FOR EACH ROW WHEN (a > 1) BEGIN SELECT 1 END", "CREATE TRIGGER t AFTER INSERT ON u FOR EACH ROW WHEN (a > 1) BEGIN SELECT 1 END"},
 		{"duckdb", "CREATE TRIGGER t INSTEAD OF INSERT ON u FOR EACH ROW EXECUTE FUNCTION f()", "CREATE TRIGGER t"},
 		{"duckdb", "CREATE CONSTRAINT TRIGGER t AFTER INSERT ON u FOR EACH ROW BEGIN SELECT 1 END", "CREATE CONSTRAINT TRIGGER t AFTER INSERT ON u FOR EACH ROW BEGIN SELECT 1 END"},
-		{"duckdb", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW BEGIN SELECT 1; END", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW BEGIN SELECT 1"},
 		{"duckdb", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW FOLLOWS x SET a = 1", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW FOLLOWS x SET a = 1"},
 		{"duckdb", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW -- c\nBEGIN SELECT 1 END", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW -- c\nBEGIN SELECT 1 END"},
 		{"mysql", "CREATE TRIGGER check_age BEFORE INSERT ON users FOR EACH ROW BEGIN SET NEW.created_at = NOW() END", "CREATE TRIGGER check_age BEFORE INSERT ON users FOR EACH ROW BEGIN SET NEW.created_at = NOW() END"},
@@ -54,16 +50,17 @@ func TestTriggerCommands(t *testing.T) {
 		{"mysql", "CREATE TRIGGER t AFTER INSERT ON u FOR EACH ROW WHEN (a > 1) BEGIN SELECT 1 END", "CREATE TRIGGER t AFTER INSERT ON u FOR EACH ROW WHEN (a > 1) BEGIN SELECT 1 END"},
 		{"mysql", "CREATE TRIGGER t INSTEAD OF INSERT ON u FOR EACH ROW EXECUTE FUNCTION f()", "CREATE TRIGGER t INSTEAD OF INSERT ON u FOR EACH ROW EXECUTE FUNCTION F()"},
 		{"mysql", "CREATE CONSTRAINT TRIGGER t AFTER INSERT ON u FOR EACH ROW BEGIN SELECT 1 END", "CREATE CONSTRAINT TRIGGER t AFTER INSERT ON u FOR EACH ROW BEGIN SELECT 1 END"},
-		{"mysql", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW BEGIN SELECT 1; END", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW BEGIN SELECT 1"},
 		{"mysql", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW FOLLOWS x SET a = 1", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW FOLLOWS x SET a = 1"},
 		{"mysql", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW -- c\nBEGIN SELECT 1 END", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW -- c\nBEGIN SELECT 1 END"},
 	} {
 		tree, err := ParseOne(c[1], c[0])
 		if err != nil {
+			t.Errorf("[%s] ParseOne(%q): %v", c[0], c[1], err)
 			continue
 		}
 		got, err := Generate(tree, c[0])
 		if err != nil {
+			t.Errorf("[%s] Generate(%q): %v", c[0], c[1], err)
 			continue
 		}
 		written++
@@ -71,11 +68,14 @@ func TestTriggerCommands(t *testing.T) {
 			t.Errorf("[%s] %s\n  want %s\n  got  %s", c[0], c[1], c[2], got)
 		}
 	}
-	if written < 20 {
-		t.Errorf("only %d statements were written back", written)
+	if written != 44 {
+		t.Errorf("wrote %d statements, want 44", written)
 	}
 	// The text after a semicolon is another statement.
-	if _, err := ParseOne("CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW BEGIN SELECT 1; END", "mysql"); err == nil {
-		t.Error("read two statements as one")
+	sql := "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW BEGIN SELECT 1; END"
+	for _, dialect := range []string{"", "tsql", "duckdb", "mysql"} {
+		if _, err := ParseOne(sql, dialect); err == nil {
+			t.Errorf("[%s] read two statements as one", dialect)
+		}
 	}
 }
