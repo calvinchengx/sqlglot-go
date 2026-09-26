@@ -1666,6 +1666,25 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			}
 			return New("CurrentDate"), nil
 		}
+		// Redshift's APPROXIMATE is a no-paren parser that retreats. COUNT
+		// (DISTINCT ...) and PERCENTILE_DISC (...) WITHIN GROUP are the two
+		// shapes it keeps; anything else, including `APPROXIMATE AS y`, is a
+		// column of that name. The bare-name retreat cannot see this: COUNT is
+		// reserved, so it does not look like an operand, and the word was read
+		// as a column with the call left over.
+		if upper == "APPROXIMATE" && noParen {
+			approx, ok, err := p.parseApproximate()
+			if err != nil {
+				return nil, err
+			}
+			if ok {
+				return approx, nil
+			}
+			// The parser put the word back. It is a column, including where
+			// what follows could itself begin an expression (`AS`, `+`): the
+			// bare-name test treats that as "still a call" and refuses it.
+			return p.parseColumn()
+		}
 		empty := p.namesAFunctionCall() && p.atEmptyArgList()
 		if noParen && c.Type != TokCASE && !empty && (!hasSpec || !p.namesAFunctionCall()) &&
 			!p.namesItselfNotACall(c) {

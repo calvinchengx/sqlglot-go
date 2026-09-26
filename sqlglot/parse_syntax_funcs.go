@@ -1402,3 +1402,80 @@ func (p *parser) parseMySQLConvert(safe bool) (*Expression, error) {
 	cast.Type = to
 	return cast, nil
 }
+
+// parseApproximate reads Redshift's `APPROXIMATE COUNT(DISTINCT x)` and
+// `APPROXIMATE PERCENTILE_DISC(q) WITHIN GROUP (ORDER BY x)`. The word is
+// still current. A shape it does not own puts the word back and reports
+// that, so the caller can read a column named APPROXIMATE.
+//
+// A distinct list or an ORDER BY of more than one expression is refused.
+// The reference keeps only the first and writes the rest away, which is a
+// different statement.
+func (p *parser) parseApproximate() (*Expression, bool, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, false, nil
+	}
+	if _, invalid := p.tables.InvalidFuncNameTokens[c.Type]; invalid {
+		return nil, false, nil
+	}
+	if p.index > 0 && p.tokens[p.index-1].Type == TokDOT {
+		return nil, false, nil
+	}
+	// `APPROXIMATE(...)` is not this grammar, and neither is a bare word.
+	// The call, when there is one, is the next name.
+	if p.index+2 >= len(p.tokens) || p.tokens[p.index+2].Type != TokL_PAREN {
+		return nil, false, nil
+	}
+	mark := p.index
+	p.advance()
+	fn, err := p.parseFunction()
+	if err != nil {
+		return nil, false, err
+	}
+	if fn != nil && fn.Class == "Count" {
+		distinct, _ := fn.Args["this"].(*Expression)
+		var exprs []*Expression
+		if distinct != nil && distinct.Class == "Distinct" {
+			exprs, _ = distinct.Args["expressions"].([]*Expression)
+		}
+		if len(exprs) == 1 {
+			return New("ApproxDistinct", Arg{"this", exprs[0]}), true, nil
+		}
+		if len(exprs) > 1 {
+			return nil, false, p.unsupported("APPROXIMATE COUNT(DISTINCT ...) with more than one expression")
+		}
+	}
+	if fn != nil && fn.Class == "PercentileDisc" && p.atWords("WITHIN", "GROUP") {
+		p.advance()
+		p.advance()
+		if !p.match(TokL_PAREN) {
+			return nil, false, p.unsupported("WITHIN GROUP without a parenthesised ORDER BY")
+		}
+		if !p.match(TokORDER_BY) {
+			return nil, false, p.unsupported("WITHIN GROUP without ORDER BY")
+		}
+		order, err := p.parseOrder()
+		if err != nil {
+			return nil, false, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, false, p.unsupported("unclosed WITHIN GROUP")
+		}
+		ordered, _ := order.Args["expressions"].([]*Expression)
+		if len(ordered) != 1 {
+			return nil, false, p.unsupported("APPROXIMATE PERCENTILE_DISC with more than one ORDER BY expression")
+		}
+		if _, directed := ordered[0].Args["desc"]; directed {
+			return nil, false, p.unsupported("APPROXIMATE PERCENTILE_DISC whose ORDER BY carries a direction")
+		}
+		col, _ := ordered[0].Args["this"].(*Expression)
+		quantile, _ := fn.Args["this"].(*Expression)
+		if col == nil || quantile == nil {
+			return nil, false, p.unsupported("APPROXIMATE PERCENTILE_DISC")
+		}
+		return New("ApproxQuantile", Arg{"this", col}, Arg{"quantile", quantile}), true, nil
+	}
+	p.index = mark
+	return nil, false, nil
+}
