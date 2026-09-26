@@ -34,6 +34,7 @@ func init() {
 		"InputOutputFormat":                   (*generator).writeInputOutputFormat,
 		"StorageHandlerProperty":              (*generator).writeStorageHandlerProperty,
 		"LockingProperty":                     (*generator).writeLockingProperty,
+		"Lock":                                (*generator).writeLock,
 		"RecursiveWithSearch":                 (*generator).writeRecursiveWithSearch,
 		"Connect":                             (*generator).writeConnect,
 		"JSON":                                (*generator).writeJSON,
@@ -4334,6 +4335,46 @@ func (g *generator) writeLockingProperty(e *Expression) string {
 	}
 	if override, _ := e.Args["override"].(bool); override {
 		out += " OVERRIDE"
+	}
+	return out
+}
+
+// writeLock writes `FOR UPDATE` / `FOR SHARE`, the tables after OF, and
+// NOWAIT, WAIT n, or SKIP LOCKED. A dialect with no Lock spelling refuses:
+// DuckDB drops the clause and still writes the query, which is a different
+// statement. The templates cannot do this either — an absent wait flag
+// compares equal to false, so they would write SKIP LOCKED for a lock that
+// never said it.
+func (g *generator) writeLock(e *Expression) string {
+	if len(g.tables.SyntaxSQL["Lock"]) == 0 {
+		return g.fail("locking reads")
+	}
+	update, _ := e.Args["update"].(bool)
+	out := "FOR SHARE"
+	if update {
+		out = "FOR UPDATE"
+	}
+	if tables, _ := e.Args["expressions"].([]*Expression); len(tables) > 0 {
+		names := make([]string, len(tables))
+		for i, table := range tables {
+			names[i] = g.node(table)
+		}
+		out += " OF " + strings.Join(names, ", ")
+	}
+	switch wait := e.Args["wait"].(type) {
+	case nil:
+	case bool:
+		if wait {
+			out += " NOWAIT"
+		} else {
+			out += " SKIP LOCKED"
+		}
+	case *Expression:
+		if wait != nil {
+			out += " WAIT " + g.node(wait)
+		}
+	default:
+		return g.fail("Lock wait")
 	}
 	return out
 }

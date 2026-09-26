@@ -1304,13 +1304,14 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 				return err
 			}
 		case p.atWords("FOR", "UPDATE"), p.atWords("FOR", "SHARE"):
-			// PostgreSQL's row locking, which the reference keeps as a LIST
-			// of Lock nodes distinguished by a single flag.
-			p.advance()
-			update := p.atWords("UPDATE")
-			p.advance()
+			// PostgreSQL's row locking. Each FOR is its own Lock, so a query
+			// may carry both a share lock and an update lock.
+			lock, err := p.parseRowLock()
+			if err != nil {
+				return err
+			}
 			locks, _ := sel.Args["locks"].([]*Expression)
-			sel.Set("locks", append(locks, New("Lock", Arg{"update", update})))
+			sel.Set("locks", append(locks, lock))
 		case p.at(TokFETCH):
 			fetch, err := p.parseFetch()
 			if err != nil {
@@ -1349,6 +1350,50 @@ func (p *parser) setOnce(node *Expression, key string, value *Expression) error 
 	}
 	node.Set(key, value)
 	return nil
+}
+
+// parseRowLock reads one `FOR UPDATE` or `FOR SHARE`, the tables it names,
+// and whether the read waits. `OF` is a name list, not an alias, so the
+// names stop at the comma. An absent wait is not `SKIP LOCKED`: that word
+// is its own flag, and writing it for a lock that never said it would lock
+// differently from the statement that was read.
+func (p *parser) parseRowLock() (*Expression, error) {
+	p.advance() // FOR
+	update := p.atWords("UPDATE")
+	p.advance()
+	lock := New("Lock", Arg{"update", update})
+	if p.atWords("OF") {
+		p.advance()
+		var tables []*Expression
+		for {
+			table, err := p.parseTableName()
+			if err != nil {
+				return nil, err
+			}
+			tables = append(tables, table)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		lock.Set("expressions", tables)
+	}
+	switch {
+	case p.atWords("NOWAIT"):
+		p.advance()
+		lock.Set("wait", true)
+	case p.atWords("WAIT"):
+		p.advance()
+		e, err := p.parsePrimary()
+		if err != nil {
+			return nil, err
+		}
+		lock.Set("wait", e)
+	case p.atWords("SKIP", "LOCKED"):
+		p.advance()
+		p.advance()
+		lock.Set("wait", false)
+	}
+	return lock, nil
 }
 
 func (p *parser) parseOrder() (*Expression, error) {
