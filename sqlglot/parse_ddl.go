@@ -3569,6 +3569,22 @@ func (p *parser) parseGenerated() (*Expression, error) {
 		case p.atWords("CYCLE"):
 			p.advance()
 			cycle = true
+		case start == nil && p.at(TokNUMBER):
+			// Redshift's positional form, IDENTITY(seed, step): the reference
+			// reads a comma list of numbers where no START WITH came first.
+			// A lone number is the seed with no step.
+			value, err := p.parseBitwise()
+			if err != nil {
+				return nil, err
+			}
+			start = value
+			if p.match(TokCOMMA) {
+				value, err := p.parseBitwise()
+				if err != nil {
+					return nil, err
+				}
+				increment = value
+			}
 		default:
 			return nil, p.unsupported("an IDENTITY option this port does not read")
 		}
