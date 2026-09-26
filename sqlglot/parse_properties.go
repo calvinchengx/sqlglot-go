@@ -50,6 +50,15 @@ func (p *parser) parseTableProperties() ([]*Expression, error) {
 			out = append(out, prop)
 			continue
 		}
+		// DISTKEY and SORTKEY put a wrapped name list in `this`, which the
+		// property probe only records when the list lands in `expressions`,
+		// so the generated table never grew an entry for them.
+		if prop, own, err := p.parseDistOrSortKey(); err != nil {
+			return nil, err
+		} else if own {
+			out = append(out, prop)
+			continue
+		}
 		spec, consumed, ok := p.atProperty()
 		if !ok {
 			return out, nil
@@ -128,6 +137,15 @@ func (p *parser) parseWrappedProperties() ([]*Expression, error) {
 		// records `WITH(SYSTEM_VERSIONING=ON)` as a single property with a
 		// flag saying so, and writes the word back itself.
 		if prop, own, err := p.parseBespokeProperty(true); err != nil {
+			return nil, err
+		} else if own {
+			out = append(out, prop)
+			if !p.match(TokCOMMA) {
+				break
+			}
+			continue
+		}
+		if prop, own, err := p.parseDistOrSortKey(); err != nil {
 			return nil, err
 		} else if own {
 			out = append(out, prop)
@@ -1024,4 +1042,74 @@ func (p *parser) parseCharsetValue() (*Expression, error) {
 	}
 	p.advance()
 	return New("Var", Arg{"this", c.Text}), nil
+}
+
+// parseDistOrSortKey reads Redshift's post-schema distribution and sort
+// clauses: `DISTKEY(c)`, `SORTKEY(a, b)` and `COMPOUND SORTKEY(a, b)`.
+// DISTSTYLE is a generated value property and is left to that table.
+//
+// The name list is identifiers, including a single one, because that is
+// what the reference stores. A sort key's `compound` flag is recorded
+// either way: absent would be a different tree from false.
+func (p *parser) parseDistOrSortKey() (*Expression, bool, error) {
+	switch {
+	case p.atWords("DISTKEY"):
+		p.advance()
+		id, err := p.parseWrappedIdentifier()
+		if err != nil {
+			return nil, true, err
+		}
+		return New("DistKeyProperty", Arg{"this", id}), true, nil
+	case p.atWords("COMPOUND", "SORTKEY"):
+		p.advance()
+		p.advance()
+		ids, err := p.parseWrappedIdentifiers()
+		if err != nil {
+			return nil, true, err
+		}
+		return New("SortKeyProperty", Arg{"this", ids}, Arg{"compound", true}), true, nil
+	case p.atWords("SORTKEY"):
+		p.advance()
+		ids, err := p.parseWrappedIdentifiers()
+		if err != nil {
+			return nil, true, err
+		}
+		return New("SortKeyProperty", Arg{"this", ids}, Arg{"compound", false}), true, nil
+	}
+	return nil, false, nil
+}
+
+func (p *parser) parseWrappedIdentifier() (*Expression, error) {
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("DISTKEY without a list")
+	}
+	id, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed DISTKEY")
+	}
+	return id, nil
+}
+
+func (p *parser) parseWrappedIdentifiers() ([]*Expression, error) {
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("SORTKEY without a list")
+	}
+	var ids []*Expression
+	for {
+		id, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		ids = append(ids, id)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed SORTKEY")
+	}
+	return ids, nil
 }
