@@ -672,6 +672,10 @@ func (p *parser) parseSelect() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	exclude, err := p.parseSelectExclude(&projections)
+	if err != nil {
+		return nil, err
+	}
 
 	sel := New("Select")
 	for _, k := range selectPrefix {
@@ -684,6 +688,9 @@ func (p *parser) parseSelect() (*Expression, error) {
 		sel.Set("distinct", New("Distinct", Arg{"on", distinctOn}))
 	}
 	sel.Set("expressions", projections)
+	if len(exclude) > 0 {
+		sel.Set("exclude", exclude)
+	}
 	if top != nil {
 		sel.Set("limit", top)
 	}
@@ -915,6 +922,97 @@ func (p *parser) parseProjections() ([]*Expression, error) {
 	return out, nil
 }
 
+// parseSelectExclude reads Redshift's select-level EXCLUDE, which names
+// columns the select list drops. Parentheses are optional on the way in
+// and always written on the way out.
+//
+// The word is an implicit alias when nothing that could be a column follows
+// it: `SELECT 1 EXCLUDE` and `SELECT 1 EXCLUDE FROM t` name the column
+// EXCLUDE. A list after it is the clause, and an alias that already ate the
+// word is given back.
+func (p *parser) parseSelectExclude(projections *[]*Expression) ([]*Expression, error) {
+	if p.dialect != "redshift" || projections == nil {
+		return nil, nil
+	}
+	items := *projections
+	aliased := false
+	if n := len(items); n > 0 {
+		last := items[n-1]
+		alias, _ := last.Args["alias"].(*Expression)
+		if last.Class == "Alias" && alias != nil && p.curr() != nil {
+			text, _ := alias.Args["this"].(string)
+			quoted, _ := alias.Args["quoted"].(bool)
+			if !quoted && strings.EqualFold(text, "EXCLUDE") && p.excludeItemAhead() {
+				aliased = true
+			}
+		}
+	}
+	atWord := !aliased && p.atWords("EXCLUDE") && p.excludeItemAheadAt(p.next())
+	if !aliased && !atWord {
+		return nil, nil
+	}
+	if aliased {
+		inner, _ := items[len(items)-1].Args["this"].(*Expression)
+		items[len(items)-1] = inner
+		*projections = items
+	} else {
+		p.advance()
+	}
+	return p.parseExcludeColumns()
+}
+
+// excludeItemAhead reports whether the current token can start an EXCLUDE
+// column. A clause keyword cannot: that is how `EXCLUDE FROM t` stays an alias.
+func (p *parser) excludeItemAhead() bool {
+	return p.excludeItemAheadAt(p.curr())
+}
+
+func (p *parser) excludeItemAheadAt(c *Token) bool {
+	if c == nil {
+		return false
+	}
+	switch c.Type {
+	case TokL_PAREN:
+		return true
+	case TokFROM, TokWHERE, TokGROUP_BY, TokHAVING, TokORDER_BY, TokLIMIT,
+		TokOFFSET, TokUNION, TokEXCEPT, TokINTERSECT, TokWINDOW, TokQUALIFY,
+		TokSEMICOLON, TokCOMMA, TokR_PAREN, TokCONNECT_BY, TokFETCH:
+		return false
+	}
+	return c.Type == TokVAR || c.Type == TokIDENTIFIER || c.Type == TokNUMBER ||
+		c.Type == TokSTRING || c.Type == TokSTAR
+}
+
+// parseExcludeColumns reads the names after EXCLUDE, wrapped or not. An empty
+// list is refused: the reference drops a bare EXCLUDE, and that is a different
+// statement from the one that was written.
+func (p *parser) parseExcludeColumns() ([]*Expression, error) {
+	wrapped := p.match(TokL_PAREN)
+	var cols []*Expression
+	for {
+		if wrapped && p.at(TokR_PAREN) {
+			break
+		}
+		if !wrapped && !p.excludeItemAhead() {
+			break
+		}
+		col, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		cols = append(cols, col)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if wrapped && !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed EXCLUDE")
+	}
+	if len(cols) == 0 {
+		return nil, p.unsupported("EXCLUDE without a column")
+	}
+	return cols, nil
+}
 func (p *parser) parseProjection() (*Expression, error) {
 	// DuckDB names a projection in FRONT of it: `SELECT foo: 1` is
 	// `SELECT 1 AS foo`. Claimed only when a NAME is followed by the colon,

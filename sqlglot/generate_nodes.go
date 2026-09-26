@@ -474,6 +474,15 @@ func (g *generator) writeSelect(e *Expression) string {
 	}
 
 	add(g.list(e))
+	// Redshift drops named columns from the select list with EXCLUDE. The
+	// parentheses are always written, whether or not they were read.
+	if cols, _ := e.Args["exclude"].([]*Expression); len(cols) > 0 {
+		names := make([]string, len(cols))
+		for i, col := range cols {
+			names[i] = g.node(col)
+		}
+		add("EXCLUDE (" + strings.Join(names, ", ") + ")")
+	}
 	add(g.child(e, "into"))
 	add(g.child(e, "from_"))
 
