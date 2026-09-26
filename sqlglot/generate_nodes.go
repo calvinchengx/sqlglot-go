@@ -952,11 +952,6 @@ func (g *generator) writeGroup(e *Expression) string {
 	// joiner trims it back off; the statement-level PIVOT template does not,
 	// and without it wrote `USING SUM(x)GROUP BY y`.
 	//
-	// `GROUP BY ALL` is carried as a flag, so the expression list is empty and
-	// writing it alone produced a bare "GROUP BY".
-	if all, _ := e.Args["all"].(bool); all {
-		return " GROUP BY ALL"
-	}
 	// The plain columns first, then each grouping in the order the reference
 	// writes them, whatever order they were written in.
 	parts := []string{}
@@ -968,6 +963,19 @@ func (g *generator) writeGroup(e *Expression) string {
 		for _, item := range items {
 			parts = append(parts, g.node(item))
 		}
+	}
+	// ALL and DISTINCT are a prefix. Either can stand alone, and either can
+	// stand in front of CUBE / ROLLUP. An absent flag is neither word.
+	all, flagged := e.Args["all"].(bool)
+	switch {
+	case flagged && all && len(parts) == 0:
+		return " GROUP BY ALL"
+	case flagged && all:
+		return " GROUP BY ALL " + strings.Join(parts, ", ")
+	case flagged && len(parts) == 0:
+		return " GROUP BY DISTINCT"
+	case flagged:
+		return " GROUP BY DISTINCT " + strings.Join(parts, ", ")
 	}
 	if len(parts) == 0 {
 		return g.fail("GROUP BY with nothing to group by")

@@ -1013,6 +1013,96 @@ func (p *parser) parseExcludeColumns() ([]*Expression, error) {
 	}
 	return cols, nil
 }
+
+// parseGroup reads the list after GROUP BY. ALL and DISTINCT are flags, and
+// they do not end the clause: `GROUP BY ALL CUBE (a)` groups by the cube as
+// well. CUBE, ROLLUP and GROUPING SETS need no comma between them. The
+// expression list is touched first, even when a construct comes before any
+// column, because that is the order the reference records the keys.
+func (p *parser) parseGroup() (*Expression, error) {
+	group := New("Group")
+	switch {
+	case p.at(TokALL):
+		p.advance()
+		group.Set("all", true)
+	case p.at(TokDISTINCT):
+		p.advance()
+		group.Set("all", false)
+	}
+	if p.groupClauseEnds() {
+		if _, ok := group.Args["all"]; !ok {
+			return nil, p.unsupported("GROUP BY with nothing to group by")
+		}
+		return group, nil
+	}
+
+	// Reserve the column list so a column that appears AFTER a CUBE still
+	// dumps before it. An empty list is not a record.
+	group.Set("expressions", []*Expression{})
+	var plain, sets, cube, rollup []*Expression
+	for {
+		for !p.atGroupConstruct() && !p.groupClauseEnds() {
+			e, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			plain = append(plain, e)
+			if !p.match(TokCOMMA) {
+				break
+			}
+			if p.atGroupConstruct() || p.groupClauseEnds() {
+				break
+			}
+		}
+		if len(plain) > 0 {
+			group.Set("expressions", plain)
+		}
+		var target *[]*Expression
+		var class, key string
+		switch {
+		case p.at(TokGROUPING_SETS):
+			target, class, key = &sets, "GroupingSets", "grouping_sets"
+		case p.at(TokCUBE):
+			target, class, key = &cube, "Cube", "cube"
+		case p.at(TokROLLUP):
+			target, class, key = &rollup, "Rollup", "rollup"
+		default:
+			return group, nil
+		}
+		p.advance()
+		members, err := p.parseParenthesisedList()
+		if err != nil {
+			return nil, err
+		}
+		*target = append(*target, New(class, Arg{"expressions", members}))
+		group.Set(key, *target)
+		p.match(TokCOMMA)
+	}
+}
+
+func (p *parser) atGroupConstruct() bool {
+	return p.at(TokCUBE) || p.at(TokROLLUP) || p.at(TokGROUPING_SETS)
+}
+
+// groupClauseEnds reports whether the token in front of us belongs to the
+// next clause rather than to this GROUP BY.
+func (p *parser) groupClauseEnds() bool {
+	if p.curr() == nil {
+		return true
+	}
+	switch p.curr().Type {
+	case TokWHERE, TokGROUP_BY, TokHAVING, TokORDER_BY, TokCLUSTER_BY,
+		TokDISTRIBUTE_BY, TokSORT_BY, TokLIMIT, TokWINDOW, TokQUALIFY,
+		TokOPTION, TokFETCH, TokOFFSET, TokCONNECT_BY, TokUNION, TokEXCEPT,
+		TokINTERSECT, TokSEMICOLON:
+		return true
+	}
+	return p.atWords("USING", "SAMPLE") || p.atWords("LATERAL", "VIEW") ||
+		p.atWords("START", "WITH") || p.atWords("FOR", "XML") ||
+		p.atWords("FOR", "JSON") || p.atWords("FOR", "BROWSE") ||
+		p.atWords("FOR", "UPDATE") || p.atWords("FOR", "SHARE")
+}
+
 func (p *parser) parseProjection() (*Expression, error) {
 	// DuckDB names a projection in FRONT of it: `SELECT foo: 1` is
 	// `SELECT 1 AS foo`. Claimed only when a NAME is followed by the colon,
@@ -1198,59 +1288,9 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			}
 		case p.at(TokGROUP_BY):
 			p.advance()
-
-			// `GROUP BY ALL` is a flag on Group, not a column named "all".
-			// Parsing it as an expression built a Group over a Column, which
-			// is a different tree for a statement the engine reads as
-			// "group by every non-aggregated column".
-			if p.at(TokALL) {
-				p.advance()
-				if err := p.setOnce(sel, "group", New("Group", Arg{"all", true})); err != nil {
-					return err
-				}
-				continue
-			}
-			// CUBE, ROLLUP and GROUPING SETS look like calls but land on
-			// their OWN args of Group rather than in its expression list,
-			// and any of them may sit beside plain columns.
-			var plain, sets, cube, rollup []*Expression
-			for {
-				var target *[]*Expression
-				var class string
-				switch {
-				case p.at(TokGROUPING_SETS):
-					target, class = &sets, "GroupingSets"
-				case p.at(TokCUBE):
-					target, class = &cube, "Cube"
-				case p.at(TokROLLUP):
-					target, class = &rollup, "Rollup"
-				}
-				if target != nil {
-					p.advance()
-					members, err := p.parseParenthesisedList()
-					if err != nil {
-						return err
-					}
-					*target = append(*target, New(class, Arg{"expressions", members}))
-				} else {
-					e, err := p.parseExpression()
-					if err != nil {
-						return err
-					}
-					plain = append(plain, e)
-				}
-				if !p.match(TokCOMMA) {
-					break
-				}
-			}
-			group := New("Group", Arg{"expressions", plain})
-			for _, pair := range []struct {
-				key  string
-				list []*Expression
-			}{{"grouping_sets", sets}, {"cube", cube}, {"rollup", rollup}} {
-				if len(pair.list) > 0 {
-					group.Set(pair.key, pair.list)
-				}
+			group, err := p.parseGroup()
+			if err != nil {
+				return err
 			}
 			if err := p.setOnce(sel, "group", group); err != nil {
 				return err
