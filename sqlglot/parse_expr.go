@@ -1685,6 +1685,16 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			// bare-name test treats that as "still a call" and refuses it.
 			return p.parseColumn()
 		}
+		// Redshift's SYSDATE is a timestamp, not GETDATE() and not a column.
+		// The generator already writes CurrentTimestamp with this flag as
+		// SYSDATE. A parenthesis is a different call, and a quoted name is
+		// not this word. A name after a dot never reaches here.
+		if upper == "SYSDATE" && noParen && c.Type != TokIDENTIFIER {
+			if n := p.next(); n == nil || n.Type != TokL_PAREN {
+				p.advance()
+				return New("CurrentTimestamp", Arg{"sysdate", true}), nil
+			}
+		}
 		empty := p.namesAFunctionCall() && p.atEmptyArgList()
 		if noParen && c.Type != TokCASE && !empty && (!hasSpec || !p.namesAFunctionCall()) &&
 			!p.namesItselfNotACall(c) {
