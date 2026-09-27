@@ -64,6 +64,10 @@ func init() {
 		"OnCondition":                         (*generator).writeOnCondition,
 		"JSONValue":                           (*generator).writeJSONValue,
 		"Initcap":                             (*generator).writeInitcap,
+		"MatchRecognize":                      (*generator).writeMatchRecognize,
+		"MatchRecognizeMeasure":               (*generator).writeMatchRecognizeMeasure,
+		"First":                               (*generator).writeFirstOrLast,
+		"Last":                                (*generator).writeFirstOrLast,
 		"FunctionSpecification":               (*generator).writeFunctionSpecification,
 		"IfBlock":                             (*generator).writeIfBlock,
 		"CaseStatement":                       (*generator).writeCaseStatement,
@@ -514,6 +518,7 @@ func (g *generator) writeSelect(e *Expression) string {
 		add(s)
 	}
 
+	add(g.child(e, "match"))
 	add(g.child(e, "where"))
 	add(g.child(e, "connect"))
 	add(g.child(e, "group"))

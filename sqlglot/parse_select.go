@@ -1305,6 +1305,9 @@ func (p *parser) parseConnect() (*Expression, error) {
 // and therefore the order they dump in.
 func (p *parser) parseQueryModifiers(sel *Expression) error {
 	for {
+		if err := p.attachMatchRecognize(sel); err != nil {
+			return err
+		}
 		switch {
 		case p.at(TokWHERE):
 			p.advance()
