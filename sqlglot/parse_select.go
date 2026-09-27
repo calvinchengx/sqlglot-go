@@ -989,10 +989,7 @@ func (p *parser) excludeItemAheadAt(c *Token) bool {
 func (p *parser) parseExcludeColumns() ([]*Expression, error) {
 	wrapped := p.match(TokL_PAREN)
 	var cols []*Expression
-	for {
-		if wrapped && p.at(TokR_PAREN) {
-			break
-		}
+	for !wrapped || !p.at(TokR_PAREN) {
 		if !wrapped && !p.excludeItemAhead() {
 			break
 		}
