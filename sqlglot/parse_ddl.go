@@ -1055,10 +1055,7 @@ func (p *parser) parseValues() (*Expression, error) {
 	p.advance() // VALUES
 	var rows []*Expression
 	for {
-		if !p.at(TokL_PAREN) {
-			return nil, p.unsupported("a VALUES row that is not parenthesised")
-		}
-		row, err := p.parseParenthesisedList()
+		row, err := p.valueRowMembers()
 		if err != nil {
 			return nil, err
 		}
@@ -1075,6 +1072,23 @@ func (p *parser) parseValues() (*Expression, error) {
 		}
 	}
 	return New("Values", Arg{"expressions", rows}), nil
+}
+
+// valueRowMembers reads the expressions of one VALUES row. A parenthesised
+// row names several columns. A bare value is one column where the dialect
+// allows the row to be written without parentheses.
+func (p *parser) valueRowMembers() ([]*Expression, error) {
+	if p.at(TokL_PAREN) {
+		return p.parseParenthesisedList()
+	}
+	if p.tables.ValuesFollowedByParen {
+		return nil, p.unsupported("a VALUES row that is not parenthesised")
+	}
+	value, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	return []*Expression{value}, nil
 }
 
 // parseDrop reads `DROP <kind> [IF EXISTS] <name>`. The names go in a LIST,

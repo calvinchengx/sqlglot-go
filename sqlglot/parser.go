@@ -267,6 +267,21 @@ func (p *parser) parseStatement() (*Expression, error) {
 	return p.parseStatementBody()
 }
 
+// startsAValuesClause reports whether VALUES here introduces rows.
+// A bare VALUES is a column name where the dialect always writes the clause
+// with parentheses: `values` is that column, not a row list. Where the
+// dialect allows it, `VALUES 1, 2` is the rows.
+func (p *parser) startsAValuesClause() bool {
+	if !p.at(TokVALUES) {
+		return false
+	}
+	if !p.tables.ValuesFollowedByParen {
+		return true
+	}
+	n := p.next()
+	return n != nil && n.Type == TokL_PAREN
+}
+
 // parseStatementBody reads a statement once any WITH clause in front of it has
 // been taken off.
 func (p *parser) parseStatementBody() (*Expression, error) {
@@ -351,6 +366,9 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	}
 	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) || p.at(TokFROM) {
 		return p.parseQueryBody()
+	}
+	if p.startsAValuesClause() {
+		return p.parseValues()
 	}
 	// After every statement with a grammar of its own, and before the ones
 	// this port only names: the reference asks in that order too, so a
