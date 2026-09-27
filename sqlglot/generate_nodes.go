@@ -63,6 +63,7 @@ func init() {
 		"JSONExtractQuote":                    (*generator).writeJSONExtractQuote,
 		"OnCondition":                         (*generator).writeOnCondition,
 		"JSONValue":                           (*generator).writeJSONValue,
+		"Initcap":                             (*generator).writeInitcap,
 		"FunctionSpecification":               (*generator).writeFunctionSpecification,
 		"IfBlock":                             (*generator).writeIfBlock,
 		"CaseStatement":                       (*generator).writeCaseStatement,
@@ -8283,3 +8284,41 @@ func (g *generator) writeAlterIndex(e *Expression) string {
 }
 
 func (g *generator) writeDropPrimaryKey(*Expression) string { return "DROP PRIMARY KEY" }
+
+// writeInitcap writes INITCAP. Presto and Trino have no such function, so the
+// default-delimiter form is a REGEXP_REPLACE; a custom delimiter is refused.
+// DuckDB rewrites it as a different regular expression this port does not
+// emit. Everywhere else the default character class is left off the call.
+func (g *generator) writeInitcap(e *Expression) string {
+	if g.dialect == "duckdb" {
+		return g.fail("INITCAP is written as a regular expression in DuckDB")
+	}
+	custom := !initcapUsesDefaultDelimiters(e)
+	if g.dialect == "presto" || g.dialect == "trino" {
+		if custom {
+			return g.fail("INITCAP does not support custom delimiters")
+		}
+		return "REGEXP_REPLACE(" + g.child(e, "this") + ", '(\\w)(\\w*)', x -> UPPER(x[1]) || LOWER(x[2]))"
+	}
+	if custom && g.dialect != "" {
+		return g.fail("INITCAP does not support custom delimiters")
+	}
+	out := "INITCAP(" + g.child(e, "this")
+	if custom {
+		out += ", " + g.child(e, "expression")
+	}
+	return out + ")"
+}
+
+func initcapUsesDefaultDelimiters(e *Expression) bool {
+	delim, _ := e.Args["expression"].(*Expression)
+	if delim == nil {
+		return true
+	}
+	if delim.Class != "Literal" {
+		return false
+	}
+	text, _ := delim.Args["this"].(string)
+	isString, _ := delim.Args["is_string"].(bool)
+	return isString && text == initcapDefaultDelimiters
+}

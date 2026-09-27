@@ -90,6 +90,8 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseDatePart(false)
 	case "OPENJSON":
 		return p.parseOpenJSON()
+	case "INITCAP":
+		return p.parseInitcap()
 	}
 	if fn, ok, err := p.parseMySQLSyntaxFunction(upper); ok {
 		return fn, err
@@ -1533,4 +1535,35 @@ func (p *parser) parseApproximate() (*Expression, bool, error) {
 	}
 	p.index = mark
 	return nil, false, nil
+}
+
+// The character class the reference stores when INITCAP is called with one
+// argument. A writer treats this exact string as "the default" and leaves it
+// out of the SQL.
+const initcapDefaultDelimiters = " \t\n\r\f\v!\"#$%&'()*+,\\-./:;<=>?@\\[\\]^_`{|}~"
+
+// parseInitcap reads INITCAP(value [, delimiters]). The second argument is
+// optional in the text and present on the node: a missing one is the
+// dialect's default character class.
+func (p *parser) parseInitcap() (*Expression, error) {
+	p.advance()
+	p.advance()
+	this, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	delim := New("Literal", Arg{"this", initcapDefaultDelimiters}, Arg{"is_string", true})
+	if p.at(TokCOMMA) {
+		p.advance()
+		delim, err = p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+	}
+	closer := p.curr()
+	p.advance()
+	if closer == nil || closer.Type != TokR_PAREN {
+		return nil, p.unsupported("unclosed INITCAP")
+	}
+	return New("Initcap", Arg{"this", this}, Arg{"expression", delim}), nil
 }
