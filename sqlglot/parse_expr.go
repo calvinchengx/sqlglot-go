@@ -1718,6 +1718,9 @@ func (p *parser) parsePrimary() (*Expression, error) {
 				return New("CurrentTimestamp", Arg{"sysdate", true}), nil
 			}
 		}
+		if built := p.parseBareCurrentDateUTC(upper, noParen, c); built != nil {
+			return built, nil
+		}
 		empty := p.namesAFunctionCall() && p.atEmptyArgList()
 		if noParen && c.Type != TokCASE && !empty && (!hasSpec || !p.namesAFunctionCall()) &&
 			!p.namesItselfNotACall(c) {
@@ -1740,6 +1743,22 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		}
 	}
 	return nil, p.unsupported("expression")
+}
+
+// parseBareCurrentDateUTC reads Dremio's CURRENT_DATE_UTC when no parenthesis
+// follows. That is today's date in UTC, the same tree CURRENT_DATE_UTC()
+// already builds. A parenthesis stays that call, and a quoted name is a
+// column. A name after a dot never reaches here. Nil means this token is
+// not that word.
+func (p *parser) parseBareCurrentDateUTC(upper string, noParen bool, c *Token) *Expression {
+	if upper != "CURRENT_DATE_UTC" || !noParen || c.Type == TokIDENTIFIER {
+		return nil
+	}
+	if n := p.next(); n != nil && n.Type == TokL_PAREN {
+		return nil
+	}
+	p.advance()
+	return buildDremioCurrentDateUTC()
 }
 
 // newStar builds a bare `*`. The reference constructs it with four modifier
