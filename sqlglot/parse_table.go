@@ -362,7 +362,35 @@ func qualifierValue(part *Expression, set bool) any {
 	}
 }
 
+// redshiftSuperUnpivot reads the relation after UNPIVOT and wraps it. The
+// word itself is consumed by the caller. `t UNPIVOT (...)` is the postfix
+// clause and is read later, once a table is already underway.
+func (p *parser) redshiftSuperUnpivot() (*Expression, error) {
+	p.advance()
+	relation, err := p.parseTable()
+	if err != nil {
+		return nil, err
+	}
+	// `c.c_orders[0]` subscripts the value being unpivoted. The index stays
+	// the integer that was written: Redshift's offset does not shift it.
+	for p.at(TokL_BRACKET) {
+		p.advance()
+		if p.at(TokR_BRACKET) {
+			return nil, p.unsupported("subscript with no index")
+		}
+		items, err := p.parseBracketItems(true)
+		if err != nil {
+			return nil, err
+		}
+		relation = New("Bracket", Arg{"this", relation}, Arg{"expressions", items})
+	}
+	return New("Pivot", Arg{"this", relation}, Arg{"unpivot", true}), nil
+}
+
 func (p *parser) parseTable() (*Expression, error) {
+	if p.dialect == "redshift" && p.at(TokUNPIVOT) {
+		return p.redshiftSuperUnpivot()
+	}
 	// DuckDB names a relation in FRONT of it too: `FROM foo: bar` is
 	// `FROM bar AS foo`, the same prefix alias the projection list takes.
 	if p.tables.PrefixAlias && p.atAliasName() {
