@@ -1313,24 +1313,10 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return arr, nil
 	}
 
-	// `LIST[1, 2]` is a List the same way `ARRAY[1, 2]` is an Array -- the
-	// word is part of the literal, not a column being subscripted -- except
-	// where the dialect reads LIST some other way first (DuckDB's own LIST
-	// type grammar, T-SQL's `[...]` already meaning a quoted identifier).
-	// An EMPTY pair -- `LIST[]` -- is not a List with nothing in it: the
-	// reference reads it as the TYPE `ARRAY<LIST>`, the same array-of-type
-	// suffix a bare `INT[]` takes, and leaves this rule for the one shape
-	// that is unambiguously a value: at least one thing between the
-	// brackets.
-	if p.tables.HasListConstructor && p.atPair(TokLIST, TokL_BRACKET) &&
-		p.index+2 < len(p.tokens) && p.tokens[p.index+2].Type != TokR_BRACKET {
-		p.advance()
-		p.advance()
-		items, err := p.parseBracketItems(true)
-		if err != nil {
-			return nil, err
-		}
-		return New("List", Arg{"expressions", items}), nil
+	// `LIST[1, 2]` is a List. The empty `LIST[]` is a type instead. Both
+	// live in parseListLiteral so this function does not grow another branch.
+	if built, ok, err := p.parseListLiteral(); ok {
+		return built, err
 	}
 
 	// `[1, 2, 3]` is an Array literal. Same token as the subscript above; the
