@@ -68,6 +68,7 @@ func init() {
 		"MatchRecognizeMeasure":               (*generator).writeMatchRecognizeMeasure,
 		"First":                               (*generator).writeFirstOrLast,
 		"Last":                                (*generator).writeFirstOrLast,
+		"Refresh":                             (*generator).writeRefresh,
 		"FunctionSpecification":               (*generator).writeFunctionSpecification,
 		"IfBlock":                             (*generator).writeIfBlock,
 		"CaseStatement":                       (*generator).writeCaseStatement,

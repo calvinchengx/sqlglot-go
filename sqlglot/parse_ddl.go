@@ -696,6 +696,8 @@ var writeClasses = map[string]bool{
 	// stops something the server is doing. Neither is a query.
 	"Declare": true,
 	"Kill":    true,
+	// REFRESH rebuilds a table or a materialized view.
+	"Refresh": true,
 }
 
 // IsWrite reports whether a parsed statement changes anything.

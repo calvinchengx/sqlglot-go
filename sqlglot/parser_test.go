@@ -860,38 +860,6 @@ func TestCountKeepsItsFlag(t *testing.T) {
 	}
 }
 
-// A write is refused for being a write, not for being unreadable. The guard
-// above this parser reports "read-only" on the strength of that distinction,
-// and the service's conformance suite checks the wording.
-//
-// CREATE left this list when it began to PARSE, and DELETE, UPDATE, MERGE,
-// EXEC and COPY have followed it. REFRESH is what is left. That is the whole point of bringing DDL and DML into
-// scope, and it moves the read-only question: a caller that asks ErrNotAQuery
-// will see them go past as though they were queries, and has to ask IsWrite
-// instead. TestWritesAreNamedWhenTheyParse covers the ones that have crossed
-// over.
-func TestWritesAreNamedNotParsed(t *testing.T) {
-	for _, c := range []struct{ sql, kind string }{
-		{"REFRESH TABLE t", "REFRESH"},
-	} {
-		_, err := ParseOne(c.sql, "databricks")
-		if !errors.Is(err, ErrNotAQuery) {
-			t.Errorf("ParseOne(%q) failed with %v, want ErrNotAQuery", c.sql, err)
-			continue
-		}
-		var named *NotAQueryError
-		if !errors.As(err, &named) || named.Kind != c.kind {
-			t.Errorf("ParseOne(%q) did not name the statement: %v", c.sql, err)
-			continue
-		}
-		// The message carries the word too: a caller that logs the error
-		// rather than inspecting it still says which statement it was.
-		if want := "sqlglot-go: not a query: " + c.kind; named.Error() != want {
-			t.Errorf("Error() = %q, want %q", named.Error(), want)
-		}
-	}
-}
-
 // Two statements is its own refusal: a guard that permitted the first and
 // ignored the rest would be no guard at all.
 func TestMoreThanOneStatement(t *testing.T) {
@@ -1015,6 +983,20 @@ func TestWritesAreNamedWhenTheyParse(t *testing.T) {
 		}
 		if !IsWrite(e) {
 			t.Errorf("IsWrite(%q) = false; it is not a read", sql)
+		}
+	}
+	// REFRESH rebuilds a table or a view. T-SQL has no such statement;
+	// the dialects that do still have to report it as a write.
+	for _, c := range []struct{ sql, dialect string }{
+		{"REFRESH TABLE t", "databricks"},
+		{"REFRESH MATERIALIZED VIEW mynamespace.test_view", "trino"},
+	} {
+		e, err := ParseOne(c.sql, c.dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", c.sql, err)
+		}
+		if !IsWrite(e) {
+			t.Errorf("IsWrite(%q) = false; it is not a read", c.sql)
 		}
 	}
 	// And a query is not a write.

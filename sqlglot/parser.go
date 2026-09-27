@@ -370,6 +370,9 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.startsAValuesClause() {
 		return p.parseValues()
 	}
+	if p.at(TokREFRESH) {
+		return p.parseRefresh()
+	}
 	// After every statement with a grammar of its own, and before the ones
 	// this port only names: the reference asks in that order too, so a
 	// keyword that is BOTH -- DuckDB's SHOW -- is read as the statement
