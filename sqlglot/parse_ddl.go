@@ -901,7 +901,10 @@ func (p *parser) parseInsert() (*Expression, error) {
 	switch {
 	case p.dialect == "mysql" && p.at(TokSET):
 		this, expression, err = p.parseMySQLInsertSet(this)
-	case p.at(TokVALUES):
+	// Redshift takes VALUES out of its keyword table, so the word arrives
+	// as a name. The reference still matches the text, and a multi-row
+	// insert is the same Values either way.
+	case p.atWords("VALUES"):
 		expression, err = p.parseValues()
 	case p.at(TokSELECT), p.at(TokWITH):
 		expression, err = p.parseQuery()
