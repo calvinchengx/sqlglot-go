@@ -1441,9 +1441,9 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			if err := p.setOnce(sel, "for_", clause); err != nil {
 				return err
 			}
-		case p.atWords("FOR", "UPDATE"), p.atWords("FOR", "SHARE"):
-			// PostgreSQL's row locking. Each FOR is its own Lock, so a query
-			// may carry both a share lock and an update lock.
+		case p.atWords("FOR", "UPDATE"), p.atWords("FOR", "SHARE"), p.atWords("LOCK", "IN", "SHARE", "MODE"):
+			// PostgreSQL's row locking, plus MySQL's older spelling of a share
+			// lock. Each one is its own Lock, so a query may carry both.
 			lock, err := p.parseRowLock()
 			if err != nil {
 				return err
@@ -1496,9 +1496,19 @@ func (p *parser) setOnce(node *Expression, key string, value *Expression) error 
 // is its own flag, and writing it for a lock that never said it would lock
 // differently from the statement that was read.
 func (p *parser) parseRowLock() (*Expression, error) {
-	p.advance() // FOR
-	update := p.atWords("UPDATE")
-	p.advance()
+	var update bool
+	if p.atWords("LOCK", "IN", "SHARE", "MODE") {
+		// MySQL's older share lock. The reference records it as the same
+		// node as FOR SHARE, and writes that spelling back.
+		p.advance()
+		p.advance()
+		p.advance()
+		p.advance()
+	} else {
+		p.advance() // FOR
+		update = p.atWords("UPDATE")
+		p.advance()
+	}
 	lock := New("Lock", Arg{"update", update})
 	if p.atWords("OF") {
 		p.advance()

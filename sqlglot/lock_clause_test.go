@@ -18,6 +18,8 @@ func TestRowLocks(t *testing.T) {
 			"SELECT * FROM t FOR UPDATE OF t NOWAIT"},
 		{"mysql", "SELECT * FROM t FOR UPDATE WAIT 5",
 			"SELECT * FROM t FOR UPDATE WAIT 5"},
+		{"mysql", "SELECT * FROM t LOCK IN SHARE MODE",
+			"SELECT * FROM t FOR SHARE"},
 		{"postgres", "SELECT * FROM t1, t2 FOR SHARE OF t1, t2 SKIP LOCKED",
 			"SELECT * FROM t1, t2 FOR SHARE OF t1, t2 SKIP LOCKED"},
 		{"postgres", "SELECT * FROM t FOR SHARE OF t",
