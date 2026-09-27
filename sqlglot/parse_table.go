@@ -599,6 +599,29 @@ func (p *parser) parseTablePartition() (*Expression, error) {
 // tableRest reads everything that may FOLLOW a table's name -- its temporal
 // clause, its alias, its hints, its sample and its pivots -- in the order the
 // reference reads them, which is the order they are written.
+// tableAtIndex reads `c.c_orders AS orders AT index`. The reference converts
+// the table into a column — its schema qualifier becomes the column's table —
+// and the alias wraps that column. `AT (` is time travel and never reaches here.
+func (p *parser) tableAtIndex(table *Expression) (*Expression, error) {
+	p.advance() // AT
+	index, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	column := New("Column", Arg{"this", table.Args["this"]})
+	if db, _ := table.Args["db"].(*Expression); db != nil {
+		column.Set("table", db)
+	}
+	if catalog, _ := table.Args["catalog"].(*Expression); catalog != nil {
+		column.Set("db", catalog)
+	}
+	this := any(column)
+	if alias, _ := table.Args["alias"].(*Expression); alias != nil {
+		this = New("Alias", Arg{"this", column}, Arg{"alias", alias.Args["this"]})
+	}
+	return New("AtIndex", Arg{"this", this}, Arg{"expression", index}), nil
+}
+
 func (p *parser) tableRest(table *Expression) (*Expression, error) {
 	// MySQL names the partition being read on the table itself:
 	// `FROM t1 PARTITION(p0)`. It is part of the name, and it stands before
@@ -649,6 +672,11 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 			return nil, err
 		}
 		table.Set("when", when)
+	}
+	// Redshift names one element of a SUPER array here. The reference returns
+	// that node immediately, so hints and pivots are not read after it.
+	if table.Class == "Table" && p.atWords("AT") {
+		return p.tableAtIndex(table)
 	}
 	// T-SQL's locking hints come after the alias: `FROM a AS b WITH (NOLOCK)`.
 	if p.at(TokWITH) && p.next() != nil && p.next().Type == TokL_PAREN {
