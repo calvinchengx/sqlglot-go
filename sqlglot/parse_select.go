@@ -1346,23 +1346,7 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 				return err
 			}
 		case p.at(TokLIMIT):
-			p.advance()
-			// `LIMIT ALL` is PostgreSQL for "no limit", and the reference
-			// records it by setting no limit at all rather than by a node
-			// meaning "unlimited". Parsing ALL as an expression built a Limit
-			// over a column named "all" -- a limit where the reference has
-			// none, on the one clause this service rewrites.
-			if p.tables.LimitAllMeansNoLimit && p.match(TokALL) {
-				continue
-			}
-			e, err := p.parseLimitCount()
-			if err != nil {
-				return err
-			}
-			options := p.parseLimitOptions()
-			limit := New("Limit", Arg{"this", nil}, Arg{"expression", e},
-				Arg{"limit_options", options}, Arg{"expressions", nil})
-			if err := p.setOnce(sel, "limit", limit); err != nil {
+			if err := p.parseQueryLimit(sel); err != nil {
 				return err
 			}
 		case p.at(TokWINDOW):
@@ -2252,6 +2236,48 @@ func (p *parser) opensASetOperation() bool {
 // side -- or, with OFFSET after it, consumes `%` and leaves a leftover. The
 // reference backtracks, reads a factor, and leaves `%` for parseLimitOptions,
 // so `10%` and `10 PERCENT` are the same tree.
+
+// parseQueryLimit reads LIMIT, including the older `LIMIT offset, count`
+// spelling. The first expression is the offset and is hoisted onto the
+// query; the Limit keeps only the count. `LIMIT ALL` records no limit.
+func (p *parser) parseQueryLimit(sel *Expression) error {
+	p.advance()
+	// `LIMIT ALL` is PostgreSQL for "no limit", and the reference records it
+	// by setting no limit at all rather than by a node meaning "unlimited".
+	// Parsing ALL as an expression built a Limit over a column named "all".
+	if p.tables.LimitAllMeansNoLimit && p.match(TokALL) {
+		return nil
+	}
+	e, err := p.parseLimitCount()
+	if err != nil {
+		return err
+	}
+	options := p.parseLimitOptions()
+	var offsetExpr *Expression
+	if p.match(TokCOMMA) {
+		offsetExpr = e
+		e, err = p.parseTerm()
+		if err != nil {
+			return err
+		}
+		if e == nil {
+			return p.unsupported("LIMIT offset without a count")
+		}
+	}
+	limit := New("Limit", Arg{"this", nil}, Arg{"expression", e},
+		Arg{"limit_options", options}, Arg{"expressions", nil})
+	if err := p.setOnce(sel, "limit", limit); err != nil {
+		return err
+	}
+	if offsetExpr != nil {
+		offset := New("Offset", Arg{"this", nil}, Arg{"expression", offsetExpr}, Arg{"expressions", nil})
+		if err := p.setOnce(sel, "offset", offset); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (p *parser) parseLimitCount() (*Expression, error) {
 	mark := p.index
 	e, err := p.parseTerm()
