@@ -305,6 +305,35 @@ func (p *parser) parsePosition() (*Expression, error) {
 	return node, nil
 }
 
+// parseRedshiftConvert reads CONVERT(type, value) as a Cast. The type is
+// the first argument, which is the reverse of the form every other dialect
+// uses. The cast carries that type, the same node, because a cast the
+// reference builds records it.
+func (p *parser) parseRedshiftConvert(safe bool) (*Expression, error) {
+	p.advance() // CONVERT
+	p.advance() // (
+	to, err := p.parseDataType()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokCOMMA) {
+		return nil, p.unsupported("CONVERT without a value")
+	}
+	this, err := p.parseBitwise()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed CONVERT")
+	}
+	cast := New("Cast", Arg{"this", this}, Arg{"to", to})
+	if safe {
+		cast.Set("safe", true)
+	}
+	cast.Type = to
+	return cast, nil
+}
+
 // CONVERT(type, x[, style]) -- the FIRST argument is a data type, which is why
 // the ordinary argument parser cannot read this one: it would read VARCHAR(10)
 // as a call to a function named VARCHAR.
@@ -318,6 +347,12 @@ func (p *parser) parseConvert(safe bool) (*Expression, error) {
 		return p.parseMySQLConvert(safe)
 	}
 	if !p.tables.ConvertBuildsConvert {
+		// Redshift's own CONVERT puts the type first: CONVERT(INT, x) is
+		// CAST(x AS INTEGER). Every other dialect that does not build a
+		// Convert reads the value first, which this port still refuses.
+		if p.dialect == "redshift" {
+			return p.parseRedshiftConvert(safe)
+		}
 		return nil, p.unsupported("CONVERT where it is a CAST written another way")
 	}
 	p.advance()
