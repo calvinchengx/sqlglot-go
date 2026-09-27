@@ -14,7 +14,6 @@ func TestAnUnsupportedStatementNamesItsConstruct(t *testing.T) {
 	for _, tc := range []struct {
 		sql, dialect, construct string
 	}{
-		{"SELECT ([1,2,3])[:-:-1]", "", "expression"},
 		{"SELECT a FROM t1 JOIN t2 USING", "tsql", "USING without a column list"},
 		{"SELECT a FROM t GROUP BY ROLLUP", "tsql", "a grouping without its arguments"},
 	} {
@@ -61,11 +60,12 @@ func TestUnsupportedErrorMessageIsTheLabel(t *testing.T) {
 // parses -- which is the point of counting them. TABLESAMPLE and PIVOT have
 // both followed it since, for the same reason and by the same route: the label
 // said what to build, so the label stopped being true. CLUSTER BY and
-// DISTRIBUTE BY were the third pair to go the same way. The cases here are
-// whatever is still refused, and they are meant to keep being replaced.
+// DISTRIBUTE BY were the third pair to go the same way, and DuckDB's
+// `[:-:-1]` slice followed them. The cases here are whatever is still
+// refused, and they are meant to keep being replaced.
 func TestLabelNamesTheKeywordThatStoppedIt(t *testing.T) {
 	for _, tc := range []struct{ dialect, sql, want string }{
-		{"postgres", "SELECT ([1,2,3])[:-:-1]", "expression at :"},
+		{"tsql", "SELECT a FROM t GROUP BY ROLLUP ORDER BY a", "a grouping without its arguments at ORDER BY"},
 	} {
 		_, err := ParseOne(tc.sql, tc.dialect)
 		var u *UnsupportedError

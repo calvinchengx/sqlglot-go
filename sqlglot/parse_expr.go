@@ -1074,15 +1074,11 @@ func (p *parser) parseBracketItems(_ bool) ([]*Expression, error) {
 			low = e
 		}
 		if p.match(TokCOLON) {
-			var high *Expression
-			if !p.at(TokR_BRACKET) && !p.at(TokCOMMA) {
-				e, err := p.parseExpression()
-				if err != nil {
-					return nil, err
-				}
-				high = e
+			item, err := p.parseSliceRest(low)
+			if err != nil {
+				return nil, err
 			}
-			items = append(items, New("Slice", Arg{"this", low}, Arg{"expression", high}))
+			items = append(items, item)
 		} else {
 			if low == nil {
 				return nil, p.unsupported("empty subscript")

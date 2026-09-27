@@ -2441,7 +2441,13 @@ func (g *generator) writeBracket(e *Expression) string {
 }
 
 func (g *generator) writeSlice(e *Expression) string {
-	return g.child(e, "this") + ":" + g.child(e, "expression")
+	out := g.child(e, "this") + ":" + g.child(e, "expression")
+	// A third bound is the step: `[:-1:-1]` walks backward. Absent, the
+	// slice stays the two-bound form it already wrote.
+	if step := g.child(e, "step"); step != "" {
+		out += ":" + step
+	}
+	return out
 }
 
 // writeQuantifier writes ALL or ANY before its operand. The two are spaced
