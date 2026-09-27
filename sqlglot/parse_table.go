@@ -533,10 +533,57 @@ func (p *parser) parseRowsFrom() (*Expression, error) {
 	return p.tableRest(New("Table", Arg{"rows_from", tables}))
 }
 
+// parseTablePartition reads `PARTITION(p0)` or `SUBPARTITION(p0)` when the
+// list is actually there. The flag is recorded even when it is false, which
+// is the tree the reference builds for a plain PARTITION.
+func (p *parser) parseTablePartition() (*Expression, error) {
+	sub := p.atWords("SUBPARTITION")
+	if !sub && !p.at(TokPARTITION) {
+		return nil, nil
+	}
+	if n := p.next(); n == nil || n.Type != TokL_PAREN {
+		return nil, nil
+	}
+	p.advance()
+	p.advance()
+	var exprs []*Expression
+	if !p.at(TokR_PAREN) {
+		for {
+			e, err := p.parseDisjunction()
+			if err != nil {
+				return nil, err
+			}
+			exprs = append(exprs, e)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed partition list")
+	}
+	if len(exprs) == 0 {
+		return nil, p.unsupported("PARTITION without a name")
+	}
+	return New("Partition", Arg{"subpartition", sub}, Arg{"expressions", exprs}), nil
+}
+
 // tableRest reads everything that may FOLLOW a table's name -- its temporal
 // clause, its alias, its hints, its sample and its pivots -- in the order the
 // reference reads them, which is the order they are written.
 func (p *parser) tableRest(table *Expression) (*Expression, error) {
+	// MySQL names the partition being read on the table itself:
+	// `FROM t1 PARTITION(p0)`. It is part of the name, and it stands before
+	// the alias. A word with no list after it is still an alias.
+	if p.dialect == "mysql" {
+		part, err := p.parseTablePartition()
+		if err != nil {
+			return nil, err
+		}
+		if part != nil {
+			table.Set("partition", part)
+		}
+	}
 	// The time-travel clause -- T-SQL's FOR SYSTEM_TIME, Databricks' TIMESTAMP
 	// AS OF, Trino's FOR VERSION AS OF -- reads the table as it stood then,
 	// and goes before the alias. BigQuery alone writes it after the alias,
