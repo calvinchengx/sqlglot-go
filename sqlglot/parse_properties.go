@@ -13,6 +13,26 @@ import (
 // reference keeps a little grammar per word and none of it is readable as data.
 // The words that are not classified are left where they are, and the statement
 // is refused for having more in it than this port reads.
+
+// parseAutoRefresh reads `AUTO REFRESH <setting>`. The word AUTO only starts
+// this property when REFRESH follows it; anything else is left for the
+// reader that actually wants AUTO. The setting is a Var, upper-cased, which
+// is what the reference's `_parse_auto_property` builds.
+func (p *parser) parseAutoRefresh() (*Expression, bool, error) {
+	if !p.atWords("AUTO", "REFRESH") {
+		return nil, false, nil
+	}
+	p.advance()
+	p.advance()
+	setting := p.curr()
+	if setting == nil {
+		return nil, false, p.unsupported("AUTO REFRESH without a setting")
+	}
+	p.advance()
+	return New("AutoRefreshProperty",
+		Arg{"this", New("Var", Arg{"this", strings.ToUpper(setting.Text)})}), true, nil
+}
+
 func (p *parser) parseTableProperties() ([]*Expression, error) {
 	var out []*Expression
 	for {
@@ -190,6 +210,9 @@ func (p *parser) parseWrappedProperties() ([]*Expression, error) {
 // docs/upstream-issues.md. This refuses instead.
 func (p *parser) parseBespokeProperty(inWith bool) (*Expression, bool, error) {
 	switch {
+	case p.atWords("AUTO", "REFRESH"):
+		prop, _, err := p.parseAutoRefresh()
+		return prop, true, err
 	case p.atWords("SYSTEM_VERSIONING"):
 		prop, err := p.parseSystemVersioning(inWith)
 		return prop, true, err
