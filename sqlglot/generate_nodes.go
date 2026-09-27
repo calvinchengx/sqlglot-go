@@ -417,6 +417,20 @@ func uniqueSelectName(selects []*Expression, want string) string {
 	}
 }
 
+// selectOperationModifiers writes MySQL's select qualifiers. They stand
+// after DISTINCT and before the columns, separated by spaces.
+func (g *generator) selectOperationModifiers(e *Expression) string {
+	mods, _ := e.Args["operation_modifiers"].([]*Expression)
+	if len(mods) == 0 {
+		return ""
+	}
+	names := make([]string, len(mods))
+	for i, mod := range mods {
+		names[i] = g.node(mod)
+	}
+	return strings.Join(names, " ")
+}
+
 func (g *generator) writeSelect(e *Expression) string {
 	if g.tables.EliminatesDistinctOn {
 		if rewritten := eliminateDistinctOn(e); rewritten != nil {
@@ -473,6 +487,7 @@ func (g *generator) writeSelect(e *Expression) string {
 		}
 	}
 
+	add(g.selectOperationModifiers(e))
 	add(g.list(e))
 	// Redshift drops named columns from the select list with EXCLUDE. The
 	// parentheses are always written, whether or not they were read.

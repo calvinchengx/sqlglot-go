@@ -660,6 +660,8 @@ func (p *parser) parseSelect() (*Expression, error) {
 		return nil, p.unsupported("SELECT ALL")
 	}
 
+	modifiers := p.parseSelectOperationModifiers()
+
 	// TOP is read before the projections and lands in the slot Select
 	// reserves for `limit` -- which is why a LIMIT written at the end of the
 	// statement still dumps before the FROM clause.
@@ -688,6 +690,9 @@ func (p *parser) parseSelect() (*Expression, error) {
 		sel.Set("distinct", New("Distinct", Arg{"on", distinctOn}))
 	}
 	sel.Set("expressions", projections)
+	if len(modifiers) > 0 {
+		sel.Set("operation_modifiers", modifiers)
+	}
 	if len(exclude) > 0 {
 		sel.Set("exclude", exclude)
 	}
@@ -741,6 +746,37 @@ func (p *parser) parseSelect() (*Expression, error) {
 		applyImplicitUnnests(sel)
 	}
 	return sel, nil
+}
+
+// parseSelectOperationModifiers reads MySQL's HIGH_PRIORITY,
+// STRAIGHT_JOIN, SQL_CALC_FOUND_ROWS and the rest. They are not columns.
+// They stand between DISTINCT and the select list, and a STRAIGHT_JOIN
+// later in the FROM is still a join.
+func (p *parser) parseSelectOperationModifiers() []*Expression {
+	var modifiers []*Expression
+	for p.atSelectOperationModifier() {
+		modifiers = append(modifiers, New("Var", Arg{"this", strings.ToUpper(p.curr().Text)}))
+		p.advance()
+	}
+	return modifiers
+}
+
+// atSelectOperationModifier reports a MySQL word that qualifies the SELECT
+// itself rather than naming a column. A quoted word is a name.
+func (p *parser) atSelectOperationModifier() bool {
+	if p.dialect != "mysql" {
+		return false
+	}
+	c := p.curr()
+	if c == nil || c.Type == TokIDENTIFIER {
+		return false
+	}
+	switch strings.ToUpper(c.Text) {
+	case "HIGH_PRIORITY", "STRAIGHT_JOIN", "SQL_SMALL_RESULT", "SQL_BIG_RESULT",
+		"SQL_BUFFER_RESULT", "SQL_NO_CACHE", "SQL_CALC_FOUND_ROWS":
+		return true
+	}
+	return false
 }
 
 // applyImplicitUnnests turns Redshift's `t AS c, c.arr_col AS x` sugar into
