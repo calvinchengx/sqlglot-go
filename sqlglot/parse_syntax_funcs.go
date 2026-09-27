@@ -91,6 +91,9 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 	case "OPENJSON":
 		return p.parseOpenJSON()
 	}
+	if fn, ok, err := p.parseMySQLSyntaxFunction(upper); ok {
+		return fn, err
+	}
 	return nil, p.unsupported("function " + upper + " with a syntax of its own")
 }
 

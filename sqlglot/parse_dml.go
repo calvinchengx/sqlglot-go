@@ -16,6 +16,10 @@ package sqlglot
 // [RETURNING ...]`.
 func (p *parser) parseUpdate() (*Expression, error) {
 	p.advance() // UPDATE
+	hint, err := p.parseLeadingHint()
+	if err != nil {
+		return nil, err
+	}
 
 	table, err := p.parseTable()
 	if err != nil {
@@ -39,7 +43,12 @@ func (p *parser) parseUpdate() (*Expression, error) {
 		return nil, err
 	}
 
-	node := New("Update", Arg{"this", table}, Arg{"expressions", assignments})
+	node := New("Update")
+	if hint != nil {
+		node.Set("hint", hint)
+	}
+	node.Set("this", table)
+	node.Set("expressions", assignments)
 	// Set in SOURCE order, because that is the order the reference assigns
 	// them in and therefore the order they dump in. T-SQL writes RETURNING
 	// here, in front of the FROM, and the node records it in the place it was
@@ -188,6 +197,10 @@ func (p *parser) parseReturning() (*Expression, error) {
 // written out below even when nothing was read.
 func (p *parser) parseDelete() (*Expression, error) {
 	p.advance() // DELETE
+	hint, err := p.parseLeadingHint()
+	if err != nil {
+		return nil, err
+	}
 
 	// MySQL's Multiple-Table DELETE names, before the FROM, which of the
 	// tables joined there actually lose rows: `DELETE x, y FROM x JOIN y
@@ -237,6 +250,9 @@ func (p *parser) parseDelete() (*Expression, error) {
 	}
 
 	node := New("Delete")
+	if hint != nil {
+		node.Set("hint", hint)
+	}
 	if tables != nil {
 		node.Set("tables", tables)
 	}

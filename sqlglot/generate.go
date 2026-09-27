@@ -325,12 +325,16 @@ func (g *generator) callList(e *Expression) string {
 }
 
 func (g *generator) list(e *Expression) string {
+	return g.listSep(e, ", ")
+}
+
+func (g *generator) listSep(e *Expression, sep string) string {
 	items, _ := e.Args["expressions"].([]*Expression)
 	parts := make([]string, 0, len(items))
 	for _, item := range items {
 		parts = append(parts, g.node(item))
 	}
-	return strings.Join(parts, ", ")
+	return strings.Join(parts, sep)
 }
 
 func (g *generator) binary(e *Expression, op string) string {

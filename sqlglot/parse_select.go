@@ -598,19 +598,15 @@ func (p *parser) parseHint(text string) (*Expression, error) {
 	inner := &parser{tokens: toks, cfg: p.cfg, tables: p.tables, dialect: p.dialect}
 	var items []*Expression
 	for {
-		item, err := inner.parseExpression()
+		item, cont, err := inner.readHintItem()
 		if err != nil {
 			return nil, err
 		}
-		// A bare WORD is a word rather than a column: `/*+ REBALANCE */`
-		// names something to do, and nothing is being selected here.
-		if item != nil && item.Class == "Column" {
-			if name, ok := bareColumnName(item); ok {
-				item = New("Var", Arg{"this", name})
-			}
+		if item == nil {
+			break
 		}
 		items = append(items, item)
-		if !inner.match(TokCOMMA) {
+		if !cont {
 			break
 		}
 	}

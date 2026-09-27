@@ -213,19 +213,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// nothing else. Unlike a SCHEMA, whose name lands on `db`, this one is
 	// an ordinary table reference.
 	if kind == "DATABASE" || kind == "NAMESPACE" {
-		if p.curr() != nil {
-			return nil, p.unsupported("CREATE " + kind + " with more than a name")
-		}
-		return New("Create",
-			Arg{"this", table},
-			Arg{"kind", kind},
-			Arg{"replace", replace},
-			Arg{"refresh", refresh},
-			Arg{"unique", false},
-			Arg{"exists", exists},
-			Arg{"indexes", []*Expression{}},
-			Arg{"concurrently", false},
-		), nil
+		return p.parseCreateDatabase(table, kind, replace, refresh, exists)
 	}
 
 	// DuckDB's MACRO is a function under another word: the tokenizer gives
@@ -911,6 +899,8 @@ func (p *parser) parseInsert() (*Expression, error) {
 
 	var expression *Expression
 	switch {
+	case p.dialect == "mysql" && p.at(TokSET):
+		this, expression, err = p.parseMySQLInsertSet(this)
 	case p.at(TokVALUES):
 		expression, err = p.parseValues()
 	case p.at(TokSELECT), p.at(TokWITH):
@@ -977,6 +967,9 @@ func (p *parser) parseKeyNames() ([]*Expression, error) {
 	for {
 		id, err := p.parseIdentifier()
 		if err != nil {
+			return nil, err
+		}
+		if id, err = p.withMySQLColumnPrefix(id); err != nil {
 			return nil, err
 		}
 		if p.atWords("TIMESERIES") {
@@ -1364,6 +1357,12 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 				return nil, err
 			}
 			kind = New("DefaultColumnConstraint", Arg{"this", value})
+		case p.dialect == "mysql" && p.atWords("ON", "UPDATE"):
+			var err error
+			kind, err = p.parseOnUpdateConstraint()
+			if err != nil {
+				return nil, err
+			}
 		case p.dialect == "mysql" && p.atWords("KEY"):
 			// MySQL's own override: a bare KEY in column-constraint
 			// position is PRIMARY KEY shorthand -- `id INT KEY
@@ -1717,7 +1716,7 @@ func (p *parser) parseAlter() (*Expression, error) {
 	}
 	kind := strings.ToUpper(kindToken.Text)
 	if kind != "TABLE" && kind != "VIEW" && kind != "INDEX" {
-		return nil, p.unsupported("ALTER " + kind)
+		return p.parseUnrecognizedAlter(start, kind)
 	}
 	p.advance()
 
@@ -1786,6 +1785,10 @@ func (p *parser) parseAlter() (*Expression, error) {
 			return nil, err
 		}
 	}
+	options, err := p.alterOptions(kind)
+	if err != nil {
+		return nil, err
+	}
 	// A constraint added NOT VALID is not checked against the rows already
 	// there. It is recorded on the statement rather than on the constraint.
 	notValid := p.atWords("NOT", "VALID")
@@ -1802,7 +1805,7 @@ func (p *parser) parseAlter() (*Expression, error) {
 		Arg{"exists", exists},
 		Arg{"actions", actions},
 		Arg{"only", only},
-		Arg{"options", []*Expression{}},
+		Arg{"options", options},
 		Arg{"cluster", nil},
 		Arg{"not_valid", notValid},
 		Arg{"check", check},
@@ -1833,9 +1836,10 @@ func (p *parser) parseAlterActions() ([]*Expression, error) {
 			return nil, err
 		}
 		actions = append(actions, action)
-		if !p.match(TokCOMMA) {
+		if !p.at(TokCOMMA) || p.atMySQLAlterOption() {
 			return actions, nil
 		}
+		p.advance()
 	}
 }
 
@@ -1848,6 +1852,8 @@ func (p *parser) atAlterActionWord() bool {
 // parseAlterAction reads one thing this ALTER does.
 func (p *parser) parseAlterAction() (*Expression, error) {
 	switch {
+	case p.dialect == "mysql" && p.atWords("AUTO_INCREMENT"):
+		return p.parseMySQLAutoIncrementAction()
 	case p.atWords("DELETE"):
 		// Rows go rather than anything about the table's shape, which is
 		// still an ALTER as far as the reference is concerned.
@@ -2572,18 +2578,9 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		// `PRIMARY KEY pk_name (id)`, told from the unnamed form by nothing
 		// but a bare word standing where the column list's own opening
 		// parenthesis would otherwise be.
-		var name *Expression
-		if p.dialect == "mysql" {
-			c := p.curr()
-			n := p.next()
-			if c != nil && (c.Type == TokVAR || c.Type == TokIDENTIFIER) &&
-				n != nil && n.Type == TokL_PAREN {
-				id, err := p.parseIdentifier()
-				if err != nil {
-					return nil, err
-				}
-				name = id
-			}
+		name, err := p.parseMySQLPrimaryKeyName()
+		if err != nil {
+			return nil, err
 		}
 		members, err := p.parseKeyColumns()
 		if err != nil {
@@ -2679,12 +2676,16 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		if name != nil {
 			schema = New("Schema", Arg{"this", name}, Arg{"expressions", columns})
 		}
+		indexType, err := p.parseMySQLUsingIndexType()
+		if err != nil {
+			return nil, err
+		}
 		// The arguments are in the order the reference assigns them, which is
 		// not the order they are written in.
 		return New("UniqueColumnConstraint",
 			Arg{"nulls", nulls},
 			Arg{"this", schema},
-			Arg{"index_type", false}), nil
+			Arg{"index_type", indexType}), nil
 	case p.atWords("PERIOD", "FOR", "SYSTEM_TIME"):
 		// The two columns that say when a row was current. They are named
 		// once for the table rather than on either column.
@@ -2773,6 +2774,13 @@ func (p *parser) parseMySQLIndexConstraint(kind string) (*Expression, error) {
 	node := New("IndexColumnConstraint",
 		Arg{"this", this}, Arg{"expressions", members}, Arg{"kind", kindArg},
 		Arg{"index_type", indexTypeArg})
+	options, err := p.parseMySQLIndexOptions()
+	if err != nil {
+		return nil, err
+	}
+	if len(options) > 0 {
+		node.Set("options", options)
+	}
 	if p.curr() != nil && !p.at(TokCOMMA) && !p.at(TokR_PAREN) {
 		return nil, p.unsupported("an index constraint with options this port does not read")
 	}
@@ -3101,6 +3109,9 @@ func (p *parser) parseParameterMode() (mode *Expression, wasModeWord bool) {
 // parseFunctionProperty reads one of the words a function may be described by,
 // or nil when none is here.
 func (p *parser) parseFunctionProperty() (*Expression, error) {
+	if p.atWords("SQL SECURITY") {
+		return p.parseSQLSecurityProperty()
+	}
 	switch {
 	case p.at(TokLANGUAGE) || p.atWords("LANGUAGE"):
 		p.advance()
@@ -3277,6 +3288,15 @@ func (p *parser) parseReturnsProperty() (*Expression, error) {
 // Returns (nil, nil, nil) when no body starts here.
 func (p *parser) parseFunctionBody() (body, returns *Expression, err error) {
 	switch {
+	case p.at(TokSELECT), p.at(TokWITH), p.at(TokVALUES):
+		// A function body may be a query with no AS in front of it. The
+		// writer puts the AS back: `SQL SECURITY INVOKER SELECT 'abc'`
+		// is `SQL SECURITY INVOKER AS SELECT 'abc'`.
+		query, err := p.parseQuery()
+		if err != nil {
+			return nil, nil, err
+		}
+		return query, nil, nil
 	case p.atWords("RETURN"):
 		p.advance()
 		inner, err := p.parseReturnBody()
@@ -4711,7 +4731,7 @@ func (p *parser) parseSetStatementItem() (*Expression, error) {
 
 	// `TO` and `=` are the same thing, and a setting may be written with
 	// neither: `SET XACT_ABORT ON`.
-	if !p.at(TokEQ) && !p.atWords("TO") {
+	if !p.at(TokEQ) && !p.atWords("TO") && !(p.dialect == "mysql" && p.at(TokCOLON_EQ)) {
 		// The sign-less form is T-SQL's alone; elsewhere the reference gives
 		// up on it and keeps the raw text. Reading it everywhere let the port
 		// read `SET@0B` as a setting and write back SQL it could not read --
@@ -6365,16 +6385,14 @@ func (p *parser) parseShowMySQL(spec mysqlShowSpec) (*Expression, error) {
 		where = New("Where", Arg{"this", cond})
 	}
 
-	var offset, limit *Expression
+	var types []*Expression
+	var query, offset, limit *Expression
 	if spec.This == "PROFILE" {
-		if p.curr() != nil && !p.matchWords("FOR", "QUERY") && !p.matchUnquotedWord("OFFSET") &&
-			!p.matchUnquotedWord("LIMIT") {
-			return nil, p.unsupported("SHOW PROFILE with more than this port reads")
+		var err error
+		types, query, offset, limit, err = p.parseMySQLShowProfile()
+		if err != nil {
+			return nil, err
 		}
-		// The CSV list of profile TYPES and the FOR QUERY/OFFSET/LIMIT trio
-		// that may follow it are declined rather than guessed: no statement
-		// in the pinned corpus exercises them, and the shape a probe never
-		// saw is a shape this port has not measured.
 	} else if p.matchUnquotedWord("LIMIT") {
 		first := p.tryParseNumberLiteral()
 		if first == nil {
@@ -6441,7 +6459,7 @@ func (p *parser) parseShowMySQL(spec mysqlShowSpec) (*Expression, error) {
 		Arg{"this", spec.This}, Arg{"target", targetID}, Arg{"full", full},
 		Arg{"log", nil}, Arg{"position", position}, Arg{"db", db},
 		Arg{"channel", channel}, Arg{"like", like}, Arg{"where", where},
-		Arg{"types", nil}, Arg{"query", nil}, Arg{"offset", offset}, Arg{"limit", limit},
+		Arg{"types", types}, Arg{"query", query}, Arg{"offset", offset}, Arg{"limit", limit},
 		Arg{"mutex", mutex}, Arg{"for_table", forTable}, Arg{"for_group", forGroup},
 		Arg{"for_user", forUser}, Arg{"for_role", forRole}, Arg{"into_outfile", intoOutfile},
 		Arg{"json", json}, Arg{"global_", global_})

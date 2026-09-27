@@ -1225,7 +1225,12 @@ func (g *generator) writePositionalColumn(e *Expression) string {
 // writeHint writes what the engine is told about running the query, back
 // inside the comment it was written in.
 func (g *generator) writeHint(e *Expression) string {
-	return "/*+ " + g.list(e) + " */"
+	// MySQL separates hint items with a space. Every other dialect uses a comma.
+	sep := ", "
+	if g.dialect == "mysql" {
+		sep = " "
+	}
+	return "/*+ " + g.listSep(e, sep) + " */"
 }
 
 func (g *generator) writeDistinct(e *Expression) string {
@@ -1956,6 +1961,12 @@ func (g *generator) writeDataType(e *Expression) string {
 		return g.fail("DataType.USER-DEFINED naming nothing")
 	}
 	out, ok := g.tables.TypeSQL[string(kind)]
+	// MySQL's SET('a', 'b') is a type whose name is its spelling. The probe
+	// never recorded it: the members are strings, and a sized type's probe
+	// sends numbers.
+	if !ok && kind == "SET" {
+		out, ok = "SET", true
+	}
 	if !ok {
 		return g.fail("DataType." + string(kind))
 	}
@@ -2798,7 +2809,7 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 				for _, item := range v {
 					parts = append(parts, g.node(item))
 				}
-				text = strings.Join(parts, ", ")
+				text = strings.Join(parts, g.exprListSep(e, key))
 			case string:
 				text = v
 			}
@@ -4824,6 +4835,10 @@ func (g *generator) writeUniqueConstraint(e *Expression) string {
 	if columns, _ := e.Args["this"].(*Expression); columns != nil {
 		out += " " + g.node(columns)
 	}
+	// MySQL's `UNIQUE (b) USING BTREE` names the index after the columns.
+	if indexType, ok := e.Args["index_type"].(string); ok && indexType != "" {
+		out += " USING " + indexType
+	}
 	return out
 }
 
@@ -5179,6 +5194,7 @@ func (g *generator) writeAlter(e *Expression) string {
 	}
 	g.inColumnList = was
 	out += " " + strings.Join(parts, ", ")
+	out += g.alterOptionText(e)
 	// A constraint added NOT VALID is not checked against the rows already
 	// there, and the words go after everything the statement does.
 	if notValid, _ := e.Args["not_valid"].(bool); notValid {
@@ -5189,6 +5205,27 @@ func (g *generator) writeAlter(e *Expression) string {
 
 // writeAddConstraint writes the constraints an ALTER adds. They are a LIST on
 // the node, as the reference keeps them.
+func (g *generator) exprListSep(e *Expression, key string) string {
+	// An index's options are written one after another with a space between
+	// them. Every other list a template fills is a CSV.
+	if key == "options" && e.Class == "IndexColumnConstraint" {
+		return " "
+	}
+	return ", "
+}
+
+func (g *generator) alterOptionText(e *Expression) string {
+	options, _ := e.Args["options"].([]*Expression)
+	if len(options) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(options))
+	for _, opt := range options {
+		parts = append(parts, g.node(opt))
+	}
+	return ", " + strings.Join(parts, ", ")
+}
+
 func (g *generator) writeAddConstraint(e *Expression) string {
 	items, _ := e.Args["expressions"].([]*Expression)
 	parts := make([]string, 0, len(items))
@@ -5457,6 +5494,9 @@ func (g *generator) writeAlterRename(e *Expression) string {
 // THEN UPDATE` -- neither.
 func (g *generator) writeUpdate(e *Expression) string {
 	head := g.withPrefix(e, "UPDATE")
+	if hint := g.child(e, "hint"); hint != "" {
+		head += " " + hint
+	}
 	if this := g.child(e, "this"); this != "" {
 		head += " " + this
 	}
@@ -5539,7 +5579,11 @@ func (g *generator) writeDelete(e *Expression) string {
 	}
 	order := g.child(e, "order")
 	limit := g.child(e, "limit")
-	verb := g.withPrefix(e, "DELETE"+tablesWord)
+	verb := g.withPrefix(e, "DELETE")
+	if hint := g.child(e, "hint"); hint != "" {
+		verb += " " + hint
+	}
+	verb += tablesWord
 	if g.tables.ReturningEnd {
 		return clauses(verb, body, cluster, where, returning, order, limit)
 	}

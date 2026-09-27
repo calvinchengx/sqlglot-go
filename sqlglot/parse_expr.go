@@ -2249,9 +2249,9 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 		p.advance()
 		return p.parseIntervalType(), nil
 	}
-	// An ENUM carries the VALUES it may take rather than a size: they are
-	// strings, and what a sized type takes there is a number.
-	if c.Type == TokENUM && p.next() != nil && p.next().Type == TokL_PAREN {
+	// An ENUM or a MySQL SET carries the VALUES it may take rather than a
+	// size: they are strings, and what a sized type takes there is a number.
+	if (c.Type == TokENUM || c.Type == TokSET) && p.next() != nil && p.next().Type == TokL_PAREN {
 		p.advance()
 		p.advance() // the opening parenthesis
 		// `ENUM ()` takes no members at all -- PostgreSQL writes exactly this
