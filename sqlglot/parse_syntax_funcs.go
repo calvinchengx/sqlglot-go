@@ -627,6 +627,33 @@ func (p *parser) parseStringAgg() (*Expression, error) {
 // RETURNING is refused: it builds a return_type out of an Anonymous call or a
 // FormatJson, shapes this port does not model, and guessing at them would put
 // a wrong tree behind a statement that reads fine.
+// parseJSONKeyValue reads one pair of a JSON_OBJECT. KEY and VALUE are
+// optional words; a colon, a comma or IS may stand between the two instead.
+// None of those spellings is stored. The pair is written back in the
+// dialect's own separator.
+func (p *parser) parseJSONKeyValue() (*Expression, error) {
+	if p.atWords("KEY") {
+		p.advance()
+	}
+	key, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	separated := p.match(TokCOLON) || p.match(TokCOMMA) || p.match(TokIS)
+	if p.atWords("VALUE") {
+		p.advance()
+		separated = true
+	}
+	if !separated {
+		return nil, p.unsupported("a JSON_OBJECT key without a value")
+	}
+	value, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	return New("JSONKeyValue", Arg{"this", key}, Arg{"expression", value}), nil
+}
+
 func (p *parser) parseJSONObject() (*Expression, error) {
 	p.advance() // the name
 	p.advance() // the opening parenthesis
@@ -642,21 +669,11 @@ func (p *parser) parseJSONObject() (*Expression, error) {
 		pairs = append(pairs, New("Star"))
 	default:
 		for {
-			key, err := p.parseExpression()
+			pair, err := p.parseJSONKeyValue()
 			if err != nil {
 				return nil, err
 			}
-			// The separator between a key and ITS value: a colon everywhere
-			// but DuckDB, which uses the same comma that separates the pairs.
-			if !p.match(TokCOLON) && !p.match(TokCOMMA) {
-				return nil, p.unsupported("a JSON_OBJECT key without a value")
-			}
-			value, err := p.parseExpression()
-			if err != nil {
-				return nil, err
-			}
-			pairs = append(pairs, New("JSONKeyValue",
-				Arg{"this", key}, Arg{"expression", value}))
+			pairs = append(pairs, pair)
 			if !p.match(TokCOMMA) {
 				break
 			}

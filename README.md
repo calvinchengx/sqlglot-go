@@ -73,7 +73,7 @@ Regenerate with `make service`; nothing in it is authored here.
 | materialize | 51/51 | 51 | 51 | 0 | 0 |
 | risingwave | 14/14 | 12 | 14 | 2 | 0 |
 | fabric | 47/47 | 47 | 47 | 0 | 0 |
-| presto | 596/596 | 593 | 596 | 3 | 0 |
+| presto | 596/596 | 594 | 596 | 2 | 0 |
 | trino | 253/253 | 248 | 253 | 5 | 0 |
 | dremio | 61/61 | 61 | 61 | 0 | 0 |
 | mysql | 638/638 | 638 | 638 | 0 | 0 |
@@ -84,7 +84,7 @@ that matters** and must be zero: it counts statements the port parsed into a
 *different* tree than the reference. Unparsed is the honest size of the gap.
 
 The port also writes SQL back out, and is held to the reference's own output
-string for string: **6,404 of the statements it parses are written back
+string for string: **6,405 of the statements it parses are written back
 identically, none is written wrongly, and none is refused**, and the guard's own rewrite -- inject a row ceiling, emit --
 lands as `TOP 500` in T-SQL and `LIMIT 500` in DuckDB from the same edit to the
 same node. Where a dialect would transform a statement in a way the port does
