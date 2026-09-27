@@ -328,6 +328,15 @@ func (g *generator) list(e *Expression) string {
 	return g.listSep(e, ", ")
 }
 
+// appendParen writes a name, and (extra) tight against it when extra was
+// written: `SELECT(a, b)`, not `SELECT (a, b)`.
+func (g *generator) appendParen(name, extra string) string {
+	if extra == "" {
+		return name
+	}
+	return name + "(" + extra + ")"
+}
+
 func (g *generator) listSep(e *Expression, sep string) string {
 	items, _ := e.Args["expressions"].([]*Expression)
 	parts := make([]string, 0, len(items))

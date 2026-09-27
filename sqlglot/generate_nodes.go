@@ -6378,9 +6378,10 @@ func (g *generator) writeGrant(e *Expression) string {
 	return out
 }
 
-// writeGrantPrivilege writes one right.
+// writeGrantPrivilege writes one right, and the columns it covers when the
+// statement named them: `SELECT(a, b)` has no space before the list.
 func (g *generator) writeGrantPrivilege(e *Expression) string {
-	return g.child(e, "this")
+	return g.appendParen(g.child(e, "this"), g.list(e))
 }
 
 // writeGrantPrincipal writes who the right is handed to, with the word that

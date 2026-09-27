@@ -4423,12 +4423,37 @@ func (p *parser) parsePrivileges() ([]*Expression, error) {
 			p.advance()
 			name = "ALL PRIVILEGES"
 		}
-		out = append(out, New("GrantPrivilege",
-			Arg{"this", New("Var", Arg{"this", name})}))
+		priv := New("GrantPrivilege", Arg{"this", New("Var", Arg{"this", name})})
+		// `SELECT(a, b)` names the columns the privilege covers. The reference
+		// reads them as columns, including an outer-join mark where the
+		// dialect records one.
+		if p.at(TokL_PAREN) {
+			cols, err := p.parsePrivilegeColumns()
+			if err != nil {
+				return nil, err
+			}
+			priv.Set("expressions", cols)
+		}
+		out = append(out, priv)
 		if !p.match(TokCOMMA) {
 			return out, nil
 		}
 	}
+}
+
+// parsePrivilegeColumns reads `(a, b)` on a privilege. Each name is a column,
+// and a dialect that records an outer-join mark on a column records it here.
+func (p *parser) parsePrivilegeColumns() ([]*Expression, error) {
+	return p.parseWrappedCSV(func() (*Expression, error) {
+		col, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		if p.tables.SupportsColumnJoinMarks && col != nil && col.Class == "Column" {
+			col.Set("join_mark", p.match(TokJOIN_MARKER))
+		}
+		return col, nil
+	})
 }
 
 // endsAPrincipal reports whether a token closes the list of principals rather
