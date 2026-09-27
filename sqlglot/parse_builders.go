@@ -322,24 +322,41 @@ func buildDremioDateDeltaWithCastInterval(class string, args []*Expression) *Exp
 	return New(class, Arg{"this", dateArg}, Arg{"expression", inner}, Arg{"unit", unit})
 }
 
-// buildDremioDateType is Dremio's `DATETYPE(year, month, day)` where all
-// three arguments are plain integer literals: the reference's own
-// `datetype_handler` folds them straight into a zero-padded date STRING
-// rather than building a Concat -- `DATETYPE(2024, 2, 2)` reads the same as
-// `DATE '2024-02-02'`. Where any argument is not a bare integer Literal, the
-// reference instead builds a CAST of a CONCAT chain, a shape no statement in
-// the pinned corpus exercises; this returns nil there rather than guess it,
-// the same way an unverified branch elsewhere in this port declines.
+// buildDremioDateType is Dremio's `DATETYPE(year, month, day)`. When all
+// three arguments are plain integer literals, the reference's own
+// `datetype_handler` folds them into a zero-padded date string:
+// `DATETYPE(2024, 2, 2)` is `DATE '2024-02-02'`. Any other argument is
+// concatenated with dashes and cast to DATE: `DATETYPE(x, y, z)` is
+// `CAST(CONCAT(x, '-', y, '-', z) AS DATE)`. The concat carries coalesce
+// because that is Dremio's CONCAT_COALESCE. A call that is not three
+// arguments is left for the caller to refuse.
 func buildDremioDateType(args []*Expression) *Expression {
 	if len(args) != 3 {
 		return nil
 	}
 	year, month, day := args[0], args[1], args[2]
+	allInts := true
 	for _, arg := range []*Expression{year, month, day} {
 		text, _ := arg.Args["this"].(string)
 		if arg.Class != "Literal" || !isIntegerText(text) {
-			return nil
+			allInts = false
+			break
 		}
+	}
+	if !allInts {
+		dash := New("Literal", Arg{"this", "-"}, Arg{"is_string", true})
+		dash2 := New("Literal", Arg{"this", "-"}, Arg{"is_string", true})
+		to := New("DataType", Arg{"this", DataTypeKind("DATE")})
+		cast := New("Cast",
+			Arg{"this", New("Concat",
+				Arg{"expressions", []*Expression{year, dash, month, dash2, day}},
+				Arg{"coalesce", true},
+			)},
+			Arg{"to", to},
+		)
+		// A cast the port builds carries its type, the same node as `to`.
+		cast.Type = to
+		return cast
 	}
 	yv, _ := strconv.Atoi(year.Args["this"].(string))
 	mv, _ := strconv.Atoi(month.Args["this"].(string))

@@ -2808,10 +2808,8 @@ func (p *parser) parseFunction() (*Expression, error) {
 			if built := buildDremioDateType(args); built != nil {
 				return built, nil
 			}
-			// The CONCAT-of-strings branch for a non-integer argument is
-			// unverified against the pinned corpus (see buildDremioDateType);
-			// DATETYPE has no generic fallback shape of its own to fall
-			// through to, so this refuses rather than building Anonymous.
+			// Not three arguments. DATETYPE has no generic fallback, so this
+			// refuses rather than building Anonymous.
 			return nil, p.unsupported("function DATETYPE with a non-integer argument")
 		}
 	}
