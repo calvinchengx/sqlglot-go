@@ -212,14 +212,10 @@ func annotateNode(e *Expression, dialect string) *Expression {
 			return literalType
 		}
 	}
-	// An ANONYMOUS call whose name the reference does not know either. The
-	// reference answers UNKNOWN for any call it has no builder for, and so
-	// does this -- but only where the name is one it also reads anonymously.
-	// A name the reference HAS a node for and this port read anonymously is
-	// a parse gap, and answering UNKNOWN there would hide it behind the
-	// annotator.
-	if e.Class == "Anonymous" && !referenceNamesTheCall(e, dialect) {
-		return dataType("UNKNOWN")
+	// An anonymous call, and a dot whose right side is one. Both answers live
+	// in annotateAnonymous so this dispatch does not grow another branch.
+	if t, ok := annotateAnonymous(e, dialect); ok {
+		return t
 	}
 
 	// A class the reference's annotator has no entry for at all. UNKNOWN is
@@ -297,6 +293,39 @@ func annotateArray(e *Expression, dialect string) *Expression {
 // for this anonymous call's name. Where it does, the port read the call
 // anonymously and the reference did not -- which is a parse gap, and the one
 // thing an annotator answer must not paper over.
+// annotateAnonymous types an anonymous call, and a dot that reaches one.
+//
+// The reference answers UNKNOWN for a call it has no builder for. A name it
+// HAS a node for, read anonymously here, is a parse gap, and answering
+// UNKNOWN there would hide it. A method is the exception the reference
+// itself makes: `x.STRING_SPLIT(' ')` is a Dot over an Anonymous even when
+// STRING_SPLIT(x, ' ') is a Split, and both the call and the dot are
+// UNKNOWN. That is what lets a subscript over the method be read.
+func annotateAnonymous(e *Expression, dialect string) (*Expression, bool) {
+	switch e.Class {
+	case "Anonymous":
+		if !referenceNamesTheCall(e, dialect) || methodCall(e) {
+			return dataType("UNKNOWN"), true
+		}
+	case "Dot":
+		call := childOf(e, "expression")
+		if call != nil && call.Class == "Anonymous" && annotate(call, dialect) != nil {
+			return dataType("UNKNOWN"), true
+		}
+	}
+	return nil, false
+}
+
+// methodCall reports whether this anonymous call is the right-hand side of
+// a dot. That is method syntax, and the reference leaves it anonymous.
+func methodCall(e *Expression) bool {
+	parent := e.Parent
+	if parent == nil || parent.Class != "Dot" {
+		return false
+	}
+	return childOf(parent, "expression") == e
+}
+
 func referenceNamesTheCall(e *Expression, dialect string) bool {
 	name, _ := e.Args["this"].(string)
 	tables := parserTables[dialect]

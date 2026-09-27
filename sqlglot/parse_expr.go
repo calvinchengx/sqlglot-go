@@ -347,7 +347,17 @@ func (p *parser) parseComprehension(this *Expression) (*Expression, bool, error)
 	}
 	iterator, err := p.parseColumn()
 	if err != nil {
-		return nil, false, err
+		// The reference's own column reader also accepts a bracket where a
+		// name would be, and an array there is an array: `IN ['1', '2', 3]`.
+		// A name that failed for any other reason is still a refusal. The
+		// bracket is unconsumed, because a failed name reads nothing.
+		if !p.at(TokL_BRACKET) {
+			return nil, false, err
+		}
+		iterator, err = p.parsePrimary()
+		if err != nil {
+			return nil, false, err
+		}
 	}
 	var condition *Expression
 	if p.atWords("IF") {
