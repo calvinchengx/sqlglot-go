@@ -5115,10 +5115,11 @@ func TestTruncateUseAndTransactions(t *testing.T) {
 			}
 		})
 	}
-	// T-SQL's BEGIN opens a BLOCK, and it takes the word TRANSACTION to mean
-	// the other thing. The reference keeps the block form as raw text.
-	if _, err := ParseOne("BEGIN", "tsql"); err == nil {
-		t.Error("a T-SQL BEGIN was read as a transaction")
+	// A bare BEGIN is a Command. A BEGIN that still has a body stays refused.
+	// A bare BEGIN is a Command, not a transaction. The reference keeps
+	// the word and an empty payload. A body after BEGIN stays refused.
+	if bare, err := ParseOne("BEGIN", "tsql"); err != nil || bare.Class != "Command" {
+		t.Fatalf("T-SQL BEGIN was not a Command: %v", err)
 	}
 	// T-SQL's own partition list is refused wherever it does not fully match
 	// the shape it reads: a WITH the reference itself falls back to a Command

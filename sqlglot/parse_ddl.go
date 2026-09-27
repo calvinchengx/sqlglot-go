@@ -4121,12 +4121,17 @@ func (p *parser) parseTransaction() (*Expression, error) {
 	if verb == "END" {
 		verb = "COMMIT"
 	}
-	// T-SQL's bare BEGIN opens a BLOCK -- `BEGIN ... END` -- and takes the
-	// word TRANSACTION to mean the other thing. The reference gives up on the
-	// block form and keeps the raw text, which is not a tree this port makes.
+	// A bare BEGIN, with nothing after the word, is the Command the reference
+	// builds: the word, and an empty payload. A BEGIN that still has a body
+	// opens a block, and that body stays refused. TRANSACTION (or TRAN) is
+	// the transaction form and is read below.
 	if verb == "BEGIN" && !p.tables.BareBeginIsATransaction {
-		if n := p.next(); n == nil ||
-			(!strings.EqualFold(n.Text, "TRANSACTION") && !strings.EqualFold(n.Text, "TRAN")) {
+		n := p.next()
+		if n == nil {
+			p.advance()
+			return New("Command", Arg{"this", "BEGIN"}, Arg{"expression", ""}), nil
+		}
+		if !strings.EqualFold(n.Text, "TRANSACTION") && !strings.EqualFold(n.Text, "TRAN") {
 			return nil, p.unsupported("BEGIN opening a block")
 		}
 	}
