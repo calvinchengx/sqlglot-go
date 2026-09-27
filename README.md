@@ -76,7 +76,7 @@ Regenerate with `make service`; nothing in it is authored here.
 | presto | 596/596 | 591 | 596 | 5 | 0 |
 | trino | 253/253 | 248 | 253 | 5 | 0 |
 | dremio | 61/61 | 59 | 61 | 2 | 0 |
-| mysql | 638/638 | 611 | 638 | 27 | 0 |
+| mysql | 638/638 | 612 | 638 | 26 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number
@@ -84,7 +84,7 @@ that matters** and must be zero: it counts statements the port parsed into a
 *different* tree than the reference. Unparsed is the honest size of the gap.
 
 The port also writes SQL back out, and is held to the reference's own output
-string for string: **6,360 of the statements it parses are written back
+string for string: **6,361 of the statements it parses are written back
 identically, none is written wrongly, and none is refused**, and the guard's own rewrite -- inject a row ceiling, emit --
 lands as `TOP 500` in T-SQL and `LIMIT 500` in DuckDB from the same edit to the
 same node. Where a dialect would transform a statement in a way the port does

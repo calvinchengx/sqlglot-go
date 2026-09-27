@@ -738,6 +738,22 @@ func (p *parser) parseBinary(ops map[TokenType]string, next func() (*Expression,
 	}
 }
 
+// parseMySQLBinaryPrefix reads `BINARY a` as CAST(a AS BINARY). The word is
+// current, and a parenthesis has already been ruled out.
+func (p *parser) parseMySQLBinaryPrefix() (*Expression, error) {
+	p.advance()
+	col, err := p.parseColumn()
+	if err != nil {
+		return nil, err
+	}
+	to := New("DataType", Arg{"this", DataTypeKind("BINARY")}, Arg{"nested", false})
+	cast := New("Cast",
+		Arg{"this", col}, Arg{"to", to}, Arg{"format", nil},
+		Arg{"safe", nil}, Arg{"action", nil}, Arg{"default", nil})
+	cast.Type = to
+	return cast, nil
+}
+
 // parseUnary mirrors the reference's UNARY_PARSERS, including that NOT takes
 // an equality as its operand rather than a unary -- so `NOT a = b` negates the
 // comparison, not the column.
@@ -745,6 +761,13 @@ func (p *parser) parseUnary() (*Expression, error) {
 	c := p.curr()
 	if c == nil {
 		return nil, p.unsupported("expression")
+	}
+	// MySQL's bare BINARY is a cast of the column that follows, including in
+	// ORDER BY. BINARY(...) is a call, and a parenthesis keeps it one.
+	if p.dialect == "mysql" && p.at(TokBINARY) {
+		if n := p.next(); n == nil || n.Type != TokL_PAREN {
+			return p.parseMySQLBinaryPrefix()
+		}
 	}
 	class, isUnary := p.tables.UnaryOps[c.Type]
 	if !isUnary {
