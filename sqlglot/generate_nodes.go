@@ -5997,12 +5997,36 @@ func (g *generator) writeSet(e *Expression) string {
 	return "SET " + g.list(e)
 }
 
+// writeBareSetItem writes a SET item that is not an assignment: MySQL's
+// CHARACTER SET, NAMES, and TRANSACTION. The kind is the statement, and a
+// column standing in for it would mean less than the input.
+func (g *generator) writeBareSetItem(e *Expression) string {
+	kind, _ := e.Args["kind"].(string)
+	if kind == "" {
+		return g.fail(e.Class + " that is not a setting")
+	}
+	out := kind
+	if global, _ := e.Args["global_"].(bool); global {
+		out = "GLOBAL " + out
+	}
+	if this := g.child(e, "this"); this != "" {
+		out += " " + this
+	}
+	if items, _ := e.Args["expressions"].([]*Expression); len(items) > 0 {
+		out += " " + g.joined(items)
+	}
+	if collate := g.child(e, "collate"); collate != "" {
+		out += " COLLATE " + collate
+	}
+	return out
+}
+
 // writeSetItem writes one setting. The two sides are held as an equality and
 // the dialect decides what goes between them -- T-SQL writes nothing at all.
 func (g *generator) writeSetItem(e *Expression) string {
 	item, _ := e.Args["this"].(*Expression)
 	if item == nil || item.Class != "EQ" {
-		return g.fail(e.Class + " that is not a setting")
+		return g.writeBareSetItem(e)
 	}
 	out := ""
 	if kind, _ := e.Args["kind"].(string); kind != "" {
