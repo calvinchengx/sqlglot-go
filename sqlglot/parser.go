@@ -204,21 +204,48 @@ func (p *parser) unsupported(what string) error {
 	return &UnsupportedError{Construct: what, Token: text, TokenIsKeyword: keyword}
 }
 
-// parseOne parses exactly one statement and insists the whole token stream was
-// consumed. Leftover tokens mean the port understood less than it thought, so
-// the result is refused rather than returned.
+// parseOne parses one statement, or a Block when another statement follows
+// the semicolon. Leftover tokens mean the port understood less than it
+// thought, so the result is refused rather than returned.
 func (p *parser) parseOne() (*Expression, error) {
 	this, err := p.parseStatement()
 	if err != nil {
 		return nil, err
 	}
-	if p.match(TokSEMICOLON) && p.curr() != nil {
-		return nil, ErrMultipleStatements
+	if !p.match(TokSEMICOLON) || p.curr() == nil {
+		if p.curr() != nil {
+			return nil, p.unsupported("trailing tokens")
+		}
+		return this, nil
 	}
-	if p.curr() != nil {
+	return p.finishStatementBlock([]*Expression{this})
+}
+
+func (p *parser) finishStatementBlock(batch []*Expression) (*Expression, error) {
+	if p.curr() == nil {
+		return New("Block", Arg{"expressions", batch}), nil
+	}
+	// A bare END here is the reference's EndStatement, the closer of a body.
+	// A column of that name would mean less than the input, so it is refused.
+	if c := p.curr(); c.Type != TokIDENTIFIER && strings.EqualFold(c.Text, "END") {
+		n := p.next()
+		if n == nil || n.Type == TokSEMICOLON {
+			return nil, p.unsupported("END")
+		}
+	}
+	statement, err := p.parseStatement()
+	if err != nil {
+		return nil, err
+	}
+	batch = append(batch, statement)
+	switch {
+	case p.curr() == nil:
+		return New("Block", Arg{"expressions", batch}), nil
+	case p.match(TokSEMICOLON):
+		return p.finishStatementBlock(batch)
+	default:
 		return nil, p.unsupported("trailing tokens")
 	}
-	return this, nil
 }
 
 // parseStatement returns a tree or an error, never (nil, nil).

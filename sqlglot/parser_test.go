@@ -860,15 +860,16 @@ func TestCountKeepsItsFlag(t *testing.T) {
 	}
 }
 
-// Two statements is its own refusal: a guard that permitted the first and
-// ignored the rest would be no guard at all.
+// Two statements are a Block. A guard that saw only the first would miss
+// the write in the second.
 func TestMoreThanOneStatement(t *testing.T) {
-	_, err := ParseOne("SELECT 1; DROP TABLE dbo.fct_sales", "tsql")
-	if !errors.Is(err, ErrMultipleStatements) {
-		t.Errorf("failed with %v, want ErrMultipleStatements", err)
+	tree, err := ParseOne("SELECT 1; DROP TABLE dbo.fct_sales", "tsql")
+	if err != nil {
+		t.Fatalf("ParseOne: %v", err)
 	}
-	if err != nil && strings.Contains(err.Error(), "fct_sales") {
-		t.Errorf("Error() carried the second statement: %q", err)
+	items, _ := tree.Args["expressions"].([]*Expression)
+	if tree.Class != "Block" || len(items) != 2 || items[1].Class != "Drop" || !IsWrite(tree) {
+		t.Fatalf("batch = %s len %d", tree.Class, len(items))
 	}
 	// One statement with a trailing semicolon is still one statement.
 	if _, err := ParseOne("SELECT 1;", ""); err != nil {

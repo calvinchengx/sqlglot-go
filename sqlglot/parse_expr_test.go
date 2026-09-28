@@ -1,7 +1,6 @@
 package sqlglot
 
 import (
-	"errors"
 	"strings"
 	"testing"
 	"time"
@@ -6118,8 +6117,9 @@ func TestCommandEndsAtTheSemicolon(t *testing.T) {
 	if e.Class != "Command" {
 		t.Errorf("read %s, want Command", e.Class)
 	}
-	if _, err := ParseOne("EXPLAIN; SELECT 1", ""); !errors.Is(err, ErrMultipleStatements) {
-		t.Errorf("EXPLAIN followed by a query gave %v, want ErrMultipleStatements", err)
+	tree, err := ParseOne("EXPLAIN; SELECT 1", "")
+	if err != nil || tree.Class != "Block" {
+		t.Errorf("EXPLAIN followed by a query gave %v %v, want a Block", err, tree)
 	}
 }
 
