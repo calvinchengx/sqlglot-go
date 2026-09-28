@@ -6021,6 +6021,13 @@ func (g *generator) writeBareSetItem(e *Expression) string {
 	return out
 }
 
+// mysqlPersistScope is MySQL's PERSIST and PERSIST_ONLY, scope words the
+// shared table does not list. Any other dialect drops them, which would
+// change which store the setting is written to.
+func (g *generator) mysqlPersistScope(kind string) bool {
+	return g.dialect == "mysql" && (kind == "PERSIST" || kind == "PERSIST_ONLY")
+}
+
 // writeSetItem writes one setting. The two sides are held as an equality and
 // the dialect decides what goes between them -- T-SQL writes nothing at all.
 func (g *generator) writeSetItem(e *Expression) string {
@@ -6033,7 +6040,7 @@ func (g *generator) writeSetItem(e *Expression) string {
 		// The scope word says WHICH setting is being changed -- a global one
 		// or this session's. A dialect that has no such word writes none, and
 		// the port refuses rather than changing the wrong scope.
-		if !g.tables.SetItemKindWritten[kind] {
+		if !g.tables.SetItemKindWritten[kind] && !g.mysqlPersistScope(kind) {
 			return g.fail(e.Class + " " + kind + ", a scope this dialect writes away")
 		}
 		out = kind + " "
