@@ -3137,6 +3137,8 @@ func (g *generator) writeJSONPath(e *Expression) string {
 				return g.fail("a JSON path key that writes nothing")
 			}
 			out += segment
+		case "JSONPathUnion":
+			out += g.jsonPathUnion(part)
 		default:
 			return g.fail(part.Class)
 		}
@@ -3152,6 +3154,28 @@ func (g *generator) writeJSONPath(e *Expression) string {
 		return g.fail("a JSON path that writes nothing")
 	}
 	return out + pieces.Close
+}
+
+// jsonPathUnion writes a bracket of several indexes or keys with no
+// space after the comma: $[1,0] and $["a",""]. A string keeps its quotes,
+// and a quote inside one is escaped. Anything else is not one of those.
+func (g *generator) jsonPathUnion(part *Expression) string {
+	items, ok := part.Args["expressions"].([]any)
+	if !ok || len(items) == 0 {
+		return g.fail("a JSON path union with no members")
+	}
+	bits := make([]string, len(items))
+	for i, item := range items {
+		switch v := item.(type) {
+		case int:
+			bits[i] = strconv.Itoa(v)
+		case string:
+			bits[i] = `"` + strings.ReplaceAll(v, `"`, `\"`) + `"`
+		default:
+			return g.fail("a JSON path union member")
+		}
+	}
+	return "[" + strings.Join(bits, ",") + "]"
 }
 
 // writeJSONExtractOp writes `->` and `->>` the way the dialect writes them,
