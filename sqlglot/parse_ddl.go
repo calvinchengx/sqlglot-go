@@ -1781,23 +1781,14 @@ func (p *parser) parseAlter() (*Expression, error) {
 
 	var actions []*Expression
 	if kind == "VIEW" {
-		// T-SQL's WITH SCHEMABINDING / ENCRYPTION / VIEW_METADATA is a
-		// property the reference does not finish reading on ALTER VIEW, so
-		// it emits a Command. Matching that tree is the only match; a
-		// finished Alter would be a different tree.
-		if p.at(TokWITH) && !p.atWords("WITH", "CHECK") && !p.atWords("WITH", "NOCHECK") {
-			return p.parseAsCommand(start), nil
-		}
-		// A view is altered by being GIVEN a new query, and the query itself
-		// is the action.
-		if !p.match(TokALIAS) {
-			return nil, p.unsupported("ALTER VIEW without a query")
-		}
-		query, err := p.parseQuery()
+		var command *Expression
+		actions, command, err = p.parseAlterView(start)
 		if err != nil {
 			return nil, err
 		}
-		actions = []*Expression{query}
+		if command != nil {
+			return command, nil
+		}
 	} else {
 		actions, err = p.parseAlterActions()
 		if err != nil {
@@ -1831,6 +1822,31 @@ func (p *parser) parseAlter() (*Expression, error) {
 		Arg{"cascade", false},
 		Arg{"iceberg", false},
 	), nil
+}
+
+// parseAlterView reads what an ALTER VIEW does. A rename is the same action
+// a table takes. Anything else is a new query. T-SQL's WITH SCHEMABINDING /
+// ENCRYPTION / VIEW_METADATA is a property the reference does not finish
+// reading, so that form is a Command of the whole statement.
+func (p *parser) parseAlterView(start Token) ([]*Expression, *Expression, error) {
+	if p.at(TokWITH) && !p.atWords("WITH", "CHECK") && !p.atWords("WITH", "NOCHECK") {
+		return nil, p.parseAsCommand(start), nil
+	}
+	if p.atWords("RENAME") {
+		action, err := p.parseAlterAction()
+		if err != nil {
+			return nil, nil, err
+		}
+		return []*Expression{action}, nil, nil
+	}
+	if !p.match(TokALIAS) {
+		return nil, nil, p.unsupported("ALTER VIEW without a query")
+	}
+	query, err := p.parseQuery()
+	if err != nil {
+		return nil, nil, err
+	}
+	return []*Expression{query}, nil, nil
 }
 
 // parseAlterActions reads everything this ALTER does, comma-separated.
