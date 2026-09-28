@@ -6951,9 +6951,20 @@ func subsecondPrecision(literal string) int {
 	return 0
 }
 
+// timeStrWithZone writes MySQL's TIME_STR_TO_TIME when a zone was given.
+// Precision is not kept then, and the zone itself is not a cast argument:
+// the reference writes TIMESTAMP of the original text.
+func (g *generator) timeStrWithZone(e *Expression) string {
+	dt := New("DataType", Arg{"this", DataTypeKind("TIMESTAMPTZ")})
+	return g.node(New("Cast", Arg{"this", e.Args["this"]}, Arg{"to", dt}))
+}
+
 // writeTimeStrToTime: MySQL keeps the fractional-second precision of a
 // literal when no zone was given (timestrtotime_sql, include_precision).
 func (g *generator) writeTimeStrToTime(e *Expression) string {
+	if g.dialect == "mysql" && e.Args["zone"] != nil {
+		return g.timeStrWithZone(e)
+	}
 	if g.dialect == "mysql" && e.Args["zone"] == nil {
 		if lit, _ := e.Args["this"].(*Expression); lit != nil && lit.Class == "Literal" {
 			text, _ := lit.Args["this"].(string)
