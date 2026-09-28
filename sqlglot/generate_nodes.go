@@ -163,6 +163,7 @@ func init() {
 		"MacroOverloads":                      (*generator).writeMacroOverloads,
 		"SplitPart":                           (*generator).writeSplitPart,
 		"FileFormatProperty":                  (*generator).writeFileFormat,
+		"EncodeProperty":                      (*generator).writeEncodeProperty,
 		"DateAdd":                             (*generator).writeDateAdd,
 		"DateSub":                             (*generator).writeDateSub,
 		"DatetimeAdd":                         (*generator).writeDatetimeAdd,
@@ -4143,6 +4144,7 @@ func (g *generator) writeCreate(e *Expression) string {
 	// the reference puts it: before the kind, on its own after the columns,
 	// and gathered into one wrapped list after those.
 	beforeKind, afterSchema, failed := g.writeProperties(e)
+	afterSchema, afterQuery := g.sinkPropertiesFollowQuery(e, afterSchema)
 	if failed != "" {
 		return failed
 	}
@@ -4220,6 +4222,7 @@ func (g *generator) writeCreate(e *Expression) string {
 		}
 		out += expression
 	}
+	out += afterQuery
 	// The properties written AFTER the query, which is where the words that
 	// say whether it filled the table go.
 	if properties, _ := e.Args["properties"].(*Expression); properties != nil {
@@ -7878,6 +7881,55 @@ func (g *generator) dateArithHiveDelta(this, amount, unit *Expression) string {
 		increment = New("Mul", Arg{"this", amount}, Arg{"expression", numberLit(float64(multiplier), true)})
 	}
 	return delta.Func + "(" + g.node(this) + ", " + g.node(increment) + ")"
+}
+
+// sinkPropertiesFollowQuery moves a SINK's WITH list to after its query.
+// Every other CREATE keeps that list where writeProperties put it.
+func (g *generator) sinkPropertiesFollowQuery(e *Expression, afterSchema string) (string, string) {
+	kind, _ := e.Args["kind"].(string)
+	if kind != "SINK" {
+		return afterSchema, ""
+	}
+	if _, ok := e.Args["expression"].(*Expression); !ok {
+		return afterSchema, ""
+	}
+	return "", afterSchema + g.sinkFormatProperties(e)
+}
+
+// sinkFormatProperties writes FORMAT and ENCODE, which stand after a
+// sink's query and after its WITH list.
+func (g *generator) sinkFormatProperties(e *Expression) string {
+	properties, _ := e.Args["properties"].(*Expression)
+	if properties == nil {
+		return ""
+	}
+	items, _ := properties.Args["expressions"].([]*Expression)
+	out := ""
+	for _, item := range items {
+		switch item.Class {
+		case "FileFormatProperty", "EncodeProperty":
+			if text := g.node(item); text != "" {
+				out += " " + text
+			}
+		}
+	}
+	return out
+}
+
+// writeEncodeProperty writes ENCODE format [(settings)] and, when the key
+// flag is set, KEY ENCODE.
+func (g *generator) writeEncodeProperty(e *Expression) string {
+	word := "ENCODE"
+	if key, _ := e.Args["key"].(bool); key {
+		word = "KEY ENCODE"
+	}
+	out := word + " " + g.child(e, "this")
+	props, _ := e.Args["properties"].(*Expression)
+	if props == nil {
+		return out
+	}
+	items, _ := props.Args["expressions"].([]*Expression)
+	return out + " (" + g.joined(items) + ")"
 }
 
 // writeFileFormat writes the storage format a table is written in.

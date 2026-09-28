@@ -33,6 +33,39 @@ func (p *parser) parseAutoRefresh() (*Expression, bool, error) {
 		Arg{"this", New("Var", Arg{"this", strings.ToUpper(setting.Text)})}), true, nil
 }
 
+// parseRisingWaveEncode reads ENCODE format [(settings)] and KEY ENCODE
+// format [(settings)]. The format is a word. The settings, when present, are
+// a property list. KEY is recorded only when it was written.
+func (p *parser) parseRisingWaveEncode() (*Expression, bool, error) {
+	if p.dialect != "risingwave" {
+		return nil, false, nil
+	}
+	key := p.atWords("KEY", "ENCODE")
+	if key {
+		p.advance()
+	} else if !p.atWords("ENCODE") {
+		return nil, false, nil
+	}
+	p.advance()
+	this, err := p.parseVarOrString()
+	if err != nil {
+		return nil, true, err
+	}
+	node := New("EncodeProperty", Arg{"this", this})
+	if p.at(TokL_PAREN) {
+		inner, err := p.parseWrappedProperties()
+		if err != nil {
+			return nil, true, err
+		}
+		node.Set("properties", New("Properties", Arg{"expressions", inner}))
+	}
+	// key follows the settings: that is the order the reference records them.
+	if key {
+		node.Set("key", true)
+	}
+	return node, true, nil
+}
+
 func (p *parser) parseTableProperties() ([]*Expression, error) {
 	var out []*Expression
 	for {
@@ -210,6 +243,9 @@ func (p *parser) parseWrappedProperties() ([]*Expression, error) {
 // docs/upstream-issues.md. This refuses instead.
 func (p *parser) parseBespokeProperty(inWith bool) (*Expression, bool, error) {
 	switch {
+	case p.dialect == "risingwave" && (p.atWords("KEY", "ENCODE") || p.atWords("ENCODE")):
+		prop, _, err := p.parseRisingWaveEncode()
+		return prop, true, err
 	case p.atWords("AUTO", "REFRESH"):
 		prop, _, err := p.parseAutoRefresh()
 		return prop, true, err

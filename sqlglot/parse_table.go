@@ -679,7 +679,9 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 		return p.tableAtIndex(table)
 	}
 	// T-SQL's locking hints come after the alias: `FROM a AS b WITH (NOLOCK)`.
-	if p.at(TokWITH) && p.next() != nil && p.next().Type == TokL_PAREN {
+	// RisingWave has no table hints. WITH ( ... ) after a name is the
+	// sink's own property list, and reading it here would swallow that.
+	if p.dialect != "risingwave" && p.at(TokWITH) && p.next() != nil && p.next().Type == TokL_PAREN {
 		hint, err := p.parseTableHint()
 		if err != nil {
 			return nil, err
