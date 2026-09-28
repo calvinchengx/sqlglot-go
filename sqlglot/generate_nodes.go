@@ -79,6 +79,8 @@ func init() {
 		"Iterate":                             (*generator).writeIterate,
 		"TimeStrToTime":                       (*generator).writeTimeStrToTime,
 		"DateDiff":                            (*generator).writeDateDiff,
+		"Encode":                              (*generator).writeEncodeDecode,
+		"Decode":                              (*generator).writeEncodeDecode,
 		"OpenJSONColumnDef":                   (*generator).writeOpenJSONColumnDef,
 		"Union":                               (*generator).writeSetOperation,
 		"Except":                              (*generator).writeSetOperation,
@@ -6950,6 +6952,43 @@ func subsecondPrecision(literal string) int {
 		return 3
 	}
 	return 0
+}
+
+// writeEncodeDecode: Presto still writes TO_UTF8 / FROM_UTF8 when the
+// charset is not utf-8. The reference warns and writes the call anyway;
+// the utf-8 forms already match a template, so they stay on that path.
+func (g *generator) writeEncodeDecode(e *Expression) string {
+	if g.dialect != "presto" || isUTF8Charset(e) {
+		return g.spell(e)
+	}
+	name := "TO_UTF8"
+	if e.Class == "Decode" {
+		name = "FROM_UTF8"
+	}
+	this := g.child(e, "this")
+	if this == "" {
+		return g.fail(e.Class + " without a value")
+	}
+	if e.Class == "Decode" {
+		if replace := g.child(e, "replace"); replace != "" {
+			return name + "(" + this + ", " + replace + ")"
+		}
+	}
+	return name + "(" + this + ")"
+}
+
+func isUTF8Charset(e *Expression) bool {
+	lit, _ := e.Args["charset"].(*Expression)
+	if lit == nil || lit.Class != "Literal" {
+		return false
+	}
+	text, _ := lit.Args["this"].(string)
+	switch strings.ToLower(text) {
+	case "utf-8", "utf8":
+		return true
+	default:
+		return false
+	}
 }
 
 // writeDateDiff: MySQL's DateDiff with a unit is TO_DAYS and the
