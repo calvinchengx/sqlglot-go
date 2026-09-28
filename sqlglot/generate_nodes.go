@@ -5320,6 +5320,23 @@ func (g *generator) writeRenameColumn(e *Expression) string {
 	return out + g.child(e, "this") + " TO " + g.child(e, "to")
 }
 
+// writeAlterColumnDrop writes DROP DEFAULT, or DROP/SET NOT NULL when the
+// column's nullability is what changed. A drop with no nullability word is
+// the default being removed.
+func (g *generator) writeAlterColumnDrop(out string, e *Expression) string {
+	if _, said := e.Args["allow_null"].(bool); said {
+		keyword := "SET"
+		if drop, _ := e.Args["drop"].(bool); drop {
+			keyword = "DROP"
+		}
+		return out + " " + keyword + " NOT NULL"
+	}
+	if drop, _ := e.Args["drop"].(bool); drop {
+		return out + " DROP DEFAULT"
+	}
+	return g.fail(e.Class + " that says nothing about the column")
+}
+
 // writeAlterColumn writes what an ALTER says about one column. Exactly one of
 // the four slots is filled, and which one it is says what the statement does.
 func (g *generator) writeAlterColumn(e *Expression) string {
@@ -5376,10 +5393,7 @@ func (g *generator) writeAlterColumn(e *Expression) string {
 	case e.Args["comment"] != nil:
 		out += " COMMENT " + g.child(e, "comment")
 	default:
-		if drop, _ := e.Args["drop"].(bool); drop {
-			return out + " DROP DEFAULT"
-		}
-		return g.fail(e.Class + " that says nothing about the column")
+		return g.writeAlterColumnDrop(out, e)
 	}
 	return out
 }

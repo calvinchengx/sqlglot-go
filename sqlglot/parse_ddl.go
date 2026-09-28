@@ -2343,6 +2343,12 @@ func (p *parser) parseAlteredColumn() (*Expression, error) {
 		p.advance()
 		p.advance()
 		action.Set("drop", true)
+	case p.atWords("DROP", "NOT", "NULL"):
+		p.advance()
+		p.advance()
+		p.advance()
+		action.Set("drop", true)
+		action.Set("allow_null", true)
 	case p.atWords("SET", "VISIBLE"), p.atWords("SET", "INVISIBLE"):
 		word := strings.ToUpper(p.next().Text)
 		p.advance()
