@@ -1824,12 +1824,27 @@ func (p *parser) parseAlter() (*Expression, error) {
 	), nil
 }
 
+// viewSetAuthorization reports ALTER VIEW … SET AUTHORIZATION, which the
+// reference does not parse in dialects that otherwise read the statement.
+func (p *parser) viewSetAuthorization() bool {
+	if p.dialect == "tsql" || p.dialect == "fabric" || !p.at(TokSET) {
+		return false
+	}
+	n := p.next()
+	return n != nil && strings.EqualFold(n.Text, "AUTHORIZATION")
+}
+
 // parseAlterView reads what an ALTER VIEW does. A rename is the same action
 // a table takes. Anything else is a new query. T-SQL's WITH SCHEMABINDING /
 // ENCRYPTION / VIEW_METADATA is a property the reference does not finish
 // reading, so that form is a Command of the whole statement.
 func (p *parser) parseAlterView(start Token) ([]*Expression, *Expression, error) {
 	if p.at(TokWITH) && !p.atWords("WITH", "CHECK") && !p.atWords("WITH", "NOCHECK") {
+		return nil, p.parseAsCommand(start), nil
+	}
+	// SET AUTHORIZATION is a setting the reference has no grammar for. It
+	// leaves the words unread and falls back to a Command, as ALTER TABLE does.
+	if p.viewSetAuthorization() {
 		return nil, p.parseAsCommand(start), nil
 	}
 	if p.atWords("RENAME") {
