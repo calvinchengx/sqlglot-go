@@ -243,6 +243,9 @@ func (p *parser) parseWrappedProperties() ([]*Expression, error) {
 // docs/upstream-issues.md. This refuses instead.
 func (p *parser) parseBespokeProperty(inWith bool) (*Expression, bool, error) {
 	switch {
+	case p.dialect == "risingwave" && p.atWords("INCLUDE"):
+		prop, err := p.parseIncludeProperty()
+		return prop, true, err
 	case p.dialect == "risingwave" && (p.atWords("KEY", "ENCODE") || p.atWords("ENCODE")):
 		prop, _, err := p.parseRisingWaveEncode()
 		return prop, true, err

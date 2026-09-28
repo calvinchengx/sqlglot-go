@@ -4500,7 +4500,17 @@ func (g *generator) writeProperties(e *Expression) (before string, out string, f
 	if len(beforeKind) > 0 {
 		before = strings.Join(beforeKind, " ") + " "
 	}
-	return before, out, ""
+	return before, g.withSourceFormats(e, out), ""
+}
+
+// withSourceFormats writes FORMAT and ENCODE after a source's other
+// properties. A sink's query owns that place, so this leaves a sink alone.
+func (g *generator) withSourceFormats(e *Expression, out string) string {
+	kind, _ := e.Args["kind"].(string)
+	if kind != "SOURCE" {
+		return out
+	}
+	return out + g.sinkFormatProperties(e)
 }
 
 // namesACatalog reports whether a CREATE's target carries all three parts of

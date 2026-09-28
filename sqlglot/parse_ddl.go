@@ -1362,6 +1362,12 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 	for {
 		var kind *Expression
 		switch {
+		case p.atRisingWaveComputed():
+			computed, compErr := p.parseRisingWaveComputed()
+			if compErr != nil {
+				return nil, compErr
+			}
+			kind = computed
 		case p.atWords("NOT", "NULL"):
 			p.advance()
 			p.advance()
@@ -2549,7 +2555,8 @@ func (p *parser) atTableConstraint() bool {
 	}
 	return p.at(TokCONSTRAINT) || p.at(TokPRIMARY_KEY) ||
 		p.at(TokFOREIGN_KEY) || p.atWords("UNIQUE") ||
-		p.atWords("EXCLUDE") || p.atWords("PERIOD", "FOR", "SYSTEM_TIME")
+		p.atWords("EXCLUDE") || p.atWords("PERIOD", "FOR", "SYSTEM_TIME") ||
+		p.atRisingWaveSchemaItem()
 }
 
 // parseTableConstraint reads one constraint on the table as a whole.
@@ -2602,6 +2609,9 @@ func (p *parser) parseTableConstraint() (*Expression, error) {
 // parseTableConstraintKind reads the constraint itself, named or not.
 func (p *parser) parseTableConstraintKind() (*Expression, error) {
 	switch {
+	case p.atRisingWaveSchemaItem():
+		item, _, err := p.parseRisingWaveSchemaItem()
+		return item, err
 	case p.dialect == "mysql" && p.atWords("FULLTEXT"):
 		p.advance()
 		if p.atWords("INDEX") || p.atWords("KEY") {
