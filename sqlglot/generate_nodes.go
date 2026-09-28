@@ -78,6 +78,7 @@ func init() {
 		"Leave":                               (*generator).writeLeave,
 		"Iterate":                             (*generator).writeIterate,
 		"TimeStrToTime":                       (*generator).writeTimeStrToTime,
+		"DateDiff":                            (*generator).writeDateDiff,
 		"OpenJSONColumnDef":                   (*generator).writeOpenJSONColumnDef,
 		"Union":                               (*generator).writeSetOperation,
 		"Except":                              (*generator).writeSetOperation,
@@ -6949,6 +6950,21 @@ func subsecondPrecision(literal string) int {
 		return 3
 	}
 	return 0
+}
+
+// writeDateDiff: MySQL's DateDiff with a unit is TO_DAYS and the
+// other forms the reference writes as DATEDIFF of the two dates. The unit
+// is not an argument there, and a TsOrDs wrapper is parser scaffolding.
+func (g *generator) writeDateDiff(e *Expression) string {
+	if g.dialect != "mysql" || e.Args["unit"] == nil {
+		return g.spell(e)
+	}
+	this, _ := e.Args["this"].(*Expression)
+	expression, _ := e.Args["expression"].(*Expression)
+	if this == nil || expression == nil {
+		return g.fail(e.Class + " without both dates")
+	}
+	return "DATEDIFF(" + g.node(stripMySQLTsOrDsWrap(this)) + ", " + g.node(stripMySQLTsOrDsWrap(expression)) + ")"
 }
 
 // timeStrWithZone writes MySQL's TIME_STR_TO_TIME when a zone was given.
