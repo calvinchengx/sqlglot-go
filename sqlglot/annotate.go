@@ -54,6 +54,12 @@ func annotateNode(e *Expression, dialect string) *Expression {
 	if e.Class == "Compress" && dialect == "mysql" {
 		return annotateMySQLCompress(e, dialect)
 	}
+	// Databricks types APPROX_PERCENTILE / PERCENTILE_APPROX from the value.
+	// An array of percentiles wraps that type; an unknown value stays unknown
+	// and is not wrapped.
+	if e.Class == "ApproxQuantile" && dialect == "databricks" {
+		return annotateDatabricksApproxQuantile(e, dialect)
+	}
 	switch e.Class {
 	case "Literal":
 		// A string is VARCHAR, a whole number INT, anything else DOUBLE.
@@ -253,6 +259,18 @@ func annotateMySQLCompress(e *Expression, dialect string) *Expression {
 	default:
 		return dataType("UNKNOWN")
 	}
+}
+
+func annotateDatabricksApproxQuantile(e *Expression, dialect string) *Expression {
+	thisType := annotate(childOf(e, "this"), dialect)
+	if typeKind(thisType) == "" || typeKind(thisType) == "UNKNOWN" {
+		return dataType("UNKNOWN")
+	}
+	if typeKind(annotate(childOf(e, "quantile"), dialect)) == "ARRAY" {
+		return New("DataType", Arg{"this", DataTypeKind("ARRAY")},
+			Arg{"expressions", []*Expression{thisType}}, Arg{"nested", true})
+	}
+	return thisType
 }
 
 func childOf(e *Expression, key string) *Expression {
