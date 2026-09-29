@@ -9,13 +9,17 @@ what a read-only SQL guard needs. Every construct in a parsed statement is a
 visible node; a construct the port does not know is a parse error, never a
 silent pass.
 
-**What it does not cover yet:** transpiler, optimizer, DML/DDL parsing beyond
-recognising a statement well enough to refuse it, and 31 of the 35 dialects —
-today it speaks four (T-SQL/Fabric, PostgreSQL, DuckDB, Databricks). A full
-port is the destination; the order is driven by the first consumer's needs, not
-by the library's table of contents. See `docs/17-sqlglot-go.md` in
+**What it covers:** the tokenizer, parser, and generator for twelve named
+dialects plus neutral; the first consumer's corpus; and simplify, annotate,
+diff, anonymize, and JSONPath. **What it does not cover yet:** 40 statements
+whose comments generate drops, 16 simplify pairs left unfolded and 2 that
+cannot be written back, 10 annotate cases with no answer and 2 that cannot
+be written back, 7 JSONPath selectors, one known diff exclusion, and 21
+named dialects with no consumer. A transpiler is not a product goal. The
+order is a measured gap, not the library's table of contents.
+`docs/17-sqlglot-go.md` in
 [data-agent-service](https://github.com/calvinchengx/data-agent-service),
-whose Go executor is the first consumer.
+whose Go executor is the first consumer, is stale.
 
 ## Coverage against data agent service
 
@@ -96,14 +100,14 @@ The tokenizer is complete and has no gap tier: every statement the reference
 lexes, the port lexes into the same tokens — same types, same text, same line,
 column and offsets, same attached comments. A tokenizer has nowhere to
 legitimately give up, because the parser above it cannot see what it drops.
-The parser is being built outward from `SELECT`. It refuses everything outside
-the grammar it has: a construct it does not understand is an `ErrUnsupported`
-that counts as unparsed, never a tree that merely looks plausible. That is why
-**mismatched is zero at every step** and is the number to watch.
+The configured reference corpus parses in full: **6,475 of 6,475**, with
+nothing unparsed. A construct outside that grammar is still an
+`ErrUnsupported`, never a tree that merely looks plausible. That is why
+**mismatched is zero** and is the number to watch.
 
 ## How it is verified
 
-`testdata/expected/` holds 4,506 statements — sqlglot's own `identity.sql`, its
+`testdata/expected/` holds 6,475 statements — sqlglot's own `identity.sql`, its
 **whole** dialect suite, and a set chosen to reach the lexical corners those
 miss — each with the token stream and the tree the reference produced.
 
@@ -116,7 +120,7 @@ second form and every file not named after one of our dialects. That was most
 of it: the largest single source of DuckDB statements is
 `tests/dialects/test_snowflake.py`, and the largest overall is
 `tests/dialects/test_dialect.py`, 5,448 lines organised by CONCEPT rather than
-by dialect. Harvesting those took the corpus from 2,171 to 4,506 and found
+by dialect. That harvest took the corpus from 2,171 to 4,506 and found
 **31 statements the port parsed into a different tree**, including two —
 `IS [NOT] DISTINCT FROM` and typed division — that had been found the
 expensive way, by fuzzing, while sitting in the reference's own tests all
@@ -144,9 +148,9 @@ hand-edited table is a divergence the port has no logic to catch.
 
 `sqlglot.Simplify` is the first thing in the port that CHANGES a tree rather
 than reproducing one, and it is held to the reference's own contract —
-`tests/fixtures/optimizer/simplify.sql`, 480 pairs pinning what each statement
-becomes. **368 are folded exactly**; the rest the port declines to fold that
-far, which costs nothing: the statement still means what it meant.
+`testdata/simplify.json`, 486 pairs pinning what each statement becomes.
+**468 are folded exactly**; the rest the port declines to fold that far,
+which costs nothing: the statement still means what it meant.
 
 Every rewrite must also **survive being written down**: the port writes the
 simplified tree, reads the SQL back, and requires the same tree — up to the
@@ -184,10 +188,11 @@ So there is one more harness, and it is the only one here whose failure means
 differ". `make oracle-exec` takes each statement as it was written, what
 the port writes back, and what the port *simplifies* it to, runs them **all**
 on a real engine, and compares the
-results. **365 statements are currently comparable on DuckDB**, which
-embeds. PostgreSQL is skipped without `PGDSN`; CI supplies it as a service
-container and `make postgres` starts one locally. An engine it cannot reach
-is skipped with a note, not a failure.
+results. The build fails if comparable DuckDB statements fall below **385**,
+or Postgres below **83**. Fifteen known divergences are recorded and are not
+worked around. PostgreSQL is skipped without `PGDSN`; CI supplies it as a
+service container and `make postgres` starts one locally. An engine it cannot
+reach is skipped with a note, not a failure.
 
 Most of the corpus is a transpiler's test suite rather than a workload: it
 says `SELECT x FROM t` and never creates `t`. `testdata/fixtures/schema.sql`

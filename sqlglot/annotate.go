@@ -49,6 +49,11 @@ func annotate(e *Expression, dialect string) *Expression {
 }
 
 func annotateNode(e *Expression, dialect string) *Expression {
+	// MySQL's COMPRESS is not a fixed return: the argument's type selects
+	// VARBINARY, LONGBLOB, or BLOB, and anything else is UNKNOWN.
+	if e.Class == "Compress" && dialect == "mysql" {
+		return annotateMySQLCompress(e, dialect)
+	}
 	switch e.Class {
 	case "Literal":
 		// A string is VARCHAR, a whole number INT, anything else DOUBLE.
@@ -231,6 +236,23 @@ func annotateNode(e *Expression, dialect string) *Expression {
 		return dataType("UNKNOWN")
 	}
 	return nil
+}
+
+// annotateMySQLCompress is the reference's _annotate_compress. The three
+// answers are disjoint sets of argument types; a type in none of them,
+// including one this port cannot resolve, is UNKNOWN rather than a guess.
+func annotateMySQLCompress(e *Expression, dialect string) *Expression {
+	switch typeKind(annotate(childOf(e, "this"), dialect)) {
+	case "CHAR", "VARCHAR", "BINARY", "VARBINARY", "TINYBLOB", "ENUM",
+		"INT", "BIGINT", "DECIMAL", "DOUBLE", "DATE", "DATETIME":
+		return dataType("VARBINARY")
+	case "TEXT", "MEDIUMTEXT", "LONGTEXT", "BLOB", "MEDIUMBLOB", "LONGBLOB", "JSON":
+		return dataType("LONGBLOB")
+	case "TINYTEXT":
+		return dataType("BLOB")
+	default:
+		return dataType("UNKNOWN")
+	}
 }
 
 func childOf(e *Expression, key string) *Expression {
