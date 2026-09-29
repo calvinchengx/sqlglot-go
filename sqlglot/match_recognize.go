@@ -39,10 +39,7 @@ func (p *parser) parseMatchRecognize() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	rows, err := p.matchRecognizeRows()
-	if err != nil {
-		return nil, err
-	}
+	rows := p.matchRecognizeRows()
 	after, err := p.matchRecognizeAfter()
 	if err != nil {
 		return nil, err
@@ -143,7 +140,7 @@ func (p *parser) matchRecognizeMeasure() (*Expression, error) {
 	return New("MatchRecognizeMeasure", Arg{"window_frame", frame}, Arg{"this", this}), nil
 }
 
-func (p *parser) matchRecognizeRows() (*Expression, error) {
+func (p *parser) matchRecognizeRows() *Expression {
 	text := ""
 	switch {
 	case p.takeWords("ONE", "ROW", "PER", "MATCH"):
@@ -159,9 +156,9 @@ func (p *parser) matchRecognizeRows() (*Expression, error) {
 			text += " WITH UNMATCHED ROWS"
 		}
 	default:
-		return nil, nil
+		return nil
 	}
-	return New("Var", Arg{"this", text}), nil
+	return New("Var", Arg{"this", text})
 }
 
 func (p *parser) matchRecognizeAfter() (*Expression, error) {
