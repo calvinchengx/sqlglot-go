@@ -43,7 +43,7 @@ func annotate(e *Expression, dialect string) *Expression {
 	if e.rawTypeKnown && e.rawTypeDialect == dialect {
 		return e.rawType
 	}
-	t := annotateNode(e, dialect)
+	t := annotateRecorded(e, dialect)
 	e.rawType, e.rawTypeDialect, e.rawTypeKnown = t, dialect, true
 	return t
 }
@@ -259,6 +259,22 @@ func annotateMySQLCompress(e *Expression, dialect string) *Expression {
 	default:
 		return dataType("UNKNOWN")
 	}
+}
+
+// annotateRecorded answers the fixed returns the generated table does not
+// carry, then the ordinary rules. STR_TO_MAP is one: Databricks inherits
+// Hive's MAP<STRING, STRING>, and the probe never recorded a nested return.
+func annotateRecorded(e *Expression, dialect string) *Expression {
+	if e.Class == "StrToMap" && dialect == "databricks" {
+		return databricksStringMap()
+	}
+	return annotateNode(e, dialect)
+}
+
+func databricksStringMap() *Expression {
+	return New("DataType", Arg{"this", DataTypeKind("MAP")},
+		Arg{"expressions", []*Expression{dataType("VARCHAR"), dataType("VARCHAR")}},
+		Arg{"nested", true})
 }
 
 func annotateDatabricksApproxQuantile(e *Expression, dialect string) *Expression {
