@@ -1260,7 +1260,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	// port refused, which the generator fuzzer found by writing `ALL()` and
 	// failing to read it back.
 	if (p.at(TokALL) || p.at(TokANY)) && p.next() != nil && p.next().Type == TokL_PAREN &&
-		p.afterComparison() && !p.atEmptyArgList() {
+		p.quantifierHere() {
 		class := "All"
 		if p.at(TokANY) {
 			class = "Any"
@@ -3566,6 +3566,21 @@ func (p *parser) atIdentifierWhere(namingATable bool) bool {
 // a LIKE. `ALL` and `ANY` are quantifiers only THERE: in a select list,
 // `ALL (age >= 30) AS every` is an ordinary call to a function named ALL, and
 // reading it as a quantifier built a node the reference never makes.
+// quantifierHere reports whether ALL or ANY at the cursor, followed by
+// parentheses, is a quantifier. After a comparison it is, except over an
+// empty argument list. Standing alone it is one only over a query:
+// ALL(SELECT 1) is a quantifier, while ALL() and ALL(1, 2) are calls.
+func (p *parser) quantifierHere() bool {
+	if p.atEmptyArgList() {
+		return false
+	}
+	if p.afterComparison() {
+		return true
+	}
+	inner := p.peekAt(2)
+	return inner != nil && (inner.Type == TokSELECT || inner.Type == TokWITH || inner.Type == TokFROM)
+}
+
 func (p *parser) afterComparison() bool {
 	if p.index == 0 {
 		return false

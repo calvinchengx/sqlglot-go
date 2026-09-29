@@ -276,10 +276,10 @@ func TestAnnotateEdges(t *testing.T) {
 		{"a scalar subquery", "SELECT (SELECT 1)", "INT"},
 		// More than one projection, and there is no single answer to give.
 		{"a subquery of two", "SELECT (SELECT 1, 2)", ""},
-		// A branch this cannot type leaves the whole CASE with no answer,
+		// ALL over a query is a BOOLEAN, so the CASE that yields it is one too,
 		// from either the WHEN or the ELSE.
-		{"a branch nobody can type", "SELECT CASE WHEN 1 = 1 THEN ALL(SELECT 1) END", ""},
-		{"a default nobody can type", "SELECT CASE WHEN 1 = 1 THEN 1 ELSE ALL(SELECT 1) END", ""},
+		{"a quantifier over a query", "SELECT CASE WHEN 1 = 1 THEN ALL(SELECT 1) END", "BOOLEAN"},
+		{"a quantifier in the default", "SELECT CASE WHEN 1 = 1 THEN 1 ELSE ALL(SELECT 1) END", "BOOLEAN"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, "duckdb")

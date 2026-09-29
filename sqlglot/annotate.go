@@ -692,27 +692,65 @@ var integerTypes = map[string]bool{
 // WHEN and the ELSE. The conditions are beside the point: they are all
 // booleans and none of them is the result.
 func annotateCase(e *Expression, dialect string) *Expression {
-	var result *Expression
-	branches, _ := e.Args["ifs"].([]*Expression)
-	for _, branch := range branches {
-		value := childOf(branch, "true")
+	var literalType, nonLiteralType, nested *Expression
+	take := func(value *Expression) bool {
 		if value == nil {
-			continue
+			return true
 		}
 		t := annotate(value, dialect)
 		if t == nil {
+			return false
+		}
+		if nested != nil {
+			return true
+		}
+		if nestedType(t) {
+			nested = t
+			return true
+		}
+		// A number is a literal and ALL(SELECT 1) is not. The reference
+		// asks the non-literal type whether it can become the literal's,
+		// so a BOOLEAN quantifier beside a 1 stays BOOLEAN.
+		if value.Class == "Literal" {
+			literalType = coerceTypes(literalType, t)
+			return true
+		}
+		nonLiteralType = coerceTypes(nonLiteralType, t)
+		return true
+	}
+	branches, _ := e.Args["ifs"].([]*Expression)
+	for _, branch := range branches {
+		if !take(childOf(branch, "true")) {
 			return nil
 		}
-		result = coerceTypes(result, t)
 	}
-	if fallback := childOf(e, "default"); fallback != nil {
-		t := annotate(fallback, dialect)
-		if t == nil {
-			return nil
-		}
-		result = coerceTypes(result, t)
+	if !take(childOf(e, "default")) {
+		return nil
 	}
-	return result
+	if nested != nil {
+		return nested
+	}
+	if literalType != nil && nonLiteralType != nil {
+		return coerceTypes(nonLiteralType, literalType)
+	}
+	if nonLiteralType != nil {
+		return nonLiteralType
+	}
+	return literalType
+}
+
+func nestedType(t *Expression) bool {
+	if t == nil {
+		return false
+	}
+	if nested, _ := t.Args["nested"].(bool); nested {
+		return true
+	}
+	switch typeKind(t) {
+	case "ARRAY", "MAP":
+		return true
+	}
+	return false
 }
 
 // annotateBracket types a subscript. A SLICE of something is that same thing
