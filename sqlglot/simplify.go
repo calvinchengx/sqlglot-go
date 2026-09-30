@@ -1246,6 +1246,24 @@ func sortXor(e *Expression, dialect string) *Expression {
 	return rebuilt
 }
 
+// connectorSortKey is the text an AND or OR operand is ordered by. Most
+// operands sort as their own SQL. A JSON or range operator sorts as its
+// class instead: the reference spells those as a function or a bare class,
+// which comes before `id = 1`, while their SQL starts with j or r.
+func connectorSortKey(e *Expression, dialect string) (string, error) {
+	e = unnest(e)
+	s, err := Generate(e, dialect)
+	if err != nil || e == nil {
+		return s, err
+	}
+	switch e.Class {
+	case "JSONBContainsTopKey", "JSONBContainsAllTopKeys", "JSONBContainsAnyTopKeys",
+		"Adjacent", "ExtendsLeft", "ExtendsRight":
+		return strings.ToUpper(e.Class) + " " + s, nil
+	}
+	return s, nil
+}
+
 func uniqSort(e, parent *Expression, dialect string) *Expression {
 	if e.Class != "And" && e.Class != "Or" {
 		return e
@@ -1262,7 +1280,7 @@ func uniqSort(e, parent *Expression, dialect string) *Expression {
 	// so a compound operand still needs its own on the way back out.
 	keys := make([]string, len(ops))
 	for i, op := range ops {
-		s, err := Generate(unnest(op), dialect)
+		s, err := connectorSortKey(op, dialect)
 		if err != nil {
 			// Cannot key this operand safely; leave the chain as it is.
 			return e
