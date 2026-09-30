@@ -3211,6 +3211,11 @@ func ignoreNullsOnTrue(dialect, upper string, args []*Expression) (*Expression, 
 }
 
 func (p *parser) buildFunction(name string, spec FuncSpec, args []*Expression) *Expression {
+	// NAMED_STRUCT is registered only so this call is reached. Its pairs are
+	// a Struct, which the spec's own argument list cannot describe.
+	if name == "NAMED_STRUCT" {
+		return namedStruct(args)
+	}
 	node := p.buildFromSpec(name, spec.Class, spec.Args, args)
 	if spec.Annot != nil {
 		// The builder's OWN node carries an annotation: PostgreSQL's DIV is
