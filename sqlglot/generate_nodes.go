@@ -1602,10 +1602,14 @@ func (g *generator) writeIf(e *Expression) string {
 		}
 	}
 	out, ok := g.syntaxTemplate(e)
-	if !ok {
-		return g.fail("If")
+	if ok {
+		return out
 	}
-	return out
+	// A dialect with no IF of its own writes the one-branch CASE the
+	// reference writes. The ELSE is the IF's own false arm.
+	return g.writeCase(New("Case",
+		Arg{"ifs", []*Expression{e}},
+		Arg{"default", childOf(e, "false")}))
 }
 
 func (g *generator) writeCast(e *Expression) string {
