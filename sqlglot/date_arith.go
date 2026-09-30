@@ -262,9 +262,21 @@ func foldDateArithmetic(e *Expression) *Expression {
 	case "Add", "Sub":
 		return foldDateIntervalBinary(e)
 	case "DateAdd", "DateSub", "DatetimeAdd", "DatetimeSub":
+		supplyDefaultDay(e)
 		return foldDateAddFamily(e)
 	}
 	return nil
+}
+
+// supplyDefaultDay is the reference generator's missing unit. DATE_ADD(x, 1)
+// is written DATE_ADD(x, 1, 'DAY'). The unit is stored on the tree here,
+// not invented while writing, so a statement that never named a unit still
+// round-trips as written until simplify runs.
+func supplyDefaultDay(e *Expression) {
+	if e.Class != "DateAdd" || childOf(e, "unit") != nil {
+		return
+	}
+	e.Set("unit", New("Var", Arg{"this", "DAY"}))
 }
 
 // foldDateIntervalBinary handles a date literal on one side of Add/Sub and
