@@ -12,8 +12,8 @@ silent pass.
 **What it covers:** the tokenizer, parser, and generator for twelve named
 dialects plus neutral; the first consumer's corpus; and simplify, annotate,
 diff, anonymize, and JSONPath. **What it does not cover yet:** 40 statements
-whose comments generate drops, 1 simplify pair left unfolded and 2 that
-cannot be written back, 2 annotate cases that cannot be written back,
+whose comments generate drops, 2 simplify pairs that cannot
+be written back, 2 annotate cases that cannot be written back,
 7 JSONPath selectors, one known diff exclusion, and 21
 named dialects with no consumer. A transpiler is not a product goal. The
 order is a measured gap, not the library's table of contents.

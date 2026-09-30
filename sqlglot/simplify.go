@@ -1394,7 +1394,22 @@ func uniqSort(e, parent *Expression, dialect string) *Expression {
 //
 // The ELIMINATION half -- `(A AND B) OR (A AND NOT B)` down to A -- is not
 // here. It holds only where B is known non-null, and a column is not.
+
+// notGroupsCase removes a parenthesis layer whose only job was to wrap a
+// CASE for NOT. The caller keeps e when the node is anything else.
+func notGroupsCase(e, parent *Expression) *Expression {
+	this := childOf(e, "this")
+	grouped := e != nil && e.Class == "Paren" && this != nil && this.Class == "Case"
+	if grouped && parent != nil && parent.Class == "Not" {
+		return this
+	}
+	return e
+}
+
 func absorb(e, parent *Expression) *Expression {
+	if next := notGroupsCase(e, parent); next != e {
+		return next
+	}
 	if e.Class != "And" && e.Class != "Or" {
 		return e
 	}
