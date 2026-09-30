@@ -60,6 +60,9 @@ func annotateNode(e *Expression, dialect string) *Expression {
 	if e.Class == "ApproxQuantile" && dialect == "databricks" {
 		return annotateDatabricksApproxQuantile(e, dialect)
 	}
+	if t, ok := fixedTimeFromParts(e, dialect); ok {
+		return t
+	}
 	switch e.Class {
 	case "Literal":
 		// A string is VARCHAR, a whole number INT, anything else DOUBLE.
@@ -264,6 +267,15 @@ func annotateMySQLCompress(e *Expression, dialect string) *Expression {
 // annotateRecorded answers the fixed returns the generated table does not
 // carry, then the ordinary rules. STR_TO_MAP is one: Databricks inherits
 // Hive's MAP<STRING, STRING>, and the probe never recorded a nested return.
+// fixedTimeFromParts is MAKETIME. MySQL and DuckDB fix TimeFromParts at
+// TIME. The probe never recorded that return.
+func fixedTimeFromParts(e *Expression, dialect string) (*Expression, bool) {
+	if e.Class != "TimeFromParts" || (dialect != "mysql" && dialect != "duckdb") {
+		return nil, false
+	}
+	return dataType("TIME"), true
+}
+
 func annotateRecorded(e *Expression, dialect string) *Expression {
 	if e.Class == "StrToMap" && dialect == "databricks" {
 		return databricksStringMap()
