@@ -280,6 +280,11 @@ func annotateRecorded(e *Expression, dialect string) *Expression {
 	if e.Class == "StrToMap" && dialect == "databricks" {
 		return databricksStringMap()
 	}
+	// CONVERT_TZ is ConvertTimezone. MySQL fixes it at DATETIME. The probe
+	// never recorded that return.
+	if e.Class == "ConvertTimezone" && dialect == "mysql" {
+		return dataType("DATETIME")
+	}
 	return annotateNode(e, dialect)
 }
 
