@@ -134,6 +134,7 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 	out = simplifyCoalesce(out, parent)
 	out = simplifyConcat(out)
 	out = simplifyNot(out, parent, dialect)
+	out = sortXor(out, dialect)
 	out = uniqSort(out, parent, dialect)
 	out = absorb(out, parent)
 	out = simplifyConnectors(out, parent)
@@ -1201,6 +1202,50 @@ func simplifyAlwaysTrueJoin(e *Expression) *Expression {
 // is not returned bare: the reference rebuilds it as `operand AND TRUE`, and
 // that is matched exactly rather than folded further, because it is the
 // fixture's own committed answer.
+
+// sortXor orders an XOR chain by each operand's own SQL. XOR is associative
+// and commutative, and A XOR A is not A, so duplicates stay. The reference
+// sorts with the same generated text this port already uses for AND and OR.
+func sortXor(e *Expression, dialect string) *Expression {
+	if e.Class != "Xor" {
+		return e
+	}
+	ops := chainOperands(e, "Xor")
+	if len(ops) < 2 {
+		return e
+	}
+	keys := make([]string, len(ops))
+	for i, op := range ops {
+		s, err := Generate(unnest(op), dialect)
+		if err != nil {
+			return e
+		}
+		keys[i] = s
+	}
+	ordered := true
+	for i := 1; i < len(keys); i++ {
+		if keys[i] < keys[i-1] {
+			ordered = false
+			break
+		}
+	}
+	if ordered {
+		return e
+	}
+	idx := make([]int, len(ops))
+	for i := range idx {
+		idx[i] = i
+	}
+	sort.SliceStable(idx, func(a, b int) bool { return keys[idx[a]] < keys[idx[b]] })
+	// The parser reads `A XOR B XOR C` as ((A XOR B) XOR C). A right-deep
+	// chain writes the same SQL and then reads back as a different tree.
+	rebuilt := ops[idx[0]]
+	for _, j := range idx[1:] {
+		rebuilt = New("Xor", Arg{"this", rebuilt}, Arg{"expression", ops[j]})
+	}
+	return rebuilt
+}
+
 func uniqSort(e, parent *Expression, dialect string) *Expression {
 	if e.Class != "And" && e.Class != "Or" {
 		return e
