@@ -945,7 +945,24 @@ func negate(e *Expression, dialect string) *Expression {
 }
 
 // simplifyNot folds a negation whose operand is already decided.
+
+// unwrapLiteralIn drops parentheses around a literal that is already an
+// IN argument: `(0.08) IN (...)` is `0.08 IN (...)`.
+func unwrapLiteralIn(e, parent *Expression) *Expression {
+	if e.Class != "Paren" || parent == nil || parent.Class != "In" {
+		return nil
+	}
+	this := childOf(e, "this")
+	if this == nil || this.Class != "Literal" {
+		return nil
+	}
+	return this
+}
+
 func simplifyNot(e, parent *Expression, dialect string) *Expression {
+	if inner := unwrapLiteralIn(e, parent); inner != nil {
+		return inner
+	}
 	if e.Class != "Not" {
 		return e
 	}
