@@ -6927,10 +6927,50 @@ func (g *generator) writeOpenJSONColumnDef(e *Expression) string {
 // probe -- which renders a node on its own -- cannot see it, and the port
 // wrote `YEAR(TO_DATE(y))`.
 //
-// A coercion carrying a FORMAT is a different call and falls through.
-func (g *generator) writeTsOrDsToDate(e *Expression) string {
-	if format, _ := e.Args["format"].(*Expression); format != nil {
+// A format the dialect does not spell itself becomes STR_TO_TIME.
+// dateFromFormat writes TS_OR_DS_TO_DATE when it carries a format. The two
+// default patterns are not a format: the reference drops them and casts.
+// Anything else, where the dialect has no call of its own, is
+// CAST(STR_TO_TIME(value, format) AS DATE). A dialect that has a call
+// still writes that call.
+func (g *generator) dateFromFormat(e *Expression) string {
+	format, _ := e.Args["format"].(*Expression)
+	if format == nil {
+		return ""
+	}
+	if _, hasCall := g.tables.FunctionSQL[e.Class]; hasCall {
 		return g.spell(e)
+	}
+	if cast := strToTimeCast(e); cast != nil {
+		return g.node(cast)
+	}
+	return ""
+}
+
+// strToTimeCast is the tree CAST(STR_TO_TIME(value, format) AS DATE). A
+// default format is not one: the reference drops it and casts the value.
+func strToTimeCast(e *Expression) *Expression {
+	format, _ := e.Args["format"].(*Expression)
+	this, _ := e.Args["this"].(*Expression)
+	if format == nil || this == nil || defaultDateFormat(format) {
+		return nil
+	}
+	parsed := New("StrToTime", Arg{"this", this}, Arg{"format", format})
+	if safe, _ := e.Args["safe"].(bool); safe {
+		parsed.Set("safe", true)
+	}
+	return New("Cast", Arg{"this", parsed},
+		Arg{"to", New("DataType", Arg{"this", DataTypeKind("DATE")})})
+}
+
+func defaultDateFormat(format *Expression) bool {
+	text, _ := format.Args["this"].(string)
+	return text == "%Y-%m-%d" || text == "%Y-%m-%d %H:%M:%S"
+}
+
+func (g *generator) writeTsOrDsToDate(e *Expression) string {
+	if written := g.dateFromFormat(e); written != "" {
+		return written
 	}
 	if e.Parent != nil {
 		if _, implied := g.tables.TsOrDsParents[e.Parent.Class]; implied {

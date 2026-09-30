@@ -644,9 +644,32 @@ func sortComparison(e *Expression, dialect string) *Expression {
 // reference's `gen(l) > gen(r)` tiebreak. Either side failing to generate
 // leaves the comparison exactly as written rather than guessing.
 func genGreater(left, right *Expression, dialect string) bool {
-	l, lerr := Generate(left, dialect)
-	r, rerr := Generate(right, dialect)
+	l, lerr := comparisonKey(left, dialect)
+	r, rerr := comparisonKey(right, dialect)
 	return lerr == nil && rerr == nil && l > r
+}
+
+// comparisonKey is the text a comparison tiebreak sorts on. A date coercion
+// sorts as its own class, which is where the reference leaves
+// DATE_TRUNC(x) > TS_OR_DS_TO_DATE(...). Its SQL is a CAST, and a CAST
+// sorts to the other side.
+func comparisonKey(e *Expression, dialect string) (string, error) {
+	s, err := Generate(e, dialect)
+	if err != nil || !sortsAsDateCoercion(e) {
+		return s, err
+	}
+	return "TS_OR_DS_TO_DATE(" + s + ")", nil
+}
+
+func sortsAsDateCoercion(e *Expression) bool {
+	if e == nil {
+		return false
+	}
+	if e.Class == "TsOrDsToDate" {
+		return true
+	}
+	this := childOf(e, "this")
+	return e.Class == "Cast" && this != nil && this.Class == "StrToTime"
 }
 
 // inverseArithmetic is what moving a constant across a comparison does:
@@ -2011,7 +2034,27 @@ func copyExpressions(in []*Expression) []*Expression {
 // simplifyStartsWith folds a prefix check whose both sides are string
 // literals: STARTS_WITH('foo', 'f') is TRUE. A column on either side is
 // left alone -- whether it starts with a prefix is not knowable here.
+
+// foldTsOrDs turns a formatted TS_OR_DS_TO_DATE into the CAST the reference
+// writes, and drops a coercion wrapped around a date that already is one.
+// The tree then matches the SQL, so reading that SQL back is the same tree.
+func foldTsOrDs(e *Expression) *Expression {
+	if e == nil || e.Class != "TsOrDsToDate" {
+		return e
+	}
+	if cast := strToTimeCast(e); cast != nil {
+		return cast
+	}
+	if this := childOf(e, "this"); castsToDate(this) {
+		return this
+	}
+	return e
+}
+
 func simplifyStartsWith(e *Expression) *Expression {
+	if next := foldTsOrDs(e); next != e {
+		return next
+	}
 	if e.Class != "StartsWith" {
 		return e
 	}
