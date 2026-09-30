@@ -658,6 +658,37 @@ func genGreater(left, right *Expression, dialect string) bool {
 // n unit` (already covered here as Sub), so it is not ported speculatively.
 var inverseArithmetic = map[string]string{"Add": "Sub", "Sub": "Add"}
 
+// inverseDateOp moves a DATE_ADD family call across a comparison onto the
+// constant, the way Add and Sub already move. DateAdd becomes subtraction.
+var inverseDateOp = map[string]string{
+	"DateAdd": "Sub", "DateSub": "Add", "DatetimeAdd": "Sub", "DatetimeSub": "Add",
+}
+
+// moveDateAddAcross turns `DATE_ADD(x, 1, DAY) <= date` into
+// `x <= date - INTERVAL 1 DAY`. A later pass folds the constant side.
+// The column has to be the date argument, and the amount has to be an
+// integer, or the node is left alone.
+func moveDateAddAcross(e *Expression) *Expression {
+	left, right := childOf(e, "this"), childOf(e, "expression")
+	if left == nil || right == nil {
+		return nil
+	}
+	op, ok := inverseDateOp[left.Class]
+	if !ok || !isDateLiteral(right) {
+		return nil
+	}
+	column, _, _, _, ok := dateAddFamilyOf(left)
+	if !ok || isDateLiteral(column) {
+		return nil
+	}
+	interval := New("Interval",
+		Arg{"this", childOf(left, "expression").Copy()},
+		Arg{"unit", childOf(left, "unit").Copy()})
+	return New(e.Class,
+		Arg{"this", column.Copy()},
+		Arg{"expression", New(op, Arg{"this", right.Copy()}, Arg{"expression", interval})})
+}
+
 // simplifyEquality is the reference's `simplify_equality`: move a constant
 // across + or - so the column stands alone. Subtraction is not commutative,
 // so `5 - x = 2` inverts the comparison (`x < 3` when it was `>`).
@@ -670,6 +701,9 @@ var inverseArithmetic = map[string]string{"Add": "Sub", "Sub": "Add"}
 func simplifyEquality(e *Expression) *Expression {
 	if !comparisons[e.Class] || e.Class == "Is" {
 		return e
+	}
+	if moved := moveDateAddAcross(e); moved != nil {
+		return moved
 	}
 	left, right := childOf(e, "this"), childOf(e, "expression")
 	if left == nil || right == nil || inverseArithmetic[left.Class] == "" {
