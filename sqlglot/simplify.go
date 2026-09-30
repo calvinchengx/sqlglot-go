@@ -131,7 +131,7 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 	out = simplifyConditionals(out, parent)
 	out = propagateConstants(out, parent)
 	out = simplifyLiterals(out, parent)
-	out = simplifyCoalesce(out, parent)
+	out = simplifyCoalesce(out, parent, dialect)
 	out = simplifyConcat(out)
 	out = simplifyNot(out, parent, dialect)
 	out = sortXor(out, dialect)
@@ -1682,7 +1682,7 @@ func isKnownNonnull(e *Expression) bool {
 // Redshift is the only dialect that refuses this rewrite, and it is not
 // configured here. A comparison whose other side is not a constant is left
 // alone -- the rewrite is valid but does no work.
-func simplifyCoalesce(e, parent *Expression) *Expression {
+func simplifyCoalesce(e, parent *Expression, dialect string) *Expression {
 	if e.Class == "Coalesce" {
 		if parent != nil && parent.Class == "Hint" {
 			return e
@@ -1701,6 +1701,10 @@ func simplifyCoalesce(e, parent *Expression) *Expression {
 		if len(coalesceArgs(e)) == 0 && this.Class == "Column" {
 			return this
 		}
+		return e
+	}
+	// Redshift does not treat COALESCE(x, 1) = 2 as "x is not null and x = 2".
+	if dialect == "redshift" {
 		return e
 	}
 	if !comparisons[e.Class] {
