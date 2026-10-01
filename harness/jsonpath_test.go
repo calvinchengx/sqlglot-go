@@ -77,7 +77,7 @@ func TestJSONPathAgainstReference(t *testing.T) {
 
 func assertJSONPathFloor(t *testing.T, agreed int) {
 	t.Helper()
-	const floor = 519 // raised by hand as the JSONPath parser grows; never lowered here
+	const floor = 526 // raised by hand as the JSONPath parser grows; never lowered here
 	if agreed < floor {
 		t.Errorf("JSONPath parser REGRESSED: %d agreed, floor %d", agreed, floor)
 	}

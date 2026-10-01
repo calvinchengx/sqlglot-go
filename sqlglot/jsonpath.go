@@ -273,16 +273,27 @@ func (p *jpParser) parseLiteral() (any, error) {
 		sign = "-"
 	}
 	if t := p.match(jpNumber); t != nil {
-		n, err := strconv.Atoi(sign + t.text)
-		if err != nil {
-			return nil, errUnsupportedJSONPath("subscript " + sign + t.text)
-		}
-		return n, nil
+		return jsonPathNumber(sign + t.text)
 	}
 	if sign != "" {
 		return nil, errUnsupportedJSONPath("a lone -")
 	}
 	return jpNoValue{}, nil
+}
+
+// jsonPathNumber reads a subscript bound. A value wider than Go's int is
+// kept as float64, the width the fixture comparison has once the number has
+// been read from JSON.
+func jsonPathNumber(text string) (any, error) {
+	n, err := strconv.Atoi(text)
+	if err == nil {
+		return n, nil
+	}
+	f, ferr := strconv.ParseFloat(text, 64)
+	if ferr != nil {
+		return nil, errUnsupportedJSONPath("subscript " + text)
+	}
+	return f, nil
 }
 
 // parseSlice reads a bracket's ONE segment: a bare literal, or `start:end`
@@ -417,10 +428,9 @@ func (p *jpParser) parseVarText() string {
 // always starts with a root, whether or not the string itself opened with
 // `$`, so a bare `field` still parses as `$.field`.
 //
-// One honest gap remains against the CTS: Python's int is unbounded, and a
-// subscript or slice bound larger than Go's own int overflows rather than
-// being read -- seven of the suite's 526 cases exist for no reason but to
-// probe exactly that, and stay declined instead of losing precision quietly.
+// A bound wider than Go's int is kept as float64. That is the width the
+// fixture comparison has once the number has been read from JSON, and it is
+// wide enough for every overflowing bound in the suite.
 func parseJSONPath(path string, dashInKeys bool) (*Expression, error) {
 	runes := []rune(path)
 	toks, err := jsonPathTokenize(runes, dashInKeys)
