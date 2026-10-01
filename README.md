@@ -11,8 +11,7 @@ silent pass.
 
 **What it covers:** the tokenizer, parser, and generator for twelve named
 dialects plus neutral; the first consumer's corpus; and simplify, annotate,
-diff, anonymize, and JSONPath. **What it does not cover yet:** 40 statements
-whose comments generate drops, and 21
+diff, anonymize, and JSONPath. **What it does not cover yet:** 21
 named dialects with no consumer. A transpiler is not a product goal. The
 order is a measured gap, not the library's table of contents.
 `docs/17-sqlglot-go.md` in
@@ -86,7 +85,7 @@ that matters** and must be zero: it counts statements the port parsed into a
 *different* tree than the reference. Unparsed is the honest size of the gap.
 
 The port also writes SQL back out, and is held to the reference's own output
-string for string: **6,435 of the statements it parses are written back
+string for string: **6,475 of the statements it parses are written back
 identically, none is written wrongly, and none is refused**, and the guard's own rewrite -- inject a row ceiling, emit --
 lands as `TOP 500` in T-SQL and `LIMIT 500` in DuckDB from the same edit to the
 same node. Where a dialect would transform a statement in a way the port does

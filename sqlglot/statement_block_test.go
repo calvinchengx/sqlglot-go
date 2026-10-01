@@ -10,8 +10,8 @@ func TestStatementBlock(t *testing.T) {
 	}{
 		{"", "SELECT 1; SELECT 2", "SELECT 1; SELECT 2"},
 		{"tsql", "SELECT 1; SELECT 2;", "SELECT 1; SELECT 2"},
-		{"", "SELECT 1 -- c\n; SELECT 2", "SELECT 1; SELECT 2"},
-		{"", "SELECT 1 /* c */ ; SELECT 2", "SELECT 1; SELECT 2"},
+		{"", "SELECT 1 -- c\n; SELECT 2", "SELECT 1 /* c */; SELECT 2"},
+		{"", "SELECT 1 /* c */ ; SELECT 2", "SELECT 1 /* c */; SELECT 2"},
 	}
 	for _, c := range cases {
 		tree, err := ParseOne(c.sql, c.dialect)

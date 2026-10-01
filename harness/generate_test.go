@@ -24,18 +24,9 @@ func TestGenerateAgainstReference(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	var written, refused, wrong, commented int
+	var written, refused, wrong int
 	var problems []string
 	for _, c := range cases {
-		// A comment is metadata the tree comparison already ignores, and the
-		// port does not carry it. The reference writes comments back out, so
-		// a statement that has one can never match here -- counted, not
-		// silently skipped, because it is a real gap in the generator even
-		// though nothing the guard emits depends on it.
-		if carriesComments(c.Tree) {
-			commented++
-			continue
-		}
 		tree, perr := sqlglot.ParseOne(c.SQL, c.Dialect)
 		if perr != nil {
 			continue
@@ -63,7 +54,6 @@ func TestGenerateAgainstReference(t *testing.T) {
 
 	t.Logf("reference %s: %d parsed statements written back identically, %d refused, %d wrong",
 		idx.Reference[:12], written, refused, wrong)
-	t.Logf("  %d more carry comments, which the port does not reproduce", commented)
 	for _, p := range problems {
 		if wrong > 0 {
 			t.Error(p)
@@ -77,20 +67,9 @@ func TestGenerateAgainstReference(t *testing.T) {
 	assertGeneratorFloor(t, written)
 }
 
-// carriesComments reports whether the reference attached a comment anywhere
-// in the tree; the dump records them under "o".
-func carriesComments(tree []map[string]any) bool {
-	for _, rec := range tree {
-		if _, ok := rec["o"]; ok {
-			return true
-		}
-	}
-	return false
-}
-
 func assertGeneratorFloor(t *testing.T, written int) {
 	t.Helper()
-	const floor = 6435 // raised by hand as the generator grows; never lowered here
+	const floor = 6475 // raised by hand as the generator grows; never lowered here
 	if written < floor {
 		t.Errorf("generator REGRESSED: %d statements written, floor %d", written, floor)
 	}

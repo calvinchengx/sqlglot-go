@@ -400,6 +400,7 @@ func (p *parser) parseTable() (*Expression, error) {
 				return nil, err
 			}
 			p.advance() // the colon
+			colonComments := p.takeComments()
 			named, err := p.parseTable()
 			if err != nil {
 				return nil, err
@@ -407,7 +408,11 @@ func (p *parser) parseTable() (*Expression, error) {
 			if existing, _ := named.Args["alias"].(*Expression); existing != nil {
 				return nil, p.unsupported("a relation named twice")
 			}
-			named.Set("alias", New("TableAlias", Arg{"this", alias}))
+			ta := New("TableAlias", Arg{"this", alias})
+			liftComments(alias, ta)
+			putComments(ta, colonComments)
+			liftComments(named, ta)
+			named.Set("alias", ta)
 			return named, nil
 		}
 	}
@@ -535,6 +540,9 @@ func (p *parser) parseTable() (*Expression, error) {
 	}
 	this, db, catalog := tableQualifiedParts(seq)
 	table := New("Table", Arg{"this", this}, Arg{"db", db}, Arg{"catalog", catalog})
+	liftPart(this, table)
+	liftPart(db, table)
+	liftPart(catalog, table)
 
 	if only {
 		table.Set("only", true)
@@ -1234,6 +1242,7 @@ func (p *parser) parseSubqueryTable() (*Expression, error) {
 		if !p.match(TokR_PAREN) {
 			return nil, p.unsupported("unclosed VALUES")
 		}
+		closing := p.takeComments()
 		alias, err := p.parseTableAlias()
 		if err != nil {
 			return nil, err
@@ -1241,7 +1250,7 @@ func (p *parser) parseSubqueryTable() (*Expression, error) {
 		if alias != nil {
 			values.Set("alias", alias)
 		}
-		return values, nil
+		return putComments(values, closing), nil
 	}
 	if p.dialect == "tsql" && p.at(TokMERGE) {
 		// T-SQL lets a MERGE stand where a table would, its OUTPUT rows
@@ -1398,7 +1407,9 @@ func (p *parser) parseTableAlias() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	return New("TableAlias", Arg{"this", id}, Arg{"columns", columns}), nil
+	node := New("TableAlias", Arg{"this", id}, Arg{"columns", columns})
+	liftComments(id, node)
+	return node, nil
 }
 
 // parseWideTableAlias reads an alias that may be named by a keyword as well
@@ -1416,7 +1427,9 @@ func (p *parser) parseWideTableAlias() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	return New("TableAlias", Arg{"this", id}, Arg{"columns", columns}), nil
+	node := New("TableAlias", Arg{"this", id}, Arg{"columns", columns})
+	liftComments(id, node)
+	return node, nil
 }
 
 // atTableAliasName reports whether the word here may name a TABLE. More

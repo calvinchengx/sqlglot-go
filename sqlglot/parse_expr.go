@@ -716,6 +716,7 @@ func (p *parser) parseBinary(ops map[TokenType]string, next func() (*Expression,
 			return this, nil
 		}
 		p.advance()
+		opComments := p.takeComments()
 		// COLLATE reads a TERM, the same as `+` and `-` do here, which is
 		// why a SCHEMA-qualified name reads fine: `pg_catalog.default` is a
 		// Column, same as it would be anywhere else. Only an UNQUALIFIED
@@ -727,7 +728,7 @@ func (p *parser) parseBinary(ops map[TokenType]string, next func() (*Expression,
 			if cerr != nil {
 				return nil, cerr
 			}
-			this = New(class, Arg{"this", this}, Arg{"expression", collationName(name)})
+			this = putComments(New(class, Arg{"this", this}, Arg{"expression", collationName(name)}), opComments)
 			continue
 		}
 		right, err := next()
@@ -740,11 +741,11 @@ func (p *parser) parseBinary(ops map[TokenType]string, next func() (*Expression,
 		if class == "Div" {
 			// Div records how the dialect divides; the reference reads both
 			// flags off the dialect rather than defaulting them.
-			this = New(class, Arg{"this", this}, Arg{"expression", right},
-				Arg{"typed", p.tables.TypedDivision}, Arg{"safe", p.tables.SafeDivision})
+			this = putComments(New(class, Arg{"this", this}, Arg{"expression", right},
+				Arg{"typed", p.tables.TypedDivision}, Arg{"safe", p.tables.SafeDivision}), opComments)
 			continue
 		}
-		this = New(class, Arg{"this", this}, Arg{"expression", right})
+		this = putComments(New(class, Arg{"this", this}, Arg{"expression", right}), opComments)
 	}
 }
 
@@ -1373,14 +1374,14 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		}
 		p.advance()
 		p.advance()
-		return New("Literal",
-			Arg{"this", "0." + n.Text}, Arg{"is_string", false}), nil
+		return p.keep(New("Literal",
+			Arg{"this", "0." + n.Text}, Arg{"is_string", false})), nil
 	case TokNUMBER:
 		p.advance()
-		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", false}), nil
+		return p.keep(New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})), nil
 	case TokSTRING:
 		p.advance()
-		first := New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
+		first := p.keep(New("Literal", Arg{"this", c.Text}, Arg{"is_string", true}))
 		// Strings written NEXT TO each other are one string: `'x' 'y' 'z'`
 		// is a concatenation, which is what the reference builds.
 		if n := p.curr(); n != nil && n.Type == TokSTRING {
@@ -1392,7 +1393,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 				}
 				p.advance()
 				items = append(items,
-					New("Literal", Arg{"this", n.Text}, Arg{"is_string", true}))
+					p.keep(New("Literal", Arg{"this", n.Text}, Arg{"is_string", true})))
 			}
 			return New("Concat",
 				Arg{"expressions", items}, Arg{"coalesce", true}), nil
@@ -1984,7 +1985,7 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 	}
 	cast := New(class, args...)
 	cast.Type = to
-	return cast, nil
+	return p.keep(cast), nil
 }
 
 // parseDataType reads a type name, its parameters, and any array suffix.
@@ -2585,7 +2586,7 @@ func (p *parser) parseCase() (*Expression, error) {
 // named "COUNT" -- and each has its own argument shape. Producing Anonymous for
 // one of those would be a divergence, so a name the reference knows is refused
 // until its node is ported. The list is generated, not guessed.
-func (p *parser) parseFunction() (*Expression, error) {
+func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	name := p.curr().Text
 	quotedName := p.curr().Type == TokIDENTIFIER
 	upper := strings.ToUpper(name)
@@ -2716,6 +2717,8 @@ func (p *parser) parseFunction() (*Expression, error) {
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed function argument list")
 	}
+	parenComments := p.takeComments()
+	defer func() { putComments(builtFn, parenComments) }()
 	// A named argument of one of those calls is a FIELD, not an alias: the
 	// reference turns each key-value argument into a PropertyEQ before the
 	// builder sees it, so `STRUCT(1 AS a)` and `{'a': 1}` produce the same
@@ -3382,7 +3385,7 @@ func (p *parser) parseColumn() (*Expression, error) {
 		// at all rather than one set false.
 		if c := p.curr(); c != nil && (c.Type == TokNULL || c.Type == TokTRUE || c.Type == TokFALSE) {
 			p.advance()
-			parts = append(parts, New("Identifier", Arg{"this", c.Text}))
+			parts = append(parts, p.keep(New("Identifier", Arg{"this", c.Text})))
 			continue
 		}
 		// `a.b.C()` is a CALL under a chain of dots, not a column: the
@@ -3442,6 +3445,7 @@ func (p *parser) parseColumn() (*Expression, error) {
 	for _, extra := range parts[held:] {
 		out = New("Dot", Arg{"this", out}, Arg{"expression", extra})
 	}
+	liftAll(parts, out)
 	return out, nil
 }
 
@@ -3480,7 +3484,7 @@ func (p *parser) parseIdentifierWhere(namingATable bool) (*Expression, error) {
 	if global {
 		name.Set("global_", true)
 	}
-	return name, nil
+	return p.keep(name), nil
 }
 
 // namesItselfNotACall reports whether a word that USUALLY opens a no-paren

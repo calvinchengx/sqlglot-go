@@ -83,6 +83,9 @@ type parser struct {
 	// on the parser rather than the tree: it exists only to be read back by
 	// parsePostfix one call later, never serialised.
 	noJoinMark map[*Expression]bool
+	// commentsFrom is the token index whose comments were already given to a
+	// node. The same token must not decorate a second one.
+	commentsFrom int
 }
 
 func (p *parser) curr() *Token {
@@ -259,7 +262,7 @@ func (p *parser) parseStatement() (*Expression, error) {
 		// all: `WITH a AS (SELECT * FROM b) UPDATE a SET c = 1` reads from b
 		// and writes to a. The clause is parsed first and assigned LAST,
 		// which is where the reference puts it however early it was written.
-		with, err := p.parseWith()
+		with, err := p.withClause()
 		if err != nil {
 			return nil, err
 		}

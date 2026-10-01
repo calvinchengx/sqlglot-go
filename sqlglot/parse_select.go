@@ -13,7 +13,7 @@ import "strings"
 // parseQuery reads a statement that produces rows: an optional WITH clause,
 // a SELECT, and any set operations chained onto it.
 func (p *parser) parseQuery() (*Expression, error) {
-	with, err := p.parseWith()
+	with, err := p.withClause()
 	if err != nil {
 		return nil, err
 	}
@@ -619,6 +619,7 @@ func (p *parser) parseHint(text string) (*Expression, error) {
 // parseSelect is entered with the SELECT token current; parseStatement checked.
 func (p *parser) parseSelect() (*Expression, error) {
 	p.advance()
+	leading := p.takeComments()
 
 	// A HINT tells the engine HOW to run the query. The tokenizer hands over
 	// the whole comment as one token; what is inside it is an ordinary list
@@ -741,6 +742,7 @@ func (p *parser) parseSelect() (*Expression, error) {
 	if p.tables.SupportsImplicitUnnest && sel.Args["from_"] != nil {
 		applyImplicitUnnests(sel)
 	}
+	putComments(sel, leading)
 	return sel, nil
 }
 
@@ -950,6 +952,8 @@ func (p *parser) parseProjections() ([]*Expression, error) {
 		if !p.match(TokCOMMA) {
 			break
 		}
+		// A comment after the comma belongs to the item before it.
+		putComments(e, p.takeComments())
 	}
 	return out, nil
 }
@@ -1143,11 +1147,17 @@ func (p *parser) parseProjection() (*Expression, error) {
 				return nil, err
 			}
 			p.advance() // the colon
+			colonComments := p.takeComments()
 			named, err := p.parseExpression()
 			if err != nil {
 				return nil, err
 			}
-			return New("Alias", Arg{"this", named}, Arg{"alias", alias}), nil
+			node := New("Alias", Arg{"this", named}, Arg{"alias", alias})
+			liftComments(alias, node)
+			putComments(node, colonComments)
+			// A prefix alias takes the value's comments too.
+			liftComments(named, node)
+			return node, nil
 		}
 	}
 	e, err := p.parseExpression()
@@ -1180,6 +1190,10 @@ func (p *parser) parseProjection() (*Expression, error) {
 // parseAlias attaches an explicit or implicit column alias.
 func (p *parser) parseAlias(this *Expression) (*Expression, error) {
 	explicit := p.match(TokALIAS)
+	var asComments []string
+	if explicit {
+		asComments = p.takeComments()
+	}
 	// `AS (a, b)` names MULTIPLE columns at once: a table-generating call
 	// like POSEXPLODE returns more than one, and the reference builds an
 	// Aliases node rather than a plain Alias -- ANY word may name one of
@@ -1222,7 +1236,13 @@ func (p *parser) parseAlias(this *Expression) (*Expression, error) {
 			}
 		}
 	}
-	return New("Alias", Arg{"this", this}, Arg{"alias", alias}), nil
+	node := New("Alias", Arg{"this", this}, Arg{"alias", alias})
+	putComments(node, asComments)
+	liftComments(alias, node)
+	if len(node.Comments) == 0 {
+		liftComments(this, node)
+	}
+	return node, nil
 }
 
 // parseAnyName reads a name where the reference accepts any token: everything
@@ -1237,9 +1257,9 @@ func (p *parser) parseAnyName() (*Expression, error) {
 		return nil, p.unsupported("identifier")
 	}
 	p.advance()
-	return New("Identifier",
+	return p.keep(New("Identifier",
 		Arg{"this", c.Text},
-		Arg{"quoted", c.Type == TokIDENTIFIER || c.Type == TokSTRING}), nil
+		Arg{"quoted", c.Type == TokIDENTIFIER || c.Type == TokSTRING})), nil
 }
 
 // atAliasName reports whether the current token can begin an implicit alias.
@@ -1311,11 +1331,13 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 		switch {
 		case p.at(TokWHERE):
 			p.advance()
+			whereComments := p.takeComments()
 			e, err := p.parseDisjunction()
 			if err != nil {
 				return err
 			}
-			if err := p.setOnce(sel, "where", New("Where", Arg{"this", e})); err != nil {
+			where := putComments(New("Where", Arg{"this", e}), whereComments)
+			if err := p.setOnce(sel, "where", where); err != nil {
 				return err
 			}
 		case p.at(TokGROUP_BY):
