@@ -316,7 +316,7 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 		return p.parseCreate()
 	}
 	if p.at(TokINSERT) {
-		return p.parseInsert()
+		return p.parseInsertOrCall()
 	}
 	if p.at(TokDROP) {
 		return p.parseDrop()
