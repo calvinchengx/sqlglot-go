@@ -157,6 +157,7 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "1 /* /* */"),
     ("oracle", "SELECT e1.x, e2.x FROM e e1, e e2 WHERE e1.y (+) = e2.y"),
     ("oracle", "SELECT e1.x, e2.x FROM e e1, e e2 WHERE e1.y = e2.y (+)"),
+    ("oracle", "NVL(NULL, 1)"),
 )
 
 
