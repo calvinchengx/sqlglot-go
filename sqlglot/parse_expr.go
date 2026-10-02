@@ -1224,6 +1224,9 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	// `{'a': 1, 'b': x}` is a Struct whose items are PropertyEQ: the key is an
 	// IDENTIFIER even though it is written as a string.
 	if c.Type == TokL_BRACE {
+		if p.daxBraceValues() {
+			return p.parseDAXBraceValues()
+		}
 		p.advance()
 		var items []*Expression
 		for !p.at(TokR_BRACE) {

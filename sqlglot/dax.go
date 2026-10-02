@@ -287,6 +287,41 @@ func (p *parser) parseExpressionAfterDAX() (*Expression, error) {
 	return p.parseAssignment()
 }
 
+// daxBraceValues reports a `{1, 2}` list. A `{key: value}` struct keeps
+// the shared reader. The reference turns the list into a Struct.
+func (p *parser) daxBraceValues() bool {
+	if p.dialect != "dax" {
+		return false
+	}
+	after := p.peekAt(2)
+	return after == nil || after.Type != TokCOLON
+}
+
+// parseDAXBraceValues reads `{1, 2}` and `{"West", "East"}` as a Struct
+// of those values, including a struct nested inside another.
+func (p *parser) parseDAXBraceValues() (*Expression, error) {
+	p.advance()
+	var items []*Expression
+	var err error
+	for err == nil && !p.at(TokR_BRACE) {
+		var item *Expression
+		item, err = p.parseExpression()
+		if err == nil {
+			items = append(items, item)
+		}
+		if err == nil && !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if err == nil && !p.match(TokR_BRACE) {
+		err = p.unsupported("unclosed struct")
+	}
+	if err != nil {
+		return nil, err
+	}
+	return New("Struct", Arg{"expressions", items}), nil
+}
+
 // daxTableCall reads ADDCOLUMNS(...) and the other calls the reference
 // accepts where a table name would be. A bare name is left as a name.
 func (p *parser) daxTableCall(name *Expression, err error) (*Expression, error) {

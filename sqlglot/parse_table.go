@@ -317,6 +317,8 @@ func (p *parser) startsATable(t *Token) bool {
 	switch t.Type {
 	case TokVAR, TokIDENTIFIER, TokL_PAREN:
 		return true
+	case TokL_BRACE:
+		return p.dialect == "dax"
 	}
 	_, name := p.tables.IDVarTokens[t.Type]
 	return name
