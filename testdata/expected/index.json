@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6486,
+ "count": 6489,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -32431,6 +32431,21 @@
    "key": "89076443edf52a6d",
    "dialect": "dax",
    "sql": "EVALUATE FILTER(Sales, Sales[Amount] > 100) ORDER BY Sales[Amount]"
+  },
+  {
+   "key": "fe86921e6f84b871",
+   "dialect": "dax",
+   "sql": "EVALUATE ADDCOLUMNS(Sales, \"x\", 1)"
+  },
+  {
+   "key": "e01f2f98d79f0a8d",
+   "dialect": "dax",
+   "sql": "EVALUATE SUMMARIZE(Sales, Sales[Region])"
+  },
+  {
+   "key": "27856c1dbbb8e2ff",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(ADDCOLUMNS(Sales, \"x\", 1), Sales[Amount] > 1)"
   }
  ]
 }

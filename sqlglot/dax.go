@@ -231,3 +231,13 @@ func (p *parser) daxOrderOrTrailing(query *Expression) (*Expression, error) {
 	}
 	return nil, err
 }
+
+// daxTableCall reads ADDCOLUMNS(...) and the other calls the reference
+// accepts where a table name would be. A bare name is left as a name.
+func (p *parser) daxTableCall(name *Expression, err error) (*Expression, error) {
+	if err == nil && name != nil && p.dialect == "dax" && p.at(TokL_PAREN) {
+		p.index--
+		return p.parseQualifiedName()
+	}
+	return name, err
+}

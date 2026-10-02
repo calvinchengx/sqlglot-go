@@ -7071,7 +7071,7 @@ func (p *parser) parseTablePart() (*Expression, error) {
 		p.advance()
 		return p.keep(New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true})), nil
 	}
-	return p.parseIdentifierWhere(true)
+	return p.daxTableCall(p.parseIdentifierWhere(true))
 }
 
 // atTablePart reports whether a name may begin here.

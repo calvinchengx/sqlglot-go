@@ -139,6 +139,9 @@ DAX_CORPUS: tuple[tuple[str, str], ...] = (
     ("dax", 'EVALUATE FILTER(Sales, Sales[Note] = "He said ""hi""")'),
     ("dax", "EVALUATE Sales ORDER BY Sales[Amount] DESC, Sales[Qty]"),
     ("dax", "EVALUATE FILTER(Sales, Sales[Amount] > 100) ORDER BY Sales[Amount]"),
+    ("dax", 'EVALUATE ADDCOLUMNS(Sales, "x", 1)'),
+    ("dax", "EVALUATE SUMMARIZE(Sales, Sales[Region])"),
+    ("dax", 'EVALUATE FILTER(ADDCOLUMNS(Sales, "x", 1), Sales[Amount] > 1)'),
 )
 
 
