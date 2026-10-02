@@ -124,6 +124,15 @@ EDGE_CORPUS: tuple[tuple[str, str], ...] = (
 )
 
 
+# DAX's suite is validate_transpile, which corpus_dialect does not read.
+# A statement is listed here once the port reads it. The reference still
+# supplies the tree and the rendering.
+DAX_CORPUS: tuple[tuple[str, str], ...] = (
+    ("dax", "EVALUATE Sales"),
+    ("dax", "EVALUATE 'Sales Data'"),
+)
+
+
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
     out = subprocess.run(
         ["git", "-C", str(sqlglot_dir), "rev-parse", "HEAD"],
@@ -316,6 +325,7 @@ def main() -> int:
         corpus = corpus_identity(a.sqlglot)
         corpus += corpus_dialect(a.sqlglot, DIALECTS)
         corpus += [(d, sql) for d, sql in EDGE_CORPUS]
+        corpus += [(d, sql) for d, sql in DAX_CORPUS]
 
     a.out.mkdir(parents=True, exist_ok=True)
     for f in a.out.glob("*.json"):
