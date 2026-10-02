@@ -183,3 +183,51 @@ func (p *parser) daxBracketColumn(col *Expression) (*Expression, error) {
 	liftPart(name, out)
 	return out, nil
 }
+
+// daxAttachOrder reads a trailing ORDER BY onto the query. The reference
+// does this once the table expression is built, for a bare EVALUATE and
+// for a FILTER alike.
+func (p *parser) daxAttachOrder(query *Expression) (*Expression, error) {
+	if !p.match(TokORDER_BY) {
+		return query, nil
+	}
+	order, err := p.parseOrder()
+	if err == nil {
+		query.Set("order", order)
+	}
+	return query, err
+}
+
+// finishDAX is ParseOne's path for this dialect. ORDER BY is read after the
+// statement; a semicolon still closes it, and anything else is refused.
+func (p *parser) finishDAX(query *Expression, err error) (*Expression, error) {
+	if err != nil || p.curr() == nil {
+		return query, err
+	}
+	if p.at(TokORDER_BY) {
+		return p.daxOrderOrTrailing(query)
+	}
+	if p.match(TokSEMICOLON) {
+		if p.curr() == nil {
+			return query, nil
+		}
+		return p.finishStatementBlock([]*Expression{query})
+	}
+	return nil, p.unsupported("trailing tokens")
+}
+
+// daxOrderOrTrailing reads a leftover ORDER BY. A semicolon after it is the
+// statement's own closer. Any other leftover is still refused.
+func (p *parser) daxOrderOrTrailing(query *Expression) (*Expression, error) {
+	if p.dialect != "dax" || !p.at(TokORDER_BY) {
+		return nil, p.unsupported("trailing tokens")
+	}
+	ordered, err := p.daxAttachOrder(query)
+	if err == nil && (p.curr() == nil || (p.match(TokSEMICOLON) && p.curr() == nil)) {
+		return ordered, nil
+	}
+	if err == nil {
+		err = p.unsupported("trailing tokens")
+	}
+	return nil, err
+}

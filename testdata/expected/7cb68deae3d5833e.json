@@ -1,0 +1,253 @@
+{
+ "dialect": "dax",
+ "rendered": "SELECT * FROM Sales ORDER BY Sales.'Amount' DESC, Sales.'Qty'",
+ "sql": "EVALUATE Sales ORDER BY Sales[Amount] DESC, Sales[Qty]",
+ "tokens": [
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "EVALUATE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 9,
+   "t": "VAR",
+   "x": "Sales"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 15,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "Sales"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 29,
+   "t": "IDENTIFIER",
+   "x": "Amount"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 38,
+   "t": "DESC",
+   "x": "DESC"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "Sales"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 49,
+   "t": "IDENTIFIER",
+   "x": "Qty"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 1,
+    "end": 0,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 9
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "Sales"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 0,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "Amount"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "table",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "Sales"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 8,
+   "k": "desc",
+   "v": true
+  },
+  {
+   "i": 8,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 49
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "Qty"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "table",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "Sales"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 18,
+   "k": "nulls_first",
+   "v": true
+  }
+ ]
+}

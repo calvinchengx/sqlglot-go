@@ -49,6 +49,9 @@ func ParseOne(sql, dialect string) (*Expression, error) {
 	}
 	cfg := tk.Config()
 	p := &parser{tokens: toks, cfg: cfg, tables: cfg.Tables, dialect: dialect, sql: sql}
+	if dialect == "dax" {
+		return p.finishDAX(p.parseStatement())
+	}
 	return p.parseOne()
 }
 
