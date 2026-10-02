@@ -158,6 +158,9 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT e1.x, e2.x FROM e e1, e e2 WHERE e1.y (+) = e2.y"),
     ("oracle", "SELECT e1.x, e2.x FROM e e1, e e2 WHERE e1.y = e2.y (+)"),
     ("oracle", "NVL(NULL, 1)"),
+    ("oracle", "SELECT * FROM table_name SAMPLE (25) s"),
+    ("oracle", "SELECT COUNT(*) * 10 FROM orders SAMPLE (10) SEED (1)"),
+    ("oracle", "SELECT * FROM t SAMPLE (.25)"),
 )
 
 

@@ -715,6 +715,9 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 		}
 		table.Set("sample", sample)
 	}
+	if err := p.oracleSampleAlias(table); err != nil {
+		return nil, err
+	}
 	// And so do the pivots, as a LIST: `PIVOT(...) PIVOT(...)` chains, and the
 	// reference keeps them in the order they were written.
 	pivots, err := p.parsePivots()
@@ -1062,7 +1065,7 @@ func (p *parser) parseTableSample() (*Expression, error) {
 		return nil, p.unsupported("unclosed TABLESAMPLE")
 	}
 
-	if p.atWords("REPEATABLE") {
+	if p.atWords("REPEATABLE") || p.atSampleSeed() {
 		p.advance()
 		if !p.match(TokL_PAREN) {
 			return nil, p.unsupported("REPEATABLE without a seed")

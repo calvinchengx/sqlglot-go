@@ -89,7 +89,7 @@ func init() {
 		"CTE":                                 (*generator).writeCTE,
 		"TableAlias":                          (*generator).writeTableAlias,
 		"From":                                (*generator).writeFrom,
-		"Table":                               (*generator).writeTable,
+		"Table":                               (*generator).writeTableSpelling,
 		"Join":                                (*generator).writeJoin,
 		"Lateral":                             (*generator).writeLateral,
 		"Subquery":                            (*generator).writeSubquery,
