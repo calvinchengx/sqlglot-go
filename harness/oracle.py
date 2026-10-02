@@ -135,6 +135,8 @@ DAX_CORPUS: tuple[tuple[str, str], ...] = (
     ("dax", "EVALUATE FILTER(Sales, [Total Amount] > 100)"),
     ("dax", "EVALUATE FILTER(Sales, Sales[Amount] > 100 && Sales[Qty] < 5)"),
     ("dax", "EVALUATE FILTER(Sales, Sales[Amount] > 100 || Sales[Qty] < 5)"),
+    ("dax", 'EVALUATE FILTER(FILTER(Sales, Sales[Amount] > 100), Sales[Region] = "West")'),
+    ("dax", 'EVALUATE FILTER(Sales, Sales[Note] = "He said ""hi""")'),
 )
 
 

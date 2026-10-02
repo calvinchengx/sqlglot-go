@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6482,
+ "count": 6484,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -32411,6 +32411,16 @@
    "key": "a47273f3de08f8a6",
    "dialect": "dax",
    "sql": "EVALUATE FILTER(Sales, Sales[Amount] > 100 || Sales[Qty] < 5)"
+  },
+  {
+   "key": "2ff2c408d41b0bbd",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(FILTER(Sales, Sales[Amount] > 100), Sales[Region] = \"West\")"
+  },
+  {
+   "key": "004d68efc35153d3",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(Sales, Sales[Note] = \"He said \"\"hi\"\"\")"
   }
  ]
 }
