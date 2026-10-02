@@ -712,14 +712,17 @@ func (g *generator) writeTable(e *Expression) string {
 	// the number.
 	ordinality := e.Args["ordinality"] == true
 	alias := g.child(e, "alias")
+	sep := g.tableAliasSep()
 	if alias != "" && !ordinality {
-		out += " AS " + alias
+		out += sep + alias
 	}
 	// The temporal clause comes before the alias, as it does in the text.
+	// The separator is whatever this dialect puts between a table and its
+	// alias, so the clause can be inserted in front of that alias.
 	if version := g.child(e, "version"); version != "" {
-		parts := strings.SplitN(out, " AS ", 2)
-		if len(parts) == 2 {
-			out = parts[0] + " " + version + " AS " + parts[1]
+		if alias != "" && !ordinality && strings.HasSuffix(out, sep+alias) {
+			name := strings.TrimSuffix(out, sep+alias)
+			out = name + " " + version + sep + alias
 		} else {
 			out += " " + version
 		}
@@ -763,7 +766,7 @@ func (g *generator) writeTable(e *Expression) string {
 	if ordinality {
 		out += " WITH ORDINALITY"
 		if alias != "" {
-			out += " AS " + alias
+			out += g.tableAliasSep() + alias
 		}
 	}
 	return out
