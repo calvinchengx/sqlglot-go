@@ -130,6 +130,9 @@ EDGE_CORPUS: tuple[tuple[str, str], ...] = (
 DAX_CORPUS: tuple[tuple[str, str], ...] = (
     ("dax", "EVALUATE Sales"),
     ("dax", "EVALUATE 'Sales Data'"),
+    ("dax", "EVALUATE FILTER(Sales, Sales[Amount] > 100)"),
+    ("dax", "EVALUATE FILTER('Sales Data', 'Sales Data'[Amount] > 100)"),
+    ("dax", "EVALUATE FILTER(Sales, [Total Amount] > 100)"),
 )
 
 

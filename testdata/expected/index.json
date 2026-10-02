@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6477,
+ "count": 6480,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -32386,6 +32386,21 @@
    "key": "6562817857f9758f",
    "dialect": "dax",
    "sql": "EVALUATE 'Sales Data'"
+  },
+  {
+   "key": "69e6a72b0b1373db",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(Sales, Sales[Amount] > 100)"
+  },
+  {
+   "key": "0f3d28cd20484255",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER('Sales Data', 'Sales Data'[Amount] > 100)"
+  },
+  {
+   "key": "0e19af8b4b3c428a",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(Sales, [Total Amount] > 100)"
   }
  ]
 }

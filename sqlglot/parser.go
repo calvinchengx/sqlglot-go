@@ -294,6 +294,9 @@ func (p *parser) parseStatement() (*Expression, error) {
 		p.at(TokSUMMARIZE) {
 		return p.parseQuery()
 	}
+	if p.opensDAXFilter() {
+		return p.parseDAXFilterQuery()
+	}
 	return p.parseStatementBody()
 }
 

@@ -3446,7 +3446,7 @@ func (p *parser) parseColumn() (*Expression, error) {
 		out = New("Dot", Arg{"this", out}, Arg{"expression", extra})
 	}
 	liftAll(parts, out)
-	return out, nil
+	return p.daxBracketColumn(out)
 }
 
 func (p *parser) parseIdentifier() (*Expression, error) { return p.parseIdentifierWhere(false) }

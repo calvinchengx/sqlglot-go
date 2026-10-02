@@ -67,3 +67,103 @@ func (p *parser) parseDAXEvaluate() (*Expression, error) {
 		Arg{"from_", New("From", Arg{"this", table})},
 	), nil
 }
+
+// opensDAXFilter reports an EVALUATE whose table is a FILTER call. A plain
+// EVALUATE stays on the path that already reads a bare table name.
+func (p *parser) opensDAXFilter() bool {
+	return p.dialect == "dax" && p.atWords("EVALUATE", "FILTER")
+}
+
+func (p *parser) parseDAXFilterQuery() (*Expression, error) {
+	p.advance()
+	return p.parseDAXFilter()
+}
+
+// parseDAXFilter reads FILTER(table, condition). A FILTER nested in the table
+// place is the same call, and its condition is AND-ed with this one.
+func (p *parser) parseDAXFilter() (*Expression, error) {
+	query, cond, err := p.readDAXFilterParts()
+	if err == nil {
+		query = daxAddWhere(query, cond)
+	}
+	return query, err
+}
+
+func (p *parser) readDAXFilterParts() (query, cond *Expression, err error) {
+	for _, tok := range []TokenType{TokFILTER, TokL_PAREN} {
+		if !p.match(tok) {
+			return nil, nil, p.unsupported("FILTER")
+		}
+	}
+	if query, err = p.parseDAXFilteredTable(); err != nil {
+		return nil, nil, err
+	}
+	if !p.match(TokCOMMA) {
+		return nil, nil, p.unsupported("FILTER without a condition")
+	}
+	if cond, err = p.parseDisjunction(); err != nil {
+		return nil, nil, err
+	}
+	if cond == nil || !p.match(TokR_PAREN) {
+		return nil, nil, p.unsupported("unclosed FILTER")
+	}
+	return query, cond, nil
+}
+
+// A plain table is handed back to the EVALUATE reader, which already knows
+// how to spell that name as SELECT * FROM. Building the same select here
+// would be a second copy of that reader.
+func (p *parser) parseDAXFilteredTable() (*Expression, error) {
+	if p.at(TokFILTER) {
+		return p.parseDAXFilter()
+	}
+	name, err := p.parseTablePart()
+	if err != nil {
+		return nil, err
+	}
+	if name == nil {
+		return nil, p.unsupported("FILTER without a table")
+	}
+	spelled, err := Generate(name, "dax")
+	if err != nil {
+		return nil, err
+	}
+	return ParseOne("EVALUATE "+spelled, "dax")
+}
+
+// daxAddWhere attaches a condition. A second FILTER AND-s its condition onto
+// the one already there, which is what the reference's where() does.
+func daxAddWhere(query, cond *Expression) *Expression {
+	pred := cond
+	if existing, _ := query.Args["where"].(*Expression); existing != nil {
+		pred = New("And",
+			Arg{"this", existing.Args["this"]},
+			Arg{"expression", cond},
+		)
+	}
+	query.Set("where", New("Where", Arg{"this", pred}))
+	return query
+}
+
+// daxBracketColumn reads Table[Column]. The bracketed name is its own
+// identifier, and the reference joins it onto the column just read.
+func (p *parser) daxBracketColumn(col *Expression) (*Expression, error) {
+	if p.dialect != "dax" || col == nil || col.Class != "Column" || !p.atIdentifier() {
+		return col, nil
+	}
+	name, _ := col.Args["this"].(*Expression)
+	if name == nil || name.Class != "Identifier" {
+		return col, nil
+	}
+	column, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	if column == nil {
+		return col, nil
+	}
+	out := New("Column", Arg{"this", column}, Arg{"table", name})
+	liftPart(column, out)
+	liftPart(name, out)
+	return out, nil
+}
