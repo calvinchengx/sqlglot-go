@@ -143,7 +143,7 @@ func (p *parser) atPair(a, b TokenType) bool {
 }
 
 func (p *parser) match(tt TokenType) bool {
-	if p.at(tt) {
+	if p.at(tt) || p.oracleSelectUnique(tt) {
 		p.advance()
 		return true
 	}

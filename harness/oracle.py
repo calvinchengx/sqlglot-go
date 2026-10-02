@@ -148,6 +148,13 @@ DAX_CORPUS: tuple[tuple[str, str], ...] = (
     ("dax", 'EVALUATE DATATABLE("a", STRING, {{"x"}})'),
 )
 
+# Statements the reference accepts as Oracle and this port already
+# reads and writes back. The rest of tests/dialects/test_oracle.py
+# stays out until each mechanism lands.
+ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
+    ("oracle", "SELECT UNIQUE col1, col2 FROM table"),
+)
+
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
     out = subprocess.run(
@@ -342,6 +349,7 @@ def main() -> int:
         corpus += corpus_dialect(a.sqlglot, DIALECTS)
         corpus += [(d, sql) for d, sql in EDGE_CORPUS]
         corpus += [(d, sql) for d, sql in DAX_CORPUS]
+        corpus += [(d, sql) for d, sql in ORACLE_CORPUS]
 
     a.out.mkdir(parents=True, exist_ok=True)
     for f in a.out.glob("*.json"):

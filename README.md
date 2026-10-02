@@ -9,9 +9,9 @@ what a read-only SQL guard needs. Every construct in a parsed statement is a
 visible node; a construct the port does not know is a parse error, never a
 silent pass.
 
-**What it covers:** the tokenizer, parser, and generator for thirteen named
+**What it covers:** the tokenizer, parser, and generator for fourteen named
 dialects plus neutral; the first consumer's corpus; and simplify, annotate,
-diff, anonymize, and JSONPath. **What it does not cover yet:** 20
+diff, anonymize, and JSONPath. **What it does not cover yet:** 19
 named dialects with no consumer. A transpiler is not a product goal. The
 order is a measured gap, not the library's table of contents.
 `docs/17-sqlglot-go.md` in
@@ -79,6 +79,7 @@ Regenerate with `make service`; nothing in it is authored here.
 | dremio | 61/61 | 61 | 61 | 0 | 0 |
 | mysql | 638/638 | 638 | 638 | 0 | 0 |
 | dax | 18/18 | 18 | 18 | 0 | 0 |
+| oracle | 1/1 | 1 | 1 | 0 | 0 |
 <!-- coverage:end -->
 
 Reference: sqlglot `ceb5111421e9` (v30.17.0-64). **Mismatched is the number
@@ -86,7 +87,7 @@ that matters** and must be zero: it counts statements the port parsed into a
 *different* tree than the reference. Unparsed is the honest size of the gap.
 
 The port also writes SQL back out, and is held to the reference's own output
-string for string: **6,493 of the statements it parses are written back
+string for string: **6,494 of the statements it parses are written back
 identically, none is written wrongly, and none is refused**, and the guard's own rewrite -- inject a row ceiling, emit --
 lands as `TOP 500` in T-SQL and `LIMIT 500` in DuckDB from the same edit to the
 same node. Where a dialect would transform a statement in a way the port does
@@ -98,14 +99,14 @@ The tokenizer is complete and has no gap tier: every statement the reference
 lexes, the port lexes into the same tokens — same types, same text, same line,
 column and offsets, same attached comments. A tokenizer has nowhere to
 legitimately give up, because the parser above it cannot see what it drops.
-The configured reference corpus parses in full: **6,493 of 6,493**, with
+The configured reference corpus parses in full: **6,494 of 6,494**, with
 nothing unparsed. A construct outside that grammar is still an
 `ErrUnsupported`, never a tree that merely looks plausible. That is why
 **mismatched is zero** and is the number to watch.
 
 ## How it is verified
 
-`testdata/expected/` holds 6,493 statements — sqlglot's own `identity.sql`, its
+`testdata/expected/` holds 6,494 statements — sqlglot's own `identity.sql`, its
 **whole** dialect suite, and a set chosen to reach the lexical corners those
 miss — each with the token stream and the tree the reference produced.
 
