@@ -154,6 +154,7 @@ DAX_CORPUS: tuple[tuple[str, str], ...] = (
 ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT UNIQUE col1, col2 FROM table"),
     ("oracle", "SELECT fred FROM barney WHERE dino ^= 'wilma'"),
+    ("oracle", "1 /* /* */"),
 )
 
 
