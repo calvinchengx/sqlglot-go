@@ -5465,7 +5465,7 @@ func (p *parser) atCommand() bool {
 		return false
 	}
 	_, ok := p.cfg.Commands[c.Type]
-	return ok
+	return ok && p.daxAllowsToken()
 }
 
 // parseCache reads `CACHE [LAZY] [TABLE] <table> [OPTIONS(k = v)] [AS <query>]`,

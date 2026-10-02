@@ -1,5 +1,7 @@
 package sqlglot
 
+import "strings"
+
 // DAX's parser accepts EVALUATE and nothing else, so the table generator's
 // probes (a SELECT, a CREATE) raise on it. The vocabulary it shares is the
 // neutral one, and a quoted name is written in single quotes. The tokenizer
@@ -230,6 +232,59 @@ func (p *parser) daxOrderOrTrailing(query *Expression) (*Expression, error) {
 		err = p.unsupported("trailing tokens")
 	}
 	return nil, err
+}
+
+// daxStatementEdge is the first token of a DAX statement. The reference
+// accepts EVALUATE there and rejects every other statement.
+func (p *parser) daxStatementEdge() bool {
+	if p.dialect != "dax" || p.index >= len(p.tokens) {
+		return false
+	}
+	if p.index == 0 {
+		return true
+	}
+	return p.tokens[p.index-1].Type == TokSEMICOLON
+}
+
+// daxOpensEvaluate reports an unquoted EVALUATE at the cursor.
+func (p *parser) daxOpensEvaluate() bool {
+	tok := &p.tokens[p.index]
+	if tok.Type == TokIDENTIFIER {
+		return false
+	}
+	return strings.EqualFold(tok.Text, "EVALUATE")
+}
+
+// daxAllowsToken keeps a statement-starting token visible only when it
+// opens EVALUATE. Every other word is hidden from the statement matchers
+// so they cannot build a tree the reference rejects.
+func (p *parser) daxAllowsToken() bool {
+	if !p.daxStatementEdge() {
+		return true
+	}
+	return p.daxOpensEvaluate()
+}
+
+// hidesDAXWords hides a word match at a statement edge unless it is
+// looking for EVALUATE. IF and the other textual statement openers go
+// through that match rather than a token type.
+func (p *parser) hidesDAXWords(words []string) bool {
+	if !p.daxStatementEdge() {
+		return false
+	}
+	if len(words) > 0 && strings.EqualFold(words[0], "EVALUATE") {
+		return false
+	}
+	return true
+}
+
+// parseExpressionAfterDAX refuses a DAX statement that is not EVALUATE.
+// A scalar subquery is not at a statement edge, so it still parses.
+func (p *parser) parseExpressionAfterDAX() (*Expression, error) {
+	if p.daxStatementEdge() && !p.daxOpensEvaluate() {
+		return nil, p.unsupported("statement")
+	}
+	return p.parseAssignment()
 }
 
 // daxTableCall reads ADDCOLUMNS(...) and the other calls the reference

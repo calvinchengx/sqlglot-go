@@ -54,7 +54,7 @@ var specialConstruction = map[string]bool{
 	// reported. Porting JSONPath properly is Tier 2 work.
 }
 
-func (p *parser) parseExpression() (*Expression, error) { return p.parseAssignment() }
+func (p *parser) parseExpression() (*Expression, error) { return p.parseExpressionAfterDAX() }
 
 func (p *parser) parseAssignment() (*Expression, error) {
 	this, err := p.parseDisjunction()
@@ -3748,7 +3748,7 @@ func (p *parser) nextWords(words ...string) bool {
 }
 
 func (p *parser) atWords(words ...string) bool {
-	if p.index+len(words) > len(p.tokens) {
+	if p.index+len(words) > len(p.tokens) || p.hidesDAXWords(words) {
 		return false
 	}
 	for i, w := range words {

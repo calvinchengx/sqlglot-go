@@ -119,7 +119,7 @@ func (p *parser) peekAt(n int) *Token {
 
 func (p *parser) at(tt TokenType) bool {
 	c := p.curr()
-	return c != nil && c.Type == tt
+	return c != nil && c.Type == tt && p.daxAllowsToken()
 }
 
 func (p *parser) atAny(tts ...TokenType) bool {
