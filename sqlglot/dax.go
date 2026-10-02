@@ -12,6 +12,7 @@ func init() {
 		tables := *src
 		tables.IdentifierStart = "'"
 		tables.IdentifierEnd = "'"
+		daxLogicOperators(&tables)
 		parserTables["dax"] = &tables
 	}
 	base := dialectConfigs[""]
@@ -41,6 +42,21 @@ func init() {
 	cfg.StringEscapePreferred = `"`
 	cfg.ByteStringEscapes = map[string]struct{}{`"`: {}}
 	dialectConfigs["dax"] = &cfg
+}
+
+// daxLogicOperators reads && and || as AND and OR. The neutral maps only
+// know the words, and these two tokens are DAX's spellings of the same
+// operators.
+func daxLogicOperators(tables *ParserTables) {
+	tables.DPipeIsStringConcat = false
+	tables.Conjunction = map[TokenType]string{
+		TokAND:  "And",
+		TokDAMP: "And",
+	}
+	tables.Disjunction = map[TokenType]string{
+		TokOR:    "Or",
+		TokDPIPE: "Or",
+	}
 }
 
 // EVALUATE names a table. FILTER, column brackets, and ORDER BY are later
