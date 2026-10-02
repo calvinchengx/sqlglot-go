@@ -106,7 +106,7 @@ func init() {
 		"Column":                              (*generator).writeColumn,
 		"Identifier":                          (*generator).writeIdentifier,
 		"Literal":                             (*generator).writeLiteral,
-		"National":                            (*generator).writeNational,
+		"National":                            (*generator).writeNationalAsString,
 		"RawString":                           (*generator).writeQuotedString,
 		"ByteString":                          (*generator).writeQuotedString,
 		"UnicodeString":                       (*generator).writeQuotedString,
