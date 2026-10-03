@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6606,
+ "count": 6607,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33031,6 +33031,11 @@
    "key": "6ed4be9fb2c43609",
    "dialect": "oracle",
    "sql": "SELECT last_name, department_id, salary, MIN(salary) KEEP (DENSE_RANK FIRST ORDER BY commission_pct) OVER (PARTITION BY department_id) AS \"Worst\", MAX(salary) KEEP (DENSE_RANK LAST ORDER BY commission_pct) OVER (PARTITION BY department_id) AS \"Best\" FROM employees"
+  },
+  {
+   "key": "8070c0fa86c22c2d",
+   "dialect": "oracle",
+   "sql": "SELECT TRUNC(SYSDATE)"
   }
  ]
 }

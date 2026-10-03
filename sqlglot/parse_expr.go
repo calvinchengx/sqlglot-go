@@ -684,7 +684,7 @@ func (p *parser) parseBitwise() (*Expression, error) {
 }
 
 func (p *parser) parseTerm() (*Expression, error) {
-	return p.parseBinary(p.tables.Term, p.parseFactor)
+	return p.parseBinary(p.tables.Term, p.oracleTruncTerm)
 }
 
 func (p *parser) parseFactor() (*Expression, error) {
