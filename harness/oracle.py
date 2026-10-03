@@ -168,6 +168,9 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT * FROM table_name@dblink_name.database_link_domain"),
     ("oracle", "SELECT * FROM V$SESSION"),
     ("oracle", "SELECT * FROM t ORDER BY a ASC NULLS LAST, b ASC NULLS FIRST, c DESC NULLS LAST, d DESC NULLS FIRST"),
+    ("oracle", "SELECT TO_DATE('January 15, 1989, 11:00 A.M.')"),
+    ("oracle", "SELECT TO_DATE('2024-12-12', 'YYYY-MM-DD')"),
+    ("oracle", "SELECT TO_DATE('January 15, 1989, 11:00 A.M.', 'Month dd, YYYY, HH12:MI A.M.') FROM DUAL"),
 )
 
 
