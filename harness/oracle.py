@@ -181,6 +181,7 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "CREATE GLOBAL TEMPORARY TABLE t AS SELECT * FROM orders"),
     ("oracle", "CREATE PRIVATE TEMPORARY TABLE t AS SELECT * FROM orders"),
     ("oracle", "CREATE OR REPLACE FORCE VIEW foo1.foo2"),
+    ("oracle", "SELECT INSTR(haystack, needle)"),
 )
 
 
