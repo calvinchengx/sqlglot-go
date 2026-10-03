@@ -187,6 +187,7 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "TRIM(BOTH 'h' FROM 'Hello World')"),
     ("oracle", "SELECT CHR(187 USING NCHAR_CS)"),
     ("oracle", "SELECT * FROM T ORDER BY I OFFSET NVL(:variable1, 10) ROWS FETCH NEXT NVL(:variable2, 10) ROWS ONLY"),
+    ("oracle", "SELECT CAST(1 AS DECIMAL)"),
 )
 
 
