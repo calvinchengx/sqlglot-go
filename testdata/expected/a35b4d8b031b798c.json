@@ -1,0 +1,543 @@
+{
+ "dialect": "oracle",
+ "rendered": "SELECT last_name, employee_id, manager_id, LEVEL FROM employees START WITH employee_id = 100 CONNECT BY PRIOR employee_id = manager_id ORDER SIBLINGS BY last_name",
+ "sql": "SELECT last_name, employee_id, manager_id, LEVEL FROM employees START WITH employee_id = 100 CONNECT BY PRIOR employee_id = manager_id ORDER SIBLINGS BY last_name",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "last_name"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "employee_id"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 31,
+   "t": "VAR",
+   "x": "manager_id"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 43,
+   "t": "VAR",
+   "x": "LEVEL"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 49,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 54,
+   "t": "VAR",
+   "x": "employees"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 64,
+   "t": "BEGIN",
+   "x": "START"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 70,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 75,
+   "t": "VAR",
+   "x": "employee_id"
+  },
+  {
+   "c": 88,
+   "e": 87,
+   "l": 1,
+   "s": 87,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 89,
+   "t": "NUMBER",
+   "x": "100"
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 93,
+   "t": "CONNECT_BY",
+   "x": "CONNECT BY"
+  },
+  {
+   "c": 109,
+   "e": 108,
+   "l": 1,
+   "s": 104,
+   "t": "VAR",
+   "x": "PRIOR"
+  },
+  {
+   "c": 121,
+   "e": 120,
+   "l": 1,
+   "s": 110,
+   "t": "VAR",
+   "x": "employee_id"
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 122,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 124,
+   "t": "VAR",
+   "x": "manager_id"
+  },
+  {
+   "c": 152,
+   "e": 151,
+   "l": 1,
+   "s": 135,
+   "t": "ORDER_SIBLINGS_BY",
+   "x": "ORDER SIBLINGS BY"
+  },
+  {
+   "c": 162,
+   "e": 161,
+   "l": 1,
+   "s": 153,
+   "t": "VAR",
+   "x": "last_name"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "last_name"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "employee_id"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 6,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "manager_id"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 11,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "LEVEL"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 16,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 54
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "employees"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Connect",
+   "i": 0,
+   "k": "connect"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 26,
+   "k": "start"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 86,
+    "end": 85,
+    "line": 1,
+    "start": 75
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "employee_id"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 28,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 27,
+   "k": "expression",
+   "m": {
+    "col": 92,
+    "end": 91,
+    "line": 1,
+    "start": 89
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "100"
+  },
+  {
+   "i": 33,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 26,
+   "k": "connect"
+  },
+  {
+   "c": "sqlglot.expressions.query.Prior",
+   "i": 36,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 37,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 38,
+   "k": "this",
+   "m": {
+    "col": 121,
+    "end": 120,
+    "line": 1,
+    "start": 110
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "employee_id"
+  },
+  {
+   "i": 39,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 38,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "i": 37,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 36,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 44,
+   "k": "this",
+   "m": {
+    "col": 134,
+    "end": 133,
+    "line": 1,
+    "start": 124
+   }
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "manager_id"
+  },
+  {
+   "i": 45,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 44,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "i": 26,
+   "k": "nocycle",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 0,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 50,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 51,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 52,
+   "k": "this",
+   "m": {
+    "col": 162,
+    "end": 161,
+    "line": 1,
+    "start": 153
+   }
+  },
+  {
+   "i": 53,
+   "k": "this",
+   "v": "last_name"
+  },
+  {
+   "i": 53,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 52,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "i": 51,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "i": 50,
+   "k": "siblings",
+   "v": true
+  }
+ ]
+}

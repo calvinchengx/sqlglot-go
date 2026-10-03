@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6622,
+ "count": 6623,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33111,6 +33111,11 @@
    "key": "0317dac32870a3ed",
    "dialect": "oracle",
    "sql": "SELECT id, PRIOR name AS parent_name, name FROM tree CONNECT BY NOCYCLE PRIOR id = parent_id"
+  },
+  {
+   "key": "a35b4d8b031b798c",
+   "dialect": "oracle",
+   "sql": "SELECT last_name, employee_id, manager_id, LEVEL FROM employees START WITH employee_id = 100 CONNECT BY PRIOR employee_id = manager_id ORDER SIBLINGS BY last_name"
   }
  ]
 }

@@ -382,6 +382,9 @@ var setOperations = map[TokenType]string{
 }
 
 func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
+	if err := p.oracleOrderSiblings(this); err != nil {
+		return nil, err
+	}
 	for {
 		c := p.curr()
 		if c == nil {

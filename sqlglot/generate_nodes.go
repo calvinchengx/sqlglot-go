@@ -1124,6 +1124,9 @@ func (g *generator) writeOrder(e *Expression) string {
 	if g.inCallArgs {
 		return " ORDER BY " + g.list(e)
 	}
+	if siblings, _ := e.Args["siblings"].(bool); siblings {
+		return "ORDER SIBLINGS BY " + g.list(e)
+	}
 	return "ORDER BY " + g.list(e)
 }
 
