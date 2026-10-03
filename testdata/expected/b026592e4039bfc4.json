@@ -1,0 +1,150 @@
+{
+ "dialect": "oracle",
+ "rendered": "XMLELEMENT(EVALNAME foo + bar)",
+ "sql": "XMLELEMENT(EVALNAME foo + bar)",
+ "tokens": [
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "XMLELEMENT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "EVALNAME"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 20,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "bar"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.functions.XMLElement"
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 2,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "bar"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "expressions",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "evalname",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "join_mark",
+   "v": false
+  }
+ ]
+}
