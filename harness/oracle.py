@@ -260,6 +260,9 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT NTH_VALUE(x, 2) FROM LAST IGNORE NULLS OVER (ORDER BY y) AS c FROM t"),
     ("oracle", "SELECT NTH_VALUE(x, 2) FROM FIRST RESPECT NULLS OVER (ORDER BY y) AS c FROM t"),
     ("oracle", "SELECT NTH_VALUE(x, 2) FROM LAST OVER (ORDER BY y) AS c FROM t"),
+    ("oracle", "SELECT (TIMESTAMP '2025-12-30 20:00:00' - TIMESTAMP '2025-12-29 14:30:00') DAY TO SECOND"),
+    ("oracle", "SELECT (SYSTIMESTAMP - order_date) DAY(9) TO SECOND FROM orders"),
+    ("oracle", "SELECT (SYSTIMESTAMP - order_date) DAY(9) TO SECOND(3) FROM orders"),
 )
 
 

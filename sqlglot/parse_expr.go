@@ -695,9 +695,9 @@ func (p *parser) parseFactor() (*Expression, error) {
 // one, exactly as the reference does.
 func (p *parser) parseFactorOperand() (*Expression, error) {
 	if len(p.tables.Exponent) == 0 {
-		return p.parseUnary()
+		return p.oracleDayToSecond(p.parseUnary())
 	}
-	return p.parseBinary(p.tables.Exponent, p.parseUnary)
+	return p.oracleDayToSecond(p.parseBinary(p.tables.Exponent, p.parseUnary))
 }
 
 // parseBinary runs one left-associative precedence level.

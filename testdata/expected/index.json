@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6601,
+ "count": 6604,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33006,6 +33006,21 @@
    "key": "729048be874294d1",
    "dialect": "oracle",
    "sql": "SELECT NTH_VALUE(x, 2) FROM LAST OVER (ORDER BY y) AS c FROM t"
+  },
+  {
+   "key": "38517ad23c02d143",
+   "dialect": "oracle",
+   "sql": "SELECT (TIMESTAMP '2025-12-30 20:00:00' - TIMESTAMP '2025-12-29 14:30:00') DAY TO SECOND"
+  },
+  {
+   "key": "3abad1971b0bb89d",
+   "dialect": "oracle",
+   "sql": "SELECT (SYSTIMESTAMP - order_date) DAY(9) TO SECOND FROM orders"
+  },
+  {
+   "key": "bc0ab3adf076bbd9",
+   "dialect": "oracle",
+   "sql": "SELECT (SYSTIMESTAMP - order_date) DAY(9) TO SECOND(3) FROM orders"
   }
  ]
 }
