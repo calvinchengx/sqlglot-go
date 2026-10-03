@@ -1,0 +1,330 @@
+{
+ "dialect": "oracle",
+ "rendered": "SELECT /*+ LEADING(departments employees) USE_NL(employees) select where group by is order by */ * FROM employees JOIN departments ON employees.department_id = departments.department_id",
+ "sql": "SELECT /*+ LEADING(departments employees) USE_NL(employees) select where group by is order by */ * FROM employees JOIN departments ON employees.department_id = departments.department_id",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "o": [
+    " LEADING(departments employees) USE_NL(employees) select where group by is order by "
+   ],
+   "s": 7,
+   "t": "HINT",
+   "x": "/*+ LEADING(departments employees) USE_NL(employees) select where group by is order by */"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 97,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 99,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 113,
+   "e": 112,
+   "l": 1,
+   "s": 104,
+   "t": "VAR",
+   "x": "employees"
+  },
+  {
+   "c": 118,
+   "e": 117,
+   "l": 1,
+   "s": 114,
+   "t": "JOIN",
+   "x": "JOIN"
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 119,
+   "t": "VAR",
+   "x": "departments"
+  },
+  {
+   "c": 133,
+   "e": 132,
+   "l": 1,
+   "s": 131,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 143,
+   "e": 142,
+   "l": 1,
+   "s": 134,
+   "t": "VAR",
+   "x": "employees"
+  },
+  {
+   "c": 144,
+   "e": 143,
+   "l": 1,
+   "s": 143,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 157,
+   "e": 156,
+   "l": 1,
+   "s": 144,
+   "t": "VAR",
+   "x": "department_id"
+  },
+  {
+   "c": 159,
+   "e": 158,
+   "l": 1,
+   "s": 158,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 171,
+   "e": 170,
+   "l": 1,
+   "s": 160,
+   "t": "VAR",
+   "x": "departments"
+  },
+  {
+   "c": 172,
+   "e": 171,
+   "l": 1,
+   "s": 171,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 185,
+   "e": 184,
+   "l": 1,
+   "s": 172,
+   "t": "VAR",
+   "x": "department_id"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "c": "sqlglot.expressions.core.Hint",
+   "i": 0,
+   "k": "hint"
+  },
+  {
+   "a": true,
+   "i": 1,
+   "k": "expressions",
+   "v": "LEADING(departments employees) USE_NL(employees) select where group by is order by"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 98,
+    "end": 97,
+    "line": 1,
+    "start": 97
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 113,
+    "end": 112,
+    "line": 1,
+    "start": 104
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "employees"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 0,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 130,
+    "end": 129,
+    "line": 1,
+    "start": 119
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "departments"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 9,
+   "k": "on"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 157,
+    "end": 156,
+    "line": 1,
+    "start": 144
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "department_id"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "table",
+   "m": {
+    "col": 143,
+    "end": 142,
+    "line": 1,
+    "start": 134
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "employees"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 15,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 14,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 185,
+    "end": 184,
+    "line": 1,
+    "start": 172
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "department_id"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "table",
+   "m": {
+    "col": 171,
+    "end": 170,
+    "line": 1,
+    "start": 160
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "departments"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 23,
+   "k": "join_mark",
+   "v": false
+  }
+ ]
+}

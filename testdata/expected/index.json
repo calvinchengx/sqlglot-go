@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6581,
+ "count": 6597,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -32906,6 +32906,86 @@
    "key": "c031aadd1932a0fb",
    "dialect": "oracle",
    "sql": "SELECT * FROM sales_history MATCH_RECOGNIZE (PARTITION BY product ORDER BY tstamp MEASURES STRT.tstamp AS start_tstamp, LAST(UP.tstamp) AS peak_tstamp, LAST(DOWN.tstamp) AS end_tstamp, MATCH_NUMBER() AS mno ONE ROW PER MATCH AFTER MATCH SKIP TO LAST DOWN PATTERN (STRT UP+ FLAT* DOWN+) DEFINE UP AS UP.units_sold > PREV(UP.units_sold), FLAT AS FLAT.units_sold = PREV(FLAT.units_sold), DOWN AS DOWN.units_sold < PREV(DOWN.units_sold)) MR"
+  },
+  {
+   "key": "253c68c7adaba6f3",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ ORDERED */* FROM tbl"
+  },
+  {
+   "key": "3370eaa974de2251",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ ORDERED */ * FROM tbl"
+  },
+  {
+   "key": "7159530867125c03",
+   "dialect": "oracle",
+   "sql": "SELECT /* test */ /*+ ORDERED */* FROM tbl"
+  },
+  {
+   "key": "a4234ecedcfbfc57",
+   "dialect": "oracle",
+   "sql": "/* test */ SELECT /*+ ORDERED */ * FROM tbl"
+  },
+  {
+   "key": "91d448a89155def8",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ USE_NL(A B) */ A.COL_TEST FROM TABLE_A A, TABLE_B B"
+  },
+  {
+   "key": "470fb154377a6279",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ INDEX(v.j jhist_employee_ix (employee_id start_date)) */ * FROM v"
+  },
+  {
+   "key": "0d7ae45349548d09",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ USE_NL(A B C) */ A.COL_TEST FROM TABLE_A A, TABLE_B B, TABLE_C C"
+  },
+  {
+   "key": "821e056dd178cf5d",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ NO_INDEX(employees emp_empid) */ employee_id FROM employees WHERE employee_id > 200"
+  },
+  {
+   "key": "86ac8a0e23631008",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ NO_INDEX_FFS(items item_order_ix) */ order_id FROM order_items items"
+  },
+  {
+   "key": "8ccf6b0b56a3473a",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ LEADING(e j) */ * FROM employees e, departments d, job_history j WHERE e.department_id = d.department_id AND e.hire_date = j.start_date"
+  },
+  {
+   "key": "cfa032f24100fdda",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ LEADING(departments employees) USE_NL(employees) */ * FROM employees JOIN departments ON employees.department_id = departments.department_id"
+  },
+  {
+   "key": "6f13c027e390e78e",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ USE_NL(bbbbbbbbbbbbbbbbbbbbbbbb) LEADING(aaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbbb cccccccccccccccccccccccc dddddddddddddddddddddddd) INDEX(cccccccccccccccccccccccc) */ * FROM aaaaaaaaaaaaaaaaaaaaaaaa JOIN bbbbbbbbbbbbbbbbbbbbbbbb ON aaaaaaaaaaaaaaaaaaaaaaaa.id = bbbbbbbbbbbbbbbbbbbbbbbb.a_id JOIN cccccccccccccccccccccccc ON bbbbbbbbbbbbbbbbbbbbbbbb.id = cccccccccccccccccccccccc.b_id JOIN dddddddddddddddddddddddd ON cccccccccccccccccccccccc.id = dddddddddddddddddddddddd.c_id"
+  },
+  {
+   "key": "812cb814f1c1e63f",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ USE_NL(bbbbbbbbbbbbbbbbbbbbbbbb) LEADING( aaaaaaaaaaaaaaaaaaaaaaaa bbbbbbbbbbbbbbbbbbbbbbbb cccccccccccccccccccccccc dddddddddddddddddddddddd ) INDEX(cccccccccccccccccccccccc) */ * FROM aaaaaaaaaaaaaaaaaaaaaaaa JOIN bbbbbbbbbbbbbbbbbbbbbbbb ON aaaaaaaaaaaaaaaaaaaaaaaa.id = bbbbbbbbbbbbbbbbbbbbbbbb.a_id JOIN cccccccccccccccccccccccc ON bbbbbbbbbbbbbbbbbbbbbbbb.id = cccccccccccccccccccccccc.b_id JOIN dddddddddddddddddddddddd ON cccccccccccccccccccccccc.id = dddddddddddddddddddddddd.c_id"
+  },
+  {
+   "key": "7c105be57f54d8fc",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ LEADING(departments employees) USE_NL(employees) select where group by is order by */ * FROM employees JOIN departments ON employees.department_id = departments.department_id"
+  },
+  {
+   "key": "10839851f3957ac2",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ LEADING(departments, employees) */ * FROM employees JOIN departments ON employees.department_id = departments.department_id"
+  },
+  {
+   "key": "a6f9a571f8158a0a",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ LEADING(departments select) */ * FROM employees JOIN departments ON employees.department_id = departments.department_id"
   }
  ]
 }

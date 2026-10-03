@@ -1239,6 +1239,9 @@ func (g *generator) writePositionalColumn(e *Expression) string {
 // writeHint writes what the engine is told about running the query, back
 // inside the comment it was written in.
 func (g *generator) writeHint(e *Expression) string {
+	if g.dialect == "oracle" {
+		return g.writeOracleHint(e)
+	}
 	// MySQL separates hint items with a space. Every other dialect uses a comma.
 	sep := ", "
 	if g.dialect == "mysql" {

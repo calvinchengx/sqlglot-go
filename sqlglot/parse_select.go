@@ -580,6 +580,9 @@ var selectPrefix = []string{
 // calls, each naming something the engine should do. The body is tokenized
 // and parsed on its own, because the tokenizer keeps the comment whole.
 func (p *parser) parseHint(text string) (*Expression, error) {
+	if p.dialect == "oracle" {
+		return p.parseOracleHint(text)
+	}
 	body := strings.TrimSpace(text)
 	body = strings.TrimPrefix(body, "/*+")
 	body = strings.TrimSuffix(body, "*/")
