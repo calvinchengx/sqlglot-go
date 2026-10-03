@@ -167,6 +167,7 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT a$x#b"),
     ("oracle", "SELECT * FROM table_name@dblink_name.database_link_domain"),
     ("oracle", "SELECT * FROM V$SESSION"),
+    ("oracle", "SELECT * FROM t ORDER BY a ASC NULLS LAST, b ASC NULLS FIRST, c DESC NULLS LAST, d DESC NULLS FIRST"),
 )
 
 
