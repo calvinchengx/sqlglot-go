@@ -1157,7 +1157,7 @@ func (p *parser) parseXMLTable() (*Expression, error) {
 			p.advance()
 		}
 		for {
-			col, err := p.parseColumn()
+			col, err := p.oracleXMLPassing()
 			if err != nil {
 				return nil, err
 			}

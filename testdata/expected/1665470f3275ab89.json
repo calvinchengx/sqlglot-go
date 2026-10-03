@@ -1,0 +1,861 @@
+{
+ "dialect": "oracle",
+ "rendered": "SELECT table_name, column_name, data_default FROM XMLTABLE('ROWSET/ROW' PASSING dbms_xmlgen.getxmltype('SELECT table_name, column_name, data_default FROM user_tab_columns') COLUMNS table_name VARCHAR2(128) PATH '*[1]', column_name VARCHAR2(128) PATH '*[2]', data_default VARCHAR2(2000) PATH '*[3]')",
+ "sql": "SELECT table_name, column_name, data_default FROM xmltable('ROWSET/ROW' passing dbms_xmlgen.getxmltype('SELECT table_name, column_name, data_default FROM user_tab_columns') columns table_name VARCHAR2(128) PATH '*[1]', column_name VARCHAR2(128) PATH '*[2]', data_default VARCHAR2(2000) PATH '*[3]')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "table_name"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "column_name"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 32,
+   "t": "VAR",
+   "x": "data_default"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 45,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 50,
+   "t": "VAR",
+   "x": "xmltable"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 59,
+   "t": "STRING",
+   "x": "ROWSET/ROW"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 72,
+   "t": "VAR",
+   "x": "passing"
+  },
+  {
+   "c": 91,
+   "e": 90,
+   "l": 1,
+   "s": 80,
+   "t": "VAR",
+   "x": "dbms_xmlgen"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 91,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 92,
+   "t": "VAR",
+   "x": "getxmltype"
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 102,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 171,
+   "e": 170,
+   "l": 1,
+   "s": 103,
+   "t": "STRING",
+   "x": "SELECT table_name, column_name, data_default FROM user_tab_columns"
+  },
+  {
+   "c": 172,
+   "e": 171,
+   "l": 1,
+   "s": 171,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 180,
+   "e": 179,
+   "l": 1,
+   "s": 173,
+   "t": "COLUMN",
+   "x": "columns"
+  },
+  {
+   "c": 191,
+   "e": 190,
+   "l": 1,
+   "s": 181,
+   "t": "VAR",
+   "x": "table_name"
+  },
+  {
+   "c": 200,
+   "e": 199,
+   "l": 1,
+   "s": 192,
+   "t": "VARCHAR",
+   "x": "VARCHAR2"
+  },
+  {
+   "c": 201,
+   "e": 200,
+   "l": 1,
+   "s": 200,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 204,
+   "e": 203,
+   "l": 1,
+   "s": 201,
+   "t": "NUMBER",
+   "x": "128"
+  },
+  {
+   "c": 205,
+   "e": 204,
+   "l": 1,
+   "s": 204,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 210,
+   "e": 209,
+   "l": 1,
+   "s": 206,
+   "t": "VAR",
+   "x": "PATH"
+  },
+  {
+   "c": 217,
+   "e": 216,
+   "l": 1,
+   "s": 211,
+   "t": "STRING",
+   "x": "*[1]"
+  },
+  {
+   "c": 218,
+   "e": 217,
+   "l": 1,
+   "s": 217,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 230,
+   "e": 229,
+   "l": 1,
+   "s": 219,
+   "t": "VAR",
+   "x": "column_name"
+  },
+  {
+   "c": 239,
+   "e": 238,
+   "l": 1,
+   "s": 231,
+   "t": "VARCHAR",
+   "x": "VARCHAR2"
+  },
+  {
+   "c": 240,
+   "e": 239,
+   "l": 1,
+   "s": 239,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 243,
+   "e": 242,
+   "l": 1,
+   "s": 240,
+   "t": "NUMBER",
+   "x": "128"
+  },
+  {
+   "c": 244,
+   "e": 243,
+   "l": 1,
+   "s": 243,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 249,
+   "e": 248,
+   "l": 1,
+   "s": 245,
+   "t": "VAR",
+   "x": "PATH"
+  },
+  {
+   "c": 256,
+   "e": 255,
+   "l": 1,
+   "s": 250,
+   "t": "STRING",
+   "x": "*[2]"
+  },
+  {
+   "c": 257,
+   "e": 256,
+   "l": 1,
+   "s": 256,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 270,
+   "e": 269,
+   "l": 1,
+   "s": 258,
+   "t": "VAR",
+   "x": "data_default"
+  },
+  {
+   "c": 279,
+   "e": 278,
+   "l": 1,
+   "s": 271,
+   "t": "VARCHAR",
+   "x": "VARCHAR2"
+  },
+  {
+   "c": 280,
+   "e": 279,
+   "l": 1,
+   "s": 279,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 284,
+   "e": 283,
+   "l": 1,
+   "s": 280,
+   "t": "NUMBER",
+   "x": "2000"
+  },
+  {
+   "c": 285,
+   "e": 284,
+   "l": 1,
+   "s": 284,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 290,
+   "e": 289,
+   "l": 1,
+   "s": 286,
+   "t": "VAR",
+   "x": "PATH"
+  },
+  {
+   "c": 297,
+   "e": 296,
+   "l": 1,
+   "s": 291,
+   "t": "STRING",
+   "x": "*[3]"
+  },
+  {
+   "c": 298,
+   "e": 297,
+   "l": 1,
+   "s": 297,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "table_name"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "column_name"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 6,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "data_default"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 11,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.XMLTable",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 71,
+    "end": 70,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "ROWSET/ROW"
+  },
+  {
+   "i": 19,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Dot",
+   "i": 18,
+   "k": "passing"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 91,
+    "end": 90,
+    "line": 1,
+    "start": 80
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "dbms_xmlgen"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 22,
+   "k": "expression",
+   "m": {
+    "col": 102,
+    "end": 101,
+    "line": 1,
+    "start": 92
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "getxmltype"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 26,
+   "k": "expressions",
+   "m": {
+    "col": 171,
+    "end": 170,
+    "line": 1,
+    "start": 103
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "SELECT table_name, column_name, data_default FROM user_tab_columns"
+  },
+  {
+   "i": 28,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 22,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 18,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 191,
+    "end": 190,
+    "line": 1,
+    "start": 181
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "table_name"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 32,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 36,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 36,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 38,
+   "k": "this",
+   "m": {
+    "col": 204,
+    "end": 203,
+    "line": 1,
+    "start": 201
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "128"
+  },
+  {
+   "i": 39,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 36,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 32,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.PathColumnConstraint",
+   "i": 43,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 44,
+   "k": "this",
+   "m": {
+    "col": 217,
+    "end": 216,
+    "line": 1,
+    "start": 211
+   }
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "*[1]"
+  },
+  {
+   "i": 45,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 18,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 48,
+   "k": "this",
+   "m": {
+    "col": 230,
+    "end": 229,
+    "line": 1,
+    "start": 219
+   }
+  },
+  {
+   "i": 49,
+   "k": "this",
+   "v": "column_name"
+  },
+  {
+   "i": 49,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 48,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 52,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 52,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 54,
+   "k": "this",
+   "m": {
+    "col": 243,
+    "end": 242,
+    "line": 1,
+    "start": 240
+   }
+  },
+  {
+   "i": 55,
+   "k": "this",
+   "v": "128"
+  },
+  {
+   "i": 55,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 52,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 48,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.PathColumnConstraint",
+   "i": 59,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 60,
+   "k": "this",
+   "m": {
+    "col": 256,
+    "end": 255,
+    "line": 1,
+    "start": 250
+   }
+  },
+  {
+   "i": 61,
+   "k": "this",
+   "v": "*[2]"
+  },
+  {
+   "i": 61,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 18,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 64,
+   "k": "this",
+   "m": {
+    "col": 270,
+    "end": 269,
+    "line": 1,
+    "start": 258
+   }
+  },
+  {
+   "i": 65,
+   "k": "this",
+   "v": "data_default"
+  },
+  {
+   "i": 65,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 64,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 68,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 68,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 70,
+   "k": "this",
+   "m": {
+    "col": 284,
+    "end": 283,
+    "line": 1,
+    "start": 280
+   }
+  },
+  {
+   "i": 71,
+   "k": "this",
+   "v": "2000"
+  },
+  {
+   "i": 71,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 68,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 64,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.PathColumnConstraint",
+   "i": 75,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 76,
+   "k": "this",
+   "m": {
+    "col": 297,
+    "end": 296,
+    "line": 1,
+    "start": 291
+   }
+  },
+  {
+   "i": 77,
+   "k": "this",
+   "v": "*[3]"
+  },
+  {
+   "i": 77,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 18,
+   "k": "by_ref",
+   "v": false
+  }
+ ]
+}
