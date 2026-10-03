@@ -2402,7 +2402,7 @@ func (p *parser) parseTypeSize() (*Expression, error) {
 	case c.Type == TokNUMBER:
 		p.advance()
 		lit := New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})
-		return New("DataTypeParam", Arg{"this", lit}), nil
+		return p.typeSizeParam(lit), nil
 	case c.Type == TokVAR, p.atIdentifier() && c.Type != TokIDENTIFIER:
 		// A bare word, not a quoted one: `VARCHAR(MAX)` is a Var, and the
 		// reference UPPER-CASES it, so `varchar(max)` and `VARCHAR(MAX)` are

@@ -161,6 +161,8 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT * FROM table_name SAMPLE (25) s"),
     ("oracle", "SELECT COUNT(*) * 10 FROM orders SAMPLE (10) SEED (1)"),
     ("oracle", "SELECT * FROM t SAMPLE (.25)"),
+    ("oracle", "SELECT CAST(NULL AS VARCHAR2(2328 CHAR)) AS COL1"),
+    ("oracle", "SELECT CAST(NULL AS VARCHAR2(2328 BYTE)) AS COL1"),
 )
 
 
