@@ -278,7 +278,9 @@ func (p *parser) parseJSONTable() (*Expression, error) {
 			return nil, p.unsupported("JSON_TABLE without a path")
 		}
 	}
-	if p.atWords("NULL", "ON") || p.atWords("ERROR", "ON") || p.at(TokDEFAULT) {
+	errorHandling := p.oracleJSONOn("ERROR")
+	emptyHandling := p.oracleJSONOn("EMPTY")
+	if p.at(TokDEFAULT) {
 		return nil, p.unsupported("JSON_TABLE error handling")
 	}
 	schema, err := p.parseJSONSchema()
@@ -291,6 +293,12 @@ func (p *parser) parseJSONTable() (*Expression, error) {
 	node := New("JSONTable", Arg{"this", this}, Arg{"schema", schema})
 	if path != nil {
 		node.Set("path", path)
+	}
+	if errorHandling != "" {
+		node.Set("error_handling", errorHandling)
+	}
+	if emptyHandling != "" {
+		node.Set("empty_handling", emptyHandling)
 	}
 	return node, nil
 }
@@ -555,6 +563,10 @@ func (p *parser) parseMySQLShowProfile() (types []*Expression, query, offset, li
 }
 
 func (p *parser) parseMySQLSyntaxFunction(upper string) (*Expression, bool, error) {
+	if upper == "JSON_TABLE" && p.dialect == "oracle" {
+		fn, err := p.parseJSONTable()
+		return fn, true, err
+	}
 	if p.dialect != "mysql" {
 		return nil, false, nil
 	}

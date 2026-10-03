@@ -293,6 +293,9 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", '/* COMMENT */ INSERT FIRST WHEN salary > 4000 THEN INTO emp2 WHEN salary > 5000 THEN INTO emp3 WHEN salary > 6000 THEN INTO emp4 SELECT salary FROM employees'),
     ("oracle", "SELECT department_id BULK COLLECT INTO v_department_ids FROM departments"),
     ("oracle", "SELECT department_id, department_name BULK COLLECT INTO v_department_ids, v_department_names FROM departments"),
+    ("oracle", "SELECT * FROM JSON_TABLE(foo FORMAT JSON, 'bla' ERROR ON ERROR NULL ON EMPTY COLUMNS(foo PATH 'bar'))"),
+    ("oracle", "SELECT\n  CASE WHEN DBMS_LOB.GETLENGTH(info) < 32000 THEN DBMS_LOB.SUBSTR(info) END AS info_txt,\n  info AS info_clob\nFROM schemaname.tablename ar\nINNER JOIN JSON_TABLE(:emps, '$[*]' COLUMNS(empno NUMBER PATH '$')) jt\n  ON ar.empno = jt.empno"),
+    ("oracle", "SELECT * FROM JSON_TABLE(my_doc, '$.data[*]' COLUMNS(NAME VARCHAR2(200) PATH '$.name', DATA CLOB FORMAT JSON PATH '$.data')) j"),
 )
 
 

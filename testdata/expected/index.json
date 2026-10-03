@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6634,
+ "count": 6637,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33171,6 +33171,21 @@
    "key": "1bfcffd1d33b2bc6",
    "dialect": "oracle",
    "sql": "SELECT department_id, department_name BULK COLLECT INTO v_department_ids, v_department_names FROM departments"
+  },
+  {
+   "key": "78708c0bd2ef42fe",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM JSON_TABLE(foo FORMAT JSON, 'bla' ERROR ON ERROR NULL ON EMPTY COLUMNS(foo PATH 'bar'))"
+  },
+  {
+   "key": "25e170f08d46ada7",
+   "dialect": "oracle",
+   "sql": "SELECT\n  CASE WHEN DBMS_LOB.GETLENGTH(info) < 32000 THEN DBMS_LOB.SUBSTR(info) END AS info_txt,\n  info AS info_clob\nFROM schemaname.tablename ar\nINNER JOIN JSON_TABLE(:emps, '$[*]' COLUMNS(empno NUMBER PATH '$')) jt\n  ON ar.empno = jt.empno"
+  },
+  {
+   "key": "d6eff486a6d6c4b1",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM JSON_TABLE(my_doc, '$.data[*]' COLUMNS(NAME VARCHAR2(200) PATH '$.name', DATA CLOB FORMAT JSON PATH '$.data')) j"
   }
  ]
 }

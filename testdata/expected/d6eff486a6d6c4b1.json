@@ -1,0 +1,513 @@
+{
+ "dialect": "oracle",
+ "rendered": "SELECT * FROM JSON_TABLE(my_doc, '$.data[*]' COLUMNS(NAME VARCHAR2(200) PATH '$.name', DATA CLOB FORMAT JSON PATH '$.data')) j",
+ "sql": "SELECT * FROM JSON_TABLE(my_doc, '$.data[*]' COLUMNS(NAME VARCHAR2(200) PATH '$.name', DATA CLOB FORMAT JSON PATH '$.data')) j",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "JSON_TABLE"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 25,
+   "t": "VAR",
+   "x": "my_doc"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 33,
+   "t": "STRING",
+   "x": "$.data[*]"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 45,
+   "t": "COLUMN",
+   "x": "COLUMNS"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 53,
+   "t": "VAR",
+   "x": "NAME"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 58,
+   "t": "VARCHAR",
+   "x": "VARCHAR2"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 66,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 67,
+   "t": "NUMBER",
+   "x": "200"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 70,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 72,
+   "t": "VAR",
+   "x": "PATH"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 77,
+   "t": "STRING",
+   "x": "$.name"
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 85,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 91,
+   "e": 90,
+   "l": 1,
+   "s": 87,
+   "t": "VAR",
+   "x": "DATA"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 92,
+   "t": "TEXT",
+   "x": "CLOB"
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 97,
+   "t": "FORMAT",
+   "x": "FORMAT"
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 104,
+   "t": "JSON",
+   "x": "JSON"
+  },
+  {
+   "c": 113,
+   "e": 112,
+   "l": 1,
+   "s": 109,
+   "t": "VAR",
+   "x": "PATH"
+  },
+  {
+   "c": 122,
+   "e": 121,
+   "l": 1,
+   "s": 114,
+   "t": "STRING",
+   "x": "$.data"
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 122,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 123,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 126,
+   "e": 125,
+   "l": 1,
+   "s": 125,
+   "t": "VAR",
+   "x": "j"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.json.JSONTable",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "my_doc"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 5,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONSchema",
+   "i": 4,
+   "k": "schema"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONColumnDef",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "NAME"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 11,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 15,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 15,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 70,
+    "end": 69,
+    "line": 1,
+    "start": 67
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "200"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 15,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "path",
+   "m": {
+    "col": 85,
+    "end": 84,
+    "line": 1,
+    "start": 77
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "$.name"
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 11,
+   "k": "ordinality",
+   "v": false
+  },
+  {
+   "i": 11,
+   "k": "format_json",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONColumnDef",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "this",
+   "m": {
+    "col": 91,
+    "end": 90,
+    "line": 1,
+    "start": 87
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "DATA"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 27,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 31,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 31,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 27,
+   "k": "path",
+   "m": {
+    "col": 122,
+    "end": 121,
+    "line": 1,
+    "start": 114
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "$.data"
+  },
+  {
+   "i": 34,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 27,
+   "k": "ordinality",
+   "v": false
+  },
+  {
+   "i": 27,
+   "k": "format_json",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "path",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "$.data[*]"
+  },
+  {
+   "i": 39,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 3,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 42,
+   "k": "this",
+   "m": {
+    "col": 126,
+    "end": 125,
+    "line": 1,
+    "start": 125
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "j"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}
