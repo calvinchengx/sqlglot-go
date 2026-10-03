@@ -183,6 +183,8 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "CREATE OR REPLACE FORCE VIEW foo1.foo2"),
     ("oracle", "SELECT INSTR(haystack, needle)"),
     ("oracle", "SELECT * FROM test WHERE MOD(col1, 4) = 3"),
+    ("oracle", "SELECT TRIM('|' FROM '||Hello ||| world||')"),
+    ("oracle", "TRIM(BOTH 'h' FROM 'Hello World')"),
 )
 
 
