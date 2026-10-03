@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6623,
+ "count": 6625,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33116,6 +33116,16 @@
    "key": "a35b4d8b031b798c",
    "dialect": "oracle",
    "sql": "SELECT last_name, employee_id, manager_id, LEVEL FROM employees START WITH employee_id = 100 CONNECT BY PRIOR employee_id = manager_id ORDER SIBLINGS BY last_name"
+  },
+  {
+   "key": "99b2c4508f2a766e",
+   "dialect": "oracle",
+   "sql": "SELECT TO_CHAR(-100, 'L99', 'NL_CURRENCY = '' AusDollars '' ')"
+  },
+  {
+   "key": "cfe45277ea6780f2",
+   "dialect": "oracle",
+   "sql": "TO_CHAR(x)"
   }
  ]
 }

@@ -282,6 +282,8 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT id FROM t START WITH (x) CONNECT BY PRIOR id = parent_id"),
     ("oracle", "SELECT id, PRIOR name AS parent_name, name FROM tree CONNECT BY NOCYCLE PRIOR id = parent_id"),
     ("oracle", "SELECT last_name, employee_id, manager_id, LEVEL FROM employees START WITH employee_id = 100 CONNECT BY PRIOR employee_id = manager_id ORDER SIBLINGS BY last_name"),
+    ("oracle", "SELECT TO_CHAR(-100, 'L99', 'NL_CURRENCY = '' AusDollars '' ')"),
+    ("oracle", "TO_CHAR(x)"),
 )
 
 
