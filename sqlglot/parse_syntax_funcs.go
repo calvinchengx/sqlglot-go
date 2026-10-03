@@ -1194,6 +1194,11 @@ func (p *parser) parseJSONArrayAgg() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	if p.atWords("FORMAT", "JSON") {
+		p.advance()
+		p.advance()
+		this = New("FormatJson", Arg{"this", this})
+	}
 	node := New("JSONArrayAgg", Arg{"this", this})
 	if p.at(TokORDER_BY) {
 		p.advance()
@@ -1209,10 +1214,15 @@ func (p *parser) parseJSONArrayAgg() (*Expression, error) {
 		p.advance()
 		node.Set("null_handling", word)
 	}
+	if p.atWords("RETURNING") || p.atWords("STRICT") {
+		if err = p.oracleJSONArrayTail(node); err != nil {
+			return nil, err
+		}
+	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed JSON_ARRAYAGG")
 	}
-	return node, nil
+	return spellOracleJSONArrayAgg(node), nil
 }
 
 // parseAggregateArgument reads the single argument of an aggregate whose

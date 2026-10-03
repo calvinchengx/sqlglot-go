@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6637,
+ "count": 6638,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33186,6 +33186,11 @@
    "key": "d6eff486a6d6c4b1",
    "dialect": "oracle",
    "sql": "SELECT * FROM JSON_TABLE(my_doc, '$.data[*]' COLUMNS(NAME VARCHAR2(200) PATH '$.name', DATA CLOB FORMAT JSON PATH '$.data')) j"
+  },
+  {
+   "key": "5046942d5ad3849e",
+   "dialect": "oracle",
+   "sql": "SELECT JSON_ARRAYAGG(FOO() FORMAT JSON ORDER BY bar NULL ON NULL RETURNING CLOB STRICT)"
   }
  ]
 }
