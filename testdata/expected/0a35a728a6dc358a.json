@@ -1,0 +1,159 @@
+{
+ "dialect": "oracle",
+ "rendered": "SELECT department_id BULK COLLECT INTO v_department_ids FROM departments",
+ "sql": "SELECT department_id BULK COLLECT INTO v_department_ids FROM departments",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "department_id"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 21,
+   "t": "BULK_COLLECT_INTO",
+   "x": "BULK COLLECT INTO"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 39,
+   "t": "VAR",
+   "x": "v_department_ids"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 56,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 61,
+   "t": "VAR",
+   "x": "departments"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "department_id"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Into",
+   "i": 0,
+   "k": "into"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "v_department_ids"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 6,
+   "k": "bulk_collect",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 61
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "departments"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

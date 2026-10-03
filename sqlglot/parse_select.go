@@ -161,6 +161,9 @@ func (p *parser) parseQueryBody() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	if err := p.oracleBulkCollect(this); err != nil {
+		return nil, err
+	}
 	return p.parseSetOperations(this)
 }
 

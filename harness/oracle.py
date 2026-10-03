@@ -291,6 +291,8 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", 'INSERT FIRST WHEN id <= 3 THEN INTO dest_tab1 (id, description) VALUES (id, description) WHEN id <= 5 THEN INTO dest_tab2 (id, description) VALUES (id, description) ELSE INTO dest_tab3 (id, description) VALUES (id, description) SELECT id, description FROM source_tab'),
     ("oracle", 'INSERT FIRST WHEN id <= 3 THEN INTO dest_tab1 (id, description) VALUES (id, description) ELSE INTO dest_tab2 (id, description) VALUES (id, description) INTO dest_tab3 (id, description) VALUES (id, description) SELECT id, description FROM source_tab'),
     ("oracle", '/* COMMENT */ INSERT FIRST WHEN salary > 4000 THEN INTO emp2 WHEN salary > 5000 THEN INTO emp3 WHEN salary > 6000 THEN INTO emp4 SELECT salary FROM employees'),
+    ("oracle", "SELECT department_id BULK COLLECT INTO v_department_ids FROM departments"),
+    ("oracle", "SELECT department_id, department_name BULK COLLECT INTO v_department_ids, v_department_names FROM departments"),
 )
 
 

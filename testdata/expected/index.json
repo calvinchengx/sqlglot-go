@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6632,
+ "count": 6634,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33161,6 +33161,16 @@
    "key": "fc5122651dd634be",
    "dialect": "oracle",
    "sql": "/* COMMENT */ INSERT FIRST WHEN salary > 4000 THEN INTO emp2 WHEN salary > 5000 THEN INTO emp3 WHEN salary > 6000 THEN INTO emp4 SELECT salary FROM employees"
+  },
+  {
+   "key": "0a35a728a6dc358a",
+   "dialect": "oracle",
+   "sql": "SELECT department_id BULK COLLECT INTO v_department_ids FROM departments"
+  },
+  {
+   "key": "1bfcffd1d33b2bc6",
+   "dialect": "oracle",
+   "sql": "SELECT department_id, department_name BULK COLLECT INTO v_department_ids, v_department_names FROM departments"
   }
  ]
 }
