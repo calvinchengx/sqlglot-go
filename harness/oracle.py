@@ -164,6 +164,9 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT CAST(NULL AS VARCHAR2(2328 CHAR)) AS COL1"),
     ("oracle", "SELECT CAST(NULL AS VARCHAR2(2328 BYTE)) AS COL1"),
     ("oracle", "SYSDATE"),
+    ("oracle", "SELECT a$x#b"),
+    ("oracle", "SELECT * FROM table_name@dblink_name.database_link_domain"),
+    ("oracle", "SELECT * FROM V$SESSION"),
 )
 
 
