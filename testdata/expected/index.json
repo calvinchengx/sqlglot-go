@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6556,
+ "count": 6562,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -32781,6 +32781,36 @@
    "key": "411adbfb78f4fe12",
    "dialect": "oracle",
    "sql": "SELECT * FROM t FOR UPDATE OF s.t.c, s.t.v SKIP LOCKED"
+  },
+  {
+   "key": "28e5d3fd766c8045",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM consumer LEFT JOIN groceries ON consumer.groceries_id = consumer.id PIVOT(MAX(type_id) FOR consumer_type IN (1, 2, 3, 4))"
+  },
+  {
+   "key": "dea1edb96904dd0e",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM test UNPIVOT INCLUDE NULLS (value FOR Description IN (col AS 'PREFIX ' || CHR(38) || ' SUFFIX'))"
+  },
+  {
+   "key": "234d99942316b2cb",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM sales UNPIVOT(q FOR p IN (q1 AS 'Prod1', q2 AS 'Prod2'))"
+  },
+  {
+   "key": "da5ccdf66de98e88",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM sales UNPIVOT(q FOR p IN (q1 AS 1, q2 AS 2))"
+  },
+  {
+   "key": "96d7c9634d13c0da",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM t UNPIVOT(revenue FOR month IN (t.jan, t.feb)) AS u"
+  },
+  {
+   "key": "67dab6f62560fec1",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM t PIVOT(SUM(t.val) FOR t.cat IN ('a' AS a)) AS p"
   }
  ]
 }

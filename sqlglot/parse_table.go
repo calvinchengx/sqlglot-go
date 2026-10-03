@@ -207,8 +207,7 @@ func (p *parser) parseJoin() (*Expression, error) {
 		// ON at all, and one named by its METHOD is not touched either.
 		join.Set("on", New("Boolean", Arg{"this", true}))
 	}
-	join.Set("pivots", nil)
-	return join, nil
+	return p.attachJoinPivots(join)
 }
 
 // parseUsingColumns reads `(x, y)` after USING, already past the word
@@ -799,7 +798,7 @@ func (p *parser) parsePivot() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		aggregates = append(aggregates, unpivotTarget(agg, unpivot))
+		aggregates = append(aggregates, unpivotTarget(p.pivotAggregate(agg), unpivot))
 		if !p.match(TokCOMMA) {
 			break
 		}
@@ -838,11 +837,10 @@ func (p *parser) parsePivot() (*Expression, error) {
 			// `IN (q1 AS `Jan-Mar`)` names the output column. The reference
 			// builds a PivotAlias for it, not the ordinary Alias.
 			if p.match(TokALIAS) {
-				name, err := p.parseIdentifier()
+				v, err = p.pivotInAlias(v)
 				if err != nil {
 					return nil, err
 				}
-				v = New("PivotAlias", Arg{"this", v}, Arg{"alias", name})
 			}
 			values = append(values, v)
 			if !p.match(TokCOMMA) {
@@ -891,9 +889,25 @@ func (p *parser) parsePivot() (*Expression, error) {
 		Arg{"default_on_null", false},
 		Arg{"group", group})
 
+	// The alias belongs to the last pivot in a chain. Oracle records it
+	// before the derived column names; an UNPIVOT records it after the
+	// value-column flag and has no derived names.
+	var alias *Expression
+	if !p.at(TokPIVOT) && !p.at(TokUNPIVOT) {
+		alias, err = p.parseTableAlias()
+		if err != nil {
+			return nil, err
+		}
+	}
 	if unpivot {
 		args = append(args, Arg{"value_columns_first", p.tables.UnpivotValueColumnsFirst})
+		if alias != nil {
+			args = append(args, Arg{"alias", alias})
+		}
 	} else {
+		if alias != nil {
+			args = append(args, Arg{"alias", alias})
+		}
 		columns, err := p.pivotColumns(aggregates, values)
 		if err != nil {
 			return nil, err
@@ -903,18 +917,6 @@ func (p *parser) parsePivot() (*Expression, error) {
 			Arg{"identify_pivot_strings", p.tables.PivotIdentifiesStrings},
 			Arg{"prefixed_pivot_columns", p.tables.PivotPrefixesColumns},
 			Arg{"pivot_column_naming", p.tables.PivotColumnNaming})
-	}
-
-	// An alias belongs to the LAST pivot in a chain, so it is only taken when
-	// another one does not follow.
-	if !p.at(TokPIVOT) && !p.at(TokUNPIVOT) {
-		alias, err := p.parseTableAlias()
-		if err != nil {
-			return nil, err
-		}
-		if alias != nil {
-			args = append(args, Arg{"alias", alias})
-		}
 	}
 	return New("Pivot", args...), nil
 }

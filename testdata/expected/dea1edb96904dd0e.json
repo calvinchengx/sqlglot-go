@@ -1,0 +1,466 @@
+{
+ "dialect": "oracle",
+ "rendered": "SELECT * FROM test UNPIVOT INCLUDE NULLS (value FOR Description IN (col AS 'PREFIX ' || CHR(38) || ' SUFFIX'))",
+ "sql": "SELECT * FROM test UNPIVOT INCLUDE NULLS (value FOR Description IN (col AS 'PREFIX ' || CHR(38) || ' SUFFIX'))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "test"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 19,
+   "t": "UNPIVOT",
+   "x": "UNPIVOT"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "INCLUDE"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 35,
+   "t": "VAR",
+   "x": "NULLS"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 42,
+   "t": "VAR",
+   "x": "value"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 48,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 52,
+   "t": "VAR",
+   "x": "Description"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 64,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 67,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 68,
+   "t": "VAR",
+   "x": "col"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 72,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 75,
+   "t": "STRING",
+   "x": "PREFIX "
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 85,
+   "t": "DPIPE",
+   "x": "||"
+  },
+  {
+   "c": 91,
+   "e": 90,
+   "l": 1,
+   "s": 88,
+   "t": "VAR",
+   "x": "CHR"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 91,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 92,
+   "t": "NUMBER",
+   "x": "38"
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 94,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 96,
+   "t": "DPIPE",
+   "x": "||"
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 99,
+   "t": "STRING",
+   "x": " SUFFIX"
+  },
+  {
+   "c": 109,
+   "e": 108,
+   "l": 1,
+   "s": 108,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 110,
+   "e": 109,
+   "l": 1,
+   "s": 109,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Pivot",
+   "i": 3,
+   "k": "pivots"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "expressions",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "value"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.In",
+   "i": 7,
+   "k": "fields"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "Description"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PivotAlias",
+   "i": 11,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 71,
+    "end": 70,
+    "line": 1,
+    "start": 68
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 16,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.DPipe",
+   "i": 15,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.DPipe",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 84,
+    "end": 83,
+    "line": 1,
+    "start": 75
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "PREFIX "
+  },
+  {
+   "i": 23,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.string.Chr",
+   "i": 22,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 26,
+   "k": "expressions",
+   "m": {
+    "col": 94,
+    "end": 93,
+    "line": 1,
+    "start": 92
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "38"
+  },
+  {
+   "i": 27,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 26,
+   "k": "charset",
+   "v": false
+  },
+  {
+   "i": 26,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "i": 22,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 21,
+   "k": "expression",
+   "m": {
+    "col": 108,
+    "end": 107,
+    "line": 1,
+    "start": 99
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": " SUFFIX"
+  },
+  {
+   "i": 33,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 21,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "i": 7,
+   "k": "unpivot",
+   "v": true
+  },
+  {
+   "i": 7,
+   "k": "include_nulls",
+   "v": true
+  },
+  {
+   "i": 7,
+   "k": "default_on_null",
+   "v": false
+  },
+  {
+   "i": 7,
+   "k": "value_columns_first",
+   "v": false
+  }
+ ]
+}

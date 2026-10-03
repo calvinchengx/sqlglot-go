@@ -215,6 +215,12 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT * FROM t FOR UPDATE OF s.t.c, s.t.v"),
     ("oracle", "SELECT * FROM t FOR UPDATE OF s.t.c, s.t.v NOWAIT"),
     ("oracle", "SELECT * FROM t FOR UPDATE OF s.t.c, s.t.v SKIP LOCKED"),
+    ("oracle", "SELECT * FROM consumer LEFT JOIN groceries ON consumer.groceries_id = consumer.id PIVOT(MAX(type_id) FOR consumer_type IN (1, 2, 3, 4))"),
+    ("oracle", "SELECT * FROM test UNPIVOT INCLUDE NULLS (value FOR Description IN (col AS 'PREFIX ' || CHR(38) || ' SUFFIX'))"),
+    ("oracle", "SELECT * FROM sales UNPIVOT(q FOR p IN (q1 AS 'Prod1', q2 AS 'Prod2'))"),
+    ("oracle", "SELECT * FROM sales UNPIVOT(q FOR p IN (q1 AS 1, q2 AS 2))"),
+    ("oracle", "SELECT * FROM t UNPIVOT(revenue FOR month IN (t.jan, t.feb)) AS u"),
+    ("oracle", "SELECT * FROM t PIVOT(SUM(t.val) FOR t.cat IN ('a' AS a)) AS p"),
 )
 
 

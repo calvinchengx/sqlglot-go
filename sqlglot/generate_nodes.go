@@ -852,7 +852,7 @@ func (g *generator) writeJoin(e *Expression) string {
 		}
 		words = append(words, "USING ("+strings.Join(names, ", ")+")")
 	}
-	return strings.Join(words, " ")
+	return g.appendJoinPivots(e, strings.Join(words, " "))
 }
 
 func (g *generator) writeLateral(e *Expression) string {
@@ -3886,7 +3886,11 @@ func (g *generator) writePivot(e *Expression) string {
 			word += " EXCLUDE NULLS "
 		}
 	}
-	out := " " + word + "(" + strings.Join(parts, ", ") + " FOR " + g.node(fields[0])
+	field := fields[0]
+	if g.dialect == "oracle" {
+		field = unqualifiedPivotField(field)
+	}
+	out := " " + word + "(" + strings.Join(parts, ", ") + " FOR " + g.node(field)
 	// DuckDB's own PIVOT may GROUP BY inside its own parentheses, the values
 	// it groups rather than anything the SELECT around it groups.
 	if group, _ := e.Args["group"].(*Expression); group != nil {
@@ -3894,7 +3898,7 @@ func (g *generator) writePivot(e *Expression) string {
 	}
 	out += ")"
 	if alias := g.child(e, "alias"); alias != "" {
-		out += " AS " + alias
+		out += g.pivotAliasSep() + alias
 	}
 	return out
 }
