@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6548,
+ "count": 6556,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -32741,6 +32741,46 @@
    "key": "dbd6de006c469408",
    "dialect": "oracle",
    "sql": "TO_NUMBER('dino' DEFAULT 0 ON CONVERSION ERROR, '9999', 'NLS_NUMERIC_CHARACTERS = ''.,''')"
+  },
+  {
+   "key": "c598df6b056dbbf8",
+   "dialect": "oracle",
+   "sql": "SELECT x FROM t WHERE cond FOR UPDATE"
+  },
+  {
+   "key": "62ee865acd07906b",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM t FOR UPDATE"
+  },
+  {
+   "key": "a3a2739f01c8e35a",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM t FOR UPDATE WAIT 5"
+  },
+  {
+   "key": "07dc4855cf74bf11",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM t FOR UPDATE NOWAIT"
+  },
+  {
+   "key": "773c1bffa32297d3",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM t FOR UPDATE SKIP LOCKED"
+  },
+  {
+   "key": "2631c6864b73988f",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM t FOR UPDATE OF s.t.c, s.t.v"
+  },
+  {
+   "key": "f4deede0d046c04a",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM t FOR UPDATE OF s.t.c, s.t.v NOWAIT"
+  },
+  {
+   "key": "411adbfb78f4fe12",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM t FOR UPDATE OF s.t.c, s.t.v SKIP LOCKED"
   }
  ]
 }

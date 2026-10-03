@@ -207,6 +207,14 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "TO_NUMBER('dino' DEFAULT 0 ON CONVERSION ERROR)"),
     ("oracle", "TO_NUMBER('dino' DEFAULT 0 ON CONVERSION ERROR, '9999')"),
     ("oracle", "TO_NUMBER('dino' DEFAULT 0 ON CONVERSION ERROR, '9999', 'NLS_NUMERIC_CHARACTERS = ''.,''')"),
+    ("oracle", "SELECT x FROM t WHERE cond FOR UPDATE"),
+    ("oracle", "SELECT * FROM t FOR UPDATE"),
+    ("oracle", "SELECT * FROM t FOR UPDATE WAIT 5"),
+    ("oracle", "SELECT * FROM t FOR UPDATE NOWAIT"),
+    ("oracle", "SELECT * FROM t FOR UPDATE SKIP LOCKED"),
+    ("oracle", "SELECT * FROM t FOR UPDATE OF s.t.c, s.t.v"),
+    ("oracle", "SELECT * FROM t FOR UPDATE OF s.t.c, s.t.v NOWAIT"),
+    ("oracle", "SELECT * FROM t FOR UPDATE OF s.t.c, s.t.v SKIP LOCKED"),
 )
 
 
