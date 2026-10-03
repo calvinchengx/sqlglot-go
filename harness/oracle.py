@@ -182,6 +182,7 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "CREATE PRIVATE TEMPORARY TABLE t AS SELECT * FROM orders"),
     ("oracle", "CREATE OR REPLACE FORCE VIEW foo1.foo2"),
     ("oracle", "SELECT INSTR(haystack, needle)"),
+    ("oracle", "SELECT * FROM test WHERE MOD(col1, 4) = 3"),
 )
 
 
