@@ -613,7 +613,7 @@ func (p *parser) parseJSONArrowAccessorRHS() (*Expression, error) {
 }
 
 func (p *parser) parseBitwise() (*Expression, error) {
-	this, err := p.parseTerm()
+	this, err := p.oracleXMLTableExpr()
 	if err != nil {
 		return nil, err
 	}

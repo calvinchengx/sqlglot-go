@@ -28,3 +28,21 @@ func (p *parser) oracleXMLPassing() (*Expression, error) {
 	}
 	return col, nil
 }
+
+// oracleXMLTableExpr reads a bare XMLTABLE(...) as the table function it
+// is. Anywhere else the expression is an ordinary term.
+func (p *parser) oracleXMLTableExpr() (*Expression, error) {
+	if p.dialect == "oracle" && p.atWords("XMLTABLE") {
+		if n := p.next(); n != nil && n.Type == TokL_PAREN {
+			table, err := p.parseXMLTable()
+			if err != nil || table == nil || !p.tables.SupportsColumnJoinMarks {
+				return table, err
+			}
+			// A bare XMLTABLE is a column expression, so it carries the
+			// same join mark every other column expression does.
+			table.Set("join_mark", p.match(TokJOIN_MARKER))
+			return table, nil
+		}
+	}
+	return p.parseTerm()
+}

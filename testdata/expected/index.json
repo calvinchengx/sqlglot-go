@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6612,
+ "count": 6617,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33061,6 +33061,31 @@
    "key": "1665470f3275ab89",
    "dialect": "oracle",
    "sql": "SELECT table_name, column_name, data_default FROM xmltable('ROWSET/ROW' passing dbms_xmlgen.getxmltype('SELECT table_name, column_name, data_default FROM user_tab_columns') columns table_name VARCHAR2(128) PATH '*[1]', column_name VARCHAR2(128) PATH '*[2]', data_default VARCHAR2(2000) PATH '*[3]')"
+  },
+  {
+   "key": "1faf804b7279f0d9",
+   "dialect": "oracle",
+   "sql": "XMLTABLE('x')"
+  },
+  {
+   "key": "b41ef5c01a6e3481",
+   "dialect": "oracle",
+   "sql": "XMLTABLE('x' RETURNING SEQUENCE BY REF)"
+  },
+  {
+   "key": "2d5cabe90475dc5f",
+   "dialect": "oracle",
+   "sql": "XMLTABLE('x' PASSING y)"
+  },
+  {
+   "key": "37d4ba31b337f34f",
+   "dialect": "oracle",
+   "sql": "XMLTABLE('x' PASSING y RETURNING SEQUENCE BY REF)"
+  },
+  {
+   "key": "72d5159857be122b",
+   "dialect": "oracle",
+   "sql": "XMLTABLE('x' RETURNING SEQUENCE BY REF COLUMNS a VARCHAR2, b FLOAT)"
   }
  ]
 }

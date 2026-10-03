@@ -271,6 +271,11 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT x.* FROM example t, XMLTABLE(XMLNAMESPACES(DEFAULT 'http://example.com/default', 'http://example.com/ns1' AS \"ns1\"), '/root/data' PASSING t.xml COLUMNS id NUMBER PATH '@id', value VARCHAR2(100) PATH 'ns1:value/text()') x"),
     ("oracle", "SELECT warehouse_name warehouse, warehouse2.\"Water\", warehouse2.\"Rail\" FROM warehouses, XMLTABLE('/Warehouse' PASSING warehouses.warehouse_spec COLUMNS \"Water\" varchar2(6) PATH 'WaterAccess', \"Rail\" varchar2(6) PATH 'RailAccess') warehouse2"),
     ("oracle", "SELECT table_name, column_name, data_default FROM xmltable('ROWSET/ROW' passing dbms_xmlgen.getxmltype('SELECT table_name, column_name, data_default FROM user_tab_columns') columns table_name VARCHAR2(128) PATH '*[1]', column_name VARCHAR2(128) PATH '*[2]', data_default VARCHAR2(2000) PATH '*[3]')"),
+    ("oracle", "XMLTABLE('x')"),
+    ("oracle", "XMLTABLE('x' RETURNING SEQUENCE BY REF)"),
+    ("oracle", "XMLTABLE('x' PASSING y)"),
+    ("oracle", "XMLTABLE('x' PASSING y RETURNING SEQUENCE BY REF)"),
+    ("oracle", "XMLTABLE('x' RETURNING SEQUENCE BY REF COLUMNS a VARCHAR2, b FLOAT)"),
 )
 
 
