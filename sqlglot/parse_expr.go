@@ -861,6 +861,7 @@ func (p *parser) parsePostfix() (*Expression, error) {
 // well as after a column, which is why `col IS NULL::BOOLEAN` casts the whole
 // test rather than the NULL.
 func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
+	this = p.oracleDateLiteral(this)
 	for {
 		if p.match(TokDCOLON) {
 			to, err := p.parseDataType()

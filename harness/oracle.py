@@ -192,6 +192,7 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "CONVERT('foo', 'dst')"),
     ("oracle", "CONVERT('foo', 'dst', 'src')"),
     ("oracle", "TIMESTAMP(3) WITH TIME ZONE"),
+    ("oracle", "DATE '2022-01-01'"),
 )
 
 
