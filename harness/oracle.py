@@ -176,6 +176,8 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "UTC_TIMESTAMP()"),
     ("oracle", "UTC_TIMESTAMP(6)"),
     ("oracle", "CURRENT_TIMESTAMP BETWEEN TO_DATE(f.C_SDATE, 'YYYY/MM/DD') AND TO_DATE(f.C_EDATE, 'YYYY/MM/DD')"),
+    ("oracle", "x::binary_double"),
+    ("oracle", "x::binary_float"),
 )
 
 

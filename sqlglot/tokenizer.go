@@ -660,10 +660,12 @@ func (t *Tokenizer) scanVar() {
 		t.add(TokVAR, "", false)
 		return
 	}
-	tt, ok := t.cfg.Keywords[strings.ToUpper(string(t.sql[t.start:t.current]))]
+	word := strings.ToUpper(string(t.sql[t.start:t.current]))
+	tt, ok := t.cfg.Keywords[word]
 	if !ok {
 		tt = TokVAR
 	}
+	tt = oracleSpelledType(t.cfg.Name, word, tt)
 	t.add(tt, "", false)
 }
 
