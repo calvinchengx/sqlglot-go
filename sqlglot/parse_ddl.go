@@ -4397,7 +4397,7 @@ func (p *parser) parseGrant() (*Expression, error) {
 	p.advance()
 	// The kind is a WORD and is written only when it was: `ON TABLE t` and
 	// `ON t` are different trees.
-	for _, word := range []string{"TABLE", "VIEW", "FUNCTION", "SCHEMA", "DATABASE"} {
+	for _, word := range []string{"TABLE", "VIEW", "FUNCTION", "PROCEDURE", "SEQUENCE", "SCHEMA", "DATABASE"} {
 		if c := p.curr(); c != nil && c.Type != TokIDENTIFIER && p.atWords(word) {
 			p.advance()
 			node.Set("kind", word)
