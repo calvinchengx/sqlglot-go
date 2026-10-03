@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6562,
+ "count": 6580,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -32811,6 +32811,96 @@
    "key": "67dab6f62560fec1",
    "dialect": "oracle",
    "sql": "SELECT * FROM t PIVOT(SUM(t.val) FOR t.cat IN ('a' AS a)) AS p"
+  },
+  {
+   "key": "0c4691637817dc36",
+   "dialect": "oracle",
+   "sql": "ANALYZE TABLE tbl"
+  },
+  {
+   "key": "d7c0023ffa2b1d3b",
+   "dialect": "oracle",
+   "sql": "ANALYZE INDEX ndx"
+  },
+  {
+   "key": "f68506ad60d99c27",
+   "dialect": "oracle",
+   "sql": "ANALYZE TABLE db.tbl PARTITION(foo = 'foo', bar = 'bar')"
+  },
+  {
+   "key": "a3d46600060f9182",
+   "dialect": "oracle",
+   "sql": "ANALYZE TABLE db.tbl SUBPARTITION(foo = 'foo', bar = 'bar')"
+  },
+  {
+   "key": "0d9fdd029dc4a323",
+   "dialect": "oracle",
+   "sql": "ANALYZE INDEX db.ndx PARTITION(foo = 'foo', bar = 'bar')"
+  },
+  {
+   "key": "99cb10e33081b1e4",
+   "dialect": "oracle",
+   "sql": "ANALYZE INDEX db.ndx PARTITION(part1)"
+  },
+  {
+   "key": "989645f71c3dbcb7",
+   "dialect": "oracle",
+   "sql": "ANALYZE CLUSTER db.cluster"
+  },
+  {
+   "key": "97916176d62d917e",
+   "dialect": "oracle",
+   "sql": "ANALYZE TABLE tbl VALIDATE REF UPDATE"
+  },
+  {
+   "key": "90af20e0425bc803",
+   "dialect": "oracle",
+   "sql": "ANALYZE LIST CHAINED ROWS"
+  },
+  {
+   "key": "c109f8860f43b73e",
+   "dialect": "oracle",
+   "sql": "ANALYZE LIST CHAINED ROWS INTO tbl"
+  },
+  {
+   "key": "e2fd236ff61b786e",
+   "dialect": "oracle",
+   "sql": "ANALYZE DELETE STATISTICS"
+  },
+  {
+   "key": "5e1f78ed3de483ac",
+   "dialect": "oracle",
+   "sql": "ANALYZE DELETE SYSTEM STATISTICS"
+  },
+  {
+   "key": "2e8c4c8ee2270f24",
+   "dialect": "oracle",
+   "sql": "ANALYZE VALIDATE REF UPDATE"
+  },
+  {
+   "key": "857f949fe382aebd",
+   "dialect": "oracle",
+   "sql": "ANALYZE VALIDATE REF UPDATE SET DANGLING TO NULL"
+  },
+  {
+   "key": "5eba5fa086895935",
+   "dialect": "oracle",
+   "sql": "ANALYZE VALIDATE STRUCTURE"
+  },
+  {
+   "key": "dc4fde5c54601ce7",
+   "dialect": "oracle",
+   "sql": "ANALYZE VALIDATE STRUCTURE CASCADE FAST"
+  },
+  {
+   "key": "2556fb72afe49740",
+   "dialect": "oracle",
+   "sql": "ANALYZE TABLE tbl VALIDATE STRUCTURE CASCADE COMPLETE ONLINE INTO db.tbl"
+  },
+  {
+   "key": "c823aff06d771c48",
+   "dialect": "oracle",
+   "sql": "ANALYZE TABLE tbl VALIDATE STRUCTURE CASCADE COMPLETE OFFLINE INTO db.tbl"
   }
  ]
 }

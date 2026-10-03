@@ -5732,14 +5732,8 @@ func (p *parser) parseAnalyze() (*Expression, error) {
 		node.Set("tables", tables)
 	}
 
-	if p.atWords("PARTITION") && p.next() != nil && p.next().Type == TokL_PAREN {
-		p.advance()
-		members, err := p.parseParenthesisedList()
-		if err != nil {
-			return nil, err
-		}
-		node.Set("partition", New("Partition",
-			Arg{"subpartition", false}, Arg{"expressions", members}))
+	if err := p.readAnalyzePartition(node); err != nil {
+		return nil, err
 	}
 
 	// MySQL's histograms and Redshift's column sets.
@@ -5774,6 +5768,9 @@ func (p *parser) parseAnalyze() (*Expression, error) {
 	}
 	if len(options) > 0 {
 		node.Set("options", options)
+	}
+	if err := p.readAnalyzeExpression(node); err != nil {
+		return nil, err
 	}
 	if p.curr() != nil {
 		return nil, p.unsupported("ANALYZE with more than this port reads")
@@ -5834,9 +5831,9 @@ func (p *parser) parseAnalyzeSubject() (string, []*Expression, error) {
 		return "TABLES " + word, []*Expression{New("Table", Arg{"db", db})}, nil
 
 	case p.at(TokINDEX), p.atUnquotedWord("DATABASE"), p.atUnquotedWord("CLUSTER"):
-		// Each reads its subject a different way and none is in the corpus,
-		// so there is no tree here to agree with.
-		return "", nil, p.unsupported("ANALYZE of something other than tables")
+		return p.parseAnalyzeNamedSubject()
+	case p.dialect == "oracle" && (p.atWords("VALIDATE") || p.atWords("DELETE") || p.atWords("LIST")):
+		return "", nil, nil
 	}
 
 	tables, err := p.parseAnalyzeTables()

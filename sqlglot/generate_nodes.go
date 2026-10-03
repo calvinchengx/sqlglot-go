@@ -6583,6 +6583,9 @@ func (g *generator) writeOnConflict(e *Expression) string {
 func (g *generator) writePartition(e *Expression) string {
 	// Under MySQL's PARTITION BY RANGE/LIST the node only holds the bound it
 	// carries, and writes as that bound alone.
+	if sub, _ := e.Args["subpartition"].(bool); sub {
+		return "SUBPARTITION(" + g.list(e) + ")"
+	}
 	if g.dialect == "mysql" && e.Parent != nil &&
 		(e.Parent.Class == "PartitionByRangeProperty" || e.Parent.Class == "PartitionByListProperty") {
 		return g.list(e)
