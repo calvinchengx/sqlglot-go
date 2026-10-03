@@ -185,6 +185,7 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT * FROM test WHERE MOD(col1, 4) = 3"),
     ("oracle", "SELECT TRIM('|' FROM '||Hello ||| world||')"),
     ("oracle", "TRIM(BOTH 'h' FROM 'Hello World')"),
+    ("oracle", "SELECT CHR(187 USING NCHAR_CS)"),
 )
 
 
