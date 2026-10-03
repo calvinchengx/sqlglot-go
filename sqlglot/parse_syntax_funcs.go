@@ -92,6 +92,8 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseOpenJSON()
 	case "INITCAP":
 		return p.parseInitcap()
+	case "TO_NUMBER":
+		return p.parseOracleToNumber()
 	}
 	if fn, ok, err := p.parseMySQLSyntaxFunction(upper); ok {
 		return fn, err

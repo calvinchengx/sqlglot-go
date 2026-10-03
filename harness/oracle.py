@@ -202,6 +202,11 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "GRANT USAGE ON SEQUENCE order_id TO sales_role"),
     ("oracle", "REVOKE EXECUTE ON PROCEDURE p FROM george"),
     ("oracle", "REVOKE USAGE ON SEQUENCE order_id FROM sales_role"),
+    ("oracle", "TO_NUMBER(x)"),
+    ("oracle", "TO_NUMBER(expr, fmt, nlsparam)"),
+    ("oracle", "TO_NUMBER('dino' DEFAULT 0 ON CONVERSION ERROR)"),
+    ("oracle", "TO_NUMBER('dino' DEFAULT 0 ON CONVERSION ERROR, '9999')"),
+    ("oracle", "TO_NUMBER('dino' DEFAULT 0 ON CONVERSION ERROR, '9999', 'NLS_NUMERIC_CHARACTERS = ''.,''')"),
 )
 
 
