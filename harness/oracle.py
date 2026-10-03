@@ -171,6 +171,10 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT TO_DATE('January 15, 1989, 11:00 A.M.')"),
     ("oracle", "SELECT TO_DATE('2024-12-12', 'YYYY-MM-DD')"),
     ("oracle", "SELECT TO_DATE('January 15, 1989, 11:00 A.M.', 'Month dd, YYYY, HH12:MI A.M.') FROM DUAL"),
+    ("oracle", "UTC_TIME()"),
+    ("oracle", "UTC_TIME(6)"),
+    ("oracle", "UTC_TIMESTAMP()"),
+    ("oracle", "UTC_TIMESTAMP(6)"),
 )
 
 
