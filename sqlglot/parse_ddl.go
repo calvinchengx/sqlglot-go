@@ -2226,6 +2226,16 @@ func (p *parser) parseMySQLModifyColumn(rename bool) (*Expression, error) {
 // The definition carries one argument the same definition inside a CREATE
 // does not: whether the column had to be absent.
 func (p *parser) parseAddedColumn(exists bool) (*Expression, error) {
+	if p.at(TokL_PAREN) {
+		if p.dialect != "oracle" || exists {
+			return nil, p.unsupported("ADD of a parenthesised column list")
+		}
+		cols, err := p.parseColumnDefs()
+		if err != nil {
+			return nil, err
+		}
+		return New("Schema", Arg{"expressions", cols}), nil
+	}
 	name, err := p.parseIdentifier()
 	if err != nil {
 		return nil, err

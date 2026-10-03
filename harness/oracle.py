@@ -194,6 +194,7 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "TIMESTAMP(3) WITH TIME ZONE"),
     ("oracle", "DATE '2022-01-01'"),
     ("oracle", "ALTER TABLE tbl_name DROP FOREIGN KEY fk_symbol"),
+    ("oracle", "ALTER TABLE Payments ADD (Stock NUMBER NOT NULL, dropid VARCHAR2(500) NOT NULL)"),
 )
 
 

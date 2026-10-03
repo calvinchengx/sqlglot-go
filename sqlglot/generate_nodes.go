@@ -5205,6 +5205,10 @@ func (g *generator) writeAlter(e *Expression) string {
 	parts := make([]string, 0, len(actions))
 	for i, action := range actions {
 		switch action.Class {
+		case "Schema":
+			// Oracle ADD (a NUMBER, b VARCHAR2(n)) is a schema of columns.
+			// The word ADD is the action; the schema is only the parentheses.
+			parts = append(parts, "ADD "+g.node(action))
 		case "ColumnDef":
 			// T-SQL says neither the word COLUMN nor a second ADD: it writes
 			// `ADD a INT, b INT` for the same list of definitions.
