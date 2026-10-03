@@ -34,6 +34,10 @@ type Expression struct {
 	Type *Expression
 	// Parent is set by the parser; never serialised.
 	Parent *Expression
+	// Comments are the comment bodies that belong to this node, without the
+	// delimiters. They are not an argument: the dump leaves them out, and so
+	// does equality. The generator is what writes them back.
+	Comments []string
 	// rawType memoises what the annotator worked out for this node, BEFORE
 	// the conversion Annotate applies on the way out. It is the raw answer
 	// because that is what an operator above needs: `NULL + 1` is an INT and
@@ -319,7 +323,8 @@ func (e *Expression) Copy() *Expression {
 	if e == nil {
 		return nil
 	}
-	out := &Expression{Class: e.Class, Args: map[string]any{}, Type: e.Type.Copy()}
+	out := &Expression{Class: e.Class, Args: map[string]any{}, Type: e.Type.Copy(),
+		Comments: append([]string(nil), e.Comments...)}
 	for _, key := range e.Keys {
 		switch v := e.Args[key].(type) {
 		case *Expression:
@@ -346,7 +351,8 @@ func (e *Expression) Copy() *Expression {
 // is duplicated, because that is a value the node owns rather than a node it
 // points at.
 func (e *Expression) shallowCopy() *Expression {
-	out := &Expression{Class: e.Class, Args: make(map[string]any, len(e.Args)), Type: e.Type.Copy()}
+	out := &Expression{Class: e.Class, Args: make(map[string]any, len(e.Args)), Type: e.Type.Copy(),
+		Comments: append([]string(nil), e.Comments...)}
 	for _, key := range e.Keys {
 		value := e.Args[key]
 		if strs, ok := value.([]string); ok {

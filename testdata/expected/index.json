@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6475,
+ "count": 6502,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -32376,6 +32376,141 @@
    "key": "af29aaa1ab0cfc7f",
    "dialect": "databricks",
    "sql": "IF 1 THEN 2 ELSE 3"
+  },
+  {
+   "key": "b97d927e125087e6",
+   "dialect": "dax",
+   "sql": "EVALUATE Sales"
+  },
+  {
+   "key": "6562817857f9758f",
+   "dialect": "dax",
+   "sql": "EVALUATE 'Sales Data'"
+  },
+  {
+   "key": "69e6a72b0b1373db",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(Sales, Sales[Amount] > 100)"
+  },
+  {
+   "key": "0f3d28cd20484255",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER('Sales Data', 'Sales Data'[Amount] > 100)"
+  },
+  {
+   "key": "0e19af8b4b3c428a",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(Sales, [Total Amount] > 100)"
+  },
+  {
+   "key": "79365d3249f801e5",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(Sales, Sales[Amount] > 100 && Sales[Qty] < 5)"
+  },
+  {
+   "key": "a47273f3de08f8a6",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(Sales, Sales[Amount] > 100 || Sales[Qty] < 5)"
+  },
+  {
+   "key": "2ff2c408d41b0bbd",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(FILTER(Sales, Sales[Amount] > 100), Sales[Region] = \"West\")"
+  },
+  {
+   "key": "004d68efc35153d3",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(Sales, Sales[Note] = \"He said \"\"hi\"\"\")"
+  },
+  {
+   "key": "7cb68deae3d5833e",
+   "dialect": "dax",
+   "sql": "EVALUATE Sales ORDER BY Sales[Amount] DESC, Sales[Qty]"
+  },
+  {
+   "key": "89076443edf52a6d",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(Sales, Sales[Amount] > 100) ORDER BY Sales[Amount]"
+  },
+  {
+   "key": "fe86921e6f84b871",
+   "dialect": "dax",
+   "sql": "EVALUATE ADDCOLUMNS(Sales, \"x\", 1)"
+  },
+  {
+   "key": "e01f2f98d79f0a8d",
+   "dialect": "dax",
+   "sql": "EVALUATE SUMMARIZE(Sales, Sales[Region])"
+  },
+  {
+   "key": "27856c1dbbb8e2ff",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(ADDCOLUMNS(Sales, \"x\", 1), Sales[Amount] > 1)"
+  },
+  {
+   "key": "31efe106bafdf2f1",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(Sales, Sales[Note] = N\"He said \"\"hi\"\"\")"
+  },
+  {
+   "key": "96ab39287704f539",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(Sales, Sales[Note] = N\"it's\")"
+  },
+  {
+   "key": "07aa419bbfba4ebd",
+   "dialect": "dax",
+   "sql": "EVALUATE FILTER(Sales, Sales[Region] IN {\"West\", \"East\"})"
+  },
+  {
+   "key": "ecc853e62576fe7c",
+   "dialect": "dax",
+   "sql": "EVALUATE DATATABLE(\"a\", STRING, {{\"x\"}})"
+  },
+  {
+   "key": "77ac246c5a42a0d1",
+   "dialect": "oracle",
+   "sql": "SELECT UNIQUE col1, col2 FROM table"
+  },
+  {
+   "key": "cbbbb0880acac904",
+   "dialect": "oracle",
+   "sql": "SELECT fred FROM barney WHERE dino ^= 'wilma'"
+  },
+  {
+   "key": "f4f454043bc08226",
+   "dialect": "oracle",
+   "sql": "1 /* /* */"
+  },
+  {
+   "key": "8ed36a6360ef32e5",
+   "dialect": "oracle",
+   "sql": "SELECT e1.x, e2.x FROM e e1, e e2 WHERE e1.y (+) = e2.y"
+  },
+  {
+   "key": "2163876cad588558",
+   "dialect": "oracle",
+   "sql": "SELECT e1.x, e2.x FROM e e1, e e2 WHERE e1.y = e2.y (+)"
+  },
+  {
+   "key": "1acd9bb96c445129",
+   "dialect": "oracle",
+   "sql": "NVL(NULL, 1)"
+  },
+  {
+   "key": "caf807f340c3b99a",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM table_name SAMPLE (25) s"
+  },
+  {
+   "key": "a208c84b5ae588e8",
+   "dialect": "oracle",
+   "sql": "SELECT COUNT(*) * 10 FROM orders SAMPLE (10) SEED (1)"
+  },
+  {
+   "key": "36de828365048868",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM t SAMPLE (.25)"
   }
  ]
 }

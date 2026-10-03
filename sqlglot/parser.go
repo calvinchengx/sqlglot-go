@@ -49,6 +49,9 @@ func ParseOne(sql, dialect string) (*Expression, error) {
 	}
 	cfg := tk.Config()
 	p := &parser{tokens: toks, cfg: cfg, tables: cfg.Tables, dialect: dialect, sql: sql}
+	if dialect == "dax" {
+		return p.finishDAX(p.parseStatement())
+	}
 	return p.parseOne()
 }
 
@@ -83,6 +86,9 @@ type parser struct {
 	// on the parser rather than the tree: it exists only to be read back by
 	// parsePostfix one call later, never serialised.
 	noJoinMark map[*Expression]bool
+	// commentsFrom is the token index whose comments were already given to a
+	// node. The same token must not decorate a second one.
+	commentsFrom int
 }
 
 func (p *parser) curr() *Token {
@@ -113,7 +119,7 @@ func (p *parser) peekAt(n int) *Token {
 
 func (p *parser) at(tt TokenType) bool {
 	c := p.curr()
-	return c != nil && c.Type == tt
+	return c != nil && c.Type == tt && p.daxAllowsToken()
 }
 
 func (p *parser) atAny(tts ...TokenType) bool {
@@ -137,7 +143,7 @@ func (p *parser) atPair(a, b TokenType) bool {
 }
 
 func (p *parser) match(tt TokenType) bool {
-	if p.at(tt) {
+	if p.at(tt) || p.oracleSelectUnique(tt) {
 		p.advance()
 		return true
 	}
@@ -259,7 +265,7 @@ func (p *parser) parseStatement() (*Expression, error) {
 		// all: `WITH a AS (SELECT * FROM b) UPDATE a SET c = 1` reads from b
 		// and writes to a. The clause is parsed first and assigned LAST,
 		// which is where the reference puts it however early it was written.
-		with, err := p.parseWith()
+		with, err := p.withClause()
 		if err != nil {
 			return nil, err
 		}
@@ -291,6 +297,9 @@ func (p *parser) parseStatement() (*Expression, error) {
 		p.at(TokSUMMARIZE) {
 		return p.parseQuery()
 	}
+	if p.opensDAXFilter() {
+		return p.parseDAXFilterQuery()
+	}
 	return p.parseStatementBody()
 }
 
@@ -312,11 +321,14 @@ func (p *parser) startsAValuesClause() bool {
 // parseStatementBody reads a statement once any WITH clause in front of it has
 // been taken off.
 func (p *parser) parseStatementBody() (*Expression, error) {
+	if p.opensDAXEvaluate() {
+		return p.parseDAXEvaluate()
+	}
 	if p.at(TokCREATE) {
 		return p.parseCreate()
 	}
 	if p.at(TokINSERT) {
-		return p.parseInsert()
+		return p.parseInsertOrCall()
 	}
 	if p.at(TokDROP) {
 		return p.parseDrop()

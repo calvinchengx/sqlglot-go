@@ -191,9 +191,9 @@ func (g *generator) node(e *Expression) string {
 		}
 	}
 	if fn, ok := generators[e.Class]; ok {
-		return fn(g, e)
+		return g.withComments(e, fn(g, e))
 	}
-	return g.spell(e)
+	return g.withComments(e, g.spell(e))
 }
 
 // stripElidedCasts removes, from the keys this class writes through, a cast
@@ -366,7 +366,7 @@ func (g *generator) binary(e *Expression, op string) string {
 	if this == nil || other == nil {
 		return g.fail(e.Class + " written as an operator without two operands")
 	}
-	return g.operand(this) + " " + op + " " + g.operand(other)
+	return g.operand(this) + " " + commentedOp(op, e.Comments) + " " + g.operand(other)
 }
 
 // operand writes one side of a binary operator, parenthesising it if this

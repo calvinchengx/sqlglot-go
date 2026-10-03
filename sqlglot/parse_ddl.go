@@ -24,6 +24,7 @@ import (
 func (p *parser) parseCreate() (*Expression, error) {
 	start := *p.curr()
 	p.advance() // CREATE
+	leading := p.takeComments()
 
 	// `OR <word>` turns on a flag of the reference's own: REPLACE and
 	// T-SQL's ALTER both mean `replace`, Databricks' REFRESH means
@@ -443,7 +444,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// Every one of these is ON the node, in this order, whether or not the
 	// statement said anything about it: an argument present-and-false is a
 	// different tree from one absent, and the reference sets them all.
-	return New("Create",
+	return putComments(New("Create",
 		Arg{"this", this},
 		Arg{"kind", kind},
 		Arg{"replace", replace},
@@ -458,7 +459,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 		Arg{"clone", clone},
 		Arg{"concurrently", false},
 		Arg{"clustered", nil},
-	), nil
+	), leading), nil
 }
 
 // parseTrailingIndex reads one of a Teradata TABLE's own trailing indexes:
@@ -746,6 +747,7 @@ func queryWriteSlot(n *Expression) bool {
 // not, the same way a Create carries fourteen.
 func (p *parser) parseInsert() (*Expression, error) {
 	p.advance() // INSERT
+	leading := p.takeComments()
 
 	ignore := false
 	if p.dialect == "mysql" && p.atWords("IGNORE") {
@@ -788,7 +790,7 @@ func (p *parser) parseInsert() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		return New("Insert",
+		return putComments(New("Insert",
 			Arg{"this", directory},
 			Arg{"stored", false}, Arg{"by_name", false}, Arg{"exists", false},
 			Arg{"partition", false}, Arg{"settings", false},
@@ -796,7 +798,7 @@ func (p *parser) parseInsert() (*Expression, error) {
 			Arg{"expression", query},
 			Arg{"overwrite", overwrite},
 			Arg{"ignore", false}, Arg{"source", false},
-		), nil
+		), leading), nil
 	}
 
 	// INTO is optional after OVERWRITE, where TABLE takes its place.
@@ -948,7 +950,7 @@ func (p *parser) parseInsert() (*Expression, error) {
 		return nil, p.unsupported("INSERT with more than this port reads")
 	}
 
-	return New("Insert",
+	return putComments(New("Insert",
 		Arg{"hint", nil}, Arg{"is_function", false}, Arg{"this", this},
 		Arg{"stored", false}, Arg{"by_name", byName}, Arg{"exists", exists},
 		Arg{"where", replaceWhere}, Arg{"using", replaceUsing},
@@ -958,7 +960,7 @@ func (p *parser) parseInsert() (*Expression, error) {
 		Arg{"conflict", conflict}, Arg{"returning", returning},
 		Arg{"overwrite", overwrite}, Arg{"alternative", nil},
 		Arg{"ignore", ignore}, Arg{"source", false},
-	), nil
+	), leading), nil
 }
 
 // parseKeyNames reads a key's members where the dialect does not order them:
@@ -5463,7 +5465,7 @@ func (p *parser) atCommand() bool {
 		return false
 	}
 	_, ok := p.cfg.Commands[c.Type]
-	return ok
+	return ok && p.daxAllowsToken()
 }
 
 // parseCache reads `CACHE [LAZY] [TABLE] <table> [OPTIONS(k = v)] [AS <query>]`,
@@ -5622,6 +5624,7 @@ func (p *parser) parseDescribe() (*Expression, error) {
 // the caller's own parenthesis rather than by the end of input.
 func (p *parser) parseDescribeBody() (*Expression, error) {
 	p.advance() // DESCRIBE
+	leading := p.takeComments()
 	style := ""
 	// A QUOTED name is never one of these words, however it is spelled:
 	// `DESCRIBE "history"` describes the table called history. The reference
@@ -5650,7 +5653,7 @@ func (p *parser) parseDescribeBody() (*Expression, error) {
 		asJSON = true
 	}
 	node.Set("as_json", asJSON)
-	return node, nil
+	return putComments(node, leading), nil
 }
 
 // parseDescribeSubject reads WHAT is being described: a whole statement where
@@ -7066,9 +7069,9 @@ func (p *parser) parseSequenceRest(table *Expression, replace, exists bool) (*Ex
 func (p *parser) parseTablePart() (*Expression, error) {
 	if c := p.curr(); c != nil && c.Type == TokSTRING {
 		p.advance()
-		return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true}), nil
+		return p.keep(New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true})), nil
 	}
-	return p.parseIdentifierWhere(true)
+	return p.daxTableCall(p.parseIdentifierWhere(true))
 }
 
 // atTablePart reports whether a name may begin here.

@@ -16,6 +16,7 @@ package sqlglot
 // [RETURNING ...]`.
 func (p *parser) parseUpdate() (*Expression, error) {
 	p.advance() // UPDATE
+	leading := p.takeComments()
 	hint, err := p.parseLeadingHint()
 	if err != nil {
 		return nil, err
@@ -104,7 +105,7 @@ func (p *parser) parseUpdate() (*Expression, error) {
 	if p.curr() != nil {
 		return nil, p.unsupported("UPDATE with more than this port reads")
 	}
-	return node, nil
+	return putComments(node, leading), nil
 }
 
 // parseAssignments reads the `a = 1, b = 2` of a SET clause. Each is an
@@ -197,6 +198,7 @@ func (p *parser) parseReturning() (*Expression, error) {
 // written out below even when nothing was read.
 func (p *parser) parseDelete() (*Expression, error) {
 	p.advance() // DELETE
+	leading := p.takeComments()
 	hint, err := p.parseLeadingHint()
 	if err != nil {
 		return nil, err
@@ -328,7 +330,7 @@ func (p *parser) parseDelete() (*Expression, error) {
 	if p.curr() != nil {
 		return nil, p.unsupported("DELETE with more than this port reads")
 	}
-	return node, nil
+	return putComments(node, leading), nil
 }
 
 // parseMerge reads `MERGE INTO <target> USING <source> ON <cond> WHEN ...`.

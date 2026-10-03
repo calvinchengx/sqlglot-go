@@ -124,6 +124,46 @@ EDGE_CORPUS: tuple[tuple[str, str], ...] = (
 )
 
 
+# DAX's suite is validate_transpile, which corpus_dialect does not read.
+# A statement is listed here once the port reads it. The reference still
+# supplies the tree and the rendering.
+DAX_CORPUS: tuple[tuple[str, str], ...] = (
+    ("dax", "EVALUATE Sales"),
+    ("dax", "EVALUATE 'Sales Data'"),
+    ("dax", "EVALUATE FILTER(Sales, Sales[Amount] > 100)"),
+    ("dax", "EVALUATE FILTER('Sales Data', 'Sales Data'[Amount] > 100)"),
+    ("dax", "EVALUATE FILTER(Sales, [Total Amount] > 100)"),
+    ("dax", "EVALUATE FILTER(Sales, Sales[Amount] > 100 && Sales[Qty] < 5)"),
+    ("dax", "EVALUATE FILTER(Sales, Sales[Amount] > 100 || Sales[Qty] < 5)"),
+    ("dax", 'EVALUATE FILTER(FILTER(Sales, Sales[Amount] > 100), Sales[Region] = "West")'),
+    ("dax", 'EVALUATE FILTER(Sales, Sales[Note] = "He said ""hi""")'),
+    ("dax", "EVALUATE Sales ORDER BY Sales[Amount] DESC, Sales[Qty]"),
+    ("dax", "EVALUATE FILTER(Sales, Sales[Amount] > 100) ORDER BY Sales[Amount]"),
+    ("dax", 'EVALUATE ADDCOLUMNS(Sales, "x", 1)'),
+    ("dax", "EVALUATE SUMMARIZE(Sales, Sales[Region])"),
+    ("dax", 'EVALUATE FILTER(ADDCOLUMNS(Sales, "x", 1), Sales[Amount] > 1)'),
+    ("dax", 'EVALUATE FILTER(Sales, Sales[Note] = N"He said ""hi""")'),
+    ("dax", """EVALUATE FILTER(Sales, Sales[Note] = N"it's")"""),
+    ("dax", 'EVALUATE FILTER(Sales, Sales[Region] IN {"West", "East"})'),
+    ("dax", 'EVALUATE DATATABLE("a", STRING, {{"x"}})'),
+)
+
+# Statements the reference accepts as Oracle and this port already
+# reads and writes back. The rest of tests/dialects/test_oracle.py
+# stays out until each mechanism lands.
+ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
+    ("oracle", "SELECT UNIQUE col1, col2 FROM table"),
+    ("oracle", "SELECT fred FROM barney WHERE dino ^= 'wilma'"),
+    ("oracle", "1 /* /* */"),
+    ("oracle", "SELECT e1.x, e2.x FROM e e1, e e2 WHERE e1.y (+) = e2.y"),
+    ("oracle", "SELECT e1.x, e2.x FROM e e1, e e2 WHERE e1.y = e2.y (+)"),
+    ("oracle", "NVL(NULL, 1)"),
+    ("oracle", "SELECT * FROM table_name SAMPLE (25) s"),
+    ("oracle", "SELECT COUNT(*) * 10 FROM orders SAMPLE (10) SEED (1)"),
+    ("oracle", "SELECT * FROM t SAMPLE (.25)"),
+)
+
+
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
     out = subprocess.run(
         ["git", "-C", str(sqlglot_dir), "rev-parse", "HEAD"],
@@ -316,6 +356,8 @@ def main() -> int:
         corpus = corpus_identity(a.sqlglot)
         corpus += corpus_dialect(a.sqlglot, DIALECTS)
         corpus += [(d, sql) for d, sql in EDGE_CORPUS]
+        corpus += [(d, sql) for d, sql in DAX_CORPUS]
+        corpus += [(d, sql) for d, sql in ORACLE_CORPUS]
 
     a.out.mkdir(parents=True, exist_ok=True)
     for f in a.out.glob("*.json"):

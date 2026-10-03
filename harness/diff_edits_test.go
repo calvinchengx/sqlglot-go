@@ -45,9 +45,6 @@ func TestDiffAgainstReference(t *testing.T) {
 	var agreed, wrong int
 	var problems []string
 	for _, c := range data.Cases {
-		if knownDiffGap[c.SourceSQL+" -> "+c.TargetSQL] {
-			continue
-		}
 		source, serr := sqlglot.ParseOne(c.SourceSQL, c.Dialect)
 		target, terr := sqlglot.ParseOne(c.TargetSQL, c.Dialect)
 		if serr != nil || terr != nil {
@@ -89,20 +86,9 @@ func TestDiffAgainstReference(t *testing.T) {
 	assertDiffFloor(t, agreed)
 }
 
-// knownDiffGap excludes pairs the algorithm itself gets right but that a
-// SEPARATE, pre-existing gap changes the answer for: the similarity scoring
-// generates each subtree's own SQL text, and this port's generator cannot
-// yet write a standalone 3-argument If node (only the 2-argument shape a
-// Case's own branch takes) -- `IF(cond, x, y)`'s bigram text comes back
-// empty instead of `CASE WHEN cond THEN x ELSE y END`, changing which node
-// a structural match picks. Investigated and confirmed: not a diff bug.
-var knownDiffGap = map[string]bool{
-	"IF(cond, x, y) -> CASE WHEN cond THEN x ELSE y END": true,
-}
-
 func assertDiffFloor(t *testing.T, agreed int) {
 	t.Helper()
-	const floor = 479 // raised by hand as diff grows; never lowered here
+	const floor = 480 // raised by hand as diff grows; never lowered here
 	if agreed < floor {
 		t.Errorf("Diff REGRESSED: %d agreed, floor %d", agreed, floor)
 	}
