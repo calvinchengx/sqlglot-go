@@ -918,7 +918,7 @@ func (g *generator) writeSubquery(e *Expression) string {
 	// `((A), A AS A AS A)` from `((A) A, A A)` -- the alias pushed past the
 	// comma onto the joined table, which already had one.
 	if alias := g.child(e, "alias"); alias != "" {
-		out += " AS " + alias
+		out += g.tableAliasSep() + alias
 	}
 	// And so does a SAMPLE, which says how much of it is read. Dropping it
 	// would read all of the rows where the statement asked for some.
@@ -5773,12 +5773,19 @@ func (g *generator) writeWhen(e *Expression) string {
 		if values := g.child(then, "expression"); values != "" {
 			action += " VALUES " + values
 		}
+		if where := g.child(then, "where"); where != "" {
+			action += " " + where
+		}
 		return out + action
 	case "Update":
+		action := "UPDATE"
 		if items, _ := then.Args["expressions"].([]*Expression); len(items) > 0 {
-			return out + "UPDATE SET " + g.list(then)
+			action = "UPDATE SET " + g.list(then)
 		}
-		return out + "UPDATE"
+		if where := g.child(then, "where"); where != "" {
+			action += " " + where
+		}
+		return out + action
 	}
 	return out + g.node(then)
 }

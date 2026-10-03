@@ -491,7 +491,7 @@ func (p *parser) parseMergeAction() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		return New("Update", Arg{"expressions", assignments}), nil
+		return p.noteMergeWhere(New("Update", Arg{"expressions", assignments}))
 	case p.at(TokINSERT):
 		p.advance()
 		insert := New("Insert")
@@ -519,7 +519,7 @@ func (p *parser) parseMergeAction() (*Expression, error) {
 				return nil, p.unsupported("a MERGE INSERT with neither columns nor values")
 			}
 		}
-		return insert, nil
+		return p.noteMergeWhere(insert)
 	case p.at(TokDELETE):
 		p.advance()
 		return New("Var", Arg{"this", "DELETE"}), nil
