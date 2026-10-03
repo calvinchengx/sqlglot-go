@@ -1,0 +1,113 @@
+{
+ "dialect": "oracle",
+ "rendered": "CONVERT('foo', 'dst')",
+ "sql": "CONVERT('foo', 'dst')",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "CONVERT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 8,
+   "t": "STRING",
+   "x": "foo"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 15,
+   "t": "STRING",
+   "x": "dst"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.string.ConvertToCharset",
+   "m": {
+    "col": 7,
+    "end": 6,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "dest",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "dst"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "join_mark",
+   "v": false
+  }
+ ]
+}

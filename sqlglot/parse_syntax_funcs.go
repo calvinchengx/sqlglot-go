@@ -348,6 +348,9 @@ func (p *parser) parseConvert(safe bool) (*Expression, error) {
 	if p.dialect == "mysql" {
 		return p.parseMySQLConvert(safe)
 	}
+	if p.dialect == "oracle" {
+		return p.parseOracleCharsetConvert()
+	}
 	if !p.tables.ConvertBuildsConvert {
 		// Redshift's own CONVERT puts the type first: CONVERT(INT, x) is
 		// CAST(x AS INTEGER). Every other dialect that does not build a
