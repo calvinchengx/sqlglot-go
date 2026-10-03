@@ -4171,7 +4171,7 @@ func (g *generator) writeCreate(e *Expression) string {
 			}
 			return g.fail(e.Class + " TEMPORARY " + kind + ", which this dialect writes another way")
 		default:
-			out += "TEMPORARY "
+			out += g.temporaryKind(e)
 		}
 	}
 	// What the statement says ABOUT the thing it makes, in the three places

@@ -178,6 +178,8 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "CURRENT_TIMESTAMP BETWEEN TO_DATE(f.C_SDATE, 'YYYY/MM/DD') AND TO_DATE(f.C_EDATE, 'YYYY/MM/DD')"),
     ("oracle", "x::binary_double"),
     ("oracle", "x::binary_float"),
+    ("oracle", "CREATE GLOBAL TEMPORARY TABLE t AS SELECT * FROM orders"),
+    ("oracle", "CREATE PRIVATE TEMPORARY TABLE t AS SELECT * FROM orders"),
 )
 
 

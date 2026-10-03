@@ -92,6 +92,10 @@ func (p *parser) parseCreate() (*Expression, error) {
 		if word == nil {
 			break
 		}
+		if prop := p.oracleTemporaryScope(); prop != nil {
+			modifiers = append(modifiers, prop)
+			continue
+		}
 		if class, ok := p.tables.CreateProperties[strings.ToUpper(word.Text)]; ok {
 			p.advance()
 			modifiers = append(modifiers, New(class))
