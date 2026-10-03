@@ -214,7 +214,10 @@ func (p *parser) unsupported(what string) error {
 // the semicolon. Leftover tokens mean the port understood less than it
 // thought, so the result is refused rather than returned.
 func (p *parser) parseOne() (*Expression, error) {
-	this, err := p.parseStatement()
+	this, handled, err := p.oracleMultiInsert()
+	if !handled {
+		this, err = p.parseStatement()
+	}
 	if err != nil {
 		return nil, err
 	}

@@ -284,6 +284,13 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT last_name, employee_id, manager_id, LEVEL FROM employees START WITH employee_id = 100 CONNECT BY PRIOR employee_id = manager_id ORDER SIBLINGS BY last_name"),
     ("oracle", "SELECT TO_CHAR(-100, 'L99', 'NL_CURRENCY = '' AusDollars '' ')"),
     ("oracle", "TO_CHAR(x)"),
+    ("oracle", 'INSERT ALL INTO dest_tab1 (id, description) VALUES (id, description) INTO dest_tab2 (id, description) VALUES (id, description) INTO dest_tab3 (id, description) VALUES (id, description) SELECT id, description FROM source_tab'),
+    ("oracle", "INSERT ALL INTO pivot_dest (id, day, val) VALUES (id, 'mon', mon_val) INTO pivot_dest (id, day, val) VALUES (id, 'tue', tue_val) INTO pivot_dest (id, day, val) VALUES (id, 'wed', wed_val) INTO pivot_dest (id, day, val) VALUES (id, 'thu', thu_val) INTO pivot_dest (id, day, val) VALUES (id, 'fri', fri_val) SELECT * FROM pivot_source"),
+    ("oracle", 'INSERT ALL WHEN id <= 3 THEN INTO dest_tab1 (id, description) VALUES (id, description) WHEN id BETWEEN 4 AND 7 THEN INTO dest_tab2 (id, description) VALUES (id, description) WHEN id >= 8 THEN INTO dest_tab3 (id, description) VALUES (id, description) SELECT id, description FROM source_tab'),
+    ("oracle", 'INSERT ALL WHEN id <= 3 THEN INTO dest_tab1 (id, description) VALUES (id, description) WHEN id BETWEEN 4 AND 7 THEN INTO dest_tab2 (id, description) VALUES (id, description) WHEN 1 = 1 THEN INTO dest_tab3 (id, description) VALUES (id, description) SELECT id, description FROM source_tab'),
+    ("oracle", 'INSERT FIRST WHEN id <= 3 THEN INTO dest_tab1 (id, description) VALUES (id, description) WHEN id <= 5 THEN INTO dest_tab2 (id, description) VALUES (id, description) ELSE INTO dest_tab3 (id, description) VALUES (id, description) SELECT id, description FROM source_tab'),
+    ("oracle", 'INSERT FIRST WHEN id <= 3 THEN INTO dest_tab1 (id, description) VALUES (id, description) ELSE INTO dest_tab2 (id, description) VALUES (id, description) INTO dest_tab3 (id, description) VALUES (id, description) SELECT id, description FROM source_tab'),
+    ("oracle", '/* COMMENT */ INSERT FIRST WHEN salary > 4000 THEN INTO emp2 WHEN salary > 5000 THEN INTO emp3 WHEN salary > 6000 THEN INTO emp4 SELECT salary FROM employees'),
 )
 
 
