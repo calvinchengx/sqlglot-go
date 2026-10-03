@@ -688,7 +688,7 @@ func (p *parser) parseTerm() (*Expression, error) {
 }
 
 func (p *parser) parseFactor() (*Expression, error) {
-	return p.parseBinary(p.tables.Factor, p.parseFactorOperand)
+	return p.parseBinary(p.tables.Factor, p.oracleKeepOperand)
 }
 
 // parseFactorOperand inserts the exponent level only where the dialect has

@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6604,
+ "count": 6606,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33021,6 +33021,16 @@
    "key": "bc0ab3adf076bbd9",
    "dialect": "oracle",
    "sql": "SELECT (SYSTIMESTAMP - order_date) DAY(9) TO SECOND(3) FROM orders"
+  },
+  {
+   "key": "898df8070e42aca6",
+   "dialect": "oracle",
+   "sql": "SELECT MIN(column_name) KEEP (DENSE_RANK FIRST ORDER BY column_name DESC) FROM table_name"
+  },
+  {
+   "key": "6ed4be9fb2c43609",
+   "dialect": "oracle",
+   "sql": "SELECT last_name, department_id, salary, MIN(salary) KEEP (DENSE_RANK FIRST ORDER BY commission_pct) OVER (PARTITION BY department_id) AS \"Worst\", MAX(salary) KEEP (DENSE_RANK LAST ORDER BY commission_pct) OVER (PARTITION BY department_id) AS \"Best\" FROM employees"
   }
  ]
 }
