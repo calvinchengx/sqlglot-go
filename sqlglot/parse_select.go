@@ -1712,7 +1712,7 @@ func (p *parser) parseFetch() (*Expression, error) {
 
 	var count *Expression
 	if !p.atLimitOptionWord() {
-		e, err := p.parseExpression()
+		e, err := p.fetchCount()
 		if err != nil {
 			return nil, err
 		}
@@ -1746,6 +1746,19 @@ func (p *parser) parseFetch() (*Expression, error) {
 	args = append(args, Arg{"limit_options", New("LimitOptions",
 		Arg{"percent", percent}, Arg{"rows", rows}, Arg{"with_ties", withTies})})
 	return New("Fetch", args...), nil
+}
+
+// fetchCount reads the count of a FETCH. The reference parses that count
+// as a field, so a call does not carry the column join mark a column would.
+func (p *parser) fetchCount() (*Expression, error) {
+	e, err := p.parseExpression()
+	if err != nil || e == nil {
+		return e, err
+	}
+	if e.Class != "Column" && e.Class != "Dot" {
+		e.Set("join_mark", nil)
+	}
+	return e, nil
 }
 
 // atLimitOptionWord reports whether what follows FETCH is already one of the
