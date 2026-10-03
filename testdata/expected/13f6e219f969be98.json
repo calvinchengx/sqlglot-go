@@ -1,0 +1,341 @@
+{
+ "dialect": "oracle",
+ "rendered": "SELECT id FROM t START WITH (parent_id IS NULL) CONNECT BY PRIOR id = parent_id",
+ "sql": "SELECT id FROM t START WITH (parent_id IS NULL) CONNECT BY PRIOR id = parent_id",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 10,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "t"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 17,
+   "t": "BEGIN",
+   "x": "START"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 23,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "parent_id"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 39,
+   "t": "IS",
+   "x": "IS"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 42,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 46,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 48,
+   "t": "CONNECT_BY",
+   "x": "CONNECT BY"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 59,
+   "t": "VAR",
+   "x": "PRIOR"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 65,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 68,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 70,
+   "t": "VAR",
+   "x": "parent_id"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 9,
+    "end": 8,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Connect",
+   "i": 0,
+   "k": "connect"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 11,
+   "k": "start"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "parent_id"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 14,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 13,
+   "k": "expression"
+  },
+  {
+   "i": 12,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 11,
+   "k": "connect"
+  },
+  {
+   "c": "sqlglot.expressions.query.Prior",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 65
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 23,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "i": 22,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 21,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 29,
+   "k": "this",
+   "m": {
+    "col": 79,
+    "end": 78,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "parent_id"
+  },
+  {
+   "i": 30,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 29,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "i": 11,
+   "k": "nocycle",
+   "v": false
+  }
+ ]
+}

@@ -135,6 +135,9 @@ func (p *parser) parseComparison() (*Expression, error) {
 // reference treats the two differently and so must this. A NOT that turns out
 // not to introduce a range is put back.
 func (p *parser) parseRange() (*Expression, error) {
+	if prefixed, handled, err := p.oracleHierarchyPrefix(); handled {
+		return prefixed, err
+	}
 	this, err := p.parseJSONArrow()
 	if err != nil {
 		return nil, err

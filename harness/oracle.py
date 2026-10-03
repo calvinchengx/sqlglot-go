@@ -276,6 +276,11 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "XMLTABLE('x' PASSING y)"),
     ("oracle", "XMLTABLE('x' PASSING y RETURNING SEQUENCE BY REF)"),
     ("oracle", "XMLTABLE('x' RETURNING SEQUENCE BY REF COLUMNS a VARCHAR2, b FLOAT)"),
+    ("oracle", "SELECT CONNECT_BY_ROOT x y"),
+    ("oracle", "SELECT * FROM t START WITH col CONNECT BY NOCYCLE PRIOR col1 = col2"),
+    ("oracle", "SELECT id FROM t START WITH (parent_id IS NULL) CONNECT BY PRIOR id = parent_id"),
+    ("oracle", "SELECT id FROM t START WITH (x) CONNECT BY PRIOR id = parent_id"),
+    ("oracle", "SELECT id, PRIOR name AS parent_name, name FROM tree CONNECT BY NOCYCLE PRIOR id = parent_id"),
 )
 
 

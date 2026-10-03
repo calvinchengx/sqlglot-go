@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6617,
+ "count": 6622,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33086,6 +33086,31 @@
    "key": "72d5159857be122b",
    "dialect": "oracle",
    "sql": "XMLTABLE('x' RETURNING SEQUENCE BY REF COLUMNS a VARCHAR2, b FLOAT)"
+  },
+  {
+   "key": "2836015255135a55",
+   "dialect": "oracle",
+   "sql": "SELECT CONNECT_BY_ROOT x y"
+  },
+  {
+   "key": "e99a770b3c36e69c",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM t START WITH col CONNECT BY NOCYCLE PRIOR col1 = col2"
+  },
+  {
+   "key": "13f6e219f969be98",
+   "dialect": "oracle",
+   "sql": "SELECT id FROM t START WITH (parent_id IS NULL) CONNECT BY PRIOR id = parent_id"
+  },
+  {
+   "key": "30cde6acfc398286",
+   "dialect": "oracle",
+   "sql": "SELECT id FROM t START WITH (x) CONNECT BY PRIOR id = parent_id"
+  },
+  {
+   "key": "0317dac32870a3ed",
+   "dialect": "oracle",
+   "sql": "SELECT id, PRIOR name AS parent_name, name FROM tree CONNECT BY NOCYCLE PRIOR id = parent_id"
   }
  ]
 }
