@@ -191,6 +191,7 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "ALTER TABLE Payments ADD Stock NUMBER NOT NULL"),
     ("oracle", "CONVERT('foo', 'dst')"),
     ("oracle", "CONVERT('foo', 'dst', 'src')"),
+    ("oracle", "TIMESTAMP(3) WITH TIME ZONE"),
 )
 
 

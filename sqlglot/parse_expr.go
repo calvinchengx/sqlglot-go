@@ -813,6 +813,9 @@ func (p *parser) parseUnary() (*Expression, error) {
 // result of this rule, a bare `x` included, and stamps it on WHATEVER it
 // parsed here, a Cast or a call as much as a bare Column.
 func (p *parser) parsePostfix() (*Expression, error) {
+	if zoned, handled, err := p.oracleZonedTimestamp(); handled {
+		return zoned, err
+	}
 	this, err := p.parsePrimary()
 	if err != nil {
 		return nil, err
