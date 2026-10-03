@@ -1891,6 +1891,8 @@ func (p *parser) parseAlterActions() ([]*Expression, error) {
 				return nil, p.unsupported("an ALTER TABLE action with no verb")
 			}
 			action, err = p.parseAddedColumn(false)
+		} else if drop, handled, dropErr := p.oracleDropForeignKey(); handled {
+			action, err = drop, dropErr
 		} else {
 			action, err = p.parseAlterAction()
 		}

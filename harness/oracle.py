@@ -193,6 +193,7 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "CONVERT('foo', 'dst', 'src')"),
     ("oracle", "TIMESTAMP(3) WITH TIME ZONE"),
     ("oracle", "DATE '2022-01-01'"),
+    ("oracle", "ALTER TABLE tbl_name DROP FOREIGN KEY fk_symbol"),
 )
 
 
