@@ -256,6 +256,10 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT /*+ LEADING(departments employees) USE_NL(employees) select where group by is order by */ * FROM employees JOIN departments ON employees.department_id = departments.department_id"),
     ("oracle", "SELECT /*+ LEADING(departments, employees) */ * FROM employees JOIN departments ON employees.department_id = departments.department_id"),
     ("oracle", "SELECT /*+ LEADING(departments select) */ * FROM employees JOIN departments ON employees.department_id = departments.department_id"),
+    ("oracle", "SELECT NTH_VALUE(x, 2) FROM FIRST OVER (ORDER BY y) AS c FROM t"),
+    ("oracle", "SELECT NTH_VALUE(x, 2) FROM LAST IGNORE NULLS OVER (ORDER BY y) AS c FROM t"),
+    ("oracle", "SELECT NTH_VALUE(x, 2) FROM FIRST RESPECT NULLS OVER (ORDER BY y) AS c FROM t"),
+    ("oracle", "SELECT NTH_VALUE(x, 2) FROM LAST OVER (ORDER BY y) AS c FROM t"),
 )
 
 

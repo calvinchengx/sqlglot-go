@@ -782,7 +782,7 @@ func (p *parser) parseUnary() (*Expression, error) {
 	}
 	class, isUnary := p.tables.UnaryOps[c.Type]
 	if !isUnary {
-		return p.parsePostfix()
+		return p.oracleNthValueFrom(p.parsePostfix())
 	}
 	p.advance()
 	// Unary plus is a no-op in the reference too: it yields its operand.
