@@ -810,6 +810,17 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "SHA1(X'002A'::BINARY)"),
     ("snowflake", "SHA1(123)"),
     ("snowflake", "SHA1(DATE '2024-01-15')"),
+    ("snowflake", "SELECT RANDOM()"),
+    ("snowflake", "SELECT RANDOM(123)"),
+    ("snowflake", "SELECT RANDSTR(123, RANDOM())"),
+    ("snowflake", "SELECT NORMAL(0, 1, RANDOM())"),
+    ("snowflake", "SELECT RANDSTR(10, RANDOM(123))"),
+    ("snowflake", "SELECT RANDSTR(10, RANDOM())"),
+    ("snowflake", "SELECT ZIPF(2, 100, RANDOM())"),
+    ("snowflake", "UNIFORM(1, 10, RANDOM(5))"),
+    ("snowflake", "UNIFORM(1, 10, RANDOM())"),
+    ("snowflake", "NORMAL(10.5, 2.5, RANDOM())"),
+    ("snowflake", "NORMAL(10.5, 2.5, RANDOM(5))"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
