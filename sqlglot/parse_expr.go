@@ -2601,7 +2601,7 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	quotedName := p.curr().Type == TokIDENTIFIER
 	upper := strings.ToUpper(name)
 	if upper == "CAST" || upper == "TRY_CAST" {
-		return p.parseCast(upper == "TRY_CAST")
+		return p.castOrConversion(upper == "TRY_CAST")
 	}
 	if _, syntax := p.tables.SyntaxFunctions[upper]; syntax {
 		return p.parseSyntaxFunction(upper)

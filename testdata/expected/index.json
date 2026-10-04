@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6646,
+ "count": 6648,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33231,6 +33231,16 @@
    "key": "514d22ab6423177a",
    "dialect": "oracle",
    "sql": "SELECT JSON_OBJECT(KEY 'key1' IS emp.column1, KEY 'key2' IS emp.column1) \"emp_key\" FROM emp"
+  },
+  {
+   "key": "62ee08af21f78e1b",
+   "dialect": "oracle",
+   "sql": "CAST(value AS NUMBER DEFAULT 0 ON CONVERSION ERROR)"
+  },
+  {
+   "key": "4a4f6bf0bebe9630",
+   "dialect": "oracle",
+   "sql": "SELECT CAST('January 15, 1989, 11:00 A.M.' AS DATE DEFAULT NULL ON CONVERSION ERROR, 'Month dd, YYYY, HH:MI A.M.') FROM DUAL"
   }
  ]
 }

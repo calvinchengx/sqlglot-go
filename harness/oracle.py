@@ -305,6 +305,8 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "INSERT /*+ APPEND(d) */ INTO dest d (i, value) SELECT 1, 'value' FROM dual"),
     ("oracle", "SELECT JSON_OBJECT(k1: v1 FORMAT JSON, k2: v2 FORMAT JSON)"),
     ("oracle", "SELECT JSON_OBJECT(KEY 'key1' IS emp.column1, KEY 'key2' IS emp.column1) \"emp_key\" FROM emp"),
+    ("oracle", "CAST(value AS NUMBER DEFAULT 0 ON CONVERSION ERROR)"),
+    ("oracle", "SELECT CAST('January 15, 1989, 11:00 A.M.' AS DATE DEFAULT NULL ON CONVERSION ERROR, 'Month dd, YYYY, HH:MI A.M.') FROM DUAL"),
 )
 
 
