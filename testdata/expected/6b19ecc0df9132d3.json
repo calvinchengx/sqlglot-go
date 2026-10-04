@@ -1,0 +1,337 @@
+{
+ "dialect": "oracle",
+ "rendered": "SELECT * FROM JSON_TABLE(foo FORMAT JSON, 'bla' ERROR ON ERROR NULL ON EMPTY COLUMNS(foo PATH 'bar'))",
+ "sql": "SELECT * FROM JSON_TABLE(foo FORMAT JSON, 'bla' ERROR ON ERROR NULL ON EMPTY COLUMNS foo PATH 'bar')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "JSON_TABLE"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 25,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 29,
+   "t": "FORMAT",
+   "x": "FORMAT"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 36,
+   "t": "JSON",
+   "x": "JSON"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 42,
+   "t": "STRING",
+   "x": "bla"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 48,
+   "t": "VAR",
+   "x": "ERROR"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 54,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 57,
+   "t": "VAR",
+   "x": "ERROR"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 63,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 68,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 71,
+   "t": "VAR",
+   "x": "EMPTY"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 77,
+   "t": "COLUMN",
+   "x": "COLUMNS"
+  },
+  {
+   "c": 88,
+   "e": 87,
+   "l": 1,
+   "s": 85,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 89,
+   "t": "VAR",
+   "x": "PATH"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 94,
+   "t": "STRING",
+   "x": "bar"
+  },
+  {
+   "c": 100,
+   "e": 99,
+   "l": 1,
+   "s": 99,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.json.JSONTable",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.FormatJson",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 6,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONSchema",
+   "i": 4,
+   "k": "schema"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONColumnDef",
+   "i": 11,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 88,
+    "end": 87,
+    "line": 1,
+    "start": 85
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 12,
+   "k": "path",
+   "m": {
+    "col": 99,
+    "end": 98,
+    "line": 1,
+    "start": 94
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "bar"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 12,
+   "k": "ordinality",
+   "v": false
+  },
+  {
+   "i": 12,
+   "k": "format_json",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "path",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "bla"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 4,
+   "k": "error_handling",
+   "v": "ERROR ON ERROR"
+  },
+  {
+   "i": 4,
+   "k": "empty_handling",
+   "v": "NULL ON EMPTY"
+  }
+ ]
+}

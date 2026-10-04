@@ -515,7 +515,7 @@ func (p *parser) parseTable() (*Expression, error) {
 					return nil, p.unsupported("table function " + strings.ToUpper(c.Text))
 				}
 			}
-			f, err := p.parseFunction()
+			f, err := p.tableCall()
 			if err != nil {
 				return nil, err
 			}

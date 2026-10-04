@@ -1,0 +1,507 @@
+{
+ "dialect": "oracle",
+ "rendered": "SELECT * FROM JSON_TABLE(res, '$.info[*]' COLUMNS(tempid NUMBER PATH '$.tempid', NESTED PATH '$.calid[*]' COLUMNS(last_dt PATH '$.last_dt '))) src",
+ "sql": "SELECT\n  *\nFROM JSON_TABLE(res, '$.info[*]' COLUMNS(\n  tempid NUMBER PATH '$.tempid',\n  NESTED PATH '$.calid[*]' COLUMNS(last_dt PATH '$.last_dt ')\n)) src",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 3,
+   "e": 9,
+   "l": 2,
+   "s": 9,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 4,
+   "e": 14,
+   "l": 3,
+   "s": 11,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 15,
+   "e": 25,
+   "l": 3,
+   "s": 16,
+   "t": "VAR",
+   "x": "JSON_TABLE"
+  },
+  {
+   "c": 16,
+   "e": 26,
+   "l": 3,
+   "s": 26,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 19,
+   "e": 29,
+   "l": 3,
+   "s": 27,
+   "t": "VAR",
+   "x": "res"
+  },
+  {
+   "c": 20,
+   "e": 30,
+   "l": 3,
+   "s": 30,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 32,
+   "e": 42,
+   "l": 3,
+   "s": 32,
+   "t": "STRING",
+   "x": "$.info[*]"
+  },
+  {
+   "c": 40,
+   "e": 50,
+   "l": 3,
+   "s": 44,
+   "t": "COLUMN",
+   "x": "COLUMNS"
+  },
+  {
+   "c": 41,
+   "e": 51,
+   "l": 3,
+   "s": 51,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 8,
+   "e": 60,
+   "l": 4,
+   "s": 55,
+   "t": "VAR",
+   "x": "tempid"
+  },
+  {
+   "c": 15,
+   "e": 67,
+   "l": 4,
+   "s": 62,
+   "t": "DECIMAL",
+   "x": "NUMBER"
+  },
+  {
+   "c": 20,
+   "e": 72,
+   "l": 4,
+   "s": 69,
+   "t": "VAR",
+   "x": "PATH"
+  },
+  {
+   "c": 31,
+   "e": 83,
+   "l": 4,
+   "s": 74,
+   "t": "STRING",
+   "x": "$.tempid"
+  },
+  {
+   "c": 32,
+   "e": 84,
+   "l": 4,
+   "s": 84,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 8,
+   "e": 93,
+   "l": 5,
+   "s": 88,
+   "t": "VAR",
+   "x": "NESTED"
+  },
+  {
+   "c": 13,
+   "e": 98,
+   "l": 5,
+   "s": 95,
+   "t": "VAR",
+   "x": "PATH"
+  },
+  {
+   "c": 26,
+   "e": 111,
+   "l": 5,
+   "s": 100,
+   "t": "STRING",
+   "x": "$.calid[*]"
+  },
+  {
+   "c": 34,
+   "e": 119,
+   "l": 5,
+   "s": 113,
+   "t": "COLUMN",
+   "x": "COLUMNS"
+  },
+  {
+   "c": 35,
+   "e": 120,
+   "l": 5,
+   "s": 120,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 42,
+   "e": 127,
+   "l": 5,
+   "s": 121,
+   "t": "VAR",
+   "x": "last_dt"
+  },
+  {
+   "c": 47,
+   "e": 132,
+   "l": 5,
+   "s": 129,
+   "t": "VAR",
+   "x": "PATH"
+  },
+  {
+   "c": 60,
+   "e": 145,
+   "l": 5,
+   "s": 134,
+   "t": "STRING",
+   "x": "$.last_dt "
+  },
+  {
+   "c": 61,
+   "e": 146,
+   "l": 5,
+   "s": 146,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 1,
+   "e": 148,
+   "l": 6,
+   "s": 148,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 2,
+   "e": 149,
+   "l": 6,
+   "s": 149,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 6,
+   "e": 153,
+   "l": 6,
+   "s": 151,
+   "t": "VAR",
+   "x": "src"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 3,
+    "end": 9,
+    "line": 2,
+    "start": 9
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.json.JSONTable",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 29,
+    "line": 3,
+    "start": 27
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "res"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 5,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONSchema",
+   "i": 4,
+   "k": "schema"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONColumnDef",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 8,
+    "end": 60,
+    "line": 4,
+    "start": 55
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "tempid"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 11,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 15,
+   "k": "this",
+   "v": "DECIMAL"
+  },
+  {
+   "i": 15,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "path",
+   "m": {
+    "col": 31,
+    "end": 83,
+    "line": 4,
+    "start": 74
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "$.tempid"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 11,
+   "k": "ordinality",
+   "v": false
+  },
+  {
+   "i": 11,
+   "k": "format_json",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONColumnDef",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 23,
+   "k": "path",
+   "m": {
+    "col": 26,
+    "end": 111,
+    "line": 5,
+    "start": 100
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "$.calid[*]"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONSchema",
+   "i": 23,
+   "k": "nested_schema"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONColumnDef",
+   "i": 27,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 127,
+    "line": 5,
+    "start": 121
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "last_dt"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 28,
+   "k": "path",
+   "m": {
+    "col": 60,
+    "end": 145,
+    "line": 5,
+    "start": 134
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "$.last_dt "
+  },
+  {
+   "i": 32,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 28,
+   "k": "ordinality",
+   "v": false
+  },
+  {
+   "i": 28,
+   "k": "format_json",
+   "v": false
+  },
+  {
+   "i": 23,
+   "k": "format_json",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "path",
+   "m": {
+    "col": 32,
+    "end": 42,
+    "line": 3,
+    "start": 32
+   }
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "$.info[*]"
+  },
+  {
+   "i": 38,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 3,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 41,
+   "k": "this",
+   "m": {
+    "col": 6,
+    "end": 153,
+    "line": 6,
+    "start": 151
+   }
+  },
+  {
+   "i": 42,
+   "k": "this",
+   "v": "src"
+  },
+  {
+   "i": 42,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

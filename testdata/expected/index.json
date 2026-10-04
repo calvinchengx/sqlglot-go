@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6649,
+ "count": 6651,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33246,6 +33246,16 @@
    "key": "c11bb004ece357b6",
    "dialect": "oracle",
    "sql": "SELECT JSON_ARRAY(FOO() FORMAT JSON, BAR() NULL ON NULL RETURNING CLOB STRICT)"
+  },
+  {
+   "key": "6b19ecc0df9132d3",
+   "dialect": "oracle",
+   "sql": "SELECT * FROM JSON_TABLE(foo FORMAT JSON, 'bla' ERROR ON ERROR NULL ON EMPTY COLUMNS foo PATH 'bar')"
+  },
+  {
+   "key": "423b8b1fd487cbb0",
+   "dialect": "oracle",
+   "sql": "SELECT\n  *\nFROM JSON_TABLE(res, '$.info[*]' COLUMNS(\n  tempid NUMBER PATH '$.tempid',\n  NESTED PATH '$.calid[*]' COLUMNS(last_dt PATH '$.last_dt ')\n)) src"
   }
  ]
 }

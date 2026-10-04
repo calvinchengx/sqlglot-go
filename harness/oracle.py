@@ -308,6 +308,8 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "CAST(value AS NUMBER DEFAULT 0 ON CONVERSION ERROR)"),
     ("oracle", "SELECT CAST('January 15, 1989, 11:00 A.M.' AS DATE DEFAULT NULL ON CONVERSION ERROR, 'Month dd, YYYY, HH:MI A.M.') FROM DUAL"),
     ("oracle", "SELECT JSON_ARRAY(FOO() FORMAT JSON, BAR() NULL ON NULL RETURNING CLOB STRICT)"),
+    ("oracle", "SELECT * FROM JSON_TABLE(foo FORMAT JSON, 'bla' ERROR ON ERROR NULL ON EMPTY COLUMNS foo PATH 'bar')"),
+    ("oracle", "SELECT\n  *\nFROM JSON_TABLE(res, '$.info[*]' COLUMNS(\n  tempid NUMBER PATH '$.tempid',\n  NESTED PATH '$.calid[*]' COLUMNS(last_dt PATH '$.last_dt ')\n)) src"),
 )
 
 
