@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6638,
+ "count": 6639,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33191,6 +33191,11 @@
    "key": "5046942d5ad3849e",
    "dialect": "oracle",
    "sql": "SELECT JSON_ARRAYAGG(FOO() FORMAT JSON ORDER BY bar NULL ON NULL RETURNING CLOB STRICT)"
+  },
+  {
+   "key": "f1b0af74a6a61b9a",
+   "dialect": "oracle",
+   "sql": "SELECT /*+ ORDERED */*/* test */ FROM tbl"
   }
  ]
 }

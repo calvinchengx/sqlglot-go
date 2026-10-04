@@ -1464,7 +1464,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			}
 			return call, nil
 		}
-		return p.starModifiers(newStar())
+		return p.starModifiers(p.keep(newStar()))
 	}
 
 	// A TYPE followed by a string is a typed literal -- `TIMESTAMP '2020-01-01'`,
