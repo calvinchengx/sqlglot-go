@@ -783,6 +783,16 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'))) f"),
     ("snowflake", "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'), recursive => true)) f"),
     ("snowflake", "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'), recursive => true, mode => 'object')) f"),
+    ("snowflake", "SELECT TIME_SLICE(CAST('2024-05-09 08:50:57.891' AS TIMESTAMP), 15, 'MINUTE')"),
+    ("snowflake", "SELECT TIME_SLICE(CAST('2024-05-09' AS DATE), 1, 'DAY')"),
+    ("snowflake", "SELECT TIME_SLICE(CAST('2024-05-09 08:50:57.891' AS TIMESTAMP), 1, 'HOUR', 'start')"),
+    ("snowflake", "SELECT TIME_SLICE(TIMESTAMP '2024-03-15 14:37:42', 1, 'HOUR')"),
+    ("snowflake", "SELECT TIME_SLICE(TIMESTAMP '2024-03-15 14:37:42', 1, 'HOUR', 'END')"),
+    ("snowflake", "SELECT TIME_SLICE(DATE '2024-03-15', 1, 'DAY')"),
+    ("snowflake", "SELECT TIME_SLICE(DATE '2024-03-15', 1, 'DAY', 'END')"),
+    ("snowflake", "SELECT TIME_SLICE(TIMESTAMP '2024-03-15 14:37:42', 15, 'MINUTE')"),
+    ("snowflake", "SELECT TIME_SLICE(TIMESTAMP '2024-03-15 14:37:42', 1, 'QUARTER')"),
+    ("snowflake", "SELECT TIME_SLICE(DATE '2024-03-15', 1, 'WEEK', 'END')"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:

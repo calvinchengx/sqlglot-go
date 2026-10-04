@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 7117,
+ "count": 7127,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -35586,6 +35586,56 @@
    "key": "116d74cc3b46af90",
    "dialect": "snowflake",
    "sql": "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'), recursive => true, mode => 'object')) f"
+  },
+  {
+   "key": "9346f591e7e7794a",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(CAST('2024-05-09 08:50:57.891' AS TIMESTAMP), 15, 'MINUTE')"
+  },
+  {
+   "key": "ca191fb8e835a461",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(CAST('2024-05-09' AS DATE), 1, 'DAY')"
+  },
+  {
+   "key": "6deec685e1526181",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(CAST('2024-05-09 08:50:57.891' AS TIMESTAMP), 1, 'HOUR', 'start')"
+  },
+  {
+   "key": "6a796988d467aff7",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(TIMESTAMP '2024-03-15 14:37:42', 1, 'HOUR')"
+  },
+  {
+   "key": "ca979f407acccfd8",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(TIMESTAMP '2024-03-15 14:37:42', 1, 'HOUR', 'END')"
+  },
+  {
+   "key": "f9ba19a243f4d0b4",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(DATE '2024-03-15', 1, 'DAY')"
+  },
+  {
+   "key": "7efd600fae39e4b4",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(DATE '2024-03-15', 1, 'DAY', 'END')"
+  },
+  {
+   "key": "b81636473b8ae807",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(TIMESTAMP '2024-03-15 14:37:42', 15, 'MINUTE')"
+  },
+  {
+   "key": "177ced48e7626675",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(TIMESTAMP '2024-03-15 14:37:42', 1, 'QUARTER')"
+  },
+  {
+   "key": "0e52167bf914a155",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(DATE '2024-03-15', 1, 'WEEK', 'END')"
   }
  ]
 }
