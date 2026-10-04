@@ -1,0 +1,352 @@
+{
+ "dialect": "oracle",
+ "rendered": "SELECT department_id, department_name INTO v_department_id, v_department_name FROM departments FETCH FIRST 1 ROWS ONLY",
+ "sql": "SELECT department_id, department_name INTO v_department_id, v_department_name FROM departments FETCH FIRST 1 ROWS ONLY",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "department_id"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 22,
+   "t": "VAR",
+   "x": "department_name"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 38,
+   "t": "INTO",
+   "x": "INTO"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 43,
+   "t": "VAR",
+   "x": "v_department_id"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 77,
+   "e": 76,
+   "l": 1,
+   "s": 60,
+   "t": "VAR",
+   "x": "v_department_name"
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 78,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 83,
+   "t": "VAR",
+   "x": "departments"
+  },
+  {
+   "c": 100,
+   "e": 99,
+   "l": 1,
+   "s": 95,
+   "t": "FETCH",
+   "x": "FETCH"
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 101,
+   "t": "FIRST",
+   "x": "FIRST"
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 107,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 113,
+   "e": 112,
+   "l": 1,
+   "s": 109,
+   "t": "ROWS",
+   "x": "ROWS"
+  },
+  {
+   "c": 118,
+   "e": 117,
+   "l": 1,
+   "s": 114,
+   "t": "VAR",
+   "x": "ONLY"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "department_id"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "department_name"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 6,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Fetch",
+   "i": 0,
+   "k": "limit"
+  },
+  {
+   "i": 11,
+   "k": "direction",
+   "v": "FIRST"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "count",
+   "m": {
+    "col": 108,
+    "end": 107,
+    "line": 1,
+    "start": 107
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.LimitOptions",
+   "i": 11,
+   "k": "limit_options"
+  },
+  {
+   "i": 16,
+   "k": "percent",
+   "v": false
+  },
+  {
+   "i": 16,
+   "k": "rows",
+   "v": true
+  },
+  {
+   "i": 16,
+   "k": "with_ties",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Into",
+   "i": 0,
+   "k": "into"
+  },
+  {
+   "i": 20,
+   "k": "bulk_collect",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 20,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "v_department_id"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 22,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 20,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "this",
+   "m": {
+    "col": 77,
+    "end": 76,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "v_department_name"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 27,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 32,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "this",
+   "m": {
+    "col": 94,
+    "end": 93,
+    "line": 1,
+    "start": 83
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "departments"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}
