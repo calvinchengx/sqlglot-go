@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6644,
+ "count": 6646,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33221,6 +33221,16 @@
    "key": "f05c9673810ebb31",
    "dialect": "oracle",
    "sql": "INSERT /*+ APPEND(d) */ INTO dest d (i, value) SELECT 1, 'value' FROM dual"
+  },
+  {
+   "key": "e556aa5a049aefdc",
+   "dialect": "oracle",
+   "sql": "SELECT JSON_OBJECT(k1: v1 FORMAT JSON, k2: v2 FORMAT JSON)"
+  },
+  {
+   "key": "514d22ab6423177a",
+   "dialect": "oracle",
+   "sql": "SELECT JSON_OBJECT(KEY 'key1' IS emp.column1, KEY 'key2' IS emp.column1) \"emp_key\" FROM emp"
   }
  ]
 }

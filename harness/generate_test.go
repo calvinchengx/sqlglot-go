@@ -69,7 +69,7 @@ func TestGenerateAgainstReference(t *testing.T) {
 
 func assertGeneratorFloor(t *testing.T, written int) {
 	t.Helper()
-	const floor = 6644 // raised by hand as the generator grows; never lowered here
+	const floor = 6646 // raised by hand as the generator grows; never lowered here
 	if written < floor {
 		t.Errorf("generator REGRESSED: %d statements written, floor %d", written, floor)
 	}

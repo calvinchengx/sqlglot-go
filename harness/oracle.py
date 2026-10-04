@@ -303,6 +303,8 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "INSERT /*+ APPEND_VALUES */ INTO dest_table VALUES (i, 'Value')"),
     ("oracle", "INSERT /*+ APPEND(d) */ INTO dest d VALUES (i, 'Value')"),
     ("oracle", "INSERT /*+ APPEND(d) */ INTO dest d (i, value) SELECT 1, 'value' FROM dual"),
+    ("oracle", "SELECT JSON_OBJECT(k1: v1 FORMAT JSON, k2: v2 FORMAT JSON)"),
+    ("oracle", "SELECT JSON_OBJECT(KEY 'key1' IS emp.column1, KEY 'key2' IS emp.column1) \"emp_key\" FROM emp"),
 )
 
 

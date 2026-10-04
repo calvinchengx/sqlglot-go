@@ -1,0 +1,418 @@
+{
+ "dialect": "oracle",
+ "rendered": "SELECT JSON_OBJECT('key1': emp.column1, 'key2': emp.column1) AS \"emp_key\" FROM emp",
+ "sql": "SELECT JSON_OBJECT(KEY 'key1' IS emp.column1, KEY 'key2' IS emp.column1) \"emp_key\" FROM emp",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "JSON_OBJECT"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "KEY"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 23,
+   "t": "STRING",
+   "x": "key1"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 30,
+   "t": "IS",
+   "x": "IS"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 33,
+   "t": "VAR",
+   "x": "emp"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 37,
+   "t": "VAR",
+   "x": "column1"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 46,
+   "t": "VAR",
+   "x": "KEY"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 50,
+   "t": "STRING",
+   "x": "key2"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 57,
+   "t": "IS",
+   "x": "IS"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 60,
+   "t": "VAR",
+   "x": "emp"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 63,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 64,
+   "t": "VAR",
+   "x": "column1"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 71,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 73,
+   "t": "IDENTIFIER",
+   "x": "emp_key"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 83,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 91,
+   "e": 90,
+   "l": 1,
+   "s": 88,
+   "t": "VAR",
+   "x": "emp"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.json.JSONObject",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONKeyValue",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "key1"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 4,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 3,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "column1"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "table",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "emp"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 8,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONKeyValue",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 50
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "key2"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 17,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 16,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "this",
+   "m": {
+    "col": 71,
+    "end": 70,
+    "line": 1,
+    "start": 64
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "column1"
+  },
+  {
+   "i": 22,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "table",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "emp"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 21,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "i": 2,
+   "k": "return_type",
+   "v": false
+  },
+  {
+   "i": 2,
+   "k": "encoding",
+   "v": false
+  },
+  {
+   "i": 2,
+   "k": "join_mark",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 82,
+    "end": 81,
+    "line": 1,
+    "start": 73
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "emp_key"
+  },
+  {
+   "i": 32,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 35,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 36,
+   "k": "this",
+   "m": {
+    "col": 91,
+    "end": 90,
+    "line": 1,
+    "start": 88
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "emp"
+  },
+  {
+   "i": 37,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

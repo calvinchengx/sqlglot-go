@@ -26,7 +26,7 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 	case "STRING_AGG":
 		return p.parseStringAgg()
 	case "JSON_OBJECT":
-		return p.parseJSONObject()
+		return p.parseJSONObjectAt()
 	case "MATCH":
 		return p.parseMatchAgainst()
 	case "CEIL":
