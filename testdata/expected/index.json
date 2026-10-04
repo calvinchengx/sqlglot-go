@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6640,
+ "count": 6644,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33201,6 +33201,26 @@
    "key": "93b6e4616da6aec8",
    "dialect": "oracle",
    "sql": "SELECT department_id, department_name INTO v_department_id, v_department_name FROM departments FETCH FIRST 1 ROWS ONLY"
+  },
+  {
+   "key": "0b84d42063dbb286",
+   "dialect": "oracle",
+   "sql": "INSERT /*+ APPEND */ INTO IAP_TBL (id, col1) VALUES (2, 'test2')"
+  },
+  {
+   "key": "ba7b0bdc84e14556",
+   "dialect": "oracle",
+   "sql": "INSERT /*+ APPEND_VALUES */ INTO dest_table VALUES (i, 'Value')"
+  },
+  {
+   "key": "bd8b38146e85a2a6",
+   "dialect": "oracle",
+   "sql": "INSERT /*+ APPEND(d) */ INTO dest d VALUES (i, 'Value')"
+  },
+  {
+   "key": "f05c9673810ebb31",
+   "dialect": "oracle",
+   "sql": "INSERT /*+ APPEND(d) */ INTO dest d (i, value) SELECT 1, 'value' FROM dual"
   }
  ]
 }

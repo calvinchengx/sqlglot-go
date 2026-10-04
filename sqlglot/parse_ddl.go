@@ -752,6 +752,10 @@ func queryWriteSlot(n *Expression) bool {
 func (p *parser) parseInsert() (*Expression, error) {
 	p.advance() // INSERT
 	leading := p.takeComments()
+	hint, err := p.oracleInsertHint()
+	if err != nil {
+		return nil, err
+	}
 
 	ignore := false
 	if p.dialect == "mysql" && p.atWords("IGNORE") {
@@ -839,6 +843,9 @@ func (p *parser) parseInsert() (*Expression, error) {
 			return nil, err
 		}
 		table.Set("alias", alias)
+	}
+	if err := p.oracleInsertAlias(table); err != nil {
+		return nil, err
 	}
 	exists := false
 	if p.atWords("IF", "EXISTS") {
@@ -955,7 +962,7 @@ func (p *parser) parseInsert() (*Expression, error) {
 	}
 
 	return putComments(New("Insert",
-		Arg{"hint", nil}, Arg{"is_function", false}, Arg{"this", this},
+		Arg{"hint", hint}, Arg{"is_function", false}, Arg{"this", this},
 		Arg{"stored", false}, Arg{"by_name", byName}, Arg{"exists", exists},
 		Arg{"where", replaceWhere}, Arg{"using", replaceUsing},
 		Arg{"partition", false},

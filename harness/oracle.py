@@ -299,6 +299,10 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT JSON_ARRAYAGG(FOO() FORMAT JSON ORDER BY bar NULL ON NULL RETURNING CLOB STRICT)"),
     ("oracle", "SELECT /*+ ORDERED */*/* test */ FROM tbl"),
     ("oracle", "SELECT department_id, department_name INTO v_department_id, v_department_name FROM departments FETCH FIRST 1 ROWS ONLY"),
+    ("oracle", "INSERT /*+ APPEND */ INTO IAP_TBL (id, col1) VALUES (2, 'test2')"),
+    ("oracle", "INSERT /*+ APPEND_VALUES */ INTO dest_table VALUES (i, 'Value')"),
+    ("oracle", "INSERT /*+ APPEND(d) */ INTO dest d VALUES (i, 'Value')"),
+    ("oracle", "INSERT /*+ APPEND(d) */ INTO dest d (i, value) SELECT 1, 'value' FROM dual"),
 )
 
 
