@@ -1,0 +1,150 @@
+{
+ "dialect": "snowflake",
+ "rendered": "SHOW STAGES LIKE 'foo' IN DATABASE db1",
+ "sql": "SHOW STAGES LIKE 'foo' IN DATABASE db1",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "SHOW",
+   "x": "SHOW"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "STAGES"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 12,
+   "t": "LIKE",
+   "x": "LIKE"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 17,
+   "t": "STRING",
+   "x": "foo"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 23,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 26,
+   "t": "DATABASE",
+   "x": "DATABASE"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 35,
+   "t": "VAR",
+   "x": "db1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Show"
+  },
+  {
+   "i": 0,
+   "k": "terse",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "STAGES"
+  },
+  {
+   "i": 0,
+   "k": "history",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "like",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "scope"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "db1"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "scope_kind",
+   "v": "DATABASE"
+  },
+  {
+   "i": 0,
+   "k": "starts_with",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "privileges",
+   "v": false
+  }
+ ]
+}

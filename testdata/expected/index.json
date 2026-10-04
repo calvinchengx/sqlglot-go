@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 7021,
+ "count": 7161,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -35106,6 +35106,706 @@
    "key": "ab7acef11f95b9e0",
    "dialect": "snowflake",
    "sql": "SELECT v:\"fruit\" FROM vartab"
+  },
+  {
+   "key": "c956436e93deb90a",
+   "dialect": "snowflake",
+   "sql": "SHOW USERS"
+  },
+  {
+   "key": "df526c3179d12aa2",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE USERS"
+  },
+  {
+   "key": "49a352b90ba37e57",
+   "dialect": "snowflake",
+   "sql": "SHOW USERS LIKE '_foo%' STARTS WITH 'bar' LIMIT 5 FROM 'baz'"
+  },
+  {
+   "key": "1c26f39f4050610d",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE DATABASES"
+  },
+  {
+   "key": "18e2503b5da9951c",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE DATABASES HISTORY LIKE 'foo' STARTS WITH 'bla' LIMIT 5 FROM 'bob' WITH PRIVILEGES USAGE, MODIFY"
+  },
+  {
+   "key": "dd3b843aa9e78b8d",
+   "dialect": "snowflake",
+   "sql": "SHOW FILE FORMATS"
+  },
+  {
+   "key": "652575370fccaa0b",
+   "dialect": "snowflake",
+   "sql": "SHOW FILE FORMATS LIKE 'foo' IN DATABASE db1"
+  },
+  {
+   "key": "a6001696da0bd9db",
+   "dialect": "snowflake",
+   "sql": "SHOW FILE FORMATS LIKE 'foo' IN SCHEMA db1.schema1"
+  },
+  {
+   "key": "a541938a8137cd6d",
+   "dialect": "snowflake",
+   "sql": "SHOW FUNCTIONS"
+  },
+  {
+   "key": "8b8913af9df04c19",
+   "dialect": "snowflake",
+   "sql": "SHOW FUNCTIONS LIKE 'foo' IN CLASS bla"
+  },
+  {
+   "key": "89672bb427baca37",
+   "dialect": "snowflake",
+   "sql": "SHOW PROCEDURES"
+  },
+  {
+   "key": "e5b7e69ed015ed86",
+   "dialect": "snowflake",
+   "sql": "SHOW PROCEDURES LIKE 'foo' IN APPLICATION app"
+  },
+  {
+   "key": "0f582dd85554ddc5",
+   "dialect": "snowflake",
+   "sql": "SHOW PROCEDURES LIKE 'foo' IN APPLICATION PACKAGE pkg"
+  },
+  {
+   "key": "114f9caa9a20bda5",
+   "dialect": "snowflake",
+   "sql": "SHOW STAGES"
+  },
+  {
+   "key": "e233c4ed22f6beb6",
+   "dialect": "snowflake",
+   "sql": "SHOW STAGES LIKE 'foo' IN DATABASE db1"
+  },
+  {
+   "key": "3b09f81fe618b4e9",
+   "dialect": "snowflake",
+   "sql": "SHOW STAGES LIKE 'foo' IN SCHEMA db1.schema1"
+  },
+  {
+   "key": "e54e76c388e129b5",
+   "dialect": "snowflake",
+   "sql": "SHOW WAREHOUSES"
+  },
+  {
+   "key": "da375673fedb990e",
+   "dialect": "snowflake",
+   "sql": "SHOW WAREHOUSES LIKE 'foo' WITH PRIVILEGES USAGE, MODIFY"
+  },
+  {
+   "key": "70d79321f252a11d",
+   "dialect": "snowflake",
+   "sql": "show terse schemas in database db1 starts with 'a' limit 10 from 'b'"
+  },
+  {
+   "key": "c30637e9a77a5b3c",
+   "dialect": "snowflake",
+   "sql": "show terse objects in schema db1.schema1 starts with 'a' limit 10 from 'b'"
+  },
+  {
+   "key": "4a605600f5f06dfb",
+   "dialect": "snowflake",
+   "sql": "show terse objects in db1.schema1 starts with 'a' limit 10 from 'b'"
+  },
+  {
+   "key": "bb5704b523e8d077",
+   "dialect": "snowflake",
+   "sql": "SHOW COLUMNS"
+  },
+  {
+   "key": "065fd4d555507bdb",
+   "dialect": "snowflake",
+   "sql": "SHOW COLUMNS IN TABLE dt_test"
+  },
+  {
+   "key": "83de9f66812e229a",
+   "dialect": "snowflake",
+   "sql": "SHOW COLUMNS LIKE '_foo%' IN TABLE dt_test"
+  },
+  {
+   "key": "d40f0f0eddd80423",
+   "dialect": "snowflake",
+   "sql": "SHOW COLUMNS IN VIEW"
+  },
+  {
+   "key": "4dd020b9512ed9ba",
+   "dialect": "snowflake",
+   "sql": "SHOW COLUMNS LIKE '_foo%' IN VIEW dt_test"
+  },
+  {
+   "key": "bc9f386ae48f6923",
+   "dialect": "snowflake",
+   "sql": "SHOW TABLES LIKE 'line%' IN tpch.public"
+  },
+  {
+   "key": "9f7408e361f2029e",
+   "dialect": "snowflake",
+   "sql": "SHOW TABLES HISTORY IN tpch.public"
+  },
+  {
+   "key": "418c5c9b0ed89a76",
+   "dialect": "snowflake",
+   "sql": "show terse tables in schema db1.schema1 starts with 'a' limit 10 from 'b'"
+  },
+  {
+   "key": "7d1d5485f4bc1131",
+   "dialect": "snowflake",
+   "sql": "show terse tables in db1.schema1 starts with 'a' limit 10 from 'b'"
+  },
+  {
+   "key": "596d03b3d550c1d0",
+   "dialect": "snowflake",
+   "sql": "SHOW ICEBERG TABLES IN db1.schema1"
+  },
+  {
+   "key": "2a00fc0423fd7c20",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE ICEBERG TABLES IN db1.schema1"
+  },
+  {
+   "key": "46669e36ef02144b",
+   "dialect": "snowflake",
+   "sql": "SHOW PRIMARY KEYS"
+  },
+  {
+   "key": "dc70d2ef150bb964",
+   "dialect": "snowflake",
+   "sql": "SHOW PRIMARY KEYS IN ACCOUNT"
+  },
+  {
+   "key": "e5d1325be6aaf603",
+   "dialect": "snowflake",
+   "sql": "SHOW PRIMARY KEYS IN DATABASE"
+  },
+  {
+   "key": "9ff2ac610c74652a",
+   "dialect": "snowflake",
+   "sql": "SHOW PRIMARY KEYS IN DATABASE foo"
+  },
+  {
+   "key": "71613c312d4fa138",
+   "dialect": "snowflake",
+   "sql": "SHOW PRIMARY KEYS IN TABLE"
+  },
+  {
+   "key": "226703bf664eb37c",
+   "dialect": "snowflake",
+   "sql": "SHOW PRIMARY KEYS IN TABLE foo"
+  },
+  {
+   "key": "89f089dff2980dbb",
+   "dialect": "snowflake",
+   "sql": "SHOW PRIMARY KEYS IN \"TEST\".\"PUBLIC\".\"foo\""
+  },
+  {
+   "key": "258edaee211af3ca",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE PRIMARY KEYS IN \"TEST\".\"PUBLIC\".\"foo\""
+  },
+  {
+   "key": "45fad4958971c802",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE VIEWS"
+  },
+  {
+   "key": "331aa3ffcd52a260",
+   "dialect": "snowflake",
+   "sql": "SHOW VIEWS"
+  },
+  {
+   "key": "359205f5776e1959",
+   "dialect": "snowflake",
+   "sql": "SHOW VIEWS LIKE 'foo%'"
+  },
+  {
+   "key": "07017471b1d3e5a5",
+   "dialect": "snowflake",
+   "sql": "SHOW VIEWS IN ACCOUNT"
+  },
+  {
+   "key": "1b57712b292abf08",
+   "dialect": "snowflake",
+   "sql": "SHOW VIEWS IN DATABASE"
+  },
+  {
+   "key": "13238af47b4c3c19",
+   "dialect": "snowflake",
+   "sql": "SHOW VIEWS IN DATABASE foo"
+  },
+  {
+   "key": "b71fc945c23570f0",
+   "dialect": "snowflake",
+   "sql": "SHOW VIEWS IN SCHEMA foo"
+  },
+  {
+   "key": "5f121e804628ef1f",
+   "dialect": "snowflake",
+   "sql": "SHOW VIEWS IN foo"
+  },
+  {
+   "key": "410631050d432644",
+   "dialect": "snowflake",
+   "sql": "SHOW UNIQUE KEYS"
+  },
+  {
+   "key": "7579211f993e8970",
+   "dialect": "snowflake",
+   "sql": "SHOW UNIQUE KEYS IN ACCOUNT"
+  },
+  {
+   "key": "1c45176c5103bfe5",
+   "dialect": "snowflake",
+   "sql": "SHOW UNIQUE KEYS IN DATABASE"
+  },
+  {
+   "key": "e2b1a5f4f620e868",
+   "dialect": "snowflake",
+   "sql": "SHOW UNIQUE KEYS IN DATABASE foo"
+  },
+  {
+   "key": "d854fb89ea3f53dc",
+   "dialect": "snowflake",
+   "sql": "SHOW UNIQUE KEYS IN TABLE"
+  },
+  {
+   "key": "82042bafcc491638",
+   "dialect": "snowflake",
+   "sql": "SHOW UNIQUE KEYS IN TABLE foo"
+  },
+  {
+   "key": "69e6584ad0c24c47",
+   "dialect": "snowflake",
+   "sql": "SHOW UNIQUE KEYS IN \"TEST\".\"PUBLIC\".\"foo\""
+  },
+  {
+   "key": "3183dfefb0557ee1",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE UNIQUE KEYS IN \"TEST\".\"PUBLIC\".\"foo\""
+  },
+  {
+   "key": "2566329d4ec9cce7",
+   "dialect": "snowflake",
+   "sql": "SHOW IMPORTED KEYS"
+  },
+  {
+   "key": "94cc73845b63783a",
+   "dialect": "snowflake",
+   "sql": "SHOW IMPORTED KEYS IN ACCOUNT"
+  },
+  {
+   "key": "2ab9bdcdb9c7db70",
+   "dialect": "snowflake",
+   "sql": "SHOW IMPORTED KEYS IN DATABASE"
+  },
+  {
+   "key": "c6e4e2b837dfe11a",
+   "dialect": "snowflake",
+   "sql": "SHOW IMPORTED KEYS IN DATABASE foo"
+  },
+  {
+   "key": "f9046ad0b3038eee",
+   "dialect": "snowflake",
+   "sql": "SHOW IMPORTED KEYS IN TABLE"
+  },
+  {
+   "key": "2796035606d8bb25",
+   "dialect": "snowflake",
+   "sql": "SHOW IMPORTED KEYS IN TABLE foo"
+  },
+  {
+   "key": "b092cf2c2bbe6439",
+   "dialect": "snowflake",
+   "sql": "SHOW IMPORTED KEYS IN \"TEST\".\"PUBLIC\".\"foo\""
+  },
+  {
+   "key": "ad6be9793509af3c",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE IMPORTED KEYS IN \"TEST\".\"PUBLIC\".\"foo\""
+  },
+  {
+   "key": "eb155424456bb4f3",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE SEQUENCES"
+  },
+  {
+   "key": "558d8e8cebf0a570",
+   "dialect": "snowflake",
+   "sql": "SHOW SEQUENCES"
+  },
+  {
+   "key": "1874d237e42de2d1",
+   "dialect": "snowflake",
+   "sql": "SHOW SEQUENCES LIKE '_foo%' IN ACCOUNT"
+  },
+  {
+   "key": "9e520d6d4f0e7349",
+   "dialect": "snowflake",
+   "sql": "SHOW SEQUENCES LIKE '_foo%' IN DATABASE"
+  },
+  {
+   "key": "3f90dfb589442564",
+   "dialect": "snowflake",
+   "sql": "SHOW SEQUENCES LIKE '_foo%' IN DATABASE foo"
+  },
+  {
+   "key": "f0ca90340eae2b4a",
+   "dialect": "snowflake",
+   "sql": "SHOW SEQUENCES LIKE '_foo%' IN SCHEMA"
+  },
+  {
+   "key": "c8bd9c275e5ddd69",
+   "dialect": "snowflake",
+   "sql": "SHOW SEQUENCES LIKE '_foo%' IN SCHEMA foo"
+  },
+  {
+   "key": "0037fac4e08a7fc2",
+   "dialect": "snowflake",
+   "sql": "SHOW SEQUENCES LIKE '_foo%' IN foo"
+  },
+  {
+   "key": "5fce858b87525427",
+   "dialect": "snowflake",
+   "sql": "SELECT BIT_LENGTH(x'A1B2')"
+  },
+  {
+   "key": "87b80dc3758264da",
+   "dialect": "snowflake",
+   "sql": "INSERT INTO test VALUES (x'48FAF43B0AFCEF9B63EE3A93EE2AC2')"
+  },
+  {
+   "key": "da67f4eff1e2aa7a",
+   "dialect": "snowflake",
+   "sql": "SELECT x'ABCD'"
+  },
+  {
+   "key": "a097841998659708",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE foo (bar DOUBLE AUTOINCREMENT START 0 INCREMENT 1)"
+  },
+  {
+   "key": "b4c5bace38e62c9c",
+   "dialect": "snowflake",
+   "sql": "CREATE OR REPLACE TABLE x (y NUMBER(38, 0) NOT NULL AUTOINCREMENT START 1 INCREMENT 1 ORDER)"
+  },
+  {
+   "key": "b3790b2262a7cd07",
+   "dialect": "snowflake",
+   "sql": "CREATE OR REPLACE TABLE x (y NUMBER(38, 0) NOT NULL AUTOINCREMENT START 1 INCREMENT 1 NOORDER)"
+  },
+  {
+   "key": "64d9cc8f7f0e9702",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT START 10)"
+  },
+  {
+   "key": "d47d7c489522612e",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT INCREMENT 2)"
+  },
+  {
+   "key": "81660bec15ce9b36",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT ORDER)"
+  },
+  {
+   "key": "da89f29af7c9e82e",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT NOORDER)"
+  },
+  {
+   "key": "7f1db08586a961ed",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT START 10 NOORDER)"
+  },
+  {
+   "key": "076127ec2d4617fd",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT INCREMENT 2 ORDER)"
+  },
+  {
+   "key": "23599c4c53b80429",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT INCREMENT 2 START 10)"
+  },
+  {
+   "key": "e50ccebc2c66ec46",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT(0, 1) ORDER)"
+  },
+  {
+   "key": "a2d8f5074f907823",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE c (pk BIGINT AUTOINCREMENT START 10)"
+  },
+  {
+   "key": "fcd2c69b31e145e1",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE c (pk BIGINT AUTOINCREMENT INCREMENT -1)"
+  },
+  {
+   "key": "7dae67aecf4c2111",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE t (id INT PRIMARY KEY AUTOINCREMENT)"
+  },
+  {
+   "key": "d78749fadb3145ab",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM foo WHERE 'str' IN (SELECT value FROM TABLE(FLATTEN(INPUT => vals)) AS _u(seq, key, path, index, value, this))"
+  },
+  {
+   "key": "7db738bf834981de",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM TABLE(FLATTEN(input => parse_json('[1, ,77]'))) f"
+  },
+  {
+   "key": "afefa7534ab6caef",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88]}'), path => 'b')) f"
+  },
+  {
+   "key": "baffa08f2c7ab06c",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM TABLE(FLATTEN(input => parse_json('[]'))) f"
+  },
+  {
+   "key": "4d1f21f7f07a7bb9",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'))) f"
+  },
+  {
+   "key": "50549bdec7d0ce76",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'), recursive => true)) f"
+  },
+  {
+   "key": "116d74cc3b46af90",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'), recursive => true, mode => 'object')) f"
+  },
+  {
+   "key": "9346f591e7e7794a",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(CAST('2024-05-09 08:50:57.891' AS TIMESTAMP), 15, 'MINUTE')"
+  },
+  {
+   "key": "ca191fb8e835a461",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(CAST('2024-05-09' AS DATE), 1, 'DAY')"
+  },
+  {
+   "key": "6deec685e1526181",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(CAST('2024-05-09 08:50:57.891' AS TIMESTAMP), 1, 'HOUR', 'start')"
+  },
+  {
+   "key": "6a796988d467aff7",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(TIMESTAMP '2024-03-15 14:37:42', 1, 'HOUR')"
+  },
+  {
+   "key": "ca979f407acccfd8",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(TIMESTAMP '2024-03-15 14:37:42', 1, 'HOUR', 'END')"
+  },
+  {
+   "key": "f9ba19a243f4d0b4",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(DATE '2024-03-15', 1, 'DAY')"
+  },
+  {
+   "key": "7efd600fae39e4b4",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(DATE '2024-03-15', 1, 'DAY', 'END')"
+  },
+  {
+   "key": "b81636473b8ae807",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(TIMESTAMP '2024-03-15 14:37:42', 15, 'MINUTE')"
+  },
+  {
+   "key": "177ced48e7626675",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(TIMESTAMP '2024-03-15 14:37:42', 1, 'QUARTER')"
+  },
+  {
+   "key": "0e52167bf914a155",
+   "dialect": "snowflake",
+   "sql": "SELECT TIME_SLICE(DATE '2024-03-15', 1, 'WEEK', 'END')"
+  },
+  {
+   "key": "e7829e33f393b198",
+   "dialect": "snowflake",
+   "sql": "DATEDIFF(DAY, CAST('2007-12-25' AS DATE), CAST('2008-12-25' AS DATE))"
+  },
+  {
+   "key": "e7cfced657924453",
+   "dialect": "snowflake",
+   "sql": "DATEDIFF(WEEK, '2024-12-13', '2024-12-17')"
+  },
+  {
+   "key": "a359847a9bd3c4f8",
+   "dialect": "snowflake",
+   "sql": "DATEDIFF(WEEK, '2024-12-15', '2024-12-16')"
+  },
+  {
+   "key": "7a970e2fd0f41d35",
+   "dialect": "snowflake",
+   "sql": "DATEDIFF(YEAR, '2020-01-15', '2023-06-20')"
+  },
+  {
+   "key": "66e7ac7520e33a53",
+   "dialect": "snowflake",
+   "sql": "DATEDIFF(MONTH, '2020-01-15', '2023-06-20')"
+  },
+  {
+   "key": "31ce29b8ab0aa641",
+   "dialect": "snowflake",
+   "sql": "DATEDIFF(QUARTER, '2020-01-15', '2023-06-20')"
+  },
+  {
+   "key": "21a936b1cf9ce69f",
+   "dialect": "snowflake",
+   "sql": "DATEDIFF(NANOSECOND, '2023-01-01 10:00:00.000000000', '2023-01-01 10:00:00.123456789')"
+  },
+  {
+   "key": "56e5ccc7d2726e63",
+   "dialect": "snowflake",
+   "sql": "DATEDIFF(NANOSECOND, start_time, end_time)"
+  },
+  {
+   "key": "15fada9efbcd67fc",
+   "dialect": "snowflake",
+   "sql": "CREATE OR REPLACE TEMPORARY TABLE x (y NUMBER IDENTITY(0, 1))"
+  },
+  {
+   "key": "35f1786999806b60",
+   "dialect": "snowflake",
+   "sql": "CREATE TEMPORARY TABLE x (y NUMBER AUTOINCREMENT(0, 1))"
+  },
+  {
+   "key": "2a5b91f89cb19809",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y NUMBER IDENTITY START 0 INCREMENT 1)"
+  },
+  {
+   "key": "eab58edda508490b",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE test_table (id NUMERIC NOT NULL AUTOINCREMENT)"
+  },
+  {
+   "key": "8456f5c2a0d12eb5",
+   "dialect": "snowflake",
+   "sql": "SHA1(x)"
+  },
+  {
+   "key": "c5c6ffa73c6787bb",
+   "dialect": "snowflake",
+   "sql": "SHA1('text')"
+  },
+  {
+   "key": "7f02bba641229413",
+   "dialect": "snowflake",
+   "sql": "SHA1(X'002A'::BINARY)"
+  },
+  {
+   "key": "9bc9e16a794d5e1e",
+   "dialect": "snowflake",
+   "sql": "SHA1(123)"
+  },
+  {
+   "key": "9428070d25018c79",
+   "dialect": "snowflake",
+   "sql": "SHA1(DATE '2024-01-15')"
+  },
+  {
+   "key": "be68fd7891b70041",
+   "dialect": "snowflake",
+   "sql": "SELECT RANDOM()"
+  },
+  {
+   "key": "2bb6de3c9d8a0cef",
+   "dialect": "snowflake",
+   "sql": "SELECT RANDOM(123)"
+  },
+  {
+   "key": "62441a124acf2e99",
+   "dialect": "snowflake",
+   "sql": "SELECT RANDSTR(123, RANDOM())"
+  },
+  {
+   "key": "fdf2189c176d0927",
+   "dialect": "snowflake",
+   "sql": "SELECT NORMAL(0, 1, RANDOM())"
+  },
+  {
+   "key": "48d8a2f9bb49aec2",
+   "dialect": "snowflake",
+   "sql": "SELECT RANDSTR(10, RANDOM(123))"
+  },
+  {
+   "key": "e3f918b614d23129",
+   "dialect": "snowflake",
+   "sql": "SELECT RANDSTR(10, RANDOM())"
+  },
+  {
+   "key": "8a9b692a7734a839",
+   "dialect": "snowflake",
+   "sql": "SELECT ZIPF(2, 100, RANDOM())"
+  },
+  {
+   "key": "1b4b15e9814c7b50",
+   "dialect": "snowflake",
+   "sql": "UNIFORM(1, 10, RANDOM(5))"
+  },
+  {
+   "key": "b8800563989f4ece",
+   "dialect": "snowflake",
+   "sql": "UNIFORM(1, 10, RANDOM())"
+  },
+  {
+   "key": "ab3fde62a50583b6",
+   "dialect": "snowflake",
+   "sql": "NORMAL(10.5, 2.5, RANDOM())"
+  },
+  {
+   "key": "a0af587554b73c10",
+   "dialect": "snowflake",
+   "sql": "NORMAL(10.5, 2.5, RANDOM(5))"
+  },
+  {
+   "key": "26b68a2ceccc3a33",
+   "dialect": "snowflake",
+   "sql": "SELECT DAYOFYEAR(CURRENT_TIMESTAMP())"
+  },
+  {
+   "key": "dc7580cbbf7bd36b",
+   "dialect": "snowflake",
+   "sql": "SELECT YEAROFWEEK(CURRENT_TIMESTAMP())"
+  },
+  {
+   "key": "b4613b9c1df240ef",
+   "dialect": "snowflake",
+   "sql": "SELECT YEAROFWEEKISO(CURRENT_TIMESTAMP())"
+  },
+  {
+   "key": "c9ee66cd941bc724",
+   "dialect": "snowflake",
+   "sql": "SELECT YEAROFWEEK('2024-12-31'::DATE)"
+  },
+  {
+   "key": "d4bf7709d0032813",
+   "dialect": "snowflake",
+   "sql": "SELECT YEAROFWEEKISO('2024-12-31'::DATE)"
+  },
+  {
+   "key": "8ba3ae0e8f974a7d",
+   "dialect": "snowflake",
+   "sql": "DAYOFYEAR(foo)"
   }
  ]
 }

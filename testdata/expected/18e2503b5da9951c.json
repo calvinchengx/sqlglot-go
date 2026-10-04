@@ -1,0 +1,287 @@
+{
+ "dialect": "snowflake",
+ "rendered": "SHOW TERSE DATABASES HISTORY LIKE 'foo' STARTS WITH 'bla' LIMIT 5 FROM 'bob' WITH PRIVILEGES USAGE, MODIFY",
+ "sql": "SHOW TERSE DATABASES HISTORY LIKE 'foo' STARTS WITH 'bla' LIMIT 5 FROM 'bob' WITH PRIVILEGES USAGE, MODIFY",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "SHOW",
+   "x": "SHOW"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "TERSE"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "DATABASES"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 21,
+   "t": "VAR",
+   "x": "HISTORY"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 29,
+   "t": "LIKE",
+   "x": "LIKE"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 34,
+   "t": "STRING",
+   "x": "foo"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "STARTS"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 47,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 52,
+   "t": "STRING",
+   "x": "bla"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 58,
+   "t": "LIMIT",
+   "x": "LIMIT"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 64,
+   "t": "NUMBER",
+   "x": "5"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 66,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 71,
+   "t": "STRING",
+   "x": "bob"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 77,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 82,
+   "t": "VAR",
+   "x": "PRIVILEGES"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 93,
+   "t": "VAR",
+   "x": "USAGE"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 98,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 100,
+   "t": "VAR",
+   "x": "MODIFY"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Show"
+  },
+  {
+   "i": 0,
+   "k": "terse",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "DATABASES"
+  },
+  {
+   "i": 0,
+   "k": "history",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "like",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "starts_with",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "bla"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Limit",
+   "i": 0,
+   "k": "limit"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "expression",
+   "m": {
+    "col": 65,
+    "end": 64,
+    "line": 1,
+    "start": 64
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "5"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "from_",
+   "m": {
+    "col": 76,
+    "end": 75,
+    "line": 1,
+    "start": 71
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "bob"
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Var",
+   "i": 0,
+   "k": "privileges"
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "USAGE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Var",
+   "i": 0,
+   "k": "privileges"
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "MODIFY"
+  }
+ ]
+}

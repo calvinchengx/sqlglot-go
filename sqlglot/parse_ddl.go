@@ -1549,8 +1549,11 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			p.advance()
 			kind = New("NotForReplicationColumnConstraint")
 		case p.atWords("AUTO_INCREMENT"), p.atWords("AUTOINCREMENT"), p.atWords("IDENTITY"):
-			p.advance()
-			kind = New("AutoIncrementColumnConstraint")
+			var incErr error
+			kind, incErr = p.columnAutoIncrement()
+			if incErr != nil {
+				return nil, incErr
+			}
 		// XMLTABLE's own columns say where in the document each one comes
 		// from.
 		case p.atWords("PATH"):
@@ -6297,6 +6300,9 @@ func (p *parser) parseExecute() (*Expression, error) {
 // phrases are the reference's own table; anything outside it is text it keeps
 // rather than a tree, and is refused here.
 func (p *parser) parseShow() (*Expression, error) {
+	if p.dialect == "snowflake" {
+		return p.parseSnowflakeShow()
+	}
 	p.advance() // SHOW
 
 	// Longest phrase first: ALL TABLES is not TABLES.

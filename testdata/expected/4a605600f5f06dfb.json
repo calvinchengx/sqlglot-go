@@ -1,0 +1,269 @@
+{
+ "dialect": "snowflake",
+ "rendered": "SHOW TERSE OBJECTS IN SCHEMA db1.schema1 STARTS WITH 'a' LIMIT 10 FROM 'b'",
+ "sql": "show terse objects in db1.schema1 starts with 'a' limit 10 from 'b'",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "SHOW",
+   "x": "show"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "terse"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "objects"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 19,
+   "t": "IN",
+   "x": "in"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 22,
+   "t": "VAR",
+   "x": "db1"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "schema1"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 34,
+   "t": "VAR",
+   "x": "starts"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 41,
+   "t": "WITH",
+   "x": "with"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 46,
+   "t": "STRING",
+   "x": "a"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 50,
+   "t": "LIMIT",
+   "x": "limit"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 56,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 59,
+   "t": "FROM",
+   "x": "from"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 64,
+   "t": "STRING",
+   "x": "b"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Show"
+  },
+  {
+   "i": 0,
+   "k": "terse",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "OBJECTS"
+  },
+  {
+   "i": 0,
+   "k": "history",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "scope"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "schema1"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "db",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "db1"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "scope_kind",
+   "v": "SCHEMA"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "starts_with",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Limit",
+   "i": 0,
+   "k": "limit"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "expression",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 56
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "from_",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 64
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "privileges",
+   "v": false
+  }
+ ]
+}

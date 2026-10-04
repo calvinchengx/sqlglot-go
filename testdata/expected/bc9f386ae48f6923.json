@@ -1,0 +1,179 @@
+{
+ "dialect": "snowflake",
+ "rendered": "SHOW TABLES LIKE 'line%' IN SCHEMA tpch.public",
+ "sql": "SHOW TABLES LIKE 'line%' IN tpch.public",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "SHOW",
+   "x": "SHOW"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "TABLES"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 12,
+   "t": "LIKE",
+   "x": "LIKE"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 17,
+   "t": "STRING",
+   "x": "line%"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 25,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "tpch"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 33,
+   "t": "VAR",
+   "x": "public"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Show"
+  },
+  {
+   "i": 0,
+   "k": "terse",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "TABLES"
+  },
+  {
+   "i": 0,
+   "k": "history",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "like",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "line%"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "scope"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "public"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "db",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "tpch"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "scope_kind",
+   "v": "SCHEMA"
+  },
+  {
+   "i": 0,
+   "k": "starts_with",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "privileges",
+   "v": false
+  }
+ ]
+}
