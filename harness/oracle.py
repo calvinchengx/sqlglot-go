@@ -759,6 +759,9 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "SHOW SEQUENCES LIKE '_foo%' IN SCHEMA"),
     ("snowflake", "SHOW SEQUENCES LIKE '_foo%' IN SCHEMA foo"),
     ("snowflake", "SHOW SEQUENCES LIKE '_foo%' IN foo"),
+    ("snowflake", "SELECT BIT_LENGTH(x'A1B2')"),
+    ("snowflake", "INSERT INTO test VALUES (x'48FAF43B0AFCEF9B63EE3A93EE2AC2')"),
+    ("snowflake", "SELECT x'ABCD'"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
