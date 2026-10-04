@@ -793,6 +793,14 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "SELECT TIME_SLICE(TIMESTAMP '2024-03-15 14:37:42', 15, 'MINUTE')"),
     ("snowflake", "SELECT TIME_SLICE(TIMESTAMP '2024-03-15 14:37:42', 1, 'QUARTER')"),
     ("snowflake", "SELECT TIME_SLICE(DATE '2024-03-15', 1, 'WEEK', 'END')"),
+    ("snowflake", "DATEDIFF(DAY, CAST('2007-12-25' AS DATE), CAST('2008-12-25' AS DATE))"),
+    ("snowflake", "DATEDIFF(WEEK, '2024-12-13', '2024-12-17')"),
+    ("snowflake", "DATEDIFF(WEEK, '2024-12-15', '2024-12-16')"),
+    ("snowflake", "DATEDIFF(YEAR, '2020-01-15', '2023-06-20')"),
+    ("snowflake", "DATEDIFF(MONTH, '2020-01-15', '2023-06-20')"),
+    ("snowflake", "DATEDIFF(QUARTER, '2020-01-15', '2023-06-20')"),
+    ("snowflake", "DATEDIFF(NANOSECOND, '2023-01-01 10:00:00.000000000', '2023-01-01 10:00:00.123456789')"),
+    ("snowflake", "DATEDIFF(NANOSECOND, start_time, end_time)"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
