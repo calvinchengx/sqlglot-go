@@ -686,6 +686,7 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", 'SELECT PARSE_JSON(\'{"food":{"fruit":"banana"}}\'):food.fruit::VARCHAR'),
     ("snowflake", 'SELECT PARSE_JSON(\'{"fruit":"banana"}\'):fruit'),
     ("snowflake", 'SELECT PARSE_JSON(\'{"a": {"b c": "foo"}}\'):a:"b c"'),
+    ("snowflake", 'SELECT v:"fruit" FROM vartab'),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:

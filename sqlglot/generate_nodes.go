@@ -3130,7 +3130,7 @@ func (g *generator) writeJSONPath(e *Expression) string {
 			// where the arrow form does not, so a bare-looking name is only
 			// bare when nothing says otherwise.
 			quoted, hasFlag := part.Args["quoted"].(bool)
-			if (hasFlag && quoted) || !isBareIdentifier(name) {
+			if bracketJSONPathKey(g.dialect, hasFlag, quoted, name) {
 				form = pieces.QuotedKey
 			}
 			body := name

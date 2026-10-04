@@ -42,6 +42,17 @@ func snowflakeJSONRequired(dialect string) bool {
 	return dialect == "snowflake"
 }
 
+// bracketJSONPathKey reports a key written in brackets. A name that is
+// not an identifier always is. A quoted identifier is too, except in
+// Snowflake, where a safe name stays a dotted segment: store['bicycle']
+// is store.bicycle inside GET_PATH.
+func bracketJSONPathKey(dialect string, hasFlag, quoted bool, name string) bool {
+	if dialect == "snowflake" && isBareIdentifier(name) {
+		return false
+	}
+	return (hasFlag && quoted) || !isBareIdentifier(name)
+}
+
 // variantPathContinues reports another segment of the same path. A dot
 // or a subscript does that everywhere. Snowflake also chains colons:
 // `a:b:c` is one path, not an extraction of an extraction.
