@@ -801,6 +801,10 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "DATEDIFF(QUARTER, '2020-01-15', '2023-06-20')"),
     ("snowflake", "DATEDIFF(NANOSECOND, '2023-01-01 10:00:00.000000000', '2023-01-01 10:00:00.123456789')"),
     ("snowflake", "DATEDIFF(NANOSECOND, start_time, end_time)"),
+    ("snowflake", "CREATE OR REPLACE TEMPORARY TABLE x (y NUMBER IDENTITY(0, 1))"),
+    ("snowflake", "CREATE TEMPORARY TABLE x (y NUMBER AUTOINCREMENT(0, 1))"),
+    ("snowflake", "CREATE TABLE x (y NUMBER IDENTITY START 0 INCREMENT 1)"),
+    ("snowflake", "CREATE TABLE test_table (id NUMERIC NOT NULL AUTOINCREMENT)"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
