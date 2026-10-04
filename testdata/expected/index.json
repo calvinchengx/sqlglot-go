@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6651,
+ "count": 6652,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33256,6 +33256,11 @@
    "key": "423b8b1fd487cbb0",
    "dialect": "oracle",
    "sql": "SELECT\n  *\nFROM JSON_TABLE(res, '$.info[*]' COLUMNS(\n  tempid NUMBER PATH '$.tempid',\n  NESTED PATH '$.calid[*]' COLUMNS(last_dt PATH '$.last_dt ')\n)) src"
+  },
+  {
+   "key": "c8650ab7042fb3e8",
+   "dialect": "oracle",
+   "sql": "SELECT JSON_OBJECTAGG(KEY department_name VALUE department_id) FROM dep WHERE id <= 30"
   }
  ]
 }

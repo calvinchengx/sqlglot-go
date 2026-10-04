@@ -310,6 +310,7 @@ ORACLE_CORPUS: tuple[tuple[str, str], ...] = (
     ("oracle", "SELECT JSON_ARRAY(FOO() FORMAT JSON, BAR() NULL ON NULL RETURNING CLOB STRICT)"),
     ("oracle", "SELECT * FROM JSON_TABLE(foo FORMAT JSON, 'bla' ERROR ON ERROR NULL ON EMPTY COLUMNS foo PATH 'bar')"),
     ("oracle", "SELECT\n  *\nFROM JSON_TABLE(res, '$.info[*]' COLUMNS(\n  tempid NUMBER PATH '$.tempid',\n  NESTED PATH '$.calid[*]' COLUMNS(last_dt PATH '$.last_dt ')\n)) src"),
+    ("oracle", "SELECT JSON_OBJECTAGG(KEY department_name VALUE department_id) FROM dep WHERE id <= 30"),
 )
 
 

@@ -57,7 +57,7 @@ var specialConstruction = map[string]bool{
 func (p *parser) parseExpression() (*Expression, error) { return p.parseExpressionAfterDAX() }
 
 func (p *parser) parseAssignment() (*Expression, error) {
-	this, err := p.parseDisjunction()
+	this, err := p.disjunctionOrObjectAgg()
 	if err != nil {
 		return nil, err
 	}
