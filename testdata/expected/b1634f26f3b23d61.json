@@ -1,0 +1,445 @@
+{
+ "dialect": "snowflake",
+ "rendered": "CREATE OR REPLACE FUNCTION ibis_udfs.public.object_values(\"obj\" OBJECT) RETURNS ARRAY LANGUAGE JAVASCRIPT RETURNS NULL ON NULL INPUT AS ' return Object.values(obj) '",
+ "sql": "CREATE OR REPLACE FUNCTION ibis_udfs.public.object_values(\"obj\" OBJECT) RETURNS ARRAY LANGUAGE JAVASCRIPT RETURNS NULL ON NULL INPUT AS ' return Object.values(obj) '",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 7,
+   "t": "OR",
+   "x": "OR"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 10,
+   "t": "REPLACE",
+   "x": "REPLACE"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 18,
+   "t": "FUNCTION",
+   "x": "FUNCTION"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "ibis_udfs"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 37,
+   "t": "VAR",
+   "x": "public"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "object_values"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 57,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 58,
+   "t": "IDENTIFIER",
+   "x": "obj"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 64,
+   "t": "OBJECT",
+   "x": "OBJECT"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 70,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 72,
+   "t": "VAR",
+   "x": "RETURNS"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 80,
+   "t": "ARRAY",
+   "x": "ARRAY"
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 86,
+   "t": "VAR",
+   "x": "LANGUAGE"
+  },
+  {
+   "c": 105,
+   "e": 104,
+   "l": 1,
+   "s": 95,
+   "t": "VAR",
+   "x": "JAVASCRIPT"
+  },
+  {
+   "c": 113,
+   "e": 112,
+   "l": 1,
+   "s": 106,
+   "t": "VAR",
+   "x": "RETURNS"
+  },
+  {
+   "c": 118,
+   "e": 117,
+   "l": 1,
+   "s": 114,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 121,
+   "e": 120,
+   "l": 1,
+   "s": 119,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 126,
+   "e": 125,
+   "l": 1,
+   "s": 122,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 132,
+   "e": 131,
+   "l": 1,
+   "s": 127,
+   "t": "VAR",
+   "x": "INPUT"
+  },
+  {
+   "c": 135,
+   "e": 134,
+   "l": 1,
+   "s": 133,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 165,
+   "e": 164,
+   "l": 1,
+   "s": 136,
+   "t": "STRING",
+   "x": " return Object.values(obj) "
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.ddl.UserDefinedFunction",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "object_values"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "db",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "public"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "catalog",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "ibis_udfs"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 58
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "obj"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 12,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 16,
+   "k": "this",
+   "v": "OBJECT"
+  },
+  {
+   "i": 16,
+   "k": "nested",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "wrapped",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "FUNCTION"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 165,
+    "end": 164,
+    "line": 1,
+    "start": 136
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": " return Object.values(obj) "
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.ReturnsProperty",
+   "i": 28,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 29,
+   "k": "this"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 30,
+   "k": "this",
+   "v": "ARRAY"
+  },
+  {
+   "i": 30,
+   "k": "nested",
+   "v": true
+  },
+  {
+   "i": 29,
+   "k": "is_table",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.LanguageProperty",
+   "i": 28,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 34,
+   "k": "this"
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "JAVASCRIPT"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.ReturnsProperty",
+   "i": 28,
+   "k": "expressions"
+  },
+  {
+   "i": 37,
+   "k": "is_table",
+   "v": false
+  },
+  {
+   "i": 37,
+   "k": "null",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "begin",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

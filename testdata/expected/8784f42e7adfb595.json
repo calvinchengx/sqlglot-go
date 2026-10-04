@@ -1,0 +1,71 @@
+{
+ "dialect": "snowflake",
+ "rendered": "TO_FILE('file.csv')",
+ "sql": "TO_FILE('file.csv')",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "TO_FILE"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 8,
+   "t": "STRING",
+   "x": "file.csv"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.string.ToFile",
+   "m": {
+    "col": 7,
+    "end": 6,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "file.csv"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

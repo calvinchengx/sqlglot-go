@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6652,
+ "count": 7011,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33261,6 +33261,1801 @@
    "key": "c8650ab7042fb3e8",
    "dialect": "oracle",
    "sql": "SELECT JSON_OBJECTAGG(KEY department_name VALUE department_id) FROM dep WHERE id <= 30"
+  },
+  {
+   "key": "e3c84ca65337947a",
+   "dialect": "snowflake",
+   "sql": "SELECT session"
+  },
+  {
+   "key": "e81b39ef36146855",
+   "dialect": "snowflake",
+   "sql": "SELECT HASH_AGG(a, b, c, d)"
+  },
+  {
+   "key": "20c22a93f3fc5c6a",
+   "dialect": "snowflake",
+   "sql": "SELECT MAX(x)"
+  },
+  {
+   "key": "53e3f6da0397294b",
+   "dialect": "snowflake",
+   "sql": "SELECT COUNT(x)"
+  },
+  {
+   "key": "0fd0d91661b0d77c",
+   "dialect": "snowflake",
+   "sql": "SELECT MIN(amount)"
+  },
+  {
+   "key": "ba52b2eb8fa86412",
+   "dialect": "snowflake",
+   "sql": "SELECT MODE(x)"
+  },
+  {
+   "key": "3584f77094711e59",
+   "dialect": "snowflake",
+   "sql": "SELECT MODE(status) OVER (PARTITION BY region) FROM orders"
+  },
+  {
+   "key": "19b44dbb4db22dde",
+   "dialect": "snowflake",
+   "sql": "SELECT MODE(x) FROM t"
+  },
+  {
+   "key": "34f025dcbc4b611e",
+   "dialect": "snowflake",
+   "sql": "SELECT TAN(x)"
+  },
+  {
+   "key": "b3e1199a89223188",
+   "dialect": "snowflake",
+   "sql": "SELECT COS(x)"
+  },
+  {
+   "key": "9330890fd1369cb9",
+   "dialect": "snowflake",
+   "sql": "SELECT SINH(1.5)"
+  },
+  {
+   "key": "a179f5bcc0cda3ab",
+   "dialect": "snowflake",
+   "sql": "SELECT MOD(x, y)"
+  },
+  {
+   "key": "9bb212a24e2c4a7b",
+   "dialect": "snowflake",
+   "sql": "SELECT FLOOR(x)"
+  },
+  {
+   "key": "ba311c4152d501cd",
+   "dialect": "snowflake",
+   "sql": "SELECT FLOOR(135.135, 1)"
+  },
+  {
+   "key": "3112b82aae2ef261",
+   "dialect": "snowflake",
+   "sql": "SELECT FLOOR(x, -1)"
+  },
+  {
+   "key": "9935e6f78c967d80",
+   "dialect": "snowflake",
+   "sql": "SELECT APPROX_TOP_K(category, 3) FROM t"
+  },
+  {
+   "key": "7bbdaf98956c4878",
+   "dialect": "snowflake",
+   "sql": "SELECT MINHASH(5, col)"
+  },
+  {
+   "key": "1da83afb5bfa51df",
+   "dialect": "snowflake",
+   "sql": "SELECT MINHASH(5, col1, col2)"
+  },
+  {
+   "key": "08a2a87d89394076",
+   "dialect": "snowflake",
+   "sql": "SELECT MINHASH(5, *)"
+  },
+  {
+   "key": "5addb2fe01edb343",
+   "dialect": "snowflake",
+   "sql": "SELECT MINHASH_COMBINE(minhash_col)"
+  },
+  {
+   "key": "dfd6bb96b3264acd",
+   "dialect": "snowflake",
+   "sql": "SELECT APPROXIMATE_SIMILARITY(minhash_col)"
+  },
+  {
+   "key": "66f52160225a9eae",
+   "dialect": "snowflake",
+   "sql": "SELECT APPROXIMATE_JACCARD_INDEX(minhash_col)"
+  },
+  {
+   "key": "429f9c2407d2769a",
+   "dialect": "snowflake",
+   "sql": "SELECT APPROX_PERCENTILE_ACCUMULATE(col)"
+  },
+  {
+   "key": "97b1a3cf1ad9af86",
+   "dialect": "snowflake",
+   "sql": "SELECT APPROX_PERCENTILE_ESTIMATE(state, 0.5)"
+  },
+  {
+   "key": "02ab70a4f1d7b931",
+   "dialect": "snowflake",
+   "sql": "SELECT APPROX_TOP_K_ACCUMULATE(col, 10)"
+  },
+  {
+   "key": "03a58d6c28a83ce2",
+   "dialect": "snowflake",
+   "sql": "SELECT APPROX_TOP_K_COMBINE(state, 2)"
+  },
+  {
+   "key": "8a76a115b4424214",
+   "dialect": "snowflake",
+   "sql": "SELECT APPROX_TOP_K_COMBINE(state)"
+  },
+  {
+   "key": "01aa843b7dad8d47",
+   "dialect": "snowflake",
+   "sql": "SELECT APPROX_TOP_K_ESTIMATE(state_column, 4)"
+  },
+  {
+   "key": "0327533c35687a82",
+   "dialect": "snowflake",
+   "sql": "SELECT APPROX_TOP_K_ESTIMATE(state_column)"
+  },
+  {
+   "key": "dc229f58235b19f6",
+   "dialect": "snowflake",
+   "sql": "SELECT APPROX_PERCENTILE_COMBINE(state_column)"
+  },
+  {
+   "key": "0fd92ce08f946770",
+   "dialect": "snowflake",
+   "sql": "SELECT EQUAL_NULL(1, 2)"
+  },
+  {
+   "key": "46bac341ec999846",
+   "dialect": "snowflake",
+   "sql": "SELECT EXP(1)"
+  },
+  {
+   "key": "90543c72f4f9f6e1",
+   "dialect": "snowflake",
+   "sql": "SELECT FACTORIAL(5)"
+  },
+  {
+   "key": "b91edbc49b64ef02",
+   "dialect": "snowflake",
+   "sql": "SELECT BIT_LENGTH('abc')"
+  },
+  {
+   "key": "111f947b733cb2f7",
+   "dialect": "snowflake",
+   "sql": "SELECT BITMAP_BIT_POSITION(10)"
+  },
+  {
+   "key": "2707b38d271e2ad7",
+   "dialect": "snowflake",
+   "sql": "SELECT BITMAP_BUCKET_NUMBER(32769)"
+  },
+  {
+   "key": "503db2e2b0950e5d",
+   "dialect": "snowflake",
+   "sql": "SELECT BITMAP_CONSTRUCT_AGG(value)"
+  },
+  {
+   "key": "f4ac35e4106a31e0",
+   "dialect": "snowflake",
+   "sql": "SELECT BITMAP_CONSTRUCT_AGG(v) FROM t"
+  },
+  {
+   "key": "098d353c1e163f39",
+   "dialect": "snowflake",
+   "sql": "SELECT TO_BOOLEAN('true')"
+  },
+  {
+   "key": "302d36f964112668",
+   "dialect": "snowflake",
+   "sql": "SELECT TO_BOOLEAN(1)"
+  },
+  {
+   "key": "f14c48b944dcc1fa",
+   "dialect": "snowflake",
+   "sql": "SELECT TO_VARIANT(123)"
+  },
+  {
+   "key": "5c8a4f1a0f9734a9",
+   "dialect": "snowflake",
+   "sql": "SELECT RTRIMMED_LENGTH(' ABCD ')"
+  },
+  {
+   "key": "bb0455dfb346da29",
+   "dialect": "snowflake",
+   "sql": "SELECT HEX_DECODE_STRING('48656C6C6F')"
+  },
+  {
+   "key": "e40d5e7845312306",
+   "dialect": "snowflake",
+   "sql": "SELECT IFNULL(col1, col2)"
+  },
+  {
+   "key": "8c9a9860956b34fe",
+   "dialect": "snowflake",
+   "sql": "SELECT NEXT_DAY('2025-10-15', 'FRIDAY')"
+  },
+  {
+   "key": "efd1730f011e5772",
+   "dialect": "snowflake",
+   "sql": "SELECT NVL2(col1, col2, col3)"
+  },
+  {
+   "key": "e5a828c4eee3e7ed",
+   "dialect": "snowflake",
+   "sql": "SELECT NVL(col1, col2)"
+  },
+  {
+   "key": "8c7f0bb545764b83",
+   "dialect": "snowflake",
+   "sql": "SELECT CHR(8364)"
+  },
+  {
+   "key": "eaabf19d2424b2c7",
+   "dialect": "snowflake",
+   "sql": "SELECT CHECK_JSON(x)"
+  },
+  {
+   "key": "bb1380a5ef64e59f",
+   "dialect": "snowflake",
+   "sql": "SELECT CHECK_JSON('{\"key\": \"value\"}')"
+  },
+  {
+   "key": "352005f21e4b257a",
+   "dialect": "snowflake",
+   "sql": "SELECT CHECK_XML('<root><key attribute=\"attr\">value</key></root>')"
+  },
+  {
+   "key": "977f3e823524a714",
+   "dialect": "snowflake",
+   "sql": "SELECT CHECK_XML('<root><key attribute=\"attr\">value</key></root>', TRUE)"
+  },
+  {
+   "key": "b7f6dc8ddadb6a08",
+   "dialect": "snowflake",
+   "sql": "SELECT COMPRESS('Hello World', 'ZLIB')"
+  },
+  {
+   "key": "d0af30eca3640929",
+   "dialect": "snowflake",
+   "sql": "SELECT DECOMPRESS_BINARY('compressed_data', 'SNAPPY')"
+  },
+  {
+   "key": "62c8d39cc9df04c9",
+   "dialect": "snowflake",
+   "sql": "SELECT DECOMPRESS_STRING('compressed_data', 'ZSTD')"
+  },
+  {
+   "key": "b3112f0894e4dde9",
+   "dialect": "snowflake",
+   "sql": "SELECT LPAD('Hello', 10, '*')"
+  },
+  {
+   "key": "1d1afda98b8ce336",
+   "dialect": "snowflake",
+   "sql": "SELECT LPAD(tbl.bin_col, 10)"
+  },
+  {
+   "key": "e6c274c5621389b7",
+   "dialect": "snowflake",
+   "sql": "SELECT RPAD('Hello', 10, '*')"
+  },
+  {
+   "key": "b435115a1125a46d",
+   "dialect": "snowflake",
+   "sql": "SELECT RPAD(tbl.bin_col, 10)"
+  },
+  {
+   "key": "027772516c880ae4",
+   "dialect": "snowflake",
+   "sql": "SELECT RPAD('test', 10, 'ab')"
+  },
+  {
+   "key": "8454eb0ed5258987",
+   "dialect": "snowflake",
+   "sql": "SELECT RPAD('data', 8)"
+  },
+  {
+   "key": "b2bfdb5a85f3e2ef",
+   "dialect": "snowflake",
+   "sql": "SELECT RPAD('exact', 5, '*')"
+  },
+  {
+   "key": "85b63680709c1ef2",
+   "dialect": "snowflake",
+   "sql": "SELECT RPAD(TO_BINARY('Hi', 'UTF8'), 10, TO_BINARY('_', 'UTF8'))"
+  },
+  {
+   "key": "cb97817a813002d9",
+   "dialect": "snowflake",
+   "sql": "SELECT SOUNDEX(column_name)"
+  },
+  {
+   "key": "6693436ff14f5327",
+   "dialect": "snowflake",
+   "sql": "SELECT SOUNDEX_P123(column_name)"
+  },
+  {
+   "key": "dffc4b0e80eae376",
+   "dialect": "snowflake",
+   "sql": "SELECT ABS(x)"
+  },
+  {
+   "key": "dd9aa1129302246b",
+   "dialect": "snowflake",
+   "sql": "SELECT ASIN(0.5)"
+  },
+  {
+   "key": "e1605b90f503b423",
+   "dialect": "snowflake",
+   "sql": "SELECT ASINH(0.5)"
+  },
+  {
+   "key": "c186ed5ccb5876b9",
+   "dialect": "snowflake",
+   "sql": "SELECT ATAN(0.5)"
+  },
+  {
+   "key": "04a6731708e745d6",
+   "dialect": "snowflake",
+   "sql": "SELECT ATAN2(0.5, 0.3)"
+  },
+  {
+   "key": "fc3f0387d44d71f9",
+   "dialect": "snowflake",
+   "sql": "SELECT ATANH(0.5)"
+  },
+  {
+   "key": "73b97a7d80a85b8d",
+   "dialect": "snowflake",
+   "sql": "SELECT CBRT(27.0)"
+  },
+  {
+   "key": "b4414131798be5af",
+   "dialect": "snowflake",
+   "sql": "SELECT POW(2, 3)"
+  },
+  {
+   "key": "7eae544effa6a777",
+   "dialect": "snowflake",
+   "sql": "SELECT POW(2.5, 3.0)"
+  },
+  {
+   "key": "92cc153d923f2ef3",
+   "dialect": "snowflake",
+   "sql": "SELECT SIGN(x)"
+  },
+  {
+   "key": "411a58e054eac143",
+   "dialect": "snowflake",
+   "sql": "SELECT COSH(1.5)"
+  },
+  {
+   "key": "37bf842875f92b52",
+   "dialect": "snowflake",
+   "sql": "SELECT TANH(0.5)"
+  },
+  {
+   "key": "64ec6997a0179d33",
+   "dialect": "snowflake",
+   "sql": "SELECT TRANSLATE(column_name, 'abc', '123')"
+  },
+  {
+   "key": "cf446199629e18fc",
+   "dialect": "snowflake",
+   "sql": "SELECT WIDTH_BUCKET(col, 0, 100, 10)"
+  },
+  {
+   "key": "09d721235a893a22",
+   "dialect": "snowflake",
+   "sql": "SELECT PI()"
+  },
+  {
+   "key": "755a7787e58c2cc5",
+   "dialect": "snowflake",
+   "sql": "SELECT DEGREES(PI() / 3)"
+  },
+  {
+   "key": "d0450cf5e03739aa",
+   "dialect": "snowflake",
+   "sql": "SELECT DEGREES(1)"
+  },
+  {
+   "key": "5480726adcf896d3",
+   "dialect": "snowflake",
+   "sql": "SELECT RADIANS(180)"
+  },
+  {
+   "key": "13510cfbbb8207ef",
+   "dialect": "snowflake",
+   "sql": "SELECT REGR_VALX(y, x)"
+  },
+  {
+   "key": "c38c0d337bf12ff3",
+   "dialect": "snowflake",
+   "sql": "SELECT REGR_VALY(y, x)"
+  },
+  {
+   "key": "efa398eda02a4ddf",
+   "dialect": "snowflake",
+   "sql": "SELECT REGR_AVGX(y, x)"
+  },
+  {
+   "key": "5dfc7e4b22253271",
+   "dialect": "snowflake",
+   "sql": "SELECT REGR_AVGY(y, x)"
+  },
+  {
+   "key": "549c9e37be494f7e",
+   "dialect": "snowflake",
+   "sql": "SELECT REGR_COUNT(y, x)"
+  },
+  {
+   "key": "e3d46e321b3cb750",
+   "dialect": "snowflake",
+   "sql": "SELECT REGR_INTERCEPT(y, x)"
+  },
+  {
+   "key": "fccdb9b79f1c101a",
+   "dialect": "snowflake",
+   "sql": "SELECT REGR_R2(y, x)"
+  },
+  {
+   "key": "d984db98b52eae78",
+   "dialect": "snowflake",
+   "sql": "SELECT REGR_SXX(y, x)"
+  },
+  {
+   "key": "b86fcf0e9d688f9a",
+   "dialect": "snowflake",
+   "sql": "SELECT REGR_SXY(y, x)"
+  },
+  {
+   "key": "16389dac93b34308",
+   "dialect": "snowflake",
+   "sql": "SELECT REGR_SYY(y, x)"
+  },
+  {
+   "key": "9b028994a7702164",
+   "dialect": "snowflake",
+   "sql": "SELECT REGR_SLOPE(y, x)"
+  },
+  {
+   "key": "34b95015da8741ab",
+   "dialect": "snowflake",
+   "sql": "SELECT IS_ARRAY(PARSE_JSON('[1,2,3]'))"
+  },
+  {
+   "key": "92bfd169e85ff94b",
+   "dialect": "snowflake",
+   "sql": "SELECT VAR_SAMP(x)"
+  },
+  {
+   "key": "380f7b56588d449f",
+   "dialect": "snowflake",
+   "sql": "SELECT VAR_POP(x)"
+  },
+  {
+   "key": "c6bf642c3869d8c2",
+   "dialect": "snowflake",
+   "sql": "SELECT RANDSTR(123, 456)"
+  },
+  {
+   "key": "107972fc72a7d903",
+   "dialect": "snowflake",
+   "sql": "IS_NULL_VALUE(x)"
+  },
+  {
+   "key": "2f7ea7d9c5d3bf7e",
+   "dialect": "snowflake",
+   "sql": "SELECT RANDSTR(10, 123)"
+  },
+  {
+   "key": "7cfc6514bffed5cd",
+   "dialect": "snowflake",
+   "sql": "SELECT ZIPF(1, 10, 1234)"
+  },
+  {
+   "key": "415899c3e2766b76",
+   "dialect": "snowflake",
+   "sql": "SELECT GROUPING_ID(a, b) AS g_id FROM x GROUP BY ROLLUP (a, b)"
+  },
+  {
+   "key": "03b1b3e42437c922",
+   "dialect": "snowflake",
+   "sql": "PARSE_URL('https://example.com/path')"
+  },
+  {
+   "key": "f48e9abc01343794",
+   "dialect": "snowflake",
+   "sql": "SELECT XMLGET(object_col, 'level2')"
+  },
+  {
+   "key": "354aa83d3ff85296",
+   "dialect": "snowflake",
+   "sql": "SELECT XMLGET(object_col, 'level3', 1)"
+  },
+  {
+   "key": "6cd6cb48a5f18a0b",
+   "dialect": "snowflake",
+   "sql": "SELECT a, b, COUNT(*) FROM x GROUP BY ALL LIMIT 100"
+  },
+  {
+   "key": "18c8a0da69b05b7e",
+   "dialect": "snowflake",
+   "sql": "STRTOK_TO_ARRAY('a.b.c', '.')"
+  },
+  {
+   "key": "e2700bfa57bc06a3",
+   "dialect": "snowflake",
+   "sql": "INTERVAL '4 years, 5 months, 3 hours'"
+  },
+  {
+   "key": "53b803a15b1673f2",
+   "dialect": "snowflake",
+   "sql": "SELECT rename, replace"
+  },
+  {
+   "key": "1e52ac2e6d1fa0fb",
+   "dialect": "snowflake",
+   "sql": "SELECT TO_TIMESTAMP(x) FROM t"
+  },
+  {
+   "key": "71bb6d4178576844",
+   "dialect": "snowflake",
+   "sql": "SELECT TO_TIMESTAMP_NTZ(x) FROM t"
+  },
+  {
+   "key": "c47f2fc571f1e4f4",
+   "dialect": "snowflake",
+   "sql": "SELECT TO_TIMESTAMP_LTZ(x) FROM t"
+  },
+  {
+   "key": "e88faba822938230",
+   "dialect": "snowflake",
+   "sql": "SELECT TO_TIMESTAMP_TZ(x) FROM t"
+  },
+  {
+   "key": "f23c02fb0f48ba14",
+   "dialect": "snowflake",
+   "sql": "TO_DECFLOAT('123.456')"
+  },
+  {
+   "key": "d2cd152c04e3ead1",
+   "dialect": "snowflake",
+   "sql": "TO_DECFLOAT('1,234.56', '999,999.99')"
+  },
+  {
+   "key": "01d4fa892c744be2",
+   "dialect": "snowflake",
+   "sql": "TRY_TO_DECFLOAT('123.456')"
+  },
+  {
+   "key": "1225d459258901f2",
+   "dialect": "snowflake",
+   "sql": "TRY_TO_DECFLOAT('1,234.56', '999,999.99')"
+  },
+  {
+   "key": "7d861c4771ae6044",
+   "dialect": "snowflake",
+   "sql": "TO_FILE(object_col)"
+  },
+  {
+   "key": "8784f42e7adfb595",
+   "dialect": "snowflake",
+   "sql": "TO_FILE('file.csv')"
+  },
+  {
+   "key": "87407a2c93dd2b03",
+   "dialect": "snowflake",
+   "sql": "TO_FILE('file.csv', 'relativepath/')"
+  },
+  {
+   "key": "921bab7560cc1319",
+   "dialect": "snowflake",
+   "sql": "ALTER TABLE authors ADD CONSTRAINT c1 UNIQUE (id, email)"
+  },
+  {
+   "key": "1d7b90ebb94c7528",
+   "dialect": "snowflake",
+   "sql": "SELECT TIMESTAMP_FROM_PARTS(2024, 5, 9, 14, 30, 45)"
+  },
+  {
+   "key": "da0f754e2075d370",
+   "dialect": "snowflake",
+   "sql": "SELECT TIMESTAMP_FROM_PARTS(2024, 5, 9, 14, 30, 45, 123)"
+  },
+  {
+   "key": "6969e04f911cb42c",
+   "dialect": "snowflake",
+   "sql": "SELECT TIMESTAMP_LTZ_FROM_PARTS(2013, 4, 5, 12, 00, 00)"
+  },
+  {
+   "key": "38c2d91188d845ba",
+   "dialect": "snowflake",
+   "sql": "SELECT TIMESTAMP_TZ_FROM_PARTS(2013, 4, 5, 12, 00, 00)"
+  },
+  {
+   "key": "968c9b6bbea89699",
+   "dialect": "snowflake",
+   "sql": "SELECT TIMESTAMP_TZ_FROM_PARTS(2013, 4, 5, 12, 00, 00, 0, 'America/Los_Angeles')"
+  },
+  {
+   "key": "08d4cb2cfb0db816",
+   "dialect": "snowflake",
+   "sql": "SELECT ARRAY_UNIQUE_AGG(x)"
+  },
+  {
+   "key": "c44958818d3333c1",
+   "dialect": "snowflake",
+   "sql": "SELECT ARRAY_UNIQUE_AGG(col) FROM t"
+  },
+  {
+   "key": "d5dcab0772d56ad9",
+   "dialect": "snowflake",
+   "sql": "SELECT ARRAY_UNIQUE_AGG(col) OVER (PARTITION BY grp) FROM t"
+  },
+  {
+   "key": "b147ab467bc145ca",
+   "dialect": "snowflake",
+   "sql": "SELECT AI_AGG(review, 'Summarize the reviews')"
+  },
+  {
+   "key": "d34da2242ffc3923",
+   "dialect": "snowflake",
+   "sql": "SELECT AI_SUMMARIZE_AGG(review)"
+  },
+  {
+   "key": "3f7fb35736457f35",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_ACCOUNT()"
+  },
+  {
+   "key": "982325a9c8f13eed",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_ACCOUNT_NAME()"
+  },
+  {
+   "key": "3a6790b044a788f9",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_AVAILABLE_ROLES()"
+  },
+  {
+   "key": "a3e68a5667ddc5df",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_CLIENT()"
+  },
+  {
+   "key": "83353cf4963371af",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_IP_ADDRESS()"
+  },
+  {
+   "key": "4a984d334949bbc4",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_DATABASE()"
+  },
+  {
+   "key": "2b61396636b0f395",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_SCHEMAS()"
+  },
+  {
+   "key": "703d12d5aa0bbb75",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_SECONDARY_ROLES()"
+  },
+  {
+   "key": "1001352d34f412ec",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_SESSION()"
+  },
+  {
+   "key": "979ee87f98809f97",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_STATEMENT()"
+  },
+  {
+   "key": "00024f5b1ee39d1c",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_VERSION()"
+  },
+  {
+   "key": "3d3b0f5b8cdec69b",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_TRANSACTION()"
+  },
+  {
+   "key": "d684876a0e6d7527",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_WAREHOUSE()"
+  },
+  {
+   "key": "c6ddee3ff255b958",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_ORGANIZATION_USER()"
+  },
+  {
+   "key": "a149fb950c84eb2a",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_REGION()"
+  },
+  {
+   "key": "b515414f664ac043",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_ROLE()"
+  },
+  {
+   "key": "564d401bafbfa948",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_ROLE_TYPE()"
+  },
+  {
+   "key": "b85943a8408e14dc",
+   "dialect": "snowflake",
+   "sql": "SELECT DAY(CURRENT_TIMESTAMP())"
+  },
+  {
+   "key": "7442e84da3b09ac9",
+   "dialect": "snowflake",
+   "sql": "SELECT MONTH(CURRENT_TIMESTAMP())"
+  },
+  {
+   "key": "8b514ecc48598eb4",
+   "dialect": "snowflake",
+   "sql": "SELECT QUARTER(CURRENT_TIMESTAMP())"
+  },
+  {
+   "key": "58cc610e145d0581",
+   "dialect": "snowflake",
+   "sql": "SELECT WEEK(CURRENT_TIMESTAMP())"
+  },
+  {
+   "key": "8e23fb0bb618d86a",
+   "dialect": "snowflake",
+   "sql": "SELECT YEAR(CURRENT_TIMESTAMP())"
+  },
+  {
+   "key": "84c96bf79b26c80f",
+   "dialect": "snowflake",
+   "sql": "SELECT SUM(amount) FROM mytable GROUP BY ALL"
+  },
+  {
+   "key": "bbbdc6e1751c52d1",
+   "dialect": "snowflake",
+   "sql": "SELECT STDDEV(x)"
+  },
+  {
+   "key": "f4f074558a70215e",
+   "dialect": "snowflake",
+   "sql": "SELECT STDDEV(x) OVER (PARTITION BY 1)"
+  },
+  {
+   "key": "82c5d53531e31d9f",
+   "dialect": "snowflake",
+   "sql": "SELECT STDDEV_POP(x)"
+  },
+  {
+   "key": "3298b55f7b5c7e4f",
+   "dialect": "snowflake",
+   "sql": "SELECT STDDEV_POP(x) OVER (PARTITION BY 1)"
+  },
+  {
+   "key": "4d8dd3c5e5248703",
+   "dialect": "snowflake",
+   "sql": "SELECT KURTOSIS(x)"
+  },
+  {
+   "key": "4d2275cca7d59319",
+   "dialect": "snowflake",
+   "sql": "SELECT KURTOSIS(x) OVER (PARTITION BY 1)"
+  },
+  {
+   "key": "a70be83f7fca80fc",
+   "dialect": "snowflake",
+   "sql": "SELECT HLL(*)"
+  },
+  {
+   "key": "0132a0a38cf2abf0",
+   "dialect": "snowflake",
+   "sql": "SELECT HLL(a)"
+  },
+  {
+   "key": "df612ecc9f1817c5",
+   "dialect": "snowflake",
+   "sql": "SELECT HLL(DISTINCT t.a)"
+  },
+  {
+   "key": "1b0f25fff06d380d",
+   "dialect": "snowflake",
+   "sql": "SELECT HLL(a, b, c)"
+  },
+  {
+   "key": "cc7b8e737da864a3",
+   "dialect": "snowflake",
+   "sql": "SELECT HLL(DISTINCT a, b, c)"
+  },
+  {
+   "key": "c90a44ed5ebf6e33",
+   "dialect": "snowflake",
+   "sql": "a$b"
+  },
+  {
+   "key": "136a621b292d233b",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_ORGANIZATION_NAME()"
+  },
+  {
+   "key": "2abf698808d0b235",
+   "dialect": "snowflake",
+   "sql": "SELECT OBJECT_AGG(key, value) FROM tbl"
+  },
+  {
+   "key": "0ed6573387a10cb7",
+   "dialect": "snowflake",
+   "sql": "1 /* /* */"
+  },
+  {
+   "key": "620a010de217e731",
+   "dialect": "snowflake",
+   "sql": "SELECT PARSE_IP('192.168.1.1', 'INET')"
+  },
+  {
+   "key": "e4f90e6f0fd79e5a",
+   "dialect": "snowflake",
+   "sql": "SELECT PARSE_IP('192.168.1.1', 'INET', 0)"
+  },
+  {
+   "key": "f298e940b22857cd",
+   "dialect": "snowflake",
+   "sql": "SELECT a, exclude, b FROM xxx"
+  },
+  {
+   "key": "034b901656651f9e",
+   "dialect": "snowflake",
+   "sql": "SELECT BOOLXOR_AGG(col) FROM tbl"
+  },
+  {
+   "key": "67655d494c0291e6",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM table AT (TIMESTAMP => '2024-07-24') UNPIVOT(a FOR b IN (c)) AS pivot_table"
+  },
+  {
+   "key": "18928d7b1c0aa32e",
+   "dialect": "snowflake",
+   "sql": "MERGE INTO my_db AS ids USING (SELECT new_id FROM my_model WHERE NOT col IS NULL) AS new_ids ON ids.type = new_ids.type AND ids.source = new_ids.source WHEN NOT MATCHED THEN INSERT VALUES (new_ids.new_id)"
+  },
+  {
+   "key": "4cd29455e31dae88",
+   "dialect": "snowflake",
+   "sql": "WITH t (SELECT 1 AS c) SELECT c FROM t"
+  },
+  {
+   "key": "73a57a0d0df313f7",
+   "dialect": "snowflake",
+   "sql": "TO_GEOGRAPHY(x, y)"
+  },
+  {
+   "key": "a7cea9f98083ae69",
+   "dialect": "snowflake",
+   "sql": "TO_GEOMETRY(x, y)"
+  },
+  {
+   "key": "a4ea9cd57f79a5c0",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM s WHERE c NOT IN (1, 2, 3)"
+  },
+  {
+   "key": "fb189bd006095aad",
+   "dialect": "snowflake",
+   "sql": "SELECT state, city, SUM(retail_price * quantity) AS gross_revenue FROM sales GROUP BY ALL"
+  },
+  {
+   "key": "3abeb02903be782d",
+   "dialect": "snowflake",
+   "sql": "SELECT CEIL(3.14)"
+  },
+  {
+   "key": "e4cbc6d9ea5e3f38",
+   "dialect": "snowflake",
+   "sql": "SELECT CEIL(3.14, 1)"
+  },
+  {
+   "key": "b56bad43d32be8d8",
+   "dialect": "snowflake",
+   "sql": "CAST(x AS CHAR VARYING)"
+  },
+  {
+   "key": "f2dc37a98ac79197",
+   "dialect": "snowflake",
+   "sql": "CAST(x AS CHARACTER VARYING)"
+  },
+  {
+   "key": "f419e6e004c47842",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM xxx, yyy, zzz"
+  },
+  {
+   "key": "c5e47121b74e64d7",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM t1 AS t1 CROSS JOIN t2 AS t2 LEFT JOIN t3 AS t3 ON t1.a = t3.i"
+  },
+  {
+   "key": "6d228c83c94a65c6",
+   "dialect": "snowflake",
+   "sql": "ARRAY_CONSTRUCT_COMPACT(1, null, 2)"
+  },
+  {
+   "key": "c677f8ac3266a975",
+   "dialect": "snowflake",
+   "sql": "ARRAY_COMPACT(arr)"
+  },
+  {
+   "key": "c52bf09417091f42",
+   "dialect": "snowflake",
+   "sql": "SELECT TIMESTAMP_FROM_PARTS(2013, 4, 5, 12, 00, 00)"
+  },
+  {
+   "key": "51c6305a234834c5",
+   "dialect": "snowflake",
+   "sql": "SELECT TIMESTAMP_LTZ_FROM_PARTS(2023, 6, 15, 14, 30, 45)"
+  },
+  {
+   "key": "573aa10e91d55106",
+   "dialect": "snowflake",
+   "sql": "SELECT TIMESTAMP_TZ_FROM_PARTS(2023, 6, 15, 14, 30, 45, 0, 'America/Los_Angeles')"
+  },
+  {
+   "key": "9187b631c906563b",
+   "dialect": "snowflake",
+   "sql": "SELECT To_BOOLEAN('T')"
+  },
+  {
+   "key": "9414e11e8d100f86",
+   "dialect": "snowflake",
+   "sql": "SELECT NTH_VALUE(a, 2) FROM t"
+  },
+  {
+   "key": "2166e01833b28af6",
+   "dialect": "snowflake",
+   "sql": "SELECT NTH_VALUE(is_deleted, 2) OVER (PARTITION BY id ROWS BETWEEN 1 PRECEDING AND 1 FOLLOWING) AS nth_is_deleted FROM my_table"
+  },
+  {
+   "key": "1da4b4cf9d2235ba",
+   "dialect": "snowflake",
+   "sql": "SELECT LEAD(is_deleted, 2, -10) RESPECT NULLS OVER (PARTITION BY id) AS nth_is_deleted FROM my_table"
+  },
+  {
+   "key": "fe0d42fcefb984c2",
+   "dialect": "snowflake",
+   "sql": "SELECT LEAD(is_deleted, 2) OVER (PARTITION BY id) AS nth_is_deleted FROM my_table"
+  },
+  {
+   "key": "dbce8f39f377dfd7",
+   "dialect": "snowflake",
+   "sql": "SELECT BOOLXOR_AGG(c1) FROM test"
+  },
+  {
+   "key": "d00ece2da959d2f7",
+   "dialect": "snowflake",
+   "sql": "POWER(x, 2)"
+  },
+  {
+   "key": "25d16d0eae793048",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM a INTERSECT ALL SELECT * FROM b"
+  },
+  {
+   "key": "27715809efefed30",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM a EXCEPT ALL SELECT * FROM b"
+  },
+  {
+   "key": "6a8264d31e4ec148",
+   "dialect": "snowflake",
+   "sql": "SELECT ARRAY_UNION_AGG(a)"
+  },
+  {
+   "key": "bb85604443aef5c6",
+   "dialect": "snowflake",
+   "sql": "trim(date_column, 'UTC')"
+  },
+  {
+   "key": "6d436146c7f84f41",
+   "dialect": "snowflake",
+   "sql": "trim(date_column)"
+  },
+  {
+   "key": "dd692460afe0e091",
+   "dialect": "snowflake",
+   "sql": "MINHASH(100, col1)"
+  },
+  {
+   "key": "517bca3b025319ed",
+   "dialect": "snowflake",
+   "sql": "MINHASH(100, col1, col2)"
+  },
+  {
+   "key": "30e613967d752410",
+   "dialect": "snowflake",
+   "sql": "MINHASH(4, col1)"
+  },
+  {
+   "key": "765aafaafee1b6d7",
+   "dialect": "snowflake",
+   "sql": "MINHASH_COMBINE(sig_col)"
+  },
+  {
+   "key": "2a6067b3366d1be4",
+   "dialect": "snowflake",
+   "sql": "APPROXIMATE_SIMILARITY(sig_col)"
+  },
+  {
+   "key": "b065e7ef757b904f",
+   "dialect": "snowflake",
+   "sql": "SELECT CAST(1 AS DOUBLE), CAST(1 AS DOUBLE)"
+  },
+  {
+   "key": "4e641c689834dc44",
+   "dialect": "snowflake",
+   "sql": "LAST_DAY(CAST('2023-04-15' AS DATE))"
+  },
+  {
+   "key": "dc999f1efe11ff3e",
+   "dialect": "snowflake",
+   "sql": "SELECT ST_DISTANCE(a, b)"
+  },
+  {
+   "key": "57125f63a2472966",
+   "dialect": "snowflake",
+   "sql": "SELECT HOUR(CAST('08:50:57' AS TIME))"
+  },
+  {
+   "key": "f999990254b96031",
+   "dialect": "snowflake",
+   "sql": "SELECT MINUTE(CAST('08:50:57' AS TIME))"
+  },
+  {
+   "key": "1f37312ff610233a",
+   "dialect": "snowflake",
+   "sql": "SELECT SECOND(CAST('08:50:57' AS TIME))"
+  },
+  {
+   "key": "ea315ff9c228b011",
+   "dialect": "snowflake",
+   "sql": "SELECT HOUR(CAST('2024-05-09 08:50:57' AS TIMESTAMP))"
+  },
+  {
+   "key": "5a3290961dbd9251",
+   "dialect": "snowflake",
+   "sql": "SELECT PREVIOUS_DAY(CAST('2024-05-09' AS DATE), 'MONDAY')"
+  },
+  {
+   "key": "8b5045fd1af6ea3c",
+   "dialect": "snowflake",
+   "sql": "SELECT MONTHS_BETWEEN(CAST('2019-03-15' AS DATE), CAST('2019-02-15' AS DATE))"
+  },
+  {
+   "key": "7fddfeffb2b10635",
+   "dialect": "snowflake",
+   "sql": "SELECT MONTHS_BETWEEN(CAST('2019-03-01 02:00:00' AS TIMESTAMP), CAST('2019-02-15 01:00:00' AS TIMESTAMP))"
+  },
+  {
+   "key": "c3c7f13efe1912a0",
+   "dialect": "snowflake",
+   "sql": "SELECT BASE64_ENCODE('Hello World')"
+  },
+  {
+   "key": "b52ab4e1aab8705e",
+   "dialect": "snowflake",
+   "sql": "SELECT BASE64_ENCODE(x)"
+  },
+  {
+   "key": "c9ed3367ba39600c",
+   "dialect": "snowflake",
+   "sql": "SELECT BASE64_ENCODE(x, 76)"
+  },
+  {
+   "key": "4bab83cf1651f692",
+   "dialect": "snowflake",
+   "sql": "SELECT BASE64_ENCODE(x, 76, '+/=')"
+  },
+  {
+   "key": "dfaaa67c3c4e8371",
+   "dialect": "snowflake",
+   "sql": "SELECT BASE64_DECODE_STRING('U25vd2ZsYWtl')"
+  },
+  {
+   "key": "c1e58eca5581d286",
+   "dialect": "snowflake",
+   "sql": "SELECT BASE64_DECODE_STRING('U25vd2ZsYWtl', '-_+')"
+  },
+  {
+   "key": "9ca9e4786310461e",
+   "dialect": "snowflake",
+   "sql": "SELECT BASE64_DECODE_BINARY(x)"
+  },
+  {
+   "key": "e2d8bb012bf58de7",
+   "dialect": "snowflake",
+   "sql": "SELECT BASE64_DECODE_BINARY(x, '-_+')"
+  },
+  {
+   "key": "590dd361ea64bf5b",
+   "dialect": "snowflake",
+   "sql": "SELECT TRY_HEX_DECODE_BINARY('48656C6C6F')"
+  },
+  {
+   "key": "240397e0fa5f06aa",
+   "dialect": "snowflake",
+   "sql": "SELECT TRY_HEX_DECODE_STRING('48656C6C6F')"
+  },
+  {
+   "key": "bed07eba2bbd9011",
+   "dialect": "snowflake",
+   "sql": "UNIFORM(1, 10, 5)"
+  },
+  {
+   "key": "ae3238c328924518",
+   "dialect": "snowflake",
+   "sql": "NORMAL(0, 1, 42)"
+  },
+  {
+   "key": "a680822db37633d1",
+   "dialect": "snowflake",
+   "sql": "EQUAL_NULL(a, b)"
+  },
+  {
+   "key": "f56821187e6af1b0",
+   "dialect": "snowflake",
+   "sql": "SELECT CURRENT_SCHEMA()"
+  },
+  {
+   "key": "dc5d2ab192d05feb",
+   "dialect": "snowflake",
+   "sql": "SELECT 1 WHERE 'abc' ILIKE ANY('%a%')"
+  },
+  {
+   "key": "76e03299f6af3f67",
+   "dialect": "snowflake",
+   "sql": "SELECT 1 WHERE 'abc' LIKE ALL ('%a%')"
+  },
+  {
+   "key": "3738f9a55cc85722",
+   "dialect": "snowflake",
+   "sql": "SELECT 'he%lo' LIKE ANY ('he#%lo', 'hello') ESCAPE '#'"
+  },
+  {
+   "key": "44720b594af5362b",
+   "dialect": "snowflake",
+   "sql": "SELECT 'he%lo' LIKE ALL ('he#%lo', 'he#%lo2') ESCAPE '#'"
+  },
+  {
+   "key": "315e4bc43c5777ec",
+   "dialect": "snowflake",
+   "sql": "SELECT 'he%lo' ILIKE ANY ('he#%lo', 'hello') ESCAPE '#'"
+  },
+  {
+   "key": "4306b53da7c98e7a",
+   "dialect": "snowflake",
+   "sql": "SELECT 1 WHERE 'he%lo' LIKE ANY ('he#%lo', 'hello') ESCAPE '#' AND x = 1"
+  },
+  {
+   "key": "ca4b40ce5d24ac02",
+   "dialect": "snowflake",
+   "sql": "SELECT 1 WHERE 'he%lo' LIKE ALL ('he#%lo', 'he#%lo2') ESCAPE '#' OR x = 1"
+  },
+  {
+   "key": "0404d9cf70e2af94",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM t UNPIVOT(a FOR b IN (c, d)) UNPIVOT(e FOR f IN (g, h))"
+  },
+  {
+   "key": "f70827c8ec236234",
+   "dialect": "snowflake",
+   "sql": "SELECT CAST('12:00:00' AS TIME)"
+  },
+  {
+   "key": "c822502552825118",
+   "dialect": "snowflake",
+   "sql": "CAST(a AS TIMESTAMP_NTZ)"
+  },
+  {
+   "key": "cdf440c9fc1a09a5",
+   "dialect": "snowflake",
+   "sql": "CAST(a AS TIMESTAMP_LTZ)"
+  },
+  {
+   "key": "008cfa1d69678df8",
+   "dialect": "snowflake",
+   "sql": "SELECT a::TIMESTAMP_LTZ(9)"
+  },
+  {
+   "key": "7dc159d55840f96c",
+   "dialect": "snowflake",
+   "sql": "SELECT a::TIMESTAMPLTZ"
+  },
+  {
+   "key": "aab4478df9c46f86",
+   "dialect": "snowflake",
+   "sql": "SELECT a::TIMESTAMP WITH LOCAL TIME ZONE"
+  },
+  {
+   "key": "662d320258cf627e",
+   "dialect": "snowflake",
+   "sql": "DATE_TRUNC('YEAR', CAST('2024-06-15' AS DATE))"
+  },
+  {
+   "key": "5a90d87722ef2710",
+   "dialect": "snowflake",
+   "sql": "SELECT CAST(a AS VARIANT)"
+  },
+  {
+   "key": "4c920497886050ac",
+   "dialect": "snowflake",
+   "sql": "SELECT CAST(a AS ARRAY)"
+  },
+  {
+   "key": "f617dac2322f2194",
+   "dialect": "snowflake",
+   "sql": "SELECT a::VARIANT"
+  },
+  {
+   "key": "289e70e4af9061c6",
+   "dialect": "snowflake",
+   "sql": "SELECT a::OBJECT"
+  },
+  {
+   "key": "90daae0912b8f1c7",
+   "dialect": "snowflake",
+   "sql": "SELECT NEXT_DAY(CAST('2024-01-01' AS DATE), 'Monday')"
+  },
+  {
+   "key": "bd5b9ca5aa96b31b",
+   "dialect": "snowflake",
+   "sql": "SELECT NEXT_DAY(CAST('2024-01-05' AS DATE), 'Friday')"
+  },
+  {
+   "key": "3d6a75af2c5c7e9f",
+   "dialect": "snowflake",
+   "sql": "SELECT NEXT_DAY(CAST('2024-01-05' AS DATE), 'WE')"
+  },
+  {
+   "key": "f2ba7de39fb88ca8",
+   "dialect": "snowflake",
+   "sql": "SELECT NEXT_DAY(CAST('2024-01-01 10:30:45' AS TIMESTAMP), 'Friday')"
+  },
+  {
+   "key": "3410e8f3bd8e96b2",
+   "dialect": "snowflake",
+   "sql": "SELECT NEXT_DAY(CAST('2024-01-01' AS DATE), day_column)"
+  },
+  {
+   "key": "ee0ea3b6ddcd2f1a",
+   "dialect": "snowflake",
+   "sql": "SELECT PREVIOUS_DAY(DATE '2024-01-15', 'Monday')"
+  },
+  {
+   "key": "f0332253ef0f921b",
+   "dialect": "snowflake",
+   "sql": "SELECT PREVIOUS_DAY(DATE '2024-01-15', 'Fr')"
+  },
+  {
+   "key": "deebc666c1e4dde4",
+   "dialect": "snowflake",
+   "sql": "SELECT PREVIOUS_DAY(TIMESTAMP '2024-01-15 10:30:45', 'Monday')"
+  },
+  {
+   "key": "1d2be3f1d88711ab",
+   "dialect": "snowflake",
+   "sql": "SELECT PREVIOUS_DAY(DATE '2024-01-15', day_column)"
+  },
+  {
+   "key": "a5623ca34e6750de",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM my_table AT (OFFSET => -60 * 5)"
+  },
+  {
+   "key": "39fc92165ec7cf9c",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM my_table AT (STATEMENT => '8e5d0ca9-005e-44e6-b858-a8f5b37c5726')"
+  },
+  {
+   "key": "060d38d960f14a08",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM my_table AT (TIMESTAMP => 'Fri, 01 May 2015 16:20:00 -0700'::timestamp)"
+  },
+  {
+   "key": "a9579188fdd60163",
+   "dialect": "snowflake",
+   "sql": "CREATE SECURE VIEW table1 AS (SELECT a FROM table2)"
+  },
+  {
+   "key": "e35091f85d099432",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE geospatial_table (id INT, g GEOGRAPHY)"
+  },
+  {
+   "key": "0cbe4226da072ef6",
+   "dialect": "snowflake",
+   "sql": "CREATE SCHEMA mytestschema_clone CLONE testschema"
+  },
+  {
+   "key": "d06d0ecd27ace79a",
+   "dialect": "snowflake",
+   "sql": "CREATE OR REPLACE TABLE EXAMPLE_DB.DEMO.USERS (ID DECIMAL(38, 0) NOT NULL, PRIMARY KEY (ID), FOREIGN KEY (CITY_CODE) REFERENCES EXAMPLE_DB.DEMO.CITIES (CITY_CODE))"
+  },
+  {
+   "key": "0deb7724a513c66e",
+   "dialect": "snowflake",
+   "sql": "CREATE OR REPLACE FUNCTION ibis_udfs.public.object_values(\"obj\" OBJECT) RETURNS ARRAY LANGUAGE JAVASCRIPT STRICT AS ' return Object.values(obj) '"
+  },
+  {
+   "key": "0cd0502f14d55a69",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE orders_clone CLONE orders"
+  },
+  {
+   "key": "deb97e0c8b832d7f",
+   "dialect": "snowflake",
+   "sql": "CREATE OR REPLACE TRANSIENT TABLE a (id INT)"
+  },
+  {
+   "key": "e1b865320d8c3faf",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE a (b INT)"
+  },
+  {
+   "key": "b485350ebf57e6fb",
+   "dialect": "snowflake",
+   "sql": "CREATE FUNCTION a() RETURNS TABLE (b INT) AS 'SELECT 1'"
+  },
+  {
+   "key": "674133979b9b566b",
+   "dialect": "snowflake",
+   "sql": "CREATE FUNCTION a() RETURNS INT IMMUTABLE AS 'SELECT 1'"
+  },
+  {
+   "key": "216c106f065235e6",
+   "dialect": "snowflake",
+   "sql": "CALL a.b.c(x, y)"
+  },
+  {
+   "key": "1c90ab5632c89196",
+   "dialect": "snowflake",
+   "sql": "SELECT 1 EXCEPT SELECT 1"
+  },
+  {
+   "key": "2c8fd06792a78b3e",
+   "dialect": "snowflake",
+   "sql": "SELECT \"c0\", \"c1\" FROM (VALUES (1, 2), (3, 4)) AS \"t0\"(\"c0\", \"c1\")"
+  },
+  {
+   "key": "2e1cfd6cec20ee6f",
+   "dialect": "snowflake",
+   "sql": "SELECT SEARCH((play, line), 'dream')"
+  },
+  {
+   "key": "18745de1ccd8028c",
+   "dialect": "snowflake",
+   "sql": "SELECT SEARCH(line, 'king')"
+  },
+  {
+   "key": "1953414ca79eed2f",
+   "dialect": "snowflake",
+   "sql": "SELECT REGEXP_COUNT('hello world', 'l ')"
+  },
+  {
+   "key": "549ecc67d3ebcb7f",
+   "dialect": "snowflake",
+   "sql": "SELECT REGEXP_COUNT('hello world', 'l', 1)"
+  },
+  {
+   "key": "7d0a795b74538b62",
+   "dialect": "snowflake",
+   "sql": "SELECT REGEXP_COUNT('hello world', 'l', 1, 'i')"
+  },
+  {
+   "key": "fd6dfe232640b1c2",
+   "dialect": "snowflake",
+   "sql": "SELECT REGEXP_COUNT('hello', 'l')"
+  },
+  {
+   "key": "e03b4de7f03dee14",
+   "dialect": "snowflake",
+   "sql": "SELECT REGEXP_COUNT('hello world', 'l', 7)"
+  },
+  {
+   "key": "ddb923b5f7a1229d",
+   "dialect": "snowflake",
+   "sql": "SELECT REGEXP_COUNT('Hello World', 'L', 1, 'im')"
+  },
+  {
+   "key": "7acdd4a44ca3d009",
+   "dialect": "snowflake",
+   "sql": "SELECT REGEXP_COUNT(subject, pattern)"
+  },
+  {
+   "key": "95f14c85258462a8",
+   "dialect": "snowflake",
+   "sql": "SELECT REGEXP_INSTR('abc', 'a')"
+  },
+  {
+   "key": "9dbe797411f0a3e5",
+   "dialect": "snowflake",
+   "sql": "SELECT REGEXP_INSTR('abc', 'a', 1, 1, 0, 'i')"
+  },
+  {
+   "key": "25f16653c9d635d0",
+   "dialect": "snowflake",
+   "sql": "SELECT REGEXP_INSTR(subject, pattern)"
+  },
+  {
+   "key": "c5b7415ed8dd2a5c",
+   "dialect": "snowflake",
+   "sql": "SELECT REGEXP_INSTR(subject, pattern, 5)"
+  },
+  {
+   "key": "d12864554e34528e",
+   "dialect": "snowflake",
+   "sql": "SELECT REGEXP_INSTR(subject, pattern, 1, 2)"
+  },
+  {
+   "key": "7e96589fb14e31b7",
+   "dialect": "snowflake",
+   "sql": "SELECT REGEXP_INSTR(subject, pattern, 1, 1, 0, 'im')"
+  },
+  {
+   "key": "3d0589854cce3caf",
+   "dialect": "snowflake",
+   "sql": "REGEXP_REPLACE(subject, pattern, replacement)"
+  },
+  {
+   "key": "30e45f78808111e3",
+   "dialect": "snowflake",
+   "sql": "REGEXP_REPLACE(subject, pattern, replacement, position)"
+  },
+  {
+   "key": "70931ef08fde3cc4",
+   "dialect": "snowflake",
+   "sql": "REGEXP_REPLACE(subject, pattern, replacement, position, occurrence, 'c')"
+  },
+  {
+   "key": "6c5b9d03a5d2c081",
+   "dialect": "snowflake",
+   "sql": "REGEXP_REPLACE(subject, pattern, replacement, 1, 0, 'c')"
+  },
+  {
+   "key": "f431a3703dad5da2",
+   "dialect": "snowflake",
+   "sql": "REGEXP_REPLACE(subject, pattern, replacement, 1, 1)"
+  },
+  {
+   "key": "cab2a8d5c76f9185",
+   "dialect": "snowflake",
+   "sql": "REGEXP_REPLACE(subject, pattern, replacement, 3, 0)"
+  },
+  {
+   "key": "e43aed2dd1c6fb3f",
+   "dialect": "snowflake",
+   "sql": "REGEXP_REPLACE(subject, pattern, replacement, 3, 1)"
+  },
+  {
+   "key": "f72e781e841e3870",
+   "dialect": "snowflake",
+   "sql": "REGEXP_REPLACE(subject, pattern, replacement, 1, 0, 'i')"
+  },
+  {
+   "key": "61284ae713542299",
+   "dialect": "snowflake",
+   "sql": "REPLACE(subject, pattern, replacement)"
+  },
+  {
+   "key": "cd84ce1a4b3d84d2",
+   "dialect": "snowflake",
+   "sql": "CAST(5 + 5 AS VARCHAR)"
+  },
+  {
+   "key": "87e1ae224c5d1329",
+   "dialect": "snowflake",
+   "sql": "SELECT CAST(1.5 AS DECFLOAT)"
+  },
+  {
+   "key": "610d790cfe050e2e",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE t (x DECFLOAT)"
+  },
+  {
+   "key": "1e1582ad8cb7d4e8",
+   "dialect": "snowflake",
+   "sql": "CREATE OR REPLACE VIEW FOO (A, B) AS SELECT A, B FROM TBL"
+  },
+  {
+   "key": "4c33ed3eefe2fd24",
+   "dialect": "snowflake",
+   "sql": "CREATE OR REPLACE MATERIALIZED VIEW FOO (A, B) AS SELECT A, B FROM TBL"
+  },
+  {
+   "key": "247f3520d559da81",
+   "dialect": "snowflake",
+   "sql": "BITMAP_OR_AGG(x)"
+  },
+  {
+   "key": "d422d313db7fbf09",
+   "dialect": "snowflake",
+   "sql": "MD5(col)"
+  },
+  {
+   "key": "755ccc98f60167ff",
+   "dialect": "snowflake",
+   "sql": "SELECT GETBIT(11, 1)"
+  },
+  {
+   "key": "cb5a715f7969c2ed",
+   "dialect": "snowflake",
+   "sql": "GETBIT(11, 1)"
+  },
+  {
+   "key": "388734d998bcfb70",
+   "dialect": "snowflake",
+   "sql": "TO_BINARY('48454C50', 'HEX')"
+  },
+  {
+   "key": "8e4100c353696498",
+   "dialect": "snowflake",
+   "sql": "TO_BINARY('48454C50')"
+  },
+  {
+   "key": "a9ff88438ef630eb",
+   "dialect": "snowflake",
+   "sql": "TO_BINARY('TEST', 'UTF-8')"
+  },
+  {
+   "key": "4c6b307af299a61d",
+   "dialect": "snowflake",
+   "sql": "TO_BINARY('SEVMUA==', 'BASE64')"
+  },
+  {
+   "key": "a922fe55177c9d2a",
+   "dialect": "snowflake",
+   "sql": "REVERSE(TO_BINARY('ABC', 'UTF-8'))"
+  },
+  {
+   "key": "adb59fb4cd74625d",
+   "dialect": "snowflake",
+   "sql": "REVERSE(TO_BINARY('414243', 'HEX'))"
+  },
+  {
+   "key": "d0f81879f6090a42",
+   "dialect": "snowflake",
+   "sql": "REVERSE('ABC')"
+  },
+  {
+   "key": "2e4d9aeca4405ef9",
+   "dialect": "snowflake",
+   "sql": "SELECT FLOOR(1.753, 2)"
+  },
+  {
+   "key": "0946fa788f854dee",
+   "dialect": "snowflake",
+   "sql": "SELECT FLOOR(123.45, -1)"
+  },
+  {
+   "key": "c4087995cea73cc8",
+   "dialect": "snowflake",
+   "sql": "SELECT FLOOR(a + b, 2)"
+  },
+  {
+   "key": "2b57f9144dd477c9",
+   "dialect": "snowflake",
+   "sql": "SELECT FLOOR(1.234, 1.5)"
+  },
+  {
+   "key": "85f1bb7c48a0214d",
+   "dialect": "snowflake",
+   "sql": "SELECT SEQ1() FROM test"
+  },
+  {
+   "key": "bd08cdf15a43e178",
+   "dialect": "snowflake",
+   "sql": "SELECT SEQ1(0) FROM test"
+  },
+  {
+   "key": "9f885994865872ce",
+   "dialect": "snowflake",
+   "sql": "SELECT SEQ1(1) FROM test"
+  },
+  {
+   "key": "b61cf0ca56d60868",
+   "dialect": "snowflake",
+   "sql": "SELECT SEQ2() FROM test"
+  },
+  {
+   "key": "5083245d65d3b63a",
+   "dialect": "snowflake",
+   "sql": "SELECT SEQ2(0) FROM test"
+  },
+  {
+   "key": "27224eb15b2df63c",
+   "dialect": "snowflake",
+   "sql": "SELECT SEQ2(1) FROM test"
+  },
+  {
+   "key": "77a4908812d6011e",
+   "dialect": "snowflake",
+   "sql": "SELECT SEQ4() FROM test"
+  },
+  {
+   "key": "8d84859d3f14419e",
+   "dialect": "snowflake",
+   "sql": "SELECT SEQ4(0) FROM test"
+  },
+  {
+   "key": "47d64c72cc3c70d0",
+   "dialect": "snowflake",
+   "sql": "SELECT SEQ4(1) FROM test"
+  },
+  {
+   "key": "83c236a7e767864d",
+   "dialect": "snowflake",
+   "sql": "SELECT SEQ8() FROM test"
+  },
+  {
+   "key": "e91592da7627e96f",
+   "dialect": "snowflake",
+   "sql": "SELECT SEQ8(0) FROM test"
+  },
+  {
+   "key": "11d39972d37f00f3",
+   "dialect": "snowflake",
+   "sql": "SELECT SEQ8(1) FROM test"
+  },
+  {
+   "key": "7d17ca6b84c978cd",
+   "dialect": "snowflake",
+   "sql": "SELECT CEIL(1.753, 2)"
+  },
+  {
+   "key": "601640a5db8c6fe7",
+   "dialect": "snowflake",
+   "sql": "SELECT CEIL(123.45, -1)"
+  },
+  {
+   "key": "39a2f1a2a327207a",
+   "dialect": "snowflake",
+   "sql": "SELECT CEIL(a + b, 2)"
+  },
+  {
+   "key": "7bbeedea70ddf5f7",
+   "dialect": "snowflake",
+   "sql": "SELECT CEIL(1.234, 1.5)"
+  },
+  {
+   "key": "754f893a2382ff4d",
+   "dialect": "snowflake",
+   "sql": "ENCRYPT(value, 'passphrase')"
+  },
+  {
+   "key": "a8450492d91b4ec4",
+   "dialect": "snowflake",
+   "sql": "ENCRYPT(value, 'passphrase', 'aad')"
+  },
+  {
+   "key": "8dd7a89b42ab6017",
+   "dialect": "snowflake",
+   "sql": "ENCRYPT(value, 'passphrase', 'aad', 'AES-GCM')"
+  },
+  {
+   "key": "c51cf3d44dd611f6",
+   "dialect": "snowflake",
+   "sql": "ENCRYPT_RAW(value, key, iv)"
+  },
+  {
+   "key": "2da573645cbc1385",
+   "dialect": "snowflake",
+   "sql": "ENCRYPT_RAW(value, key, iv, aad)"
+  },
+  {
+   "key": "3890fcca8ab0d1ff",
+   "dialect": "snowflake",
+   "sql": "ENCRYPT_RAW(value, key, iv, aad, 'AES-GCM')"
+  },
+  {
+   "key": "4b78a2dcb7135517",
+   "dialect": "snowflake",
+   "sql": "DECRYPT(encrypted, 'passphrase')"
+  },
+  {
+   "key": "4a034c9932e5418c",
+   "dialect": "snowflake",
+   "sql": "DECRYPT(encrypted, 'passphrase', 'aad')"
+  },
+  {
+   "key": "8e15d9b3e8950d3f",
+   "dialect": "snowflake",
+   "sql": "DECRYPT(encrypted, 'passphrase', 'aad', 'AES-GCM')"
+  },
+  {
+   "key": "2a3b28e73e0083dd",
+   "dialect": "snowflake",
+   "sql": "DECRYPT_RAW(encrypted, key, iv)"
+  },
+  {
+   "key": "d5bec30b58eda427",
+   "dialect": "snowflake",
+   "sql": "DECRYPT_RAW(encrypted, key, iv, aad)"
+  },
+  {
+   "key": "02a9a5a754912bde",
+   "dialect": "snowflake",
+   "sql": "DECRYPT_RAW(encrypted, key, iv, aad, 'AES-GCM')"
+  },
+  {
+   "key": "a5f62c03526668a4",
+   "dialect": "snowflake",
+   "sql": "DECRYPT_RAW(encrypted, key, iv, aad, 'AES-GCM', aead)"
+  },
+  {
+   "key": "7774553c9a5ac3ec",
+   "dialect": "snowflake",
+   "sql": "UPDATE test SET t = 1 FROM t1"
+  },
+  {
+   "key": "34adf5b970fb9235",
+   "dialect": "snowflake",
+   "sql": "APPROX_TOP_K(C4, 3, 5)"
+  },
+  {
+   "key": "4586c7342b0eb3a3",
+   "dialect": "snowflake",
+   "sql": "TRY_TO_TIMESTAMP(foo)"
+  },
+  {
+   "key": "64a78d65cf19075e",
+   "dialect": "snowflake",
+   "sql": "TRY_TO_TIMESTAMP('12345')"
+  },
+  {
+   "key": "37e3c69906087cd3",
+   "dialect": "snowflake",
+   "sql": "TO_DATE('12345')"
+  },
+  {
+   "key": "b1634f26f3b23d61",
+   "dialect": "snowflake",
+   "sql": "CREATE OR REPLACE FUNCTION ibis_udfs.public.object_values(\"obj\" OBJECT) RETURNS ARRAY LANGUAGE JAVASCRIPT RETURNS NULL ON NULL INPUT AS ' return Object.values(obj) '"
+  },
+  {
+   "key": "690f4a34bbe36f79",
+   "dialect": "snowflake",
+   "sql": "CREATE FUNCTION a(x DOUBLE) RETURNS DOUBLE LANGUAGE SQL CALLED ON NULL INPUT AS ' x * 2 '"
+  },
+  {
+   "key": "57b92b77b0f063a0",
+   "dialect": "snowflake",
+   "sql": "SELECT number"
+  },
+  {
+   "key": "a79264e5ddc5e69b",
+   "dialect": "snowflake",
+   "sql": "SELECT TO_TIMESTAMP(123.4)"
+  },
+  {
+   "key": "b0a761902d02a6e2",
+   "dialect": "snowflake",
+   "sql": "SELECT SEARCH_IP(col, '192.168.0.0')"
   }
  ]
 }
