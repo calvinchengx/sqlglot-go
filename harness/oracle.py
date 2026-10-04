@@ -821,6 +821,12 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "UNIFORM(1, 10, RANDOM())"),
     ("snowflake", "NORMAL(10.5, 2.5, RANDOM())"),
     ("snowflake", "NORMAL(10.5, 2.5, RANDOM(5))"),
+    ("snowflake", "SELECT DAYOFYEAR(CURRENT_TIMESTAMP())"),
+    ("snowflake", "SELECT YEAROFWEEK(CURRENT_TIMESTAMP())"),
+    ("snowflake", "SELECT YEAROFWEEKISO(CURRENT_TIMESTAMP())"),
+    ("snowflake", "SELECT YEAROFWEEK('2024-12-31'::DATE)"),
+    ("snowflake", "SELECT YEAROFWEEKISO('2024-12-31'::DATE)"),
+    ("snowflake", "DAYOFYEAR(foo)"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
