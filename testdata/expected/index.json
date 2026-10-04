@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 7096,
+ "count": 7110,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -35481,6 +35481,76 @@
    "key": "da67f4eff1e2aa7a",
    "dialect": "snowflake",
    "sql": "SELECT x'ABCD'"
+  },
+  {
+   "key": "a097841998659708",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE foo (bar DOUBLE AUTOINCREMENT START 0 INCREMENT 1)"
+  },
+  {
+   "key": "b4c5bace38e62c9c",
+   "dialect": "snowflake",
+   "sql": "CREATE OR REPLACE TABLE x (y NUMBER(38, 0) NOT NULL AUTOINCREMENT START 1 INCREMENT 1 ORDER)"
+  },
+  {
+   "key": "b3790b2262a7cd07",
+   "dialect": "snowflake",
+   "sql": "CREATE OR REPLACE TABLE x (y NUMBER(38, 0) NOT NULL AUTOINCREMENT START 1 INCREMENT 1 NOORDER)"
+  },
+  {
+   "key": "64d9cc8f7f0e9702",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT START 10)"
+  },
+  {
+   "key": "d47d7c489522612e",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT INCREMENT 2)"
+  },
+  {
+   "key": "81660bec15ce9b36",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT ORDER)"
+  },
+  {
+   "key": "da89f29af7c9e82e",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT NOORDER)"
+  },
+  {
+   "key": "7f1db08586a961ed",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT START 10 NOORDER)"
+  },
+  {
+   "key": "076127ec2d4617fd",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT INCREMENT 2 ORDER)"
+  },
+  {
+   "key": "23599c4c53b80429",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT INCREMENT 2 START 10)"
+  },
+  {
+   "key": "e50ccebc2c66ec46",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE x (y INT AUTOINCREMENT(0, 1) ORDER)"
+  },
+  {
+   "key": "a2d8f5074f907823",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE c (pk BIGINT AUTOINCREMENT START 10)"
+  },
+  {
+   "key": "fcd2c69b31e145e1",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE c (pk BIGINT AUTOINCREMENT INCREMENT -1)"
+  },
+  {
+   "key": "7dae67aecf4c2111",
+   "dialect": "snowflake",
+   "sql": "CREATE TABLE t (id INT PRIMARY KEY AUTOINCREMENT)"
   }
  ]
 }

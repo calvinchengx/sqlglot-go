@@ -762,6 +762,20 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "SELECT BIT_LENGTH(x'A1B2')"),
     ("snowflake", "INSERT INTO test VALUES (x'48FAF43B0AFCEF9B63EE3A93EE2AC2')"),
     ("snowflake", "SELECT x'ABCD'"),
+    ("snowflake", "CREATE TABLE foo (bar DOUBLE AUTOINCREMENT START 0 INCREMENT 1)"),
+    ("snowflake", "CREATE OR REPLACE TABLE x (y NUMBER(38, 0) NOT NULL AUTOINCREMENT START 1 INCREMENT 1 ORDER)"),
+    ("snowflake", "CREATE OR REPLACE TABLE x (y NUMBER(38, 0) NOT NULL AUTOINCREMENT START 1 INCREMENT 1 NOORDER)"),
+    ("snowflake", "CREATE TABLE x (y INT AUTOINCREMENT START 10)"),
+    ("snowflake", "CREATE TABLE x (y INT AUTOINCREMENT INCREMENT 2)"),
+    ("snowflake", "CREATE TABLE x (y INT AUTOINCREMENT ORDER)"),
+    ("snowflake", "CREATE TABLE x (y INT AUTOINCREMENT NOORDER)"),
+    ("snowflake", "CREATE TABLE x (y INT AUTOINCREMENT START 10 NOORDER)"),
+    ("snowflake", "CREATE TABLE x (y INT AUTOINCREMENT INCREMENT 2 ORDER)"),
+    ("snowflake", "CREATE TABLE x (y INT AUTOINCREMENT INCREMENT 2 START 10)"),
+    ("snowflake", "CREATE TABLE x (y INT AUTOINCREMENT(0, 1) ORDER)"),
+    ("snowflake", "CREATE TABLE c (pk BIGINT AUTOINCREMENT START 10)"),
+    ("snowflake", "CREATE TABLE c (pk BIGINT AUTOINCREMENT INCREMENT -1)"),
+    ("snowflake", "CREATE TABLE t (id INT PRIMARY KEY AUTOINCREMENT)"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
