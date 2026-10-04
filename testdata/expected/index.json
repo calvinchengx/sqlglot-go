@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 7110,
+ "count": 7117,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -35551,6 +35551,41 @@
    "key": "7dae67aecf4c2111",
    "dialect": "snowflake",
    "sql": "CREATE TABLE t (id INT PRIMARY KEY AUTOINCREMENT)"
+  },
+  {
+   "key": "d78749fadb3145ab",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM foo WHERE 'str' IN (SELECT value FROM TABLE(FLATTEN(INPUT => vals)) AS _u(seq, key, path, index, value, this))"
+  },
+  {
+   "key": "7db738bf834981de",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM TABLE(FLATTEN(input => parse_json('[1, ,77]'))) f"
+  },
+  {
+   "key": "afefa7534ab6caef",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88]}'), path => 'b')) f"
+  },
+  {
+   "key": "baffa08f2c7ab06c",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM TABLE(FLATTEN(input => parse_json('[]'))) f"
+  },
+  {
+   "key": "4d1f21f7f07a7bb9",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'))) f"
+  },
+  {
+   "key": "50549bdec7d0ce76",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'), recursive => true)) f"
+  },
+  {
+   "key": "116d74cc3b46af90",
+   "dialect": "snowflake",
+   "sql": "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'), recursive => true, mode => 'object')) f"
   }
  ]
 }

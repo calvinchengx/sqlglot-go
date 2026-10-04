@@ -776,6 +776,13 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "CREATE TABLE c (pk BIGINT AUTOINCREMENT START 10)"),
     ("snowflake", "CREATE TABLE c (pk BIGINT AUTOINCREMENT INCREMENT -1)"),
     ("snowflake", "CREATE TABLE t (id INT PRIMARY KEY AUTOINCREMENT)"),
+    ("snowflake", "SELECT * FROM foo WHERE 'str' IN (SELECT value FROM TABLE(FLATTEN(INPUT => vals)) AS _u(seq, key, path, index, value, this))"),
+    ("snowflake", "SELECT * FROM TABLE(FLATTEN(input => parse_json('[1, ,77]'))) f"),
+    ("snowflake", "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88]}'), path => 'b')) f"),
+    ("snowflake", "SELECT * FROM TABLE(FLATTEN(input => parse_json('[]'))) f"),
+    ("snowflake", "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'))) f"),
+    ("snowflake", "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'), recursive => true)) f"),
+    ("snowflake", "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'), recursive => true, mode => 'object')) f"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:

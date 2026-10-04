@@ -741,7 +741,7 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 			table.Set("alias", alias)
 		}
 	}
-	return table, nil
+	return p.liftSnowflakeTable(table)
 }
 
 // parsePivots reads the run of PIVOT and UNPIVOT clauses after a table.

@@ -1,0 +1,379 @@
+{
+ "dialect": "snowflake",
+ "rendered": "SELECT * FROM TABLE(FLATTEN(input => PARSE_JSON('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'), recursive => TRUE, mode => 'object')) AS f",
+ "sql": "SELECT * FROM TABLE(FLATTEN(input => parse_json('{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}'), recursive => true, mode => 'object')) f",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 14,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 20,
+   "t": "VAR",
+   "x": "FLATTEN"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "input"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 34,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 37,
+   "t": "VAR",
+   "x": "parse_json"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 47,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 48,
+   "t": "STRING",
+   "x": "{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 86,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 88,
+   "e": 87,
+   "l": 1,
+   "s": 87,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 89,
+   "t": "RECURSIVE",
+   "x": "recursive"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 99,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 102,
+   "t": "TRUE",
+   "x": "true"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 106,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 108,
+   "t": "VAR",
+   "x": "mode"
+  },
+  {
+   "c": 115,
+   "e": 114,
+   "l": 1,
+   "s": 113,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 116,
+   "t": "STRING",
+   "x": "object"
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 124,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 126,
+   "e": 125,
+   "l": 1,
+   "s": 125,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 128,
+   "e": 127,
+   "l": 1,
+   "s": 127,
+   "t": "VAR",
+   "x": "f"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.TableFromRows",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "c": "sqlglot.expressions.array.Explode",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "input"
+  },
+  {
+   "c": "sqlglot.expressions.json.ParseJSON",
+   "i": 5,
+   "k": "expression",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 86,
+    "end": 85,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "{\"a\":1, \"b\":[77,88], \"c\": {\"d\":\"X\"}}"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "recursive"
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 12,
+   "k": "expression"
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "mode"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expression",
+   "m": {
+    "col": 124,
+    "end": 123,
+    "line": 1,
+    "start": 116
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "object"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 3,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 128,
+    "end": 127,
+    "line": 1,
+    "start": 127
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "f"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}
