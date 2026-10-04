@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 6648,
+ "count": 6649,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -33241,6 +33241,11 @@
    "key": "4a4f6bf0bebe9630",
    "dialect": "oracle",
    "sql": "SELECT CAST('January 15, 1989, 11:00 A.M.' AS DATE DEFAULT NULL ON CONVERSION ERROR, 'Month dd, YYYY, HH:MI A.M.') FROM DUAL"
+  },
+  {
+   "key": "c11bb004ece357b6",
+   "dialect": "oracle",
+   "sql": "SELECT JSON_ARRAY(FOO() FORMAT JSON, BAR() NULL ON NULL RETURNING CLOB STRICT)"
   }
  ]
 }

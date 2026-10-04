@@ -284,7 +284,7 @@ func (p *parser) parseExpressionAfterDAX() (*Expression, error) {
 	if p.daxStatementEdge() && !p.daxOpensEvaluate() {
 		return nil, p.unsupported("statement")
 	}
-	return p.parseAssignment()
+	return p.expressionOrJSONArray()
 }
 
 // daxBraceValues reports a `{1, 2}` list. A `{key: value}` struct keeps
