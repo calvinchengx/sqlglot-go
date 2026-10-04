@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 7011,
+ "count": 7020,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -35056,6 +35056,51 @@
    "key": "b0a761902d02a6e2",
    "dialect": "snowflake",
    "sql": "SELECT SEARCH_IP(col, '192.168.0.0')"
+  },
+  {
+   "key": "7d53856b60fe7e93",
+   "dialect": "snowflake",
+   "sql": "WITH t AS (SELECT PARSE_JSON('{\"level1\": {\"level2\": {\"level3\": \"value\"}}}') AS data) SELECT data:     level1  : level2 : level3::VARIANT FROM t"
+  },
+  {
+   "key": "fd64392cdb7f5cc1",
+   "dialect": "snowflake",
+   "sql": "SELECT p FROM t WHERE p:val NOT IN ('2')"
+  },
+  {
+   "key": "8827810032c300be",
+   "dialect": "snowflake",
+   "sql": "SELECT PARSE_JSON('{\"x\": \"hello\"}'):x LIKE 'hello'"
+  },
+  {
+   "key": "e0c49583fa052b78",
+   "dialect": "snowflake",
+   "sql": "SELECT data:x LIKE 'hello' FROM some_table"
+  },
+  {
+   "key": "cececb7f35003fd8",
+   "dialect": "snowflake",
+   "sql": "SELECT v:attr[0].name FROM vartab"
+  },
+  {
+   "key": "d93ae1214920cbd0",
+   "dialect": "snowflake",
+   "sql": "v:attr[0]:name"
+  },
+  {
+   "key": "9f5a08461b85f20d",
+   "dialect": "snowflake",
+   "sql": "SELECT PARSE_JSON('{\"food\":{\"fruit\":\"banana\"}}'):food.fruit::VARCHAR"
+  },
+  {
+   "key": "3831bbfcf0470be8",
+   "dialect": "snowflake",
+   "sql": "SELECT PARSE_JSON('{\"fruit\":\"banana\"}'):fruit"
+  },
+  {
+   "key": "a45aff9e1fc1301c",
+   "dialect": "snowflake",
+   "sql": "SELECT PARSE_JSON('{\"a\": {\"b c\": \"foo\"}}'):a:\"b c\""
   }
  ]
 }

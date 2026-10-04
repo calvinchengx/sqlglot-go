@@ -677,6 +677,15 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", 'SELECT number'),
     ("snowflake", 'SELECT TO_TIMESTAMP(123.4)'),
     ("snowflake", "SELECT SEARCH_IP(col, '192.168.0.0')"),
+    ("snowflake", 'WITH t AS (SELECT PARSE_JSON(\'{"level1": {"level2": {"level3": "value"}}}\') AS data) SELECT data:     level1  : level2 : level3::VARIANT FROM t'),
+    ("snowflake", "SELECT p FROM t WHERE p:val NOT IN ('2')"),
+    ("snowflake", 'SELECT PARSE_JSON(\'{"x": "hello"}\'):x LIKE \'hello\''),
+    ("snowflake", "SELECT data:x LIKE 'hello' FROM some_table"),
+    ("snowflake", 'SELECT v:attr[0].name FROM vartab'),
+    ("snowflake", 'v:attr[0]:name'),
+    ("snowflake", 'SELECT PARSE_JSON(\'{"food":{"fruit":"banana"}}\'):food.fruit::VARCHAR'),
+    ("snowflake", 'SELECT PARSE_JSON(\'{"fruit":"banana"}\'):fruit'),
+    ("snowflake", 'SELECT PARSE_JSON(\'{"a": {"b c": "foo"}}\'):a:"b c"'),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:

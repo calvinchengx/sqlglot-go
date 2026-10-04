@@ -902,7 +902,7 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 				Arg{"this", this},
 				Arg{"expression", path},
 				Arg{"variant_extract", true},
-				Arg{"requires_json", false})
+				Arg{"requires_json", snowflakeJSONRequired(p.dialect)})
 			continue
 		}
 		// `->` / `->>` at the accessor tier, binding tighter than arithmetic.
@@ -3979,10 +3979,7 @@ func (p *parser) parseVariantPath() (*Expression, error) {
 		default:
 			return nil, p.unsupported("a variant path without a key")
 		}
-		if p.match(TokDOT) {
-			continue
-		}
-		if p.at(TokL_BRACKET) {
+		if p.variantPathContinues() {
 			continue
 		}
 		return New("JSONPath", Arg{"expressions", segments}), nil
