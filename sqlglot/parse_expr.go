@@ -1084,6 +1084,13 @@ func (p *parser) parseBracketItems(_ bool) ([]*Expression, error) {
 	var items []*Expression
 	for !p.at(TokR_BRACKET) {
 		var low *Expression
+		// Where a colon is the JSON operator (Databricks' `c:path`), a slice
+		// with no lower bound is an extraction with nothing to extract from,
+		// and the reference refuses it. Reading it as a slice wrote
+		// `ARRAY(::a)`, which reads back as a cast.
+		if p.tables.VariantExtractColon && p.atSliceStart() {
+			return nil, p.unsupported("slice with no lower bound")
+		}
 		if !p.atSliceStart() {
 			e, err := p.parseExpression()
 			if err != nil {
