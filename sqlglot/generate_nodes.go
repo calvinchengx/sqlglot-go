@@ -1616,6 +1616,14 @@ func (g *generator) writeIf(e *Expression) string {
 	}
 	// A dialect with no IF of its own writes the one-branch CASE the
 	// reference writes. The ELSE is the IF's own false arm.
+	//
+	// With no THEN value there is nothing to write: T-SQL's `IF(0)` built
+	// `CASE WHEN 0 THEN  END`, which reads back as a CASE without END. The
+	// reference reads that input as an IF block, not a function, so the port
+	// declines rather than inventing a branch.
+	if childOf(e, "true") == nil {
+		return g.fail("If with no THEN value")
+	}
 	return g.writeCase(New("Case",
 		Arg{"ifs", []*Expression{e}},
 		Arg{"default", childOf(e, "false")}))

@@ -112,6 +112,8 @@ var seeds = []string{
 	// A parameter as a slice's end bound: `[: :a]` was read as an empty step
 	// slot and written `[::a]`, which reads back as a cast.
 	"[: :WWa]",
+	// T-SQL reads `IF(x)` with no branches; the port wrote `CASE WHEN x THEN  END`.
+	"!IF(0)",
 	"SELECT 1", "SELECT a FROM t WHERE b > 1", "WITH x AS (SELECT 1) SELECT * FROM x",
 	"SELECT * FROM a JOIN b ON a.i = b.i", "SELECT CAST(a AS INT) FROM t",
 	"SELECT a, COUNT(*) FROM t GROUP BY a HAVING COUNT(*) > 1",
