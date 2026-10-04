@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 7021,
+ "count": 7093,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -35106,6 +35106,366 @@
    "key": "ab7acef11f95b9e0",
    "dialect": "snowflake",
    "sql": "SELECT v:\"fruit\" FROM vartab"
+  },
+  {
+   "key": "c956436e93deb90a",
+   "dialect": "snowflake",
+   "sql": "SHOW USERS"
+  },
+  {
+   "key": "df526c3179d12aa2",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE USERS"
+  },
+  {
+   "key": "49a352b90ba37e57",
+   "dialect": "snowflake",
+   "sql": "SHOW USERS LIKE '_foo%' STARTS WITH 'bar' LIMIT 5 FROM 'baz'"
+  },
+  {
+   "key": "1c26f39f4050610d",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE DATABASES"
+  },
+  {
+   "key": "18e2503b5da9951c",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE DATABASES HISTORY LIKE 'foo' STARTS WITH 'bla' LIMIT 5 FROM 'bob' WITH PRIVILEGES USAGE, MODIFY"
+  },
+  {
+   "key": "dd3b843aa9e78b8d",
+   "dialect": "snowflake",
+   "sql": "SHOW FILE FORMATS"
+  },
+  {
+   "key": "652575370fccaa0b",
+   "dialect": "snowflake",
+   "sql": "SHOW FILE FORMATS LIKE 'foo' IN DATABASE db1"
+  },
+  {
+   "key": "a6001696da0bd9db",
+   "dialect": "snowflake",
+   "sql": "SHOW FILE FORMATS LIKE 'foo' IN SCHEMA db1.schema1"
+  },
+  {
+   "key": "a541938a8137cd6d",
+   "dialect": "snowflake",
+   "sql": "SHOW FUNCTIONS"
+  },
+  {
+   "key": "8b8913af9df04c19",
+   "dialect": "snowflake",
+   "sql": "SHOW FUNCTIONS LIKE 'foo' IN CLASS bla"
+  },
+  {
+   "key": "89672bb427baca37",
+   "dialect": "snowflake",
+   "sql": "SHOW PROCEDURES"
+  },
+  {
+   "key": "e5b7e69ed015ed86",
+   "dialect": "snowflake",
+   "sql": "SHOW PROCEDURES LIKE 'foo' IN APPLICATION app"
+  },
+  {
+   "key": "0f582dd85554ddc5",
+   "dialect": "snowflake",
+   "sql": "SHOW PROCEDURES LIKE 'foo' IN APPLICATION PACKAGE pkg"
+  },
+  {
+   "key": "114f9caa9a20bda5",
+   "dialect": "snowflake",
+   "sql": "SHOW STAGES"
+  },
+  {
+   "key": "e233c4ed22f6beb6",
+   "dialect": "snowflake",
+   "sql": "SHOW STAGES LIKE 'foo' IN DATABASE db1"
+  },
+  {
+   "key": "3b09f81fe618b4e9",
+   "dialect": "snowflake",
+   "sql": "SHOW STAGES LIKE 'foo' IN SCHEMA db1.schema1"
+  },
+  {
+   "key": "e54e76c388e129b5",
+   "dialect": "snowflake",
+   "sql": "SHOW WAREHOUSES"
+  },
+  {
+   "key": "da375673fedb990e",
+   "dialect": "snowflake",
+   "sql": "SHOW WAREHOUSES LIKE 'foo' WITH PRIVILEGES USAGE, MODIFY"
+  },
+  {
+   "key": "70d79321f252a11d",
+   "dialect": "snowflake",
+   "sql": "show terse schemas in database db1 starts with 'a' limit 10 from 'b'"
+  },
+  {
+   "key": "c30637e9a77a5b3c",
+   "dialect": "snowflake",
+   "sql": "show terse objects in schema db1.schema1 starts with 'a' limit 10 from 'b'"
+  },
+  {
+   "key": "4a605600f5f06dfb",
+   "dialect": "snowflake",
+   "sql": "show terse objects in db1.schema1 starts with 'a' limit 10 from 'b'"
+  },
+  {
+   "key": "bb5704b523e8d077",
+   "dialect": "snowflake",
+   "sql": "SHOW COLUMNS"
+  },
+  {
+   "key": "065fd4d555507bdb",
+   "dialect": "snowflake",
+   "sql": "SHOW COLUMNS IN TABLE dt_test"
+  },
+  {
+   "key": "83de9f66812e229a",
+   "dialect": "snowflake",
+   "sql": "SHOW COLUMNS LIKE '_foo%' IN TABLE dt_test"
+  },
+  {
+   "key": "d40f0f0eddd80423",
+   "dialect": "snowflake",
+   "sql": "SHOW COLUMNS IN VIEW"
+  },
+  {
+   "key": "4dd020b9512ed9ba",
+   "dialect": "snowflake",
+   "sql": "SHOW COLUMNS LIKE '_foo%' IN VIEW dt_test"
+  },
+  {
+   "key": "bc9f386ae48f6923",
+   "dialect": "snowflake",
+   "sql": "SHOW TABLES LIKE 'line%' IN tpch.public"
+  },
+  {
+   "key": "9f7408e361f2029e",
+   "dialect": "snowflake",
+   "sql": "SHOW TABLES HISTORY IN tpch.public"
+  },
+  {
+   "key": "418c5c9b0ed89a76",
+   "dialect": "snowflake",
+   "sql": "show terse tables in schema db1.schema1 starts with 'a' limit 10 from 'b'"
+  },
+  {
+   "key": "7d1d5485f4bc1131",
+   "dialect": "snowflake",
+   "sql": "show terse tables in db1.schema1 starts with 'a' limit 10 from 'b'"
+  },
+  {
+   "key": "596d03b3d550c1d0",
+   "dialect": "snowflake",
+   "sql": "SHOW ICEBERG TABLES IN db1.schema1"
+  },
+  {
+   "key": "2a00fc0423fd7c20",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE ICEBERG TABLES IN db1.schema1"
+  },
+  {
+   "key": "46669e36ef02144b",
+   "dialect": "snowflake",
+   "sql": "SHOW PRIMARY KEYS"
+  },
+  {
+   "key": "dc70d2ef150bb964",
+   "dialect": "snowflake",
+   "sql": "SHOW PRIMARY KEYS IN ACCOUNT"
+  },
+  {
+   "key": "e5d1325be6aaf603",
+   "dialect": "snowflake",
+   "sql": "SHOW PRIMARY KEYS IN DATABASE"
+  },
+  {
+   "key": "9ff2ac610c74652a",
+   "dialect": "snowflake",
+   "sql": "SHOW PRIMARY KEYS IN DATABASE foo"
+  },
+  {
+   "key": "71613c312d4fa138",
+   "dialect": "snowflake",
+   "sql": "SHOW PRIMARY KEYS IN TABLE"
+  },
+  {
+   "key": "226703bf664eb37c",
+   "dialect": "snowflake",
+   "sql": "SHOW PRIMARY KEYS IN TABLE foo"
+  },
+  {
+   "key": "89f089dff2980dbb",
+   "dialect": "snowflake",
+   "sql": "SHOW PRIMARY KEYS IN \"TEST\".\"PUBLIC\".\"foo\""
+  },
+  {
+   "key": "258edaee211af3ca",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE PRIMARY KEYS IN \"TEST\".\"PUBLIC\".\"foo\""
+  },
+  {
+   "key": "45fad4958971c802",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE VIEWS"
+  },
+  {
+   "key": "331aa3ffcd52a260",
+   "dialect": "snowflake",
+   "sql": "SHOW VIEWS"
+  },
+  {
+   "key": "359205f5776e1959",
+   "dialect": "snowflake",
+   "sql": "SHOW VIEWS LIKE 'foo%'"
+  },
+  {
+   "key": "07017471b1d3e5a5",
+   "dialect": "snowflake",
+   "sql": "SHOW VIEWS IN ACCOUNT"
+  },
+  {
+   "key": "1b57712b292abf08",
+   "dialect": "snowflake",
+   "sql": "SHOW VIEWS IN DATABASE"
+  },
+  {
+   "key": "13238af47b4c3c19",
+   "dialect": "snowflake",
+   "sql": "SHOW VIEWS IN DATABASE foo"
+  },
+  {
+   "key": "b71fc945c23570f0",
+   "dialect": "snowflake",
+   "sql": "SHOW VIEWS IN SCHEMA foo"
+  },
+  {
+   "key": "5f121e804628ef1f",
+   "dialect": "snowflake",
+   "sql": "SHOW VIEWS IN foo"
+  },
+  {
+   "key": "410631050d432644",
+   "dialect": "snowflake",
+   "sql": "SHOW UNIQUE KEYS"
+  },
+  {
+   "key": "7579211f993e8970",
+   "dialect": "snowflake",
+   "sql": "SHOW UNIQUE KEYS IN ACCOUNT"
+  },
+  {
+   "key": "1c45176c5103bfe5",
+   "dialect": "snowflake",
+   "sql": "SHOW UNIQUE KEYS IN DATABASE"
+  },
+  {
+   "key": "e2b1a5f4f620e868",
+   "dialect": "snowflake",
+   "sql": "SHOW UNIQUE KEYS IN DATABASE foo"
+  },
+  {
+   "key": "d854fb89ea3f53dc",
+   "dialect": "snowflake",
+   "sql": "SHOW UNIQUE KEYS IN TABLE"
+  },
+  {
+   "key": "82042bafcc491638",
+   "dialect": "snowflake",
+   "sql": "SHOW UNIQUE KEYS IN TABLE foo"
+  },
+  {
+   "key": "69e6584ad0c24c47",
+   "dialect": "snowflake",
+   "sql": "SHOW UNIQUE KEYS IN \"TEST\".\"PUBLIC\".\"foo\""
+  },
+  {
+   "key": "3183dfefb0557ee1",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE UNIQUE KEYS IN \"TEST\".\"PUBLIC\".\"foo\""
+  },
+  {
+   "key": "2566329d4ec9cce7",
+   "dialect": "snowflake",
+   "sql": "SHOW IMPORTED KEYS"
+  },
+  {
+   "key": "94cc73845b63783a",
+   "dialect": "snowflake",
+   "sql": "SHOW IMPORTED KEYS IN ACCOUNT"
+  },
+  {
+   "key": "2ab9bdcdb9c7db70",
+   "dialect": "snowflake",
+   "sql": "SHOW IMPORTED KEYS IN DATABASE"
+  },
+  {
+   "key": "c6e4e2b837dfe11a",
+   "dialect": "snowflake",
+   "sql": "SHOW IMPORTED KEYS IN DATABASE foo"
+  },
+  {
+   "key": "f9046ad0b3038eee",
+   "dialect": "snowflake",
+   "sql": "SHOW IMPORTED KEYS IN TABLE"
+  },
+  {
+   "key": "2796035606d8bb25",
+   "dialect": "snowflake",
+   "sql": "SHOW IMPORTED KEYS IN TABLE foo"
+  },
+  {
+   "key": "b092cf2c2bbe6439",
+   "dialect": "snowflake",
+   "sql": "SHOW IMPORTED KEYS IN \"TEST\".\"PUBLIC\".\"foo\""
+  },
+  {
+   "key": "ad6be9793509af3c",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE IMPORTED KEYS IN \"TEST\".\"PUBLIC\".\"foo\""
+  },
+  {
+   "key": "eb155424456bb4f3",
+   "dialect": "snowflake",
+   "sql": "SHOW TERSE SEQUENCES"
+  },
+  {
+   "key": "558d8e8cebf0a570",
+   "dialect": "snowflake",
+   "sql": "SHOW SEQUENCES"
+  },
+  {
+   "key": "1874d237e42de2d1",
+   "dialect": "snowflake",
+   "sql": "SHOW SEQUENCES LIKE '_foo%' IN ACCOUNT"
+  },
+  {
+   "key": "9e520d6d4f0e7349",
+   "dialect": "snowflake",
+   "sql": "SHOW SEQUENCES LIKE '_foo%' IN DATABASE"
+  },
+  {
+   "key": "3f90dfb589442564",
+   "dialect": "snowflake",
+   "sql": "SHOW SEQUENCES LIKE '_foo%' IN DATABASE foo"
+  },
+  {
+   "key": "f0ca90340eae2b4a",
+   "dialect": "snowflake",
+   "sql": "SHOW SEQUENCES LIKE '_foo%' IN SCHEMA"
+  },
+  {
+   "key": "c8bd9c275e5ddd69",
+   "dialect": "snowflake",
+   "sql": "SHOW SEQUENCES LIKE '_foo%' IN SCHEMA foo"
+  },
+  {
+   "key": "0037fac4e08a7fc2",
+   "dialect": "snowflake",
+   "sql": "SHOW SEQUENCES LIKE '_foo%' IN foo"
   }
  ]
 }

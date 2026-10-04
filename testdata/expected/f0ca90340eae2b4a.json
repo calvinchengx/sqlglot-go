@@ -1,0 +1,116 @@
+{
+ "dialect": "snowflake",
+ "rendered": "SHOW SEQUENCES LIKE '_foo%' IN SCHEMA",
+ "sql": "SHOW SEQUENCES LIKE '_foo%' IN SCHEMA",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "SHOW",
+   "x": "SHOW"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "SEQUENCES"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 15,
+   "t": "LIKE",
+   "x": "LIKE"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 20,
+   "t": "STRING",
+   "x": "_foo%"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 28,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 31,
+   "t": "SCHEMA",
+   "x": "SCHEMA"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Show"
+  },
+  {
+   "i": 0,
+   "k": "terse",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "SEQUENCES"
+  },
+  {
+   "i": 0,
+   "k": "history",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "like",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "_foo%"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "scope_kind",
+   "v": "SCHEMA"
+  },
+  {
+   "i": 0,
+   "k": "starts_with",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "privileges",
+   "v": false
+  }
+ ]
+}

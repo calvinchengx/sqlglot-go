@@ -1,0 +1,150 @@
+{
+ "dialect": "snowflake",
+ "rendered": "SHOW PROCEDURES LIKE 'foo' IN APPLICATION app",
+ "sql": "SHOW PROCEDURES LIKE 'foo' IN APPLICATION app",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "SHOW",
+   "x": "SHOW"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "PROCEDURES"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 16,
+   "t": "LIKE",
+   "x": "LIKE"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 21,
+   "t": "STRING",
+   "x": "foo"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 27,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 30,
+   "t": "VAR",
+   "x": "APPLICATION"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 42,
+   "t": "VAR",
+   "x": "app"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Show"
+  },
+  {
+   "i": 0,
+   "k": "terse",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "iceberg",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "PROCEDURES"
+  },
+  {
+   "i": 0,
+   "k": "history",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "like",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "scope"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "app"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "scope_kind",
+   "v": "APPLICATION"
+  },
+  {
+   "i": 0,
+   "k": "starts_with",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "privileges",
+   "v": false
+  }
+ ]
+}

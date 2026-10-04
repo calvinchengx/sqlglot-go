@@ -6297,6 +6297,9 @@ func (p *parser) parseExecute() (*Expression, error) {
 // phrases are the reference's own table; anything outside it is text it keeps
 // rather than a tree, and is refused here.
 func (p *parser) parseShow() (*Expression, error) {
+	if p.dialect == "snowflake" {
+		return p.parseSnowflakeShow()
+	}
 	p.advance() // SHOW
 
 	// Longest phrase first: ALL TABLES is not TABLES.
