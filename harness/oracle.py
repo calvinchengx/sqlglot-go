@@ -805,6 +805,11 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "CREATE TEMPORARY TABLE x (y NUMBER AUTOINCREMENT(0, 1))"),
     ("snowflake", "CREATE TABLE x (y NUMBER IDENTITY START 0 INCREMENT 1)"),
     ("snowflake", "CREATE TABLE test_table (id NUMERIC NOT NULL AUTOINCREMENT)"),
+    ("snowflake", "SHA1(x)"),
+    ("snowflake", "SHA1('text')"),
+    ("snowflake", "SHA1(X'002A'::BINARY)"),
+    ("snowflake", "SHA1(123)"),
+    ("snowflake", "SHA1(DATE '2024-01-15')"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
