@@ -13,6 +13,9 @@ func spellSnowflakeDayPart(tables *ParserTables) {
 		return
 	}
 	owned := maps.Clone(tables.FunctionSQL)
+	owned["DayOfMonth"] = snowflakeDayPart(owned["DayOfMonth"], "DAYOFMONTH")
+	owned["DayOfWeek"] = snowflakeDayPart(owned["DayOfWeek"], "DAYOFWEEK")
+	owned["DayOfWeekIso"] = snowflakeDayPart(owned["DayOfWeekIso"], "DAYOFWEEKISO")
 	owned["DayOfYear"] = snowflakeDayPart(owned["DayOfYear"], "DAYOFYEAR")
 	owned["YearOfWeek"] = snowflakeDayPart(owned["YearOfWeek"], "YEAROFWEEK")
 	owned["YearOfWeekIso"] = snowflakeDayPart(owned["YearOfWeekIso"], "YEAROFWEEKISO")
