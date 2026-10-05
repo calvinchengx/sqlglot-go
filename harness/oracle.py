@@ -829,6 +829,8 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "DAYOFYEAR(foo)"),
     ("snowflake", "SELECT STDDEV_SAMP(x)"),
     ("snowflake", "SELECT STDDEV_SAMP(x) OVER (PARTITION BY 1)"),
+    ("snowflake", "SELECT CHARINDEX('sub', 'testsubstring', -1)"),
+    ("snowflake", "SELECT CHARINDEX('sub', 'testsubstring', p)"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
