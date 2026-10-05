@@ -866,6 +866,9 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "SELECT MIN_BY(a, b) FROM t"),
     ("snowflake", "SELECT DAYOFMONTH(CURRENT_TIMESTAMP())"),
     ("snowflake", "SELECT DAYOFWEEK('2016-01-02T23:39:20.123-07:00'::TIMESTAMP)"),
+    ("snowflake", "LOCALTIMESTAMP"),
+    ("snowflake", "LOCALTIMESTAMP()"),
+    ("snowflake", "LOCALTIMESTAMP(3)"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
