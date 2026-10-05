@@ -831,6 +831,18 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "SELECT STDDEV_SAMP(x) OVER (PARTITION BY 1)"),
     ("snowflake", "SELECT CHARINDEX('sub', 'testsubstring', -1)"),
     ("snowflake", "SELECT CHARINDEX('sub', 'testsubstring', p)"),
+    ("snowflake", "SELECT BITAND(a, b)"),
+    ("snowflake", "SELECT BITAND(a, b, 'LEFT')"),
+    ("snowflake", "SELECT BIT_AND(a, b)"),
+    ("snowflake", "SELECT BIT_AND(a, b, 'LEFT')"),
+    ("snowflake", "SELECT BITOR(a, b)"),
+    ("snowflake", "SELECT BITOR(a, b, 'LEFT')"),
+    ("snowflake", "SELECT BIT_OR(a, b)"),
+    ("snowflake", "SELECT BIT_OR(a, b, 'RIGHT')"),
+    ("snowflake", "SELECT BITXOR(a, b)"),
+    ("snowflake", "SELECT BITXOR(a, b, 'LEFT')"),
+    ("snowflake", "SELECT BIT_XOR(a, b)"),
+    ("snowflake", "SELECT BIT_XOR(a, b, 'LEFT')"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
