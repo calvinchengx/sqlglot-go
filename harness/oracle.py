@@ -847,6 +847,9 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "SELECT SQUARE(2.5)"),
     ("snowflake", "SQUARE(x)"),
     ("snowflake", "WEEKOFYEAR(tstamp)"),
+    ("snowflake", "SELECT BIT_NOT(a)"),
+    ("snowflake", "SELECT BITNOT(a)"),
+    ("snowflake", "SELECT BITNOT(-1)"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
