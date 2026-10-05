@@ -827,6 +827,8 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "SELECT YEAROFWEEK('2024-12-31'::DATE)"),
     ("snowflake", "SELECT YEAROFWEEKISO('2024-12-31'::DATE)"),
     ("snowflake", "DAYOFYEAR(foo)"),
+    ("snowflake", "SELECT STDDEV_SAMP(x)"),
+    ("snowflake", "SELECT STDDEV_SAMP(x) OVER (PARTITION BY 1)"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
