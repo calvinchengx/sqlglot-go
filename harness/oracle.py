@@ -855,6 +855,7 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "SELECT a NOT RLIKE b"),
     ("snowflake", "SELECT RLIKE(a, b)"),
     ("snowflake", "SELECT RLIKE(a, b, 'i')"),
+    ("snowflake", "SELECT * EXCLUDE (a, b) REPLACE (c AS d, E AS F) FROM xxx"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
