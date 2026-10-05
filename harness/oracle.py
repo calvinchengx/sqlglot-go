@@ -846,6 +846,7 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "SELECT * REPLACE (CAST(col AS TEXT) AS scol) FROM t"),
     ("snowflake", "SELECT SQUARE(2.5)"),
     ("snowflake", "SQUARE(x)"),
+    ("snowflake", "WEEKOFYEAR(tstamp)"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
