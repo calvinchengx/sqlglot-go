@@ -843,6 +843,7 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "SELECT BITXOR(a, b, 'LEFT')"),
     ("snowflake", "SELECT BIT_XOR(a, b)"),
     ("snowflake", "SELECT BIT_XOR(a, b, 'LEFT')"),
+    ("snowflake", "SELECT * REPLACE (CAST(col AS TEXT) AS scol) FROM t"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
