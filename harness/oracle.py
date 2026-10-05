@@ -858,6 +858,12 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "SELECT * EXCLUDE (a, b) REPLACE (c AS d, E AS F) FROM xxx"),
     ("snowflake", "SELECT ST_MAKEPOINT(10, 20)"),
     ("snowflake", "SELECT INSERT(a, 0, 0, 'b')"),
+    ("snowflake", "MAX_BY(DISTINCT selected_col, filtered_col)"),
+    ("snowflake", "MIN_BY(DISTINCT selected_col, filtered_col)"),
+    ("snowflake", "MAX_BY(selected_col, filtered_col, 5)"),
+    ("snowflake", "MIN_BY(selected_col, filtered_col, 3)"),
+    ("snowflake", "SELECT MAX_BY(a, b) FROM t"),
+    ("snowflake", "SELECT MIN_BY(a, b) FROM t"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
