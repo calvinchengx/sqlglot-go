@@ -221,6 +221,7 @@ func (p *parser) parseRange() (*Expression, error) {
 				} else {
 					this = New(class, Arg{"this", left}, Arg{"expression", right})
 				}
+				this = wholeRegexpLike(p.dialect, this)
 			}
 		case c.Type == TokMEMBER_OF:
 			// `x MEMBER OF(y)`: the right side is PARENTHESISED and

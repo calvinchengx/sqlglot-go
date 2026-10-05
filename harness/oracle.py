@@ -850,6 +850,11 @@ SNOWFLAKE_CORPUS: tuple[tuple[str, str], ...] = (
     ("snowflake", "SELECT BIT_NOT(a)"),
     ("snowflake", "SELECT BITNOT(a)"),
     ("snowflake", "SELECT BITNOT(-1)"),
+    ("snowflake", "SELECT REGEXP_LIKE(a, b, c)"),
+    ("snowflake", "SELECT a RLIKE b"),
+    ("snowflake", "SELECT a NOT RLIKE b"),
+    ("snowflake", "SELECT RLIKE(a, b)"),
+    ("snowflake", "SELECT RLIKE(a, b, 'i')"),
 )
 
 def reference_commit(sqlglot_dir: pathlib.Path) -> str:
