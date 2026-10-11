@@ -25,3 +25,46 @@ func (g *generator) writePartitionedByProperty(e *Expression) string {
 	}
 	return g.spell(e)
 }
+
+// writePartitionByRangePropertyDynamic writes Doris's dynamic range partition:
+// `FROM ('start') TO ('end') INTERVAL n unit`.
+func (g *generator) writePartitionByRangePropertyDynamic(e *Expression) string {
+	start := g.child(e, "start")
+	end := g.child(e, "end")
+	out := "FROM (" + start + ") TO (" + end + ")"
+	if every, _ := e.Args["every"].(*Expression); every != nil {
+		out += " INTERVAL " + g.child(every, "this") + " " + g.child(every, "unit")
+	}
+	return out
+}
+
+// writeUniqueKeyProperty writes a composite key. Doris writes a bare KEY
+// inside a MATERIALIZED VIEW -- the MV's own key, not a uniqueness constraint
+// (DorisGenerator.uniquekeyproperty_sql); every other dialect keeps the
+// template's `UNIQUE KEY (...)`.
+func (g *generator) writeUniqueKeyProperty(e *Expression) string {
+	if g.dialect == "doris" && dorisInsideMaterializedView(e) {
+		return "KEY (" + g.list(e) + ")"
+	}
+	return g.spell(e)
+}
+
+func dorisInsideMaterializedView(e *Expression) bool {
+	for p := e.Parent; p != nil; p = p.Parent {
+		if p.Class != "Create" {
+			continue
+		}
+		props, _ := p.Args["properties"].(*Expression)
+		if props == nil {
+			return false
+		}
+		items, _ := props.Args["expressions"].([]*Expression)
+		for _, item := range items {
+			if item != nil && item.Class == "MaterializedProperty" {
+				return true
+			}
+		}
+		return false
+	}
+	return false
+}

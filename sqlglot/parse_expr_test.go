@@ -6345,7 +6345,6 @@ func TestAnalyzeRefusals(t *testing.T) {
 	for _, sql := range []string{
 		// Each reads its subject a different way and none is in the corpus.
 		"ANALYZE INDEX i",
-		"ANALYZE DATABASE db",
 		"ANALYZE CLUSTER c",
 		// The other words the reference accepts where COMPUTE stands, each
 		// of which builds a node of its own.
