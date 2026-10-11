@@ -2779,7 +2779,7 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	if upper == "MOD" && len(args) == 2 {
 		return p.buildMod(args), nil
 	}
-	if upper == "STR_TO_DATE" && p.dialect == "mysql" && len(args) == 2 {
+	if upper == "STR_TO_DATE" && (p.dialect == "mysql" || p.dialect == "doris") && len(args) == 2 {
 		return p.buildMySQLStrToDate(args), nil
 	}
 	if (upper == "DATE_ADD" || upper == "DATE_SUB") && p.dialect == "mysql" && len(args) == 2 {
@@ -2787,6 +2787,24 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 			return built, nil
 		}
 		return nil, p.unsupported(upper + " with a second argument this port does not read as an INTERVAL")
+	}
+	// Doris subclasses MySQL but overrides the date-delta builders with a
+	// default unit of DAY -- a bare day count is legal, unlike MySQL's -- and
+	// its DATE_TRUNC takes the unit and the datetime in either order. Both are
+	// decided by the reference's own builders, not by the generic dispatch.
+	if p.dialect == "doris" {
+		switch upper {
+		case "DATE_ADD", "DATE_SUB", "ADDDATE", "SUBDATE":
+			class := map[string]string{
+				"DATE_ADD": "DateAdd", "DATE_SUB": "DateSub",
+				"ADDDATE": "DateAdd", "SUBDATE": "DateSub",
+			}[upper]
+			if built := buildDorisDateDeltaWithInterval(class, args); built != nil {
+				return built, nil
+			}
+		case "DATE_TRUNC":
+			return buildDorisDateTrunc(args), nil
+		}
 	}
 	// DATE_ADD/DATE_SUB over an INTERVAL argument are rewritten by these
 	// dialects' own builders, which are not ported (the neutral dialect's

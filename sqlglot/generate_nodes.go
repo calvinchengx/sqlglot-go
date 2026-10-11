@@ -184,6 +184,7 @@ func init() {
 		"MacroOverload":                       (*generator).writeMacroOverload,
 		"AlterSet":                            (*generator).writeAlterSet,
 		"Partition":                           (*generator).writePartition,
+		"PartitionedByProperty":               (*generator).writePartitionedByProperty,
 		"OnConflict":                          (*generator).writeOnConflict,
 		"Pragma":                              (*generator).writePragma,
 		"Comment":                             (*generator).writeComment,
@@ -677,6 +678,22 @@ func (g *generator) writeCTE(e *Expression) string {
 
 func (g *generator) writeFrom(e *Expression) string { return "FROM " + g.child(e, "this") }
 
+// dorisBareTableAlias reports whether this table's alias is written without
+// AS: the nearest Update/Delete/Select ancestor is a write, so the alias is
+// the target rather than a FROM item. The reference decides it the same way
+// (DorisGenerator.table_sql).
+func dorisBareTableAlias(e *Expression) bool {
+	for p := e.Parent; p != nil; p = p.Parent {
+		switch p.Class {
+		case "Update", "Delete":
+			return true
+		case "Select":
+			return false
+		}
+	}
+	return false
+}
+
 func (g *generator) writeTable(e *Expression) string {
 	var out string
 	if rows, _ := e.Args["rows_from"].([]*Expression); len(rows) > 0 {
@@ -713,6 +730,12 @@ func (g *generator) writeTable(e *Expression) string {
 	ordinality := e.Args["ordinality"] == true
 	alias := g.child(e, "alias")
 	sep := g.tableAliasSep()
+	// Doris writes the table alias bare -- no AS -- in UPDATE and DELETE,
+	// where the alias is the target rather than a FROM item. The reference
+	// decides by the nearest Update/Delete/Select ancestor.
+	if g.dialect == "doris" && alias != "" && dorisBareTableAlias(e) {
+		sep = " "
+	}
 	if alias != "" && !ordinality {
 		out += sep + alias
 	}
@@ -5566,6 +5589,15 @@ func (g *generator) writeAlterRename(e *Expression) string {
 	if target == nil {
 		return g.fail(e.Class + " with no target")
 	}
+	// Doris writes `RENAME <name>` -- no TO, and the qualifier dropped
+	// (RENAME_TABLE_WITH_DB = False): the table stays where it was.
+	if g.dialect == "doris" {
+		name, _ := target.Args["this"].(*Expression)
+		if name == nil {
+			return g.fail(e.Class + " with no name")
+		}
+		return "RENAME " + g.node(name)
+	}
 	switch g.tables.RenameTarget {
 	case "whole":
 		return "RENAME TO " + g.node(target)
@@ -7138,7 +7170,7 @@ func (g *generator) writeTimeStrToTime(e *Expression) string {
 }
 
 func (g *generator) writeTimeToStr(e *Expression) string {
-	if g.dialect == "mysql" {
+	if g.dialect == "mysql" || g.dialect == "doris" {
 		this, _ := e.Args["this"].(*Expression)
 		if stripped := stripMySQLTsOrDsWrap(this); stripped != this {
 			e = e.shallowCopy()
@@ -7856,7 +7888,7 @@ func (g *generator) writeDateArith(e *Expression, domain string, sign int) strin
 			return g.dateArithDremio(name, this, amount, unit)
 		}
 		return g.dateArithGenericFallback(name, this, amount, unit, false)
-	case "mysql":
+	case "mysql", "doris":
 		if domain == "Date" {
 			return g.dateArithMySQL(name, this, amount, unit)
 		}

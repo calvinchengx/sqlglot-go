@@ -1,0 +1,945 @@
+{
+ "dialect": "doris",
+ "rendered": "CREATE TABLE IF NOT EXISTS example_tbl_unique (user_id BIGINT NOT NULL, user_name VARCHAR(50) NOT NULL, city VARCHAR(20), age SMALLINT, sex TINYINT) UNIQUE KEY (user_id, user_name) DISTRIBUTED BY HASH (user_id) BUCKETS 10 PROPERTIES ('enable_unique_key_merge_on_write'='true')",
+ "sql": "CREATE TABLE IF NOT EXISTS example_tbl_unique (user_id BIGINT NOT NULL, user_name VARCHAR(50) NOT NULL, city VARCHAR(20), age SMALLINT, sex TINYINT) UNIQUE KEY (user_id, user_name) DISTRIBUTED BY HASH (user_id) BUCKETS 10 PROPERTIES ('enable_unique_key_merge_on_write'='true')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "IF"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 16,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 20,
+   "t": "EXISTS",
+   "x": "EXISTS"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "example_tbl_unique"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 46,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 47,
+   "t": "VAR",
+   "x": "user_id"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 55,
+   "t": "BIGINT",
+   "x": "BIGINT"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 62,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 66,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 70,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 72,
+   "t": "VAR",
+   "x": "user_name"
+  },
+  {
+   "c": 89,
+   "e": 88,
+   "l": 1,
+   "s": 82,
+   "t": "VARCHAR",
+   "x": "VARCHAR"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 89,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 90,
+   "t": "NUMBER",
+   "x": "50"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 92,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 97,
+   "e": 96,
+   "l": 1,
+   "s": 94,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 98,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 102,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 104,
+   "t": "VAR",
+   "x": "city"
+  },
+  {
+   "c": 116,
+   "e": 115,
+   "l": 1,
+   "s": 109,
+   "t": "VARCHAR",
+   "x": "VARCHAR"
+  },
+  {
+   "c": 117,
+   "e": 116,
+   "l": 1,
+   "s": 116,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 119,
+   "e": 118,
+   "l": 1,
+   "s": 117,
+   "t": "NUMBER",
+   "x": "20"
+  },
+  {
+   "c": 120,
+   "e": 119,
+   "l": 1,
+   "s": 119,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 121,
+   "e": 120,
+   "l": 1,
+   "s": 120,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 122,
+   "t": "VAR",
+   "x": "age"
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 126,
+   "t": "SMALLINT",
+   "x": "SMALLINT"
+  },
+  {
+   "c": 135,
+   "e": 134,
+   "l": 1,
+   "s": 134,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 139,
+   "e": 138,
+   "l": 1,
+   "s": 136,
+   "t": "VAR",
+   "x": "sex"
+  },
+  {
+   "c": 147,
+   "e": 146,
+   "l": 1,
+   "s": 140,
+   "t": "TINYINT",
+   "x": "TINYINT"
+  },
+  {
+   "c": 148,
+   "e": 147,
+   "l": 1,
+   "s": 147,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 155,
+   "e": 154,
+   "l": 1,
+   "s": 149,
+   "t": "UNIQUE",
+   "x": "UNIQUE"
+  },
+  {
+   "c": 159,
+   "e": 158,
+   "l": 1,
+   "s": 156,
+   "t": "KEY",
+   "x": "KEY"
+  },
+  {
+   "c": 161,
+   "e": 160,
+   "l": 1,
+   "s": 160,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 168,
+   "e": 167,
+   "l": 1,
+   "s": 161,
+   "t": "VAR",
+   "x": "user_id"
+  },
+  {
+   "c": 169,
+   "e": 168,
+   "l": 1,
+   "s": 168,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 179,
+   "e": 178,
+   "l": 1,
+   "s": 170,
+   "t": "VAR",
+   "x": "user_name"
+  },
+  {
+   "c": 180,
+   "e": 179,
+   "l": 1,
+   "s": 179,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 192,
+   "e": 191,
+   "l": 1,
+   "s": 181,
+   "t": "VAR",
+   "x": "DISTRIBUTED"
+  },
+  {
+   "c": 195,
+   "e": 194,
+   "l": 1,
+   "s": 193,
+   "t": "VAR",
+   "x": "BY"
+  },
+  {
+   "c": 200,
+   "e": 199,
+   "l": 1,
+   "s": 196,
+   "t": "VAR",
+   "x": "HASH"
+  },
+  {
+   "c": 202,
+   "e": 201,
+   "l": 1,
+   "s": 201,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 209,
+   "e": 208,
+   "l": 1,
+   "s": 202,
+   "t": "VAR",
+   "x": "user_id"
+  },
+  {
+   "c": 210,
+   "e": 209,
+   "l": 1,
+   "s": 209,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 218,
+   "e": 217,
+   "l": 1,
+   "s": 211,
+   "t": "VAR",
+   "x": "BUCKETS"
+  },
+  {
+   "c": 221,
+   "e": 220,
+   "l": 1,
+   "s": 219,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 232,
+   "e": 231,
+   "l": 1,
+   "s": 222,
+   "t": "VAR",
+   "x": "PROPERTIES"
+  },
+  {
+   "c": 234,
+   "e": 233,
+   "l": 1,
+   "s": 233,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 268,
+   "e": 267,
+   "l": 1,
+   "s": 234,
+   "t": "STRING",
+   "x": "enable_unique_key_merge_on_write"
+  },
+  {
+   "c": 269,
+   "e": 268,
+   "l": 1,
+   "s": 268,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 275,
+   "e": 274,
+   "l": 1,
+   "s": 269,
+   "t": "STRING",
+   "x": "true"
+  },
+  {
+   "c": 276,
+   "e": 275,
+   "l": 1,
+   "s": 275,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "example_tbl_unique"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "user_id"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "BIGINT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 6,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.NotNullColumnConstraint",
+   "i": 13,
+   "k": "kind"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 81,
+    "end": 80,
+    "line": 1,
+    "start": 72
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "user_name"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 15,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 19,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 19,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 21,
+   "k": "this",
+   "m": {
+    "col": 92,
+    "end": 91,
+    "line": 1,
+    "start": 90
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "50"
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 19,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 15,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.NotNullColumnConstraint",
+   "i": 26,
+   "k": "kind"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 108,
+    "end": 107,
+    "line": 1,
+    "start": 104
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "city"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 28,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 32,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 32,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 34,
+   "k": "this",
+   "m": {
+    "col": 119,
+    "end": 118,
+    "line": 1,
+    "start": 117
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "20"
+  },
+  {
+   "i": 35,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 32,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 39,
+   "k": "this",
+   "m": {
+    "col": 125,
+    "end": 124,
+    "line": 1,
+    "start": 122
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "age"
+  },
+  {
+   "i": 40,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 39,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 43,
+   "k": "this",
+   "v": "SMALLINT"
+  },
+  {
+   "i": 43,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 46,
+   "k": "this",
+   "m": {
+    "col": 139,
+    "end": 138,
+    "line": 1,
+    "start": 136
+   }
+  },
+  {
+   "i": 47,
+   "k": "this",
+   "v": "sex"
+  },
+  {
+   "i": 47,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 46,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 50,
+   "k": "this",
+   "v": "TINYINT"
+  },
+  {
+   "i": 50,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.UniqueKeyProperty",
+   "i": 58,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 59,
+   "k": "expressions",
+   "m": {
+    "col": 168,
+    "end": 167,
+    "line": 1,
+    "start": 161
+   }
+  },
+  {
+   "i": 60,
+   "k": "this",
+   "v": "user_id"
+  },
+  {
+   "i": 60,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 59,
+   "k": "expressions",
+   "m": {
+    "col": 179,
+    "end": 178,
+    "line": 1,
+    "start": 170
+   }
+  },
+  {
+   "i": 63,
+   "k": "this",
+   "v": "user_name"
+  },
+  {
+   "i": 63,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DistributedByProperty",
+   "i": 58,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 66,
+   "k": "expressions",
+   "m": {
+    "col": 209,
+    "end": 208,
+    "line": 1,
+    "start": 202
+   }
+  },
+  {
+   "i": 67,
+   "k": "this",
+   "v": "user_id"
+  },
+  {
+   "i": 67,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 66,
+   "k": "kind",
+   "v": "HASH"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 66,
+   "k": "buckets",
+   "m": {
+    "col": 221,
+    "end": 220,
+    "line": 1,
+    "start": 219
+   }
+  },
+  {
+   "i": 71,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 71,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 58,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 74,
+   "k": "this",
+   "m": {
+    "col": 268,
+    "end": 267,
+    "line": 1,
+    "start": 234
+   }
+  },
+  {
+   "i": 75,
+   "k": "this",
+   "v": "enable_unique_key_merge_on_write"
+  },
+  {
+   "i": 75,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 74,
+   "k": "value",
+   "m": {
+    "col": 275,
+    "end": 274,
+    "line": 1,
+    "start": 269
+   }
+  },
+  {
+   "i": 78,
+   "k": "this",
+   "v": "true"
+  },
+  {
+   "i": 78,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}
