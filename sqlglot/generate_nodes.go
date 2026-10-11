@@ -1670,10 +1670,14 @@ func (g *generator) writeCast(e *Expression) string {
 	word := "CAST"
 	if e.Class == "TryCast" {
 		word = "TRY_CAST"
-		// Hive has no TRY_CAST: its generator maps TryCast to a plain CAST
-		// (HiveGenerator.TRANSFORMS' `no_trycast_sql`).
-		if g.dialect == "hive" {
-			word = "CAST"
+		// The Hive family has no TRY_CAST of its own: a plain TryCast (the one
+		// a non-strict CAST builds) writes CAST, and only the `safe` variant
+		// an explicit TRY_CAST builds keeps the word.
+		if isHiveFamily(g.dialect) {
+			safe, _ := e.Args["safe"].(bool)
+			if !safe {
+				word = "CAST"
+			}
 		}
 	}
 	// Dremio's own CURRENT_DATE_UTC() parses into this exact shape (see

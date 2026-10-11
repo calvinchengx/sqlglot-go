@@ -1,0 +1,442 @@
+{
+ "dialect": "spark",
+ "rendered": "CREATE TABLE blah (col_a INT, date STRING) COMMENT 'Test comment: blah' PARTITIONED BY (date) USING ICEBERG TBLPROPERTIES ('x'='1')",
+ "sql": "CREATE TABLE blah (col_a INT) COMMENT \"Test comment: blah\" PARTITIONED BY (date STRING) USING ICEBERG TBLPROPERTIES('x' = '1')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "blah"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "col_a"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 25,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 30,
+   "t": "COMMENT",
+   "x": "COMMENT"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 38,
+   "t": "STRING",
+   "x": "Test comment: blah"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 59,
+   "t": "PARTITION_BY",
+   "x": "PARTITIONED BY"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 74,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 75,
+   "t": "DATE",
+   "x": "date"
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 80,
+   "t": "TEXT",
+   "x": "STRING"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 86,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 88,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 94,
+   "t": "VAR",
+   "x": "ICEBERG"
+  },
+  {
+   "c": 115,
+   "e": 114,
+   "l": 1,
+   "s": 102,
+   "t": "VAR",
+   "x": "TBLPROPERTIES"
+  },
+  {
+   "c": 116,
+   "e": 115,
+   "l": 1,
+   "s": 115,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 119,
+   "e": 118,
+   "l": 1,
+   "s": 116,
+   "t": "STRING",
+   "x": "x"
+  },
+  {
+   "c": 121,
+   "e": 120,
+   "l": 1,
+   "s": 120,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 122,
+   "t": "STRING",
+   "x": "1"
+  },
+  {
+   "c": 126,
+   "e": 125,
+   "l": 1,
+   "s": 125,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "blah"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "col_a"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.SchemaCommentProperty",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "Test comment: blah"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionedByProperty",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 23,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 24,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 79,
+    "end": 78,
+    "line": 1,
+    "start": 75
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "date"
+  },
+  {
+   "i": 26,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 25,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 29,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 29,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.FileFormatProperty",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 32,
+   "k": "this"
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "ICEBERG"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 35,
+   "k": "this",
+   "m": {
+    "col": 119,
+    "end": 118,
+    "line": 1,
+    "start": 116
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 36,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 35,
+   "k": "value",
+   "m": {
+    "col": 125,
+    "end": 124,
+    "line": 1,
+    "start": 122
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 39,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

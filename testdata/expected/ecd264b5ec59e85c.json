@@ -1,0 +1,910 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT TRANSFORM(zip_code, name, age) ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe' WITH SERDEPROPERTIES ('field.delim'='\\t') USING 'cat' AS (a STRING, b STRING, c STRING) ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe' WITH SERDEPROPERTIES ('field.delim'='\\t') FROM person WHERE zip_code > 94511",
+ "sql": "SELECT TRANSFORM(zip_code, name, age) ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe' WITH SERDEPROPERTIES ('field.delim'='\\t') USING 'cat' AS (a STRING, b STRING, c STRING) ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe' WITH SERDEPROPERTIES ('field.delim'='\\t') FROM person WHERE zip_code > 94511",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "TRANSFORM"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "zip_code"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "name"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 33,
+   "t": "VAR",
+   "x": "age"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 38,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 42,
+   "t": "FORMAT",
+   "x": "FORMAT"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 49,
+   "t": "VAR",
+   "x": "SERDE"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 55,
+   "t": "STRING",
+   "x": "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 108,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 128,
+   "e": 127,
+   "l": 1,
+   "s": 113,
+   "t": "SERDE_PROPERTIES",
+   "x": "SERDEPROPERTIES"
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 129,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 143,
+   "e": 142,
+   "l": 1,
+   "s": 130,
+   "t": "STRING",
+   "x": "field.delim"
+  },
+  {
+   "c": 144,
+   "e": 143,
+   "l": 1,
+   "s": 143,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 148,
+   "e": 147,
+   "l": 1,
+   "s": 144,
+   "t": "STRING",
+   "x": "\t"
+  },
+  {
+   "c": 149,
+   "e": 148,
+   "l": 1,
+   "s": 148,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 155,
+   "e": 154,
+   "l": 1,
+   "s": 150,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 161,
+   "e": 160,
+   "l": 1,
+   "s": 156,
+   "t": "STRING",
+   "x": "cat"
+  },
+  {
+   "c": 164,
+   "e": 163,
+   "l": 1,
+   "s": 162,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 166,
+   "e": 165,
+   "l": 1,
+   "s": 165,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 167,
+   "e": 166,
+   "l": 1,
+   "s": 166,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 174,
+   "e": 173,
+   "l": 1,
+   "s": 168,
+   "t": "TEXT",
+   "x": "STRING"
+  },
+  {
+   "c": 175,
+   "e": 174,
+   "l": 1,
+   "s": 174,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 177,
+   "e": 176,
+   "l": 1,
+   "s": 176,
+   "t": "VAR",
+   "x": "b"
+  },
+  {
+   "c": 184,
+   "e": 183,
+   "l": 1,
+   "s": 178,
+   "t": "TEXT",
+   "x": "STRING"
+  },
+  {
+   "c": 185,
+   "e": 184,
+   "l": 1,
+   "s": 184,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 187,
+   "e": 186,
+   "l": 1,
+   "s": 186,
+   "t": "VAR",
+   "x": "c"
+  },
+  {
+   "c": 194,
+   "e": 193,
+   "l": 1,
+   "s": 188,
+   "t": "TEXT",
+   "x": "STRING"
+  },
+  {
+   "c": 195,
+   "e": 194,
+   "l": 1,
+   "s": 194,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 199,
+   "e": 198,
+   "l": 1,
+   "s": 196,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 206,
+   "e": 205,
+   "l": 1,
+   "s": 200,
+   "t": "FORMAT",
+   "x": "FORMAT"
+  },
+  {
+   "c": 212,
+   "e": 211,
+   "l": 1,
+   "s": 207,
+   "t": "VAR",
+   "x": "SERDE"
+  },
+  {
+   "c": 265,
+   "e": 264,
+   "l": 1,
+   "s": 213,
+   "t": "STRING",
+   "x": "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe"
+  },
+  {
+   "c": 270,
+   "e": 269,
+   "l": 1,
+   "s": 266,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 286,
+   "e": 285,
+   "l": 1,
+   "s": 271,
+   "t": "SERDE_PROPERTIES",
+   "x": "SERDEPROPERTIES"
+  },
+  {
+   "c": 288,
+   "e": 287,
+   "l": 1,
+   "s": 287,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 301,
+   "e": 300,
+   "l": 1,
+   "s": 288,
+   "t": "STRING",
+   "x": "field.delim"
+  },
+  {
+   "c": 302,
+   "e": 301,
+   "l": 1,
+   "s": 301,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 306,
+   "e": 305,
+   "l": 1,
+   "s": 302,
+   "t": "STRING",
+   "x": "\t"
+  },
+  {
+   "c": 307,
+   "e": 306,
+   "l": 1,
+   "s": 306,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 312,
+   "e": 311,
+   "l": 1,
+   "s": 308,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 319,
+   "e": 318,
+   "l": 1,
+   "s": 313,
+   "t": "VAR",
+   "x": "person"
+  },
+  {
+   "c": 325,
+   "e": 324,
+   "l": 1,
+   "s": 320,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 334,
+   "e": 333,
+   "l": 1,
+   "s": 326,
+   "t": "VAR",
+   "x": "zip_code"
+  },
+  {
+   "c": 336,
+   "e": 335,
+   "l": 1,
+   "s": 335,
+   "t": "GT",
+   "x": ">"
+  },
+  {
+   "c": 342,
+   "e": 341,
+   "l": 1,
+   "s": 337,
+   "t": "NUMBER",
+   "x": "94511"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.QueryTransform",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "zip_code"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "name"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "age"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "command_script",
+   "m": {
+    "col": 161,
+    "end": 160,
+    "line": 1,
+    "start": 156
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "cat"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 1,
+   "k": "schema"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 17,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 167,
+    "end": 166,
+    "line": 1,
+    "start": 166
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 18,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 22,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 22,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 17,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 177,
+    "end": 176,
+    "line": 1,
+    "start": 176
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 26,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 25,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 29,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 29,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 17,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 187,
+    "end": 186,
+    "line": 1,
+    "start": 186
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 32,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 36,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 36,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.RowFormatSerdeProperty",
+   "i": 1,
+   "k": "row_format_before"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 39,
+   "k": "this",
+   "m": {
+    "col": 107,
+    "end": 106,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe"
+  },
+  {
+   "i": 40,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.properties.SerdeProperties",
+   "i": 39,
+   "k": "serde_properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 43,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 44,
+   "k": "this",
+   "m": {
+    "col": 143,
+    "end": 142,
+    "line": 1,
+    "start": 130
+   }
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "field.delim"
+  },
+  {
+   "i": 45,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 44,
+   "k": "value",
+   "m": {
+    "col": 148,
+    "end": 147,
+    "line": 1,
+    "start": 144
+   }
+  },
+  {
+   "i": 48,
+   "k": "this",
+   "v": "\t"
+  },
+  {
+   "i": 48,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 43,
+   "k": "with_",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.properties.RowFormatSerdeProperty",
+   "i": 1,
+   "k": "row_format_after"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 52,
+   "k": "this",
+   "m": {
+    "col": 265,
+    "end": 264,
+    "line": 1,
+    "start": 213
+   }
+  },
+  {
+   "i": 53,
+   "k": "this",
+   "v": "org.apache.hadoop.hive.serde2.lazy.LazySimpleSerDe"
+  },
+  {
+   "i": 53,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.properties.SerdeProperties",
+   "i": 52,
+   "k": "serde_properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 56,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 57,
+   "k": "this",
+   "m": {
+    "col": 301,
+    "end": 300,
+    "line": 1,
+    "start": 288
+   }
+  },
+  {
+   "i": 58,
+   "k": "this",
+   "v": "field.delim"
+  },
+  {
+   "i": 58,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 57,
+   "k": "value",
+   "m": {
+    "col": 306,
+    "end": 305,
+    "line": 1,
+    "start": 302
+   }
+  },
+  {
+   "i": 61,
+   "k": "this",
+   "v": "\t"
+  },
+  {
+   "i": 61,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 56,
+   "k": "with_",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 65,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 66,
+   "k": "this",
+   "m": {
+    "col": 319,
+    "end": 318,
+    "line": 1,
+    "start": 313
+   }
+  },
+  {
+   "i": 67,
+   "k": "this",
+   "v": "person"
+  },
+  {
+   "i": 67,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.GT",
+   "i": 70,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 71,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 72,
+   "k": "this",
+   "m": {
+    "col": 334,
+    "end": 333,
+    "line": 1,
+    "start": 326
+   }
+  },
+  {
+   "i": 73,
+   "k": "this",
+   "v": "zip_code"
+  },
+  {
+   "i": 73,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 71,
+   "k": "expression",
+   "m": {
+    "col": 342,
+    "end": 341,
+    "line": 1,
+    "start": 337
+   }
+  },
+  {
+   "i": 76,
+   "k": "this",
+   "v": "94511"
+  },
+  {
+   "i": 76,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

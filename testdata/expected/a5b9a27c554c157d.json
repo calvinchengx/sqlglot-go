@@ -1,0 +1,115 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT STR_TO_MAP('a:1,b:2,c:3', ',', ':')",
+ "sql": "SELECT STR_TO_MAP('a:1,b:2,c:3')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "STR_TO_MAP"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 18,
+   "t": "STRING",
+   "x": "a:1,b:2,c:3"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.StrToMap",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "a:1,b:2,c:3"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "pair_delim"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": ","
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "key_value_delim"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": ":"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

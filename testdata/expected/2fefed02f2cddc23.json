@@ -1,0 +1,285 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT CONCAT(COALESCE(ARRAY('abc'), ARRAY()), ARRAY('bcg'))",
+ "sql": "SELECT CONCAT(COALESCE(ARRAY('abc'), ARRAY()), ARRAY('bcg'))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CONCAT"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "COALESCE"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 23,
+   "t": "ARRAY",
+   "x": "ARRAY"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 29,
+   "t": "STRING",
+   "x": "abc"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 34,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 37,
+   "t": "ARRAY",
+   "x": "ARRAY"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 45,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 47,
+   "t": "ARRAY",
+   "x": "ARRAY"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 53,
+   "t": "STRING",
+   "x": "bcg"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 59,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.Concat",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Coalesce",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expressions",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "abc"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.array.Array",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.array.Array",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "expressions",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "bcg"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "coalesce",
+   "v": false
+  }
+ ]
+}

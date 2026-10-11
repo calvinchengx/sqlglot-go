@@ -1,0 +1,202 @@
+{
+ "dialect": "spark",
+ "rendered": "TO_JSON(MAP_FROM_ENTRIES(ARRAY(('action_type', 'at'))))",
+ "sql": "TO_JSON(MAP_FROM_ENTRIES(ARRAY(('action_type', 'at'))))",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "TO_JSON"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "MAP_FROM_ENTRIES"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 25,
+   "t": "ARRAY",
+   "x": "ARRAY"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 32,
+   "t": "STRING",
+   "x": "action_type"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 45,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 47,
+   "t": "STRING",
+   "x": "at"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 51,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.json.JSONFormat",
+   "m": {
+    "col": 7,
+    "end": 6,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.array.MapFromEntries",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expressions",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "action_type"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expressions",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "at"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

@@ -2082,15 +2082,35 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 // char/varchar as string there and does not truncate, so the length is
 // dropped rather than carried (HiveParser._parse_types).
 func (p *parser) hiveCastType(to *Expression) *Expression {
-	if p.dialect != "hive" || to == nil || to.Class != "DataType" {
+	if !isHiveFamily(p.dialect) || to == nil || to.Class != "DataType" {
 		return to
 	}
-	kind, _ := to.Args["this"].(DataTypeKind)
-	switch strings.ToUpper(string(kind)) {
-	case "CHAR", "VARCHAR":
-		to.Set("this", DataTypeKind("TEXT"))
-		to.Set("expressions", nil)
+	// The reference runs its rewrite over the WHOLE type, so a char/varchar
+	// nested inside a STRUCT or ARRAY is rewritten too.
+	var rewrite func(*Expression)
+	rewrite = func(n *Expression) {
+		if n == nil {
+			return
+		}
+		if n.Class == "DataType" {
+			kind, _ := n.Args["this"].(DataTypeKind)
+			if k := strings.ToUpper(string(kind)); k == "CHAR" || k == "VARCHAR" {
+				n.Set("this", DataTypeKind("TEXT"))
+				n.Set("expressions", nil)
+			}
+		}
+		for _, key := range n.Keys {
+			switch v := n.Args[key].(type) {
+			case *Expression:
+				rewrite(v)
+			case []*Expression:
+				for _, x := range v {
+					rewrite(x)
+				}
+			}
+		}
 	}
+	rewrite(to)
 	return to
 }
 
@@ -2742,7 +2762,7 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	// builder with) builds a bare MAP(...) through its own reference builder
 	// rather than a probeable signature -- see buildVarMap -- so it is not
 	// turned away here despite having none.
-	isVarMap := upper == "MAP" && (p.dialect == "databricks" || p.dialect == "starrocks" || p.dialect == "hive")
+	isVarMap := upper == "MAP" && (p.dialect == "databricks" || p.dialect == "starrocks" || isHiveFamily(p.dialect))
 	// Dremio's DATETYPE has no generic fallback shape at all -- unlike
 	// DATE_ADD/DATE_SUB's cast-interval builder, which still probes fine
 	// through its own fallback_builder -- so it is not turned away here
@@ -2758,8 +2778,11 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	// the probe cannot record -- they are lambdas -- so they are built by
 	// hand and must not be turned away here.
 	isSingleStoreFn := p.dialect == "singlestore" && singlestoreOwnedFunction(upper)
+	// The Hive family's own builders are hand-written too (the probe cannot
+	// record the lambdas), so they must not be turned away here either.
+	isHiveFn := isHiveFamily(p.dialect) && hiveOwnedFunction(upper)
 	if !named && !byArity && !isJSONPath && !byWord && !isVarMap && !isDremioDateType &&
-		!isMySQLDateDelta && !isPrestoToChar && !isSingleStoreFn {
+		!isMySQLDateDelta && !isPrestoToChar && !isSingleStoreFn && !isHiveFn {
 		if _, custom := p.tables.NamedFunctions[upper]; custom {
 			return nil, p.unsupported("function " + upper + " with a builder of its own")
 		}
@@ -2893,7 +2916,7 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	if upper == "MOD" && len(args) == 2 {
 		return p.buildMod(args), nil
 	}
-	if p.dialect == "hive" {
+	if isHiveFamily(p.dialect) {
 		if built := p.buildHiveFunction(upper, args); built != nil {
 			return built, nil
 		}

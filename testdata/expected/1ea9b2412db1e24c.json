@@ -1,0 +1,156 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT /*+ MAPJOIN(table) */ cola FROM table",
+ "sql": "SELECT /*+ MAPJOIN(table) */ cola FROM table",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "o": [
+    " MAPJOIN(table) "
+   ],
+   "s": 7,
+   "t": "HINT",
+   "x": "/*+ MAPJOIN(table) */"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "cola"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 34,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 39,
+   "t": "TABLE",
+   "x": "table"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "c": "sqlglot.expressions.core.Hint",
+   "i": 0,
+   "k": "hint"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.JoinHint",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "MAPJOIN"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 9
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "table"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "cola"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "table"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

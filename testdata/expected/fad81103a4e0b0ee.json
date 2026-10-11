@@ -1,0 +1,102 @@
+{
+ "dialect": "spark",
+ "rendered": "ANALYZE TABLES FROM db COMPUTE STATISTICS",
+ "sql": "ANALYZE TABLES FROM db COMPUTE STATISTICS",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "ANALYZE",
+   "x": "ANALYZE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "TABLES"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 15,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 20,
+   "t": "VAR",
+   "x": "db"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "COMPUTE"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 31,
+   "t": "VAR",
+   "x": "STATISTICS"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Analyze"
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLES FROM"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "tables"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "db",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "db"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.AnalyzeStatistics",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "i": 6,
+   "k": "kind",
+   "v": "COMPUTE"
+  }
+ ]
+}

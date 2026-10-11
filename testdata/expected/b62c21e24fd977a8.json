@@ -1,0 +1,177 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT CAST(NULL AS STRING) AS COL1",
+ "sql": "SELECT CAST(NULL AS VARCHAR(2328)) AS COL1",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 12,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 17,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 20,
+   "t": "VARCHAR",
+   "x": "VARCHAR"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 28,
+   "t": "NUMBER",
+   "x": "2328"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 35,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 38,
+   "t": "VAR",
+   "x": "COL1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.functions.TryCast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TEXT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 4,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 4,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "COL1"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

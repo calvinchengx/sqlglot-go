@@ -1,0 +1,105 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT EXTRACT(MONTH FROM '1970-01-01')",
+ "sql": "SELECT EXTRACT(month FROM '1970-01-01')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "EXTRACT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "month"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 21,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 26,
+   "t": "STRING",
+   "x": "1970-01-01"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 38,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.Extract",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "MONTH"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "1970-01-01"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

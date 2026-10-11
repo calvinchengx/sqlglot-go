@@ -1,0 +1,160 @@
+{
+ "dialect": "spark2",
+ "rendered": "SELECT TO_UTC_TIMESTAMP(CAST(NOW() AS TIMESTAMP), 'GMT')",
+ "sql": "SELECT TO_UTC_TIMESTAMP(NOW(), 'GMT')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "TO_UTC_TIMESTAMP"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "NOW"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 31,
+   "t": "STRING",
+   "x": "GMT"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.FromTimeZone",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMP"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "NOW"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 5,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "zone",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "GMT"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

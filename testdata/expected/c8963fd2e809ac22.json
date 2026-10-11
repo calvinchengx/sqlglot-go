@@ -1,0 +1,199 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT TO_UTC_TIMESTAMP(CAST('2016-08-31' AS TIMESTAMP), 'Asia/Seoul')",
+ "sql": "SELECT TO_UTC_TIMESTAMP(CAST('2016-08-31' AS TIMESTAMP), 'Asia/Seoul')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "TO_UTC_TIMESTAMP"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 29,
+   "t": "STRING",
+   "x": "2016-08-31"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 42,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 45,
+   "t": "TIMESTAMPTZ",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 57,
+   "t": "STRING",
+   "x": "Asia/Seoul"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 69,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.FromTimeZone",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.TryCast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMPTZ"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "2016-08-31"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 6,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  },
+  {
+   "i": 6,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "zone",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "Asia/Seoul"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

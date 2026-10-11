@@ -1,0 +1,162 @@
+{
+ "dialect": "spark",
+ "rendered": "CREATE TEMPORARY VIEW test AS SELECT 1",
+ "sql": "CREATE TEMPORARY VIEW test AS SELECT 1",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 7,
+   "t": "TEMPORARY",
+   "x": "TEMPORARY"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 17,
+   "t": "VIEW",
+   "x": "VIEW"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 22,
+   "t": "VAR",
+   "x": "test"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 27,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 30,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "NUMBER",
+   "x": "1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "VIEW"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "expressions",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.TemporaryProperty",
+   "i": 14,
+   "k": "expressions"
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

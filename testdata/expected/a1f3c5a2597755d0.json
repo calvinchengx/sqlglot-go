@@ -1,0 +1,137 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT COLLECT_SET(sample_col) FROM sample_table",
+ "sql": "SELECT COLLECT_SET(sample_col) FROM sample_table",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "COLLECT_SET"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "sample_col"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 31,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 36,
+   "t": "VAR",
+   "x": "sample_table"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.ArrayUniqueAgg",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "sample_col"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "sample_table"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

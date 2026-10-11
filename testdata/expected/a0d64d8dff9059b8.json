@@ -1,0 +1,238 @@
+{
+ "dialect": "spark",
+ "rendered": "IF(cond, foo AS bar, bla AS baz)",
+ "sql": "IF(cond, foo AS bar, bla AS baz)",
+ "tokens": [
+  {
+   "c": 2,
+   "e": 1,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "IF"
+  },
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 2,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 3,
+   "t": "VAR",
+   "x": "cond"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 9,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 13,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "bar"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 21,
+   "t": "VAR",
+   "x": "bla"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 25,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "baz"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.functions.If"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 7,
+    "end": 6,
+    "line": 1,
+    "start": 3
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "cond"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "true"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 9
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "alias",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "bar"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "false"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "bla"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "alias",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "baz"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

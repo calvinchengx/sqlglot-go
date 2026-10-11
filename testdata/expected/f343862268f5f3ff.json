@@ -1,0 +1,154 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT REGEXP_REPLACE('100-200', '([^0-9])', '')",
+ "sql": "SELECT REGEXP_REPLACE('100-200', r'([^0-9])', '')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "REGEXP_REPLACE"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 22,
+   "t": "STRING",
+   "x": "100-200"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 33,
+   "t": "RAW_STRING",
+   "x": "([^0-9])"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 46,
+   "t": "STRING",
+   "x": ""
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 48,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.RegexpReplace",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "100-200"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.RawString",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "([^0-9])"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "replacement",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": ""
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

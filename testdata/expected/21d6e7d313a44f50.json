@@ -1,0 +1,585 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT GET_JSON_OBJECT(FILTER(FROM_JSON(GET_JSON_OBJECT('{\"k1\": [{\"k2\": \"{\\\\\"k3\\\\\": 1}\", \"k4\": \"v\"}]}', '$.k1'), 'ARRAY<MAP<STRING, STRING>>'), x -> x['k4'] = 'v')[0]['k2'], '$.k3')",
+ "sql": "SELECT GET_JSON_OBJECT(FILTER(FROM_JSON(GET_JSON_OBJECT('{\"k1\": [{\"k2\": \"{\\\\\"k3\\\\\": 1}\", \"k4\": \"v\"}]}', '$.k1'), 'ARRAY<MAP<STRING, STRING>>'), x -> x['k4'] = 'v')[0]['k2'], '$.k3')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "GET_JSON_OBJECT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 23,
+   "t": "FILTER",
+   "x": "FILTER"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 30,
+   "t": "VAR",
+   "x": "FROM_JSON"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "GET_JSON_OBJECT"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 56,
+   "t": "STRING",
+   "x": "{\"k1\": [{\"k2\": \"{\\\"k3\\\": 1}\", \"k4\": \"v\"}]}"
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 102,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 110,
+   "e": 109,
+   "l": 1,
+   "s": 104,
+   "t": "STRING",
+   "x": "$.k1"
+  },
+  {
+   "c": 111,
+   "e": 110,
+   "l": 1,
+   "s": 110,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 111,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 141,
+   "e": 140,
+   "l": 1,
+   "s": 113,
+   "t": "STRING",
+   "x": "ARRAY<MAP<STRING, STRING>>"
+  },
+  {
+   "c": 142,
+   "e": 141,
+   "l": 1,
+   "s": 141,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 143,
+   "e": 142,
+   "l": 1,
+   "s": 142,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 145,
+   "e": 144,
+   "l": 1,
+   "s": 144,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 148,
+   "e": 147,
+   "l": 1,
+   "s": 146,
+   "t": "ARROW",
+   "x": "->"
+  },
+  {
+   "c": 150,
+   "e": 149,
+   "l": 1,
+   "s": 149,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 151,
+   "e": 150,
+   "l": 1,
+   "s": 150,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 155,
+   "e": 154,
+   "l": 1,
+   "s": 151,
+   "t": "STRING",
+   "x": "k4"
+  },
+  {
+   "c": 156,
+   "e": 155,
+   "l": 1,
+   "s": 155,
+   "t": "R_BRACKET",
+   "x": "]"
+  },
+  {
+   "c": 158,
+   "e": 157,
+   "l": 1,
+   "s": 157,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 162,
+   "e": 161,
+   "l": 1,
+   "s": 159,
+   "t": "STRING",
+   "x": "v"
+  },
+  {
+   "c": 163,
+   "e": 162,
+   "l": 1,
+   "s": 162,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 164,
+   "e": 163,
+   "l": 1,
+   "s": 163,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 165,
+   "e": 164,
+   "l": 1,
+   "s": 164,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 166,
+   "e": 165,
+   "l": 1,
+   "s": 165,
+   "t": "R_BRACKET",
+   "x": "]"
+  },
+  {
+   "c": 167,
+   "e": 166,
+   "l": 1,
+   "s": 166,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 171,
+   "e": 170,
+   "l": 1,
+   "s": 167,
+   "t": "STRING",
+   "x": "k2"
+  },
+  {
+   "c": 172,
+   "e": 171,
+   "l": 1,
+   "s": 171,
+   "t": "R_BRACKET",
+   "x": "]"
+  },
+  {
+   "c": 173,
+   "e": 172,
+   "l": 1,
+   "s": 172,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 180,
+   "e": 179,
+   "l": 1,
+   "s": 174,
+   "t": "STRING",
+   "x": "$.k3"
+  },
+  {
+   "c": 181,
+   "e": 180,
+   "l": 1,
+   "s": 180,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExtractScalar",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Bracket",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Bracket",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.array.ArrayFilter",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "FROM_JSON"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExtractScalar",
+   "i": 5,
+   "k": "expressions",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 102,
+    "end": 101,
+    "line": 1,
+    "start": 56
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "{\"k1\": [{\"k2\": \"{\\\"k3\\\": 1}\", \"k4\": \"v\"}]}"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 7,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 11,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 11,
+   "k": "expressions"
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "k1"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "expressions",
+   "m": {
+    "col": 141,
+    "end": 140,
+    "line": 1,
+    "start": 113
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "ARRAY<MAP<STRING, STRING>>"
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Lambda",
+   "i": 4,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Bracket",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 150,
+    "end": 149,
+    "line": 1,
+    "start": 149
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 20,
+   "k": "expressions",
+   "m": {
+    "col": 155,
+    "end": 154,
+    "line": 1,
+    "start": 151
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "k4"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 19,
+   "k": "expression",
+   "m": {
+    "col": 162,
+    "end": 161,
+    "line": 1,
+    "start": 159
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "v"
+  },
+  {
+   "i": 27,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "expressions",
+   "m": {
+    "col": 145,
+    "end": 144,
+    "line": 1,
+    "start": 144
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 30,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expressions",
+   "m": {
+    "col": 165,
+    "end": 164,
+    "line": 1,
+    "start": 164
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 33,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 171,
+    "end": 170,
+    "line": 1,
+    "start": 167
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "k2"
+  },
+  {
+   "i": 36,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 39,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 39,
+   "k": "expressions"
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "k3"
+  }
+ ]
+}

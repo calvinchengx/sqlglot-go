@@ -1,0 +1,123 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT '2023-01-01T00:00:00' + INTERVAL '1' MILLISECOND",
+ "sql": "SELECT '2023-01-01T00:00:00' + INTERVAL '1' MILLISECOND",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 7,
+   "t": "STRING",
+   "x": "2023-01-01T00:00:00"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 31,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 40,
+   "t": "STRING",
+   "x": "1"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "MILLISECOND"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Add",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "2023-01-01T00:00:00"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 5,
+   "k": "unit"
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "MILLISECOND"
+  }
+ ]
+}

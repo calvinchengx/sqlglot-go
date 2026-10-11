@@ -1,0 +1,198 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT * FROM test TABLESAMPLE (BUCKET 4 OUT OF 10)",
+ "sql": "SELECT * FROM test TABLESAMPLE (BUCKET 4 OUT OF 10)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "test"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 19,
+   "t": "TABLE_SAMPLE",
+   "x": "TABLESAMPLE"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 32,
+   "t": "VAR",
+   "x": "BUCKET"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "NUMBER",
+   "x": "4"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 41,
+   "t": "OUT",
+   "x": "OUT"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 45,
+   "t": "VAR",
+   "x": "OF"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 48,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableSample",
+   "i": 3,
+   "k": "sample"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "bucket_numerator",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "4"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "bucket_denominator",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

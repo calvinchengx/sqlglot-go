@@ -1,0 +1,405 @@
+{
+ "dialect": "spark2",
+ "rendered": "SELECT CAST(MONTHS_BETWEEN(CAST('2021-01-01' AS TIMESTAMP), CAST('2020-01-01' AS TIMESTAMP)) / 12 AS INT)",
+ "sql": "SELECT CAST(MONTHS_BETWEEN(CAST('2021-01-01' AS TIMESTAMP), CAST('2020-01-01' AS TIMESTAMP)) / 12 AS INT)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "MONTHS_BETWEEN"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 32,
+   "t": "STRING",
+   "x": "2021-01-01"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 45,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 48,
+   "t": "TIMESTAMPTZ",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 57,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 60,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 64,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 77,
+   "e": 76,
+   "l": 1,
+   "s": 65,
+   "t": "STRING",
+   "x": "2020-01-01"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 78,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 81,
+   "t": "TIMESTAMPTZ",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 91,
+   "e": 90,
+   "l": 1,
+   "s": 90,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 91,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 93,
+   "t": "SLASH",
+   "x": "/"
+  },
+  {
+   "c": 97,
+   "e": 96,
+   "l": 1,
+   "s": 95,
+   "t": "NUMBER",
+   "x": "12"
+  },
+  {
+   "c": 100,
+   "e": 99,
+   "l": 1,
+   "s": 98,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 101,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 105,
+   "e": 104,
+   "l": 1,
+   "s": 104,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.TryCast",
+   "i": 0,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Div",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.MonthsBetween",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.TryCast",
+   "i": 3,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMPTZ"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "2021-01-01"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 4,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 8,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  },
+  {
+   "i": 8,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.functions.TryCast",
+   "i": 3,
+   "k": "expression",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMPTZ"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 77,
+    "end": 76,
+    "line": 1,
+    "start": 65
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "2020-01-01"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 11,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 15,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  },
+  {
+   "i": 15,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 97,
+    "end": 96,
+    "line": 1,
+    "start": 95
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "12"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 2,
+   "k": "typed",
+   "v": false
+  },
+  {
+   "i": 2,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 23,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 23,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

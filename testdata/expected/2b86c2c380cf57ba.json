@@ -1,0 +1,167 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT FROM_UTC_TIMESTAMP(CAST('2012-10-31 00:00' AS TIMESTAMP), 'America/Sao_Paulo')",
+ "sql": "SELECT FROM_UTC_TIMESTAMP(TIMESTAMP '2012-10-31 00:00', 'America/Sao_Paulo')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "FROM_UTC_TIMESTAMP"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 26,
+   "t": "TIMESTAMPTZ",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 36,
+   "t": "STRING",
+   "x": "2012-10-31 00:00"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 56,
+   "t": "STRING",
+   "x": "America/Sao_Paulo"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 75,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.AtTimeZone",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMPTZ"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "2012-10-31 00:00"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 6,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  },
+  {
+   "i": 6,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "zone",
+   "m": {
+    "col": 75,
+    "end": 74,
+    "line": 1,
+    "start": 56
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "America/Sao_Paulo"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

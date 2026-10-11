@@ -1727,9 +1727,14 @@ func (p *parser) parseAddPartition(exists bool) (*Expression, error) {
 		location = loc
 	}
 	// The reference assigns exists, then this, then location -- the order the
-	// dump compares, not the class's own field order.
+	// dump compares, not the class's own field order. A missing LOCATION is
+	// False, not absent.
+	locationArg := location
+	if location == nil {
+		locationArg = false
+	}
 	return New("AddPartition",
-		Arg{"exists", exists}, Arg{"this", this}, Arg{"location", location}), nil
+		Arg{"exists", exists}, Arg{"this", this}, Arg{"location", locationArg}), nil
 }
 
 // parseDroppedPartitions reads the `PARTITION (...)` list an ALTER drops.
@@ -2209,7 +2214,7 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 	case p.at(TokSET):
 		p.advance()
 		return p.parseAlterSet()
-	case p.dialect == "hive" && p.atWords("CHANGE"):
+	case isHiveFamily(p.dialect) && p.atWords("CHANGE"):
 		// Hive's CHANGE restates a column under a new name
 		// (HiveParser._parse_alter_table_change): `CHANGE [COLUMN] a b TYPE
 		// [COMMENT '...']`.
@@ -2439,6 +2444,17 @@ func (p *parser) parseAlteredColumn() (*Expression, error) {
 	}
 	action := New("AlterColumn", Arg{"this", name})
 	switch {
+	case (p.dialect == "spark2" || p.dialect == "spark") && p.atWords("TYPE"):
+		// Spark's ALTER COLUMN ... TYPE restates the type only
+		// (CHANGE_COLUMN_ALTER_SYNTAX).
+		p.advance()
+		dtype, err := p.parseColumnType()
+		if err != nil {
+			return nil, err
+		}
+		action.Set("dtype", p.hiveCastType(dtype))
+		action.Set("collate", false)
+		action.Set("using", false)
 	case p.atWords("SET", "DEFAULT"):
 		p.advance()
 		p.advance()
@@ -6258,6 +6274,12 @@ func (p *parser) parseDeclare() (*Expression, error) {
 		replace = true
 	}
 
+	// Spark's DECLARE names a variable and gives it a value, with no type:
+	// `DECLARE five = 5`, `DECLARE VARIABLE size DEFAULT 6`.
+	if p.dialect == "spark2" || p.dialect == "spark" {
+		return p.parseSparkDeclare(replace)
+	}
+
 	// The reference tries its own item parser and CATCHES what it raises --
 	// `PRIMARY KEY CLUSTERED (...)` is a constraint shape this port's own
 	// column-def reader has no case for, and the reference gives up on it
@@ -6271,6 +6293,32 @@ func (p *parser) parseDeclare() (*Expression, error) {
 	}
 	if err != nil || len(items) == 0 || p.curr() != nil {
 		return p.parseAsCommand(start), nil
+	}
+	return New("Declare", Arg{"expressions", items}, Arg{"replace", replace}), nil
+}
+
+// parseSparkDeclare reads Spark's `DECLARE [OR REPLACE] [VARIABLE] name
+// [= v | DEFAULT v]`, one or more of them.
+func (p *parser) parseSparkDeclare(replace bool) (*Expression, error) {
+	var items []*Expression
+	for {
+		p.matchUnquotedWord("VARIABLE")
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		item := New("DeclareItem", Arg{"this", []*Expression{name}})
+		if p.match(TokEQ) || p.matchUnquotedWord("DEFAULT") {
+			value, err := p.parseDisjunction()
+			if err != nil {
+				return nil, err
+			}
+			item.Set("default", value)
+		}
+		items = append(items, item)
+		if !p.match(TokCOMMA) {
+			break
+		}
 	}
 	return New("Declare", Arg{"expressions", items}, Arg{"replace", replace}), nil
 }

@@ -1,0 +1,319 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT REGEXP_EXTRACT(TO_JSON(FROM_JSON('[[1, 2, 3]]', SCHEMA_OF_JSON('[[1, 2, 3]]'))), '^.(.*).$')",
+ "sql": "SELECT REGEXP_EXTRACT(TO_JSON(FROM_JSON('[[1, 2, 3]]', SCHEMA_OF_JSON('[[1, 2, 3]]'))), '^.(.*).$', 1)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "REGEXP_EXTRACT"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 22,
+   "t": "VAR",
+   "x": "TO_JSON"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 30,
+   "t": "VAR",
+   "x": "FROM_JSON"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 40,
+   "t": "STRING",
+   "x": "[[1, 2, 3]]"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 55,
+   "t": "VAR",
+   "x": "SCHEMA_OF_JSON"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 69,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 70,
+   "t": "STRING",
+   "x": "[[1, 2, 3]]"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 83,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 84,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 85,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 86,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 88,
+   "t": "STRING",
+   "x": "^.(.*).$"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 98,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 100,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 101,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.RegexpExtract",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.json.JSONFormat",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "FROM_JSON"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expressions",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "[[1, 2, 3]]"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 3,
+   "k": "expressions",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "SCHEMA_OF_JSON"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "expressions",
+   "m": {
+    "col": 83,
+    "end": 82,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "[[1, 2, 3]]"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 98,
+    "end": 97,
+    "line": 1,
+    "start": 88
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "^.(.*).$"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "group",
+   "m": {
+    "col": 101,
+    "end": 100,
+    "line": 1,
+    "start": 100
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "null_if_pos_overflow",
+   "v": true
+  }
+ ]
+}

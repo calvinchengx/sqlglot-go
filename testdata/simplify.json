@@ -752,6 +752,11 @@
    "expected": "NOT REGEXP_MATCHES(s, 'a')"
   },
   {
+   "dialect": "spark",
+   "sql": "NOT (s RLIKE 'a')",
+   "expected": "NOT s RLIKE 'a'"
+  },
+  {
    "dialect": "",
    "sql": "1 + 1",
    "expected": "2"

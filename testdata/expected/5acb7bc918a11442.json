@@ -1,0 +1,247 @@
+{
+ "dialect": "spark",
+ "rendered": "CACHE TABLE testCache OPTIONS('storageLevel' = 'DISK_ONLY') AS SELECT * FROM testData",
+ "sql": "CACHE TABLE testCache OPTIONS('storageLevel' = 'DISK_ONLY') AS SELECT * FROM testData",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "CACHE",
+   "x": "CACHE"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 6,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "testCache"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 22,
+   "t": "VAR",
+   "x": "OPTIONS"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 30,
+   "t": "STRING",
+   "x": "storageLevel"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 45,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 47,
+   "t": "STRING",
+   "x": "DISK_ONLY"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 60,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 63,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 70,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 72,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 77,
+   "t": "VAR",
+   "x": "testData"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Cache"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "testCache"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "lazy",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "options",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "storageLevel"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "options",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "DISK_ONLY"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 12,
+   "k": "expressions",
+   "m": {
+    "col": 71,
+    "end": 70,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 12,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 85,
+    "end": 84,
+    "line": 1,
+    "start": 77
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "testData"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}
