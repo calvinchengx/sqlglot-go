@@ -482,6 +482,30 @@ func dorisIsUnitLike(e *Expression) bool {
 	return true
 }
 
+// buildStarRocksTimestampTrunc is StarRocks' own build_timestamp_trunc: the
+// unit comes FIRST, then the datetime, and the unit is a Var.
+func buildStarRocksTimestampTrunc(args []*Expression) *Expression {
+	unit := argAt(args, 0)
+	this := argAt(args, 1)
+	if unit != nil && unit.Class == "Literal" {
+		if text, ok := unit.Args["this"].(string); ok {
+			unit = New("Var", Arg{"this", strings.ToUpper(text)})
+		}
+	}
+	return New("TimestampTrunc", Arg{"this", this}, Arg{"unit", unit})
+}
+
+// buildStarRocksDateDiff is StarRocks' DATEDIFF/DATE_DIFF shape: a DateDiff
+// whose unit the two functions place in different slots, held as a Var.
+func buildStarRocksDateDiff(this, expression, unit *Expression) *Expression {
+	if unit != nil && unit.Class == "Literal" {
+		if text, ok := unit.Args["this"].(string); ok {
+			unit = New("Var", Arg{"this", strings.ToUpper(text)})
+		}
+	}
+	return New("DateDiff", Arg{"this", this}, Arg{"expression", expression}, Arg{"unit", unit})
+}
+
 // teradataTimeMapping is Teradata's TIME_MAPPING in the pinned reference.
 // Presto's TO_CHAR is Teradata-compatible and reads its format through THIS
 // table rather than Presto's own, so it is written out here -- Teradata is

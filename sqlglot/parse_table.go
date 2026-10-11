@@ -634,8 +634,10 @@ func (p *parser) tableAtIndex(table *Expression) (*Expression, error) {
 func (p *parser) tableRest(table *Expression) (*Expression, error) {
 	// MySQL names the partition being read on the table itself:
 	// `FROM t1 PARTITION(p0)`. It is part of the name, and it stands before
-	// the alias. A word with no list after it is still an alias.
-	if p.dialect == "mysql" {
+	// the alias. A word with no list after it is still an alias. StarRocks
+	// and Doris inherit MySQL's SUPPORTS_PARTITION_SELECTION, so they read it
+	// too -- REFRESH EXTERNAL TABLE t PARTITION(...) among them.
+	if p.dialect == "mysql" || p.dialect == "doris" || p.dialect == "starrocks" {
 		part, err := p.parseTablePartition()
 		if err != nil {
 			return nil, err
@@ -1559,6 +1561,19 @@ func (p *parser) parseUnnest() (*Expression, error) {
 	if !ordinality {
 		if c := p.curr(); c != nil && c.Type == TokWITH {
 			return nil, p.unsupported("UNNEST WITH OFFSET")
+		}
+	}
+	// StarRocks defaults the UNNEST table alias and column to `unnest` when
+	// the statement does not name them (StarRocksParser._parse_unnest).
+	if p.dialect == "starrocks" {
+		unnestIdent := func() *Expression {
+			return New("Identifier", Arg{"this", "unnest"}, Arg{"quoted", false})
+		}
+		if alias == nil {
+			alias = New("TableAlias", Arg{"this", unnestIdent()},
+				Arg{"columns", []*Expression{unnestIdent()}})
+		} else if cols, _ := alias.Args["columns"].([]*Expression); len(cols) == 0 {
+			alias.Set("columns", []*Expression{unnestIdent()})
 		}
 	}
 	return New("Unnest",

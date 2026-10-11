@@ -2632,7 +2632,7 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	// builder with) builds a bare MAP(...) through its own reference builder
 	// rather than a probeable signature -- see buildVarMap -- so it is not
 	// turned away here despite having none.
-	isVarMap := upper == "MAP" && p.dialect == "databricks"
+	isVarMap := upper == "MAP" && (p.dialect == "databricks" || p.dialect == "starrocks")
 	// Dremio's DATETYPE has no generic fallback shape at all -- unlike
 	// DATE_ADD/DATE_SUB's cast-interval builder, which still probes fine
 	// through its own fallback_builder -- so it is not turned away here
@@ -2779,7 +2779,7 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	if upper == "MOD" && len(args) == 2 {
 		return p.buildMod(args), nil
 	}
-	if upper == "STR_TO_DATE" && (p.dialect == "mysql" || p.dialect == "doris") && len(args) == 2 {
+	if upper == "STR_TO_DATE" && (p.dialect == "mysql" || p.dialect == "doris" || p.dialect == "starrocks") && len(args) == 2 {
 		return p.buildMySQLStrToDate(args), nil
 	}
 	if (upper == "DATE_ADD" || upper == "DATE_SUB") && p.dialect == "mysql" && len(args) == 2 {
@@ -2804,6 +2804,28 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 			}
 		case "DATE_TRUNC":
 			return buildDorisDateTrunc(args), nil
+		}
+	}
+	// StarRocks shares MySQL's family but writes its date functions its own
+	// way: the delta builders default to DAY, DATE_TRUNC takes the unit
+	// FIRST, and DATEDIFF/DATE_DIFF put the unit in different slots.
+	if p.dialect == "starrocks" {
+		switch upper {
+		case "DATE_ADD", "DATE_SUB", "ADDDATE", "SUBDATE":
+			class := map[string]string{
+				"DATE_ADD": "DateAdd", "DATE_SUB": "DateSub",
+				"ADDDATE": "DateAdd", "SUBDATE": "DateSub",
+			}[upper]
+			if built := buildDorisDateDeltaWithInterval(class, args); built != nil {
+				return built, nil
+			}
+		case "DATE_TRUNC":
+			return buildStarRocksTimestampTrunc(args), nil
+		case "DATEDIFF":
+			return buildStarRocksDateDiff(argAt(args, 0), argAt(args, 1),
+				New("Literal", Arg{"this", "DAY"}, Arg{"is_string", true})), nil
+		case "DATE_DIFF":
+			return buildStarRocksDateDiff(argAt(args, 1), argAt(args, 2), argAt(args, 0)), nil
 		}
 	}
 	// DATE_ADD/DATE_SUB over an INTERVAL argument are rewritten by these
