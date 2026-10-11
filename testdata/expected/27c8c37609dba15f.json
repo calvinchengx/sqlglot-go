@@ -1,0 +1,676 @@
+{
+ "dialect": "spark",
+ "rendered": "SELECT TRANSFORM(name, age) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LINES TERMINATED BY '\\n' NULL DEFINED AS 'NULL' USING 'cat' AS (name_age STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '@' LINES TERMINATED BY '\\n' NULL DEFINED AS 'NULL' FROM person",
+ "sql": "SELECT TRANSFORM(name, age) ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' LINES TERMINATED BY '\\n' NULL DEFINED AS 'NULL' USING 'cat' AS (name_age STRING) ROW FORMAT DELIMITED FIELDS TERMINATED BY '@' LINES TERMINATED BY '\\n' NULL DEFINED AS 'NULL' FROM person",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "TRANSFORM"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "name"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "age"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 28,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 32,
+   "t": "FORMAT",
+   "x": "FORMAT"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 39,
+   "t": "VAR",
+   "x": "DELIMITED"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 49,
+   "t": "VAR",
+   "x": "FIELDS"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 56,
+   "t": "VAR",
+   "x": "TERMINATED"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 67,
+   "t": "VAR",
+   "x": "BY"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 70,
+   "t": "STRING",
+   "x": ","
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 74,
+   "t": "VAR",
+   "x": "LINES"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 80,
+   "t": "VAR",
+   "x": "TERMINATED"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 91,
+   "t": "VAR",
+   "x": "BY"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 94,
+   "t": "STRING",
+   "x": "\n"
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 99,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 111,
+   "e": 110,
+   "l": 1,
+   "s": 104,
+   "t": "VAR",
+   "x": "DEFINED"
+  },
+  {
+   "c": 114,
+   "e": 113,
+   "l": 1,
+   "s": 112,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 121,
+   "e": 120,
+   "l": 1,
+   "s": 115,
+   "t": "STRING",
+   "x": "NULL"
+  },
+  {
+   "c": 127,
+   "e": 126,
+   "l": 1,
+   "s": 122,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 133,
+   "e": 132,
+   "l": 1,
+   "s": 128,
+   "t": "STRING",
+   "x": "cat"
+  },
+  {
+   "c": 136,
+   "e": 135,
+   "l": 1,
+   "s": 134,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 138,
+   "e": 137,
+   "l": 1,
+   "s": 137,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 146,
+   "e": 145,
+   "l": 1,
+   "s": 138,
+   "t": "VAR",
+   "x": "name_age"
+  },
+  {
+   "c": 153,
+   "e": 152,
+   "l": 1,
+   "s": 147,
+   "t": "TEXT",
+   "x": "STRING"
+  },
+  {
+   "c": 154,
+   "e": 153,
+   "l": 1,
+   "s": 153,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 158,
+   "e": 157,
+   "l": 1,
+   "s": 155,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 165,
+   "e": 164,
+   "l": 1,
+   "s": 159,
+   "t": "FORMAT",
+   "x": "FORMAT"
+  },
+  {
+   "c": 175,
+   "e": 174,
+   "l": 1,
+   "s": 166,
+   "t": "VAR",
+   "x": "DELIMITED"
+  },
+  {
+   "c": 182,
+   "e": 181,
+   "l": 1,
+   "s": 176,
+   "t": "VAR",
+   "x": "FIELDS"
+  },
+  {
+   "c": 193,
+   "e": 192,
+   "l": 1,
+   "s": 183,
+   "t": "VAR",
+   "x": "TERMINATED"
+  },
+  {
+   "c": 196,
+   "e": 195,
+   "l": 1,
+   "s": 194,
+   "t": "VAR",
+   "x": "BY"
+  },
+  {
+   "c": 200,
+   "e": 199,
+   "l": 1,
+   "s": 197,
+   "t": "STRING",
+   "x": "@"
+  },
+  {
+   "c": 206,
+   "e": 205,
+   "l": 1,
+   "s": 201,
+   "t": "VAR",
+   "x": "LINES"
+  },
+  {
+   "c": 217,
+   "e": 216,
+   "l": 1,
+   "s": 207,
+   "t": "VAR",
+   "x": "TERMINATED"
+  },
+  {
+   "c": 220,
+   "e": 219,
+   "l": 1,
+   "s": 218,
+   "t": "VAR",
+   "x": "BY"
+  },
+  {
+   "c": 225,
+   "e": 224,
+   "l": 1,
+   "s": 221,
+   "t": "STRING",
+   "x": "\n"
+  },
+  {
+   "c": 230,
+   "e": 229,
+   "l": 1,
+   "s": 226,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 238,
+   "e": 237,
+   "l": 1,
+   "s": 231,
+   "t": "VAR",
+   "x": "DEFINED"
+  },
+  {
+   "c": 241,
+   "e": 240,
+   "l": 1,
+   "s": 239,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 248,
+   "e": 247,
+   "l": 1,
+   "s": 242,
+   "t": "STRING",
+   "x": "NULL"
+  },
+  {
+   "c": 253,
+   "e": 252,
+   "l": 1,
+   "s": 249,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 260,
+   "e": 259,
+   "l": 1,
+   "s": 254,
+   "t": "VAR",
+   "x": "person"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.QueryTransform",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "name"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "age"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "command_script",
+   "m": {
+    "col": 133,
+    "end": 132,
+    "line": 1,
+    "start": 128
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "cat"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 1,
+   "k": "schema"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 13,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 146,
+    "end": 145,
+    "line": 1,
+    "start": 138
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "name_age"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 14,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 18,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 18,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.RowFormatDelimitedProperty",
+   "i": 1,
+   "k": "row_format_before"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 21,
+   "k": "fields",
+   "m": {
+    "col": 73,
+    "end": 72,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": ","
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 21,
+   "k": "lines",
+   "m": {
+    "col": 98,
+    "end": 97,
+    "line": 1,
+    "start": 94
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "\n"
+  },
+  {
+   "i": 25,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 21,
+   "k": "null",
+   "m": {
+    "col": 121,
+    "end": 120,
+    "line": 1,
+    "start": 115
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "NULL"
+  },
+  {
+   "i": 28,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.properties.RowFormatDelimitedProperty",
+   "i": 1,
+   "k": "row_format_after"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 31,
+   "k": "fields",
+   "m": {
+    "col": 200,
+    "end": 199,
+    "line": 1,
+    "start": 197
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "@"
+  },
+  {
+   "i": 32,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 31,
+   "k": "lines",
+   "m": {
+    "col": 225,
+    "end": 224,
+    "line": 1,
+    "start": 221
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "\n"
+  },
+  {
+   "i": 35,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 31,
+   "k": "null",
+   "m": {
+    "col": 248,
+    "end": 247,
+    "line": 1,
+    "start": 242
+   }
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "NULL"
+  },
+  {
+   "i": 38,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 41,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 42,
+   "k": "this",
+   "m": {
+    "col": 260,
+    "end": 259,
+    "line": 1,
+    "start": 254
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "person"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

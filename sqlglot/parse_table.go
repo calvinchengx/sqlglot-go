@@ -800,7 +800,17 @@ func (p *parser) parsePivot() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		aggregates = append(aggregates, unpivotTarget(p.pivotAggregate(agg), unpivot))
+		target := unpivotTarget(p.pivotAggregate(agg), unpivot)
+		// An UNPIVOT names its value columns, and a parenthesised list of
+		// them is a Tuple whose members are Identifiers too.
+		if unpivot && target != nil && target.Class == "Tuple" {
+			if members, _ := target.Args["expressions"].([]*Expression); members != nil {
+				for i, m := range members {
+					members[i] = unpivotTarget(m, true)
+				}
+			}
+		}
+		aggregates = append(aggregates, target)
 		if !p.match(TokCOMMA) {
 			break
 		}
@@ -933,6 +943,11 @@ func (p *parser) pivotColumns(aggregates, values []*Expression) ([]*Expression, 
 				names = append(names, alias.Name())
 			}
 		}
+	}
+	// Spark names the columns after the value ALONE when there is only one
+	// aggregate, and after value+aggregate once there are several.
+	if p.tables.PivotColumnNaming == "agg_name_if_multiple" && len(aggregates) == 1 {
+		names = nil
 	}
 	// DuckDB names the columns after the AGGREGATES themselves once there is
 	// more than one, rendering each back to SQL to do it. That is a
@@ -1347,7 +1362,11 @@ func (p *parser) parseParenthesisedTable() (*Expression, error) {
 	// Inside a join tree a VALUES is wrapped in a TABLE, where standing alone
 	// as a FROM item it is not -- and the alias moves onto the wrapper with
 	// it. Same rows, two shapes, and the position decides.
-	if table.Class == "Values" {
+	joins, err := p.parseJoins()
+	if err != nil {
+		return nil, err
+	}
+	if table.Class == "Values" && len(joins) > 0 {
 		alias, _ := table.Args["alias"].(*Expression)
 		table.Set("alias", nil)
 		wrapped := New("Table", Arg{"this", table})
@@ -1355,10 +1374,6 @@ func (p *parser) parseParenthesisedTable() (*Expression, error) {
 			wrapped.Set("alias", alias)
 		}
 		table = wrapped
-	}
-	joins, err := p.parseJoins()
-	if err != nil {
-		return nil, err
 	}
 	if len(joins) > 0 {
 		table.Set("joins", joins)

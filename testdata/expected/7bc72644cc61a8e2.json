@@ -1,0 +1,54 @@
+{
+ "dialect": "spark",
+ "rendered": "REFRESH 'hdfs://path/to/table'",
+ "sql": "REFRESH 'hdfs://path/to/table'",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "REFRESH",
+   "x": "REFRESH"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 8,
+   "t": "STRING",
+   "x": "hdfs://path/to/table"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Refresh"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "hdfs://path/to/table"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": ""
+  }
+ ]
+}

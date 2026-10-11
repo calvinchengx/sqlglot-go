@@ -2,6 +2,13 @@ package sqlglot
 
 import "fmt"
 
+// isHiveFamily reports whether a dialect inherits Hive's own parser and
+// generator behaviour -- Hive itself, and the two Spark subclasses that add
+// to it rather than replacing it.
+func isHiveFamily(dialect string) bool {
+	return dialect == "hive" || dialect == "spark2" || dialect == "spark"
+}
+
 // isTrueBoolean reports whether a node is the literal TRUE.
 func isTrueBoolean(e *Expression) bool {
 	if e == nil || e.Class != "Boolean" {
@@ -9,6 +16,18 @@ func isTrueBoolean(e *Expression) bool {
 	}
 	b, _ := e.Args["this"].(bool)
 	return b
+}
+
+// hiveOwnedFunction reports the names buildHiveFunction builds by hand, so the
+// generic dispatch does not turn them away for having no recorded signature.
+func hiveOwnedFunction(upper string) bool {
+	switch upper {
+	case "STRUCT", "NAMED_STRUCT", "INITCAP",
+		"FIRST", "FIRST_VALUE", "LAST", "LAST_VALUE",
+		"GET_JSON_OBJECT":
+		return true
+	}
+	return false
 }
 
 // buildHiveFunction builds the Hive functions whose shape the generic
@@ -65,6 +84,21 @@ func (p *parser) buildHiveFunction(upper string, args []*Expression) *Expression
 			return New("JSONExtractScalar",
 				Arg{"this", args[0]}, Arg{"expression", expr})
 		}
+
+	case "NAMED_STRUCT":
+		// Spark's NAMED_STRUCT('k', v, ...) is a Struct of PropertyEQ pairs
+		// (Spark2Parser._build_named_struct).
+		var items []*Expression
+		for i := 0; i+1 < len(args); i += 2 {
+			key := args[i]
+			if key == nil {
+				continue
+			}
+			items = append(items, New("PropertyEQ",
+				Arg{"this", New("Identifier", Arg{"this", key.Name()}, Arg{"quoted", false})},
+				Arg{"expression", args[i+1]}))
+		}
+		return New("Struct", Arg{"expressions", items})
 
 	case "INITCAP":
 		// Hive's own default delimiter set, which is whitespace rather than

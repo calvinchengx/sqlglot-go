@@ -46,15 +46,37 @@ func snowflakeJSONRequired(dialect string) bool {
 // not an identifier always is. A quoted identifier is too, except in
 // Snowflake, where a safe name stays a dotted segment: store['bicycle']
 // is store.bicycle inside GET_PATH.
+// hiveSafeJSONPathKey is the Hive family's SAFE_JSON_PATH_KEY_RE:
+// `^[_\-a-zA-Z][\-\w]*$`, a key that may be written bare.
+func hiveSafeJSONPathKey(name string) bool {
+	if name == "" {
+		return false
+	}
+	safe := func(ch byte) bool {
+		return ch == '-' || ch == '_' ||
+			(ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') || (ch >= '0' && ch <= '9')
+	}
+	first := name[0]
+	isAlpha := (first >= 'a' && first <= 'z') || (first >= 'A' && first <= 'Z')
+	if first != '_' && first != '-' && !isAlpha {
+		return false
+	}
+	for i := 1; i < len(name); i++ {
+		if !safe(name[i]) {
+			return false
+		}
+	}
+	return true
+}
+
 func bracketJSONPathKey(dialect string, hasFlag, quoted bool, name string) bool {
 	if dialect == "snowflake" && isBareIdentifier(name) {
 		return false
 	}
-	// Hive writes a path's key as its bare NAME however it is spelled
-	// (HiveGenerator's own json_path_key_only_name), so a key that is not a
-	// bare identifier is not bracketed.
-	if dialect == "hive" {
-		return false
+	// The Hive family writes a key matching its own SAFE_JSON_PATH_KEY_RE
+	// bare (letters, digits, `_` and `-`), and brackets anything else.
+	if isHiveFamily(dialect) {
+		return !hiveSafeJSONPathKey(name)
 	}
 	return (hasFlag && quoted) || !isBareIdentifier(name)
 }

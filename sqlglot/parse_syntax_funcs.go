@@ -1601,8 +1601,12 @@ func (p *parser) parseInitcap() (*Expression, error) {
 	// Hive's own default character class is whitespace rather than the base
 	// dialect's punctuation (INITCAP_DEFAULT_DELIMITER_CHARS).
 	delimText := initcapDefaultDelimiters
-	if p.dialect == "hive" {
+	if isHiveFamily(p.dialect) {
 		delimText = " \t\n\r\f\v\x1c\x1d\x1e\x1f"
+	}
+	if p.dialect == "spark2" || p.dialect == "spark" {
+		// Spark's own default is a bare space.
+		delimText = " "
 	}
 	delim := New("Literal", Arg{"this", delimText}, Arg{"is_string", true})
 	if p.at(TokCOMMA) {

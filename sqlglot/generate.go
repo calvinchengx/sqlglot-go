@@ -195,7 +195,7 @@ func (g *generator) node(e *Expression) string {
 			return g.withComments(e, out)
 		}
 	}
-	if g.dialect == "hive" {
+	if isHiveFamily(g.dialect) {
 		if out, handled := g.hiveNode(e); handled {
 			return g.withComments(e, out)
 		}

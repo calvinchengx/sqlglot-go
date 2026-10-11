@@ -1,0 +1,977 @@
+{
+ "dialect": "spark",
+ "rendered": "MERGE INTO target USING source ON target.id = source.id WHEN MATCHED AND source.is_deleted = 1 THEN DELETE WHEN MATCHED THEN UPDATE SET val = source.val WHEN NOT MATCHED THEN INSERT (id, val) VALUES (source.id, source.val)",
+ "sql": "MERGE INTO target USING source ON target.id = source.id WHEN MATCHED AND source.is_deleted = 1 THEN DELETE WHEN MATCHED THEN UPDATE SET val = source.val WHEN NOT MATCHED THEN INSERT (id, val) VALUES (source.id, source.val)",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "MERGE",
+   "x": "MERGE"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 6,
+   "t": "INTO",
+   "x": "INTO"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "target"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 18,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "source"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 31,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 34,
+   "t": "VAR",
+   "x": "target"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 41,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 46,
+   "t": "VAR",
+   "x": "source"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 53,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 56,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 61,
+   "t": "VAR",
+   "x": "MATCHED"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 69,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 73,
+   "t": "VAR",
+   "x": "source"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 79,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 80,
+   "t": "VAR",
+   "x": "is_deleted"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 91,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 93,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 95,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 100,
+   "t": "DELETE",
+   "x": "DELETE"
+  },
+  {
+   "c": 111,
+   "e": 110,
+   "l": 1,
+   "s": 107,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 119,
+   "e": 118,
+   "l": 1,
+   "s": 112,
+   "t": "VAR",
+   "x": "MATCHED"
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 120,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 131,
+   "e": 130,
+   "l": 1,
+   "s": 125,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  },
+  {
+   "c": 135,
+   "e": 134,
+   "l": 1,
+   "s": 132,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 139,
+   "e": 138,
+   "l": 1,
+   "s": 136,
+   "t": "VAR",
+   "x": "val"
+  },
+  {
+   "c": 141,
+   "e": 140,
+   "l": 1,
+   "s": 140,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 148,
+   "e": 147,
+   "l": 1,
+   "s": 142,
+   "t": "VAR",
+   "x": "source"
+  },
+  {
+   "c": 149,
+   "e": 148,
+   "l": 1,
+   "s": 148,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 152,
+   "e": 151,
+   "l": 1,
+   "s": 149,
+   "t": "VAR",
+   "x": "val"
+  },
+  {
+   "c": 157,
+   "e": 156,
+   "l": 1,
+   "s": 153,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 161,
+   "e": 160,
+   "l": 1,
+   "s": 158,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 169,
+   "e": 168,
+   "l": 1,
+   "s": 162,
+   "t": "VAR",
+   "x": "MATCHED"
+  },
+  {
+   "c": 174,
+   "e": 173,
+   "l": 1,
+   "s": 170,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 181,
+   "e": 180,
+   "l": 1,
+   "s": 175,
+   "t": "INSERT",
+   "x": "INSERT"
+  },
+  {
+   "c": 183,
+   "e": 182,
+   "l": 1,
+   "s": 182,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 185,
+   "e": 184,
+   "l": 1,
+   "s": 183,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 186,
+   "e": 185,
+   "l": 1,
+   "s": 185,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 190,
+   "e": 189,
+   "l": 1,
+   "s": 187,
+   "t": "VAR",
+   "x": "val"
+  },
+  {
+   "c": 191,
+   "e": 190,
+   "l": 1,
+   "s": 190,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 198,
+   "e": 197,
+   "l": 1,
+   "s": 192,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 200,
+   "e": 199,
+   "l": 1,
+   "s": 199,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 206,
+   "e": 205,
+   "l": 1,
+   "s": 200,
+   "t": "VAR",
+   "x": "source"
+  },
+  {
+   "c": 207,
+   "e": 206,
+   "l": 1,
+   "s": 206,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 209,
+   "e": 208,
+   "l": 1,
+   "s": 207,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 210,
+   "e": 209,
+   "l": 1,
+   "s": 209,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 217,
+   "e": 216,
+   "l": 1,
+   "s": 211,
+   "t": "VAR",
+   "x": "source"
+  },
+  {
+   "c": 218,
+   "e": 217,
+   "l": 1,
+   "s": 217,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 221,
+   "e": 220,
+   "l": 1,
+   "s": 218,
+   "t": "VAR",
+   "x": "val"
+  },
+  {
+   "c": 222,
+   "e": 221,
+   "l": 1,
+   "s": 221,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Merge"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "target"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "using"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "source"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 0,
+   "k": "on"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 41
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "table",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "target"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "table",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "source"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "using_cond",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.Whens",
+   "i": 0,
+   "k": "whens"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.When",
+   "i": 25,
+   "k": "expressions"
+  },
+  {
+   "i": 26,
+   "k": "matched",
+   "v": true
+  },
+  {
+   "i": 26,
+   "k": "source",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 26,
+   "k": "condition"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 29,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "this",
+   "m": {
+    "col": 90,
+    "end": 89,
+    "line": 1,
+    "start": 80
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "is_deleted"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "table",
+   "m": {
+    "col": 79,
+    "end": 78,
+    "line": 1,
+    "start": 73
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "source"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 29,
+   "k": "expression",
+   "m": {
+    "col": 94,
+    "end": 93,
+    "line": 1,
+    "start": 93
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 37,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 26,
+   "k": "then"
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "DELETE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.When",
+   "i": 25,
+   "k": "expressions"
+  },
+  {
+   "i": 42,
+   "k": "matched",
+   "v": true
+  },
+  {
+   "i": 42,
+   "k": "source",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.Update",
+   "i": 42,
+   "k": "then"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 45,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 46,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 47,
+   "k": "this",
+   "m": {
+    "col": 139,
+    "end": 138,
+    "line": 1,
+    "start": 136
+   }
+  },
+  {
+   "i": 48,
+   "k": "this",
+   "v": "val"
+  },
+  {
+   "i": 48,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 46,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 51,
+   "k": "this",
+   "m": {
+    "col": 152,
+    "end": 151,
+    "line": 1,
+    "start": 149
+   }
+  },
+  {
+   "i": 52,
+   "k": "this",
+   "v": "val"
+  },
+  {
+   "i": 52,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 51,
+   "k": "table",
+   "m": {
+    "col": 148,
+    "end": 147,
+    "line": 1,
+    "start": 142
+   }
+  },
+  {
+   "i": 55,
+   "k": "this",
+   "v": "source"
+  },
+  {
+   "i": 55,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.When",
+   "i": 25,
+   "k": "expressions"
+  },
+  {
+   "i": 58,
+   "k": "matched",
+   "v": false
+  },
+  {
+   "i": 58,
+   "k": "source",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.Insert",
+   "i": 58,
+   "k": "then"
+  },
+  {
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 61,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 62,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 63,
+   "k": "this",
+   "m": {
+    "col": 185,
+    "end": 184,
+    "line": 1,
+    "start": 183
+   }
+  },
+  {
+   "i": 64,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 64,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 62,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 67,
+   "k": "this",
+   "m": {
+    "col": 190,
+    "end": 189,
+    "line": 1,
+    "start": 187
+   }
+  },
+  {
+   "i": 68,
+   "k": "this",
+   "v": "val"
+  },
+  {
+   "i": 68,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 61,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 71,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 72,
+   "k": "this",
+   "m": {
+    "col": 209,
+    "end": 208,
+    "line": 1,
+    "start": 207
+   }
+  },
+  {
+   "i": 73,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 73,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 72,
+   "k": "table",
+   "m": {
+    "col": 206,
+    "end": 205,
+    "line": 1,
+    "start": 200
+   }
+  },
+  {
+   "i": 76,
+   "k": "this",
+   "v": "source"
+  },
+  {
+   "i": 76,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 71,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 79,
+   "k": "this",
+   "m": {
+    "col": 221,
+    "end": 220,
+    "line": 1,
+    "start": 218
+   }
+  },
+  {
+   "i": 80,
+   "k": "this",
+   "v": "val"
+  },
+  {
+   "i": 80,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 79,
+   "k": "table",
+   "m": {
+    "col": 217,
+    "end": 216,
+    "line": 1,
+    "start": 211
+   }
+  },
+  {
+   "i": 83,
+   "k": "this",
+   "v": "source"
+  },
+  {
+   "i": 83,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}
