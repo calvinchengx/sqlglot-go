@@ -421,6 +421,67 @@ func buildMySQLDateDeltaWithInterval(upper string, args []*Expression) *Expressi
 	return New(class, Arg{"this", args[0]}, Arg{"expression", quantity}, Arg{"unit", unit})
 }
 
+// buildDorisDateDeltaWithInterval is the reference's own
+// `build_date_delta_with_interval` with `default_unit="DAY"`, which is how
+// Doris differs from MySQL: DATE_ADD/DATE_SUB/ADDDATE/SUBDATE accept a bare
+// day count as well as a real INTERVAL, and the bare form carries an explicit
+// DAY unit the generic path would not add.
+func buildDorisDateDeltaWithInterval(class string, args []*Expression) *Expression {
+	if len(args) < 2 || args[0] == nil || args[1] == nil {
+		return nil
+	}
+	if args[1].Class == "Interval" {
+		quantity, _ := args[1].Args["this"].(*Expression)
+		unit, _ := args[1].Args["unit"].(*Expression)
+		return New(class, Arg{"this", args[0]}, Arg{"expression", quantity}, Arg{"unit", unit})
+	}
+	return New(class, Arg{"this", args[0]}, Arg{"expression", args[1]},
+		Arg{"unit", New("Var", Arg{"this", "DAY"})})
+}
+
+// buildDorisDateTrunc is the reference's Doris `_build_date_trunc`: it accepts
+// both DATE_TRUNC(datetime, unit) and DATE_TRUNC(unit, datetime), deciding
+// which argument is the unit by SHAPE -- a string literal carrying no digit is
+// the unit -- and always builds a TimestampTrunc.
+func buildDorisDateTrunc(args []*Expression) *Expression {
+	var a0, a1 *Expression
+	if len(args) > 0 {
+		a0 = args[0]
+	}
+	if len(args) > 1 {
+		a1 = args[1]
+	}
+	unit, this := a0, a1
+	if !dorisIsUnitLike(a0) {
+		unit, this = a1, a0
+	}
+	// The reference hands TimestampTrunc the raw unit Literal and sqlglot
+	// coerces it to a Var, upper-cased; do the same here so the trees agree.
+	if unit != nil && unit.Class == "Literal" {
+		if text, ok := unit.Args["this"].(string); ok {
+			unit = New("Var", Arg{"this", strings.ToUpper(text)})
+		}
+	}
+	return New("TimestampTrunc", Arg{"this", this}, Arg{"unit", unit})
+}
+
+func dorisIsUnitLike(e *Expression) bool {
+	if e == nil || e.Class != "Literal" {
+		return false
+	}
+	isStr, _ := e.Args["is_string"].(bool)
+	if !isStr {
+		return false
+	}
+	text, _ := e.Args["this"].(string)
+	for _, ch := range text {
+		if ch >= '0' && ch <= '9' {
+			return false
+		}
+	}
+	return true
+}
+
 // teradataTimeMapping is Teradata's TIME_MAPPING in the pinned reference.
 // Presto's TO_CHAR is Teradata-compatible and reads its format through THIS
 // table rather than Presto's own, so it is written out here -- Teradata is

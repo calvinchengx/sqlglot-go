@@ -1,0 +1,335 @@
+{
+ "dialect": "doris",
+ "rendered": "INSERT OVERWRITE TABLE test PARTITION(p1, p2) VALUES (1, 2)",
+ "sql": "INSERT OVERWRITE TABLE test PARTITION(p1, p2) VALUES (1, 2)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "INSERT",
+   "x": "INSERT"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 7,
+   "t": "OVERWRITE",
+   "x": "OVERWRITE"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 17,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "test"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 28,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 38,
+   "t": "VAR",
+   "x": "p1"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 42,
+   "t": "VAR",
+   "x": "p2"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 46,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 57,
+   "t": "NUMBER",
+   "x": "2"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Insert"
+  },
+  {
+   "i": 0,
+   "k": "is_function",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 2,
+   "k": "partition"
+  },
+  {
+   "i": 6,
+   "k": "subpartition",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "p1"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "p2"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "stored",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "by_name",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "partition",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "settings",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "default",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Values",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 22,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 23,
+   "k": "expressions",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 54
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 23,
+   "k": "expressions",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 27,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "overwrite",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "ignore",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "source",
+   "v": false
+  }
+ ]
+}

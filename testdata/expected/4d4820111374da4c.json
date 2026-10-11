@@ -1,0 +1,307 @@
+{
+ "dialect": "doris",
+ "rendered": "CREATE MATERIALIZED VIEW mv REFRESH AUTO ON SCHEDULE EVERY 5 MINUTE STARTS '2025-01-01 00:00:00' AS SELECT 1",
+ "sql": "CREATE MATERIALIZED VIEW mv REFRESH AUTO ON SCHEDULE EVERY 5 MINUTE STARTS '2025-01-01 00:00:00' AS SELECT 1",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "MATERIALIZED"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 20,
+   "t": "VIEW",
+   "x": "VIEW"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 25,
+   "t": "VAR",
+   "x": "mv"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "REFRESH"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 36,
+   "t": "VAR",
+   "x": "AUTO"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 41,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "SCHEDULE"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 53,
+   "t": "VAR",
+   "x": "EVERY"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 59,
+   "t": "NUMBER",
+   "x": "5"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 61,
+   "t": "VAR",
+   "x": "MINUTE"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 68,
+   "t": "VAR",
+   "x": "STARTS"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 75,
+   "t": "STRING",
+   "x": "2025-01-01 00:00:00"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 97,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 100,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 107,
+   "t": "NUMBER",
+   "x": "1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "mv"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "VIEW"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "expressions",
+   "m": {
+    "col": 108,
+    "end": 107,
+    "line": 1,
+    "start": 107
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.MaterializedProperty",
+   "i": 14,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.RefreshTriggerProperty",
+   "i": 14,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 16,
+   "k": "method"
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "AUTO"
+  },
+  {
+   "i": 16,
+   "k": "kind",
+   "v": "SCHEDULE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "every",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "5"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 16,
+   "k": "unit"
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "MINUTE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "starts",
+   "m": {
+    "col": 96,
+    "end": 95,
+    "line": 1,
+    "start": 75
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "2025-01-01 00:00:00"
+  },
+  {
+   "i": 25,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

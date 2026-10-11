@@ -1,0 +1,97 @@
+{
+ "dialect": "doris",
+ "rendered": "DATE_TRUNC('2010-12-02 19:28:30', 'HOUR')",
+ "sql": "DATE_TRUNC('2010-12-02 19:28:30', 'HOUR')",
+ "tokens": [
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "DATE_TRUNC"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 11,
+   "t": "STRING",
+   "x": "2010-12-02 19:28:30"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 34,
+   "t": "STRING",
+   "x": "HOUR"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.TimestampTrunc",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "2010-12-02 19:28:30"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 0,
+   "k": "unit"
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "HOUR"
+  }
+ ]
+}

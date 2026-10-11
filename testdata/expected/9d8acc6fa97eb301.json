@@ -1,0 +1,102 @@
+{
+ "dialect": "doris",
+ "rendered": "DATE_TRUNC(event_date, 'DAY')",
+ "sql": "DATE_TRUNC(event_date, 'DAY')",
+ "tokens": [
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "DATE_TRUNC"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "event_date"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 23,
+   "t": "STRING",
+   "x": "DAY"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.TimestampTrunc",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "event_date"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 0,
+   "k": "unit"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "DAY"
+  }
+ ]
+}

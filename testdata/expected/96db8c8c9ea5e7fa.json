@@ -1,0 +1,420 @@
+{
+ "dialect": "doris",
+ "rendered": "UPDATE employees e SET e.salary = e.salary * 1.1 WHERE e.department = 'IT'",
+ "sql": "UPDATE employees e SET e.salary = e.salary * 1.1 WHERE e.department = 'IT'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "employees"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "e"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 19,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "e"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 25,
+   "t": "VAR",
+   "x": "salary"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 34,
+   "t": "VAR",
+   "x": "e"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 36,
+   "t": "VAR",
+   "x": "salary"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 45,
+   "t": "NUMBER",
+   "x": "1.1"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 49,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "VAR",
+   "x": "e"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 57,
+   "t": "VAR",
+   "x": "department"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 68,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 70,
+   "t": "STRING",
+   "x": "IT"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Update"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "employees"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 1,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "e"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "salary"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "table",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "e"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Mul",
+   "i": 9,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "salary"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "table",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "e"
+  },
+  {
+   "i": 22,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expression",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "1.1"
+  },
+  {
+   "i": 25,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 28,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 29,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "this",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "department"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "table",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "e"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 29,
+   "k": "expression",
+   "m": {
+    "col": 74,
+    "end": 73,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "IT"
+  },
+  {
+   "i": 37,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

@@ -1,0 +1,232 @@
+{
+ "dialect": "doris",
+ "rendered": "DELETE FROM sales s WHERE s.id = 1",
+ "sql": "DELETE FROM sales s WHERE s.id = 1",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "DELETE",
+   "x": "DELETE"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "sales"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "s"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 20,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "s"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "NUMBER",
+   "x": "1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Delete"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "sales"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 1,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "s"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "using",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cluster",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "table",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "s"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 12,
+   "k": "expression",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

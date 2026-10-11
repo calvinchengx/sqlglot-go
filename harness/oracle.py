@@ -39,7 +39,7 @@ import sys
 
 # Dialects the executor configures. sqlglot's per-dialect suites supply
 # dialect-specific statements; identity.sql supplies the dialect-neutral core.
-DIALECTS = ("tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql")
+DIALECTS = ("tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris")
 
 
 
@@ -977,6 +977,21 @@ def corpus_dialect(sqlglot_dir: pathlib.Path, dialects: tuple[str, ...]) -> list
     return out
 
 
+def json_default(o):
+    """A stray Expression the reference's own `dump()` did not recurse into.
+
+    Doris's multi-value range partition list (`VALUES [('a'), ('b')]`) is one:
+    the dump embeds a raw `Literal` where every other node is a dict. Dumping
+    it the way the reference meant to -- rather than dropping the statement --
+    keeps the corpus faithful to the tree the reference built.
+    """
+    import sqlglot
+
+    if isinstance(o, sqlglot.exp.Expression):
+        return o.dump()
+    raise TypeError(f"Object of type {o.__class__.__name__} is not JSON serializable")
+
+
 def dump(sql: str, dialect: str):
     import sqlglot
 
@@ -1092,6 +1107,7 @@ def main() -> int:
                 },
                 indent=1,
                 sort_keys=True,
+                default=json_default,
             )
         )
         index.append({"key": key, "dialect": dialect, "sql": sql})

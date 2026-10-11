@@ -1,0 +1,194 @@
+{
+ "dialect": "doris",
+ "rendered": "CREATE MATERIALIZED VIEW mv BUILD IMMEDIATE AS SELECT 1",
+ "sql": "CREATE MATERIALIZED VIEW mv BUILD IMMEDIATE AS SELECT 1",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "MATERIALIZED"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 20,
+   "t": "VIEW",
+   "x": "VIEW"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 25,
+   "t": "VAR",
+   "x": "mv"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "BUILD"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 34,
+   "t": "VAR",
+   "x": "IMMEDIATE"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 44,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 47,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "NUMBER",
+   "x": "1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "mv"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "VIEW"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "expressions",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 54
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.MaterializedProperty",
+   "i": 14,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.BuildProperty",
+   "i": 14,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "IMMEDIATE"
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

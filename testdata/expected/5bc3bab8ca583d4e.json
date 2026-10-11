@@ -1,0 +1,312 @@
+{
+ "dialect": "doris",
+ "rendered": "CREATE TABLE test_table (c1 INT, c2 INT) UNIQUE KEY (c1)",
+ "sql": "CREATE TABLE test_table (c1 INT, c2 INT) UNIQUE KEY (c1)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "test_table"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 25,
+   "t": "VAR",
+   "x": "c1"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 28,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 33,
+   "t": "VAR",
+   "x": "c2"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 36,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 41,
+   "t": "UNIQUE",
+   "x": "UNIQUE"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 48,
+   "t": "KEY",
+   "x": "KEY"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 53,
+   "t": "VAR",
+   "x": "c1"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "test_table"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "c2"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 13,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 17,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 17,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.UniqueKeyProperty",
+   "i": 25,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "expressions",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

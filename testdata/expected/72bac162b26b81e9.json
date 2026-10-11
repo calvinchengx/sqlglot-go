@@ -1,0 +1,524 @@
+{
+ "dialect": "doris",
+ "rendered": "DELETE FROM orders o WHERE o.customer_id IN (SELECT c.id FROM customers AS c WHERE c.status_code = 'inactive')",
+ "sql": "DELETE FROM orders o WHERE o.customer_id IN (SELECT c.id FROM customers AS c WHERE c.status_code = 'inactive')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "DELETE",
+   "x": "DELETE"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "orders"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "o"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 21,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "o"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "customer_id"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 41,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 45,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "VAR",
+   "x": "c"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 54,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 57,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 62,
+   "t": "VAR",
+   "x": "customers"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 72,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 75,
+   "t": "VAR",
+   "x": "c"
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 77,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 83,
+   "t": "VAR",
+   "x": "c"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 84,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 85,
+   "t": "VAR",
+   "x": "status_code"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 97,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 109,
+   "e": 108,
+   "l": 1,
+   "s": 99,
+   "t": "STRING",
+   "x": "inactive"
+  },
+  {
+   "c": 110,
+   "e": 109,
+   "l": 1,
+   "s": 109,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Delete"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "orders"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 1,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "o"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "using",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cluster",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.In",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "customer_id"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "table",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "o"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 12,
+   "k": "query"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 20,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 54
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "table",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 26,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 21,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 29,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "this",
+   "m": {
+    "col": 71,
+    "end": 70,
+    "line": 1,
+    "start": 62
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "customers"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 30,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "this",
+   "m": {
+    "col": 76,
+    "end": 75,
+    "line": 1,
+    "start": 75
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 35,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 21,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 38,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 39,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 40,
+   "k": "this",
+   "m": {
+    "col": 96,
+    "end": 95,
+    "line": 1,
+    "start": 85
+   }
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "status_code"
+  },
+  {
+   "i": 41,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 40,
+   "k": "table",
+   "m": {
+    "col": 84,
+    "end": 83,
+    "line": 1,
+    "start": 83
+   }
+  },
+  {
+   "i": 44,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 44,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 39,
+   "k": "expression",
+   "m": {
+    "col": 109,
+    "end": 108,
+    "line": 1,
+    "start": 99
+   }
+  },
+  {
+   "i": 47,
+   "k": "this",
+   "v": "inactive"
+  },
+  {
+   "i": 47,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

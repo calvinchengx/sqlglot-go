@@ -1,0 +1,200 @@
+{
+ "dialect": "doris",
+ "rendered": "SELECT JSON_EXTRACT(CAST('{\"key\": 1}' AS JSONB), '$.key')",
+ "sql": "SELECT JSON_EXTRACT(CAST('{\"key\": 1}' AS JSONB), '$.key')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "JSON_EXTRACT"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 20,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 25,
+   "t": "STRING",
+   "x": "{\"key\": 1}"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 38,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 41,
+   "t": "JSONB",
+   "x": "JSONB"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 46,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 47,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 49,
+   "t": "STRING",
+   "x": "$.key"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExtract",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "JSONB"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "{\"key\": 1}"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 6,
+   "k": "this",
+   "v": "JSONB"
+  },
+  {
+   "i": 6,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "key"
+  }
+ ]
+}
