@@ -50,6 +50,12 @@ func bracketJSONPathKey(dialect string, hasFlag, quoted bool, name string) bool 
 	if dialect == "snowflake" && isBareIdentifier(name) {
 		return false
 	}
+	// Hive writes a path's key as its bare NAME however it is spelled
+	// (HiveGenerator's own json_path_key_only_name), so a key that is not a
+	// bare identifier is not bracketed.
+	if dialect == "hive" {
+		return false
+	}
 	return (hasFlag && quoted) || !isBareIdentifier(name)
 }
 

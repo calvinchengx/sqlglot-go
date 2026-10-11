@@ -1986,6 +1986,11 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			}
 			return New("AddConstraint", Arg{"expressions", constraints}), nil
 		}
+		// Hive's ADD COLUMNS (...) names a LIST of columns.
+		if p.atWords("COLUMNS") && p.next() != nil && p.next().Type == TokL_PAREN {
+			p.advance()
+			return p.parseAddedColumn(false)
+		}
 		// The word COLUMN is optional: T-SQL writes it nowhere and reads it
 		// anywhere.
 		if p.atWords("COLUMN") {
@@ -2204,6 +2209,31 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 	case p.at(TokSET):
 		p.advance()
 		return p.parseAlterSet()
+	case p.dialect == "hive" && p.atWords("CHANGE"):
+		// Hive's CHANGE restates a column under a new name
+		// (HiveParser._parse_alter_table_change): `CHANGE [COLUMN] a b TYPE
+		// [COMMENT '...']`.
+		p.advance()
+		p.match(TokCOLUMN)
+		from, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		to, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		dtype, err := p.parseColumnType()
+		if err != nil {
+			return nil, err
+		}
+		var comment any = false
+		if p.matchUnquotedWord("COMMENT") {
+			comment = p.tryParseStringLiteral()
+		}
+		return New("AlterColumn",
+			Arg{"this", from}, Arg{"rename_to", to},
+			Arg{"dtype", dtype}, Arg{"comment", comment}), nil
 	case p.dialect == "singlestore" && p.atWords("CHANGE"):
 		// SingleStore's CHANGE renames a column rather than restating it
 		// (SingleStoreParser.ALTER_PARSERS): `CHANGE old new`.
@@ -2279,7 +2309,9 @@ func (p *parser) parseMySQLModifyColumn(rename bool) (*Expression, error) {
 // does not: whether the column had to be absent.
 func (p *parser) parseAddedColumn(exists bool) (*Expression, error) {
 	if p.at(TokL_PAREN) {
-		if p.dialect != "oracle" || exists {
+		// Hive's `ADD COLUMNS (y INT, z STRING)` is a parenthesised list too,
+		// the same shape Oracle's is.
+		if (p.dialect != "oracle" && p.dialect != "hive") || exists {
 			return nil, p.unsupported("ADD of a parenthesised column list")
 		}
 		cols, err := p.parseColumnDefs()
@@ -3261,6 +3293,13 @@ func (p *parser) parseFunctionProperty() (*Expression, error) {
 	if p.atWords("SQL SECURITY") {
 		return p.parseSQLSecurityProperty()
 	}
+	// Hive's `USING JAR|FILE|ARCHIVE '<path>'` names a file the function
+	// loads. The reference keeps it in written order, which this port's
+	// Create writer does not yet reproduce, so it is refused rather than
+	// written in the wrong place.
+	if p.atWords("USING") {
+		return nil, p.unsupported("a function's USING property")
+	}
 	switch {
 	case p.at(TokLANGUAGE) || p.atWords("LANGUAGE"):
 		p.advance()
@@ -3850,6 +3889,10 @@ func (p *parser) parseIndexRest(replace, unique, temporary bool, kind string, cl
 		return nil, p.unsupported("CREATE INDEX without ON")
 	}
 	p.advance()
+	// Hive writes `ON TABLE t` rather than `ON t` (INDEX_ON).
+	if p.tables.IndexOnWord == "ON TABLE" {
+		p.matchUnquotedWord("TABLE")
+	}
 	table, err := p.parseTableName()
 	if err != nil {
 		return nil, err

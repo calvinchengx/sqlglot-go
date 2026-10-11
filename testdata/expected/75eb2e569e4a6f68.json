@@ -1,0 +1,455 @@
+{
+ "dialect": "hive",
+ "rendered": "CREATE TABLE blah (col_a INT) COMMENT 'Test comment: blah' PARTITIONED BY (date STRING) STORED AS ICEBERG TBLPROPERTIES ('x'='1')",
+ "sql": "CREATE TABLE blah (\n  col_a INT\n)\nCOMMENT 'Test comment: blah'\nPARTITIONED BY (\n  date STRING\n)\nSTORED AS ICEBERG\nTBLPROPERTIES (\n  'x'='1'\n)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "blah"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 7,
+   "e": 26,
+   "l": 2,
+   "s": 22,
+   "t": "VAR",
+   "x": "col_a"
+  },
+  {
+   "c": 11,
+   "e": 30,
+   "l": 2,
+   "s": 28,
+   "t": "INT",
+   "x": "INT"
+  },
+  {
+   "c": 1,
+   "e": 32,
+   "l": 3,
+   "s": 32,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 7,
+   "e": 40,
+   "l": 4,
+   "s": 34,
+   "t": "COMMENT",
+   "x": "COMMENT"
+  },
+  {
+   "c": 28,
+   "e": 61,
+   "l": 4,
+   "s": 42,
+   "t": "STRING",
+   "x": "Test comment: blah"
+  },
+  {
+   "c": 14,
+   "e": 76,
+   "l": 5,
+   "s": 63,
+   "t": "PARTITION_BY",
+   "x": "PARTITIONED BY"
+  },
+  {
+   "c": 16,
+   "e": 78,
+   "l": 5,
+   "s": 78,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 6,
+   "e": 85,
+   "l": 6,
+   "s": 82,
+   "t": "DATE",
+   "x": "date"
+  },
+  {
+   "c": 13,
+   "e": 92,
+   "l": 6,
+   "s": 87,
+   "t": "TEXT",
+   "x": "STRING"
+  },
+  {
+   "c": 1,
+   "e": 94,
+   "l": 7,
+   "s": 94,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 6,
+   "e": 101,
+   "l": 8,
+   "s": 96,
+   "t": "VAR",
+   "x": "STORED"
+  },
+  {
+   "c": 9,
+   "e": 104,
+   "l": 8,
+   "s": 103,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 17,
+   "e": 112,
+   "l": 8,
+   "s": 106,
+   "t": "VAR",
+   "x": "ICEBERG"
+  },
+  {
+   "c": 13,
+   "e": 126,
+   "l": 9,
+   "s": 114,
+   "t": "VAR",
+   "x": "TBLPROPERTIES"
+  },
+  {
+   "c": 15,
+   "e": 128,
+   "l": 9,
+   "s": 128,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 5,
+   "e": 134,
+   "l": 10,
+   "s": 132,
+   "t": "STRING",
+   "x": "x"
+  },
+  {
+   "c": 6,
+   "e": 135,
+   "l": 10,
+   "s": 135,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 9,
+   "e": 138,
+   "l": 10,
+   "s": 136,
+   "t": "STRING",
+   "x": "1"
+  },
+  {
+   "c": 1,
+   "e": 140,
+   "l": 11,
+   "s": 140,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "blah"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 7,
+    "end": 26,
+    "line": 2,
+    "start": 22
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "col_a"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.SchemaCommentProperty",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 61,
+    "line": 4,
+    "start": 42
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "Test comment: blah"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionedByProperty",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 23,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 24,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 6,
+    "end": 85,
+    "line": 6,
+    "start": 82
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "date"
+  },
+  {
+   "i": 26,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 25,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 29,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 29,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.FileFormatProperty",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 32,
+   "k": "this"
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "ICEBERG"
+  },
+  {
+   "i": 32,
+   "k": "hive_format",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 36,
+   "k": "this",
+   "m": {
+    "col": 5,
+    "end": 134,
+    "line": 10,
+    "start": 132
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 37,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 36,
+   "k": "value",
+   "m": {
+    "col": 9,
+    "end": 138,
+    "line": 10,
+    "start": 136
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 40,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

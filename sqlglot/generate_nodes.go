@@ -622,7 +622,7 @@ func (g *generator) writeSetOperation(e *Expression) string {
 		word += " BY NAME"
 	}
 	parts := []string{g.child(e, "this"), word, g.child(e, "expression")}
-	for _, key := range []string{"order", "limit", "offset"} {
+	for _, key := range []string{"cluster", "distribute", "sort", "order", "limit", "offset"} {
 		if s := g.child(e, key); s != "" {
 			parts = append(parts, s)
 		}
@@ -968,9 +968,15 @@ func (g *generator) writeSubquery(e *Expression) string {
 	// OUTSIDE the parentheses: `(SELECT 1) ORDER BY x LIMIT 1` orders
 	// the subquery, not the SELECT inside it, and the two are
 	// different trees for what an engine runs the same way.
-	for _, key := range []string{"order", "limit", "offset"} {
+	for _, key := range []string{"cluster", "distribute", "sort", "order", "limit", "offset"} {
 		if s := g.child(e, key); s != "" {
-			out += " " + s
+			// The three Hive reducer clauses carry their own leading space,
+			// the way a sample and a pivot do.
+			if key == "cluster" || key == "distribute" || key == "sort" {
+				out += s
+			} else {
+				out += " " + s
+			}
 		}
 	}
 	return out
@@ -1664,6 +1670,11 @@ func (g *generator) writeCast(e *Expression) string {
 	word := "CAST"
 	if e.Class == "TryCast" {
 		word = "TRY_CAST"
+		// Hive has no TRY_CAST: its generator maps TryCast to a plain CAST
+		// (HiveGenerator.TRANSFORMS' `no_trycast_sql`).
+		if g.dialect == "hive" {
+			word = "CAST"
+		}
 	}
 	// Dremio's own CURRENT_DATE_UTC() parses into this exact shape (see
 	// buildDremioCurrentDateUTC) and writes back out as the bare word,

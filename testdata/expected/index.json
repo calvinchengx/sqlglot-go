@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 7670,
+ "count": 8105,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -4903,6 +4903,11 @@
    "sql": "SELECT MATCH(\"table\") AGAINST('x') FROM t"
   },
   {
+   "key": "f15e86c1bdc7dc7a",
+   "dialect": "hive",
+   "sql": "SELECT CAST(ds AS STRING) AS ds FROM (VALUES ('2022-01-01')) AS t(ds)"
+  },
+  {
    "key": "4a968e025e9ce366",
    "dialect": "trino",
    "sql": "SELECT CAST(ds AS VARCHAR) AS ds FROM (VALUES ('2022-01-01')) AS t(ds)"
@@ -4931,6 +4936,11 @@
    "key": "6129a5ae06ba9a5e",
    "dialect": "duckdb",
    "sql": "SELECT DATE_TRUNC('ISOYEAR', CAST('2015-06-15' AS DATE))"
+  },
+  {
+   "key": "893e9f8faedd83e2",
+   "dialect": "hive",
+   "sql": "SELECT SPACE(2)"
   },
   {
    "key": "3404054d8bfbf0c6",
@@ -4996,6 +5006,11 @@
    "key": "d9d0b4ab4e458598",
    "dialect": "duckdb",
    "sql": "SELECT {'_0': 1, '_1': 2, '_2': 3}, {}, {'_0': 'abc'}, {'_0': 1, 'str_col': t.str_col}, {'a': 1, 'b': 'abc'}, {'abc': str_col}"
+  },
+  {
+   "key": "e50c22e66f825e36",
+   "dialect": "hive",
+   "sql": "SELECT STRUCT(1, 2, 3), STRUCT(), STRUCT('abc'), STRUCT(1, t.str_col), STRUCT(1, 'abc'), STRUCT(str_col)"
   },
   {
    "key": "12b77f51be7d9298",
@@ -5343,6 +5358,11 @@
    "sql": "LOWER(HEX(x))"
   },
   {
+   "key": "177ba9f7db80aa39",
+   "dialect": "hive",
+   "sql": "LOWER(HEX(x))"
+  },
+  {
    "key": "940317b412fe3a12",
    "dialect": "mysql",
    "sql": "LOWER(HEX(x))"
@@ -5360,6 +5380,11 @@
   {
    "key": "3752610c9f3cf280",
    "dialect": "duckdb",
+   "sql": "HEX(x)"
+  },
+  {
+   "key": "a0f630b8b0b87d6a",
+   "dialect": "hive",
    "sql": "HEX(x)"
   },
   {
@@ -5386,6 +5411,11 @@
    "key": "6ad432268dcef3a8",
    "dialect": "trino",
    "sql": "MD5(x)"
+  },
+  {
+   "key": "d89df948ee0e6c88",
+   "dialect": "hive",
+   "sql": "UNHEX(MD5(x))"
   },
   {
    "key": "70a94be8d79b2257",
@@ -5483,6 +5513,11 @@
    "sql": "'x'"
   },
   {
+   "key": "fbc8f397d72f79f0",
+   "dialect": "hive",
+   "sql": "'x'"
+  },
+  {
    "key": "641e4e8e6f4e7be2",
    "dialect": "duckdb",
    "sql": "'x'''"
@@ -5493,9 +5528,24 @@
    "sql": "'x'''"
   },
   {
+   "key": "0fa82f550f94f5d9",
+   "dialect": "hive",
+   "sql": "'x\\''"
+  },
+  {
    "key": "e4ac89d69842b866",
    "dialect": "duckdb",
    "sql": "'x\\'''"
+  },
+  {
+   "key": "0bde36fbd07cd709",
+   "dialect": "hive",
+   "sql": "'x\\\\\\''"
+  },
+  {
+   "key": "84e4e365a6d5e3a6",
+   "dialect": "hive",
+   "sql": "'x\\\\y'"
   },
   {
    "key": "13ca2e7eedad57af",
@@ -5508,6 +5558,11 @@
    "sql": "'\\'"
   },
   {
+   "key": "c7067151d2ec4c16",
+   "dialect": "hive",
+   "sql": "'\\\\'"
+  },
+  {
    "key": "d26aa6ba9a777acd",
    "dialect": "duckdb",
    "sql": "'/\\*.*\\*/'"
@@ -5516,6 +5571,11 @@
    "key": "ebc974e16913cb86",
    "dialect": "presto",
    "sql": "'/\\*.*\\*/'"
+  },
+  {
+   "key": "8f66ebdaf2de901a",
+   "dialect": "hive",
+   "sql": "'/\\\\*.*\\\\*/'"
   },
   {
    "key": "cfe373dd580de80c",
@@ -5533,6 +5593,11 @@
    "sql": "CAST(a AS BIGINT)"
   },
   {
+   "key": "3bec6a9c0e1082a9",
+   "dialect": "hive",
+   "sql": "CAST(a AS BIGINT)"
+  },
+  {
    "key": "22cebe61c5602890",
    "dialect": "duckdb",
    "sql": "CAST(a AS BLOB)"
@@ -5541,6 +5606,11 @@
    "key": "88719ffd92d72b21",
    "dialect": "presto",
    "sql": "CAST(a AS VARBINARY)"
+  },
+  {
+   "key": "547637273a6bf497",
+   "dialect": "hive",
+   "sql": "CAST(a AS BINARY)"
   },
   {
    "key": "88c7c25c37e5af6d",
@@ -5553,6 +5623,11 @@
    "sql": "CAST(a AS DECIMAL)"
   },
   {
+   "key": "7eaf3972fd64e8c5",
+   "dialect": "hive",
+   "sql": "CAST(a AS DECIMAL)"
+  },
+  {
    "key": "ac0a477df5041ce8",
    "dialect": "duckdb",
    "sql": "[1, 2, 3]"
@@ -5561,6 +5636,11 @@
    "key": "0c69c772fc784c3f",
    "dialect": "presto",
    "sql": "ARRAY[1, 2, 3]"
+  },
+  {
+   "key": "0526e87262501821",
+   "dialect": "hive",
+   "sql": "ARRAY(1, 2, 3)"
   },
   {
    "key": "cb3d11e35f35b4e5",
@@ -5575,6 +5655,11 @@
   {
    "key": "500d72fd9c7a8286",
    "dialect": "presto",
+   "sql": "CURRENT_DATETIME()"
+  },
+  {
+   "key": "6be5f7eb1a02771f",
+   "dialect": "hive",
    "sql": "CURRENT_DATETIME()"
   },
   {
@@ -5593,6 +5678,11 @@
    "sql": "CURRENT_TIME"
   },
   {
+   "key": "0e662a17385d9731",
+   "dialect": "hive",
+   "sql": "CURRENT_TIME()"
+  },
+  {
    "key": "060291b331b180a4",
    "dialect": "duckdb",
    "sql": "CURRENT_TIMESTAMP"
@@ -5606,6 +5696,11 @@
    "key": "df95e8101427649c",
    "dialect": "presto",
    "sql": "CURRENT_TIMESTAMP"
+  },
+  {
+   "key": "871b6d67dda5ae1d",
+   "dialect": "hive",
+   "sql": "CURRENT_TIMESTAMP()"
   },
   {
    "key": "a63a3b20dce36d10",
@@ -5623,6 +5718,11 @@
    "sql": "CREATE TABLE db.example_table (col_a ROW(struct_col_a INTEGER, struct_col_b VARCHAR))"
   },
   {
+   "key": "30faa13e67e5b9b6",
+   "dialect": "hive",
+   "sql": "CREATE TABLE db.example_table (col_a STRUCT<struct_col_a: INT, struct_col_b: STRING>)"
+  },
+  {
    "key": "1a1232b748319be1",
    "dialect": "duckdb",
    "sql": "CREATE TABLE db.example_table (col_a STRUCT(struct_col_a BIGINT, struct_col_b STRUCT(nested_col_a TEXT, nested_col_b TEXT)))"
@@ -5631,6 +5731,11 @@
    "key": "2c8f64303b266bb4",
    "dialect": "presto",
    "sql": "CREATE TABLE db.example_table (col_a ROW(struct_col_a BIGINT, struct_col_b ROW(nested_col_a VARCHAR, nested_col_b VARCHAR)))"
+  },
+  {
+   "key": "361cc4d70bed85b5",
+   "dialect": "hive",
+   "sql": "CREATE TABLE db.example_table (col_a STRUCT<struct_col_a: BIGINT, struct_col_b: STRUCT<nested_col_a: STRING, nested_col_b: STRING>>)"
   },
   {
    "key": "01a30c7aaccd2ec8",
@@ -5656,6 +5761,11 @@
    "key": "95e223f45e83be11",
    "dialect": "presto",
    "sql": "SELECT * FROM a WHERE b IN (SELECT UNNEST(ARRAY[1, 2, 3]))"
+  },
+  {
+   "key": "950050b2e5da4240",
+   "dialect": "hive",
+   "sql": "SELECT * FROM a WHERE b IN (SELECT EXPLODE(ARRAY(1, 2, 3)))"
   },
   {
    "key": "8c6400471b7483c4",
@@ -5686,6 +5796,11 @@
    "key": "f36af444c26ad6e1",
    "dialect": "presto",
    "sql": "DATE_ADD('DAY', CAST('-1' AS BIGINT), CURRENT_DATE)"
+  },
+  {
+   "key": "4c7a7c3bbf8efbf6",
+   "dialect": "hive",
+   "sql": "DATE_ADD(CURRENT_DATE, -1)"
   },
   {
    "key": "068c1698a499cd2b",
@@ -5803,6 +5918,11 @@
    "sql": "ARRAY_CONCAT(ARRAY(1, 2), ARRAY_CONCAT(ARRAY(3, 4), ARRAY(5, 6)))"
   },
   {
+   "key": "fda7dcf62e1bc1c0",
+   "dialect": "hive",
+   "sql": "CONCAT(ARRAY(1, 2), ARRAY(3, 4), ARRAY(5, 6))"
+  },
+  {
    "key": "dc6fffe28ba36e70",
    "dialect": "databricks",
    "sql": "CONCAT(ARRAY(1, 2), ARRAY(3, 4), ARRAY(5, 6))"
@@ -5878,6 +5998,11 @@
    "sql": "IF(y <> 0, CAST(x AS DOUBLE) / y, NULL)"
   },
   {
+   "key": "40bccdd120502282",
+   "dialect": "hive",
+   "sql": "IF(y <> 0, x / y, NULL)"
+  },
+  {
    "key": "9fff65afac4cbcb4",
    "dialect": "databricks",
    "sql": "TRY_DIVIDE(x, y)"
@@ -5901,6 +6026,11 @@
    "key": "8141cdc211cd8fdd",
    "dialect": "trino",
    "sql": "IF((2 * y) <> 0, CAST((x + 1) AS DOUBLE) / (2 * y), NULL)"
+  },
+  {
+   "key": "e5a722f93dfba070",
+   "dialect": "hive",
+   "sql": "IF((2 * y) <> 0, (x + 1) / (2 * y), NULL)"
   },
   {
    "key": "8a697de7aeed6cd2",
@@ -6168,6 +6298,11 @@
    "sql": "SELECT * FROM EXPLODE(ARRAY(STRUCT('Alice' AS name, STRUCT(85 AS math, 90 AS english) AS scores), STRUCT('Bob' AS name, STRUCT(92 AS math, 88 AS english) AS scores)))"
   },
   {
+   "key": "cfa0cb6b85fd767a",
+   "dialect": "hive",
+   "sql": "SELECT * FROM EXPLODE(ARRAY(STRUCT('Alice', STRUCT(85, 90)), STRUCT('Bob', STRUCT(92, 88))))"
+  },
+  {
    "key": "d845b7fc3dd2c33c",
    "dialect": "duckdb",
    "sql": "SELECT * FROM (SELECT UNNEST([{'name': 'Alice', 'score': 85}, {'name': 'Bob', 'score': 92}, {'name': 'Diana', 'score': 95}], max_depth => 2))"
@@ -6186,6 +6321,11 @@
    "key": "d963bf200075122d",
    "dialect": "databricks",
    "sql": "SELECT * FROM EXPLODE(ARRAY(STRUCT('Alice' AS name, 85 AS score), STRUCT('Bob' AS name, 92 AS score), STRUCT('Diana' AS name, 95 AS score)))"
+  },
+  {
+   "key": "4883c30445408e63",
+   "dialect": "hive",
+   "sql": "SELECT * FROM EXPLODE(ARRAY(STRUCT('Alice', 85), STRUCT('Bob', 92), STRUCT('Diana', 95)))"
   },
   {
    "key": "32a9277fbc2bc5a7",
@@ -6943,9 +7083,19 @@
    "sql": "STR_SPLIT(x, 's')"
   },
   {
+   "key": "905fa5c497200891",
+   "dialect": "hive",
+   "sql": "SPLIT(x, CONCAT('\\\\Q', 's', '\\\\E'))"
+  },
+  {
    "key": "3490b8d2132259ca",
    "dialect": "duckdb",
    "sql": "STRING_SPLIT_REGEX(x, '\\d+')"
+  },
+  {
+   "key": "19fbab1c3cbea500",
+   "dialect": "hive",
+   "sql": "SPLIT(x, '\\\\d+')"
   },
   {
    "key": "fe24b5f46f9c8c1e",
@@ -6956,6 +7106,11 @@
    "key": "71095753eacec307",
    "dialect": "duckdb",
    "sql": "SELECT col[1]"
+  },
+  {
+   "key": "ec73327b85e3b3b1",
+   "dialect": "hive",
+   "sql": "SELECT col[0]"
   },
   {
    "key": "25860c27a96ff6d4",
@@ -7320,6 +7475,11 @@
   {
    "key": "6bb9f710aed690be",
    "dialect": "databricks",
+   "sql": "SELECT TYPEOF(1)"
+  },
+  {
+   "key": "9c96409d68d97644",
+   "dialect": "hive",
    "sql": "SELECT TYPEOF(1)"
   },
   {
@@ -8018,6 +8178,11 @@
    "sql": "CAST(a AS CHAR)"
   },
   {
+   "key": "b3c4be5873587c07",
+   "dialect": "hive",
+   "sql": "CAST(a AS STRING)"
+  },
+  {
    "key": "d15d3052445fca42",
    "dialect": "postgres",
    "sql": "CAST(a AS TEXT)"
@@ -8060,6 +8225,11 @@
   {
    "key": "81aa16d81df510b7",
    "dialect": "mysql",
+   "sql": "CAST(a AS BINARY(4))"
+  },
+  {
+   "key": "017159996b4d1cc2",
+   "dialect": "hive",
    "sql": "CAST(a AS BINARY(4))"
   },
   {
@@ -8143,6 +8313,11 @@
    "sql": "CAST(a AS CHAR(3))"
   },
   {
+   "key": "7323e3ee88b1c63f",
+   "dialect": "hive",
+   "sql": "CAST(a AS VARCHAR(3))"
+  },
+  {
    "key": "63900ec24dc05a42",
    "dialect": "postgres",
    "sql": "CAST(a AS VARCHAR(3))"
@@ -8186,6 +8361,11 @@
    "key": "49ebf75dd7e19d6d",
    "dialect": "mysql",
    "sql": "CAST(a AS SIGNED)"
+  },
+  {
+   "key": "c02bc2d8762336a7",
+   "dialect": "hive",
+   "sql": "CAST(a AS SMALLINT)"
   },
   {
    "key": "0a8c99a364177752",
@@ -8240,6 +8420,11 @@
   {
    "key": "96a69030c8479319",
    "dialect": "mysql",
+   "sql": "CAST(a AS DOUBLE)"
+  },
+  {
+   "key": "b4b5d32a94ab745e",
+   "dialect": "hive",
    "sql": "CAST(a AS DOUBLE)"
   },
   {
@@ -8316,6 +8501,11 @@
    "key": "22209aa99e873265",
    "dialect": "duckdb",
    "sql": "CREATE TABLE a AS SELECT * FROM b LIMIT 0"
+  },
+  {
+   "key": "7d0fe8c5284602ba",
+   "dialect": "hive",
+   "sql": "CREATE TABLE a LIKE b"
   },
   {
    "key": "96c58e49765d1810",
@@ -8483,6 +8673,11 @@
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
   },
   {
+   "key": "1ffdf6e2f0c05258",
+   "dialect": "hive",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
+  },
+  {
    "key": "4a48bfe9021546c4",
    "dialect": "mysql",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
@@ -8538,6 +8733,11 @@
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
   },
   {
+   "key": "df9ddcb1f10b06e5",
+   "dialect": "hive",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
+  },
+  {
    "key": "9a4e5047725325b8",
    "dialect": "mysql",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
@@ -8583,6 +8783,11 @@
    "sql": "STR_TO_DATE(x, '%Y-%m-%dT%T')"
   },
   {
+   "key": "09c0069d1514e0a5",
+   "dialect": "hive",
+   "sql": "CAST(FROM_UNIXTIME(UNIX_TIMESTAMP(x, 'yyyy-M-dTH:m:s')) AS TIMESTAMP)"
+  },
+  {
    "key": "a42c8a7d44cfedd5",
    "dialect": "presto",
    "sql": "DATE_PARSE(x, '%Y-%m-%dT%T')"
@@ -8596,6 +8801,11 @@
    "key": "cf72cb3a6c6b6314",
    "dialect": "duckdb",
    "sql": "STRPTIME('2020-01-01', '%Y-%m-%d')"
+  },
+  {
+   "key": "ec3eb82e49aa2c16",
+   "dialect": "hive",
+   "sql": "CAST('2020-01-01' AS TIMESTAMP)"
   },
   {
    "key": "5803353f17614725",
@@ -8616,6 +8826,11 @@
    "key": "45045ab897ccb027",
    "dialect": "duckdb",
    "sql": "STRPTIME(x, '%y')"
+  },
+  {
+   "key": "92a90ca0d8b54217",
+   "dialect": "hive",
+   "sql": "CAST(FROM_UNIXTIME(UNIX_TIMESTAMP(x, 'yy')) AS TIMESTAMP)"
   },
   {
    "key": "3510f8ef0765e8d4",
@@ -8643,6 +8858,11 @@
    "sql": "EPOCH(STRPTIME('2020-01-01', '%Y-%m-%d'))"
   },
   {
+   "key": "3e5e3a5bec415631",
+   "dialect": "hive",
+   "sql": "UNIX_TIMESTAMP('2020-01-01', 'yyyy-M-d')"
+  },
+  {
    "key": "d809303411f6def2",
    "dialect": "presto",
    "sql": "TO_UNIXTIME(COALESCE(TRY(DATE_PARSE(CAST('2020-01-01' AS VARCHAR), '%Y-%m-%d')), PARSE_DATETIME(DATE_FORMAT(CAST('2020-01-01' AS TIMESTAMP), '%Y-%m-%d'), 'yyyy-MM-dd')))"
@@ -8661,6 +8881,11 @@
    "key": "ff9587e5af50e2d2",
    "dialect": "duckdb",
    "sql": "CAST('2020-01-01' AS DATE)"
+  },
+  {
+   "key": "aa96457c571e381a",
+   "dialect": "hive",
+   "sql": "TO_DATE('2020-01-01')"
   },
   {
    "key": "5757e5142ea0e576",
@@ -8783,6 +9008,11 @@
    "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP WITH TIME ZONE)"
   },
   {
+   "key": "50ec52049aa9b006",
+   "dialect": "hive",
+   "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP)"
+  },
+  {
    "key": "2102db8dee1a04c1",
    "dialect": "presto",
    "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP WITH TIME ZONE)"
@@ -8828,6 +9058,11 @@
    "sql": "CAST(col AS TIMESTAMP WITH TIME ZONE)"
   },
   {
+   "key": "14ad1d2025dc263a",
+   "dialect": "hive",
+   "sql": "CAST(col AS TIMESTAMP)"
+  },
+  {
    "key": "d5c0557ef2bee237",
    "dialect": "presto",
    "sql": "CAST(col AS TIMESTAMP WITH TIME ZONE)"
@@ -8841,6 +9076,11 @@
    "key": "ca39de8cbb240024",
    "dialect": "duckdb",
    "sql": "EPOCH(CAST('2020-01-01' AS TIMESTAMP))"
+  },
+  {
+   "key": "96e0e5622a6308a0",
+   "dialect": "hive",
+   "sql": "UNIX_TIMESTAMP('2020-01-01')"
   },
   {
    "key": "2a649ff3cec8903c",
@@ -8861,6 +9101,11 @@
    "key": "4c408e5bd5aa605e",
    "dialect": "duckdb",
    "sql": "STRFTIME(x, '%Y-%m-%d')"
+  },
+  {
+   "key": "f118bd9ca8b2e8e4",
+   "dialect": "hive",
+   "sql": "DATE_FORMAT(x, 'yyyy-MM-dd')"
   },
   {
    "key": "1e3e18436351838f",
@@ -8903,6 +9148,11 @@
    "sql": "CAST(x AS TEXT)"
   },
   {
+   "key": "0cf79281f24343f1",
+   "dialect": "hive",
+   "sql": "CAST(x AS STRING)"
+  },
+  {
    "key": "5a9fa7bde5c58890",
    "dialect": "presto",
    "sql": "CAST(x AS VARCHAR)"
@@ -8923,6 +9173,11 @@
    "sql": "EPOCH(x)"
   },
   {
+   "key": "edb6f8cbd1fcaf4d",
+   "dialect": "hive",
+   "sql": "UNIX_TIMESTAMP(x)"
+  },
+  {
    "key": "705b83dcdae2b78a",
    "dialect": "presto",
    "sql": "TO_UNIXTIME(x)"
@@ -8938,6 +9193,11 @@
    "sql": "SUBSTRING(CAST(x AS TEXT), 1, 10)"
   },
   {
+   "key": "bbbf140d54e9f452",
+   "dialect": "hive",
+   "sql": "SUBSTRING(CAST(x AS STRING), 1, 10)"
+  },
+  {
    "key": "d4d733e2cc526a1f",
    "dialect": "presto",
    "sql": "SUBSTR(CAST(x AS VARCHAR), 1, 10)"
@@ -8951,6 +9211,11 @@
    "key": "5a61236313099c6d",
    "dialect": "duckdb",
    "sql": "CAST(x AS DATE)"
+  },
+  {
+   "key": "412cf230a3300977",
+   "dialect": "hive",
+   "sql": "TO_DATE(x)"
   },
   {
    "key": "a005943dbf5343a6",
@@ -8983,6 +9248,11 @@
    "sql": "CAST(STRPTIME(x, '%-d') AS DATE)"
   },
   {
+   "key": "87e9a96ee9627f05",
+   "dialect": "hive",
+   "sql": "TO_DATE(x, 'd')"
+  },
+  {
    "key": "1e9a1a6e0dcf3911",
    "dialect": "presto",
    "sql": "CAST(DATE_PARSE(x, '%e') AS DATE)"
@@ -8991,6 +9261,11 @@
    "key": "393a7da81aa3f0df",
    "dialect": "duckdb",
    "sql": "STRFTIME(TO_TIMESTAMP(x), y)"
+  },
+  {
+   "key": "3538fcbcaa5f5925",
+   "dialect": "hive",
+   "sql": "FROM_UNIXTIME(x, y)"
   },
   {
    "key": "7a710a11d0e81a81",
@@ -9011,6 +9286,11 @@
    "key": "3beccacee90a51a7",
    "dialect": "duckdb",
    "sql": "TO_TIMESTAMP(x)"
+  },
+  {
+   "key": "a0275f7b7dcd7298",
+   "dialect": "hive",
+   "sql": "FROM_UNIXTIME(x)"
   },
   {
    "key": "db166832c89e50de",
@@ -9053,6 +9333,11 @@
    "sql": "CAST(STRFTIME(x, '%Y%m%d') AS INT)"
   },
   {
+   "key": "8150356d30002298",
+   "dialect": "hive",
+   "sql": "CAST(DATE_FORMAT(x, 'yyyyMMdd') AS INT)"
+  },
+  {
    "key": "6367719d1ee4b258",
    "dialect": "presto",
    "sql": "CAST(DATE_FORMAT(x, '%Y%m%d') AS INT)"
@@ -9063,6 +9348,11 @@
    "sql": "CAST(STRPTIME(CAST(x AS TEXT), '%Y%m%d') AS DATE)"
   },
   {
+   "key": "8689a39ce9c212a6",
+   "dialect": "hive",
+   "sql": "TO_DATE(CAST(x AS STRING), 'yyyyMMdd')"
+  },
+  {
    "key": "e9de635351ed3bda",
    "dialect": "presto",
    "sql": "CAST(DATE_PARSE(CAST(x AS VARCHAR), '%Y%m%d') AS DATE)"
@@ -9071,6 +9361,11 @@
    "key": "f7db348fa2d84a8d",
    "dialect": "duckdb",
    "sql": "CAST(SUBSTR(REPLACE(CAST(x AS TEXT), '-', ''), 1, 8) AS INT)"
+  },
+  {
+   "key": "303a3694548d4f89",
+   "dialect": "hive",
+   "sql": "CAST(SUBSTR(REPLACE(CAST(x AS STRING), '-', ''), 1, 8) AS INT)"
   },
   {
    "key": "e697aad732f79093",
@@ -9086,6 +9381,11 @@
    "key": "4f3a442d3f5a3d69",
    "dialect": "duckdb",
    "sql": "x + INTERVAL 1 DAY"
+  },
+  {
+   "key": "f72f7e548d735104",
+   "dialect": "hive",
+   "sql": "DATE_ADD(x, 1)"
   },
   {
    "key": "1d707931c270e925",
@@ -9258,6 +9558,11 @@
    "sql": "STR_TO_DATE(x, '%Y-%m-%dT%T')"
   },
   {
+   "key": "05d235b2e6e36723",
+   "dialect": "hive",
+   "sql": "CAST(FROM_UNIXTIME(UNIX_TIMESTAMP(x, 'yyyy-M-dTH:m:s')) AS DATE)"
+  },
+  {
    "key": "bf63b80f196cf08c",
    "dialect": "presto",
    "sql": "CAST(DATE_PARSE(x, '%Y-%m-%dT%T') AS DATE)"
@@ -9276,6 +9581,11 @@
    "key": "f9e95f9ac621c390",
    "dialect": "starrocks",
    "sql": "STR_TO_DATE(x, '%Y-%m-%d')"
+  },
+  {
+   "key": "53df73d6d1eb28fe",
+   "dialect": "hive",
+   "sql": "CAST(x AS DATE)"
   },
   {
    "key": "35084927dd7be2d6",
@@ -9303,6 +9613,11 @@
    "sql": "CAST('2021-02-01' AS DATE) + INTERVAL 1 DAY"
   },
   {
+   "key": "2c9c350d7736448f",
+   "dialect": "hive",
+   "sql": "DATE_ADD('2021-02-01', 1)"
+  },
+  {
    "key": "55910ad2697ad654",
    "dialect": "presto",
    "sql": "DATE_ADD('DAY', 1, CAST(CAST('2021-02-01' AS TIMESTAMP) AS DATE))"
@@ -9323,9 +9638,19 @@
    "sql": "DATE_ADD('DAY', 1, CAST(CAST(CURRENT_DATE AS TIMESTAMP) AS DATE))"
   },
   {
+   "key": "d0fda6ed0a7f9ad4",
+   "dialect": "hive",
+   "sql": "DATE_ADD(CURRENT_DATE, 1)"
+  },
+  {
    "key": "7a3d85af6c5859dc",
    "dialect": "duckdb",
    "sql": "CAST('2020-01-01' AS DATE) + INTERVAL 1 DAY"
+  },
+  {
+   "key": "b47048834141ed1a",
+   "dialect": "hive",
+   "sql": "DATE_ADD(CAST('2020-01-01' AS DATE), 1)"
   },
   {
    "key": "76086c9c521a0fc2",
@@ -9348,6 +9673,11 @@
    "sql": "CAST('2022-01-01' AS DATETIME)"
   },
   {
+   "key": "b8bba34fa4a116bb",
+   "dialect": "hive",
+   "sql": "CAST('2022-01-01' AS TIMESTAMP)"
+  },
+  {
    "key": "e86397e228add566",
    "dialect": "doris",
    "sql": "CAST('2022-01-01' AS DATETIME)"
@@ -9360,6 +9690,11 @@
   {
    "key": "e7cec766b06c74c6",
    "dialect": "starrocks",
+   "sql": "TIMESTAMP('2022-01-01')"
+  },
+  {
+   "key": "876f0d764fb3cd80",
+   "dialect": "hive",
    "sql": "TIMESTAMP('2022-01-01')"
   },
   {
@@ -9418,6 +9753,11 @@
    "sql": "LIST_SUM([1, 2])"
   },
   {
+   "key": "8e7e81414ce6b419",
+   "dialect": "hive",
+   "sql": "ARRAY_SUM(ARRAY(1, 2))"
+  },
+  {
    "key": "ccae0d4d160af354",
    "dialect": "presto",
    "sql": "ARRAY_SUM(ARRAY[1, 2])"
@@ -9428,9 +9768,19 @@
    "sql": "REDUCE(x, 0, (acc, x) -> acc + x, acc -> acc)"
   },
   {
+   "key": "529f9953fb29730f",
+   "dialect": "hive",
+   "sql": "REDUCE(x, 0, (acc, x) -> acc + x, acc -> acc)"
+  },
+  {
    "key": "08a4e94f519ede9d",
    "dialect": "presto",
    "sql": "REDUCE(x, 0, (acc, x) -> acc + x, acc -> acc)"
+  },
+  {
+   "key": "dedfd611bf27f1a7",
+   "dialect": "hive",
+   "sql": "ARRAY_INTERSECT(x, y)"
   },
   {
    "key": "6245ac7d64d4a3b5",
@@ -9486,6 +9836,11 @@
    "key": "f3431c41c5ab2bb5",
    "dialect": "duckdb",
    "sql": "LIST_SORT(x)"
+  },
+  {
+   "key": "7d0199e6d15fcd4d",
+   "dialect": "hive",
+   "sql": "SORT_ARRAY(x)"
   },
   {
    "key": "c71734ce9a9499f9",
@@ -9661,6 +10016,11 @@
    "key": "5cbf3dd708caa852",
    "dialect": "presto",
    "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC, lname NULLS FIRST"
+  },
+  {
+   "key": "cd33d95fd1095478",
+   "dialect": "hive",
+   "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC NULLS LAST, lname"
   },
   {
    "key": "063bc69fa5590674",
@@ -9888,6 +10248,11 @@
    "sql": "SELECT a, b FROM x CROSS JOIN UNNEST(y) AS t(a, b)"
   },
   {
+   "key": "a7a66c6d04b7ee56",
+   "dialect": "hive",
+   "sql": "SELECT a, b FROM x LATERAL VIEW EXPLODE(y) t AS a, b"
+  },
+  {
    "key": "abac73b54ebae891",
    "dialect": "presto",
    "sql": "SELECT numbers, animals, n, a FROM (SELECT ARRAY[2, 5] AS numbers, ARRAY['dog', 'cat', 'bird'] AS animals UNION ALL SELECT ARRAY[7, 8, 9], ARRAY['cow', 'pig']) AS x CROSS JOIN UNNEST(numbers, animals) AS t(n, a)"
@@ -9901,6 +10266,11 @@
    "key": "4771bb9123c43975",
    "dialect": "presto",
    "sql": "SELECT * FROM x CROSS JOIN UNNEST(a) AS j(lista) CROSS JOIN UNNEST(b) AS k(listb) CROSS JOIN UNNEST(c) AS l(listc)"
+  },
+  {
+   "key": "0909d2805bcb9868",
+   "dialect": "hive",
+   "sql": "SELECT * FROM x LATERAL VIEW EXPLODE(a) j AS lista LATERAL VIEW EXPLODE(b) k AS listb LATERAL VIEW EXPLODE(c) l AS listc"
   },
   {
    "key": "db2951dba7d3f8d1",
@@ -9983,6 +10353,11 @@
    "sql": "x ILIKE '%y'"
   },
   {
+   "key": "032f5472a56fc9b8",
+   "dialect": "hive",
+   "sql": "LOWER(x) LIKE LOWER('%y')"
+  },
+  {
    "key": "d959d8f90e83006b",
    "dialect": "mysql",
    "sql": "LOWER(x) LIKE LOWER('%y')"
@@ -10011,6 +10386,11 @@
    "key": "e61887c480401d13",
    "dialect": "postgres",
    "sql": "x NOT ILIKE '%y'"
+  },
+  {
+   "key": "971425edc1b1c118",
+   "dialect": "hive",
+   "sql": "LOWER(x) NOT LIKE LOWER('%y')"
   },
   {
    "key": "e1cea1dae561f96a",
@@ -10108,6 +10488,11 @@
    "sql": "INSTR(haystack, needle)"
   },
   {
+   "key": "45800fe4af89cb3f",
+   "dialect": "hive",
+   "sql": "INSTR(haystack, needle)"
+  },
+  {
    "key": "e316a04fcd4f24e1",
    "dialect": "mysql",
    "sql": "INSTR(haystack, needle)"
@@ -10125,6 +10510,11 @@
   {
    "key": "03b1b1d0b25937a3",
    "dialect": "doris",
+   "sql": "LOCATE(needle, haystack)"
+  },
+  {
+   "key": "11d5996b8518120d",
+   "dialect": "hive",
    "sql": "LOCATE(needle, haystack)"
   },
   {
@@ -10175,6 +10565,11 @@
   {
    "key": "6401e674eb9ac8ce",
    "dialect": "doris",
+   "sql": "LOCATE(needle, haystack, position)"
+  },
+  {
+   "key": "61ded6766e732b47",
+   "dialect": "hive",
    "sql": "LOCATE(needle, haystack, position)"
   },
   {
@@ -10258,6 +10653,11 @@
    "sql": "CASE WHEN '-' IS NULL OR 'a' IS NULL OR 'b' IS NULL THEN NULL ELSE CONCAT_WS('-', 'a', 'b') END"
   },
   {
+   "key": "c4987d34652eb668",
+   "dialect": "hive",
+   "sql": "CASE WHEN '-' IS NULL OR 'a' IS NULL OR 'b' IS NULL THEN NULL ELSE CONCAT_WS('-', 'a', 'b') END"
+  },
+  {
    "key": "e11b370919391d7e",
    "dialect": "trino",
    "sql": "CASE WHEN '-' IS NULL OR 'a' IS NULL OR 'b' IS NULL THEN NULL ELSE CONCAT_WS('-', CAST('a' AS VARCHAR), CAST('b' AS VARCHAR)) END"
@@ -10265,6 +10665,11 @@
   {
    "key": "ee5f2cfb8f39a8d8",
    "dialect": "duckdb",
+   "sql": "CASE WHEN '-' IS NULL OR x IS NULL THEN NULL ELSE CONCAT_WS('-', x) END"
+  },
+  {
+   "key": "7fd45e320c6c0bf9",
+   "dialect": "hive",
    "sql": "CASE WHEN '-' IS NULL OR x IS NULL THEN NULL ELSE CONCAT_WS('-', x) END"
   },
   {
@@ -10308,6 +10713,11 @@
    "sql": "IF(x > 1, 1, 0)"
   },
   {
+   "key": "bf2121ed2007ea75",
+   "dialect": "hive",
+   "sql": "IF(x > 1, 1, 0)"
+  },
+  {
    "key": "2e45ad3cc01828d2",
    "dialect": "duckdb",
    "sql": "CASE WHEN 1 THEN x ELSE 0 END"
@@ -10315,6 +10725,11 @@
   {
    "key": "214c3e2246e48ed5",
    "dialect": "presto",
+   "sql": "CASE WHEN 1 THEN x ELSE 0 END"
+  },
+  {
+   "key": "35a03be2205b032f",
+   "dialect": "hive",
    "sql": "CASE WHEN 1 THEN x ELSE 0 END"
   },
   {
@@ -10328,6 +10743,11 @@
    "sql": "x[y]"
   },
   {
+   "key": "4cbf4f9fda765419",
+   "dialect": "hive",
+   "sql": "x[y]"
+  },
+  {
    "key": "8efcb9445c53c756",
    "dialect": "duckdb",
    "sql": "'[\"x\"]'"
@@ -10335,6 +10755,11 @@
   {
    "key": "1bf3523a31a9b255",
    "dialect": "presto",
+   "sql": "'[\"x\"]'"
+  },
+  {
+   "key": "d3f62dfb42fefa50",
+   "dialect": "hive",
    "sql": "'[\"x\"]'"
   },
   {
@@ -10348,6 +10773,11 @@
    "sql": "TRUE OR NULL AS \"foo\""
   },
   {
+   "key": "47a00210939e6fdf",
+   "dialect": "hive",
+   "sql": "TRUE OR NULL AS `foo`"
+  },
+  {
    "key": "d42b6ac0003644af",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN COALESCE(bar, 0) = 1 THEN TRUE ELSE FALSE END AS foo FROM baz"
@@ -10358,8 +10788,18 @@
    "sql": "SELECT IF(COALESCE(bar, 0) = 1, TRUE, FALSE) AS foo FROM baz"
   },
   {
+   "key": "0cbe3bff7f9a78eb",
+   "dialect": "hive",
+   "sql": "SELECT IF(COALESCE(bar, 0) = 1, TRUE, FALSE) AS foo FROM baz"
+  },
+  {
    "key": "3a4e2be809df79b4",
    "dialect": "duckdb",
+   "sql": "LEVENSHTEIN(col1, col2)"
+  },
+  {
+   "key": "06fc009e40bd3c95",
+   "dialect": "hive",
    "sql": "LEVENSHTEIN(col1, col2)"
   },
   {
@@ -10398,8 +10838,18 @@
    "sql": "LEVENSHTEIN_DISTANCE(COALESCE(col1, col2), COALESCE(col2, col1))"
   },
   {
+   "key": "10a98b3e66af08d8",
+   "dialect": "hive",
+   "sql": "LEVENSHTEIN(COALESCE(col1, col2), COALESCE(col2, col1))"
+  },
+  {
    "key": "4cbafbf218410331",
    "dialect": "presto",
+   "sql": "FILTER(the_array, x -> x > 0)"
+  },
+  {
+   "key": "805b9781c8b11d7c",
+   "dialect": "hive",
    "sql": "FILTER(the_array, x -> x > 0)"
   },
   {
@@ -10415,6 +10865,11 @@
   {
    "key": "f90a3e9ced0f74f6",
    "dialect": "duckdb",
+   "sql": "a / b"
+  },
+  {
+   "key": "77205503e7874f77",
+   "dialect": "hive",
    "sql": "a / b"
   },
   {
@@ -10443,9 +10898,19 @@
    "sql": "CAST(a AS FLOAT) / b"
   },
   {
+   "key": "6f340fc1aaf71b3f",
+   "dialect": "hive",
+   "sql": "(8 - 1 + 7) % 7"
+  },
+  {
    "key": "1fc0aca5e308155d",
    "dialect": "presto",
    "sql": "(8 - 1 + 7) % 7"
+  },
+  {
+   "key": "3a5bdcb79cd5d185",
+   "dialect": "hive",
+   "sql": "a % (b + 1)"
   },
   {
    "key": "ab6e9cf411812ae6",
@@ -10456,6 +10921,11 @@
    "key": "17adc7eb68099d2e",
    "dialect": "duckdb",
    "sql": "LIST_FILTER(the_array, _u -> _u <> target)"
+  },
+  {
+   "key": "c231c7a75b2f11e9",
+   "dialect": "hive",
+   "sql": "ARRAY_REMOVE(the_array, target)"
   },
   {
    "key": "5a14fd473bce3f48",
@@ -10495,6 +10965,11 @@
   {
    "key": "2e9a0f8b6e34e077",
    "dialect": "duckdb",
+   "sql": "SELECT * FROM t LIMIT 1"
+  },
+  {
+   "key": "5c8a9fd7976a4e25",
+   "dialect": "hive",
    "sql": "SELECT * FROM t LIMIT 1"
   },
   {
@@ -10553,9 +11028,19 @@
    "sql": "CREATE TABLE t (c TEXT, nc TEXT, v1 TEXT, v2 TEXT, nv TEXT, nv2 TEXT)"
   },
   {
+   "key": "a2914c401d6cc73d",
+   "dialect": "hive",
+   "sql": "CREATE TABLE t (c STRING, nc STRING, v1 STRING, v2 STRING, nv STRING, nv2 STRING)"
+  },
+  {
    "key": "78111f7875c27203",
    "dialect": "postgres",
    "sql": "CREATE TABLE t (c CHAR, nc CHAR, v1 VARCHAR, v2 VARCHAR, nv VARCHAR, nv2 VARCHAR)"
+  },
+  {
+   "key": "2b4cf9b041ce1fe5",
+   "dialect": "hive",
+   "sql": "pow(1.2, 3.4)"
   },
   {
    "key": "595e0d370df3703d",
@@ -10563,9 +11048,19 @@
    "sql": "power(1.2, 3.4)"
   },
   {
+   "key": "b87077e32614b894",
+   "dialect": "hive",
+   "sql": "CREATE INDEX my_idx ON TABLE tbl(a, b)"
+  },
+  {
    "key": "3ad41d91597d9833",
    "dialect": "postgres",
    "sql": "CREATE INDEX my_idx ON tbl(a NULLS FIRST, b NULLS FIRST)"
+  },
+  {
+   "key": "5e6a8de17f0227e8",
+   "dialect": "hive",
+   "sql": "CREATE UNIQUE INDEX my_idx ON TABLE tbl(a, b)"
   },
   {
    "key": "37fd90a177005c70",
@@ -10578,6 +11073,11 @@
    "sql": "CREATE TABLE t (b1 BLOB, b2 BLOB(1024), c1 TEXT, c2 TEXT(1024))"
   },
   {
+   "key": "a4fb764920fec7a5",
+   "dialect": "hive",
+   "sql": "CREATE TABLE t (b1 BINARY, b2 BINARY(1024), c1 STRING, c2 VARCHAR(1024))"
+  },
+  {
    "key": "bc6017f8ff1652b3",
    "dialect": "postgres",
    "sql": "CREATE TABLE t (b1 BYTEA, b2 BYTEA(1024), c1 TEXT, c2 TEXT(1024))"
@@ -10588,9 +11088,19 @@
    "sql": "CREATE TABLE t (b1 VARBYTE, b2 VARBYTE(1024), c1 VARCHAR(MAX), c2 VARCHAR(1024))"
   },
   {
+   "key": "ef7c2182fa4a26f8",
+   "dialect": "hive",
+   "sql": "WITH t AS (SELECT 1 AS x, 2 AS y) SELECT x AS x FROM t GROUP BY x"
+  },
+  {
    "key": "59c31bb20cb91701",
    "dialect": "presto",
    "sql": "WITH t AS (SELECT 1 AS x, 2 AS y) SELECT x AS x FROM t GROUP BY x"
+  },
+  {
+   "key": "eafd61648c34bd79",
+   "dialect": "hive",
+   "sql": "WITH t AS (SELECT 1 AS x, 2 AS y) SELECT SUM(x) AS y, y AS x FROM t GROUP BY y"
   },
   {
    "key": "62681275364f3654",
@@ -10608,9 +11118,19 @@
    "sql": "SELECT 1 'foo'"
   },
   {
+   "key": "0b3ea4df20fe354f",
+   "dialect": "hive",
+   "sql": "SELECT y AS x FROM my_table AS t"
+  },
+  {
    "key": "f486cc4c4c567471",
    "dialect": "postgres",
    "sql": "SELECT y AS x FROM my_table AS t"
+  },
+  {
+   "key": "4fef7c8d43d3fb86",
+   "dialect": "hive",
+   "sql": "SELECT * FROM (SELECT * FROM my_table AS t) AS tbl"
   },
   {
    "key": "befd37a0e5696f5a",
@@ -10618,9 +11138,19 @@
    "sql": "SELECT * FROM (SELECT * FROM my_table AS t) AS tbl"
   },
   {
+   "key": "3a79365d7c33bb28",
+   "dialect": "hive",
+   "sql": "WITH cte1 AS (SELECT a, b FROM table1), cte2 AS (SELECT c, e AS d FROM table2) SELECT b, d AS dd FROM cte1 AS t CROSS JOIN cte2 WHERE cte1.a = cte2.c"
+  },
+  {
    "key": "0f5620e9998c0d6e",
    "dialect": "postgres",
    "sql": "WITH cte1 AS (SELECT a, b FROM table1), cte2 AS (SELECT c, e AS d FROM table2) SELECT b, d AS dd FROM cte1 AS t CROSS JOIN cte2 WHERE cte1.a = cte2.c"
+  },
+  {
+   "key": "a1dcf3f2cbb51a90",
+   "dialect": "hive",
+   "sql": "SELECT * FROM (SELECT 1 AS col) apply"
   },
   {
    "key": "76e4c7629fed017d",
@@ -10773,6 +11303,11 @@
    "sql": "LOG(x)"
   },
   {
+   "key": "a31723806cf6dd20",
+   "dialect": "hive",
+   "sql": "LOG(x)"
+  },
+  {
    "key": "d0ce0426a594b331",
    "dialect": "mysql",
    "sql": "LOG(x)"
@@ -10790,6 +11325,11 @@
   {
    "key": "c75a35de21e3ff9d",
    "dialect": "duckdb",
+   "sql": "LOG(b, n)"
+  },
+  {
+   "key": "51ab4fa33bb5d213",
+   "dialect": "hive",
    "sql": "LOG(b, n)"
   },
   {
@@ -10938,6 +11478,11 @@
    "sql": "SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq"
   },
   {
+   "key": "3beea662478c0fb6",
+   "dialect": "hive",
+   "sql": "WITH t AS (SELECT 1 AS c) SELECT * FROM (SELECT c FROM t) AS subq"
+  },
+  {
    "key": "5637160bad6c0471",
    "dialect": "mysql",
    "sql": "SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq"
@@ -10973,6 +11518,11 @@
    "sql": "SELECT * FROM (SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq1) AS subq2"
   },
   {
+   "key": "54003765b0246a35",
+   "dialect": "hive",
+   "sql": "WITH t AS (SELECT 1 AS c) SELECT * FROM (SELECT * FROM (SELECT c FROM t) AS subq1) AS subq2"
+  },
+  {
    "key": "65406caa9958efb9",
    "dialect": "tsql",
    "sql": "WITH t AS (SELECT 1 AS c) SELECT * FROM (SELECT * FROM (SELECT c AS c FROM t) AS subq1) AS subq2"
@@ -10993,6 +11543,16 @@
    "sql": "WITH c AS (WITH b AS (WITH a1 AS (SELECT 1), a2 AS (SELECT 2) SELECT * FROM a1, a2) SELECT * FROM b) SELECT * FROM c"
   },
   {
+   "key": "b23acf49b8973787",
+   "dialect": "hive",
+   "sql": "WITH a1 AS (SELECT 1), a2 AS (SELECT 2), b AS (SELECT * FROM a1, a2), c AS (SELECT * FROM b) SELECT * FROM c"
+  },
+  {
+   "key": "fa8f7f77d21ce520",
+   "dialect": "hive",
+   "sql": "WITH tmp AS (\n  SELECT\n    *\n  FROM table0\n), subquery1 AS (\n  SELECT\n    *\n  FROM tmp\n), tmp2 AS (\n  SELECT\n    *\n  FROM table1\n  WHERE\n    a IN subquery1\n), subquery2 AS (\n  SELECT\n    *\n  FROM tmp2\n)\nSELECT\n  *\nFROM subquery2"
+  },
+  {
    "key": "80643b8cfe3956f4",
    "dialect": "databricks",
    "sql": "RAND()"
@@ -11006,6 +11566,11 @@
    "key": "b600039208abc2c8",
    "dialect": "duckdb",
    "sql": "RANDOM()"
+  },
+  {
+   "key": "fe95a665f3667d87",
+   "dialect": "hive",
+   "sql": "RAND()"
   },
   {
    "key": "0e633acd26515e27",
@@ -11168,9 +11733,19 @@
    "sql": "SELECT 1 EXCEPT ALL SELECT 1"
   },
   {
+   "key": "14e587537b3976b9",
+   "dialect": "hive",
+   "sql": "TRIM('abc', 'a')"
+  },
+  {
    "key": "60c4c9a9a04c9659",
    "dialect": "databricks",
    "sql": "TRIM('a', 'abc')"
+  },
+  {
+   "key": "ae482095228146d6",
+   "dialect": "hive",
+   "sql": "TRIM('a' FROM 'abc')"
   },
   {
    "key": "bf693e1a2dce8aef",
@@ -11178,9 +11753,19 @@
    "sql": "TRIM('a' FROM 'abc')"
   },
   {
+   "key": "aeab459c236d06dd",
+   "dialect": "hive",
+   "sql": "LTRIM('Hello World', 'H')"
+  },
+  {
    "key": "abdde5bb7318de26",
    "dialect": "databricks",
    "sql": "LTRIM('H', 'Hello World')"
+  },
+  {
+   "key": "67c807eb56bd967a",
+   "dialect": "hive",
+   "sql": "TRIM(LEADING 'H' FROM 'Hello World')"
   },
   {
    "key": "6fa8e83ebcb25ed6",
@@ -11188,9 +11773,19 @@
    "sql": "TRIM(LEADING 'H' FROM 'Hello World')"
   },
   {
+   "key": "c4fe44d37dcfabc8",
+   "dialect": "hive",
+   "sql": "RTRIM('Hello World', 'd')"
+  },
+  {
    "key": "89d5aa67f1db0c12",
    "dialect": "databricks",
    "sql": "RTRIM('d', 'Hello World')"
+  },
+  {
+   "key": "a0bd72e15e11a2a7",
+   "dialect": "hive",
+   "sql": "TRIM(TRAILING 'd' FROM 'Hello World')"
   },
   {
    "key": "e3fcdc7d209640a9",
@@ -11198,14 +11793,29 @@
    "sql": "TRIM(TRAILING 'd' FROM 'Hello World')"
   },
   {
+   "key": "73537d3cc9072327",
+   "dialect": "hive",
+   "sql": "LTRIM('Hello World')"
+  },
+  {
    "key": "98997c501100b1c8",
    "dialect": "databricks",
    "sql": "LTRIM('Hello World')"
   },
   {
+   "key": "d23d6d523ce57bc7",
+   "dialect": "hive",
+   "sql": "RTRIM('Hello World')"
+  },
+  {
    "key": "bcd2b8b96d66f698",
    "dialect": "databricks",
    "sql": "RTRIM('Hello World')"
+  },
+  {
+   "key": "d995718bd2118728",
+   "dialect": "hive",
+   "sql": "UUID()"
   },
   {
    "key": "5fe12da22c081b93",
@@ -11265,6 +11875,11 @@
   {
    "key": "55532ae5ffa28846",
    "dialect": "databricks",
+   "sql": "ASCII('A')"
+  },
+  {
+   "key": "739b8efd659075f0",
+   "dialect": "hive",
    "sql": "ASCII('A')"
   },
   {
@@ -11443,6 +12058,11 @@
    "sql": "WEEKOFYEAR(CAST('2025-01-01' AS DATE))"
   },
   {
+   "key": "76c51f841e84f2c3",
+   "dialect": "hive",
+   "sql": "WEEKOFYEAR(CAST('2025-01-01' AS DATE))"
+  },
+  {
    "key": "afa166701fe2008e",
    "dialect": "mysql",
    "sql": "WEEKOFYEAR(CAST('2025-01-01' AS DATE))"
@@ -11486,6 +12106,11 @@
    "key": "85f632bd1d58c057",
    "dialect": "databricks",
    "sql": "UNIX_MILLIS(foo)"
+  },
+  {
+   "key": "7806ba33e6614e6c",
+   "dialect": "hive",
+   "sql": "REVERSE(x)"
   },
   {
    "key": "9f8002225a42e2f9",
@@ -11538,6 +12163,11 @@
    "sql": "REGR_COUNT(x, y)"
   },
   {
+   "key": "5e166cd1a4809c1b",
+   "dialect": "hive",
+   "sql": "REGR_COUNT(x, y)"
+  },
+  {
    "key": "e40fc0d8fcae8eea",
    "dialect": "postgres",
    "sql": "REGR_COUNT(x, y)"
@@ -11563,6 +12193,11 @@
    "sql": "REGR_INTERCEPT(x, y)"
   },
   {
+   "key": "2d8423114b76896b",
+   "dialect": "hive",
+   "sql": "REGR_INTERCEPT(x, y)"
+  },
+  {
    "key": "dd91cd113bc7a3da",
    "dialect": "postgres",
    "sql": "REGR_INTERCEPT(x, y)"
@@ -11580,6 +12215,11 @@
   {
    "key": "7650a03b955a0f3a",
    "dialect": "duckdb",
+   "sql": "REGR_R2(x, y)"
+  },
+  {
+   "key": "0fd0aace3945d554",
+   "dialect": "hive",
    "sql": "REGR_R2(x, y)"
   },
   {
@@ -11628,6 +12268,11 @@
    "sql": "REGR_SXX(x, y)"
   },
   {
+   "key": "d69ab2eb328f9b82",
+   "dialect": "hive",
+   "sql": "REGR_SXX(x, y)"
+  },
+  {
    "key": "4f1a34b0a4abc148",
    "dialect": "postgres",
    "sql": "REGR_SXX(x, y)"
@@ -11645,6 +12290,11 @@
   {
    "key": "5ba728f2eeab039f",
    "dialect": "duckdb",
+   "sql": "REGR_SXY(x, y)"
+  },
+  {
+   "key": "23f9a45988a86c81",
+   "dialect": "hive",
    "sql": "REGR_SXY(x, y)"
   },
   {
@@ -11668,6 +12318,11 @@
    "sql": "REGR_SYY(x, y)"
   },
   {
+   "key": "34400a2027d153b1",
+   "dialect": "hive",
+   "sql": "REGR_SYY(x, y)"
+  },
+  {
    "key": "eaa059a1d204be60",
    "dialect": "postgres",
    "sql": "REGR_SYY(x, y)"
@@ -11676,6 +12331,11 @@
    "key": "41b24a28311e44c2",
    "dialect": "presto",
    "sql": "REGR_SYY(x, y)"
+  },
+  {
+   "key": "84377aaf50a5e2b6",
+   "dialect": "hive",
+   "sql": "TRANSLATE(x, y, z)"
   },
   {
    "key": "03ab923df29c8844",
@@ -11706,6 +12366,11 @@
    "key": "41eb528f8492305a",
    "dialect": "redshift",
    "sql": "TRANSLATE(x, y, z)"
+  },
+  {
+   "key": "8efc546c4862559e",
+   "dialect": "hive",
+   "sql": "SOUNDEX(x)"
   },
   {
    "key": "94aab1b3e4e8d28a",
@@ -11741,6 +12406,11 @@
    "key": "fb80d9010f842bf1",
    "dialect": "redshift",
    "sql": "SOUNDEX(x)"
+  },
+  {
+   "key": "1e5b406323cfcc40",
+   "dialect": "hive",
+   "sql": "GROUPING(x)"
   },
   {
    "key": "41ea976636b5d6b5",
@@ -12663,6 +13333,11 @@
    "sql": "REGEXP_LIKE(x, y)"
   },
   {
+   "key": "a9d66380474d95cf",
+   "dialect": "hive",
+   "sql": "x RLIKE y"
+  },
+  {
    "key": "76176754929bdba1",
    "dialect": "dremio",
    "sql": "SELECT DATE_PART('YEAR', date '2021-04-01')"
@@ -12685,6 +13360,11 @@
   {
    "key": "e0cb4dca9206fd89",
    "dialect": "dremio",
+   "sql": "CAST(a AS FLOAT)"
+  },
+  {
+   "key": "383be09556f4fed7",
+   "dialect": "hive",
    "sql": "CAST(a AS FLOAT)"
   },
   {
@@ -13943,6 +14623,11 @@
    "sql": "DATE_DIFF('day', CAST(b AS DATE), CAST(a AS DATE))"
   },
   {
+   "key": "c371193eda1653ec",
+   "dialect": "hive",
+   "sql": "DATEDIFF(a, b)"
+  },
+  {
    "key": "8e644602f8d82187",
    "dialect": "duckdb",
    "sql": "XOR(a, b)"
@@ -14093,6 +14778,11 @@
    "sql": "SPLIT(x, 'a')"
   },
   {
+   "key": "a8bcdf3e32103985",
+   "dialect": "hive",
+   "sql": "SPLIT(x, CONCAT('\\\\Q', 'a', '\\\\E'))"
+  },
+  {
    "key": "92151af79903e87d",
    "dialect": "duckdb",
    "sql": "STRING_TO_ARRAY(x, 'a')"
@@ -14108,6 +14798,11 @@
    "sql": "REGEXP_SPLIT(x, 'a')"
   },
   {
+   "key": "ad9a1d76fa554304",
+   "dialect": "hive",
+   "sql": "SPLIT(x, 'a')"
+  },
+  {
    "key": "01d70228677f9dd8",
    "dialect": "duckdb",
    "sql": "STRUCT_EXTRACT(x, 'abc')"
@@ -14115,6 +14810,11 @@
   {
    "key": "43048ab0721e6855",
    "dialect": "presto",
+   "sql": "x.abc"
+  },
+  {
+   "key": "200be9f3d42bc18b",
+   "dialect": "hive",
    "sql": "x.abc"
   },
   {
@@ -14138,6 +14838,11 @@
    "sql": "x.y.abc"
   },
   {
+   "key": "2cdbcc1d327b6ea0",
+   "dialect": "hive",
+   "sql": "x.y.abc"
+  },
+  {
    "key": "058f956f9f789c26",
    "dialect": "duckdb",
    "sql": "QUANTILE(x, 0.5)"
@@ -14146,6 +14851,11 @@
    "key": "b9fc9f6aa34dc486",
    "dialect": "presto",
    "sql": "APPROX_PERCENTILE(x, 0.5)"
+  },
+  {
+   "key": "78b8d8e11f11ac73",
+   "dialect": "hive",
+   "sql": "PERCENTILE(x, 0.5)"
   },
   {
    "key": "a07b40c0f26936e2",
@@ -14166,6 +14876,11 @@
    "key": "c25acd9140a9c0e0",
    "dialect": "duckdb",
    "sql": "POWER(TRY_CAST(2 AS SMALLINT), 3)"
+  },
+  {
+   "key": "3e5cc6398f56bd17",
+   "dialect": "hive",
+   "sql": "POW(2S, 3)"
   },
   {
    "key": "86bb8b87f0b9c12b",
@@ -14206,6 +14921,11 @@
    "key": "d6f738fab1418826",
    "dialect": "presto",
    "sql": "ARRAY_SORT(x, (a, b) -> CASE WHEN a < b THEN 1 WHEN a > b THEN -1 ELSE 0 END)"
+  },
+  {
+   "key": "d92dff313c71d810",
+   "dialect": "hive",
+   "sql": "SORT_ARRAY(x, FALSE)"
   },
   {
    "key": "1c337941a26c6363",
@@ -14278,6 +14998,11 @@
    "sql": "MONTH('2021-03-01')"
   },
   {
+   "key": "06a9737f41e15cfe",
+   "dialect": "hive",
+   "sql": "MONTH('2021-03-01')"
+  },
+  {
    "key": "5c814b578293ee97",
    "dialect": "duckdb",
    "sql": "LIST_CONCAT([1, 2], [3, 4])"
@@ -14286,6 +15011,11 @@
    "key": "5dc5335bc56d6aa5",
    "dialect": "postgres",
    "sql": "ARRAY_CAT(ARRAY[1, 2], ARRAY[3, 4])"
+  },
+  {
+   "key": "c1cc01a125224560",
+   "dialect": "hive",
+   "sql": "CONCAT(ARRAY(1, 2), ARRAY(3, 4))"
   },
   {
    "key": "44bec8be531c8216",
@@ -14298,13 +15028,28 @@
    "sql": "SELECT CAST(TRY_CAST(x AS DATE) AS DATE) + INTERVAL 1 DAY"
   },
   {
+   "key": "0ea2a8f6d24a6c64",
+   "dialect": "hive",
+   "sql": "SELECT DATE_ADD(TO_DATE(x), 1)"
+  },
+  {
    "key": "85c7fc4ae803c229",
    "dialect": "duckdb",
    "sql": "SELECT CAST('2018-01-01 00:00:00' AS DATE) + INTERVAL 3 DAY"
   },
   {
+   "key": "fefc763ba6d0fb4d",
+   "dialect": "hive",
+   "sql": "SELECT DATE_ADD('2018-01-01 00:00:00', 3)"
+  },
+  {
    "key": "9f7a1b6798df47f2",
    "dialect": "duckdb",
+   "sql": "SELECT CAST('2018-01-01 00:00:00' AS DATE) + INTERVAL '3' DAY"
+  },
+  {
+   "key": "547550c2e1a781e8",
+   "dialect": "hive",
    "sql": "SELECT CAST('2018-01-01 00:00:00' AS DATE) + INTERVAL '3' DAY"
   },
   {
@@ -15113,6 +15858,11 @@
    "sql": "DATE_FORMAT(x, '%Y-%m-%d %T')"
   },
   {
+   "key": "fa9583b93200aa66",
+   "dialect": "hive",
+   "sql": "DATE_FORMAT(x, 'yyyy-MM-dd HH:mm:ss')"
+  },
+  {
    "key": "15a25aeefcdf55ed",
    "dialect": "duckdb",
    "sql": "STRPTIME(x, '%y-%-m')"
@@ -15123,6 +15873,11 @@
    "sql": "DATE_PARSE(x, '%y-%c')"
   },
   {
+   "key": "6ce842cf9d7d3803",
+   "dialect": "hive",
+   "sql": "CAST(FROM_UNIXTIME(UNIX_TIMESTAMP(x, 'yy-M')) AS TIMESTAMP)"
+  },
+  {
    "key": "cc764f2dd46fecfa",
    "dialect": "duckdb",
    "sql": "STRPTIME(x, '%-m/%-d/%y %-I:%M %p')"
@@ -15131,6 +15886,11 @@
    "key": "d4c85b892604eecf",
    "dialect": "presto",
    "sql": "DATE_PARSE(x, '%c/%e/%y %l:%i %p')"
+  },
+  {
+   "key": "410a64cb285531e3",
+   "dialect": "hive",
+   "sql": "CAST(FROM_UNIXTIME(UNIX_TIMESTAMP(x, 'M/d/yy h:m a')) AS TIMESTAMP)"
   },
   {
    "key": "0200ffaca1496fd1",
@@ -15145,6 +15905,11 @@
   {
    "key": "2fb6831a9bb515fb",
    "dialect": "duckdb",
+   "sql": "SELECT CAST('foo' AS TIMESTAMP)"
+  },
+  {
+   "key": "9d7b206b312ea7b5",
+   "dialect": "hive",
    "sql": "SELECT CAST('foo' AS TIMESTAMP)"
   },
   {
@@ -15548,6 +16313,11 @@
    "sql": "TRY_CAST(1 AS DOUBLE)"
   },
   {
+   "key": "868e4610824c356d",
+   "dialect": "hive",
+   "sql": "1d"
+  },
+  {
    "key": "e096a0aebac1ebfa",
    "dialect": "duckdb",
    "sql": "COL::BIGINT[]"
@@ -15561,6 +16331,11 @@
    "key": "2846f5bf86124702",
    "dialect": "presto",
    "sql": "CAST(COL AS ARRAY(BIGINT))"
+  },
+  {
+   "key": "78c35e0e3276f39e",
+   "dialect": "hive",
+   "sql": "CAST(COL AS ARRAY<BIGINT>)"
   },
   {
    "key": "0f19f908cbbcb7e3",
@@ -16428,6 +17203,11 @@
    "sql": "SELECT BITWISE_AND(x, 1)"
   },
   {
+   "key": "099141104eeb4d89",
+   "dialect": "hive",
+   "sql": "SELECT x & 1"
+  },
+  {
    "key": "8d24a0cf539b80a0",
    "dialect": "duckdb",
    "sql": "SELECT x | 1"
@@ -16436,6 +17216,11 @@
    "key": "cb9b66223b724258",
    "dialect": "presto",
    "sql": "SELECT BITWISE_OR(x, 1)"
+  },
+  {
+   "key": "9f7ae58d5f997955",
+   "dialect": "hive",
+   "sql": "SELECT x | 1"
   },
   {
    "key": "e59bc12e71c762ab",
@@ -16463,8 +17248,18 @@
    "sql": "SELECT BITWISE_NOT(x)"
   },
   {
+   "key": "02227c7bd805c174",
+   "dialect": "hive",
+   "sql": "SELECT ~x"
+  },
+  {
    "key": "fd67f53814c512e4",
    "dialect": "duckdb",
+   "sql": "SELECT x << 1"
+  },
+  {
+   "key": "e47e6a29c9fa5d18",
+   "dialect": "hive",
    "sql": "SELECT x << 1"
   },
   {
@@ -16475,6 +17270,11 @@
   {
    "key": "12b90b5e9925bce7",
    "dialect": "duckdb",
+   "sql": "SELECT x >> 1"
+  },
+  {
+   "key": "274812f9fd2a763f",
+   "dialect": "hive",
    "sql": "SELECT x >> 1"
   },
   {
@@ -16558,6 +17358,11 @@
    "sql": "CAST(STRPTIME(x, '%Y') AS DATE)"
   },
   {
+   "key": "740e385ace955035",
+   "dialect": "hive",
+   "sql": "TO_DATE(x, 'yyyy')"
+  },
+  {
    "key": "a02f39f9fc348a87",
    "dialect": "presto",
    "sql": "CAST(DATE_PARSE(x, '%Y') AS DATE)"
@@ -16618,6 +17423,11 @@
    "sql": "CREATE OR REPLACE VIEW `schema`.`v` (`col` COMMENT 'desc') AS SELECT `src_col` AS `col`"
   },
   {
+   "key": "175c202e9a49b1d6",
+   "dialect": "hive",
+   "sql": "MD5(x)"
+  },
+  {
    "key": "4c0560d4bc6700f3",
    "dialect": "presto",
    "sql": "LOWER(TO_HEX(MD5(x)))"
@@ -16653,6 +17463,11 @@
    "sql": "SELECT IF(1 = 0, NULL, 1) AS NIZ1"
   },
   {
+   "key": "10c6e660d6259bd8",
+   "dialect": "hive",
+   "sql": "SELECT IF(1 = 0, NULL, 1) AS NIZ1"
+  },
+  {
    "key": "60c183e524030460",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN 1 = 0 THEN NULL ELSE 1 END AS NIZ1"
@@ -16663,14 +17478,29 @@
    "sql": "SELECT IF(NULL IS NULL, 0, NULL) AS NIZ1"
   },
   {
+   "key": "17703d4014b2b2d1",
+   "dialect": "hive",
+   "sql": "SELECT IF(NULL IS NULL, 0, NULL) AS NIZ1"
+  },
+  {
    "key": "feb483ac4b47f07f",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN NULL IS NULL THEN 0 ELSE NULL END AS NIZ1"
   },
   {
+   "key": "25062e3ab253285e",
+   "dialect": "hive",
+   "sql": "SELECT a RLIKE 'x'"
+  },
+  {
    "key": "950879198d97ffa1",
    "dialect": "presto",
    "sql": "SELECT REGEXP_LIKE(a, 'x')"
+  },
+  {
+   "key": "66361763df949253",
+   "dialect": "hive",
+   "sql": "SELECT a RLIKE '.*x.*'"
   },
   {
    "key": "162bec38de80f4ec",
@@ -16785,6 +17615,11 @@
   {
    "key": "a4b1b6242783f472",
    "dialect": "duckdb",
+   "sql": "REGEXP_REPLACE(subject, pattern, replacement)"
+  },
+  {
+   "key": "3d788da1ec832bc2",
+   "dialect": "hive",
    "sql": "REGEXP_REPLACE(subject, pattern, replacement)"
   },
   {
@@ -17058,6 +17893,11 @@
    "sql": "CREATE TABLE t (col CHAR(MAX))"
   },
   {
+   "key": "27e51a9b6e4ebc73",
+   "dialect": "hive",
+   "sql": "x & 1"
+  },
+  {
    "key": "f3fca9272f160fc2",
    "dialect": "duckdb",
    "sql": "x & 1"
@@ -17066,6 +17906,11 @@
    "key": "12ddd33ecd4471f0",
    "dialect": "presto",
    "sql": "BITWISE_AND(x, 1)"
+  },
+  {
+   "key": "d413fdb5bbfe5d13",
+   "dialect": "hive",
+   "sql": "x & 1 > 0"
   },
   {
    "key": "d4eb48743b9e9e9b",
@@ -17078,6 +17923,11 @@
    "sql": "BITWISE_AND(x, 1) > 0"
   },
   {
+   "key": "c19ca033f829343a",
+   "dialect": "hive",
+   "sql": "~x"
+  },
+  {
    "key": "eafbd04fc3afbf7c",
    "dialect": "duckdb",
    "sql": "~x"
@@ -17086,6 +17936,11 @@
    "key": "c710c6feceef8c38",
    "dialect": "presto",
    "sql": "BITWISE_NOT(x)"
+  },
+  {
+   "key": "c4a15d8de2c7bdf3",
+   "dialect": "hive",
+   "sql": "x | 1"
   },
   {
    "key": "327864eb118e3493",
@@ -17098,6 +17953,11 @@
    "sql": "BITWISE_OR(x, 1)"
   },
   {
+   "key": "62d9d6242bc589dc",
+   "dialect": "hive",
+   "sql": "x << 1"
+  },
+  {
    "key": "d9d4a6d97e33f3e4",
    "dialect": "duckdb",
    "sql": "x << 1"
@@ -17106,6 +17966,11 @@
    "key": "3570fc54264e9866",
    "dialect": "presto",
    "sql": "BITWISE_LEFT_SHIFT(x, 1)"
+  },
+  {
+   "key": "d48f04c04634728d",
+   "dialect": "hive",
+   "sql": "x >> 1"
   },
   {
    "key": "25723debd431b688",
@@ -17118,6 +17983,11 @@
    "sql": "BITWISE_RIGHT_SHIFT(x, 1)"
   },
   {
+   "key": "04eb742dd3356a10",
+   "dialect": "hive",
+   "sql": "1s"
+  },
+  {
    "key": "8a8c786683e1c5a9",
    "dialect": "duckdb",
    "sql": "TRY_CAST(1 AS SMALLINT)"
@@ -17126,6 +17996,21 @@
    "key": "0ca71c6b5a7f9b30",
    "dialect": "presto",
    "sql": "TRY_CAST(1 AS SMALLINT)"
+  },
+  {
+   "key": "335076af56c78198",
+   "dialect": "hive",
+   "sql": "CAST(1 AS SMALLINT)"
+  },
+  {
+   "key": "29306460b6c8815a",
+   "dialect": "hive",
+   "sql": "1S"
+  },
+  {
+   "key": "745df186a7779df2",
+   "dialect": "hive",
+   "sql": "1Y"
   },
   {
    "key": "226f58f43d69be89",
@@ -17138,6 +18023,16 @@
    "sql": "TRY_CAST(1 AS TINYINT)"
   },
   {
+   "key": "f6d55858c390dfb3",
+   "dialect": "hive",
+   "sql": "CAST(1 AS TINYINT)"
+  },
+  {
+   "key": "b18d971efa2567ac",
+   "dialect": "hive",
+   "sql": "1L"
+  },
+  {
    "key": "794fb02e1d2d129f",
    "dialect": "duckdb",
    "sql": "TRY_CAST(1 AS BIGINT)"
@@ -17148,6 +18043,16 @@
    "sql": "TRY_CAST(1 AS BIGINT)"
   },
   {
+   "key": "c81d3a1176477623",
+   "dialect": "hive",
+   "sql": "CAST(1 AS BIGINT)"
+  },
+  {
+   "key": "973f3c48a1e04b8b",
+   "dialect": "hive",
+   "sql": "1.0bd"
+  },
+  {
    "key": "eaa4daa20b347e49",
    "dialect": "duckdb",
    "sql": "TRY_CAST(1.0 AS DECIMAL)"
@@ -17156,6 +18061,16 @@
    "key": "b0c839dc17b9053f",
    "dialect": "presto",
    "sql": "TRY_CAST(1.0 AS DECIMAL)"
+  },
+  {
+   "key": "1fa7ad325bae5aad",
+   "dialect": "hive",
+   "sql": "CAST(1.0 AS DECIMAL)"
+  },
+  {
+   "key": "0f998f016c02b759",
+   "dialect": "hive",
+   "sql": "CAST(1 AS INT)"
   },
   {
    "key": "a45dd574d967883b",
@@ -17173,6 +18088,11 @@
    "sql": "TRY_CAST(1 AS INTEGER)"
   },
   {
+   "key": "be2a620db113e631",
+   "dialect": "hive",
+   "sql": "CREATE TABLE x (w STRING) PARTITIONED BY (y INT, z INT)"
+  },
+  {
    "key": "b96f93d8c141f991",
    "dialect": "duckdb",
    "sql": "CREATE TABLE x (w TEXT)"
@@ -17181,6 +18101,11 @@
    "key": "e54deaee204c023f",
    "dialect": "presto",
    "sql": "CREATE TABLE x (w VARCHAR, y INTEGER, z INTEGER) WITH (PARTITIONED_BY=ARRAY['y', 'z'])"
+  },
+  {
+   "key": "c22f1858c74f5427",
+   "dialect": "hive",
+   "sql": "CREATE TABLE test STORED AS parquet TBLPROPERTIES ('x'='1', 'Z'='2') AS SELECT 1"
   },
   {
    "key": "6f6870041d1c422d",
@@ -17193,9 +18118,119 @@
    "sql": "CREATE TABLE test WITH (format='parquet', x='1', Z='2') AS SELECT 1"
   },
   {
+   "key": "2527147e41545629",
+   "dialect": "hive",
+   "sql": "CREATE TABLE test STORED AS PARQUET TBLPROPERTIES ('x'='1', 'Z'='2') AS SELECT 1"
+  },
+  {
+   "key": "c862c3b1a93f330e",
+   "dialect": "hive",
+   "sql": "CREATE TABLE test STORED AS INPUTFORMAT 'foo1' OUTPUTFORMAT 'foo2'"
+  },
+  {
    "key": "2bf5a41d107ef21a",
    "dialect": "databricks",
    "sql": "CREATE TABLE test STORED AS INPUTFORMAT 'foo1' OUTPUTFORMAT 'foo2'"
+  },
+  {
+   "key": "de85c1ab18b7adb6",
+   "dialect": "hive",
+   "sql": "ALTER TABLE x PARTITION(y = z) ADD COLUMN a VARCHAR(10)"
+  },
+  {
+   "key": "1aaa3097a0adea50",
+   "dialect": "hive",
+   "sql": "ALTER TABLE x CHANGE a a VARCHAR(10)"
+  },
+  {
+   "key": "8d78c1f6e7ebdc6e",
+   "dialect": "hive",
+   "sql": "ALTER TABLE x CHANGE COLUMN a a VARCHAR(10)"
+  },
+  {
+   "key": "bdae15b8a164c60b",
+   "dialect": "hive",
+   "sql": "ALTER TABLE x CHANGE COLUMN a a VARCHAR(10) COMMENT 'comment'"
+  },
+  {
+   "key": "278b2473f7c8d4c4",
+   "dialect": "hive",
+   "sql": "ALTER TABLE x CHANGE COLUMN a b VARCHAR(10)"
+  },
+  {
+   "key": "af19b18966f05f4f",
+   "dialect": "hive",
+   "sql": "ALTER TABLE x CHANGE COLUMN a a VARCHAR(10) CASCADE"
+  },
+  {
+   "key": "f87b9f01ebba0874",
+   "dialect": "hive",
+   "sql": "ALTER TABLE X ADD COLUMNS (y INT, z STRING)"
+  },
+  {
+   "key": "03e2fbcd9f2101cf",
+   "dialect": "hive",
+   "sql": "ALTER TABLE X ADD COLUMNS (y INT, z STRING) CASCADE"
+  },
+  {
+   "key": "53577f86b043e151",
+   "dialect": "hive",
+   "sql": "CREATE EXTERNAL TABLE x (y INT) ROW FORMAT SERDE 'serde' ROW FORMAT DELIMITED FIELDS TERMINATED BY '1' WITH SERDEPROPERTIES ('input.regex'='')"
+  },
+  {
+   "key": "788a2e5a4849c4d8",
+   "dialect": "hive",
+   "sql": "CREATE EXTERNAL TABLE `my_table` (`a7` ARRAY<DATE>) ROW FORMAT SERDE 'a' STORED AS INPUTFORMAT 'b' OUTPUTFORMAT 'c' LOCATION 'd' TBLPROPERTIES ('e'='f')"
+  },
+  {
+   "key": "fe31f3d6286cdc8f",
+   "dialect": "hive",
+   "sql": "CREATE EXTERNAL TABLE X (y INT) STORED BY 'x'"
+  },
+  {
+   "key": "074ad62df956eaf0",
+   "dialect": "hive",
+   "sql": "ALTER VIEW v1 AS SELECT x, UPPER(s) AS s FROM t2"
+  },
+  {
+   "key": "1014c164ac73be50",
+   "dialect": "hive",
+   "sql": "ALTER VIEW v1 (c1, c2) AS SELECT x, UPPER(s) AS s FROM t2"
+  },
+  {
+   "key": "0374c0bc58ee6128",
+   "dialect": "hive",
+   "sql": "ALTER VIEW v7 (c1 COMMENT 'Comment for c1', c2) AS SELECT t1.c1, t1.c2 FROM t1"
+  },
+  {
+   "key": "8a8915af8454d3cb",
+   "dialect": "hive",
+   "sql": "ALTER VIEW db1.v1 RENAME TO db2.v2"
+  },
+  {
+   "key": "a43dfd4892f91a08",
+   "dialect": "hive",
+   "sql": "ALTER VIEW v1 SET TBLPROPERTIES ('tblp1'='1', 'tblp2'='2')"
+  },
+  {
+   "key": "1d11dc958bb7cba7",
+   "dialect": "hive",
+   "sql": "ALTER VIEW v1 UNSET TBLPROPERTIES ('tblp1', 'tblp2')"
+  },
+  {
+   "key": "59f93facc7939671",
+   "dialect": "hive",
+   "sql": "CREATE TABLE foo (col STRUCT<struct_col_a: VARCHAR((50))>)"
+  },
+  {
+   "key": "49c23fcf22a7e432",
+   "dialect": "hive",
+   "sql": "CREATE TABLE db.example_table (col_a struct<struct_col_a:int, struct_col_b:string>)"
+  },
+  {
+   "key": "542c505438910b8d",
+   "dialect": "hive",
+   "sql": "CREATE TABLE db.example_table (col_a struct<struct_col_a:int, struct_col_b:struct<nested_col_a:string, nested_col_b:string>>)"
   },
   {
    "key": "a12becea432e91c8",
@@ -17208,9 +18243,24 @@
    "sql": "CREATE TABLE db.example_table (col_a ROW(struct_col_a INTEGER, struct_col_b ROW(nested_col_a VARCHAR, nested_col_b VARCHAR)))"
   },
   {
+   "key": "00cb01893324b6d5",
+   "dialect": "hive",
+   "sql": "CREATE TABLE db.example_table (col_a STRUCT<struct_col_a: INT, struct_col_b: STRUCT<nested_col_a: STRING, nested_col_b: STRING>>)"
+  },
+  {
+   "key": "e9e307f6ceecee49",
+   "dialect": "hive",
+   "sql": "ALTER TABLE db.example_table ADD PARTITION(col_a = 'a') LOCATION 'b'"
+  },
+  {
    "key": "e9d1ab8ad00dc800",
    "dialect": "databricks",
    "sql": "ALTER TABLE db.example_table ADD PARTITION(col_a = 'a') LOCATION 'b'"
+  },
+  {
+   "key": "65699046b9086445",
+   "dialect": "hive",
+   "sql": "SELECT a, b FROM x LATERAL VIEW EXPLODE(y) t AS a LATERAL VIEW EXPLODE(z) u AS b"
   },
   {
    "key": "ca16aef4668905bf",
@@ -17223,9 +18273,19 @@
    "sql": "SELECT a, b FROM x CROSS JOIN UNNEST(y) AS t(a) CROSS JOIN UNNEST(z) AS u(b)"
   },
   {
+   "key": "607fabe133bac6d6",
+   "dialect": "hive",
+   "sql": "SELECT a FROM x LATERAL VIEW EXPLODE(y) t AS a"
+  },
+  {
    "key": "4c26042d59dd025f",
    "dialect": "duckdb",
    "sql": "SELECT a FROM x CROSS JOIN UNNEST(y) AS t(a)"
+  },
+  {
+   "key": "182d19d5b3f24b4b",
+   "dialect": "hive",
+   "sql": "SELECT a FROM x LATERAL VIEW POSEXPLODE(y) t AS pos, col"
   },
   {
    "key": "d4c816ecb4fc0705",
@@ -17243,6 +18303,11 @@
    "sql": "SELECT a FROM x CROSS JOIN LATERAL (SELECT pos - 1 AS pos, col FROM UNNEST(y) WITH ORDINALITY AS t(col, pos))"
   },
   {
+   "key": "174905c2bb71fc68",
+   "dialect": "hive",
+   "sql": "SELECT * FROM x LATERAL VIEW POSEXPLODE(MAP(col, 'val')) t AS pos, key, value"
+  },
+  {
    "key": "15a001ca905dda63",
    "dialect": "presto",
    "sql": "SELECT * FROM x CROSS JOIN LATERAL (SELECT pos - 1 AS pos, key, value FROM UNNEST(MAP(ARRAY[col], ARRAY['val'])) WITH ORDINALITY AS t(key, value, pos))"
@@ -17251,6 +18316,11 @@
    "key": "ef92a4667eda6b53",
    "dialect": "trino",
    "sql": "SELECT * FROM x CROSS JOIN LATERAL (SELECT pos - 1 AS pos, key, value FROM UNNEST(MAP(ARRAY[col], ARRAY['val'])) WITH ORDINALITY AS t(key, value, pos))"
+  },
+  {
+   "key": "e0498b8aad2bc3a9",
+   "dialect": "hive",
+   "sql": "SELECT a FROM x LATERAL VIEW EXPLODE(ARRAY(y)) t AS a"
   },
   {
    "key": "8795dc711e57583a",
@@ -17263,6 +18333,11 @@
    "sql": "SELECT a FROM x CROSS JOIN UNNEST([y]) AS t(a)"
   },
   {
+   "key": "554e25c6c27af2e2",
+   "dialect": "hive",
+   "sql": "'\\''"
+  },
+  {
    "key": "1cb5c25f431fffc9",
    "dialect": "duckdb",
    "sql": "''''"
@@ -17271,6 +18346,11 @@
    "key": "c6465051e250cfab",
    "dialect": "presto",
    "sql": "''''"
+  },
+  {
+   "key": "49407613d5a32d12",
+   "dialect": "hive",
+   "sql": "'\"x\"'"
   },
   {
    "key": "b9ca8aadbc163032",
@@ -17283,6 +18363,11 @@
    "sql": "'\"x\"'"
   },
   {
+   "key": "9214da15bf126fa4",
+   "dialect": "hive",
+   "sql": "\"'x'\""
+  },
+  {
    "key": "98d325025a782e9c",
    "dialect": "duckdb",
    "sql": "'''x'''"
@@ -17291,6 +18376,16 @@
    "key": "e77b305b42846a6a",
    "dialect": "presto",
    "sql": "'''x'''"
+  },
+  {
+   "key": "b08c69e6c5410842",
+   "dialect": "hive",
+   "sql": "'\\'x\\''"
+  },
+  {
+   "key": "dafe4fcaee3a4419",
+   "dialect": "hive",
+   "sql": "'\\\\\\\\a'"
   },
   {
    "key": "a8a67d18b659d0bc",
@@ -17303,6 +18398,11 @@
    "sql": "'\\\\a'"
   },
   {
+   "key": "78ee54ec5cac9eec",
+   "dialect": "hive",
+   "sql": "a RLIKE 'x'"
+  },
+  {
    "key": "32d6c9dccdd89f8a",
    "dialect": "duckdb",
    "sql": "REGEXP_MATCHES(a, 'x')"
@@ -17313,9 +18413,29 @@
    "sql": "REGEXP_LIKE(a, 'x')"
   },
   {
+   "key": "611c7c1b605a7688",
+   "dialect": "hive",
+   "sql": "a REGEXP 'x'"
+  },
+  {
+   "key": "5fabcd2c2a7b79f0",
+   "dialect": "hive",
+   "sql": "STR_TO_DATE(x)"
+  },
+  {
+   "key": "2e102a666bb4a58a",
+   "dialect": "hive",
+   "sql": "(UNIX_TIMESTAMP(y) - UNIX_TIMESTAMP(x)) * 1000"
+  },
+  {
    "key": "dbddb5ab70753de9",
    "dialect": "presto",
    "sql": "DATE_DIFF('millisecond', x, y)"
+  },
+  {
+   "key": "dfe790e783b694bf",
+   "dialect": "hive",
+   "sql": "UNIX_TIMESTAMP(y) - UNIX_TIMESTAMP(x)"
   },
   {
    "key": "0cb6fb61650b3501",
@@ -17323,9 +18443,19 @@
    "sql": "DATE_DIFF('second', x, y)"
   },
   {
+   "key": "26632ebff57d439c",
+   "dialect": "hive",
+   "sql": "(UNIX_TIMESTAMP(y) - UNIX_TIMESTAMP(x)) / 60"
+  },
+  {
    "key": "d355314d00e0d4a1",
    "dialect": "presto",
    "sql": "DATE_DIFF('minute', x, y)"
+  },
+  {
+   "key": "41a45e915d664e26",
+   "dialect": "hive",
+   "sql": "(UNIX_TIMESTAMP(y) - UNIX_TIMESTAMP(x)) / 3600"
   },
   {
    "key": "7831d55e1fa445d8",
@@ -17338,6 +18468,11 @@
    "sql": "DATE_DIFF('DAY', CAST(CAST(b AS TIMESTAMP) AS DATE), CAST(CAST(a AS TIMESTAMP) AS DATE))"
   },
   {
+   "key": "2c711b542e857dd4",
+   "dialect": "hive",
+   "sql": "from_unixtime(x, \"yyyy-MM-dd'T'HH\")"
+  },
+  {
    "key": "e61641062b3dcec6",
    "dialect": "duckdb",
    "sql": "STRFTIME(TO_TIMESTAMP(x), '%Y-%m-%d''T''%H')"
@@ -17348,6 +18483,16 @@
    "sql": "DATE_FORMAT(FROM_UNIXTIME(x), '%Y-%m-%d''T''%H')"
   },
   {
+   "key": "c502c69ca09e17b5",
+   "dialect": "hive",
+   "sql": "FROM_UNIXTIME(x, 'yyyy-MM-dd\\'T\\'HH')"
+  },
+  {
+   "key": "377d64070b7cfff8",
+   "dialect": "hive",
+   "sql": "DATE_FORMAT('2020-01-01', 'yyyy-MM-dd HH:mm:ss')"
+  },
+  {
    "key": "ea6cd5ee9598cd5d",
    "dialect": "duckdb",
    "sql": "STRFTIME(CAST('2020-01-01' AS TIMESTAMP), '%Y-%m-%d %H:%M:%S')"
@@ -17356,6 +18501,11 @@
    "key": "3b3fc924d5160960",
    "dialect": "presto",
    "sql": "DATE_FORMAT(CAST('2020-01-01' AS TIMESTAMP), '%Y-%m-%d %H:%i:%s')"
+  },
+  {
+   "key": "398aad2a6c79ec1a",
+   "dialect": "hive",
+   "sql": "DATE_ADD('2020-01-01', 1)"
   },
   {
    "key": "dd6c5284f3e62a4d",
@@ -17373,9 +18523,19 @@
    "sql": "DATEADD(DAY, 1, CAST(CAST('2020-01-01' AS DATETIME2) AS DATE))"
   },
   {
+   "key": "dc175b49eb901a17",
+   "dialect": "hive",
+   "sql": "DATE_SUB('2020-01-01', 1)"
+  },
+  {
    "key": "0e72268294162913",
    "dialect": "duckdb",
    "sql": "CAST('2020-01-01' AS DATE) + INTERVAL (1 * -1) DAY"
+  },
+  {
+   "key": "0ed66542286258fa",
+   "dialect": "hive",
+   "sql": "DATE_ADD('2020-01-01', 1 * -1)"
   },
   {
    "key": "f286d9edfea6d8c3",
@@ -17391,6 +18551,26 @@
    "key": "2f9bc64192b859a2",
    "dialect": "tsql",
    "sql": "DATEADD(DAY, 1 * -1, CAST(CAST('2020-01-01' AS DATETIME2) AS DATE))"
+  },
+  {
+   "key": "19e4cd4f0bcf61ad",
+   "dialect": "hive",
+   "sql": "DATE_ADD('2020-01-01', -1)"
+  },
+  {
+   "key": "76f3e53c14817665",
+   "dialect": "hive",
+   "sql": "DATE_ADD(a, b * -1)"
+  },
+  {
+   "key": "6f4fba6d9984568d",
+   "dialect": "hive",
+   "sql": "ADD_MONTHS('2020-01-01', -2)"
+  },
+  {
+   "key": "b28effe25ad99ca9",
+   "dialect": "hive",
+   "sql": "DATEDIFF(TO_DATE(y), x)"
   },
   {
    "key": "9bb301fef960c290",
@@ -17413,9 +18593,189 @@
    "sql": "TO_UNIXTIME(COALESCE(TRY(DATE_PARSE(CAST(x AS VARCHAR), '%Y-%m-%d %H:%i:%s')), PARSE_DATETIME(DATE_FORMAT(x, '%Y-%m-%d %H:%i:%s'), 'yyyy-MM-dd HH:mm:ss')))"
   },
   {
+   "key": "b6e0a314af1383fe",
+   "dialect": "hive",
+   "sql": "TO_DATE(TO_DATE(x))"
+  },
+  {
+   "key": "e8c620c3fd3897db",
+   "dialect": "hive",
+   "sql": "DAY(TO_DATE(x))"
+  },
+  {
+   "key": "ccd8dc02538eb854",
+   "dialect": "hive",
+   "sql": "SELECT * FROM t WHERE col IN ('stream')"
+  },
+  {
+   "key": "1d68e4f39900a25c",
+   "dialect": "hive",
+   "sql": "SET hiveconf:some_var = 5"
+  },
+  {
+   "key": "a98b74e8d16afd67",
+   "dialect": "hive",
+   "sql": "(VALUES (1 AS a, 2 AS b, 3))"
+  },
+  {
+   "key": "f60da4a674db108b",
+   "dialect": "hive",
+   "sql": "SELECT * FROM my_table TIMESTAMP AS OF DATE_ADD(CURRENT_DATE, -1)"
+  },
+  {
+   "key": "969316e66786cf0a",
+   "dialect": "hive",
+   "sql": "SELECT * FROM my_table VERSION AS OF DATE_ADD(CURRENT_DATE, -1)"
+  },
+  {
+   "key": "e8f71a9aae56d78a",
+   "dialect": "hive",
+   "sql": "SELECT WEEKOFYEAR('2024-05-22'), DAYOFMONTH('2024-05-22'), DAYOFWEEK('2024-05-22')"
+  },
+  {
+   "key": "0df574aad7fe342c",
+   "dialect": "hive",
+   "sql": "SELECT ROW() OVER (DISTRIBUTE BY x SORT BY y)"
+  },
+  {
+   "key": "b36b6c637cf104ea",
+   "dialect": "hive",
+   "sql": "SELECT transform"
+  },
+  {
+   "key": "12ce7ba4dc109643",
+   "dialect": "hive",
+   "sql": "SELECT * FROM test DISTRIBUTE BY y SORT BY x DESC ORDER BY l"
+  },
+  {
+   "key": "359b4603acaa93a3",
+   "dialect": "hive",
+   "sql": "SELECT * FROM test WHERE RAND() <= 0.1 DISTRIBUTE BY RAND() SORT BY RAND()"
+  },
+  {
+   "key": "a4bd97a7465932f5",
+   "dialect": "hive",
+   "sql": "(SELECT 1 UNION SELECT 2) DISTRIBUTE BY z"
+  },
+  {
+   "key": "0743471915d4b8d0",
+   "dialect": "hive",
+   "sql": "(SELECT 1 UNION SELECT 2) DISTRIBUTE BY z SORT BY x"
+  },
+  {
+   "key": "9fdb5cf17ea04f49",
+   "dialect": "hive",
+   "sql": "(SELECT 1 UNION SELECT 2) CLUSTER BY y"
+  },
+  {
+   "key": "f8914e10bfee8ced",
+   "dialect": "hive",
+   "sql": "SELECT * FROM test CLUSTER BY y"
+  },
+  {
+   "key": "f25ed39591972379",
+   "dialect": "hive",
+   "sql": "(SELECT 1 UNION SELECT 2) SORT BY z"
+  },
+  {
+   "key": "59766c948da67d5a",
+   "dialect": "hive",
+   "sql": "INSERT OVERWRITE TABLE zipcodes PARTITION(state = '0') VALUES (896, 'US', 'TAMPA', 33607)"
+  },
+  {
+   "key": "3c6269c4edf4910c",
+   "dialect": "hive",
+   "sql": "INSERT OVERWRITE TABLE zipcodes PARTITION(state = 0) VALUES (896, 'US', 'TAMPA', 33607)"
+  },
+  {
+   "key": "53931fde9a8085ba",
+   "dialect": "hive",
+   "sql": "INSERT OVERWRITE DIRECTORY 'x' ROW FORMAT DELIMITED FIELDS TERMINATED BY '\u0001' COLLECTION ITEMS TERMINATED BY ',' MAP KEYS TERMINATED BY ':' LINES TERMINATED BY '' STORED AS TEXTFILE SELECT * FROM `a`.`b`"
+  },
+  {
+   "key": "f06975a84fff01a1",
+   "dialect": "hive",
+   "sql": "SELECT a, b, SUM(c) FROM tabl AS t GROUP BY a, b, GROUPING SETS ((a, b), a)"
+  },
+  {
+   "key": "6eda1ce1af8684a3",
+   "dialect": "hive",
+   "sql": "SELECT a, b, SUM(c) FROM tabl AS t GROUP BY a, b, GROUPING SETS ((t.a, b), a)"
+  },
+  {
+   "key": "a2c5855aee76ca1b",
+   "dialect": "hive",
+   "sql": "SELECT a, b, SUM(c) FROM tabl AS t GROUP BY a, FOO(b), GROUPING SETS ((a, FOO(b)), a)"
+  },
+  {
+   "key": "a0486212b87f539e",
+   "dialect": "hive",
+   "sql": "SELECT key, value, GROUPING__ID, COUNT(*) FROM T1 GROUP BY key, value WITH CUBE"
+  },
+  {
+   "key": "8a3eabbaa7727304",
+   "dialect": "hive",
+   "sql": "SELECT key, value, GROUPING__ID, COUNT(*) FROM T1 GROUP BY key, value WITH ROLLUP"
+  },
+  {
+   "key": "48b84268ea8ffc69",
+   "dialect": "hive",
+   "sql": "TRUNCATE TABLE t1 PARTITION(age = 10, name = 'test', address = 'abc')"
+  },
+  {
+   "key": "5647595be0f3d694",
+   "dialect": "hive",
+   "sql": "SELECT * FROM t1, t2"
+  },
+  {
+   "key": "8e1dfd619dd6e50a",
+   "dialect": "hive",
+   "sql": "SELECT ${hiveconf:some_var}"
+  },
+  {
+   "key": "8fdd21edef399921",
+   "dialect": "hive",
+   "sql": "SELECT A.1a AS b FROM test_a AS A"
+  },
+  {
+   "key": "72d80cda8a13ebdc",
+   "dialect": "hive",
+   "sql": "SELECT 1_a AS a FROM test_table"
+  },
+  {
    "key": "c7f14ac23cf6e386",
    "dialect": "trino",
    "sql": "SELECT \"1_a\" AS a FROM test_table"
+  },
+  {
+   "key": "e945f3c83321293e",
+   "dialect": "hive",
+   "sql": "SELECT a_b AS 1_a FROM test_table"
+  },
+  {
+   "key": "e7ab7c818b3db178",
+   "dialect": "hive",
+   "sql": "SELECT 1a_1a FROM test_a"
+  },
+  {
+   "key": "9ba4660a2ce98aa6",
+   "dialect": "hive",
+   "sql": "SELECT 1a AS 1a_1a FROM test_a"
+  },
+  {
+   "key": "bbc28acb17207fe9",
+   "dialect": "hive",
+   "sql": "CREATE TABLE test_table (1a STRING)"
+  },
+  {
+   "key": "0adde446f526540f",
+   "dialect": "hive",
+   "sql": "CREATE TABLE test_table2 (1a_1a STRING)"
+  },
+  {
+   "key": "ab92d6bdccd4204b",
+   "dialect": "hive",
+   "sql": "PERCENTILE_APPROX(x, 0.5)"
   },
   {
    "key": "19791c84c6309d08",
@@ -17423,14 +18783,34 @@
    "sql": "APPROX_QUANTILE(x, 0.5)"
   },
   {
+   "key": "daef80d4d2e86480",
+   "dialect": "hive",
+   "sql": "PERCENTILE_APPROX(ALL x, 0.5)"
+  },
+  {
    "key": "a4bdf2246b14a61f",
    "dialect": "databricks",
    "sql": "PERCENTILE_APPROX(ALL x, 0.5)"
   },
   {
+   "key": "5eb3b6d789685c5d",
+   "dialect": "hive",
+   "sql": "PERCENTILE_APPROX(x, 0.5, 200)"
+  },
+  {
+   "key": "13f2c1e1b57e3609",
+   "dialect": "hive",
+   "sql": "PERCENTILE_APPROX(ALL x, 0.5, 200)"
+  },
+  {
    "key": "d34f98339694fe9b",
    "dialect": "databricks",
    "sql": "PERCENTILE_APPROX(ALL x, 0.5, 200)"
+  },
+  {
+   "key": "4392609c6764a112",
+   "dialect": "hive",
+   "sql": "APPROX_COUNT_DISTINCT(a)"
   },
   {
    "key": "874eacaef6d2ace9",
@@ -17441,6 +18821,11 @@
    "key": "2e5f4e8214f0eb52",
    "dialect": "presto",
    "sql": "APPROX_DISTINCT(a)"
+  },
+  {
+   "key": "dfcce4b538c69ff3",
+   "dialect": "hive",
+   "sql": "ARRAY_CONTAINS(x, 1)"
   },
   {
    "key": "8d42d497fbbdf0ae",
@@ -17458,6 +18843,16 @@
    "sql": "CONTAINS(x, 1)"
   },
   {
+   "key": "d68a340ecc697464",
+   "dialect": "hive",
+   "sql": "SIZE(x)"
+  },
+  {
+   "key": "f62b83c20d3ba6fe",
+   "dialect": "hive",
+   "sql": "LOCATE('a', x)"
+  },
+  {
    "key": "65f435e738806686",
    "dialect": "duckdb",
    "sql": "STRPOS(x, 'a')"
@@ -17466,6 +18861,11 @@
    "key": "17862d82dc65cf6b",
    "dialect": "presto",
    "sql": "STRPOS(x, 'a')"
+  },
+  {
+   "key": "116b4eb29eadfc6f",
+   "dialect": "hive",
+   "sql": "LOCATE('a', x, 3)"
   },
   {
    "key": "b282b82e684da479",
@@ -17478,6 +18878,26 @@
    "sql": "IF(STRPOS(SUBSTR(x, 3), 'a') = 0, 0, STRPOS(SUBSTR(x, 3), 'a') + 3 - 1)"
   },
   {
+   "key": "a27b8876b61c2ebe",
+   "dialect": "hive",
+   "sql": "INITCAP('new york')"
+  },
+  {
+   "key": "3087d507482190ba",
+   "dialect": "hive",
+   "sql": "SELECT * FROM x.z TABLESAMPLE(10 PERCENT) y"
+  },
+  {
+   "key": "5ad0474ec6827b8a",
+   "dialect": "hive",
+   "sql": "SELECT * FROM x.z TABLESAMPLE (10 PERCENT) AS y"
+  },
+  {
+   "key": "a289f96c5b708949",
+   "dialect": "hive",
+   "sql": "SELECT SORT_ARRAY(x, FALSE)"
+  },
+  {
    "key": "c0fbb910e96f3e6d",
    "dialect": "duckdb",
    "sql": "SELECT ARRAY_REVERSE_SORT(x)"
@@ -17488,9 +18908,19 @@
    "sql": "SELECT ARRAY_SORT(x, (a, b) -> CASE WHEN a < b THEN 1 WHEN a > b THEN -1 ELSE 0 END)"
   },
   {
+   "key": "8676a7370c77a7df",
+   "dialect": "hive",
+   "sql": "GET_JSON_OBJECT(x, '$.name')"
+  },
+  {
    "key": "524e18dcd3640de1",
    "dialect": "presto",
    "sql": "JSON_EXTRACT_SCALAR(x, '$.name')"
+  },
+  {
+   "key": "2d97b74c4d21efcf",
+   "dialect": "hive",
+   "sql": "MAP(a, b, c, d)"
   },
   {
    "key": "9a7698ee1aa9646c",
@@ -17503,6 +18933,11 @@
    "sql": "MAP(ARRAY[a, c], ARRAY[b, d])"
   },
   {
+   "key": "9b1c3c299598e4ed",
+   "dialect": "hive",
+   "sql": "MAP(a, b)"
+  },
+  {
    "key": "dc1808feaef160c0",
    "dialect": "duckdb",
    "sql": "MAP([a], [b])"
@@ -17511,6 +18946,11 @@
    "key": "8b068dcf0f12bcdf",
    "dialect": "presto",
    "sql": "MAP(ARRAY[a], ARRAY[b])"
+  },
+  {
+   "key": "6e5e24622465d058",
+   "dialect": "hive",
+   "sql": "LOG(10)"
   },
   {
    "key": "20a70a89aff52715",
@@ -17523,6 +18963,16 @@
    "sql": "LN(10)"
   },
   {
+   "key": "82185e3b2f35639b",
+   "dialect": "hive",
+   "sql": "LN(10)"
+  },
+  {
+   "key": "16f41f9056a4d070",
+   "dialect": "hive",
+   "sql": "ds = \"2020-01-01\""
+  },
+  {
    "key": "e782c2b33784679c",
    "dialect": "duckdb",
    "sql": "ds = '2020-01-01'"
@@ -17531,6 +18981,16 @@
    "key": "60adc867b538910c",
    "dialect": "presto",
    "sql": "ds = '2020-01-01'"
+  },
+  {
+   "key": "481c4aa587a6df0e",
+   "dialect": "hive",
+   "sql": "ds = '2020-01-01'"
+  },
+  {
+   "key": "fcf52aba88b5ab23",
+   "dialect": "hive",
+   "sql": "ds = \"1''2\""
   },
   {
    "key": "224b8f84ca5c0ec5",
@@ -17543,6 +19003,16 @@
    "sql": "ds = '1''''2'"
   },
   {
+   "key": "0d6ef9b751960798",
+   "dialect": "hive",
+   "sql": "ds = '1\\'\\'2'"
+  },
+  {
+   "key": "2e9d9fd8489c9297",
+   "dialect": "hive",
+   "sql": "x == 1"
+  },
+  {
    "key": "62e6425dab2e2364",
    "dialect": "duckdb",
    "sql": "x = 1"
@@ -17553,6 +19023,16 @@
    "sql": "x = 1"
   },
   {
+   "key": "057f21ecb3f16889",
+   "dialect": "hive",
+   "sql": "x = 1"
+  },
+  {
+   "key": "f8b3dd649ff79dc5",
+   "dialect": "hive",
+   "sql": "x DIV y"
+  },
+  {
    "key": "7a91bf16ce5e1b3a",
    "dialect": "databricks",
    "sql": "x DIV y"
@@ -17561,6 +19041,11 @@
    "key": "0b96c5d49a53070d",
    "dialect": "presto",
    "sql": "CAST(CAST(x AS DOUBLE) / y AS INTEGER)"
+  },
+  {
+   "key": "b04de0c446d3b1b8",
+   "dialect": "hive",
+   "sql": "COLLECT_LIST(x)"
   },
   {
    "key": "19de223f48bf05d2",
@@ -17578,6 +19063,11 @@
    "sql": "ARRAY_AGG(x) FILTER(WHERE x IS NOT NULL)"
   },
   {
+   "key": "a77ae7f1bc4de671",
+   "dialect": "hive",
+   "sql": "COLLECT_SET(x)"
+  },
+  {
    "key": "8436a02063ef1a54",
    "dialect": "doris",
    "sql": "COLLECT_SET(x)"
@@ -17593,9 +19083,24 @@
    "sql": "ARRAY_AGG(DISTINCT x)"
   },
   {
+   "key": "ce3c7dcb274566b5",
+   "dialect": "hive",
+   "sql": "SELECT * FROM x TABLESAMPLE (1 PERCENT) AS foo"
+  },
+  {
    "key": "d8514ea1aec72fa5",
    "dialect": "presto",
    "sql": "SELECT * FROM x AS foo TABLESAMPLE BERNOULLI (1)"
+  },
+  {
+   "key": "99ef6fc1566b5b13",
+   "dialect": "hive",
+   "sql": "SELECT a, SUM(c) FROM t GROUP BY a, DATE_FORMAT(b, 'yyyy'), GROUPING SETS ((a, DATE_FORMAT(b, 'yyyy')), a)"
+  },
+  {
+   "key": "ebd5914a80f59144",
+   "dialect": "hive",
+   "sql": "SELECT TRUNC(CAST(ds AS TIMESTAMP), 'MONTH')"
   },
   {
    "key": "79abecd54a6dcd47",
@@ -17606,6 +19111,16 @@
    "key": "5484dcf511e28ea9",
    "dialect": "presto",
    "sql": "SELECT DATE_TRUNC('MONTH', TRY_CAST(ds AS TIMESTAMP))"
+  },
+  {
+   "key": "779f2968395fd426",
+   "dialect": "hive",
+   "sql": "CAST(3.14159 AS BIGINT)"
+  },
+  {
+   "key": "1d3e952fe68b7eaf",
+   "dialect": "hive",
+   "sql": "REGEXP_EXTRACT('abc', '(a)(b)(c)')"
   },
   {
    "key": "c035ae3d7bd635ee",
@@ -17628,14 +19143,34 @@
    "sql": "REGEXP_EXTRACT('abc', '(a)(b)(c)', 1)"
   },
   {
+   "key": "163600dbbfb114c5",
+   "dialect": "hive",
+   "sql": "SELECT EXISTS(ARRAY(2, 3), x -> x % 2 = 0)"
+  },
+  {
    "key": "8b9a4c1815f7cbbb",
    "dialect": "databricks",
    "sql": "SELECT EXISTS(ARRAY(2, 3), x -> x % 2 = 0)"
   },
   {
+   "key": "8e1c5265f38c8815",
+   "dialect": "hive",
+   "sql": "SELECT 1_2"
+  },
+  {
+   "key": "2545eade16a9d722",
+   "dialect": "hive",
+   "sql": "SELECT MAP(*), STRUCT(*) FROM t"
+  },
+  {
    "key": "ebb4ecd6db21f98c",
    "dialect": "databricks",
    "sql": "SELECT MAP(*), STRUCT(*) FROM t"
+  },
+  {
+   "key": "d381d7df25df14cb",
+   "dialect": "hive",
+   "sql": "SELECT FIRST(sample_col, TRUE)"
   },
   {
    "key": "a79f47a364661f69",
@@ -17653,6 +19188,11 @@
    "sql": "SELECT ANY_VALUE(sample_col)"
   },
   {
+   "key": "608543c0b96d0454",
+   "dialect": "hive",
+   "sql": "SELECT FIRST_VALUE(sample_col, TRUE)"
+  },
+  {
    "key": "03fe0aea6d6b2085",
    "dialect": "databricks",
    "sql": "SELECT FIRST_VALUE(sample_col, TRUE)"
@@ -17666,6 +19206,11 @@
    "key": "2fe1b9777361b806",
    "dialect": "duckdb",
    "sql": "SELECT FIRST_VALUE(sample_col IGNORE NULLS)"
+  },
+  {
+   "key": "6f4e3a9ba53f0122",
+   "dialect": "hive",
+   "sql": "SELECT LAST_VALUE(sample_col, TRUE)"
   },
   {
    "key": "5b4a575c062beafc",
@@ -17683,6 +19228,11 @@
    "sql": "SELECT LAST_VALUE(sample_col IGNORE NULLS)"
   },
   {
+   "key": "a92062861719db54",
+   "dialect": "hive",
+   "sql": "SELECT LAST(sample_col, TRUE)"
+  },
+  {
    "key": "1b9bc788d5f0fbf1",
    "dialect": "databricks",
    "sql": "SELECT LAST(sample_col, TRUE)"
@@ -17693,9 +19243,74 @@
    "sql": "SELECT LAST(sample_col) IGNORE NULLS"
   },
   {
+   "key": "c9b89a463e07489c",
+   "dialect": "hive",
+   "sql": "DATE_SUB(CURRENT_DATE, 1 + 1)"
+  },
+  {
+   "key": "66de53e8c26860c4",
+   "dialect": "hive",
+   "sql": "SELECT ELT(2, 'foo', 'bar', 'baz') AS Result"
+  },
+  {
+   "key": "8d5e1320070d48c9",
+   "dialect": "hive",
+   "sql": "WITH t AS (SELECT '{\"x-y\": \"z\"}' AS c) SELECT GET_JSON_OBJECT(c, '$.x-y') FROM t"
+  },
+  {
    "key": "624977c92255a3a4",
    "dialect": "databricks",
    "sql": "WITH t AS (SELECT '{\"x-y\": \"z\"}' AS c) SELECT GET_JSON_OBJECT(c, '$[\"x-y\"]') FROM t"
+  },
+  {
+   "key": "0568e58f66cd141a",
+   "dialect": "hive",
+   "sql": "SELECT PARSE_JSON('{\"key\": 123}')"
+  },
+  {
+   "key": "33a726fe90268cd8",
+   "dialect": "hive",
+   "sql": "SELECT TO_JSON(PARSE_JSON('{\"key\": 123}'))"
+  },
+  {
+   "key": "a12fd00034dd1d46",
+   "dialect": "hive",
+   "sql": "'\n'"
+  },
+  {
+   "key": "7d87a11bb244f0f4",
+   "dialect": "hive",
+   "sql": "'\\n'"
+  },
+  {
+   "key": "2ad2a1fa14b11d71",
+   "dialect": "hive",
+   "sql": "'\\\n'"
+  },
+  {
+   "key": "a9a131f4fbbb6945",
+   "dialect": "hive",
+   "sql": "'\\\\n'"
+  },
+  {
+   "key": "ecb1f6038c9b1ff9",
+   "dialect": "hive",
+   "sql": "''"
+  },
+  {
+   "key": "6c666fe9d44c9245",
+   "dialect": "hive",
+   "sql": "'\\\\z'"
+  },
+  {
+   "key": "3879ff6949d28ab1",
+   "dialect": "hive",
+   "sql": "CAST(a AS BIT)"
+  },
+  {
+   "key": "23464bd9477099f5",
+   "dialect": "hive",
+   "sql": "CAST(a AS BOOLEAN)"
   },
   {
    "key": "c2138f77b6b88817",
@@ -17703,14 +19318,54 @@
    "sql": "PERCENTILE(x, 0.5)"
   },
   {
+   "key": "c64b3a20806e0ac3",
+   "dialect": "hive",
+   "sql": "PERCENTILE(DISTINCT x, 0.5)"
+  },
+  {
    "key": "2980d91ce4471789",
    "dialect": "databricks",
    "sql": "PERCENTILE(DISTINCT x, 0.5)"
   },
   {
+   "key": "0577f91034ef9ca6",
+   "dialect": "hive",
+   "sql": "PERCENTILE(ALL x, 0.5)"
+  },
+  {
    "key": "d648b43b63e7b2b6",
    "dialect": "databricks",
    "sql": "PERCENTILE(ALL x, 0.5)"
+  },
+  {
+   "key": "cf5ac0dd565e5be7",
+   "dialect": "hive",
+   "sql": "CREATE FUNCTION my_func AS 'com.example.MyFunc' USING JAR 'hdfs://path/to/my.jar'"
+  },
+  {
+   "key": "f744931b05f56dd1",
+   "dialect": "hive",
+   "sql": "CREATE OR REPLACE TEMPORARY FUNCTION some_func AS 'my_jar.SomeFunctionUDF' USING JAR 's3://bucket/my.jar'"
+  },
+  {
+   "key": "037154ae28f7791a",
+   "dialect": "hive",
+   "sql": "CREATE FUNCTION my_func AS 'com.example.MyFunc' USING FILE 'hdfs://path/to/file.py'"
+  },
+  {
+   "key": "db98e1635235a355",
+   "dialect": "hive",
+   "sql": "CREATE FUNCTION my_func AS 'com.example.MyFunc' USING ARCHIVE 'hdfs://path/to/archive.zip'"
+  },
+  {
+   "key": "506d309f486cfe12",
+   "dialect": "hive",
+   "sql": "TRUNC(date_col, 'MM')"
+  },
+  {
+   "key": "7219dd84947cf3db",
+   "dialect": "hive",
+   "sql": "EXISTS(col, x -> x % 2 = 0)"
   },
   {
    "key": "d23c19f68f15f347",
@@ -19098,6 +20753,11 @@
    "sql": "CREATE TABLE t (foo VARBINARY)"
   },
   {
+   "key": "35175011a5d5a842",
+   "dialect": "hive",
+   "sql": "CREATE TABLE t (foo BINARY)"
+  },
+  {
    "key": "b9ce23e05b13c324",
    "dialect": "redshift",
    "sql": "CREATE TABLE t (foo VARBYTE)"
@@ -20465,6 +22125,11 @@
   {
    "key": "fe3c35e70a9ad10b",
    "dialect": "doris",
+   "sql": "CAST(x AS DOUBLE)"
+  },
+  {
+   "key": "8ebe3c37e5bf0d41",
+   "dialect": "hive",
    "sql": "CAST(x AS DOUBLE)"
   },
   {
@@ -21898,6 +23563,11 @@
    "sql": "EXPLODE(SEQUENCE(CAST('2019-01-01' AS TIMESTAMP), CAST(CURRENT_TIMESTAMP() AS TIMESTAMP), INTERVAL '1' DAY))"
   },
   {
+   "key": "1a9d500209fac81a",
+   "dialect": "hive",
+   "sql": "EXPLODE(SEQUENCE(CAST('2019-01-01' AS TIMESTAMP), CAST(CURRENT_TIMESTAMP() AS TIMESTAMP), INTERVAL '1' DAY))"
+  },
+  {
    "key": "149b894f08d907f2",
    "dialect": "postgres",
    "sql": "GENERATE_SERIES(CAST('2019-01-01' AS TIMESTAMP), CURRENT_TIMESTAMP, INTERVAL '1 DAY')"
@@ -21925,6 +23595,11 @@
   {
    "key": "10f8d1e415283ae8",
    "dialect": "databricks",
+   "sql": "SELECT * FROM EXPLODE(SEQUENCE(a, b))"
+  },
+  {
+   "key": "90b3c3d6e5fcab69",
+   "dialect": "hive",
    "sql": "SELECT * FROM EXPLODE(SEQUENCE(a, b))"
   },
   {
@@ -21993,6 +23668,11 @@
    "sql": "SELECT * FROM x FETCH FIRST 1 ROWS ONLY"
   },
   {
+   "key": "532870f98e2ba17f",
+   "dialect": "hive",
+   "sql": "SELECT * FROM x LIMIT 1"
+  },
+  {
    "key": "aaa3c15fbbeb9aa0",
    "dialect": "postgres",
    "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC NULLS LAST, lname"
@@ -22008,9 +23688,24 @@
    "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC, lname"
   },
   {
+   "key": "72a3db07d28c53a8",
+   "dialect": "hive",
+   "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC NULLS LAST, lname NULLS LAST"
+  },
+  {
+   "key": "c764dbd35cd42684",
+   "dialect": "hive",
+   "sql": "SELECT CASE WHEN SUBSTRING('abcdefg', 1, 2) IN ('ab') THEN 1 ELSE 0 END"
+  },
+  {
    "key": "2ed1d097aa833029",
    "dialect": "postgres",
    "sql": "SELECT * FROM x WHERE SUBSTRING(col1 FROM 3 + LENGTH(col1) - 10 FOR 10) IN (col2)"
+  },
+  {
+   "key": "39dcebf27c9fd189",
+   "dialect": "hive",
+   "sql": "SELECT * FROM x WHERE SUBSTRING(col1, 3 + LENGTH(col1) - 10, 10) IN (col2)"
   },
   {
    "key": "bf460e4ab4d741f4",
@@ -22028,6 +23723,11 @@
    "sql": "SELECT TRIM(' XXX ')"
   },
   {
+   "key": "787ed3d959a1c158",
+   "dialect": "hive",
+   "sql": "SELECT TRIM(' XXX ')"
+  },
+  {
    "key": "4ee69152fc2dd271",
    "dialect": "postgres",
    "sql": "TRIM(LEADING FROM ' XXX ')"
@@ -22040,6 +23740,11 @@
   {
    "key": "e7b259044a6a0c8c",
    "dialect": "postgres",
+   "sql": "LTRIM(' XXX ')"
+  },
+  {
+   "key": "0f1353a809e313b2",
+   "dialect": "hive",
    "sql": "LTRIM(' XXX ')"
   },
   {
@@ -22060,6 +23765,11 @@
   {
    "key": "90320712c3716ca6",
    "dialect": "postgres",
+   "sql": "RTRIM(' XXX ')"
+  },
+  {
+   "key": "b915b0b170cd78e7",
+   "dialect": "hive",
    "sql": "RTRIM(' XXX ')"
   },
   {
@@ -22271,6 +23981,11 @@
    "key": "520927816832e5c5",
    "dialect": "postgres",
    "sql": "WITH t AS (SELECT ARRAY[1, 2, 3] AS col) SELECT * FROM t WHERE 1 <= ANY(col) AND 2 = ANY(col)"
+  },
+  {
+   "key": "6333aeb4ba14872a",
+   "dialect": "hive",
+   "sql": "WITH t AS (SELECT ARRAY(1, 2, 3) AS col) SELECT * FROM t WHERE EXISTS(col, x -> 1 <= x) AND EXISTS(col, x -> 2 = x)"
   },
   {
    "key": "13ba7925e604c2d1",
@@ -22973,6 +24688,11 @@
    "sql": "CREATE TABLE x (a UUID, b VARBINARY)"
   },
   {
+   "key": "c69d3bfcb498ee6a",
+   "dialect": "hive",
+   "sql": "CREATE TABLE x (a UUID, b BINARY)"
+  },
+  {
    "key": "44b7f5b6ae3ae7fb",
    "dialect": "tsql",
    "sql": "CREATE TABLE x (a UNIQUEIDENTIFIER, b VARBINARY)"
@@ -23053,6 +24773,11 @@
    "sql": "SELECT UNNEST(c) FROM t"
   },
   {
+   "key": "38a0dccffa1ef191",
+   "dialect": "hive",
+   "sql": "SELECT EXPLODE(c) FROM t"
+  },
+  {
    "key": "685ee6570bd23953",
    "dialect": "presto",
    "sql": "SELECT IF(_u.pos = _u_2.pos_2, _u_2.col) AS col FROM t CROSS JOIN UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(c)))) AS _u(pos) CROSS JOIN UNNEST(c) WITH ORDINALITY AS _u_2(col, pos_2) WHERE _u.pos = _u_2.pos_2 OR (_u.pos > CARDINALITY(c) AND _u_2.pos_2 = CARDINALITY(c))"
@@ -23061,6 +24786,11 @@
    "key": "142df261d564b165",
    "dialect": "postgres",
    "sql": "SELECT UNNEST(ARRAY[1])"
+  },
+  {
+   "key": "a1a5640969e81ff1",
+   "dialect": "hive",
+   "sql": "SELECT EXPLODE(ARRAY(1))"
   },
   {
    "key": "a470fad5fb2e9e6f",
@@ -23258,6 +24988,11 @@
    "sql": "CARDINALITY(arr)"
   },
   {
+   "key": "9576a6faba1f8c0b",
+   "dialect": "hive",
+   "sql": "SIZE(arr)"
+  },
+  {
    "key": "044f35a733a41c32",
    "dialect": "databricks",
    "sql": "SIZE(arr)"
@@ -23415,6 +25150,11 @@
   {
    "key": "3df3280efcaeb4c8",
    "dialect": "postgres",
+   "sql": "ROUND(x::DOUBLE, 4)"
+  },
+  {
+   "key": "c0356a1443a87e1e",
+   "dialect": "hive",
    "sql": "ROUND(x::DOUBLE, 4)"
   },
   {
@@ -23708,9 +25448,19 @@
    "sql": "FROM_BASE64(x)"
   },
   {
+   "key": "b39633e26dcafba8",
+   "dialect": "hive",
+   "sql": "UNBASE64(x)"
+  },
+  {
    "key": "eded1bd8acc82f4d",
    "dialect": "presto",
    "sql": "TO_BASE64(x)"
+  },
+  {
+   "key": "c6721ba610030482",
+   "dialect": "hive",
+   "sql": "BASE64(x)"
   },
   {
    "key": "780b56bc684b3c3f",
@@ -23753,6 +25503,11 @@
    "sql": "CAST(MAP(ARRAY['key'], ARRAY[1]) AS MAP(VARCHAR, INTEGER))"
   },
   {
+   "key": "4393d5eaf723aba1",
+   "dialect": "hive",
+   "sql": "CAST(MAP('key', 1) AS MAP<STRING, INT>)"
+  },
+  {
    "key": "75ee5f5653374c4f",
    "dialect": "presto",
    "sql": "CAST(MAP(ARRAY['a','b','c'], ARRAY[ARRAY[1], ARRAY[2], ARRAY[3]]) AS MAP(VARCHAR, ARRAY(INT)))"
@@ -23766,6 +25521,11 @@
    "key": "b0e47320ec6c0dba",
    "dialect": "presto",
    "sql": "CAST(MAP(ARRAY['a', 'b', 'c'], ARRAY[ARRAY[1], ARRAY[2], ARRAY[3]]) AS MAP(VARCHAR, ARRAY(INTEGER)))"
+  },
+  {
+   "key": "24f6be81db9f8473",
+   "dialect": "hive",
+   "sql": "CAST(MAP('a', ARRAY(1), 'b', ARRAY(2), 'c', ARRAY(3)) AS MAP<STRING, ARRAY<INT>>)"
   },
   {
    "key": "2fbdfc3fc29326e9",
@@ -23793,6 +25553,11 @@
    "sql": "CAST(x AS TIMESTAMP(9) WITH TIME ZONE)"
   },
   {
+   "key": "04c94867b14478b8",
+   "dialect": "hive",
+   "sql": "CAST(x AS TIMESTAMP)"
+  },
+  {
    "key": "32b8108395c51fa2",
    "dialect": "presto",
    "sql": "REPLACE(subject, pattern)"
@@ -23800,6 +25565,11 @@
   {
    "key": "9b27d3e71a6db5b1",
    "dialect": "duckdb",
+   "sql": "REPLACE(subject, pattern, '')"
+  },
+  {
+   "key": "7f1dacdb7e6e3f2f",
+   "dialect": "hive",
    "sql": "REPLACE(subject, pattern, '')"
   },
   {
@@ -23815,6 +25585,11 @@
   {
    "key": "c4756f283d300995",
    "dialect": "duckdb",
+   "sql": "REPLACE(subject, pattern, replacement)"
+  },
+  {
+   "key": "7bf0b9d291567587",
+   "dialect": "hive",
    "sql": "REPLACE(subject, pattern, replacement)"
   },
   {
@@ -23838,6 +25613,11 @@
    "sql": "STR_SPLIT(x, 'a.')"
   },
   {
+   "key": "dbdaf3432558ecb2",
+   "dialect": "hive",
+   "sql": "SPLIT(x, CONCAT('\\\\Q', 'a.', '\\\\E'))"
+  },
+  {
    "key": "ba00299461be7a7e",
    "dialect": "presto",
    "sql": "REGEXP_SPLIT(x, 'a.')"
@@ -23848,9 +25628,19 @@
    "sql": "STR_SPLIT_REGEX(x, 'a.')"
   },
   {
+   "key": "a585a90b6bd7edbd",
+   "dialect": "hive",
+   "sql": "SPLIT(x, 'a.')"
+  },
+  {
    "key": "b1eb64e7d4af9970",
    "dialect": "presto",
    "sql": "ARRAY_JOIN(x, '-', 'a')"
+  },
+  {
+   "key": "a8e460127d249426",
+   "dialect": "hive",
+   "sql": "CONCAT_WS('-', x)"
   },
   {
    "key": "aee5475f8dda40ab",
@@ -23928,6 +25718,11 @@
    "sql": "DATE_FORMAT(x, '%T')"
   },
   {
+   "key": "391744ab86cc8afb",
+   "dialect": "hive",
+   "sql": "DATE_FORMAT(x, 'HH:mm:ss')"
+  },
+  {
    "key": "5a9b92bc0a58d085",
    "dialect": "presto",
    "sql": "DATE_PARSE(SUBSTR(x, 1, 10), '%Y-%m-%d')"
@@ -23936,6 +25731,11 @@
    "key": "9f58994eafd62694",
    "dialect": "duckdb",
    "sql": "STRPTIME(SUBSTRING(x, 1, 10), '%Y-%m-%d')"
+  },
+  {
+   "key": "83de483fc0beae9a",
+   "dialect": "hive",
+   "sql": "CAST(SUBSTRING(x, 1, 10) AS TIMESTAMP)"
   },
   {
    "key": "e6ca23216ad5fe9d",
@@ -24123,6 +25923,11 @@
    "sql": "CREATE TABLE test WITH (format='PARQUET') AS SELECT 1"
   },
   {
+   "key": "cd57d14d0f65f055",
+   "dialect": "hive",
+   "sql": "CREATE TABLE test STORED AS PARQUET AS SELECT 1"
+  },
+  {
    "key": "f6eafd39c57577eb",
    "dialect": "presto",
    "sql": "CREATE TABLE test STORED AS 'PARQUET' AS SELECT 1"
@@ -24136,6 +25941,11 @@
    "key": "08c4ea5f2a00873b",
    "dialect": "presto",
    "sql": "CREATE TABLE test WITH (format='PARQUET', X='1', Z='2') AS SELECT 1"
+  },
+  {
+   "key": "7df6724f8f8a53dc",
+   "dialect": "hive",
+   "sql": "CREATE TABLE test STORED AS PARQUET TBLPROPERTIES ('X'='1', 'Z'='2') AS SELECT 1"
   },
   {
    "key": "406c2c7620d08633",
@@ -24156,6 +25966,11 @@
    "key": "430120b8f2280667",
    "dialect": "presto",
    "sql": "CREATE TABLE x WITH (bucket_by=ARRAY['y'], bucket_count=64) AS SELECT 1 AS y"
+  },
+  {
+   "key": "edebccab1ddab2b7",
+   "dialect": "hive",
+   "sql": "CREATE TABLE x TBLPROPERTIES ('bucket_by'=ARRAY('y'), 'bucket_count'=64) AS SELECT 1 AS y"
   },
   {
    "key": "5207dab312092c7d",
@@ -24203,6 +26018,11 @@
    "sql": "'''x'"
   },
   {
+   "key": "c24d2856f59904f7",
+   "dialect": "hive",
+   "sql": "'\\'x'"
+  },
+  {
    "key": "426f9b5c94f92aaa",
    "dialect": "presto",
    "sql": "x IN ('a', 'a''b')"
@@ -24211,6 +26031,11 @@
    "key": "589fe07ee166420c",
    "dialect": "duckdb",
    "sql": "x IN ('a', 'a''b')"
+  },
+  {
+   "key": "0dc4be51cbd021bb",
+   "dialect": "hive",
+   "sql": "x IN ('a', 'a\\'b')"
   },
   {
    "key": "c4212695c8341cb9",
@@ -24226,6 +26051,11 @@
    "key": "3e3c75b9daf81c4e",
    "dialect": "presto",
    "sql": "SELECT a FROM x CROSS JOIN UNNEST(ARRAY[y]) AS t(a) CROSS JOIN b"
+  },
+  {
+   "key": "55de737c3f4dd218",
+   "dialect": "hive",
+   "sql": "SELECT a FROM x CROSS JOIN b LATERAL VIEW EXPLODE(ARRAY(y)) t AS a"
   },
   {
    "key": "b596aebdf7a6c4fe",
@@ -24398,6 +26228,11 @@
    "sql": "ANY_VALUE(x)"
   },
   {
+   "key": "d74b83184749c7c5",
+   "dialect": "hive",
+   "sql": "FIRST(x)"
+  },
+  {
    "key": "2e13ec93b4ffeca2",
    "dialect": "mysql",
    "sql": "ANY_VALUE(x)"
@@ -24568,6 +26403,11 @@
    "sql": "SELECT APPROX_COUNT_DISTINCT(a) FROM foo"
   },
   {
+   "key": "dbe647adbfb7411a",
+   "dialect": "hive",
+   "sql": "SELECT APPROX_COUNT_DISTINCT(a) FROM foo"
+  },
+  {
    "key": "a16cef5f5b428bc2",
    "dialect": "presto",
    "sql": "SELECT APPROX_DISTINCT(a, 0.1) FROM foo"
@@ -24578,6 +26418,11 @@
    "sql": "SELECT JSON_EXTRACT(x, '$.name')"
   },
   {
+   "key": "e095a6047ca9e588",
+   "dialect": "hive",
+   "sql": "SELECT GET_JSON_OBJECT(x, '$.name')"
+  },
+  {
    "key": "3753b597d996fb22",
    "dialect": "presto",
    "sql": "SELECT JSON_EXTRACT_SCALAR(x, '$.name')"
@@ -24585,6 +26430,11 @@
   {
    "key": "0f1513db13e7a605",
    "dialect": "presto",
+   "sql": "'\u6bdb'"
+  },
+  {
+   "key": "50f415feb31bc0e7",
+   "dialect": "hive",
    "sql": "'\u6bdb'"
   },
   {
@@ -24603,6 +26453,11 @@
    "sql": "SELECT ARRAY_SORT(x, (\"left\", \"right\") -> -1)"
   },
   {
+   "key": "3080dc78f5b24356",
+   "dialect": "hive",
+   "sql": "SELECT SORT_ARRAY(x)"
+  },
+  {
    "key": "147ff84f0de7f5c4",
    "dialect": "presto",
    "sql": "SELECT ARRAY_SORT(x)"
@@ -24618,6 +26473,11 @@
    "sql": "MAP(ARRAY(a, b), ARRAY(c, d))"
   },
   {
+   "key": "efe7a1223f9ae5f5",
+   "dialect": "hive",
+   "sql": "MAP(a, c, b, d)"
+  },
+  {
    "key": "a99eddcbab993d1e",
    "dialect": "presto",
    "sql": "MAP(ARRAY[a, b], ARRAY[c, d])"
@@ -24626,6 +26486,11 @@
    "key": "dfd601ade5471556",
    "dialect": "presto",
    "sql": "MAP(ARRAY('a'), ARRAY('b'))"
+  },
+  {
+   "key": "6c6a73f9f6b823da",
+   "dialect": "hive",
+   "sql": "MAP('a', 'b')"
   },
   {
    "key": "252f793932e69e55",
@@ -24638,9 +26503,19 @@
    "sql": "SELECT * FROM UNNEST(ARRAY['7', '14']) AS x"
   },
   {
+   "key": "52149b38ca783c76",
+   "dialect": "hive",
+   "sql": "SELECT * FROM EXPLODE(ARRAY('7', '14')) AS x"
+  },
+  {
    "key": "1c0e72f9b66fe552",
    "dialect": "presto",
    "sql": "SELECT * FROM UNNEST(ARRAY['7', '14']) AS x(y)"
+  },
+  {
+   "key": "39b8785c657f6b9d",
+   "dialect": "hive",
+   "sql": "SELECT * FROM EXPLODE(ARRAY('7', '14')) AS x(y)"
   },
   {
    "key": "ae535a1373ac18dc",
@@ -24660,6 +26535,11 @@
   {
    "key": "6da496be4e3a5815",
    "dialect": "presto",
+   "sql": "SELECT a, b, c, d, SUM(y) FROM z GROUP BY d, GROUPING SETS ((b, c)), CUBE (a), ROLLUP (a)"
+  },
+  {
+   "key": "5e53d2ddf791bbf1",
+   "dialect": "hive",
    "sql": "SELECT a, b, c, d, SUM(y) FROM z GROUP BY d, GROUPING SETS ((b, c)), CUBE (a), ROLLUP (a)"
   },
   {
@@ -24711,6 +26591,11 @@
    "key": "273a3d5ed7d34f7a",
    "dialect": "duckdb",
    "sql": "REGEXP_EXTRACT('abc', '(a)(b)(c)')"
+  },
+  {
+   "key": "b9c9bfe5c6fadf4b",
+   "dialect": "hive",
+   "sql": "REGEXP_EXTRACT('abc', '(a)(b)(c)', 0)"
   },
   {
    "key": "7ef850878bef3856",
@@ -25328,6 +27213,11 @@
    "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
   },
   {
+   "key": "85dfcaffe0323ecd",
+   "dialect": "hive",
+   "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
+  },
+  {
    "key": "013872aeaac127c3",
    "dialect": "mysql",
    "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY CASE WHEN c IS NULL THEN 1 ELSE 0 END DESC, c DESC) AS _row_number FROM x) AS _t WHERE _row_number = 1"
@@ -25403,6 +27293,11 @@
    "sql": "DATE_DIFF('DAY', CAST(a AS TIMESTAMP), CAST(b AS TIMESTAMP))"
   },
   {
+   "key": "342aee88cce38849",
+   "dialect": "hive",
+   "sql": "DATEDIFF(b, a)"
+  },
+  {
    "key": "c2c1e6cf9ab12a25",
    "dialect": "redshift",
    "sql": "DATEDIFF(DAY, a, b)"
@@ -25421,6 +27316,11 @@
    "key": "8f63ea113c33d86d",
    "dialect": "duckdb",
    "sql": "SELECT CAST('2008-02-28' AS TIMESTAMP) + INTERVAL 18 MONTH"
+  },
+  {
+   "key": "a45dd3edbec303d0",
+   "dialect": "hive",
+   "sql": "SELECT ADD_MONTHS('2008-02-28', 18)"
   },
   {
    "key": "57fe5d82eae50b4a",
@@ -25461,6 +27361,11 @@
    "key": "c68bac2b5b610830",
    "dialect": "duckdb",
    "sql": "SELECT DATE_DIFF('WEEK', CAST('2009-01-01' AS TIMESTAMP), CAST('2009-12-31' AS TIMESTAMP))"
+  },
+  {
+   "key": "c5a1118f5e260e3a",
+   "dialect": "hive",
+   "sql": "SELECT CAST(DATEDIFF('2009-12-31', '2009-01-01') / 7 AS INT)"
   },
   {
    "key": "ed824042b928640b",
@@ -26428,6 +28333,11 @@
    "sql": "SELECT FROM_UNIXTIME(1234567890, '%Y-%m-%d %H:%i:%s')"
   },
   {
+   "key": "f233da122522d1fc",
+   "dialect": "hive",
+   "sql": "SELECT FROM_UNIXTIME(1234567890)"
+  },
+  {
    "key": "aaa45d014a227ed0",
    "dialect": "singlestore",
    "sql": "SELECT FROM_UNIXTIME(1234567890) :> TEXT"
@@ -26876,6 +28786,11 @@
    "key": "aae7c990327c33e9",
    "dialect": "singlestore",
    "sql": "SELECT DATEDIFF(DATE('2013-09-01'), DATE('2009-02-13'))"
+  },
+  {
+   "key": "dbc935f0c1aa8adf",
+   "dialect": "hive",
+   "sql": "SELECT DATEDIFF('2013-09-01', '2009-02-13')"
   },
   {
    "key": "637b4549fd5b3972",
@@ -27823,6 +29738,11 @@
    "sql": "SELECT RANGE(-5, -25, -10)"
   },
   {
+   "key": "012f417650d651cf",
+   "dialect": "hive",
+   "sql": "SELECT EXTRACT(year FROM CAST('2020-01-01' AS TIMESTAMP))"
+  },
+  {
    "key": "0f118c362aa97992",
    "dialect": "duckdb",
    "sql": "{'a': b, 'c': d}"
@@ -27831,6 +29751,11 @@
    "key": "b858d3ed1ea28681",
    "dialect": "databricks",
    "sql": "SELECT i, p, o FROM qt QUALIFY ROW_NUMBER() OVER (PARTITION BY p ORDER BY o NULLS LAST) = 1"
+  },
+  {
+   "key": "7de53a601935e07c",
+   "dialect": "hive",
+   "sql": "SELECT i, p, o FROM (SELECT i, p, o, ROW_NUMBER() OVER (PARTITION BY p ORDER BY o NULLS LAST) AS _w FROM qt) AS _t WHERE _w = 1"
   },
   {
    "key": "f0e109891972682e",
@@ -27943,6 +29868,11 @@
    "sql": "POWER(x, 2)"
   },
   {
+   "key": "ccdf6dcd4b1b7ec4",
+   "dialect": "hive",
+   "sql": "POWER(x, 2)"
+  },
+  {
    "key": "a0e0c88a25d917d4",
    "dialect": "mysql",
    "sql": "POWER(x, 2)"
@@ -27988,6 +29918,11 @@
    "sql": "IF(bar = 0 AND NOT foo IS NULL, 0, CAST(foo AS DOUBLE) / bar)"
   },
   {
+   "key": "a5ebe7921272d39e",
+   "dialect": "hive",
+   "sql": "IF(bar = 0 AND NOT foo IS NULL, 0, foo / bar)"
+  },
+  {
    "key": "1a16f3e7055ec701",
    "dialect": "duckdb",
    "sql": "CASE WHEN bar = 0 AND NOT foo IS NULL THEN 0 ELSE foo / bar END"
@@ -27996,6 +29931,11 @@
    "key": "2eac3f2ed4f9ef56",
    "dialect": "presto",
    "sql": "IF((c - d) = 0 AND NOT (a - b) IS NULL, 0, CAST((a - b) AS DOUBLE) / (c - d))"
+  },
+  {
+   "key": "01e88b9bde1bfb58",
+   "dialect": "hive",
+   "sql": "IF((c - d) = 0 AND NOT (a - b) IS NULL, 0, (a - b) / (c - d))"
   },
   {
    "key": "0cce917307d0d8a9",
@@ -28008,6 +29948,11 @@
    "sql": "IF(bar = 0 OR bar IS NULL, 0, CAST(foo AS DOUBLE) / bar)"
   },
   {
+   "key": "b838b873d28355af",
+   "dialect": "hive",
+   "sql": "IF(bar = 0 OR bar IS NULL, 0, foo / bar)"
+  },
+  {
    "key": "4ea68c7e9838ad25",
    "dialect": "duckdb",
    "sql": "CASE WHEN bar = 0 OR bar IS NULL THEN 0 ELSE foo / bar END"
@@ -28016,6 +29961,11 @@
    "key": "a8687357f7ed9460",
    "dialect": "presto",
    "sql": "IF((c - d) = 0 OR (c - d) IS NULL, 0, CAST((a - b) AS DOUBLE) / (c - d))"
+  },
+  {
+   "key": "673b37751c7de136",
+   "dialect": "hive",
+   "sql": "IF((c - d) = 0 OR (c - d) IS NULL, 0, (a - b) / (c - d))"
   },
   {
    "key": "e16992f7c69ffbf8",
@@ -28028,6 +29978,11 @@
    "sql": "IF(foo IS NULL, 0, foo)"
   },
   {
+   "key": "b61826b03b949188",
+   "dialect": "hive",
+   "sql": "IF(foo IS NULL, 0, foo)"
+  },
+  {
    "key": "4b0b03e0cc00566f",
    "dialect": "duckdb",
    "sql": "CASE WHEN foo IS NULL THEN 0 ELSE foo END"
@@ -28035,6 +29990,11 @@
   {
    "key": "7b5fd3618317caa0",
    "dialect": "presto",
+   "sql": "IF(foo = 0, NULL, foo)"
+  },
+  {
+   "key": "7bcafe8a6a88b8fb",
+   "dialect": "hive",
    "sql": "IF(foo = 0, NULL, foo)"
   },
   {
@@ -28148,9 +30108,19 @@
    "sql": "SELECT REGEXP_FULL_MATCH(a, b)"
   },
   {
+   "key": "9fbdf520e829e111",
+   "dialect": "hive",
+   "sql": "SELECT a RLIKE b"
+  },
+  {
    "key": "e8a3933e0b1559cb",
    "dialect": "duckdb",
    "sql": "SELECT NOT REGEXP_FULL_MATCH(a, b)"
+  },
+  {
+   "key": "3d2bf0e9393dbb39",
+   "dialect": "hive",
+   "sql": "SELECT NOT a RLIKE b"
   },
   {
    "key": "2a2ee7581bccc81e",
@@ -28271,6 +30241,11 @@
    "key": "711e75099acf4d96",
    "dialect": "duckdb",
    "sql": "SELECT CAST('2024-08-06 09:10:00.000' AS TIMESTAMP) AT TIME ZONE 'America/Los_Angeles' AT TIME ZONE 'America/New_York'"
+  },
+  {
+   "key": "e5fcfaf0523da6c5",
+   "dialect": "hive",
+   "sql": "CAST(UUID() AS STRING)"
   },
   {
    "key": "f7d695162841a577",
@@ -29213,9 +31188,19 @@
    "sql": "ENDS_WITH('abc', 'c')"
   },
   {
+   "key": "a4855167b1106095",
+   "dialect": "hive",
+   "sql": "REGEXP_EXTRACT(subject, pattern, group)"
+  },
+  {
    "key": "f2f8b70a1e721be2",
    "dialect": "presto",
    "sql": "REGEXP_EXTRACT(subject, pattern, \"group\")"
+  },
+  {
+   "key": "bffd3f688f21b9e5",
+   "dialect": "hive",
+   "sql": "REGEXP_EXTRACT(subject, pattern)"
   },
   {
    "key": "28490ee2e3da6e82",
@@ -29308,6 +31293,11 @@
    "sql": "REGEXP_REPLACE(subject, pattern, '', 'g')"
   },
   {
+   "key": "4a3d4e7c1030db50",
+   "dialect": "hive",
+   "sql": "REGEXP_REPLACE(subject, pattern, '')"
+  },
+  {
    "key": "885efb920bc17067",
    "dialect": "duckdb",
    "sql": "REGEXP_REPLACE(subject, pattern, replacement, 'g')"
@@ -29366,6 +31356,26 @@
    "key": "f29476ad7c073658",
    "dialect": "duckdb",
    "sql": "ALTER TABLE t RENAME TO x"
+  },
+  {
+   "key": "d1e5e57188773ab2",
+   "dialect": "hive",
+   "sql": "CAST('foo' AS STRING)"
+  },
+  {
+   "key": "f43abe4d32c074ce",
+   "dialect": "hive",
+   "sql": "CAST(5 + 5 AS STRING)"
+  },
+  {
+   "key": "ba5519a510b80f09",
+   "dialect": "hive",
+   "sql": "CAST(CAST('2020-01-01' AS DATE) AS STRING)"
+  },
+  {
+   "key": "066cb35b26d11e03",
+   "dialect": "hive",
+   "sql": "CAST('val' AS STRING)"
   },
   {
    "key": "da0842998babafb3",
@@ -29693,6 +31703,11 @@
    "sql": "CREATE TABLE db.example_table (col_a ARRAY(INTEGER), col_b ARRAY(ARRAY(INTEGER)))"
   },
   {
+   "key": "e95def2f25727dfe",
+   "dialect": "hive",
+   "sql": "CREATE TABLE db.example_table (col_a ARRAY<INT>, col_b ARRAY<ARRAY<INT>>)"
+  },
+  {
    "key": "a4cc3c9b98a4e0ec",
    "dialect": "duckdb",
    "sql": "CREATE TABLE x"
@@ -29701,6 +31716,11 @@
    "key": "c5d240afa6f22b90",
    "dialect": "presto",
    "sql": "CREATE TABLE x WITH (format='ICEBERG', PARTITIONED_BY=ARRAY['MONTHS(y)'])"
+  },
+  {
+   "key": "bfc656bd96d0bdda",
+   "dialect": "hive",
+   "sql": "CREATE TABLE x STORED AS ICEBERG PARTITIONED BY (MONTHS(y)) LOCATION 's3://z'"
   },
   {
    "key": "d3d9805e6bc330bf",
@@ -29716,6 +31736,16 @@
    "key": "1e593adb0ca09201",
    "dialect": "presto",
    "sql": "CREATE TABLE blah (\n  col_a INTEGER,\n  date VARCHAR\n)\nCOMMENT 'Test comment: blah'\nWITH (\n  PARTITIONED_BY=ARRAY['date'],\n  format='ICEBERG',\n  x='1'\n)"
+  },
+  {
+   "key": "75eb2e569e4a6f68",
+   "dialect": "hive",
+   "sql": "CREATE TABLE blah (\n  col_a INT\n)\nCOMMENT 'Test comment: blah'\nPARTITIONED BY (\n  date STRING\n)\nSTORED AS ICEBERG\nTBLPROPERTIES (\n  'x'='1'\n)"
+  },
+  {
+   "key": "6732ba36b4bf3e38",
+   "dialect": "hive",
+   "sql": "ALTER TABLE db.example CHANGE COLUMN col_a col_a BIGINT"
   },
   {
    "key": "361d092c1fbf795d",
@@ -29735,6 +31765,11 @@
   {
    "key": "6248ae68e2e8dbbc",
    "dialect": "duckdb",
+   "sql": "CONCAT_WS(' ', NULL, 'Smith')"
+  },
+  {
+   "key": "767e756a4a8e13a3",
+   "dialect": "hive",
    "sql": "CONCAT_WS(' ', NULL, 'Smith')"
   },
   {
@@ -29853,6 +31888,11 @@
    "sql": "WITH tbl AS (SELECT 1 AS id, 'eggy' AS name UNION ALL SELECT NULL AS id, 'jake' AS name) SELECT COUNT(DISTINCT CASE WHEN id IS NULL THEN NULL WHEN name IS NULL THEN NULL ELSE (id, name) END) AS cnt FROM tbl"
   },
   {
+   "key": "dcee8ba125e40189",
+   "dialect": "hive",
+   "sql": "WITH tbl AS (SELECT 1 AS id, 'eggy' AS name UNION ALL SELECT NULL AS id, 'jake' AS name) SELECT COUNT(DISTINCT id, name) AS cnt FROM tbl"
+  },
+  {
    "key": "eca2f887b6c7e875",
    "dialect": "mysql",
    "sql": "WITH tbl AS (SELECT 1 AS id, 'eggy' AS name UNION ALL SELECT NULL AS id, 'jake' AS name) SELECT COUNT(DISTINCT id, name) AS cnt FROM tbl"
@@ -29923,6 +31963,11 @@
    "sql": "SELECT DATE_DIFF('WEEK', CAST('2020-01-01' AS DATE), CAST('2020-12-31' AS DATE))"
   },
   {
+   "key": "6ab41f7330c386e5",
+   "dialect": "hive",
+   "sql": "SELECT CAST(DATEDIFF('2020-12-31', '2020-01-01') / 7 AS INT)"
+  },
+  {
    "key": "00c67f61a964afd5",
    "dialect": "postgres",
    "sql": "SELECT CAST(EXTRACT(days FROM (CAST(CAST('2020-12-31' AS DATE) AS TIMESTAMP) - CAST(CAST('2020-01-01' AS DATE) AS TIMESTAMP))) / 7 AS BIGINT)"
@@ -29936,6 +31981,11 @@
    "key": "67b0ae0cd3f0009f",
    "dialect": "duckdb",
    "sql": "SELECT DATE_DIFF('MONTH', CAST('1996-10-30' AS DATE), CAST('1997-02-28 10:30:00' AS DATE)) + CASE WHEN DAY(CAST('1997-02-28 10:30:00' AS DATE)) = DAY(LAST_DAY(CAST('1997-02-28 10:30:00' AS DATE))) AND DAY(CAST('1996-10-30' AS DATE)) = DAY(LAST_DAY(CAST('1996-10-30' AS DATE))) THEN 0 ELSE (DAY(CAST('1997-02-28 10:30:00' AS DATE)) - DAY(CAST('1996-10-30' AS DATE))) / 31.0 END"
+  },
+  {
+   "key": "2e9db9cf21c24a78",
+   "dialect": "hive",
+   "sql": "SELECT MONTHS_BETWEEN('1997-02-28 10:30:00', '1996-10-30')"
   },
   {
    "key": "5f728bc31f5894ab",
@@ -30023,6 +32073,11 @@
    "sql": "SELECT STRPTIME('3:4:5 PM', '%I:%M:%S %p')"
   },
   {
+   "key": "5f72e63266ef4c66",
+   "dialect": "hive",
+   "sql": "SELECT 'John Doe' RLIKE 'John.*'"
+  },
+  {
    "key": "fb7dfbd35eee74ef",
    "dialect": "postgres",
    "sql": "SELECT 'John Doe' ~ 'John.*'"
@@ -30041,6 +32096,11 @@
    "key": "f59c7438ce605fb7",
    "dialect": "databricks",
    "sql": "SELECT DATEDIFF(MONTH, '2020-01-01', '2020-03-05')"
+  },
+  {
+   "key": "e4d7773c8f2f8e18",
+   "dialect": "hive",
+   "sql": "SELECT CAST(MONTHS_BETWEEN('2020-03-05', '2020-01-01') AS INT)"
   },
   {
    "key": "76699a7cb8371087",
@@ -30073,6 +32133,11 @@
    "sql": "REDUCE(my_arr, 0, (acc, x) -> acc + x, s -> s * 2)"
   },
   {
+   "key": "74a3f0e4e35968e9",
+   "dialect": "hive",
+   "sql": "REDUCE(my_arr, 0, (acc, x) -> acc + x, s -> s * 2)"
+  },
+  {
    "key": "9349244ddc20decd",
    "dialect": "presto",
    "sql": "REDUCE(my_arr, 0, (acc, x) -> acc + x, s -> s * 2)"
@@ -30086,6 +32151,11 @@
    "key": "3aa36069894efa13",
    "dialect": "presto",
    "sql": "ARRAY_SORT(x, (\"left\", \"right\") -> -1)"
+  },
+  {
+   "key": "2af9b9e26644583b",
+   "dialect": "hive",
+   "sql": "ARRAY(0, 1, 2)"
   },
   {
    "key": "a03b7b2f38fd8204",
@@ -30113,6 +32183,11 @@
    "sql": "YEAR(CAST(CAST('2021-03-01' AS TIMESTAMP) AS DATE))"
   },
   {
+   "key": "b2b4c363ec914fc9",
+   "dialect": "hive",
+   "sql": "YEAR('2021-03-01')"
+  },
+  {
    "key": "8d08af51ef6ee4d2",
    "dialect": "duckdb",
    "sql": "'\u6bdb'"
@@ -30128,6 +32203,11 @@
    "sql": "SELECT SUBSTR(x, 1, 2), SUBSTR(x, LENGTH(x) - (2 - 1))"
   },
   {
+   "key": "80230fe175322ed4",
+   "dialect": "hive",
+   "sql": "SELECT SUBSTRING(x, 1, 2), SUBSTRING(x, LENGTH(x) - (2 - 1))"
+  },
+  {
    "key": "952c74d6fa576eca",
    "dialect": "duckdb",
    "sql": "MAP([1], c)"
@@ -30136,6 +32216,11 @@
    "key": "c613400f6f11aaa1",
    "dialect": "presto",
    "sql": "MAP(ARRAY[1], c)"
+  },
+  {
+   "key": "68579de287492d93",
+   "dialect": "hive",
+   "sql": "MAP(ARRAY(1), c)"
   },
   {
    "key": "9b98d2f699be25b8",
@@ -30245,6 +32330,11 @@
   {
    "key": "7aeb6137940dae7e",
    "dialect": "databricks",
+   "sql": "WITH cte AS (SELECT cola FROM other_table) INSERT OVERWRITE TABLE table SELECT cola FROM cte"
+  },
+  {
+   "key": "3cdeafa2c04323b4",
+   "dialect": "hive",
    "sql": "WITH cte AS (SELECT cola FROM other_table) INSERT OVERWRITE TABLE table SELECT cola FROM cte"
   },
   {
@@ -30511,6 +32601,11 @@
    "key": "ef01be292506dc59",
    "dialect": "starrocks",
    "sql": "SELECT MAP('a', 1, 'b', 2)['a']"
+  },
+  {
+   "key": "bebf227878b63e31",
+   "dialect": "hive",
+   "sql": "SELECT MAP('a', 1, 'b', 2)"
   },
   {
    "key": "692ced2494ff73c3",
@@ -30918,8 +33013,18 @@
    "sql": "arr[1]"
   },
   {
+   "key": "2fed5fa10128b6d8",
+   "dialect": "hive",
+   "sql": "`x`"
+  },
+  {
    "key": "1d5de2da3bf19811",
    "dialect": "presto",
+   "sql": "IF(x = 'a', y, NULL)"
+  },
+  {
+   "key": "4b603731a9879b4b",
+   "dialect": "hive",
    "sql": "IF(x = 'a', y, NULL)"
   },
   {
@@ -30928,8 +33033,18 @@
    "sql": "COALESCE(a, 0)"
   },
   {
+   "key": "6b9b3d55962c27e7",
+   "dialect": "hive",
+   "sql": "COALESCE(a, 0)"
+  },
+  {
    "key": "ad348cf8107ca711",
    "dialect": "presto",
+   "sql": "COUNT(DISTINCT a)"
+  },
+  {
+   "key": "2dda0a1a75c3f113",
+   "dialect": "hive",
    "sql": "COUNT(DISTINCT a)"
   },
   {
@@ -30943,8 +33058,18 @@
    "sql": "COUNT(DISTINCT (a))"
   },
   {
+   "key": "6cc0aff74a315a1c",
+   "dialect": "hive",
+   "sql": "COUNT(DISTINCT (a))"
+  },
+  {
    "key": "9b69614e8820ceb7",
    "dialect": "presto",
+   "sql": "COUNT(a)"
+  },
+  {
+   "key": "1560562a9da5403c",
+   "dialect": "hive",
    "sql": "COUNT(a)"
   },
   {
@@ -30965,6 +33090,11 @@
   {
    "key": "81d22e9d94fffe5b",
    "dialect": "duckdb",
+   "sql": "CREATE TABLE a"
+  },
+  {
+   "key": "d6e684b960b75eeb",
+   "dialect": "hive",
    "sql": "CREATE TABLE a"
   },
   {
@@ -32003,6 +34133,11 @@
    "sql": "CREATE TEMPORARY TABLE mytemptable (a INT)"
   },
   {
+   "key": "2c8db8de72cf5554",
+   "dialect": "hive",
+   "sql": "CREATE TEMPORARY TABLE mytemptable (a INT)"
+  },
+  {
    "key": "bd6fcf94bc6f6136",
    "dialect": "databricks",
    "sql": "CREATE TEMPORARY TABLE mytemptable (a INT) USING PARQUET"
@@ -32018,6 +34153,11 @@
    "sql": "CREATE TABLE [dbo].[mytable](\n                [email] [varchar](255) NOT NULL,\n                CONSTRAINT [UN_t_mytable] UNIQUE NONCLUSTERED\n                (\n                    [email] ASC\n                )\n                )"
   },
   {
+   "key": "35d0fd3d8d02cea0",
+   "dialect": "hive",
+   "sql": "CREATE TABLE `dbo`.`mytable` (`email` VARCHAR(255) NOT NULL)"
+  },
+  {
    "key": "fb77d60b09d649e4",
    "dialect": "databricks",
    "sql": "CREATE TABLE `dbo`.`mytable` (`email` VARCHAR(255) NOT NULL)"
@@ -32031,6 +34171,11 @@
    "key": "36b746466287235d",
    "dialect": "tsql",
    "sql": "CREATE TABLE x (A INTEGER NOT NULL, B INTEGER NULL)"
+  },
+  {
+   "key": "989df6c67f93e0b5",
+   "dialect": "hive",
+   "sql": "CREATE TABLE x (A INT NOT NULL, B INT)"
   },
   {
    "key": "95962516bc0b6d3d",
@@ -32503,8 +34648,18 @@
    "sql": "CAST(x AS TIMESTAMP)"
   },
   {
+   "key": "8a749fcfca3ee05d",
+   "dialect": "hive",
+   "sql": "CAST(x AS BINARY)"
+  },
+  {
    "key": "19992600f844bd42",
    "dialect": "tsql",
+   "sql": "CAST(X AS INT)"
+  },
+  {
+   "key": "a324b90d5ae8d9a9",
+   "dialect": "hive",
    "sql": "CAST(X AS INT)"
   },
   {
@@ -32518,8 +34673,18 @@
    "sql": "CAST(X AS BIGINT)"
   },
   {
+   "key": "bfbc74f9d86efb59",
+   "dialect": "hive",
+   "sql": "CAST(X AS BIGINT)"
+  },
+  {
    "key": "1d89b85bdde3f158",
    "dialect": "tsql",
+   "sql": "CAST(X AS SMALLINT)"
+  },
+  {
+   "key": "744cd7bb72bad812",
+   "dialect": "hive",
    "sql": "CAST(X AS SMALLINT)"
   },
   {
@@ -32551,6 +34716,11 @@
    "key": "a487cfe6fe89b4d6",
    "dialect": "tsql",
    "sql": "CAST(x AS FLOAT(32))"
+  },
+  {
+   "key": "7e122971fabebad2",
+   "dialect": "hive",
+   "sql": "CAST(x AS FLOAT)"
   },
   {
    "key": "9caf90fa2d263a79",
@@ -33900,6 +36070,11 @@
   {
    "key": "a13a6ba60e2b273e",
    "dialect": "databricks",
+   "sql": "SELECT ${x}"
+  },
+  {
+   "key": "5dd3b686de9ae545",
+   "dialect": "hive",
    "sql": "SELECT ${x}"
   },
   {
