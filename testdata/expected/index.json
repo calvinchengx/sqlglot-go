@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 7318,
+ "count": 7462,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -5468,6 +5468,11 @@
    "sql": "REGEXP_LIKE('foo', '.*')"
   },
   {
+   "key": "71b296c0cb009bb0",
+   "dialect": "starrocks",
+   "sql": "REGEXP('foo', '.*')"
+  },
+  {
    "key": "1b8fa0b0b81a0a9e",
    "dialect": "duckdb",
    "sql": "'x'"
@@ -5686,6 +5691,21 @@
    "key": "068c1698a499cd2b",
    "dialect": "mysql",
    "sql": "DATEDIFF(CAST('2010-07-07' AS DATE), CAST('2008-12-25' AS DATE))"
+  },
+  {
+   "key": "13975739dbe4dda5",
+   "dialect": "starrocks",
+   "sql": "DATE_DIFF('DAY', CAST('2010-07-07' AS DATE), CAST('2008-12-25' AS DATE))"
+  },
+  {
+   "key": "a2cf7e8615efd6d2",
+   "dialect": "starrocks",
+   "sql": "DATEDIFF(CAST('2010-07-07' AS DATE), CAST('2008-12-25' AS DATE))"
+  },
+  {
+   "key": "325a22709bcd4bc6",
+   "dialect": "starrocks",
+   "sql": "DATE_DIFF('MINUTE', CAST('2010-07-07' AS DATE), CAST('2008-12-25' AS DATE))"
   },
   {
    "key": "5c0b6b402ac7e9fb",
@@ -8013,6 +8033,11 @@
    "sql": "CAST(a AS VARCHAR(MAX))"
   },
   {
+   "key": "c8f7555e55042bcb",
+   "dialect": "starrocks",
+   "sql": "CAST(a AS STRING)"
+  },
+  {
    "key": "4125fa1c4f2b6d87",
    "dialect": "tsql",
    "sql": "CAST(a AS VARCHAR(MAX))"
@@ -8053,8 +8078,18 @@
    "sql": "CAST(a AS VARBYTE(4))"
   },
   {
+   "key": "0b543d4a7ee4af5f",
+   "dialect": "starrocks",
+   "sql": "CAST(a AS BINARY(4))"
+  },
+  {
    "key": "e09dc7077b51e7bd",
    "dialect": "mysql",
+   "sql": "CAST(a AS VARBINARY(4))"
+  },
+  {
+   "key": "9779ab91b835b348",
+   "dialect": "starrocks",
    "sql": "CAST(a AS VARBINARY(4))"
   },
   {
@@ -8075,6 +8110,11 @@
   {
    "key": "c7135eac512b4d45",
    "dialect": "redshift",
+   "sql": "CAST(a AS VARCHAR)"
+  },
+  {
+   "key": "875d20a1a083b919",
+   "dialect": "starrocks",
    "sql": "CAST(a AS VARCHAR)"
   },
   {
@@ -8118,6 +8158,11 @@
    "sql": "CAST(a AS VARCHAR(3))"
   },
   {
+   "key": "8ffd1a8f34dab603",
+   "dialect": "starrocks",
+   "sql": "CAST(a AS VARCHAR(3))"
+  },
+  {
    "key": "d1f389f2a7496fb1",
    "dialect": "tsql",
    "sql": "CAST(a AS VARCHAR(3))"
@@ -8155,6 +8200,11 @@
   {
    "key": "e3b66541bb0c16cc",
    "dialect": "redshift",
+   "sql": "CAST(a AS SMALLINT)"
+  },
+  {
+   "key": "9fa2ededf6be2df6",
+   "dialect": "starrocks",
    "sql": "CAST(a AS SMALLINT)"
   },
   {
@@ -8198,6 +8248,11 @@
    "sql": "CAST(a AS DOUBLE)"
   },
   {
+   "key": "f2ca98dd908c3e61",
+   "dialect": "starrocks",
+   "sql": "CAST(a AS DOUBLE)"
+  },
+  {
    "key": "453c0255c7ce2565",
    "dialect": "postgres",
    "sql": "CAST('1 DAY' AS INTERVAL)"
@@ -8206,6 +8261,11 @@
    "key": "b735de96bb694a1e",
    "dialect": "redshift",
    "sql": "CAST('1 DAY' AS INTERVAL)"
+  },
+  {
+   "key": "886d570372d7dbf3",
+   "dialect": "starrocks",
+   "sql": "CAST(a AS DATETIME)"
   },
   {
    "key": "3106191445f524e3",
@@ -8221,6 +8281,11 @@
    "key": "3b9b698221b98636",
    "dialect": "mysql",
    "sql": "CAST(a AS DATETIME)"
+  },
+  {
+   "key": "bb9580dcab1d9ae4",
+   "dialect": "starrocks",
+   "sql": "TIMESTAMP(a)"
   },
   {
    "key": "34132d262d936d22",
@@ -8333,6 +8398,11 @@
    "sql": "SELECT DECODE(tbl.col, 'some_string', 'foo')"
   },
   {
+   "key": "caf7587fc3e7a1de",
+   "dialect": "starrocks",
+   "sql": "TO_BINARY('1C')"
+  },
+  {
    "key": "a7c2d579e19c5fef",
    "dialect": "duckdb",
    "sql": "TO_BINARY('1C')"
@@ -8341,6 +8411,11 @@
    "key": "2420d8b0e74c9c38",
    "dialect": "databricks",
    "sql": "TO_BINARY('1C')"
+  },
+  {
+   "key": "7fb49c4565fdedde",
+   "dialect": "starrocks",
+   "sql": "TO_BINARY('1C', 'HEX')"
   },
   {
    "key": "a4e6036c5a90da6d",
@@ -8428,6 +8503,11 @@
    "sql": "SELECT NVL2(a, b, c)"
   },
   {
+   "key": "2c59a87fa8f8d701",
+   "dialect": "starrocks",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
+  },
+  {
    "key": "40172a480d99e2d5",
    "dialect": "trino",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
@@ -8476,6 +8556,11 @@
    "key": "df5cd53ab7c2bb96",
    "dialect": "redshift",
    "sql": "SELECT NVL2(a, b)"
+  },
+  {
+   "key": "5211858b246129d4",
+   "dialect": "starrocks",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
   },
   {
    "key": "527378cf9a5d080e",
@@ -8563,6 +8648,11 @@
    "sql": "TO_UNIXTIME(COALESCE(TRY(DATE_PARSE(CAST('2020-01-01' AS VARCHAR), '%Y-%m-%d')), PARSE_DATETIME(DATE_FORMAT(CAST('2020-01-01' AS TIMESTAMP), '%Y-%m-%d'), 'yyyy-MM-dd')))"
   },
   {
+   "key": "6d4e484e0e760589",
+   "dialect": "starrocks",
+   "sql": "UNIX_TIMESTAMP('2020-01-01', '%Y-%m-%d')"
+  },
+  {
    "key": "553c57b7b9bf6c84",
    "dialect": "doris",
    "sql": "UNIX_TIMESTAMP('2020-01-01', '%Y-%m-%d')"
@@ -8576,6 +8666,11 @@
    "key": "5757e5142ea0e576",
    "dialect": "presto",
    "sql": "CAST('2020-01-01' AS TIMESTAMP)"
+  },
+  {
+   "key": "cb82c45a0c07ae73",
+   "dialect": "starrocks",
+   "sql": "TO_DATE('2020-01-01')"
   },
   {
    "key": "bab721776622023d",
@@ -8903,6 +8998,11 @@
    "sql": "DATE_FORMAT(FROM_UNIXTIME(x), y)"
   },
   {
+   "key": "c8895e528c06b514",
+   "dialect": "starrocks",
+   "sql": "FROM_UNIXTIME(x, y)"
+  },
+  {
    "key": "d8c1365764d55726",
    "dialect": "doris",
    "sql": "FROM_UNIXTIME(x, y)"
@@ -8925,6 +9025,11 @@
   {
    "key": "eaef8e42883cd5c3",
    "dialect": "presto",
+   "sql": "FROM_UNIXTIME(x)"
+  },
+  {
+   "key": "b8053d40c80f5b53",
+   "dialect": "starrocks",
    "sql": "FROM_UNIXTIME(x)"
   },
   {
@@ -8998,6 +9103,11 @@
    "sql": "x + INTERVAL '1 DAY'"
   },
   {
+   "key": "96d93cc1a8564966",
+   "dialect": "starrocks",
+   "sql": "DATE_ADD(x, INTERVAL 1 DAY)"
+  },
+  {
    "key": "b1ff6ce2ed92e187",
    "dialect": "tsql",
    "sql": "DATEADD(DAY, 1, x)"
@@ -9028,6 +9138,11 @@
    "sql": "DATE_TRUNC('DAY', x)"
   },
   {
+   "key": "b064367a9126aace",
+   "dialect": "starrocks",
+   "sql": "DATE_TRUNC('DAY', x)"
+  },
+  {
    "key": "3a7402a52063a1d1",
    "dialect": "doris",
    "sql": "DATE_TRUNC(x, 'DAY')"
@@ -9053,6 +9168,11 @@
    "sql": "DATE_TRUNC('day', x)"
   },
   {
+   "key": "1e0a1a4649d66aae",
+   "dialect": "starrocks",
+   "sql": "DATE_TRUNC('day', x)"
+  },
+  {
    "key": "c3326d3930ff17f3",
    "dialect": "doris",
    "sql": "DATE_TRUNC('day', x)"
@@ -9065,6 +9185,11 @@
   {
    "key": "ca56d64fec13d1d6",
    "dialect": "postgres",
+   "sql": "DATE_TRUNC('day', x::DATE)"
+  },
+  {
+   "key": "e435ff0b1becd96d",
+   "dialect": "starrocks",
    "sql": "DATE_TRUNC('day', x::DATE)"
   },
   {
@@ -9098,6 +9223,11 @@
    "sql": "DATE_TRUNC('YEAR', x)"
   },
   {
+   "key": "3784214aa346ac82",
+   "dialect": "starrocks",
+   "sql": "DATE_TRUNC('YEAR', x)"
+  },
+  {
    "key": "b45ff474aa91495a",
    "dialect": "doris",
    "sql": "DATE_TRUNC(x, 'YEAR')"
@@ -9108,6 +9238,11 @@
    "sql": "DATE_TRUNC(year, x)"
   },
   {
+   "key": "cc02aa6d28d50516",
+   "dialect": "starrocks",
+   "sql": "DATE_TRUNC('year', x)"
+  },
+  {
    "key": "7a5466a6561d655a",
    "dialect": "databricks",
    "sql": "NEXT_DAY(x, y)"
@@ -9116,6 +9251,11 @@
    "key": "3ccf94eb54a3f908",
    "dialect": "redshift",
    "sql": "NEXT_DAY(x, y)"
+  },
+  {
+   "key": "16fee5a25630b660",
+   "dialect": "starrocks",
+   "sql": "STR_TO_DATE(x, '%Y-%m-%dT%T')"
   },
   {
    "key": "bf63b80f196cf08c",
@@ -9130,6 +9270,11 @@
   {
    "key": "f6fcfab124020a5d",
    "dialect": "mysql",
+   "sql": "STR_TO_DATE(x, '%Y-%m-%d')"
+  },
+  {
+   "key": "f9e95f9ac621c390",
+   "dialect": "starrocks",
    "sql": "STR_TO_DATE(x, '%Y-%m-%d')"
   },
   {
@@ -9198,6 +9343,11 @@
    "sql": "CAST('2022-01-01' AS DATETIME)"
   },
   {
+   "key": "9610a8819020f886",
+   "dialect": "starrocks",
+   "sql": "CAST('2022-01-01' AS DATETIME)"
+  },
+  {
    "key": "e86397e228add566",
    "dialect": "doris",
    "sql": "CAST('2022-01-01' AS DATETIME)"
@@ -9205,6 +9355,11 @@
   {
    "key": "1d09aad90923f422",
    "dialect": "mysql",
+   "sql": "TIMESTAMP('2022-01-01')"
+  },
+  {
+   "key": "e7cec766b06c74c6",
+   "dialect": "starrocks",
    "sql": "TIMESTAMP('2022-01-01')"
   },
   {
@@ -9290,6 +9445,11 @@
   {
    "key": "3a2447df7f83d8b3",
    "dialect": "trino",
+   "sql": "ARRAY_INTERSECT(x, y)"
+  },
+  {
+   "key": "d9831f5a66e1de38",
+   "dialect": "starrocks",
    "sql": "ARRAY_INTERSECT(x, y)"
   },
   {
@@ -9563,6 +9723,11 @@
    "sql": "JSON_EXTRACT(x, '$.y')"
   },
   {
+   "key": "d3ac9012f75532e1",
+   "dialect": "starrocks",
+   "sql": "x -> '$.y'"
+  },
+  {
    "key": "9fdb8e968e783933",
    "dialect": "duckdb",
    "sql": "x -> '$.y'"
@@ -9626,6 +9791,11 @@
    "key": "6566acd1999f3e07",
    "dialect": "presto",
    "sql": "JSON_EXTRACT(x, '$.y[0].z')"
+  },
+  {
+   "key": "9c18578dcf96695f",
+   "dialect": "starrocks",
+   "sql": "x -> '$.y[0].z'"
   },
   {
    "key": "46c065c84f86cf43",
@@ -9823,6 +9993,11 @@
    "sql": "LOWER(x) LIKE LOWER('%y')"
   },
   {
+   "key": "183f5d238f88463d",
+   "dialect": "starrocks",
+   "sql": "LOWER(x) LIKE LOWER('%y')"
+  },
+  {
    "key": "1fdbe73b79b0379d",
    "dialect": "trino",
    "sql": "LOWER(x) LIKE LOWER('%y')"
@@ -9938,6 +10113,11 @@
    "sql": "INSTR(haystack, needle)"
   },
   {
+   "key": "eeebe118381a1776",
+   "dialect": "starrocks",
+   "sql": "INSTR(haystack, needle)"
+  },
+  {
    "key": "2939663f455832f5",
    "dialect": "databricks",
    "sql": "LOCATE(needle, haystack)"
@@ -9950,6 +10130,11 @@
   {
    "key": "2d5a1858140a0078",
    "dialect": "mysql",
+   "sql": "LOCATE(needle, haystack)"
+  },
+  {
+   "key": "994a73183d2363b9",
+   "dialect": "starrocks",
    "sql": "LOCATE(needle, haystack)"
   },
   {
@@ -9995,6 +10180,11 @@
   {
    "key": "3d6136d1ef294bc3",
    "dialect": "mysql",
+   "sql": "LOCATE(needle, haystack, position)"
+  },
+  {
+   "key": "378fa9cc3e5225f4",
+   "dialect": "starrocks",
    "sql": "LOCATE(needle, haystack, position)"
   },
   {
@@ -10213,6 +10403,11 @@
    "sql": "FILTER(the_array, x -> x > 0)"
   },
   {
+   "key": "a46e5c9dac4921d5",
+   "dialect": "starrocks",
+   "sql": "ARRAY_FILTER(the_array, x -> x > 0)"
+  },
+  {
    "key": "0570d3c45b81566b",
    "dialect": "databricks",
    "sql": "a / b"
@@ -10220,6 +10415,11 @@
   {
    "key": "f90a3e9ced0f74f6",
    "dialect": "duckdb",
+   "sql": "a / b"
+  },
+  {
+   "key": "918ebd1cbc8ce643",
+   "dialect": "starrocks",
    "sql": "a / b"
   },
   {
@@ -10268,6 +10468,11 @@
    "sql": "ARRAY_REMOVE(the_array, target)"
   },
   {
+   "key": "77388126cd9648ef",
+   "dialect": "starrocks",
+   "sql": "ARRAY_REMOVE(the_array, target)"
+  },
+  {
    "key": "902059c794cd8f8a",
    "dialect": "databricks",
    "sql": "ARRAY_REMOVE(the_array, target)"
@@ -10295,6 +10500,11 @@
   {
    "key": "2b76737944131613",
    "dialect": "redshift",
+   "sql": "SELECT * FROM t LIMIT 1"
+  },
+  {
+   "key": "f4566da98c6ec50a",
+   "dialect": "starrocks",
    "sql": "SELECT * FROM t LIMIT 1"
   },
   {
@@ -10855,6 +11065,11 @@
   {
    "key": "57427704c60a7a7f",
    "dialect": "mysql",
+   "sql": "WITH RECURSIVE _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATE_ADD(date_value, INTERVAL 1 WEEK) AS DATE) FROM _generated_dates WHERE CAST(DATE_ADD(date_value, INTERVAL 1 WEEK) AS DATE) <= CAST('2020-02-01' AS DATE)) SELECT * FROM (SELECT date_value FROM _generated_dates) AS _generated_dates"
+  },
+  {
+   "key": "aaf3749cadd84708",
+   "dialect": "starrocks",
    "sql": "WITH RECURSIVE _generated_dates(date_value) AS (SELECT CAST('2020-01-01' AS DATE) AS date_value UNION ALL SELECT CAST(DATE_ADD(date_value, INTERVAL 1 WEEK) AS DATE) FROM _generated_dates WHERE CAST(DATE_ADD(date_value, INTERVAL 1 WEEK) AS DATE) <= CAST('2020-02-01' AS DATE)) SELECT * FROM (SELECT date_value FROM _generated_dates) AS _generated_dates"
   },
   {
@@ -11803,6 +12018,11 @@
    "sql": "JSON_KEYS(foo)"
   },
   {
+   "key": "3099547911c5fb19",
+   "dialect": "starrocks",
+   "sql": "JSON_KEYS(foo)"
+  },
+  {
    "key": "b4cdd6a5fd6a6079",
    "dialect": "duckdb",
    "sql": "JSON_KEYS(foo)"
@@ -11815,6 +12035,11 @@
   {
    "key": "ed58d51d1d861b81",
    "dialect": "mysql",
+   "sql": "JSON_KEYS(foo, '$.a')"
+  },
+  {
+   "key": "aa2250f5b6bac9e0",
+   "dialect": "starrocks",
    "sql": "JSON_KEYS(foo, '$.a')"
   },
   {
@@ -14951,6 +15176,11 @@
    "key": "965178847852907e",
    "dialect": "trino",
    "sql": "SELECT CAST('foo' AS TIMESTAMP)"
+  },
+  {
+   "key": "ad20941ec0a58063",
+   "dialect": "starrocks",
+   "sql": "SELECT CAST('foo' AS DATETIME)"
   },
   {
    "key": "7d5a00ad0c22f1e9",
@@ -19483,6 +19713,11 @@
    "sql": "CAST(x AS CHAR)"
   },
   {
+   "key": "0bd2010a72be4c7e",
+   "dialect": "starrocks",
+   "sql": "CAST(x AS STRING)"
+  },
+  {
    "key": "2ee349e604406bde",
    "dialect": "mysql",
    "sql": "CAST(x AS SIGNED)"
@@ -20246,6 +20481,11 @@
    "key": "2f76c6d0a6591748",
    "dialect": "redshift",
    "sql": "CAST(x AS DOUBLE PRECISION)"
+  },
+  {
+   "key": "0ced13c5ba102c91",
+   "dialect": "starrocks",
+   "sql": "CAST(x AS DOUBLE)"
   },
   {
    "key": "5afae62d3bdf2091",
@@ -22175,6 +22415,11 @@
   {
    "key": "5803331a9ee09d92",
    "dialect": "doris",
+   "sql": "UPDATE foo SET a = bar.a, b = bar.b FROM bar WHERE foo.id = bar.id"
+  },
+  {
+   "key": "9ecc1d4a8ff7e506",
+   "dialect": "starrocks",
    "sql": "UPDATE foo SET a = bar.a, b = bar.b FROM bar WHERE foo.id = bar.id"
   },
   {
@@ -24653,6 +24898,11 @@
    "sql": "SIGN(x)"
   },
   {
+   "key": "1c418214cee4fba3",
+   "dialect": "starrocks",
+   "sql": "SIGN(x)"
+  },
+  {
    "key": "2f2f706461793366",
    "dialect": "presto",
    "sql": "ANALYZE tbl"
@@ -25081,6 +25331,11 @@
    "key": "80210941eb722091",
    "dialect": "redshift",
    "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC) AS _row_number FROM x) AS _t WHERE _row_number = 1"
+  },
+  {
+   "key": "4a46b005f489abdc",
+   "dialect": "starrocks",
+   "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY CASE WHEN c IS NULL THEN 1 ELSE 0 END DESC, c DESC) AS _row_number FROM x) AS _t WHERE _row_number = 1"
   },
   {
    "key": "b84d189b7be811fa",
@@ -26353,6 +26608,11 @@
    "sql": "SELECT (col1 && col2) OR (ARRAY_LENGTH(col1) <> LIST_COUNT(col1) AND ARRAY_LENGTH(col2) <> LIST_COUNT(col2))"
   },
   {
+   "key": "641ebcc01332531e",
+   "dialect": "starrocks",
+   "sql": "SELECT ARRAY_INTERSECT([1, 2], [2, 3])"
+  },
+  {
    "key": "727d7f7bc7c31f70",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN [1, 2] IS NULL OR [2, 3] IS NULL THEN NULL ELSE LIST_TRANSFORM(LIST_FILTER(LIST_ZIP([1, 2], GENERATE_SERIES(1, LENGTH([1, 2]))), pair -> (LENGTH(LIST_FILTER([1, 2][1:pair[2]], e -> e IS NOT DISTINCT FROM pair[1])) <= LENGTH(LIST_FILTER([2, 3], e -> e IS NOT DISTINCT FROM pair[1])))), pair -> pair[1]) END"
@@ -26660,6 +26920,11 @@
   {
    "key": "2571d02431cd390f",
    "dialect": "redshift",
+   "sql": "POWER(x, 2)"
+  },
+  {
+   "key": "abaf1ceccb88bd66",
+   "dialect": "starrocks",
    "sql": "POWER(x, 2)"
   },
   {
@@ -27253,6 +27518,11 @@
    "sql": "SELECT EXTRACT(SECOND FROM CAST('11:45:00.123456789' AS TIME))"
   },
   {
+   "key": "9825e7d877d9a386",
+   "dialect": "starrocks",
+   "sql": "SELECT ST_POINT(10, 20)"
+  },
+  {
    "key": "6161ab926267f2c2",
    "dialect": "duckdb",
    "sql": "LAST_DAY(CAST('2023-04-15' AS DATE))"
@@ -27271,6 +27541,11 @@
    "key": "320c0f3beb14f4a7",
    "dialect": "duckdb",
    "sql": "CAST(CAST('2025-12-15' AS DATE) + INTERVAL ((7 - EXTRACT(DAYOFWEEK FROM CAST('2025-12-15' AS DATE))) % 7) DAY AS DATE)"
+  },
+  {
+   "key": "5819449a20fef7ef",
+   "dialect": "starrocks",
+   "sql": "SELECT ST_DISTANCE_SPHERE(ST_X(a), ST_Y(a), ST_X(b), ST_Y(b))"
   },
   {
    "key": "7bd13c313ecebd25",
@@ -27545,6 +27820,11 @@
   {
    "key": "97d1d100420a2b42",
    "dialect": "databricks",
+   "sql": "SELECT CURRENT_VERSION()"
+  },
+  {
+   "key": "47fd1ff1d6b6e1f0",
+   "dialect": "starrocks",
    "sql": "SELECT CURRENT_VERSION()"
   },
   {
@@ -28291,6 +28571,11 @@
    "key": "180400e980005440",
    "dialect": "duckdb",
    "sql": "SELECT FLATTEN([['a', 'b'], ['c', 'd', 'e']])"
+  },
+  {
+   "key": "0462cb129d871cd1",
+   "dialect": "starrocks",
+   "sql": "SELECT ARRAY_FLATTEN([['a', 'b'], ['c', 'd', 'e']])"
   },
   {
    "key": "e065ad125f25dee4",
@@ -29108,9 +29393,84 @@
    "sql": "CREATE TABLE z (a INT PRIMARY KEY AUTO_INCREMENT)"
   },
   {
+   "key": "90048fffb0f790d7",
+   "dialect": "starrocks",
+   "sql": "SELECT ARRAY_JOIN([1, 3, 5, NULL], '_', 'NULL')"
+  },
+  {
+   "key": "0a021bae6cf3e68a",
+   "dialect": "starrocks",
+   "sql": "SELECT ARRAY_JOIN([1, 3, 5, NULL], '_')"
+  },
+  {
+   "key": "44eadd1ac94037f0",
+   "dialect": "starrocks",
+   "sql": "ALTER TABLE a SWAP WITH b"
+  },
+  {
+   "key": "da361d32ab94ba17",
+   "dialect": "starrocks",
+   "sql": "SELECT ARRAY_AGG(a) FROM x"
+  },
+  {
+   "key": "66114de605a1187d",
+   "dialect": "starrocks",
+   "sql": "SELECT ST_DISTANCE_SPHERE(10.1, 20.2, 30.3, 40.4)"
+  },
+  {
+   "key": "d934ee64bd9e8a8a",
+   "dialect": "starrocks",
+   "sql": "SELECT * FROM t WHERE cond"
+  },
+  {
+   "key": "fa86cbd3c67e58ca",
+   "dialect": "starrocks",
+   "sql": "CURRENT_VERSION()"
+  },
+  {
+   "key": "6bf1e929cf0e9516",
+   "dialect": "starrocks",
+   "sql": "SELECT t1.id FROM t1 LEFT ANTI JOIN t2 ON t1.id = t2.id"
+  },
+  {
+   "key": "18186195bb5a5c30",
+   "dialect": "starrocks",
+   "sql": "SELECT t1.id FROM t1 LEFT SEMI JOIN t2 ON t1.id = t2.id"
+  },
+  {
+   "key": "69ff6ac85a1b64a3",
+   "dialect": "starrocks",
+   "sql": "SELECT MIN_BY(name, ts) FROM t"
+  },
+  {
+   "key": "b8a037c97de5fd0e",
+   "dialect": "starrocks",
+   "sql": "SELECT MAX_BY(name, ts) FROM t"
+  },
+  {
+   "key": "9983909aade4b563",
+   "dialect": "starrocks",
+   "sql": "SELECT MIN_BY(x, y) OVER (PARTITION BY z) FROM t"
+  },
+  {
+   "key": "d9a1858542870331",
+   "dialect": "starrocks",
+   "sql": "SELECT MAX_BY(a, b), MIN_BY(a, b) FROM t"
+  },
+  {
    "key": "5370fca0223f1130",
    "dialect": "presto",
    "sql": "SELECT MAX_BY(a, b), MIN_BY(a, b) FROM t"
+  },
+  {
+   "key": "524af2481bd36ef3",
+   "dialect": "starrocks",
+   "sql": "SELECT MAP('a', 1, 'b', 2)"
+  },
+  {
+   "key": "ef01be292506dc59",
+   "dialect": "starrocks",
+   "sql": "SELECT MAP('a', 1, 'b', 2)['a']"
   },
   {
    "key": "692ced2494ff73c3",
@@ -29123,6 +29483,11 @@
    "sql": "SELECT MAP(ARRAY['a', 'b'], ARRAY[1, 2])"
   },
   {
+   "key": "9d122d4c626e514d",
+   "dialect": "starrocks",
+   "sql": "SELECT ARRAY_CONTAINS_ALL([1, 2, 3], [1, 2])"
+  },
+  {
    "key": "b769652530613f9e",
    "dialect": "duckdb",
    "sql": "SELECT [1, 2] <@ [1, 2, 3]"
@@ -29131,6 +29496,101 @@
    "key": "f05d7da43088edd0",
    "dialect": "postgres",
    "sql": "SELECT ARRAY[1, 2] <@ ARRAY[1, 2, 3]"
+  },
+  {
+   "key": "475f62865a630e94",
+   "dialect": "starrocks",
+   "sql": "SELECT TRIM('  hi  ')"
+  },
+  {
+   "key": "8dee8854db19cc04",
+   "dialect": "starrocks",
+   "sql": "SELECT TRIM('--hi--', '-')"
+  },
+  {
+   "key": "a8481ee25517de6d",
+   "dialect": "starrocks",
+   "sql": "SELECT LTRIM('xxhi', 'x')"
+  },
+  {
+   "key": "84f0324317207764",
+   "dialect": "starrocks",
+   "sql": "SELECT RTRIM('hixx', 'x')"
+  },
+  {
+   "key": "38c53b9a51d729b6",
+   "dialect": "starrocks",
+   "sql": "SELECT DISTINCT ON (a) a, b FROM x ORDER BY c DESC"
+  },
+  {
+   "key": "27c8c676bf3aa801",
+   "dialect": "starrocks",
+   "sql": "SELECT * FROM UNNEST(GENERATE_DATE_ARRAY(DATE '2020-01-01', DATE '2020-02-01', INTERVAL 1 WEEK)) AS _q(date_week)"
+  },
+  {
+   "key": "1d2a75e802355738",
+   "dialect": "starrocks",
+   "sql": "INSERT OVERWRITE my_table SELECT * FROM other_table"
+  },
+  {
+   "key": "e21841fb86dedac0",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE t (c INT) COMMENT 'c'"
+  },
+  {
+   "key": "e1d31864237b04bc",
+   "dialect": "starrocks",
+   "sql": "DROP TABLE my_table"
+  },
+  {
+   "key": "1c6775f1306683d9",
+   "dialect": "starrocks",
+   "sql": "DROP TABLE IF EXISTS example_db.my_table"
+  },
+  {
+   "key": "59545fc72b986d15",
+   "dialect": "starrocks",
+   "sql": "DROP TABLE my_table FORCE"
+  },
+  {
+   "key": "bcb212bc9483461c",
+   "dialect": "starrocks",
+   "sql": "DROP TEMPORARY TABLE my_table FORCE"
+  },
+  {
+   "key": "633e244d171cc9b2",
+   "dialect": "starrocks",
+   "sql": "REFRESH EXTERNAL TABLE hive1"
+  },
+  {
+   "key": "10d420356ffcbedf",
+   "dialect": "starrocks",
+   "sql": "REFRESH EXTERNAL TABLE hive_catalog.hive_db.hive_table"
+  },
+  {
+   "key": "6329c42b214f609a",
+   "dialect": "starrocks",
+   "sql": "REFRESH EXTERNAL TABLE hudi1 PARTITION('date=2022-12-20', 'date=2022-12-21')"
+  },
+  {
+   "key": "f6e34f891a5905b7",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE foo (col0 DECIMAL(9, 1), col1 DECIMAL32(9, 1), col2 DECIMAL64(18, 10), col3 DECIMAL128(38, 10)) DISTRIBUTED BY HASH (col1) BUCKETS 1"
+  },
+  {
+   "key": "2c8f18ebafbc35b6",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE foo (col1 LARGEINT) DISTRIBUTED BY HASH (col1) BUCKETS 1"
+  },
+  {
+   "key": "b391f804ae5ba134",
+   "dialect": "starrocks",
+   "sql": "CREATE VIEW foo (foo_col1) SECURITY NONE AS SELECT bar_col1 FROM bar"
+  },
+  {
+   "key": "b851cc833828f244",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE foo (col1 BIGINT, col2 BIGINT) ROLLUP (r1(col1, col2), r2(col1))"
   },
   {
    "key": "8a0e29c63fd974df",
@@ -29143,14 +29603,119 @@
    "sql": "CREATE TABLE foo (col1 BIGINT, col2 BIGINT)"
   },
   {
+   "key": "42364c50348d22b1",
+   "dialect": "starrocks",
+   "sql": "ALTER TABLE t1 RENAME t2"
+  },
+  {
+   "key": "b016fd9d08d86179",
+   "dialect": "starrocks",
+   "sql": "SELECT CAST(`a`.`b` AS INT) FROM foo"
+  },
+  {
+   "key": "2097bf1b539e2793",
+   "dialect": "starrocks",
+   "sql": "SELECT APPROX_COUNT_DISTINCT(a) FROM x"
+  },
+  {
+   "key": "cb7ab561fcf31ff9",
+   "dialect": "starrocks",
+   "sql": "SELECT [1, 2, 3]"
+  },
+  {
+   "key": "24291ba5a99504d3",
+   "dialect": "starrocks",
+   "sql": "SELECT CAST(PARSE_JSON(fieldvalue) -> '00000000-0000-0000-0000-00000000' AS VARCHAR) AS `code` FROM (SELECT '{\"00000000-0000-0000-0000-00000000\":\"code01\"}') AS t(fieldvalue)"
+  },
+  {
+   "key": "081f70532ff14ba7",
+   "dialect": "starrocks",
+   "sql": "SELECT text FROM example_table"
+  },
+  {
+   "key": "119cf0385fb71bf2",
+   "dialect": "starrocks",
+   "sql": "SELECT DATE_DIFF('SECOND', '2010-11-30 23:59:59', '2010-11-30 20:58:59')"
+  },
+  {
+   "key": "954225cca368b1b8",
+   "dialect": "starrocks",
+   "sql": "SELECT DATE_DIFF('MINUTE', '2010-11-30 23:59:59', '2010-11-30 20:58:59')"
+  },
+  {
+   "key": "d82843a158bc7246",
+   "dialect": "starrocks",
+   "sql": "SELECT DATE_ADD(x, INTERVAL '3' DAY)"
+  },
+  {
+   "key": "ff781554200dcfd7",
+   "dialect": "starrocks",
+   "sql": "SELECT DATE_SUB(x, INTERVAL '3' MONTH)"
+  },
+  {
+   "key": "11703af0d3090654",
+   "dialect": "starrocks",
+   "sql": "SELECT DATE_SUB(x, 3)"
+  },
+  {
+   "key": "43675e9dcede29a5",
+   "dialect": "starrocks",
+   "sql": "SELECT DATE_ADD(x, 7)"
+  },
+  {
+   "key": "eba7bb9d1b7389bf",
+   "dialect": "starrocks",
+   "sql": "SELECT ADDDATE(x, 7)"
+  },
+  {
+   "key": "1ca39f89e68ad2d4",
+   "dialect": "starrocks",
+   "sql": "SELECT SUBDATE(x, 7)"
+  },
+  {
+   "key": "1ca6d51b719d2f6a",
+   "dialect": "starrocks",
+   "sql": "SELECT REGEXP(abc, '%foo%')"
+  },
+  {
    "key": "ca6829972d1e8c9a",
    "dialect": "mysql",
    "sql": "SELECT REGEXP_LIKE(abc, '%foo%')"
   },
   {
+   "key": "45bd75793a867190",
+   "dialect": "starrocks",
+   "sql": "SELECT student, score, t.unnest FROM tests CROSS JOIN LATERAL UNNEST(scores) AS t"
+  },
+  {
+   "key": "c6d7f65cea625cbb",
+   "dialect": "starrocks",
+   "sql": "SELECT student, score, unnest FROM tests CROSS JOIN LATERAL UNNEST(scores)"
+  },
+  {
+   "key": "acef9a5a9b13bf8b",
+   "dialect": "starrocks",
+   "sql": "SELECT student, score, unnest FROM tests CROSS JOIN LATERAL UNNEST(scores) AS unnest(unnest)"
+  },
+  {
+   "key": "921332805a2e1efe",
+   "dialect": "starrocks",
+   "sql": "SELECT * FROM UNNEST(array['John','Jane','Jim','Jamie'], array[24,25,26,27]) AS t(name, age)"
+  },
+  {
    "key": "e85aa0a2773a4b05",
    "dialect": "postgres",
    "sql": "SELECT * FROM UNNEST(ARRAY['John', 'Jane', 'Jim', 'Jamie'], ARRAY[24, 25, 26, 27]) AS t(name, age)"
+  },
+  {
+   "key": "0c9a63c2f079d8d7",
+   "dialect": "starrocks",
+   "sql": "SELECT * FROM UNNEST(['John', 'Jane', 'Jim', 'Jamie'], [24, 25, 26, 27]) AS t(name, age)"
+  },
+  {
+   "key": "7b3a675bc51652ee",
+   "dialect": "starrocks",
+   "sql": "SELECT id, t.type, t.scores FROM example_table, unnest(split(type, \";\"), scores) AS t(type,scores)"
   },
   {
    "key": "14d4f728116c10bb",
@@ -29163,9 +29728,154 @@
    "sql": "SELECT id, t.type, t.scores FROM example_table LATERAL VIEW INLINE(ARRAYS_ZIP(SPLIT(type, CONCAT('\\\\Q', ';', '\\\\E')), scores)) t AS type, scores"
   },
   {
+   "key": "c93cacbbddd538a3",
+   "dialect": "starrocks",
+   "sql": "SELECT id, t.type, t.scores FROM example_table, UNNEST(SPLIT(type, ';'), scores) AS t(type, scores)"
+  },
+  {
+   "key": "edc5b30ff04c75b9",
+   "dialect": "starrocks",
+   "sql": "SELECT id, t.type, t.scores FROM example_table_2 CROSS JOIN LATERAL unnest(split(type, \";\"), scores) AS t(type,scores)"
+  },
+  {
+   "key": "e193fe9471ddda2c",
+   "dialect": "starrocks",
+   "sql": "SELECT id, t.type, t.scores FROM example_table_2 CROSS JOIN LATERAL UNNEST(SPLIT(type, ';'), scores) AS t(type, scores)"
+  },
+  {
+   "key": "59d7ede8616a855f",
+   "dialect": "starrocks",
+   "sql": "ANALYZE TABLE TBL(c1, c2) PROPERTIES ('prop1'=val1)"
+  },
+  {
+   "key": "0b540391c49da06c",
+   "dialect": "starrocks",
+   "sql": "ANALYZE FULL TABLE TBL(c1, c2) PROPERTIES ('prop1'=val1)"
+  },
+  {
+   "key": "ee2a7ec2c7702517",
+   "dialect": "starrocks",
+   "sql": "ANALYZE SAMPLE TABLE TBL(c1, c2) PROPERTIES ('prop1'=val1)"
+  },
+  {
+   "key": "de1dafcf0a99eea3",
+   "dialect": "starrocks",
+   "sql": "ANALYZE TABLE TBL(c1, c2) WITH SYNC MODE PROPERTIES ('prop1'=val1)"
+  },
+  {
+   "key": "cd2d4055c4d6ca14",
+   "dialect": "starrocks",
+   "sql": "ANALYZE TABLE TBL(c1, c2) WITH ASYNC MODE PROPERTIES ('prop1'=val1)"
+  },
+  {
+   "key": "998b90d9a2a9c625",
+   "dialect": "starrocks",
+   "sql": "ANALYZE TABLE TBL UPDATE HISTOGRAM ON c1, c2 PROPERTIES ('prop1'=val1)"
+  },
+  {
+   "key": "eca1761d8ff44c47",
+   "dialect": "starrocks",
+   "sql": "ANALYZE TABLE TBL UPDATE HISTOGRAM ON c1, c2 WITH 5 BUCKETS PROPERTIES ('prop1'=val1)"
+  },
+  {
+   "key": "f36f64f228b999b7",
+   "dialect": "starrocks",
+   "sql": "ANALYZE TABLE TBL UPDATE HISTOGRAM ON c1, c2 WITH SYNC MODE WITH 5 BUCKETS PROPERTIES ('prop1'=val1)"
+  },
+  {
+   "key": "3bfd7c48a532eb56",
+   "dialect": "starrocks",
+   "sql": "ANALYZE TABLE TBL UPDATE HISTOGRAM ON c1, c2 WITH ASYNC MODE WITH 5 BUCKETS PROPERTIES ('prop1'=val1)"
+  },
+  {
+   "key": "f75489afeac08805",
+   "dialect": "starrocks",
+   "sql": "SELECT * FROM t WHERE a BETWEEN 1 AND 5"
+  },
+  {
    "key": "6f9b28dd5daed07e",
    "dialect": "mysql",
    "sql": "SELECT * FROM t WHERE a BETWEEN 1 AND 5"
+  },
+  {
+   "key": "04217762b9c42baf",
+   "dialect": "starrocks",
+   "sql": "SELECT a BETWEEN 1 AND 5 FROM t"
+  },
+  {
+   "key": "a6ee28ccd3353eb5",
+   "dialect": "starrocks",
+   "sql": "DELETE FROM t WHERE a BETWEEN b AND c"
+  },
+  {
+   "key": "d2869a384faa3555",
+   "dialect": "starrocks",
+   "sql": "DELETE FROM t WHERE a BETWEEN 1 AND 10 AND b BETWEEN 20 AND 30 OR c BETWEEN 'x' AND 'z'"
+  },
+  {
+   "key": "c32ac322b014f374",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE test_table (col2 DATE) PARTITION BY DATE_TRUNC('DAY', col2)"
+  },
+  {
+   "key": "1d432000e8edde5e",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE test_table (col2 BIGINT) PARTITION BY FROM_UNIXTIME(col2, '%Y%m%d')"
+  },
+  {
+   "key": "93b01c3da01d2658",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE test_table (col1 STRING, col2 BIGINT) PARTITION BY FROM_UNIXTIME(col2, '%Y%m%d'), col1"
+  },
+  {
+   "key": "0ea9716db9ed0144",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE test_table (col1 BIGINT, col2 DATE) PARTITION BY FROM_UNIXTIME(col2, '%Y%m%d'), DATE_TRUNC('DAY', col1)"
+  },
+  {
+   "key": "279f8fdbf08cdea8",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE test_table (col1 STRING) PARTITION BY LIST (col1) (PARTITION pLos_Angeles VALUES IN ('Los Angeles'), PARTITION pSan_Francisco VALUES IN ('San Francisco'))"
+  },
+  {
+   "key": "7fd87f59153ceeb2",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE test_table (col1 DATE, col2 STRING) PARTITION BY LIST (col1, col2) (PARTITION p1 VALUES IN (('2022-04-01', 'LA'), ('2022-04-01', 'SF')))"
+  },
+  {
+   "key": "57b45615fa05d2b5",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE test_table (col1 DATE) PARTITION BY RANGE (col1) (PARTITION p1 VALUES LESS THAN ('2020-01-31'), PARTITION p2 VALUES LESS THAN ('2020-02-29'), PARTITION p3 VALUES LESS THAN ('2020-03-31'))"
+  },
+  {
+   "key": "5f931cceafd29033",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE test_table (col1 STRING) PARTITION BY RANGE (STR2DATE(col1, '%Y-%m-%d')) (PARTITION p1 VALUES LESS THAN ('2021-01-01'), PARTITION p2 VALUES LESS THAN ('2021-01-02'), PARTITION p3 VALUES LESS THAN ('2021-01-03'))"
+  },
+  {
+   "key": "f9c69e61f9bdda17",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE test_table (col1 DATE) PARTITION BY RANGE (col1) (PARTITION p1 VALUES LESS THAN ('2020-01-31'), PARTITION p_max VALUES LESS THAN (MAXVALUE))"
+  },
+  {
+   "key": "83c8e046f071e617",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE test_table (col1 BIGINT) PARTITION BY RANGE (col1) (START ('1') END ('10') EVERY (1), START ('10') END ('100') EVERY (10))"
+  },
+  {
+   "key": "9b2a4bccfc19456c",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE test_table (col1 DATE) PARTITION BY RANGE (col1) (START ('2019-01-01') END ('2021-01-01') EVERY (INTERVAL 1 YEAR), START ('2021-01-01') END ('2021-05-01') EVERY (INTERVAL 1 MONTH), START ('2021-05-01') END ('2021-05-04') EVERY (INTERVAL 1 DAY))"
+  },
+  {
+   "key": "1b310271ead2d635",
+   "dialect": "starrocks",
+   "sql": "ARRAY_FLATTEN(arr)"
+  },
+  {
+   "key": "b2c6c338693419f5",
+   "dialect": "starrocks",
+   "sql": "arr[1]"
   },
   {
    "key": "1d5de2da3bf19811",
@@ -29235,6 +29945,11 @@
   {
    "key": "1f080537323ab989",
    "dialect": "redshift",
+   "sql": "CREATE TABLE a"
+  },
+  {
+   "key": "a742c04638d41a24",
+   "dialect": "starrocks",
    "sql": "CREATE TABLE a"
   },
   {
@@ -31275,6 +31990,11 @@
   {
    "key": "5ac30e69ff6e7b86",
    "dialect": "mysql",
+   "sql": "ALTER TABLE a MODIFY COLUMN b INT NOT NULL"
+  },
+  {
+   "key": "a8a9ba735ed351ef",
+   "dialect": "starrocks",
    "sql": "ALTER TABLE a MODIFY COLUMN b INT NOT NULL"
   },
   {

@@ -85,7 +85,7 @@ func (p *parser) parseTableProperties() ([]*Expression, error) {
 			out = append(out, prop)
 			continue
 		}
-		if (p.dialect == "mysql" || p.dialect == "doris") && p.atWords("PARTITION BY") &&
+		if (p.dialect == "mysql" || p.dialect == "doris" || p.dialect == "starrocks") && p.atWords("PARTITION BY") &&
 			p.next() != nil && (strings.EqualFold(p.next().Text, "RANGE") || strings.EqualFold(p.next().Text, "LIST")) {
 			prop, err := p.parseMySQLPartition()
 			if err != nil {
@@ -97,7 +97,36 @@ func (p *parser) parseTableProperties() ([]*Expression, error) {
 		// Doris's own property words (UNIQUE/KEY, DUPLICATE, DISTRIBUTED,
 		// BUILD, REFRESH) and PROPERTIES, which opens a list rather than
 		// contributing a property of its own.
-		if p.dialect == "doris" {
+		// StarRocks partitions by an EXPRESSION, with the parentheses
+		// optional: `PARTITION BY DATE_TRUNC('DAY', col2)`.
+		if p.dialect == "starrocks" && p.atWords("PARTITION BY") {
+			p.advance() // PARTITION BY
+			var exprs []*Expression
+			if p.at(TokL_PAREN) {
+				inner, err := p.parseWrappedCSV(p.parseAssignment)
+				if err != nil {
+					return nil, err
+				}
+				exprs = inner
+			} else {
+				first, err := p.parseAssignment()
+				if err != nil {
+					return nil, err
+				}
+				exprs = append(exprs, first)
+				for p.match(TokCOMMA) {
+					next, err := p.parseAssignment()
+					if err != nil {
+						return nil, err
+					}
+					exprs = append(exprs, next)
+				}
+			}
+			out = append(out, New("PartitionedByProperty",
+				Arg{"this", New("Schema", Arg{"expressions", exprs})}))
+			continue
+		}
+		if p.dialect == "doris" || p.dialect == "starrocks" {
 			if p.atWords("PROPERTIES") {
 				p.advance()
 				inner, err := p.parseWrappedProperties()
@@ -1053,6 +1082,28 @@ func (p *parser) parseMySQLPartition() (*Expression, error) {
 			return New(class, Arg{"partition_expressions", expressions},
 				Arg{"create_expressions", []*Expression{dyn}}), nil
 		}
+		// StarRocks' dynamic range writes `START ('a') END ('b') EVERY (n U)`
+		// in place of the partition list, one or more of them.
+		if p.dialect == "starrocks" && p.at(TokL_PAREN) && p.next() != nil &&
+			strings.EqualFold(p.next().Text, "START") {
+			p.advance() // (
+			var create []*Expression
+			for {
+				dyn, err := p.parseStarRocksDynamicPartition()
+				if err != nil {
+					return nil, err
+				}
+				create = append(create, dyn)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed dynamic partition")
+			}
+			return New(class, Arg{"partition_expressions", expressions},
+				Arg{"create_expressions", create}), nil
+		}
 		return nil, p.unsupported("PARTITION BY without a partition list")
 	}
 	create, err := p.parseWrappedCSV(value)
@@ -1091,6 +1142,43 @@ func (p *parser) parseDorisDynamicPartition() (*Expression, error) {
 	return New("PartitionByRangePropertyDynamic",
 		Arg{"start", start}, Arg{"end", end},
 		Arg{"every", New("Interval", Arg{"this", num}, Arg{"unit", unit})}), nil
+}
+
+// parseStarRocksDynamicPartition reads `START ('a') END ('b') EVERY (n U)`
+// -- StarRocksParser._parse_partitioning_granularity_dynamic. The EVERY value
+// is an INTERVAL when one is written, and a bare number otherwise.
+func (p *parser) parseStarRocksDynamicPartition() (*Expression, error) {
+	p.matchWords("START")
+	start, err := p.parseDorisWrappedString()
+	if err != nil {
+		return nil, err
+	}
+	p.matchWords("END")
+	end, err := p.parseDorisWrappedString()
+	if err != nil {
+		return nil, err
+	}
+	p.matchWords("EVERY")
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("EVERY without a value")
+	}
+	var every *Expression
+	if p.at(TokINTERVAL) {
+		every, err = p.parseInterval()
+		if err != nil {
+			return nil, err
+		}
+	} else {
+		every = p.tryParseNumberLiteral()
+		if every == nil {
+			return nil, p.unsupported("EVERY without a number")
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed EVERY")
+	}
+	return New("PartitionByRangePropertyDynamic",
+		Arg{"start", start}, Arg{"end", end}, Arg{"every", every}), nil
 }
 
 func (p *parser) parseDorisWrappedString() (*Expression, error) {
