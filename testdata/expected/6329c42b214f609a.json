@@ -1,0 +1,177 @@
+{
+ "dialect": "starrocks",
+ "rendered": "REFRESH EXTERNAL TABLE hudi1 PARTITION('date=2022-12-20', 'date=2022-12-21')",
+ "sql": "REFRESH EXTERNAL TABLE hudi1 PARTITION('date=2022-12-20', 'date=2022-12-21')",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "REFRESH",
+   "x": "REFRESH"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "EXTERNAL"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 17,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "hudi1"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 29,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 38,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 39,
+   "t": "STRING",
+   "x": "date=2022-12-20"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 58,
+   "t": "STRING",
+   "x": "date=2022-12-21"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 75,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Refresh"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "hudi1"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 1,
+   "k": "partition"
+  },
+  {
+   "i": 5,
+   "k": "subpartition",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "expressions",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "date=2022-12-20"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "expressions",
+   "m": {
+    "col": 75,
+    "end": 74,
+    "line": 1,
+    "start": 58
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "date=2022-12-21"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "EXTERNAL TABLE"
+  }
+ ]
+}

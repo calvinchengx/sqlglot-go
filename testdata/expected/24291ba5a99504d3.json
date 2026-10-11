@@ -1,0 +1,421 @@
+{
+ "dialect": "starrocks",
+ "rendered": "SELECT CAST(PARSE_JSON(fieldvalue) -> '00000000-0000-0000-0000-00000000' AS VARCHAR) AS `code` FROM (SELECT '{\"00000000-0000-0000-0000-00000000\":\"code01\"}') AS t(fieldvalue)",
+ "sql": "SELECT CAST(PARSE_JSON(fieldvalue) -> '00000000-0000-0000-0000-00000000' AS VARCHAR) AS `code` FROM (SELECT '{\"00000000-0000-0000-0000-00000000\":\"code01\"}') AS t(fieldvalue)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "PARSE_JSON"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "fieldvalue"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 35,
+   "t": "ARROW",
+   "x": "->"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 38,
+   "t": "STRING",
+   "x": "00000000-0000-0000-0000-00000000"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 73,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 76,
+   "t": "VARCHAR",
+   "x": "VARCHAR"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 83,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 85,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 88,
+   "t": "IDENTIFIER",
+   "x": "code"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 95,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 100,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 101,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 155,
+   "e": 154,
+   "l": 1,
+   "s": 108,
+   "t": "STRING",
+   "x": "{\"00000000-0000-0000-0000-00000000\":\"code01\"}"
+  },
+  {
+   "c": 156,
+   "e": 155,
+   "l": 1,
+   "s": 155,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 159,
+   "e": 158,
+   "l": 1,
+   "s": 157,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 161,
+   "e": 160,
+   "l": 1,
+   "s": 160,
+   "t": "VAR",
+   "x": "t"
+  },
+  {
+   "c": 162,
+   "e": 161,
+   "l": 1,
+   "s": 161,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 172,
+   "e": 171,
+   "l": 1,
+   "s": 162,
+   "t": "VAR",
+   "x": "fieldvalue"
+  },
+  {
+   "c": 173,
+   "e": 172,
+   "l": 1,
+   "s": 172,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.json.JSONExtract",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.json.ParseJSON",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "fieldvalue"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expression",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "00000000-0000-0000-0000-00000000"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 3,
+   "k": "only_json_types",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 13,
+   "k": "this",
+   "v": "VARCHAR"
+  },
+  {
+   "i": 13,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 94,
+    "end": 93,
+    "line": 1,
+    "start": 88
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "code"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 20,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 21,
+   "k": "expressions",
+   "m": {
+    "col": 155,
+    "end": 154,
+    "line": 1,
+    "start": 108
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "{\"00000000-0000-0000-0000-00000000\":\"code01\"}"
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 20,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 161,
+    "end": 160,
+    "line": 1,
+    "start": 160
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 26,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 25,
+   "k": "columns",
+   "m": {
+    "col": 172,
+    "end": 171,
+    "line": 1,
+    "start": 162
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "fieldvalue"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

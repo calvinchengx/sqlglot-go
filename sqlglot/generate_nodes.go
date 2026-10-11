@@ -445,6 +445,12 @@ func (g *generator) selectOperationModifiers(e *Expression) string {
 }
 
 func (g *generator) writeSelect(e *Expression) string {
+	// StarRocks rewrites UNNEST(GENERATE_DATE_ARRAY(...)) into a recursive CTE
+	// (transforms.unnest_generate_date_array_using_recursive_cte), which this
+	// port does not build. Refuse rather than write the un-transformed query.
+	if g.dialect == "starrocks" && hasGenerateDateArrayUnnest(e) {
+		return g.fail("UNNEST(GENERATE_DATE_ARRAY(...)), which this dialect rewrites as a recursive CTE")
+	}
 	if g.tables.EliminatesDistinctOn {
 		if rewritten := eliminateDistinctOn(e); rewritten != nil {
 			return g.node(rewritten)
@@ -4729,7 +4735,14 @@ func (g *generator) writeInsert(e *Expression) string {
 		}
 	default:
 		if overwrite, _ := e.Args["overwrite"].(bool); overwrite {
-			out += "OVERWRITE TABLE "
+			// The words between INSERT and the target are the dialect's
+			// own: StarRocks writes a bare OVERWRITE where most write
+			// OVERWRITE TABLE (Generator.INSERT_OVERWRITE).
+			if g.dialect == "starrocks" {
+				out += "OVERWRITE "
+			} else {
+				out += "OVERWRITE TABLE "
+			}
 		} else {
 			out += "INTO "
 		}
@@ -5593,7 +5606,7 @@ func (g *generator) writeAlterRename(e *Expression) string {
 	}
 	// Doris writes `RENAME <name>` -- no TO, and the qualifier dropped
 	// (RENAME_TABLE_WITH_DB = False): the table stays where it was.
-	if g.dialect == "doris" {
+	if g.dialect == "doris" || g.dialect == "starrocks" {
 		name, _ := target.Args["this"].(*Expression)
 		if name == nil {
 			return g.fail(e.Class + " with no name")
@@ -5661,6 +5674,16 @@ func clauses(parts ...string) string {
 
 // writeDelete writes `DELETE FROM <table> [USING ...] [WHERE ...]`.
 func (g *generator) writeDelete(e *Expression) string {
+	// StarRocks does not support BETWEEN in a DELETE's WHERE; rewrite it on a
+	// copy before writing (StarRocksGenerator._eliminate_between_in_delete).
+	if g.dialect == "starrocks" {
+		if w, _ := e.Args["where"].(*Expression); w != nil {
+			c := e.Copy()
+			cw, _ := c.Args["where"].(*Expression)
+			starrocksEliminateBetween(cw)
+			e = c
+		}
+	}
 	this := g.child(e, "this")
 	if this == "" {
 		// A DELETE inside an ALTER names no table of its own: the ALTER has
@@ -6634,9 +6657,15 @@ func (g *generator) writePartition(e *Expression) string {
 	if sub, _ := e.Args["subpartition"].(bool); sub {
 		return "SUBPARTITION(" + g.list(e) + ")"
 	}
-	if (g.dialect == "mysql" || g.dialect == "doris") && e.Parent != nil &&
+	if (g.dialect == "mysql" || g.dialect == "doris" || g.dialect == "starrocks") && e.Parent != nil &&
 		(e.Parent.Class == "PartitionByRangeProperty" || e.Parent.Class == "PartitionByListProperty") {
 		return g.list(e)
+	}
+	if g.tables.PartitionSQL == "" {
+		// The template was never probed for this dialect because its corpus
+		// holds no table-partition write; the reference's own base spelling
+		// is `PARTITION(<members>)`.
+		return "PARTITION(" + g.list(e) + ")"
 	}
 	return strings.ReplaceAll(g.tables.PartitionSQL, "{members}", g.list(e))
 }
@@ -6887,6 +6916,9 @@ func (g *generator) writeAnalyze(e *Expression) string {
 	}
 	if partition := g.child(e, "partition"); partition != "" {
 		out += " " + partition
+	}
+	if mode, _ := e.Args["mode"].(string); mode != "" {
+		out += " " + mode
 	}
 	if statistics := g.child(e, "expression"); statistics != "" {
 		out += " " + statistics
@@ -7890,7 +7922,7 @@ func (g *generator) writeDateArith(e *Expression, domain string, sign int) strin
 			return g.dateArithDremio(name, this, amount, unit)
 		}
 		return g.dateArithGenericFallback(name, this, amount, unit, false)
-	case "mysql", "doris":
+	case "mysql", "doris", "starrocks":
 		if domain == "Date" {
 			return g.dateArithMySQL(name, this, amount, unit)
 		}
