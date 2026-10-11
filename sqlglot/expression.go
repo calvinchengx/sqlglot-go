@@ -238,6 +238,26 @@ func (e *Expression) Dump() []map[string]any {
 		}
 		out = append(out, rec)
 		switch n := f.node.(type) {
+		case []*Expression:
+			// A LIST nested inside a list -- Doris's bracket range
+			// `VALUES [('a'), ('b'))` keeps `PartitionRange.expressions` as
+			// expressions-of-expressions. The reference dumps each inner list
+			// as its own record whose `v` is the list of its members' dumps.
+			inner := make([]any, 0, len(n))
+			for _, x := range n {
+				inner = append(inner, x.Dump())
+			}
+			rec["v"] = inner
+		case []any:
+			inner := make([]any, 0, len(n))
+			for _, x := range n {
+				if ex, ok := x.(*Expression); ok {
+					inner = append(inner, ex.Dump())
+				} else {
+					inner = append(inner, x)
+				}
+			}
+			rec["v"] = inner
 		case *Expression:
 			// A list may hold NOTHING at a position -- a procedure with no
 			// body has a block of one empty statement -- and the reference
