@@ -1,0 +1,254 @@
+{
+ "dialect": "sqlite",
+ "rendered": "CREATE TRIGGER check_balance BEFORE UPDATE OF balance ON accounts WHEN NEW.balance < 0 BEGIN UPDATE accounts SET balance = 0 WHERE id = NEW.id END",
+ "sql": "CREATE TRIGGER check_balance BEFORE UPDATE OF balance ON accounts WHEN NEW.balance < 0 BEGIN UPDATE accounts SET balance = 0 WHERE id = NEW.id END",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 7,
+   "t": "TRIGGER",
+   "x": "TRIGGER"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "check_balance"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "BEFORE"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 36,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 43,
+   "t": "VAR",
+   "x": "OF"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 46,
+   "t": "VAR",
+   "x": "balance"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 54,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 57,
+   "t": "VAR",
+   "x": "accounts"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 66,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 71,
+   "t": "VAR",
+   "x": "NEW"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 74,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 75,
+   "t": "VAR",
+   "x": "balance"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 83,
+   "t": "LT",
+   "x": "<"
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 85,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 87,
+   "t": "BEGIN",
+   "x": "BEGIN"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 93,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 100,
+   "t": "VAR",
+   "x": "accounts"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 109,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 120,
+   "e": 119,
+   "l": 1,
+   "s": 113,
+   "t": "VAR",
+   "x": "balance"
+  },
+  {
+   "c": 122,
+   "e": 121,
+   "l": 1,
+   "s": 121,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 123,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 125,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 133,
+   "e": 132,
+   "l": 1,
+   "s": 131,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 135,
+   "e": 134,
+   "l": 1,
+   "s": 134,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 139,
+   "e": 138,
+   "l": 1,
+   "s": 136,
+   "t": "VAR",
+   "x": "NEW"
+  },
+  {
+   "c": 140,
+   "e": 139,
+   "l": 1,
+   "s": 139,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 142,
+   "e": 141,
+   "l": 1,
+   "s": 140,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 146,
+   "e": 145,
+   "l": 1,
+   "s": 143,
+   "t": "END",
+   "x": "END"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "CREATE"
+  },
+  {
+   "i": 0,
+   "k": "expression",
+   "v": " TRIGGER check_balance BEFORE UPDATE OF balance ON accounts WHEN NEW.balance < 0 BEGIN UPDATE accounts SET balance = 0 WHERE id = NEW.id END"
+  }
+ ]
+}

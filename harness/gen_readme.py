@@ -34,8 +34,7 @@ README = ROOT / "README.md"
 # Reading order, widest first, rather than alphabetical: the neutral dialect is
 # the bulk of the corpus and the four the service uses follow it. Listed here
 # so a dialect nobody placed is an error, not a silent omission.
-DIALECTS = ["neutral", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "dax", "oracle", "snowflake"]
-
+DIALECTS = ["neutral", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "dax", "oracle", "snowflake"]
 
 class Stale(Exception):
     """The README disagrees with what was measured."""

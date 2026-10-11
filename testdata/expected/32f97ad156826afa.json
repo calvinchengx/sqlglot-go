@@ -1,0 +1,99 @@
+{
+ "dialect": "sqlite",
+ "rendered": "ATTACH 'foo' AS schema_name",
+ "sql": "ATTACH DATABASE 'foo' AS schema_name",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "ATTACH",
+   "x": "ATTACH"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "DATABASE",
+   "x": "DATABASE"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 16,
+   "t": "STRING",
+   "x": "foo"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 22,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 25,
+   "t": "VAR",
+   "x": "schema_name"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Attach"
+  },
+  {
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "schema_name"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

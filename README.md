@@ -84,6 +84,7 @@ Regenerate with `make service`; nothing in it is authored here.
 | hive | 435/435 | 410 | 435 | 25 | 0 |
 | spark2 | 83/83 | 83 | 83 | 0 | 0 |
 | spark | 845/845 | 798 | 845 | 47 | 0 |
+| sqlite | 255/255 | 226 | 255 | 29 | 0 |
 | dax | 18/18 | 18 | 18 | 0 | 0 |
 | oracle | 159/159 | 159 | 159 | 0 | 0 |
 | snowflake | 551/551 | 551 | 551 | 0 | 0 |

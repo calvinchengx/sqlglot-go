@@ -698,10 +698,104 @@ func (p *parser) parseFactor() (*Expression, error) {
 // parseFactorOperand inserts the exponent level only where the dialect has
 // one, exactly as the reference does.
 func (p *parser) parseFactorOperand() (*Expression, error) {
+	// inArith is read BEFORE the operand, off the operator that precedes it.
+	inArith := false
+	if p.dialect == "sqlite" && p.index > 0 {
+		inArith = p.sqliteArithToken(p.tokens[p.index-1].Type)
+	}
+	// SQLite reads `||`, `->` and `->>` at THIS tier -- tighter than
+	// multiplication, looser than COLLATE (SQLiteParser._parse_factor_operand).
+	if p.dialect == "sqlite" {
+		this, err := p.sqliteConcatOperand()
+		if err != nil {
+			return nil, err
+		}
+		return p.sqliteConcatTier(this, inArith)
+	}
 	if len(p.tables.Exponent) == 0 {
 		return p.oracleDayToSecond(p.parseUnary())
 	}
 	return p.oracleDayToSecond(p.parseBinary(p.tables.Exponent, p.parseUnary))
+}
+
+// sqliteArithToken reports whether a token is one of SQLite's arithmetic
+// operators -- BITWISE, TERM and FACTOR minus COLLATE, which binds elsewhere.
+func (p *parser) sqliteArithToken(tt TokenType) bool {
+	if tt == TokCOLLATE {
+		return false
+	}
+	if _, ok := p.tables.Bitwise[tt]; ok {
+		return true
+	}
+	if _, ok := p.tables.Term[tt]; ok {
+		return true
+	}
+	_, ok := p.tables.Factor[tt]
+	return ok
+}
+
+// sqliteConcatTier continues the `||`/`->`/`->>` tier from an operand already
+// read, parenthesising it where the grouping would otherwise change.
+func (p *parser) sqliteConcatTier(this *Expression, inArith bool) (*Expression, error) {
+	parsedOp := false
+	for {
+		c := p.curr()
+		if c == nil {
+			break
+		}
+		if c.Type != TokDPIPE && c.Type != TokARROW && c.Type != TokDARROW {
+			break
+		}
+		// A DPipe already read binds differently from the arrows, so it is
+		// parenthesised before an arrow takes it as its operand.
+		if c.Type != TokDPIPE && this.Class == "DPipe" {
+			this = New("Paren", Arg{"this", this})
+		}
+		var err error
+		if c.Type == TokDPIPE {
+			p.advance()
+			rhs, err := p.sqliteConcatOperand()
+			if err != nil {
+				return nil, err
+			}
+			this = New("DPipe", Arg{"this", this}, Arg{"expression", rhs}, Arg{"safe", true})
+		} else {
+			this, err = p.consumeJSONArrow(this, p.sqliteConcatOperand)
+			if err != nil {
+				return nil, err
+			}
+		}
+		parsedOp = true
+	}
+	if parsedOp && (inArith || (p.curr() != nil && p.sqliteArithToken(p.curr().Type))) {
+		this = New("Paren", Arg{"this", this})
+	}
+	return this, nil
+}
+
+// sqliteConcatOperand reads one operand of the concat tier: a unary
+// expression, then any COLLATE, which binds tighter than any binary operator
+// (SQLiteParser._parse_concat_operand).
+func (p *parser) sqliteConcatOperand() (*Expression, error) {
+	this, err := p.parseUnary()
+	if err != nil {
+		return nil, err
+	}
+	for p.match(TokCOLLATE) {
+		rhs, err := p.parseUnary()
+		if err != nil {
+			return nil, err
+		}
+		collate := New("Collate", Arg{"this", this}, Arg{"expression", rhs})
+		// The collation is a NAME, not a column (SQLiteParser._normalize_collate).
+		if rhs != nil && rhs.Class == "Column" {
+			if name, _ := rhs.Args["this"].(*Expression); name != nil {
+				collate.Set("expression", New("Var", Arg{"this", name.Args["this"]}))
+			}
+		}
+		this = collate
+	}
+	return this, nil
 }
 
 // parseBinary runs one left-associative precedence level.
@@ -974,7 +1068,8 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 		}
 		// `->` / `->>` at the accessor tier, binding tighter than arithmetic.
 		// Dialects that read them level with `||` leave them for parseBitwise.
-		if c := p.curr(); c != nil && (c.Type == TokARROW || c.Type == TokDARROW) {
+		// SQLite reads them at its own concat tier, inside the factor operand.
+		if c := p.curr(); c != nil && (c.Type == TokARROW || c.Type == TokDARROW) && p.dialect != "sqlite" {
 			if _, atBitwise := p.tables.JSONOperatorsAtBitwise[c.Type]; !atBitwise {
 				var err error
 				this, err = p.consumeJSONArrow(this, p.parseJSONArrowAccessorRHS)
@@ -2781,8 +2876,9 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	// The Hive family's own builders are hand-written too (the probe cannot
 	// record the lambdas), so they must not be turned away here either.
 	isHiveFn := isHiveFamily(p.dialect) && hiveOwnedFunction(upper)
+	isSQLiteFn := p.dialect == "sqlite" && sqliteOwnedFunction(upper)
 	if !named && !byArity && !isJSONPath && !byWord && !isVarMap && !isDremioDateType &&
-		!isMySQLDateDelta && !isPrestoToChar && !isSingleStoreFn && !isHiveFn {
+		!isMySQLDateDelta && !isPrestoToChar && !isSingleStoreFn && !isHiveFn && !isSQLiteFn {
 		if _, custom := p.tables.NamedFunctions[upper]; custom {
 			return nil, p.unsupported("function " + upper + " with a builder of its own")
 		}
@@ -2918,6 +3014,11 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	}
 	if isHiveFamily(p.dialect) {
 		if built := p.buildHiveFunction(upper, args); built != nil {
+			return built, nil
+		}
+	}
+	if p.dialect == "sqlite" {
+		if built := p.buildSQLiteFunction(upper, args); built != nil {
 			return built, nil
 		}
 	}

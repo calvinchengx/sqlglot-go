@@ -195,6 +195,11 @@ func (g *generator) node(e *Expression) string {
 			return g.withComments(e, out)
 		}
 	}
+	if g.dialect == "sqlite" {
+		if out, handled := g.sqliteNode(e); handled {
+			return g.withComments(e, out)
+		}
+	}
 	if isHiveFamily(g.dialect) {
 		if out, handled := g.hiveNode(e); handled {
 			return g.withComments(e, out)

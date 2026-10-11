@@ -574,6 +574,15 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// A column with neither a type nor a constraint stays a bare NAME,
+		// not a ColumnDef (`CREATE TABLE t (x, y)`).
+		if kind == nil && len(constraints) == 0 {
+			out = append(out, name)
+			if !p.match(TokCOMMA) {
+				break
+			}
+			continue
+		}
 		def := New("ColumnDef", Arg{"this", name}, Arg{"kind", kind})
 		if len(constraints) > 0 {
 			def.Set("constraints", constraints)
@@ -1448,7 +1457,15 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 				kind = clustered
 			}
 		case p.atWords("UNIQUE"):
+			// SQLite leaves UNIQUE bare where a column constraint follows
+			// (SQLiteParser._parse_unique).
+			if p.dialect == "sqlite" && p.next() != nil && isConstraintWord(p.next().Text) {
+				p.advance()
+				kind = New("UniqueColumnConstraint")
+				break
+			}
 			p.advance()
+			_ = isConstraintWord
 			// `NULLS NOT DISTINCT` makes two NULLs equal for the purpose of
 			// the constraint, so a second row holding one is rejected. The
 			// reference keeps only whether the words were there.
@@ -2823,6 +2840,12 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 			Arg{"expressions", columns},
 			Arg{"reference", reference[0].Args["kind"]}), nil
 	case p.atWords("UNIQUE"):
+		// SQLite leaves UNIQUE bare where a column constraint follows it
+		// (SQLiteParser._parse_unique).
+		if p.dialect == "sqlite" && p.next() != nil && isConstraintWord(p.next().Text) {
+			p.advance()
+			return New("UniqueColumnConstraint"), nil
+		}
 		p.advance()
 		// MySQL (and the reference's own base rule, universally) allows
 		// KEY or INDEX right after UNIQUE, said or not -- `UNIQUE KEY`
@@ -3716,7 +3739,13 @@ func (p *parser) parseGenerated() (*Expression, error) {
 		// identity CARRYING an expression everywhere else. One statement,
 		// two nodes, and the dialect decides which.
 		if p.tables.GeneratedExpressionIsComputed {
-			return New("ComputedColumnConstraint", Arg{"this", value}), nil
+			node := New("ComputedColumnConstraint", Arg{"this", value})
+			// SQLite always records whether the value is STORED
+			// (SQLiteParser._parse_generated_as_identity).
+			if p.dialect == "sqlite" {
+				node.Set("persisted", false)
+			}
+			return node, nil
 		}
 		return New("GeneratedAsIdentityColumnConstraint",
 			Arg{"this", true}, Arg{"expression", value}), nil
@@ -5035,14 +5064,90 @@ func isBareWord(text string) bool {
 // statement a grammar of its own.
 func (p *parser) parsePragma() (*Expression, error) {
 	p.advance() // PRAGMA
-	this, err := p.parseExpression()
+	// SQLite reads the name as a VAR whatever token spells it, with an
+	// optional `.`-qualified part, `=`, and an optional wrapped value
+	// (SQLiteParser._parse_pragma). Every other dialect reads the whole
+	// thing as one expression.
+	if p.dialect != "sqlite" {
+		this, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		if p.curr() != nil {
+			return nil, p.unsupported("PRAGMA with more than this port reads")
+		}
+		return New("Pragma", Arg{"this", this}), nil
+	}
+	name, err := p.parsePragmaVar()
 	if err != nil {
 		return nil, err
 	}
-	if p.curr() != nil {
-		return nil, p.unsupported("PRAGMA with more than this port reads")
+	if name == nil {
+		return nil, p.unsupported("PRAGMA without a name")
 	}
-	return New("Pragma", Arg{"this", this}), nil
+	if p.match(TokDOT) {
+		rhs, err := p.parsePragmaVar()
+		if err != nil {
+			return nil, err
+		}
+		name = New("Dot", Arg{"this", name}, Arg{"expression", rhs})
+	}
+	p.match(TokEQ)
+	var value *Expression
+	if p.at(TokL_PAREN) {
+		p.advance()
+		if !p.at(TokR_PAREN) {
+			value, err = p.parsePragmaValue()
+			if err != nil {
+				return nil, err
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed PRAGMA value")
+		}
+	} else {
+		value, err = p.parsePragmaValue()
+		if err != nil {
+			return nil, err
+		}
+	}
+	if value != nil {
+		return New("Pragma", Arg{"this", New("EQ", Arg{"this", name}, Arg{"expression", value})}), nil
+	}
+	return New("Pragma", Arg{"this", name}), nil
+}
+
+// parsePragmaVar reads a name as a Var whatever token spells it.
+func (p *parser) parsePragmaVar() (*Expression, error) {
+	c := p.curr()
+	if c == nil {
+		return nil, nil
+	}
+	p.advance()
+	return New("Var", Arg{"this", c.Text}), nil
+}
+
+// parsePragmaValue reads the value a PRAGMA is set to: a unary expression, or
+// a bare word where no expression reads.
+func (p *parser) parsePragmaValue() (*Expression, error) {
+	saved := p.index
+	if v, err := p.parseUnary(); err == nil && v != nil {
+		return v, nil
+	}
+	p.index = saved
+	return p.parsePragmaVar()
+}
+
+// isConstraintWord reports whether a word starts a column constraint -- the
+// keys of the reference's own CONSTRAINT_PARSERS.
+func isConstraintWord(word string) bool {
+	switch strings.ToUpper(word) {
+	case "PRIMARY", "PRIMARY KEY", "NOT", "NULL", "DEFAULT", "REFERENCES", "CHECK", "UNIQUE",
+		"CONSTRAINT", "COLLATE", "GENERATED", "AUTO_INCREMENT", "AUTOINCREMENT",
+		"IDENTITY", "COMMENT":
+		return true
+	}
+	return false
 }
 
 // parseOnConflict reads what an INSERT does when a row is already there:
@@ -5327,6 +5432,19 @@ func (p *parser) parseColumnType() (*Expression, error) {
 func (p *parser) parseAttachDetach() (*Expression, error) {
 	isAttach := p.at(TokATTACH)
 	p.advance()
+	// SQLite's ATTACH/DETACH names one expression, nothing more
+	// (SQLiteParser._parse_attach_detach).
+	if p.dialect == "sqlite" {
+		p.matchUnquotedWord("DATABASE")
+		this, err := p.parseExpression()
+		if err != nil {
+			return nil, err
+		}
+		if isAttach {
+			return New("Attach", Arg{"this", this}), nil
+		}
+		return New("Detach", Arg{"this", this}), nil
+	}
 	if p.at(TokDATABASE) {
 		p.advance()
 	}

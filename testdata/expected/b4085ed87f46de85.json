@@ -1,0 +1,54 @@
+{
+ "dialect": "sqlite",
+ "rendered": "REPLACE INTO foo (x, y) VALUES (1, 2)",
+ "sql": "REPLACE INTO foo (x, y) VALUES (1, 2)",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "REPLACE",
+   "x": "REPLACE"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "STRING",
+   "x": "INTO foo (x, y) VALUES (1, 2)"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "REPLACE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "INTO foo (x, y) VALUES (1, 2)"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

@@ -1,0 +1,294 @@
+{
+ "dialect": "sqlite",
+ "rendered": "CREATE TRIGGER view_insert INSTEAD OF INSERT ON employee_view BEGIN INSERT INTO employees (id, name, department) VALUES (NEW.id, NEW.name, NEW.department) END",
+ "sql": "CREATE TRIGGER view_insert INSTEAD OF INSERT ON employee_view BEGIN INSERT INTO employees (id, name, department) VALUES (NEW.id, NEW.name, NEW.department) END",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 7,
+   "t": "TRIGGER",
+   "x": "TRIGGER"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "view_insert"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "INSTEAD"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 35,
+   "t": "VAR",
+   "x": "OF"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 38,
+   "t": "INSERT",
+   "x": "INSERT"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 45,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 48,
+   "t": "VAR",
+   "x": "employee_view"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 62,
+   "t": "BEGIN",
+   "x": "BEGIN"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 68,
+   "t": "INSERT",
+   "x": "INSERT"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 75,
+   "t": "INTO",
+   "x": "INTO"
+  },
+  {
+   "c": 89,
+   "e": 88,
+   "l": 1,
+   "s": 80,
+   "t": "VAR",
+   "x": "employees"
+  },
+  {
+   "c": 91,
+   "e": 90,
+   "l": 1,
+   "s": 90,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 91,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 93,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 95,
+   "t": "VAR",
+   "x": "name"
+  },
+  {
+   "c": 100,
+   "e": 99,
+   "l": 1,
+   "s": 99,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 111,
+   "e": 110,
+   "l": 1,
+   "s": 101,
+   "t": "VAR",
+   "x": "department"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 111,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 119,
+   "e": 118,
+   "l": 1,
+   "s": 113,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 121,
+   "e": 120,
+   "l": 1,
+   "s": 120,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 121,
+   "t": "VAR",
+   "x": "NEW"
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 124,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 127,
+   "e": 126,
+   "l": 1,
+   "s": 125,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 128,
+   "e": 127,
+   "l": 1,
+   "s": 127,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 132,
+   "e": 131,
+   "l": 1,
+   "s": 129,
+   "t": "VAR",
+   "x": "NEW"
+  },
+  {
+   "c": 133,
+   "e": 132,
+   "l": 1,
+   "s": 132,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 137,
+   "e": 136,
+   "l": 1,
+   "s": 133,
+   "t": "VAR",
+   "x": "name"
+  },
+  {
+   "c": 138,
+   "e": 137,
+   "l": 1,
+   "s": 137,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 142,
+   "e": 141,
+   "l": 1,
+   "s": 139,
+   "t": "VAR",
+   "x": "NEW"
+  },
+  {
+   "c": 143,
+   "e": 142,
+   "l": 1,
+   "s": 142,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 153,
+   "e": 152,
+   "l": 1,
+   "s": 143,
+   "t": "VAR",
+   "x": "department"
+  },
+  {
+   "c": 154,
+   "e": 153,
+   "l": 1,
+   "s": 153,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 158,
+   "e": 157,
+   "l": 1,
+   "s": 155,
+   "t": "END",
+   "x": "END"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "CREATE"
+  },
+  {
+   "i": 0,
+   "k": "expression",
+   "v": " TRIGGER view_insert INSTEAD OF INSERT ON employee_view BEGIN INSERT INTO employees (id, name, department) VALUES (NEW.id, NEW.name, NEW.department) END"
+  }
+ ]
+}

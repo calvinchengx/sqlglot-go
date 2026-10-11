@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 9033,
+ "count": 9288,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -5398,6 +5398,11 @@
    "sql": "SELECT DATE_DIFF('WEEK', DATE_TRUNC('WEEK', CAST('2017-10-14 00:00:00' AS TIMESTAMP) + INTERVAL '1' DAY), DATE_TRUNC('WEEK', CAST('2017-10-15 00:00:00' AS TIMESTAMP) + INTERVAL '1' DAY))"
   },
   {
+   "key": "7307195821cc32a1",
+   "dialect": "sqlite",
+   "sql": "MIN(x, y)"
+  },
+  {
    "key": "8fa6dc0215d38323",
    "dialect": "databricks",
    "sql": "SELECT DATE_ADD(MINUTE, '10', CAST('2008-12-25 15:30:00+00' AS TIMESTAMP))"
@@ -5463,6 +5468,11 @@
    "sql": "LOWER(HEX(x))"
   },
   {
+   "key": "3a5fe85f1916ae05",
+   "dialect": "sqlite",
+   "sql": "LOWER(HEX(x))"
+  },
+  {
    "key": "031edcdee5b57e25",
    "dialect": "presto",
    "sql": "LOWER(TO_HEX(x))"
@@ -5495,6 +5505,11 @@
   {
    "key": "540fd4421fd82cd8",
    "dialect": "spark",
+   "sql": "HEX(x)"
+  },
+  {
+   "key": "747d847b5287ef42",
+   "dialect": "sqlite",
    "sql": "HEX(x)"
   },
   {
@@ -8663,6 +8678,11 @@
    "sql": "CAST(a AS VARBYTE(4))"
   },
   {
+   "key": "53b701e1378b99e8",
+   "dialect": "sqlite",
+   "sql": "CAST(a AS BLOB(4))"
+  },
+  {
    "key": "114733b0833ceee4",
    "dialect": "spark",
    "sql": "CAST(a AS BINARY(4))"
@@ -8686,6 +8706,11 @@
    "key": "10181eedb8b8f96f",
    "dialect": "postgres",
    "sql": "CAST(a AS TIMESTAMP)"
+  },
+  {
+   "key": "cac32cfca6c754b7",
+   "dialect": "sqlite",
+   "sql": "CAST(a AS DATETIME)"
   },
   {
    "key": "ff8c218037e148b5",
@@ -8811,6 +8836,11 @@
    "key": "49d0e7848334e709",
    "dialect": "spark",
    "sql": "CAST(a AS SMALLINT)"
+  },
+  {
+   "key": "85ed281a45aa408a",
+   "dialect": "sqlite",
+   "sql": "CAST(a AS INTEGER)"
   },
   {
    "key": "9fa2ededf6be2df6",
@@ -8968,6 +8998,11 @@
    "sql": "CREATE TABLE a LIKE b"
   },
   {
+   "key": "d4582197ef6c0fba",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE a AS SELECT * FROM b LIMIT 0"
+  },
+  {
    "key": "76aeeeafbaccf5b6",
    "dialect": "trino",
    "sql": "CREATE TABLE a (LIKE b)"
@@ -9118,6 +9153,11 @@
    "sql": "SELECT COALESCE(1, NULL) FROM foo"
   },
   {
+   "key": "83f391be9d7a8aca",
+   "dialect": "sqlite",
+   "sql": "SELECT (NOT x GLOB CAST(x'2a5b5e012d7f5d2a' AS TEXT))"
+  },
+  {
    "key": "9343b71bf4f79a8f",
    "dialect": "mysql",
    "sql": "SELECT REGEXP_LIKE(x, '^[[:ascii:]]*$')"
@@ -9188,6 +9228,11 @@
    "sql": "SELECT NVL2(a, b, c)"
   },
   {
+   "key": "004654cc06a3ed30",
+   "dialect": "sqlite",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
+  },
+  {
    "key": "2c59a87fa8f8d701",
    "dialect": "starrocks",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
@@ -9256,6 +9301,11 @@
    "key": "657d6f19aec38b67",
    "dialect": "spark2",
    "sql": "SELECT NVL2(a, b)"
+  },
+  {
+   "key": "2fa2ec9441556fb1",
+   "dialect": "sqlite",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
   },
   {
    "key": "5211858b246129d4",
@@ -9458,6 +9508,11 @@
    "sql": "CAST('2020-01-01' AS TIMESTAMP)"
   },
   {
+   "key": "13f59835f3909d87",
+   "dialect": "sqlite",
+   "sql": "'2020-01-01'"
+  },
+  {
    "key": "a4b13068312f6f9c",
    "dialect": "doris",
    "sql": "CAST('2020-01-01' AS DATETIME)"
@@ -9543,6 +9598,11 @@
    "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP WITH TIME ZONE)"
   },
   {
+   "key": "ee34144f1436fd12",
+   "dialect": "sqlite",
+   "sql": "'2020-01-01 12:13:14-08:00'"
+  },
+  {
    "key": "4f0faa8c8d13c699",
    "dialect": "doris",
    "sql": "CAST('2020-01-01 12:13:14-08:00' AS DATETIME)"
@@ -9596,6 +9656,11 @@
    "key": "d5c0557ef2bee237",
    "dialect": "presto",
    "sql": "CAST(col AS TIMESTAMP WITH TIME ZONE)"
+  },
+  {
+   "key": "025531b42ee2e0a2",
+   "dialect": "sqlite",
+   "sql": "col"
   },
   {
    "key": "72cae54a1fc452ad",
@@ -9948,6 +10013,11 @@
    "sql": "DATE_ADD(x, 1)"
   },
   {
+   "key": "c01a633efdddc24e",
+   "dialect": "sqlite",
+   "sql": "DATE(x, '1 DAY')"
+  },
+  {
    "key": "96d93cc1a8564966",
    "dialect": "starrocks",
    "sql": "DATE_ADD(x, INTERVAL 1 DAY)"
@@ -10196,6 +10266,11 @@
    "key": "ddbed93aa3a3f7e1",
    "dialect": "spark",
    "sql": "CAST(x AS DATE)"
+  },
+  {
+   "key": "4588323468e14b49",
+   "dialect": "sqlite",
+   "sql": "x"
   },
   {
    "key": "e34c8df24d69555b",
@@ -10748,6 +10823,11 @@
    "sql": "GET_JSON_OBJECT(x, '$[\\'a b\\']')"
   },
   {
+   "key": "1b8a35763c077283",
+   "dialect": "sqlite",
+   "sql": "x -> '$.\"a b\"'"
+  },
+  {
    "key": "eb53e496f5a6fbe6",
    "dialect": "trino",
    "sql": "JSON_EXTRACT(x, '$[\"a b\"]')"
@@ -10781,6 +10861,11 @@
    "key": "bde8105ed566b278",
    "dialect": "presto",
    "sql": "JSON_EXTRACT(x, '$.y')"
+  },
+  {
+   "key": "a982cf0430d1291c",
+   "dialect": "sqlite",
+   "sql": "x -> '$.y'"
   },
   {
    "key": "d3ac9012f75532e1",
@@ -10828,6 +10913,11 @@
    "sql": "JSON_EXTRACT_PATH_TEXT(x, 'y')"
   },
   {
+   "key": "bf93a7231bfb067f",
+   "dialect": "sqlite",
+   "sql": "x ->> '$.y'"
+  },
+  {
    "key": "a83326930ad7367a",
    "dialect": "duckdb",
    "sql": "x ->> '$.y'"
@@ -10856,6 +10946,11 @@
    "key": "6566acd1999f3e07",
    "dialect": "presto",
    "sql": "JSON_EXTRACT(x, '$.y[0].z')"
+  },
+  {
+   "key": "fe38407b2495af3b",
+   "dialect": "sqlite",
+   "sql": "x -> '$.y[0].z'"
   },
   {
    "key": "9c18578dcf96695f",
@@ -10896,6 +10991,11 @@
    "key": "b62f0a00bceddd5a",
    "dialect": "spark",
    "sql": "GET_JSON_OBJECT(x, \"$.y[0].z\")"
+  },
+  {
+   "key": "df8a999c7833f279",
+   "dialect": "sqlite",
+   "sql": "x ->> '$.y[0].z'"
   },
   {
    "key": "86fb2c626c669444",
@@ -11128,6 +11228,11 @@
    "sql": "a || b || c"
   },
   {
+   "key": "03e0ae3eff6b6c8b",
+   "dialect": "sqlite",
+   "sql": "a || b || c"
+  },
+  {
    "key": "22b666ce7fc1aeb6",
    "dialect": "duckdb",
    "sql": "x ILIKE '%y'"
@@ -11156,6 +11261,11 @@
    "key": "6dd99b8f2b4614eb",
    "dialect": "spark",
    "sql": "x ILIKE '%y'"
+  },
+  {
+   "key": "9e85a0a93dd5cd27",
+   "dialect": "sqlite",
+   "sql": "LOWER(x) LIKE LOWER('%y')"
   },
   {
    "key": "183f5d238f88463d",
@@ -11310,6 +11420,11 @@
   {
    "key": "2fe35782440ed958",
    "dialect": "spark2",
+   "sql": "INSTR(haystack, needle)"
+  },
+  {
+   "key": "fc249a0777554eeb",
+   "dialect": "sqlite",
    "sql": "INSTR(haystack, needle)"
   },
   {
@@ -11476,6 +11591,11 @@
    "key": "39bd85be0b86f6b5",
    "dialect": "risingwave",
    "sql": "CASE WHEN POSITION(needle IN SUBSTRING(haystack FROM position)) = 0 THEN 0 ELSE POSITION(needle IN SUBSTRING(haystack FROM position)) + position - 1 END"
+  },
+  {
+   "key": "e01e38e4d8bcb772",
+   "dialect": "sqlite",
+   "sql": "IIF(INSTR(SUBSTRING(haystack, position), needle) = 0, 0, INSTR(SUBSTRING(haystack, position), needle) + position - 1)"
   },
   {
    "key": "9eff4457606dc0eb",
@@ -11703,6 +11823,11 @@
    "sql": "LEVENSHTEIN_DISTANCE(col1, col2)"
   },
   {
+   "key": "f9e101443cb075cd",
+   "dialect": "sqlite",
+   "sql": "EDITDIST3(col1, col2)"
+  },
+  {
    "key": "24a14f254ed1c84f",
    "dialect": "trino",
    "sql": "LEVENSHTEIN_DISTANCE(col1, col2)"
@@ -11793,6 +11918,11 @@
    "sql": "CAST(a AS DOUBLE PRECISION) / b"
   },
   {
+   "key": "c8e919ad1aaf45ae",
+   "dialect": "sqlite",
+   "sql": "CAST(a AS REAL) / b"
+  },
+  {
    "key": "1c07c2427e87baf9",
    "dialect": "trino",
    "sql": "CAST(a AS DOUBLE) / b"
@@ -11868,6 +11998,11 @@
    "sql": "SELECT * FROM t LIMIT 1"
   },
   {
+   "key": "e53b0150a7a78214",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM t LIMIT 1"
+  },
+  {
    "key": "2e9a0f8b6e34e077",
    "dialect": "duckdb",
    "sql": "SELECT * FROM t LIMIT 1"
@@ -11928,9 +12063,34 @@
    "sql": "WITH t AS (SELECT 1 AS all) SELECT 1 FROM t LIMIT all"
   },
   {
+   "key": "84980c4bdb367c70",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM data LIMIT 20 OFFSET 10"
+  },
+  {
    "key": "cd7588fec4ae91a6",
    "dialect": "tsql",
    "sql": "SELECT TOP 10 x FROM y"
+  },
+  {
+   "key": "f2da16aea5b70e03",
+   "dialect": "sqlite",
+   "sql": "SELECT x FROM y LIMIT 10"
+  },
+  {
+   "key": "db5e686b0862006d",
+   "dialect": "sqlite",
+   "sql": "SELECT x FROM y LIMIT 10 OFFSET 5"
+  },
+  {
+   "key": "e98b74da5ac4e08b",
+   "dialect": "sqlite",
+   "sql": "SELECT x FROM y LIMIT 3 OFFSET 10"
+  },
+  {
+   "key": "2f50475cd2bdc992",
+   "dialect": "sqlite",
+   "sql": "`x` + \"y\""
   },
   {
    "key": "0aca9e156c9c3bdc",
@@ -11958,6 +12118,11 @@
    "sql": "CREATE TABLE t (c CHAR, nc CHAR, v1 VARCHAR, v2 VARCHAR, nv VARCHAR, nv2 VARCHAR)"
   },
   {
+   "key": "81a10000941debab",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE t (c TEXT, nc TEXT, v1 TEXT, v2 TEXT, nv TEXT, nv2 TEXT)"
+  },
+  {
    "key": "2b4cf9b041ce1fe5",
    "dialect": "hive",
    "sql": "pow(1.2, 3.4)"
@@ -11973,6 +12138,11 @@
    "sql": "CREATE INDEX my_idx ON TABLE tbl(a, b)"
   },
   {
+   "key": "27efe62a74404842",
+   "dialect": "sqlite",
+   "sql": "CREATE INDEX my_idx ON tbl(a, b)"
+  },
+  {
    "key": "3ad41d91597d9833",
    "dialect": "postgres",
    "sql": "CREATE INDEX my_idx ON tbl(a NULLS FIRST, b NULLS FIRST)"
@@ -11981,6 +12151,11 @@
    "key": "5e6a8de17f0227e8",
    "dialect": "hive",
    "sql": "CREATE UNIQUE INDEX my_idx ON TABLE tbl(a, b)"
+  },
+  {
+   "key": "8906f66f3e44c301",
+   "dialect": "sqlite",
+   "sql": "CREATE UNIQUE INDEX my_idx ON tbl(a, b)"
   },
   {
    "key": "37fd90a177005c70",
@@ -12001,6 +12176,11 @@
    "key": "bc6017f8ff1652b3",
    "dialect": "postgres",
    "sql": "CREATE TABLE t (b1 BYTEA, b2 BYTEA(1024), c1 TEXT, c2 TEXT(1024))"
+  },
+  {
+   "key": "da672512ca0f5364",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE t (b1 BLOB, b2 BLOB(1024), c1 TEXT, c2 TEXT(1024))"
   },
   {
    "key": "c34b2a677af6c3de",
@@ -12033,6 +12213,11 @@
    "sql": "SELECT 1 'foo'"
   },
   {
+   "key": "35cd76c44645d033",
+   "dialect": "sqlite",
+   "sql": "SELECT 1 'foo'"
+  },
+  {
    "key": "4e8853d9e673d5b1",
    "dialect": "tsql",
    "sql": "SELECT 1 'foo'"
@@ -12048,6 +12233,11 @@
    "sql": "SELECT y AS x FROM my_table AS t"
   },
   {
+   "key": "5864c7b92b153a1a",
+   "dialect": "sqlite",
+   "sql": "SELECT y AS x FROM my_table AS t"
+  },
+  {
    "key": "4fef7c8d43d3fb86",
    "dialect": "hive",
    "sql": "SELECT * FROM (SELECT * FROM my_table AS t) AS tbl"
@@ -12058,6 +12248,11 @@
    "sql": "SELECT * FROM (SELECT * FROM my_table AS t) AS tbl"
   },
   {
+   "key": "2a6bc623f256c9fa",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM (SELECT * FROM my_table AS t) AS tbl"
+  },
+  {
    "key": "3a79365d7c33bb28",
    "dialect": "hive",
    "sql": "WITH cte1 AS (SELECT a, b FROM table1), cte2 AS (SELECT c, e AS d FROM table2) SELECT b, d AS dd FROM cte1 AS t CROSS JOIN cte2 WHERE cte1.a = cte2.c"
@@ -12065,6 +12260,11 @@
   {
    "key": "0f5620e9998c0d6e",
    "dialect": "postgres",
+   "sql": "WITH cte1 AS (SELECT a, b FROM table1), cte2 AS (SELECT c, e AS d FROM table2) SELECT b, d AS dd FROM cte1 AS t CROSS JOIN cte2 WHERE cte1.a = cte2.c"
+  },
+  {
+   "key": "d396937a92550e2a",
+   "dialect": "sqlite",
    "sql": "WITH cte1 AS (SELECT a, b FROM table1), cte2 AS (SELECT c, e AS d FROM table2) SELECT b, d AS dd FROM cte1 AS t CROSS JOIN cte2 WHERE cte1.a = cte2.c"
   },
   {
@@ -12158,6 +12358,11 @@
    "sql": "BEGIN"
   },
   {
+   "key": "0b3690b376df21f2",
+   "dialect": "sqlite",
+   "sql": "BEGIN TRANSACTION"
+  },
+  {
    "key": "91473ed91b20c937",
    "dialect": "tsql",
    "sql": "BEGIN TRANSACTION"
@@ -12181,6 +12386,11 @@
    "key": "3b420856bb8d5908",
    "dialect": "trino",
    "sql": "START TRANSACTION ISOLATION LEVEL REPEATABLE READ"
+  },
+  {
+   "key": "2a65805a0176e580",
+   "dialect": "sqlite",
+   "sql": "BEGIN IMMEDIATE TRANSACTION"
   },
   {
    "key": "3c3298e22160939d",
@@ -12243,6 +12453,11 @@
    "sql": "LOG(x)"
   },
   {
+   "key": "0e639ba65ba72af5",
+   "dialect": "sqlite",
+   "sql": "LOG(x)"
+  },
+  {
    "key": "bac3626182822873",
    "dialect": "dremio",
    "sql": "LOG(x)"
@@ -12298,6 +12513,11 @@
    "sql": "LOG(b, n)"
   },
   {
+   "key": "366abaf390610ae1",
+   "dialect": "sqlite",
+   "sql": "LOG(b, n)"
+  },
+  {
    "key": "362f91f2386537e6",
    "dialect": "trino",
    "sql": "LOG(b, n)"
@@ -12316,6 +12536,11 @@
    "key": "f13f3951ec41e15f",
    "dialect": "presto",
    "sql": "SELECT COUNT_IF(col % 2 = 0) FROM foo"
+  },
+  {
+   "key": "9bbb45258d0aae63",
+   "dialect": "sqlite",
+   "sql": "SELECT SUM(IIF(col % 2 = 0, 1, 0)) FROM foo"
   },
   {
    "key": "f154b072aa649263",
@@ -12346,6 +12571,11 @@
    "key": "d5a03fd0e3678a3b",
    "dialect": "presto",
    "sql": "SELECT COUNT_IF(col % 2 = 0) FILTER(WHERE col < 1000) FROM foo"
+  },
+  {
+   "key": "2d39f5785d3b7729",
+   "dialect": "sqlite",
+   "sql": "SELECT SUM(IIF(col % 2 = 0, 1, 0)) FILTER(WHERE col < 1000) FROM foo"
   },
   {
    "key": "6d8e51b74720fa2b",
@@ -12413,6 +12643,11 @@
    "sql": "SELECT SUM(X) OVER (PARTITION BY x RANGE BETWEEN 1 PRECEDING AND CURRENT ROW EXCLUDE NO OTHERS)"
   },
   {
+   "key": "f9d8aeac0759c33c",
+   "dialect": "sqlite",
+   "sql": "SELECT SUM(X) OVER (PARTITION BY x RANGE BETWEEN 1 PRECEDING AND CURRENT ROW EXCLUDE NO OTHERS)"
+  },
+  {
    "key": "b5b41a6096b6d488",
    "dialect": "duckdb",
    "sql": "SELECT SUM(X) OVER (PARTITION BY x RANGE BETWEEN 1 PRECEDING AND CURRENT ROW)"
@@ -12420,6 +12655,11 @@
   {
    "key": "73d00878098f7fa2",
    "dialect": "postgres",
+   "sql": "SELECT SUM(X) OVER (PARTITION BY x RANGE BETWEEN 1 PRECEDING AND CURRENT ROW)"
+  },
+  {
+   "key": "659a4352d89cb484",
+   "dialect": "sqlite",
    "sql": "SELECT SUM(X) OVER (PARTITION BY x RANGE BETWEEN 1 PRECEDING AND CURRENT ROW)"
   },
   {
@@ -12466,6 +12706,11 @@
    "key": "96a834a386244a23",
    "dialect": "spark2",
    "sql": "WITH t AS (SELECT 1 AS c) SELECT * FROM (SELECT c FROM t) AS subq"
+  },
+  {
+   "key": "16ab4f6dc6fdea14",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq"
   },
   {
    "key": "7a2a60f8cf034454",
@@ -12556,6 +12801,11 @@
    "key": "4ce008566e23f7a8",
    "dialect": "spark",
    "sql": "RAND()"
+  },
+  {
+   "key": "8172e546cb71a429",
+   "dialect": "sqlite",
+   "sql": "RANDOM()"
   },
   {
    "key": "ac1abc77e948000c",
@@ -12946,6 +13196,11 @@
    "key": "f32f587bf89c17e2",
    "dialect": "tsql",
    "sql": "SCHEMA_NAME()"
+  },
+  {
+   "key": "53eb213345812e34",
+   "dialect": "sqlite",
+   "sql": "'main'"
   },
   {
    "key": "79f60bbd701c3460",
@@ -13773,8 +14028,18 @@
    "sql": "JSON_REMOVE('[\"a\", [\"b\", \"c\"], \"d\"]', '$[1]', '$[1]')"
   },
   {
+   "key": "d1611b4c08a5df26",
+   "dialect": "sqlite",
+   "sql": "JSON_REMOVE('[\"a\", [\"b\", \"c\"], \"d\"]', '$[1]', '$[1]')"
+  },
+  {
    "key": "79d6362e1bf7de0a",
    "dialect": "mysql",
+   "sql": "JSON_SET('{\"a\": 1}', '$', '{\"b\": 2, \"c\": 3}')"
+  },
+  {
+   "key": "65fb5111c88d17fa",
+   "dialect": "sqlite",
    "sql": "JSON_SET('{\"a\": 1}', '$', '{\"b\": 2, \"c\": 3}')"
   },
   {
@@ -14726,6 +14991,11 @@
    "key": "e6826fea526f08f1",
    "dialect": "duckdb",
    "sql": "SELECT FIRST_VALUE(c RESPECT NULLS) OVER (PARTITION BY gb ORDER BY ob) FROM t"
+  },
+  {
+   "key": "928ae211fa714e16",
+   "dialect": "sqlite",
+   "sql": "SELECT FIRST_VALUE(c) OVER (PARTITION BY gb ORDER BY ob NULLS LAST) FROM t"
   },
   {
    "key": "4764d2a836f52a96",
@@ -16536,6 +16806,11 @@
    "key": "73a0ecf1d5b8bbc4",
    "dialect": "duckdb",
    "sql": "WITH t AS (SELECT i, i * i * i * i * i AS i5 FROM RANGE(1, 5) AS t(i)) SELECT * FROM t"
+  },
+  {
+   "key": "cdb8717674fb5807",
+   "dialect": "sqlite",
+   "sql": "WITH t AS (SELECT i, i * i * i * i * i AS i5 FROM (SELECT value AS i FROM GENERATE_SERIES(1, 5)) AS t) SELECT * FROM t"
   },
   {
    "key": "1bda97c3d5d85fc6",
@@ -18978,6 +19253,11 @@
    "sql": "LOWER(TO_HEX(SHA512(x)))"
   },
   {
+   "key": "c6ff90dcad179e17",
+   "dialect": "sqlite",
+   "sql": "SELECT IIF(1 = 0, NULL, 1) AS NIZ1"
+  },
+  {
    "key": "b309b097aab87bb8",
    "dialect": "presto",
    "sql": "SELECT IF(1 = 0, NULL, 1) AS NIZ1"
@@ -18996,6 +19276,11 @@
    "key": "60c183e524030460",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN 1 = 0 THEN NULL ELSE 1 END AS NIZ1"
+  },
+  {
+   "key": "db7c91f34ad8bd0c",
+   "dialect": "sqlite",
+   "sql": "SELECT IIF(NULL IS NULL, 0, NULL) AS NIZ1"
   },
   {
    "key": "bc754d150b03a00a",
@@ -22023,6 +22308,11 @@
    "sql": "CREATE TABLE z (a INT) COMMENT 'x'"
   },
   {
+   "key": "52889a778edeb857",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE z (a INTEGER)"
+  },
+  {
    "key": "f67c82184e2a7ffb",
    "dialect": "mysql",
    "sql": "CREATE TABLE x (id int not null auto_increment, primary key (id))"
@@ -22031,6 +22321,11 @@
    "key": "c92fb697b812c296",
    "dialect": "mysql",
    "sql": "CREATE TABLE x (id INT NOT NULL AUTO_INCREMENT, PRIMARY KEY (id))"
+  },
+  {
+   "key": "9e0843723ed9296d",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE x (id INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT)"
   },
   {
    "key": "c20f0d40009509f6",
@@ -22728,6 +23023,11 @@
    "sql": "CHR(10)"
   },
   {
+   "key": "28c9a8208a64b0ea",
+   "dialect": "sqlite",
+   "sql": "CHAR(10)"
+  },
+  {
    "key": "ca589d7019e4bf89",
    "dialect": "tsql",
    "sql": "CHAR(10)"
@@ -22751,6 +23051,11 @@
    "key": "5860cea61fe7b71a",
    "dialect": "tsql",
    "sql": "CREATE TABLE t (foo VARBINARY)"
+  },
+  {
+   "key": "23f710372c449ae0",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE t (foo BLOB)"
   },
   {
    "key": "b0e5bd80607d49cb",
@@ -23288,8 +23593,18 @@
    "sql": "SELECT JSON_EXTRACT('[10, 20, [30, 40]]', '$[1]')"
   },
   {
+   "key": "3ffdfbe28547d14b",
+   "dialect": "sqlite",
+   "sql": "SELECT '[10, 20, [30, 40]]' -> '$[1]'"
+  },
+  {
    "key": "f1818ec931c7fe0e",
    "dialect": "mysql",
+   "sql": "SELECT JSON_EXTRACT('[10, 20, [30, 40]]', '$[1]', '$[0]')"
+  },
+  {
+   "key": "9a78a949d23b57b7",
+   "dialect": "sqlite",
    "sql": "SELECT JSON_EXTRACT('[10, 20, [30, 40]]', '$[1]', '$[0]')"
   },
   {
@@ -23498,6 +23813,11 @@
    "sql": "GROUP_CONCAT(DISTINCT x ORDER BY y DESC)"
   },
   {
+   "key": "1adad2c6f7ebe2eb",
+   "dialect": "sqlite",
+   "sql": "GROUP_CONCAT(DISTINCT x)"
+  },
+  {
    "key": "7f4046926a86f271",
    "dialect": "postgres",
    "sql": "STRING_AGG(DISTINCT x, ',' ORDER BY y DESC NULLS LAST)"
@@ -23506,6 +23826,11 @@
    "key": "524dd2c571eea345",
    "dialect": "mysql",
    "sql": "GROUP_CONCAT(x ORDER BY y SEPARATOR z)"
+  },
+  {
+   "key": "9dfcb410c6e4ef9d",
+   "dialect": "sqlite",
+   "sql": "GROUP_CONCAT(x, z)"
   },
   {
    "key": "087aab8e192ac8d9",
@@ -23526,6 +23851,11 @@
    "key": "ddbd659157ee5ab4",
    "dialect": "mysql",
    "sql": "GROUP_CONCAT(DISTINCT x ORDER BY y DESC SEPARATOR '')"
+  },
+  {
+   "key": "c44618f3e6e36a1c",
+   "dialect": "sqlite",
+   "sql": "GROUP_CONCAT(DISTINCT x, '')"
   },
   {
    "key": "e5a318311352cec2",
@@ -23551,6 +23881,11 @@
    "key": "39811e675347deb1",
    "dialect": "mysql",
    "sql": "GROUP_CONCAT(CONCAT(a, b, c) SEPARATOR ',')"
+  },
+  {
+   "key": "7fa5f0457f71913f",
+   "dialect": "sqlite",
+   "sql": "GROUP_CONCAT(a || b || c, ',')"
   },
   {
    "key": "e73ad036d21c834d",
@@ -23583,6 +23918,11 @@
    "sql": "GROUP_CONCAT(CONCAT(a, b, c) SEPARATOR '')"
   },
   {
+   "key": "efe7508bf84c8430",
+   "dialect": "sqlite",
+   "sql": "GROUP_CONCAT(a || b || c, '')"
+  },
+  {
    "key": "000eea322a5fa1a6",
    "dialect": "tsql",
    "sql": "STRING_AGG(a + b + c, '')"
@@ -23606,6 +23946,11 @@
    "key": "84478678e183492d",
    "dialect": "mysql",
    "sql": "GROUP_CONCAT(DISTINCT CONCAT(a, b, c) SEPARATOR '')"
+  },
+  {
+   "key": "dc3c949dffe8ff47",
+   "dialect": "sqlite",
+   "sql": "GROUP_CONCAT(DISTINCT a || b || c, '')"
   },
   {
    "key": "cbc74ef30a3549ee",
@@ -25393,6 +25738,11 @@
    "sql": "GET_JSON_OBJECT('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4')"
   },
   {
+   "key": "5a4842ecfe7029ec",
+   "dialect": "sqlite",
+   "sql": "'{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}' -> '$.f4'"
+  },
+  {
    "key": "a6e29c33aa96e721",
    "dialect": "tsql",
    "sql": "ISNULL(JSON_QUERY('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4'), JSON_VALUE('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4'))"
@@ -25743,6 +26093,11 @@
    "sql": "SELECT * FROM x LIMIT 1"
   },
   {
+   "key": "cbd4af7ade597a8d",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM x LIMIT 1"
+  },
+  {
    "key": "aaa3c15fbbeb9aa0",
    "dialect": "postgres",
    "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC NULLS LAST, lname"
@@ -25993,6 +26348,11 @@
    "sql": "1 / DIV(4, 2)"
   },
   {
+   "key": "561bde74aac3ea7f",
+   "dialect": "sqlite",
+   "sql": "1 / CAST(CAST(CAST(4 AS REAL) / 2 AS INTEGER) AS REAL)"
+  },
+  {
    "key": "0e33d073a02a919f",
    "dialect": "duckdb",
    "sql": "1 / CAST(4 // 2 AS DECIMAL)"
@@ -26200,6 +26560,11 @@
   {
    "key": "cc996024da438fa1",
    "dialect": "postgres",
+   "sql": "CREATE TABLE table1 (a INT, b INT, PRIMARY KEY (a))"
+  },
+  {
+   "key": "538c255fb981cc23",
+   "dialect": "sqlite",
    "sql": "CREATE TABLE table1 (a INT, b INT, PRIMARY KEY (a))"
   },
   {
@@ -28578,6 +28943,11 @@
    "sql": "ANY_VALUE(x)"
   },
   {
+   "key": "7a689e63a266cca0",
+   "dialect": "sqlite",
+   "sql": "MAX(x)"
+  },
+  {
    "key": "ad0d29cca21b1ce1",
    "dialect": "tsql",
    "sql": "MAX(x)"
@@ -29418,6 +29788,11 @@
    "sql": "SELECT GET_JSON_OBJECT('{ \"farm\": {\"barn\": { \"color\": \"red\", \"feed stocked\": true }}}', '$.farm.barn.color')"
   },
   {
+   "key": "b12cbb790c53d1c7",
+   "dialect": "sqlite",
+   "sql": "SELECT '{ \"farm\": {\"barn\": { \"color\": \"red\", \"feed stocked\": true }}}' ->> '$.farm.barn.color'"
+  },
+  {
    "key": "b64593b18071b521",
    "dialect": "redshift",
    "sql": "LISTAGG(sellerid, ', ')"
@@ -29725,6 +30100,11 @@
   {
    "key": "22c23baf9a74dec9",
    "dialect": "spark",
+   "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
+  },
+  {
+   "key": "81d450f89bc8ac87",
+   "dialect": "sqlite",
    "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
   },
   {
@@ -32323,6 +32703,11 @@
    "sql": "SELECT i, p, o FROM (SELECT i, p, o, ROW_NUMBER() OVER (PARTITION BY p ORDER BY o NULLS LAST) AS _w FROM qt) AS _t WHERE _w = 1"
   },
   {
+   "key": "f42f32462a6b9845",
+   "dialect": "sqlite",
+   "sql": "SELECT i, p, o FROM (SELECT i, p, o, ROW_NUMBER() OVER (PARTITION BY p ORDER BY o NULLS LAST) AS _w FROM qt) AS _t WHERE _w = 1"
+  },
+  {
    "key": "b2f93139749fe4c6",
    "dialect": "trino",
    "sql": "SELECT i, p, o FROM (SELECT i, p, o, ROW_NUMBER() OVER (PARTITION BY p ORDER BY o) AS _w FROM qt) AS _t WHERE _w = 1"
@@ -32388,6 +32773,11 @@
    "sql": "SELECT BOOL_OR(c1), BOOL_OR(c2) FROM test"
   },
   {
+   "key": "b2bd8cfbcdb172d4",
+   "dialect": "sqlite",
+   "sql": "SELECT MAX(c1), MAX(c2) FROM test"
+  },
+  {
    "key": "738a3189c5c8b130",
    "dialect": "duckdb",
    "sql": "SELECT BOOL_AND(CAST(c1 AS BOOLEAN)), BOOL_AND(CAST(c2 AS BOOLEAN)) FROM test"
@@ -32401,6 +32791,11 @@
    "key": "8a2df2fc69bc123c",
    "dialect": "spark",
    "sql": "SELECT BOOL_AND(c1), BOOL_AND(c2) FROM test"
+  },
+  {
+   "key": "55b53e6518857fae",
+   "dialect": "sqlite",
+   "sql": "SELECT MIN(c1), MIN(c2) FROM test"
   },
   {
    "key": "3cf31336fc93166f",
@@ -32468,6 +32863,11 @@
    "sql": "POWER(x, 2)"
   },
   {
+   "key": "534cb3f596cad50c",
+   "dialect": "sqlite",
+   "sql": "POWER(x, 2)"
+  },
+  {
    "key": "abaf1ceccb88bd66",
    "dialect": "starrocks",
    "sql": "POWER(x, 2)"
@@ -32486,6 +32886,11 @@
    "key": "77cfdb63c5ede605",
    "dialect": "tsql",
    "sql": "SQUARE(x)"
+  },
+  {
+   "key": "3b16a85387ee5444",
+   "dialect": "sqlite",
+   "sql": "IIF(bar = 0 AND NOT foo IS NULL, 0, CAST(foo AS REAL) / bar)"
   },
   {
    "key": "b5d5f9ad4a032c60",
@@ -32508,6 +32913,11 @@
    "sql": "CASE WHEN bar = 0 AND NOT foo IS NULL THEN 0 ELSE foo / bar END"
   },
   {
+   "key": "a64e846dc4e4429b",
+   "dialect": "sqlite",
+   "sql": "IIF((c - d) = 0 AND NOT (a - b) IS NULL, 0, CAST((a - b) AS REAL) / (c - d))"
+  },
+  {
    "key": "2eac3f2ed4f9ef56",
    "dialect": "presto",
    "sql": "IF((c - d) = 0 AND NOT (a - b) IS NULL, 0, CAST((a - b) AS DOUBLE) / (c - d))"
@@ -32526,6 +32936,11 @@
    "key": "0cce917307d0d8a9",
    "dialect": "duckdb",
    "sql": "CASE WHEN (c - d) = 0 AND NOT (a - b) IS NULL THEN 0 ELSE (a - b) / (c - d) END"
+  },
+  {
+   "key": "8f5371f4bb56ab89",
+   "dialect": "sqlite",
+   "sql": "IIF(bar = 0 OR bar IS NULL, 0, CAST(foo AS REAL) / bar)"
   },
   {
    "key": "4a2d51a30a9a9e04",
@@ -32548,6 +32963,11 @@
    "sql": "CASE WHEN bar = 0 OR bar IS NULL THEN 0 ELSE foo / bar END"
   },
   {
+   "key": "ffd8a16557dc6f51",
+   "dialect": "sqlite",
+   "sql": "IIF((c - d) = 0 OR (c - d) IS NULL, 0, CAST((a - b) AS REAL) / (c - d))"
+  },
+  {
    "key": "a8687357f7ed9460",
    "dialect": "presto",
    "sql": "IF((c - d) = 0 OR (c - d) IS NULL, 0, CAST((a - b) AS DOUBLE) / (c - d))"
@@ -32568,6 +32988,11 @@
    "sql": "CASE WHEN (c - d) = 0 OR (c - d) IS NULL THEN 0 ELSE (a - b) / (c - d) END"
   },
   {
+   "key": "f18e7420a0dc2740",
+   "dialect": "sqlite",
+   "sql": "IIF(foo IS NULL, 0, foo)"
+  },
+  {
    "key": "17e73dbfa5df6e38",
    "dialect": "presto",
    "sql": "IF(foo IS NULL, 0, foo)"
@@ -32586,6 +33011,11 @@
    "key": "4b0b03e0cc00566f",
    "dialect": "duckdb",
    "sql": "CASE WHEN foo IS NULL THEN 0 ELSE foo END"
+  },
+  {
+   "key": "5e7d9b1fbbde1baa",
+   "dialect": "sqlite",
+   "sql": "IIF(foo = 0, NULL, foo)"
   },
   {
    "key": "7b5fd3618317caa0",
@@ -36498,9 +36928,199 @@
    "sql": "TRUNC(date_col, 'MM')"
   },
   {
+   "key": "612d8074e883d877",
+   "dialect": "sqlite",
+   "sql": "SELECT 1 IN (0) IN (1)"
+  },
+  {
+   "key": "4c387af3eac6d758",
+   "dialect": "sqlite",
+   "sql": "SELECT 1 LIKE 2 LIKE 3"
+  },
+  {
+   "key": "735158f5d245a17c",
+   "dialect": "sqlite",
+   "sql": "SELECT 1 NOT IN (0) IN (0, 1)"
+  },
+  {
+   "key": "407c7d699224b6f5",
+   "dialect": "sqlite",
+   "sql": "SELECT x NOT IN (1) IS TRUE"
+  },
+  {
+   "key": "8684852237df7505",
+   "dialect": "sqlite",
+   "sql": "SELECT 0 NOT IN (1) NOT IN (2)"
+  },
+  {
+   "key": "746aab128dc8f295",
+   "dialect": "sqlite",
+   "sql": "WITH xyz(x) AS (SELECT 1) SELECT x FROM xyz"
+  },
+  {
+   "key": "14bc32c3a8ad595d",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM t AS t INDEXED BY s.i"
+  },
+  {
+   "key": "b16b38549351359b",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM t INDEXED BY s.i"
+  },
+  {
+   "key": "d61bd5bc3a63c97c",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM t INDEXED BY i"
+  },
+  {
+   "key": "6d47a85f4ce984c6",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM t NOT INDEXED"
+  },
+  {
+   "key": "6c6e08cb3c5e6ba9",
+   "dialect": "sqlite",
+   "sql": "SELECT match FROM t"
+  },
+  {
+   "key": "647cabc3add9d9f4",
+   "dialect": "sqlite",
+   "sql": "SELECT rowid FROM t1 WHERE t1 MATCH 'lorem'"
+  },
+  {
+   "key": "46879257c21dd99f",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM t WHERE a REGEXP 'x'"
+  },
+  {
+   "key": "42b1e3900d9410a8",
+   "dialect": "sqlite",
+   "sql": "SELECT RANK() OVER (RANGE CURRENT ROW) FROM tbl"
+  },
+  {
+   "key": "9f4e3356af58ab24",
+   "dialect": "sqlite",
+   "sql": "UNHEX(a, b)"
+  },
+  {
+   "key": "edc7539422301704",
+   "dialect": "sqlite",
+   "sql": "SELECT DATE()"
+  },
+  {
+   "key": "b9b5bc094211ef27",
+   "dialect": "sqlite",
+   "sql": "SELECT DATE('now', 'start of month', '+1 month', '-1 day')"
+  },
+  {
+   "key": "07ff0d4ac3de60d9",
+   "dialect": "sqlite",
+   "sql": "SELECT DATE(d, '1 DAY') FROM t"
+  },
+  {
    "key": "17635b1c76b3c801",
    "dialect": "duckdb",
    "sql": "SELECT DATE_ADD(d, INTERVAL 1 DAY) FROM t"
+  },
+  {
+   "key": "31c49b30c1071c26",
+   "dialect": "sqlite",
+   "sql": "SELECT DATETIME(1092941466, 'unixepoch')"
+  },
+  {
+   "key": "72880a1f1e7d83f9",
+   "dialect": "sqlite",
+   "sql": "SELECT DATETIME(1092941466, 'auto')"
+  },
+  {
+   "key": "32f67a30470bc120",
+   "dialect": "sqlite",
+   "sql": "SELECT DATETIME(1092941466, 'unixepoch', 'localtime')"
+  },
+  {
+   "key": "2e63816bb7b292de",
+   "dialect": "sqlite",
+   "sql": "SELECT UNIXEPOCH()"
+  },
+  {
+   "key": "4b8fa9f3ef61bec3",
+   "dialect": "sqlite",
+   "sql": "SELECT JULIANDAY('now') - JULIANDAY('1776-07-04')"
+  },
+  {
+   "key": "05246e7356002af2",
+   "dialect": "sqlite",
+   "sql": "SELECT UNIXEPOCH() - UNIXEPOCH('2004-01-01 02:34:56')"
+  },
+  {
+   "key": "609a4917f9a01e6a",
+   "dialect": "sqlite",
+   "sql": "SELECT DATE('now', 'start of year', '+9 months', 'weekday 2')"
+  },
+  {
+   "key": "3434d068aabf4d54",
+   "dialect": "sqlite",
+   "sql": "SELECT (JULIANDAY('now') - 2440587.5) * 86400.0"
+  },
+  {
+   "key": "ec2c4bec8ba395d2",
+   "dialect": "sqlite",
+   "sql": "SELECT UNIXEPOCH('now', 'subsec')"
+  },
+  {
+   "key": "644b296ec43075e4",
+   "dialect": "sqlite",
+   "sql": "SELECT TIMEDIFF('now', '1809-02-12')"
+  },
+  {
+   "key": "650347e0342a6c9e",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM GENERATE_SERIES(1, 5)"
+  },
+  {
+   "key": "1594a9c9eb33e923",
+   "dialect": "sqlite",
+   "sql": "SELECT INSTR(haystack, needle)"
+  },
+  {
+   "key": "050134afd76cc7de",
+   "dialect": "sqlite",
+   "sql": "SELECT a, SUM(b) OVER (ORDER BY a ROWS BETWEEN -1 PRECEDING AND 1 FOLLOWING) FROM t1 ORDER BY 1"
+  },
+  {
+   "key": "f1691d1259b9865a",
+   "dialect": "sqlite",
+   "sql": "SELECT JSON_EXTRACT('[10, 20, [30, 40]]', '$[2]', '$[0]', '$[1]')"
+  },
+  {
+   "key": "d3e1639b64696acb",
+   "dialect": "sqlite",
+   "sql": "SELECT JSON_EXTRACT(a, '$.k') FROM t"
+  },
+  {
+   "key": "d93e26ff74b72697",
+   "dialect": "sqlite",
+   "sql": "SELECT a -> '$.k' FROM t"
+  },
+  {
+   "key": "cb7fa1c2fb2aff5b",
+   "dialect": "sqlite",
+   "sql": "SELECT a ->> '$.k' FROM t"
+  },
+  {
+   "key": "8c445a0b5a8f276e",
+   "dialect": "sqlite",
+   "sql": "SELECT JSON_SET('{}', '$.x', JSON_EXTRACT(a, '$.k'))"
+  },
+  {
+   "key": "6666c521a2d037e9",
+   "dialect": "sqlite",
+   "sql": "SELECT JSON_EXTRACT(a, '$') FROM t"
+  },
+  {
+   "key": "b097c9c18067e662",
+   "dialect": "sqlite",
+   "sql": "SELECT JSON_EXTRACT(a, b) FROM t"
   },
   {
    "key": "154a006a65822f84",
@@ -36513,6 +37133,11 @@
    "sql": "SELECT a ->> '$.k' FROM t"
   },
   {
+   "key": "68f0a5576e812507",
+   "dialect": "sqlite",
+   "sql": "SELECT JSON_EXTRACT('[10, 20, [30, 40]]', '$[1]')"
+  },
+  {
    "key": "4788f2e5eea5a9a3",
    "dialect": "mysql",
    "sql": "SELECT CAST('[10, 20, [30, 40]]' AS JSON) ->> '$[1]'"
@@ -36523,9 +37148,79 @@
    "sql": "SELECT '[10, 20, [30, 40]]' ->> '$[1]'"
   },
   {
+   "key": "330a33e6d15cb2a1",
+   "dialect": "sqlite",
+   "sql": "SELECT item AS \"item\", some AS \"some\" FROM data WHERE (item = 'value_1' COLLATE NOCASE) AND (some = 't' COLLATE NOCASE) ORDER BY item ASC LIMIT 1 OFFSET 0"
+  },
+  {
+   "key": "317793ef0afbeeeb",
+   "dialect": "sqlite",
+   "sql": "SELECT a FROM t1 WHERE a NOT NULL AND a NOT NULL ORDER BY a"
+  },
+  {
+   "key": "b7566a0e71ee4e4d",
+   "dialect": "sqlite",
+   "sql": "SELECT a, b FROM t1 WHERE b + a NOT NULL ORDER BY 1"
+  },
+  {
+   "key": "f5a17fb3982bbe32",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM t1, t2"
+  },
+  {
+   "key": "21f8dc40152ffd88",
+   "dialect": "sqlite",
+   "sql": "ALTER TABLE t RENAME a TO b"
+  },
+  {
+   "key": "c649350f398cc15a",
+   "dialect": "sqlite",
+   "sql": "ALTER TABLE t1 RENAME TO t2"
+  },
+  {
+   "key": "bc379b4573a3d8f5",
+   "dialect": "sqlite",
+   "sql": "SELECT LIKE(y, x)"
+  },
+  {
+   "key": "350aa303df9bf9c5",
+   "dialect": "sqlite",
+   "sql": "SELECT x LIKE y"
+  },
+  {
+   "key": "3426b8ca2a2d48dd",
+   "dialect": "sqlite",
+   "sql": "SELECT GLOB('*y*', 'xyz')"
+  },
+  {
+   "key": "d016791bdd334056",
+   "dialect": "sqlite",
+   "sql": "SELECT 'xyz' GLOB '*y*'"
+  },
+  {
+   "key": "b42ef1a0d1656f64",
+   "dialect": "sqlite",
+   "sql": "SELECT LIKE('%y%', 'xyz', '')"
+  },
+  {
+   "key": "83eed9a35aaa6c6e",
+   "dialect": "sqlite",
+   "sql": "SELECT 'xyz' LIKE '%y%' ESCAPE ''"
+  },
+  {
+   "key": "43c5fe65370fcaf7",
+   "dialect": "sqlite",
+   "sql": "SELECT MIN(a, b) FROM t"
+  },
+  {
    "key": "be3cfe053e2a8e44",
    "dialect": "postgres",
    "sql": "SELECT LEAST(a, b) FROM t"
+  },
+  {
+   "key": "6ccf18b6d76197fb",
+   "dialect": "sqlite",
+   "sql": "SELECT MAX(a, b) FROM t"
   },
   {
    "key": "3c8fe774ac198f03",
@@ -36533,9 +37228,19 @@
    "sql": "SELECT GREATEST(a, b) FROM t"
   },
   {
+   "key": "ea0913d2a7a53318",
+   "dialect": "sqlite",
+   "sql": "SELECT JSON_GROUP_ARRAY(name) FROM t"
+  },
+  {
    "key": "b648a5bf8e809258",
    "dialect": "postgres",
    "sql": "SELECT JSON_AGG(name) FROM t"
+  },
+  {
+   "key": "0a8fca6a90be3f28",
+   "dialect": "sqlite",
+   "sql": "SELECT JSON_GROUP_OBJECT(name, value) FROM t"
   },
   {
    "key": "96c274db73f7d9be",
@@ -36543,9 +37248,44 @@
    "sql": "SELECT JSON_OBJECT_AGG(name, value) FROM t"
   },
   {
+   "key": "ff4a2044e85bab9c",
+   "dialect": "sqlite",
+   "sql": "INSERT OR IGNORE INTO foo (x, y) VALUES (1, 2)"
+  },
+  {
    "key": "34aeebdecb680567",
    "dialect": "mysql",
    "sql": "INSERT IGNORE INTO foo (x, y) VALUES (1, 2)"
+  },
+  {
+   "key": "8b96be56fa2e0046",
+   "dialect": "sqlite",
+   "sql": "CURRENT_DATE"
+  },
+  {
+   "key": "e763fa6623a669bf",
+   "dialect": "sqlite",
+   "sql": "CURRENT_TIME"
+  },
+  {
+   "key": "317783342262c1ae",
+   "dialect": "sqlite",
+   "sql": "CURRENT_TIMESTAMP"
+  },
+  {
+   "key": "3934e8b9a89b7818",
+   "dialect": "sqlite",
+   "sql": "SELECT DATE('2020-01-01 16:03:05')"
+  },
+  {
+   "key": "015d73809fa202ed",
+   "dialect": "sqlite",
+   "sql": "SELECT CAST([a].[b] AS SMALLINT) FROM foo"
+  },
+  {
+   "key": "69a9715c96b9ca1d",
+   "dialect": "sqlite",
+   "sql": "SELECT CAST(\"a\".\"b\" AS INTEGER) FROM foo"
   },
   {
    "key": "9d2f5436018ac5a1",
@@ -36553,9 +37293,29 @@
    "sql": "SELECT CAST(`a`.`b` AS SMALLINT) FROM foo"
   },
   {
+   "key": "53ddc81c473e48f7",
+   "dialect": "sqlite",
+   "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC NULLS LAST, lname"
+  },
+  {
    "key": "7f0c6218f89b0c86",
    "dialect": "postgres",
    "sql": "GREATEST(x)"
+  },
+  {
+   "key": "bf49a3682b4f9b38",
+   "dialect": "sqlite",
+   "sql": "MIN(x)"
+  },
+  {
+   "key": "6ec2dbafd7211a09",
+   "dialect": "sqlite",
+   "sql": "MIN(x, y, z)"
+  },
+  {
+   "key": "c1d43b825908c471",
+   "dialect": "sqlite",
+   "sql": "UNICODE(x)"
   },
   {
    "key": "998f25fb64ebc205",
@@ -36578,9 +37338,164 @@
    "sql": "ASCII(x)"
   },
   {
+   "key": "fd2e062bf5ff2860",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM station WHERE city IS NOT ''"
+  },
+  {
+   "key": "4c51a89713bc2655",
+   "dialect": "sqlite",
+   "sql": "SELECT JSON_OBJECT('col1', 1, 'col2', '1')"
+  },
+  {
+   "key": "23ce1b87817fc970",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE \"foo t\" (\"foo t id\" TEXT NOT NULL, PRIMARY KEY (\"foo t id\"))"
+  },
+  {
+   "key": "b4085ed87f46de85",
+   "dialect": "sqlite",
+   "sql": "REPLACE INTO foo (x, y) VALUES (1, 2)"
+  },
+  {
+   "key": "32f97ad156826afa",
+   "dialect": "sqlite",
+   "sql": "ATTACH DATABASE 'foo' AS schema_name"
+  },
+  {
+   "key": "eb0e13acc00d0727",
+   "dialect": "sqlite",
+   "sql": "ATTACH DATABASE NOT EXISTS(SELECT 1) AS schema_name"
+  },
+  {
+   "key": "6505316db6bfa4dc",
+   "dialect": "sqlite",
+   "sql": "ATTACH DATABASE IIF(NOT EXISTS(SELECT 1), 'foo1', 'foo2') AS schema_name"
+  },
+  {
+   "key": "c420d5f03ae7df54",
+   "dialect": "sqlite",
+   "sql": "ATTACH DATABASE 'foo' || '.foo2' AS schema_name"
+  },
+  {
+   "key": "56fde17e6fb6394e",
+   "dialect": "sqlite",
+   "sql": "DETACH DATABASE schema_name"
+  },
+  {
+   "key": "9f385cb38861ebaa",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM t WHERE NULL IS y"
+  },
+  {
+   "key": "2b78105bcf795288",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM t WHERE NULL IS NOT y"
+  },
+  {
+   "key": "cafae4503765d458",
+   "dialect": "sqlite",
+   "sql": "SELECT SQLITE_VERSION()"
+  },
+  {
+   "key": "e25f9dec316450b0",
+   "dialect": "sqlite",
+   "sql": "SELECT a.data ->> b.key ->> a.final_key FROM t"
+  },
+  {
+   "key": "44adcc96977f02b3",
+   "dialect": "sqlite",
+   "sql": "SELECT a -> b ->> c -> d FROM t"
+  },
+  {
+   "key": "cf897afae72d44d8",
+   "dialect": "sqlite",
+   "sql": "SELECT a || b ->> c"
+  },
+  {
+   "key": "b844282a8ecd87ee",
+   "dialect": "sqlite",
+   "sql": "SELECT a ->> b || c FROM t"
+  },
+  {
+   "key": "e441dd1692338ca4",
+   "dialect": "sqlite",
+   "sql": "SELECT 2 * 3 || 4"
+  },
+  {
+   "key": "95cd6483cd266cbd",
+   "dialect": "sqlite",
+   "sql": "SELECT 1 + 2 || 3"
+  },
+  {
+   "key": "6cc114b30e9a8149",
+   "dialect": "sqlite",
+   "sql": "SELECT a || b * c FROM t"
+  },
+  {
+   "key": "15efa6e365254847",
+   "dialect": "sqlite",
+   "sql": "SELECT a - b ->> c FROM t"
+  },
+  {
+   "key": "80308c4cd1c9e35e",
+   "dialect": "sqlite",
+   "sql": "SELECT a ->> b + c FROM t"
+  },
+  {
+   "key": "9879f44ee7341674",
+   "dialect": "sqlite",
+   "sql": "SELECT -a || b FROM t"
+  },
+  {
+   "key": "d3aa69faca538b4a",
+   "dialect": "sqlite",
+   "sql": "SELECT a || b COLLATE NOCASE FROM t ORDER BY 1"
+  },
+  {
+   "key": "49b49b41a944fffb",
+   "dialect": "sqlite",
+   "sql": "SELECT a COLLATE NOCASE || b -> c FROM t"
+  },
+  {
+   "key": "9f440f2bc3caae18",
+   "dialect": "sqlite",
+   "sql": "SELECT a COLLATE NOCASE || b * c FROM t"
+  },
+  {
+   "key": "d01160596c114b70",
+   "dialect": "sqlite",
+   "sql": "SELECT a COLLATE NOCASE -> b + c FROM t"
+  },
+  {
+   "key": "8f6c8de61c5822e3",
+   "dialect": "sqlite",
+   "sql": "SELECT STRFTIME('%Y/%m/%d', 'now')"
+  },
+  {
+   "key": "53245ff4d380827c",
+   "dialect": "sqlite",
+   "sql": "SELECT STRFTIME('%Y-%m-%d', '2016-10-16', 'start of month')"
+  },
+  {
+   "key": "0b88710cd9483d65",
+   "dialect": "sqlite",
+   "sql": "SELECT STRFTIME('%s')"
+  },
+  {
+   "key": "063622ab9552befd",
+   "dialect": "sqlite",
+   "sql": "SELECT STRFTIME('%Y-%m-%d', '2020-01-01 12:05:03')"
+  },
+  {
    "key": "12313adf08ca555a",
    "dialect": "duckdb",
    "sql": "SELECT STRFTIME(CAST('2020-01-01 12:05:03' AS TIMESTAMP), '%Y-%m-%d')"
+  },
+  {
+   "key": "36a27f64b9b40bb5",
+   "dialect": "sqlite",
+   "sql": "SELECT STRFTIME('%Y-%m-%d', CURRENT_TIMESTAMP)"
   },
   {
    "key": "42dee08ebd66280b",
@@ -36588,9 +37503,264 @@
    "sql": "SELECT STRFTIME(CAST(CURRENT_TIMESTAMP AS TIMESTAMP), '%Y-%m-%d')"
   },
   {
+   "key": "9da601b3f861b84d",
+   "dialect": "sqlite",
+   "sql": "DATEDIFF(a, b, 'day')"
+  },
+  {
+   "key": "b04c385066107015",
+   "dialect": "sqlite",
+   "sql": "CAST((JULIANDAY(a) - JULIANDAY(b)) AS INTEGER)"
+  },
+  {
+   "key": "d610bbb3b41c7f14",
+   "dialect": "sqlite",
+   "sql": "DATEDIFF(a, b, 'hour')"
+  },
+  {
+   "key": "eaf363c9f23ab5d3",
+   "dialect": "sqlite",
+   "sql": "CAST((JULIANDAY(a) - JULIANDAY(b)) * 24.0 AS INTEGER)"
+  },
+  {
+   "key": "93e5099ef94dcba8",
+   "dialect": "sqlite",
+   "sql": "DATEDIFF(a, b, 'year')"
+  },
+  {
+   "key": "b93a27dcceee4aba",
+   "dialect": "sqlite",
+   "sql": "CAST((JULIANDAY(a) - JULIANDAY(b)) / 365.0 AS INTEGER)"
+  },
+  {
+   "key": "773ca2d9f27acc02",
+   "dialect": "sqlite",
+   "sql": "SELECT 0XCC"
+  },
+  {
+   "key": "d2ca18bf9cf0ad57",
+   "dialect": "sqlite",
+   "sql": "SELECT x'CC'"
+  },
+  {
+   "key": "d896861692f899d8",
+   "dialect": "sqlite",
+   "sql": "SELECT FIRST_VALUE(Name) OVER (PARTITION BY AlbumId ORDER BY Bytes DESC) AS LargestTrack FROM tracks"
+  },
+  {
+   "key": "dea6a3eda4fd60bc",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE foo (bar LONGVARCHAR)"
+  },
+  {
+   "key": "ddac08c243ad9e44",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE foo (bar TEXT)"
+  },
+  {
+   "key": "369e71ea9360d3a9",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE t (a INTEGER, b INTEGER AS (a * 2) STORED)"
+  },
+  {
+   "key": "de626a0a2cb8f1f2",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE t (a INTEGER, b INTEGER AS (a * 2))"
+  },
+  {
+   "key": "20ff141135afd809",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE t (a INTEGER, b AS (a * 2) STORED)"
+  },
+  {
+   "key": "49ceb5c01c8d0fb9",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE t (a INTEGER, b AS (a * 2))"
+  },
+  {
+   "key": "801e5e82b9840090",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE t (a INTEGER, b INTEGER GENERATED ALWAYS AS (a * 2) STORED)"
+  },
+  {
+   "key": "c4211c2838d069f1",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE t (a INTEGER, b INTEGER GENERATED ALWAYS AS (a * 2) VIRTUAL)"
+  },
+  {
+   "key": "8b1931d2f7c83bb9",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE t (a INTEGER, b INTEGER GENERATED ALWAYS AS (a * 2))"
+  },
+  {
+   "key": "85e9385d9663c4ff",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE t (a INTEGER PRIMARY KEY GENERATED ALWAYS AS IDENTITY)"
+  },
+  {
+   "key": "3ba3039bfd35baa8",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE t (a INTEGER, b AS (a * 2) STORED NOT NULL)"
+  },
+  {
    "key": "5ad43938d94e5efb",
    "dialect": "tsql",
    "sql": "CREATE TABLE t (a INT, b AS (a * 2) PERSISTED NOT NULL)"
+  },
+  {
+   "key": "99abff963db0a680",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE over (x, y)"
+  },
+  {
+   "key": "668d6c21805b4cf5",
+   "dialect": "sqlite",
+   "sql": "INSERT OR ABORT INTO foo (x, y) VALUES (1, 2)"
+  },
+  {
+   "key": "f33cb055b2edb91a",
+   "dialect": "sqlite",
+   "sql": "INSERT OR FAIL INTO foo (x, y) VALUES (1, 2)"
+  },
+  {
+   "key": "c221c7c7a21f2092",
+   "dialect": "sqlite",
+   "sql": "INSERT OR REPLACE INTO foo (x, y) VALUES (1, 2)"
+  },
+  {
+   "key": "347a9045f0eed2ed",
+   "dialect": "sqlite",
+   "sql": "INSERT OR ROLLBACK INTO foo (x, y) VALUES (1, 2)"
+  },
+  {
+   "key": "6c3d720e7422fe9a",
+   "dialect": "sqlite",
+   "sql": "INSERT INTO tbl (x, y) SELECT 1, 'a' WHERE TRUE ON CONFLICT(x, LOWER(y)) DO UPDATE SET y = excluded.y"
+  },
+  {
+   "key": "86a831340e81b50f",
+   "dialect": "sqlite",
+   "sql": "INSERT INTO tbl (x, y) VALUES (1, 'a') ON CONFLICT(x, LOWER(y) COLLATE NOCASE ASC, y DESC) DO NOTHING"
+  },
+  {
+   "key": "8a7a665cc5558a60",
+   "dialect": "sqlite",
+   "sql": "INSERT INTO tbl (x, y) VALUES (1, 'a') ON CONFLICT(CASE WHEN x > 0 THEN x ELSE -x END) DO NOTHING"
+  },
+  {
+   "key": "527bb993b821feb4",
+   "dialect": "sqlite",
+   "sql": "INSERT INTO tbl (x, y) VALUES (1, 'a') ON CONFLICT(x) WHERE x > 0 DO UPDATE SET y = excluded.y"
+  },
+  {
+   "key": "da1568c3788bdeea",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE foo (id INTEGER PRIMARY KEY ASC)"
+  },
+  {
+   "key": "086da0e85a69d96a",
+   "dialect": "sqlite",
+   "sql": "CREATE TEMPORARY TABLE foo (id INTEGER)"
+  },
+  {
+   "key": "16530f85f7ef4e24",
+   "dialect": "sqlite",
+   "sql": "CREATE VIRTUAL TABLE docs USING fts5(title, content)"
+  },
+  {
+   "key": "6017922a17449fd6",
+   "dialect": "sqlite",
+   "sql": "CREATE VIRTUAL TABLE IF NOT EXISTS docs USING fts5(title, content)"
+  },
+  {
+   "key": "df2b9f1c38a6e132",
+   "dialect": "sqlite",
+   "sql": "CREATE VIRTUAL TABLE main.docs USING fts5(title, content)"
+  },
+  {
+   "key": "2fb09c93474771ef",
+   "dialect": "sqlite",
+   "sql": "CREATE VIRTUAL TABLE demo_index USING rtree(id, minX, maxX, minY, maxY)"
+  },
+  {
+   "key": "3fd940df99bd432a",
+   "dialect": "sqlite",
+   "sql": "CREATE VIRTUAL TABLE t USING module_name"
+  },
+  {
+   "key": "60f072c554583f8a",
+   "dialect": "sqlite",
+   "sql": "PRAGMA table_info"
+  },
+  {
+   "key": "10f7dd0548c0cb45",
+   "dialect": "sqlite",
+   "sql": "PRAGMA schema"
+  },
+  {
+   "key": "2bb7c3fb25ff525d",
+   "dialect": "sqlite",
+   "sql": "PRAGMA full_column_names = on"
+  },
+  {
+   "key": "5063764caf85fe27",
+   "dialect": "sqlite",
+   "sql": "PRAGMA full_column_names = off"
+  },
+  {
+   "key": "a4e792f899f20270",
+   "dialect": "sqlite",
+   "sql": "PRAGMA cache_size = 2000"
+  },
+  {
+   "key": "3f401013a4336ef3",
+   "dialect": "sqlite",
+   "sql": "PRAGMA foo = -2000"
+  },
+  {
+   "key": "b52d5e80b99015b6",
+   "dialect": "sqlite",
+   "sql": "PRAGMA foo(-2000)"
+  },
+  {
+   "key": "7d480a4ab63125d9",
+   "dialect": "sqlite",
+   "sql": "PRAGMA encoding = 'UTF-16'"
+  },
+  {
+   "key": "2848d713672321f5",
+   "dialect": "sqlite",
+   "sql": "PRAGMA main.cache_size"
+  },
+  {
+   "key": "798b688d5d7de483",
+   "dialect": "sqlite",
+   "sql": "PRAGMA main.cache_size = 2000"
+  },
+  {
+   "key": "0b67cc0626ed77cc",
+   "dialect": "sqlite",
+   "sql": "PRAGMA cache_size(2000)"
+  },
+  {
+   "key": "c6c299cc2c0bdc50",
+   "dialect": "sqlite",
+   "sql": "PRAGMA main.cache_size(2000)"
+  },
+  {
+   "key": "269b14d2a228c672",
+   "dialect": "sqlite",
+   "sql": "\n            CREATE TABLE \"Track\"\n            (\n                CONSTRAINT \"PK_Track\" FOREIGN KEY (\"TrackId\"),\n                FOREIGN KEY (\"AlbumId\") REFERENCES \"Album\" (\n                    \"AlbumId\"\n                ) ON DELETE NO ACTION ON UPDATE NO ACTION,\n                FOREIGN KEY (\"AlbumId\") ON DELETE CASCADE ON UPDATE RESTRICT,\n                FOREIGN KEY (\"AlbumId\") ON DELETE SET NULL ON UPDATE SET DEFAULT\n            )\n            "
+  },
+  {
+   "key": "498df0d8d3a0caa3",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE \"Track\" (\n  CONSTRAINT \"PK_Track\" FOREIGN KEY (\"TrackId\"),\n  FOREIGN KEY (\"AlbumId\") REFERENCES \"Album\" (\n    \"AlbumId\"\n  ) ON DELETE NO ACTION ON UPDATE NO ACTION,\n  FOREIGN KEY (\"AlbumId\") ON DELETE CASCADE ON UPDATE RESTRICT,\n  FOREIGN KEY (\"AlbumId\") ON DELETE SET NULL ON UPDATE SET DEFAULT\n)"
+  },
+  {
+   "key": "96b0ed1345ab8962",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE z (a INTEGER UNIQUE PRIMARY KEY AUTOINCREMENT)"
   },
   {
    "key": "13d79bb9c4afe0f5",
@@ -36603,14 +37773,79 @@
    "sql": "CREATE TABLE z (a INT GENERATED BY DEFAULT AS IDENTITY NOT NULL UNIQUE PRIMARY KEY)"
   },
   {
+   "key": "ec0232d2f91cf9a2",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE \"x\" (\"Name\" NVARCHAR(200) NOT NULL)"
+  },
+  {
+   "key": "4a8db29e24002821",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE \"x\" (\"Name\" TEXT(200) NOT NULL)"
+  },
+  {
    "key": "c47c3d6146aa88d0",
    "dialect": "mysql",
    "sql": "CREATE TABLE `x` (`Name` VARCHAR(200) NOT NULL)"
   },
   {
+   "key": "0a8c54b62887c651",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE store (store_id INTEGER PRIMARY KEY AUTOINCREMENT, mgr_id INTEGER NOT NULL UNIQUE REFERENCES staff ON UPDATE CASCADE)"
+  },
+  {
+   "key": "d4e9c18799f755d5",
+   "dialect": "sqlite",
+   "sql": "ANALYZE tbl"
+  },
+  {
+   "key": "bdfe37200c57e080",
+   "dialect": "sqlite",
+   "sql": "ANALYZE schma.tbl"
+  },
+  {
+   "key": "4a20036531de298b",
+   "dialect": "sqlite",
+   "sql": "CREATE TRIGGER log_insert AFTER INSERT ON users BEGIN INSERT INTO audit_log (user_id, action, created_at) VALUES (NEW.id, 'INSERT', datetime('now')) END"
+  },
+  {
+   "key": "d2a11995e490143f",
+   "dialect": "sqlite",
+   "sql": "CREATE TRIGGER check_balance BEFORE UPDATE OF balance ON accounts WHEN NEW.balance < 0 BEGIN UPDATE accounts SET balance = 0 WHERE id = NEW.id END"
+  },
+  {
+   "key": "d7c66057aae8f45a",
+   "dialect": "sqlite",
+   "sql": "CREATE TRIGGER view_insert INSTEAD OF INSERT ON employee_view BEGIN INSERT INTO employees (id, name, department) VALUES (NEW.id, NEW.name, NEW.department) END"
+  },
+  {
+   "key": "0f9482618333ac22",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM t AS t(c1, c2)"
+  },
+  {
+   "key": "a48c89148ca49578",
+   "dialect": "sqlite",
+   "sql": "TRUNC(3.14)"
+  },
+  {
+   "key": "e06dbd895f5cca39",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE a (b, c, UNIQUE (b, c) ON CONFLICT IGNORE)"
+  },
+  {
+   "key": "bdf1206936cdc91b",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE z (a INTEGER PRIMARY KEY AUTOINCREMENT)"
+  },
+  {
    "key": "1f7bf6f63915cdcd",
    "dialect": "mysql",
    "sql": "CREATE TABLE z (a INT PRIMARY KEY AUTO_INCREMENT)"
+  },
+  {
+   "key": "c2d132cd916679ad",
+   "dialect": "sqlite",
+   "sql": "TRUNC(3.14, 2)"
   },
   {
    "key": "90048fffb0f790d7",
@@ -37253,6 +38488,11 @@
    "sql": "CREATE TABLE a"
   },
   {
+   "key": "3ed175b8fcf62e83",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE a"
+  },
+  {
    "key": "a742c04638d41a24",
    "dialect": "starrocks",
    "sql": "CREATE TABLE a"
@@ -37296,6 +38536,16 @@
    "key": "a01779048a0550ac",
    "dialect": "spark",
    "sql": "TO_DATE('1992-01', 'yyyy-d')"
+  },
+  {
+   "key": "1c83e129d2475f08",
+   "dialect": "sqlite",
+   "sql": "SELECT DATE_SUB('2023-01-01', 5, YEAR)"
+  },
+  {
+   "key": "55235ee5f3224286",
+   "dialect": "sqlite",
+   "sql": "SELECT DATE_SUB('2023-01-01', -5, YEAR)"
   },
   {
    "key": "684d29cde481af9c",
@@ -38128,6 +39378,11 @@
    "sql": "SELECT IF(cond, 'True', 'False')"
   },
   {
+   "key": "e5cfd71b540126c1",
+   "dialect": "sqlite",
+   "sql": "SELECT IIF(cond, 'True', 'False')"
+  },
+  {
    "key": "bd4fb7d89fbd2aed",
    "dialect": "tsql",
    "sql": "SELECT TRIM(BOTH 'a' FROM a)"
@@ -38558,9 +39813,19 @@
    "sql": "SELECT * FROM t LIMIT 10 OFFSET 5"
   },
   {
+   "key": "b18aa66133f2f861",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM t LIMIT 5, 10"
+  },
+  {
    "key": "b09d18fe1045a810",
    "dialect": "duckdb",
    "sql": "SELECT * FROM t ORDER BY (SELECT NULL) NULLS FIRST LIMIT 10 OFFSET 5"
+  },
+  {
+   "key": "616dec0beeaf4918",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM t ORDER BY (SELECT NULL) LIMIT 10 OFFSET 5"
   },
   {
    "key": "7cebcdbea9c0bf57",
@@ -38593,6 +39858,11 @@
    "sql": "GROUP_CONCAT(x ORDER BY z DESC SEPARATOR y)"
   },
   {
+   "key": "dd04facec5cd8d30",
+   "dialect": "sqlite",
+   "sql": "GROUP_CONCAT(x, y)"
+  },
+  {
    "key": "b9200a382e9b27e5",
    "dialect": "postgres",
    "sql": "STRING_AGG(x, y ORDER BY z DESC NULLS LAST)"
@@ -38606,6 +39876,11 @@
    "key": "e78c921bc49a3ac5",
    "dialect": "mysql",
    "sql": "GROUP_CONCAT(x ORDER BY z ASC SEPARATOR '|')"
+  },
+  {
+   "key": "1dc3aea8d7321112",
+   "dialect": "sqlite",
+   "sql": "GROUP_CONCAT(x, '|')"
   },
   {
    "key": "e3b880c4525fd116",

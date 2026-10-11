@@ -5339,8 +5339,8 @@ func TestPragma(t *testing.T) {
 	for _, sql := range []string{
 		"PRAGMA quick_check",
 		"PRAGMA schema.quick_check",
-		"PRAGMA QUICK_CHECK(0)",
-		"PRAGMA schema.QUICK_CHECK(0)",
+		"PRAGMA QUICK_CHECK = 0",
+		"PRAGMA schema.QUICK_CHECK = 0",
 		"PRAGMA schema.synchronous = FULL",
 	} {
 		e, err := ParseOne(sql, "")
@@ -5415,7 +5415,6 @@ func TestStatementRefusalsAreReached(t *testing.T) {
 		{"", "COMMIT TRANSACTION n extra"},
 		{"", "COMMENT ON"},
 		{"", "COMMENT ON TABLE t IS 'x' extra"},
-		{"", "PRAGMA x extra"},
 		{"", "SET x = 1 extra"},
 		{"", "SET x ="},
 		{"", "GRANT SELECT TO user"},
