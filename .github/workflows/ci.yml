@@ -93,8 +93,11 @@ jobs:
     # function directly when this job first timed out landing the 10th
     # dialect (Presto) at a 9-dialect baseline of 8m10s. The bound grows with
     # dialect count, not with anything this session changed, so headroom is
-    # widened here rather than chasing a one-off.
-    timeout-minutes: 20
+    # widened here rather than chasing a one-off. SingleStore, the 18th named
+    # dialect, pushed it past the 20-minute bound (it is a large one, with a
+    # rich SHOW vocabulary and a big function table to probe), so it is raised
+    # again.
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
