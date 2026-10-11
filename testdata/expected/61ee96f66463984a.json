@@ -1,0 +1,179 @@
+{
+ "dialect": "singlestore",
+ "rendered": "SELECT APPROX_COUNT_DISTINCT(asset_id) AS approx_distinct_asset_id FROM acd_assets",
+ "sql": "SELECT APPROX_COUNT_DISTINCT(asset_id) AS approx_distinct_asset_id FROM acd_assets",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "APPROX_COUNT_DISTINCT"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "asset_id"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 39,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 42,
+   "t": "VAR",
+   "x": "approx_distinct_asset_id"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 67,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 72,
+   "t": "VAR",
+   "x": "acd_assets"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Hll",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "asset_id"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 66,
+    "end": 65,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "approx_distinct_asset_id"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 82,
+    "end": 81,
+    "line": 1,
+    "start": 72
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "acd_assets"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,422 @@
+{
+ "dialect": "singlestore",
+ "rendered": "SELECT `class`, student_id, test1, APPROX_PERCENTILE(test1, 0.3) OVER (PARTITION BY `class`) AS percentile FROM test_scores",
+ "sql": "SELECT `class`, student_id, test1, APPROX_PERCENTILE(test1, 0.3) OVER (PARTITION BY `class`) AS percentile FROM test_scores",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 7,
+   "t": "IDENTIFIER",
+   "x": "class"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "student_id"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "test1"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 35,
+   "t": "VAR",
+   "x": "APPROX_PERCENTILE"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 53,
+   "t": "VAR",
+   "x": "test1"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 60,
+   "t": "NUMBER",
+   "x": "0.3"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 63,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 65,
+   "t": "OVER",
+   "x": "OVER"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 70,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 71,
+   "t": "PARTITION_BY",
+   "x": "PARTITION BY"
+  },
+  {
+   "c": 91,
+   "e": 90,
+   "l": 1,
+   "s": 84,
+   "t": "IDENTIFIER",
+   "x": "class"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 91,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 93,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 96,
+   "t": "VAR",
+   "x": "percentile"
+  },
+  {
+   "c": 111,
+   "e": 110,
+   "l": 1,
+   "s": 107,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 112,
+   "t": "VAR",
+   "x": "test_scores"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "class"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "student_id"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "test1"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Window",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.ApproxQuantile",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "test1"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 15,
+   "k": "quantile",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "0.3"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 14,
+   "k": "partition_by"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 91,
+    "end": 90,
+    "line": 1,
+    "start": 84
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "class"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 14,
+   "k": "over",
+   "v": "OVER"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "alias",
+   "m": {
+    "col": 106,
+    "end": 105,
+    "line": 1,
+    "start": 96
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "percentile"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 31,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 123,
+    "end": 122,
+    "line": 1,
+    "start": 112
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "test_scores"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

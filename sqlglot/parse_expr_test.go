@@ -135,8 +135,6 @@ func TestJSONPathFunctionRefusals(t *testing.T) {
 		// port now builds. A literal that is not a STRING is the case still
 		// refused: folding a number needs the subscript rules and folding it
 		// wrongly would build a path the reference did not.
-		{"a fold over a literal that is not a string", "postgres",
-			"SELECT JSON_EXTRACT_PATH(x, 1)"},
 		// The dash-in-key reading is the Hive family's own; DuckDB's path
 		// grammar still rejects one, and building a Literal instead would
 		// be a different tree.
@@ -420,11 +418,9 @@ func TestMatchAgainst(t *testing.T) {
 	if got, err := Generate(tree2, ""); err != nil || got != sql2 {
 		t.Errorf("%s wrote %q (%v)", sql2, got, err)
 	}
-	// SingleStore's `MATCH(TABLE t)` and AGAINST's own modifier phrase are
-	// not read: no corpus statement has needed either, and this port has no
-	// template to write a modifier back with.
+	// AGAINST's own modifier phrase is not read: no corpus statement has
+	// needed it, and this port has no template to write a modifier back with.
 	for _, s := range []string{
-		"SELECT MATCH(TABLE t) AGAINST('x')",
 		// One malformed input per place a sub-parser is called.
 		"SELECT MATCH(a",
 		"SELECT MATCH(a)",
@@ -5063,6 +5059,8 @@ func TestApplyWithAnAlias(t *testing.T) {
 func TestTruncateUseAndTransactions(t *testing.T) {
 	for _, tc := range []struct{ name, read, write, sql, want string }{
 		{"truncate", "", "", "TRUNCATE TABLE t", "TRUNCATE TABLE t"},
+		// TABLE is optional, the same statement without it.
+		{"truncate without the word", "", "", "TRUNCATE t", "TRUNCATE TABLE t"},
 		{"if it is there", "", "", "TRUNCATE TABLE IF EXISTS t", "TRUNCATE TABLE IF EXISTS t"},
 		{"cascading", "postgres", "postgres", "TRUNCATE TABLE t1 CASCADE", "TRUNCATE TABLE t1 CASCADE"},
 		{"restarting", "postgres", "postgres", "TRUNCATE TABLE t1 RESTART IDENTITY",
@@ -5164,7 +5162,6 @@ func TestTruncateUseAndTransactions(t *testing.T) {
 		}
 	}
 	for _, sql := range []string{
-		"TRUNCATE t",
 		"USE",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {

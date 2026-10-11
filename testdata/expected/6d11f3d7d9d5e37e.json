@@ -1,0 +1,83 @@
+{
+ "dialect": "singlestore",
+ "rendered": "SHOW REPRODUCTION INTO OUTFILE 'a'",
+ "sql": "SHOW REPRODUCTION INTO OUTFILE 'a'",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "SHOW",
+   "x": "SHOW"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "REPRODUCTION"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 18,
+   "t": "INTO",
+   "x": "INTO"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "OUTFILE"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 31,
+   "t": "STRING",
+   "x": "a"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Show"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "REPRODUCTION"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "into_outfile",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "json",
+   "v": false
+  }
+ ]
+}

@@ -749,18 +749,26 @@ func (p *parser) parseJSONObject() (*Expression, error) {
 func (p *parser) parseMatchAgainst() (*Expression, error) {
 	p.advance() // MATCH
 	p.advance() // the opening parenthesis
-	if p.atWords("TABLE") {
-		return nil, p.unsupported("MATCH over a TABLE")
-	}
 	var columns []*Expression
-	for {
-		col, err := p.parseColumn()
+	if p.matchUnquotedWord("TABLE") {
+		// SingleStore's MATCH(TABLE t) names the table rather than columns.
+		table, err := p.parseTable()
 		if err != nil {
 			return nil, err
 		}
-		columns = append(columns, col)
-		if !p.match(TokCOMMA) {
-			break
+		if table != nil {
+			columns = []*Expression{table}
+		}
+	} else {
+		for {
+			col, err := p.parseColumn()
+			if err != nil {
+				return nil, err
+			}
+			columns = append(columns, col)
+			if !p.match(TokCOMMA) {
+				break
+			}
 		}
 	}
 	if !p.match(TokR_PAREN) {
@@ -1163,6 +1171,29 @@ func (p *parser) parseJSONBExists() (*Expression, error) {
 func (p *parser) parseJSONAgg() (*Expression, error) {
 	p.advance()
 	p.advance()
+
+	// SingleStore reads JSON_AGG(name ORDER BY ...) with the ORDER BY in the
+	// node's own `order` slot, where the base keeps the ordering wrapped
+	// around `this` (SingleStoreParser.FUNCTION_PARSERS).
+	if p.dialect == "singlestore" {
+		this, err := p.parseTerm()
+		if err != nil {
+			return nil, err
+		}
+		node := New("JSONArrayAgg", Arg{"this", this})
+		if p.at(TokORDER_BY) {
+			p.advance()
+			order, err := p.parseOrder()
+			if err != nil {
+				return nil, err
+			}
+			node.Set("order", order)
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed JSON_AGG")
+		}
+		return node, nil
+	}
 
 	this, err := p.parseAggregateArgument()
 	if err != nil {

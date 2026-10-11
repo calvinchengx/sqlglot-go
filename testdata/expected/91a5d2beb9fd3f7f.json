@@ -1,0 +1,83 @@
+{
+ "dialect": "singlestore",
+ "rendered": "SHOW USERS FOR ROLE 'role_name'",
+ "sql": "SHOW USERS FOR ROLE 'role_name'",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "SHOW",
+   "x": "SHOW"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "USERS"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 11,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "ROLE"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 20,
+   "t": "STRING",
+   "x": "role_name"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Show"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "USERS"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "for_role",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "role_name"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "json",
+   "v": false
+  }
+ ]
+}

@@ -8298,7 +8298,7 @@ func indexText(e *Expression) string {
 // writeShow writes MySQL's SHOW statements (the reference's show_sql). Other
 // dialects keep the generic spelling.
 func (g *generator) writeShow(e *Expression) string {
-	if g.dialect != "mysql" {
+	if g.dialect != "mysql" && g.dialect != "singlestore" {
 		return g.spell(e)
 	}
 	name, _ := e.Args["this"].(string)

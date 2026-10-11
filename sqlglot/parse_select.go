@@ -1591,6 +1591,12 @@ func (p *parser) parseOrderedList() ([]*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// `ORDER BY ALL` sorts by every column. SingleStore is the only
+		// dialect that reads the word as such; elsewhere it is a name
+		// (SUPPORTS_ORDER_BY_ALL).
+		if p.tables.SupportsOrderByAll && strings.EqualFold(e.Name(), "ALL") {
+			e = New("Var", Arg{"this", "ALL"})
+		}
 		desc := false
 		hasDirection := false
 		switch {

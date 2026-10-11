@@ -1,0 +1,169 @@
+{
+ "dialect": "singlestore",
+ "rendered": "SELECT DATEDIFF('2009-12-31', '2009-01-01') AS numweeks",
+ "sql": "SELECT DATEDIFF('2009-12-31', '2009-01-01') AS numweeks",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "DATEDIFF"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 16,
+   "t": "STRING",
+   "x": "2009-12-31"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 30,
+   "t": "STRING",
+   "x": "2009-01-01"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 44,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 47,
+   "t": "VAR",
+   "x": "numweeks"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.DateDiff",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "2009-12-31"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "2009-01-01"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 2,
+   "k": "date_part_boundary",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "numweeks"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

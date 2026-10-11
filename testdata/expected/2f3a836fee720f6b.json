@@ -1,0 +1,148 @@
+{
+ "dialect": "singlestore",
+ "rendered": "SELECT TIMESTAMPDIFF(QUARTER, '2009-02-13', '2013-09-01')",
+ "sql": "SELECT TIMESTAMPDIFF(QUARTER, '2009-02-13', '2013-09-01')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "TIMESTAMPDIFF"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 21,
+   "t": "VAR",
+   "x": "QUARTER"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 30,
+   "t": "STRING",
+   "x": "2009-02-13"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 44,
+   "t": "STRING",
+   "x": "2013-09-01"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.TimestampDiff",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "2013-09-01"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "2009-02-13"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "unit"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "QUARTER"
+  }
+ ]
+}

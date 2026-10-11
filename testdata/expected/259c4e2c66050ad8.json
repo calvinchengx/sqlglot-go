@@ -1,0 +1,206 @@
+{
+ "dialect": "singlestore",
+ "rendered": "SELECT * FROM employee WHERE JSON_MATCH_ANY(payroll::?names)",
+ "sql": "SELECT * FROM employee WHERE JSON_MATCH_ANY(payroll::?names)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "employee"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 23,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "JSON_MATCH_ANY"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "payroll"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 51,
+   "t": "DCOLONQMARK",
+   "x": "::?"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 54,
+   "t": "VAR",
+   "x": "names"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 59,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "employee"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "JSON_MATCH_ANY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExists",
+   "i": 8,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "payroll"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "path",
+   "v": "names"
+  },
+  {
+   "i": 10,
+   "k": "from_dcolonqmark",
+   "v": true
+  }
+ ]
+}

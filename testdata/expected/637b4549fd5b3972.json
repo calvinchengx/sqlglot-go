@@ -1,0 +1,190 @@
+{
+ "dialect": "singlestore",
+ "rendered": "SELECT TIMESTAMPDIFF(WEEK, '2009-01-01', '2009-12-31') AS numweeks",
+ "sql": "SELECT TIMESTAMPDIFF(WEEK, '2009-01-01', '2009-12-31') AS numweeks",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "TIMESTAMPDIFF"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 21,
+   "t": "VAR",
+   "x": "WEEK"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 27,
+   "t": "STRING",
+   "x": "2009-01-01"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 41,
+   "t": "STRING",
+   "x": "2009-12-31"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 55,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 58,
+   "t": "VAR",
+   "x": "numweeks"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TimestampDiff",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 41
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "2009-12-31"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "2009-01-01"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 2,
+   "k": "unit"
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "WEEK"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 66,
+    "end": 65,
+    "line": 1,
+    "start": 58
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "numweeks"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

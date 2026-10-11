@@ -80,6 +80,7 @@ Regenerate with `make service`; nothing in it is authored here.
 | mysql | 638/638 | 638 | 638 | 0 | 0 |
 | doris | 115/115 | 115 | 115 | 0 | 0 |
 | starrocks | 144/144 | 144 | 144 | 0 | 0 |
+| singlestore | 208/208 | 208 | 208 | 0 | 0 |
 | dax | 18/18 | 18 | 18 | 0 | 0 |
 | oracle | 159/159 | 159 | 159 | 0 | 0 |
 | snowflake | 551/551 | 551 | 551 | 0 | 0 |

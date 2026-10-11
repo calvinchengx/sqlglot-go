@@ -1,0 +1,113 @@
+{
+ "dialect": "singlestore",
+ "rendered": "SELECT ('a' RLIKE '^[\u0000-\u007f]*$')",
+ "sql": "SELECT ('a' RLIKE '^[\u0000-\u007f]*$')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 8,
+   "t": "STRING",
+   "x": "a"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 12,
+   "t": "RLIKE",
+   "x": "RLIKE"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 18,
+   "t": "STRING",
+   "x": "^[\u0000-\u007f]*$"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.RegexpLike",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expression",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "^[\u0000-\u007f]*$"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}
