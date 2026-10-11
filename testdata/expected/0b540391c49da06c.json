@@ -1,0 +1,261 @@
+{
+ "dialect": "starrocks",
+ "rendered": "ANALYZE FULL TABLE TBL(c1, c2) PROPERTIES ('prop1'=val1)",
+ "sql": "ANALYZE FULL TABLE TBL(c1, c2) PROPERTIES ('prop1'=val1)",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "ANALYZE",
+   "x": "ANALYZE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 8,
+   "t": "FULL",
+   "x": "FULL"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 13,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "TBL"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "c1"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "c2"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 31,
+   "t": "VAR",
+   "x": "PROPERTIES"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 43,
+   "t": "STRING",
+   "x": "prop1"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 51,
+   "t": "VAR",
+   "x": "val1"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Analyze"
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "tables"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "TBL"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 3,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "c1"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 3,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "c2"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 13,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "prop1"
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 14,
+   "k": "value"
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "val1"
+  },
+  {
+   "a": true,
+   "i": 0,
+   "k": "options",
+   "v": "FULL"
+  }
+ ]
+}

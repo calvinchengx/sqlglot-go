@@ -39,8 +39,51 @@ func (p *parser) parseDorisProperty() (prop *Expression, own bool, err error) {
 	case p.atWords("REFRESH"):
 		e, err := p.parseRefreshTriggerProperty()
 		return e, true, err
+	case p.atWords("ROLLUP"):
+		e, err := p.parseRollupProperty()
+		return e, true, err
 	}
 	return nil, false, nil
+}
+
+// parseRollupProperty reads StarRocks' `ROLLUP (r1(col1, col2) [FROM idx]
+// [PROPERTIES (...)], ...)` -- StarRocksParser._parse_rollup_property.
+func (p *parser) parseRollupProperty() (*Expression, error) {
+	p.advance() // ROLLUP
+	indexes, err := p.parseWrappedCSV(p.parseRollupIndex)
+	if err != nil {
+		return nil, err
+	}
+	return New("RollupProperty", Arg{"expressions", indexes}), nil
+}
+
+func (p *parser) parseRollupIndex() (*Expression, error) {
+	name, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	columns, err := p.parseWrappedCSV(p.parseIdentifier)
+	if err != nil {
+		return nil, err
+	}
+	var fromIndex *Expression
+	if p.matchWords("FROM") {
+		fromIndex, err = p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+	}
+	var properties *Expression
+	if p.matchWords("PROPERTIES") {
+		inner, err := p.parseWrappedProperties()
+		if err != nil {
+			return nil, err
+		}
+		properties = New("Properties", Arg{"expressions", inner})
+	}
+	return New("RollupIndex",
+		Arg{"this", name}, Arg{"expressions", columns},
+		Arg{"from_index", fromIndex}, Arg{"properties", properties}), nil
 }
 
 // parseCompositeKeyProperty reads `[UNIQUE] KEY (<columns>)` -- the reference's

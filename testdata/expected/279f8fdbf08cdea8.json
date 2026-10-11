@@ -1,0 +1,496 @@
+{
+ "dialect": "starrocks",
+ "rendered": "CREATE TABLE test_table (col1 STRING) PARTITION BY LIST (col1) (PARTITION pLos_Angeles VALUES IN ('Los Angeles'), PARTITION pSan_Francisco VALUES IN ('San Francisco'))",
+ "sql": "CREATE TABLE test_table (col1 STRING) PARTITION BY LIST (col1) (PARTITION pLos_Angeles VALUES IN ('Los Angeles'), PARTITION pSan_Francisco VALUES IN ('San Francisco'))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "test_table"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 25,
+   "t": "VAR",
+   "x": "col1"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 30,
+   "t": "TEXT",
+   "x": "STRING"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 38,
+   "t": "PARTITION_BY",
+   "x": "PARTITION BY"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 51,
+   "t": "LIST",
+   "x": "LIST"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 57,
+   "t": "VAR",
+   "x": "col1"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 61,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 63,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 64,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 74,
+   "t": "VAR",
+   "x": "pLos_Angeles"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 87,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 94,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 97,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 111,
+   "e": 110,
+   "l": 1,
+   "s": 98,
+   "t": "STRING",
+   "x": "Los Angeles"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 111,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 113,
+   "e": 112,
+   "l": 1,
+   "s": 112,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 114,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 138,
+   "e": 137,
+   "l": 1,
+   "s": 124,
+   "t": "VAR",
+   "x": "pSan_Francisco"
+  },
+  {
+   "c": 145,
+   "e": 144,
+   "l": 1,
+   "s": 139,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 148,
+   "e": 147,
+   "l": 1,
+   "s": 146,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 150,
+   "e": 149,
+   "l": 1,
+   "s": 149,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 165,
+   "e": 164,
+   "l": 1,
+   "s": 150,
+   "t": "STRING",
+   "x": "San Francisco"
+  },
+  {
+   "c": 166,
+   "e": 165,
+   "l": 1,
+   "s": 165,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 167,
+   "e": 166,
+   "l": 1,
+   "s": 166,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "test_table"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "col1"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionByListProperty",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 19,
+   "k": "partition_expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "col1"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 19,
+   "k": "create_expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionList",
+   "i": 24,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 25,
+   "k": "this",
+   "m": {
+    "col": 86,
+    "end": 85,
+    "line": 1,
+    "start": 74
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "pLos_Angeles"
+  },
+  {
+   "i": 26,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 25,
+   "k": "expressions",
+   "m": {
+    "col": 111,
+    "end": 110,
+    "line": 1,
+    "start": 98
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "Los Angeles"
+  },
+  {
+   "i": 29,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 19,
+   "k": "create_expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionList",
+   "i": 32,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "this",
+   "m": {
+    "col": 138,
+    "end": 137,
+    "line": 1,
+    "start": 124
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "pSan_Francisco"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 33,
+   "k": "expressions",
+   "m": {
+    "col": 165,
+    "end": 164,
+    "line": 1,
+    "start": 150
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "San Francisco"
+  },
+  {
+   "i": 37,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

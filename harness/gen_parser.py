@@ -31,7 +31,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks")
 
 
 def gostr(s: str) -> str:

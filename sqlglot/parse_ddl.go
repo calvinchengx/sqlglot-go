@@ -810,7 +810,8 @@ func (p *parser) parseInsert() (*Expression, error) {
 	}
 
 	// INTO is optional after OVERWRITE, where TABLE takes its place.
-	if !p.match(TokINTO) && !p.atWords("TABLE") {
+	// StarRocks writes `INSERT OVERWRITE <table>` with neither.
+	if !p.match(TokINTO) && !p.atWords("TABLE") && !(p.dialect == "starrocks" && overwrite) {
 		return nil, p.unsupported("INSERT without INTO")
 	}
 	if p.atWords("TABLE") {
@@ -2103,7 +2104,7 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			return nil, err
 		}
 		return New("RenameIndex", Arg{"this", from}, Arg{"to", to}), nil
-	case p.dialect == "doris" && p.atWords("RENAME") && p.next() != nil &&
+	case (p.dialect == "doris" || p.dialect == "starrocks") && p.atWords("RENAME") && p.next() != nil &&
 		!strings.EqualFold(p.next().Text, "TO") && !strings.EqualFold(p.next().Text, "COLUMN"):
 		// Doris writes `RENAME <name>` with no TO: the new name lives where
 		// the old one did.
@@ -2113,6 +2114,15 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			return nil, err
 		}
 		return New("AlterRename", Arg{"this", target}), nil
+	case p.atWords("SWAP"):
+		// StarRocks' `ALTER TABLE a SWAP WITH b`.
+		p.advance() // SWAP
+		p.matchWords("WITH")
+		target, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		return New("SwapTable", Arg{"this", target}), nil
 	case p.atWords("RENAME", "TO"):
 		p.advance()
 		p.advance()
@@ -5769,6 +5779,19 @@ func (p *parser) parseAnalyze() (*Expression, error) {
 		return nil, err
 	}
 
+	// StarRocks names the run mode between the subject and the expression:
+	// `ANALYZE TABLE t WITH SYNC MODE PROPERTIES (...)`.
+	if p.at(TokWITH) {
+		m, d := p.peekAt(1), p.peekAt(2)
+		if m != nil && (strings.EqualFold(m.Text, "SYNC") || strings.EqualFold(m.Text, "ASYNC")) &&
+			d != nil && strings.EqualFold(d.Text, "MODE") {
+			node.Set("mode", "WITH "+strings.ToUpper(m.Text)+" MODE")
+			p.advance()
+			p.advance()
+			p.advance()
+		}
+	}
+
 	// MySQL's histograms and Redshift's column sets.
 	if p.atWords("UPDATE") || p.atWords("DROP") {
 		histogram, err := p.parseAnalyzeHistogram()
@@ -5799,8 +5822,37 @@ func (p *parser) parseAnalyze() (*Expression, error) {
 		}
 		node.Set("properties", New("Properties", Arg{"expressions", items}))
 	}
+	// StarRocks spells the same property list `PROPERTIES (...)` rather than
+	// `WITH (...)`.
+	if p.atUnquotedWord("PROPERTIES") && p.next() != nil && p.next().Type == TokL_PAREN {
+		p.advance()
+		items, err := p.parseWrappedProperties()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("properties", New("Properties", Arg{"expressions", items}))
+	}
 	if len(options) > 0 {
 		node.Set("options", options)
+	}
+	// The reference builds Analyze with its properties argument BEFORE its
+	// expression argument, so a tree holding both -- StarRocks' histogram
+	// followed by PROPERTIES -- dumps them properties-first even though the
+	// parser meets the expression first.
+	if _, hasProps := node.Args["properties"]; hasProps {
+		if _, hasExpr := node.Args["expression"]; hasExpr {
+			ordered := make([]string, 0, len(node.Keys))
+			for _, k := range node.Keys {
+				if k == "properties" {
+					continue
+				}
+				if k == "expression" {
+					ordered = append(ordered, "properties")
+				}
+				ordered = append(ordered, k)
+			}
+			node.Keys = ordered
+		}
 	}
 	if err := p.readAnalyzeExpression(node); err != nil {
 		return nil, err
@@ -7615,8 +7667,17 @@ func (p *parser) parseAnalyzeHistogram() (*Expression, error) {
 		var withs []string
 		for p.at(TokWITH) {
 			p.advance()
+			// StarRocks names the run mode here as well as the bucket count:
+			// `WITH SYNC MODE WITH 5 BUCKETS` is one AnalyzeWith holding both.
 			if p.atWords("SYNC") || p.atWords("ASYNC") {
-				return nil, p.unsupported("an ANALYZE histogram in SYNC/ASYNC mode")
+				word := strings.ToUpper(p.curr().Text)
+				p.advance()
+				if !p.atWords("MODE") {
+					return nil, p.unsupported("an ANALYZE histogram WITH a mode but no MODE")
+				}
+				p.advance()
+				withs = append(withs, word+" MODE")
+				continue
 			}
 			n := p.curr()
 			if n == nil || n.Type != TokNUMBER {

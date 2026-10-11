@@ -1,0 +1,450 @@
+{
+ "dialect": "starrocks",
+ "rendered": "DELETE FROM t WHERE a >= 1 AND a <= 10 AND b >= 20 AND b <= 30 OR c >= 'x' AND c <= 'z'",
+ "sql": "DELETE FROM t WHERE a BETWEEN 1 AND 10 AND b BETWEEN 20 AND 30 OR c BETWEEN 'x' AND 'z'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "DELETE",
+   "x": "DELETE"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "t"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 14,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 22,
+   "t": "BETWEEN",
+   "x": "BETWEEN"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 32,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 36,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 39,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "VAR",
+   "x": "b"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 45,
+   "t": "BETWEEN",
+   "x": "BETWEEN"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 53,
+   "t": "NUMBER",
+   "x": "20"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 56,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 60,
+   "t": "NUMBER",
+   "x": "30"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 63,
+   "t": "OR",
+   "x": "OR"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 66,
+   "t": "VAR",
+   "x": "c"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 68,
+   "t": "BETWEEN",
+   "x": "BETWEEN"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 76,
+   "t": "STRING",
+   "x": "x"
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 80,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 84,
+   "t": "STRING",
+   "x": "z"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Delete"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "using",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "cluster",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.Or",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.And",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Between",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 10,
+   "k": "low",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 10,
+   "k": "high",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Between",
+   "i": 9,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 21,
+   "k": "low",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "20"
+  },
+  {
+   "i": 26,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 21,
+   "k": "high",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "30"
+  },
+  {
+   "i": 29,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Between",
+   "i": 8,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 32,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "this",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 32,
+   "k": "low",
+   "m": {
+    "col": 79,
+    "end": 78,
+    "line": 1,
+    "start": 76
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 37,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 32,
+   "k": "high",
+   "m": {
+    "col": 87,
+    "end": 86,
+    "line": 1,
+    "start": 84
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "z"
+  },
+  {
+   "i": 40,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}
