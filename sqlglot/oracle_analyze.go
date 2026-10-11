@@ -15,6 +15,13 @@ func init() {
 func (p *parser) parseAnalyzeNamedSubject() (string, []*Expression, error) {
 	word := strings.ToUpper(p.curr().Text)
 	switch {
+	case word == "DATABASE":
+		p.advance()
+		db, err := p.parseIdentifier()
+		if err != nil {
+			return "", nil, err
+		}
+		return "DATABASE", []*Expression{New("Table", Arg{"db", db})}, nil
 	case p.dialect == "oracle" && (word == "INDEX" || word == "CLUSTER"):
 		p.advance()
 		table, err := p.parseTableName()

@@ -85,13 +85,34 @@ func (p *parser) parseTableProperties() ([]*Expression, error) {
 			out = append(out, prop)
 			continue
 		}
-		if p.dialect == "mysql" && p.atWords("PARTITION BY") {
+		if (p.dialect == "mysql" || p.dialect == "doris") && p.atWords("PARTITION BY") &&
+			p.next() != nil && (strings.EqualFold(p.next().Text, "RANGE") || strings.EqualFold(p.next().Text, "LIST")) {
 			prop, err := p.parseMySQLPartition()
 			if err != nil {
 				return nil, err
 			}
 			out = append(out, prop)
 			continue
+		}
+		// Doris's own property words (UNIQUE/KEY, DUPLICATE, DISTRIBUTED,
+		// BUILD, REFRESH) and PROPERTIES, which opens a list rather than
+		// contributing a property of its own.
+		if p.dialect == "doris" {
+			if p.atWords("PROPERTIES") {
+				p.advance()
+				inner, err := p.parseWrappedProperties()
+				if err != nil {
+					return nil, err
+				}
+				out = append(out, inner...)
+				continue
+			}
+			if prop, own, err := p.parseDorisProperty(); err != nil {
+				return nil, err
+			} else if own {
+				out = append(out, prop)
+				continue
+			}
 		}
 		// A word whose branches the generated table cannot describe: ON opens
 		// both `ON COMMIT PRESERVE ROWS` and `ON <filegroup>`, and NO both a
@@ -818,6 +839,20 @@ func (p *parser) parseSchemaProperty() ([]*Expression, error) {
 	}
 	var out []*Expression
 	for {
+		// Doris's `PARTITION BY (DATE_TRUNC(c2, 'MONTH'))` puts a CALL where
+		// the other dialects put a column name; read it as the expression it
+		// is, since a column definition cannot start with one.
+		if p.dialect == "doris" && p.curr() != nil && p.next() != nil && p.next().Type == TokL_PAREN {
+			call, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, call)
+			if !p.match(TokCOMMA) {
+				break
+			}
+			continue
+		}
 		name, err := p.parseIdentifier()
 		if err != nil {
 			return nil, err
@@ -1003,6 +1038,21 @@ func (p *parser) parseMySQLPartition() (*Expression, error) {
 		return nil, err
 	}
 	if !p.at(TokL_PAREN) || p.next() == nil || !strings.EqualFold(p.next().Text, "PARTITION") {
+		// Doris's dynamic range writes a single FROM…TO…INTERVAL expression
+		// in place of the partition list: `(FROM ('a') TO ('b') INTERVAL n U)`.
+		if p.dialect == "doris" && p.at(TokL_PAREN) && p.next() != nil &&
+			strings.EqualFold(p.next().Text, "FROM") {
+			p.advance() // (
+			dyn, err := p.parseDorisDynamicPartition()
+			if err != nil {
+				return nil, err
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed dynamic partition")
+			}
+			return New(class, Arg{"partition_expressions", expressions},
+				Arg{"create_expressions", []*Expression{dyn}}), nil
+		}
 		return nil, p.unsupported("PARTITION BY without a partition list")
 	}
 	create, err := p.parseWrappedCSV(value)
@@ -1010,6 +1060,51 @@ func (p *parser) parseMySQLPartition() (*Expression, error) {
 		return nil, err
 	}
 	return New(class, Arg{"partition_expressions", expressions}, Arg{"create_expressions", create}), nil
+}
+
+// parseDorisDynamicPartition reads `FROM ('start') TO ('end') INTERVAL n unit`
+// -- the reference's _parse_partitioning_granularity_dynamic.
+func (p *parser) parseDorisDynamicPartition() (*Expression, error) {
+	p.matchWords("FROM")
+	start, err := p.parseDorisWrappedString()
+	if err != nil {
+		return nil, err
+	}
+	if !p.matchWords("TO") {
+		return nil, p.unsupported("FROM without TO")
+	}
+	end, err := p.parseDorisWrappedString()
+	if err != nil {
+		return nil, err
+	}
+	if !p.matchWords("INTERVAL") {
+		return nil, p.unsupported("a dynamic partition without INTERVAL")
+	}
+	num := p.tryParseNumberLiteral()
+	if num == nil {
+		return nil, p.unsupported("INTERVAL without a number")
+	}
+	unit, err := p.parseDorisAnyVar()
+	if err != nil {
+		return nil, err
+	}
+	return New("PartitionByRangePropertyDynamic",
+		Arg{"start", start}, Arg{"end", end},
+		Arg{"every", New("Interval", Arg{"this", num}, Arg{"unit", unit})}), nil
+}
+
+func (p *parser) parseDorisWrappedString() (*Expression, error) {
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("a wrapped string expected")
+	}
+	s := p.tryParseStringLiteral()
+	if s == nil {
+		return nil, p.unsupported("a string expected")
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed string")
+	}
+	return s, nil
 }
 
 func (p *parser) parsePartitionRangeValue() (*Expression, error) {

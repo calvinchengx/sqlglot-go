@@ -2103,6 +2103,16 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			return nil, err
 		}
 		return New("RenameIndex", Arg{"this", from}, Arg{"to", to}), nil
+	case p.dialect == "doris" && p.atWords("RENAME") && p.next() != nil &&
+		!strings.EqualFold(p.next().Text, "TO") && !strings.EqualFold(p.next().Text, "COLUMN"):
+		// Doris writes `RENAME <name>` with no TO: the new name lives where
+		// the old one did.
+		p.advance() // RENAME
+		target, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		return New("AlterRename", Arg{"this", target}), nil
 	case p.atWords("RENAME", "TO"):
 		p.advance()
 		p.advance()
@@ -2544,6 +2554,19 @@ func (p *parser) parseViewColumns() ([]*Expression, error) {
 		name, err := p.parseIdentifier()
 		if err != nil {
 			return nil, err
+		}
+		// Doris's materialized-view columns carry a TYPE, where a plain
+		// view's carry only what is said about them: `(c1 INT, c2 INT)`.
+		if p.dialect == "doris" && !p.at(TokR_PAREN) && !p.at(TokCOMMA) {
+			kind, err := p.parseDataType()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, New("ColumnDef", Arg{"this", name}, Arg{"kind", kind}))
+			if !p.match(TokCOMMA) {
+				break
+			}
+			continue
 		}
 		constraints, err := p.parseColumnConstraints()
 		if err != nil {

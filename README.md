@@ -78,7 +78,7 @@ Regenerate with `make service`; nothing in it is authored here.
 | trino | 253/253 | 253 | 253 | 0 | 0 |
 | dremio | 61/61 | 61 | 61 | 0 | 0 |
 | mysql | 638/638 | 638 | 638 | 0 | 0 |
-| doris | 115/115 | 97 | 115 | 18 | 0 |
+| doris | 115/115 | 114 | 115 | 1 | 0 |
 | dax | 18/18 | 18 | 18 | 0 | 0 |
 | oracle | 159/159 | 159 | 159 | 0 | 0 |
 | snowflake | 551/551 | 551 | 551 | 0 | 0 |

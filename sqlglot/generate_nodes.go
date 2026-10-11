@@ -185,6 +185,8 @@ func init() {
 		"AlterSet":                            (*generator).writeAlterSet,
 		"Partition":                           (*generator).writePartition,
 		"PartitionedByProperty":               (*generator).writePartitionedByProperty,
+		"PartitionByRangePropertyDynamic":     (*generator).writePartitionByRangePropertyDynamic,
+		"UniqueKeyProperty":                   (*generator).writeUniqueKeyProperty,
 		"OnConflict":                          (*generator).writeOnConflict,
 		"Pragma":                              (*generator).writePragma,
 		"Comment":                             (*generator).writeComment,
@@ -6632,7 +6634,7 @@ func (g *generator) writePartition(e *Expression) string {
 	if sub, _ := e.Args["subpartition"].(bool); sub {
 		return "SUBPARTITION(" + g.list(e) + ")"
 	}
-	if g.dialect == "mysql" && e.Parent != nil &&
+	if (g.dialect == "mysql" || g.dialect == "doris") && e.Parent != nil &&
 		(e.Parent.Class == "PartitionByRangeProperty" || e.Parent.Class == "PartitionByListProperty") {
 		return g.list(e)
 	}
