@@ -31,7 +31,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore")
 
 
 def gostr(s: str) -> str:
@@ -3647,8 +3647,16 @@ def json_arrow_flags(dialect: str) -> tuple[bool, bool, bool]:
     # off the node entirely while the others set it to False -- and an arg
     # present-but-false is a different tree from an arg absent. The flag could
     # not have told us that; the node could.
-    node = sqlglot.parse_one("SELECT x ->> 'y'", dialect=dialect or None).selects[0]
-    plain = sqlglot.parse_one("SELECT x -> c", dialect=dialect or None).selects[0]
+    node = None
+    plain = None
+    try:
+        node = sqlglot.parse_one("SELECT x ->> 'y'", dialect=dialect or None).selects[0]
+        plain = sqlglot.parse_one("SELECT x -> c", dialect=dialect or None).selects[0]
+    except Exception:  # noqa: BLE001
+        # The dialect does not READ the arrow at all -- SingleStore drops
+        # ARROW/DARROW from its column operators -- so there is no flag to
+        # record and no arrow for the port to write.
+        return (False, False, False)
     return (
         bool(getattr(d.parser_class, "JSON_ARROWS_REQUIRE_JSON_TYPE", False)),
         "scalar_only" in node.args,
@@ -3665,7 +3673,11 @@ def json_path_is_parsed(dialect: str) -> bool:
     """
     import sqlglot
 
-    e = sqlglot.parse_one("SELECT j -> '$.a.b'", dialect=dialect or None).selects[0]
+    try:
+        e = sqlglot.parse_one("SELECT j -> '$.a.b'", dialect=dialect or None).selects[0]
+    except Exception:  # noqa: BLE001
+        # No arrow to parse, so no path to take apart.
+        return False
     return len(e.args["expression"].args["expressions"]) > 2
 
 
@@ -6333,6 +6345,14 @@ def main() -> int:
         "\t// read ALL as a column of that name instead. PROBED: the difference\n",
         "\t// lands on the one clause the guard rewrites.\n",
         "\tLimitAllMeansNoLimit bool\n",
+        "\t// SupportsOrderByAll: `ORDER BY ALL` sorts by every column, which\n",
+        "\t// SingleStore is the only dialect that reads; the word is otherwise a\n",
+        "\t// name.\n",
+        "\tSupportsOrderByAll bool\n",
+        "\t// VectorTypeAliases: the short names a VECTOR's element type may be\n",
+        "\t// written with (SingleStore's I8/I16/I32/F32/F64), each mapped to the\n",
+        "\t// type it names.\n",
+        "\tVectorTypeAliases map[string]string\n",
         "\t// StringSensitiveArgs are argument positions where a STRING\n",
         "\t// LITERAL makes the reference build something structurally\n",
         "\t// different: PostgreSQL reads a string step to GENERATE_SERIES as\n",
@@ -7649,6 +7669,11 @@ def main() -> int:
         out.append(
             f"\t\tLimitAllMeansNoLimit: {str(limit_all_means_no_limit(name)).lower()},\n"
         )
+        out.append(
+            "\t\tSupportsOrderByAll: %s,\n"
+            % str(bool(getattr(Dialect.get_or_raise(name or None), "SUPPORTS_ORDER_BY_ALL", False))).lower()
+        )
+        out.append(strstrmap("VectorTypeAliases", getattr(Dialect.get_or_raise(name or None), "VECTOR_TYPE_ALIASES", {})))
         reserved = reserved_keywords(name, Dialect)
         if reserved:
             out.append("\t\tReservedKeywords: map[string]bool{\n")

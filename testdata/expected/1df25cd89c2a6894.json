@@ -1,0 +1,306 @@
+{
+ "dialect": "singlestore",
+ "rendered": "SELECT REDUCE(0, JSON_TO_ARRAY('[1,2,3,4]'), REDUCE_ACC() + REDUCE_VALUE()) AS `Result`",
+ "sql": "SELECT REDUCE(0, JSON_TO_ARRAY('[1,2,3,4]'), REDUCE_ACC() + REDUCE_VALUE()) AS `Result`",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "REDUCE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "JSON_TO_ARRAY"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 31,
+   "t": "STRING",
+   "x": "[1,2,3,4]"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 45,
+   "t": "VAR",
+   "x": "REDUCE_ACC"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 60,
+   "t": "VAR",
+   "x": "REDUCE_VALUE"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 72,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 73,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 74,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 76,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 79,
+   "t": "IDENTIFIER",
+   "x": "Result"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.array.Reduce",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "initial",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "JSON_TO_ARRAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "expressions",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "[1,2,3,4]"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Add",
+   "i": 2,
+   "k": "merge"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "REDUCE_ACC"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 11,
+   "k": "expression",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "REDUCE_VALUE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 87,
+    "end": 86,
+    "line": 1,
+    "start": 79
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "Result"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": true
+  }
+ ]
+}

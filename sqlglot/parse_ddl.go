@@ -1638,6 +1638,13 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 					Arg{"this", New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true})})
 				break
 			}
+			// A STRING collation is a Literal: `COLLATE 'binary'`.
+			if c.Type == TokSTRING {
+				p.advance()
+				kind = New("CollateColumnConstraint",
+					Arg{"this", New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})})
+				break
+			}
 			name, err := p.parseColumn()
 			if err != nil {
 				return nil, err
@@ -2197,6 +2204,20 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 	case p.at(TokSET):
 		p.advance()
 		return p.parseAlterSet()
+	case p.dialect == "singlestore" && p.atWords("CHANGE"):
+		// SingleStore's CHANGE renames a column rather than restating it
+		// (SingleStoreParser.ALTER_PARSERS): `CHANGE old new`.
+		p.advance()
+		p.match(TokCOLUMN)
+		from, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		to, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		return New("RenameColumn", Arg{"this", from}, Arg{"to", to}), nil
 	case p.atWords("MODIFY"), p.atWords("CHANGE"):
 		rename := p.atWords("CHANGE")
 		p.advance()
@@ -4072,10 +4093,9 @@ func (p *parser) parseTruncate() (*Expression, error) {
 		return p.parseFunction()
 	}
 	p.advance() // TRUNCATE
-	if !p.atWords("TABLE") {
-		return nil, p.unsupported("TRUNCATE without TABLE")
-	}
-	p.advance()
+	// TABLE is optional everywhere (`TRUNCATE t` is the same statement),
+	// which is how the reference reads it too.
+	p.matchUnquotedWord("TABLE")
 	exists := false
 	if p.atWords("IF", "EXISTS") {
 		p.advance()
@@ -4151,7 +4171,7 @@ func (p *parser) parseTruncate() (*Expression, error) {
 		p.advance()
 		node.Set("option", "RESTRICT")
 	}
-	if p.curr() != nil {
+	if c := p.curr(); c != nil && c.Type != TokSEMICOLON {
 		return nil, p.unsupported("TRUNCATE with more than this port reads")
 	}
 	return node, nil
@@ -6381,26 +6401,41 @@ func (p *parser) parseShow() (*Expression, error) {
 	}
 	p.advance() // SHOW
 
-	// Longest phrase first: ALL TABLES is not TABLES.
+	// The reference walks its SHOW trie a word at a time and stops at the
+	// FIRST phrase it recognises -- the SHORTEST match, not the longest.
+	// `SHOW GROUPS FOR ROLE x` is therefore SHOW GROUPS carrying a FOR ROLE
+	// clause, not a kind named GROUPS FOR ROLE.
+	start := p.index
 	var kind string
-	for phrase := range p.tables.ShowKinds {
-		words := strings.Split(phrase, " ")
-		if !p.atWords(words...) {
-			continue
+	var words []string
+	for {
+		c := p.curr()
+		if c == nil {
+			break
 		}
-		if len(phrase) > len(kind) {
+		words = append(words, strings.ToUpper(c.Text))
+		phrase := strings.Join(words, " ")
+		p.advance()
+		if _, ok := p.tables.ShowKinds[phrase]; ok {
 			kind = phrase
+			break
+		}
+		if !p.showKindIsPrefix(phrase) {
+			break
 		}
 	}
 	if kind == "" {
+		p.index = start
 		return nil, p.unsupported("SHOW of something this port does not read")
-	}
-	for range strings.Split(kind, " ") {
-		p.advance()
 	}
 
 	if p.dialect == "mysql" {
 		if spec, ok := mysqlShowKinds[kind]; ok {
+			return p.parseShowMySQL(spec)
+		}
+	}
+	if p.dialect == "singlestore" {
+		if spec, ok := singlestoreShowKinds[kind]; ok {
 			return p.parseShowMySQL(spec)
 		}
 	}
@@ -6417,6 +6452,36 @@ func (p *parser) parseShow() (*Expression, error) {
 		return nil, p.unsupported("SHOW with more than this port reads")
 	}
 	return node, nil
+}
+
+// showKindIsPrefix reports whether any SHOW kind starts with this phrase --
+// the port's own walk of the reference's SHOW trie, over the generated phrase
+// set.
+func (p *parser) showKindIsPrefix(phrase string) bool {
+	prefix := phrase + " "
+	for k := range p.tables.ShowKinds {
+		if strings.HasPrefix(k, prefix) {
+			return true
+		}
+	}
+	return false
+}
+
+// parseIDVarAny is the reference's _parse_id_var(any_token=True): an
+// identifier if one reads, and ANY single token otherwise -- `SHOW PLAN JSON
+// 25` names the target `25`, which is a number rather than a name.
+func (p *parser) parseIDVarAny() *Expression {
+	saved := p.index
+	if id, err := p.parseIdentifier(); err == nil && id != nil {
+		return id
+	}
+	p.index = saved
+	c := p.curr()
+	if c == nil {
+		return nil
+	}
+	p.advance()
+	return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", c.Type == TokSTRING})
 }
 
 // mysqlShowSpec is one entry of MySQL's own SHOW_PARSERS: the phrase written
@@ -6489,6 +6554,100 @@ var mysqlShowKinds = map[string]mysqlShowSpec{
 	"WARNINGS":          {This: "WARNINGS"},
 }
 
+// singlestoreShowKinds is SingleStore's SHOW_PARSERS -- MySQL's own table with
+// SingleStore's extra kinds (aggregates, pipelines, projections, the resource and
+// replication statuses) and a few canonical renames, read out of the reference's
+// own dict. The spec shape is MySQL's; SingleStore only adds entries to it.
+var singlestoreShowKinds = map[string]mysqlShowSpec{
+	"AGGREGATES":                        {This: "AGGREGATES", Target: ""},
+	"BINARY LOGS":                       {This: "BINARY LOGS", Target: ""},
+	"BINLOG EVENTS":                     {This: "BINLOG EVENTS", Target: ""},
+	"CDC EXTRACTOR POOL":                {This: "CDC EXTRACTOR POOL", Target: ""},
+	"CHARACTER SET":                     {This: "CHARACTER SET", Target: ""},
+	"CHARSET":                           {This: "CHARACTER SET", Target: ""},
+	"COLLATION":                         {This: "COLLATION", Target: ""},
+	"COLUMNS":                           {This: "COLUMNS", Target: "FROM"},
+	"CREATE AGGREGATE":                  {This: "CREATE AGGREGATE", Target: "BARE"},
+	"CREATE DATABASE":                   {This: "CREATE DATABASE", Target: "BARE"},
+	"CREATE EVENT":                      {This: "CREATE EVENT", Target: "BARE"},
+	"CREATE FUNCTION":                   {This: "CREATE FUNCTION", Target: "BARE"},
+	"CREATE PIPELINE":                   {This: "CREATE PIPELINE", Target: "BARE"},
+	"CREATE PROCEDURE":                  {This: "CREATE PROCEDURE", Target: "BARE"},
+	"CREATE PROJECTION":                 {This: "CREATE PROJECTION", Target: "BARE"},
+	"CREATE TABLE":                      {This: "CREATE TABLE", Target: "BARE"},
+	"CREATE TRIGGER":                    {This: "CREATE TRIGGER", Target: "BARE"},
+	"CREATE VIEW":                       {This: "CREATE VIEW", Target: "BARE"},
+	"DATABASE STATUS":                   {This: "DATABASE STATUS", Target: ""},
+	"DATABASES":                         {This: "DATABASES", Target: ""},
+	"DISTRIBUTED_PLANCACHE STATUS":      {This: "DISTRIBUTED_PLANCACHE STATUS", Target: ""},
+	"ENGINE":                            {This: "ENGINE", Target: "BARE"},
+	"ENGINES":                           {This: "ENGINES", Target: ""},
+	"ERRORS":                            {This: "ERRORS", Target: ""},
+	"EVENTS":                            {This: "EVENTS", Target: ""},
+	"FULL COLUMNS":                      {This: "COLUMNS", Target: "FROM", Full: true},
+	"FULL PROCESSLIST":                  {This: "PROCESSLIST", Target: "", Full: true},
+	"FULL TABLES":                       {This: "TABLES", Target: "", Full: true},
+	"FULLTEXT SERVICE METRICS FOR NODE": {This: "FULLTEXT SERVICE METRICS FOR NODE", Target: "BARE"},
+	"FULLTEXT SERVICE METRICS LOCAL":    {This: "FULLTEXT SERVICE METRICS LOCAL", Target: ""},
+	"FULLTEXT SERVICE STATUS":           {This: "FULLTEXT SERVICE STATUS", Target: ""},
+	"FUNCTION CODE":                     {This: "FUNCTION CODE", Target: "BARE"},
+	"FUNCTION STATUS":                   {This: "FUNCTION STATUS", Target: ""},
+	"FUNCTIONS":                         {This: "FUNCTIONS", Target: ""},
+	"GLOBAL STATUS":                     {This: "STATUS", Target: "", Global: true},
+	"GLOBAL VARIABLES":                  {This: "VARIABLES", Target: "", Global: true},
+	"GRANTS":                            {This: "GRANTS", Target: "FOR"},
+	"GROUPS":                            {This: "GROUPS", Target: ""},
+	"GROUPS FOR ROLE":                   {This: "GROUPS FOR ROLE", Target: "BARE"},
+	"GROUPS FOR USER":                   {This: "GROUPS FOR USER", Target: "BARE"},
+	"INDEX":                             {This: "INDEX", Target: "FROM"},
+	"INDEXES":                           {This: "INDEX", Target: "FROM"},
+	"KEYS":                              {This: "INDEX", Target: "FROM"},
+	"LINKS":                             {This: "LINKS", Target: "ON"},
+	"LOAD ERRORS":                       {This: "LOAD ERRORS", Target: ""},
+	"LOAD WARNINGS":                     {This: "LOAD WARNINGS", Target: ""},
+	"MASTER LOGS":                       {This: "BINARY LOGS", Target: ""},
+	"MASTER STATUS":                     {This: "MASTER STATUS", Target: ""},
+	"OPEN TABLES":                       {This: "OPEN TABLES", Target: ""},
+	"PARTITIONS":                        {This: "PARTITIONS", Target: "ON"},
+	"PIPELINES":                         {This: "PIPELINES", Target: ""},
+	"PLAN":                              {This: "PLAN", Target: "BARE"},
+	"PLANCACHE":                         {This: "PLANCACHE", Target: ""},
+	"PLUGINS":                           {This: "PLUGINS", Target: ""},
+	"PRIVILEGES":                        {This: "PRIVILEGES", Target: ""},
+	"PROCEDURE CODE":                    {This: "PROCEDURE CODE", Target: "BARE"},
+	"PROCEDURE STATUS":                  {This: "PROCEDURE STATUS", Target: ""},
+	"PROCEDURES":                        {This: "PROCEDURES", Target: ""},
+	"PROCESSLIST":                       {This: "PROCESSLIST", Target: ""},
+	"PROFILE":                           {This: "PROFILE", Target: ""},
+	"PROFILES":                          {This: "PROFILES", Target: ""},
+	"PROJECTIONS":                       {This: "PROJECTIONS", Target: "ON TABLE"},
+	"RELAYLOG EVENTS":                   {This: "RELAYLOG EVENTS", Target: ""},
+	"REPLICA STATUS":                    {This: "REPLICA STATUS", Target: ""},
+	"REPLICAS":                          {This: "REPLICAS", Target: ""},
+	"REPLICATION STATUS":                {This: "REPLICATION STATUS", Target: ""},
+	"REPRODUCTION":                      {This: "REPRODUCTION", Target: ""},
+	"RESOURCE POOLS":                    {This: "RESOURCE POOLS", Target: ""},
+	"ROLES":                             {This: "ROLES", Target: ""},
+	"ROLES FOR GROUP":                   {This: "ROLES FOR GROUP", Target: "BARE"},
+	"ROLES FOR USER":                    {This: "ROLES FOR USER", Target: "BARE"},
+	"SCHEMAS":                           {This: "DATABASES", Target: ""},
+	"SESSION STATUS":                    {This: "STATUS", Target: ""},
+	"SESSION VARIABLES":                 {This: "VARIABLES", Target: ""},
+	"SLAVE HOSTS":                       {This: "REPLICAS", Target: ""},
+	"SLAVE STATUS":                      {This: "REPLICA STATUS", Target: ""},
+	"STATUS":                            {This: "STATUS", Target: ""},
+	"STATUS EXTENDED":                   {This: "STATUS EXTENDED", Target: ""},
+	"STORAGE ENGINES":                   {This: "ENGINES", Target: ""},
+	"TABLE STATUS":                      {This: "TABLE STATUS", Target: ""},
+	"TABLES":                            {This: "TABLES", Target: ""},
+	"TRIGGERS":                          {This: "TRIGGERS", Target: ""},
+	"USERS":                             {This: "USERS", Target: ""},
+	"USERS FOR GROUP":                   {This: "USERS FOR GROUP", Target: "BARE"},
+	"USERS FOR ROLE":                    {This: "USERS FOR ROLE", Target: "BARE"},
+	"VARIABLES":                         {This: "VARIABLES", Target: ""},
+	"WARNINGS":                          {This: "WARNINGS", Target: ""},
+}
+
 // matchWords consumes every one of words in order if they are ALL present,
 // or none of them if the sequence breaks partway through -- the atomic
 // version of atWords, for a phrase that is only sometimes there.
@@ -6531,13 +6690,9 @@ func (p *parser) parseShowMySQL(spec mysqlShowSpec) (*Expression, error) {
 	var targetID *Expression
 	if spec.Target != "" {
 		if spec.Target != "BARE" {
-			p.matchUnquotedWord(spec.Target)
+			p.matchWords(strings.Split(spec.Target, " ")...)
 		}
-		id, err := p.parseIdentifier()
-		if err != nil {
-			return nil, err
-		}
-		targetID = id
+		targetID = p.parseIDVarAny()
 	}
 
 	var position, db *Expression
@@ -7605,14 +7760,36 @@ func (p *parser) parseComputedColumn() (*Expression, error) {
 	case p.atWords("VIRTUAL"):
 		p.advance()
 	}
+	// A computed column may name the type its expression yields, or the word
+	// AUTO -- `b AS (a * 2) PERSISTED AUTO NOT NULL` -- which the reference
+	// records as a Var rather than a type.
+	var dataType *Expression
+	if p.atWords("AUTO") {
+		p.advance()
+		dataType = New("Var", Arg{"this", "AUTO"})
+	} else {
+		// A computed column need not name a type at all; `_parse_types`
+		// returns nothing where one does not read.
+		mark := p.index
+		dataType, err = p.parseColumnType()
+		if err != nil {
+			p.index = mark
+			dataType = nil
+		}
+	}
 	notNull := false
 	if p.atWords("NOT", "NULL") {
 		p.advance()
 		p.advance()
 		notNull = true
 	}
-	return New("ColumnConstraint", Arg{"kind", New("ComputedColumnConstraint",
-		Arg{"this", value}, Arg{"persisted", persisted}, Arg{"not_null", notNull})}), nil
+	computed := New("ComputedColumnConstraint",
+		Arg{"this", value}, Arg{"persisted", persisted})
+	if dataType != nil {
+		computed.Set("data_type", dataType)
+	}
+	computed.Set("not_null", notNull)
+	return New("ColumnConstraint", Arg{"kind", computed}), nil
 }
 
 // parseOnDuplicateKey reads MySQL's `ON DUPLICATE KEY UPDATE a = 1, ...`, which

@@ -190,6 +190,11 @@ func (g *generator) node(e *Expression) string {
 			}
 		}
 	}
+	if g.dialect == "singlestore" {
+		if out, handled := g.singlestoreNode(e); handled {
+			return g.withComments(e, out)
+		}
+	}
 	if fn, ok := generators[e.Class]; ok {
 		return g.withComments(e, fn(g, e))
 	}

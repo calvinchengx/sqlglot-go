@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 7462,
+ "count": 7670,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -12033,6 +12033,11 @@
    "sql": "JSON_KEYS(foo)"
   },
   {
+   "key": "e47db7d8755a55fd",
+   "dialect": "singlestore",
+   "sql": "JSON_KEYS(foo)"
+  },
+  {
    "key": "ed58d51d1d861b81",
    "dialect": "mysql",
    "sql": "JSON_KEYS(foo, '$.a')"
@@ -22428,6 +22433,11 @@
    "sql": "UPDATE foo JOIN bar ON TRUE SET foo.a = bar.a, foo.b = bar.b WHERE foo.id = bar.id"
   },
   {
+   "key": "27d8107e40b2ef73",
+   "dialect": "singlestore",
+   "sql": "UPDATE foo JOIN bar ON TRUE SET foo.a = bar.a, foo.b = bar.b WHERE foo.id = bar.id"
+  },
+  {
    "key": "d3ae6ff3887b8e80",
    "dialect": "postgres",
    "sql": "SELECT MLEAST(VARIADIC ARRAY[10, -1, 5, 4.4])"
@@ -26238,6 +26248,171 @@
    "sql": "CREATE TABLE t (map_col MAP<VARCHAR, INT>)"
   },
   {
+   "key": "17c4c4377f07e5ed",
+   "dialect": "singlestore",
+   "sql": "SELECT 1"
+  },
+  {
+   "key": "d6cc22dc1ee0177f",
+   "dialect": "singlestore",
+   "sql": "SELECT * FROM `users` ORDER BY ALL"
+  },
+  {
+   "key": "95b510f23434d457",
+   "dialect": "singlestore",
+   "sql": "SELECT ELT(2, 'foo', 'bar', 'baz')"
+  },
+  {
+   "key": "bf1b209d4ee2f935",
+   "dialect": "singlestore",
+   "sql": "SELECT CHARSET(CHAR(100 USING utf8))"
+  },
+  {
+   "key": "9533252b09a0f242",
+   "dialect": "singlestore",
+   "sql": "SELECT TO_JSON(ROW(1, 2) :> RECORD(a INT, b INT))"
+  },
+  {
+   "key": "ad506d557ead957c",
+   "dialect": "singlestore",
+   "sql": "JSON_KEYS(json_doc, 'a', 'b', 'c', 2)"
+  },
+  {
+   "key": "2d01c57f2354c86a",
+   "dialect": "singlestore",
+   "sql": "SELECT VERSION()"
+  },
+  {
+   "key": "6e235f32433779ef",
+   "dialect": "singlestore",
+   "sql": "SELECT CURTIME()"
+  },
+  {
+   "key": "2ab777b43a6bf8fc",
+   "dialect": "singlestore",
+   "sql": "SELECT e'text'"
+  },
+  {
+   "key": "108984438b12da5b",
+   "dialect": "singlestore",
+   "sql": "SELECT E'text'"
+  },
+  {
+   "key": "938e66fd3c20be91",
+   "dialect": "singlestore",
+   "sql": "SELECT 'text'"
+  },
+  {
+   "key": "1a2338589a580504",
+   "dialect": "singlestore",
+   "sql": "SELECT * FROM abs"
+  },
+  {
+   "key": "353af33a3b5922f9",
+   "dialect": "singlestore",
+   "sql": "SELECT * FROM ABS"
+  },
+  {
+   "key": "656c84b7800fbbda",
+   "dialect": "singlestore",
+   "sql": "SELECT * FROM security_lists_intersect"
+  },
+  {
+   "key": "78f8b4d6a500beaa",
+   "dialect": "singlestore",
+   "sql": "SELECT * FROM vacuum"
+  },
+  {
+   "key": "829fa97773c7b2fe",
+   "dialect": "singlestore",
+   "sql": "SELECT STR_TO_DATE('March 3rd, 2015', '%M %D, %Y')"
+  },
+  {
+   "key": "118e123b2681e016",
+   "dialect": "singlestore",
+   "sql": "SELECT DATE_FORMAT(NOW(), '%Y-%m-%d %h:%i:%s')"
+  },
+  {
+   "key": "827065a784be3279",
+   "dialect": "singlestore",
+   "sql": "SELECT TO_DATE('03/01/2019', 'MM/DD/YYYY') AS `result`"
+  },
+  {
+   "key": "1cba005ab4590327",
+   "dialect": "singlestore",
+   "sql": "SELECT TO_TIMESTAMP('The date and time are 01/01/2018 2:30:15.123456', 'The date and time are MM/DD/YYYY HH12:MI:SS.FF6') AS `result`"
+  },
+  {
+   "key": "924cb948bf4ee508",
+   "dialect": "singlestore",
+   "sql": "SELECT TO_CHAR('2018-03-01', 'MM/DD')"
+  },
+  {
+   "key": "7deef69e4f68235d",
+   "dialect": "singlestore",
+   "sql": "SELECT TIME_FORMAT('12:05:47', '%s, %i, %h')"
+  },
+  {
+   "key": "1b5babc3c97baa71",
+   "dialect": "singlestore",
+   "sql": "SELECT DATE('2019-01-01 05:06')"
+  },
+  {
+   "key": "0ea7ccb26add5a4e",
+   "dialect": "singlestore",
+   "sql": "SELECT 1 :> INT"
+  },
+  {
+   "key": "2f291d2aac2dd0a6",
+   "dialect": "singlestore",
+   "sql": "SELECT 1 !:> INT"
+  },
+  {
+   "key": "4a62422b1cc12f21",
+   "dialect": "singlestore",
+   "sql": "SELECT '{\"a\" : 1}' :> JSON"
+  },
+  {
+   "key": "b458ba430a3a0fb4",
+   "dialect": "singlestore",
+   "sql": "SELECT NOW() !:> TIMESTAMP(6)"
+  },
+  {
+   "key": "f9fbf3c283347d55",
+   "dialect": "singlestore",
+   "sql": "SELECT x :> GEOGRAPHYPOINT"
+  },
+  {
+   "key": "d1ec738a93e69e70",
+   "dialect": "singlestore",
+   "sql": "SELECT age :> TEXT FROM `users`"
+  },
+  {
+   "key": "a8666fa4e5ce5628",
+   "dialect": "singlestore",
+   "sql": "SELECT FROM_UNIXTIME(1234567890)"
+  },
+  {
+   "key": "9241dde9f95643c6",
+   "dialect": "singlestore",
+   "sql": "SELECT FROM_UNIXTIME(1234567890, '%M %D, %Y')"
+  },
+  {
+   "key": "8f9caad10e75f17d",
+   "dialect": "singlestore",
+   "sql": "SELECT UNIX_TIMESTAMP()"
+  },
+  {
+   "key": "822304175fa38086",
+   "dialect": "singlestore",
+   "sql": "SELECT UNIX_TIMESTAMP('2009-02-13 23:31:30') AS funday"
+  },
+  {
+   "key": "326fff938197f77c",
+   "dialect": "singlestore",
+   "sql": "SELECT UNIX_TIMESTAMP('2009-02-13 23:31:30')"
+  },
+  {
    "key": "7ae48d3c5c087106",
    "dialect": "duckdb",
    "sql": "SELECT EPOCH('2009-02-13 23:31:30')"
@@ -26248,14 +26423,84 @@
    "sql": "SELECT TIME_STR_TO_UNIX('2009-02-13 23:31:30')"
   },
   {
+   "key": "3ff3ffbd006122a5",
+   "dialect": "singlestore",
+   "sql": "SELECT FROM_UNIXTIME(1234567890, '%Y-%m-%d %H:%i:%s')"
+  },
+  {
+   "key": "aaa45d014a227ed0",
+   "dialect": "singlestore",
+   "sql": "SELECT FROM_UNIXTIME(1234567890) :> TEXT"
+  },
+  {
+   "key": "7107c089abf66431",
+   "dialect": "singlestore",
+   "sql": "SELECT a::b FROM t"
+  },
+  {
+   "key": "c220b6e6899beae6",
+   "dialect": "singlestore",
+   "sql": "SELECT a::$b FROM t"
+  },
+  {
+   "key": "95db8a74c2b4add4",
+   "dialect": "singlestore",
+   "sql": "SELECT a::%b FROM t"
+  },
+  {
+   "key": "f95ffbd6aee51e9d",
+   "dialect": "singlestore",
+   "sql": "SELECT a::`b`::`2` FROM t"
+  },
+  {
+   "key": "71680fe4d47b8a7e",
+   "dialect": "singlestore",
+   "sql": "SELECT a::2 FROM t"
+  },
+  {
+   "key": "c97a587300ef6b50",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_EXTRACT_JSON(a, 'b') FROM t"
+  },
+  {
    "key": "fd58a16cb2894b4b",
    "dialect": "mysql",
    "sql": "SELECT JSON_EXTRACT(a, '$.b') FROM t"
   },
   {
+   "key": "54d4a198e903f005",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_EXTRACT_STRING(a, 'b') FROM t"
+  },
+  {
+   "key": "46fd576e746834bc",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_EXTRACT_DOUBLE(a, 'b') FROM t"
+  },
+  {
+   "key": "e84511894705f60a",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_EXTRACT_BIGINT(a, 'b') FROM t"
+  },
+  {
+   "key": "7a8bfe3e8495f163",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_EXTRACT_JSON(a, 'b', '2') FROM t"
+  },
+  {
    "key": "55e93787fe344356",
    "dialect": "mysql",
    "sql": "SELECT JSON_EXTRACT(a, '$.b[2]') FROM t"
+  },
+  {
+   "key": "e4066fcb5277cf9a",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_EXTRACT_STRING(a, 'b', 2) FROM t"
+  },
+  {
+   "key": "39b952be13bfce5f",
+   "dialect": "singlestore",
+   "sql": "SELECT BSON_EXTRACT_BSON(a, 'b') FROM t"
   },
   {
    "key": "b5ed603fc8bae73f",
@@ -26268,9 +26513,59 @@
    "sql": "SELECT JSONB_EXTRACT(a, '$.b') FROM t"
   },
   {
+   "key": "259a4a513d32869c",
+   "dialect": "singlestore",
+   "sql": "SELECT BSON_EXTRACT_STRING(a, 'b') FROM t"
+  },
+  {
+   "key": "a98c2faaebf1c8ff",
+   "dialect": "singlestore",
+   "sql": "SELECT BSON_EXTRACT_DOUBLE(a, 'b') FROM t"
+  },
+  {
+   "key": "f479f1bdcdb4a96c",
+   "dialect": "singlestore",
+   "sql": "SELECT BSON_EXTRACT_BIGINT(a, 'b') FROM t"
+  },
+  {
+   "key": "25c45102c3b00a6a",
+   "dialect": "singlestore",
+   "sql": "SELECT BSON_EXTRACT_BSON(a, 'b', 2) FROM t"
+  },
+  {
+   "key": "ad30ecba13d65407",
+   "dialect": "singlestore",
+   "sql": "SELECT BSON_EXTRACT_STRING(a, 'b', 2) FROM t"
+  },
+  {
+   "key": "3dfff042bf10b7af",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_EXTRACT_STRING('{\"item\": \"shoes\", \"price\": \"49.95\"}', 'price') :> DECIMAL(4, 2)"
+  },
+  {
    "key": "16d5b56e3da20c3d",
    "dialect": "mysql",
    "sql": "SELECT JSON_VALUE('{\"item\": \"shoes\", \"price\": \"49.95\"}', '$.price' RETURNING DECIMAL(4, 2))"
+  },
+  {
+   "key": "a9f46c112de0e812",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_ARRAY_CONTAINS_STRING('[\"a\", \"b\"]', 'b')"
+  },
+  {
+   "key": "6c7950e3cabee5a3",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_ARRAY_CONTAINS_DOUBLE('[1, 2]', 1)"
+  },
+  {
+   "key": "e6eb62c4d9ff147a",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_ARRAY_CONTAINS_JSON('[\"{\"a\": 1}\"]', '{\"a\":   1}')"
+  },
+  {
+   "key": "af5c4f00ea464b97",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_ARRAY_CONTAINS_JSON('[\"a\"]', TO_JSON('a'))"
   },
   {
    "key": "ef7d413f35050b67",
@@ -26278,9 +26573,214 @@
    "sql": "SELECT 'a' MEMBER OF ('[\"a\"]')"
   },
   {
+   "key": "2ea0406d7c310a03",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_PRETTY('[\"G\",\"alpha\",\"20\",10]')"
+  },
+  {
+   "key": "6e096173a30fede3",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_AGG(name ORDER BY id ASC NULLS LAST, name DESC NULLS FIRST) FROM t"
+  },
+  {
+   "key": "d2df2b4d319a5190",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_AGG(name) FROM t"
+  },
+  {
+   "key": "7fad836f9bc18228",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_AGG(t.*) FROM t"
+  },
+  {
+   "key": "a3b2e8673c7c1e61",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_BUILD_ARRAY(id, name) FROM t"
+  },
+  {
+   "key": "5c2d9630244f91e8",
+   "dialect": "singlestore",
+   "sql": "SELECT BSON_MATCH_ANY_EXISTS('{\"x\":true}', 'x')"
+  },
+  {
+   "key": "50c6d4f55c05ed2b",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_MATCH_ANY_EXISTS('{\"a\":1}', 'a')"
+  },
+  {
+   "key": "e857ba502c415173",
+   "dialect": "singlestore",
+   "sql": "SELECT JSON_BUILD_OBJECT('name', name) FROM t"
+  },
+  {
+   "key": "5098bef273db66ae",
+   "dialect": "singlestore",
+   "sql": "SELECT DAYNAME('2014-04-18')"
+  },
+  {
+   "key": "37ea17e3dc52bbf3",
+   "dialect": "singlestore",
+   "sql": "SELECT HOUR('2009-02-13 23:31:30')"
+  },
+  {
+   "key": "8d7686f4e1e4a4f1",
+   "dialect": "singlestore",
+   "sql": "SELECT MICROSECOND('2009-02-13 23:31:30.123456')"
+  },
+  {
+   "key": "ffd739788edc8e07",
+   "dialect": "singlestore",
+   "sql": "SELECT SECOND('2009-02-13 23:31:30.123456')"
+  },
+  {
+   "key": "0b6bb30f73765089",
+   "dialect": "singlestore",
+   "sql": "SELECT MONTHNAME('2014-04-18')"
+  },
+  {
+   "key": "25fcf9ae1e0bd57b",
+   "dialect": "singlestore",
+   "sql": "SELECT WEEKDAY('2014-04-18')"
+  },
+  {
+   "key": "5815e9917c83dc44",
+   "dialect": "singlestore",
+   "sql": "SELECT MINUTE('2009-02-13 23:31:30.123456')"
+  },
+  {
+   "key": "d1744e650e9ac5ef",
+   "dialect": "singlestore",
+   "sql": "SELECT ((DAYOFWEEK('2014-04-18') % 7) + 1)"
+  },
+  {
+   "key": "f627bdf04895224d",
+   "dialect": "singlestore",
+   "sql": "SELECT DAY('2014-04-18')"
+  },
+  {
+   "key": "61ee96f66463984a",
+   "dialect": "singlestore",
+   "sql": "SELECT APPROX_COUNT_DISTINCT(asset_id) AS approx_distinct_asset_id FROM acd_assets"
+  },
+  {
+   "key": "afa2fb3dd123cebd",
+   "dialect": "singlestore",
+   "sql": "SELECT APPROX_COUNT_DISTINCT(asset_id1, asset_id2) AS approx_distinct_asset_id FROM acd_assets"
+  },
+  {
+   "key": "2f7cd618ed6dacc8",
+   "dialect": "singlestore",
+   "sql": "SELECT SUM(CASE WHEN age > 18 THEN 1 ELSE 0 END) FROM `users`"
+  },
+  {
+   "key": "978e4b35a3ffd076",
+   "dialect": "singlestore",
+   "sql": "SELECT MAX(ABS(age > 18)) FROM `users`"
+  },
+  {
+   "key": "bd4ba66082848212",
+   "dialect": "singlestore",
+   "sql": "SELECT MIN(ABS(age > 18)) FROM `users`"
+  },
+  {
+   "key": "f0a231e138bc24a1",
+   "dialect": "singlestore",
+   "sql": "SELECT `class`, student_id, test1, APPROX_PERCENTILE(test1, 0.3) OVER (PARTITION BY `class`) AS percentile FROM test_scores"
+  },
+  {
+   "key": "eb76d34bfef7c74e",
+   "dialect": "singlestore",
+   "sql": "SELECT `class`, student_id, test1, APPROX_PERCENTILE(test1, 0.3, 0.4) OVER (PARTITION BY `class`) AS percentile FROM test_scores"
+  },
+  {
+   "key": "3c0659bb8cbfea95",
+   "dialect": "singlestore",
+   "sql": "SELECT APPROX_PERCENTILE(test1, 0.3) FROM test_scores"
+  },
+  {
+   "key": "f3e86edb7e12c97d",
+   "dialect": "singlestore",
+   "sql": "SELECT VAR_SAMP(yearly_total) FROM player_scores"
+  },
+  {
+   "key": "21603e166d4d3f2e",
+   "dialect": "singlestore",
+   "sql": "SELECT VAR_POP(yearly_total) FROM player_scores"
+  },
+  {
+   "key": "f830e4a858bc8e2d",
+   "dialect": "singlestore",
+   "sql": "SELECT VARIANCE(yearly_total) FROM player_scores"
+  },
+  {
+   "key": "dbfff89affb58f8f",
+   "dialect": "singlestore",
+   "sql": "SELECT POWER(id, 1 / 3) FROM orders"
+  },
+  {
+   "key": "5138d01386fa3110",
+   "dialect": "singlestore",
+   "sql": "SELECT (TRUE AND (NOT FALSE)) OR ((NOT TRUE) AND FALSE)"
+  },
+  {
    "key": "4ecc48aeb872c4f7",
    "dialect": "mysql",
    "sql": "SELECT TRUE XOR FALSE"
+  },
+  {
+   "key": "c3a0e19b52a12c60",
+   "dialect": "singlestore",
+   "sql": "SELECT 'a' RLIKE 'b'"
+  },
+  {
+   "key": "356e91ac49f1e560",
+   "dialect": "singlestore",
+   "sql": "SELECT 'a' REGEXP 'b'"
+  },
+  {
+   "key": "c8b4fbaa77d42169",
+   "dialect": "singlestore",
+   "sql": "SELECT LPAD('', LENGTH('a') * 3, 'a')"
+  },
+  {
+   "key": "15d6efa2fe4ada00",
+   "dialect": "singlestore",
+   "sql": "SELECT REGEXP_SUBSTR('adog', 'O', 1, 1, 'c')"
+  },
+  {
+   "key": "3dafe8d9e48640a2",
+   "dialect": "singlestore",
+   "sql": "SELECT ('a' RLIKE '^[\u0000-\u007f]*$')"
+  },
+  {
+   "key": "842aa618352a15f8",
+   "dialect": "singlestore",
+   "sql": "SELECT UNHEX(MD5('data'))"
+  },
+  {
+   "key": "6813ccd4e220e736",
+   "dialect": "singlestore",
+   "sql": "SELECT CHAR(101)"
+  },
+  {
+   "key": "a6b07542f5354fbb",
+   "dialect": "singlestore",
+   "sql": "SELECT INSTR('ohai', 'i')"
+  },
+  {
+   "key": "29780212fd34c098",
+   "dialect": "singlestore",
+   "sql": "SELECT REGEXP_MATCH('adog', 'O', 'c')"
+  },
+  {
+   "key": "bd106733404f8589",
+   "dialect": "singlestore",
+   "sql": "SELECT REGEXP_INSTR('abcd', CONCAT('^', 'ab'))"
+  },
+  {
+   "key": "40cf084a38dd06f4",
+   "dialect": "singlestore",
+   "sql": "SELECT CONV('f', 16, 10)"
   },
   {
    "key": "3fd8ac40ce024dc4",
@@ -26288,9 +26788,84 @@
    "sql": "SELECT STRTOL('f',16)"
   },
   {
+   "key": "069e74c475406001",
+   "dialect": "singlestore",
+   "sql": "SELECT LOWER('ABC') RLIKE LOWER('a.*')"
+  },
+  {
    "key": "64949cf2df1eeace",
    "dialect": "postgres",
    "sql": "SELECT 'ABC' ~* 'a.*'"
+  },
+  {
+   "key": "c3be18eeace7d377",
+   "dialect": "singlestore",
+   "sql": "SELECT CONCAT(SUBSTRING('abcdef', 1, 2 - 1), 'xyz', SUBSTRING('abcdef', 2 + 3))"
+  },
+  {
+   "key": "d03acdc7d9e48582",
+   "dialect": "singlestore",
+   "sql": "SELECT SHA(email) FROM t"
+  },
+  {
+   "key": "df0d7766fe8c3fd0",
+   "dialect": "singlestore",
+   "sql": "SELECT MD5(email) FROM t"
+  },
+  {
+   "key": "1df25cd89c2a6894",
+   "dialect": "singlestore",
+   "sql": "SELECT REDUCE(0, JSON_TO_ARRAY('[1,2,3,4]'), REDUCE_ACC() + REDUCE_VALUE()) AS `Result`"
+  },
+  {
+   "key": "155eaf324fcfaa4a",
+   "dialect": "singlestore",
+   "sql": "SELECT TIME_BUCKET('1d', '2019-03-14 06:04:12', '2019-03-13 03:00:00')"
+  },
+  {
+   "key": "3c8c1621aae8f5fa",
+   "dialect": "singlestore",
+   "sql": "SELECT '2019-03-14 06:04:12' :> DATE"
+  },
+  {
+   "key": "d6f656f34c60d926",
+   "dialect": "singlestore",
+   "sql": "SELECT CONVERT_TZ(NOW() :> TIMESTAMP, 'GMT', 'UTC')"
+  },
+  {
+   "key": "483b02468bfd9301",
+   "dialect": "singlestore",
+   "sql": "SELECT STR_TO_DATE(20190314, '%Y%m%d')"
+  },
+  {
+   "key": "211a0c2cd8ea8ae2",
+   "dialect": "singlestore",
+   "sql": "SELECT (DATE_FORMAT('2019-03-14 06:04:12', '%Y%m%d') :> INT)"
+  },
+  {
+   "key": "3e35e3127a7245c2",
+   "dialect": "singlestore",
+   "sql": "SELECT '2019-03-14 06:04:12' :> TIME"
+  },
+  {
+   "key": "22f4626e978e2318",
+   "dialect": "singlestore",
+   "sql": "SELECT DATE_ADD(NOW(), INTERVAL '1' MONTH)"
+  },
+  {
+   "key": "5e00fe24a70e2ecd",
+   "dialect": "singlestore",
+   "sql": "SELECT DATE_TRUNC('MINUTE', '2016-08-08 12:05:31')"
+  },
+  {
+   "key": "85f549a6d2c5364c",
+   "dialect": "singlestore",
+   "sql": "SELECT DATE_SUB('2010-04-02', INTERVAL '1' WEEK)"
+  },
+  {
+   "key": "2f3a836fee720f6b",
+   "dialect": "singlestore",
+   "sql": "SELECT TIMESTAMPDIFF(QUARTER, '2009-02-13', '2013-09-01')"
   },
   {
    "key": "ac32a7791e633a96",
@@ -26298,9 +26873,119 @@
    "sql": "SELECT DATE_DIFF('QUARTER', '2009-02-13', '2013-09-01')"
   },
   {
+   "key": "aae7c990327c33e9",
+   "dialect": "singlestore",
+   "sql": "SELECT DATEDIFF(DATE('2013-09-01'), DATE('2009-02-13'))"
+  },
+  {
+   "key": "637b4549fd5b3972",
+   "dialect": "singlestore",
+   "sql": "SELECT TIMESTAMPDIFF(WEEK, '2009-01-01', '2009-12-31') AS numweeks"
+  },
+  {
    "key": "5f6188b1d4328d61",
    "dialect": "redshift",
    "sql": "SELECT datediff(week,'2009-01-01','2009-12-31') AS numweeks"
+  },
+  {
+   "key": "feedd0d14e1943b6",
+   "dialect": "singlestore",
+   "sql": "SELECT DATEDIFF('2009-12-31', '2009-01-01') AS numweeks"
+  },
+  {
+   "key": "48e17ff143e8ae91",
+   "dialect": "singlestore",
+   "sql": "SELECT CURRENT_DATE()"
+  },
+  {
+   "key": "eddc6b75f1fb2104",
+   "dialect": "singlestore",
+   "sql": "SELECT CURRENT_DATE"
+  },
+  {
+   "key": "86f69878c06ba95b",
+   "dialect": "singlestore",
+   "sql": "SELECT UTC_DATE()"
+  },
+  {
+   "key": "271b8a93f588c9af",
+   "dialect": "singlestore",
+   "sql": "SELECT UTC_DATE"
+  },
+  {
+   "key": "d027ae71cecc2c96",
+   "dialect": "singlestore",
+   "sql": "SELECT CURRENT_TIME()"
+  },
+  {
+   "key": "c8ecb2389ffa9e83",
+   "dialect": "singlestore",
+   "sql": "SELECT CURRENT_TIME"
+  },
+  {
+   "key": "2edb6b4c24686957",
+   "dialect": "singlestore",
+   "sql": "SELECT CURRENT_TIME(6)"
+  },
+  {
+   "key": "516fb737ff37b18b",
+   "dialect": "singlestore",
+   "sql": "SELECT UTC_TIME()"
+  },
+  {
+   "key": "e94188e70ed91d57",
+   "dialect": "singlestore",
+   "sql": "SELECT UTC_TIME"
+  },
+  {
+   "key": "95f04964a8e5f984",
+   "dialect": "singlestore",
+   "sql": "SELECT CURRENT_TIMESTAMP()"
+  },
+  {
+   "key": "d74299e9f475483f",
+   "dialect": "singlestore",
+   "sql": "SELECT CURRENT_TIMESTAMP"
+  },
+  {
+   "key": "93b3b83545961ded",
+   "dialect": "singlestore",
+   "sql": "SELECT CURRENT_TIMESTAMP(6)"
+  },
+  {
+   "key": "54a700cb58639aae",
+   "dialect": "singlestore",
+   "sql": "SELECT UTC_TIMESTAMP()"
+  },
+  {
+   "key": "1fe23226583b73ff",
+   "dialect": "singlestore",
+   "sql": "SELECT UTC_TIMESTAMP"
+  },
+  {
+   "key": "1bd736df2765d906",
+   "dialect": "singlestore",
+   "sql": "SELECT CURRENT_TIMESTAMP(6) :> DATETIME(6)"
+  },
+  {
+   "key": "84f2f594afb38bae",
+   "dialect": "singlestore",
+   "sql": "SELECT UTC_TIMESTAMP(6)"
+  },
+  {
+   "key": "3c4618d405b2e859",
+   "dialect": "singlestore",
+   "sql": "SELECT UTC_TIME(6)"
+  },
+  {
+   "key": "74a920eb80618a49",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a DECIMAL(10, 20))"
+  },
+  {
+   "key": "d365443e7e033373",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a BOOLEAN)"
   },
   {
    "key": "0cdbae4a244a1b19",
@@ -26308,9 +26993,74 @@
    "sql": "CREATE TABLE testTypes (a BIT)"
   },
   {
+   "key": "e0168c578659c133",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a DATE)"
+  },
+  {
+   "key": "0c262e2d91a46343",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a DATETIME)"
+  },
+  {
+   "key": "70105a0d73ae1305",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a DECIMAL(9, 3))"
+  },
+  {
+   "key": "c9d3c29e1e74fb59",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a DECIMAL(18, 3))"
+  },
+  {
+   "key": "f7fd5664d5362e82",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a DECIMAL(38, 3))"
+  },
+  {
+   "key": "4a1620cdaf87202e",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a DECIMAL(65, 3))"
+  },
+  {
+   "key": "a903e15e18537936",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a ENUM('a'))"
+  },
+  {
+   "key": "67802d284d16db75",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a TEXT(2))"
+  },
+  {
+   "key": "c289f9baf15a93e2",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a GEOGRAPHY)"
+  },
+  {
+   "key": "a70985bee6112094",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a GEOGRAPHYPOINT)"
+  },
+  {
+   "key": "d2384cca2b0d61b4",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a BSON)"
+  },
+  {
    "key": "949b3e82dacd30e6",
    "dialect": "postgres",
    "sql": "CREATE TABLE testTypes (a JSONB)"
+  },
+  {
+   "key": "193d5b9e79d381cc",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a TIMESTAMP(6))"
+  },
+  {
+   "key": "1f7a43ef6f626d03",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a TIMESTAMP)"
   },
   {
    "key": "7dc6e0607500d073",
@@ -26323,9 +27073,299 @@
    "sql": "CREATE TABLE testTypes (a TIMESTAMP_MS)"
   },
   {
+   "key": "56dd8691e3d27399",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE testTypes (a BLOB)"
+  },
+  {
+   "key": "88475aa5be58bcd8",
+   "dialect": "singlestore",
+   "sql": "SELECT `t0`.`name` FROM `t0`"
+  },
+  {
+   "key": "afc7c47c26546698",
+   "dialect": "singlestore",
+   "sql": "SELECT 'data'"
+  },
+  {
    "key": "d5e9653b904d1473",
    "dialect": "presto",
    "sql": "SELECT U&'d\\0061t\\0061'"
+  },
+  {
+   "key": "50bf63266e00ac80",
+   "dialect": "singlestore",
+   "sql": "SELECT name :> LONGTEXT COLLATE 'utf8mb4_bin' FROM `users`"
+  },
+  {
+   "key": "154b3158a507ca7d",
+   "dialect": "singlestore",
+   "sql": "SHOW AGGREGATES FROM db1"
+  },
+  {
+   "key": "9d89930ac8c937a8",
+   "dialect": "singlestore",
+   "sql": "SHOW AGGREGATES LIKE 'multiply%'"
+  },
+  {
+   "key": "61bded48ca0e5a95",
+   "dialect": "singlestore",
+   "sql": "SHOW CDC EXTRACTOR POOL"
+  },
+  {
+   "key": "244c50f090c3c135",
+   "dialect": "singlestore",
+   "sql": "SHOW CREATE AGGREGATE avg_udaf"
+  },
+  {
+   "key": "24cb89182543ed8f",
+   "dialect": "singlestore",
+   "sql": "SHOW CREATE PIPELINE mypipeline"
+  },
+  {
+   "key": "1e3f2cda5212dd73",
+   "dialect": "singlestore",
+   "sql": "SHOW CREATE PROJECTION lineitem_sort_shipdate FOR TABLE lineitem"
+  },
+  {
+   "key": "0a777c282e8fc142",
+   "dialect": "singlestore",
+   "sql": "SHOW DATABASE STATUS"
+  },
+  {
+   "key": "90e53d6fcda2f2b3",
+   "dialect": "singlestore",
+   "sql": "SHOW DISTRIBUTED_PLANCACHE STATUS"
+  },
+  {
+   "key": "a23822a5bff82773",
+   "dialect": "singlestore",
+   "sql": "SHOW FULLTEXT SERVICE STATUS"
+  },
+  {
+   "key": "ab3c4568dd9f3400",
+   "dialect": "singlestore",
+   "sql": "SHOW FULLTEXT SERVICE METRICS LOCAL"
+  },
+  {
+   "key": "224e801484d21e42",
+   "dialect": "singlestore",
+   "sql": "SHOW FULLTEXT SERVICE METRICS FOR NODE 1"
+  },
+  {
+   "key": "9651d2b206985ead",
+   "dialect": "singlestore",
+   "sql": "SHOW FUNCTIONS FROM db LIKE 'a'"
+  },
+  {
+   "key": "d2ae07e17eb8b614",
+   "dialect": "singlestore",
+   "sql": "SHOW GROUPS"
+  },
+  {
+   "key": "7168fd4627cad473",
+   "dialect": "singlestore",
+   "sql": "SHOW GROUPS FOR ROLE 'role_name_0'"
+  },
+  {
+   "key": "c1e1d7ef9dff8257",
+   "dialect": "singlestore",
+   "sql": "SHOW GROUPS FOR USER 'root'"
+  },
+  {
+   "key": "5653e0c0bc7e5de6",
+   "dialect": "singlestore",
+   "sql": "SHOW INDEXES FROM mytbl"
+  },
+  {
+   "key": "99311dd91963197e",
+   "dialect": "singlestore",
+   "sql": "SHOW KEYS FROM mytbl"
+  },
+  {
+   "key": "9eef1ae91bb77978",
+   "dialect": "singlestore",
+   "sql": "SHOW LINKS ON Orderdb"
+  },
+  {
+   "key": "16e21efd901f07c6",
+   "dialect": "singlestore",
+   "sql": "SHOW LOAD ERRORS"
+  },
+  {
+   "key": "712d4cb2aa97bfc2",
+   "dialect": "singlestore",
+   "sql": "SHOW LOAD WARNINGS"
+  },
+  {
+   "key": "81558540958274e6",
+   "dialect": "singlestore",
+   "sql": "SHOW PARTITIONS ON memsql_demo"
+  },
+  {
+   "key": "378d7ec9c8ef20e0",
+   "dialect": "singlestore",
+   "sql": "SHOW PIPELINES"
+  },
+  {
+   "key": "f5ed7af1ad98f7e2",
+   "dialect": "singlestore",
+   "sql": "SHOW PLAN JSON 25"
+  },
+  {
+   "key": "98db127ed09e437b",
+   "dialect": "singlestore",
+   "sql": "SHOW PLAN 25"
+  },
+  {
+   "key": "ea0d2f37dd07b263",
+   "dialect": "singlestore",
+   "sql": "SHOW PLANCACHE"
+  },
+  {
+   "key": "b8e76707c2cd723d",
+   "dialect": "singlestore",
+   "sql": "SHOW PROCEDURES FROM dbExample"
+  },
+  {
+   "key": "3a95c45537daeaec",
+   "dialect": "singlestore",
+   "sql": "SHOW PROCEDURES LIKE '%sp%'"
+  },
+  {
+   "key": "0c45c7be7f4cd96b",
+   "dialect": "singlestore",
+   "sql": "SHOW PROJECTIONS ON TABLE t"
+  },
+  {
+   "key": "fc440e0eb8daa0db",
+   "dialect": "singlestore",
+   "sql": "SHOW PROJECTIONS"
+  },
+  {
+   "key": "d17c199c57c1432b",
+   "dialect": "singlestore",
+   "sql": "SHOW REPLICATION STATUS"
+  },
+  {
+   "key": "e47618c0b1bf0dbc",
+   "dialect": "singlestore",
+   "sql": "SHOW REPRODUCTION"
+  },
+  {
+   "key": "6d11f3d7d9d5e37e",
+   "dialect": "singlestore",
+   "sql": "SHOW REPRODUCTION INTO OUTFILE 'a'"
+  },
+  {
+   "key": "a834c8baae429229",
+   "dialect": "singlestore",
+   "sql": "SHOW RESOURCE POOLS"
+  },
+  {
+   "key": "0bbd3807a0b6c2f6",
+   "dialect": "singlestore",
+   "sql": "SHOW ROLES LIKE 'xyz'"
+  },
+  {
+   "key": "05075bb56aba0708",
+   "dialect": "singlestore",
+   "sql": "SHOW ROLES FOR GROUP 'group_0'"
+  },
+  {
+   "key": "bc4fc4de3792297e",
+   "dialect": "singlestore",
+   "sql": "SHOW ROLES FOR USER 'root'"
+  },
+  {
+   "key": "3e1578da7ebfc7e2",
+   "dialect": "singlestore",
+   "sql": "SHOW STATUS"
+  },
+  {
+   "key": "ad493986d58ed24f",
+   "dialect": "singlestore",
+   "sql": "SHOW USERS"
+  },
+  {
+   "key": "47746bf96dcbd584",
+   "dialect": "singlestore",
+   "sql": "SHOW USERS FOR GROUP 'group_name'"
+  },
+  {
+   "key": "91a5d2beb9fd3f7f",
+   "dialect": "singlestore",
+   "sql": "SHOW USERS FOR ROLE 'role_name'"
+  },
+  {
+   "key": "6f4199ae8d8a005c",
+   "dialect": "singlestore",
+   "sql": "TRUNCATE t1; TRUNCATE t2"
+  },
+  {
+   "key": "8f21fba8b87cd912",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE t (a VECTOR(10, I32))"
+  },
+  {
+   "key": "1b9aa96141cfe10c",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE t (a VECTOR(10))"
+  },
+  {
+   "key": "6dc14829e0339cae",
+   "dialect": "singlestore",
+   "sql": "ALTER TABLE t CHANGE middle_initial middle_name"
+  },
+  {
+   "key": "a56023abd63656b5",
+   "dialect": "singlestore",
+   "sql": "ALTER TABLE t MODIFY COLUMN name TEXT COLLATE 'binary'"
+  },
+  {
+   "key": "6364c7ea1fd8c514",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE ComputedColumnConstraint (points INT, score AS (points * 2) PERSISTED AUTO NOT NULL)"
+  },
+  {
+   "key": "9c00b04aeafd3e93",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE ComputedColumnConstraint (points INT, score AS (points * 2) AUTO NOT NULL)"
+  },
+  {
+   "key": "9e3014713054a5be",
+   "dialect": "singlestore",
+   "sql": "CREATE TABLE ComputedColumnConstraint (points INT, score AS (points * 2) PERSISTED BIGINT NOT NULL)"
+  },
+  {
+   "key": "259c4e2c66050ad8",
+   "dialect": "singlestore",
+   "sql": "SELECT * FROM employee WHERE JSON_MATCH_ANY(payroll::?names)"
+  },
+  {
+   "key": "fab72e50cc39f9df",
+   "dialect": "singlestore",
+   "sql": "JSON_BUILD_ARRAY(id, name)"
+  },
+  {
+   "key": "bba54fcea2fb93bf",
+   "dialect": "singlestore",
+   "sql": "JSON_BUILD_OBJECT('name', name)"
+  },
+  {
+   "key": "38d2349a6ff7e76f",
+   "dialect": "singlestore",
+   "sql": "SELECT MATCH(name) AGAINST('search term') FROM products"
+  },
+  {
+   "key": "9586981fdaeac620",
+   "dialect": "singlestore",
+   "sql": "SELECT MATCH(name, name) AGAINST('book') FROM products"
+  },
+  {
+   "key": "ce901096703dbcb5",
+   "dialect": "singlestore",
+   "sql": "SELECT MATCH(TABLE products2) AGAINST('search term') FROM products2"
   },
   {
    "key": "0bf9593495ab4104",

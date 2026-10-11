@@ -867,6 +867,64 @@ func (p *parser) parsePostfix() (*Expression, error) {
 func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 	this = p.oracleDateLiteral(this)
 	for {
+		// SingleStore's column operators are its own (SingleStoreParser
+		// .COLUMN_OPERATORS): `:>` and `!:` CAST, where every other dialect's
+		// `::` does, and `::`/`::$`/`::%`/`::?` EXTRACT JSON, where every
+		// other dialect's `::` casts. They are checked here, before the
+		// generic `::` branch below.
+		if p.dialect == "singlestore" {
+			if p.match(TokCOLON_GT) {
+				to, err := p.parseDataType()
+				if err != nil {
+					return nil, err
+				}
+				cast := New("Cast", Arg{"this", this}, Arg{"to", to})
+				cast.Type = to
+				this = cast
+				continue
+			}
+			if p.match(TokNCOLON_GT) {
+				to, err := p.parseDataType()
+				if err != nil {
+					return nil, err
+				}
+				cast := New("TryCast", Arg{"this", this}, Arg{"to", to})
+				cast.Type = to
+				this = cast
+				continue
+			}
+			if c := p.curr(); c != nil && (c.Type == TokDCOLON || c.Type == TokDCOLONDOLLAR ||
+				c.Type == TokDCOLONPERCENT || c.Type == TokDCOLONQMARK) {
+				op := c.Type
+				p.advance()
+				field, err := p.parseJSONArrowAccessorRHS()
+				if err != nil {
+					return nil, err
+				}
+				name := ""
+				if field != nil {
+					name = field.Name()
+				}
+				switch op {
+				case TokDCOLON:
+					this = New("JSONExtract", Arg{"this", this},
+						Arg{"expression", p.singlestoreJSONPath(name)},
+						Arg{"only_json_types", false})
+				case TokDCOLONDOLLAR:
+					this = New("JSONExtractScalar", Arg{"this", this},
+						Arg{"expression", p.singlestoreJSONPath(name)},
+						Arg{"only_json_types", false}, Arg{"json_type", "STRING"})
+				case TokDCOLONPERCENT:
+					this = New("JSONExtractScalar", Arg{"this", this},
+						Arg{"expression", p.singlestoreJSONPath(name)},
+						Arg{"only_json_types", false}, Arg{"json_type", "DOUBLE"})
+				case TokDCOLONQMARK:
+					this = New("JSONExists", Arg{"this", this},
+						Arg{"path", name}, Arg{"from_dcolonqmark", true})
+				}
+				continue
+			}
+		}
 		if p.match(TokDCOLON) {
 			to, err := p.parseDataType()
 			if err != nil {
@@ -2330,6 +2388,28 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 		if !p.match(close) {
 			return nil, p.unsupported("unclosed type parameters")
 		}
+		// SingleStore writes a VECTOR's element type SECOND but stores it
+		// first, resolving the short alias (I32 -> INT) on the way
+		// (SingleStoreParser._parse_vector_expressions).
+		if kind == "VECTOR" && len(params) == 2 {
+			// The element type is a type parameter (a DataTypeParam holding
+			// the word), so its name is read from inside.
+			typeName := ""
+			if t := params[1]; t != nil {
+				if inner, _ := t.Args["this"].(*Expression); inner != nil {
+					typeName = strings.ToUpper(inner.Name())
+				} else {
+					typeName = strings.ToUpper(t.Name())
+				}
+			}
+			if alias, ok := p.tables.VectorTypeAliases[typeName]; ok {
+				typeName = alias
+			}
+			params = []*Expression{
+				New("DataType", Arg{"this", DataTypeKind(typeName)}, Arg{"nested", false}),
+				params[0],
+			}
+		}
 		dt.Set("expressions", params)
 	}
 	// `TIMESTAMP WITH TIME ZONE` is a type of its own rather than a timestamp
@@ -2644,8 +2724,12 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	// answer to record here either.
 	isMySQLDateDelta := (upper == "DATE_ADD" || upper == "DATE_SUB") && p.dialect == "mysql"
 	isPrestoToChar := upper == "TO_CHAR" && (p.dialect == "presto" || p.dialect == "trino")
+	// SingleStore's own date/time functions have builders of their own that
+	// the probe cannot record -- they are lambdas -- so they are built by
+	// hand and must not be turned away here.
+	isSingleStoreFn := p.dialect == "singlestore" && singlestoreOwnedFunction(upper)
 	if !named && !byArity && !isJSONPath && !byWord && !isVarMap && !isDremioDateType &&
-		!isMySQLDateDelta && !isPrestoToChar {
+		!isMySQLDateDelta && !isPrestoToChar && !isSingleStoreFn {
 		if _, custom := p.tables.NamedFunctions[upper]; custom {
 			return nil, p.unsupported("function " + upper + " with a builder of its own")
 		}
@@ -2781,6 +2865,15 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	}
 	if upper == "STR_TO_DATE" && (p.dialect == "mysql" || p.dialect == "doris" || p.dialect == "starrocks") && len(args) == 2 {
 		return p.buildMySQLStrToDate(args), nil
+	}
+	// SingleStore's date and time functions are its own builders -- several
+	// wrap their first argument in a CAST to TIME(6) so a bare time-of-day
+	// string reads, and the formats are the MySQL ones
+	// (SingleStoreParser.FUNCTIONS).
+	if p.dialect == "singlestore" {
+		if built := p.buildSingleStoreFunction(upper, args); built != nil {
+			return built, nil
+		}
 	}
 	if (upper == "DATE_ADD" || upper == "DATE_SUB") && p.dialect == "mysql" && len(args) == 2 {
 		if built := buildMySQLDateDeltaWithInterval(upper, args); built != nil {
@@ -3662,6 +3755,23 @@ func (p *parser) afterComparison() bool {
 	return prev == TokLIKE || prev == TokILIKE
 }
 
+// singlestoreJSONPath turns the name after a SingleStore `::`/`::$`/`::%` into
+// the JSONPath the reference's build_json_extract_path builds: an integral
+// name is a SUBSCRIPT (SingleStore indexes from zero, so the number is kept as
+// written), anything else a KEY.
+func (p *parser) singlestoreJSONPath(name string) *Expression {
+	if n, ok := pythonInt(name); ok {
+		return New("JSONPath", Arg{"expressions", []*Expression{
+			New("JSONPathRoot"),
+			New("JSONPathSubscript", Arg{"this", n}),
+		}})
+	}
+	return New("JSONPath", Arg{"expressions", []*Expression{
+		New("JSONPathRoot"),
+		New("JSONPathKey", Arg{"this", name}),
+	}})
+}
+
 // jsonPathFor turns an argument into whatever the reference puts in a JSON
 // extraction's `expression` slot. Probed across the dialects, not transcribed:
 //
@@ -3868,11 +3978,15 @@ func (p *parser) buildJSONPathFunction(spec JSONPathFunc, args []*Expression) *E
 			if arg.Class != "Literal" {
 				return p.positionalJSONPathCall(spec, args)
 			}
-			// A literal that is not a STRING is one this port does not fold
-			// yet, and folding it wrongly would build a path the reference
-			// did not.
+			// A literal that is not a STRING still folds where its text is
+			// there to read: the reference turns a whole NUMBER into a
+			// subscript (`BSON_EXTRACT_BSON(a, 'b', 2)`), and a
+			// non-integral one into a key of that name. A literal with no
+			// string text (a boolean) is not a segment this port folds.
 			if !isStringLiteral(arg) {
-				return nil
+				if _, ok := arg.Args["this"].(string); !ok {
+					return nil
+				}
 			}
 		}
 		path = p.foldJSONPath(args[1:], spec)

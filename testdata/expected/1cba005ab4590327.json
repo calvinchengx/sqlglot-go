@@ -1,0 +1,158 @@
+{
+ "dialect": "singlestore",
+ "rendered": "SELECT TO_TIMESTAMP('The date and time are 01/01/2018 2:30:15.123456', 'The date and time are MM/DD/YYYY HH12:MI:SS.FF6') AS `result`",
+ "sql": "SELECT TO_TIMESTAMP('The date and time are 01/01/2018 2:30:15.123456', 'The date and time are MM/DD/YYYY HH12:MI:SS.FF6') AS `result`",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "TO_TIMESTAMP"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 20,
+   "t": "STRING",
+   "x": "The date and time are 01/01/2018 2:30:15.123456"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 69,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 120,
+   "e": 119,
+   "l": 1,
+   "s": 71,
+   "t": "STRING",
+   "x": "The date and time are MM/DD/YYYY HH12:MI:SS.FF6"
+  },
+  {
+   "c": 121,
+   "e": 120,
+   "l": 1,
+   "s": 120,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 122,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 133,
+   "e": 132,
+   "l": 1,
+   "s": 125,
+   "t": "IDENTIFIER",
+   "x": "result"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.StrToTime",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 18,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 20
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "The date and time are 01/01/2018 2:30:15.123456"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "format"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "The date and time are %m/%d/%Y %I:%M:%S.%f"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 133,
+    "end": 132,
+    "line": 1,
+    "start": 125
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "result"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": true
+  }
+ ]
+}

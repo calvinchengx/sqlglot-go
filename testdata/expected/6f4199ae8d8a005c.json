@@ -1,0 +1,138 @@
+{
+ "dialect": "singlestore",
+ "rendered": "TRUNCATE t1; TRUNCATE t2",
+ "sql": "TRUNCATE t1; TRUNCATE t2",
+ "tokens": [
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 0,
+   "t": "TRUNCATE",
+   "x": "TRUNCATE"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 9,
+   "t": "VAR",
+   "x": "t1"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "SEMICOLON",
+   "x": ";"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 13,
+   "t": "TRUNCATE",
+   "x": "TRUNCATE"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 22,
+   "t": "VAR",
+   "x": "t2"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Block"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.TruncateTable",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 9
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "t1"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "is_database",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.TruncateTable",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 8,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "t2"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 8,
+   "k": "is_database",
+   "v": false
+  },
+  {
+   "i": 8,
+   "k": "exists",
+   "v": false
+  }
+ ]
+}

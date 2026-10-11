@@ -1,0 +1,127 @@
+{
+ "dialect": "singlestore",
+ "rendered": "SELECT JSON_ARRAY_CONTAINS_STRING('[\"a\", \"b\"]', 'b')",
+ "sql": "SELECT JSON_ARRAY_CONTAINS_STRING('[\"a\", \"b\"]', 'b')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "JSON_ARRAY_CONTAINS_STRING"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 34,
+   "t": "STRING",
+   "x": "[\"a\", \"b\"]"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 46,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 48,
+   "t": "STRING",
+   "x": "b"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 51,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONArrayContains",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 46,
+    "end": 45,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "[\"a\", \"b\"]"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "json_type",
+   "v": "STRING"
+  }
+ ]
+}
