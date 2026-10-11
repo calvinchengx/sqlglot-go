@@ -1113,6 +1113,30 @@ func (p *parser) parsePartitionRangeValue() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	if p.dialect == "doris" && p.atWords("VALUES") && !p.atWords("VALUES", "LESS", "THAN") {
+		// Doris's bracket form: `VALUES [('a'), ('b'))` -- a list of wrapped
+		// value lists, which the reference keeps as expressions-of-expressions.
+		p.advance() // VALUES
+		if p.match(TokL_BRACKET) {
+			var values []any
+			for {
+				inner, err := p.parseWrappedCSV(p.parseExpression)
+				if err != nil {
+					return nil, err
+				}
+				values = append(values, inner)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			// Opens `[` but closes with `)`: the reference's own
+			// _match(R_BRACKET) is non-failing.
+			p.match(TokR_BRACKET)
+			p.match(TokR_PAREN)
+			bound := New("PartitionRange", Arg{"this", name}, Arg{"expressions", values})
+			return New("Partition", Arg{"expressions", []*Expression{bound}}), nil
+		}
+	}
 	if !p.atWords("VALUES", "LESS", "THAN") {
 		return name, nil
 	}

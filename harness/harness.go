@@ -104,8 +104,10 @@ func Normalise(tree []map[string]any) []map[string]any {
 				continue
 			}
 			// A type annotation is its own nested record list, and carries
-			// positions of its own; they are metadata there too.
-			if k == "t" {
+			// positions of its own; they are metadata there too. So does a
+			// nested list (`v` of expressions-of-expressions), whose inner
+			// records carry the same metadata.
+			if k == "t" || k == "v" {
 				n[k] = normaliseNested(v)
 				continue
 			}
@@ -134,7 +136,14 @@ func normaliseNested(v any) any {
 	for _, r := range records {
 		rec, ok := r.(map[string]any)
 		if !ok {
-			out = append(out, r)
+			// A list nested inside a list: recurse so its own records are
+			// stripped the same way.
+			switch r.(type) {
+			case []any, []map[string]any:
+				out = append(out, normaliseNested(r))
+			default:
+				out = append(out, r)
+			}
 			continue
 		}
 		n := map[string]any{}
