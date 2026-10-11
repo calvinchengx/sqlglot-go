@@ -1,0 +1,89 @@
+{
+ "dialect": "hive",
+ "rendered": "CAST(1 AS SMALLINT)",
+ "sql": "1S",
+ "tokens": [
+  {
+   "c": 2,
+   "e": 1,
+   "l": 1,
+   "s": 0,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 2,
+   "e": 1,
+   "l": 1,
+   "s": 0,
+   "t": "DCOLON",
+   "x": "::"
+  },
+  {
+   "c": 2,
+   "e": 1,
+   "l": 1,
+   "s": 0,
+   "t": "SMALLINT",
+   "x": "S"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.functions.TryCast",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "SMALLINT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 2,
+    "end": 1,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 0,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 4,
+   "k": "this",
+   "v": "SMALLINT"
+  },
+  {
+   "i": 4,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

@@ -1,0 +1,369 @@
+{
+ "dialect": "hive",
+ "rendered": "CREATE TABLE test STORED AS PARQUET TBLPROPERTIES ('X'='1', 'Z'='2') AS SELECT 1",
+ "sql": "CREATE TABLE test STORED AS PARQUET TBLPROPERTIES ('X'='1', 'Z'='2') AS SELECT 1",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "test"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "STORED"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 25,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "PARQUET"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 36,
+   "t": "VAR",
+   "x": "TBLPROPERTIES"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 51,
+   "t": "STRING",
+   "x": "X"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 55,
+   "t": "STRING",
+   "x": "1"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 60,
+   "t": "STRING",
+   "x": "Z"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 63,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 64,
+   "t": "STRING",
+   "x": "2"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 67,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 69,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 72,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 79,
+   "t": "NUMBER",
+   "x": "1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "expressions",
+   "m": {
+    "col": 80,
+    "end": 79,
+    "line": 1,
+    "start": 79
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.FileFormatProperty",
+   "i": 14,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 15,
+   "k": "this"
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "PARQUET"
+  },
+  {
+   "i": 15,
+   "k": "hive_format",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 14,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "X"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 19,
+   "k": "value",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 23,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 14,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "Z"
+  },
+  {
+   "i": 27,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 26,
+   "k": "value",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 64
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 30,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

@@ -31,7 +31,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive")
 
 
 def gostr(s: str) -> str:
@@ -6353,6 +6353,31 @@ def main() -> int:
         "\t// written with (SingleStore's I8/I16/I32/F32/F64), each mapped to the\n",
         "\t// type it names.\n",
         "\tVectorTypeAliases map[string]string\n",
+        "\t// StrictCast: CAST builds a TryCast rather than a Cast (Hive's own\n",
+        "\t// STRICT_CAST, off for the Spark family).\n",
+        "\tStrictCast bool\n",
+        "\t// ArraySizeName is the function an array's length is spelled with.\n",
+        "\tArraySizeName string\n",
+        "\t// PadFillPatternIsRequired: LPAD/RPAD must name their fill.\n",
+        "\tPadFillPatternIsRequired bool\n",
+        "\t// TablesampleWithMethod: TABLESAMPLE names a sampling METHOD.\n",
+        "\tTablesampleWithMethod bool\n",
+        "\t// LastDaySupportsDatePart: LAST_DAY takes a date part.\n",
+        "\tLastDaySupportsDatePart bool\n",
+        "\t// SupportsToNumber: TO_NUMBER exists.\n",
+        "\tSupportsToNumber bool\n",
+        "\t// SupportsMedian: MEDIAN exists.\n",
+        "\tSupportsMedian bool\n",
+        "\t// AlterSetType is the word ALTER TABLE ... SET writes before its\n",
+        "\t// options.\n",
+        "\tAlterSetType string\n",
+        "\t// JsonPathSingleQuoteEscape: a JSON path's single quote is escaped.\n",
+        "\tJsonPathSingleQuoteEscape bool\n",
+        "\t// ExtractAllowsQuotes: EXTRACT's field may be quoted.\n",
+        "\tExtractAllowsQuotes bool\n",
+        "\t// TrySupported: TRY_CAST exists; where it does not, a TryCast is\n",
+        "\t// written CAST.\n",
+        "\tTrySupported bool\n",
         "\t// StringSensitiveArgs are argument positions where a STRING\n",
         "\t// LITERAL makes the reference build something structurally\n",
         "\t// different: PostgreSQL reads a string step to GENERATE_SERIES as\n",
@@ -7674,6 +7699,36 @@ def main() -> int:
             % str(bool(getattr(Dialect.get_or_raise(name or None), "SUPPORTS_ORDER_BY_ALL", False))).lower()
         )
         out.append(strstrmap("VectorTypeAliases", getattr(Dialect.get_or_raise(name or None), "VECTOR_TYPE_ALIASES", {})))
+        # Hive's own dialect-level switches, none of which an earlier dialect
+        # needed probed.
+        out.append(
+            "\t\tStrictCast: %s,\n"
+            % str(bool(getattr(P, "STRICT_CAST", True))).lower()
+        )
+        out.append(
+            "\t\tTrySupported: %s,\n"
+            % str(bool(getattr(Dialect.get_or_raise(name or None).generator_class, "TRY_SUPPORTED", True))).lower()
+        )
+        _dg = Dialect.get_or_raise(name or None)
+        # These live on the GENERATOR class, not the Dialect, so they are read
+        # from there -- Dialect does not proxy them.
+        _gen = _dg.generator_class
+        for field, attr, default in (
+            ("ArraySizeName", "ARRAY_SIZE_NAME", ""),
+            ("PadFillPatternIsRequired", "PAD_FILL_PATTERN_IS_REQUIRED", False),
+            ("TablesampleWithMethod", "TABLESAMPLE_WITH_METHOD", True),
+            ("LastDaySupportsDatePart", "LAST_DAY_SUPPORTS_DATE_PART", True),
+            ("SupportsToNumber", "SUPPORTS_TO_NUMBER", True),
+            ("SupportsMedian", "SUPPORTS_MEDIAN", True),
+            ("AlterSetType", "ALTER_SET_TYPE", ""),
+            ("JsonPathSingleQuoteEscape", "JSON_PATH_SINGLE_QUOTE_ESCAPE", False),
+            ("ExtractAllowsQuotes", "EXTRACT_ALLOWS_QUOTES", True),
+        ):
+            value = getattr(_gen, attr, default)
+            if isinstance(value, bool):
+                out.append("\t\t%s: %s,\n" % (field, str(value).lower()))
+            else:
+                out.append("\t\t%s: %s,\n" % (field, gostr(str(value))))
         reserved = reserved_keywords(name, Dialect)
         if reserved:
             out.append("\t\tReservedKeywords: map[string]bool{\n")

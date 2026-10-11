@@ -1,0 +1,225 @@
+{
+ "dialect": "hive",
+ "rendered": "CREATE OR REPLACE TEMPORARY FUNCTION some_func AS 'my_jar.SomeFunctionUDF' USING JAR 's3://bucket/my.jar'",
+ "sql": "CREATE OR REPLACE TEMPORARY FUNCTION some_func AS 'my_jar.SomeFunctionUDF' USING JAR 's3://bucket/my.jar'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 7,
+   "t": "OR",
+   "x": "OR"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 10,
+   "t": "REPLACE",
+   "x": "REPLACE"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 18,
+   "t": "TEMPORARY",
+   "x": "TEMPORARY"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 28,
+   "t": "FUNCTION",
+   "x": "FUNCTION"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 37,
+   "t": "VAR",
+   "x": "some_func"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 47,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 50,
+   "t": "STRING",
+   "x": "my_jar.SomeFunctionUDF"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 75,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 81,
+   "t": "VAR",
+   "x": "JAR"
+  },
+  {
+   "c": 105,
+   "e": 104,
+   "l": 1,
+   "s": 85,
+   "t": "STRING",
+   "x": "s3://bucket/my.jar"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 46,
+    "end": 45,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "some_func"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "FUNCTION"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 74,
+    "end": 73,
+    "line": 1,
+    "start": 50
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "my_jar.SomeFunctionUDF"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.TemporaryProperty",
+   "i": 13,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.UsingProperty",
+   "i": 13,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 105,
+    "end": 104,
+    "line": 1,
+    "start": 85
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "s3://bucket/my.jar"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 15,
+   "k": "kind",
+   "v": "JAR"
+  },
+  {
+   "i": 0,
+   "k": "begin",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

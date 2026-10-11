@@ -1598,7 +1598,13 @@ func (p *parser) parseInitcap() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	delim := New("Literal", Arg{"this", initcapDefaultDelimiters}, Arg{"is_string", true})
+	// Hive's own default character class is whitespace rather than the base
+	// dialect's punctuation (INITCAP_DEFAULT_DELIMITER_CHARS).
+	delimText := initcapDefaultDelimiters
+	if p.dialect == "hive" {
+		delimText = " \t\n\r\f\v\x1c\x1d\x1e\x1f"
+	}
+	delim := New("Literal", Arg{"this", delimText}, Arg{"is_string", true})
 	if p.at(TokCOMMA) {
 		p.advance()
 		delim, err = p.parseExpression()

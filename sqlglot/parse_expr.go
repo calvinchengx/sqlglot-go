@@ -930,7 +930,15 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 			if err != nil {
 				return nil, err
 			}
-			cast := New("Cast", Arg{"this", this}, Arg{"to", to})
+			// A dialect with STRICT_CAST off (Hive's own) builds a TryCast
+			// here too -- this is the shape `123L` takes, the tokenizer
+			// spelling the suffix as `123 :: BIGINT`.
+			class := "Cast"
+			if !p.tables.StrictCast {
+				class = "TryCast"
+			}
+			to = p.hiveCastType(to)
+			cast := New(class, Arg{"this", this}, Arg{"to", to})
 			cast.Type = to
 			this = cast
 			continue
@@ -2047,6 +2055,7 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed CAST")
 	}
+	to = p.hiveCastType(to)
 
 	class := "Cast"
 	args := []Arg{
@@ -2058,10 +2067,31 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 		class = "TryCast"
 		args[3] = Arg{"safe", true}
 		args = append(args, Arg{"requires_string", nil})
+	} else if !p.tables.StrictCast {
+		// Hive's STRICT_CAST is off, so its CAST is a TryCast too -- one with
+		// no `safe` flag, which is what tells the two spellings apart.
+		class = "TryCast"
 	}
 	cast := New(class, args...)
 	cast.Type = to
 	return p.keep(cast), nil
+}
+
+// hiveCastType is Hive's own `_parse_types` rule: outside a schema definition a
+// CAST to CHAR(length)/VARCHAR(length) is a cast to TEXT -- Spark treats
+// char/varchar as string there and does not truncate, so the length is
+// dropped rather than carried (HiveParser._parse_types).
+func (p *parser) hiveCastType(to *Expression) *Expression {
+	if p.dialect != "hive" || to == nil || to.Class != "DataType" {
+		return to
+	}
+	kind, _ := to.Args["this"].(DataTypeKind)
+	switch strings.ToUpper(string(kind)) {
+	case "CHAR", "VARCHAR":
+		to.Set("this", DataTypeKind("TEXT"))
+		to.Set("expressions", nil)
+	}
+	return to
 }
 
 // parseDataType reads a type name, its parameters, and any array suffix.
@@ -2712,7 +2742,7 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	// builder with) builds a bare MAP(...) through its own reference builder
 	// rather than a probeable signature -- see buildVarMap -- so it is not
 	// turned away here despite having none.
-	isVarMap := upper == "MAP" && (p.dialect == "databricks" || p.dialect == "starrocks")
+	isVarMap := upper == "MAP" && (p.dialect == "databricks" || p.dialect == "starrocks" || p.dialect == "hive")
 	// Dremio's DATETYPE has no generic fallback shape at all -- unlike
 	// DATE_ADD/DATE_SUB's cast-interval builder, which still probes fine
 	// through its own fallback_builder -- so it is not turned away here
@@ -2862,6 +2892,30 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	}
 	if upper == "MOD" && len(args) == 2 {
 		return p.buildMod(args), nil
+	}
+	if p.dialect == "hive" {
+		if built := p.buildHiveFunction(upper, args); built != nil {
+			return built, nil
+		}
+	}
+	if p.dialect == "hive" && (upper == "DATE_ADD" || upper == "DATE_SUB") && len(args) == 2 {
+		// Hive's DATE_ADD/DATE_SUB build a TsOrDsAdd whose unit is always DAY,
+		// and DATE_SUB negates the count (HiveParser.FUNCTIONS).
+		expression := args[1]
+		if upper == "DATE_SUB" {
+			// `expression * -1`, which parenthesises a non-atomic operand the
+			// way the reference's own multiplication does.
+			inner := expression
+			if expression != nil && expression.Class != "Literal" && expression.Class != "Column" {
+				inner = New("Paren", Arg{"this", expression})
+			}
+			expression = New("Mul",
+				Arg{"this", inner},
+				Arg{"expression", New("Neg", Arg{"this", New("Literal", Arg{"this", "1"}, Arg{"is_string", false})})})
+		}
+		return New("TsOrDsAdd",
+			Arg{"this", args[0]}, Arg{"expression", expression},
+			Arg{"unit", New("Var", Arg{"this", "DAY"})}), nil
 	}
 	if upper == "STR_TO_DATE" && (p.dialect == "mysql" || p.dialect == "doris" || p.dialect == "starrocks") && len(args) == 2 {
 		return p.buildMySQLStrToDate(args), nil

@@ -195,6 +195,11 @@ func (g *generator) node(e *Expression) string {
 			return g.withComments(e, out)
 		}
 	}
+	if g.dialect == "hive" {
+		if out, handled := g.hiveNode(e); handled {
+			return g.withComments(e, out)
+		}
+	}
 	if fn, ok := generators[e.Class]; ok {
 		return g.withComments(e, fn(g, e))
 	}

@@ -98,12 +98,12 @@ func annotateNode(e *Expression, dialect string) *Expression {
 		// specifically (Redshift's own DENSE_RANK stays BIGINT, an
 		// asymmetry in the engine itself, not a spelling choice), everyone
 		// else BIGINT.
-		if dialect == "databricks" || dialect == "redshift" {
+		if dialect == "databricks" || dialect == "redshift" || dialect == "hive" {
 			return dataType("INT")
 		}
 		return dataType("BIGINT")
 	case "DenseRank":
-		if dialect == "databricks" {
+		if dialect == "databricks" || dialect == "hive" {
 			return dataType("INT")
 		}
 		return dataType("BIGINT")

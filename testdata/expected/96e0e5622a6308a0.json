@@ -1,0 +1,86 @@
+{
+ "dialect": "hive",
+ "rendered": "UNIX_TIMESTAMP('2020-01-01')",
+ "sql": "UNIX_TIMESTAMP('2020-01-01')",
+ "tokens": [
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "UNIX_TIMESTAMP"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 15,
+   "t": "STRING",
+   "x": "2020-01-01"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.StrToUnix",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "2020-01-01"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "format"
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "%Y-%mstrict-%dstrict %Hstrict:%Mstrict:%Sstrict"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

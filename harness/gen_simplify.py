@@ -27,7 +27,7 @@ import pathlib
 import subprocess
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive")
 
 
 def pinned_commit(repo: pathlib.Path) -> str:
