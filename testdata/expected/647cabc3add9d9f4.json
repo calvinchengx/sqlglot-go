@@ -1,0 +1,191 @@
+{
+ "dialect": "sqlite",
+ "rendered": "SELECT rowid FROM t1 WHERE t1 MATCH 'lorem'",
+ "sql": "SELECT rowid FROM t1 WHERE t1 MATCH 'lorem'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "rowid"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 13,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "t1"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 21,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 27,
+   "t": "VAR",
+   "x": "t1"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 30,
+   "t": "MATCH",
+   "x": "MATCH"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 36,
+   "t": "STRING",
+   "x": "lorem"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "rowid"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "t1"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.Match",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "t1"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "expression",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "lorem"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

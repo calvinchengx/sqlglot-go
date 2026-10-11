@@ -1,0 +1,196 @@
+{
+ "dialect": "sqlite",
+ "rendered": "SELECT (JULIANDAY('now') - 2440587.5) * 86400.0",
+ "sql": "SELECT (JULIANDAY('now') - 2440587.5) * 86400.0",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "JULIANDAY"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 18,
+   "t": "STRING",
+   "x": "now"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 27,
+   "t": "NUMBER",
+   "x": "2440587.5"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 38,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 40,
+   "t": "NUMBER",
+   "x": "86400.0"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Mul",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "JULIANDAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "expressions",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "now"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "expression",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "2440587.5"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "86400.0"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

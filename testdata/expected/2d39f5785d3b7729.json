@@ -1,0 +1,448 @@
+{
+ "dialect": "sqlite",
+ "rendered": "SELECT SUM(IIF(col % 2 = 0, 1, 0)) FILTER(WHERE col < 1000) FROM foo",
+ "sql": "SELECT SUM(IIF(col % 2 = 0, 1, 0)) FILTER(WHERE col < 1000) FROM foo",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "SUM"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "IIF"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 15,
+   "t": "VAR",
+   "x": "col"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "MOD",
+   "x": "%"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "NUMBER",
+   "x": "2"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 35,
+   "t": "FILTER",
+   "x": "FILTER"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 42,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 48,
+   "t": "VAR",
+   "x": "col"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "LT",
+   "x": "<"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 54,
+   "t": "NUMBER",
+   "x": "1000"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 60,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 65,
+   "t": "VAR",
+   "x": "foo"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Filter",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.If",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Mod",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "expression",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "expression",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "true",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "false",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 19,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.LT",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 23,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 48
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 23,
+   "k": "expression",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 54
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "1000"
+  },
+  {
+   "i": 28,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 31,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 68,
+    "end": 67,
+    "line": 1,
+    "start": 65
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

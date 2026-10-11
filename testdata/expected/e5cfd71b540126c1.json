@@ -1,0 +1,164 @@
+{
+ "dialect": "sqlite",
+ "rendered": "SELECT IIF(cond, 'True', 'False')",
+ "sql": "SELECT IIF(cond, 'True', 'False')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "IIF"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "cond"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 17,
+   "t": "STRING",
+   "x": "True"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 25,
+   "t": "STRING",
+   "x": "False"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.If",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "cond"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "true",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "True"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "false",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "False"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

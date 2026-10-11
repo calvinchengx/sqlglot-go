@@ -1,0 +1,726 @@
+{
+ "dialect": "sqlite",
+ "rendered": "CREATE TABLE \"Track\" (CONSTRAINT \"PK_Track\" FOREIGN KEY (\"TrackId\"), FOREIGN KEY (\"AlbumId\") REFERENCES \"Album\" (\"AlbumId\") ON DELETE NO ACTION ON UPDATE NO ACTION, FOREIGN KEY (\"AlbumId\") ON DELETE CASCADE ON UPDATE RESTRICT, FOREIGN KEY (\"AlbumId\") ON DELETE SET NULL ON UPDATE SET DEFAULT)",
+ "sql": "\n            CREATE TABLE \"Track\"\n            (\n                CONSTRAINT \"PK_Track\" FOREIGN KEY (\"TrackId\"),\n                FOREIGN KEY (\"AlbumId\") REFERENCES \"Album\" (\n                    \"AlbumId\"\n                ) ON DELETE NO ACTION ON UPDATE NO ACTION,\n                FOREIGN KEY (\"AlbumId\") ON DELETE CASCADE ON UPDATE RESTRICT,\n                FOREIGN KEY (\"AlbumId\") ON DELETE SET NULL ON UPDATE SET DEFAULT\n            )\n            ",
+ "tokens": [
+  {
+   "c": 18,
+   "e": 18,
+   "l": 2,
+   "s": 13,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 24,
+   "e": 24,
+   "l": 2,
+   "s": 20,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 32,
+   "e": 32,
+   "l": 2,
+   "s": 26,
+   "t": "IDENTIFIER",
+   "x": "Track"
+  },
+  {
+   "c": 13,
+   "e": 46,
+   "l": 3,
+   "s": 46,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 26,
+   "e": 73,
+   "l": 4,
+   "s": 64,
+   "t": "CONSTRAINT",
+   "x": "CONSTRAINT"
+  },
+  {
+   "c": 37,
+   "e": 84,
+   "l": 4,
+   "s": 75,
+   "t": "IDENTIFIER",
+   "x": "PK_Track"
+  },
+  {
+   "c": 49,
+   "e": 96,
+   "l": 4,
+   "s": 86,
+   "t": "FOREIGN_KEY",
+   "x": "FOREIGN KEY"
+  },
+  {
+   "c": 51,
+   "e": 98,
+   "l": 4,
+   "s": 98,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 60,
+   "e": 107,
+   "l": 4,
+   "s": 99,
+   "t": "IDENTIFIER",
+   "x": "TrackId"
+  },
+  {
+   "c": 61,
+   "e": 108,
+   "l": 4,
+   "s": 108,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 62,
+   "e": 109,
+   "l": 4,
+   "s": 109,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 27,
+   "e": 137,
+   "l": 5,
+   "s": 127,
+   "t": "FOREIGN_KEY",
+   "x": "FOREIGN KEY"
+  },
+  {
+   "c": 29,
+   "e": 139,
+   "l": 5,
+   "s": 139,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 38,
+   "e": 148,
+   "l": 5,
+   "s": 140,
+   "t": "IDENTIFIER",
+   "x": "AlbumId"
+  },
+  {
+   "c": 39,
+   "e": 149,
+   "l": 5,
+   "s": 149,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 50,
+   "e": 160,
+   "l": 5,
+   "s": 151,
+   "t": "REFERENCES",
+   "x": "REFERENCES"
+  },
+  {
+   "c": 58,
+   "e": 168,
+   "l": 5,
+   "s": 162,
+   "t": "IDENTIFIER",
+   "x": "Album"
+  },
+  {
+   "c": 60,
+   "e": 170,
+   "l": 5,
+   "s": 170,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 29,
+   "e": 200,
+   "l": 6,
+   "s": 192,
+   "t": "IDENTIFIER",
+   "x": "AlbumId"
+  },
+  {
+   "c": 17,
+   "e": 218,
+   "l": 7,
+   "s": 218,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 20,
+   "e": 221,
+   "l": 7,
+   "s": 220,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 27,
+   "e": 228,
+   "l": 7,
+   "s": 223,
+   "t": "DELETE",
+   "x": "DELETE"
+  },
+  {
+   "c": 30,
+   "e": 231,
+   "l": 7,
+   "s": 230,
+   "t": "VAR",
+   "x": "NO"
+  },
+  {
+   "c": 37,
+   "e": 238,
+   "l": 7,
+   "s": 233,
+   "t": "VAR",
+   "x": "ACTION"
+  },
+  {
+   "c": 40,
+   "e": 241,
+   "l": 7,
+   "s": 240,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 47,
+   "e": 248,
+   "l": 7,
+   "s": 243,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  },
+  {
+   "c": 50,
+   "e": 251,
+   "l": 7,
+   "s": 250,
+   "t": "VAR",
+   "x": "NO"
+  },
+  {
+   "c": 57,
+   "e": 258,
+   "l": 7,
+   "s": 253,
+   "t": "VAR",
+   "x": "ACTION"
+  },
+  {
+   "c": 58,
+   "e": 259,
+   "l": 7,
+   "s": 259,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 27,
+   "e": 287,
+   "l": 8,
+   "s": 277,
+   "t": "FOREIGN_KEY",
+   "x": "FOREIGN KEY"
+  },
+  {
+   "c": 29,
+   "e": 289,
+   "l": 8,
+   "s": 289,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 38,
+   "e": 298,
+   "l": 8,
+   "s": 290,
+   "t": "IDENTIFIER",
+   "x": "AlbumId"
+  },
+  {
+   "c": 39,
+   "e": 299,
+   "l": 8,
+   "s": 299,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 42,
+   "e": 302,
+   "l": 8,
+   "s": 301,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 49,
+   "e": 309,
+   "l": 8,
+   "s": 304,
+   "t": "DELETE",
+   "x": "DELETE"
+  },
+  {
+   "c": 57,
+   "e": 317,
+   "l": 8,
+   "s": 311,
+   "t": "VAR",
+   "x": "CASCADE"
+  },
+  {
+   "c": 60,
+   "e": 320,
+   "l": 8,
+   "s": 319,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 67,
+   "e": 327,
+   "l": 8,
+   "s": 322,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  },
+  {
+   "c": 76,
+   "e": 336,
+   "l": 8,
+   "s": 329,
+   "t": "VAR",
+   "x": "RESTRICT"
+  },
+  {
+   "c": 77,
+   "e": 337,
+   "l": 8,
+   "s": 337,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 27,
+   "e": 365,
+   "l": 9,
+   "s": 355,
+   "t": "FOREIGN_KEY",
+   "x": "FOREIGN KEY"
+  },
+  {
+   "c": 29,
+   "e": 367,
+   "l": 9,
+   "s": 367,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 38,
+   "e": 376,
+   "l": 9,
+   "s": 368,
+   "t": "IDENTIFIER",
+   "x": "AlbumId"
+  },
+  {
+   "c": 39,
+   "e": 377,
+   "l": 9,
+   "s": 377,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 42,
+   "e": 380,
+   "l": 9,
+   "s": 379,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 49,
+   "e": 387,
+   "l": 9,
+   "s": 382,
+   "t": "DELETE",
+   "x": "DELETE"
+  },
+  {
+   "c": 53,
+   "e": 391,
+   "l": 9,
+   "s": 389,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 58,
+   "e": 396,
+   "l": 9,
+   "s": 393,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 61,
+   "e": 399,
+   "l": 9,
+   "s": 398,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 68,
+   "e": 406,
+   "l": 9,
+   "s": 401,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  },
+  {
+   "c": 72,
+   "e": 410,
+   "l": 9,
+   "s": 408,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 80,
+   "e": 418,
+   "l": 9,
+   "s": 412,
+   "t": "DEFAULT",
+   "x": "DEFAULT"
+  },
+  {
+   "c": 13,
+   "e": 432,
+   "l": 10,
+   "s": 432,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 32,
+    "line": 2,
+    "start": 26
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "Track"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.Constraint",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 84,
+    "line": 4,
+    "start": 75
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "PK_Track"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ForeignKey",
+   "i": 6,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "expressions",
+   "m": {
+    "col": 60,
+    "end": 107,
+    "line": 4,
+    "start": 99
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "TrackId"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ForeignKey",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "expressions",
+   "m": {
+    "col": 38,
+    "end": 148,
+    "line": 5,
+    "start": 140
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "AlbumId"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.constraints.Reference",
+   "i": 14,
+   "k": "reference"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 58,
+    "end": 168,
+    "line": 5,
+    "start": 162
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "Album"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "expressions",
+   "m": {
+    "col": 29,
+    "end": 200,
+    "line": 6,
+    "start": 192
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "AlbumId"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "i": 18,
+   "k": "options",
+   "v": "ON DELETE NO ACTION"
+  },
+  {
+   "a": true,
+   "i": 18,
+   "k": "options",
+   "v": "ON UPDATE NO ACTION"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ForeignKey",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 29,
+   "k": "expressions",
+   "m": {
+    "col": 38,
+    "end": 298,
+    "line": 8,
+    "start": 290
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "AlbumId"
+  },
+  {
+   "i": 30,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 29,
+   "k": "delete",
+   "v": "CASCADE"
+  },
+  {
+   "i": 29,
+   "k": "update",
+   "v": "RESTRICT"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ForeignKey",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 35,
+   "k": "expressions",
+   "m": {
+    "col": 38,
+    "end": 376,
+    "line": 9,
+    "start": 368
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "AlbumId"
+  },
+  {
+   "i": 36,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 35,
+   "k": "delete",
+   "v": "SET NULL"
+  },
+  {
+   "i": 35,
+   "k": "update",
+   "v": "SET DEFAULT"
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

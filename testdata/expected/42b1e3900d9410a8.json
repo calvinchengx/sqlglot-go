@@ -1,0 +1,176 @@
+{
+ "dialect": "sqlite",
+ "rendered": "SELECT RANK() OVER (RANGE CURRENT ROW) FROM tbl",
+ "sql": "SELECT RANK() OVER (RANGE CURRENT ROW) FROM tbl",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "RANK"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 14,
+   "t": "OVER",
+   "x": "OVER"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 20,
+   "t": "RANGE",
+   "x": "RANGE"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "CURRENT"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 34,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 39,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "tbl"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Window",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Rank",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.WindowSpec",
+   "i": 1,
+   "k": "spec"
+  },
+  {
+   "i": 3,
+   "k": "kind",
+   "v": "RANGE"
+  },
+  {
+   "i": 3,
+   "k": "start",
+   "v": "CURRENT ROW"
+  },
+  {
+   "i": 1,
+   "k": "over",
+   "v": "OVER"
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "tbl"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

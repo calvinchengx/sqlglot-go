@@ -2382,8 +2382,18 @@
    "expected": "SELECT NOT NOT NOT NOT t_bool.a FROM t_bool"
   },
   {
+   "dialect": "sqlite",
+   "sql": "SELECT NOT(NOT(NOT(NOT t_bool.a))) FROM t_bool",
+   "expected": "SELECT NOT NOT NOT NOT t_bool.a FROM t_bool"
+  },
+  {
    "dialect": "mysql",
    "sql": "WITH t0 AS (SELECT 1 AS a, 'foo' AS p) SELECT NOT(NOT(CASE WHEN t0.a > 1 THEN t0.a ELSE t0.p END)) AS res FROM t0",
+   "expected": "WITH t0 AS (SELECT 1 AS a, 'foo' AS p) SELECT NOT NOT CASE WHEN t0.a > 1 THEN t0.a ELSE t0.p END AS res FROM t0"
+  },
+  {
+   "dialect": "sqlite",
+   "sql": "WITH t0 AS (SELECT 1 AS a, 'foo' AS p) SELECT NOT (NOT(CASE WHEN t0.a > 1 THEN t0.a ELSE t0.p END)) AS res FROM t0",
    "expected": "WITH t0 AS (SELECT 1 AS a, 'foo' AS p) SELECT NOT NOT CASE WHEN t0.a > 1 THEN t0.a ELSE t0.p END AS res FROM t0"
   },
   {
