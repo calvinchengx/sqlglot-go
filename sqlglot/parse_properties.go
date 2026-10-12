@@ -69,6 +69,38 @@ func (p *parser) parseRisingWaveEncode() (*Expression, bool, error) {
 func (p *parser) parseTableProperties() ([]*Expression, error) {
 	var out []*Expression
 	for {
+		// SQLite's CREATE VIRTUAL TABLE names the module it uses and the
+		// arguments it takes: `USING fts5(title, content)`.
+		if p.dialect == "sqlite" && p.atWords("USING") {
+			p.advance()
+			module := p.parseIDVarAny()
+			if module == nil {
+				return nil, p.unsupported("USING without a module")
+			}
+			prop := New("ModuleProperty", Arg{"this", module})
+			if p.at(TokL_PAREN) {
+				args, err := p.parseWrappedCSV(func() (*Expression, error) {
+					return p.parseIDVarAny(), nil
+				})
+				if err != nil {
+					return nil, err
+				}
+				if len(args) > 0 {
+					prop.Set("expressions", args)
+				}
+			}
+			out = append(out, prop)
+			continue
+		}
+		// Hive's `CLUSTERED BY (cols) [SORTED BY (cols)] INTO n BUCKETS`.
+		if p.atWords("CLUSTERED", "BY") {
+			prop, err := p.parseClusteredBy()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, prop)
+			continue
+		}
 		// `PARTITION OF` is not in the generated table of property words: it
 		// carries a whole grammar of its own rather than a word and a shape.
 		if p.atWords("PARTITION", "OF") {

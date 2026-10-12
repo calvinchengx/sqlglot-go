@@ -101,6 +101,13 @@ func (p *parser) parseCreate() (*Expression, error) {
 			modifiers = append(modifiers, New(class))
 			continue
 		}
+		// SQLite's CREATE VIRTUAL TABLE: the word stands in front of the kind
+		// and builds a bare VirtualProperty (SQLiteParser.PROPERTY_PARSERS).
+		if p.dialect == "sqlite" && p.atWords("VIRTUAL") {
+			p.advance()
+			modifiers = append(modifiers, New("VirtualProperty"))
+			continue
+		}
 		// MySQL's own CREATE VIEW preamble: `ALGORITHM=...` and
 		// `DEFINER=user@host`, each a property of its own rather than a
 		// bare word.
@@ -776,6 +783,17 @@ func (p *parser) parseInsert() (*Expression, error) {
 		p.advance()
 		overwrite = true
 	}
+	// SQLite's `INSERT OR <policy>` names what happens on a conflict.
+	alternative := ""
+	if p.dialect == "sqlite" && p.at(TokOR) {
+		p.advance()
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("INSERT OR without a policy")
+		}
+		alternative = strings.ToUpper(c.Text)
+		p.advance()
+	}
 	// What is written need not be a TABLE at all: `INSERT OVERWRITE
 	// DIRECTORY 'x'` writes files, and the target is a Directory naming the
 	// path, whether it is on the local machine or not.
@@ -980,9 +998,17 @@ func (p *parser) parseInsert() (*Expression, error) {
 		Arg{"settings", false}, Arg{"default", defaultValues},
 		Arg{"expression", expression},
 		Arg{"conflict", conflict}, Arg{"returning", returning},
-		Arg{"overwrite", overwrite}, Arg{"alternative", nil},
+		Arg{"overwrite", overwrite}, Arg{"alternative", alternativeOrNil(alternative)},
 		Arg{"ignore", ignore}, Arg{"source", false},
 	), leading), nil
+}
+
+// alternativeOrNil turns an empty alternative word into an absent arg.
+func alternativeOrNil(word string) any {
+	if word == "" {
+		return nil
+	}
+	return word
 }
 
 // parseKeyNames reads a key's members where the dialect does not order them:
@@ -1822,6 +1848,16 @@ func (p *parser) parseAlter() (*Expression, error) {
 		check = nil
 	}
 
+	// A VIEW names its columns where a TABLE names its columns, and the
+	// reference reads them as the schema of the name.
+	if kind == "VIEW" && p.at(TokL_PAREN) {
+		cols, err := p.parseViewColumns()
+		if err != nil {
+			return nil, err
+		}
+		table = New("Schema", Arg{"this", table}, Arg{"expressions", cols})
+	}
+
 	// SET AUTHORIZATION and SET PROPERTIES are settings the reference has no
 	// grammar for in any dialect that reads the statement at all: it leaves
 	// tokens over and falls back to a Command of the whole statement.
@@ -1906,6 +1942,11 @@ func (p *parser) parseAlterView(start Token) ([]*Expression, *Expression, error)
 			return nil, nil, err
 		}
 		return []*Expression{action}, nil, nil
+	}
+	// UNSET is not an ALTER action the reference reads, so it leaves the words
+	// unread and falls back to a Command of the whole statement.
+	if p.atWords("UNSET") {
+		return nil, p.parseAsCommand(start), nil
 	}
 	if !p.match(TokALIAS) {
 		return nil, nil, p.unsupported("ALTER VIEW without a query")
@@ -3333,11 +3374,22 @@ func (p *parser) parseFunctionProperty() (*Expression, error) {
 		return p.parseSQLSecurityProperty()
 	}
 	// Hive's `USING JAR|FILE|ARCHIVE '<path>'` names a file the function
-	// loads. The reference keeps it in written order, which this port's
-	// Create writer does not yet reproduce, so it is refused rather than
-	// written in the wrong place.
+	// loads.
 	if p.atWords("USING") {
-		return nil, p.unsupported("a function's USING property")
+		p.advance()
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("USING without a kind")
+		}
+		kind := strings.ToUpper(c.Text)
+		p.advance()
+		path := p.curr()
+		if path == nil || path.Type != TokSTRING {
+			return nil, p.unsupported("USING without a path")
+		}
+		lit := New("Literal", Arg{"this", path.Text}, Arg{"is_string", true})
+		p.advance()
+		return New("UsingProperty", Arg{"this", lit}, Arg{"kind", kind}), nil
 	}
 	switch {
 	case p.at(TokLANGUAGE) || p.atWords("LANGUAGE"):
@@ -5436,7 +5488,7 @@ func (p *parser) parseAttachDetach() (*Expression, error) {
 	// (SQLiteParser._parse_attach_detach).
 	if p.dialect == "sqlite" {
 		p.matchUnquotedWord("DATABASE")
-		this, err := p.parseExpression()
+		this, err := p.parseAliasedExpression()
 		if err != nil {
 			return nil, err
 		}
@@ -6392,12 +6444,10 @@ func (p *parser) parseDeclare() (*Expression, error) {
 		replace = true
 	}
 
-	// Spark's DECLARE names a variable and gives it a value, with no type:
-	// `DECLARE five = 5`, `DECLARE VARIABLE size DEFAULT 6`.
-	if p.dialect == "spark2" || p.dialect == "spark" {
-		return p.parseSparkDeclare(replace)
-	}
-
+	// The reference reads one item parser for every dialect, Spark included:
+	// `DECLARE x INT`, `DECLARE VARIABLE size DEFAULT 6` and
+	// `DECLARE five = 5` are all the same shape.
+	//
 	// The reference tries its own item parser and CATCHES what it raises --
 	// `PRIMARY KEY CLUSTERED (...)` is a constraint shape this port's own
 	// column-def reader has no case for, and the reference gives up on it
@@ -6411,32 +6461,6 @@ func (p *parser) parseDeclare() (*Expression, error) {
 	}
 	if err != nil || len(items) == 0 || p.curr() != nil {
 		return p.parseAsCommand(start), nil
-	}
-	return New("Declare", Arg{"expressions", items}, Arg{"replace", replace}), nil
-}
-
-// parseSparkDeclare reads Spark's `DECLARE [OR REPLACE] [VARIABLE] name
-// [= v | DEFAULT v]`, one or more of them.
-func (p *parser) parseSparkDeclare(replace bool) (*Expression, error) {
-	var items []*Expression
-	for {
-		p.matchUnquotedWord("VARIABLE")
-		name, err := p.parseIdentifier()
-		if err != nil {
-			return nil, err
-		}
-		item := New("DeclareItem", Arg{"this", []*Expression{name}})
-		if p.match(TokEQ) || p.matchUnquotedWord("DEFAULT") {
-			value, err := p.parseDisjunction()
-			if err != nil {
-				return nil, err
-			}
-			item.Set("default", value)
-		}
-		items = append(items, item)
-		if !p.match(TokCOMMA) {
-			break
-		}
 	}
 	return New("Declare", Arg{"expressions", items}, Arg{"replace", replace}), nil
 }
@@ -6492,10 +6516,14 @@ func (p *parser) parseDeclareItem() (*Expression, error) {
 			kind = New("Schema", Arg{"expressions", columns})
 		}
 	} else {
+		// The type is OPTIONAL (`DECLARE five = 5`), so a shape that is not
+		// a type leaves `kind` absent rather than failing the item.
+		mark := p.index
 		var err error
 		kind, err = p.parseDataType()
 		if err != nil {
-			return nil, err
+			p.index = mark
+			kind = nil
 		}
 	}
 

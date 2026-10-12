@@ -147,8 +147,10 @@ func (g *generator) hiveNode(e *Expression) (string, bool) {
 		// (HiveGenerator.json_path_key_only_name).
 		return g.child(e, "this"), true
 	case "Schema":
-		// Hive's ADD COLUMNS (...): the Schema is the ALTER's action.
-		if g.dialect == "hive" && e.Parent != nil && e.Parent.Class == "Alter" {
+		// Hive's ADD COLUMNS (...): the Schema is the ALTER's action, not the
+		// name it alters.
+		if g.dialect == "hive" && e.Parent != nil && e.Parent.Class == "Alter" &&
+			e.Parent.Args["this"] != e {
 			return "COLUMNS " + g.spell(e), true
 		}
 	case "AlterColumn":

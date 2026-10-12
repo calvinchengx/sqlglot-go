@@ -19,10 +19,22 @@ var intervalStringRE = regexp.MustCompile(`\s*(-?[0-9]+(?:\.[0-9]+)?)\s*([a-zA-Z
 // split back out, upper-cased). A string holding MORE than one quantity --
 // `'1 year 2 months'` -- is left whole with no unit, which is why the count of
 // matches decides rather than the first match.
+// parseInterval reads the INTERVAL word and what it introduces, retreating
+// entirely where the word turned out to be a NAME.
 func (p *parser) parseInterval() (*Expression, error) {
 	start := p.index
 	p.advance() // INTERVAL
+	interval, err := p.parseIntervalBody()
+	if err != nil || interval == nil {
+		p.index = start
+		return nil, err
+	}
+	return interval, nil
+}
 
+// parseIntervalBody reads the quantity, unit and any further units of one
+// INTERVAL, with the INTERVAL word already consumed.
+func (p *parser) parseIntervalBody() (*Expression, error) {
 	// INTERVAL is a NAME wherever what follows it is not a quantity: `SELECT
 	// interval` selects a column, and `WHERE interval IS NULL` tests one. The
 	// reference reads the operand and puts everything back where it did not
@@ -38,7 +50,6 @@ func (p *parser) parseInterval() (*Expression, error) {
 		this, err = p.parseTerm()
 	}
 	if err != nil || this == nil || p.namesAColumnRatherThanAQuantity(this) {
-		p.index = start
 		return nil, nil
 	}
 
@@ -110,7 +121,23 @@ func (p *parser) parseInterval() (*Expression, error) {
 			Arg{"expression", New("Var", Arg{"this", p.normalisedIntervalUnit(end.Text)})})
 	}
 
-	return New("Interval", Arg{"this", this}, Arg{"unit", unit}), nil
+	interval := New("Interval", Arg{"this", this}, Arg{"unit", unit})
+
+	// `INTERVAL '5' HOURS '30' MINUTES` is a SUM of intervals, with an
+	// optional PLUS between the parts (the reference's _parse_interval).
+	after := p.index
+	p.match(TokPLUS)
+	if c := p.curr(); c != nil && (c.Type == TokSTRING || c.Type == TokNUMBER) {
+		rest, err := p.parseIntervalBody()
+		if err != nil {
+			return nil, err
+		}
+		if rest != nil {
+			return New("Add", Arg{"this", interval}, Arg{"expression", rest}), nil
+		}
+	}
+	p.index = after
+	return interval, nil
 }
 
 // normalisedIntervalUnit is the unit the reference records for a spelling. Most words

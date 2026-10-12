@@ -719,6 +719,31 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 	if err := p.oracleSampleAlias(table); err != nil {
 		return nil, err
 	}
+	// Hive, Spark2 and Spark write the alias AFTER the sample
+	// (ALIAS_POST_TABLESAMPLE), where every other dialect writes it before.
+	if isHiveFamily(p.dialect) && table.Args["sample"] != nil && table.Args["alias"] == nil {
+		alias, err := p.parseTableAlias()
+		if err != nil {
+			return nil, err
+		}
+		if alias != nil {
+			table.Set("alias", alias)
+		}
+	}
+	// SQLite names the index the table is read through, or that none may be
+	// used (the reference's `_parse_table`, after the alias).
+	if p.at(TokINDEXED_BY) {
+		p.advance()
+		indexed, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		table.Set("indexed", indexed)
+	} else if p.atWords("NOT", "INDEXED") {
+		p.advance()
+		p.advance()
+		table.Set("indexed", false)
+	}
 	// And so do the pivots, as a LIST: `PIVOT(...) PIVOT(...)` chains, and the
 	// reference keeps them in the order they were written.
 	pivots, err := p.parsePivots()

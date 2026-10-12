@@ -114,3 +114,185 @@ func (p *parser) buildHiveFunction(upper string, args []*Expression) *Expression
 	}
 	return nil
 }
+
+// sparkJoinHint reports the names Spark2 and Spark read as a join hint rather
+// than as a function call (Spark2Parser.FUNCTION_PARSERS).
+func sparkJoinHint(upper string) bool {
+	switch upper {
+	case "BROADCAST", "BROADCASTJOIN", "MAPJOIN", "MERGE", "SHUFFLEMERGE",
+		"MERGEJOIN", "SHUFFLE_HASH", "SHUFFLE_REPLICATE_NL":
+		return true
+	}
+	return false
+}
+
+// parseJoinHintFunction reads `NAME(table, ...)` into a JoinHint. The name is
+// already consumed.
+func (p *parser) parseJoinHintFunction(name string) (*Expression, error) {
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("a join hint without its tables")
+	}
+	var args []*Expression
+	if !p.at(TokR_PAREN) {
+		for {
+			table, err := p.parseTable()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, table)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed join hint")
+	}
+	return New("JoinHint", Arg{"this", name}, Arg{"expressions", args}), nil
+}
+
+// parseClusteredBy reads `CLUSTERED BY (cols) [SORTED BY (cols)] INTO n
+// BUCKETS` (the reference's _parse_clustered_by). The leading words are
+// already current.
+func (p *parser) parseClusteredBy() (*Expression, error) {
+	p.advance() // CLUSTERED
+	p.advance() // BY
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("CLUSTERED BY without its columns")
+	}
+	var exprs []*Expression
+	for !p.at(TokR_PAREN) {
+		col, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		exprs = append(exprs, col)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed CLUSTERED BY")
+	}
+	var sortedBy []*Expression
+	if p.atWords("SORTED", "BY") {
+		p.advance()
+		p.advance()
+		if !p.match(TokL_PAREN) {
+			return nil, p.unsupported("SORTED BY without its columns")
+		}
+		for !p.at(TokR_PAREN) {
+			ordered, err := p.parseOrderedColumn()
+			if err != nil {
+				return nil, err
+			}
+			sortedBy = append(sortedBy, ordered)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed SORTED BY")
+		}
+	}
+	if !p.match(TokINTO) {
+		return nil, p.unsupported("CLUSTERED BY without INTO")
+	}
+	c := p.curr()
+	if c == nil || c.Type != TokNUMBER {
+		return nil, p.unsupported("CLUSTERED BY without a bucket count")
+	}
+	buckets := New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})
+	p.advance()
+	p.matchUnquotedWord("BUCKETS")
+	args := []Arg{{"expressions", exprs}}
+	if len(sortedBy) > 0 {
+		args = append(args, Arg{"sorted_by", sortedBy})
+	}
+	args = append(args, Arg{"buckets", buckets})
+	return New("ClusteredByProperty", args...), nil
+}
+
+// parseOrderedColumn reads one column of a SORTED BY list.
+func (p *parser) parseOrderedColumn() (*Expression, error) {
+	this, err := p.parseColumn()
+	if err != nil {
+		return nil, err
+	}
+	var desc *bool
+	switch {
+	case p.match(TokDESC):
+		b := true
+		desc = &b
+	case p.match(TokASC):
+		b := false
+		desc = &b
+	}
+	nullsFirst, saidSo := false, false
+	if p.atWords("NULLS", "FIRST") {
+		p.advance()
+		p.advance()
+		nullsFirst, saidSo = true, true
+	} else if p.atWords("NULLS", "LAST") {
+		p.advance()
+		p.advance()
+		nullsFirst, saidSo = false, true
+	}
+	if !saidSo {
+		nullsFirst = p.nullsFirst(desc != nil && *desc)
+	}
+	args := []Arg{{"this", this}}
+	if desc != nil {
+		args = append(args, Arg{"desc", *desc})
+	}
+	args = append(args, Arg{"nulls_first", nullsFirst})
+	return New("Ordered", args...), nil
+}
+
+// buildHiveTransform reads Hive's `TRANSFORM(args) [USING script [AS schema]]`
+// (HiveParser._parse_transform). The name is already consumed. It returns nil
+// when the call is not a TRANSFORM, so the caller reads it as a function.
+func (p *parser) buildHiveTransform() (*Expression, error) {
+	if !p.at(TokL_PAREN) {
+		return nil, nil
+	}
+	args, err := p.parseWrappedCSV(p.parseLambdaOrExpression)
+	if err != nil {
+		// Not a TRANSFORM this reader can take: leave it to the generic
+		// signature rather than refusing the statement here.
+		return nil, nil
+	}
+	if !p.match(TokUSING) {
+		// No USING: this is the ordinary TRANSFORM, built by the generic
+		// signature rather than here.
+		return nil, nil
+	}
+	c := p.curr()
+	if c == nil || c.Type != TokSTRING {
+		return nil, p.unsupported("TRANSFORM USING without a script")
+	}
+	script := New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
+	p.advance()
+	p.match(TokALIAS)
+	var schema *Expression
+	if p.at(TokL_PAREN) {
+		cols, err := p.parseColumnDefs()
+		if err != nil {
+			return nil, err
+		}
+		schema = New("Schema", Arg{"expressions", cols})
+	}
+	return New("QueryTransform",
+		Arg{"expressions", args}, Arg{"command_script", script}, Arg{"schema", schema}), nil
+}
+
+// parseLambdaOrExpression reads a lambda where there is one and an ordinary
+// expression otherwise, which is what Hive's TRANSFORM arguments are.
+func (p *parser) parseLambdaOrExpression() (*Expression, error) {
+	mark := p.index
+	if lam, err := p.parseLambda(); err == nil && lam != nil {
+		return lam, nil
+	}
+	p.index = mark
+	return p.parseExpression()
+}
