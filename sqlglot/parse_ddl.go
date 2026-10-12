@@ -2207,6 +2207,24 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			return nil, err
 		}
 		return New("AlterRename", Arg{"this", target}), nil
+	case p.dialect == "sqlite" && p.atWords("RENAME") && p.next() != nil &&
+		!strings.EqualFold(p.next().Text, "TO"):
+		// SQLite writes no COLUMN word (ALTER_RENAME_REQUIRES_COLUMN off):
+		// `RENAME a TO b` renames a column.
+		p.advance() // RENAME
+		from, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		if !p.atWords("TO") {
+			return nil, p.unsupported("RENAME without TO")
+		}
+		p.advance()
+		to, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		return New("RenameColumn", Arg{"this", from}, Arg{"to", to}, Arg{"exists", false}), nil
 	case p.atWords("RENAME", "COLUMN"):
 		p.advance()
 		p.advance()
