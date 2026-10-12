@@ -579,12 +579,28 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 		}
 		// A column that NAMES a type and computes its value is the same
 		// constraint the typeless form builds: `b INTEGER AS (a * 2) STORED`.
-		// SQLite reads it here; MySQL has its own case in the constraint
-		// reader, which keeps the shape that dialect writes.
+		// SQLite writes GENERATED ALWAYS in front of the AS, and keeps
+		// neither word. MySQL has its own case in the constraint reader,
+		// which keeps the shape that dialect writes.
+		generated := false
+		if p.dialect == "sqlite" && p.atWords("GENERATED", "ALWAYS") {
+			p.advance()
+			p.advance()
+			generated = true
+		}
 		if p.dialect == "sqlite" && p.at(TokALIAS) {
 			computed, err := p.parseComputedColumn(false)
 			if err != nil {
 				return nil, err
+			}
+			// The reference reads the GENERATED form's expression through a
+			// reader that unwraps the parentheses; the AS form keeps them.
+			if generated {
+				if kind, _ := computed.Args["kind"].(*Expression); kind != nil {
+					if inner, _ := kind.Args["this"].(*Expression); inner != nil && inner.Class == "Paren" {
+						kind.Set("this", inner.Args["this"])
+					}
+				}
 			}
 			rest, err := p.parseColumnConstraints()
 			if err != nil {
