@@ -2026,6 +2026,16 @@ func (p *parser) parseAlterView(start Token) ([]*Expression, *Expression, error)
 	if p.atWords("UNSET") {
 		return nil, p.parseAsCommand(start), nil
 	}
+	if p.at(TokSET) {
+		// `ALTER VIEW v SET ...` sets something about the view, read the same
+		// way an ALTER TABLE SET reads it (with the word already consumed).
+		p.advance() // SET
+		action, err := p.parseAlterSet()
+		if err != nil {
+			return nil, nil, err
+		}
+		return []*Expression{action}, nil, nil
+	}
 	if !p.match(TokALIAS) {
 		return nil, nil, p.unsupported("ALTER VIEW without a query")
 	}
@@ -5475,6 +5485,15 @@ func (p *parser) parseAlterSet() (*Expression, error) {
 			return nil, err
 		}
 		node.Set("access_method", name)
+	case p.atWords("TBLPROPERTIES"):
+		// `SET TBLPROPERTIES ('a'='1')` names a table's own properties, which
+		// the reference reads as ONE Properties node holding them.
+		p.advance()
+		items, err := p.parseWrappedProperties()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("expressions", []*Expression{New("Properties", Arg{"expressions", items})})
 	case p.at(TokL_PAREN) && p.tables.AlterSetIsWrapped:
 		// The parentheses are the SYNTAX's here, not a list's: what is inside
 		// them is read as table PROPERTIES, each with a class of its own,
