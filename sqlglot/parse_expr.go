@@ -2839,6 +2839,18 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	name := p.curr().Text
 	quotedName := p.curr().Type == TokIDENTIFIER
 	upper := strings.ToUpper(name)
+	if isHiveFamily(p.dialect) && upper == "TRANSFORM" && p.next() != nil && p.next().Type == TokL_PAREN {
+		mark := p.index
+		p.advance() // the name
+		built, err := p.buildHiveTransform()
+		if err != nil {
+			return nil, err
+		}
+		if built != nil {
+			return built, nil
+		}
+		p.index = mark // not a `... USING script` TRANSFORM; read it as a function
+	}
 	if (p.dialect == "spark2" || p.dialect == "spark") && sparkJoinHint(upper) {
 		p.advance() // the name, as the reference does before a FUNCTION_PARSERS entry
 		return p.parseJoinHintFunction(upper)

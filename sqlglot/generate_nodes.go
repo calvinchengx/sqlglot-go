@@ -156,6 +156,7 @@ func init() {
 		"Hint":                                (*generator).writeHint,
 		"JoinHint":                            (*generator).writeJoinHint,
 		"ClusteredByProperty":                 (*generator).writeClusteredBy,
+		"QueryTransform":                      (*generator).writeQueryTransform,
 		"PositionalColumn":                    (*generator).writePositionalColumn,
 		"ExcludeColumnConstraint":             (*generator).writeExcludeConstraint,
 		"WithOperator":                        (*generator).writeWithOperator,
@@ -1295,6 +1296,19 @@ func (g *generator) writePositionalColumn(e *Expression) string {
 // inside the comment it was written in.
 // writeJoinHint writes `NAME(tables)`, the join hint Spark2 and Spark read
 // inside a `/*+ ... */` hint.
+// writeQueryTransform writes Hive's `TRANSFORM(args) [USING script [AS
+// schema]]`.
+func (g *generator) writeQueryTransform(e *Expression) string {
+	out := "TRANSFORM(" + g.listSep(e, ", ") + ")"
+	if script := g.child(e, "command_script"); script != "" {
+		out += " USING " + script
+	}
+	if schema := g.child(e, "schema"); schema != "" {
+		out += " AS " + schema
+	}
+	return out
+}
+
 // writeClusteredBy writes `CLUSTERED BY (cols) [SORTED BY (cols)] INTO n
 // BUCKETS`.
 func (g *generator) writeClusteredBy(e *Expression) string {

@@ -248,3 +248,51 @@ func (p *parser) parseOrderedColumn() (*Expression, error) {
 	args = append(args, Arg{"nulls_first", nullsFirst})
 	return New("Ordered", args...), nil
 }
+
+// buildHiveTransform reads Hive's `TRANSFORM(args) [USING script [AS schema]]`
+// (HiveParser._parse_transform). The name is already consumed. It returns nil
+// when the call is not a TRANSFORM, so the caller reads it as a function.
+func (p *parser) buildHiveTransform() (*Expression, error) {
+	if !p.at(TokL_PAREN) {
+		return nil, nil
+	}
+	args, err := p.parseWrappedCSV(p.parseLambdaOrExpression)
+	if err != nil {
+		// Not a TRANSFORM this reader can take: leave it to the generic
+		// signature rather than refusing the statement here.
+		return nil, nil
+	}
+	if !p.match(TokUSING) {
+		// No USING: this is the ordinary TRANSFORM, built by the generic
+		// signature rather than here.
+		return nil, nil
+	}
+	c := p.curr()
+	if c == nil || c.Type != TokSTRING {
+		return nil, p.unsupported("TRANSFORM USING without a script")
+	}
+	script := New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
+	p.advance()
+	p.match(TokALIAS)
+	var schema *Expression
+	if p.at(TokL_PAREN) {
+		cols, err := p.parseColumnDefs()
+		if err != nil {
+			return nil, err
+		}
+		schema = New("Schema", Arg{"expressions", cols})
+	}
+	return New("QueryTransform",
+		Arg{"expressions", args}, Arg{"command_script", script}, Arg{"schema", schema}), nil
+}
+
+// parseLambdaOrExpression reads a lambda where there is one and an ordinary
+// expression otherwise, which is what Hive's TRANSFORM arguments are.
+func (p *parser) parseLambdaOrExpression() (*Expression, error) {
+	mark := p.index
+	if lam, err := p.parseLambda(); err == nil && lam != nil {
+		return lam, nil
+	}
+	p.index = mark
+	return p.parseExpression()
+}
