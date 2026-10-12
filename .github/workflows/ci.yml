@@ -15,7 +15,9 @@ jobs:
   differential:
     name: Against the reference (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 10
+    # macOS runners are slow, and the corpus has grown to ~9,300 statements
+    # across 23 dialects: 10 minutes no longer covers the differential there.
+    timeout-minutes: 25
     # The port has no dependencies and no native library, so it runs wherever
     # Go does -- but "should work on Windows" is a claim, and developers work
     # on Windows machines of both architectures. The differential run is the
