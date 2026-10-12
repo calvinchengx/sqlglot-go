@@ -273,6 +273,9 @@ func (p *parser) buildHiveTransform() (*Expression, error) {
 		// signature rather than refusing the statement here.
 		return nil, nil
 	}
+	// A ROW FORMAT may stand between the arguments and USING, and another
+	// after the schema.
+	rowFormatBefore := p.parseRowFormatIfAny()
 	if !p.match(TokUSING) {
 		// No USING: this is the ordinary TRANSFORM, built by the generic
 		// signature rather than here.
@@ -293,8 +296,22 @@ func (p *parser) buildHiveTransform() (*Expression, error) {
 		}
 		schema = New("Schema", Arg{"expressions", cols})
 	}
+	rowFormatAfter := p.parseRowFormatIfAny()
 	return New("QueryTransform",
-		Arg{"expressions", args}, Arg{"command_script", script}, Arg{"schema", schema}), nil
+		Arg{"expressions", args}, Arg{"command_script", script}, Arg{"schema", schema},
+		Arg{"row_format_before", rowFormatBefore}, Arg{"row_format_after", rowFormatAfter}), nil
+}
+
+// parseRowFormatIfAny reads a ROW FORMAT where one stands, or nothing.
+func (p *parser) parseRowFormatIfAny() *Expression {
+	if !p.atWords("ROW", "FORMAT") {
+		return nil
+	}
+	prop, err := p.parseRowFormat()
+	if err != nil {
+		return nil
+	}
+	return prop
 }
 
 // parseLambdaOrExpression reads a lambda where there is one and an ordinary

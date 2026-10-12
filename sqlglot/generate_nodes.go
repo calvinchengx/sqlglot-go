@@ -1319,11 +1319,17 @@ func (g *generator) writePositionalColumn(e *Expression) string {
 // schema]]`.
 func (g *generator) writeQueryTransform(e *Expression) string {
 	out := "TRANSFORM(" + g.listSep(e, ", ") + ")"
+	if before := g.child(e, "row_format_before"); before != "" {
+		out += " " + before
+	}
 	if script := g.child(e, "command_script"); script != "" {
 		out += " USING " + script
 	}
 	if schema := g.child(e, "schema"); schema != "" {
 		out += " AS " + schema
+	}
+	if after := g.child(e, "row_format_after"); after != "" {
+		out += " " + after
 	}
 	return out
 }
