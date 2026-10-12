@@ -53,7 +53,9 @@ func (p *parser) windowBody(this *Expression, over any) (*Expression, error) {
 			}
 			alias = id
 		}
-		if p.match(TokPARTITION_BY) {
+		// The Hive family writes DISTRIBUTE BY for the partition and
+		// SORT BY for the order (HiveParser._parse_partition_and_order).
+		if p.match(TokPARTITION_BY) || (isHiveFamily(p.dialect) && p.match(TokDISTRIBUTE_BY)) {
 			for {
 				e, err := p.parseExpression()
 				if err != nil {
@@ -65,7 +67,7 @@ func (p *parser) windowBody(this *Expression, over any) (*Expression, error) {
 				}
 			}
 		}
-		if p.match(TokORDER_BY) {
+		if p.match(TokORDER_BY) || (isHiveFamily(p.dialect) && p.match(TokSORT_BY)) {
 			o, err := p.parseOrder()
 			if err != nil {
 				return nil, err
