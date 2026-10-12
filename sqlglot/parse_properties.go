@@ -92,6 +92,15 @@ func (p *parser) parseTableProperties() ([]*Expression, error) {
 			out = append(out, prop)
 			continue
 		}
+		// Hive's `CLUSTERED BY (cols) [SORTED BY (cols)] INTO n BUCKETS`.
+		if p.atWords("CLUSTERED", "BY") {
+			prop, err := p.parseClusteredBy()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, prop)
+			continue
+		}
 		// `PARTITION OF` is not in the generated table of property words: it
 		// carries a whole grammar of its own rather than a word and a shape.
 		if p.atWords("PARTITION", "OF") {

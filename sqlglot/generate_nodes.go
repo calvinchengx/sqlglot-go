@@ -155,6 +155,7 @@ func init() {
 		"Index":                               (*generator).writeIndex,
 		"Hint":                                (*generator).writeHint,
 		"JoinHint":                            (*generator).writeJoinHint,
+		"ClusteredByProperty":                 (*generator).writeClusteredBy,
 		"PositionalColumn":                    (*generator).writePositionalColumn,
 		"ExcludeColumnConstraint":             (*generator).writeExcludeConstraint,
 		"WithOperator":                        (*generator).writeWithOperator,
@@ -1294,6 +1295,21 @@ func (g *generator) writePositionalColumn(e *Expression) string {
 // inside the comment it was written in.
 // writeJoinHint writes `NAME(tables)`, the join hint Spark2 and Spark read
 // inside a `/*+ ... */` hint.
+// writeClusteredBy writes `CLUSTERED BY (cols) [SORTED BY (cols)] INTO n
+// BUCKETS`.
+func (g *generator) writeClusteredBy(e *Expression) string {
+	out := "CLUSTERED BY (" + g.listSep(e, ", ") + ")"
+	if sorted, _ := e.Args["sorted_by"].([]*Expression); len(sorted) > 0 {
+		parts := make([]string, 0, len(sorted))
+		for _, s := range sorted {
+			parts = append(parts, g.node(s))
+		}
+		out += " SORTED BY (" + strings.Join(parts, ", ") + ")"
+	}
+	out += " INTO " + g.child(e, "buckets") + " BUCKETS"
+	return out
+}
+
 func (g *generator) writeJoinHint(e *Expression) string {
 	this, _ := e.Args["this"].(string)
 	return this + "(" + g.listSep(e, ", ") + ")"

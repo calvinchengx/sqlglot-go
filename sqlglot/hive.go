@@ -150,3 +150,101 @@ func (p *parser) parseJoinHintFunction(name string) (*Expression, error) {
 	}
 	return New("JoinHint", Arg{"this", name}, Arg{"expressions", args}), nil
 }
+
+// parseClusteredBy reads `CLUSTERED BY (cols) [SORTED BY (cols)] INTO n
+// BUCKETS` (the reference's _parse_clustered_by). The leading words are
+// already current.
+func (p *parser) parseClusteredBy() (*Expression, error) {
+	p.advance() // CLUSTERED
+	p.advance() // BY
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("CLUSTERED BY without its columns")
+	}
+	var exprs []*Expression
+	for !p.at(TokR_PAREN) {
+		col, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		exprs = append(exprs, col)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed CLUSTERED BY")
+	}
+	var sortedBy []*Expression
+	if p.atWords("SORTED", "BY") {
+		p.advance()
+		p.advance()
+		if !p.match(TokL_PAREN) {
+			return nil, p.unsupported("SORTED BY without its columns")
+		}
+		for !p.at(TokR_PAREN) {
+			ordered, err := p.parseOrderedColumn()
+			if err != nil {
+				return nil, err
+			}
+			sortedBy = append(sortedBy, ordered)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed SORTED BY")
+		}
+	}
+	if !p.match(TokINTO) {
+		return nil, p.unsupported("CLUSTERED BY without INTO")
+	}
+	c := p.curr()
+	if c == nil || c.Type != TokNUMBER {
+		return nil, p.unsupported("CLUSTERED BY without a bucket count")
+	}
+	buckets := New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})
+	p.advance()
+	p.matchUnquotedWord("BUCKETS")
+	args := []Arg{{"expressions", exprs}}
+	if len(sortedBy) > 0 {
+		args = append(args, Arg{"sorted_by", sortedBy})
+	}
+	args = append(args, Arg{"buckets", buckets})
+	return New("ClusteredByProperty", args...), nil
+}
+
+// parseOrderedColumn reads one column of a SORTED BY list.
+func (p *parser) parseOrderedColumn() (*Expression, error) {
+	this, err := p.parseColumn()
+	if err != nil {
+		return nil, err
+	}
+	var desc *bool
+	switch {
+	case p.match(TokDESC):
+		b := true
+		desc = &b
+	case p.match(TokASC):
+		b := false
+		desc = &b
+	}
+	nullsFirst, saidSo := false, false
+	if p.atWords("NULLS", "FIRST") {
+		p.advance()
+		p.advance()
+		nullsFirst, saidSo = true, true
+	} else if p.atWords("NULLS", "LAST") {
+		p.advance()
+		p.advance()
+		nullsFirst, saidSo = false, true
+	}
+	if !saidSo {
+		nullsFirst = p.nullsFirst(desc != nil && *desc)
+	}
+	args := []Arg{{"this", this}}
+	if desc != nil {
+		args = append(args, Arg{"desc", *desc})
+	}
+	args = append(args, Arg{"nulls_first", nullsFirst})
+	return New("Ordered", args...), nil
+}

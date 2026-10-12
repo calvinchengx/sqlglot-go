@@ -6418,12 +6418,10 @@ func (p *parser) parseDeclare() (*Expression, error) {
 		replace = true
 	}
 
-	// Spark's DECLARE names a variable and gives it a value, with no type:
-	// `DECLARE five = 5`, `DECLARE VARIABLE size DEFAULT 6`.
-	if p.dialect == "spark2" || p.dialect == "spark" {
-		return p.parseSparkDeclare(replace)
-	}
-
+	// The reference reads one item parser for every dialect, Spark included:
+	// `DECLARE x INT`, `DECLARE VARIABLE size DEFAULT 6` and
+	// `DECLARE five = 5` are all the same shape.
+	//
 	// The reference tries its own item parser and CATCHES what it raises --
 	// `PRIMARY KEY CLUSTERED (...)` is a constraint shape this port's own
 	// column-def reader has no case for, and the reference gives up on it
@@ -6437,32 +6435,6 @@ func (p *parser) parseDeclare() (*Expression, error) {
 	}
 	if err != nil || len(items) == 0 || p.curr() != nil {
 		return p.parseAsCommand(start), nil
-	}
-	return New("Declare", Arg{"expressions", items}, Arg{"replace", replace}), nil
-}
-
-// parseSparkDeclare reads Spark's `DECLARE [OR REPLACE] [VARIABLE] name
-// [= v | DEFAULT v]`, one or more of them.
-func (p *parser) parseSparkDeclare(replace bool) (*Expression, error) {
-	var items []*Expression
-	for {
-		p.matchUnquotedWord("VARIABLE")
-		name, err := p.parseIdentifier()
-		if err != nil {
-			return nil, err
-		}
-		item := New("DeclareItem", Arg{"this", []*Expression{name}})
-		if p.match(TokEQ) || p.matchUnquotedWord("DEFAULT") {
-			value, err := p.parseDisjunction()
-			if err != nil {
-				return nil, err
-			}
-			item.Set("default", value)
-		}
-		items = append(items, item)
-		if !p.match(TokCOMMA) {
-			break
-		}
 	}
 	return New("Declare", Arg{"expressions", items}, Arg{"replace", replace}), nil
 }
@@ -6518,10 +6490,14 @@ func (p *parser) parseDeclareItem() (*Expression, error) {
 			kind = New("Schema", Arg{"expressions", columns})
 		}
 	} else {
+		// The type is OPTIONAL (`DECLARE five = 5`), so a shape that is not
+		// a type leaves `kind` absent rather than failing the item.
+		mark := p.index
 		var err error
 		kind, err = p.parseDataType()
 		if err != nil {
-			return nil, err
+			p.index = mark
+			kind = nil
 		}
 	}
 
