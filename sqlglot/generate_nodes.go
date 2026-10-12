@@ -1040,10 +1040,17 @@ func (g *generator) writeGroup(e *Expression) string {
 	if plain := g.list(e); plain != "" {
 		parts = append(parts, plain)
 	}
+	// A CUBE or ROLLUP written in the WITH form follows the columns with a
+	// SPACE rather than a comma (the reference's own GROUPINGS_SEP rule).
+	sep := ", "
 	for _, key := range []string{"grouping_sets", "cube", "rollup"} {
 		items, _ := e.Args[key].([]*Expression)
 		for _, item := range items {
-			parts = append(parts, g.node(item))
+			text := g.node(item)
+			if text == "WITH CUBE" || text == "WITH ROLLUP" {
+				sep = " "
+			}
+			parts = append(parts, text)
 		}
 	}
 	// ALL and DISTINCT are a prefix. Either can stand alone, and either can
@@ -1053,16 +1060,16 @@ func (g *generator) writeGroup(e *Expression) string {
 	case flagged && all && len(parts) == 0:
 		return " GROUP BY ALL"
 	case flagged && all:
-		return " GROUP BY ALL " + strings.Join(parts, ", ")
+		return " GROUP BY ALL " + strings.Join(parts, sep)
 	case flagged && len(parts) == 0:
 		return " GROUP BY DISTINCT"
 	case flagged:
-		return " GROUP BY DISTINCT " + strings.Join(parts, ", ")
+		return " GROUP BY DISTINCT " + strings.Join(parts, sep)
 	}
 	if len(parts) == 0 {
 		return g.fail("GROUP BY with nothing to group by")
 	}
-	return " GROUP BY " + strings.Join(parts, ", ")
+	return " GROUP BY " + strings.Join(parts, sep)
 }
 
 // writeStar writes `*` and what may follow it: EXCEPT drops columns, REPLACE
@@ -1158,6 +1165,16 @@ func (g *generator) writeTuple(e *Expression) string {
 func (g *generator) writeGrouping(e *Expression) string {
 	// Registered for these three classes and no others, so there is no fourth
 	// case to fall through to.
+	// A CUBE or ROLLUP with NO columns is the WITH form: the word goes in
+	// front of the clause rather than in front of a parenthesised list.
+	if items, _ := e.Args["expressions"].([]*Expression); len(items) == 0 {
+		switch e.Class {
+		case "Cube":
+			return "WITH CUBE"
+		case "Rollup":
+			return "WITH ROLLUP"
+		}
+	}
 	word := map[string]string{
 		"GroupingSets": "GROUPING SETS", "Cube": "CUBE", "Rollup": "ROLLUP",
 	}[e.Class]
