@@ -2392,7 +2392,7 @@ func (p *parser) parseAddedColumn(exists bool) (*Expression, error) {
 	if p.at(TokL_PAREN) {
 		// Hive's `ADD COLUMNS (y INT, z STRING)` is a parenthesised list too,
 		// the same shape Oracle's is.
-		if (p.dialect != "oracle" && p.dialect != "hive") || exists {
+		if (p.dialect != "oracle" && !isHiveFamily(p.dialect)) || exists {
 			return nil, p.unsupported("ADD of a parenthesised column list")
 		}
 		cols, err := p.parseColumnDefs()

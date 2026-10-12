@@ -153,7 +153,7 @@ func (g *generator) hiveNode(e *Expression) (string, bool) {
 	case "Schema":
 		// Hive's ADD COLUMNS (...): the Schema is the ALTER's action, not the
 		// name it alters.
-		if g.dialect == "hive" && e.Parent != nil && e.Parent.Class == "Alter" &&
+		if isHiveFamily(g.dialect) && e.Parent != nil && e.Parent.Class == "Alter" &&
 			e.Parent.Args["this"] != e {
 			return "COLUMNS " + g.spell(e), true
 		}
