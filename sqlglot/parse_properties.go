@@ -92,6 +92,21 @@ func (p *parser) parseTableProperties() ([]*Expression, error) {
 			out = append(out, prop)
 			continue
 		}
+		// Hive's ROW FORMAT, and the WITH SERDEPROPERTIES that may follow it.
+		if p.atWords("ROW", "FORMAT") {
+			prop, err := p.parseRowFormat()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, prop)
+			continue
+		}
+		if p.atWords("WITH", "SERDEPROPERTIES") {
+			if prop := p.parseWithSerdeProperties(); prop != nil {
+				out = append(out, prop)
+				continue
+			}
+		}
 		// Hive's `CLUSTERED BY (cols) [SORTED BY (cols)] INTO n BUCKETS`.
 		if p.atWords("CLUSTERED", "BY") {
 			prop, err := p.parseClusteredBy()
