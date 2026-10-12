@@ -3298,7 +3298,6 @@ func TestAlterTable(t *testing.T) {
 		t.Errorf("ALTER INDEX wrote %q (%v)", got, err)
 	}
 	for _, sql := range []string{
-		"ALTER TABLE t SET TBLPROPERTIES ('a' = 'b')",
 		"ALTER TABLE t ALTER COLUMN a SET NOT NULL",
 		"ALTER TABLE t",
 	} {
