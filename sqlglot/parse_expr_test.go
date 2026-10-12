@@ -1854,13 +1854,13 @@ func TestGroupingWriterEdges(t *testing.T) {
 	if got, err := Generate(New("GroupingSets"), ""); err != nil || got != "GROUPING SETS ()" {
 		t.Errorf("got %q (%v), want the empty grouping written", got, err)
 	}
-	// A class this writer does not name is refused rather than guessed at:
-	// it spells three groupings and nothing else.
-	if got, err := Generate(New("Rollup"), ""); err != nil || got != "ROLLUP ()" {
-		t.Errorf("got %q (%v), want ROLLUP ()", got, err)
+	// A CUBE or ROLLUP with no columns is the WITH form, which the reference
+	// writes in front of the clause rather than in front of a list.
+	if got, err := Generate(New("Rollup"), ""); err != nil || got != "WITH ROLLUP" {
+		t.Errorf("got %q (%v), want WITH ROLLUP", got, err)
 	}
-	if got, err := Generate(New("Cube", Arg{"expressions", []*Expression{}}), ""); err != nil || got != "CUBE ()" {
-		t.Errorf("got %q (%v), want CUBE ()", got, err)
+	if got, err := Generate(New("Cube", Arg{"expressions", []*Expression{}}), ""); err != nil || got != "WITH CUBE" {
+		t.Errorf("got %q (%v), want WITH CUBE", got, err)
 	}
 	// An empty grouping list still closes its parentheses.
 	e, err := ParseOne("SELECT a FROM t GROUP BY GROUPING SETS ()", "")

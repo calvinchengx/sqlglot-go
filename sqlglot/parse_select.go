@@ -1084,6 +1084,22 @@ func (p *parser) parseGroup() (*Expression, error) {
 		}
 		var target *[]*Expression
 		var class, key string
+		// `GROUP BY a, b WITH CUBE` writes the word WITH rather than putting
+		// the columns inside the construct, and the construct then holds no
+		// columns of its own.
+		if p.at(TokWITH) && p.next() != nil &&
+			(p.next().Type == TokCUBE || p.next().Type == TokROLLUP) {
+			p.advance() // WITH
+			class, key := "Cube", "cube"
+			if p.at(TokROLLUP) {
+				class, key = "Rollup", "rollup"
+			}
+			p.advance()
+			existing, _ := group.Args[key].([]*Expression)
+			group.Set(key, append(existing, New(class, Arg{"expressions", []*Expression{}})))
+			p.match(TokCOMMA)
+			continue
+		}
 		switch {
 		case p.at(TokGROUPING_SETS):
 			target, class, key = &sets, "GroupingSets", "grouping_sets"
