@@ -5396,6 +5396,10 @@ func (g *generator) writeAlter(e *Expression) string {
 	if notValid, _ := e.Args["not_valid"].(bool); notValid {
 		out += " NOT VALID"
 	}
+	// CASCADE goes last of all, and only where the dialect reads it.
+	if cascade, _ := e.Args["cascade"].(bool); cascade && isHiveFamily(g.dialect) {
+		out += " CASCADE"
+	}
 	return out
 }
 
