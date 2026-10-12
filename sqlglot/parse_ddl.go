@@ -2251,6 +2251,30 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 				Arg{"exists", exists},
 			), nil
 		}
+		// `DROP COLUMNS (...)` names a LIST of columns, which the reference
+		// wraps in a Schema -- and it builds the Drop with only those two
+		// arguments, not the full shape a statement-level DROP carries.
+		if p.atWords("COLUMNS") && p.next() != nil && p.next().Type == TokL_PAREN {
+			p.advance()
+			p.advance()
+			var cols []*Expression
+			for !p.at(TokR_PAREN) {
+				c, err := p.parseIdentifier()
+				if err != nil {
+					return nil, err
+				}
+				cols = append(cols, c)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed DROP COLUMNS")
+			}
+			return New("Drop",
+				Arg{"tables", []*Expression{New("Schema", Arg{"expressions", cols})}},
+				Arg{"kind", "COLUMNS"}), nil
+		}
 		if constraint {
 			name, err := p.parseTableName()
 			if err != nil {
@@ -6005,18 +6029,19 @@ func (p *parser) parseCache() (*Expression, error) {
 		}
 		node.Set("options", options)
 	}
-	if p.match(TokALIAS) {
-		// The reference DROPS a dangling AS and writes the statement without
-		// it. Refusing beats writing back something shorter than what came
-		// in, as with `INSTALL x FROM`.
-		if p.curr() == nil {
-			return nil, p.unsupported("CACHE with an AS and no query")
-		}
+	hadAs := p.match(TokALIAS)
+	// The query may follow the options directly, or after an AS.
+	if p.at(TokSELECT) || p.at(TokWITH) || p.at(TokL_PAREN) {
 		body, err := p.parseCreateBody()
 		if err != nil {
 			return nil, err
 		}
 		node.Set("expression", body)
+	} else if hadAs {
+		// The reference DROPS a dangling AS and writes the statement without
+		// it. Refusing beats writing back something shorter than what came
+		// in, as with `INSTALL x FROM`.
+		return nil, p.unsupported("CACHE with an AS and no query")
 	}
 	if p.curr() != nil {
 		return nil, p.unsupported("CACHE with more than this port reads")
@@ -6024,11 +6049,11 @@ func (p *parser) parseCache() (*Expression, error) {
 	return node, nil
 }
 
-// parseCacheOptions reads the ONE setting a CACHE may carry.
+// parseCacheOptions reads the settings a CACHE may carry.
 //
-// One, not a list: the reference reads a single `'key' = 'value'` and refuses
-// a second pair, and both halves have to be strings. It keeps them as two
-// members of a list rather than as an equality, so the `=` is the writer's.
+// The reference reads a LIST of them, each half a string, with the `=`
+// between them optional -- and it keeps them as members of a list rather than
+// as an equality, so the `=` is the writer's.
 //
 // A missing value is refused. The reference reads `OPTIONS('k')` and writes
 // `OPTIONS('k' = )`, which is not SQL and which it cannot read back.
@@ -6037,21 +6062,27 @@ func (p *parser) parseCacheOptions() ([]*Expression, error) {
 	if !p.match(TokL_PAREN) {
 		return nil, p.unsupported("CACHE OPTIONS without a setting")
 	}
-	key, err := p.parseCacheString()
-	if err != nil {
-		return nil, err
-	}
-	if !p.match(TokEQ) {
-		return nil, p.unsupported("a CACHE option that is not a setting")
-	}
-	value, err := p.parseCacheString()
-	if err != nil {
-		return nil, err
+	var out []*Expression
+	for {
+		item, err := p.parseCacheString()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+		p.match(TokEQ)
+		if p.at(TokR_PAREN) {
+			break
+		}
 	}
 	if !p.match(TokR_PAREN) {
-		return nil, p.unsupported("more than one CACHE option")
+		return nil, p.unsupported("unclosed CACHE options")
 	}
-	return []*Expression{key, value}, nil
+	// A lone setting is refused: the reference reads it and then writes
+	// `OPTIONS('k' = )`, which is not SQL and which it cannot read back.
+	if len(out) < 2 {
+		return nil, p.unsupported("a CACHE option without a value")
+	}
+	return out, nil
 }
 
 // parseCacheString reads one half of that setting. A national string keeps
@@ -6099,6 +6130,15 @@ func (p *parser) parseUncache() (*Expression, error) {
 
 // describeStyles are the words that say HOW a DESCRIBE should answer, as
 // against naming the thing to describe.
+// describeCreatables are the words that may stand in front of a DESCRIBE's
+// subject and name WHAT it is -- the reference's own CREATABLES.
+var describeCreatables = map[string]bool{
+	"COLUMN": true, "CONSTRAINT": true, "FOREIGN KEY": true, "FUNCTION": true,
+	"INDEX": true, "MATERIALIZED": true, "PROCEDURE": true, "SCHEMA": true,
+	"SEQUENCE": true, "SINK": true, "SOURCE": true, "TABLE": true,
+	"TRIGGER": true, "VIEW": true, "DATABASE": true,
+}
+
 var describeStyles = map[string]bool{
 	"ANALYZE": true, "EXTENDED": true, "FORMATTED": true, "HISTORY": true,
 }
@@ -6134,6 +6174,18 @@ func (p *parser) parseDescribe() (*Expression, error) {
 func (p *parser) parseDescribeBody() (*Expression, error) {
 	p.advance() // DESCRIBE
 	leading := p.takeComments()
+	// A CREATABLE word in front says WHAT is being described -- `DESCRIBE
+	// TABLE x`. Where a DOT follows it the word is a SCHEMA name and the
+	// reference backs up, leaving it to the table read, but the KIND is
+	// already recorded.
+	kind := ""
+	if c := p.curr(); c != nil && c.Type != TokIDENTIFIER &&
+		describeCreatables[strings.ToUpper(c.Text)] {
+		kind = c.Text
+		if n := p.next(); n == nil || n.Type != TokDOT {
+			p.advance()
+		}
+	}
 	style := ""
 	// A QUOTED name is never one of these words, however it is spelled:
 	// `DESCRIBE "history"` describes the table called history. The reference
@@ -6151,9 +6203,20 @@ func (p *parser) parseDescribeBody() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	// A PARTITION names which slice of the table is described.
+	part, err := p.parseTablePartition()
+	if err != nil {
+		return nil, err
+	}
 	node := New("Describe", Arg{"this", this})
 	if style != "" {
 		node.Set("style", style)
+	}
+	if kind != "" {
+		node.Set("kind", kind)
+	}
+	if part != nil {
+		node.Set("partition", part)
 	}
 	asJSON := false
 	if p.atWords("AS", "JSON") {
