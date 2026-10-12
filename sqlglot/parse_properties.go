@@ -69,6 +69,20 @@ func (p *parser) parseRisingWaveEncode() (*Expression, bool, error) {
 func (p *parser) parseTableProperties() ([]*Expression, error) {
 	var out []*Expression
 	for {
+		// Hive's `USING ICEBERG` names the format a table is stored in -- the
+		// same property `STORED AS ICEBERG` builds, without the hive_format
+		// flag (HiveParser._parse_using_property).
+		if isHiveFamily(p.dialect) && p.atWords("USING") {
+			p.advance()
+			c := p.curr()
+			if c == nil {
+				return nil, p.unsupported("USING without a format")
+			}
+			word := strings.ToUpper(c.Text)
+			p.advance()
+			out = append(out, New("FileFormatProperty", Arg{"this", New("Var", Arg{"this", word})}))
+			continue
+		}
 		// SQLite's CREATE VIRTUAL TABLE names the module it uses and the
 		// arguments it takes: `USING fts5(title, content)`.
 		if p.dialect == "sqlite" && p.atWords("USING") {
@@ -918,7 +932,8 @@ func (p *parser) parseSchemaProperty() ([]*Expression, error) {
 		// Doris's `PARTITION BY (DATE_TRUNC(c2, 'MONTH'))` puts a CALL where
 		// the other dialects put a column name; read it as the expression it
 		// is, since a column definition cannot start with one.
-		if p.dialect == "doris" && p.curr() != nil && p.next() != nil && p.next().Type == TokL_PAREN {
+		if (p.dialect == "doris" || isHiveFamily(p.dialect)) &&
+			p.curr() != nil && p.next() != nil && p.next().Type == TokL_PAREN {
 			call, err := p.parseExpression()
 			if err != nil {
 				return nil, err
