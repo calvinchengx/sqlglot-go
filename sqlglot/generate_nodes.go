@@ -5182,7 +5182,28 @@ func (g *generator) writeTimeseriesKey(e *Expression) string {
 
 // writeForeignKey writes the columns that point at another table, and where.
 func (g *generator) writeForeignKey(e *Expression) string {
-	return "FOREIGN KEY (" + g.list(e) + ") " + g.child(e, "reference")
+	expressions := g.list(e)
+	if expressions != "" {
+		expressions = " (" + expressions + ")"
+	}
+	out := "FOREIGN KEY" + expressions
+	if ref := g.child(e, "reference"); ref != "" {
+		out += " " + ref
+	}
+	if del, _ := e.Args["delete"].(string); del != "" {
+		out += " ON DELETE " + del
+	}
+	if upd, _ := e.Args["update"].(string); upd != "" {
+		out += " ON UPDATE " + upd
+	}
+	if options, _ := e.Args["options"].([]*Expression); len(options) > 0 {
+		parts := make([]string, 0, len(options))
+		for _, o := range options {
+			parts = append(parts, g.node(o))
+		}
+		out += " " + strings.Join(parts, " ")
+	}
+	return out
 }
 
 // writeConstraint writes a NAMED constraint on the table. It holds a LIST of

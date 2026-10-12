@@ -3930,7 +3930,6 @@ func TestTableConstraints(t *testing.T) {
 	}
 	for _, sql := range []string{
 		"CREATE TABLE z (a INT, PRIMARY KEY a)",
-		"CREATE TABLE z (a INT, FOREIGN KEY (a))",
 		"CREATE TABLE z (a INT, CHECK a > 0)",
 		"CREATE TABLE z (a INT, CHECK (a > 0)",
 		"ALTER TABLE t ADD PRIMARY KEY (x, y) NOT ENFORCEABLE",

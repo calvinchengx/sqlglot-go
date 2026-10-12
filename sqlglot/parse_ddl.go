@@ -1895,6 +1895,18 @@ func (p *parser) parseAlter() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	// A slice of the table may be named between its name and its actions:
+	// `ALTER TABLE x PARTITION(y = z) ADD COLUMN a INT`. The reference reads
+	// it as part of the TABLE, not of the ALTER.
+	if kind == "TABLE" && isHiveFamily(p.dialect) {
+		part, err := p.parseTablePartition()
+		if err != nil {
+			return nil, err
+		}
+		if part != nil {
+			table.Set("partition", part)
+		}
+	}
 
 	// `WITH CHECK` says the rows already there are to be tested against what
 	// is being added. NOCHECK says they are not, and the reference records
@@ -2951,19 +2963,67 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// A FOREIGN KEY may name no reference at all: `FOREIGN KEY (x)` is a
+		// whole constraint, and the reference records the absence.
+		var node *Expression
 		if !p.at(TokREFERENCES) {
-			return nil, p.unsupported("FOREIGN KEY without REFERENCES")
+			node = New("ForeignKey", Arg{"expressions", columns})
+		} else {
+			reference, err := p.parseColumnConstraints()
+			if err != nil {
+				return nil, err
+			}
+			if len(reference) != 1 {
+				return nil, p.unsupported("FOREIGN KEY with more than a reference")
+			}
+			node = New("ForeignKey",
+				Arg{"expressions", columns},
+				Arg{"reference", reference[0].Args["kind"]})
 		}
-		reference, err := p.parseColumnConstraints()
+		// `ON DELETE <action>` and `ON UPDATE <action>` name what happens to
+		// the rows that point at a changed one. The action is kept as a WORD.
+		for p.at(TokON) {
+			p.advance()
+			if !p.atWords("DELETE") && !p.atWords("UPDATE") {
+				return nil, p.unsupported("ON without DELETE or UPDATE")
+			}
+			kind := strings.ToLower(p.curr().Text)
+			p.advance()
+			action := ""
+			switch {
+			case p.atWords("NO", "ACTION"):
+				p.advance()
+				p.advance()
+				action = "NO ACTION"
+			case p.atWords("SET"):
+				p.advance()
+				if p.at(TokNULL) {
+					p.advance()
+					action = "SET NULL"
+				} else if p.atWords("DEFAULT") {
+					p.advance()
+					action = "SET DEFAULT"
+				} else {
+					return nil, p.unsupported("SET without NULL or DEFAULT")
+				}
+			default:
+				c := p.curr()
+				if c == nil {
+					return nil, p.unsupported("ON without an action")
+				}
+				action = strings.ToUpper(c.Text)
+				p.advance()
+			}
+			node.Set(kind, action)
+		}
+		options, err := p.parseKeyConstraintOptions()
 		if err != nil {
 			return nil, err
 		}
-		if len(reference) != 1 {
-			return nil, p.unsupported("FOREIGN KEY with more than a reference")
+		if len(options) > 0 {
+			node.Set("options", options)
 		}
-		return New("ForeignKey",
-			Arg{"expressions", columns},
-			Arg{"reference", reference[0].Args["kind"]}), nil
+		return node, nil
 	case p.atWords("UNIQUE"):
 		// SQLite leaves UNIQUE bare where a column constraint follows it
 		// (SQLiteParser._parse_unique).
