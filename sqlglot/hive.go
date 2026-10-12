@@ -114,3 +114,39 @@ func (p *parser) buildHiveFunction(upper string, args []*Expression) *Expression
 	}
 	return nil
 }
+
+// sparkJoinHint reports the names Spark2 and Spark read as a join hint rather
+// than as a function call (Spark2Parser.FUNCTION_PARSERS).
+func sparkJoinHint(upper string) bool {
+	switch upper {
+	case "BROADCAST", "BROADCASTJOIN", "MAPJOIN", "MERGE", "SHUFFLEMERGE",
+		"MERGEJOIN", "SHUFFLE_HASH", "SHUFFLE_REPLICATE_NL":
+		return true
+	}
+	return false
+}
+
+// parseJoinHintFunction reads `NAME(table, ...)` into a JoinHint. The name is
+// already consumed.
+func (p *parser) parseJoinHintFunction(name string) (*Expression, error) {
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("a join hint without its tables")
+	}
+	var args []*Expression
+	if !p.at(TokR_PAREN) {
+		for {
+			table, err := p.parseTable()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, table)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed join hint")
+	}
+	return New("JoinHint", Arg{"this", name}, Arg{"expressions", args}), nil
+}

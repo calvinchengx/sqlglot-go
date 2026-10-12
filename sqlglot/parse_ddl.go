@@ -101,6 +101,13 @@ func (p *parser) parseCreate() (*Expression, error) {
 			modifiers = append(modifiers, New(class))
 			continue
 		}
+		// SQLite's CREATE VIRTUAL TABLE: the word stands in front of the kind
+		// and builds a bare VirtualProperty (SQLiteParser.PROPERTY_PARSERS).
+		if p.dialect == "sqlite" && p.atWords("VIRTUAL") {
+			p.advance()
+			modifiers = append(modifiers, New("VirtualProperty"))
+			continue
+		}
 		// MySQL's own CREATE VIEW preamble: `ALGORITHM=...` and
 		// `DEFINER=user@host`, each a property of its own rather than a
 		// bare word.
@@ -776,6 +783,17 @@ func (p *parser) parseInsert() (*Expression, error) {
 		p.advance()
 		overwrite = true
 	}
+	// SQLite's `INSERT OR <policy>` names what happens on a conflict.
+	alternative := ""
+	if p.dialect == "sqlite" && p.at(TokOR) {
+		p.advance()
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("INSERT OR without a policy")
+		}
+		alternative = strings.ToUpper(c.Text)
+		p.advance()
+	}
 	// What is written need not be a TABLE at all: `INSERT OVERWRITE
 	// DIRECTORY 'x'` writes files, and the target is a Directory naming the
 	// path, whether it is on the local machine or not.
@@ -980,9 +998,17 @@ func (p *parser) parseInsert() (*Expression, error) {
 		Arg{"settings", false}, Arg{"default", defaultValues},
 		Arg{"expression", expression},
 		Arg{"conflict", conflict}, Arg{"returning", returning},
-		Arg{"overwrite", overwrite}, Arg{"alternative", nil},
+		Arg{"overwrite", overwrite}, Arg{"alternative", alternativeOrNil(alternative)},
 		Arg{"ignore", ignore}, Arg{"source", false},
 	), leading), nil
+}
+
+// alternativeOrNil turns an empty alternative word into an absent arg.
+func alternativeOrNil(word string) any {
+	if word == "" {
+		return nil
+	}
+	return word
 }
 
 // parseKeyNames reads a key's members where the dialect does not order them:
@@ -5436,7 +5462,7 @@ func (p *parser) parseAttachDetach() (*Expression, error) {
 	// (SQLiteParser._parse_attach_detach).
 	if p.dialect == "sqlite" {
 		p.matchUnquotedWord("DATABASE")
-		this, err := p.parseExpression()
+		this, err := p.parseAliasedExpression()
 		if err != nil {
 			return nil, err
 		}

@@ -154,6 +154,12 @@ func (p *parser) parseRange() (*Expression, error) {
 		}
 
 		switch {
+		// `a NOT NULL` is the negated IS NULL: the reference reads the NULL
+		// after a NOT at this level and wraps the Is in a Not.
+		case negate && c.Type == TokNULL:
+			// `a NOT NULL` is a negated IS NULL; the negation wraps below.
+			p.advance()
+			this = New("Is", Arg{"this", this}, Arg{"expression", New("Null")})
 		// PostgreSQL writes `x ISNULL` and `x NOTNULL` for the two IS NULL
 		// tests. The first is exactly `IS NULL`; the second is a NEGATED Is
 		// in the dialect that keeps one and a Not around an Is in the
@@ -2833,6 +2839,10 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	name := p.curr().Text
 	quotedName := p.curr().Type == TokIDENTIFIER
 	upper := strings.ToUpper(name)
+	if (p.dialect == "spark2" || p.dialect == "spark") && sparkJoinHint(upper) {
+		p.advance() // the name, as the reference does before a FUNCTION_PARSERS entry
+		return p.parseJoinHintFunction(upper)
+	}
 	if upper == "CAST" || upper == "TRY_CAST" {
 		return p.castOrConversion(upper == "TRY_CAST")
 	}

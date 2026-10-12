@@ -154,6 +154,7 @@ func init() {
 		"Reference":                           (*generator).writeReference,
 		"Index":                               (*generator).writeIndex,
 		"Hint":                                (*generator).writeHint,
+		"JoinHint":                            (*generator).writeJoinHint,
 		"PositionalColumn":                    (*generator).writePositionalColumn,
 		"ExcludeColumnConstraint":             (*generator).writeExcludeConstraint,
 		"WithOperator":                        (*generator).writeWithOperator,
@@ -744,8 +745,18 @@ func (g *generator) writeTable(e *Expression) string {
 	if g.dialect == "doris" && alias != "" && dorisBareTableAlias(e) {
 		sep = " "
 	}
-	if alias != "" && !ordinality {
+	aliasAfterSample := isHiveFamily(g.dialect) && e.Args["sample"] != nil
+	if alias != "" && !ordinality && !aliasAfterSample {
 		out += sep + alias
+	}
+	// SQLite's `INDEXED BY x` / `NOT INDEXED` stands right after the alias
+	// (the reference's table_sql).
+	if indexed := e.Args["indexed"]; indexed != nil {
+		if node, ok := indexed.(*Expression); ok {
+			out += " INDEXED BY " + g.node(node)
+		} else {
+			out += " NOT INDEXED"
+		}
 	}
 	// The temporal clause comes before the alias, as it does in the text.
 	// The separator is whatever this dialect puts between a table and its
@@ -780,6 +791,9 @@ func (g *generator) writeTable(e *Expression) string {
 	// TABLESAMPLE hangs off the table, after the alias. Its own template
 	// carries the space in front of it, the way the reference returns it.
 	out += g.child(e, "sample")
+	if aliasAfterSample && alias != "" {
+		out += sep + alias
+	}
 	// Then the pivots, in the order they were written, each carrying its own
 	// leading space too.
 	pivots, _ := e.Args["pivots"].([]*Expression)
@@ -1278,6 +1292,13 @@ func (g *generator) writePositionalColumn(e *Expression) string {
 
 // writeHint writes what the engine is told about running the query, back
 // inside the comment it was written in.
+// writeJoinHint writes `NAME(tables)`, the join hint Spark2 and Spark read
+// inside a `/*+ ... */` hint.
+func (g *generator) writeJoinHint(e *Expression) string {
+	this, _ := e.Args["this"].(string)
+	return this + "(" + g.listSep(e, ", ") + ")"
+}
+
 func (g *generator) writeHint(e *Expression) string {
 	if g.dialect == "oracle" {
 		return g.writeOracleHint(e)
@@ -4738,7 +4759,11 @@ func (g *generator) writeInsert(e *Expression) string {
 	if ignore, _ := e.Args["ignore"].(bool); ignore {
 		insertWord += " IGNORE"
 	}
-	out := g.withPrefix(e, insertWord) + " "
+	out := g.withPrefix(e, insertWord)
+	if alt, _ := e.Args["alternative"].(string); alt != "" {
+		out += " OR " + alt
+	}
+	out += " "
 	// What is written may not be a table at all: a DIRECTORY names the files
 	// and says so itself, so neither word belongs in front of it.
 	into, _ := e.Args["this"].(*Expression)
