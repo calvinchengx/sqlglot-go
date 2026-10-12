@@ -6268,10 +6268,7 @@ func TestDescribe(t *testing.T) {
 		// The reference reads the KIND and then writes the statement without
 		// it -- `DESCRIBE VIEW x` comes back as `DESCRIBE x`, which asks
 		// about whatever object holds the name.
-		"DESCRIBE TABLE x",
-		"DESCRIBE VIEW x",
 		// Not read: none is in the corpus and each is a shape to guess at.
-		"DESCRIBE x PARTITION(a = 1)",
 		"DESCRIBE FORMAT=JSON x",
 		"DESCRIBE",
 		"DESCRIBE x EXTRA",

@@ -6083,6 +6083,15 @@ func (p *parser) parseUncache() (*Expression, error) {
 
 // describeStyles are the words that say HOW a DESCRIBE should answer, as
 // against naming the thing to describe.
+// describeCreatables are the words that may stand in front of a DESCRIBE's
+// subject and name WHAT it is -- the reference's own CREATABLES.
+var describeCreatables = map[string]bool{
+	"COLUMN": true, "CONSTRAINT": true, "FOREIGN KEY": true, "FUNCTION": true,
+	"INDEX": true, "MATERIALIZED": true, "PROCEDURE": true, "SCHEMA": true,
+	"SEQUENCE": true, "SINK": true, "SOURCE": true, "TABLE": true,
+	"TRIGGER": true, "VIEW": true, "DATABASE": true,
+}
+
 var describeStyles = map[string]bool{
 	"ANALYZE": true, "EXTENDED": true, "FORMATTED": true, "HISTORY": true,
 }
@@ -6118,6 +6127,18 @@ func (p *parser) parseDescribe() (*Expression, error) {
 func (p *parser) parseDescribeBody() (*Expression, error) {
 	p.advance() // DESCRIBE
 	leading := p.takeComments()
+	// A CREATABLE word in front says WHAT is being described -- `DESCRIBE
+	// TABLE x`. Where a DOT follows it the word is a SCHEMA name and the
+	// reference backs up, leaving it to the table read, but the KIND is
+	// already recorded.
+	kind := ""
+	if c := p.curr(); c != nil && c.Type != TokIDENTIFIER &&
+		describeCreatables[strings.ToUpper(c.Text)] {
+		kind = c.Text
+		if n := p.next(); n == nil || n.Type != TokDOT {
+			p.advance()
+		}
+	}
 	style := ""
 	// A QUOTED name is never one of these words, however it is spelled:
 	// `DESCRIBE "history"` describes the table called history. The reference
@@ -6135,9 +6156,20 @@ func (p *parser) parseDescribeBody() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	// A PARTITION names which slice of the table is described.
+	part, err := p.parseTablePartition()
+	if err != nil {
+		return nil, err
+	}
 	node := New("Describe", Arg{"this", this})
 	if style != "" {
 		node.Set("style", style)
+	}
+	if kind != "" {
+		node.Set("kind", kind)
+	}
+	if part != nil {
+		node.Set("partition", part)
 	}
 	asJSON := false
 	if p.atWords("AS", "JSON") {

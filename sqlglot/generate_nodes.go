@@ -7044,7 +7044,13 @@ func (g *generator) writeDescribe(e *Expression) string {
 	if style, _ := e.Args["style"].(string); style != "" {
 		out += " " + style
 	}
+	// The KIND is recorded but never written: the reference's own describe_sql
+	// writes the subject alone, so `DESCRIBE TABLE x` comes back as
+	// `DESCRIBE x`.
 	out += " " + g.child(e, "this")
+	if partition := g.child(e, "partition"); partition != "" {
+		out += " " + partition
+	}
 	if asJSON, _ := e.Args["as_json"].(bool); asJSON {
 		out += " AS JSON"
 	}
