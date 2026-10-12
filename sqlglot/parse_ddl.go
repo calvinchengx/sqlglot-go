@@ -1102,6 +1102,69 @@ func (p *parser) parseRowFormatDelimited() (*Expression, error) {
 	return format, nil
 }
 
+// parseRowFormat reads `ROW FORMAT SERDE 'x' [WITH SERDEPROPERTIES (...)]` or
+// `ROW FORMAT DELIMITED ...` (the reference's _parse_row_format).
+func (p *parser) parseRowFormat() (*Expression, error) {
+	p.advance() // ROW
+	p.advance() // FORMAT
+	if p.atWords("SERDE") {
+		p.advance()
+		c := p.curr()
+		if c == nil || c.Type != TokSTRING {
+			return nil, p.unsupported("SERDE without a class")
+		}
+		serde := New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
+		p.advance()
+		prop := New("RowFormatSerdeProperty", Arg{"this", serde})
+		if serdeProps := p.parseWithSerdeProperties(); serdeProps != nil {
+			prop.Set("serde_properties", serdeProps)
+		}
+		return prop, nil
+	}
+	p.matchUnquotedWord("DELIMITED")
+	format := New("RowFormatDelimitedProperty")
+	for _, clause := range []struct {
+		words []string
+		key   string
+	}{
+		{[]string{"FIELDS", "TERMINATED", "BY"}, "fields"},
+		{[]string{"ESCAPED", "BY"}, "escaped"},
+		{[]string{"COLLECTION", "ITEMS", "TERMINATED", "BY"}, "collection_items"},
+		{[]string{"MAP", "KEYS", "TERMINATED", "BY"}, "map_keys"},
+		{[]string{"LINES", "TERMINATED", "BY"}, "lines"},
+		{[]string{"NULL", "DEFINED", "AS"}, "null"},
+	} {
+		if !p.atWords(clause.words...) {
+			continue
+		}
+		for range clause.words {
+			p.advance()
+		}
+		text := p.curr()
+		if text == nil || text.Type != TokSTRING {
+			return nil, p.unsupported(clause.words[0] + " without a separator")
+		}
+		p.advance()
+		format.Set(clause.key, New("Literal", Arg{"this", text.Text}, Arg{"is_string", true}))
+	}
+	return format, nil
+}
+
+// parseWithSerdeProperties reads `WITH SERDEPROPERTIES (...)` where it stands,
+// or nothing.
+func (p *parser) parseWithSerdeProperties() *Expression {
+	if !p.at(TokWITH) || p.next() == nil || !strings.EqualFold(p.next().Text, "SERDEPROPERTIES") {
+		return nil
+	}
+	p.advance() // WITH
+	p.advance() // SERDEPROPERTIES
+	props, err := p.parseWrappedProperties()
+	if err != nil {
+		return nil
+	}
+	return New("SerdeProperties", Arg{"expressions", props}, Arg{"with_", true})
+}
+
 // parseValues reads `VALUES (1, 2), (3, 4)` -- a list of rows.
 func (p *parser) parseValues() (*Expression, error) {
 	p.advance() // VALUES

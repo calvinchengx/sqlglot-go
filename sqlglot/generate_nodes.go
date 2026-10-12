@@ -275,6 +275,8 @@ func init() {
 		"CompressColumnConstraint":            (*generator).writeCompressConstraint,
 		"CaseSpecificColumnConstraint":        (*generator).writeCaseSpecificConstraint,
 		"RowFormatDelimitedProperty":          (*generator).writeRowFormatDelimited,
+		"RowFormatSerdeProperty":              (*generator).writeRowFormatSerde,
+		"SerdeProperties":                     (*generator).writeSerdeProperties,
 		"Tuple":                               (*generator).writeTuple,
 		"ToMap":                               (*generator).writeToMap,
 		"GroupConcat":                         (*generator).writeGroupConcat,
@@ -1317,11 +1319,17 @@ func (g *generator) writePositionalColumn(e *Expression) string {
 // schema]]`.
 func (g *generator) writeQueryTransform(e *Expression) string {
 	out := "TRANSFORM(" + g.listSep(e, ", ") + ")"
+	if before := g.child(e, "row_format_before"); before != "" {
+		out += " " + before
+	}
 	if script := g.child(e, "command_script"); script != "" {
 		out += " USING " + script
 	}
 	if schema := g.child(e, "schema"); schema != "" {
 		out += " AS " + schema
+	}
+	if after := g.child(e, "row_format_after"); after != "" {
+		out += " " + after
 	}
 	return out
 }
@@ -5126,6 +5134,25 @@ func (g *generator) writeDirectory(e *Expression) string {
 		out += " " + format
 	}
 	return out
+}
+
+// writeRowFormatSerde writes `ROW FORMAT SERDE 'class' [WITH
+// SERDEPROPERTIES (...)]`.
+func (g *generator) writeRowFormatSerde(e *Expression) string {
+	out := "ROW FORMAT SERDE " + g.child(e, "this")
+	if serde := g.child(e, "serde_properties"); serde != "" {
+		out += " " + serde
+	}
+	return out
+}
+
+// writeSerdeProperties writes `[WITH] SERDEPROPERTIES (...)`.
+func (g *generator) writeSerdeProperties(e *Expression) string {
+	prefix := ""
+	if with_, _ := e.Args["with_"].(bool); with_ {
+		prefix = "WITH "
+	}
+	return prefix + "SERDEPROPERTIES (" + g.list(e) + ")"
 }
 
 // writeRowFormatDelimited writes how the rows and the values in them are
