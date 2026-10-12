@@ -1897,10 +1897,7 @@ func (p *parser) parseAlter() (*Expression, error) {
 	}
 	// A CASCADE says the change goes on to what depends on the table, and the
 	// reference reads it where the dialect supports it.
-	cascade := false
-	if isHiveFamily(p.dialect) && p.matchUnquotedWord("CASCADE") {
-		cascade = true
-	}
+	cascade := isHiveFamily(p.dialect) && p.matchUnquotedWord("CASCADE")
 	if p.curr() != nil {
 		return nil, p.unsupported("ALTER with more than this port reads")
 	}
