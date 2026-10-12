@@ -5989,18 +5989,19 @@ func (p *parser) parseCache() (*Expression, error) {
 		}
 		node.Set("options", options)
 	}
-	if p.match(TokALIAS) {
-		// The reference DROPS a dangling AS and writes the statement without
-		// it. Refusing beats writing back something shorter than what came
-		// in, as with `INSTALL x FROM`.
-		if p.curr() == nil {
-			return nil, p.unsupported("CACHE with an AS and no query")
-		}
+	hadAs := p.match(TokALIAS)
+	// The query may follow the options directly, or after an AS.
+	if p.at(TokSELECT) || p.at(TokWITH) || p.at(TokL_PAREN) {
 		body, err := p.parseCreateBody()
 		if err != nil {
 			return nil, err
 		}
 		node.Set("expression", body)
+	} else if hadAs {
+		// The reference DROPS a dangling AS and writes the statement without
+		// it. Refusing beats writing back something shorter than what came
+		// in, as with `INSTALL x FROM`.
+		return nil, p.unsupported("CACHE with an AS and no query")
 	}
 	if p.curr() != nil {
 		return nil, p.unsupported("CACHE with more than this port reads")
@@ -6008,11 +6009,11 @@ func (p *parser) parseCache() (*Expression, error) {
 	return node, nil
 }
 
-// parseCacheOptions reads the ONE setting a CACHE may carry.
+// parseCacheOptions reads the settings a CACHE may carry.
 //
-// One, not a list: the reference reads a single `'key' = 'value'` and refuses
-// a second pair, and both halves have to be strings. It keeps them as two
-// members of a list rather than as an equality, so the `=` is the writer's.
+// The reference reads a LIST of them, each half a string, with the `=`
+// between them optional -- and it keeps them as members of a list rather than
+// as an equality, so the `=` is the writer's.
 //
 // A missing value is refused. The reference reads `OPTIONS('k')` and writes
 // `OPTIONS('k' = )`, which is not SQL and which it cannot read back.
@@ -6021,21 +6022,27 @@ func (p *parser) parseCacheOptions() ([]*Expression, error) {
 	if !p.match(TokL_PAREN) {
 		return nil, p.unsupported("CACHE OPTIONS without a setting")
 	}
-	key, err := p.parseCacheString()
-	if err != nil {
-		return nil, err
-	}
-	if !p.match(TokEQ) {
-		return nil, p.unsupported("a CACHE option that is not a setting")
-	}
-	value, err := p.parseCacheString()
-	if err != nil {
-		return nil, err
+	var out []*Expression
+	for {
+		item, err := p.parseCacheString()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, item)
+		p.match(TokEQ)
+		if p.at(TokR_PAREN) {
+			break
+		}
 	}
 	if !p.match(TokR_PAREN) {
-		return nil, p.unsupported("more than one CACHE option")
+		return nil, p.unsupported("unclosed CACHE options")
 	}
-	return []*Expression{key, value}, nil
+	// A lone setting is refused: the reference reads it and then writes
+	// `OPTIONS('k' = )`, which is not SQL and which it cannot read back.
+	if len(out) < 2 {
+		return nil, p.unsupported("a CACHE option without a value")
+	}
+	return out, nil
 }
 
 // parseCacheString reads one half of that setting. A national string keeps
