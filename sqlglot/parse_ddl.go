@@ -550,7 +550,7 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 		// whatever the expression yields -- so this is read before the type
 		// is looked for.
 		if p.at(TokALIAS) {
-			computed, err := p.parseComputedColumn()
+			computed, err := p.parseComputedColumn(true)
 			if err != nil {
 				return nil, err
 			}
@@ -576,6 +576,27 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 		if err != nil {
 			p.index = mark
 			kind = nil
+		}
+		// A column that NAMES a type and computes its value is the same
+		// constraint the typeless form builds: `b INTEGER AS (a * 2) STORED`.
+		// SQLite reads it here; MySQL has its own case in the constraint
+		// reader, which keeps the shape that dialect writes.
+		if p.dialect == "sqlite" && p.at(TokALIAS) {
+			computed, err := p.parseComputedColumn(false)
+			if err != nil {
+				return nil, err
+			}
+			rest, err := p.parseColumnConstraints()
+			if err != nil {
+				return nil, err
+			}
+			def := New("ColumnDef", Arg{"this", name}, Arg{"kind", kind},
+				Arg{"constraints", append([]*Expression{computed}, rest...)})
+			out = append(out, def)
+			if !p.match(TokCOMMA) {
+				break
+			}
+			continue
 		}
 		constraints, err := p.parseColumnConstraints()
 		if err != nil {
@@ -8146,7 +8167,7 @@ func (p *parser) parseTriggerEvents() ([]*Expression, error) {
 // PERSISTED and STORED say the same thing in two dialects' words -- the value
 // is written down rather than recomputed -- and VIRTUAL says the opposite. One
 // flag carries all three.
-func (p *parser) parseComputedColumn() (*Expression, error) {
+func (p *parser) parseComputedColumn(full bool) (*Expression, error) {
 	p.advance() // AS
 	value, err := p.parseDisjunction()
 	if err != nil {
@@ -8185,10 +8206,20 @@ func (p *parser) parseComputedColumn() (*Expression, error) {
 	}
 	computed := New("ComputedColumnConstraint",
 		Arg{"this", value}, Arg{"persisted", persisted})
+	if !full {
+		// The typed form reads only the expression and the storage word --
+		// the reference builds it with neither a data type nor a NOT NULL.
+		return New("ColumnConstraint", Arg{"kind", computed}), nil
+	}
 	if dataType != nil {
 		computed.Set("data_type", dataType)
 	}
-	computed.Set("not_null", notNull)
+	if notNull {
+		computed.Set("not_null", true)
+	} else if full {
+		// The reference records the absence as FALSE on the typeless form.
+		computed.Set("not_null", false)
+	}
 	return New("ColumnConstraint", Arg{"kind", computed}), nil
 }
 
