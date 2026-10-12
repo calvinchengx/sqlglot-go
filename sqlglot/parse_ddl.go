@@ -1848,6 +1848,16 @@ func (p *parser) parseAlter() (*Expression, error) {
 		check = nil
 	}
 
+	// A VIEW names its columns where a TABLE names its columns, and the
+	// reference reads them as the schema of the name.
+	if kind == "VIEW" && p.at(TokL_PAREN) {
+		cols, err := p.parseViewColumns()
+		if err != nil {
+			return nil, err
+		}
+		table = New("Schema", Arg{"this", table}, Arg{"expressions", cols})
+	}
+
 	// SET AUTHORIZATION and SET PROPERTIES are settings the reference has no
 	// grammar for in any dialect that reads the statement at all: it leaves
 	// tokens over and falls back to a Command of the whole statement.
@@ -1932,6 +1942,11 @@ func (p *parser) parseAlterView(start Token) ([]*Expression, *Expression, error)
 			return nil, nil, err
 		}
 		return []*Expression{action}, nil, nil
+	}
+	// UNSET is not an ALTER action the reference reads, so it leaves the words
+	// unread and falls back to a Command of the whole statement.
+	if p.atWords("UNSET") {
+		return nil, p.parseAsCommand(start), nil
 	}
 	if !p.match(TokALIAS) {
 		return nil, nil, p.unsupported("ALTER VIEW without a query")
