@@ -3359,11 +3359,22 @@ func (p *parser) parseFunctionProperty() (*Expression, error) {
 		return p.parseSQLSecurityProperty()
 	}
 	// Hive's `USING JAR|FILE|ARCHIVE '<path>'` names a file the function
-	// loads. The reference keeps it in written order, which this port's
-	// Create writer does not yet reproduce, so it is refused rather than
-	// written in the wrong place.
+	// loads.
 	if p.atWords("USING") {
-		return nil, p.unsupported("a function's USING property")
+		p.advance()
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("USING without a kind")
+		}
+		kind := strings.ToUpper(c.Text)
+		p.advance()
+		path := p.curr()
+		if path == nil || path.Type != TokSTRING {
+			return nil, p.unsupported("USING without a path")
+		}
+		lit := New("Literal", Arg{"this", path.Text}, Arg{"is_string", true})
+		p.advance()
+		return New("UsingProperty", Arg{"this", lit}, Arg{"kind", kind}), nil
 	}
 	switch {
 	case p.at(TokLANGUAGE) || p.atWords("LANGUAGE"):

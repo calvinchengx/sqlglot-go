@@ -6038,7 +6038,7 @@ func (g *generator) normalized(identifier *Expression) string {
 func (g *generator) writeFunctionRest(e *Expression, out string) string {
 	out += g.child(e, "this")
 
-	var afterParams, afterAs []string
+	var afterParams, afterAs, afterBody []string
 	properties, _ := e.Args["properties"].(*Expression)
 	if properties != nil {
 		items, _ := properties.Args["expressions"].([]*Expression)
@@ -6047,7 +6047,10 @@ func (g *generator) writeFunctionRest(e *Expression, out string) string {
 				continue // already written, in front of the kind
 			}
 			place := "schema"
-			if item.Class == "ReturnsProperty" {
+			if item.Class == "UsingProperty" {
+				// POST_EXPRESSION: written after the body.
+				place = "post"
+			} else if item.Class == "ReturnsProperty" {
 				place = g.tables.FunctionReturnsPlace[returnsShape(item)]
 			} else if !g.tables.FunctionPropertiesWritten {
 				place = ""
@@ -6057,6 +6060,8 @@ func (g *generator) writeFunctionRest(e *Expression, out string) string {
 				afterParams = append(afterParams, g.node(item))
 			case "alias":
 				afterAs = append(afterAs, "TABLE")
+			case "post":
+				afterBody = append(afterBody, g.node(item))
 			default:
 				// The dialect writes this nowhere, so the function it makes
 				// would promise less than the statement did.
@@ -6067,13 +6072,17 @@ func (g *generator) writeFunctionRest(e *Expression, out string) string {
 	for _, part := range afterParams {
 		out += " " + part
 	}
+	post := ""
+	if len(afterBody) > 0 {
+		post = " " + strings.Join(afterBody, " ")
+	}
 
 	body, _ := e.Args["expression"].(*Expression)
 	if body == nil {
 		if len(afterAs) > 0 {
 			return g.fail(e.Class + " whose return type has no body to sit in")
 		}
-		return out
+		return out + post
 	}
 	// Databricks turns a table-valued function's body into a RETURN before
 	// writing it, whatever it was written as, and then writes no AS in front
@@ -6081,20 +6090,20 @@ func (g *generator) writeFunctionRest(e *Expression, out string) string {
 	// A macro's overloads each carry their own AS, so none is written in
 	// front of them.
 	if body.Class == "MacroOverloads" {
-		return out + " " + g.node(body)
+		return out + " " + g.node(body) + post
 	}
 	isReturn := body.Class == "Return"
 	if !isReturn && g.tables.FunctionWrapsTableBody && g.returnsATable(properties) {
-		return out + " " + g.tables.ReturnWord + " " + g.node(body)
+		return out + " " + g.tables.ReturnWord + " " + g.node(body) + post
 	}
 	if isReturn && !g.tables.FunctionReturnAs {
-		return out + " " + g.node(body)
+		return out + " " + g.node(body) + post
 	}
 	out += " AS"
 	for _, part := range afterAs {
 		out += " " + part
 	}
-	return out + " " + g.node(body)
+	return out + " " + g.node(body) + post
 }
 
 // returnsShape names which of the three shapes a RETURNS property holds, which
