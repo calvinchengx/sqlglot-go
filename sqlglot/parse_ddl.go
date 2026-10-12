@@ -2235,6 +2235,30 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 				Arg{"exists", exists},
 			), nil
 		}
+		// `DROP COLUMNS (...)` names a LIST of columns, which the reference
+		// wraps in a Schema -- and it builds the Drop with only those two
+		// arguments, not the full shape a statement-level DROP carries.
+		if p.atWords("COLUMNS") && p.next() != nil && p.next().Type == TokL_PAREN {
+			p.advance()
+			p.advance()
+			var cols []*Expression
+			for !p.at(TokR_PAREN) {
+				c, err := p.parseIdentifier()
+				if err != nil {
+					return nil, err
+				}
+				cols = append(cols, c)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed DROP COLUMNS")
+			}
+			return New("Drop",
+				Arg{"tables", []*Expression{New("Schema", Arg{"expressions", cols})}},
+				Arg{"kind", "COLUMNS"}), nil
+		}
 		if constraint {
 			name, err := p.parseTableName()
 			if err != nil {
