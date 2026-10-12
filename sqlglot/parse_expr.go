@@ -2656,6 +2656,18 @@ func (p *parser) parseTypeSize() (*Expression, error) {
 		p.advance()
 		v := New("Var", Arg{"this", strings.ToUpper(c.Text)})
 		return New("DataTypeParam", Arg{"this", v}), nil
+	case c.Type == TokL_PAREN:
+		// `VARCHAR((50))`: the size is itself parenthesised, and the
+		// reference keeps the parentheses rather than folding them away.
+		p.advance()
+		inner, err := p.parseTypeSize()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed type parameter")
+		}
+		return New("DataTypeParam", Arg{"this", New("Paren", Arg{"this", inner.Args["this"]})}), nil
 	}
 	return nil, p.unsupported("non-numeric type parameter")
 }
