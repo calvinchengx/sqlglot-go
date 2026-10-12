@@ -52,7 +52,11 @@ func (g *generator) hiveNode(e *Expression) (string, bool) {
 		}
 		return "DATEDIFF(" + g.child(e, "this") + ", " + g.child(e, "expression") + ")", true
 	case "Unnest":
-		return "EXPLODE(" + g.list(e) + ")", true
+		out := "EXPLODE(" + g.list(e) + ")"
+		if alias, _ := e.Args["alias"].(*Expression); alias != nil {
+			out += " AS " + g.node(alias)
+		}
+		return out, true
 	case "JSONExtract", "JSONExtractScalar":
 		// Both are the same function, which names no scalar-ness.
 		return "GET_JSON_OBJECT(" + g.child(e, "this") + ", " + g.child(e, "expression") + ")", true

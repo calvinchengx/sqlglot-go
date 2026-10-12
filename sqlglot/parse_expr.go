@@ -4685,6 +4685,25 @@ func (p *parser) parseSessionParameter() (*Expression, error) {
 	return New("SessionParameter", Arg{"this", this}, Arg{"kind", kind}), nil
 }
 
+// parseBraceParameterName reads a name inside `${...}`: an Identifier where
+// one is written, otherwise the token itself as a Var.
+func (p *parser) parseBraceParameterName() *Expression {
+	c := p.curr()
+	if c == nil || c.Type == TokR_BRACE || c.Type == TokCOLON {
+		return nil
+	}
+	p.advance()
+	switch c.Type {
+	case TokIDENTIFIER:
+		return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true})
+	case TokNUMBER:
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})
+	case TokSTRING:
+		return New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
+	}
+	return New("Var", Arg{"this", c.Text})
+}
+
 func (p *parser) parseParameter() *Expression {
 	c := p.curr()
 	if c == nil || c.Type != TokPARAMETER {
@@ -4693,6 +4712,24 @@ func (p *parser) parseParameter() *Expression {
 	// Databricks brackets the name: `${x}`. It is the same Parameter, with an
 	// `expression` flag recording that the braces were there -- and the port
 	// WRITES this form, so it has to read it back.
+	// Hive brackets the name too, but with an optional COLON and a second
+	// name after it: `${hiveconf:some_var}` (HiveParser._parse_parameter).
+	if isHiveFamily(p.dialect) && c.Text == "$" && p.next() != nil && p.next().Type == TokL_BRACE {
+		mark := p.index
+		p.advance() // $
+		p.advance() // {
+		this := p.parseBraceParameterName()
+		// The reference records the COLON's absence as FALSE rather than
+		// leaving the argument out.
+		var expression any = false
+		if p.match(TokCOLON) {
+			expression = p.parseBraceParameterName()
+		}
+		if this != nil && p.match(TokR_BRACE) {
+			return New("Parameter", Arg{"this", this}, Arg{"expression", expression})
+		}
+		p.index = mark
+	}
 	if c.Text == "$" && p.next() != nil && p.next().Type == TokL_BRACE {
 		// The braces delimit the name, so it can be ANY single token --
 		// including a keyword, and including one that only became a keyword

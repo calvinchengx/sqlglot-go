@@ -1448,6 +1448,17 @@ func (p *parser) parseTableAlias() (*Expression, error) {
 	if !explicit && !p.atAliasName() {
 		return nil, nil
 	}
+	// The NAME may be absent where a column list follows: `UNNEST(x) AS (a)`.
+	if p.at(TokL_PAREN) {
+		columns, err := p.parseAliasColumns()
+		if err != nil {
+			return nil, err
+		}
+		if len(columns) == 0 {
+			return nil, nil
+		}
+		return New("TableAlias", Arg{"columns", columns}), nil
+	}
 	id, err := p.parseIdentifier()
 	if err != nil {
 		return nil, err
