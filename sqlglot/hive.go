@@ -23,7 +23,7 @@ func isTrueBoolean(e *Expression) bool {
 func hiveOwnedFunction(upper string) bool {
 	switch upper {
 	case "STRUCT", "NAMED_STRUCT", "INITCAP",
-		"FIRST", "FIRST_VALUE", "LAST", "LAST_VALUE",
+		"FIRST", "FIRST_VALUE", "LAST", "LAST_VALUE", "ANY_VALUE",
 		"GET_JSON_OBJECT":
 		return true
 	}
@@ -64,6 +64,17 @@ func (p *parser) buildHiveFunction(upper string, args []*Expression) *Expression
 				"LAST": "Last", "LAST_VALUE": "LastValue",
 			}[upper]
 			this := New(class, Arg{"this", args[0]})
+			if len(args) > 1 && isTrueBoolean(args[1]) {
+				return New("IgnoreNulls", Arg{"this", this})
+			}
+			return this
+		}
+
+	case "ANY_VALUE":
+		// Spark's own build_with_ignore_nulls entry; Hive and Spark2 build
+		// it through the generic signature.
+		if (p.dialect == "spark" || p.dialect == "spark2") && len(args) >= 1 {
+			this := New("AnyValue", Arg{"this", args[0]})
 			if len(args) > 1 && isTrueBoolean(args[1]) {
 				return New("IgnoreNulls", Arg{"this", this})
 			}

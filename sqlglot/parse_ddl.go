@@ -2207,6 +2207,24 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			return nil, err
 		}
 		return New("AlterRename", Arg{"this", target}), nil
+	case p.dialect == "sqlite" && p.atWords("RENAME") && p.next() != nil &&
+		!strings.EqualFold(p.next().Text, "TO"):
+		// SQLite writes no COLUMN word (ALTER_RENAME_REQUIRES_COLUMN off):
+		// `RENAME a TO b` renames a column.
+		p.advance() // RENAME
+		from, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		if !p.atWords("TO") {
+			return nil, p.unsupported("RENAME without TO")
+		}
+		p.advance()
+		to, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		return New("RenameColumn", Arg{"this", from}, Arg{"to", to}, Arg{"exists", false}), nil
 	case p.atWords("RENAME", "COLUMN"):
 		p.advance()
 		p.advance()
@@ -2374,7 +2392,7 @@ func (p *parser) parseAddedColumn(exists bool) (*Expression, error) {
 	if p.at(TokL_PAREN) {
 		// Hive's `ADD COLUMNS (y INT, z STRING)` is a parenthesised list too,
 		// the same shape Oracle's is.
-		if (p.dialect != "oracle" && p.dialect != "hive") || exists {
+		if (p.dialect != "oracle" && !isHiveFamily(p.dialect)) || exists {
 			return nil, p.unsupported("ADD of a parenthesised column list")
 		}
 		cols, err := p.parseColumnDefs()

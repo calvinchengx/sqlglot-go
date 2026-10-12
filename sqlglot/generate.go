@@ -84,6 +84,9 @@ type generator struct {
 	// a later bare name holding one would pair with it; see
 	// lexesBackAsOneName.
 	wroteDollar bool
+	// nameIndex counts the names the generator makes up for something that
+	// has none -- `_t0`, `_t1`, ... (the reference's `_next_name`).
+	nameIndex int
 	// coerced holds the nodes standing where a CONDITION is wanted in a
 	// dialect that has no boolean type, so each is compared into one.
 	coerced map[*Expression]bool
@@ -994,4 +997,12 @@ func (g *generator) jsonOperator(e *Expression, op string) string {
 		right = "(" + right + ")"
 	}
 	return left + " " + op + " " + right
+}
+
+// nextName makes up a name for something that has none, numbering them from
+// zero (the reference's `_next_name`).
+func (g *generator) nextName() string {
+	name := fmt.Sprintf("_t%d", g.nameIndex)
+	g.nameIndex++
+	return name
 }

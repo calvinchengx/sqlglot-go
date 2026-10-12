@@ -1913,6 +1913,12 @@ func (g *generator) writeParameter(e *Expression) string {
 		return g.fail(e.Class + " whose name is not a name")
 	}
 	out := strings.ReplaceAll(g.tables.Placeholder.Parameter, "{name}", name)
+	// Hive's `${hiveconf:some_var}`: the COLON and the second name are part
+	// of the parameter's own text. The name checked above is the FIRST one.
+	if sub, _ := e.Args["expression"].(*Expression); sub != nil {
+		out = strings.ReplaceAll(g.tables.Placeholder.Parameter,
+			"{name}", name+":"+g.node(sub))
+	}
 	// The dollar a spelling puts in FRONT of the name can pair with one
 	// inside it, and the two together open a dollar-quote: `@A$` written for
 	// PostgreSQL is `$A$`, a quote tag rather than a parameter, and what
@@ -3061,6 +3067,11 @@ func (g *generator) writeTableAlias(e *Expression) string {
 	if len(columns) == 0 {
 		return out
 	}
+	// A column list with no name gets one of the generator's own, unless the
+	// dialect names the columns alone (the reference's tablealias_sql).
+	if out == "" && g.dialect != "bigquery" {
+		out = g.nextName()
+	}
 	rendered := make([]string, 0, len(columns))
 	for _, c := range columns {
 		rendered = append(rendered, g.node(c))
@@ -3682,11 +3693,6 @@ func (g *generator) unnestCall(e, alias *Expression) string {
 	call := g.namedFunction(e, spec)
 	if alias == nil {
 		return call
-	}
-	if spec.Name != "UNNEST" {
-		// Databricks writes the whole thing as EXPLODE with the alias among
-		// the arguments, which is a shape this port does not build.
-		return g.fail("Unnest with an alias in " + g.dialect)
 	}
 	return call + " AS " + g.node(alias)
 }
