@@ -81,9 +81,9 @@ Regenerate with `make service`; nothing in it is authored here.
 | doris | 115/115 | 115 | 115 | 0 | 0 |
 | starrocks | 144/144 | 144 | 144 | 0 | 0 |
 | singlestore | 208/208 | 208 | 208 | 0 | 0 |
-| hive | 435/435 | 433 | 435 | 2 | 0 |
+| hive | 435/435 | 435 | 435 | 0 | 0 |
 | spark2 | 83/83 | 83 | 83 | 0 | 0 |
-| spark | 845/845 | 844 | 845 | 1 | 0 |
+| spark | 845/845 | 845 | 845 | 0 | 0 |
 | sqlite | 255/255 | 254 | 255 | 1 | 0 |
 | dax | 18/18 | 18 | 18 | 0 | 0 |
 | oracle | 159/159 | 159 | 159 | 0 | 0 |

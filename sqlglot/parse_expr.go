@@ -2952,7 +2952,7 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	// Distinct node and passes that as the call's single argument. Refusing
 	// it turned away one of the commonest aggregates a data agent writes.
 	distinct := p.match(TokDISTINCT)
-	var order *Expression
+	var order, limitValue *Expression
 	wasInCallArgs := p.inCallArgs
 	p.inCallArgs = true
 	if !p.at(TokR_PAREN) {
@@ -3004,6 +3004,17 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 				}
 				order = o
 			}
+			// BigQuery writes a LIMIT inside the call, after the ORDER BY,
+			// and the reference wraps the Order in it.
+			if p.at(TokLIMIT) {
+				p.advance()
+				c := p.curr()
+				if c == nil {
+					return nil, p.unsupported("LIMIT without a value")
+				}
+				p.advance()
+				limitValue = New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})
+			}
 			if !p.match(TokCOMMA) {
 				break
 			}
@@ -3038,6 +3049,15 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		}
 		order.Set("this", args[len(args)-1])
 		args[len(args)-1] = order
+	}
+	if limitValue != nil {
+		if order == nil || len(args) == 0 {
+			return nil, p.unsupported("LIMIT without an ORDER BY to limit")
+		}
+		// The reference assigns `this` before `expression`, which is the order
+		// the dump compares.
+		args[len(args)-1] = New("Limit",
+			Arg{"this", args[len(args)-1]}, Arg{"expression", limitValue})
 	}
 	// A builder that reads its arguments rather than only placing them. The
 	// probe drives builders with placeholder columns and cannot see such a

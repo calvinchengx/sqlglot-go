@@ -1265,7 +1265,13 @@ func (g *generator) writeLimitWord(e *Expression, word string) string {
 		word == "TOP " && !isPlainNumber(inner) {
 		count = "(" + count + ")"
 	}
-	out := word + count
+	// A LIMIT may wrap what it limits -- `COLLECT_LIST(x ORDER BY x LIMIT
+	// 10)` -- and that stands BEFORE the word.
+	out := ""
+	if this := g.child(e, "this"); this != "" {
+		out += this + " "
+	}
+	out += word + count
 	// What follows the count -- PERCENT, ROWS ONLY, WITH TIES -- is a node
 	// with a spelling of its own, and it brings its own leading space.
 	if opts, _ := e.Args["limit_options"].(*Expression); opts != nil {
@@ -4873,6 +4879,11 @@ func (g *generator) writeInsert(e *Expression) string {
 		target += " BY NAME"
 	}
 	target += exists
+	// The format the files are written in stands right after the target:
+	// `INSERT OVERWRITE DIRECTORY 'x' ... STORED AS TEXTFILE`.
+	if stored := g.child(e, "stored"); stored != "" {
+		target += " " + stored
+	}
 	// Databricks writes the slice it overwrites between the target and the
 	// body, in whichever of the two spellings the statement used.
 	if where := g.child(e, "where"); where != "" {

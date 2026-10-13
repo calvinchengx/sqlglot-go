@@ -858,13 +858,28 @@ func (p *parser) parseInsert() (*Expression, error) {
 			}
 			directory.Set("row_format", format)
 		}
+		// The format the files are written in stands after the ROW FORMAT:
+		// `STORED AS TEXTFILE`.
+		var stored any = false
+		if p.atWords("STORED", "AS") {
+			p.advance()
+			p.advance()
+			c := p.curr()
+			if c == nil {
+				return nil, p.unsupported("STORED AS without a format")
+			}
+			stored = New("FileFormatProperty",
+				Arg{"this", New("Var", Arg{"this", strings.ToUpper(c.Text)})},
+				Arg{"hive_format", true})
+			p.advance()
+		}
 		query, err := p.parseQuery()
 		if err != nil {
 			return nil, err
 		}
 		return putComments(New("Insert",
 			Arg{"this", directory},
-			Arg{"stored", false}, Arg{"by_name", false}, Arg{"exists", false},
+			Arg{"stored", stored}, Arg{"by_name", false}, Arg{"exists", false},
 			Arg{"partition", false}, Arg{"settings", false},
 			Arg{"default", false},
 			Arg{"expression", query},
