@@ -3190,12 +3190,30 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// SQLite names what happens when the rule is broken, and the reference
+		// keeps it on the constraint.
+		var onConflict *Expression
+		if p.at(TokON) && p.nextWords("CONFLICT") {
+			p.advance() // ON
+			p.advance() // CONFLICT
+			action := p.curr()
+			if action == nil {
+				return nil, p.unsupported("ON CONFLICT without an action")
+			}
+			onConflict = New("OnConflict", Arg{"duplicate", false},
+				Arg{"action", New("Var", Arg{"this", strings.ToUpper(action.Text)})})
+			p.advance()
+		}
 		// The arguments are in the order the reference assigns them, which is
 		// not the order they are written in.
-		return New("UniqueColumnConstraint",
+		node := New("UniqueColumnConstraint",
 			Arg{"nulls", nulls},
 			Arg{"this", schema},
-			Arg{"index_type", indexType}), nil
+			Arg{"index_type", indexType})
+		if onConflict != nil {
+			node.Set("on_conflict", onConflict)
+		}
+		return node, nil
 	case p.atWords("PERIOD", "FOR", "SYSTEM_TIME"):
 		// The two columns that say when a row was current. They are named
 		// once for the table rather than on either column.
@@ -5477,14 +5495,36 @@ func (p *parser) parseOnConflict() (*Expression, error) {
 		}
 		constraint = name
 	case p.at(TokL_PAREN):
-		members, err := p.parseParenthesisedList()
-		if err != nil {
-			return nil, err
+		// A key may be an EXPRESSION and may be ORDERED: `(x, LOWER(y)
+		// COLLATE NOCASE ASC, y DESC)`. A direction that was not written
+		// stays unwritten, the same as anywhere else an Ordered is built.
+		p.advance()
+		for !p.at(TokR_PAREN) {
+			e, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			var desc *bool
+			switch {
+			case p.match(TokDESC):
+				b := true
+				desc = &b
+			case p.match(TokASC):
+				b := false
+				desc = &b
+			}
+			o := New("Ordered", Arg{"this", e})
+			if desc != nil {
+				o.Set("desc", *desc)
+			}
+			o.Set("nulls_first", p.nullsFirst(desc != nil && *desc))
+			keys = append(keys, o)
+			if !p.match(TokCOMMA) {
+				break
+			}
 		}
-		for _, member := range members {
-			keys = append(keys, New("Ordered",
-				Arg{"this", member},
-				Arg{"nulls_first", p.nullsFirst(false)}))
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed ON CONFLICT keys")
 		}
 		if p.at(TokWHERE) {
 			p.advance()

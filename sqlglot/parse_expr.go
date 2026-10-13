@@ -2937,6 +2937,11 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	_, known := p.tables.NamedFunctions[upper]
 	_, namesItsArgs := p.tables.FunctionsWithAliasedArgs[upper]
 	aliasedArgs := !known || namesItsArgs
+	// Spark's IF is not a name the reference knows, so each of its arguments
+	// may name itself: `IF(cond, foo AS bar, bla AS baz)`.
+	if isHiveFamily(p.dialect) && upper == "IF" {
+		aliasedArgs = true
+	}
 
 	p.advance()
 	p.advance() // the opening parenthesis

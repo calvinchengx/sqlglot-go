@@ -5064,6 +5064,10 @@ func (g *generator) writeUniqueConstraint(e *Expression) string {
 	if indexType, ok := e.Args["index_type"].(string); ok && indexType != "" {
 		out += " USING " + indexType
 	}
+	// SQLite names what happens when the rule is broken, last of all.
+	if onConflict := g.child(e, "on_conflict"); onConflict != "" {
+		out += " " + onConflict
+	}
 	return out
 }
 
