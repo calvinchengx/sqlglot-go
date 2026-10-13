@@ -25,6 +25,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 	start := *p.curr()
 	p.advance() // CREATE
 	leading := p.takeComments()
+	afterCreate := p.index
 
 	// `OR <word>` turns on a flag of the reference's own: REPLACE and
 	// T-SQL's ALTER both mean `replace`, Databricks' REFRESH means
@@ -197,7 +198,18 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// The name is a bare Identifier rather than a Table -- a trigger lives on
 	// a table rather than being one.
 	if kind == "TRIGGER" {
-		return p.parseTriggerRest(replace, start, constraintTrigger)
+		node, err := p.parseTriggerRest(replace, start, constraintTrigger)
+		if err != nil {
+			// An EVENT this port does not read is refused outright; anything
+			// else the reference gives up on and keeps the whole statement a
+			// Command.
+			if triggerFailureIsHard(err.Error()) {
+				return nil, err
+			}
+			p.index = afterCreate
+			return p.parseAsCommand(start), nil
+		}
+		return node, nil
 	}
 
 	exists := false
@@ -8218,14 +8230,15 @@ func (p *parser) parseTriggerRest(replace bool, start Token, constraintTrigger b
 	var when *Expression
 	if p.atWords("WHEN") {
 		p.advance()
-		if !p.match(TokL_PAREN) {
-			return nil, p.unsupported("a trigger condition without parentheses")
-		}
+		// The parentheses are OPTIONAL: postgres reads `WHEN a > 1` and writes
+		// it back with them, so the reader must take the bare form. Where they
+		// WERE written, an unclosed one is still refused.
+		hadParen := p.match(TokL_PAREN)
 		condition, err := p.parseDisjunction()
 		if err != nil {
 			return nil, err
 		}
-		if !p.match(TokR_PAREN) {
+		if hadParen && !p.match(TokR_PAREN) {
 			return nil, p.unsupported("unclosed trigger condition")
 		}
 		when = condition
@@ -8503,4 +8516,18 @@ func (p *parser) parseAnalyzeHistogram() (*Expression, error) {
 	node.Set("expression", expression)
 	node.Set("update_options", updateOptions)
 	return node, nil
+}
+
+// triggerFailureIsHard reports whether a trigger failure is one the reference
+// RAISES rather than giving up on. Everything else it keeps as a Command.
+func triggerFailureIsHard(msg string) bool {
+	for _, s := range []string{
+		"trigger event", "no table", "unclosed trigger condition",
+		"EXECUTE without",
+	} {
+		if strings.Contains(msg, s) {
+			return true
+		}
+	}
+	return false
 }
