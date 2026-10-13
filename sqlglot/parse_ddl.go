@@ -5120,12 +5120,20 @@ func (p *parser) parseComment() (*Expression, error) {
 // records an equality either way, so the sign is a spelling rather than part
 // of the tree.
 func (p *parser) parseSet() (*Expression, error) {
+	start := *p.curr()
 	p.advance() // SET
+	mark := p.index
 	var items []*Expression
 	for {
 		item, err := p.parseSetStatementItem()
 		if err != nil {
 			return nil, err
+		}
+		if item == nil {
+			// Nothing was read: the reference retreats and keeps the whole
+			// statement as a Command.
+			p.index = mark
+			return p.parseAsCommand(start), nil
 		}
 		items = append(items, item)
 		if !p.match(TokCOMMA) {
@@ -5197,6 +5205,7 @@ func (p *parser) parseTransactionCharacteristics() []*Expression {
 // parseSetStatementItem reads one setting, with the scope word that may come
 // in front of it.
 func (p *parser) parseSetStatementItem() (*Expression, error) {
+	mark := p.index
 	// `SET [GLOBAL|SESSION] TRANSACTION ...` is the reference's own base
 	// `_parse_set_transaction`, universal rather than a MySQL-only shape,
 	// even though MySQL's corpus is the first to exercise it here.
@@ -5322,7 +5331,11 @@ func (p *parser) parseSetStatementItem() (*Expression, error) {
 		// read `SET@0B` as a setting and write back SQL it could not read --
 		// the generator fuzzer found 111 of those in one run.
 		if !p.tables.SetWithoutASign || p.curr() == nil {
-			return nil, p.unsupported("SET without a value")
+			// The reference gives up on the item and RETREATS: what it could
+			// not read stays in the statement, which becomes a Command. That
+			// is how `SET hiveconf:x = 5` reads.
+			p.index = mark
+			return nil, nil
 		}
 	} else {
 		p.advance()
