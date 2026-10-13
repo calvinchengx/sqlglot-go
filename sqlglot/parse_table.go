@@ -1647,11 +1647,28 @@ func (p *parser) parseUnnest() (*Expression, error) {
 			alias.Set("columns", []*Expression{unnestIdent()})
 		}
 	}
+	// BigQuery ANNOTATES the unnested expression to decide whether the array
+	// holds structs, and records that as explode_array; the annotation is also
+	// what gives the array its `t` (BigQueryParser._parse_unnest).
+	var explodeArray any
+	if p.dialect == "bigquery" && len(items) > 0 {
+		AnnotateFully(items[0], "bigquery")
+		if t := items[0].Type; t != nil && typeKind(t) == "ARRAY" {
+			if elems, _ := t.Args["expressions"].([]*Expression); len(elems) > 0 {
+				for _, el := range elems {
+					if typeKind(el) == "STRUCT" {
+						explodeArray = true
+						break
+					}
+				}
+			}
+		}
+	}
 	return New("Unnest",
 		Arg{"expressions", items},
 		Arg{"alias", alias},
 		Arg{"offset", offset},
-		Arg{"explode_array", nil}), nil
+		Arg{"explode_array", explodeArray}), nil
 }
 
 // FOR SYSTEM_TIME, which asks a temporal table what it held at some point or

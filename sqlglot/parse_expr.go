@@ -1502,6 +1502,11 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		if p.tables.HasDistinctArrayConstructors {
 			arr.Set("bracket_notation", true)
 		}
+		// BigQuery marks an array built from a BRACKET, which is what decides
+		// how it is written back (BigQueryParser._parse_bracket).
+		if p.dialect == "bigquery" {
+			arr.Set("struct_name_inheritance", true)
+		}
 		return arr, nil
 	}
 
@@ -1522,6 +1527,11 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		arr := New("Array", Arg{"expressions", items})
 		if p.tables.HasDistinctArrayConstructors {
 			arr.Set("bracket_notation", true)
+		}
+		// BigQuery marks an array built from a BRACKET, which is what decides
+		// how it is written back (BigQueryParser._parse_bracket).
+		if p.dialect == "bigquery" {
+			arr.Set("struct_name_inheritance", true)
 		}
 		return arr, nil
 	}
