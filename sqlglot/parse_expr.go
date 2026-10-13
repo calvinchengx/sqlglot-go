@@ -2782,6 +2782,19 @@ func arrayOf(dt *Expression, values []*Expression) *Expression {
 // reference's shape rather than a simplification of it.
 func (p *parser) parseScalarSubquery() (*Expression, error) {
 	p.advance() // the opening parenthesis
+	if p.at(TokVALUES) {
+		// A derived VALUES table: the reference wraps the Values ITSELF, with
+		// no Select over it (Parser._parse_derived_table_values).
+		values, err := p.parseValuesTable()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed subquery")
+		}
+		return New("Subquery", Arg{"this", values}, Arg{"pivots", nil},
+			Arg{"alias", nil}, Arg{"sample", nil}), nil
+	}
 	inner, err := p.parseQuery()
 	if err != nil {
 		return nil, err

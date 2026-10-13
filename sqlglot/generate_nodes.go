@@ -4893,10 +4893,18 @@ func (g *generator) writeInsert(e *Expression) string {
 	if yes, _ := e.Args["default"].(bool); yes && g.tables.ReturningEnd {
 		body = clauses(body, "DEFAULT VALUES")
 	}
+	var result string
 	if g.tables.ReturningEnd {
-		return clauses(out+target, body, conflict, returning)
+		result = clauses(out+target, body, conflict, returning)
+	} else {
+		result = clauses(out+target, returning, body, conflict)
 	}
-	return clauses(out+target, returning, body, conflict)
+	// The SOURCE a statement inserts from is written last, with its own
+	// TABLE word: `INSERT OVERWRITE TABLE t1 TABLE t2`.
+	if src := g.child(e, "source"); src != "" {
+		result += " TABLE " + src
+	}
+	return result
 }
 
 // writeValues writes the rows of a VALUES clause.
@@ -5999,7 +6007,10 @@ func (g *generator) writeWhen(e *Expression) string {
 		return out + action
 	case "Update":
 		action := "UPDATE"
-		if items, _ := then.Args["expressions"].([]*Expression); len(items) > 0 {
+		// A star is written WITHOUT a SET: `WHEN MATCHED THEN UPDATE *`.
+		if star, _ := then.Args["expressions"].(*Expression); star != nil && star.Class == "Star" {
+			action = "UPDATE " + g.node(star)
+		} else if items, _ := then.Args["expressions"].([]*Expression); len(items) > 0 {
 			action = "UPDATE SET " + g.list(then)
 		}
 		if where := g.child(then, "where"); where != "" {

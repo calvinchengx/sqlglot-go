@@ -482,6 +482,13 @@ func (p *parser) parseMergeAction() (*Expression, error) {
 	switch {
 	case p.at(TokUPDATE):
 		p.advance()
+		if p.at(TokSTAR) {
+			// `WHEN MATCHED THEN UPDATE *` updates every column, and the
+			// reference keeps the star as the one assignment.
+			p.advance()
+			// The reference keeps the star as a SINGLE node, not a list.
+			return New("Update", Arg{"expressions", New("Star")}), nil
+		}
 		if !p.match(TokSET) {
 			// `WHEN MATCHED THEN UPDATE` updates every column DuckDB can pair
 			// up. The absence is recorded rather than left off.

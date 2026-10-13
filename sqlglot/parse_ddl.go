@@ -995,11 +995,24 @@ func (p *parser) parseInsert() (*Expression, error) {
 		expression, err = p.parseQueryBody()
 	case defaultValues:
 		// Nothing to read: DEFAULT VALUES was the body.
+	case p.at(TokTABLE):
+		// `INSERT OVERWRITE TABLE t1 TABLE t2`: the second TABLE names the
+		// SOURCE, and there is no expression at all.
 	default:
 		return nil, p.unsupported("INSERT without VALUES or a query")
 	}
 	if err != nil {
 		return nil, err
+	}
+	// The SOURCE a statement inserts from may be named after the body:
+	// `INSERT OVERWRITE TABLE t1 TABLE t2`.
+	var source any = false
+	if p.match(TokTABLE) {
+		src, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		source = src
 	}
 	// MySQL names the inserted row for the ON DUPLICATE KEY clause:
 	// `VALUES (...) AS new`.
@@ -1036,7 +1049,7 @@ func (p *parser) parseInsert() (*Expression, error) {
 		Arg{"expression", expression},
 		Arg{"conflict", conflict}, Arg{"returning", returning},
 		Arg{"overwrite", overwrite}, Arg{"alternative", alternativeOrNil(alternative)},
-		Arg{"ignore", ignore}, Arg{"source", false},
+		Arg{"ignore", ignore}, Arg{"source", source},
 	), leading), nil
 }
 
@@ -1231,7 +1244,28 @@ func (p *parser) parseValues() (*Expression, error) {
 // allows the row to be written without parentheses.
 func (p *parser) valueRowMembers() ([]*Expression, error) {
 	if p.at(TokL_PAREN) {
-		return p.parseParenthesisedList()
+		// A member may be NAMED: `(1 AS a, 2 AS b)` names the columns the row
+		// is read as, and the reference keeps each Alias in the Tuple.
+		p.advance()
+		var items []*Expression
+		for !p.at(TokR_PAREN) {
+			e, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			e, err = p.parseAlias(e)
+			if err != nil {
+				return nil, err
+			}
+			items = append(items, e)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed VALUES row")
+		}
+		return items, nil
 	}
 	if p.tables.ValuesFollowedByParen {
 		return nil, p.unsupported("a VALUES row that is not parenthesised")
@@ -5068,20 +5102,12 @@ func (p *parser) parseComment() (*Expression, error) {
 // records an equality either way, so the sign is a spelling rather than part
 // of the tree.
 func (p *parser) parseSet() (*Expression, error) {
-	start := *p.curr()
 	p.advance() // SET
-	mark := p.index
 	var items []*Expression
 	for {
 		item, err := p.parseSetStatementItem()
 		if err != nil {
 			return nil, err
-		}
-		if item == nil {
-			// Nothing was read: the reference retreats and keeps the whole
-			// statement as a Command.
-			p.index = mark
-			return p.parseAsCommand(start), nil
 		}
 		items = append(items, item)
 		if !p.match(TokCOMMA) {
@@ -5153,7 +5179,6 @@ func (p *parser) parseTransactionCharacteristics() []*Expression {
 // parseSetStatementItem reads one setting, with the scope word that may come
 // in front of it.
 func (p *parser) parseSetStatementItem() (*Expression, error) {
-	mark := p.index
 	// `SET [GLOBAL|SESSION] TRANSACTION ...` is the reference's own base
 	// `_parse_set_transaction`, universal rather than a MySQL-only shape,
 	// even though MySQL's corpus is the first to exercise it here.
@@ -5279,11 +5304,7 @@ func (p *parser) parseSetStatementItem() (*Expression, error) {
 		// read `SET@0B` as a setting and write back SQL it could not read --
 		// the generator fuzzer found 111 of those in one run.
 		if !p.tables.SetWithoutASign || p.curr() == nil {
-			// The reference gives up on the item and RETREATS: what it could
-			// not read stays in the statement, which becomes a Command. That
-			// is how `SET hiveconf:x = 5` reads.
-			p.index = mark
-			return nil, nil
+			return nil, p.unsupported("SET without a value")
 		}
 	} else {
 		p.advance()

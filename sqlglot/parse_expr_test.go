@@ -5444,11 +5444,8 @@ func TestStatementRefusalsAreReached(t *testing.T) {
 // generator fuzzer found 111 of those in a single run.
 func TestSetNeedsASignExceptInTSQL(t *testing.T) {
 	for _, d := range []string{"", "postgres", "duckdb", "databricks"} {
-		// The reference READS it, but not as a setting: with no sign it gives
-		// up on the item and keeps the whole statement a Command.
-		e, err := ParseOne("SET KEY VALUE", d)
-		if err == nil && e.Class != "Command" {
-			t.Errorf("[%s] a sign-less SET read as %s, not a Command", d, e.Class)
+		if _, err := ParseOne("SET KEY VALUE", d); err == nil {
+			t.Errorf("[%s] a sign-less SET was read", d)
 		}
 	}
 	if _, err := ParseOne("SET KEY VALUE", "tsql"); err != nil {
