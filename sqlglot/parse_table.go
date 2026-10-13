@@ -1611,7 +1611,27 @@ func (p *parser) parseUnnest() (*Expression, error) {
 	// ask for.
 	if !ordinality {
 		if c := p.curr(); c != nil && c.Type == TokWITH {
-			return nil, p.unsupported("UNNEST WITH OFFSET")
+			// BigQuery writes `WITH OFFSET [AS name]` back as it was written,
+			// so it is read here; every other dialect writes the same thing as
+			// WITH ORDINALITY, which drops the name, so it stays refused.
+			if p.dialect != "bigquery" || !p.nextWords("OFFSET") {
+				return nil, p.unsupported("UNNEST WITH OFFSET")
+			}
+			p.advance() // WITH
+			p.advance() // OFFSET
+			var name *Expression
+			if p.match(TokALIAS) {
+				id, err := p.parseIdentifier()
+				if err != nil {
+					return nil, err
+				}
+				name = id
+			}
+			if name != nil {
+				offset = name
+			} else {
+				offset = true
+			}
 		}
 	}
 	// StarRocks defaults the UNNEST table alias and column to `unnest` when
