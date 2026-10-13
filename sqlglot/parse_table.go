@@ -1610,28 +1610,25 @@ func (p *parser) parseUnnest() (*Expression, error) {
 	// drops the name. Refuse rather than write a column the statement did not
 	// ask for.
 	if !ordinality {
-		if c := p.curr(); c != nil && c.Type == TokWITH {
-			// BigQuery writes `WITH OFFSET [AS name]` back as it was written,
-			// so it is read here; every other dialect writes the same thing as
-			// WITH ORDINALITY, which drops the name, so it stays refused.
-			if p.dialect != "bigquery" || !p.nextWords("OFFSET") {
+		if c := p.curr(); c != nil && c.Type == TokWITH && p.nextWords("OFFSET") {
+			// `WITH OFFSET [AS name]` names the ordinality column, and a name
+			// that was not written is `offset` (Parser._parse_unnest). Only
+			// the dialects that WRITE it back keep the name, so the rest
+			// still refuse rather than silently shortening the statement.
+			if p.dialect != "bigquery" {
 				return nil, p.unsupported("UNNEST WITH OFFSET")
 			}
 			p.advance() // WITH
 			p.advance() // OFFSET
-			var name *Expression
-			if p.match(TokALIAS) {
-				id, err := p.parseIdentifier()
-				if err != nil {
-					return nil, err
-				}
-				name = id
+			p.match(TokALIAS)
+			name, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
 			}
-			if name != nil {
-				offset = name
-			} else {
-				offset = true
+			if name == nil {
+				name = New("Identifier", Arg{"this", "offset"}, Arg{"quoted", false})
 			}
+			offset = name
 		}
 	}
 	// StarRocks defaults the UNNEST table alias and column to `unnest` when

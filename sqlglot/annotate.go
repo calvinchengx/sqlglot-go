@@ -111,6 +111,21 @@ func annotateNode(e *Expression, dialect string) *Expression {
 		return dataType("DOUBLE")
 	case "Array":
 		return annotateArray(e, dialect)
+	case "GenerateSeries":
+		// `GENERATE_ARRAY(...)` is an ARRAY of its START's type -- its own
+		// arguments are this/expression/step, not a list.
+		if t := annotate(childOf(e, "start"), dialect); t != nil {
+			return New("DataType", Arg{"this", DataTypeKind("ARRAY")},
+				Arg{"expressions", []*Expression{t}}, Arg{"nested", true})
+		}
+		return nil
+	case "GenerateDateArray", "GenerateTimestampArray":
+		element := "DATE"
+		if e.Class == "GenerateTimestampArray" {
+			element = "TIMESTAMP"
+		}
+		return New("DataType", Arg{"this", DataTypeKind("ARRAY")},
+			Arg{"expressions", []*Expression{dataType(element)}}, Arg{"nested", true})
 	case "Case":
 		return annotateCase(e, dialect)
 	case "Struct":
