@@ -2153,14 +2153,48 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 		p.advance()
 		to = New("DataType", Arg{"this", DataTypeKind("CHARACTER_SET")}, Arg{"kind", name})
 	}
+	// `CAST(x AS STRING FORMAT 'DAY')` names the format the value is read or
+	// written with (Parser._parse_cast).
+	var format *Expression
+	if p.atWords("FORMAT") {
+		p.advance()
+		c := p.curr()
+		if c == nil || c.Type != TokSTRING {
+			return nil, p.unsupported("CAST FORMAT without a string")
+		}
+		format = New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
+		p.advance()
+	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed CAST")
+	}
+	// A TEMPORAL cast carrying a format builds a StrToDate/StrToTime with the
+	// format MAPPED through the dialect's own (Parser._parse_cast).
+	if format != nil {
+		if kind, _ := to.Args["this"].(DataTypeKind); kind == "DATE" || kind == "TIMESTAMP" ||
+			kind == "TIMESTAMPTZ" || kind == "DATETIME" || kind == "TIME" {
+			text, _ := format.Args["this"].(string)
+			mapping := p.tables.FormatTimeMapping
+			if len(mapping) == 0 {
+				mapping = p.tables.TimeMapping
+			}
+			class := "StrToTime"
+			if kind == "DATE" {
+				class = "StrToDate"
+			}
+			node := New(class, Arg{"this", this},
+				Arg{"format", New("Literal", Arg{"this", formatTime(text, mapping)}, Arg{"is_string", true})})
+			if try {
+				node.Set("safe", true)
+			}
+			return p.keep(node), nil
+		}
 	}
 	to = p.hiveCastType(to)
 
 	class := "Cast"
 	args := []Arg{
-		{"this", this}, {"to", to}, {"format", nil},
+		{"this", this}, {"to", to}, {"format", format},
 		{"safe", nil}, {"action", nil}, {"default", nil},
 	}
 	if try {
@@ -2880,8 +2914,10 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		p.advance() // the name, as the reference does before a FUNCTION_PARSERS entry
 		return p.parseJoinHintFunction(upper)
 	}
-	if upper == "CAST" || upper == "TRY_CAST" {
-		return p.castOrConversion(upper == "TRY_CAST")
+	if upper == "CAST" || upper == "TRY_CAST" ||
+		(p.dialect == "bigquery" && upper == "SAFE_CAST") {
+		// BigQuery's SAFE_CAST is the same reader, flagged safe.
+		return p.castOrConversion(upper == "TRY_CAST" || upper == "SAFE_CAST")
 	}
 	if _, syntax := p.tables.SyntaxFunctions[upper]; syntax {
 		return p.parseSyntaxFunction(upper)
