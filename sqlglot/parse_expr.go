@@ -2924,8 +2924,10 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	// record the lambdas), so they must not be turned away here either.
 	isHiveFn := isHiveFamily(p.dialect) && hiveOwnedFunction(upper)
 	isSQLiteFn := p.dialect == "sqlite" && sqliteOwnedFunction(upper)
+	isBigQueryFn := p.dialect == "bigquery" && bigqueryOwnedFunction(upper)
 	if !named && !byArity && !isJSONPath && !byWord && !isVarMap && !isDremioDateType &&
-		!isMySQLDateDelta && !isPrestoToChar && !isSingleStoreFn && !isHiveFn && !isSQLiteFn {
+		!isMySQLDateDelta && !isPrestoToChar && !isSingleStoreFn && !isHiveFn && !isSQLiteFn &&
+		!isBigQueryFn {
 		if _, custom := p.tables.NamedFunctions[upper]; custom {
 			return nil, p.unsupported("function " + upper + " with a builder of its own")
 		}
@@ -3091,6 +3093,11 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	}
 	if p.dialect == "sqlite" {
 		if built := p.buildSQLiteFunction(upper, args); built != nil {
+			return built, nil
+		}
+	}
+	if p.dialect == "bigquery" {
+		if built := p.buildBigQueryFunction(upper, args); built != nil {
 			return built, nil
 		}
 	}
