@@ -228,7 +228,7 @@ func (p *parser) parseBigQueryMakeInterval() (*Expression, error) {
 		if p.at(TokR_PAREN) {
 			break
 		}
-		value, err := p.parseLambda()
+		value, err := p.parseBigQueryLambda()
 		if err != nil {
 			return nil, err
 		}
@@ -258,7 +258,7 @@ func (p *parser) parseBigQueryFeaturesAtTime() (*Expression, error) {
 	}
 	node := New("FeaturesAtTime", Arg{"this", this})
 	for p.match(TokCOMMA) {
-		arg, err := p.parseLambda()
+		arg, err := p.parseBigQueryLambda()
 		if err != nil {
 			return nil, err
 		}
@@ -303,7 +303,7 @@ func (p *parser) parseBigQueryVectorSearch() (*Expression, error) {
 			node.Set("query_column_to_search", s)
 			continue
 		}
-		arg, err := p.parseLambda()
+		arg, err := p.parseBigQueryLambda()
 		if err != nil {
 			return nil, err
 		}
@@ -333,7 +333,7 @@ func (p *parser) parseBigQueryForecast() (*Expression, error) {
 	}
 	node := New("AIForecast", Arg{"this", this})
 	for p.match(TokCOMMA) {
-		arg, err := p.parseLambda()
+		arg, err := p.parseBigQueryLambda()
 		if err != nil {
 			return nil, err
 		}
@@ -364,4 +364,14 @@ func (p *parser) parseBigQueryCSV(member func() (*Expression, error)) ([]*Expres
 		}
 	}
 	return out, nil
+}
+
+// parseBigQueryLambda reads what the ML family's arguments are: a named
+// argument (`key => value`) where one stands, and a lambda or expression
+// otherwise (Parser._parse_lambda).
+func (p *parser) parseBigQueryLambda() (*Expression, error) {
+	if p.atKwarg() {
+		return p.parseKwarg()
+	}
+	return p.parseLambda()
 }
