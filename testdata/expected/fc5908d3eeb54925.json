@@ -1,0 +1,266 @@
+{
+ "dialect": "bigquery",
+ "rendered": "FOR system_time IN (SELECT 1 AS x) DO SELECT system_time.x",
+ "sql": "FOR system_time IN (SELECT 1 AS x) DO SELECT system_time.x",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 4,
+   "t": "VAR",
+   "x": "system_time"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 16,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 20,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 29,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 35,
+   "t": "VAR",
+   "x": "DO"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 38,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 45,
+   "t": "VAR",
+   "x": "system_time"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 57,
+   "t": "VAR",
+   "x": "x"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.ForIn"
+  },
+  {
+   "c": "sqlglot.expressions.core.In",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 4
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "system_time"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 1,
+   "k": "query"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "alias",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 15,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "this",
+   "m": {
+    "col": 58,
+    "end": 57,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 16,
+   "k": "table",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "system_time"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

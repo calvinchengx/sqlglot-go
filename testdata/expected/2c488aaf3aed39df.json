@@ -1,0 +1,150 @@
+{
+ "dialect": "bigquery",
+ "rendered": "APPROX_QUANTILES(DISTINCT foo, 2 IGNORE NULLS)",
+ "sql": "APPROX_QUANTILES(DISTINCT foo, 2 IGNORE NULLS)",
+ "tokens": [
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "APPROX_QUANTILES"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 17,
+   "t": "DISTINCT",
+   "x": "DISTINCT"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "NUMBER",
+   "x": "2"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 33,
+   "t": "VAR",
+   "x": "IGNORE"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "NULLS"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 45,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.IgnoreNulls"
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.ApproxQuantiles",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "name": "APPROX_QUANTILES",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Distinct",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

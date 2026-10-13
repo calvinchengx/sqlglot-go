@@ -1,0 +1,93 @@
+{
+ "dialect": "bigquery",
+ "rendered": "NET.REG_DOMAIN('http://example.com')",
+ "sql": "NET.REG_DOMAIN('http://example.com')",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "NET"
+  },
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 3,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 4,
+   "t": "VAR",
+   "x": "REG_DOMAIN"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 15,
+   "t": "STRING",
+   "x": "http://example.com"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.functions.NetFunc"
+  },
+  {
+   "c": "sqlglot.expressions.functions.RegDomain",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "name": "REG_DOMAIN",
+    "start": 4
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "http://example.com"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

@@ -1,0 +1,108 @@
+{
+ "dialect": "bigquery",
+ "rendered": "LAX_STRING(PARSE_JSON('\"str\"'))",
+ "sql": "LAX_STRING(PARSE_JSON('\"str\"'))",
+ "tokens": [
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "LAX_STRING"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "PARSE_JSON"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 22,
+   "t": "STRING",
+   "x": "\"str\""
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.functions.LaxString",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "name": "LAX_STRING",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.json.ParseJSON",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "name": "PARSE_JSON",
+    "start": 11
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 28,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "\"str\""
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

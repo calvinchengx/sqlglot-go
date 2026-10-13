@@ -1,0 +1,989 @@
+{
+ "dialect": "bigquery",
+ "rendered": "MERGE INTO dataset.NewArrivals USING (SELECT * FROM UNNEST([('microwave', 10, 'warehouse #1'), ('dryer', 30, 'warehouse #1'), ('oven', 20, 'warehouse #2')])) ON FALSE WHEN NOT MATCHED THEN INSERT ROW WHEN NOT MATCHED BY SOURCE THEN DELETE",
+ "sql": "MERGE INTO dataset.NewArrivals USING (SELECT * FROM UNNEST([('microwave', 10, 'warehouse #1'), ('dryer', 30, 'warehouse #1'), ('oven', 20, 'warehouse #2')])) ON FALSE WHEN NOT MATCHED THEN INSERT ROW WHEN NOT MATCHED BY SOURCE THEN DELETE",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "MERGE",
+   "x": "MERGE"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 6,
+   "t": "INTO",
+   "x": "INTO"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "dataset"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "NewArrivals"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 31,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 38,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 45,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 47,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 52,
+   "t": "UNNEST",
+   "x": "UNNEST"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 59,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 60,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 61,
+   "t": "STRING",
+   "x": "microwave"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 72,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 74,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 77,
+   "e": 76,
+   "l": 1,
+   "s": 76,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 78,
+   "t": "STRING",
+   "x": "warehouse #1"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 92,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 93,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 95,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 96,
+   "t": "STRING",
+   "x": "dryer"
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 103,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 105,
+   "t": "NUMBER",
+   "x": "30"
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 107,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 109,
+   "t": "STRING",
+   "x": "warehouse #1"
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 123,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 124,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 127,
+   "e": 126,
+   "l": 1,
+   "s": 126,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 133,
+   "e": 132,
+   "l": 1,
+   "s": 127,
+   "t": "STRING",
+   "x": "oven"
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 133,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 137,
+   "e": 136,
+   "l": 1,
+   "s": 135,
+   "t": "NUMBER",
+   "x": "20"
+  },
+  {
+   "c": 138,
+   "e": 137,
+   "l": 1,
+   "s": 137,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 153,
+   "e": 152,
+   "l": 1,
+   "s": 139,
+   "t": "STRING",
+   "x": "warehouse #2"
+  },
+  {
+   "c": 154,
+   "e": 153,
+   "l": 1,
+   "s": 153,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 155,
+   "e": 154,
+   "l": 1,
+   "s": 154,
+   "t": "R_BRACKET",
+   "x": "]"
+  },
+  {
+   "c": 156,
+   "e": 155,
+   "l": 1,
+   "s": 155,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 157,
+   "e": 156,
+   "l": 1,
+   "s": 156,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 160,
+   "e": 159,
+   "l": 1,
+   "s": 158,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 166,
+   "e": 165,
+   "l": 1,
+   "s": 161,
+   "t": "FALSE",
+   "x": "FALSE"
+  },
+  {
+   "c": 171,
+   "e": 170,
+   "l": 1,
+   "s": 167,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 175,
+   "e": 174,
+   "l": 1,
+   "s": 172,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 183,
+   "e": 182,
+   "l": 1,
+   "s": 176,
+   "t": "VAR",
+   "x": "MATCHED"
+  },
+  {
+   "c": 188,
+   "e": 187,
+   "l": 1,
+   "s": 184,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 195,
+   "e": 194,
+   "l": 1,
+   "s": 189,
+   "t": "INSERT",
+   "x": "INSERT"
+  },
+  {
+   "c": 199,
+   "e": 198,
+   "l": 1,
+   "s": 196,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 204,
+   "e": 203,
+   "l": 1,
+   "s": 200,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 208,
+   "e": 207,
+   "l": 1,
+   "s": 205,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 216,
+   "e": 215,
+   "l": 1,
+   "s": 209,
+   "t": "VAR",
+   "x": "MATCHED"
+  },
+  {
+   "c": 219,
+   "e": 218,
+   "l": 1,
+   "s": 217,
+   "t": "VAR",
+   "x": "BY"
+  },
+  {
+   "c": 226,
+   "e": 225,
+   "l": 1,
+   "s": 220,
+   "t": "VAR",
+   "x": "SOURCE"
+  },
+  {
+   "c": 231,
+   "e": 230,
+   "l": 1,
+   "s": 227,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 238,
+   "e": 237,
+   "l": 1,
+   "s": 232,
+   "t": "DELETE",
+   "x": "DELETE"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Merge"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "NewArrivals"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "db",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "dataset"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 0,
+   "k": "using"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 9,
+   "k": "expressions",
+   "m": {
+    "col": 46,
+    "end": 45,
+    "line": 1,
+    "start": 45
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 9,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.array.Unnest",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.array.Array",
+   "i": 12,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 13,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 14,
+   "k": "expressions",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "nonnull": true,
+    "start": 61
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    }
+   ]
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "microwave"
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 14,
+   "k": "expressions",
+   "m": {
+    "col": 76,
+    "end": 75,
+    "line": 1,
+    "nonnull": true,
+    "start": 74
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    }
+   ]
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 14,
+   "k": "expressions",
+   "m": {
+    "col": 92,
+    "end": 91,
+    "line": 1,
+    "nonnull": true,
+    "start": 78
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    }
+   ]
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "warehouse #1"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 13,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 24,
+   "k": "expressions",
+   "m": {
+    "col": 103,
+    "end": 102,
+    "line": 1,
+    "nonnull": true,
+    "start": 96
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    }
+   ]
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "dryer"
+  },
+  {
+   "i": 25,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 24,
+   "k": "expressions",
+   "m": {
+    "col": 107,
+    "end": 106,
+    "line": 1,
+    "nonnull": true,
+    "start": 105
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    }
+   ]
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "30"
+  },
+  {
+   "i": 28,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 24,
+   "k": "expressions",
+   "m": {
+    "col": 123,
+    "end": 122,
+    "line": 1,
+    "nonnull": true,
+    "start": 109
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    }
+   ]
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "warehouse #1"
+  },
+  {
+   "i": 31,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 13,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 34,
+   "k": "expressions",
+   "m": {
+    "col": 133,
+    "end": 132,
+    "line": 1,
+    "nonnull": true,
+    "start": 127
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    }
+   ]
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "oven"
+  },
+  {
+   "i": 35,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 34,
+   "k": "expressions",
+   "m": {
+    "col": 137,
+    "end": 136,
+    "line": 1,
+    "nonnull": true,
+    "start": 135
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    }
+   ]
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "20"
+  },
+  {
+   "i": 38,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 34,
+   "k": "expressions",
+   "m": {
+    "col": 153,
+    "end": 152,
+    "line": 1,
+    "nonnull": true,
+    "start": 139
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "VARCHAR"
+    }
+   ]
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "warehouse #2"
+  },
+  {
+   "i": 41,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 13,
+   "k": "struct_name_inheritance",
+   "v": true
+  },
+  {
+   "i": 12,
+   "k": "offset",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 0,
+   "k": "on"
+  },
+  {
+   "i": 46,
+   "k": "this",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "using_cond",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.Whens",
+   "i": 0,
+   "k": "whens"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.When",
+   "i": 49,
+   "k": "expressions"
+  },
+  {
+   "i": 50,
+   "k": "matched",
+   "v": false
+  },
+  {
+   "i": 50,
+   "k": "source",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.Insert",
+   "i": 50,
+   "k": "then"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 53,
+   "k": "this"
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "ROW"
+  },
+  {
+   "i": 53,
+   "k": "expression",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.When",
+   "i": 49,
+   "k": "expressions"
+  },
+  {
+   "i": 57,
+   "k": "matched",
+   "v": false
+  },
+  {
+   "i": 57,
+   "k": "source",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 57,
+   "k": "then"
+  },
+  {
+   "i": 60,
+   "k": "this",
+   "v": "DELETE"
+  }
+ ]
+}

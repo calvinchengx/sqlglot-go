@@ -3793,6 +3793,26 @@ func (p *parser) parseColumn() (*Expression, error) {
 		// reference builds Dot(Dot(a, b), C()). Detected before the name is
 		// consumed, so the call parser sees it where it expects to.
 		if p.namesAFunctionCall() {
+			// BigQuery's NET.* and SAFE.* calls are nodes of their own, and the
+			// reference RE-PARSES the call through the ordinary function
+			// reader for them (and for AI.*/ML.*) so a known name gets its
+			// builder rather than an Anonymous (BigQueryParser._parse_column_ops).
+			head := parts[len(parts)-1]
+			prefix := strings.ToUpper(head.Name())
+			if p.dialect == "bigquery" &&
+				(prefix == "NET" || prefix == "SAFE" || prefix == "AI" || prefix == "ML") {
+				fn, err := p.parseFunction()
+				if err != nil {
+					return nil, err
+				}
+				switch prefix {
+				case "NET":
+					return New("NetFunc", Arg{"this", fn}), nil
+				case "SAFE":
+					return New("SafeFunc", Arg{"this", fn}), nil
+				}
+				return New("Dot", Arg{"this", head}, Arg{"expression", fn}), nil
+			}
 			fn, err := p.parseQualifiedName()
 			if err != nil {
 				return nil, err

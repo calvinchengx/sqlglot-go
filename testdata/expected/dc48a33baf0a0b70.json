@@ -1,0 +1,420 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT * FROM AI.GENERATE_TABLE(MODEL `mydataset.gemini_model`, (SELECT 'Q' AS prompt), STRUCT('name STRING' AS output_schema))",
+ "sql": "SELECT * FROM AI.GENERATE_TABLE(MODEL `mydataset.gemini_model`, (SELECT 'Q' AS prompt), STRUCT('name STRING' AS output_schema))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "AI"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "GENERATE_TABLE"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 32,
+   "t": "MODEL",
+   "x": "MODEL"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 38,
+   "t": "IDENTIFIER",
+   "x": "mydataset.gemini_model"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 62,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 64,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 65,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 72,
+   "t": "STRING",
+   "x": "Q"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 76,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 79,
+   "t": "VAR",
+   "x": "prompt"
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 85,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 86,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 88,
+   "t": "STRUCT",
+   "x": "STRUCT"
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 94,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 95,
+   "t": "STRING",
+   "x": "name STRING"
+  },
+  {
+   "c": 111,
+   "e": 110,
+   "l": 1,
+   "s": 109,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 112,
+   "t": "VAR",
+   "x": "output_schema"
+  },
+  {
+   "c": 126,
+   "e": 125,
+   "l": 1,
+   "s": 125,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 127,
+   "e": 126,
+   "l": 1,
+   "s": 126,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.GenerateTable",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "quoted_table": true
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "gemini_model"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "db",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "mydataset"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 4,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 13,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 75,
+    "end": 74,
+    "line": 1,
+    "start": 72
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "Q"
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "alias",
+   "m": {
+    "col": 85,
+    "end": 84,
+    "line": 1,
+    "start": 79
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "prompt"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.array.Struct",
+   "i": 4,
+   "k": "params_struct",
+   "m": {
+    "col": 94,
+    "end": 93,
+    "line": 1,
+    "name": "STRUCT",
+    "start": 88
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PropertyEQ",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 125,
+    "end": 124,
+    "line": 1,
+    "start": 112
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "output_schema"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 22,
+   "k": "expression",
+   "m": {
+    "col": 108,
+    "end": 107,
+    "line": 1,
+    "start": 95
+   }
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "name STRING"
+  },
+  {
+   "i": 26,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "db",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "AI"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

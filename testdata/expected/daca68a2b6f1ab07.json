@@ -1,0 +1,182 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT * FROM region_or_dataset.`INFORMATION_SCHEMA.TABLES` AS some_name",
+ "sql": "SELECT * FROM region_or_dataset.INFORMATION_SCHEMA.TABLES AS some_name",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "region_or_dataset"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 32,
+   "t": "VAR",
+   "x": "INFORMATION_SCHEMA"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 51,
+   "t": "VAR",
+   "x": "TABLES"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 58,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 61,
+   "t": "VAR",
+   "x": "some_name"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "INFORMATION_SCHEMA.TABLES"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "db",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "region_or_dataset"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 3,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 70,
+    "end": 69,
+    "line": 1,
+    "start": 61
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "some_name"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

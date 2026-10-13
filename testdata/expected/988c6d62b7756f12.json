@@ -1,0 +1,205 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT * FROM foo AS t0 FOR SYSTEM_TIME AS OF '2026-02-12T23:22:21.743416+00:00'",
+ "sql": "SELECT * FROM foo AS t0 FOR SYSTEM_TIME AS OF '2026-02-12T23:22:21.743416+00:00'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "foo"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 18,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 21,
+   "t": "VAR",
+   "x": "t0"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 24,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "SYSTEM_TIME"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 40,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 43,
+   "t": "VAR",
+   "x": "OF"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 46,
+   "t": "STRING",
+   "x": "2026-02-12T23:22:21.743416+00:00"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 3,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "t0"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Version",
+   "i": 3,
+   "k": "version"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "expression",
+   "m": {
+    "col": 80,
+    "end": 79,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "2026-02-12T23:22:21.743416+00:00"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 11,
+   "k": "kind",
+   "v": "AS OF"
+  }
+ ]
+}

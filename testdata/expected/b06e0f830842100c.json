@@ -1,0 +1,589 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT * FROM ML.TRANSLATE(MODEL `mydataset.mymodel`, (SELECT comment AS text_content FROM mydataset.mytable), STRUCT('translate_text' AS translate_mode, 'en' AS target_language_code))",
+ "sql": "SELECT * FROM ML.TRANSLATE(MODEL `mydataset.mymodel`, (SELECT comment AS text_content FROM mydataset.mytable), STRUCT('translate_text' AS translate_mode, 'en' AS target_language_code))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "ML"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "TRANSLATE"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 27,
+   "t": "MODEL",
+   "x": "MODEL"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 33,
+   "t": "IDENTIFIER",
+   "x": "mydataset.mymodel"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 55,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 62,
+   "t": "COMMENT",
+   "x": "comment"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 70,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 73,
+   "t": "VAR",
+   "x": "text_content"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 86,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 100,
+   "e": 99,
+   "l": 1,
+   "s": 91,
+   "t": "VAR",
+   "x": "mydataset"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 100,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 101,
+   "t": "VAR",
+   "x": "mytable"
+  },
+  {
+   "c": 109,
+   "e": 108,
+   "l": 1,
+   "s": 108,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 110,
+   "e": 109,
+   "l": 1,
+   "s": 109,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 117,
+   "e": 116,
+   "l": 1,
+   "s": 111,
+   "t": "STRUCT",
+   "x": "STRUCT"
+  },
+  {
+   "c": 118,
+   "e": 117,
+   "l": 1,
+   "s": 117,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 118,
+   "t": "STRING",
+   "x": "translate_text"
+  },
+  {
+   "c": 137,
+   "e": 136,
+   "l": 1,
+   "s": 135,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 152,
+   "e": 151,
+   "l": 1,
+   "s": 138,
+   "t": "VAR",
+   "x": "translate_mode"
+  },
+  {
+   "c": 153,
+   "e": 152,
+   "l": 1,
+   "s": 152,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 158,
+   "e": 157,
+   "l": 1,
+   "s": 154,
+   "t": "STRING",
+   "x": "en"
+  },
+  {
+   "c": 161,
+   "e": 160,
+   "l": 1,
+   "s": 159,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 182,
+   "e": 181,
+   "l": 1,
+   "s": 162,
+   "t": "VAR",
+   "x": "target_language_code"
+  },
+  {
+   "c": 183,
+   "e": 182,
+   "l": 1,
+   "s": 182,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 184,
+   "e": 183,
+   "l": 1,
+   "s": 183,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.MLTranslate",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "quoted_table": true
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "mymodel"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "db",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "mydataset"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 4,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 13,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 62
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "comment"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "alias",
+   "m": {
+    "col": 85,
+    "end": 84,
+    "line": 1,
+    "start": 73
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "text_content"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 13,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 108,
+    "end": 107,
+    "line": 1,
+    "start": 101
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "mytable"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "db",
+   "m": {
+    "col": 100,
+    "end": 99,
+    "line": 1,
+    "start": 91
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "mydataset"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.array.Struct",
+   "i": 4,
+   "k": "params_struct",
+   "m": {
+    "col": 117,
+    "end": 116,
+    "line": 1,
+    "name": "STRUCT",
+    "start": 111
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PropertyEQ",
+   "i": 30,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 31,
+   "k": "this",
+   "m": {
+    "col": 152,
+    "end": 151,
+    "line": 1,
+    "start": 138
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "translate_mode"
+  },
+  {
+   "i": 32,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 31,
+   "k": "expression",
+   "m": {
+    "col": 134,
+    "end": 133,
+    "line": 1,
+    "start": 118
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "translate_text"
+  },
+  {
+   "i": 35,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PropertyEQ",
+   "i": 30,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 38,
+   "k": "this",
+   "m": {
+    "col": 182,
+    "end": 181,
+    "line": 1,
+    "start": 162
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "target_language_code"
+  },
+  {
+   "i": 39,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 38,
+   "k": "expression",
+   "m": {
+    "col": 158,
+    "end": 157,
+    "line": 1,
+    "start": 154
+   }
+  },
+  {
+   "i": 42,
+   "k": "this",
+   "v": "en"
+  },
+  {
+   "i": 42,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "db",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "ML"
+  },
+  {
+   "i": 45,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

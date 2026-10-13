@@ -1,0 +1,139 @@
+{
+ "dialect": "bigquery",
+ "rendered": "DATE_TRUNC(col, WEEK(MONDAY))",
+ "sql": "DATE_TRUNC(col, WEEK(MONDAY))",
+ "tokens": [
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "DATE_TRUNC"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 11,
+   "t": "VAR",
+   "x": "col"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "WEEK"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 21,
+   "t": "VAR",
+   "x": "MONDAY"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.DateTrunc",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "name": "DATE_TRUNC",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.WeekStart",
+   "i": 0,
+   "k": "unit",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "name": "WEEK",
+    "start": 16
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "MONDAY"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "col"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

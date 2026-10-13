@@ -1,0 +1,103 @@
+{
+ "dialect": "bigquery",
+ "rendered": "PARSE_TIME('%I:%M:%S', '07:30:00')",
+ "sql": "PARSE_TIME('%I:%M:%S', '07:30:00')",
+ "tokens": [
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "PARSE_TIME"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 11,
+   "t": "STRING",
+   "x": "%I:%M:%S"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 23,
+   "t": "STRING",
+   "x": "07:30:00"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.ParseTime",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "name": "PARSE_TIME",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "07:30:00"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "format"
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "%I:%M:%S"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

@@ -1,0 +1,191 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT GENERATE_DATE_ARRAY('2016-10-05', '2016-10-08', INTERVAL '1' MONTH)",
+ "sql": "SELECT GENERATE_DATE_ARRAY('2016-10-05', '2016-10-08', INTERVAL '1' MONTH)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "GENERATE_DATE_ARRAY"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 27,
+   "t": "STRING",
+   "x": "2016-10-05"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 41,
+   "t": "STRING",
+   "x": "2016-10-08"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 55,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 64,
+   "t": "STRING",
+   "x": "1"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 68,
+   "t": "VAR",
+   "x": "MONTH"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 73,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.GenerateDateArray",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "name": "GENERATE_DATE_ARRAY",
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "start",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "2016-10-05"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "end",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 41
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "2016-10-08"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 1,
+   "k": "step"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 64
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 8,
+   "k": "unit"
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "MONTH"
+  }
+ ]
+}

@@ -1,0 +1,176 @@
+{
+ "dialect": "bigquery",
+ "rendered": "DATETIME_DIFF('2017-12-18', '2017-12-17', WEEK(MONDAY))",
+ "sql": "DATETIME_DIFF('2017-12-18', '2017-12-17', WEEK(MONDAY))",
+ "tokens": [
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "DATETIME_DIFF"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 14,
+   "t": "STRING",
+   "x": "2017-12-18"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 28,
+   "t": "STRING",
+   "x": "2017-12-17"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 42,
+   "t": "VAR",
+   "x": "WEEK"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 46,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 47,
+   "t": "VAR",
+   "x": "MONDAY"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.DatetimeDiff",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "name": "DATETIME_DIFF",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "2017-12-18"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "2017-12-17"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.functions.WeekStart",
+   "i": 0,
+   "k": "unit",
+   "m": {
+    "col": 46,
+    "end": 45,
+    "line": 1,
+    "name": "WEEK",
+    "start": 42
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "MONDAY"
+  },
+  {
+   "i": 0,
+   "k": "date_part_boundary",
+   "v": true
+  }
+ ]
+}

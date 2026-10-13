@@ -1,0 +1,140 @@
+{
+ "dialect": "bigquery",
+ "rendered": "PARSE_JSON('{}', wide_number_mode => 'exact')",
+ "sql": "PARSE_JSON('{}', wide_number_mode => 'exact')",
+ "tokens": [
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "PARSE_JSON"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 10,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 11,
+   "t": "STRING",
+   "x": "{}"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "wide_number_mode"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 34,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 37,
+   "t": "STRING",
+   "x": "exact"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.json.ParseJSON",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "name": "PARSE_JSON",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 11
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "{}"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "wide_number_mode"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "expression",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "exact"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

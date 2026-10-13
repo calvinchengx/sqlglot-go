@@ -1,0 +1,108 @@
+{
+ "dialect": "bigquery",
+ "rendered": "JSON_STRIP_NULLS(PARSE_JSON('[1, null, 2, null, [null]]'))",
+ "sql": "JSON_STRIP_NULLS(PARSE_JSON('[1, null, 2, null, [null]]'))",
+ "tokens": [
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "JSON_STRIP_NULLS"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "PARSE_JSON"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 28,
+   "t": "STRING",
+   "x": "[1, null, 2, null, [null]]"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 57,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.json.JSONStripNulls",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "name": "JSON_STRIP_NULLS",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.json.ParseJSON",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "name": "PARSE_JSON",
+    "start": 17
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "[1, null, 2, null, [null]]"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

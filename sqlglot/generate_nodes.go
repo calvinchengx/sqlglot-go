@@ -157,6 +157,8 @@ func init() {
 		"JoinHint":                            (*generator).writeJoinHint,
 		"ClusteredByProperty":                 (*generator).writeClusteredBy,
 		"QueryTransform":                      (*generator).writeQueryTransform,
+		"SafeFunc":                            (*generator).writeSafeFunc,
+		"NetFunc":                             (*generator).writeNetFunc,
 		"PositionalColumn":                    (*generator).writePositionalColumn,
 		"ExcludeColumnConstraint":             (*generator).writeExcludeConstraint,
 		"WithOperator":                        (*generator).writeWithOperator,
@@ -1319,6 +1321,16 @@ func (g *generator) writePositionalColumn(e *Expression) string {
 
 // writeHint writes what the engine is told about running the query, back
 // inside the comment it was written in.
+// writeSafeFunc writes BigQuery's `SAFE.<call>`.
+func (g *generator) writeSafeFunc(e *Expression) string {
+	return "SAFE." + g.child(e, "this")
+}
+
+// writeNetFunc writes BigQuery's `NET.<call>`.
+func (g *generator) writeNetFunc(e *Expression) string {
+	return "NET." + g.child(e, "this")
+}
+
 // writeJoinHint writes `NAME(tables)`, the join hint Spark2 and Spark read
 // inside a `/*+ ... */` hint.
 // writeQueryTransform writes Hive's `TRANSFORM(args) [USING script [AS

@@ -1,0 +1,202 @@
+{
+ "dialect": "bigquery",
+ "rendered": "DECLARE TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP() - INTERVAL '1' HOUR",
+ "sql": "DECLARE TS TIMESTAMP DEFAULT CURRENT_TIMESTAMP() - INTERVAL '1' HOUR",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "DECLARE",
+   "x": "DECLARE"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "TS"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 11,
+   "t": "TIMESTAMPTZ",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 21,
+   "t": "DEFAULT",
+   "x": "DEFAULT"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 29,
+   "t": "CURRENT_TIMESTAMP",
+   "x": "CURRENT_TIMESTAMP"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 46,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 47,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 49,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 51,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 60,
+   "t": "STRING",
+   "x": "1"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 64,
+   "t": "VAR",
+   "x": "HOUR"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Declare"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.DeclareItem",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "TS"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 5,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  },
+  {
+   "i": 5,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 1,
+   "k": "default"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentTimestamp",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 46,
+    "end": 45,
+    "line": 1,
+    "name": "CURRENT_TIMESTAMP",
+    "start": 29
+   }
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 8,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 10,
+   "k": "unit"
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "HOUR"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  }
+ ]
+}

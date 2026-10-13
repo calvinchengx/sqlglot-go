@@ -1,0 +1,54 @@
+{
+ "dialect": "bigquery",
+ "rendered": "WHILE i < ARRAY_LENGTH(batches) DO SET x = batches[OFFSET(i)]",
+ "sql": "WHILE i < ARRAY_LENGTH(batches) DO SET x = batches[OFFSET(i)]",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "COMMAND",
+   "x": "WHILE"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 60,
+   "t": "STRING",
+   "x": "i < ARRAY_LENGTH(batches) DO SET x = batches[OFFSET(i)]"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "WHILE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "i < ARRAY_LENGTH(batches) DO SET x = batches[OFFSET(i)]"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

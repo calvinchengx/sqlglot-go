@@ -1,0 +1,158 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT * FROM `proj.dataset.INFORMATION_SCHEMA.SOME_VIEW` AS `proj.dataset.INFORMATION_SCHEMA.SOME_VIEW`",
+ "sql": "SELECT * FROM `proj.dataset.INFORMATION_SCHEMA.SOME_VIEW`",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 14,
+   "t": "IDENTIFIER",
+   "x": "proj.dataset.INFORMATION_SCHEMA.SOME_VIEW"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "quoted_table": true
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": null,
+    "end": null,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "INFORMATION_SCHEMA.SOME_VIEW"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "db",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "dataset"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "catalog",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "proj"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 3,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "proj.dataset.INFORMATION_SCHEMA.SOME_VIEW"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": true
+  }
+ ]
+}

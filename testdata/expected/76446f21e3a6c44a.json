@@ -1,0 +1,429 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT * FROM AI.FORECAST((SELECT * FROM citibike_trips), data_col => 'num_trips', timestamp_col => 'date', horizon => 30)",
+ "sql": "SELECT * FROM AI.FORECAST((SELECT * FROM citibike_trips), data_col => 'num_trips', timestamp_col => 'date', horizon => 30)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "AI"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "FORECAST"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 27,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 34,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 36,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 41,
+   "t": "VAR",
+   "x": "citibike_trips"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 58,
+   "t": "VAR",
+   "x": "data_col"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 67,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 70,
+   "t": "STRING",
+   "x": "num_trips"
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 81,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 83,
+   "t": "VAR",
+   "x": "timestamp_col"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 97,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 100,
+   "t": "STRING",
+   "x": "date"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 106,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 115,
+   "e": 114,
+   "l": 1,
+   "s": 108,
+   "t": "VAR",
+   "x": "horizon"
+  },
+  {
+   "c": 118,
+   "e": 117,
+   "l": 1,
+   "s": 116,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 121,
+   "e": 120,
+   "l": 1,
+   "s": 119,
+   "t": "NUMBER",
+   "x": "30"
+  },
+  {
+   "c": 122,
+   "e": 121,
+   "l": 1,
+   "s": 121,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.AIForecast",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 6,
+   "k": "expressions",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 6,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 41
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "citibike_trips"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 4,
+   "k": "data_col"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 13,
+   "k": "this"
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "data_col"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expression",
+   "m": {
+    "col": 81,
+    "end": 80,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "num_trips"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 4,
+   "k": "timestamp_col"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 19,
+   "k": "this"
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "timestamp_col"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 19,
+   "k": "expression",
+   "m": {
+    "col": 106,
+    "end": 105,
+    "line": 1,
+    "start": 100
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "date"
+  },
+  {
+   "i": 22,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 4,
+   "k": "horizon"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 25,
+   "k": "this"
+  },
+  {
+   "i": 26,
+   "k": "this",
+   "v": "horizon"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 25,
+   "k": "expression",
+   "m": {
+    "col": 121,
+    "end": 120,
+    "line": 1,
+    "start": 119
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "30"
+  },
+  {
+   "i": 28,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "db",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "AI"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

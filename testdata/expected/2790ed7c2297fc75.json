@@ -1,0 +1,396 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT * FROM ML.FEATURES_AT_TIME(TABLE mydataset.feature_table, time => '2022-06-11 10:00:00+00', num_rows => 1, ignore_feature_nulls => TRUE)",
+ "sql": "SELECT * FROM ML.FEATURES_AT_TIME(TABLE mydataset.feature_table, time => '2022-06-11 10:00:00+00', num_rows => 1, ignore_feature_nulls => TRUE)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "ML"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "FEATURES_AT_TIME"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 34,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "mydataset"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 49,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 50,
+   "t": "VAR",
+   "x": "feature_table"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 63,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 65,
+   "t": "TIME",
+   "x": "time"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 70,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 97,
+   "e": 96,
+   "l": 1,
+   "s": 73,
+   "t": "STRING",
+   "x": "2022-06-11 10:00:00+00"
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 97,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 99,
+   "t": "VAR",
+   "x": "num_rows"
+  },
+  {
+   "c": 110,
+   "e": 109,
+   "l": 1,
+   "s": 108,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 111,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 113,
+   "e": 112,
+   "l": 1,
+   "s": 112,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 114,
+   "t": "VAR",
+   "x": "ignore_feature_nulls"
+  },
+  {
+   "c": 137,
+   "e": 136,
+   "l": 1,
+   "s": 135,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 142,
+   "e": 141,
+   "l": 1,
+   "s": 138,
+   "t": "TRUE",
+   "x": "TRUE"
+  },
+  {
+   "c": 143,
+   "e": 142,
+   "l": 1,
+   "s": 142,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.FeaturesAtTime",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 50
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "feature_table"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "db",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "mydataset"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 4,
+   "k": "time"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "time"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 12,
+   "k": "expression",
+   "m": {
+    "col": 97,
+    "end": 96,
+    "line": 1,
+    "start": 73
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "2022-06-11 10:00:00+00"
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 4,
+   "k": "num_rows"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 18,
+   "k": "this"
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "num_rows"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 18,
+   "k": "expression",
+   "m": {
+    "col": 112,
+    "end": 111,
+    "line": 1,
+    "start": 111
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 21,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 4,
+   "k": "ignore_feature_nulls"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 24,
+   "k": "this"
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "ignore_feature_nulls"
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 24,
+   "k": "expression"
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "db",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "ML"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

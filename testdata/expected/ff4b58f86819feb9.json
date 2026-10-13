@@ -1,0 +1,117 @@
+{
+ "dialect": "bigquery",
+ "rendered": "PARSE_TIMESTAMP('%Y.%m.%d %I:%M:%S%z', x)",
+ "sql": "cast(x as time format 'YYYY.MM.DD HH:MI:SSTZH')",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "cast"
+  },
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 4,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 7,
+   "t": "ALIAS",
+   "x": "as"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 10,
+   "t": "TIME",
+   "x": "time"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 15,
+   "t": "FORMAT",
+   "x": "format"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 22,
+   "t": "STRING",
+   "x": "YYYY.MM.DD HH:MI:SSTZH"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 46,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.StrToTime"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 6,
+    "end": 5,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "format"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "%Y.%m.%d %I:%M:%S%z"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

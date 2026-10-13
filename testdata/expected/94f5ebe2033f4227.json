@@ -1,0 +1,83 @@
+{
+ "dialect": "bigquery",
+ "rendered": "x <> ''",
+ "sql": "x <> \"\"",
+ "tokens": [
+  {
+   "c": 1,
+   "e": 0,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 2,
+   "t": "NEQ",
+   "x": "<>"
+  },
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 5,
+   "t": "STRING",
+   "x": ""
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.NEQ"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 1,
+    "end": 0,
+    "line": 1,
+    "start": 0
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 7,
+    "end": 6,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": ""
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

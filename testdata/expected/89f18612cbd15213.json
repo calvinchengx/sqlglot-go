@@ -1,0 +1,134 @@
+{
+ "dialect": "bigquery",
+ "rendered": "TO_JSON(9999999999, stringify_wide_numbers => FALSE)",
+ "sql": "TO_JSON(9999999999, stringify_wide_numbers => FALSE)",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "TO_JSON"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 8,
+   "t": "NUMBER",
+   "x": "9999999999"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 20,
+   "t": "VAR",
+   "x": "stringify_wide_numbers"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 43,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 46,
+   "t": "FALSE",
+   "x": "FALSE"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 51,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.json.JSONFormat",
+   "m": {
+    "col": 7,
+    "end": 6,
+    "line": 1,
+    "name": "TO_JSON",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 8
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "9999999999"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 0,
+   "k": "options"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "stringify_wide_numbers"
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 4,
+   "k": "expression"
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "to_json",
+   "v": true
+  }
+ ]
+}

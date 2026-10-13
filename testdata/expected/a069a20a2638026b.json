@@ -1,0 +1,173 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT INT64(JSON_QUERY(PARSE_JSON('{\"key\": 2000}'), '$.key'))",
+ "sql": "SELECT INT64(JSON_QUERY(JSON '{\"key\": 2000}', '$.key'))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "BIGINT",
+   "x": "INT64"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "JSON_QUERY"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 24,
+   "t": "JSON",
+   "x": "JSON"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 29,
+   "t": "STRING",
+   "x": "{\"key\": 2000}"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 44,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 46,
+   "t": "STRING",
+   "x": "$.key"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Int64",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "name": "INT64",
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.json.JSONExtract",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "name": "JSON_QUERY",
+    "start": 13
+   }
+  },
+  {
+   "c": "sqlglot.expressions.json.ParseJSON",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "{\"key\": 2000}"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 2,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "key"
+  }
+ ]
+}

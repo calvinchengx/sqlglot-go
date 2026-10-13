@@ -1,0 +1,380 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT * FROM AI.GENERATE_TEXT(MODEL `mydataset.gemini_model`, TABLE `mydataset.prompt_table`, STRUCT(0.15 AS temperature))",
+ "sql": "SELECT * FROM AI.GENERATE_TEXT(MODEL `mydataset.gemini_model`, TABLE `mydataset.prompt_table`, STRUCT(0.15 AS temperature))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "AI"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "GENERATE_TEXT"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 31,
+   "t": "MODEL",
+   "x": "MODEL"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 37,
+   "t": "IDENTIFIER",
+   "x": "mydataset.gemini_model"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 61,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 63,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 69,
+   "t": "IDENTIFIER",
+   "x": "mydataset.prompt_table"
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 93,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 95,
+   "t": "STRUCT",
+   "x": "STRUCT"
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 101,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 102,
+   "t": "NUMBER",
+   "x": "0.15"
+  },
+  {
+   "c": 109,
+   "e": 108,
+   "l": 1,
+   "s": 107,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 121,
+   "e": 120,
+   "l": 1,
+   "s": 110,
+   "t": "VAR",
+   "x": "temperature"
+  },
+  {
+   "c": 122,
+   "e": 121,
+   "l": 1,
+   "s": 121,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 122,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.GenerateText",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "quoted_table": true
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "gemini_model"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "db",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "mydataset"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 4,
+   "k": "expression",
+   "m": {
+    "quoted_table": true
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 93,
+    "end": 92,
+    "line": 1,
+    "start": 69
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "prompt_table"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "db",
+   "m": {
+    "col": 93,
+    "end": 92,
+    "line": 1,
+    "start": 69
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "mydataset"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.array.Struct",
+   "i": 4,
+   "k": "params_struct",
+   "m": {
+    "col": 101,
+    "end": 100,
+    "line": 1,
+    "name": "STRUCT",
+    "start": 95
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PropertyEQ",
+   "i": 19,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 121,
+    "end": 120,
+    "line": 1,
+    "start": 110
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "temperature"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 20,
+   "k": "expression",
+   "m": {
+    "col": 106,
+    "end": 105,
+    "line": 1,
+    "start": 102
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "0.15"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "db",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "AI"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

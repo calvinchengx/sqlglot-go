@@ -1,0 +1,891 @@
+{
+ "dialect": "bigquery",
+ "rendered": "CREATE MODEL project_id.mydataset.mymodel INPUT(f1 INT64, f2 FLOAT64, f3 STRING, f4 ARRAY<INT64>) OUTPUT(out1 INT64, out2 INT64) REMOTE WITH CONNECTION myproject.us.test_connection OPTIONS (ENDPOINT='https://us-central1-aiplatform.googleapis.com/v1/projects/myproject/locations/us-central1/endpoints/1234')",
+ "sql": "CREATE MODEL project_id.mydataset.mymodel\nINPUT(\n  f1 INT64,\n  f2 FLOAT64,\n  f3 STRING,\n  f4 ARRAY<INT64>\n)\nOUTPUT(\n  out1 INT64,\n  out2 INT64\n)\nREMOTE WITH CONNECTION myproject.us.test_connection\nOPTIONS (\n  ENDPOINT='https://us-central1-aiplatform.googleapis.com/v1/projects/myproject/locations/us-central1/endpoints/1234'\n)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "MODEL",
+   "x": "MODEL"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "project_id"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "mydataset"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 34,
+   "t": "VAR",
+   "x": "mymodel"
+  },
+  {
+   "c": 5,
+   "e": 46,
+   "l": 2,
+   "s": 42,
+   "t": "VAR",
+   "x": "INPUT"
+  },
+  {
+   "c": 6,
+   "e": 47,
+   "l": 2,
+   "s": 47,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 4,
+   "e": 52,
+   "l": 3,
+   "s": 51,
+   "t": "VAR",
+   "x": "f1"
+  },
+  {
+   "c": 10,
+   "e": 58,
+   "l": 3,
+   "s": 54,
+   "t": "BIGINT",
+   "x": "INT64"
+  },
+  {
+   "c": 11,
+   "e": 59,
+   "l": 3,
+   "s": 59,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 4,
+   "e": 64,
+   "l": 4,
+   "s": 63,
+   "t": "VAR",
+   "x": "f2"
+  },
+  {
+   "c": 12,
+   "e": 72,
+   "l": 4,
+   "s": 66,
+   "t": "DOUBLE",
+   "x": "FLOAT64"
+  },
+  {
+   "c": 13,
+   "e": 73,
+   "l": 4,
+   "s": 73,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 4,
+   "e": 78,
+   "l": 5,
+   "s": 77,
+   "t": "VAR",
+   "x": "f3"
+  },
+  {
+   "c": 11,
+   "e": 85,
+   "l": 5,
+   "s": 80,
+   "t": "TEXT",
+   "x": "STRING"
+  },
+  {
+   "c": 12,
+   "e": 86,
+   "l": 5,
+   "s": 86,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 4,
+   "e": 91,
+   "l": 6,
+   "s": 90,
+   "t": "VAR",
+   "x": "f4"
+  },
+  {
+   "c": 10,
+   "e": 97,
+   "l": 6,
+   "s": 93,
+   "t": "ARRAY",
+   "x": "ARRAY"
+  },
+  {
+   "c": 11,
+   "e": 98,
+   "l": 6,
+   "s": 98,
+   "t": "LT",
+   "x": "<"
+  },
+  {
+   "c": 16,
+   "e": 103,
+   "l": 6,
+   "s": 99,
+   "t": "BIGINT",
+   "x": "INT64"
+  },
+  {
+   "c": 17,
+   "e": 104,
+   "l": 6,
+   "s": 104,
+   "t": "GT",
+   "x": ">"
+  },
+  {
+   "c": 1,
+   "e": 106,
+   "l": 7,
+   "s": 106,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 6,
+   "e": 113,
+   "l": 8,
+   "s": 108,
+   "t": "VAR",
+   "x": "OUTPUT"
+  },
+  {
+   "c": 7,
+   "e": 114,
+   "l": 8,
+   "s": 114,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 6,
+   "e": 121,
+   "l": 9,
+   "s": 118,
+   "t": "VAR",
+   "x": "out1"
+  },
+  {
+   "c": 12,
+   "e": 127,
+   "l": 9,
+   "s": 123,
+   "t": "BIGINT",
+   "x": "INT64"
+  },
+  {
+   "c": 13,
+   "e": 128,
+   "l": 9,
+   "s": 128,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 6,
+   "e": 135,
+   "l": 10,
+   "s": 132,
+   "t": "VAR",
+   "x": "out2"
+  },
+  {
+   "c": 12,
+   "e": 141,
+   "l": 10,
+   "s": 137,
+   "t": "BIGINT",
+   "x": "INT64"
+  },
+  {
+   "c": 1,
+   "e": 143,
+   "l": 11,
+   "s": 143,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 6,
+   "e": 150,
+   "l": 12,
+   "s": 145,
+   "t": "VAR",
+   "x": "REMOTE"
+  },
+  {
+   "c": 11,
+   "e": 155,
+   "l": 12,
+   "s": 152,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 22,
+   "e": 166,
+   "l": 12,
+   "s": 157,
+   "t": "VAR",
+   "x": "CONNECTION"
+  },
+  {
+   "c": 32,
+   "e": 176,
+   "l": 12,
+   "s": 168,
+   "t": "VAR",
+   "x": "myproject"
+  },
+  {
+   "c": 33,
+   "e": 177,
+   "l": 12,
+   "s": 177,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 35,
+   "e": 179,
+   "l": 12,
+   "s": 178,
+   "t": "VAR",
+   "x": "us"
+  },
+  {
+   "c": 36,
+   "e": 180,
+   "l": 12,
+   "s": 180,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 51,
+   "e": 195,
+   "l": 12,
+   "s": 181,
+   "t": "VAR",
+   "x": "test_connection"
+  },
+  {
+   "c": 7,
+   "e": 203,
+   "l": 13,
+   "s": 197,
+   "t": "VAR",
+   "x": "OPTIONS"
+  },
+  {
+   "c": 9,
+   "e": 205,
+   "l": 13,
+   "s": 205,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 10,
+   "e": 216,
+   "l": 14,
+   "s": 209,
+   "t": "VAR",
+   "x": "ENDPOINT"
+  },
+  {
+   "c": 11,
+   "e": 217,
+   "l": 14,
+   "s": 217,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 117,
+   "e": 323,
+   "l": 14,
+   "s": 218,
+   "t": "STRING",
+   "x": "https://us-central1-aiplatform.googleapis.com/v1/projects/myproject/locations/us-central1/endpoints/1234"
+  },
+  {
+   "c": 1,
+   "e": 325,
+   "l": 15,
+   "s": 325,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "mymodel"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "db",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "mydataset"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "catalog",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "project_id"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "MODEL"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.InputModelProperty",
+   "i": 16,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 4,
+    "end": 52,
+    "line": 3,
+    "start": 51
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "f1"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 19,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 23,
+   "k": "this",
+   "v": "BIGINT"
+  },
+  {
+   "i": 23,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 4,
+    "end": 64,
+    "line": 4,
+    "start": 63
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "f2"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 26,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 30,
+   "k": "this",
+   "v": "DOUBLE"
+  },
+  {
+   "i": 30,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "this",
+   "m": {
+    "col": 4,
+    "end": 78,
+    "line": 5,
+    "start": 77
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "f3"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 33,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 37,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 37,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 18,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 40,
+   "k": "this",
+   "m": {
+    "col": 4,
+    "end": 91,
+    "line": 6,
+    "start": 90
+   }
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "f4"
+  },
+  {
+   "i": 41,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 40,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 44,
+   "k": "this",
+   "v": "ARRAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 44,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 46,
+   "k": "this",
+   "v": "BIGINT"
+  },
+  {
+   "i": 46,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 44,
+   "k": "nested",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.OutputModelProperty",
+   "i": 16,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 50,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 51,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 52,
+   "k": "this",
+   "m": {
+    "col": 6,
+    "end": 121,
+    "line": 9,
+    "start": 118
+   }
+  },
+  {
+   "i": 53,
+   "k": "this",
+   "v": "out1"
+  },
+  {
+   "i": 53,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 52,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 56,
+   "k": "this",
+   "v": "BIGINT"
+  },
+  {
+   "i": 56,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 51,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 59,
+   "k": "this",
+   "m": {
+    "col": 6,
+    "end": 135,
+    "line": 10,
+    "start": 132
+   }
+  },
+  {
+   "i": 60,
+   "k": "this",
+   "v": "out2"
+  },
+  {
+   "i": 60,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 59,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 63,
+   "k": "this",
+   "v": "BIGINT"
+  },
+  {
+   "i": 63,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.RemoteWithConnectionModelProperty",
+   "i": 16,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 66,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 67,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 195,
+    "line": 12,
+    "start": 181
+   }
+  },
+  {
+   "i": 68,
+   "k": "this",
+   "v": "test_connection"
+  },
+  {
+   "i": 68,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 67,
+   "k": "db",
+   "m": {
+    "col": 35,
+    "end": 179,
+    "line": 12,
+    "start": 178
+   }
+  },
+  {
+   "i": 71,
+   "k": "this",
+   "v": "us"
+  },
+  {
+   "i": 71,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 67,
+   "k": "catalog",
+   "m": {
+    "col": 32,
+    "end": 176,
+    "line": 12,
+    "start": 168
+   }
+  },
+  {
+   "i": 74,
+   "k": "this",
+   "v": "myproject"
+  },
+  {
+   "i": 74,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.Property",
+   "i": 16,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 77,
+   "k": "this"
+  },
+  {
+   "i": 78,
+   "k": "this",
+   "v": "ENDPOINT"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 77,
+   "k": "value",
+   "m": {
+    "col": 117,
+    "end": 323,
+    "line": 14,
+    "start": 218
+   }
+  },
+  {
+   "i": 80,
+   "k": "this",
+   "v": "https://us-central1-aiplatform.googleapis.com/v1/projects/myproject/locations/us-central1/endpoints/1234"
+  },
+  {
+   "i": 80,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

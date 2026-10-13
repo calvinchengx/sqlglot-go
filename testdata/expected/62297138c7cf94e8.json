@@ -1,0 +1,341 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT CAST(CAST('2008-12-25 00:00:00+00:00' AS TIMESTAMP) AS STRING FORMAT 'YYYY-MM-DD HH24:MI:SS TZH:TZM' AT TIME ZONE 'Asia/Kolkata') AS date_time_to_string",
+ "sql": "SELECT CAST(CAST('2008-12-25 00:00:00+00:00' AS TIMESTAMP) AS STRING FORMAT 'YYYY-MM-DD HH24:MI:SS TZH:TZM' AT TIME ZONE 'Asia/Kolkata') AS date_time_to_string",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 17,
+   "t": "STRING",
+   "x": "2008-12-25 00:00:00+00:00"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 45,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 48,
+   "t": "TIMESTAMPTZ",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 57,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 59,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 62,
+   "t": "TEXT",
+   "x": "STRING"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 69,
+   "t": "FORMAT",
+   "x": "FORMAT"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 76,
+   "t": "STRING",
+   "x": "YYYY-MM-DD HH24:MI:SS TZH:TZM"
+  },
+  {
+   "c": 110,
+   "e": 109,
+   "l": 1,
+   "s": 108,
+   "t": "VAR",
+   "x": "AT"
+  },
+  {
+   "c": 115,
+   "e": 114,
+   "l": 1,
+   "s": 111,
+   "t": "TIME",
+   "x": "TIME"
+  },
+  {
+   "c": 120,
+   "e": 119,
+   "l": 1,
+   "s": 116,
+   "t": "VAR",
+   "x": "ZONE"
+  },
+  {
+   "c": 135,
+   "e": 134,
+   "l": 1,
+   "s": 121,
+   "t": "STRING",
+   "x": "Asia/Kolkata"
+  },
+  {
+   "c": 136,
+   "e": 135,
+   "l": 1,
+   "s": 135,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 139,
+   "e": 138,
+   "l": 1,
+   "s": 137,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 159,
+   "e": 158,
+   "l": 1,
+   "s": 140,
+   "t": "VAR",
+   "x": "date_time_to_string"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TEXT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 2,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMPTZ"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "2008-12-25 00:00:00+00:00"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 3,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 7,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  },
+  {
+   "i": 7,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.AtTimeZone",
+   "i": 2,
+   "k": "format"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 107,
+    "end": 106,
+    "line": 1,
+    "start": 76
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "YYYY-MM-DD HH24:MI:SS TZH:TZM"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "zone",
+   "m": {
+    "col": 135,
+    "end": 134,
+    "line": 1,
+    "start": 121
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "Asia/Kolkata"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 159,
+    "end": 158,
+    "line": 1,
+    "start": 140
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "date_time_to_string"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

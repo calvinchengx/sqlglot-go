@@ -1,0 +1,180 @@
+{
+ "dialect": "bigquery",
+ "rendered": "TIMESTAMP_TRUNC(CAST('2024-03-15 14:35:00' AS TIMESTAMP), MINUTE, 'America/New_York')",
+ "sql": "TIMESTAMP_TRUNC(TIMESTAMP '2024-03-15 14:35:00', MINUTE, 'America/New_York')",
+ "tokens": [
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "TIMESTAMP_TRUNC"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 16,
+   "t": "TIMESTAMPTZ",
+   "x": "TIMESTAMP"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 26,
+   "t": "STRING",
+   "x": "2024-03-15 14:35:00"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 47,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 49,
+   "t": "VAR",
+   "x": "MINUTE"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 57,
+   "t": "STRING",
+   "x": "America/New_York"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 75,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.temporal.TimestampTrunc",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "name": "TIMESTAMP_TRUNC",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMPTZ"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "2024-03-15 14:35:00"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 5,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  },
+  {
+   "i": 5,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 0,
+   "k": "unit"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "MINUTE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "zone",
+   "m": {
+    "col": 75,
+    "end": 74,
+    "line": 1,
+    "start": 57
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "America/New_York"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

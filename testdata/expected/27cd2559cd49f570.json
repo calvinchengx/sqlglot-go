@@ -1,0 +1,146 @@
+{
+ "dialect": "bigquery",
+ "rendered": "JSON_VALUE_ARRAY(PARSE_JSON('{\"fruits\": [\"apples\", \"oranges\", \"grapes\"]}'), '$.fruits')",
+ "sql": "JSON_EXTRACT_STRING_ARRAY(PARSE_JSON('{\"fruits\": [\"apples\", \"oranges\", \"grapes\"]}'), '$.fruits')",
+ "tokens": [
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "JSON_EXTRACT_STRING_ARRAY"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "PARSE_JSON"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 37,
+   "t": "STRING",
+   "x": "{\"fruits\": [\"apples\", \"oranges\", \"grapes\"]}"
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 82,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 83,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 85,
+   "t": "STRING",
+   "x": "$.fruits"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 95,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.JSONValueArray",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "name": "JSON_EXTRACT_STRING_ARRAY",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.json.ParseJSON",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "name": "PARSE_JSON",
+    "start": 26
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 82,
+    "end": 81,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "{\"fruits\": [\"apples\", \"oranges\", \"grapes\"]}"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "fruits"
+  }
+ ]
+}

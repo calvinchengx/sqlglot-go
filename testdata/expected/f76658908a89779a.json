@@ -1,0 +1,460 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT * FROM ML.TRANSLATE(MODEL `mydataset.mytranslatemodel`, TABLE `mydataset.mybqtable`, STRUCT('translate_text' AS translate_mode, 'zh-CN' AS target_language_code))",
+ "sql": "SELECT * FROM ML.TRANSLATE(MODEL `mydataset.mytranslatemodel`, TABLE `mydataset.mybqtable`, STRUCT('translate_text' AS translate_mode, 'zh-CN' AS target_language_code))",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "ML"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "TRANSLATE"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 27,
+   "t": "MODEL",
+   "x": "MODEL"
+  },
+  {
+   "c": 61,
+   "e": 60,
+   "l": 1,
+   "s": 33,
+   "t": "IDENTIFIER",
+   "x": "mydataset.mytranslatemodel"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 61,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 63,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 69,
+   "t": "IDENTIFIER",
+   "x": "mydataset.mybqtable"
+  },
+  {
+   "c": 91,
+   "e": 90,
+   "l": 1,
+   "s": 90,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 92,
+   "t": "STRUCT",
+   "x": "STRUCT"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 98,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 115,
+   "e": 114,
+   "l": 1,
+   "s": 99,
+   "t": "STRING",
+   "x": "translate_text"
+  },
+  {
+   "c": 118,
+   "e": 117,
+   "l": 1,
+   "s": 116,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 133,
+   "e": 132,
+   "l": 1,
+   "s": 119,
+   "t": "VAR",
+   "x": "translate_mode"
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 133,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 142,
+   "e": 141,
+   "l": 1,
+   "s": 135,
+   "t": "STRING",
+   "x": "zh-CN"
+  },
+  {
+   "c": 145,
+   "e": 144,
+   "l": 1,
+   "s": 143,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 166,
+   "e": 165,
+   "l": 1,
+   "s": 146,
+   "t": "VAR",
+   "x": "target_language_code"
+  },
+  {
+   "c": 167,
+   "e": 166,
+   "l": 1,
+   "s": 166,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 168,
+   "e": 167,
+   "l": 1,
+   "s": 167,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.MLTranslate",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "quoted_table": true
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "mytranslatemodel"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "db",
+   "m": {
+    "col": 61,
+    "end": 60,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "mydataset"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 4,
+   "k": "expression",
+   "m": {
+    "quoted_table": true
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 90,
+    "end": 89,
+    "line": 1,
+    "start": 69
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "mybqtable"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "db",
+   "m": {
+    "col": 90,
+    "end": 89,
+    "line": 1,
+    "start": 69
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "mydataset"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.array.Struct",
+   "i": 4,
+   "k": "params_struct",
+   "m": {
+    "col": 98,
+    "end": 97,
+    "line": 1,
+    "name": "STRUCT",
+    "start": 92
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PropertyEQ",
+   "i": 19,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 133,
+    "end": 132,
+    "line": 1,
+    "start": 119
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "translate_mode"
+  },
+  {
+   "i": 21,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 20,
+   "k": "expression",
+   "m": {
+    "col": 115,
+    "end": 114,
+    "line": 1,
+    "start": 99
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "translate_text"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.PropertyEQ",
+   "i": 19,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "this",
+   "m": {
+    "col": 166,
+    "end": 165,
+    "line": 1,
+    "start": 146
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "target_language_code"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 27,
+   "k": "expression",
+   "m": {
+    "col": 142,
+    "end": 141,
+    "line": 1,
+    "start": 135
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "zh-CN"
+  },
+  {
+   "i": 31,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "db",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "ML"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

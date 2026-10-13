@@ -1,0 +1,72 @@
+{
+ "dialect": "bigquery",
+ "rendered": "BYTE_LENGTH('foo')",
+ "sql": "OCTET_LENGTH('foo')",
+ "tokens": [
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "OCTET_LENGTH"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 13,
+   "t": "STRING",
+   "x": "foo"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.string.ByteLength",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "name": "OCTET_LENGTH",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "foo"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

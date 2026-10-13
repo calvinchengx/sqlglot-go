@@ -1,0 +1,145 @@
+{
+ "dialect": "bigquery",
+ "rendered": "JSON_KEYS(PARSE_JSON('{\"a\": {\"b\":1}}', 1))",
+ "sql": "JSON_KEYS(PARSE_JSON('{\"a\": {\"b\":1}}', 1))",
+ "tokens": [
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "JSON_KEYS"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 9,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 10,
+   "t": "VAR",
+   "x": "PARSE_JSON"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 21,
+   "t": "STRING",
+   "x": "{\"a\": {\"b\":1}}"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.json.JSONKeysAtDepth",
+   "m": {
+    "col": 9,
+    "end": 8,
+    "line": 1,
+    "name": "JSON_KEYS",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.json.ParseJSON",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "name": "PARSE_JSON",
+    "start": 10
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "{\"a\": {\"b\":1}}"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

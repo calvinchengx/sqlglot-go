@@ -1,0 +1,208 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT FORMAT_TIMESTAMP('%F %T', CURRENT_TIMESTAMP(), 'Europe/Berlin') AS ts",
+ "sql": "SELECT FORMAT_TIMESTAMP('%F %T', CURRENT_TIMESTAMP(), 'Europe/Berlin') AS ts",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "FORMAT_TIMESTAMP"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 24,
+   "t": "STRING",
+   "x": "%F %T"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 33,
+   "t": "CURRENT_TIMESTAMP",
+   "x": "CURRENT_TIMESTAMP"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 51,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 54,
+   "t": "STRING",
+   "x": "Europe/Berlin"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 69,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 71,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 74,
+   "t": "VAR",
+   "x": "ts"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TimeToStr",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "name": "FORMAT_TIMESTAMP",
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TsOrDsToTimestamp",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.CurrentTimestamp",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "name": "CURRENT_TIMESTAMP",
+    "start": 33
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "format"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "%Y-%m-%d %H:%M:%S"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "zone",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 54
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "Europe/Berlin"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 76,
+    "end": 75,
+    "line": 1,
+    "start": 74
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "ts"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

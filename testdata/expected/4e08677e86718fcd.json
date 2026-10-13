@@ -1,0 +1,547 @@
+{
+ "dialect": "bigquery",
+ "rendered": "FOR record IN (SELECT word, word_count FROM bigquery-public-data.samples.shakespeare LIMIT 5) DO SELECT record.word, record.word_count",
+ "sql": "FOR record IN (SELECT word, word_count FROM bigquery-public-data.samples.shakespeare LIMIT 5) DO SELECT record.word, record.word_count",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 4,
+   "t": "STRUCT",
+   "x": "record"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 11,
+   "t": "IN",
+   "x": "IN"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 15,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 22,
+   "t": "VAR",
+   "x": "word"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 28,
+   "t": "VAR",
+   "x": "word_count"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 39,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "bigquery"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 53,
+   "t": "VAR",
+   "x": "public"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 59,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 60,
+   "t": "VAR",
+   "x": "data"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 64,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 65,
+   "t": "VAR",
+   "x": "samples"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 72,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 73,
+   "t": "VAR",
+   "x": "shakespeare"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 85,
+   "t": "LIMIT",
+   "x": "LIMIT"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 91,
+   "t": "NUMBER",
+   "x": "5"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 92,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 94,
+   "t": "VAR",
+   "x": "DO"
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 97,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 110,
+   "e": 109,
+   "l": 1,
+   "s": 104,
+   "t": "STRUCT",
+   "x": "record"
+  },
+  {
+   "c": 111,
+   "e": 110,
+   "l": 1,
+   "s": 110,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 115,
+   "e": 114,
+   "l": 1,
+   "s": 111,
+   "t": "VAR",
+   "x": "word"
+  },
+  {
+   "c": 116,
+   "e": 115,
+   "l": 1,
+   "s": 115,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 123,
+   "e": 122,
+   "l": 1,
+   "s": 117,
+   "t": "STRUCT",
+   "x": "record"
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 123,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 124,
+   "t": "VAR",
+   "x": "word_count"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.ForIn"
+  },
+  {
+   "c": "sqlglot.expressions.core.In",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 4
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "record"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 1,
+   "k": "query"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "word"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "word_count"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Limit",
+   "i": 7,
+   "k": "limit"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 16,
+   "k": "expression",
+   "m": {
+    "col": 92,
+    "end": 91,
+    "line": 1,
+    "start": 91
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "5"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 7,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 20,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "this",
+   "m": {
+    "col": 84,
+    "end": 83,
+    "line": 1,
+    "start": 73
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "shakespeare"
+  },
+  {
+   "i": 22,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "db",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 65
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "samples"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "catalog",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "bigquery-public-data"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 31,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 115,
+    "end": 114,
+    "line": 1,
+    "start": 111
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "word"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "table",
+   "m": {
+    "col": 110,
+    "end": 109,
+    "line": 1,
+    "start": 104
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "record"
+  },
+  {
+   "i": 36,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 31,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 39,
+   "k": "this",
+   "m": {
+    "col": 134,
+    "end": 133,
+    "line": 1,
+    "start": 124
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "word_count"
+  },
+  {
+   "i": 40,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 39,
+   "k": "table",
+   "m": {
+    "col": 123,
+    "end": 122,
+    "line": 1,
+    "start": 117
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "record"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

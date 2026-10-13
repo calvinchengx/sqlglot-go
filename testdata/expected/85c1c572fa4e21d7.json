@@ -1,0 +1,562 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT * FROM VECTOR_SEARCH(TABLE mydataset.base_table, 'column_to_search', TABLE mydataset.query_table, query_column_to_search => 'query_column_to_search', top_k => 2, distance_type => 'cosine', options => '{\"fraction_lists_to_search\":0.15}')",
+ "sql": "SELECT * FROM VECTOR_SEARCH(TABLE mydataset.base_table, 'column_to_search', TABLE mydataset.query_table, query_column_to_search => 'query_column_to_search', top_k => 2, distance_type => 'cosine', options => '{\"fraction_lists_to_search\":0.15}')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 9,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "VECTOR_SEARCH"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 28,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 34,
+   "t": "VAR",
+   "x": "mydataset"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "base_table"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 56,
+   "t": "STRING",
+   "x": "column_to_search"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 74,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 76,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 91,
+   "e": 90,
+   "l": 1,
+   "s": 82,
+   "t": "VAR",
+   "x": "mydataset"
+  },
+  {
+   "c": 92,
+   "e": 91,
+   "l": 1,
+   "s": 91,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 92,
+   "t": "VAR",
+   "x": "query_table"
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 103,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 127,
+   "e": 126,
+   "l": 1,
+   "s": 105,
+   "t": "VAR",
+   "x": "query_column_to_search"
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 128,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 155,
+   "e": 154,
+   "l": 1,
+   "s": 131,
+   "t": "STRING",
+   "x": "query_column_to_search"
+  },
+  {
+   "c": 156,
+   "e": 155,
+   "l": 1,
+   "s": 155,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 162,
+   "e": 161,
+   "l": 1,
+   "s": 157,
+   "t": "VAR",
+   "x": "top_k"
+  },
+  {
+   "c": 165,
+   "e": 164,
+   "l": 1,
+   "s": 163,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 167,
+   "e": 166,
+   "l": 1,
+   "s": 166,
+   "t": "NUMBER",
+   "x": "2"
+  },
+  {
+   "c": 168,
+   "e": 167,
+   "l": 1,
+   "s": 167,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 182,
+   "e": 181,
+   "l": 1,
+   "s": 169,
+   "t": "VAR",
+   "x": "distance_type"
+  },
+  {
+   "c": 185,
+   "e": 184,
+   "l": 1,
+   "s": 183,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 194,
+   "e": 193,
+   "l": 1,
+   "s": 186,
+   "t": "STRING",
+   "x": "cosine"
+  },
+  {
+   "c": 195,
+   "e": 194,
+   "l": 1,
+   "s": 194,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 203,
+   "e": 202,
+   "l": 1,
+   "s": 196,
+   "t": "VAR",
+   "x": "options"
+  },
+  {
+   "c": 206,
+   "e": 205,
+   "l": 1,
+   "s": 204,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 242,
+   "e": 241,
+   "l": 1,
+   "s": 207,
+   "t": "STRING",
+   "x": "{\"fraction_lists_to_search\":0.15}"
+  },
+  {
+   "c": 243,
+   "e": 242,
+   "l": 1,
+   "s": 242,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.VectorSearch",
+   "i": 3,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "base_table"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 5,
+   "k": "db",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "mydataset"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "column_to_search",
+   "m": {
+    "col": 74,
+    "end": 73,
+    "line": 1,
+    "start": 56
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "column_to_search"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 4,
+   "k": "query_table"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 103,
+    "end": 102,
+    "line": 1,
+    "start": 92
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "query_table"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "db",
+   "m": {
+    "col": 91,
+    "end": 90,
+    "line": 1,
+    "start": 82
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "mydataset"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 4,
+   "k": "query_column_to_search"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 22,
+   "k": "this"
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "query_column_to_search"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 22,
+   "k": "expression",
+   "m": {
+    "col": 155,
+    "end": 154,
+    "line": 1,
+    "start": 131
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "query_column_to_search"
+  },
+  {
+   "i": 25,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 4,
+   "k": "top_k"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 28,
+   "k": "this"
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "top_k"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 28,
+   "k": "expression",
+   "m": {
+    "col": 167,
+    "end": 166,
+    "line": 1,
+    "start": 166
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 31,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 4,
+   "k": "distance_type"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 34,
+   "k": "this"
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "distance_type"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 34,
+   "k": "expression",
+   "m": {
+    "col": 194,
+    "end": 193,
+    "line": 1,
+    "start": 186
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "cosine"
+  },
+  {
+   "i": 37,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 4,
+   "k": "options"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 40,
+   "k": "this"
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "options"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 40,
+   "k": "expression",
+   "m": {
+    "col": 242,
+    "end": 241,
+    "line": 1,
+    "start": 207
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "{\"fraction_lists_to_search\":0.15}"
+  },
+  {
+   "i": 43,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

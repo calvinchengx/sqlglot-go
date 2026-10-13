@@ -156,9 +156,109 @@
    "type": "ROW(INTEGER, DOUBLE, VARCHAR)"
   },
   {
+   "dialect": "bigquery",
+   "sql": "CASE WHEN TRUE THEN '2010-01-01' ELSE DATE '2020-02-02' END",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CASE WHEN TRUE THEN '2010-01-01' WHEN FALSE THEN DATE '2020-02-02' ELSE '1990-01-01' END",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CASE WHEN TRUE THEN DATETIME '2020-02-02 00:00:00' ELSE '2010-01-01' END",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CASE WHEN TRUE THEN TIMESTAMP '2020-02-02 00:00:00' ELSE '2010-01-01' END",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "NULL",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ARRAY(SELECT 'foo' UNION ALL SELECT 'bar')",
+   "type": "ARRAY<STRING>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ARRAY(SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3)",
+   "type": "ARRAY<INT64>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ARRAY(SELECT 1 UNION ALL SELECT 2.5)",
+   "type": "ARRAY<FLOAT64>"
+  },
+  {
    "dialect": "",
    "sql": "1 + (SELECT 2.5 AS c)",
    "type": "DOUBLE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CASE WHEN TRUE THEN 2.5 ELSE CAST(3.5 AS BIGNUMERIC) END",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CASE WHEN TRUE THEN CAST(3.5 AS BIGNUMERIC) ELSE 2.5 END",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CASE WHEN TRUE THEN 3/10 ELSE CAST(3.5 AS BIGNUMERIC) END",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CASE WHEN TRUE THEN CAST(3.5 AS BIGNUMERIC) ELSE 3/10 END",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CASE WHEN TRUE THEN 2.4 ELSE 2.5 END",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CAST(1 AS BIGNUMERIC) + 1.5",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "1.5 + CAST(1 AS BIGNUMERIC)",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "1.5 + CAST(1 AS FLOAT64)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CAST(1 AS FLOAT64) + 1.5",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CAST(1 AS INT) + 1.5",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "1.5 + CAST(1 AS INT)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "IF(1 = 1, CAST(1 AS BIGNUMERIC) * 1.5, CAST(2 AS BIGNUMERIC))",
+   "type": "BIGNUMERIC"
   },
   {
    "dialect": "",
@@ -474,6 +574,1311 @@
    "dialect": "hive",
    "sql": "STR_TO_MAP('a:1,b:2', ',', ':')",
    "type": "MAP<STRING, STRING>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SIGN(1)",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SIGN(1.5)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CEIL(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CEIL(5.5)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "FLOOR(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "FLOOR(5.5)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SQRT(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SQRT(5.5)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "LN(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "LN(5.5)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "LOG(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "LOG(5.5)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ROUND(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ROUND(5.5)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "EXP(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "EXP(5.5)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "AVG(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "AVG(5.5)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE.PARSE_DATE('%Y-%m-%d', '2024-01-15')",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PARSE_DATE('%Y-%m-%d', '2024-01-15')",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE.PARSE_DATETIME('%Y-%m-%d %H:%M:%S', '2024-01-15 10:30:00')",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE.PARSE_TIME('%H:%M:%S', '10:30:00')",
+   "type": "TIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE.PARSE_TIMESTAMP('%Y-%m-%d %H:%M:%S', '2024-01-15 10:30:00')",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PARSE_TIMESTAMP('%Y-%m-%d %H:%M:%S', '2024-01-15 10:30:00')",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ARRAY_CONCAT(['a'], ['b'])",
+   "type": "ARRAY<STRING>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ARRAY_TO_STRING(['a'], ['b'], ',')",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ARRAY_FIRST(['a', 'b'])",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ARRAY_LAST(['a', 'b'])",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ARRAY_FIRST([1, 1.5])",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ARRAY_LAST([1, 1.5])",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "GENERATE_ARRAY(1, 5, 0.3)",
+   "type": "ARRAY<FLOAT64>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "GENERATE_ARRAY(1, 5)",
+   "type": "ARRAY<INT64>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "GENERATE_ARRAY(1, 2.5)",
+   "type": "ARRAY<FLOAT64>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "INT64(JSON '999')",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "MAKE_INTERVAL(1, 6, 15)",
+   "type": "INTERVAL"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATETIME(2025, 1, 1, 12, 0, 0)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ASCII('A')",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "UNICODE('bcd')",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_ARRAY(10)",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_ARRAY(10, [1, 2])",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_VALUE(JSON '{\"foo\": \"1\" }', '$.foo')",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_EXTRACT_SCALAR(JSON '[\"a\",\"b\"]')",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_VALUE_ARRAY(JSON '[\"a\",\"b\"]')",
+   "type": "ARRAY<STRING>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_EXTRACT_STRING_ARRAY(JSON '[\"a\",\"b\"]')",
+   "type": "ARRAY<STRING>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_TYPE(JSON '1')",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "GENERATE_TIMESTAMP_ARRAY('2016-10-05', '2016-10-07', INTERVAL '1' DAY)",
+   "type": "ARRAY<TIMESTAMP>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TIME(15, 30, 00)",
+   "type": "TIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TIME(TIMESTAMP \"2008-12-25 15:30:00\")",
+   "type": "TIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TIME(DATETIME \"2008-12-25 15:30:00\")",
+   "type": "TIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TIME_TRUNC(TIME \"15:30:00\", HOUR)",
+   "type": "TIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_FROM_UNIX_DATE(1)",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(DATE '2008-12-25', MONTH)",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(TIMESTAMP '2008-12-25', MONTH)",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(DATETIME '2008-12-25', MONTH)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TIMESTAMP_TRUNC(TIMESTAMP \"2008-12-25 15:30:00+00\", DAY, \"UTC\")",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TIMESTAMP_TRUNC(DATETIME \"2008-12-25 15:30:00\", DAY)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PARSE_DATETIME('%a %b %e %I:%M:%S %Y', 'Thu Dec 25 07:30:00 2008')",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "FORMAT_TIME(\"%R\", TIME \"15:30:00\")",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PARSE_TIME(\"%I:%M:%S\", \"07:30:00\")",
+   "type": "TIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "BYTE_LENGTH(\"foo\")",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CODE_POINTS_TO_STRING([65, 255, 513, 1024])",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "REVERSE(\"abc\")",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "REVERSE(b'1a3')",
+   "type": "BYTES"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "REGEXP_EXTRACT_ALL('Try `func(x)` or `func(y)`', '`(.+?)`')",
+   "type": "ARRAY<STRING>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "REGEXP_EXTRACT_ALL(b'\\x48\\x65\\x6C\\x6C\\x6F', b'(\\x6C+)')",
+   "type": "ARRAY<BYTES>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "REPLACE ('cherry', 'pie', 'cobbler')",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "REPLACE(b'\\x48\\x65\\x6C\\x6C\\x6F', b'\\x6C\\x6C', b'\\x59\\x59')",
+   "type": "BYTES"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SOUNDEX('foo')",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "MD5('foo')",
+   "type": "BYTES"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TO_HEX(MD5('foo'))",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "FARM_FINGERPRINT('foo')",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "FARM_FINGERPRINT(b'foo')",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_CONVERT_BYTES_TO_STRING(b'\\xc2')",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "FROM_HEX('foo')",
+   "type": "BYTES"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TO_HEX(b'foo')",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TO_CODE_POINTS('foo')",
+   "type": "ARRAY<INT64>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TO_CODE_POINTS(b'\\x66\\x6f\\x6f')",
+   "type": "ARRAY<INT64>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CODE_POINTS_TO_BYTES([65, 98])",
+   "type": "BYTES"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PARSE_BIGNUMERIC('1.2')",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PARSE_NUMERIC('1.2')",
+   "type": "NUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "BOOL(PARSE_JSON('true'))",
+   "type": "BOOL"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "FLOAT64(PARSE_JSON('9.8'))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "FLOAT64(PARSE_JSON('9.8'), wide_number_mode => 'round')",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CONTAINS_SUBSTR('aa', 'a')",
+   "type": "BOOL"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CONTAINS_SUBSTR(PARSE_JSON('{\"lunch\":\"soup\"}'), 'lunch', json_scope => 'JSON_VALUES')",
+   "type": "BOOL"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "NORMALIZE('\\u00ea')",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "NORMALIZE('\\u00ea', NFKC)",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "OCTET_LENGTH(\"foo\")",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "REGEXP_INSTR('ab@cd-ef', '@[^-]*')",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "REGEXP_INSTR('a@cd-ef', '@[^-]*', 1, 1, 0)",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ROW_NUMBER() OVER (ORDER BY 1)",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "FORMAT('%f %E %f %f', 1.1, 2.2, 3.4, 4.4)",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "NET.HOST('http://example.com')",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "NET.REG_DOMAIN('http://example.com')",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PERCENTILE_CONT(CAST(1 AS NUMERIC), CAST(1 AS NUMERIC)) OVER (ORDER BY 1)",
+   "type": "NUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PERCENTILE_CONT(CAST(1 AS NUMERIC), CAST(1 AS BIGNUMERIC)) OVER (ORDER BY 1)",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PERCENTILE_CONT(CAST(1 AS NUMERIC), CAST(1 AS FLOAT64)) OVER (ORDER BY 1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PERCENTILE_CONT(CAST(1 AS BIGNUMERIC), CAST(1 AS NUMERIC)) OVER (ORDER BY 1)",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PERCENTILE_CONT(CAST(1 AS BIGNUMERIC), CAST(1 AS BIGNUMERIC)) OVER (ORDER BY 1)",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PERCENTILE_CONT(CAST(1 AS BIGNUMERIC), CAST(1 AS FLOAT64)) OVER (ORDER BY 1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PERCENTILE_CONT(CAST(1 AS FLOAT64), CAST(1 AS NUMERIC)) OVER (ORDER BY 1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PERCENTILE_CONT(CAST(1 AS FLOAT64), CAST(1 AS BIGNUMERIC)) OVER (ORDER BY 1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PERCENTILE_CONT(CAST(1 AS FLOAT64), CAST(1 AS FLOAT64)) OVER (ORDER BY 1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CUME_DIST() OVER (ORDER BY 1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DENSE_RANK() OVER (ORDER BY 1)",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "NTILE(1) OVER (ORDER BY 1)",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "RANK() OVER (ORDER BY 1)",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "PERCENT_RANK() OVER (ORDER BY 1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_OBJECT('foo', 10, 'bar', TRUE)",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_QUERY('{\"fruits\": [\"apples\", \"oranges\", \"grapes\"]}', '$.fruits')",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_QUERY(JSON_OBJECT('fruits', ['apples', 'oranges', 'grapes']), '$.fruits')",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_EXTRACT('{\"fruits\": [\"apples\", \"oranges\", \"grapes\"]}', '$.fruits')",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_EXTRACT(JSON_OBJECT('fruits', ['apples', 'oranges', 'grapes']), '$.fruits')",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_QUERY_ARRAY('{\"fruits\": [\"apples\", \"oranges\", \"grapes\"]}', '$.fruits')",
+   "type": "ARRAY<STRING>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_QUERY_ARRAY(JSON_OBJECT('fruits', ['apples', 'oranges', 'grapes']), '$.fruits')",
+   "type": "ARRAY<JSON>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_EXTRACT_ARRAY('{\"fruits\": [\"apples\", \"oranges\", \"grapes\"]}', '$.fruits')",
+   "type": "ARRAY<STRING>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_EXTRACT_ARRAY(JSON_OBJECT('fruits', ['apples', 'oranges', 'grapes']), '$.fruits')",
+   "type": "ARRAY<JSON>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_ARRAY_APPEND(PARSE_JSON('[\"a\", \"b\", \"c\"]'), '$', 1)",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_ARRAY_APPEND(PARSE_JSON('[\"a\", \"b\", \"c\"]'), '$', [1, 2], append_each_element => FALSE)",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_ARRAY_INSERT(PARSE_JSON('[\"a\", [\"b\", \"c\"], \"d\"]'), '$[1]', 1)",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_ARRAY_INSERT(PARSE_JSON('[\"a\", \"b\", \"c\"]'), '$[1]', [1, 2], insert_each_element => FALSE)",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_ARRAY_INSERT(PARSE_JSON('[\"a\", [\"b\", \"c\"], \"d\"]'), '$[1]', 1)",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_ARRAY_INSERT(PARSE_JSON('[\"a\", \"b\", \"c\"]'), '$[1]', [1, 2], insert_each_element => FALSE)",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_KEYS(PARSE_JSON('{\"a\": {\"b\":1}}'))",
+   "type": "ARRAY<STRING>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_KEYS(PARSE_JSON('{\"a\": {\"b\":1}}'), 1)",
+   "type": "ARRAY<STRING>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_KEYS(PARSE_JSON('{\"a\": {\"b\":1}}'), 1, node => 'lax')",
+   "type": "ARRAY<STRING>"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_REMOVE(PARSE_JSON('[\"a\", [\"b\", \"c\"], \"d\"]'), '$[1]', '$[1]')",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_SET(PARSE_JSON('{\"a\": 1}'), '$', PARSE_JSON('{\"b\": 2, \"c\": 3}'))",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_SET(PARSE_JSON('{\"a\": 1}'), '$.b', 999, create_if_missing => FALSE)",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_STRIP_NULLS(PARSE_JSON('[1, null, 2, null, [null]]'))",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_STRIP_NULLS(PARSE_JSON('[1, null, 2, null]'), include_arrays => FALSE)",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "JSON_STRIP_NULLS(PARSE_JSON('{\"a\": {\"b\": {\"c\": null}}, \"d\": [null], \"e\": [], \"f\": 1}'), include_arrays => FALSE, remove_empty => TRUE)",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "LAX_BOOL(PARSE_JSON('true'))",
+   "type": "BOOL"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "LAX_FLOAT64(PARSE_JSON('9.8'))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "LAX_INT64(PARSE_JSON('10'))",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "LAX_STRING(PARSE_JSON('\"str\"'))",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TO_JSON_STRING(STRUCT(1 AS id, [10, 20] AS cords))",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TO_JSON(STRUCT(1 AS id, [10, 20] AS cords))",
+   "type": "JSON"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ABS(CAST(-1 AS INT64))",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ABS(CAST(-1 AS NUMERIC))",
+   "type": "NUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ABS(CAST(1 AS BIGNUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ABS(CAST(1 AS FLOAT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "IS_INF(1)",
+   "type": "BOOL"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "IS_NAN(1)",
+   "type": "BOOL"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CBRT(27)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "RAND()",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ACOS(0.5)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ACOSH(0.5)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ASIN(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ASINH(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ATAN(0.5)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ATANH(0.5)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "ATAN2(0.5, 0.3)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "COT(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "COTH(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CSC(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CSCH(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SEC(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SECH(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SIN(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SINH(1)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "COSINE_DISTANCE([1.0, 2.0], [3.0, 4.0])",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "EUCLIDEAN_DISTANCE([1.0, 2.0], [3.0, 4.0])",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "RANGE_BUCKET(20, [0, 10, 20, 30, 40])",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS INT64), CAST(1 AS NUMERIC))",
+   "type": "NUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS INT64), CAST(1 AS INT64))",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS INT64), CAST(1 AS BIGNUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS INT64), CAST(1 AS FLOAT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS NUMERIC), CAST(1 AS INT64))",
+   "type": "NUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS NUMERIC), CAST(1 AS NUMERIC))",
+   "type": "NUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS NUMERIC), CAST(1 AS BIGNUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS NUMERIC), CAST(1 AS FLOAT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS BIGNUMERIC), CAST(1 AS INT64))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS BIGNUMERIC), CAST(1 AS NUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS BIGNUMERIC), CAST(1 AS BIGNUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS BIGNUMERIC), CAST(1 AS FLOAT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS FLOAT64), CAST(1 AS INT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS FLOAT64), CAST(1 AS NUMERIC))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS FLOAT64), CAST(1 AS BIGNUMERIC))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_ADD(CAST(1 AS FLOAT64), CAST(1 AS FLOAT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS INT64), CAST(1 AS INT64))",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS INT64), CAST(1 AS NUMERIC))",
+   "type": "NUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS INT64), CAST(1 AS BIGNUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS INT64), CAST(1 AS FLOAT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS NUMERIC), CAST(1 AS INT64))",
+   "type": "NUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS NUMERIC), CAST(1 AS NUMERIC))",
+   "type": "NUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS NUMERIC), CAST(1 AS BIGNUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS NUMERIC), CAST(1 AS FLOAT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS BIGNUMERIC), CAST(1 AS INT64))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS BIGNUMERIC), CAST(1 AS NUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS BIGNUMERIC), CAST(1 AS BIGNUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS BIGNUMERIC), CAST(1 AS FLOAT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS FLOAT64), CAST(1 AS INT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS FLOAT64), CAST(1 AS NUMERIC))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS FLOAT64), CAST(1 AS BIGNUMERIC))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_MULTIPLY(CAST(1 AS FLOAT64), CAST(1 AS FLOAT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS INT64), CAST(1 AS INT64))",
+   "type": "INT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS INT64), CAST(1 AS NUMERIC))",
+   "type": "NUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS INT64), CAST(1 AS BIGNUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS INT64), CAST(1 AS FLOAT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS NUMERIC), CAST(1 AS INT64))",
+   "type": "NUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS NUMERIC), CAST(1 AS NUMERIC))",
+   "type": "NUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS NUMERIC), CAST(1 AS BIGNUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS NUMERIC), CAST(1 AS FLOAT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS BIGNUMERIC), CAST(1 AS INT64))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS BIGNUMERIC), CAST(1 AS NUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS BIGNUMERIC), CAST(1 AS BIGNUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS BIGNUMERIC), CAST(1 AS FLOAT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS FLOAT64), CAST(1 AS INT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS FLOAT64), CAST(1 AS NUMERIC))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS FLOAT64), CAST(1 AS BIGNUMERIC))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_SUBTRACT(CAST(1 AS FLOAT64), CAST(1 AS FLOAT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_NEGATE(CAST(1 AS FLOAT64))",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_NEGATE(CAST(1 AS NUMERIC))",
+   "type": "NUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "SAFE_NEGATE(CAST(1 AS BIGNUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATETIME_TRUNC(DATETIME \"2008-12-25 15:30:00\", DAY)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATETIME_TRUNC(TIMESTAMP \"2008-12-25 15:30:00\", DAY)",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "GENERATE_UUID()",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "IF(TRUE, '2010-01-01', DATE '2020-02-02')",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "IF(TRUE, DATETIME '2010-01-01 00:00:00', '2020-02-02 00:00:00')",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "IF(TRUE, '00:00:00', TIME '00:01:00')",
+   "type": "TIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "IF(TRUE, 1, CAST(2.5 AS BIGNUMERIC))",
+   "type": "BIGNUMERIC"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "IF(TRUE, 1.5, 2.5)",
+   "type": "FLOAT64"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "IF(TRUE, '2010-01-01 00:00:00', TIMESTAMP '2020-02-02 00:00:00')",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "COALESCE('2010-01-01', DATE '2020-02-02')",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "COALESCE(DATETIME '2010-01-01 00:00:00', '2020-02-02 00:00:00')",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "IFNULL('00:00:00', TIME '00:01:00')",
+   "type": "TIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "IFNULL(TIMESTAMP '2010-01-01 00:00:00', '2020-02-02 00:00:00')",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "r'a'",
+   "type": "STRING"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(DATE '2008-12-25', INTERVAL 5 DAY)",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(DATE '2008-12-25', INTERVAL 2 WEEK)",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(DATE '2008-12-25', INTERVAL 3 MONTH)",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(DATE '2008-12-25', INTERVAL 1 QUARTER)",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(DATE '2008-12-25', INTERVAL 2 YEAR)",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(TIMESTAMP '2008-12-25 15:30:00', INTERVAL 5 DAY)",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(TIMESTAMP '2008-12-25 15:30:00', INTERVAL 2 HOUR)",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(TIMESTAMP '2008-12-25 15:30:00', INTERVAL 30 MINUTE)",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(DATETIME '2008-12-25 15:30:00', INTERVAL 5 DAY)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(DATETIME '2008-12-25 15:30:00', INTERVAL 2 WEEK)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(DATETIME '2008-12-25 15:30:00', INTERVAL 3 MONTH)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(DATETIME '2008-12-25 15:30:00', INTERVAL 1 QUARTER)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(DATETIME '2008-12-25 15:30:00', INTERVAL 2 YEAR)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(DATETIME '2008-12-25 15:30:00', INTERVAL 2 HOUR)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD(DATETIME '2008-12-25 15:30:00', INTERVAL 30 MINUTE)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_ADD('2008-12-25', INTERVAL 5 DAY)",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC('2008-12-25', MONTH)",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATETIME_TRUNC('2008-12-25', DAY)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATETIME_TRUNC('2008-12-25 15:30:00', DAY)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TIMESTAMP_TRUNC('2008-12-25 15:30:00', DAY)",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TIMESTAMP_TRUNC('2008-12-25', DAY)",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_SUB('2008-12-25', INTERVAL 1 MONTH)",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_SUB(DATE '2008-12-25', INTERVAL 1 MONTH)",
+   "type": "DATE"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_SUB(DATETIME '2008-12-25 15:30:00', INTERVAL 1 DAY)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_SUB(TIMESTAMP '2008-12-25 15:30:00', INTERVAL 1 HOUR)",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATETIME_ADD('2008-12-25 15:30:00', INTERVAL 1 DAY)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATETIME_SUB('2008-12-25 15:30:00', INTERVAL 1 DAY)",
+   "type": "DATETIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TIMESTAMP_ADD('2008-12-25 15:30:00', INTERVAL 1 HOUR)",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TIMESTAMP_SUB('2008-12-25 15:30:00', INTERVAL 1 HOUR)",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TIME_ADD('08:50:48', INTERVAL 1 HOUR)",
+   "type": "TIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TIME_SUB('08:50:48', INTERVAL 1 HOUR)",
+   "type": "TIME"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "TIME_TRUNC('08:50:48', HOUR)",
+   "type": "TIME"
   },
   {
    "dialect": "duckdb",
@@ -900,8 +2305,13 @@
    "SMALLINT"
   ],
   "VARCHAR": [
+   "DATE",
+   "DATETIME",
    "NVARCHAR",
-   "TEXT"
+   "TEXT",
+   "TIME",
+   "TIMESTAMP",
+   "TIMESTAMPTZ"
   ]
  }
 }

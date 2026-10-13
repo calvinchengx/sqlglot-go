@@ -1,0 +1,955 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT `u`.`user_email` AS `user_email`, `d`.`user_id` AS `user_id`, `account_id` AS `account_id` FROM `analytics_staging`.`stg_mongodb__users` AS `u` CROSS JOIN UNNEST(`u`.`cluster_details`) AS `d` CROSS JOIN UNNEST(`d`.`account_ids`) AS `account_id` WHERE NOT `account_id` IS NULL",
+ "sql": "SELECT\n  `u`.`user_email` AS `user_email`,\n  `d`.`user_id` AS `user_id`,\n  `account_id` AS `account_id`\nFROM `analytics_staging`.`stg_mongodb__users` AS `u`, UNNEST(`u`.`cluster_details`) AS `d`, UNNEST(`d`.`account_ids`) AS `account_id`\nWHERE\n  NOT `account_id` IS NULL",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 5,
+   "e": 11,
+   "l": 2,
+   "s": 9,
+   "t": "IDENTIFIER",
+   "x": "u"
+  },
+  {
+   "c": 6,
+   "e": 12,
+   "l": 2,
+   "s": 12,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 18,
+   "e": 24,
+   "l": 2,
+   "s": 13,
+   "t": "IDENTIFIER",
+   "x": "user_email"
+  },
+  {
+   "c": 21,
+   "e": 27,
+   "l": 2,
+   "s": 26,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 34,
+   "e": 40,
+   "l": 2,
+   "s": 29,
+   "t": "IDENTIFIER",
+   "x": "user_email"
+  },
+  {
+   "c": 35,
+   "e": 41,
+   "l": 2,
+   "s": 41,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 5,
+   "e": 47,
+   "l": 3,
+   "s": 45,
+   "t": "IDENTIFIER",
+   "x": "d"
+  },
+  {
+   "c": 6,
+   "e": 48,
+   "l": 3,
+   "s": 48,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 15,
+   "e": 57,
+   "l": 3,
+   "s": 49,
+   "t": "IDENTIFIER",
+   "x": "user_id"
+  },
+  {
+   "c": 18,
+   "e": 60,
+   "l": 3,
+   "s": 59,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 28,
+   "e": 70,
+   "l": 3,
+   "s": 62,
+   "t": "IDENTIFIER",
+   "x": "user_id"
+  },
+  {
+   "c": 29,
+   "e": 71,
+   "l": 3,
+   "s": 71,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 14,
+   "e": 86,
+   "l": 4,
+   "s": 75,
+   "t": "IDENTIFIER",
+   "x": "account_id"
+  },
+  {
+   "c": 17,
+   "e": 89,
+   "l": 4,
+   "s": 88,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 30,
+   "e": 102,
+   "l": 4,
+   "s": 91,
+   "t": "IDENTIFIER",
+   "x": "account_id"
+  },
+  {
+   "c": 4,
+   "e": 107,
+   "l": 5,
+   "s": 104,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 24,
+   "e": 127,
+   "l": 5,
+   "s": 109,
+   "t": "IDENTIFIER",
+   "x": "analytics_staging"
+  },
+  {
+   "c": 25,
+   "e": 128,
+   "l": 5,
+   "s": 128,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 45,
+   "e": 148,
+   "l": 5,
+   "s": 129,
+   "t": "IDENTIFIER",
+   "x": "stg_mongodb__users"
+  },
+  {
+   "c": 48,
+   "e": 151,
+   "l": 5,
+   "s": 150,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 52,
+   "e": 155,
+   "l": 5,
+   "s": 153,
+   "t": "IDENTIFIER",
+   "x": "u"
+  },
+  {
+   "c": 53,
+   "e": 156,
+   "l": 5,
+   "s": 156,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 60,
+   "e": 163,
+   "l": 5,
+   "s": 158,
+   "t": "UNNEST",
+   "x": "UNNEST"
+  },
+  {
+   "c": 61,
+   "e": 164,
+   "l": 5,
+   "s": 164,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 64,
+   "e": 167,
+   "l": 5,
+   "s": 165,
+   "t": "IDENTIFIER",
+   "x": "u"
+  },
+  {
+   "c": 65,
+   "e": 168,
+   "l": 5,
+   "s": 168,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 82,
+   "e": 185,
+   "l": 5,
+   "s": 169,
+   "t": "IDENTIFIER",
+   "x": "cluster_details"
+  },
+  {
+   "c": 83,
+   "e": 186,
+   "l": 5,
+   "s": 186,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 86,
+   "e": 189,
+   "l": 5,
+   "s": 188,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 90,
+   "e": 193,
+   "l": 5,
+   "s": 191,
+   "t": "IDENTIFIER",
+   "x": "d"
+  },
+  {
+   "c": 91,
+   "e": 194,
+   "l": 5,
+   "s": 194,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 98,
+   "e": 201,
+   "l": 5,
+   "s": 196,
+   "t": "UNNEST",
+   "x": "UNNEST"
+  },
+  {
+   "c": 99,
+   "e": 202,
+   "l": 5,
+   "s": 202,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 102,
+   "e": 205,
+   "l": 5,
+   "s": 203,
+   "t": "IDENTIFIER",
+   "x": "d"
+  },
+  {
+   "c": 103,
+   "e": 206,
+   "l": 5,
+   "s": 206,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 116,
+   "e": 219,
+   "l": 5,
+   "s": 207,
+   "t": "IDENTIFIER",
+   "x": "account_ids"
+  },
+  {
+   "c": 117,
+   "e": 220,
+   "l": 5,
+   "s": 220,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 120,
+   "e": 223,
+   "l": 5,
+   "s": 222,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 133,
+   "e": 236,
+   "l": 5,
+   "s": 225,
+   "t": "IDENTIFIER",
+   "x": "account_id"
+  },
+  {
+   "c": 5,
+   "e": 242,
+   "l": 6,
+   "s": 238,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 5,
+   "e": 248,
+   "l": 7,
+   "s": 246,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 18,
+   "e": 261,
+   "l": 7,
+   "s": 250,
+   "t": "IDENTIFIER",
+   "x": "account_id"
+  },
+  {
+   "c": 21,
+   "e": 264,
+   "l": 7,
+   "s": 263,
+   "t": "IS",
+   "x": "IS"
+  },
+  {
+   "c": 26,
+   "e": 269,
+   "l": 7,
+   "s": 266,
+   "t": "NULL",
+   "x": "NULL"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 24,
+    "line": 2,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "user_email"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "table",
+   "m": {
+    "col": 5,
+    "end": 11,
+    "line": 2,
+    "start": 9
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "u"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 34,
+    "end": 40,
+    "line": 2,
+    "start": 29
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "user_email"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 57,
+    "line": 3,
+    "start": 49
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "user_id"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "table",
+   "m": {
+    "col": 5,
+    "end": 47,
+    "line": 3,
+    "start": 45
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "d"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "alias",
+   "m": {
+    "col": 28,
+    "end": 70,
+    "line": 3,
+    "start": 62
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "user_id"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 23,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 86,
+    "line": 4,
+    "start": 75
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "account_id"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "alias",
+   "m": {
+    "col": 30,
+    "end": 102,
+    "line": 4,
+    "start": 91
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "account_id"
+  },
+  {
+   "i": 28,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 31,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 45,
+    "end": 148,
+    "line": 5,
+    "start": 129
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "stg_mongodb__users"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "db",
+   "m": {
+    "col": 24,
+    "end": 127,
+    "line": 5,
+    "start": 109
+   }
+  },
+  {
+   "i": 36,
+   "k": "this",
+   "v": "analytics_staging"
+  },
+  {
+   "i": 36,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 32,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 39,
+   "k": "this",
+   "m": {
+    "col": 52,
+    "end": 155,
+    "line": 5,
+    "start": 153
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "u"
+  },
+  {
+   "i": 40,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 0,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.array.Unnest",
+   "i": 43,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 44,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 45,
+   "k": "this",
+   "m": {
+    "col": 82,
+    "end": 185,
+    "line": 5,
+    "start": 169
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "i": 46,
+   "k": "this",
+   "v": "cluster_details"
+  },
+  {
+   "i": 46,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 45,
+   "k": "table",
+   "m": {
+    "col": 64,
+    "end": 167,
+    "line": 5,
+    "start": 165
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "i": 49,
+   "k": "this",
+   "v": "u"
+  },
+  {
+   "i": 49,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 44,
+   "k": "alias"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 52,
+   "k": "columns",
+   "m": {
+    "col": 90,
+    "end": 193,
+    "line": 5,
+    "start": 191
+   }
+  },
+  {
+   "i": 53,
+   "k": "this",
+   "v": "d"
+  },
+  {
+   "i": 53,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 44,
+   "k": "offset",
+   "v": false
+  },
+  {
+   "i": 43,
+   "k": "kind",
+   "v": "CROSS"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 0,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.array.Unnest",
+   "i": 58,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 59,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 60,
+   "k": "this",
+   "m": {
+    "col": 116,
+    "end": 219,
+    "line": 5,
+    "start": 207
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "i": 61,
+   "k": "this",
+   "v": "account_ids"
+  },
+  {
+   "i": 61,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 60,
+   "k": "table",
+   "m": {
+    "col": 102,
+    "end": 205,
+    "line": 5,
+    "start": 203
+   },
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "UNKNOWN"
+    }
+   ]
+  },
+  {
+   "i": 64,
+   "k": "this",
+   "v": "d"
+  },
+  {
+   "i": 64,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 59,
+   "k": "alias"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 67,
+   "k": "columns",
+   "m": {
+    "col": 133,
+    "end": 236,
+    "line": 5,
+    "start": 225
+   }
+  },
+  {
+   "i": 68,
+   "k": "this",
+   "v": "account_id"
+  },
+  {
+   "i": 68,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "i": 59,
+   "k": "offset",
+   "v": false
+  },
+  {
+   "i": 58,
+   "k": "kind",
+   "v": "CROSS"
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.Not",
+   "i": 73,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Is",
+   "i": 74,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 75,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 76,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 261,
+    "line": 7,
+    "start": 250
+   }
+  },
+  {
+   "i": 77,
+   "k": "this",
+   "v": "account_id"
+  },
+  {
+   "i": 77,
+   "k": "quoted",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 75,
+   "k": "expression"
+  }
+ ]
+}

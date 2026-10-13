@@ -1,0 +1,167 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT FORMAT_DATETIME('%c', CAST('2008-12-25 15:30:00' AS DATETIME))",
+ "sql": "SELECT FORMAT_DATETIME('%c', DATETIME '2008-12-25 15:30:00')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "FORMAT_DATETIME"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 23,
+   "t": "STRING",
+   "x": "%c"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 29,
+   "t": "TIMESTAMP",
+   "x": "DATETIME"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 38,
+   "t": "STRING",
+   "x": "2008-12-25 15:30:00"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 59,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.TimeToStr",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "name": "FORMAT_DATETIME",
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.temporal.TsOrDsToDatetime",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 2,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMP"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 59,
+    "end": 58,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "2008-12-25 15:30:00"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 3,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 7,
+   "k": "this",
+   "v": "TIMESTAMP"
+  },
+  {
+   "i": 7,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "format"
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "%a %b %e %H:%M:%S %Y"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

@@ -1,0 +1,191 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SELECT GENERATE_TIMESTAMP_ARRAY('2016-10-05 00:00:00', '2016-10-07 00:00:00', INTERVAL '1' DAY)",
+ "sql": "SELECT GENERATE_TIMESTAMP_ARRAY('2016-10-05 00:00:00', '2016-10-07 00:00:00', INTERVAL '1' DAY)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "GENERATE_TIMESTAMP_ARRAY"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 32,
+   "t": "STRING",
+   "x": "2016-10-05 00:00:00"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 55,
+   "t": "STRING",
+   "x": "2016-10-07 00:00:00"
+  },
+  {
+   "c": 77,
+   "e": 76,
+   "l": 1,
+   "s": 76,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 78,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 87,
+   "t": "STRING",
+   "x": "1"
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 91,
+   "t": "VAR",
+   "x": "DAY"
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 94,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.GenerateTimestampArray",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "name": "GENERATE_TIMESTAMP_ARRAY",
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "start",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "2016-10-05 00:00:00"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "end",
+   "m": {
+    "col": 76,
+    "end": 75,
+    "line": 1,
+    "start": 55
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "2016-10-07 00:00:00"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 1,
+   "k": "step"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 90,
+    "end": 89,
+    "line": 1,
+    "start": 87
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 8,
+   "k": "unit"
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "DAY"
+  }
+ ]
+}

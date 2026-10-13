@@ -1,0 +1,213 @@
+{
+ "dialect": "bigquery",
+ "rendered": "JSON_KEYS(PARSE_JSON('{\"a\": {\"b\":1}}'), 1, mode => 'lax')",
+ "sql": "JSON_KEYS(PARSE_JSON('{\"a\": {\"b\":1}}'), 1, mode => 'lax')",
+ "tokens": [
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "JSON_KEYS"
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 9,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 10,
+   "t": "VAR",
+   "x": "PARSE_JSON"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 20,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 21,
+   "t": "STRING",
+   "x": "{\"a\": {\"b\":1}}"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 38,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 43,
+   "t": "VAR",
+   "x": "mode"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 48,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 51,
+   "t": "STRING",
+   "x": "lax"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.json.JSONKeysAtDepth",
+   "m": {
+    "col": 9,
+    "end": 8,
+    "line": 1,
+    "name": "JSON_KEYS",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.json.ParseJSON",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "name": "PARSE_JSON",
+    "start": 10
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 36,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "{\"a\": {\"b\":1}}"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 0,
+   "k": "mode"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "mode"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "expression",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "lax"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}
