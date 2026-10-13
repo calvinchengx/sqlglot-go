@@ -2782,6 +2782,19 @@ func arrayOf(dt *Expression, values []*Expression) *Expression {
 // reference's shape rather than a simplification of it.
 func (p *parser) parseScalarSubquery() (*Expression, error) {
 	p.advance() // the opening parenthesis
+	if p.at(TokVALUES) {
+		// A derived VALUES table: the reference wraps the Values ITSELF, with
+		// no Select over it (Parser._parse_derived_table_values).
+		values, err := p.parseValuesTable()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed subquery")
+		}
+		return New("Subquery", Arg{"this", values}, Arg{"pivots", nil},
+			Arg{"alias", nil}, Arg{"sample", nil}), nil
+	}
 	inner, err := p.parseQuery()
 	if err != nil {
 		return nil, err
@@ -2924,6 +2937,11 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	_, known := p.tables.NamedFunctions[upper]
 	_, namesItsArgs := p.tables.FunctionsWithAliasedArgs[upper]
 	aliasedArgs := !known || namesItsArgs
+	// Spark's IF is not a name the reference knows, so each of its arguments
+	// may name itself: `IF(cond, foo AS bar, bla AS baz)`.
+	if isHiveFamily(p.dialect) && upper == "IF" {
+		aliasedArgs = true
+	}
 
 	p.advance()
 	p.advance() // the opening parenthesis
@@ -2934,7 +2952,7 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	// Distinct node and passes that as the call's single argument. Refusing
 	// it turned away one of the commonest aggregates a data agent writes.
 	distinct := p.match(TokDISTINCT)
-	var order *Expression
+	var order, limitValue *Expression
 	wasInCallArgs := p.inCallArgs
 	p.inCallArgs = true
 	if !p.at(TokR_PAREN) {
@@ -2986,6 +3004,17 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 				}
 				order = o
 			}
+			// BigQuery writes a LIMIT inside the call, after the ORDER BY,
+			// and the reference wraps the Order in it.
+			if p.at(TokLIMIT) {
+				p.advance()
+				c := p.curr()
+				if c == nil {
+					return nil, p.unsupported("LIMIT without a value")
+				}
+				p.advance()
+				limitValue = New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})
+			}
 			if !p.match(TokCOMMA) {
 				break
 			}
@@ -3020,6 +3049,15 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		}
 		order.Set("this", args[len(args)-1])
 		args[len(args)-1] = order
+	}
+	if limitValue != nil {
+		if order == nil || len(args) == 0 {
+			return nil, p.unsupported("LIMIT without an ORDER BY to limit")
+		}
+		// The reference assigns `this` before `expression`, which is the order
+		// the dump compares.
+		args[len(args)-1] = New("Limit",
+			Arg{"this", args[len(args)-1]}, Arg{"expression", limitValue})
 	}
 	// A builder that reads its arguments rather than only placing them. The
 	// probe drives builders with placeholder columns and cannot see such a

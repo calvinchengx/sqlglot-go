@@ -1265,7 +1265,13 @@ func (g *generator) writeLimitWord(e *Expression, word string) string {
 		word == "TOP " && !isPlainNumber(inner) {
 		count = "(" + count + ")"
 	}
-	out := word + count
+	// A LIMIT may wrap what it limits -- `COLLECT_LIST(x ORDER BY x LIMIT
+	// 10)` -- and that stands BEFORE the word.
+	out := ""
+	if this := g.child(e, "this"); this != "" {
+		out += this + " "
+	}
+	out += word + count
 	// What follows the count -- PERCENT, ROWS ONLY, WITH TIES -- is a node
 	// with a spelling of its own, and it brings its own leading space.
 	if opts, _ := e.Args["limit_options"].(*Expression); opts != nil {
@@ -4873,6 +4879,11 @@ func (g *generator) writeInsert(e *Expression) string {
 		target += " BY NAME"
 	}
 	target += exists
+	// The format the files are written in stands right after the target:
+	// `INSERT OVERWRITE DIRECTORY 'x' ... STORED AS TEXTFILE`.
+	if stored := g.child(e, "stored"); stored != "" {
+		target += " " + stored
+	}
 	// Databricks writes the slice it overwrites between the target and the
 	// body, in whichever of the two spellings the statement used.
 	if where := g.child(e, "where"); where != "" {
@@ -4893,10 +4904,18 @@ func (g *generator) writeInsert(e *Expression) string {
 	if yes, _ := e.Args["default"].(bool); yes && g.tables.ReturningEnd {
 		body = clauses(body, "DEFAULT VALUES")
 	}
+	var result string
 	if g.tables.ReturningEnd {
-		return clauses(out+target, body, conflict, returning)
+		result = clauses(out+target, body, conflict, returning)
+	} else {
+		result = clauses(out+target, returning, body, conflict)
 	}
-	return clauses(out+target, returning, body, conflict)
+	// The SOURCE a statement inserts from is written last, with its own
+	// TABLE word: `INSERT OVERWRITE TABLE t1 TABLE t2`.
+	if src := g.child(e, "source"); src != "" {
+		result += " TABLE " + src
+	}
+	return result
 }
 
 // writeValues writes the rows of a VALUES clause.
@@ -5055,6 +5074,10 @@ func (g *generator) writeUniqueConstraint(e *Expression) string {
 	// MySQL's `UNIQUE (b) USING BTREE` names the index after the columns.
 	if indexType, ok := e.Args["index_type"].(string); ok && indexType != "" {
 		out += " USING " + indexType
+	}
+	// SQLite names what happens when the rule is broken, last of all.
+	if onConflict := g.child(e, "on_conflict"); onConflict != "" {
+		out += " " + onConflict
 	}
 	return out
 }
@@ -5999,7 +6022,10 @@ func (g *generator) writeWhen(e *Expression) string {
 		return out + action
 	case "Update":
 		action := "UPDATE"
-		if items, _ := then.Args["expressions"].([]*Expression); len(items) > 0 {
+		// A star is written WITHOUT a SET: `WHEN MATCHED THEN UPDATE *`.
+		if star, _ := then.Args["expressions"].(*Expression); star != nil && star.Class == "Star" {
+			action = "UPDATE " + g.node(star)
+		} else if items, _ := then.Args["expressions"].([]*Expression); len(items) > 0 {
 			action = "UPDATE SET " + g.list(then)
 		}
 		if where := g.child(then, "where"); where != "" {

@@ -25,6 +25,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 	start := *p.curr()
 	p.advance() // CREATE
 	leading := p.takeComments()
+	afterCreate := p.index
 
 	// `OR <word>` turns on a flag of the reference's own: REPLACE and
 	// T-SQL's ALTER both mean `replace`, Databricks' REFRESH means
@@ -197,7 +198,18 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// The name is a bare Identifier rather than a Table -- a trigger lives on
 	// a table rather than being one.
 	if kind == "TRIGGER" {
-		return p.parseTriggerRest(replace, start, constraintTrigger)
+		node, err := p.parseTriggerRest(replace, start, constraintTrigger)
+		if err != nil {
+			// An EVENT this port does not read is refused outright; anything
+			// else the reference gives up on and keeps the whole statement a
+			// Command.
+			if triggerFailureIsHard(err.Error()) {
+				return nil, err
+			}
+			p.index = afterCreate
+			return p.parseAsCommand(start), nil
+		}
+		return node, nil
 	}
 
 	exists := false
@@ -858,13 +870,28 @@ func (p *parser) parseInsert() (*Expression, error) {
 			}
 			directory.Set("row_format", format)
 		}
+		// The format the files are written in stands after the ROW FORMAT:
+		// `STORED AS TEXTFILE`.
+		var stored any = false
+		if p.atWords("STORED", "AS") {
+			p.advance()
+			p.advance()
+			c := p.curr()
+			if c == nil {
+				return nil, p.unsupported("STORED AS without a format")
+			}
+			stored = New("FileFormatProperty",
+				Arg{"this", New("Var", Arg{"this", strings.ToUpper(c.Text)})},
+				Arg{"hive_format", true})
+			p.advance()
+		}
 		query, err := p.parseQuery()
 		if err != nil {
 			return nil, err
 		}
 		return putComments(New("Insert",
 			Arg{"this", directory},
-			Arg{"stored", false}, Arg{"by_name", false}, Arg{"exists", false},
+			Arg{"stored", stored}, Arg{"by_name", false}, Arg{"exists", false},
 			Arg{"partition", false}, Arg{"settings", false},
 			Arg{"default", false},
 			Arg{"expression", query},
@@ -995,11 +1022,24 @@ func (p *parser) parseInsert() (*Expression, error) {
 		expression, err = p.parseQueryBody()
 	case defaultValues:
 		// Nothing to read: DEFAULT VALUES was the body.
+	case p.at(TokTABLE):
+		// `INSERT OVERWRITE TABLE t1 TABLE t2`: the second TABLE names the
+		// SOURCE, and there is no expression at all.
 	default:
 		return nil, p.unsupported("INSERT without VALUES or a query")
 	}
 	if err != nil {
 		return nil, err
+	}
+	// The SOURCE a statement inserts from may be named after the body:
+	// `INSERT OVERWRITE TABLE t1 TABLE t2`.
+	var source any = false
+	if p.match(TokTABLE) {
+		src, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		source = src
 	}
 	// MySQL names the inserted row for the ON DUPLICATE KEY clause:
 	// `VALUES (...) AS new`.
@@ -1036,7 +1076,7 @@ func (p *parser) parseInsert() (*Expression, error) {
 		Arg{"expression", expression},
 		Arg{"conflict", conflict}, Arg{"returning", returning},
 		Arg{"overwrite", overwrite}, Arg{"alternative", alternativeOrNil(alternative)},
-		Arg{"ignore", ignore}, Arg{"source", false},
+		Arg{"ignore", ignore}, Arg{"source", source},
 	), leading), nil
 }
 
@@ -1231,7 +1271,28 @@ func (p *parser) parseValues() (*Expression, error) {
 // allows the row to be written without parentheses.
 func (p *parser) valueRowMembers() ([]*Expression, error) {
 	if p.at(TokL_PAREN) {
-		return p.parseParenthesisedList()
+		// A member may be NAMED: `(1 AS a, 2 AS b)` names the columns the row
+		// is read as, and the reference keeps each Alias in the Tuple.
+		p.advance()
+		var items []*Expression
+		for !p.at(TokR_PAREN) {
+			e, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			e, err = p.parseAlias(e)
+			if err != nil {
+				return nil, err
+			}
+			items = append(items, e)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed VALUES row")
+		}
+		return items, nil
 	}
 	if p.tables.ValuesFollowedByParen {
 		return nil, p.unsupported("a VALUES row that is not parenthesised")
@@ -3156,12 +3217,30 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// SQLite names what happens when the rule is broken, and the reference
+		// keeps it on the constraint.
+		var onConflict *Expression
+		if p.at(TokON) && p.nextWords("CONFLICT") {
+			p.advance() // ON
+			p.advance() // CONFLICT
+			action := p.curr()
+			if action == nil {
+				return nil, p.unsupported("ON CONFLICT without an action")
+			}
+			onConflict = New("OnConflict", Arg{"duplicate", false},
+				Arg{"action", New("Var", Arg{"this", strings.ToUpper(action.Text)})})
+			p.advance()
+		}
 		// The arguments are in the order the reference assigns them, which is
 		// not the order they are written in.
-		return New("UniqueColumnConstraint",
+		node := New("UniqueColumnConstraint",
 			Arg{"nulls", nulls},
 			Arg{"this", schema},
-			Arg{"index_type", indexType}), nil
+			Arg{"index_type", indexType})
+		if onConflict != nil {
+			node.Set("on_conflict", onConflict)
+		}
+		return node, nil
 	case p.atWords("PERIOD", "FOR", "SYSTEM_TIME"):
 		// The two columns that say when a row was current. They are named
 		// once for the table rather than on either column.
@@ -5456,14 +5535,36 @@ func (p *parser) parseOnConflict() (*Expression, error) {
 		}
 		constraint = name
 	case p.at(TokL_PAREN):
-		members, err := p.parseParenthesisedList()
-		if err != nil {
-			return nil, err
+		// A key may be an EXPRESSION and may be ORDERED: `(x, LOWER(y)
+		// COLLATE NOCASE ASC, y DESC)`. A direction that was not written
+		// stays unwritten, the same as anywhere else an Ordered is built.
+		p.advance()
+		for !p.at(TokR_PAREN) {
+			e, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			var desc *bool
+			switch {
+			case p.match(TokDESC):
+				b := true
+				desc = &b
+			case p.match(TokASC):
+				b := false
+				desc = &b
+			}
+			o := New("Ordered", Arg{"this", e})
+			if desc != nil {
+				o.Set("desc", *desc)
+			}
+			o.Set("nulls_first", p.nullsFirst(desc != nil && *desc))
+			keys = append(keys, o)
+			if !p.match(TokCOMMA) {
+				break
+			}
 		}
-		for _, member := range members {
-			keys = append(keys, New("Ordered",
-				Arg{"this", member},
-				Arg{"nulls_first", p.nullsFirst(false)}))
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed ON CONFLICT keys")
 		}
 		if p.at(TokWHERE) {
 			p.advance()
@@ -8129,14 +8230,15 @@ func (p *parser) parseTriggerRest(replace bool, start Token, constraintTrigger b
 	var when *Expression
 	if p.atWords("WHEN") {
 		p.advance()
-		if !p.match(TokL_PAREN) {
-			return nil, p.unsupported("a trigger condition without parentheses")
-		}
+		// The parentheses are OPTIONAL: postgres reads `WHEN a > 1` and writes
+		// it back with them, so the reader must take the bare form. Where they
+		// WERE written, an unclosed one is still refused.
+		hadParen := p.match(TokL_PAREN)
 		condition, err := p.parseDisjunction()
 		if err != nil {
 			return nil, err
 		}
-		if !p.match(TokR_PAREN) {
+		if hadParen && !p.match(TokR_PAREN) {
 			return nil, p.unsupported("unclosed trigger condition")
 		}
 		when = condition
@@ -8414,4 +8516,18 @@ func (p *parser) parseAnalyzeHistogram() (*Expression, error) {
 	node.Set("expression", expression)
 	node.Set("update_options", updateOptions)
 	return node, nil
+}
+
+// triggerFailureIsHard reports whether a trigger failure is one the reference
+// RAISES rather than giving up on. Everything else it keeps as a Command.
+func triggerFailureIsHard(msg string) bool {
+	for _, s := range []string{
+		"trigger event", "no table", "unclosed trigger condition",
+		"EXECUTE without",
+	} {
+		if strings.Contains(msg, s) {
+			return true
+		}
+	}
+	return false
 }

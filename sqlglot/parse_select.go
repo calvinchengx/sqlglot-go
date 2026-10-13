@@ -506,7 +506,7 @@ func (p *parser) queryAt(i int) bool {
 		return false
 	}
 	switch next.Type {
-	case TokSELECT, TokWITH, TokFROM, TokPIVOT, TokUNPIVOT, TokSUMMARIZE:
+	case TokSELECT, TokWITH, TokFROM, TokPIVOT, TokUNPIVOT, TokSUMMARIZE, TokVALUES:
 		return true
 	case TokL_PAREN:
 		if !p.queryAt(i + 1) {
@@ -1198,6 +1198,16 @@ func (p *parser) parseProjection() (*Expression, error) {
 // parseAlias attaches an explicit or implicit column alias.
 func (p *parser) parseAlias(this *Expression) (*Expression, error) {
 	explicit := p.match(TokALIAS)
+	// A LIMIT or OFFSET with nothing to take as its value is an ALIAS rather
+	// than a clause: the reference tries the clause first and falls back, so
+	// `SELECT 1 limit` names the column limit.
+	if !explicit && (p.at(TokLIMIT) || p.at(TokOFFSET)) && !p.limitValueFollows() {
+		c := p.curr()
+		p.advance()
+		return New("Alias", Arg{"this", this},
+			Arg{"alias", New("Identifier",
+				Arg{"this", c.Text}, Arg{"quoted", false})}), nil
+	}
 	var asComments []string
 	if explicit {
 		asComments = p.takeComments()
@@ -2400,4 +2410,19 @@ func (p *parser) parseLimitOptions() *Expression {
 	}
 	return New("LimitOptions",
 		Arg{"percent", percent}, Arg{"rows", rows}, Arg{"with_ties", withTies})
+}
+
+// limitValueFollows reports whether a LIMIT or OFFSET standing here has a
+// value to take. Where it does not, the word is an alias.
+func (p *parser) limitValueFollows() bool {
+	n := p.next()
+	if n == nil {
+		return false
+	}
+	switch n.Type {
+	case TokFROM, TokWHERE, TokGROUP_BY, TokHAVING, TokORDER_BY, TokLIMIT, TokOFFSET,
+		TokSEMICOLON, TokR_PAREN, TokUNION, TokEXCEPT, TokINTERSECT:
+		return false
+	}
+	return true
 }
