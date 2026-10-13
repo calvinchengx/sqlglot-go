@@ -2908,6 +2908,11 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	name := p.curr().Text
 	quotedName := p.curr().Type == TokIDENTIFIER
 	upper := strings.ToUpper(name)
+	if p.dialect == "bigquery" && bigqueryOwnedParser(upper) && p.next() != nil && p.next().Type == TokL_PAREN {
+		p.advance() // the name
+		p.advance() // the opening parenthesis
+		return p.parseBigQueryFunctionParser(upper)
+	}
 	if isHiveFamily(p.dialect) && upper == "TRANSFORM" && p.next() != nil && p.next().Type == TokL_PAREN {
 		mark := p.index
 		p.advance() // the name
