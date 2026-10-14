@@ -2450,6 +2450,11 @@ func (g *generator) writeIn(e *Expression) string {
 	if field, _ := e.Args["field"].(*Expression); field != nil {
 		return g.childOperand(e) + " IN " + g.node(field)
 	}
+	// `x IN UNNEST(a)` holds the unnested expression under a key of its own,
+	// and it brings its own parentheses (Generator.in_sql).
+	if unnest, _ := e.Args["unnest"].(*Expression); unnest != nil {
+		return g.childOperand(e) + " IN " + g.node(unnest)
+	}
 	return g.childOperand(e) + " IN (" + g.list(e) + ")"
 }
 
