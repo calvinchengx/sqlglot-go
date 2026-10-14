@@ -375,3 +375,27 @@ func (p *parser) parseBigQueryLambda() (*Expression, error) {
 	}
 	return p.parseLambda()
 }
+
+// normalizeBareWeek rewrites a bare WEEK date part into WEEK(SUNDAY): BigQuery
+// reads the two as the same, and the tree records the day explicitly
+// (BigQueryParser._normalize_bare_week).
+func normalizeBareWeek(upper string, expr *Expression) *Expression {
+	if expr == nil {
+		return expr
+	}
+	switch upper {
+	case "DATE_DIFF", "DATETIME_DIFF", "DATE_TRUNC", "DATETIME_TRUNC",
+		"TIMESTAMP_TRUNC", "LAST_DAY":
+	default:
+		return expr
+	}
+	unit, _ := expr.Args["unit"].(*Expression)
+	if unit == nil || (unit.Class != "Literal" && unit.Class != "Var") {
+		return expr
+	}
+	if strings.ToUpper(unit.Name()) != "WEEK" {
+		return expr
+	}
+	expr.Set("unit", New("WeekStart", Arg{"this", New("Var", Arg{"this", "SUNDAY"})}))
+	return expr
+}
