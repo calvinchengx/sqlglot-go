@@ -3443,6 +3443,7 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		built := p.buildFunction(upper, spec, args)
 		if p.dialect == "bigquery" {
 			built = normalizeBareWeek(upper, built)
+			built = normalizeRegexpGroup(upper, built)
 		}
 		if inner != "" {
 			return New(inner, Arg{"this", built}), nil

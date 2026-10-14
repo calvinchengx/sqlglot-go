@@ -1,6 +1,9 @@
 package sqlglot
 
-import "strings"
+import (
+	"regexp"
+	"strings"
+)
 
 // bigqueryOwnedFunction reports the names buildBigQueryFunction builds by hand,
 // so the generic dispatch does not turn them away for having no recorded
@@ -398,4 +401,56 @@ func normalizeBareWeek(upper string, expr *Expression) *Expression {
 	}
 	expr.Set("unit", New("WeekStart", Arg{"this", New("Var", Arg{"this", "SUNDAY"})}))
 	return expr
+}
+
+// normalizeRegexpGroup records the capture group BigQuery's REGEXP_EXTRACT
+// returns: when the pattern holds exactly ONE group, that group is the one
+// read, and the tree records it as `group` = 1. REGEXP_EXTRACT_ALL reads
+// group 0 unless a pattern names one, so its default is written instead
+// (BigQueryParser._build_regexp_extract).
+func normalizeRegexpGroup(upper string, expr *Expression) *Expression {
+	if expr == nil {
+		return expr
+	}
+	var fallback string
+	switch upper {
+	case "REGEXP_EXTRACT", "REGEXP_SUBSTR":
+		if expr.Class != "RegexpExtract" {
+			return expr
+		}
+	case "REGEXP_EXTRACT_ALL":
+		if expr.Class != "RegexpExtractAll" {
+			return expr
+		}
+		fallback = "0"
+	default:
+		return expr
+	}
+	pat, _ := expr.Args["expression"].(*Expression)
+	if pat == nil || pat.Class != "Literal" {
+		return expr
+	}
+	text, _ := pat.Args["this"].(string)
+	group := fallback
+	if captureGroupCount(text) == 1 {
+		group = "1"
+	}
+	if group == "" {
+		// The reference passes no group at all rather than a null one.
+		expr.Args["group"] = nil
+		return expr
+	}
+	expr.Set("group", New("Literal", Arg{"this", group}, Arg{"is_string", false}))
+	return expr
+}
+
+// captureGroupCount counts the capturing groups in a regular expression the
+// way the reference's `re.compile(pattern).groups` does: a pattern that does
+// not compile has none.
+func captureGroupCount(pattern string) int {
+	re, err := regexp.Compile(pattern)
+	if err != nil {
+		return 0
+	}
+	return re.NumSubexp()
 }
