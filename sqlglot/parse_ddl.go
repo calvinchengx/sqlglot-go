@@ -7960,7 +7960,52 @@ func (p *parser) parseTablePart() (*Expression, error) {
 		p.advance()
 		return p.keep(New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true})), nil
 	}
+	// BigQuery's table names may begin with a DIGIT and may hold dashes:
+	// `144A_FLAG`, `x-0.y` (BigQueryParser._parse_table_part).
+	if p.dialect == "bigquery" {
+		if c := p.curr(); c != nil && c.Type == TokNUMBER {
+			text := c.Text
+			p.advance()
+			if p.connectedTo(p.tokens[p.index-1]) {
+				if n := p.curr(); n != nil {
+					text += n.Text
+					p.advance()
+				}
+			}
+			return New("Identifier", Arg{"this", text}, Arg{"quoted", true}), nil
+		}
+		id, err := p.daxTableCall(p.parseIdentifierWhere(true))
+		if err != nil || id == nil || id.Class != "Identifier" {
+			return id, err
+		}
+		quoted, _ := id.Args["quoted"].(bool)
+		text := id.Name()
+		joined := false
+		for p.at(TokDASH) {
+			if p.next() == nil {
+				break
+			}
+			p.advance() // the dash
+			text += "-"
+			for p.curr() != nil && p.curr().Type != TokDOT {
+				text += p.curr().Text
+				p.advance()
+			}
+			joined = true
+		}
+		if joined {
+			return New("Identifier", Arg{"this", text}, Arg{"quoted", quoted}), nil
+		}
+		return id, nil
+	}
 	return p.daxTableCall(p.parseIdentifierWhere(true))
+}
+
+// connectedTo reports whether the token now current was written with NO space
+// after the one before it -- the reference's `_is_connected`.
+func (p *parser) connectedTo(prev Token) bool {
+	c := p.curr()
+	return c != nil && c.Start == prev.End
 }
 
 // atTablePart reports whether a name may begin here.
