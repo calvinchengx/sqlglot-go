@@ -2178,6 +2178,10 @@ func bigqueryTableParts(table *Expression) *Expression {
 				Arg{"this", newThis},
 				Arg{"db", quotedIdent(words[1])},
 				Arg{"catalog", quotedIdent(words[0])})
+			// The whole name was written inside one pair of backticks, and
+			// that is how it goes back out
+			// (BigQueryGenerator.table_parts).
+			table.quotedTable = true
 		}
 	}
 

@@ -717,6 +717,20 @@ func (g *generator) writeTable(e *Expression) string {
 			parts = append(parts, g.node(row))
 		}
 		out = "ROWS FROM (" + strings.Join(parts, ", ") + ")"
+	} else if g.dialect == "bigquery" && e.quotedTable {
+		// A qualified name that was written inside ONE pair of backticks goes
+		// back out the same way: `x.y` and `x`.`y` mean different things
+		// (BigQueryGenerator.table_parts).
+		var names []string
+		for _, key := range []string{"catalog", "db", "this"} {
+			child, _ := e.Args[key].(*Expression)
+			if child == nil {
+				continue
+			}
+			names = append(names, child.Name())
+		}
+		out = g.node(New("Identifier",
+			Arg{"this", strings.Join(names, ".")}, Arg{"quoted", true}))
 	} else {
 		parts := []string{}
 		for _, key := range []string{"catalog", "db", "this"} {
@@ -1824,7 +1838,50 @@ func (g *generator) writeCast(e *Expression) string {
 			}
 		}
 	}
+	if g.dialect == "bigquery" {
+		// An inline type-annotated ARRAY literal round-trips as
+		// `ARRAY<INT64>[1, 2, 3]`, unless it holds a query -- that spelling is
+		// invalid for `ARRAY(SELECT ...)` (BigQueryGenerator.cast_sql).
+		if arr, _ := e.Args["this"].(*Expression); arr != nil && arr.Class == "Array" {
+			items, _ := arr.Args["expressions"].([]*Expression)
+			if len(items) > 0 && !containsClass(items[0], "Query") {
+				return g.child(e, "to") + g.child(e, "this")
+			}
+		}
+		// SAFE_CAST is BigQuery's own spelling for a TryCast, and a format the
+		// cast was written with is kept as it was written
+		// (BigQueryGenerator.cast_sql, Generator.cast_sql).
+		bigword := "CAST"
+		if e.Class == "TryCast" {
+			bigword = "SAFE_CAST"
+		}
+		out := bigword + "(" + g.child(e, "this") + " AS " + g.child(e, "to")
+		if def := g.child(e, "default"); def != "" {
+			out += " DEFAULT " + def + " ON CONVERSION ERROR"
+		}
+		if format := g.child(e, "format"); format != "" {
+			out += " FORMAT " + format
+		}
+		if action := g.child(e, "action"); action != "" {
+			out += " " + action
+		}
+		return out + ")"
+	}
 	return word + "(" + g.child(e, "this") + " AS " + g.child(e, "to") + ")"
+}
+
+// containsClass reports whether a node holds one of the named classes
+// anywhere below it.
+func containsClass(e *Expression, class string) bool {
+	found := false
+	e.Walk(func(n *Expression) bool {
+		if n.Class == class {
+			found = true
+			return false
+		}
+		return true
+	})
+	return found
 }
 
 // mysqlCastMapping is the reference's CAST_MAPPING: DataType kinds CAST()

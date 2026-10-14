@@ -55,6 +55,11 @@ type Expression struct {
 	rawType        *Expression
 	rawTypeDialect string
 	rawTypeKnown   bool
+	// quotedTable marks a Table whose qualified name was written inside ONE
+	// pair of backticks, which is how BigQuery writes it back. The reference
+	// keeps this in the node's meta, which this port does not carry; the flag
+	// is the same signal without the map.
+	quotedTable bool
 }
 
 // Arg is one named argument of a node, in the order it was given.
@@ -344,7 +349,7 @@ func (e *Expression) Copy() *Expression {
 		return nil
 	}
 	out := &Expression{Class: e.Class, Args: map[string]any{}, Type: e.Type.Copy(),
-		Comments: append([]string(nil), e.Comments...)}
+		Comments: append([]string(nil), e.Comments...), quotedTable: e.quotedTable}
 	for _, key := range e.Keys {
 		switch v := e.Args[key].(type) {
 		case *Expression:
