@@ -3,6 +3,7 @@ package sqlglot
 import (
 	"strconv"
 	"strings"
+	"time"
 )
 
 // Annotate answers what TYPE an expression has.
@@ -159,6 +160,8 @@ func annotateNode(e *Expression, dialect string) *Expression {
 			Arg{"expressions", []*Expression{
 				New("DataType", Arg{"this", DataTypeKind(element)}, Arg{"nested", false})}},
 			Arg{"nested", true})
+	case "DateTrunc", "DateAdd", "DateSub":
+		return annotateTimeUnit(e, dialect)
 	case "Case":
 		return annotateCase(e, dialect)
 	case "Struct":
@@ -973,4 +976,88 @@ func ApplyIndexOffset(this *Expression, items []*Expression, offset int, dialect
 	}
 	shifted := New("Add", Arg{"this", left}, Arg{"expression", amount})
 	return []*Expression{Simplify(shifted, dialect)}, true
+}
+
+// textTypeKinds are the types a string is read as, and temporalTypeKinds the
+// ones that carry a date or a time (DataType.TEXT_TYPES, TEMPORAL_TYPES).
+var textTypeKinds = map[string]bool{
+	"CHAR": true, "NCHAR": true, "NVARCHAR": true, "TEXT": true,
+	"TINYTEXT": true, "MEDIUMTEXT": true, "LONGTEXT": true,
+	"VARCHAR": true, "NAME": true,
+}
+
+var temporalTypeKinds = map[string]bool{
+	"DATE": true, "DATE32": true, "DATETIME": true, "DATETIME2": true,
+	"DATETIME64": true, "SMALLDATETIME": true, "TIME": true, "TIMESTAMP": true,
+	"TIMESTAMPNTZ": true, "TIMESTAMPLTZ": true, "TIMESTAMPTZ": true,
+	"TIMESTAMP_MS": true, "TIMESTAMP_NS": true, "TIMESTAMP_S": true, "TIMETZ": true,
+}
+
+// dateUnitKinds are the interval units that operate on date components
+// (helper.DATE_UNITS).
+var dateUnitKinds = map[string]bool{
+	"DAY": true, "WEEK": true, "MONTH": true, "QUARTER": true, "YEAR": true,
+	"YEAR_MONTH": true,
+}
+
+// annotateTimeUnit types a date function by its unit: a unit that names a date
+// component keeps the operand's own type, any other unit makes the answer a
+// DATETIME, and a string operand is read as a date or a datetime from the text
+// it holds (Parser._annotate_timeunit).
+func annotateTimeUnit(e *Expression, dialect string) *Expression {
+	this := childOf(e, "this")
+	if this == nil {
+		return dataType("UNKNOWN")
+	}
+	kind := typeKind(annotate(this, dialect))
+	dateUnit := false
+	if unit := childOf(e, "unit"); unit != nil {
+		dateUnit = dateUnitKinds[strings.ToUpper(unit.Name())]
+	}
+	switch {
+	case textTypeKinds[kind]:
+		text := this.Name()
+		if isISODate(text) && dateUnit {
+			return dataType("DATE")
+		}
+		// An ISO date is also an ISO datetime, but not the other way round.
+		if isISODate(text) || isISODateTime(text) {
+			return dataType("DATETIME")
+		}
+		return dataType("UNKNOWN")
+	case temporalTypeKinds[kind]:
+		if !dateUnit {
+			return dataType("DATETIME")
+		}
+		return dataType(kind)
+	}
+	return dataType("UNKNOWN")
+}
+
+// isISODate reports whether the text is a date Python's own reader takes:
+// `YYYY-MM-DD`, or the `YYYYMMDD` a newer Python also accepts.
+func isISODate(text string) bool {
+	if _, err := time.Parse("2006-01-02", text); err == nil {
+		return true
+	}
+	_, err := time.Parse("20060102", text)
+	return err == nil
+}
+
+// isISODateTime reports whether the text is a datetime Python's own reader
+// takes, which is a date with a time attached -- or a bare date.
+func isISODateTime(text string) bool {
+	if isISODate(text) {
+		return true
+	}
+	for _, layout := range []string{
+		"2006-01-02T15:04:05", "2006-01-02 15:04:05",
+		"2006-01-02T15:04:05.999999", "2006-01-02 15:04:05.999999",
+		"20060102T15:04:05", "2006-01-02T15:04", "2006-01-02 15:04",
+	} {
+		if _, err := time.Parse(layout, text); err == nil {
+			return true
+		}
+	}
+	return false
 }

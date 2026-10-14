@@ -1161,6 +1161,13 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 			continue
 		}
 		if p.at(TokL_BRACKET) {
+			// A subscript turns the array it indexes into a Bracket, and the
+			// reference marks only the node its bracket reader RETURNS: an
+			// array that ends up subscripted is not marked
+			// (BigQueryParser._parse_bracket).
+			if p.dialect == "bigquery" && this.Class == "Array" {
+				this.Set("struct_name_inheritance", nil)
+			}
 			p.advance()
 			// A SUBSCRIPT: a colon here separates a slice's bounds.
 			// `x[]` subscripts nothing, and the reference refuses it -- a
