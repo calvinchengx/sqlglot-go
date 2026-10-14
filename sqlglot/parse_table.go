@@ -2080,7 +2080,7 @@ func splitQualifiedName(name string, minWords int) []string {
 // space after the one before it -- the reference's `_is_connected`.
 func (p *parser) connectedToPrev() bool {
 	c := p.curr()
-	return c != nil && p.index > 0 && c.Start == p.tokens[p.index-1].End
+	return c != nil && p.index > 0 && c.Start == p.tokens[p.index-1].End+1
 }
 
 // bigqueryTableParts applies BigQuery's own reading of a table name to the
@@ -2125,14 +2125,14 @@ func bigqueryTableParts(table *Expression) *Expression {
 		if db := argExpr("db"); db != nil {
 			if !isQuoted(db) {
 				if parts := strings.Split(db.Name(), "."); len(parts) == 2 {
-					table.Set("catalog", ident(parts[0], false))
-					table.Set("db", ident(parts[1], false))
+					table.Set("catalog", New("Identifier", Arg{"this", parts[0]}))
+					table.Set("db", New("Identifier", Arg{"this", parts[1]}))
 				}
 			}
 		} else if this := argExpr("this"); this != nil && this.Class == "Identifier" && !isQuoted(this) {
 			if parts := strings.Split(this.Name(), "."); len(parts) == 2 {
-				table.Set("db", ident(parts[0], false))
-				table.Set("this", ident(parts[1], false))
+				table.Set("db", New("Identifier", Arg{"this", parts[0]}))
+				table.Set("this", New("Identifier", Arg{"this", parts[1]}))
 			}
 		}
 	}

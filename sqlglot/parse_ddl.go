@@ -8005,7 +8005,7 @@ func (p *parser) parseTablePart() (*Expression, error) {
 // after the one before it -- the reference's `_is_connected`.
 func (p *parser) connectedTo(prev Token) bool {
 	c := p.curr()
-	return c != nil && c.Start == prev.End
+	return c != nil && c.Start == prev.End+1
 }
 
 // atTablePart reports whether a name may begin here.
