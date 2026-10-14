@@ -3649,6 +3649,12 @@ func writesAsACall(text string) bool {
 // OUTSIDE the call there and inside it in Databricks, so a dialect that puts it
 // inside is refused rather than written with it in the wrong place.
 func (g *generator) writeUnnest(e *Expression) string {
+	// BigQuery names the unnested COLUMN alone -- no parenthesised column
+	// list -- and writes the ordinality as WITH OFFSET rather than WITH
+	// ORDINALITY (Generator.unnest_sql, UNNEST_COLUMN_ONLY).
+	if g.dialect == "bigquery" {
+		return g.writeBigQueryUnnest(e)
+	}
 	// Redshift never writes the call at all: an UNNEST built from its own
 	// `t, t.arr_col AS x` sugar (always exactly one bare column, no
 	// ordinality) is written straight back as that same sugar --
@@ -3722,6 +3728,46 @@ func (g *generator) writeRedshiftUnnestSugar(e *Expression) string {
 
 // unnestCall spells an UNNEST and the alias its own spelling carries, by
 // whichever route this dialect has for it: a function spelling, or a template.
+// writeBigQueryUnnest writes an UNNEST the way BigQuery does: the alias is
+// its FIRST column written bare, and the ordinality follows as
+// `WITH OFFSET [AS name]` (Generator.unnest_sql).
+func (g *generator) writeBigQueryUnnest(e *Expression) string {
+	items, _ := e.Args["expressions"].([]*Expression)
+	alias, _ := e.Args["alias"].(*Expression)
+	offset := e.Args["offset"]
+	// A named ordinality is written by the clause itself, not as a column of
+	// the alias -- BigQuery has no WITH ORDINALITY to fold it into.
+	named, _ := offset.(*Expression)
+	ordinality := named != nil || offset == true
+
+	var aliasSQL string
+	if alias != nil {
+		if columns, _ := alias.Args["columns"].([]*Expression); len(columns) > 0 {
+			aliasSQL = g.node(columns[0])
+		}
+	}
+	if g.err != nil {
+		return ""
+	}
+	// The call is spelled WITHOUT the alias or the ordinality: this writer
+	// places both itself.
+	bare := New("Unnest", Arg{"expressions", items}, Arg{"offset", false})
+	call := g.unnestCall(bare, nil)
+	if g.err != nil {
+		return ""
+	}
+	if aliasSQL != "" {
+		call += " AS " + aliasSQL
+	}
+	switch {
+	case named != nil:
+		return call + " WITH OFFSET AS " + g.node(named)
+	case ordinality:
+		return call + " WITH OFFSET"
+	}
+	return call
+}
+
 func (g *generator) unnestCall(e, alias *Expression) string {
 	spec, ok := g.functionSpelling(e)
 	if !ok {
