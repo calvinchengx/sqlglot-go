@@ -181,6 +181,7 @@ func init() {
 		"RegexpReplace":                       (*generator).writeRegexpFlagged,
 		"RegexpExtract":                       (*generator).writeRegexpFlagged,
 		"RegexpExtractAll":                    (*generator).writeRegexpFlagged,
+		"DateTrunc":                           (*generator).writeDateTrunc,
 		"IgnoreNulls":                         (*generator).writeIgnoreNulls,
 		"RespectNulls":                        (*generator).writeRespectNulls,
 		"TriggerProperties":                   (*generator).writeTriggerProperties,
@@ -1772,6 +1773,33 @@ func (g *generator) writeIf(e *Expression) string {
 	return g.writeCase(New("Case",
 		Arg{"ifs", []*Expression{e}},
 		Arg{"default", childOf(e, "false")}))
+}
+
+// writeDateTrunc writes DATE_TRUNC. BigQuery reads a string unit as the unit
+// itself -- `DATE_TRUNC(x, 'MONTH')` is written back as `DATE_TRUNC(x, MONTH)`
+// -- where every other dialect writes the template it was probed with
+// (BigQueryGenerator.datetrunc_sql).
+func (g *generator) writeDateTrunc(e *Expression) string {
+	if g.dialect != "bigquery" {
+		if out, ok := g.syntaxTemplate(e); ok {
+			return out
+		}
+		return g.fail("DateTrunc")
+	}
+	var args []string
+	args = append(args, g.child(e, "this"))
+	unit, _ := e.Args["unit"].(*Expression)
+	switch {
+	case unit == nil:
+	case isStringLiteral(unit):
+		args = append(args, unit.Name())
+	default:
+		args = append(args, g.node(unit))
+	}
+	if zone := g.child(e, "zone"); zone != "" {
+		args = append(args, zone)
+	}
+	return "DATE_TRUNC(" + strings.Join(args, ", ") + ")"
 }
 
 func (g *generator) writeCast(e *Expression) string {
