@@ -676,6 +676,24 @@ func (p *parser) parseTableName() (*Expression, error) {
 			break
 		}
 	}
+	// BigQuery writes a qualified name inside ONE pair of backticks, so what
+	// arrives as a single part has to be split again
+	// (BigQueryParser._parse_table_parts).
+	if p.dialect == "bigquery" && len(parts) == 1 && parts[0].Class == "Identifier" {
+		if quoted, _ := parts[0].Args["quoted"].(bool); quoted {
+			sub := strings.Split(parts[0].Name(), ".")
+			if len(sub) > 1 && len(sub) <= 3 {
+				table := New("Table")
+				names := []string{"this", "db", "catalog"}
+				for i, s := range sub {
+					table.Set(names[len(sub)-1-i],
+						New("Identifier", Arg{"this", s}, Arg{"quoted", true}))
+				}
+				markTemporaryTable(table, p.dialect)
+				return table, nil
+			}
+		}
+	}
 	if len(parts) > 3 {
 		return nil, p.unsupported("an over-qualified table name")
 	}

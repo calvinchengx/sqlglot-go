@@ -532,6 +532,22 @@ func (p *parser) parseTable() (*Expression, error) {
 		}
 	}
 
+	// BigQuery writes a qualified name inside ONE pair of backticks, so a
+	// single part holding dots is split again
+	// (BigQueryParser._parse_table_parts).
+	if p.dialect == "bigquery" && len(parts) == 1 && fn == nil && parts[0].Class == "Identifier" {
+		if quoted, _ := parts[0].Args["quoted"].(bool); quoted {
+			sub := strings.Split(parts[0].Name(), ".")
+			if len(sub) > 1 && len(sub) <= 3 {
+				var split []*Expression
+				for _, s := range sub {
+					split = append(split, New("Identifier", Arg{"this", s}, Arg{"quoted", true}))
+				}
+				parts = split
+			}
+		}
+	}
+
 	// The dotted sequence is every part read plus, for a table function, the
 	// call itself standing in for the final name -- `a.b.c.f()` qualifies
 	// `f()` exactly the way `a.b.c.d` qualifies `d`.
