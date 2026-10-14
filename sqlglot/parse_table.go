@@ -532,61 +532,17 @@ func (p *parser) parseTable() (*Expression, error) {
 		}
 	}
 
-	// BigQuery writes a qualified name inside ONE pair of backticks, and may
-	// carry a DOMAIN-scoped project id whose dots belong to the domain: the
-	// parts are joined and split again, the domain's dots masked
-	// (BigQueryParser._parse_table_parts).
-	if p.dialect == "bigquery" && fn == nil {
-		hasDot := false
-		var names []string
-		for _, part := range parts {
-			names = append(names, part.Name())
-			if part.Class == "Identifier" && strings.Contains(part.Name(), ".") {
-				hasDot = true
-			}
+	// BigQuery reads a trailing star as part of the name -- `x.y*` names every
+	// table whose name begins with `y`, and `x.*` names the star itself --
+	// and only when the star is written with no space before it
+	// (Parser._parse_table_parts, wildcard=True).
+	if p.dialect == "bigquery" && p.at(TokSTAR) && p.connectedToPrev() {
+		if n := len(parts); n > 0 && parts[n-1] == nil {
+			parts[n-1] = New("Identifier", Arg{"this", "*"}, Arg{"quoted", false})
+		} else if n := len(parts); n > 0 && parts[n-1].Class == "Identifier" {
+			parts[n-1].Set("this", parts[n-1].Name()+"*")
 		}
-		if hasDot {
-			words := splitQualifiedName(strings.Join(names, "."), 3)
-			ident := func(w string) *Expression {
-				if w == "" {
-					return nil
-				}
-				return New("Identifier", Arg{"this", w}, Arg{"quoted", true})
-			}
-			n := len(words)
-			table := New("Table")
-			// The last two words are the name and the dataset, and the ones
-			// before them the catalog: a FOURTH part and beyond joins the name
-			// into a Dot rather than becoming a fourth qualifier.
-			if n >= 4 {
-				table.Set("this", New("Dot", Arg{"this", ident(words[n-2])},
-					Arg{"expression", ident(words[n-1])}))
-				table.Set("db", ident(words[n-3]))
-				table.Set("catalog", ident(words[n-4]))
-			} else {
-				table.Set("this", ident(words[n-1]))
-				if n >= 2 {
-					table.Set("db", ident(words[n-2]))
-				}
-				if n >= 3 {
-					table.Set("catalog", ident(words[n-3]))
-				}
-			}
-			// The INFORMATION_SCHEMA views need a region or dataset in front
-			// of them, and the reference merges the two into one name so a
-			// three-part reference does not look like a four-part one.
-			if n >= 2 && strings.EqualFold(words[n-2], "INFORMATION_SCHEMA") {
-				table.Set("this", New("Identifier",
-					Arg{"this", words[n-2] + "." + words[n-1]}, Arg{"quoted", true}))
-				if n >= 3 {
-					table.Set("db", ident(words[n-3]))
-				}
-				if n >= 4 {
-					table.Set("catalog", ident(words[n-4]))
-				}
-			}
-			return p.tableRest(table)
-		}
+		p.advance()
 	}
 
 	// The dotted sequence is every part read plus, for a table function, the
@@ -601,6 +557,14 @@ func (p *parser) parseTable() (*Expression, error) {
 	liftPart(this, table)
 	liftPart(db, table)
 	liftPart(catalog, table)
+
+	// BigQuery reads a qualified name its own way: a float token can swallow
+	// the dot that separated two parts, a name written inside ONE pair of
+	// backticks carries every dot, and its INFORMATION_SCHEMA views merge the
+	// last two parts (BigQueryParser._parse_table_parts).
+	if p.dialect == "bigquery" && fn == nil {
+		table = bigqueryTableParts(table)
+	}
 
 	if only {
 		table.Set("only", true)
@@ -2110,4 +2074,148 @@ func splitQualifiedName(name string, minWords int) []string {
 		return pad(out)
 	}
 	return pad(strings.Split(name, "."))
+}
+
+// connectedToPrev reports whether the token now current was written with NO
+// space after the one before it -- the reference's `_is_connected`.
+func (p *parser) connectedToPrev() bool {
+	c := p.curr()
+	return c != nil && p.index > 0 && c.Start == p.tokens[p.index-1].End
+}
+
+// bigqueryTableParts applies BigQuery's own reading of a table name to the
+// parts read plainly: a float token can swallow the dot between two parts, a
+// name written inside ONE pair of backticks carries every dot, and an
+// INFORMATION_SCHEMA view merges its last two parts
+// (BigQueryParser._parse_table_parts).
+func bigqueryTableParts(table *Expression) *Expression {
+	argExpr := func(key string) *Expression {
+		e, _ := table.Args[key].(*Expression)
+		return e
+	}
+	isQuoted := func(e *Expression) bool {
+		q, _ := e.Args["quoted"].(bool)
+		return q
+	}
+	ident := func(name string, quoted bool) *Expression {
+		return New("Identifier", Arg{"this", name}, Arg{"quoted", quoted})
+	}
+	// The parts of the table in order catalog, db, this -- a Dot in any of
+	// them flattens, so a name that was already nested is still seen whole
+	// (Table.parts).
+	flat := func() []*Expression {
+		var out []*Expression
+		for _, key := range []string{"catalog", "db", "this"} {
+			e := argExpr(key)
+			switch {
+			case e == nil:
+			case e.Class == "Dot":
+				out = append(out, flattenDot(e)...)
+			default:
+				out = append(out, e)
+			}
+		}
+		return out
+	}
+
+	// `proj-1.db.tbl` -- the `1.` is tokenized as a float, so the dot that
+	// separated the project from the dataset is inside that token. The same
+	// happens to the name when there is no dataset: `x-0.y`.
+	if argExpr("catalog") == nil {
+		if db := argExpr("db"); db != nil {
+			if !isQuoted(db) {
+				if parts := strings.Split(db.Name(), "."); len(parts) == 2 {
+					table.Set("catalog", ident(parts[0], false))
+					table.Set("db", ident(parts[1], false))
+				}
+			}
+		} else if this := argExpr("this"); this != nil && this.Class == "Identifier" && !isQuoted(this) {
+			if parts := strings.Split(this.Name(), "."); len(parts) == 2 {
+				table.Set("db", ident(parts[0], false))
+				table.Set("this", ident(parts[1], false))
+			}
+		}
+	}
+
+	// A name holding a dot is joined and split again, the dots of a
+	// DOMAIN-scoped project id masked: `domain.com:project-id.mydataset.tbl`
+	// names three parts, not five.
+	var alias *Expression
+	if this := argExpr("this"); this != nil && this.Class == "Identifier" {
+		var names []string
+		hasDot := false
+		for _, part := range flat() {
+			names = append(names, part.Name())
+			if strings.Contains(part.Name(), ".") {
+				hasDot = true
+			}
+		}
+		if hasDot {
+			alias = this
+			words := splitQualifiedName(strings.Join(names, "."), 3)
+			quotedIdent := func(w string) *Expression {
+				if w == "" {
+					return nil
+				}
+				return ident(w, true)
+			}
+			// The first three words are the catalog, the dataset and the
+			// name; anything past them joins the name into a Dot rather than
+			// becoming a fourth qualifier.
+			newThis := quotedIdent(words[2])
+			for _, w := range words[3:] {
+				newThis = New("Dot", Arg{"this", newThis}, Arg{"expression", quotedIdent(w)})
+			}
+			table = New("Table",
+				Arg{"this", newThis},
+				Arg{"db", quotedIdent(words[1])},
+				Arg{"catalog", quotedIdent(words[0])})
+		}
+	}
+
+	// An INFORMATION_SCHEMA view needs a region or dataset in front of it, so
+	// the reference merges the last two parts into one name -- otherwise a
+	// three-part reference would look like a four-part one, with the region
+	// taken for a project (BigQueryParser._parse_table_parts).
+	parts := flat()
+	if len(parts) > 1 && strings.EqualFold(parts[len(parts)-2].Name(), "INFORMATION_SCHEMA") {
+		// The view is aliased by its own name, which keeps the columns of a
+		// query that references it qualified the way they were written. A
+		// real alias coming up in the token stream overwrites it.
+		if table.Args["alias"] == nil {
+			a := alias
+			if a == nil {
+				a = parts[len(parts)-1]
+			}
+			table.Set("alias", New("TableAlias", Arg{"this", a}))
+		}
+		view := parts[len(parts)-2].Name() + "." + parts[len(parts)-1].Name()
+		table.Set("this", New("Identifier", Arg{"this", view}, Arg{"quoted", true}))
+		table.Set("db", nil)
+		table.Set("catalog", nil)
+		if len(parts) >= 3 {
+			table.Set("db", parts[len(parts)-3])
+		}
+		if len(parts) >= 4 {
+			table.Set("catalog", parts[len(parts)-4])
+		}
+	}
+	return table
+}
+
+// flattenDot returns the leaves of a Dot chain, left to right.
+func flattenDot(e *Expression) []*Expression {
+	var out []*Expression
+	for _, key := range []string{"this", "expression"} {
+		part, _ := e.Args[key].(*Expression)
+		if part == nil {
+			continue
+		}
+		if part.Class == "Dot" {
+			out = append(out, flattenDot(part)...)
+		} else {
+			out = append(out, part)
+		}
+	}
+	return out
 }

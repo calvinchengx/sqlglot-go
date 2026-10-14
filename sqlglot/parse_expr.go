@@ -1602,7 +1602,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 					p.keep(New("Literal", Arg{"this", n.Text}, Arg{"is_string", true})))
 			}
 			return New("Concat",
-				Arg{"expressions", items}, Arg{"coalesce", true}), nil
+				Arg{"expressions", items}, Arg{"coalesce", concatCoalesce(p.dialect)}), nil
 		}
 		return first, nil
 	// The tokenizer already tells these apart -- a raw string, a byte string,
@@ -5084,4 +5084,15 @@ func (p *parser) quotedNamedTypeWord(c *Token) *Expression {
 		return New("ObjectIdentifier", Arg{"this", strings.ToUpper(c.Text)})
 	}
 	return nil
+}
+
+// concatCoalesce reports the dialect's CONCAT_COALESCE: whether a Concat folds
+// a NULL argument to NULL. Adjacent string literals become a Concat carrying
+// this flag (Dialect.CONCAT_COALESCE, Parser._parse_primary).
+func concatCoalesce(dialect string) bool {
+	switch dialect {
+	case "dremio", "drill", "duckdb", "exasol", "postgres", "tsql":
+		return true
+	}
+	return false
 }
