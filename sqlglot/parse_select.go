@@ -778,17 +778,17 @@ func (p *parser) atSelectOperationModifier() bool {
 // FROM and JOINs, run once query modifiers are done.
 func applyImplicitUnnests(sel *Expression) {
 	fromTable := sel.Args["from_"].(*Expression).This()
-	refs := map[string]bool{strings.ToLower(aliasOrName(fromTable)): true}
+	refs := map[string]bool{normalizedRef(fromTable): true}
 	joinsAny, _ := sel.Args["joins"].([]*Expression)
 	for _, join := range joinsAny {
 		table := join.This()
 		if table == nil {
 			continue
 		}
-		ref := strings.ToLower(aliasOrName(table))
+		ref := normalizedRef(table)
 		if table.Class == "Table" && join.Args["on"] == nil {
 			parts := tableParts(table)
-			if len(parts) > 1 && len(parts) <= 4 && refs[strings.ToLower(parts[0].Name())] {
+			if len(parts) > 1 && len(parts) <= 4 && refs[normalizedName(parts[0])] {
 				if column := tableToColumn(table); column != nil {
 					unnest := New("Unnest", Arg{"expressions", []*Expression{column}})
 					if alias, ok := table.Args["alias"].(*Expression); ok && alias != nil {
@@ -802,6 +802,40 @@ func applyImplicitUnnests(sel *Expression) {
 		}
 		refs[ref] = true
 	}
+}
+
+// normalizedRef is a relation's name as the reference compares it: its alias
+// where it has one, else its own name, case-folded the way
+// normalize_identifiers folds it (Parser._implicit_unnests_to_explicit).
+func normalizedRef(e *Expression) string {
+	if alias, ok := e.Args["alias"].(*Expression); ok && alias != nil {
+		if this, ok2 := alias.Args["this"].(*Expression); ok2 && this != nil {
+			return normalizedName(this)
+		}
+	}
+	return normalizedName(e)
+}
+
+// normalizedName is the reference's normalize_identifiers applied to one
+// name: a QUOTED identifier keeps the spelling it was written with, and only
+// an unquoted one is case-folded. Folding both made
+// ``FROM Coordinates, `Coordinates.position` `` look like a nested column of
+// the first table where the reference keeps it a table of its own.
+func normalizedName(e *Expression) string {
+	if e == nil {
+		return ""
+	}
+	if e.Class == "Table" || e.Class == "Column" {
+		if inner := e.This(); inner != nil {
+			e = inner
+		}
+	}
+	if e.Class == "Identifier" {
+		if quoted, _ := e.Args["quoted"].(bool); quoted {
+			return e.Name()
+		}
+	}
+	return strings.ToLower(e.Name())
 }
 
 // aliasOrName is the reference's `.alias_or_name`: a node's own alias where

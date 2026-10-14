@@ -1180,6 +1180,26 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 			}
 			this = New("Bracket", Arg{"this", this}, Arg{"expressions", items},
 				Arg{"offset", nil}, Arg{"safe", nil}, Arg{"returns_null_on_error", nil})
+			// BigQuery names the numbering INSIDE the brackets -- OFFSET(1)
+			// counts from 0 and ORDINAL(1) from 1 -- and the reference reads
+			// that name as a flag on the Bracket, keeping the argument alone
+			// in its place (BigQueryParser._parse_bracket).
+			if p.dialect == "bigquery" {
+				for i, expr := range items {
+					if expr == nil || expr.Class != "Anonymous" {
+						break
+					}
+					offset, safe, ok := bigqueryBracketOffset(strings.ToUpper(expr.Name()))
+					callArgs, _ := expr.Args["expressions"].([]*Expression)
+					if !ok || len(callArgs) == 0 {
+						break
+					}
+					this.Set("offset", offset)
+					this.Set("safe", safe)
+					items[i] = New("Literal",
+						Arg{"this", callArgs[0].Name()}, Arg{"is_string", false})
+				}
+			}
 			continue
 		}
 		// A dot after something that is NOT a plain name: `a[0].b`, `f(x).g`,
@@ -1639,6 +1659,11 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return New("UnicodeString", Arg{"this", c.Text}, Arg{"escape", escape}), nil
 	case TokHEX_STRING:
 		p.advance()
+		// BigQuery and ClickHouse read a hex literal as an INTEGER, which
+		// records it as one (Parser.NUMERIC_PARSERS).
+		if p.dialect == "bigquery" || p.dialect == "clickhouse" {
+			return New("HexString", Arg{"this", c.Text}, Arg{"is_integer", true}), nil
+		}
 		return New("HexString", Arg{"this", c.Text}), nil
 	case TokBIT_STRING:
 		p.advance()
@@ -2200,7 +2225,13 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 		if kind, _ := to.Args["this"].(DataTypeKind); kind == "DATE" || kind == "TIMESTAMP" ||
 			kind == "TIMESTAMPTZ" || kind == "DATETIME" || kind == "TIME" {
 			text, _ := format.Args["this"].(string)
-			mapping := p.tables.FormatTimeMapping
+			// FORMAT_MAPPING is read FIRST where a dialect has one --
+			// BigQuery's alone -- and the dialect's TIME_MAPPING after it
+			// (Parser._parse_cast).
+			mapping := p.tables.FormatMapping
+			if len(mapping) == 0 {
+				mapping = p.tables.FormatTimeMapping
+			}
 			if len(mapping) == 0 {
 				mapping = p.tables.TimeMapping
 			}
@@ -2622,6 +2653,45 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 			}
 		}
 		dt.Set("expressions", params)
+
+		// `ARRAY<INT64>[1, 2]` writes the array's VALUES inside the type, and
+		// the reference builds the cast that produces them: an Array of
+		// those values cast to the type just read. Only the `<...>` form --
+		// a `(...)` type leaves the bracket to the ordinary reader
+		// (Parser._parse_types).
+		if open == TokLT && (p.at(TokL_BRACKET) || p.at(TokL_PAREN)) {
+			p.advance()
+			var values []*Expression
+			for !p.at(TokR_BRACKET) && !p.at(TokR_PAREN) {
+				v, err := p.parseDisjunction()
+				if err != nil {
+					return nil, err
+				}
+				if v == nil {
+					break
+				}
+				values = append(values, v)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			if len(values) == 0 && isStruct {
+				// An empty STRUCT's bracket is left for the ordinary reader.
+				p.index--
+			} else {
+				p.match(TokR_BRACKET)
+				p.match(TokR_PAREN)
+				cls := "Array"
+				if isStruct {
+					cls = "Struct"
+				}
+				dt.Set("nested", nested)
+				cast := New("Cast", Arg{"this", New(cls, Arg{"expressions", values})},
+					Arg{"to", dt})
+				cast.Type = dt
+				return cast, nil
+			}
+		}
 	}
 	// `TIMESTAMP WITH TIME ZONE` is a type of its own rather than a timestamp
 	// carrying a flag, and WITHOUT says only that the plain one was meant. The
@@ -3945,6 +4015,12 @@ func (p *parser) parseColumn() (*Expression, error) {
 		out = New("Dot", Arg{"this", out}, Arg{"expression", extra})
 	}
 	liftAll(parts, out)
+	// BigQuery splits a COLUMN whose part carries dots the way it splits a
+	// table name: `` `db.t`.`c` `` names three parts, not two
+	// (BigQueryParser._parse_column).
+	if p.dialect == "bigquery" && out.Class == "Column" {
+		out = bigqueryColumnParts(out)
+	}
 	return p.daxBracketColumn(out)
 }
 

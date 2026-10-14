@@ -410,6 +410,12 @@ func annotateArray(e *Expression, dialect string) *Expression {
 		if t == nil {
 			return nil
 		}
+		// An element with NO answer poisons the whole array: the reference
+		// answers UNKNOWN for it rather than an ARRAY of UNKNOWN
+		// (Parser._annotate_by_args).
+		if typeKind(t) == "UNKNOWN" {
+			return dataType("UNKNOWN")
+		}
 		element = coerceTypes(element, t)
 	}
 	// An array with nothing in it is an ARRAY of UNKNOWN, not an array with

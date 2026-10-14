@@ -58,10 +58,34 @@ func (p *parser) buildBigQueryFunction(upper string, args []*Expression) *Expres
 			return New("Length", Arg{"this", args[0]}, Arg{"binary", true})
 		}
 	case "TO_JSON":
+		// `TO_JSON(x, stringify_wide_numbers => FALSE)` keeps the options
+		// under their own key, written BEFORE the flag that makes this the
+		// JSON reading (BigQueryParser.FUNCTIONS).
 		if len(args) >= 1 {
-			node := New("JSONFormat", Arg{"this", args[0]}, Arg{"to_json", true})
+			node := New("JSONFormat", Arg{"this", args[0]})
 			if len(args) >= 2 {
 				node.Set("options", args[1])
+			}
+			node.Set("to_json", true)
+			return node
+		}
+	case "JSON_STRIP_NULLS":
+		// The named arguments are keys of their own, named after the
+		// argument rather than read positionally
+		// (BigQueryParser._build_json_strip_nulls).
+		if len(args) >= 1 {
+			node := New("JSONStripNulls", Arg{"this", args[0]})
+			for _, a := range args[1:] {
+				if a == nil {
+					continue
+				}
+				if a.Class == "Kwarg" {
+					if k := childOf(a, "this"); k != nil {
+						node.Set(strings.ToLower(k.Name()), a)
+					}
+					continue
+				}
+				node.Set("expression", a)
 			}
 			return node
 		}
@@ -71,11 +95,14 @@ func (p *parser) buildBigQueryFunction(upper string, args []*Expression) *Expres
 				Arg{"length", New("Literal", Arg{"this", upper[3:]}, Arg{"is_string", false})})
 		}
 	case "NORMALIZE_AND_CASEFOLD":
+		// The form is written BEFORE the flag, in the node's own order
+		// (BigQueryParser.FUNCTIONS).
 		if len(args) >= 1 {
-			node := New("Normalize", Arg{"this", args[0]}, Arg{"is_casefold", true})
+			node := New("Normalize", Arg{"this", args[0]})
 			if len(args) >= 2 {
 				node.Set("form", args[1])
 			}
+			node.Set("is_casefold", true)
 			return node
 		}
 	}
@@ -209,12 +236,16 @@ func (p *parser) parseBigQueryGenerate(class string) (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	var params any
+	// A generate call that names no parameters records FALSE rather than
+	// nothing: the reference's `self._match(COMMA) and self._parse_bitwise()`
+	// short-circuits (BigQueryParser._parse_generate).
+	params := any(false)
 	if p.match(TokCOMMA) {
-		params, err = p.parseBitwise()
+		value, err := p.parseBitwise()
 		if err != nil {
 			return nil, err
 		}
+		params = value
 	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed " + class)
@@ -426,11 +457,13 @@ func normalizeRegexpGroup(upper string, expr *Expression) *Expression {
 	default:
 		return expr
 	}
+	// The reference compiles the SECOND argument's NAME, whatever node that
+	// argument is -- a raw string reads the same way a plain one does.
 	pat, _ := expr.Args["expression"].(*Expression)
-	if pat == nil || pat.Class != "Literal" {
+	if pat == nil {
 		return expr
 	}
-	text, _ := pat.Args["this"].(string)
+	text := pat.Name()
 	group := fallback
 	if captureGroupCount(text) == 1 {
 		group = "1"
@@ -453,4 +486,58 @@ func captureGroupCount(pattern string) int {
 		return 0
 	}
 	return re.NumSubexp()
+}
+
+// bigqueryColumnParts splits a BigQuery column name that was written inside
+// one pair of backticks, the same way a table name is split, so that
+// `` `db.t`.`c` `` names three parts rather than two
+// (BigQueryParser._parse_column).
+func bigqueryColumnParts(col *Expression) *Expression {
+	var names []string
+	hasDot := false
+	for _, key := range []string{"catalog", "db", "table", "this"} {
+		e, _ := col.Args[key].(*Expression)
+		if e == nil {
+			continue
+		}
+		names = append(names, e.Name())
+		if strings.Contains(e.Name(), ".") {
+			hasDot = true
+		}
+	}
+	if !hasDot {
+		return col
+	}
+	words := splitQualifiedName(strings.Join(names, "."), 4)
+	ident := func(w string) *Expression {
+		if w == "" {
+			return nil
+		}
+		return New("Identifier", Arg{"this", w}, Arg{"quoted", true})
+	}
+	newThis := ident(words[3])
+	for _, w := range words[4:] {
+		newThis = New("Dot", Arg{"this", newThis}, Arg{"expression", ident(w)})
+	}
+	return New("Column",
+		Arg{"this", newThis},
+		Arg{"table", ident(words[2])},
+		Arg{"db", ident(words[1])},
+		Arg{"catalog", ident(words[0])})
+}
+
+// bigqueryBracketOffset names the numbering a subscript's own function asks
+// for (BigQueryParser.BRACKET_OFFSETS).
+func bigqueryBracketOffset(name string) (offset int, safe bool, ok bool) {
+	switch name {
+	case "OFFSET":
+		return 0, false, true
+	case "ORDINAL":
+		return 1, false, true
+	case "SAFE_OFFSET":
+		return 0, true, true
+	case "SAFE_ORDINAL":
+		return 1, true, true
+	}
+	return 0, false, false
 }

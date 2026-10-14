@@ -372,6 +372,9 @@ type ParserTables struct {
 	DatePartMapping    map[string]string
 	InverseTimeMapping map[string]string
 	FormatTimeMapping  map[string]string
+	// FormatMapping is the dialect's FORMAT_MAPPING, the table a CAST
+	// ... FORMAT is read through where it has one -- BigQuery's alone.
+	FormatMapping map[string]string
 	// FullFormatTimeMapping is TimeMapping with a dialect's OWN full-word
 	// spellings layered over it -- T-SQL's DATENAME(mm, x) wants the full
 	// month name, not the two-digit one TimeMapping's "mm" gives FORMAT.
@@ -110494,6 +110497,31 @@ var parserTables = map[string]*ParserTables{
 			"%dstrict":             "%d",
 			"%m/%d/%y":             "%D",
 			"%mstrict":             "%m",
+		},
+		FormatMapping: map[string]string{
+			"DD":    "%d",
+			"HH":    "%I",
+			"HH12":  "%I",
+			"HH24":  "%H",
+			"MI":    "%M",
+			"MM":    "%m",
+			"MON":   "%b",
+			"MONTH": "%B",
+			"SS":    "%S",
+			"SSSSS": "%f",
+			"TZH":   "%z",
+			"YY":    "%y",
+			"YYYY":  "%Y",
+			"dd":    "%d",
+			"hh24":  "%H",
+			"mi":    "%M",
+			"mm":    "%m",
+			"mon":   "%b",
+			"month": "%B",
+			"ss":    "%S",
+			"tzh":   "%z",
+			"yy":    "%y",
+			"yyyy":  "%Y",
 		},
 		TimeFormatArgs: map[string][]int{
 			"FORMAT_DATE":      {0},

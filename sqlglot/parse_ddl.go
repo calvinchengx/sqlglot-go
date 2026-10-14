@@ -676,32 +676,30 @@ func (p *parser) parseTableName() (*Expression, error) {
 			break
 		}
 	}
-	// BigQuery writes a qualified name inside ONE pair of backticks, so what
-	// arrives as a single part has to be split again
-	// (BigQueryParser._parse_table_parts).
-	if p.dialect == "bigquery" && len(parts) == 1 && parts[0].Class == "Identifier" {
-		if quoted, _ := parts[0].Args["quoted"].(bool); quoted {
-			sub := strings.Split(parts[0].Name(), ".")
-			if len(sub) > 1 && len(sub) <= 3 {
-				table := New("Table")
-				names := []string{"this", "db", "catalog"}
-				for i, s := range sub {
-					table.Set(names[len(sub)-1-i],
-						New("Identifier", Arg{"this", s}, Arg{"quoted", true}))
-				}
-				markTemporaryTable(table, p.dialect)
-				return table, nil
-			}
-		}
-	}
-	if len(parts) > 3 {
+	if len(parts) > 3 && p.dialect != "bigquery" {
 		return nil, p.unsupported("an over-qualified table name")
 	}
-	// Nearest first, as the reference fills them.
-	names := []string{"this", "db", "catalog"}
-	table := New("Table")
-	for i := range parts {
-		table.Set(names[i], parts[len(parts)-1-i])
+	// Nearest first, as the reference fills them: a fourth part and beyond
+	// joins the name into a Dot rather than becoming a fourth qualifier.
+	this, db, catalog := tableQualifiedParts(parts)
+	// Only the parts that were WRITTEN become arguments: a nil one would add
+	// a key holding nothing, and a reader that counts them would see a
+	// qualifier that is not there.
+	table := New("Table", Arg{"this", this})
+	if db != nil {
+		table.Set("db", db)
+	}
+	if catalog != nil {
+		table.Set("catalog", catalog)
+	}
+	liftPart(this, table)
+	liftPart(db, table)
+	liftPart(catalog, table)
+	// BigQuery reads the qualified name its own way here too -- one pair of
+	// backticks may hold every part of it
+	// (BigQueryParser._parse_table_parts).
+	if p.dialect == "bigquery" {
+		table = bigqueryTableParts(table)
 	}
 	markTemporaryTable(table, p.dialect)
 	return table, nil
@@ -7987,7 +7985,9 @@ func (p *parser) parseTablePart() (*Expression, error) {
 			}
 			p.advance() // the dash
 			text += "-"
-			for p.curr() != nil && p.curr().Type != TokDOT {
+			// Only the tokens written with NO space between them belong to
+			// the name: `a-b c` names the table `a-b` with the alias `c`.
+			for p.curr() != nil && p.curr().Type != TokDOT && p.connectedTo(p.tokens[p.index-1]) {
 				text += p.curr().Text
 				p.advance()
 			}

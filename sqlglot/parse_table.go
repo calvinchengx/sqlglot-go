@@ -1020,7 +1020,15 @@ func (p *parser) pivotColumns(aggregates, values []*Expression) ([]*Expression, 
 			continue
 		}
 		for _, name := range names {
-			out = append(out, identifierFor(base+"_"+name))
+			// The reference builds the product of the IN values with the
+			// aggregate names LAST, and a dialect that PREFIXES its pivot
+			// columns moves that name to the front: BigQuery writes `d_x`
+			// where the plain spelling is `x_d` (Parser._parse_pivot).
+			if p.tables.PivotPrefixesColumns {
+				out = append(out, identifierFor(name+"_"+base))
+			} else {
+				out = append(out, identifierFor(base+"_"+name))
+			}
 		}
 	}
 	return out, nil
