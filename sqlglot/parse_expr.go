@@ -1604,6 +1604,11 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return New("RawString", Arg{"this", c.Text}), nil
 	case TokBYTE_STRING:
 		p.advance()
+		// BigQuery's BYTE_STRING_IS_BYTES_TYPE is on, which records the
+		// literal as a BYTES value (Parser.NUMERIC_PARSERS).
+		if p.dialect == "bigquery" {
+			return New("ByteString", Arg{"this", c.Text}, Arg{"is_bytes", true}), nil
+		}
 		return New("ByteString", Arg{"this", c.Text}), nil
 	case TokUNICODE_STRING:
 		p.advance()
