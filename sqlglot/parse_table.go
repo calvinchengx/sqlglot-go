@@ -532,19 +532,60 @@ func (p *parser) parseTable() (*Expression, error) {
 		}
 	}
 
-	// BigQuery writes a qualified name inside ONE pair of backticks, so a
-	// single part holding dots is split again
+	// BigQuery writes a qualified name inside ONE pair of backticks, and may
+	// carry a DOMAIN-scoped project id whose dots belong to the domain: the
+	// parts are joined and split again, the domain's dots masked
 	// (BigQueryParser._parse_table_parts).
-	if p.dialect == "bigquery" && len(parts) == 1 && fn == nil && parts[0].Class == "Identifier" {
-		if quoted, _ := parts[0].Args["quoted"].(bool); quoted {
-			sub := strings.Split(parts[0].Name(), ".")
-			if len(sub) > 1 && len(sub) <= 3 {
-				var split []*Expression
-				for _, s := range sub {
-					split = append(split, New("Identifier", Arg{"this", s}, Arg{"quoted", true}))
-				}
-				parts = split
+	if p.dialect == "bigquery" && fn == nil {
+		hasDot := false
+		var names []string
+		for _, part := range parts {
+			names = append(names, part.Name())
+			if part.Class == "Identifier" && strings.Contains(part.Name(), ".") {
+				hasDot = true
 			}
+		}
+		if hasDot {
+			words := splitQualifiedName(strings.Join(names, "."), 3)
+			ident := func(w string) *Expression {
+				if w == "" {
+					return nil
+				}
+				return New("Identifier", Arg{"this", w}, Arg{"quoted", true})
+			}
+			n := len(words)
+			table := New("Table")
+			// The last two words are the name and the dataset, and the ones
+			// before them the catalog: a FOURTH part and beyond joins the name
+			// into a Dot rather than becoming a fourth qualifier.
+			if n >= 4 {
+				table.Set("this", New("Dot", Arg{"this", ident(words[n-2])},
+					Arg{"expression", ident(words[n-1])}))
+				table.Set("db", ident(words[n-3]))
+				table.Set("catalog", ident(words[n-4]))
+			} else {
+				table.Set("this", ident(words[n-1]))
+				if n >= 2 {
+					table.Set("db", ident(words[n-2]))
+				}
+				if n >= 3 {
+					table.Set("catalog", ident(words[n-3]))
+				}
+			}
+			// The INFORMATION_SCHEMA views need a region or dataset in front
+			// of them, and the reference merges the two into one name so a
+			// three-part reference does not look like a four-part one.
+			if n >= 2 && strings.EqualFold(words[n-2], "INFORMATION_SCHEMA") {
+				table.Set("this", New("Identifier",
+					Arg{"this", words[n-2] + "." + words[n-1]}, Arg{"quoted", true}))
+				if n >= 3 {
+					table.Set("db", ident(words[n-3]))
+				}
+				if n >= 4 {
+					table.Set("catalog", ident(words[n-4]))
+				}
+			}
+			return p.tableRest(table)
 		}
 	}
 
@@ -2026,4 +2067,27 @@ func (p *parser) versionPhrase() (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// splitQualifiedName splits a BigQuery qualified name, masking the dots a
+// DOMAIN-scoped project id carries -- `domain.com:project-id` -- so they are
+// not read as path separators (BigQueryParser._split_qualified_name).
+func splitQualifiedName(name string, minWords int) []string {
+	const mask = "\x00"
+	pad := func(words []string) []string {
+		for len(words) < minWords {
+			words = append([]string{""}, words...)
+		}
+		return words
+	}
+	if colon := strings.Index(name, ":"); colon != -1 && strings.Contains(name[:colon], ".") {
+		masked := strings.ReplaceAll(name[:colon], ".", mask) + name[colon:]
+		words := strings.Split(masked, ".")
+		out := make([]string, 0, len(words))
+		for _, w := range words {
+			out = append(out, strings.ReplaceAll(w, mask, "."))
+		}
+		return pad(out)
+	}
+	return pad(strings.Split(name, "."))
 }
