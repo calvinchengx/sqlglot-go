@@ -1781,10 +1781,9 @@ func (g *generator) writeIf(e *Expression) string {
 // (BigQueryGenerator.datetrunc_sql).
 func (g *generator) writeDateTrunc(e *Expression) string {
 	if g.dialect != "bigquery" {
-		if out, ok := g.syntaxTemplate(e); ok {
-			return out
-		}
-		return g.fail("DateTrunc")
+		// Every other dialect keeps the spelling it was read with -- Oracle's
+		// TRUNC(x), the template a probed dialect was given, and so on.
+		return g.spell(e)
 	}
 	var args []string
 	args = append(args, g.child(e, "this"))
