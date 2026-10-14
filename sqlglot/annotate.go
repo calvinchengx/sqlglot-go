@@ -112,20 +112,53 @@ func annotateNode(e *Expression, dialect string) *Expression {
 	case "Array":
 		return annotateArray(e, dialect)
 	case "GenerateSeries":
-		// `GENERATE_ARRAY(...)` is an ARRAY of its START's type -- its own
-		// arguments are this/expression/step, not a list.
-		if t := annotate(childOf(e, "start"), dialect); t != nil {
-			return New("DataType", Arg{"this", DataTypeKind("ARRAY")},
-				Arg{"expressions", []*Expression{t}}, Arg{"nested", true})
+		// `GENERATE_ARRAY(start, end[, step])` is an ARRAY of the coercion of
+		// its bounds -- its arguments are start/end/step, not a list -- and a
+		// literal bound coerces into a non-literal one, never the reverse
+		// (Parser._annotate_by_args via GenerateSeries's typing entry).
+		var literalType, nonLiteralType *Expression
+		for _, key := range []string{"start", "end", "step"} {
+			node := childOf(e, key)
+			if node == nil {
+				continue
+			}
+			t := annotate(node, dialect)
+			if t == nil {
+				return nil
+			}
+			if node.Class == "Literal" {
+				literalType = coerceTypes(literalType, t)
+			} else {
+				nonLiteralType = coerceTypes(nonLiteralType, t)
+			}
 		}
-		return nil
+		var element *Expression
+		switch {
+		case literalType != nil && nonLiteralType != nil:
+			element = coerceTypes(nonLiteralType, literalType)
+		case nonLiteralType != nil:
+			element = nonLiteralType
+		default:
+			element = literalType
+		}
+		if element == nil {
+			return nil
+		}
+		return New("DataType", Arg{"this", DataTypeKind("ARRAY")},
+			Arg{"expressions", []*Expression{bareType(element)}}, Arg{"nested", true})
 	case "GenerateDateArray", "GenerateTimestampArray":
+		// The reference builds these from the STRING `ARRAY<DATE>`, whose
+		// element records `nested: false` -- where an element the annotator
+		// computed itself carries no `nested` at all
+		// (GenerateDateArray's typing entry).
 		element := "DATE"
 		if e.Class == "GenerateTimestampArray" {
 			element = "TIMESTAMP"
 		}
 		return New("DataType", Arg{"this", DataTypeKind("ARRAY")},
-			Arg{"expressions", []*Expression{dataType(element)}}, Arg{"nested", true})
+			Arg{"expressions", []*Expression{
+				New("DataType", Arg{"this", DataTypeKind(element)}, Arg{"nested", false})}},
+			Arg{"nested", true})
 	case "Case":
 		return annotateCase(e, dialect)
 	case "Struct":
@@ -335,6 +368,18 @@ func dataType(kind string) *Expression {
 	return New("DataType", Arg{"this", DataTypeKind(kind)})
 }
 
+// bareType is the type the reference's coercion hands back: a type with no
+// parameters is UNWRAPPED to its bare kind, and `_set_type` then builds a
+// fresh DataType from it -- which carries no `nested` arg. Keeping the node
+// the type was read from left the parser's `nested: false` in the result
+// (Parser._maybe_coerce).
+func bareType(t *Expression) *Expression {
+	if t == nil || hasTypeParams(t) {
+		return t
+	}
+	return dataType(typeKind(t))
+}
+
 func typeKind(t *Expression) string {
 	if t == nil || t.Class != "DataType" {
 		return ""
@@ -374,7 +419,7 @@ func annotateArray(e *Expression, dialect string) *Expression {
 		element = dataType("UNKNOWN")
 	}
 	return New("DataType", Arg{"this", DataTypeKind("ARRAY")},
-		Arg{"expressions", []*Expression{element}}, Arg{"nested", true})
+		Arg{"expressions", []*Expression{bareType(element)}}, Arg{"nested", true})
 }
 
 // referenceNamesTheCall reports whether the reference builds a node of its own
