@@ -7911,6 +7911,14 @@ func (g *generator) writeNullTreatment(e *Expression, words string) string {
 	if call == nil {
 		return g.fail(e.Class + " over nothing")
 	}
+	// BigQuery writes the words INSIDE the call whenever the call is an
+	// aggregate, and after it otherwise (Generator._embed_ignore_nulls).
+	if g.dialect == "bigquery" {
+		if isA("AggFunc", call) {
+			return g.nullTreatmentInsideCall(e, call, words)
+		}
+		return g.child(e, "this") + " " + words
+	}
 	if !g.tables.IgnoreNullsInFunc {
 		return g.child(e, "this") + " " + words
 	}
