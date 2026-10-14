@@ -474,6 +474,17 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 }
 
 func (p *parser) parseIn(this *Expression) (*Expression, error) {
+	// `x IN UNNEST(a)` keeps the unnested expression under `unnest` rather
+	// than as a field or an expression list (Parser._parse_in).
+	if p.at(TokUNNEST) {
+		if n := p.next(); n != nil && n.Type == TokL_PAREN {
+			unnest, err := p.parseUnnestWithAlias(false)
+			if err != nil {
+				return nil, err
+			}
+			return New("In", Arg{"this", this}, Arg{"unnest", unnest}), nil
+		}
+	}
 	if !p.match(TokL_PAREN) {
 		// `'red' IN flags` asks whether the value is in the LIST that column
 		// holds, rather than in a list written here. The reference keeps

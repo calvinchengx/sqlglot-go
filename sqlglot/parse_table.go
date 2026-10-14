@@ -1622,6 +1622,13 @@ func (p *parser) parseAliasColumns() ([]*Expression, error) {
 // the reference rather than a Table wrapping a call -- the distinction the
 // TableFunctions table exists to catch. Entered with UNNEST current.
 func (p *parser) parseUnnest() (*Expression, error) {
+	return p.parseUnnestWithAlias(true)
+}
+
+// parseUnnestWithAlias reads an UNNEST. `IN UNNEST(...)` takes the same shape
+// but never an alias, so the reference parses it with with_alias=False
+// (Parser._parse_in, Parser._parse_unnest).
+func (p *parser) parseUnnestWithAlias(withAlias bool) (*Expression, error) {
 	p.advance()
 	if !p.match(TokL_PAREN) {
 		return nil, p.unsupported("UNNEST without arguments")
@@ -1647,9 +1654,22 @@ func (p *parser) parseUnnest() (*Expression, error) {
 		p.advance()
 		p.advance()
 	}
-	alias, err := p.parseTableAlias()
-	if err != nil {
-		return nil, err
+	var alias *Expression
+	var err error
+	if withAlias {
+		alias, err = p.parseTableAlias()
+		if err != nil {
+			return nil, err
+		}
+		// BigQuery's UNNEST_COLUMN_ONLY moves the alias's name into `columns`:
+		// the name refers to the unnested COLUMN, not to a table
+		// (Parser._parse_unnest).
+		if p.dialect == "bigquery" && alias != nil {
+			if this, _ := alias.Args["this"].(*Expression); this != nil {
+				alias.Set("columns", []*Expression{this})
+				alias.Set("this", nil)
+			}
+		}
 	}
 	var offset any = ordinality
 	// An alias with MORE columns than there are unnested expressions names
@@ -1690,7 +1710,7 @@ func (p *parser) parseUnnest() (*Expression, error) {
 	}
 	// StarRocks defaults the UNNEST table alias and column to `unnest` when
 	// the statement does not name them (StarRocksParser._parse_unnest).
-	if p.dialect == "starrocks" {
+	if p.dialect == "starrocks" && withAlias {
 		unnestIdent := func() *Expression {
 			return New("Identifier", Arg{"this", "unnest"}, Arg{"quoted", false})
 		}
