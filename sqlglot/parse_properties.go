@@ -668,6 +668,13 @@ func (p *parser) parseProperty(spec PropertySpec) (*Expression, error) {
 		}
 		return New(spec.Class, Arg{"this", value}), nil
 	case "table":
+		// `REMOTE WITH CONNECTION x` names the connection a model runs
+		// through, and the two words stand between the property and the
+		// name (BigQueryParser._parse_remote_with_connection).
+		if spec.Class == "RemoteWithConnectionModelProperty" {
+			p.matchUnquotedWord("WITH")
+			p.matchUnquotedWord("CONNECTION")
+		}
 		table, err := p.parseTableName()
 		if err != nil {
 			return nil, err
