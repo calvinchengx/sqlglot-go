@@ -545,11 +545,29 @@ func (g *generator) writeSelect(e *Expression) string {
 	add(g.child(e, "connect"))
 	add(g.child(e, "group"))
 	add(g.child(e, "having"))
-	// Hive's three reducer clauses sit between HAVING and ORDER BY, in the
-	// reference's own order.
+	// The clauses that sit between HAVING and ORDER BY: Hive's three reducer
+	// clauses, then the WINDOW and QUALIFY a dialect writes there. BigQuery
+	// writes QUALIFY BEFORE WINDOW where every other dialect writes it after
+	// (Generator.AFTER_HAVING_MODIFIER_TRANSFORMS).
 	add(g.child(e, "cluster"))
 	add(g.child(e, "distribute"))
 	add(g.child(e, "sort"))
+	windowsSQL := ""
+	if windows, _ := e.Args["windows"].([]*Expression); len(windows) > 0 {
+		names := make([]string, 0, len(windows))
+		for _, w := range windows {
+			names = append(names, g.node(w))
+		}
+		windowsSQL = "WINDOW " + strings.Join(names, ", ")
+	}
+	qualifySQL := g.child(e, "qualify")
+	if g.dialect == "bigquery" {
+		add(qualifySQL)
+		add(windowsSQL)
+	} else {
+		add(windowsSQL)
+		add(qualifySQL)
+	}
 	add(g.child(e, "order"))
 
 	// A FETCH is written AFTER the offset where a LIMIT is written before it:
@@ -581,16 +599,6 @@ func (g *generator) writeSelect(e *Expression) string {
 		}
 		add(sample)
 	}
-	// The WINDOW clause comes BEFORE the QUALIFY that refers to its names.
-	windows, _ := e.Args["windows"].([]*Expression)
-	if len(windows) > 0 {
-		names := make([]string, 0, len(windows))
-		for _, w := range windows {
-			names = append(names, g.node(w))
-		}
-		add("WINDOW " + strings.Join(names, ", "))
-	}
-	add(g.child(e, "qualify"))
 	// A LATERAL VIEW is a clause of the query, and there may be several.
 	laterals, _ := e.Args["laterals"].([]*Expression)
 	for _, lateral := range laterals {
@@ -623,8 +631,14 @@ func (g *generator) withPrefix(e *Expression, body string) string {
 
 func (g *generator) writeSetOperation(e *Expression) string {
 	word := strings.ToUpper(e.Class)
-	if e.Args["distinct"] == false {
+	switch {
+	case e.Args["distinct"] == false:
 		word += " ALL"
+	case e.Args["distinct"] == true && g.dialect == "bigquery":
+		// BigQuery has no DEFAULT for a set operation's DISTINCT -- it reads
+		// a bare UNION as an error -- so the word is always written
+		// (BigQuery.SET_OP_DISTINCT_BY_DEFAULT, Generator.set_operation).
+		word += " DISTINCT"
 	}
 	if e.Args["by_name"] == true {
 		word += " BY NAME"
