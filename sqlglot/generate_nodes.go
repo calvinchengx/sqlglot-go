@@ -175,6 +175,8 @@ func init() {
 		"EncodeProperty":                      (*generator).writeEncodeProperty,
 		"DateAdd":                             (*generator).writeDateAdd,
 		"DateSub":                             (*generator).writeDateSub,
+		"MakeInterval":                        (*generator).writeMakeInterval,
+		"AIForecast":                          (*generator).writeAIForecast,
 		"ParseDatetime":                       (*generator).writeParseDatetime,
 		"ParseTime":                           (*generator).writeParseDatetime,
 		"TimestampAdd":                        (*generator).writeTimestampAdd,
@@ -8791,6 +8793,54 @@ func (g *generator) writeRegexpFlagged(e *Expression) string {
 		}
 	}
 	return g.regexpCallWithFlags(e, key)
+}
+
+// writeMakeInterval writes BigQuery's MAKE_INTERVAL, whose parts are named in
+// the class's own argument order -- year, month, week, day, hour, minute,
+// second -- and written only where they were given. The reference has no
+// transform for it and reaches its function fallback, which writes the name
+// and then each present argument in that order (Generator.function_fallback_sql).
+func (g *generator) writeMakeInterval(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	keys := []string{"year", "month", "week", "day", "hour", "minute", "second"}
+	args := make([]string, 0, len(keys))
+	for _, key := range keys {
+		if arg, _ := e.Args[key].(*Expression); arg != nil {
+			args = append(args, g.node(arg))
+		}
+	}
+	return "MAKE_INTERVAL(" + strings.Join(args, ", ") + ")"
+}
+
+// writeAIForecast writes BigQuery's AI.FORECAST. The `AI.` is not written
+// here: it is the db qualifier on the Table the call stands in, which the
+// table writer already puts back. What this adds is the TABLE keyword when
+// the value is a table and the named arguments in their own order
+// (Generator.aiforecast_sql).
+func (g *generator) writeAIForecast(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	args := make([]string, 0, 10)
+	if this, _ := e.Args["this"].(*Expression); this != nil {
+		rendered := g.node(this)
+		if this.Class == "Table" {
+			rendered = "TABLE " + rendered
+		}
+		args = append(args, rendered)
+	}
+	for _, key := range []string{
+		"data_col", "timestamp_col", "model", "id_cols", "horizon",
+		"forecast_end_timestamp", "confidence_level",
+		"output_historical_time_series", "context_window",
+	} {
+		if arg, _ := e.Args[key].(*Expression); arg != nil {
+			args = append(args, g.node(arg))
+		}
+	}
+	return "FORECAST(" + strings.Join(args, ", ") + ")"
 }
 
 // writeParseDatetime writes BigQuery's PARSE_DATETIME and PARSE_TIME, which
