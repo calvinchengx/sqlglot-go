@@ -1602,6 +1602,16 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 		case p.at(TokNULL):
 			p.advance()
 			kind = New("NotNullColumnConstraint", Arg{"allow_null", true})
+		case p.dialect == "bigquery" && p.atWords("OPTIONS"):
+			// `a STRING OPTIONS (description='x')` records the settings as a
+			// Properties node (BigQueryParser.CONSTRAINT_PARSERS,
+			// Parser._parse_with_property).
+			p.advance() // OPTIONS
+			properties, err := p.parseWrappedProperties()
+			if err != nil {
+				return nil, err
+			}
+			kind = New("Properties", Arg{"expressions", properties})
 		case p.atWords("DEFAULT"):
 			p.advance()
 			value, err := p.parseUnary()
