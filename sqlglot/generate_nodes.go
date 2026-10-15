@@ -6860,12 +6860,20 @@ func (g *generator) writeFunctionRest(e *Expression, out string) string {
 	out += g.child(e, "this")
 
 	var afterParams, afterAs, afterBody []string
+	var withProps []string
 	properties, _ := e.Args["properties"].(*Expression)
 	if properties != nil {
 		items, _ := properties.Args["expressions"].([]*Expression)
 		for _, item := range items {
 			if item.Class == "TemporaryProperty" {
 				continue // already written, in front of the kind
+			}
+			// A property the dialect writes inside its own list -- a UDF's
+			// `OPTIONS (...)` -- is gathered here and written as one clause
+			// (Generator.properties_sql, WITH_PROPERTIES_PREFIX).
+			if g.tables.PropertyLocation[item.Class] == "POST_WITH" {
+				withProps = append(withProps, g.node(item))
+				continue
 			}
 			place := "schema"
 			if item.Class == "UsingProperty" {
@@ -6889,6 +6897,14 @@ func (g *generator) writeFunctionRest(e *Expression, out string) string {
 				return g.fail(item.Class + ", which this dialect writes nowhere")
 			}
 		}
+	}
+	if len(withProps) > 0 {
+		prefix := g.tables.WithPropertiesPrefix
+		sep := " "
+		if strings.TrimSpace(prefix) == "" {
+			sep = ""
+		}
+		afterParams = append(afterParams, prefix+sep+"("+strings.Join(withProps, ", ")+")")
 	}
 	for _, part := range afterParams {
 		out += " " + part

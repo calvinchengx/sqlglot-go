@@ -3501,6 +3501,13 @@ func (p *parser) parseFunctionRest(name *Expression, kind string, replace, exist
 			return nil, err
 		}
 		if property != nil {
+			// A list the word itself carried -- a UDF's `OPTIONS (...)` --
+			// is SPLICED into the statement's own list rather than nested
+			// inside a node of its own (Parser._parse_create, extend_props).
+			if inner, _ := property.Args["expressions"].([]*Expression); property.Class == "Properties" && len(inner) > 0 {
+				properties = append(properties, inner...)
+				continue
+			}
 			properties = append(properties, property)
 			continue
 		}
@@ -3718,6 +3725,15 @@ func (p *parser) parseFunctionProperty() (*Expression, error) {
 		return New("UsingProperty", Arg{"this", lit}, Arg{"kind", kind}), nil
 	}
 	switch {
+	case p.dialect == "bigquery" && p.atWords("OPTIONS"):
+		// A UDF's `OPTIONS (...)` records the settings as a property of its
+		// own (Parser._parse_create, _parse_properties).
+		p.advance()
+		properties, err := p.parseWrappedProperties()
+		if err != nil {
+			return nil, err
+		}
+		return New("Properties", Arg{"expressions", properties}), nil
 	case p.at(TokLANGUAGE) || p.atWords("LANGUAGE"):
 		p.advance()
 		c := p.curr()
