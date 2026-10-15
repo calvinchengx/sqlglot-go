@@ -2216,12 +2216,31 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 	var format *Expression
 	if p.atWords("FORMAT") {
 		p.advance()
+		// The format may be written inside parentheses
+		// (Parser._parse_cast, _parse_wrapped).
+		wrapped := p.match(TokL_PAREN)
 		c := p.curr()
 		if c == nil || c.Type != TokSTRING {
 			return nil, p.unsupported("CAST FORMAT without a string")
 		}
 		format = New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
 		p.advance()
+		if wrapped && !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed CAST FORMAT")
+		}
+		// `... FORMAT ('f') AT TIME ZONE z` names the zone the text is read
+		// in. It wraps the format, and a cast that becomes a StrToTime moves
+		// the zone onto itself (Parser._parse_at_time_zone, _parse_cast).
+		if p.atWords("AT", "TIME", "ZONE") {
+			p.advance()
+			p.advance()
+			p.advance()
+			zone, err := p.parseUnary()
+			if err != nil {
+				return nil, err
+			}
+			format = New("AtTimeZone", Arg{"this", format}, Arg{"zone", zone})
+		}
 	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed CAST")
@@ -2231,7 +2250,12 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 	if format != nil {
 		if kind, _ := to.Args["this"].(DataTypeKind); kind == "DATE" || kind == "TIMESTAMP" ||
 			kind == "TIMESTAMPTZ" || kind == "DATETIME" || kind == "TIME" {
-			text, _ := format.Args["this"].(string)
+			fmtLiteral := format
+			var zone *Expression
+			if format.Class == "AtTimeZone" {
+				fmtLiteral, zone = childOf(format, "this"), childOf(format, "zone")
+			}
+			text, _ := fmtLiteral.Args["this"].(string)
 			// FORMAT_MAPPING is read FIRST where a dialect has one --
 			// BigQuery's alone -- and the dialect's TIME_MAPPING after it
 			// (Parser._parse_cast).
@@ -2250,6 +2274,11 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 				Arg{"format", New("Literal", Arg{"this", formatTime(text, mapping)}, Arg{"is_string", true})})
 			if try {
 				node.Set("safe", true)
+			}
+			// A zone the format named goes on the StrToTime, where the
+			// reference keeps it (Parser._parse_cast).
+			if zone != nil && class == "StrToTime" {
+				node.Set("zone", zone)
 			}
 			return p.keep(node), nil
 		}
