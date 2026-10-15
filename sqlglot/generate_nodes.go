@@ -138,6 +138,7 @@ func init() {
 		"Concat":                              (*generator).writeConcat,
 		"List":                                (*generator).writeList,
 		"TsOrDsAdd":                           (*generator).writeTsOrDsAdd,
+		"WeekStart":                           (*generator).writeWeekStart,
 		"TsOrDsDiff":                          (*generator).writeTsOrDsDiff,
 		"Alter":                               (*generator).writeAlter,
 		"AlterDistStyle":                      (*generator).writeAlterDistStyle,
@@ -1538,11 +1539,17 @@ func (g *generator) writeIdentifier(e *Expression) string {
 		quoted = true
 	}
 	if !quoted && (!readableAsABareName(name) || !g.lexesBackAsOneName(name)) {
-		// A name the tokenizer would not give back. The port builds one only
-		// from a token the tokenizer could not classify -- a stray backtick
-		// among them -- and writing it bare produced SQL nothing can read.
-		// The generator fuzzer found it.
-		return g.fail(e.Class + " whose name is not a name")
+		// BigQuery names a table with dashes and a star just as it was
+		// written -- `FROM my-table`, `FROM x.*` -- and its own reader takes
+		// them back, so the safety net below does not apply to it
+		// (BigQueryParser._parse_table_part).
+		if !(g.dialect == "bigquery" && bigqueryDashedName(name)) {
+			// A name the tokenizer would not give back. The port builds one
+			// only from a token the tokenizer could not classify -- a stray
+			// backtick among them -- and writing it bare produced SQL nothing
+			// can read. The generator fuzzer found it.
+			return g.fail(e.Class + " whose name is not a name")
+		}
 	}
 	// T-SQL's mark for a temporary table, which the parser took off the name
 	// and recorded here. It goes INSIDE the quoting -- `[#foo]`, not `#[foo]`
@@ -7006,6 +7013,21 @@ func (g *generator) writeLanguageProperty(e *Expression) string {
 	return "LANGUAGE " + g.child(e, "this")
 }
 
+// writeWeekStart writes BigQuery's WEEK(<day>) -- the day the week begins on
+// -- which collapses to a bare WEEK when that day is SUNDAY
+// (BigQueryGenerator.weekstart_sql).
+func (g *generator) writeWeekStart(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	day := strings.ToUpper(e.Args["this"].(*Expression).Name())
+	if day == "SUNDAY" {
+		// BigQuery specific optimization since WEEK(SUNDAY) == WEEK.
+		return "WEEK"
+	}
+	return "WEEK(" + g.child(e, "this") + ")"
+}
+
 func (g *generator) writeStabilityProperty(e *Expression) string {
 	this, _ := e.Args["this"].(*Expression)
 	if this == nil {
@@ -7181,6 +7203,23 @@ func (g *generator) writeReturn(e *Expression) string {
 // readableAsABareName reports whether a name written without quotes would be
 // read back as the same name. It is the tokenizer's own rule for what may
 // continue a word, plus the symbols a dialect lets a name hold.
+// bigqueryDashedName reports a name BigQuery writes bare and reads back as
+// one name: letters, digits, dashes and a star, with no space and no leading
+// dash -- `my-table`, `x-0`, `y*`. The dash may not OPEN the name, or it would
+// read as a minus sign.
+func bigqueryDashedName(name string) bool {
+	if name == "" || name[0] == '-' {
+		return false
+	}
+	for _, r := range name {
+		if isIdentifierChar(r) || r == '-' || r == '*' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
 func readableAsABareName(name string) bool {
 	if name == "" {
 		return false
