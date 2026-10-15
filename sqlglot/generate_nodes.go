@@ -1543,7 +1543,7 @@ func (g *generator) writeIdentifier(e *Expression) string {
 		// written -- `FROM my-table`, `FROM x.*` -- and its own reader takes
 		// them back, so the safety net below does not apply to it
 		// (BigQueryParser._parse_table_part).
-		if !(g.dialect == "bigquery" && bigqueryDashedName(name)) {
+		if g.dialect != "bigquery" || !bigqueryDashedName(name) {
 			// A name the tokenizer would not give back. The port builds one
 			// only from a token the tokenizer could not classify -- a stray
 			// backtick among them -- and writing it bare produced SQL nothing
@@ -2326,20 +2326,6 @@ func stripPrecisionParams(e *Expression) *Expression {
 		return true
 	})
 	return out
-}
-
-// containsClass reports whether a node holds one of the named classes
-// anywhere below it.
-func containsClass(e *Expression, class string) bool {
-	found := false
-	e.Walk(func(n *Expression) bool {
-		if n.Class == class {
-			found = true
-			return false
-		}
-		return true
-	})
-	return found
 }
 
 // mysqlCastMapping is the reference's CAST_MAPPING: DataType kinds CAST()

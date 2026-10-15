@@ -915,17 +915,6 @@ func normalizedName(e *Expression) string {
 	return strings.ToLower(e.Name())
 }
 
-// aliasOrName is the reference's `.alias_or_name`: a node's own alias where
-// it has one, else its name.
-func aliasOrName(e *Expression) string {
-	if alias, ok := e.Args["alias"].(*Expression); ok && alias != nil {
-		if this, ok2 := alias.Args["this"].(*Expression); ok2 && this != nil {
-			return this.Name()
-		}
-	}
-	return e.Name()
-}
-
 // tableParts is a Table's `.parts`: catalog and db where present, then the
 // table position flattened out of whatever Dot chain a fourth-or-later
 // qualifier left it holding.
