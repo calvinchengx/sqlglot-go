@@ -1882,8 +1882,13 @@ func (g *generator) writeCast(e *Expression) string {
 		if e.Class == "TryCast" {
 			bigword = "SAFE_CAST"
 		}
-		out := bigword + "(" + g.child(e, "this") + " AS " + g.child(e, "to")
-		if def := g.child(e, "default"); def != "" {
+		// BigQuery allows a precision only in DDL, so every type parameter
+		// under the cast comes out: `CAST(x AS STRING(10))` writes
+		// `CAST(x AS STRING)` (BigQueryGenerator.TRANSFORMS,
+		// transforms.remove_precision_parameterized_types).
+		out := bigword + "(" + g.node(stripPrecisionParams(castChild(e, "this"))) +
+			" AS " + g.node(stripPrecisionParams(castChild(e, "to")))
+		if def := g.node(stripPrecisionParams(castChild(e, "default"))); def != "" {
 			out += " DEFAULT " + def + " ON CONVERSION ERROR"
 		}
 		if format := g.child(e, "format"); format != "" {
@@ -1895,6 +1900,40 @@ func (g *generator) writeCast(e *Expression) string {
 		return out + ")"
 	}
 	return word + "(" + g.child(e, "this") + " AS " + g.child(e, "to") + ")"
+}
+
+// castChild is one of a cast's arguments, or nothing.
+func castChild(e *Expression, key string) *Expression {
+	child, _ := e.Args[key].(*Expression)
+	return child
+}
+
+// stripPrecisionParams copies a subtree and takes the parameters off every
+// DataType in it, which is what BigQuery does to the types under a cast
+// (transforms.remove_precision_parameterized_types).
+func stripPrecisionParams(e *Expression) *Expression {
+	if e == nil {
+		return nil
+	}
+	out := e.Copy()
+	out.Walk(func(n *Expression) bool {
+		if n.Class != "DataType" {
+			return true
+		}
+		params, _ := n.Args["expressions"].([]*Expression)
+		kept := make([]*Expression, 0, len(params))
+		for _, p := range params {
+			if p != nil && p.Class == "DataTypeParam" {
+				continue
+			}
+			kept = append(kept, p)
+		}
+		if len(kept) != len(params) {
+			n.Set("expressions", kept)
+		}
+		return true
+	})
+	return out
 }
 
 // containsClass reports whether a node holds one of the named classes
@@ -8268,9 +8307,31 @@ func (g *generator) writeDateArith(e *Expression, domain string, sign int) strin
 			return g.dateArithMySQL(name, this, amount, unit)
 		}
 		return g.dateArithGenericFallback(name, this, amount, unit, false)
+	case "bigquery":
+		return g.dateArithBigQuery(name, this, amount, unit)
 	default:
 		return g.dateArithGenericFallback(name, this, amount, unit, domain == "Date" && sign > 0)
 	}
+}
+
+// dateArithBigQuery writes the amount and the unit back inside an INTERVAL:
+// `DATE_ADD(x, INTERVAL '1' DAY)`. The unit is a Var of the unit's own name,
+// defaulting to DAY (BigQueryGenerator.TRANSFORMS, date_add_interval_sql).
+func (g *generator) dateArithBigQuery(name string, this, amount, unit *Expression) string {
+	unitVar := unit
+	switch {
+	case unit == nil:
+		unitVar = New("Var", Arg{"this", "DAY"})
+	case unit.Class == "Var", unit.Class == "Placeholder", unit.Class == "WeekStart", unit.Class == "Column":
+	default:
+		text := unit.Name()
+		if text == "" {
+			text = "DAY"
+		}
+		unitVar = New("Var", Arg{"this", text})
+	}
+	interval := New("Interval", Arg{"this", amount}, Arg{"unit", unitVar})
+	return name + "(" + g.node(this) + ", " + g.node(interval) + ")"
 }
 
 // isPlainNumericLiteral reports whether e is a bare, non-string Literal --
