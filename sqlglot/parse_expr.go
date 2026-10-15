@@ -4080,8 +4080,21 @@ func (p *parser) parseColumn() (*Expression, error) {
 		}
 		// After a dot, `null` and `true` are names, not values -- and the
 		// reference builds a bare Identifier for them, with no `quoted` arg
-		// at all rather than one set false.
+		// at all rather than one set false. A parenthesis after the word
+		// makes it a CALL instead: `assert.true(1 = 1)` is a qualified call
+		// to a function called `true` (Parser._parse_column_ops).
 		if c := p.curr(); c != nil && (c.Type == TokNULL || c.Type == TokTRUE || c.Type == TokFALSE) {
+			if n := p.next(); n != nil && n.Type == TokL_PAREN {
+				fn, err := p.parseQualifiedName()
+				if err != nil {
+					return nil, err
+				}
+				chain := parts[0]
+				for _, part := range parts[1:] {
+					chain = New("Dot", Arg{"this", chain}, Arg{"expression", part})
+				}
+				return New("Dot", Arg{"this", chain}, Arg{"expression", fn}), nil
+			}
 			p.advance()
 			parts = append(parts, p.keep(New("Identifier", Arg{"this", c.Text})))
 			continue
