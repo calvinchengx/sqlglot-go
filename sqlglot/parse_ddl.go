@@ -7964,8 +7964,11 @@ func (p *parser) parseTablePart() (*Expression, error) {
 		if c := p.curr(); c != nil && c.Type == TokNUMBER {
 			text := c.Text
 			p.advance()
+			// The rest of the name is a WORD written with no space after the
+			// digits; a closing bracket is not part of it
+			// (Parser._parse_table_part, _advance_any).
 			if p.connectedTo(p.tokens[p.index-1]) {
-				if n := p.curr(); n != nil {
+				if n := p.curr(); n != nil && (n.Type == TokVAR || n.Type == TokIDENTIFIER) {
 					text += n.Text
 					p.advance()
 				}

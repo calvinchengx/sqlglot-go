@@ -4061,8 +4061,11 @@ func (p *parser) parseColumn() (*Expression, error) {
 			if c := p.curr(); c != nil && c.Type == TokNUMBER {
 				p.advance()
 				name := c.Text
+				// The rest of the name is a WORD written with no space after
+				// the digits; a closing bracket is not part of it
+				// (Parser._parse_field, _advance_any).
 				if p.connectedTo(p.tokens[p.index-1]) {
-					if n := p.curr(); n != nil {
+					if n := p.curr(); n != nil && (n.Type == TokVAR || n.Type == TokIDENTIFIER) {
 						name += n.Text
 						p.advance()
 					}

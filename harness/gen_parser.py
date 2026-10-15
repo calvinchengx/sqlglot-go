@@ -5878,6 +5878,8 @@ def property_specs(dialect: str) -> dict[str, dict]:
       schema           a parenthesised column list, into `this` as a Schema
       wrapped-columns  a parenthesised list, into `expressions` as columns
       wrapped-tables   the same, as tables -- INHERITS
+      columns          a BARE comma-separated list, into `expressions` as
+                       columns -- BigQuery's CLUSTER BY
 
     A name whose answers fit none of them is not recorded, and the port keeps
     refusing it. One name is skipped for a different reason: DATA_DELETION with
@@ -5930,10 +5932,13 @@ def property_specs(dialect: str) -> dict[str, dict]:
                     shape, node = "wrapped-tables", wrapped
             if shape is None and word is not None:
                 inner = word.args.get("this")
+                listed = word.args.get("expressions") or []
                 if isinstance(inner, e.Var):
                     shape, node = "value", word
                 elif isinstance(inner, e.Table):
                     shape, node = "table", word
+                elif listed and all(isinstance(x, e.Column) for x in listed):
+                    shape, node = "columns", word
             if shape is None and bare is not None and not bare.args:
                 shape, node = "bare", bare
             if shape is None:

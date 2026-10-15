@@ -714,6 +714,21 @@ func (p *parser) parseProperty(spec PropertySpec) (*Expression, error) {
 			return nil, err
 		}
 		return New(spec.Class, Arg{"this", New("Schema", Arg{"expressions", columns})}), nil
+	case "columns":
+		// BigQuery's CLUSTER BY takes a BARE comma-separated list of columns,
+		// with no parentheses (BigQueryParser._parse_cluster_property).
+		var items []*Expression
+		for {
+			column, err := p.parseColumn()
+			if err != nil {
+				return nil, err
+			}
+			items = append(items, column)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		return New(spec.Class, Arg{"expressions", items}), nil
 	case "wrapped-columns", "wrapped-tables":
 		// Databricks' CLUSTER BY takes AUTO or NONE in place of the column
 		// list -- the word IS the clustering, not a name it sorts by -- and
