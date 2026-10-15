@@ -208,6 +208,11 @@ func (g *generator) node(e *Expression) string {
 			return g.withComments(e, out)
 		}
 	}
+	if g.dialect == "starrocks" {
+		if out, handled := g.starrocksNode(e); handled {
+			return g.withComments(e, out)
+		}
+	}
 	if fn, ok := generators[e.Class]; ok {
 		return g.withComments(e, fn(g, e))
 	}
