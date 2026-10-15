@@ -107,7 +107,7 @@ func init() {
 		"Identifier":                          (*generator).writeIdentifier,
 		"Literal":                             (*generator).writeLiteral,
 		"National":                            (*generator).writeNationalAsString,
-		"RawString":                           (*generator).writeQuotedString,
+		"RawString":                           (*generator).writeRawString,
 		"ByteString":                          (*generator).writeQuotedString,
 		"UnicodeString":                       (*generator).writeQuotedString,
 		"HexString":                           (*generator).writeQuotedString,
@@ -1648,6 +1648,30 @@ func (g *generator) writeQuotedString(e *Expression) string {
 func (g *generator) writeNational(e *Expression) string {
 	text, _ := e.Args["this"].(string)
 	return "N'" + escapeStringBody(text, g.cfg.StringEscapePreferred) + "'"
+}
+
+// writeRawString writes a raw string literal. The backslashes the text
+// already holds are doubled FIRST, and only then are the control characters
+// spelled out -- the other order doubles the backslash the escaping itself
+// introduces, and a newline came back as `\n` (Generator.rawstring_sql).
+func (g *generator) writeRawString(e *Expression) string {
+	spec, ok := g.tables.StringClassSQL[e.Class]
+	if !ok {
+		return g.fail(e.Class + ", which this dialect writes in a way that loses it")
+	}
+	template, _, _ := strings.Cut(spec, "\t")
+	body, _ := e.Args["this"].(string)
+	preferred := g.cfg.StringEscapePreferred
+	if preferred != "" {
+		body = strings.ReplaceAll(body, preferred, preferred+preferred)
+	}
+	body = escapeControlCharacters(body)
+	if preferred == "" || preferred == "'" {
+		body = strings.ReplaceAll(body, "'", "''")
+	} else {
+		body = strings.ReplaceAll(body, "'", preferred+"'")
+	}
+	return strings.ReplaceAll(template, "{body}", body)
 }
 
 // writeLowerHex writes HEX(x) wrapped in LOWER: none of this port's dialects
@@ -3644,7 +3668,18 @@ func (g *generator) writeStruct(e *Expression) string {
 		}
 		parts = append(parts, g.node(item))
 	}
-	out := strings.ReplaceAll(g.tables.StructTemplate, "{fields}", strings.Join(parts, ", "))
+	// A dialect that preserves original names writes the name the struct was
+	// WRITTEN with -- `struct(...)` comes back out lowercase
+	// (Generator.function_fallback_sql).
+	template := g.tables.StructTemplate
+	if e.originalName != "" {
+		if _, consults := g.tables.ConsultsOriginalName[e.Class]; consults {
+			if i := strings.Index(template, "("); i > 0 && !strings.ContainsAny(template[:i], " {") {
+				template = e.originalName + template[i:]
+			}
+		}
+	}
+	out := strings.ReplaceAll(template, "{fields}", strings.Join(parts, ", "))
 	g.inCallArgs = was
 	return out
 }
@@ -8467,11 +8502,18 @@ func (g *generator) writeNullTreatment(e *Expression, words string) string {
 // with them -- `LAST_VALUE(x ORDER BY x IGNORE NULLS)`. Only DuckDB writes
 // them inside at all, and it writes them there.
 func (g *generator) nullTreatmentInsideCall(e, call *Expression, words string) string {
+	// The call is rendered WITHOUT its own comments: they belong after the
+	// words rather than inside the parentheses, and the reference writes them
+	// there itself (Generator._embed_ignore_nulls).
+	comments := call.Comments
+	call.Comments = nil
 	out := g.node(call)
+	call.Comments = comments
 	if !strings.HasSuffix(out, ")") {
 		return g.fail(e.Class + " over something that is not a call")
 	}
-	return out[:len(out)-1] + " " + words + ")"
+	out = out[:len(out)-1] + " " + words + ")"
+	return g.withComments(call, out)
 }
 
 // writeRegexpFlagged writes a regexp call and the FLAGS that say how the match

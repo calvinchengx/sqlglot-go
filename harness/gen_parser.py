@@ -5496,7 +5496,7 @@ def render_functions(P, exp, dialect, funcs):
             named_rendered = named_probe.sql(dialect=dialect or None)
         except Exception:  # noqa: BLE001
             named_rendered = rendered
-        if named_rendered != rendered and PROBE_ORIGINAL_NAME in named_rendered:
+        if named_rendered != rendered and PROBE_ORIGINAL_NAME.upper() in named_rendered.upper():
             consults_name.add(cls_name)
 
         # Probe every argument count the call can have, widest first. MAX of
