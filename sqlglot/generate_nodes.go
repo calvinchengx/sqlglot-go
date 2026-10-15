@@ -8891,6 +8891,17 @@ func (g *generator) writeCurrentTime(e *Expression) string {
 // it to the step that runs before any writer is reached
 // (BigQueryGenerator._str_to_datetime_sql).
 func (g *generator) writeStrToTime(e *Expression) string {
+	// Hive reads a string as a date or a timestamp by CASTing it, where no
+	// format was written to parse it with (HiveGenerator._str_to_date_sql).
+	// A format the CAST subsumes is the same thing; one it does not is left
+	// to the template the reference itself produced.
+	if isHiveFamily(g.dialect) && e.Args["format"] == nil {
+		dtype := "DATE"
+		if e.Class == "StrToTime" {
+			dtype = "TIMESTAMP"
+		}
+		return "CAST(" + g.child(e, "this") + " AS " + dtype + ")"
+	}
 	if g.dialect != "bigquery" {
 		return g.spell(e)
 	}
