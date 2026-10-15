@@ -3234,6 +3234,22 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		p.advance()
 		p.advance()
 	}
+	// `ANY_VALUE(x HAVING MAX y)` keeps the row whose y is greatest, and the
+	// reference records it as a node of its own around the VALUE. It comes
+	// BEFORE the ordering, which is where the reference reads it
+	// (Parser._parse_function_call, _parse_having_max).
+	var havingMaxColumn *Expression
+	havingMaxMax := true
+	if p.at(TokHAVING) && (p.nextWords("MAX") || p.nextWords("MIN")) {
+		p.advance() // HAVING
+		havingMaxMax = !p.atWords("MIN")
+		p.advance() // MAX or MIN
+		column, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		havingMaxColumn = column
+	}
 	// `ARRAY_AGG(x ORDER BY y)`: the ORDER BY belongs to the argument it
 	// follows, and the reference wraps that argument in an Order rather than
 	// hanging the clause off the call. It stands AFTER the nulls modifier and
@@ -3268,21 +3284,6 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 			inner = word
 		}
 	}
-	// `ANY_VALUE(x HAVING MAX y)` keeps the row whose y is greatest, and the
-	// reference records it as a node of its own around the VALUE
-	// (Parser._parse_having_max).
-	var havingMaxColumn *Expression
-	havingMaxMax := true
-	if p.at(TokHAVING) && (p.nextWords("MAX") || p.nextWords("MIN")) {
-		p.advance() // HAVING
-		havingMaxMax = !p.atWords("MIN")
-		p.advance() // MAX or MIN
-		column, err := p.parseColumn()
-		if err != nil {
-			return nil, err
-		}
-		havingMaxColumn = column
-	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed function argument list")
 	}
@@ -3298,13 +3299,9 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	if distinct {
 		args = []*Expression{New("Distinct", Arg{"expressions", args}, Arg{"on", nil})}
 	}
-	if order != nil {
-		if len(args) == 0 {
-			return nil, p.unsupported("ORDER BY without an argument to order")
-		}
-		order.Set("this", args[len(args)-1])
-		args[len(args)-1] = order
-	}
+	// The HAVING wraps the value, and the ordering wraps the HAVING: the
+	// reference reads them in that order
+	// (Parser._parse_order(_parse_having_max(...))).
 	if havingMaxColumn != nil {
 		if len(args) == 0 {
 			return nil, p.unsupported("HAVING MAX without a value to keep")
@@ -3312,6 +3309,13 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		args[len(args)-1] = New("HavingMax",
 			Arg{"this", args[len(args)-1]},
 			Arg{"expression", havingMaxColumn}, Arg{"max", havingMaxMax})
+	}
+	if order != nil {
+		if len(args) == 0 {
+			return nil, p.unsupported("ORDER BY without an argument to order")
+		}
+		order.Set("this", args[len(args)-1])
+		args[len(args)-1] = order
 	}
 	if limitValue != nil {
 		if len(args) == 0 {

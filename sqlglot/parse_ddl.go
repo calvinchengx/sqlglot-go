@@ -8008,7 +8008,13 @@ func (p *parser) parseTablePart() (*Expression, error) {
 			text += "-"
 			// Only the tokens written with NO space between them belong to
 			// the name: `a-b c` names the table `a-b` with the alias `c`.
-			for p.curr() != nil && p.curr().Type != TokDOT && p.connectedTo(p.tokens[p.index-1]) {
+			// Only NAME tokens belong to the dashed name: `b-c)` ends at the
+			// bracket, and `x-0.y` runs on through the dot the float token
+			// swallowed.
+			for p.curr() != nil && p.curr().Type != TokDOT &&
+				(p.curr().Type == TokVAR || p.curr().Type == TokIDENTIFIER ||
+					p.curr().Type == TokNUMBER) &&
+				p.connectedTo(p.tokens[p.index-1]) {
 				text += p.curr().Text
 				p.advance()
 			}
