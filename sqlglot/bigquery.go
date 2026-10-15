@@ -10,7 +10,7 @@ import (
 // signature (BigQueryParser.FUNCTIONS is full of lambdas the probe cannot see).
 func bigqueryOwnedFunction(upper string) bool {
 	switch upper {
-	case "TO_HEX",
+	case "TO_HEX", "LOWER",
 		"WEEK", "DATE_ADD", "DATE_SUB", "DATETIME_ADD", "DATETIME_SUB",
 		"TIME_ADD", "TIME_SUB", "TIMESTAMP_ADD", "TIMESTAMP_SUB",
 		"SPLIT", "LENGTH", "TO_JSON", "SHA256", "SHA512",
@@ -69,6 +69,17 @@ func (p *parser) buildBigQueryFunction(upper string, args []*Expression) *Expres
 			}
 			node.Set("to_json", true)
 			return node
+		}
+	case "LOWER":
+		// `LOWER(TO_HEX(x))` folds into the TO_HEX itself -- the hex it
+		// builds is already lower-case -- and anything else is an ordinary
+		// LOWER. The recorded signature describes the FOLDED form, so the
+		// call is built here rather than through it.
+		if len(args) >= 1 && args[0] != nil {
+			if args[0].Class == "LowerHex" {
+				return args[0]
+			}
+			return New("Lower", Arg{"this", args[0]})
 		}
 	case "TO_HEX":
 		// `TO_HEX(MD5(x))` unwraps the digest back to MD5(x); anything else
