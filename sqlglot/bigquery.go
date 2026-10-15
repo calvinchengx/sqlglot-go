@@ -212,9 +212,15 @@ func (p *parser) parseBigQueryML(class string) (*Expression, error) {
 		}
 	}
 	p.match(TokCOMMA)
-	params, err := p.parseBitwise()
-	if err != nil {
-		return nil, err
+	// A parameters STRUCT the statement did not write is simply absent --
+	// `_parse_bitwise` answers nothing rather than failing
+	// (BigQueryParser._parse_ml).
+	var params *Expression
+	if !p.at(TokR_PAREN) {
+		params, err = p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
 	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed " + class)
