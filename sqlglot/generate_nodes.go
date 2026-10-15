@@ -175,6 +175,8 @@ func init() {
 		"EncodeProperty":                      (*generator).writeEncodeProperty,
 		"DateAdd":                             (*generator).writeDateAdd,
 		"DateSub":                             (*generator).writeDateSub,
+		"StrToTime":                           (*generator).writeStrToTime,
+		"StrToDate":                           (*generator).writeStrToTime,
 		"MakeInterval":                        (*generator).writeMakeInterval,
 		"AIForecast":                          (*generator).writeAIForecast,
 		"ParseDatetime":                       (*generator).writeParseDatetime,
@@ -8793,6 +8795,53 @@ func (g *generator) writeRegexpFlagged(e *Expression) string {
 		}
 	}
 	return g.regexpCallWithFlags(e, key)
+}
+
+// writeStrToTime writes BigQuery's two spellings of a string-to-time
+// conversion. The ordinary one is PARSE_TIMESTAMP or PARSE_DATE, with the
+// format first -- spelled through the dialect's INVERSE_TIME_MAPPING -- and
+// the zone last where one was written. A SAFE one is a SAFE_CAST whose FORMAT
+// is spelled through INVERSE_FORMAT_MAPPING instead, a DIFFERENT table for the
+// same stored format, which is why this writer spells it rather than leaving
+// it to the step that runs before any writer is reached
+// (BigQueryGenerator._str_to_datetime_sql).
+func (g *generator) writeStrToTime(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	dtype := "TIMESTAMP"
+	if e.Class == "StrToDate" {
+		dtype = "DATE"
+	}
+	format, _ := e.Args["format"].(*Expression)
+	mapping := g.tables.InverseTimeMapping
+	if e.Args["safe"] == true {
+		mapping = g.tables.InverseFormatMapping
+	}
+	spelled := ""
+	if format != nil {
+		spelled = g.node(format)
+		if raw, ok := format.Args["this"].(string); ok && isStringLiteral(format) {
+			spelled = g.node(New("Literal",
+				Arg{"this", formatTime(raw, mapping)}, Arg{"is_string", true}))
+		}
+	}
+	if e.Args["safe"] == true {
+		out := "SAFE_CAST(" + g.child(e, "this") + " AS " + dtype
+		if spelled != "" {
+			out += " FORMAT " + spelled
+		}
+		return out + ")"
+	}
+	args := make([]string, 0, 3)
+	if spelled != "" {
+		args = append(args, spelled)
+	}
+	args = append(args, g.child(e, "this"))
+	if zone, _ := e.Args["zone"].(*Expression); zone != nil {
+		args = append(args, g.node(zone))
+	}
+	return "PARSE_" + dtype + "(" + strings.Join(args, ", ") + ")"
 }
 
 // writeMakeInterval writes BigQuery's MAKE_INTERVAL, whose parts are named in
