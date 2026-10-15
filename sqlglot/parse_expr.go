@@ -3308,8 +3308,8 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 			Arg{"expression", havingMaxColumn}, Arg{"max", havingMaxMax})
 	}
 	if limitValue != nil {
-		if order == nil || len(args) == 0 {
-			return nil, p.unsupported("LIMIT without an ORDER BY to limit")
+		if len(args) == 0 {
+			return nil, p.unsupported("LIMIT without a value to limit")
 		}
 		// The reference assigns `this` before `expression`, which is the order
 		// the dump compares.
