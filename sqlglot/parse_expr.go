@@ -4910,6 +4910,12 @@ func (p *parser) parseDotField() (*Expression, bool, error) {
 		return nil, false, nil
 	}
 	switch n.Type {
+	case TokSTAR:
+		// `f(x).*` names every field of what the call returned
+		// (Parser._parse_column_ops, _parse_star).
+		p.advance()
+		p.advance()
+		return newStar(), false, nil
 	case TokNUMBER:
 		p.advance()
 		p.advance()
