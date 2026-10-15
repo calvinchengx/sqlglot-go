@@ -128,7 +128,7 @@ func bigqueryOwnedParser(upper string) bool {
 	case "ARRAY", "JSON_ARRAY", "MAKE_INTERVAL", "PREDICT", "TRANSLATE",
 		"FEATURES_AT_TIME", "GENERATE_EMBEDDING", "GENERATE_TEXT_EMBEDDING",
 		"GENERATE_TEXT", "GENERATE_TABLE", "GENERATE_BOOL", "GENERATE_INT",
-		"GENERATE_DOUBLE", "VECTOR_SEARCH", "FORECAST":
+		"GENERATE_DOUBLE", "VECTOR_SEARCH", "FORECAST", "GAP_FILL":
 		return true
 	}
 	return false
@@ -180,6 +180,8 @@ func (p *parser) parseBigQueryFunctionParser(upper string) (*Expression, error) 
 			"GENERATE_DOUBLE": "GenerateDouble",
 		}[upper]
 		return p.parseBigQueryGenerate(class)
+	case "GAP_FILL":
+		return p.parseBigQueryGapFill()
 	case "FEATURES_AT_TIME":
 		return p.parseBigQueryFeaturesAtTime()
 	case "VECTOR_SEARCH":
@@ -574,4 +576,40 @@ func bigqueryBracketOffset(name string) (offset int, safe bool, ok bool) {
 		return 1, true, true
 	}
 	return 0, false, false
+}
+
+// parseBigQueryGapFill reads `[TABLE] table, ts_column => ..., ...`. The
+// arguments after the table are filled into the node's own slots in order,
+// whatever they name themselves (Parser._parse_gap_fill,
+// GapFill.from_arg_list).
+func (p *parser) parseBigQueryGapFill() (*Expression, error) {
+	p.matchUnquotedWord("TABLE")
+	table, err := p.parseTable()
+	if err != nil {
+		return nil, err
+	}
+	node := New("GapFill", Arg{"this", table})
+	keys := []string{"ts_column", "bucket_width", "partitioning_columns",
+		"value_columns", "origin", "ignore_nulls"}
+	p.match(TokCOMMA)
+	for _, key := range keys {
+		if p.at(TokR_PAREN) {
+			break
+		}
+		arg, err := p.parseBigQueryLambda()
+		if err != nil {
+			return nil, err
+		}
+		if arg == nil {
+			break
+		}
+		node.Set(key, arg)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed GAP_FILL")
+	}
+	return node, nil
 }

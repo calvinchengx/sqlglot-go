@@ -195,6 +195,7 @@ func init() {
 		"MLForecast":                          (*generator).writeMLForecast,
 		"FeaturesAtTime":                      (*generator).writeFeaturesAtTime,
 		"VectorSearch":                        (*generator).writeVectorSearch,
+		"GapFill":                             (*generator).writeGapFill,
 		"Mod":                                 (*generator).writeMod,
 		"Contains":                            (*generator).writeContains,
 		"IgnoreNulls":                         (*generator).writeIgnoreNulls,
@@ -2002,6 +2003,22 @@ func (g *generator) writeVectorSearch(e *Expression) string {
 		}
 	}
 	return "VECTOR_SEARCH(" + strings.Join(parts, ", ") + ")"
+}
+
+// writeGapFill writes `GAP_FILL(TABLE t, ...)`: the table takes the word
+// TABLE and the rest follow in the node's own order
+// (Generator.gapfill_sql).
+func (g *generator) writeGapFill(e *Expression) string {
+	parts := []string{"TABLE " + g.child(e, "this")}
+	for _, key := range e.Keys {
+		if key == "this" {
+			continue
+		}
+		if s := g.child(e, key); s != "" {
+			parts = append(parts, s)
+		}
+	}
+	return "GAP_FILL(" + strings.Join(parts, ", ") + ")"
 }
 
 // tableArgument renders one argument, prefixed with TABLE where it is a table.
