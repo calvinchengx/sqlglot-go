@@ -10,7 +10,7 @@ import (
 // signature (BigQueryParser.FUNCTIONS is full of lambdas the probe cannot see).
 func bigqueryOwnedFunction(upper string) bool {
 	switch upper {
-	case "TO_HEX", "LOWER", "EDIT_DISTANCE",
+	case "TO_HEX", "LOWER", "UPPER", "EDIT_DISTANCE",
 		"WEEK", "DATE_ADD", "DATE_SUB", "DATETIME_ADD", "DATETIME_SUB",
 		"TIME_ADD", "TIME_SUB", "TIMESTAMP_ADD", "TIMESTAMP_SUB",
 		"SPLIT", "LENGTH", "TO_JSON", "SHA256", "SHA512",
@@ -69,6 +69,15 @@ func (p *parser) buildBigQueryFunction(upper string, args []*Expression) *Expres
 			}
 			node.Set("to_json", true)
 			return node
+		}
+	case "UPPER":
+		// `UPPER(TO_HEX(x))` folds into the upper-case hex of the value,
+		// which is what the TO_HEX would have written in capitals anyway.
+		if len(args) >= 1 && args[0] != nil {
+			if args[0].Class == "LowerHex" {
+				return New("Hex", Arg{"this", args[0].This()})
+			}
+			return New("Upper", Arg{"this", args[0]})
 		}
 	case "EDIT_DISTANCE":
 		// The third argument is a named `max_distance => n`, and the

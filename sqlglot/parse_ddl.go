@@ -7964,6 +7964,14 @@ func (p *parser) parseSequenceRest(table *Expression, replace, exists bool) (*Ex
 // path as a table, so `FROM 'x.y'` names one table called `x.y` rather than
 // two parts of a name -- and the reference writes it back as `"x.y"`.
 func (p *parser) parseTablePart() (*Expression, error) {
+	// A STAR names nothing here -- `FROM x.*` reads the star as the table's
+	// own name, which parseTable does once the parts are read
+	// (Parser._parse_table_part, _parse_id_var).
+	if p.dialect == "bigquery" {
+		if c := p.curr(); c != nil && c.Type == TokSTAR {
+			return nil, nil
+		}
+	}
 	if c := p.curr(); c != nil && c.Type == TokSTRING {
 		p.advance()
 		return p.keep(New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true})), nil

@@ -541,7 +541,9 @@ func (p *parser) parseTable() (*Expression, error) {
 	// (Parser._parse_table_parts, wildcard=True).
 	if p.dialect == "bigquery" && p.at(TokSTAR) && p.connectedToPrev() {
 		if n := len(parts); n > 0 && parts[n-1] == nil {
-			parts[n-1] = New("Identifier", Arg{"this", "*"}, Arg{"quoted", false})
+			// A bare Identifier, with no `quoted` argument at all
+			// (Parser._parse_table_parts).
+			parts[n-1] = New("Identifier", Arg{"this", "*"})
 		} else if n := len(parts); n > 0 && parts[n-1].Class == "Identifier" {
 			parts[n-1].Set("this", parts[n-1].Name()+"*")
 		}
