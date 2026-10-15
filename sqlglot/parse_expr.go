@@ -3231,6 +3231,21 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		p.advance()
 		p.advance()
 	}
+	// `ANY_VALUE(x HAVING MAX y)` keeps the row whose y is greatest, and the
+	// reference records it as a node of its own around the VALUE
+	// (Parser._parse_having_max).
+	var havingMaxColumn *Expression
+	havingMaxMax := true
+	if p.at(TokHAVING) && (p.nextWords("MAX") || p.nextWords("MIN")) {
+		p.advance() // HAVING
+		havingMaxMax = !p.atWords("MIN")
+		p.advance() // MAX or MIN
+		column, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		havingMaxColumn = column
+	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed function argument list")
 	}
@@ -3252,6 +3267,14 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		}
 		order.Set("this", args[len(args)-1])
 		args[len(args)-1] = order
+	}
+	if havingMaxColumn != nil {
+		if len(args) == 0 {
+			return nil, p.unsupported("HAVING MAX without a value to keep")
+		}
+		args[len(args)-1] = New("HavingMax",
+			Arg{"this", args[len(args)-1]},
+			Arg{"expression", havingMaxColumn}, Arg{"max", havingMaxMax})
 	}
 	if limitValue != nil {
 		if order == nil || len(args) == 0 {
