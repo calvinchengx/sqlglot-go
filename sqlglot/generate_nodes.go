@@ -3938,6 +3938,7 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 	if over, ok := g.tables.JSONPathByClass[e.Class]; ok && over.Form != "" {
 		form = over.Form
 	}
+	form = g.jsonExtractName(e, form)
 	this, _ := e.Args["this"].(*Expression)
 	if !isAtomForOperator(this) && !writesAsACall(g.node(this)) {
 		return g.fail(e.Class + " over a compound expression")
@@ -3956,7 +3957,7 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 			if over.PlainForm == "" {
 				return g.fail(e.Class + " over a path it cannot write plainly")
 			}
-			form = over.PlainForm
+			form = g.jsonExtractName(e, over.PlainForm)
 		}
 		out := g.writeJSONOperand(e, form)
 		// Further paths beyond the first ride along as extra call arguments.
@@ -3987,6 +3988,23 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 	}
 	g.pathOwner = saved
 	return strings.ReplaceAll(out, "{path}", text)
+}
+
+// jsonExtractName puts the name the statement was WRITTEN with on a JSON
+// extraction form, where the dialect preserves original names -- BigQuery
+// reads JSON_QUERY as the same node as JSON_EXTRACT, and writes back the name
+// it was given (BigQueryGenerator._json_extract_sql).
+func (g *generator) jsonExtractName(e *Expression, form string) string {
+	if e.originalName == "" {
+		return form
+	}
+	if _, consults := g.tables.ConsultsOriginalName[e.Class]; !consults {
+		return form
+	}
+	if i := strings.Index(form, "("); i > 0 && !strings.ContainsAny(form[:i], " {") {
+		return e.originalName + form[i:]
+	}
+	return form
 }
 
 // writeJSONOperand writes an extraction whose right-hand side is an ORDINARY
