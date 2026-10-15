@@ -356,9 +356,9 @@ func (p *parser) parseDelete() (*Expression, error) {
 func (p *parser) parseMerge(nested bool) (*Expression, error) {
 	p.advance() // MERGE
 
-	if !p.match(TokINTO) {
-		return nil, p.unsupported("MERGE without INTO")
-	}
+	// BigQuery writes a MERGE with no INTO at all -- `MERGE dataset.t USING
+	// ...` (Parser._parse_merge).
+	p.match(TokINTO)
 	target, err := p.parseTable()
 	if err != nil {
 		return nil, err
@@ -517,19 +517,28 @@ func (p *parser) parseMergeAction() (*Expression, error) {
 			insert.Set("this", New("Star"))
 			return insert, nil
 		}
-		if p.at(TokL_PAREN) {
+		// `INSERT ROW` inserts the whole row, and the word is kept as a Var.
+		if p.matchUnquotedWord("ROW") {
+			insert.Set("this", New("Var", Arg{"this", "ROW"}))
+		} else if p.at(TokL_PAREN) {
 			columns, err := p.parseParenthesisedList()
 			if err != nil {
 				return nil, err
 			}
 			insert.Set("this", New("Tuple", Arg{"expressions", columns}))
 		}
-		if p.match(TokVALUES) {
+		// VALUES is matched by TEXT: in BigQuery it is a plain word rather
+		// than a keyword (Parser._parse_when_matched).
+		if p.matchUnquotedWord("VALUES") {
 			values, err := p.parseParenthesisedList()
 			if err != nil {
 				return nil, err
 			}
 			insert.Set("expression", New("Tuple", Arg{"expressions", values}))
+		} else if _, hasThis := insert.Args["this"]; hasThis {
+			// `INSERT ROW` names no values, and the reference records FALSE
+			// there rather than nothing (Parser._parse_when_matched).
+			insert.Set("expression", false)
 		}
 		if _, ok := insert.Args["this"]; !ok {
 			if _, ok := insert.Args["expression"]; !ok {

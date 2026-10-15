@@ -5189,7 +5189,11 @@ func (g *generator) writePropertyList(e *Expression) string {
 		case "POST_WITH":
 			with = append(with, g.node(item))
 		case "POST_SCHEMA":
-			root = append(root, g.node(item))
+			// A spelling that brings its OWN leading separator -- the
+			// templates do, because they were recorded as the reference
+			// renders them inside the statement -- is joined without a
+			// second one.
+			root = append(root, strings.TrimLeft(g.node(item), " "))
 		}
 	}
 	out := strings.Join(root, " ")
@@ -5333,7 +5337,11 @@ func (g *generator) writeProperties(e *Expression) (before string, out string, f
 					continue
 				}
 			}
-			root = append(root, g.node(item))
+			// A spelling that brings its OWN leading separator -- the
+			// templates do, because they were recorded as the reference
+			// renders them inside the statement -- is joined without a
+			// second one.
+			root = append(root, strings.TrimLeft(g.node(item), " "))
 		case "POST_WITH":
 			with = append(with, g.node(item))
 		case "POST_CREATE":

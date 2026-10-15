@@ -700,9 +700,19 @@ func (p *parser) parseProperty(spec PropertySpec) (*Expression, error) {
 				return New(spec.Class, Arg{"this",
 					New("Schema", Arg{"this", name}, Arg{"expressions", columns})}), nil
 			}
-			field, err := p.parseBitwise()
-			if err != nil {
-				return nil, err
+			// The reference reads a FIELD here rather than a general
+			// expression: a bare name is an Identifier, not the Column an
+			// expression reader builds (Parser._parse_partitioned_by,
+			// _parse_field).
+			var field *Expression
+			var ferr error
+			if p.namesAFunctionCall() {
+				field, ferr = p.parseFunction()
+			} else {
+				field, ferr = p.parseIdentifier()
+			}
+			if ferr != nil {
+				return nil, ferr
 			}
 			return New(spec.Class, Arg{"this", field}), nil
 		}

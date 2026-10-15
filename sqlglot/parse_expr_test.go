@@ -3407,6 +3407,11 @@ func TestMerge(t *testing.T) {
 		{"by source", "duckdb",
 			"MERGE INTO t USING s ON a = b WHEN NOT MATCHED BY SOURCE THEN DELETE",
 			"MERGE INTO t USING s ON a = b WHEN NOT MATCHED BY SOURCE THEN DELETE"},
+		// The reference matches INTO optionally, so a MERGE written without
+		// it is read and written back WITH it.
+		{"no INTO", "",
+			"MERGE t USING s ON a = b WHEN MATCHED THEN DELETE",
+			"MERGE INTO t USING s ON a = b WHEN MATCHED THEN DELETE"},
 		// DuckDB spells the match as a column list rather than a condition,
 		// and it takes the place of the ON entirely.
 		{"matched on columns", "duckdb",
@@ -3462,7 +3467,6 @@ func TestMerge(t *testing.T) {
 		"MERGE INTO t WITH (HOLDLOCK) AS 5 USING s ON a = b WHEN MATCHED THEN DELETE",
 		"MERGE INTO t USING s ON a = b",
 		"MERGE INTO t USING s ON a = b WHEN MATCHED THEN TRUNCATE",
-		"MERGE t USING s ON a = b WHEN MATCHED THEN DELETE",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
