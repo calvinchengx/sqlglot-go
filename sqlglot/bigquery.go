@@ -10,7 +10,8 @@ import (
 // signature (BigQueryParser.FUNCTIONS is full of lambdas the probe cannot see).
 func bigqueryOwnedFunction(upper string) bool {
 	switch upper {
-	case "WEEK", "DATE_ADD", "DATE_SUB", "DATETIME_ADD", "DATETIME_SUB",
+	case "TO_HEX",
+		"WEEK", "DATE_ADD", "DATE_SUB", "DATETIME_ADD", "DATETIME_SUB",
 		"TIME_ADD", "TIME_SUB", "TIMESTAMP_ADD", "TIMESTAMP_SUB",
 		"SPLIT", "LENGTH", "TO_JSON", "SHA256", "SHA512",
 		"NORMALIZE_AND_CASEFOLD":
@@ -68,6 +69,15 @@ func (p *parser) buildBigQueryFunction(upper string, args []*Expression) *Expres
 			}
 			node.Set("to_json", true)
 			return node
+		}
+	case "TO_HEX":
+		// `TO_HEX(MD5(x))` unwraps the digest back to MD5(x); anything else
+		// is the lower-case hex of the value (BigQueryParser._build_to_hex).
+		if len(args) >= 1 && args[0] != nil {
+			if args[0].Class == "MD5Digest" {
+				return New("MD5", Arg{"this", args[0].This()})
+			}
+			return New("LowerHex", Arg{"this", args[0]})
 		}
 	case "JSON_STRIP_NULLS":
 		// The named arguments are keys of their own, named after the
