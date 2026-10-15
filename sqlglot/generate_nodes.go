@@ -9984,8 +9984,12 @@ func (g *generator) writeInitcap(e *Expression) string {
 		}
 		return "REGEXP_REPLACE(" + g.child(e, "this") + ", '(\\w)(\\w*)', x -> UPPER(x[1]) || LOWER(x[2]))"
 	}
-	if custom && g.dialect != "" {
-		return g.fail("INITCAP does not support custom delimiters")
+	// A custom delimiter is written only where the dialect supports one --
+	// BigQuery, Snowflake and the neutral dialect. Everywhere else the
+	// reference warns and DROPS it, writing the call without it
+	// (Generator.initcap_sql, Dialect.INITCAP_SUPPORTS_CUSTOM_DELIMITERS).
+	if custom && g.dialect != "" && g.dialect != "bigquery" && g.dialect != "snowflake" {
+		custom = false
 	}
 	out := "INITCAP(" + g.child(e, "this")
 	if custom {
