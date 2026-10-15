@@ -7,6 +7,13 @@ import "strings"
 // handled here.
 func (g *generator) sqliteNode(e *Expression) (string, bool) {
 	switch e.Class {
+	case "ColumnDef":
+		// A true identity column is AUTOINCREMENT in SQLite, and the words
+		// that said otherwise come off it
+		// (SQLiteGenerator.TRANSFORMS, _generated_to_auto_increment).
+		if out, ok := g.sqliteGeneratedToAutoIncrement(e); ok {
+			return out, true
+		}
 	case "JSONExtract", "JSONExtractScalar":
 		// Only the FUNCTION form writes JSON_EXTRACT; the `->`/`->>` form
 		// keeps its arrow. The two are told apart by the flags the function
@@ -174,4 +181,51 @@ func sqlitePathText(path string) string {
 		return path[1 : len(path)-1]
 	}
 	return path
+}
+
+// sqliteGeneratedToAutoIncrement rewrites a true identity column as
+// AUTOINCREMENT, which is how SQLite spells one: the GENERATED ALWAYS AS
+// IDENTITY constraint comes off the column, and any NOT NULL beside it, and
+// an AUTOINCREMENT is appended in their place. A form that carries an
+// EXPRESSION is a computed column and keeps it
+// (SQLiteGenerator._generated_to_auto_increment).
+func (g *generator) sqliteGeneratedToAutoIncrement(e *Expression) (string, bool) {
+	constraints, _ := e.Args["constraints"].([]*Expression)
+	found := false
+	for _, c := range constraints {
+		if c == nil || c.Class != "ColumnConstraint" {
+			continue
+		}
+		if kind, _ := c.Args["kind"].(*Expression); kind != nil &&
+			kind.Class == "GeneratedAsIdentityColumnConstraint" &&
+			kind.Args["expression"] == nil {
+			found = true
+			break
+		}
+	}
+	if !found {
+		return "", false
+	}
+	kept := make([]*Expression, 0, len(constraints)+1)
+	for _, c := range constraints {
+		if c == nil || c.Class != "ColumnConstraint" {
+			kept = append(kept, c)
+			continue
+		}
+		kind, _ := c.Args["kind"].(*Expression)
+		if kind == nil {
+			kept = append(kept, c)
+			continue
+		}
+		if kind.Class == "GeneratedAsIdentityColumnConstraint" ||
+			kind.Class == "NotNullColumnConstraint" {
+			continue
+		}
+		kept = append(kept, c)
+	}
+	kept = append(kept, New("ColumnConstraint",
+		Arg{"kind", New("AutoIncrementColumnConstraint")}))
+	copied := e.shallowCopy()
+	copied.Set("constraints", kept)
+	return g.writeColumnDef(copied), true
 }
