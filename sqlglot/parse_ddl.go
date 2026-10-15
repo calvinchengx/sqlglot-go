@@ -3744,6 +3744,13 @@ func (p *parser) parseFunctionProperty() (*Expression, error) {
 		p.advance()
 		return New("StabilityProperty",
 			Arg{"this", New("Literal", Arg{"this", "IMMUTABLE"}, Arg{"is_string", true})}), nil
+	// `NOT DETERMINISTIC` is the standard word for VOLATILE, and the
+	// reference records it that way (BigQueryParser._parse_property).
+	case p.atWords("NOT", "DETERMINISTIC"):
+		p.advance()
+		p.advance()
+		return New("StabilityProperty",
+			Arg{"this", New("Literal", Arg{"this", "VOLATILE"}, Arg{"is_string", true})}), nil
 	case p.atWords("STRICT"):
 		p.advance()
 		return New("StrictProperty"), nil

@@ -6965,6 +6965,15 @@ func (g *generator) writeStabilityProperty(e *Expression) string {
 		return g.fail(e.Class + " with no word")
 	}
 	word, _ := this.Args["this"].(string)
+	// BigQuery has the standard words too: IMMUTABLE is DETERMINISTIC and
+	// everything else is NOT DETERMINISTIC
+	// (BigQueryGenerator.TRANSFORMS).
+	if g.dialect == "bigquery" {
+		if word == "IMMUTABLE" {
+			return "DETERMINISTIC"
+		}
+		return "NOT DETERMINISTIC"
+	}
 	// Trino has only DETERMINISTIC and its negation.
 	if g.dialect == "trino" {
 		if word == "IMMUTABLE" {
