@@ -4847,6 +4847,14 @@ func (g *generator) writeGroupConcat(e *Expression) string {
 		}
 		return out[:close] + " ON OVERFLOW " + overflow + out[close:]
 	}
+	// BigQuery writes an ordering and a LIMIT as MODIFIERS after the
+	// separator: `STRING_AGG(DISTINCT v, sep LIMIT 3)`
+	// (Generator.groupconcat_sql).
+	if g.dialect == "bigquery" {
+		if out, ok := g.bigQueryGroupConcat(e); ok {
+			return out
+		}
+	}
 	order, _ := e.Args["this"].(*Expression)
 	// Nothing folded in, or a dialect that writes the ordering where it
 	// already is: the ordinary spelling serves.
@@ -4873,6 +4881,41 @@ func (g *generator) writeGroupConcat(e *Expression) string {
 		return out + " WITHIN GROUP (" + strings.TrimSpace(g.node(ordering)) + ")"
 	}
 	return g.fail(e.Class + " over an ordering this dialect writes elsewhere")
+}
+
+// bigQueryGroupConcat writes a GroupConcat whose first argument carries an
+// ordering and a LIMIT, both of which BigQuery puts after the separator
+// rather than inside the argument.
+func (g *generator) bigQueryGroupConcat(e *Expression) (string, bool) {
+	inner, _ := e.Args["this"].(*Expression)
+	var limit *Expression
+	if inner != nil && inner.Class == "Limit" {
+		limit = inner
+		inner = childOf(inner, "this")
+	}
+	var ordering *Expression
+	if inner != nil && inner.Class == "Order" {
+		ordering = inner
+		inner = childOf(inner, "this")
+	}
+	if limit == nil && ordering == nil {
+		return "", false
+	}
+	plain := e.shallowCopy()
+	plain.Set("this", inner)
+	out := g.spell(plain)
+	if !strings.HasSuffix(out, ")") {
+		return g.fail(e.Class + " whose spelling is not a call"), true
+	}
+	mods := ""
+	if ordering != nil {
+		mods += " " + strings.TrimSpace(g.node(
+			New("Order", Arg{"expressions", ordering.Args["expressions"]})))
+	}
+	if limit != nil {
+		mods += " LIMIT " + g.child(limit, "expression")
+	}
+	return out[:len(out)-1] + mods + ")", true
 }
 
 // writeCreate writes the statements that make things. The kind is a WORD on

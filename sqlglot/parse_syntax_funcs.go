@@ -571,6 +571,18 @@ func (p *parser) parseStringAgg() (*Expression, error) {
 		order.Set("this", args[0])
 		args[0] = order
 	}
+	// `STRING_AGG(x ORDER BY y LIMIT n)` takes a LIMIT as well, and it wraps
+	// whatever the ordering left (Parser._parse_string_agg, _parse_limit).
+	if p.at(TokLIMIT) {
+		p.advance()
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("LIMIT without a value")
+		}
+		p.advance()
+		args[0] = New("Limit", Arg{"this", args[0]},
+			Arg{"expression", New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})})
+	}
 	// A third argument is the overflow behaviour, which the reference reads
 	// and then writes away -- `STRING_AGG(DISTINCT x, y, z)` comes back
 	// without the z.
