@@ -4016,6 +4016,24 @@ func (p *parser) parseColumn() (*Expression, error) {
 			star = true
 			break
 		}
+		// After a dot, a NUMBER names a FIELD rather than a value: BigQuery
+		// reads `data.144A_FLAG` as a field called 144A_FLAG, quoted
+		// (BigQueryParser.SUPPORTS_DIGIT_PREFIXED_FIELD_NAMES,
+		// Parser._parse_field).
+		if p.dialect == "bigquery" {
+			if c := p.curr(); c != nil && c.Type == TokNUMBER {
+				p.advance()
+				name := c.Text
+				if p.connectedTo(p.tokens[p.index-1]) {
+					if n := p.curr(); n != nil {
+						name += n.Text
+						p.advance()
+					}
+				}
+				parts = append(parts, New("Identifier", Arg{"this", name}, Arg{"quoted", true}))
+				continue
+			}
+		}
 		// After a dot, `null` and `true` are names, not values -- and the
 		// reference builds a bare Identifier for them, with no `quoted` arg
 		// at all rather than one set false.
