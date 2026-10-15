@@ -2053,9 +2053,6 @@ func (g *generator) writeJSONStripNulls(e *Expression) string {
 // template every other dialect was probed with spells it LN
 // (BigQueryGenerator, PRESERVE_ORIGINAL_NAMES).
 func (g *generator) writeLn(e *Expression) string {
-	if g.dialect == "bigquery" {
-		return "LOG(" + g.child(e, "this") + ")"
-	}
 	return g.spell(e)
 }
 
@@ -3430,6 +3427,17 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 			continue
 		}
 		out := candidate.Template
+		// A dialect that preserves original names writes the name the call
+		// was WRITTEN with, and the template's leading name is the class's
+		// own -- `substr(x, 1)` is a Substring and comes back out substr
+		// (Generator.function_fallback_sql).
+		if e.originalName != "" {
+			if _, consults := g.tables.ConsultsOriginalName[e.Class]; consults {
+				if i := strings.Index(out, "("); i > 0 && !strings.ContainsAny(out[:i], " {") {
+					out = e.originalName + out[i:]
+				}
+			}
+		}
 		// Left to right, the order the text is READ in. Some of what a writer
 		// records while rendering is positional -- a dollar already written
 		// pairs with the next one and opens a quote -- so filling the markers
