@@ -8826,6 +8826,19 @@ func (g *generator) writeRegexpFlagged(e *Expression) string {
 	if g.dialect == "bigquery" && e.Class != "RegexpReplace" {
 		return g.bigqueryRegexpCall(e)
 	}
+	// Spark names the replacement and then the POSITION the search starts
+	// at, and drops any occurrence the tree carries
+	// (Spark2Generator.TRANSFORMS).
+	if (g.dialect == "spark" || g.dialect == "spark2") && e.Class == "RegexpReplace" {
+		args := []string{g.child(e, "this"), g.child(e, "expression")}
+		if replacement, _ := e.Args["replacement"].(*Expression); replacement != nil {
+			args = append(args, g.node(replacement))
+		}
+		if position, _ := e.Args["position"].(*Expression); position != nil {
+			args = append(args, g.node(position))
+		}
+		return "REGEXP_REPLACE(" + strings.Join(args, ", ") + ")"
+	}
 	key, named := g.tables.RegexpFlagArgs[e.Class]
 	if !named {
 		return g.spell(e)
