@@ -4414,7 +4414,7 @@ func (p *parser) jsonPathFor(arg *Expression) *Expression {
 		// would otherwise be.
 		return arg
 	}
-	path, err := parseJSONPath(text, p.dialect == "databricks")
+	path, err := parseJSONPath(text, p.jsonPathDashesInKeys())
 	if err != nil {
 		// ANY path the reference cannot read is handed straight back as the
 		// string it was written as -- not only the ones that are obviously
@@ -4610,7 +4610,7 @@ func (p *parser) buildJSONPathFunction(spec JSONPathFunc, args []*Expression) *E
 				// subscript -- neither is JSONPath, so the reference's own
 				// to_json_path skips parsing rather than fail at it.
 				path = args[1]
-			} else if parsed, err := parseJSONPath(text, p.dialect == "databricks"); err != nil {
+			} else if parsed, err := parseJSONPath(text, p.jsonPathDashesInKeys()); err != nil {
 				if jsonPathKeptAsLiteral(text) {
 					path = args[1]
 				} else {
@@ -4622,7 +4622,7 @@ func (p *parser) buildJSONPathFunction(spec JSONPathFunc, args []*Expression) *E
 		} else if lit := args[1]; lit.Class == "Literal" {
 			// A number is a position: the reference reads `1` as `[1]`.
 			text, _ := lit.Args["this"].(string)
-			parsed, err := parseJSONPath("["+text+"]", p.dialect == "databricks")
+			parsed, err := parseJSONPath("["+text+"]", p.jsonPathDashesInKeys())
 			if err != nil {
 				return nil
 			}

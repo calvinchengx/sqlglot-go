@@ -73,6 +73,11 @@ func bracketJSONPathKey(dialect string, hasFlag, quoted bool, name string) bool 
 	if dialect == "snowflake" && isBareIdentifier(name) {
 		return false
 	}
+	// BigQuery writes a key of dashes and word characters bare -- `$.x-y` --
+	// and brackets anything else (BigQueryGenerator.SAFE_JSON_PATH_KEY_RE).
+	if dialect == "bigquery" {
+		return !bigquerySafeJSONPathKey(name)
+	}
 	// The Hive family writes a key matching its own SAFE_JSON_PATH_KEY_RE
 	// bare (letters, digits, `_` and `-`), and brackets anything else.
 	if isHiveFamily(dialect) {
@@ -89,4 +94,19 @@ func (p *parser) variantPathContinues() bool {
 		return true
 	}
 	return p.dialect == "snowflake" && p.match(TokCOLON)
+}
+
+// bigquerySafeJSONPathKey is BigQuery's own SAFE_JSON_PATH_KEY_RE:
+// `^[\-\w]*$`, which an EMPTY name matches as well.
+func bigquerySafeJSONPathKey(name string) bool {
+	for i := 0; i < len(name); i++ {
+		ch := name[i]
+		if ch == '-' || ch == '_' ||
+			(ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z') ||
+			(ch >= '0' && ch <= '9') {
+			continue
+		}
+		return false
+	}
+	return true
 }
