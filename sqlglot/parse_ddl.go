@@ -153,6 +153,12 @@ func (p *parser) parseCreate() (*Expression, error) {
 		p.advance()
 		constraintTrigger = true
 	}
+	// `CREATE TABLE FUNCTION f(...)` makes a FUNCTION: the TABLE is stepped
+	// over and the kind is the word after it
+	// (Parser._parse_create, _match_pair(TABLE, FUNCTION)).
+	if p.at(TokTABLE) && p.nextWords("FUNCTION") {
+		p.advance()
+	}
 	kindToken := p.curr()
 	if kindToken == nil {
 		return nil, p.unsupported("CREATE without a kind")
@@ -3871,7 +3877,31 @@ func (p *parser) parseReturnsProperty() (*Expression, error) {
 	// at, so the two cannot be merged.
 	this := New("Var", Arg{"this", "TABLE"})
 	property := New("ReturnsProperty")
-	if p.at(TokL_PAREN) {
+	if p.at(TokLT) {
+		// `RETURNS TABLE <a INT64, b STRING>` writes the columns between
+		// angle brackets rather than in parentheses
+		// (Parser._parse_returns).
+		p.advance()
+		var columns []*Expression
+		for {
+			field, err := p.parseStructField()
+			if err != nil {
+				return nil, err
+			}
+			columns = append(columns, field)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokGT) {
+			return nil, p.unsupported("unclosed RETURNS TABLE")
+		}
+		// The Schema's own name is the plain STRING "TABLE" in this form,
+		// where the parenthesised one carries a Var
+		// (Parser._parse_returns).
+		property.Set("this", New("Schema",
+			Arg{"this", "TABLE"}, Arg{"expressions", columns}))
+	} else if p.at(TokL_PAREN) {
 		columns, err := p.parseColumnDefs()
 		if err != nil {
 			return nil, err

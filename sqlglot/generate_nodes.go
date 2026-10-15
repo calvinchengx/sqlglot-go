@@ -4928,6 +4928,20 @@ func (g *generator) bigQueryGroupConcat(e *Expression) (string, bool) {
 // shape of `this` is what says which spelling this is.
 func (g *generator) writeCreate(e *Expression) string {
 	kind, _ := e.Args["kind"].(string)
+	// BigQuery spells a FUNCTION that returns a TABLE `TABLE FUNCTION`, and
+	// unwraps a subquery the statement wrote around its body
+	// (BigQueryGenerator._create_sql).
+	if g.dialect == "bigquery" && kind == "FUNCTION" {
+		returns := e.FindAll("ReturnsProperty")
+		if len(returns) > 0 && returns[0].Args["is_table"] == true {
+			kind = "TABLE FUNCTION"
+			if body, _ := e.Args["expression"].(*Expression); body != nil &&
+				(body.Class == "Subquery" || body.Class == "Literal") {
+				e = e.shallowCopy()
+				e.Set("expression", childOf(body, "this"))
+			}
+		}
+	}
 	// Presto drops a VIEW's own column list entirely: `CREATE VIEW x (cola)
 	// AS SELECT 1 AS cola` writes as `CREATE VIEW x AS SELECT 1 AS cola`,
 	// the column names carried by the SELECT's own aliases instead. The
@@ -6950,6 +6964,18 @@ func (g *generator) returnsATable(properties *Expression) bool {
 func (g *generator) writeReturnsProperty(e *Expression) string {
 	if null, _ := e.Args["null"].(bool); null {
 		return "RETURNS NULL ON NULL INPUT"
+	}
+	// BigQuery writes a table return's columns between ANGLE brackets, with
+	// the Schema's own name in front: `RETURNS TABLE <a INT64>`
+	// (BigQueryGenerator._returnsproperty_sql).
+	if g.dialect == "bigquery" {
+		if schema, _ := e.Args["this"].(*Expression); schema != nil && schema.Class == "Schema" {
+			name := g.child(schema, "this")
+			if s, ok := schema.Args["this"].(string); ok {
+				name = s
+			}
+			return "RETURNS " + name + " <" + g.list(schema) + ">"
+		}
 	}
 	out := "RETURNS "
 	// T-SQL NAMES the table a function returns, and the name sits between the
