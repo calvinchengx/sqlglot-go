@@ -2978,6 +2978,15 @@ var classIsA = map[string]map[string]bool{
 		"BitwiseXorAgg":              true,
 		"BoolxorAgg":                 true,
 	},
+	"Query": {
+		"Except":       true,
+		"Intersect":    true,
+		"Query":        true,
+		"Select":       true,
+		"SetOperation": true,
+		"Subquery":     true,
+		"Union":        true,
+	},
 }
 
 // classArgKeys is each class's arg_types in ORDER, which is the order a

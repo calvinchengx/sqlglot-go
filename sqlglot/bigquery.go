@@ -129,9 +129,15 @@ func bigqueryOwnedParser(upper string) bool {
 func (p *parser) parseBigQueryFunctionParser(upper string) (*Expression, error) {
 	switch upper {
 	case "ARRAY":
+		// `ARRAY(SELECT ...)` reads the query itself, and the closing
+		// parenthesis is consumed here rather than by the argument list
+		// (BigQueryParser.FUNCTION_PARSERS).
 		stmt, err := p.parseStatement()
 		if err != nil {
 			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed ARRAY")
 		}
 		return New("Array", Arg{"expressions", []*Expression{stmt}},
 			Arg{"struct_name_inheritance", true}), nil
@@ -490,7 +496,7 @@ func captureGroupCount(pattern string) int {
 
 // bigqueryColumnParts splits a BigQuery column name that was written inside
 // one pair of backticks, the same way a table name is split, so that
-// `` `db.t`.`c` `` names three parts rather than two
+// “ `db.t`.`c` “ names three parts rather than two
 // (BigQueryParser._parse_column).
 func bigqueryColumnParts(col *Expression) *Expression {
 	var names []string

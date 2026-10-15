@@ -460,6 +460,17 @@ func isIntegerText(text string) bool {
 // ARRAY<DOUBLE>, because the elements coerce to DOUBLE before being wrapped.
 func annotateArray(e *Expression, dialect string) *Expression {
 	items, _ := e.Args["expressions"].([]*Expression)
+	// `ARRAY(SELECT ... UNION ALL ...)` holds the coerced type of the first
+	// column across the chain, and `ARRAY(SELECT ...)` the projection's own
+	// (BigQuery typing._annotate_array).
+	if dialect == "bigquery" && len(items) == 1 {
+		if elem := unnestedQuery(items[0]); elem != nil {
+			if t := setOpFirstColumnType(elem, dialect); t != nil {
+				return New("DataType", Arg{"this", DataTypeKind("ARRAY")},
+					Arg{"expressions", []*Expression{t}}, Arg{"nested", true})
+			}
+		}
+	}
 	var element *Expression
 	for _, item := range items {
 		t := annotate(item, dialect)
@@ -1188,4 +1199,56 @@ func annotateDiv(e *Expression, dialect string) *Expression {
 		return coerceTypes(result, dataType("DOUBLE"))
 	}
 	return result
+}
+
+// unnestedQuery returns the query an ARRAY's single argument holds, looking
+// through a Subquery, or nil where it holds none.
+func unnestedQuery(e *Expression) *Expression {
+	for e != nil && e.Class == "Subquery" {
+		e = childOf(e, "this")
+	}
+	switch {
+	case e == nil:
+		return nil
+	case e.Class == "Select", e.Class == "Union", e.Class == "Except", e.Class == "Intersect":
+		return e
+	}
+	return nil
+}
+
+// setOpFirstColumnType is the coerced type of the FIRST column across a set
+// operation's chain, which is what `ARRAY(SELECT ... UNION ALL ...)` holds
+// (TypeAnnotator._get_setop_column_types).
+func setOpFirstColumnType(e *Expression, dialect string) *Expression {
+	var types []*Expression
+	var collect func(node *Expression)
+	collect = func(node *Expression) {
+		switch {
+		case node == nil:
+		case node.Class == "Union", node.Class == "Except", node.Class == "Intersect":
+			collect(node.This())
+			collect(childOf(node, "expression"))
+		case node.Class == "Subquery":
+			collect(childOf(node, "this"))
+		case node.Class == "Select":
+			projections, _ := node.Args["expressions"].([]*Expression)
+			if len(projections) != 1 {
+				return
+			}
+			t := annotate(projections[0], dialect)
+			if t == nil || typeKind(t) == "UNKNOWN" {
+				return
+			}
+			types = append(types, t)
+		}
+	}
+	collect(e)
+	if len(types) == 0 {
+		return nil
+	}
+	result := types[0]
+	for _, t := range types[1:] {
+		result = coerceTypes(result, t)
+	}
+	return bareType(result)
 }

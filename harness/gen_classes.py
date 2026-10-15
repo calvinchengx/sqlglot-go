@@ -69,7 +69,7 @@ def main() -> int:
     # Transcribing the answers would be a table that silently rots when the
     # reference reorganises its classes; asking issubclass keeps it honest.
     bases = ("Predicate", "Binary", "Unary", "Condition", "Connector",
-             "SubqueryPredicate", "Expr", "AggFunc")
+             "SubqueryPredicate", "Expr", "AggFunc", "Query")
     print()
     print("// classIsA[base][class] is true where the reference's class derives")
     print("// from that base. Generated, because it is ancestry rather than naming:")
