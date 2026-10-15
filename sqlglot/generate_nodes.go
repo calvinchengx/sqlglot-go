@@ -79,6 +79,7 @@ func init() {
 		"Iterate":                             (*generator).writeIterate,
 		"TimeStrToTime":                       (*generator).writeTimeStrToTime,
 		"DateDiff":                            (*generator).writeDateDiff,
+		"Trunc":                               (*generator).writeTrunc,
 		"Encode":                              (*generator).writeEncodeDecode,
 		"Decode":                              (*generator).writeEncodeDecode,
 		"OpenJSONColumnDef":                   (*generator).writeOpenJSONColumnDef,
@@ -8144,6 +8145,9 @@ func isUTF8Charset(e *Expression) bool {
 // other forms the reference writes as DATEDIFF of the two dates. The unit
 // is not an argument there, and a TsOrDs wrapper is parser scaffolding.
 func (g *generator) writeDateDiff(e *Expression) string {
+	if g.dialect == "sqlite" {
+		return g.sqliteDateDiff(e)
+	}
 	if g.dialect != "mysql" || e.Args["unit"] == nil {
 		return g.spell(e)
 	}
@@ -8153,6 +8157,56 @@ func (g *generator) writeDateDiff(e *Expression) string {
 		return g.fail(e.Class + " without both dates")
 	}
 	return "DATEDIFF(" + g.node(stripMySQLTsOrDsWrap(this)) + ", " + g.node(stripMySQLTsOrDsWrap(expression)) + ")"
+}
+
+// sqliteDateDiff writes SQLite's DATEDIFF, which the dialect has no function
+// for: the reference subtracts one JULIANDAY from the other -- a difference in
+// DAYS -- scales that by the unit, and casts the result to an integer
+// (SQLiteGenerator.datediff_sql).
+func (g *generator) sqliteDateDiff(e *Expression) string {
+	this, _ := e.Args["this"].(*Expression)
+	expression, _ := e.Args["expression"].(*Expression)
+	if this == nil || expression == nil {
+		return g.fail(e.Class + " without both dates")
+	}
+	unit := "DAY"
+	if u, _ := e.Args["unit"].(*Expression); u != nil && u.Name() != "" {
+		unit = strings.ToUpper(u.Name())
+	}
+	out := "(JULIANDAY(" + g.node(this) + ") - JULIANDAY(" + g.node(expression) + "))"
+	switch unit {
+	case "DAY":
+		// The difference is already in days.
+	case "MONTH":
+		out += " / 30.0"
+	case "YEAR":
+		out += " / 365.0"
+	case "HOUR":
+		out += " * 24.0"
+	case "MINUTE":
+		out += " * 1440.0"
+	case "SECOND":
+		out += " * 86400.0"
+	case "MILLISECOND":
+		out += " * 86400000.0"
+	case "MICROSECOND":
+		out += " * 86400000000.0"
+	case "NANOSECOND":
+		out += " * 8640000000000.0"
+	default:
+		return g.fail(e.Class + " for the unit " + unit)
+	}
+	return "CAST(" + out + " AS INTEGER)"
+}
+
+// writeTrunc writes SQLite's TRUNC, which takes the value alone: a precision
+// is written nowhere, as the reference's own writer drops it
+// (SQLiteGenerator.trunc_sql).
+func (g *generator) writeTrunc(e *Expression) string {
+	if g.dialect != "sqlite" {
+		return g.spell(e)
+	}
+	return "TRUNC(" + g.child(e, "this") + ")"
 }
 
 // timeStrWithZone writes MySQL's TIME_STR_TO_TIME when a zone was given.
