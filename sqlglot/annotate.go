@@ -823,7 +823,23 @@ func AnnotateFully(e *Expression, dialect string) bool {
 	// leaves alone -- the annotation belongs to the cast, not to the spelling
 	// of what it casts to.
 	if e.Class == "DataType" {
-		return true
+		// The FIELDS a STRUCT type declares are expressions, and the
+		// reference walks into them -- it stamps the NAME of each ColumnDef
+		// with UNKNOWN, which is what a DataType's own type is. The type
+		// words beside it are types, and a type is not stamped
+		// (TypeAnnotator._annotate_expression).
+		complete := true
+		params, _ := e.Args["expressions"].([]*Expression)
+		for _, param := range params {
+			if param == nil {
+				continue
+			}
+			// A DataType member is itself a type word and is not stamped;
+			// the FIELDS a STRUCT declares are ColumnDefs, and those are
+			// walked like any other expression.
+			complete = AnnotateFully(param, dialect) && complete
+		}
+		return complete
 	}
 	complete := true
 	for _, key := range e.Keys {

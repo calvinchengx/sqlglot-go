@@ -2696,6 +2696,13 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 		// a `(...)` type leaves the bracket to the ordinary reader
 		// (Parser._parse_types).
 		if open == TokLT && (p.at(TokL_BRACKET) || p.at(TokL_PAREN)) {
+			// The values are closed by the bracket that OPENED them, and by
+			// that one alone: `UNNEST(ARRAY<INT64>[1, 2])` has a parenthesis
+			// of its own still to come (Parser._parse_types).
+			closer := TokR_BRACKET
+			if p.at(TokL_PAREN) {
+				closer = TokR_PAREN
+			}
 			p.advance()
 			var values []*Expression
 			for !p.at(TokR_BRACKET) && !p.at(TokR_PAREN) {
@@ -2715,8 +2722,7 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 				// An empty STRUCT's bracket is left for the ordinary reader.
 				p.index--
 			} else {
-				p.match(TokR_BRACKET)
-				p.match(TokR_PAREN)
+				p.match(closer)
 				cls := "Array"
 				if isStruct {
 					cls = "Struct"

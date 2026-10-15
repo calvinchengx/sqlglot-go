@@ -2232,7 +2232,9 @@ func (g *generator) writeCast(e *Expression) string {
 		// invalid for `ARRAY(SELECT ...)` (BigQueryGenerator.cast_sql).
 		if arr, _ := e.Args["this"].(*Expression); arr != nil && arr.Class == "Array" {
 			items, _ := arr.Args["expressions"].([]*Expression)
-			if len(items) > 0 && !isA("Query", items[0]) {
+			// An EMPTY literal still round-trips this way; only one holding
+			// a query does not (BigQueryGenerator.cast_sql).
+			if len(items) == 0 || !isA("Query", items[0]) {
 				return g.child(e, "to") + g.child(e, "this")
 			}
 		}
