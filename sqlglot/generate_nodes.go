@@ -175,6 +175,10 @@ func init() {
 		"EncodeProperty":                      (*generator).writeEncodeProperty,
 		"DateAdd":                             (*generator).writeDateAdd,
 		"DateSub":                             (*generator).writeDateSub,
+		"TimestampAdd":                        (*generator).writeTimestampAdd,
+		"TimestampSub":                        (*generator).writeTimestampSub,
+		"TimeAdd":                             (*generator).writeTimeAdd,
+		"TimeSub":                             (*generator).writeTimeSub,
 		"DatetimeAdd":                         (*generator).writeDatetimeAdd,
 		"DatetimeSub":                         (*generator).writeDatetimeSub,
 		"TableSample":                         (*generator).writeTableSample,
@@ -8901,6 +8905,42 @@ func (g *generator) writeDateAdd(e *Expression) string {
 
 func (g *generator) writeDateSub(e *Expression) string {
 	return g.writeDateArith(e, "Date", -1)
+}
+
+// writeTimestampAdd and its three siblings write BigQuery's TIMESTAMP_ADD /
+// TIMESTAMP_SUB / TIME_ADD / TIME_SUB, which name their own domain and put the
+// amount and its unit inside an INTERVAL beside the value
+// (BigQueryGenerator.TRANSFORMS, Dialect.date_add_interval_sql).
+//
+// Every other dialect spells these through the template the reference itself
+// produced, so the writer steps aside where it has nothing to add.
+func (g *generator) writeTimestampAdd(e *Expression) string {
+	return g.writeIntervalArith(e, "TIMESTAMP", "ADD")
+}
+
+func (g *generator) writeTimestampSub(e *Expression) string {
+	return g.writeIntervalArith(e, "TIMESTAMP", "SUB")
+}
+
+func (g *generator) writeTimeAdd(e *Expression) string {
+	return g.writeIntervalArith(e, "TIME", "ADD")
+}
+
+func (g *generator) writeTimeSub(e *Expression) string {
+	return g.writeIntervalArith(e, "TIME", "SUB")
+}
+
+func (g *generator) writeIntervalArith(e *Expression, domain, kind string) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	this, _ := e.Args["this"].(*Expression)
+	amount, _ := e.Args["expression"].(*Expression)
+	unit, _ := e.Args["unit"].(*Expression)
+	if this == nil || amount == nil {
+		return g.fail(e.Class + " with a missing operand")
+	}
+	return g.dateArithBigQuery(domain+"_"+kind, this, amount, unit)
 }
 
 func (g *generator) writeDatetimeAdd(e *Expression) string {
