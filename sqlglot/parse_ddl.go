@@ -153,6 +153,12 @@ func (p *parser) parseCreate() (*Expression, error) {
 		p.advance()
 		constraintTrigger = true
 	}
+	// `CREATE TABLE FUNCTION f(...)` makes a FUNCTION: the TABLE is stepped
+	// over and the kind is the word after it
+	// (Parser._parse_create, _match_pair(TABLE, FUNCTION)).
+	if p.at(TokTABLE) && p.nextWords("FUNCTION") {
+		p.advance()
+	}
 	kindToken := p.curr()
 	if kindToken == nil {
 		return nil, p.unsupported("CREATE without a kind")
@@ -332,7 +338,8 @@ func (p *parser) parseCreate() (*Expression, error) {
 			return nil, err
 		}
 		expression = query
-	case p.curr() == nil, p.atWords("SHALLOW", "CLONE"), p.atWords("CLONE"):
+	case p.curr() == nil, p.atWords("SHALLOW", "CLONE"), p.atWords("CLONE"),
+		p.atWords("SHALLOW", "COPY"), p.atWords("COPY"):
 		// A table with no columns and no query: the statement makes the name
 		// and nothing else. `CREATE TABLE a` is a whole statement, and so is
 		// one whose shape comes from the table it CLONES.
@@ -409,19 +416,18 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// columns or a query. SHALLOW says the rows are shared until one side
 	// writes to them.
 	var clone *Expression
-	shallow := false
-	if p.atWords("SHALLOW", "CLONE") {
-		p.advance()
-		shallow = true
-	}
-	if p.atWords("CLONE") {
+	shallow := p.matchUnquotedWord("SHALLOW")
+	// COPY is the same node as CLONE with a flag saying the rows are copied
+	// rather than shared (Parser.CLONE_KEYWORDS, _parse_create).
+	if p.atWords("CLONE") || p.atWords("COPY") {
+		copying := strings.EqualFold(p.curr().Text, "COPY")
 		p.advance()
 		source, err := p.parseTableName()
 		if err != nil {
 			return nil, err
 		}
 		clone = New("Clone",
-			Arg{"this", source}, Arg{"shallow", shallow}, Arg{"copy", false})
+			Arg{"this", source}, Arg{"shallow", shallow}, Arg{"copy", copying})
 	}
 	if p.curr() != nil {
 		// A VIEW has no properties of its own left to try after this point --
@@ -676,14 +682,30 @@ func (p *parser) parseTableName() (*Expression, error) {
 			break
 		}
 	}
-	if len(parts) > 3 {
+	if len(parts) > 3 && p.dialect != "bigquery" {
 		return nil, p.unsupported("an over-qualified table name")
 	}
-	// Nearest first, as the reference fills them.
-	names := []string{"this", "db", "catalog"}
-	table := New("Table")
-	for i := range parts {
-		table.Set(names[i], parts[len(parts)-1-i])
+	// Nearest first, as the reference fills them: a fourth part and beyond
+	// joins the name into a Dot rather than becoming a fourth qualifier.
+	this, db, catalog := tableQualifiedParts(parts)
+	// Only the parts that were WRITTEN become arguments: a nil one would add
+	// a key holding nothing, and a reader that counts them would see a
+	// qualifier that is not there.
+	table := New("Table", Arg{"this", this})
+	if db != nil {
+		table.Set("db", db)
+	}
+	if catalog != nil {
+		table.Set("catalog", catalog)
+	}
+	liftPart(this, table)
+	liftPart(db, table)
+	liftPart(catalog, table)
+	// BigQuery reads the qualified name its own way here too -- one pair of
+	// backticks may hold every part of it
+	// (BigQueryParser._parse_table_parts).
+	if p.dialect == "bigquery" {
+		table = bigqueryTableParts(table)
 	}
 	markTemporaryTable(table, p.dialect)
 	return table, nil
@@ -1586,6 +1608,16 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 		case p.at(TokNULL):
 			p.advance()
 			kind = New("NotNullColumnConstraint", Arg{"allow_null", true})
+		case p.dialect == "bigquery" && p.atWords("OPTIONS"):
+			// `a STRING OPTIONS (description='x')` records the settings as a
+			// Properties node (BigQueryParser.CONSTRAINT_PARSERS,
+			// Parser._parse_with_property).
+			p.advance() // OPTIONS
+			properties, err := p.parseWrappedProperties()
+			if err != nil {
+				return nil, err
+			}
+			kind = New("Properties", Arg{"expressions", properties})
 		case p.atWords("DEFAULT"):
 			p.advance()
 			value, err := p.parseUnary()
@@ -2262,6 +2294,21 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 		p.advance()
 		p.advance()
 		return New("DropPrimaryKey"), nil
+	case p.at(TokDROP) && p.dialect == "bigquery" && p.next() != nil && p.next().Type == TokPRIMARY_KEY:
+		// `DROP PRIMARY KEY IF EXISTS` is not an ALTER either this port or
+		// the reference has a node for: the reference keeps it as a COMMAND
+		// whose text is the rest of the action (Parser._parse_alter).
+		drop := strings.ToUpper(p.curr().Text)
+		p.advance()
+		var words []string
+		for p.curr() != nil && !p.at(TokCOMMA) {
+			words = append(words, p.curr().Text)
+			p.advance()
+		}
+		// The text is everything after the word, SPACE included
+		// (Parser._parse_as_command).
+		return New("Command", Arg{"this", drop},
+			Arg{"expression", " " + strings.Join(words, " ")}), nil
 	case p.at(TokDROP) && p.dialect == "mysql" && p.next() != nil &&
 		(strings.EqualFold(p.next().Text, "INDEX") || strings.EqualFold(p.next().Text, "FOREIGN KEY")):
 		p.advance()
@@ -3469,6 +3516,13 @@ func (p *parser) parseFunctionRest(name *Expression, kind string, replace, exist
 			return nil, err
 		}
 		if property != nil {
+			// A list the word itself carried -- a UDF's `OPTIONS (...)` --
+			// is SPLICED into the statement's own list rather than nested
+			// inside a node of its own (Parser._parse_create, extend_props).
+			if inner, _ := property.Args["expressions"].([]*Expression); property.Class == "Properties" && len(inner) > 0 {
+				properties = append(properties, inner...)
+				continue
+			}
 			properties = append(properties, property)
 			continue
 		}
@@ -3686,6 +3740,15 @@ func (p *parser) parseFunctionProperty() (*Expression, error) {
 		return New("UsingProperty", Arg{"this", lit}, Arg{"kind", kind}), nil
 	}
 	switch {
+	case p.dialect == "bigquery" && p.atWords("OPTIONS"):
+		// A UDF's `OPTIONS (...)` records the settings as a property of its
+		// own (Parser._parse_create, _parse_properties).
+		p.advance()
+		properties, err := p.parseWrappedProperties()
+		if err != nil {
+			return nil, err
+		}
+		return New("Properties", Arg{"expressions", properties}), nil
 	case p.at(TokLANGUAGE) || p.atWords("LANGUAGE"):
 		p.advance()
 		c := p.curr()
@@ -3718,6 +3781,13 @@ func (p *parser) parseFunctionProperty() (*Expression, error) {
 		p.advance()
 		return New("StabilityProperty",
 			Arg{"this", New("Literal", Arg{"this", "IMMUTABLE"}, Arg{"is_string", true})}), nil
+	// `NOT DETERMINISTIC` is the standard word for VOLATILE, and the
+	// reference records it that way (BigQueryParser._parse_property).
+	case p.atWords("NOT", "DETERMINISTIC"):
+		p.advance()
+		p.advance()
+		return New("StabilityProperty",
+			Arg{"this", New("Literal", Arg{"this", "VOLATILE"}, Arg{"is_string", true})}), nil
 	case p.atWords("STRICT"):
 		p.advance()
 		return New("StrictProperty"), nil
@@ -3838,7 +3908,31 @@ func (p *parser) parseReturnsProperty() (*Expression, error) {
 	// at, so the two cannot be merged.
 	this := New("Var", Arg{"this", "TABLE"})
 	property := New("ReturnsProperty")
-	if p.at(TokL_PAREN) {
+	if p.at(TokLT) {
+		// `RETURNS TABLE <a INT64, b STRING>` writes the columns between
+		// angle brackets rather than in parentheses
+		// (Parser._parse_returns).
+		p.advance()
+		var columns []*Expression
+		for {
+			field, err := p.parseStructField()
+			if err != nil {
+				return nil, err
+			}
+			columns = append(columns, field)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokGT) {
+			return nil, p.unsupported("unclosed RETURNS TABLE")
+		}
+		// The Schema's own name is the plain STRING "TABLE" in this form,
+		// where the parenthesised one carries a Var
+		// (Parser._parse_returns).
+		property.Set("this", New("Schema",
+			Arg{"this", "TABLE"}, Arg{"expressions", columns}))
+	} else if p.at(TokL_PAREN) {
 		columns, err := p.parseColumnDefs()
 		if err != nil {
 			return nil, err
@@ -7938,11 +8032,75 @@ func (p *parser) parseSequenceRest(table *Expression, replace, exists bool) (*Ex
 // path as a table, so `FROM 'x.y'` names one table called `x.y` rather than
 // two parts of a name -- and the reference writes it back as `"x.y"`.
 func (p *parser) parseTablePart() (*Expression, error) {
+	// A STAR names nothing here -- `FROM x.*` reads the star as the table's
+	// own name, which parseTable does once the parts are read
+	// (Parser._parse_table_part, _parse_id_var).
+	if p.dialect == "bigquery" {
+		if c := p.curr(); c != nil && c.Type == TokSTAR {
+			return nil, nil
+		}
+	}
 	if c := p.curr(); c != nil && c.Type == TokSTRING {
 		p.advance()
 		return p.keep(New("Identifier", Arg{"this", c.Text}, Arg{"quoted", true})), nil
 	}
+	// BigQuery's table names may begin with a DIGIT and may hold dashes:
+	// `144A_FLAG`, `x-0.y` (BigQueryParser._parse_table_part).
+	if p.dialect == "bigquery" {
+		if c := p.curr(); c != nil && c.Type == TokNUMBER {
+			text := c.Text
+			p.advance()
+			// The rest of the name is a WORD written with no space after the
+			// digits; a closing bracket is not part of it
+			// (Parser._parse_table_part, _advance_any).
+			if p.connectedTo(p.tokens[p.index-1]) {
+				if n := p.curr(); n != nil && (n.Type == TokVAR || n.Type == TokIDENTIFIER) {
+					text += n.Text
+					p.advance()
+				}
+			}
+			return New("Identifier", Arg{"this", text}, Arg{"quoted", true}), nil
+		}
+		id, err := p.daxTableCall(p.parseIdentifierWhere(true))
+		if err != nil || id == nil || id.Class != "Identifier" {
+			return id, err
+		}
+		quoted, _ := id.Args["quoted"].(bool)
+		text := id.Name()
+		joined := false
+		for p.at(TokDASH) {
+			if p.next() == nil {
+				break
+			}
+			p.advance() // the dash
+			text += "-"
+			// Only the tokens written with NO space between them belong to
+			// the name: `a-b c` names the table `a-b` with the alias `c`.
+			// Only the tokens written with NO space between them belong to
+			// the name, and it ends where a token that FOLLOWS a table part
+			// begins: `a-b c` names the table `a-b` with the alias `c`, and
+			// `b-c)` ends at the bracket
+			// (BigQueryParser.DASHED_TABLE_PART_FOLLOW_TOKENS).
+			for p.curr() != nil && !p.atAny(TokDOT, TokL_PAREN, TokR_PAREN) &&
+				p.connectedTo(p.tokens[p.index-1]) {
+				text += p.curr().Text
+				p.advance()
+			}
+			joined = true
+		}
+		if joined {
+			return New("Identifier", Arg{"this", text}, Arg{"quoted", quoted}), nil
+		}
+		return id, nil
+	}
 	return p.daxTableCall(p.parseIdentifierWhere(true))
+}
+
+// connectedTo reports whether the token now current was written with NO space
+// after the one before it -- the reference's `_is_connected`.
+func (p *parser) connectedTo(prev Token) bool {
+	c := p.curr()
+	return c != nil && c.Start == prev.End+1
 }
 
 // atTablePart reports whether a name may begin here.

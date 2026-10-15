@@ -1047,6 +1047,21 @@
    "expected": "CAST(x AS DATETIME) + INTERVAL '1' WEEK"
   },
   {
+   "dialect": "bigquery",
+   "sql": "CAST('2023-01-01' AS TIMESTAMP) + INTERVAL 1 DAY",
+   "expected": "CAST('2023-01-02 00:00:00' AS TIMESTAMP)"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "INTERVAL 1 DAY + CAST('2023-01-01' AS TIMESTAMP)",
+   "expected": "CAST('2023-01-02 00:00:00' AS TIMESTAMP)"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CAST('2023-01-02' AS TIMESTAMP) - INTERVAL 1 DAY",
+   "expected": "CAST('2023-01-01 00:00:00' AS TIMESTAMP)"
+  },
+  {
    "dialect": "",
    "sql": "TS_OR_DS_TO_DATE('1998-12-01 00:00:01') - interval '90' day",
    "expected": "CAST('1998-09-02' AS DATE)"
@@ -1782,6 +1797,56 @@
    "expected": "x < CAST('2023-12-18' AS DATE) AND x >= CAST('2023-12-11' AS DATE)"
   },
   {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(CAST('2023-12-15' AS DATE), WEEK)",
+   "expected": "CAST('2023-12-10' AS DATE)"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(CAST('2023-10-01' AS TIMESTAMP), QUARTER)",
+   "expected": "CAST('2023-10-01 00:00:00' AS TIMESTAMP)"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(CAST('2023-12-16' AS DATE), WEEK)",
+   "expected": "CAST('2023-12-10' AS DATE)"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(CAST('2023-12-10' AS DATE), WEEK)",
+   "expected": "CAST('2023-12-10' AS DATE)"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(x, WEEK) > CAST('2008-11-09' AS DATE)",
+   "expected": "x >= CAST('2008-11-16' AS DATE)"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(x, WEEK) = CAST('2008-11-09' AS DATE)",
+   "expected": "x < CAST('2008-11-16' AS DATE) AND x >= CAST('2008-11-09' AS DATE)"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(x, WEEK) <> CAST('2008-11-09' AS DATE)",
+   "expected": "x < CAST('2008-11-09' AS DATE) OR x >= CAST('2008-11-16' AS DATE)"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(x, WEEK) IN (CAST('2008-11-09' AS DATE), CAST('2008-11-23' AS DATE))",
+   "expected": "(x < CAST('2008-11-16' AS DATE) AND x >= CAST('2008-11-09' AS DATE)) OR (x < CAST('2008-11-30' AS DATE) AND x >= CAST('2008-11-23' AS DATE))"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(CAST('2023-12-15' AS DATE), WEEK(MONDAY))",
+   "expected": "DATE_TRUNC(CAST('2023-12-15' AS DATE), WEEK(MONDAY))"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(x, WEEK(MONDAY)) = CAST('2008-11-10' AS DATE)",
+   "expected": "DATE_TRUNC(x, WEEK(MONDAY)) = CAST('2008-11-10' AS DATE)"
+  },
+  {
    "dialect": "tsql",
    "sql": "DATETRUNC(WEEK, CAST('2021-12-08' AS DATETIME2))",
    "expected": "CAST('2021-12-05 00:00:00' AS DATETIME2)"
@@ -1807,14 +1872,29 @@
    "expected": "x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
   },
   {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(x, year) = CAST('2021-01-01' AS TIMESTAMP)",
+   "expected": "x < CAST('2022-01-01 00:00:00' AS TIMESTAMP) AND x >= CAST('2021-01-01 00:00:00' AS TIMESTAMP)"
+  },
+  {
    "dialect": "",
    "sql": "DATE_TRUNC('quarter', x) = CAST('2021-01-01' AS DATE)",
    "expected": "x < CAST('2021-04-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
   },
   {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(x, quarter) = CAST('2021-01-01' AS TIMESTAMP)",
+   "expected": "x < CAST('2021-04-01 00:00:00' AS TIMESTAMP) AND x >= CAST('2021-01-01 00:00:00' AS TIMESTAMP)"
+  },
+  {
    "dialect": "",
    "sql": "DATE_TRUNC('month', x) = CAST('2021-01-01' AS DATE)",
    "expected": "x < CAST('2021-02-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(x, month) = CAST('2021-01-01' AS TIMESTAMP)",
+   "expected": "x < CAST('2021-02-01 00:00:00' AS TIMESTAMP) AND x >= CAST('2021-01-01 00:00:00' AS TIMESTAMP)"
   },
   {
    "dialect": "",
@@ -1827,9 +1907,19 @@
    "expected": "x < CAST('2021-01-02' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
   },
   {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(x, DAY) = CAST('2021-01-01' AS TIMESTAMP)",
+   "expected": "x < CAST('2021-01-02 00:00:00' AS TIMESTAMP) AND x >= CAST('2021-01-01 00:00:00' AS TIMESTAMP)"
+  },
+  {
    "dialect": "",
    "sql": "CAST('2021-01-01' AS DATE) = DATE_TRUNC('year', x)",
    "expected": "x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CAST('2021-01-01' AS TIMESTAMP) = DATE_TRUNC(x, year)",
+   "expected": "x < CAST('2022-01-01 00:00:00' AS TIMESTAMP) AND x >= CAST('2021-01-01 00:00:00' AS TIMESTAMP)"
   },
   {
    "dialect": "",
@@ -1862,6 +1952,11 @@
    "expected": "x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)"
   },
   {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(x, WEEK) <> CAST('2008-11-09' AS DATE) AND y = 1",
+   "expected": "(x < CAST('2008-11-09' AS DATE) OR x >= CAST('2008-11-16' AS DATE)) AND y = 1"
+  },
+  {
    "dialect": "",
    "sql": "DATE_TRUNC('year', x) <> CAST('2021-01-02' AS DATE)",
    "expected": "DATE_TRUNC('YEAR', x) <> CAST('2021-01-02' AS DATE)"
@@ -1872,6 +1967,11 @@
    "expected": "x < CAST('2022-01-01' AS DATE)"
   },
   {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(x, year) <= CAST('2021-01-01' AS TIMESTAMP)",
+   "expected": "x < CAST('2022-01-01 00:00:00' AS TIMESTAMP)"
+  },
+  {
    "dialect": "",
    "sql": "DATE_TRUNC('year', x) <= CAST('2021-01-02' AS DATE)",
    "expected": "x < CAST('2022-01-01' AS DATE)"
@@ -1880,6 +1980,11 @@
    "dialect": "",
    "sql": "CAST('2021-01-01' AS DATE) >= DATE_TRUNC('year', x)",
    "expected": "x < CAST('2022-01-01' AS DATE)"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "CAST('2021-01-01' AS TIMESTAMP) >= DATE_TRUNC(x, year)",
+   "expected": "x < CAST('2022-01-01 00:00:00' AS TIMESTAMP)"
   },
   {
    "dialect": "",
@@ -1930,6 +2035,11 @@
    "dialect": "",
    "sql": "DATE_TRUNC('year', x) IN (CAST('2021-01-01' AS DATE), CAST('2023-01-01' AS DATE))",
    "expected": "(x < CAST('2022-01-01' AS DATE) AND x >= CAST('2021-01-01' AS DATE)) OR (x < CAST('2024-01-01' AS DATE) AND x >= CAST('2023-01-01' AS DATE))"
+  },
+  {
+   "dialect": "bigquery",
+   "sql": "DATE_TRUNC(x, year) IN (CAST('2021-01-01' AS TIMESTAMP), CAST('2023-01-01' AS TIMESTAMP))",
+   "expected": "(x < CAST('2022-01-01 00:00:00' AS TIMESTAMP) AND x >= CAST('2021-01-01 00:00:00' AS TIMESTAMP)) OR (x < CAST('2024-01-01 00:00:00' AS TIMESTAMP) AND x >= CAST('2023-01-01 00:00:00' AS TIMESTAMP))"
   },
   {
    "dialect": "",

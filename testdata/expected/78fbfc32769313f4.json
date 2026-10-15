@@ -1,0 +1,606 @@
+{
+ "dialect": "bigquery",
+ "rendered": "MERGE INTO dataset.Inventory AS T USING dataset.NewArrivals AS S ON FALSE WHEN NOT MATCHED AND product LIKE '%a%' THEN DELETE WHEN NOT MATCHED BY SOURCE AND product LIKE '%b%' THEN DELETE",
+ "sql": "\n            MERGE dataset.Inventory T\n            USING dataset.NewArrivals S ON FALSE\n            WHEN NOT MATCHED BY TARGET AND product LIKE '%a%'\n            THEN DELETE\n            WHEN NOT MATCHED BY SOURCE AND product LIKE '%b%'\n            THEN DELETE",
+ "tokens": [
+  {
+   "c": 17,
+   "e": 17,
+   "l": 2,
+   "s": 13,
+   "t": "MERGE",
+   "x": "MERGE"
+  },
+  {
+   "c": 25,
+   "e": 25,
+   "l": 2,
+   "s": 19,
+   "t": "VAR",
+   "x": "dataset"
+  },
+  {
+   "c": 26,
+   "e": 26,
+   "l": 2,
+   "s": 26,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 35,
+   "e": 35,
+   "l": 2,
+   "s": 27,
+   "t": "VAR",
+   "x": "Inventory"
+  },
+  {
+   "c": 37,
+   "e": 37,
+   "l": 2,
+   "s": 37,
+   "t": "VAR",
+   "x": "T"
+  },
+  {
+   "c": 17,
+   "e": 55,
+   "l": 3,
+   "s": 51,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 25,
+   "e": 63,
+   "l": 3,
+   "s": 57,
+   "t": "VAR",
+   "x": "dataset"
+  },
+  {
+   "c": 26,
+   "e": 64,
+   "l": 3,
+   "s": 64,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 37,
+   "e": 75,
+   "l": 3,
+   "s": 65,
+   "t": "VAR",
+   "x": "NewArrivals"
+  },
+  {
+   "c": 39,
+   "e": 77,
+   "l": 3,
+   "s": 77,
+   "t": "VAR",
+   "x": "S"
+  },
+  {
+   "c": 42,
+   "e": 80,
+   "l": 3,
+   "s": 79,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 48,
+   "e": 86,
+   "l": 3,
+   "s": 82,
+   "t": "FALSE",
+   "x": "FALSE"
+  },
+  {
+   "c": 16,
+   "e": 103,
+   "l": 4,
+   "s": 100,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 20,
+   "e": 107,
+   "l": 4,
+   "s": 105,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 28,
+   "e": 115,
+   "l": 4,
+   "s": 109,
+   "t": "VAR",
+   "x": "MATCHED"
+  },
+  {
+   "c": 31,
+   "e": 118,
+   "l": 4,
+   "s": 117,
+   "t": "VAR",
+   "x": "BY"
+  },
+  {
+   "c": 38,
+   "e": 125,
+   "l": 4,
+   "s": 120,
+   "t": "VAR",
+   "x": "TARGET"
+  },
+  {
+   "c": 42,
+   "e": 129,
+   "l": 4,
+   "s": 127,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 50,
+   "e": 137,
+   "l": 4,
+   "s": 131,
+   "t": "VAR",
+   "x": "product"
+  },
+  {
+   "c": 55,
+   "e": 142,
+   "l": 4,
+   "s": 139,
+   "t": "LIKE",
+   "x": "LIKE"
+  },
+  {
+   "c": 61,
+   "e": 148,
+   "l": 4,
+   "s": 144,
+   "t": "STRING",
+   "x": "%a%"
+  },
+  {
+   "c": 16,
+   "e": 165,
+   "l": 5,
+   "s": 162,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 23,
+   "e": 172,
+   "l": 5,
+   "s": 167,
+   "t": "DELETE",
+   "x": "DELETE"
+  },
+  {
+   "c": 16,
+   "e": 189,
+   "l": 6,
+   "s": 186,
+   "t": "WHEN",
+   "x": "WHEN"
+  },
+  {
+   "c": 20,
+   "e": 193,
+   "l": 6,
+   "s": 191,
+   "t": "NOT",
+   "x": "NOT"
+  },
+  {
+   "c": 28,
+   "e": 201,
+   "l": 6,
+   "s": 195,
+   "t": "VAR",
+   "x": "MATCHED"
+  },
+  {
+   "c": 31,
+   "e": 204,
+   "l": 6,
+   "s": 203,
+   "t": "VAR",
+   "x": "BY"
+  },
+  {
+   "c": 38,
+   "e": 211,
+   "l": 6,
+   "s": 206,
+   "t": "VAR",
+   "x": "SOURCE"
+  },
+  {
+   "c": 42,
+   "e": 215,
+   "l": 6,
+   "s": 213,
+   "t": "AND",
+   "x": "AND"
+  },
+  {
+   "c": 50,
+   "e": 223,
+   "l": 6,
+   "s": 217,
+   "t": "VAR",
+   "x": "product"
+  },
+  {
+   "c": 55,
+   "e": 228,
+   "l": 6,
+   "s": 225,
+   "t": "LIKE",
+   "x": "LIKE"
+  },
+  {
+   "c": 61,
+   "e": 234,
+   "l": 6,
+   "s": 230,
+   "t": "STRING",
+   "x": "%b%"
+  },
+  {
+   "c": 16,
+   "e": 251,
+   "l": 7,
+   "s": 248,
+   "t": "THEN",
+   "x": "THEN"
+  },
+  {
+   "c": 23,
+   "e": 258,
+   "l": 7,
+   "s": 253,
+   "t": "DELETE",
+   "x": "DELETE"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.dml.Merge"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 35,
+    "line": 2,
+    "start": 27
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "Inventory"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "db",
+   "m": {
+    "col": 25,
+    "end": 25,
+    "line": 2,
+    "start": 19
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "dataset"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 1,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 37,
+    "line": 2,
+    "start": 37
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "T"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "using"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 75,
+    "line": 3,
+    "start": 65
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "NewArrivals"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "db",
+   "m": {
+    "col": 25,
+    "end": 63,
+    "line": 3,
+    "start": 57
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "dataset"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 12,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 77,
+    "line": 3,
+    "start": 77
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "S"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 0,
+   "k": "on"
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "using_cond",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.dml.Whens",
+   "i": 0,
+   "k": "whens"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.When",
+   "i": 26,
+   "k": "expressions"
+  },
+  {
+   "i": 27,
+   "k": "matched",
+   "v": false
+  },
+  {
+   "i": 27,
+   "k": "source",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Like",
+   "i": 27,
+   "k": "condition"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 30,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 31,
+   "k": "this",
+   "m": {
+    "col": 50,
+    "end": 137,
+    "line": 4,
+    "start": 131
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "product"
+  },
+  {
+   "i": 32,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 30,
+   "k": "expression",
+   "m": {
+    "col": 61,
+    "end": 148,
+    "line": 4,
+    "start": 144
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "%a%"
+  },
+  {
+   "i": 35,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 27,
+   "k": "then"
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "DELETE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.When",
+   "i": 26,
+   "k": "expressions"
+  },
+  {
+   "i": 40,
+   "k": "matched",
+   "v": false
+  },
+  {
+   "i": 40,
+   "k": "source",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Like",
+   "i": 40,
+   "k": "condition"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 43,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 44,
+   "k": "this",
+   "m": {
+    "col": 50,
+    "end": 223,
+    "line": 6,
+    "start": 217
+   }
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "product"
+  },
+  {
+   "i": 45,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 43,
+   "k": "expression",
+   "m": {
+    "col": 61,
+    "end": 234,
+    "line": 6,
+    "start": 230
+   }
+  },
+  {
+   "i": 48,
+   "k": "this",
+   "v": "%b%"
+  },
+  {
+   "i": 48,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 40,
+   "k": "then"
+  },
+  {
+   "i": 51,
+   "k": "this",
+   "v": "DELETE"
+  }
+ ]
+}

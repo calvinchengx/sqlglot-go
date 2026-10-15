@@ -474,6 +474,17 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 }
 
 func (p *parser) parseIn(this *Expression) (*Expression, error) {
+	// `x IN UNNEST(a)` keeps the unnested expression under `unnest` rather
+	// than as a field or an expression list (Parser._parse_in).
+	if p.at(TokUNNEST) {
+		if n := p.next(); n != nil && n.Type == TokL_PAREN {
+			unnest, err := p.parseUnnestWithAlias(false)
+			if err != nil {
+				return nil, err
+			}
+			return New("In", Arg{"this", this}, Arg{"unnest", unnest}), nil
+		}
+	}
 	if !p.match(TokL_PAREN) {
 		// `'red' IN flags` asks whether the value is in the LIST that column
 		// holds, rather than in a list written here. The reference keeps
@@ -1150,6 +1161,13 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 			continue
 		}
 		if p.at(TokL_BRACKET) {
+			// A subscript turns the array it indexes into a Bracket, and the
+			// reference marks only the node its bracket reader RETURNS: an
+			// array that ends up subscripted is not marked
+			// (BigQueryParser._parse_bracket).
+			if p.dialect == "bigquery" && this.Class == "Array" {
+				this.Set("struct_name_inheritance", nil)
+			}
 			p.advance()
 			// A SUBSCRIPT: a colon here separates a slice's bounds.
 			// `x[]` subscripts nothing, and the reference refuses it -- a
@@ -1169,6 +1187,26 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 			}
 			this = New("Bracket", Arg{"this", this}, Arg{"expressions", items},
 				Arg{"offset", nil}, Arg{"safe", nil}, Arg{"returns_null_on_error", nil})
+			// BigQuery names the numbering INSIDE the brackets -- OFFSET(1)
+			// counts from 0 and ORDINAL(1) from 1 -- and the reference reads
+			// that name as a flag on the Bracket, keeping the argument alone
+			// in its place (BigQueryParser._parse_bracket).
+			if p.dialect == "bigquery" {
+				for i, expr := range items {
+					if expr == nil || expr.Class != "Anonymous" {
+						break
+					}
+					offset, safe, ok := bigqueryBracketOffset(strings.ToUpper(expr.Name()))
+					callArgs, _ := expr.Args["expressions"].([]*Expression)
+					if !ok || len(callArgs) == 0 {
+						break
+					}
+					this.Set("offset", offset)
+					this.Set("safe", safe)
+					items[i] = New("Literal",
+						Arg{"this", callArgs[0].Name()}, Arg{"is_string", false})
+				}
+			}
 			continue
 		}
 		// A dot after something that is NOT a plain name: `a[0].b`, `f(x).g`,
@@ -1502,6 +1540,11 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		if p.tables.HasDistinctArrayConstructors {
 			arr.Set("bracket_notation", true)
 		}
+		// BigQuery marks an array built from a BRACKET, which is what decides
+		// how it is written back (BigQueryParser._parse_bracket).
+		if p.dialect == "bigquery" {
+			arr.Set("struct_name_inheritance", true)
+		}
 		return arr, nil
 	}
 
@@ -1522,6 +1565,11 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		arr := New("Array", Arg{"expressions", items})
 		if p.tables.HasDistinctArrayConstructors {
 			arr.Set("bracket_notation", true)
+		}
+		// BigQuery marks an array built from a BRACKET, which is what decides
+		// how it is written back (BigQueryParser._parse_bracket).
+		if p.dialect == "bigquery" {
+			arr.Set("struct_name_inheritance", true)
 		}
 		return arr, nil
 	}
@@ -1581,7 +1629,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 					p.keep(New("Literal", Arg{"this", n.Text}, Arg{"is_string", true})))
 			}
 			return New("Concat",
-				Arg{"expressions", items}, Arg{"coalesce", true}), nil
+				Arg{"expressions", items}, Arg{"coalesce", concatCoalesce(p.dialect)}), nil
 		}
 		return first, nil
 	// The tokenizer already tells these apart -- a raw string, a byte string,
@@ -1594,6 +1642,11 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return New("RawString", Arg{"this", c.Text}), nil
 	case TokBYTE_STRING:
 		p.advance()
+		// BigQuery's BYTE_STRING_IS_BYTES_TYPE is on, which records the
+		// literal as a BYTES value (Parser.NUMERIC_PARSERS).
+		if p.dialect == "bigquery" {
+			return New("ByteString", Arg{"this", c.Text}, Arg{"is_bytes", true}), nil
+		}
 		return New("ByteString", Arg{"this", c.Text}), nil
 	case TokUNICODE_STRING:
 		p.advance()
@@ -1613,6 +1666,11 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return New("UnicodeString", Arg{"this", c.Text}, Arg{"escape", escape}), nil
 	case TokHEX_STRING:
 		p.advance()
+		// BigQuery and ClickHouse read a hex literal as an INTEGER, which
+		// records it as one (Parser.NUMERIC_PARSERS).
+		if p.dialect == "bigquery" || p.dialect == "clickhouse" {
+			return New("HexString", Arg{"this", c.Text}, Arg{"is_integer", true}), nil
+		}
 		return New("HexString", Arg{"this", c.Text}), nil
 	case TokBIT_STRING:
 		p.advance()
@@ -2153,14 +2211,83 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 		p.advance()
 		to = New("DataType", Arg{"this", DataTypeKind("CHARACTER_SET")}, Arg{"kind", name})
 	}
+	// `CAST(x AS STRING FORMAT 'DAY')` names the format the value is read or
+	// written with (Parser._parse_cast).
+	var format *Expression
+	if p.atWords("FORMAT") {
+		p.advance()
+		// The format may be written inside parentheses
+		// (Parser._parse_cast, _parse_wrapped).
+		wrapped := p.match(TokL_PAREN)
+		c := p.curr()
+		if c == nil || c.Type != TokSTRING {
+			return nil, p.unsupported("CAST FORMAT without a string")
+		}
+		format = New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
+		p.advance()
+		if wrapped && !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed CAST FORMAT")
+		}
+		// `... FORMAT ('f') AT TIME ZONE z` names the zone the text is read
+		// in. It wraps the format, and a cast that becomes a StrToTime moves
+		// the zone onto itself (Parser._parse_at_time_zone, _parse_cast).
+		if p.atWords("AT", "TIME", "ZONE") {
+			p.advance()
+			p.advance()
+			p.advance()
+			zone, err := p.parseUnary()
+			if err != nil {
+				return nil, err
+			}
+			format = New("AtTimeZone", Arg{"this", format}, Arg{"zone", zone})
+		}
+	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed CAST")
+	}
+	// A TEMPORAL cast carrying a format builds a StrToDate/StrToTime with the
+	// format MAPPED through the dialect's own (Parser._parse_cast).
+	if format != nil {
+		if kind, _ := to.Args["this"].(DataTypeKind); kind == "DATE" || kind == "TIMESTAMP" ||
+			kind == "TIMESTAMPTZ" || kind == "DATETIME" || kind == "TIME" {
+			fmtLiteral := format
+			var zone *Expression
+			if format.Class == "AtTimeZone" {
+				fmtLiteral, zone = childOf(format, "this"), childOf(format, "zone")
+			}
+			text, _ := fmtLiteral.Args["this"].(string)
+			// FORMAT_MAPPING is read FIRST where a dialect has one --
+			// BigQuery's alone -- and the dialect's TIME_MAPPING after it
+			// (Parser._parse_cast).
+			mapping := p.tables.FormatMapping
+			if len(mapping) == 0 {
+				mapping = p.tables.FormatTimeMapping
+			}
+			if len(mapping) == 0 {
+				mapping = p.tables.TimeMapping
+			}
+			class := "StrToTime"
+			if kind == "DATE" {
+				class = "StrToDate"
+			}
+			node := New(class, Arg{"this", this},
+				Arg{"format", New("Literal", Arg{"this", formatTime(text, mapping)}, Arg{"is_string", true})})
+			if try {
+				node.Set("safe", true)
+			}
+			// A zone the format named goes on the StrToTime, where the
+			// reference keeps it (Parser._parse_cast).
+			if zone != nil && class == "StrToTime" {
+				node.Set("zone", zone)
+			}
+			return p.keep(node), nil
+		}
 	}
 	to = p.hiveCastType(to)
 
 	class := "Cast"
 	args := []Arg{
-		{"this", this}, {"to", to}, {"format", nil},
+		{"this", this}, {"to", to}, {"format", format},
 		{"safe", nil}, {"action", nil}, {"default", nil},
 	}
 	if try {
@@ -2562,6 +2689,51 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 			}
 		}
 		dt.Set("expressions", params)
+
+		// `ARRAY<INT64>[1, 2]` writes the array's VALUES inside the type, and
+		// the reference builds the cast that produces them: an Array of
+		// those values cast to the type just read. Only the `<...>` form --
+		// a `(...)` type leaves the bracket to the ordinary reader
+		// (Parser._parse_types).
+		if open == TokLT && (p.at(TokL_BRACKET) || p.at(TokL_PAREN)) {
+			// The values are closed by the bracket that OPENED them, and by
+			// that one alone: `UNNEST(ARRAY<INT64>[1, 2])` has a parenthesis
+			// of its own still to come (Parser._parse_types).
+			closer := TokR_BRACKET
+			if p.at(TokL_PAREN) {
+				closer = TokR_PAREN
+			}
+			p.advance()
+			var values []*Expression
+			for !p.at(TokR_BRACKET) && !p.at(TokR_PAREN) {
+				v, err := p.parseDisjunction()
+				if err != nil {
+					return nil, err
+				}
+				if v == nil {
+					break
+				}
+				values = append(values, v)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			if len(values) == 0 && isStruct {
+				// An empty STRUCT's bracket is left for the ordinary reader.
+				p.index--
+			} else {
+				p.match(closer)
+				cls := "Array"
+				if isStruct {
+					cls = "Struct"
+				}
+				dt.Set("nested", nested)
+				cast := New("Cast", Arg{"this", New(cls, Arg{"expressions", values})},
+					Arg{"to", dt})
+				cast.Type = dt
+				return cast, nil
+			}
+		}
 	}
 	// `TIMESTAMP WITH TIME ZONE` is a type of its own rather than a timestamp
 	// carrying a flag, and WITHOUT says only that the plain one was meant. The
@@ -2862,8 +3034,41 @@ func (p *parser) parseCase() (*Expression, error) {
 // until its node is ported. The list is generated, not guessed.
 func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	name := p.curr().Text
+	// A comment standing in front of the name belongs to the call built from
+	// it -- and to the node this function RETURNS, since the wrapper a
+	// dialect puts around the call is built afterwards from the same token
+	// (Parser.expression, Parser._add_comments).
+	var leading []string
+	if c := p.curr(); c != nil && len(c.Comments) > 0 {
+		leading = append([]string(nil), c.Comments...)
+		c.Comments = nil
+	}
+	// A dialect that PRESERVES_ORIGINAL_NAMES records the name a call was
+	// WRITTEN with, and writes that name back where the class's own writer is
+	// the fallback -- `LOG(x)` is an Ln, and comes out LOG
+	// (Parser._parse_function, Generator.function_fallback_sql).
+	defer func() {
+		if err != nil || builtFn == nil {
+			return
+		}
+		if len(leading) > 0 && builtFn.Class != "Anonymous" {
+			putComments(builtFn, leading)
+		}
+		if builtFn.Class == "Anonymous" {
+			return
+		}
+		if _, ok := p.tables.ConsultsOriginalName[builtFn.Class]; !ok {
+			return
+		}
+		builtFn.originalName = name
+	}()
 	quotedName := p.curr().Type == TokIDENTIFIER
 	upper := strings.ToUpper(name)
+	if p.dialect == "bigquery" && bigqueryOwnedParser(upper) && p.next() != nil && p.next().Type == TokL_PAREN {
+		p.advance() // the name
+		p.advance() // the opening parenthesis
+		return p.parseBigQueryFunctionParser(upper)
+	}
 	if isHiveFamily(p.dialect) && upper == "TRANSFORM" && p.next() != nil && p.next().Type == TokL_PAREN {
 		mark := p.index
 		p.advance() // the name
@@ -2880,8 +3085,10 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		p.advance() // the name, as the reference does before a FUNCTION_PARSERS entry
 		return p.parseJoinHintFunction(upper)
 	}
-	if upper == "CAST" || upper == "TRY_CAST" {
-		return p.castOrConversion(upper == "TRY_CAST")
+	if upper == "CAST" || upper == "TRY_CAST" ||
+		(p.dialect == "bigquery" && upper == "SAFE_CAST") {
+		// BigQuery's SAFE_CAST is the same reader, flagged safe.
+		return p.castOrConversion(upper == "TRY_CAST" || upper == "SAFE_CAST")
 	}
 	if _, syntax := p.tables.SyntaxFunctions[upper]; syntax {
 		return p.parseSyntaxFunction(upper)
@@ -2924,8 +3131,10 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	// record the lambdas), so they must not be turned away here either.
 	isHiveFn := isHiveFamily(p.dialect) && hiveOwnedFunction(upper)
 	isSQLiteFn := p.dialect == "sqlite" && sqliteOwnedFunction(upper)
+	isBigQueryFn := p.dialect == "bigquery" && bigqueryOwnedFunction(upper)
 	if !named && !byArity && !isJSONPath && !byWord && !isVarMap && !isDremioDateType &&
-		!isMySQLDateDelta && !isPrestoToChar && !isSingleStoreFn && !isHiveFn && !isSQLiteFn {
+		!isMySQLDateDelta && !isPrestoToChar && !isSingleStoreFn && !isHiveFn && !isSQLiteFn &&
+		!isBigQueryFn {
 		if _, custom := p.tables.NamedFunctions[upper]; custom {
 			return nil, p.unsupported("function " + upper + " with a builder of its own")
 		}
@@ -2991,11 +3200,10 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 				return nil, err
 			}
 			args = append(args, arg)
-			// `ARRAY_AGG(x ORDER BY y)`: the ORDER BY belongs to the argument
-			// it follows, and the reference wraps that argument in an Order
-			// rather than hanging the clause off the call. Where the whole
-			// list was collected into a Distinct, the Order wraps THAT, which
-			// is why it is applied below rather than here.
+			// `ARRAY_AGG(x ORDER BY y)`: the ORDER BY belongs to the
+			// argument it follows, and the reference wraps that argument in
+			// an Order rather than hanging the clause off the call. A nulls
+			// modifier may stand between the two, and is read after the loop.
 			if p.at(TokORDER_BY) {
 				p.advance()
 				o, oerr := p.parseOrder()
@@ -3004,8 +3212,6 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 				}
 				order = o
 			}
-			// BigQuery writes a LIMIT inside the call, after the ORDER BY,
-			// and the reference wraps the Order in it.
 			if p.at(TokLIMIT) {
 				p.advance()
 				c := p.curr()
@@ -3028,6 +3234,56 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		p.advance()
 		p.advance()
 	}
+	// `ANY_VALUE(x HAVING MAX y)` keeps the row whose y is greatest, and the
+	// reference records it as a node of its own around the VALUE. It comes
+	// BEFORE the ordering, which is where the reference reads it
+	// (Parser._parse_function_call, _parse_having_max).
+	var havingMaxColumn *Expression
+	havingMaxMax := true
+	if p.at(TokHAVING) && (p.nextWords("MAX") || p.nextWords("MIN")) {
+		p.advance() // HAVING
+		havingMaxMax = !p.atWords("MIN")
+		p.advance() // MAX or MIN
+		column, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		havingMaxColumn = column
+	}
+	// `ARRAY_AGG(x ORDER BY y)`: the ORDER BY belongs to the argument it
+	// follows, and the reference wraps that argument in an Order rather than
+	// hanging the clause off the call. It stands AFTER the nulls modifier and
+	// the HAVING, which is where the reference reads it
+	// (Parser._parse_function_call).
+	if order == nil && p.at(TokORDER_BY) {
+		p.advance()
+		o, oerr := p.parseOrder()
+		if oerr != nil {
+			return nil, oerr
+		}
+		order = o
+	}
+	// BigQuery writes a LIMIT inside the call, after the ORDER BY, and the
+	// reference wraps the Order in it.
+	if limitValue == nil && p.at(TokLIMIT) {
+		p.advance()
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("LIMIT without a value")
+		}
+		p.advance()
+		limitValue = New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})
+	}
+	// The words may also stand AFTER the ordering -- `LAST_VALUE(x ORDER BY x
+	// IGNORE NULLS)` -- where the reference reaches them through the ordered
+	// expression it reads there.
+	if inner == "" {
+		if word := p.atNullsModifier(); word != "" {
+			p.advance()
+			p.advance()
+			inner = word
+		}
+	}
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed function argument list")
 	}
@@ -3043,6 +3299,17 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	if distinct {
 		args = []*Expression{New("Distinct", Arg{"expressions", args}, Arg{"on", nil})}
 	}
+	// The HAVING wraps the value, and the ordering wraps the HAVING: the
+	// reference reads them in that order
+	// (Parser._parse_order(_parse_having_max(...))).
+	if havingMaxColumn != nil {
+		if len(args) == 0 {
+			return nil, p.unsupported("HAVING MAX without a value to keep")
+		}
+		args[len(args)-1] = New("HavingMax",
+			Arg{"this", args[len(args)-1]},
+			Arg{"expression", havingMaxColumn}, Arg{"max", havingMaxMax})
+	}
 	if order != nil {
 		if len(args) == 0 {
 			return nil, p.unsupported("ORDER BY without an argument to order")
@@ -3051,8 +3318,8 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		args[len(args)-1] = order
 	}
 	if limitValue != nil {
-		if order == nil || len(args) == 0 {
-			return nil, p.unsupported("LIMIT without an ORDER BY to limit")
+		if len(args) == 0 {
+			return nil, p.unsupported("LIMIT without a value to limit")
 		}
 		// The reference assigns `this` before `expression`, which is the order
 		// the dump compares.
@@ -3091,6 +3358,11 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	}
 	if p.dialect == "sqlite" {
 		if built := p.buildSQLiteFunction(upper, args); built != nil {
+			return built, nil
+		}
+	}
+	if p.dialect == "bigquery" {
+		if built := p.buildBigQueryFunction(upper, args); built != nil {
 			return built, nil
 		}
 	}
@@ -3367,6 +3639,10 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 			}
 		}
 		built := p.buildFunction(upper, spec, args)
+		if p.dialect == "bigquery" {
+			built = normalizeBareWeek(upper, built)
+			built = normalizeRegexpGroup(upper, built)
+		}
 		if inner != "" {
 			return New(inner, Arg{"this", built}), nil
 		}
@@ -3781,10 +4057,44 @@ func (p *parser) parseColumn() (*Expression, error) {
 			star = true
 			break
 		}
+		// After a dot, a NUMBER names a FIELD rather than a value: BigQuery
+		// reads `data.144A_FLAG` as a field called 144A_FLAG, quoted
+		// (BigQueryParser.SUPPORTS_DIGIT_PREFIXED_FIELD_NAMES,
+		// Parser._parse_field).
+		if p.dialect == "bigquery" {
+			if c := p.curr(); c != nil && c.Type == TokNUMBER {
+				p.advance()
+				name := c.Text
+				// The rest of the name is a WORD written with no space after
+				// the digits; a closing bracket is not part of it
+				// (Parser._parse_field, _advance_any).
+				if p.connectedTo(p.tokens[p.index-1]) {
+					if n := p.curr(); n != nil && (n.Type == TokVAR || n.Type == TokIDENTIFIER) {
+						name += n.Text
+						p.advance()
+					}
+				}
+				parts = append(parts, New("Identifier", Arg{"this", name}, Arg{"quoted", true}))
+				continue
+			}
+		}
 		// After a dot, `null` and `true` are names, not values -- and the
 		// reference builds a bare Identifier for them, with no `quoted` arg
-		// at all rather than one set false.
+		// at all rather than one set false. A parenthesis after the word
+		// makes it a CALL instead: `assert.true(1 = 1)` is a qualified call
+		// to a function called `true` (Parser._parse_column_ops).
 		if c := p.curr(); c != nil && (c.Type == TokNULL || c.Type == TokTRUE || c.Type == TokFALSE) {
+			if n := p.next(); n != nil && n.Type == TokL_PAREN {
+				fn, err := p.parseQualifiedName()
+				if err != nil {
+					return nil, err
+				}
+				chain := parts[0]
+				for _, part := range parts[1:] {
+					chain = New("Dot", Arg{"this", chain}, Arg{"expression", part})
+				}
+				return New("Dot", Arg{"this", chain}, Arg{"expression", fn}), nil
+			}
 			p.advance()
 			parts = append(parts, p.keep(New("Identifier", Arg{"this", c.Text})))
 			continue
@@ -3793,6 +4103,26 @@ func (p *parser) parseColumn() (*Expression, error) {
 		// reference builds Dot(Dot(a, b), C()). Detected before the name is
 		// consumed, so the call parser sees it where it expects to.
 		if p.namesAFunctionCall() {
+			// BigQuery's NET.* and SAFE.* calls are nodes of their own, and the
+			// reference RE-PARSES the call through the ordinary function
+			// reader for them (and for AI.*/ML.*) so a known name gets its
+			// builder rather than an Anonymous (BigQueryParser._parse_column_ops).
+			head := parts[len(parts)-1]
+			prefix := strings.ToUpper(head.Name())
+			if p.dialect == "bigquery" &&
+				(prefix == "NET" || prefix == "SAFE" || prefix == "AI" || prefix == "ML") {
+				fn, err := p.parseFunction()
+				if err != nil {
+					return nil, err
+				}
+				switch prefix {
+				case "NET":
+					return New("NetFunc", Arg{"this", fn}), nil
+				case "SAFE":
+					return New("SafeFunc", Arg{"this", fn}), nil
+				}
+				return New("Dot", Arg{"this", head}, Arg{"expression", fn}), nil
+			}
 			fn, err := p.parseQualifiedName()
 			if err != nil {
 				return nil, err
@@ -3847,6 +4177,12 @@ func (p *parser) parseColumn() (*Expression, error) {
 		out = New("Dot", Arg{"this", out}, Arg{"expression", extra})
 	}
 	liftAll(parts, out)
+	// BigQuery splits a COLUMN whose part carries dots the way it splits a
+	// table name: `` `db.t`.`c` `` names three parts, not two
+	// (BigQueryParser._parse_column).
+	if p.dialect == "bigquery" && out.Class == "Column" {
+		out = bigqueryColumnParts(out)
+	}
 	return p.daxBracketColumn(out)
 }
 
@@ -4078,7 +4414,7 @@ func (p *parser) jsonPathFor(arg *Expression) *Expression {
 		// would otherwise be.
 		return arg
 	}
-	path, err := parseJSONPath(text, p.dialect == "databricks")
+	path, err := parseJSONPath(text, p.jsonPathDashesInKeys())
 	if err != nil {
 		// ANY path the reference cannot read is handed straight back as the
 		// string it was written as -- not only the ones that are obviously
@@ -4274,7 +4610,7 @@ func (p *parser) buildJSONPathFunction(spec JSONPathFunc, args []*Expression) *E
 				// subscript -- neither is JSONPath, so the reference's own
 				// to_json_path skips parsing rather than fail at it.
 				path = args[1]
-			} else if parsed, err := parseJSONPath(text, p.dialect == "databricks"); err != nil {
+			} else if parsed, err := parseJSONPath(text, p.jsonPathDashesInKeys()); err != nil {
 				if jsonPathKeptAsLiteral(text) {
 					path = args[1]
 				} else {
@@ -4286,7 +4622,7 @@ func (p *parser) buildJSONPathFunction(spec JSONPathFunc, args []*Expression) *E
 		} else if lit := args[1]; lit.Class == "Literal" {
 			// A number is a position: the reference reads `1` as `[1]`.
 			text, _ := lit.Args["this"].(string)
-			parsed, err := parseJSONPath("["+text+"]", p.dialect == "databricks")
+			parsed, err := parseJSONPath("["+text+"]", p.jsonPathDashesInKeys())
 			if err != nil {
 				return nil
 			}
@@ -4591,6 +4927,12 @@ func (p *parser) parseDotField() (*Expression, bool, error) {
 		return nil, false, nil
 	}
 	switch n.Type {
+	case TokSTAR:
+		// `f(x).*` names every field of what the call returned
+		// (Parser._parse_column_ops, _parse_star).
+		p.advance()
+		p.advance()
+		return newStar(), false, nil
 	case TokNUMBER:
 		p.advance()
 		p.advance()
@@ -4990,4 +5332,15 @@ func (p *parser) quotedNamedTypeWord(c *Token) *Expression {
 		return New("ObjectIdentifier", Arg{"this", strings.ToUpper(c.Text)})
 	}
 	return nil
+}
+
+// concatCoalesce reports the dialect's CONCAT_COALESCE: whether a Concat folds
+// a NULL argument to NULL. Adjacent string literals become a Concat carrying
+// this flag (Dialect.CONCAT_COALESCE, Parser._parse_primary).
+func concatCoalesce(dialect string) bool {
+	switch dialect {
+	case "dremio", "drill", "duckdb", "exasol", "postgres", "tsql":
+		return true
+	}
+	return false
 }

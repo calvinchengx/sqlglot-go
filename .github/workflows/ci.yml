@@ -49,7 +49,14 @@ jobs:
   coverage-and-lint:
     name: Coverage floor and lint
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    # The floor is measured over `go test ./...` under -coverpkg, so the whole
+    # tree is rebuilt with instrumentation before a single test runs, and the
+    # fuzz and the lint queue behind it on the same runner. BigQuery -- the
+    # largest corpus landed so far, and the one that pushed the differential
+    # job past its own bound -- carried this one past ten minutes while the
+    # lint was still running, so the bound is widened rather than the work
+    # trimmed.
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
@@ -98,8 +105,10 @@ jobs:
     # widened here rather than chasing a one-off. SingleStore, the 18th named
     # dialect, pushed it past the 20-minute bound (it is a large one, with a
     # rich SHOW vocabulary and a big function table to probe), so it is raised
-    # again.
-    timeout-minutes: 35
+    # again. BigQuery, the 24th named dialect and the largest corpus of them
+    # all, brought the measured run to half an hour -- the probe cost is per
+    # dialect, so the bound moves with the count and is widened again here.
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5

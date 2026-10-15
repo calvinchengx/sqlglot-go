@@ -138,6 +138,7 @@ func init() {
 		"Concat":                              (*generator).writeConcat,
 		"List":                                (*generator).writeList,
 		"TsOrDsAdd":                           (*generator).writeTsOrDsAdd,
+		"WeekStart":                           (*generator).writeWeekStart,
 		"TsOrDsDiff":                          (*generator).writeTsOrDsDiff,
 		"Alter":                               (*generator).writeAlter,
 		"AlterDistStyle":                      (*generator).writeAlterDistStyle,
@@ -157,6 +158,8 @@ func init() {
 		"JoinHint":                            (*generator).writeJoinHint,
 		"ClusteredByProperty":                 (*generator).writeClusteredBy,
 		"QueryTransform":                      (*generator).writeQueryTransform,
+		"SafeFunc":                            (*generator).writeSafeFunc,
+		"NetFunc":                             (*generator).writeNetFunc,
 		"PositionalColumn":                    (*generator).writePositionalColumn,
 		"ExcludeColumnConstraint":             (*generator).writeExcludeConstraint,
 		"WithOperator":                        (*generator).writeWithOperator,
@@ -179,6 +182,23 @@ func init() {
 		"RegexpReplace":                       (*generator).writeRegexpFlagged,
 		"RegexpExtract":                       (*generator).writeRegexpFlagged,
 		"RegexpExtractAll":                    (*generator).writeRegexpFlagged,
+		"DateTrunc":                           (*generator).writeDateTrunc,
+		"Ln":                                  (*generator).writeLn,
+		"JSONStripNulls":                      (*generator).writeJSONStripNulls,
+		"Predict":                             (*generator).writePredict,
+		"GenerateEmbedding":                   (*generator).writeGenerateEmbedding,
+		"GenerateText":                        (*generator).writeGenerateText,
+		"GenerateTable":                       (*generator).writeGenerateTable,
+		"GenerateBool":                        (*generator).writeGenerateBool,
+		"GenerateInt":                         (*generator).writeGenerateInt,
+		"GenerateDouble":                      (*generator).writeGenerateDouble,
+		"MLTranslate":                         (*generator).writeMLTranslate,
+		"MLForecast":                          (*generator).writeMLForecast,
+		"FeaturesAtTime":                      (*generator).writeFeaturesAtTime,
+		"VectorSearch":                        (*generator).writeVectorSearch,
+		"GapFill":                             (*generator).writeGapFill,
+		"Mod":                                 (*generator).writeMod,
+		"Contains":                            (*generator).writeContains,
 		"IgnoreNulls":                         (*generator).writeIgnoreNulls,
 		"RespectNulls":                        (*generator).writeRespectNulls,
 		"TriggerProperties":                   (*generator).writeTriggerProperties,
@@ -478,6 +498,11 @@ func (g *generator) writeSelect(e *Expression) string {
 	// about what it selects.
 	add(g.child(e, "hint"))
 	add(g.child(e, "distinct"))
+	// `SELECT AS STRUCT ...` names what the projections build, and stands
+	// after the quantifier (Generator.select_sql).
+	if kind, _ := e.Args["kind"].(string); kind != "" {
+		add("AS " + strings.ToUpper(kind))
+	}
 
 	// T-SQL says TOP here; every other dialect says LIMIT at the end. The
 	// tree is the same either way, which is the point: the guard rewrites one
@@ -540,13 +565,31 @@ func (g *generator) writeSelect(e *Expression) string {
 	add(g.child(e, "match"))
 	add(g.child(e, "where"))
 	add(g.child(e, "connect"))
-	add(g.child(e, "group"))
+	add(g.writeGroupClause(e))
 	add(g.child(e, "having"))
-	// Hive's three reducer clauses sit between HAVING and ORDER BY, in the
-	// reference's own order.
+	// The clauses that sit between HAVING and ORDER BY: Hive's three reducer
+	// clauses, then the WINDOW and QUALIFY a dialect writes there. BigQuery
+	// writes QUALIFY BEFORE WINDOW where every other dialect writes it after
+	// (Generator.AFTER_HAVING_MODIFIER_TRANSFORMS).
 	add(g.child(e, "cluster"))
 	add(g.child(e, "distribute"))
 	add(g.child(e, "sort"))
+	windowsSQL := ""
+	if windows, _ := e.Args["windows"].([]*Expression); len(windows) > 0 {
+		names := make([]string, 0, len(windows))
+		for _, w := range windows {
+			names = append(names, g.node(w))
+		}
+		windowsSQL = "WINDOW " + strings.Join(names, ", ")
+	}
+	qualifySQL := g.child(e, "qualify")
+	if g.dialect == "bigquery" {
+		add(qualifySQL)
+		add(windowsSQL)
+	} else {
+		add(windowsSQL)
+		add(qualifySQL)
+	}
 	add(g.child(e, "order"))
 
 	// A FETCH is written AFTER the offset where a LIMIT is written before it:
@@ -578,16 +621,6 @@ func (g *generator) writeSelect(e *Expression) string {
 		}
 		add(sample)
 	}
-	// The WINDOW clause comes BEFORE the QUALIFY that refers to its names.
-	windows, _ := e.Args["windows"].([]*Expression)
-	if len(windows) > 0 {
-		names := make([]string, 0, len(windows))
-		for _, w := range windows {
-			names = append(names, g.node(w))
-		}
-		add("WINDOW " + strings.Join(names, ", "))
-	}
-	add(g.child(e, "qualify"))
 	// A LATERAL VIEW is a clause of the query, and there may be several.
 	laterals, _ := e.Args["laterals"].([]*Expression)
 	for _, lateral := range laterals {
@@ -619,12 +652,35 @@ func (g *generator) withPrefix(e *Expression, body string) string {
 }
 
 func (g *generator) writeSetOperation(e *Expression) string {
-	word := strings.ToUpper(e.Class)
-	if e.Args["distinct"] == false {
+	// The side and the kind stand between the left operand and the word, and
+	// what the operation matches BY comes after it
+	// (Generator.set_operation).
+	lead := ""
+	if side, _ := e.Args["side"].(string); side != "" {
+		lead += side + " "
+	}
+	if kind, _ := e.Args["kind"].(string); kind != "" {
+		lead += kind + " "
+	}
+	word := lead + strings.ToUpper(e.Class)
+	switch {
+	case e.Args["distinct"] == false:
 		word += " ALL"
+	case e.Args["distinct"] == true && g.dialect == "bigquery":
+		// BigQuery has no DEFAULT for a set operation's DISTINCT -- it reads
+		// a bare UNION as an error -- so the word is always written
+		// (BigQuery.SET_OP_DISTINCT_BY_DEFAULT, Generator.set_operation).
+		word += " DISTINCT"
 	}
 	if e.Args["by_name"] == true {
 		word += " BY NAME"
+	}
+	if on, _ := e.Args["on"].([]*Expression); len(on) > 0 {
+		names := make([]string, 0, len(on))
+		for _, col := range on {
+			names = append(names, g.node(col))
+		}
+		word += " ON (" + strings.Join(names, ", ") + ")"
 	}
 	parts := []string{g.child(e, "this"), word, g.child(e, "expression")}
 	for _, key := range []string{"cluster", "distribute", "sort", "order", "limit", "offset"} {
@@ -715,6 +771,20 @@ func (g *generator) writeTable(e *Expression) string {
 			parts = append(parts, g.node(row))
 		}
 		out = "ROWS FROM (" + strings.Join(parts, ", ") + ")"
+	} else if g.dialect == "bigquery" && e.quotedTable {
+		// A qualified name that was written inside ONE pair of backticks goes
+		// back out the same way: `x.y` and `x`.`y` mean different things
+		// (BigQueryGenerator.table_parts).
+		var names []string
+		for _, key := range []string{"catalog", "db", "this"} {
+			child, _ := e.Args[key].(*Expression)
+			if child == nil {
+				continue
+			}
+			names = append(names, child.Name())
+		}
+		out = g.node(New("Identifier",
+			Arg{"this", strings.Join(names, ".")}, Arg{"quoted", true}))
 	} else {
 		parts := []string{}
 		for _, key := range []string{"catalog", "db", "this"} {
@@ -766,7 +836,12 @@ func (g *generator) writeTable(e *Expression) string {
 	// The separator is whatever this dialect puts between a table and its
 	// alias, so the clause can be inserted in front of that alias.
 	if version := g.child(e, "version"); version != "" {
-		if alias != "" && !ordinality && strings.HasSuffix(out, sep+alias) {
+		// BigQuery writes the temporal clause AFTER the alias, and every
+		// other dialect writes it before (Generator.table_sql,
+		// BigQuery.ALIAS_POST_VERSION).
+		if g.dialect == "bigquery" {
+			out += " " + version
+		} else if alias != "" && !ordinality && strings.HasSuffix(out, sep+alias) {
 			name := strings.TrimSuffix(out, sep+alias)
 			out = name + " " + version + sep + alias
 		} else {
@@ -1319,6 +1394,16 @@ func (g *generator) writePositionalColumn(e *Expression) string {
 
 // writeHint writes what the engine is told about running the query, back
 // inside the comment it was written in.
+// writeSafeFunc writes BigQuery's `SAFE.<call>`.
+func (g *generator) writeSafeFunc(e *Expression) string {
+	return "SAFE." + g.child(e, "this")
+}
+
+// writeNetFunc writes BigQuery's `NET.<call>`.
+func (g *generator) writeNetFunc(e *Expression) string {
+	return "NET." + g.child(e, "this")
+}
+
 // writeJoinHint writes `NAME(tables)`, the join hint Spark2 and Spark read
 // inside a `/*+ ... */` hint.
 // writeQueryTransform writes Hive's `TRANSFORM(args) [USING script [AS
@@ -1400,6 +1485,25 @@ func (g *generator) writeDistinct(e *Expression) string {
 }
 
 func (g *generator) writeColumn(e *Expression) string {
+	// A qualifier that was written inside ONE pair of backticks is written
+	// back as one identifier, with only the name after it separate:
+	// `` `db.t`.`c` `` (BigQueryGenerator.column_parts).
+	if g.dialect == "bigquery" && e.quotedColumn {
+		var names []string
+		for _, key := range []string{"catalog", "db", "table"} {
+			child, _ := e.Args[key].(*Expression)
+			if child == nil {
+				continue
+			}
+			names = append(names, child.Name())
+		}
+		last := g.child(e, "this")
+		if len(names) == 0 {
+			return last
+		}
+		return g.node(New("Identifier",
+			Arg{"this", strings.Join(names, ".")}, Arg{"quoted", true})) + "." + last
+	}
 	parts := []string{}
 	for _, key := range []string{"catalog", "db", "table", "this"} {
 		if key == "table" && g.mergeTarget[e] {
@@ -1435,11 +1539,17 @@ func (g *generator) writeIdentifier(e *Expression) string {
 		quoted = true
 	}
 	if !quoted && (!readableAsABareName(name) || !g.lexesBackAsOneName(name)) {
-		// A name the tokenizer would not give back. The port builds one only
-		// from a token the tokenizer could not classify -- a stray backtick
-		// among them -- and writing it bare produced SQL nothing can read.
-		// The generator fuzzer found it.
-		return g.fail(e.Class + " whose name is not a name")
+		// BigQuery names a table with dashes and a star just as it was
+		// written -- `FROM my-table`, `FROM x.*` -- and its own reader takes
+		// them back, so the safety net below does not apply to it
+		// (BigQueryParser._parse_table_part).
+		if g.dialect != "bigquery" || !bigqueryDashedName(name) {
+			// A name the tokenizer would not give back. The port builds one
+			// only from a token the tokenizer could not classify -- a stray
+			// backtick among them -- and writing it bare produced SQL nothing
+			// can read. The generator fuzzer found it.
+			return g.fail(e.Class + " whose name is not a name")
+		}
 	}
 	// T-SQL's mark for a temporary table, which the parser took off the name
 	// and recorded here. It goes INSIDE the quoting -- `[#foo]`, not `#[foo]`
@@ -1517,6 +1627,45 @@ func (g *generator) escapeSequences(text string) string {
 // template substitutes text VERBATIM and a body holding a quote would end
 // the string early otherwise.
 func (g *generator) writeQuotedString(e *Expression) string {
+	// BigQuery writes a BYTES literal as `b'...'` and an integer HEX_STRING as
+	// `0x...`; the recorded template describes the OTHER shape of each -- a
+	// byte string the dialect does not treat as BYTES, a hex string it does
+	// not treat as an integer -- because the probe could not set the flag
+	// (Generator.bytestring_sql, Generator.hexstring_sql).
+	if g.dialect == "bigquery" {
+		body, _ := e.Args["this"].(string)
+		switch e.Class {
+		case "RawString":
+			// A raw string's own backslashes are doubled FIRST, and only
+			// then are the control characters spelled out -- the other order
+			// doubles the backslash the escaping itself introduces, and a
+			// newline came back as an escaped backslash-n
+			// (Generator.rawstring_sql).
+			preferred := g.cfg.StringEscapePreferred
+			if preferred != "" {
+				body = strings.ReplaceAll(body, preferred, preferred+preferred)
+			}
+			body = escapeControlCharacters(body)
+			if preferred == "" || preferred == "'" {
+				body = strings.ReplaceAll(body, "'", "''")
+			} else {
+				body = strings.ReplaceAll(body, "'", preferred+"'")
+			}
+			return "'" + body + "'"
+		case "ByteString":
+			if e.Args["is_bytes"] == true {
+				// A byte string's own escapes are already in the text, so a
+				// backslash is left alone and only the delimiter is escaped
+				// (escape_str(..., escape_backslash=False)).
+				body = escapeControlCharacters(body)
+				return "b'" + strings.ReplaceAll(body, "'", "\\'") + "'"
+			}
+		case "HexString":
+			if e.Args["is_integer"] == true {
+				return "0x" + body
+			}
+		}
+	}
 	spec, ok := g.tables.StringClassSQL[e.Class]
 	if !ok {
 		// This dialect writes the value in a way that loses it -- the neutral
@@ -1558,6 +1707,11 @@ func (g *generator) writeNational(e *Expression) string {
 // lowercase check always takes the LOWER branch here. Presto's own HEX_FUNC
 // is TO_HEX rather than HEX.
 func (g *generator) writeLowerHex(e *Expression) string {
+	// BigQuery spells the function TO_HEX and writes no LOWER around it
+	// (BigQueryGenerator.HEX_FUNC, HEX_LOWERCASE, Generator.lowerhex_sql).
+	if g.dialect == "bigquery" {
+		return "TO_HEX(" + g.child(e, "this") + ")"
+	}
 	name := "HEX"
 	if isPrestoFamily(g.dialect) {
 		name = "TO_HEX"
@@ -1748,6 +1902,295 @@ func (g *generator) writeIf(e *Expression) string {
 		Arg{"default", childOf(e, "false")}))
 }
 
+// writeMLCall writes the shape every BigQuery ML call shares:
+// `NAME(MODEL m, TABLE t, params)`. The TABLE keyword goes in only where the
+// argument IS a table, and a parameters slot that holds nothing is left out
+// entirely (Generator._ml_sql).
+func (g *generator) writeMLCall(e *Expression, name string) string {
+	parts := []string{"MODEL " + g.child(e, "this")}
+	if exprNode, _ := e.Args["expression"].(*Expression); exprNode != nil {
+		exprSQL := g.node(exprNode)
+		if exprNode.Class == "Table" {
+			exprSQL = "TABLE " + exprSQL
+		}
+		parts = append(parts, exprSQL)
+	}
+	if params, _ := e.Args["params_struct"].(*Expression); params != nil {
+		parts = append(parts, g.node(params))
+	}
+	return name + "(" + strings.Join(parts, ", ") + ")"
+}
+
+func (g *generator) writePredict(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "PREDICT")
+}
+
+func (g *generator) writeGenerateEmbedding(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	if e.Args["is_text"] == true {
+		return g.writeMLCall(e, "GENERATE_TEXT_EMBEDDING")
+	}
+	return g.writeMLCall(e, "GENERATE_EMBEDDING")
+}
+
+func (g *generator) writeGenerateText(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "GENERATE_TEXT")
+}
+
+func (g *generator) writeGenerateTable(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "GENERATE_TABLE")
+}
+
+func (g *generator) writeGenerateBool(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "GENERATE_BOOL")
+}
+
+func (g *generator) writeGenerateInt(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "GENERATE_INT")
+}
+
+func (g *generator) writeGenerateDouble(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "GENERATE_DOUBLE")
+}
+
+func (g *generator) writeMLTranslate(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "TRANSLATE")
+}
+
+func (g *generator) writeMLForecast(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "FORECAST")
+}
+
+// writeFeaturesAtTime writes `FEATURES_AT_TIME([TABLE] t, ...)`; the keyword
+// goes in only for a table (Generator.featuresattime_sql).
+func (g *generator) writeFeaturesAtTime(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	parts := []string{g.tableArgument(e, "this")}
+	for _, key := range []string{"time", "num_rows", "ignore_feature_nulls"} {
+		if s := g.child(e, key); s != "" {
+			parts = append(parts, s)
+		}
+	}
+	return "FEATURES_AT_TIME(" + strings.Join(parts, ", ") + ")"
+}
+
+// writeVectorSearch writes `VECTOR_SEARCH([TABLE] t, c, [TABLE] q, ...)`
+// (Generator.vectorsearch_sql).
+func (g *generator) writeVectorSearch(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	parts := []string{g.tableArgument(e, "this"), g.child(e, "column_to_search")}
+	for _, key := range []string{"query_table", "query_column_to_search", "top_k", "distance_type", "options"} {
+		if s := g.tableArgument(e, key); s != "" {
+			parts = append(parts, s)
+		}
+	}
+	return "VECTOR_SEARCH(" + strings.Join(parts, ", ") + ")"
+}
+
+// writeGapFill writes `GAP_FILL(TABLE t, ...)`: the table takes the word
+// TABLE and the rest follow in the node's own order
+// (Generator.gapfill_sql).
+func (g *generator) writeGapFill(e *Expression) string {
+	parts := []string{"TABLE " + g.child(e, "this")}
+	for _, key := range e.Keys {
+		if key == "this" {
+			continue
+		}
+		if s := g.child(e, key); s != "" {
+			parts = append(parts, s)
+		}
+	}
+	return "GAP_FILL(" + strings.Join(parts, ", ") + ")"
+}
+
+// tableArgument renders one argument, prefixed with TABLE where it is a table.
+func (g *generator) tableArgument(e *Expression, key string) string {
+	node, _ := e.Args[key].(*Expression)
+	if node == nil {
+		return ""
+	}
+	out := g.node(node)
+	if node.Class == "Table" {
+		return "TABLE " + out
+	}
+	return out
+}
+
+// writeGroupClause writes GROUP BY. BigQuery replaces a grouped expression
+// that repeats a projection with that projection's alias, but only when the
+// query also orders -- it is a workaround for grouping by an expression and
+// then ordering by the alias (BigQueryGenerator._alias_ordered_group).
+func (g *generator) writeGroupClause(e *Expression) string {
+	group, _ := e.Args["group"].(*Expression)
+	if group == nil {
+		return ""
+	}
+	if g.dialect == "bigquery" {
+		if order, _ := e.Args["order"].(*Expression); order != nil {
+			group = aliasGroupedExpressions(e, group)
+		}
+	}
+	return g.node(group)
+}
+
+// aliasGroupedExpressions swaps a grouped expression for the alias of a
+// projection that holds the same expression.
+func aliasGroupedExpressions(e, group *Expression) *Expression {
+	projections, _ := e.Args["expressions"].([]*Expression)
+	grouped, _ := group.Args["expressions"].([]*Expression)
+	if len(grouped) == 0 {
+		return group
+	}
+	replaced := make([]*Expression, len(grouped))
+	copy(replaced, grouped)
+	changed := false
+	for i, expr := range grouped {
+		if expr == nil || isPlainNumericLiteral(expr) {
+			continue
+		}
+		for _, proj := range projections {
+			if proj == nil || proj.Class != "Alias" {
+				continue
+			}
+			inner, _ := proj.Args["this"].(*Expression)
+			alias, _ := proj.Args["alias"].(*Expression)
+			if inner == nil || alias == nil || !inner.Equal(expr) {
+				continue
+			}
+			replaced[i] = New("Column", Arg{"this", alias})
+			changed = true
+			break
+		}
+	}
+	if !changed {
+		return group
+	}
+	out := group.Copy()
+	out.Set("expressions", replaced)
+	return out
+}
+
+// writeJSONStripNulls writes the call with every argument the tree holds, in
+// the class's own order: the named arguments are keys of their own rather
+// than positions in a list, and the recorded spelling was probed without them
+// (Generator.function_fallback_sql).
+func (g *generator) writeJSONStripNulls(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	parts := []string{g.child(e, "this")}
+	for _, key := range []string{"expression", "include_arrays", "remove_empty"} {
+		if s := g.child(e, key); s != "" {
+			parts = append(parts, s)
+		}
+	}
+	return "JSON_STRIP_NULLS(" + strings.Join(parts, ", ") + ")"
+}
+
+// writeLn writes the natural logarithm. BigQuery spells it LOG, where the
+// template every other dialect was probed with spells it LN
+// (BigQueryGenerator, PRESERVE_ORIGINAL_NAMES).
+func (g *generator) writeLn(e *Expression) string {
+	return g.spell(e)
+}
+
+// writeMod writes the remainder. BigQuery takes the parentheses off an
+// operand rather than carrying them through: `MOD((a + 1), b)` is written
+// `MOD(a + 1, b)` (BigQueryGenerator.mod_sql).
+func (g *generator) writeMod(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	args := []string{g.node(unnestParen(childOf(e, "this"))), g.node(unnestParen(childOf(e, "expression")))}
+	return "MOD(" + strings.Join(args, ", ") + ")"
+}
+
+// unnestParen returns what a parenthesised expression holds, and anything
+// else as it stands -- the reference's `exp.Paren.unnest()`.
+func unnestParen(e *Expression) *Expression {
+	if e == nil || e.Class != "Paren" {
+		return e
+	}
+	if inner := childOf(e, "this"); inner != nil {
+		return inner
+	}
+	return e
+}
+
+// writeContains writes BigQuery's CONTAINS_SUBSTR. The parser wraps each
+// operand in a LOWER, and the generator takes it back off -- the LOWER is
+// what the engine does anyway (BigQueryGenerator.contains_sql).
+func (g *generator) writeContains(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	this, expr := childOf(e, "this"), childOf(e, "expression")
+	if this != nil && expr != nil && this.Class == "Lower" && expr.Class == "Lower" {
+		this, expr = childOf(this, "this"), childOf(expr, "this")
+	}
+	args := []string{g.node(this), g.node(expr)}
+	if scope := childOf(e, "json_scope"); scope != nil {
+		args = append(args, g.node(scope))
+	}
+	return "CONTAINS_SUBSTR(" + strings.Join(args, ", ") + ")"
+}
+
+// writeDateTrunc writes DATE_TRUNC. BigQuery reads a string unit as the unit
+// itself -- `DATE_TRUNC(x, 'MONTH')` is written back as `DATE_TRUNC(x, MONTH)`
+// -- where every other dialect writes the template it was probed with
+// (BigQueryGenerator.datetrunc_sql).
+func (g *generator) writeDateTrunc(e *Expression) string {
+	if g.dialect != "bigquery" {
+		// Every other dialect keeps the spelling it was read with -- Oracle's
+		// TRUNC(x), the template a probed dialect was given, and so on.
+		return g.spell(e)
+	}
+	var args []string
+	args = append(args, g.child(e, "this"))
+	unit, _ := e.Args["unit"].(*Expression)
+	switch {
+	case unit == nil:
+	case isStringLiteral(unit):
+		args = append(args, unit.Name())
+	default:
+		args = append(args, g.node(unit))
+	}
+	if zone := g.child(e, "zone"); zone != "" {
+		args = append(args, zone)
+	}
+	return "DATE_TRUNC(" + strings.Join(args, ", ") + ")"
+}
+
 func (g *generator) writeCast(e *Expression) string {
 	word := "CAST"
 	if e.Class == "TryCast" {
@@ -1812,7 +2255,77 @@ func (g *generator) writeCast(e *Expression) string {
 			}
 		}
 	}
+	if g.dialect == "bigquery" {
+		// An inline type-annotated ARRAY literal round-trips as
+		// `ARRAY<INT64>[1, 2, 3]`, unless it holds a query -- that spelling is
+		// invalid for `ARRAY(SELECT ...)` (BigQueryGenerator.cast_sql).
+		if arr, _ := e.Args["this"].(*Expression); arr != nil && arr.Class == "Array" {
+			items, _ := arr.Args["expressions"].([]*Expression)
+			// An EMPTY literal still round-trips this way; only one holding
+			// a query does not (BigQueryGenerator.cast_sql).
+			if len(items) == 0 || !isA("Query", items[0]) {
+				return g.child(e, "to") + g.child(e, "this")
+			}
+		}
+		// SAFE_CAST is BigQuery's own spelling for a TryCast, and a format the
+		// cast was written with is kept as it was written
+		// (BigQueryGenerator.cast_sql, Generator.cast_sql).
+		bigword := "CAST"
+		if e.Class == "TryCast" {
+			bigword = "SAFE_CAST"
+		}
+		// BigQuery allows a precision only in DDL, so every type parameter
+		// under the cast comes out: `CAST(x AS STRING(10))` writes
+		// `CAST(x AS STRING)` (BigQueryGenerator.TRANSFORMS,
+		// transforms.remove_precision_parameterized_types).
+		out := bigword + "(" + g.node(stripPrecisionParams(castChild(e, "this"))) +
+			" AS " + g.node(stripPrecisionParams(castChild(e, "to")))
+		if def := g.node(stripPrecisionParams(castChild(e, "default"))); def != "" {
+			out += " DEFAULT " + def + " ON CONVERSION ERROR"
+		}
+		if format := g.child(e, "format"); format != "" {
+			out += " FORMAT " + format
+		}
+		if action := g.child(e, "action"); action != "" {
+			out += " " + action
+		}
+		return out + ")"
+	}
 	return word + "(" + g.child(e, "this") + " AS " + g.child(e, "to") + ")"
+}
+
+// castChild is one of a cast's arguments, or nothing.
+func castChild(e *Expression, key string) *Expression {
+	child, _ := e.Args[key].(*Expression)
+	return child
+}
+
+// stripPrecisionParams copies a subtree and takes the parameters off every
+// DataType in it, which is what BigQuery does to the types under a cast
+// (transforms.remove_precision_parameterized_types).
+func stripPrecisionParams(e *Expression) *Expression {
+	if e == nil {
+		return nil
+	}
+	out := e.Copy()
+	out.Walk(func(n *Expression) bool {
+		if n.Class != "DataType" {
+			return true
+		}
+		params, _ := n.Args["expressions"].([]*Expression)
+		kept := make([]*Expression, 0, len(params))
+		for _, p := range params {
+			if p != nil && p.Class == "DataTypeParam" {
+				continue
+			}
+			kept = append(kept, p)
+		}
+		if len(kept) != len(params) {
+			n.Set("expressions", kept)
+		}
+		return true
+	})
+	return out
 }
 
 // mysqlCastMapping is the reference's CAST_MAPPING: DataType kinds CAST()
@@ -2354,7 +2867,11 @@ func (g *generator) writeColumnDef(e *Expression) string {
 	return leading + g.child(e, "this") + sep + kind + trailing
 }
 
-func (g *generator) writeAnonymous(e *Expression) string { return g.anonymous(e, true) }
+func (g *generator) writeAnonymous(e *Expression) string {
+	// BigQuery does not normalize a function's name, so a call keeps the case
+	// it was written with (BigQuery.NORMALIZE_FUNCTIONS, Generator.func).
+	return g.anonymous(e, g.dialect != "bigquery")
+}
 
 func (g *generator) anonymous(e *Expression, upper bool) string {
 	name, quoted := anonymousName(e)
@@ -2380,6 +2897,11 @@ func (g *generator) writeIn(e *Expression) string {
 	// in the list that column holds, and takes no parentheses of its own.
 	if field, _ := e.Args["field"].(*Expression); field != nil {
 		return g.childOperand(e) + " IN " + g.node(field)
+	}
+	// `x IN UNNEST(a)` holds the unnested expression under a key of its own,
+	// and it brings its own parentheses (Generator.in_sql).
+	if unnest, _ := e.Args["unnest"].(*Expression); unnest != nil {
+		return g.childOperand(e) + " IN " + g.node(unnest)
 	}
 	return g.childOperand(e) + " IN (" + g.list(e) + ")"
 }
@@ -2586,6 +3108,27 @@ func (g *generator) writeBracket(e *Expression) string {
 	// would emit `x[i]` for a statement the reference writes as a function.
 	if spec, ok := g.functionSpelling(e); ok {
 		return g.namedFunction(e, spec)
+	}
+	// BigQuery names the numbering inside the brackets again: an offset of 0
+	// is OFFSET(...), of 1 ORDINAL(...), and a safe subscript puts SAFE_ in
+	// front of either (BigQueryGenerator.bracket_sql).
+	if g.dialect == "bigquery" {
+		items, _ := e.Args["expressions"].([]*Expression)
+		parts := make([]string, 0, len(items))
+		for _, item := range items {
+			parts = append(parts, g.node(item))
+		}
+		inner := strings.Join(parts, ", ")
+		switch e.Args["offset"] {
+		case 0:
+			inner = "OFFSET(" + inner + ")"
+		case 1:
+			inner = "ORDINAL(" + inner + ")"
+		}
+		if e.Args["safe"] == true {
+			inner = "SAFE_" + inner
+		}
+		return g.childOperand(e) + "[" + inner + "]"
 	}
 	// Written back in the dialect's own numbering: the parser subtracted the
 	// offset, so writing adds it again. Without this the port read `a[1]`
@@ -2940,6 +3483,17 @@ func (g *generator) syntaxTemplate(e *Expression) (string, bool) {
 			continue
 		}
 		out := candidate.Template
+		// A dialect that preserves original names writes the name the call
+		// was WRITTEN with, and the template's leading name is the class's
+		// own -- `substr(x, 1)` is a Substring and comes back out substr
+		// (Generator.function_fallback_sql).
+		if e.originalName != "" {
+			if _, consults := g.tables.ConsultsOriginalName[e.Class]; consults {
+				if i := strings.Index(out, "("); i > 0 && !strings.ContainsAny(out[:i], " {") {
+					out = e.originalName + out[i:]
+				}
+			}
+		}
 		// Left to right, the order the text is READ in. Some of what a writer
 		// records while rendering is positional -- a dollar already written
 		// pairs with the next one and opens a quote -- so filling the markers
@@ -3098,6 +3652,12 @@ func (g *generator) writeTableAlias(e *Expression) string {
 	if len(columns) == 0 {
 		return out
 	}
+	// BigQuery has no named columns in a table alias, and none in a CTE
+	// either, so the list is dropped rather than written
+	// (BigQuery.SUPPORTS_TABLE_ALIAS_COLUMNS, Generator.tablealias_sql).
+	if g.dialect == "bigquery" {
+		return out
+	}
 	// A column list with no name gets one of the generator's own, unless the
 	// dialect names the columns alone (the reference's tablealias_sql).
 	if out == "" && g.dialect != "bigquery" {
@@ -3140,7 +3700,18 @@ func (g *generator) writeStruct(e *Expression) string {
 		}
 		parts = append(parts, g.node(item))
 	}
-	out := strings.ReplaceAll(g.tables.StructTemplate, "{fields}", strings.Join(parts, ", "))
+	// A dialect that preserves original names writes the name the struct was
+	// WRITTEN with -- `struct(...)` comes back out lowercase
+	// (Generator.function_fallback_sql).
+	template := g.tables.StructTemplate
+	if e.originalName != "" {
+		if _, consults := g.tables.ConsultsOriginalName[e.Class]; consults {
+			if i := strings.Index(template, "("); i > 0 && !strings.ContainsAny(template[:i], " {") {
+				template = e.originalName + template[i:]
+			}
+		}
+	}
+	out := strings.ReplaceAll(template, "{fields}", strings.Join(parts, ", "))
 	g.inCallArgs = was
 	return out
 }
@@ -3406,6 +3977,7 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 	if over, ok := g.tables.JSONPathByClass[e.Class]; ok && over.Form != "" {
 		form = over.Form
 	}
+	form = g.jsonExtractName(e, form)
 	this, _ := e.Args["this"].(*Expression)
 	if !isAtomForOperator(this) && !writesAsACall(g.node(this)) {
 		return g.fail(e.Class + " over a compound expression")
@@ -3424,7 +3996,7 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 			if over.PlainForm == "" {
 				return g.fail(e.Class + " over a path it cannot write plainly")
 			}
-			form = over.PlainForm
+			form = g.jsonExtractName(e, over.PlainForm)
 		}
 		out := g.writeJSONOperand(e, form)
 		// Further paths beyond the first ride along as extra call arguments.
@@ -3455,6 +4027,23 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 	}
 	g.pathOwner = saved
 	return strings.ReplaceAll(out, "{path}", text)
+}
+
+// jsonExtractName puts the name the statement was WRITTEN with on a JSON
+// extraction form, where the dialect preserves original names -- BigQuery
+// reads JSON_QUERY as the same node as JSON_EXTRACT, and writes back the name
+// it was given (BigQueryGenerator._json_extract_sql).
+func (g *generator) jsonExtractName(e *Expression, form string) string {
+	if e.originalName == "" {
+		return form
+	}
+	if _, consults := g.tables.ConsultsOriginalName[e.Class]; !consults {
+		return form
+	}
+	if i := strings.Index(form, "("); i > 0 && !strings.ContainsAny(form[:i], " {") {
+		return e.originalName + form[i:]
+	}
+	return form
 }
 
 // writeJSONOperand writes an extraction whose right-hand side is an ORDINARY
@@ -3637,6 +4226,12 @@ func writesAsACall(text string) bool {
 // OUTSIDE the call there and inside it in Databricks, so a dialect that puts it
 // inside is refused rather than written with it in the wrong place.
 func (g *generator) writeUnnest(e *Expression) string {
+	// BigQuery names the unnested COLUMN alone -- no parenthesised column
+	// list -- and writes the ordinality as WITH OFFSET rather than WITH
+	// ORDINALITY (Generator.unnest_sql, UNNEST_COLUMN_ONLY).
+	if g.dialect == "bigquery" {
+		return g.writeBigQueryUnnest(e)
+	}
 	// Redshift never writes the call at all: an UNNEST built from its own
 	// `t, t.arr_col AS x` sugar (always exactly one bare column, no
 	// ordinality) is written straight back as that same sugar --
@@ -3710,6 +4305,46 @@ func (g *generator) writeRedshiftUnnestSugar(e *Expression) string {
 
 // unnestCall spells an UNNEST and the alias its own spelling carries, by
 // whichever route this dialect has for it: a function spelling, or a template.
+// writeBigQueryUnnest writes an UNNEST the way BigQuery does: the alias is
+// its FIRST column written bare, and the ordinality follows as
+// `WITH OFFSET [AS name]` (Generator.unnest_sql).
+func (g *generator) writeBigQueryUnnest(e *Expression) string {
+	items, _ := e.Args["expressions"].([]*Expression)
+	alias, _ := e.Args["alias"].(*Expression)
+	offset := e.Args["offset"]
+	// A named ordinality is written by the clause itself, not as a column of
+	// the alias -- BigQuery has no WITH ORDINALITY to fold it into.
+	named, _ := offset.(*Expression)
+	ordinality := named != nil || offset == true
+
+	var aliasSQL string
+	if alias != nil {
+		if columns, _ := alias.Args["columns"].([]*Expression); len(columns) > 0 {
+			aliasSQL = g.node(columns[0])
+		}
+	}
+	if g.err != nil {
+		return ""
+	}
+	// The call is spelled WITHOUT the alias or the ordinality: this writer
+	// places both itself.
+	bare := New("Unnest", Arg{"expressions", items}, Arg{"offset", false})
+	call := g.unnestCall(bare, nil)
+	if g.err != nil {
+		return ""
+	}
+	if aliasSQL != "" {
+		call += " AS " + aliasSQL
+	}
+	switch {
+	case named != nil:
+		return call + " WITH OFFSET AS " + g.node(named)
+	case ordinality:
+		return call + " WITH OFFSET"
+	}
+	return call
+}
+
 func (g *generator) unnestCall(e, alias *Expression) string {
 	spec, ok := g.functionSpelling(e)
 	if !ok {
@@ -4210,6 +4845,14 @@ func (g *generator) writeGroupConcat(e *Expression) string {
 		}
 		return out[:close] + " ON OVERFLOW " + overflow + out[close:]
 	}
+	// BigQuery writes an ordering and a LIMIT as MODIFIERS after the
+	// separator: `STRING_AGG(DISTINCT v, sep LIMIT 3)`
+	// (Generator.groupconcat_sql).
+	if g.dialect == "bigquery" {
+		if out, ok := g.bigQueryGroupConcat(e); ok {
+			return out
+		}
+	}
 	order, _ := e.Args["this"].(*Expression)
 	// Nothing folded in, or a dialect that writes the ordering where it
 	// already is: the ordinary spelling serves.
@@ -4238,11 +4881,60 @@ func (g *generator) writeGroupConcat(e *Expression) string {
 	return g.fail(e.Class + " over an ordering this dialect writes elsewhere")
 }
 
+// bigQueryGroupConcat writes a GroupConcat whose first argument carries an
+// ordering and a LIMIT, both of which BigQuery puts after the separator
+// rather than inside the argument.
+func (g *generator) bigQueryGroupConcat(e *Expression) (string, bool) {
+	inner, _ := e.Args["this"].(*Expression)
+	var limit *Expression
+	if inner != nil && inner.Class == "Limit" {
+		limit = inner
+		inner = childOf(inner, "this")
+	}
+	var ordering *Expression
+	if inner != nil && inner.Class == "Order" {
+		ordering = inner
+		inner = childOf(inner, "this")
+	}
+	if limit == nil && ordering == nil {
+		return "", false
+	}
+	plain := e.shallowCopy()
+	plain.Set("this", inner)
+	out := g.spell(plain)
+	if !strings.HasSuffix(out, ")") {
+		return g.fail(e.Class + " whose spelling is not a call"), true
+	}
+	mods := ""
+	if ordering != nil {
+		mods += " " + strings.TrimSpace(g.node(
+			New("Order", Arg{"expressions", ordering.Args["expressions"]})))
+	}
+	if limit != nil {
+		mods += " LIMIT " + g.child(limit, "expression")
+	}
+	return out[:len(out)-1] + mods + ")", true
+}
+
 // writeCreate writes the statements that make things. The kind is a WORD on
 // the node and the name is wrapped in a Schema when there are columns, so the
 // shape of `this` is what says which spelling this is.
 func (g *generator) writeCreate(e *Expression) string {
 	kind, _ := e.Args["kind"].(string)
+	// BigQuery spells a FUNCTION that returns a TABLE `TABLE FUNCTION`, and
+	// unwraps a subquery the statement wrote around its body
+	// (BigQueryGenerator._create_sql).
+	if g.dialect == "bigquery" && kind == "FUNCTION" {
+		returns := e.FindAll("ReturnsProperty")
+		if len(returns) > 0 && returns[0].Args["is_table"] == true {
+			kind = "TABLE FUNCTION"
+			if body, _ := e.Args["expression"].(*Expression); body != nil &&
+				(body.Class == "Subquery" || body.Class == "Literal") {
+				e = e.shallowCopy()
+				e.Set("expression", childOf(body, "this"))
+			}
+		}
+	}
 	// Presto drops a VIEW's own column list entirely: `CREATE VIEW x (cola)
 	// AS SELECT 1 AS cola` writes as `CREATE VIEW x AS SELECT 1 AS cola`,
 	// the column names carried by the SELECT's own aliases instead. The
@@ -4449,6 +5141,11 @@ func (g *generator) writeClone(e *Expression) string {
 	if shallow, _ := e.Args["shallow"].(bool); shallow {
 		out = "SHALLOW "
 	}
+	// COPY is the same node as CLONE with a flag: the rows are copied rather
+	// than shared (Generator.clone_sql, SUPPORTS_TABLE_COPY).
+	if copying, _ := e.Args["copy"].(bool); copying {
+		return out + "COPY " + g.child(e, "this")
+	}
 	return out + "CLONE " + g.child(e, "this")
 }
 
@@ -4509,7 +5206,11 @@ func (g *generator) writePropertyList(e *Expression) string {
 		case "POST_WITH":
 			with = append(with, g.node(item))
 		case "POST_SCHEMA":
-			root = append(root, g.node(item))
+			// A spelling that brings its OWN leading separator -- the
+			// templates do, because they were recorded as the reference
+			// renders them inside the statement -- is joined without a
+			// second one.
+			root = append(root, strings.TrimLeft(g.node(item), " "))
 		}
 	}
 	out := strings.Join(root, " ")
@@ -4653,7 +5354,11 @@ func (g *generator) writeProperties(e *Expression) (before string, out string, f
 					continue
 				}
 			}
-			root = append(root, g.node(item))
+			// A spelling that brings its OWN leading separator -- the
+			// templates do, because they were recorded as the reference
+			// renders them inside the statement -- is joined without a
+			// second one.
+			root = append(root, strings.TrimLeft(g.node(item), " "))
 		case "POST_WITH":
 			with = append(with, g.node(item))
 		case "POST_CREATE":
@@ -5853,14 +6558,6 @@ func (g *generator) writeDelete(e *Expression) string {
 		}
 	}
 	this := g.child(e, "this")
-	if this == "" {
-		// A DELETE inside an ALTER names no table of its own: the ALTER has
-		// already named it, and what is left is which rows go.
-		if where := g.child(e, "where"); where != "" {
-			return "DELETE " + where
-		}
-		return g.fail(e.Class + " with no table")
-	}
 	// MySQL's Multiple-Table DELETE names, before the FROM, which of the
 	// tables joined there actually lose rows -- and T-SQL's OUTPUT sits in
 	// that very spot, straight after the verb: `DELETE x OUTPUT x.a FROM z`.
@@ -5871,6 +6568,22 @@ func (g *generator) writeDelete(e *Expression) string {
 			parts = append(parts, g.node(t))
 		}
 		tablesWord = " " + strings.Join(parts, ", ")
+	}
+	if this == "" {
+		// A DELETE inside an ALTER names no table of its own: the ALTER has
+		// already named it, and what is left is which rows go. A DELETE with
+		// no FROM at all -- BigQuery's `DELETE t WHERE ...` -- names the
+		// table among the TABLES instead (Generator.delete_sql).
+		if tablesWord != "" {
+			if where := g.child(e, "where"); where != "" {
+				return "DELETE" + tablesWord + " " + where
+			}
+			return "DELETE" + tablesWord
+		}
+		if where := g.child(e, "where"); where != "" {
+			return "DELETE " + where
+		}
+		return g.fail(e.Class + " with no table")
 	}
 	body := "FROM " + this
 	if using, _ := e.Args["using"].([]*Expression); len(using) > 0 {
@@ -6140,12 +6853,20 @@ func (g *generator) writeFunctionRest(e *Expression, out string) string {
 	out += g.child(e, "this")
 
 	var afterParams, afterAs, afterBody []string
+	var withProps []string
 	properties, _ := e.Args["properties"].(*Expression)
 	if properties != nil {
 		items, _ := properties.Args["expressions"].([]*Expression)
 		for _, item := range items {
 			if item.Class == "TemporaryProperty" {
 				continue // already written, in front of the kind
+			}
+			// A property the dialect writes inside its own list -- a UDF's
+			// `OPTIONS (...)` -- is gathered here and written as one clause
+			// (Generator.properties_sql, WITH_PROPERTIES_PREFIX).
+			if g.tables.PropertyLocation[item.Class] == "POST_WITH" {
+				withProps = append(withProps, g.node(item))
+				continue
 			}
 			place := "schema"
 			if item.Class == "UsingProperty" {
@@ -6169,6 +6890,14 @@ func (g *generator) writeFunctionRest(e *Expression, out string) string {
 				return g.fail(item.Class + ", which this dialect writes nowhere")
 			}
 		}
+	}
+	if len(withProps) > 0 {
+		prefix := g.tables.WithPropertiesPrefix
+		sep := " "
+		if strings.TrimSpace(prefix) == "" {
+			sep = ""
+		}
+		afterParams = append(afterParams, prefix+sep+"("+strings.Join(withProps, ", ")+")")
 	}
 	for _, part := range afterParams {
 		out += " " + part
@@ -6245,6 +6974,18 @@ func (g *generator) writeReturnsProperty(e *Expression) string {
 	if null, _ := e.Args["null"].(bool); null {
 		return "RETURNS NULL ON NULL INPUT"
 	}
+	// BigQuery writes a table return's columns between ANGLE brackets, with
+	// the Schema's own name in front: `RETURNS TABLE <a INT64>`
+	// (BigQueryGenerator._returnsproperty_sql).
+	if g.dialect == "bigquery" {
+		if schema, _ := e.Args["this"].(*Expression); schema != nil && schema.Class == "Schema" {
+			name := g.child(schema, "this")
+			if s, ok := schema.Args["this"].(string); ok {
+				name = s
+			}
+			return "RETURNS " + name + " <" + g.list(schema) + ">"
+		}
+	}
 	out := "RETURNS "
 	// T-SQL NAMES the table a function returns, and the name sits between the
 	// word and the table it names.
@@ -6258,12 +6999,36 @@ func (g *generator) writeLanguageProperty(e *Expression) string {
 	return "LANGUAGE " + g.child(e, "this")
 }
 
+// writeWeekStart writes BigQuery's WEEK(<day>) -- the day the week begins on
+// -- which collapses to a bare WEEK when that day is SUNDAY
+// (BigQueryGenerator.weekstart_sql).
+func (g *generator) writeWeekStart(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	day := strings.ToUpper(e.Args["this"].(*Expression).Name())
+	if day == "SUNDAY" {
+		// BigQuery specific optimization since WEEK(SUNDAY) == WEEK.
+		return "WEEK"
+	}
+	return "WEEK(" + g.child(e, "this") + ")"
+}
+
 func (g *generator) writeStabilityProperty(e *Expression) string {
 	this, _ := e.Args["this"].(*Expression)
 	if this == nil {
 		return g.fail(e.Class + " with no word")
 	}
 	word, _ := this.Args["this"].(string)
+	// BigQuery has the standard words too: IMMUTABLE is DETERMINISTIC and
+	// everything else is NOT DETERMINISTIC
+	// (BigQueryGenerator.TRANSFORMS).
+	if g.dialect == "bigquery" {
+		if word == "IMMUTABLE" {
+			return "DETERMINISTIC"
+		}
+		return "NOT DETERMINISTIC"
+	}
 	// Trino has only DETERMINISTIC and its negation.
 	if g.dialect == "trino" {
 		if word == "IMMUTABLE" {
@@ -6424,6 +7189,23 @@ func (g *generator) writeReturn(e *Expression) string {
 // readableAsABareName reports whether a name written without quotes would be
 // read back as the same name. It is the tokenizer's own rule for what may
 // continue a word, plus the symbols a dialect lets a name hold.
+// bigqueryDashedName reports a name BigQuery writes bare and reads back as
+// one name: letters, digits, dashes and a star, with no space and no leading
+// dash -- `my-table`, `x-0`, `y*`. The dash may not OPEN the name, or it would
+// read as a minus sign.
+func bigqueryDashedName(name string) bool {
+	if name == "" || name[0] == '-' {
+		return false
+	}
+	for _, r := range name {
+		if isIdentifierChar(r) || r == '-' || r == '*' {
+			continue
+		}
+		return false
+	}
+	return true
+}
+
 func readableAsABareName(name string) bool {
 	if name == "" {
 		return false
@@ -7390,6 +8172,9 @@ func (g *generator) writeTimeStrToTime(e *Expression) string {
 }
 
 func (g *generator) writeTimeToStr(e *Expression) string {
+	if g.dialect == "bigquery" {
+		return g.writeBigQueryTimeToStr(e)
+	}
 	if g.dialect == "mysql" || g.dialect == "doris" {
 		this, _ := e.Args["this"].(*Expression)
 		if stripped := stripMySQLTsOrDsWrap(this); stripped != this {
@@ -7398,6 +8183,34 @@ func (g *generator) writeTimeToStr(e *Expression) string {
 		}
 	}
 	return g.spell(e)
+}
+
+// writeBigQueryTimeToStr picks between FORMAT_DATE, FORMAT_DATETIME,
+// FORMAT_TIME and FORMAT_TIMESTAMP by the TS_OR_DS cast the value carries,
+// and unwraps that cast rather than writing it: the tree stores
+// `FORMAT_DATETIME(x, f)` as a TimeToStr over a TsOrDsToDatetime
+// (BigQueryGenerator.timetostr_sql).
+func (g *generator) writeBigQueryTimeToStr(e *Expression) string {
+	inner, _ := e.Args["this"].(*Expression)
+	name := "FORMAT_DATE"
+	timeExpr := e
+	if inner != nil {
+		switch inner.Class {
+		case "TsOrDsToDatetime":
+			name, timeExpr = "FORMAT_DATETIME", inner
+		case "TsOrDsToTimestamp":
+			name, timeExpr = "FORMAT_TIMESTAMP", inner
+		case "TsOrDsToTime":
+			name, timeExpr = "FORMAT_TIME", inner
+		case "TsOrDsToDate":
+			name, timeExpr = "FORMAT_DATE", inner
+		}
+	}
+	args := []string{g.child(e, "format"), g.child(timeExpr, "this")}
+	if zone := g.child(e, "zone"); zone != "" {
+		args = append(args, zone)
+	}
+	return name + "(" + strings.Join(args, ", ") + ")"
 }
 
 // writeDeclareItem writes one declared variable: the names, the type, and the
@@ -7853,6 +8666,23 @@ func (g *generator) writeNullTreatment(e *Expression, words string) string {
 	if call == nil {
 		return g.fail(e.Class + " over nothing")
 	}
+	// BigQuery writes the words INSIDE the call whenever the call is an
+	// aggregate, and after it otherwise (Generator._embed_ignore_nulls).
+	if g.dialect == "bigquery" {
+		if isA("AggFunc", call) {
+			// The words go BEFORE the call's own ordering -- `ARRAY_AGG(x
+			// IGNORE NULLS ORDER BY x LIMIT 1)` -- where BigQuery puts them
+			// (BigQuery.IGNORE_NULLS_BEFORE_ORDER,
+			// Generator._embed_ignore_nulls).
+			copied := call.Copy()
+			if value, _ := copied.Args["this"].(*Expression); isNullModifier(value) {
+				putWordsBeforeModifier(value, e.Class)
+				return g.node(copied)
+			}
+			return g.nullTreatmentInsideCall(e, call, words)
+		}
+		return g.child(e, "this") + " " + words
+	}
 	if !g.tables.IgnoreNullsInFunc {
 		return g.child(e, "this") + " " + words
 	}
@@ -7871,6 +8701,30 @@ func (g *generator) writeNullTreatment(e *Expression, words string) string {
 	return g.child(e, "this")
 }
 
+// isNullModifier reports whether a node is one of the clauses the null
+// treatment is written in front of.
+func isNullModifier(e *Expression) bool {
+	if e == nil {
+		return false
+	}
+	switch e.Class {
+	case "Order", "Limit", "HavingMax":
+		return true
+	}
+	return false
+}
+
+// putWordsBeforeModifier descends to the innermost modifier's own value and
+// wraps THAT in the words, which is where BigQuery writes them.
+func putWordsBeforeModifier(mod *Expression, class string) {
+	value, _ := mod.Args["this"].(*Expression)
+	if isNullModifier(value) {
+		putWordsBeforeModifier(value, class)
+		return
+	}
+	mod.Set("this", New(class, Arg{"this", value}))
+}
+
 // nullTreatmentInsideCall writes the words among the call's arguments, by
 // reopening its closing parenthesis.
 //
@@ -7878,11 +8732,18 @@ func (g *generator) writeNullTreatment(e *Expression, words string) string {
 // with them -- `LAST_VALUE(x ORDER BY x IGNORE NULLS)`. Only DuckDB writes
 // them inside at all, and it writes them there.
 func (g *generator) nullTreatmentInsideCall(e, call *Expression, words string) string {
+	// The call is rendered WITHOUT its own comments: they belong after the
+	// words rather than inside the parentheses, and the reference writes them
+	// there itself (Generator._embed_ignore_nulls).
+	comments := call.Comments
+	call.Comments = nil
 	out := g.node(call)
+	call.Comments = comments
 	if !strings.HasSuffix(out, ")") {
 		return g.fail(e.Class + " over something that is not a call")
 	}
-	return out[:len(out)-1] + " " + words + ")"
+	out = out[:len(out)-1] + " " + words + ")"
+	return g.withComments(call, out)
 }
 
 // writeRegexpFlagged writes a regexp call and the FLAGS that say how the match
@@ -8113,9 +8974,31 @@ func (g *generator) writeDateArith(e *Expression, domain string, sign int) strin
 			return g.dateArithMySQL(name, this, amount, unit)
 		}
 		return g.dateArithGenericFallback(name, this, amount, unit, false)
+	case "bigquery":
+		return g.dateArithBigQuery(name, this, amount, unit)
 	default:
 		return g.dateArithGenericFallback(name, this, amount, unit, domain == "Date" && sign > 0)
 	}
+}
+
+// dateArithBigQuery writes the amount and the unit back inside an INTERVAL:
+// `DATE_ADD(x, INTERVAL '1' DAY)`. The unit is a Var of the unit's own name,
+// defaulting to DAY (BigQueryGenerator.TRANSFORMS, date_add_interval_sql).
+func (g *generator) dateArithBigQuery(name string, this, amount, unit *Expression) string {
+	unitVar := unit
+	switch {
+	case unit == nil:
+		unitVar = New("Var", Arg{"this", "DAY"})
+	case unit.Class == "Var", unit.Class == "Placeholder", unit.Class == "WeekStart", unit.Class == "Column":
+	default:
+		text := unit.Name()
+		if text == "" {
+			text = "DAY"
+		}
+		unitVar = New("Var", Arg{"this", text})
+	}
+	interval := New("Interval", Arg{"this", amount}, Arg{"unit", unitVar})
+	return name + "(" + g.node(this) + ", " + g.node(interval) + ")"
 }
 
 // isPlainNumericLiteral reports whether e is a bare, non-string Literal --

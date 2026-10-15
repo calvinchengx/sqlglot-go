@@ -571,6 +571,18 @@ func (p *parser) parseStringAgg() (*Expression, error) {
 		order.Set("this", args[0])
 		args[0] = order
 	}
+	// `STRING_AGG(x ORDER BY y LIMIT n)` takes a LIMIT as well, and it wraps
+	// whatever the ordering left (Parser._parse_string_agg, _parse_limit).
+	if p.at(TokLIMIT) {
+		p.advance()
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("LIMIT without a value")
+		}
+		p.advance()
+		args[0] = New("Limit", Arg{"this", args[0]},
+			Arg{"expression", New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})})
+	}
 	// A third argument is the overflow behaviour, which the reference reads
 	// and then writes away -- `STRING_AGG(DISTINCT x, y, z)` comes back
 	// without the z.
@@ -734,7 +746,43 @@ func (p *parser) parseJSONObject() (*Expression, error) {
 		return nil, p.unsupported("unclosed JSON_OBJECT")
 	}
 	args = append(args, Arg{"return_type", returnType}, Arg{"encoding", encoding})
-	return New("JSONObject", args...), nil
+	node := New("JSONObject", args...)
+	// BigQuery's "signature 2" writes the keys and the values as two ARRAYS
+	// in one pair, and the reference rewrites that into one pair per key
+	// (BigQueryParser._parse_json_object).
+	if p.dialect == "bigquery" {
+		if kv := firstJSONPair(node); kv != nil {
+			keys, _ := childOf(kv, "this").Args["expressions"].([]*Expression)
+			values, _ := childOf(kv, "expression").Args["expressions"].([]*Expression)
+			pairs := make([]*Expression, 0, len(keys))
+			for i, k := range keys {
+				var v *Expression
+				if i < len(values) {
+					v = values[i]
+				}
+				pairs = append(pairs, New("JSONKeyValue", Arg{"this", k}, Arg{"expression", v}))
+			}
+			node.Set("expressions", pairs)
+		}
+	}
+	return node, nil
+}
+
+// firstJSONPair returns the first pair of a JSONObject when it holds one.
+func firstJSONPair(node *Expression) *Expression {
+	pairs, _ := node.Args["expressions"].([]*Expression)
+	if len(pairs) == 0 {
+		return nil
+	}
+	kv := pairs[0]
+	if kv == nil || kv.Class != "JSONKeyValue" {
+		return nil
+	}
+	key, value := childOf(kv, "this"), childOf(kv, "expression")
+	if key == nil || value == nil || key.Class != "Array" || value.Class != "Array" {
+		return nil
+	}
+	return kv
 }
 
 // parseMatchAgainst reads MySQL's full-text search predicate:
@@ -1148,7 +1196,7 @@ func (p *parser) parseJSONBExists() (*Expression, error) {
 		}
 		if isStringLiteral(path) {
 			text, _ := path.Args["this"].(string)
-			folded, err := parseJSONPath(text, p.dialect == "databricks")
+			folded, err := parseJSONPath(text, p.jsonPathDashesInKeys())
 			if err != nil {
 				return nil, p.unsupported("JSONB_EXISTS over a path it cannot fold")
 			}

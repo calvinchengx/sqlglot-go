@@ -1,0 +1,139 @@
+{
+ "dialect": "bigquery",
+ "rendered": "SAFE.PARSE_DATE('%F', '2024-01-15')",
+ "sql": "SAFE.PARSE_DATE('%Y-%m-%d', '2024-01-15')",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "SAFE"
+  },
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 4,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "PARSE_DATE"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 16,
+   "t": "STRING",
+   "x": "%Y-%m-%d"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 28,
+   "t": "STRING",
+   "x": "2024-01-15"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.SafeFunc"
+  },
+  {
+   "c": "sqlglot.expressions.temporal.StrToDate",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "name": "PARSE_DATE",
+    "start": 5
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "2024-01-15"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "format"
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "%Y-%m-%d"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "default_year"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "1970"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

@@ -58,6 +58,7 @@ func (p *parser) parseJoin() (*Expression, error) {
 		return join, nil
 	}
 
+	mark := p.index
 	c := p.curr()
 	if c == nil {
 		return nil, nil
@@ -118,9 +119,11 @@ func (p *parser) parseJoin() (*Expression, error) {
 	// none follows it.
 	straight := kind != nil && kind.Type == TokSTRAIGHT_JOIN
 	if !p.match(TokJOIN) && !straight {
-		if side != nil || kind != nil || hint != "" {
-			return nil, p.unsupported("join without JOIN")
-		}
+		// A side or a kind with no JOIN after it is not a join at all: it
+		// belongs to what follows -- a set operation's own side and kind,
+		// `SELECT 1 INNER UNION ALL SELECT 3` -- and the reference retreats
+		// rather than refusing (Parser._parse_join).
+		p.index = mark
 		return nil, nil
 	}
 
@@ -532,6 +535,21 @@ func (p *parser) parseTable() (*Expression, error) {
 		}
 	}
 
+	// BigQuery reads a trailing star as part of the name -- `x.y*` names every
+	// table whose name begins with `y`, and `x.*` names the star itself --
+	// and only when the star is written with no space before it
+	// (Parser._parse_table_parts, wildcard=True).
+	if p.dialect == "bigquery" && p.at(TokSTAR) && p.connectedToPrev() {
+		if n := len(parts); n > 0 && parts[n-1] == nil {
+			// A bare Identifier, with no `quoted` argument at all
+			// (Parser._parse_table_parts).
+			parts[n-1] = New("Identifier", Arg{"this", "*"})
+		} else if n := len(parts); n > 0 && parts[n-1].Class == "Identifier" {
+			parts[n-1].Set("this", parts[n-1].Name()+"*")
+		}
+		p.advance()
+	}
+
 	// The dotted sequence is every part read plus, for a table function, the
 	// call itself standing in for the final name -- `a.b.c.f()` qualifies
 	// `f()` exactly the way `a.b.c.d` qualifies `d`.
@@ -544,6 +562,14 @@ func (p *parser) parseTable() (*Expression, error) {
 	liftPart(this, table)
 	liftPart(db, table)
 	liftPart(catalog, table)
+
+	// BigQuery reads a qualified name its own way: a float token can swallow
+	// the dot that separated two parts, a name written inside ONE pair of
+	// backticks carries every dot, and its INFORMATION_SCHEMA views merge the
+	// last two parts (BigQueryParser._parse_table_parts).
+	if p.dialect == "bigquery" && fn == nil {
+		table = bigqueryTableParts(table)
+	}
 
 	if only {
 		table.Set("only", true)
@@ -648,16 +674,13 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 	}
 	// The time-travel clause -- T-SQL's FOR SYSTEM_TIME, Databricks' TIMESTAMP
 	// AS OF, Trino's FOR VERSION AS OF -- reads the table as it stood then,
-	// and goes before the alias. BigQuery alone writes it after the alias,
-	// which this does not read.
-	if p.dialect != "bigquery" {
-		if word, ok := p.versionPhrase(); ok {
-			version, err := p.parseVersion(word)
-			if err != nil {
-				return nil, err
-			}
-			table.Set("version", version)
+	// and goes before the alias.
+	if word, ok := p.versionPhrase(); ok {
+		version, err := p.parseVersion(word)
+		if err != nil {
+			return nil, err
 		}
+		table.Set("version", version)
 	}
 	// `AT (VERSION => 3)` may stand where an alias would, and AT is a word an
 	// implicit alias would otherwise take: `demo AT (VERSION => 2)` would
@@ -675,6 +698,15 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 	}
 	if alias != nil {
 		table.Set("alias", alias)
+	}
+	// The time-travel clause may also stand AFTER the alias --
+	// `FROM foo AS t0 FOR SYSTEM_TIME AS OF z` (Parser._parse_table).
+	if word, ok := p.versionPhrase(); ok {
+		version, err := p.parseVersion(word)
+		if err != nil {
+			return nil, err
+		}
+		table.Set("version", version)
 	}
 	// And it may stand AFTER the alias too.
 	if p.atWords("AT") && p.next() != nil && p.next().Type == TokL_PAREN {
@@ -999,7 +1031,15 @@ func (p *parser) pivotColumns(aggregates, values []*Expression) ([]*Expression, 
 			continue
 		}
 		for _, name := range names {
-			out = append(out, identifierFor(base+"_"+name))
+			// The reference builds the product of the IN values with the
+			// aggregate names LAST, and a dialect that PREFIXES its pivot
+			// columns moves that name to the front: BigQuery writes `d_x`
+			// where the plain spelling is `x_d` (Parser._parse_pivot).
+			if p.tables.PivotPrefixesColumns {
+				out = append(out, identifierFor(name+"_"+base))
+			} else {
+				out = append(out, identifierFor(base+"_"+name))
+			}
 		}
 	}
 	return out, nil
@@ -1565,6 +1605,13 @@ func (p *parser) parseAliasColumns() ([]*Expression, error) {
 // the reference rather than a Table wrapping a call -- the distinction the
 // TableFunctions table exists to catch. Entered with UNNEST current.
 func (p *parser) parseUnnest() (*Expression, error) {
+	return p.parseUnnestWithAlias(true)
+}
+
+// parseUnnestWithAlias reads an UNNEST. `IN UNNEST(...)` takes the same shape
+// but never an alias, so the reference parses it with with_alias=False
+// (Parser._parse_in, Parser._parse_unnest).
+func (p *parser) parseUnnestWithAlias(withAlias bool) (*Expression, error) {
 	p.advance()
 	if !p.match(TokL_PAREN) {
 		return nil, p.unsupported("UNNEST without arguments")
@@ -1590,9 +1637,22 @@ func (p *parser) parseUnnest() (*Expression, error) {
 		p.advance()
 		p.advance()
 	}
-	alias, err := p.parseTableAlias()
-	if err != nil {
-		return nil, err
+	var alias *Expression
+	var err error
+	if withAlias {
+		alias, err = p.parseTableAlias()
+		if err != nil {
+			return nil, err
+		}
+		// BigQuery's UNNEST_COLUMN_ONLY moves the alias's name into `columns`:
+		// the name refers to the unnested COLUMN, not to a table
+		// (Parser._parse_unnest).
+		if p.dialect == "bigquery" && alias != nil {
+			if this, _ := alias.Args["this"].(*Expression); this != nil {
+				alias.Set("columns", []*Expression{this})
+				alias.Set("this", nil)
+			}
+		}
 	}
 	var offset any = ordinality
 	// An alias with MORE columns than there are unnested expressions names
@@ -1610,13 +1670,36 @@ func (p *parser) parseUnnest() (*Expression, error) {
 	// drops the name. Refuse rather than write a column the statement did not
 	// ask for.
 	if !ordinality {
-		if c := p.curr(); c != nil && c.Type == TokWITH {
-			return nil, p.unsupported("UNNEST WITH OFFSET")
+		if c := p.curr(); c != nil && c.Type == TokWITH && p.nextWords("OFFSET") {
+			// `WITH OFFSET [AS name]` names the ordinality column, and a name
+			// that was not written is `offset` (Parser._parse_unnest). Only
+			// the dialects that WRITE it back keep the name, so the rest
+			// still refuse rather than silently shortening the statement.
+			if p.dialect != "bigquery" {
+				return nil, p.unsupported("UNNEST WITH OFFSET")
+			}
+			p.advance() // WITH
+			p.advance() // OFFSET
+			p.match(TokALIAS)
+			// A name that was not written is `offset`; the reader takes a
+			// NAME only where one can stand (Parser._parse_unnest,
+			// _parse_id_var).
+			var name *Expression
+			if p.atIdentifier() {
+				name, err = p.parseIdentifier()
+				if err != nil {
+					return nil, err
+				}
+			}
+			if name == nil {
+				name = New("Identifier", Arg{"this", "offset"}, Arg{"quoted", false})
+			}
+			offset = name
 		}
 	}
 	// StarRocks defaults the UNNEST table alias and column to `unnest` when
 	// the statement does not name them (StarRocksParser._parse_unnest).
-	if p.dialect == "starrocks" {
+	if p.dialect == "starrocks" && withAlias {
 		unnestIdent := func() *Expression {
 			return New("Identifier", Arg{"this", "unnest"}, Arg{"quoted", false})
 		}
@@ -1627,11 +1710,28 @@ func (p *parser) parseUnnest() (*Expression, error) {
 			alias.Set("columns", []*Expression{unnestIdent()})
 		}
 	}
+	// BigQuery ANNOTATES the unnested expression to decide whether the array
+	// holds structs, and records that as explode_array; the annotation is also
+	// what gives the array its `t` (BigQueryParser._parse_unnest).
+	var explodeArray any
+	if p.dialect == "bigquery" && len(items) > 0 {
+		AnnotateFully(items[0], "bigquery")
+		if t := items[0].Type; t != nil && typeKind(t) == "ARRAY" {
+			if elems, _ := t.Args["expressions"].([]*Expression); len(elems) > 0 {
+				for _, el := range elems {
+					if typeKind(el) == "STRUCT" {
+						explodeArray = true
+						break
+					}
+				}
+			}
+		}
+	}
 	return New("Unnest",
 		Arg{"expressions", items},
 		Arg{"alias", alias},
 		Arg{"offset", offset},
-		Arg{"explode_array", nil}), nil
+		Arg{"explode_array", explodeArray}), nil
 }
 
 // FOR SYSTEM_TIME, which asks a temporal table what it held at some point or
@@ -1976,4 +2076,175 @@ func (p *parser) versionPhrase() (string, bool) {
 		}
 	}
 	return "", false
+}
+
+// splitQualifiedName splits a BigQuery qualified name, masking the dots a
+// DOMAIN-scoped project id carries -- `domain.com:project-id` -- so they are
+// not read as path separators (BigQueryParser._split_qualified_name).
+func splitQualifiedName(name string, minWords int) []string {
+	const mask = "\x00"
+	pad := func(words []string) []string {
+		for len(words) < minWords {
+			words = append([]string{""}, words...)
+		}
+		return words
+	}
+	if colon := strings.Index(name, ":"); colon != -1 && strings.Contains(name[:colon], ".") {
+		masked := strings.ReplaceAll(name[:colon], ".", mask) + name[colon:]
+		words := strings.Split(masked, ".")
+		out := make([]string, 0, len(words))
+		for _, w := range words {
+			out = append(out, strings.ReplaceAll(w, mask, "."))
+		}
+		return pad(out)
+	}
+	return pad(strings.Split(name, "."))
+}
+
+// connectedToPrev reports whether the token now current was written with NO
+// space after the one before it -- the reference's `_is_connected`.
+func (p *parser) connectedToPrev() bool {
+	c := p.curr()
+	return c != nil && p.index > 0 && c.Start == p.tokens[p.index-1].End+1
+}
+
+// bigqueryTableParts applies BigQuery's own reading of a table name to the
+// parts read plainly: a float token can swallow the dot between two parts, a
+// name written inside ONE pair of backticks carries every dot, and an
+// INFORMATION_SCHEMA view merges its last two parts
+// (BigQueryParser._parse_table_parts).
+func bigqueryTableParts(table *Expression) *Expression {
+	argExpr := func(key string) *Expression {
+		e, _ := table.Args[key].(*Expression)
+		return e
+	}
+	isQuoted := func(e *Expression) bool {
+		q, _ := e.Args["quoted"].(bool)
+		return q
+	}
+	ident := func(name string, quoted bool) *Expression {
+		return New("Identifier", Arg{"this", name}, Arg{"quoted", quoted})
+	}
+	// The parts of the table in order catalog, db, this -- a Dot in any of
+	// them flattens, so a name that was already nested is still seen whole
+	// (Table.parts).
+	flat := func() []*Expression {
+		var out []*Expression
+		for _, key := range []string{"catalog", "db", "this"} {
+			e := argExpr(key)
+			switch {
+			case e == nil:
+			case e.Class == "Dot":
+				out = append(out, flattenDot(e)...)
+			default:
+				out = append(out, e)
+			}
+		}
+		return out
+	}
+
+	// `proj-1.db.tbl` -- the `1.` is tokenized as a float, so the dot that
+	// separated the project from the dataset is inside that token. The same
+	// happens to the name when there is no dataset: `x-0.y`.
+	if argExpr("catalog") == nil {
+		if db := argExpr("db"); db != nil {
+			if !isQuoted(db) {
+				if parts := strings.Split(db.Name(), "."); len(parts) == 2 {
+					table.Set("catalog", New("Identifier", Arg{"this", parts[0]}))
+					table.Set("db", New("Identifier", Arg{"this", parts[1]}))
+				}
+			}
+		} else if this := argExpr("this"); this != nil && this.Class == "Identifier" && !isQuoted(this) {
+			if parts := strings.Split(this.Name(), "."); len(parts) == 2 {
+				table.Set("db", New("Identifier", Arg{"this", parts[0]}))
+				table.Set("this", New("Identifier", Arg{"this", parts[1]}))
+			}
+		}
+	}
+
+	// A name holding a dot is joined and split again, the dots of a
+	// DOMAIN-scoped project id masked: `domain.com:project-id.mydataset.tbl`
+	// names three parts, not five.
+	var alias *Expression
+	if this := argExpr("this"); this != nil && this.Class == "Identifier" {
+		var names []string
+		hasDot := false
+		for _, part := range flat() {
+			names = append(names, part.Name())
+			if strings.Contains(part.Name(), ".") {
+				hasDot = true
+			}
+		}
+		if hasDot {
+			alias = this
+			words := splitQualifiedName(strings.Join(names, "."), 3)
+			quotedIdent := func(w string) *Expression {
+				if w == "" {
+					return nil
+				}
+				return ident(w, true)
+			}
+			// The first three words are the catalog, the dataset and the
+			// name; anything past them joins the name into a Dot rather than
+			// becoming a fourth qualifier.
+			newThis := quotedIdent(words[2])
+			for _, w := range words[3:] {
+				newThis = New("Dot", Arg{"this", newThis}, Arg{"expression", quotedIdent(w)})
+			}
+			table = New("Table",
+				Arg{"this", newThis},
+				Arg{"db", quotedIdent(words[1])},
+				Arg{"catalog", quotedIdent(words[0])})
+			// The whole name was written inside one pair of backticks, and
+			// that is how it goes back out
+			// (BigQueryGenerator.table_parts).
+			table.quotedTable = true
+		}
+	}
+
+	// An INFORMATION_SCHEMA view needs a region or dataset in front of it, so
+	// the reference merges the last two parts into one name -- otherwise a
+	// three-part reference would look like a four-part one, with the region
+	// taken for a project (BigQueryParser._parse_table_parts).
+	parts := flat()
+	if len(parts) > 1 && strings.EqualFold(parts[len(parts)-2].Name(), "INFORMATION_SCHEMA") {
+		// The view is aliased by its own name, which keeps the columns of a
+		// query that references it qualified the way they were written. A
+		// real alias coming up in the token stream overwrites it.
+		if table.Args["alias"] == nil {
+			a := alias
+			if a == nil {
+				a = parts[len(parts)-1]
+			}
+			table.Set("alias", New("TableAlias", Arg{"this", a}))
+		}
+		view := parts[len(parts)-2].Name() + "." + parts[len(parts)-1].Name()
+		table.Set("this", New("Identifier", Arg{"this", view}, Arg{"quoted", true}))
+		table.Set("db", nil)
+		table.Set("catalog", nil)
+		if len(parts) >= 3 {
+			table.Set("db", parts[len(parts)-3])
+		}
+		if len(parts) >= 4 {
+			table.Set("catalog", parts[len(parts)-4])
+		}
+	}
+	return table
+}
+
+// flattenDot returns the leaves of a Dot chain, left to right.
+func flattenDot(e *Expression) []*Expression {
+	var out []*Expression
+	for _, key := range []string{"this", "expression"} {
+		part, _ := e.Args[key].(*Expression)
+		if part == nil {
+			continue
+		}
+		if part.Class == "Dot" {
+			out = append(out, flattenDot(part)...)
+		} else {
+			out = append(out, part)
+		}
+	}
+	return out
 }

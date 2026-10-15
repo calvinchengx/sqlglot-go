@@ -668,6 +668,13 @@ func (p *parser) parseProperty(spec PropertySpec) (*Expression, error) {
 		}
 		return New(spec.Class, Arg{"this", value}), nil
 	case "table":
+		// `REMOTE WITH CONNECTION x` names the connection a model runs
+		// through, and the two words stand between the property and the
+		// name (BigQueryParser._parse_remote_with_connection).
+		if spec.Class == "RemoteWithConnectionModelProperty" {
+			p.matchUnquotedWord("WITH")
+			p.matchUnquotedWord("CONNECTION")
+		}
 		table, err := p.parseTableName()
 		if err != nil {
 			return nil, err
@@ -700,9 +707,26 @@ func (p *parser) parseProperty(spec PropertySpec) (*Expression, error) {
 				return New(spec.Class, Arg{"this",
 					New("Schema", Arg{"this", name}, Arg{"expressions", columns})}), nil
 			}
-			field, err := p.parseBitwise()
-			if err != nil {
-				return nil, err
+			// The reference reads a FIELD here rather than a general
+			// expression: a bare name is an Identifier, not the Column an
+			// expression reader builds (Parser._parse_partitioned_by,
+			// _parse_field).
+			var field *Expression
+			var ferr error
+			// A primary first -- a literal, an array literal -- then a call,
+			// then a bare name, which is the reference's own order
+			// (Parser._parse_field).
+			switch {
+			case p.at(TokL_BRACKET), p.atPair(TokARRAY, TokL_BRACKET),
+				p.at(TokNUMBER), p.at(TokSTRING), p.at(TokTRUE), p.at(TokFALSE), p.at(TokNULL):
+				field, ferr = p.parsePrimary()
+			case p.namesAFunctionCall():
+				field, ferr = p.parseFunction()
+			default:
+				field, ferr = p.parseIdentifier()
+			}
+			if ferr != nil {
+				return nil, ferr
 			}
 			return New(spec.Class, Arg{"this", field}), nil
 		}
@@ -714,7 +738,49 @@ func (p *parser) parseProperty(spec PropertySpec) (*Expression, error) {
 			return nil, err
 		}
 		return New(spec.Class, Arg{"this", New("Schema", Arg{"expressions", columns})}), nil
+	case "columns":
+		// BigQuery's CLUSTER BY takes a BARE comma-separated list of columns,
+		// with no parentheses (BigQueryParser._parse_cluster_property).
+		var items []*Expression
+		for {
+			column, err := p.parseColumn()
+			if err != nil {
+				return nil, err
+			}
+			items = append(items, column)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		return New(spec.Class, Arg{"expressions", items}), nil
 	case "wrapped-columns", "wrapped-tables":
+		// BigQuery's TRANSFORM takes general EXPRESSIONS between its
+		// parentheses -- each one may name itself -- rather than a column
+		// list (Parser.PROPERTY_PARSERS).
+		if spec.Class == "TransformModelProperty" {
+			if !p.match(TokL_PAREN) {
+				return nil, p.unsupported("TRANSFORM without a list")
+			}
+			var items []*Expression
+			for !p.at(TokR_PAREN) {
+				item, err := p.parseExpression()
+				if err != nil {
+					return nil, err
+				}
+				item, err = p.parseAlias(item)
+				if err != nil {
+					return nil, err
+				}
+				items = append(items, item)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed TRANSFORM")
+			}
+			return New(spec.Class, Arg{"expressions", items}), nil
+		}
 		// Databricks' CLUSTER BY takes AUTO or NONE in place of the column
 		// list -- the word IS the clustering, not a name it sorts by -- and
 		// only those two, matched before the list is tried at all.

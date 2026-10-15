@@ -1,0 +1,222 @@
+{
+ "dialect": "bigquery",
+ "rendered": "JSON_STRIP_NULLS(PARSE_JSON('{\"a\": {\"b\": {\"c\": null}}, \"d\": [null], \"e\": [], \"f\": 1}'), include_arrays => FALSE, remove_empty => TRUE)",
+ "sql": "JSON_STRIP_NULLS(PARSE_JSON('{\"a\": {\"b\": {\"c\": null}}, \"d\": [null], \"e\": [], \"f\": 1}'), include_arrays => FALSE, remove_empty => TRUE)",
+ "tokens": [
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "JSON_STRIP_NULLS"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "PARSE_JSON"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 28,
+   "t": "STRING",
+   "x": "{\"a\": {\"b\": {\"c\": null}}, \"d\": [null], \"e\": [], \"f\": 1}"
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 85,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 86,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 102,
+   "e": 101,
+   "l": 1,
+   "s": 88,
+   "t": "VAR",
+   "x": "include_arrays"
+  },
+  {
+   "c": 105,
+   "e": 104,
+   "l": 1,
+   "s": 103,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 111,
+   "e": 110,
+   "l": 1,
+   "s": 106,
+   "t": "FALSE",
+   "x": "FALSE"
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 111,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 113,
+   "t": "VAR",
+   "x": "remove_empty"
+  },
+  {
+   "c": 128,
+   "e": 127,
+   "l": 1,
+   "s": 126,
+   "t": "FARROW",
+   "x": "=>"
+  },
+  {
+   "c": 133,
+   "e": 132,
+   "l": 1,
+   "s": 129,
+   "t": "TRUE",
+   "x": "TRUE"
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 133,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.json.JSONStripNulls",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "name": "JSON_STRIP_NULLS",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.json.ParseJSON",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "name": "PARSE_JSON",
+    "start": 17
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 85,
+    "end": 84,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "{\"a\": {\"b\": {\"c\": null}}, \"d\": [null], \"e\": [], \"f\": 1}"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 0,
+   "k": "include_arrays"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "include_arrays"
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 5,
+   "k": "expression"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Kwarg",
+   "i": 0,
+   "k": "remove_empty"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "remove_empty"
+  },
+  {
+   "c": "sqlglot.expressions.core.Boolean",
+   "i": 10,
+   "k": "expression"
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": true
+  }
+ ]
+}

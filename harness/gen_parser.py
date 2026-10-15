@@ -31,7 +31,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery")
 
 def gostr(s: str) -> str:
     """Quote a string as Go source.
@@ -5411,6 +5411,9 @@ def cast_over_elisions(exp, dialect, forms):
     return out
 
 
+PROBE_ORIGINAL_NAME = "__probe_original_name__"
+
+
 def render_functions(P, exp, dialect, funcs):
     """How the reference WRITES each function node, for the generator.
 
@@ -5432,6 +5435,7 @@ def render_functions(P, exp, dialect, funcs):
     that would parse back into a different node.
     """
     out = {}
+    consults_name = set()
     for name, cls_name, spec in funcs:
         cls = getattr(exp, cls_name, None)
         if cls is None:
@@ -5479,6 +5483,21 @@ def render_functions(P, exp, dialect, funcs):
             rendered = cls(**kwargs).sql(dialect=dialect or None)
         except Exception:  # noqa: BLE001 -- a node that will not render is not supported
             continue
+
+        # A dialect that PRESERVES_ORIGINAL_NAMES writes back the name a call
+        # was WRITTEN with, but only where the class's own writer is the
+        # fallback -- a name the dialect renames outright (COUNTIF for
+        # CountIf) is not the call's own. Probed by rendering the same node
+        # with a name in its meta and seeing whether that name comes out
+        # (Parser._parse_function, Generator.function_fallback_sql).
+        try:
+            named_probe = cls(**kwargs)
+            named_probe.meta["name"] = PROBE_ORIGINAL_NAME
+            named_rendered = named_probe.sql(dialect=dialect or None)
+        except Exception:  # noqa: BLE001
+            named_rendered = rendered
+        if named_rendered != rendered and PROBE_ORIGINAL_NAME.upper() in named_rendered.upper():
+            consults_name.add(cls_name)
 
         # Probe every argument count the call can have, widest first. MAX of
         # one argument is MAX; of two, PostgreSQL writes GREATEST. Each
@@ -5569,7 +5588,7 @@ def render_functions(P, exp, dialect, funcs):
     # that flag selects rather than the general one.
     for candidates in out.values():
         candidates.sort(key=lambda c: (-len(c[2]), -(c[4] if len(c) > 4 else 0)))
-    return out
+    return out, consults_name
 
 
 def sqlmap(name: str, rendered) -> str:
@@ -5859,6 +5878,8 @@ def property_specs(dialect: str) -> dict[str, dict]:
       schema           a parenthesised column list, into `this` as a Schema
       wrapped-columns  a parenthesised list, into `expressions` as columns
       wrapped-tables   the same, as tables -- INHERITS
+      columns          a BARE comma-separated list, into `expressions` as
+                       columns -- BigQuery's CLUSTER BY
 
     A name whose answers fit none of them is not recorded, and the port keeps
     refusing it. One name is skipped for a different reason: DATA_DELETION with
@@ -5911,10 +5932,13 @@ def property_specs(dialect: str) -> dict[str, dict]:
                     shape, node = "wrapped-tables", wrapped
             if shape is None and word is not None:
                 inner = word.args.get("this")
+                listed = word.args.get("expressions") or []
                 if isinstance(inner, e.Var):
                     shape, node = "value", word
                 elif isinstance(inner, e.Table):
                     shape, node = "table", word
+                elif listed and all(isinstance(x, e.Column) for x in listed):
+                    shape, node = "columns", word
             if shape is None and bare is not None and not bare.args:
                 shape, node = "bare", bare
             if shape is None:
@@ -6107,6 +6131,10 @@ def main() -> int:
         "\t// other than NAME(a, b); the generator refuses it rather than\n",
         "\t// emitting something that would parse back differently.\n",
         "\tFunctionSQL map[string][]FuncSQL\n",
+        "\t// ConsultsOriginalName marks the classes whose writer uses the name\n",
+        "\t// the call was WRITTEN with, where the dialect preserves original\n",
+        "\t// names. Probed by rendering the node with a name in its meta.\n",
+        "\tConsultsOriginalName map[string]struct{}\n",
         "\t// BinarySQL and UnarySQL are how each operator node is written.\n",
         "\t// DuckDB writes Pow as ** where the default writes POWER(a, b), so\n",
         "\t// the spelling is read from the reference's generator, not assumed.\n",
@@ -6442,6 +6470,9 @@ def main() -> int:
         "\tDatePartMapping map[string]string\n",
         "\tInverseTimeMapping map[string]string\n",
         "\tFormatTimeMapping  map[string]string\n",
+        "\t// FormatMapping is the dialect's FORMAT_MAPPING, the table a CAST\n",
+        "\t// ... FORMAT is read through where it has one -- BigQuery's alone.\n",
+        "\tFormatMapping map[string]string\n",
         "\t// FullFormatTimeMapping is TimeMapping with a dialect's OWN full-word\n",
         "\t// spellings layered over it -- T-SQL's DATENAME(mm, x) wants the full\n",
         "\t// month name, not the two-digit one TimeMapping's \"mm\" gives FORMAT.\n",
@@ -7403,7 +7434,8 @@ def main() -> int:
             out.append("\t\t},\n")
         for field, attr in (("DatePartMapping", "DATE_PART_MAPPING"),
                             ("InverseTimeMapping", "INVERSE_TIME_MAPPING"),
-                            ("FormatTimeMapping", "FORMAT_TIME_MAPPING")):
+                            ("FormatTimeMapping", "FORMAT_TIME_MAPPING"),
+                            ("FormatMapping", "FORMAT_MAPPING")):
             _m = getattr(_D.get_or_raise(name or None), attr, None) or {}
             if not _m:
                 continue
@@ -7524,7 +7556,13 @@ def main() -> int:
                 joined = ", ".join(str(i) for i in indexes)
                 out.append(f"\t\t\t{gostr(fname)}: {{{joined}}},\n")
             out.append("\t\t},\n")
-        out.append(sqlmap("FunctionSQL", render_functions(P, exp, name, render_forms)))
+        func_templates, consults_name = render_functions(P, exp, name, render_forms)
+        out.append(sqlmap("FunctionSQL", func_templates))
+        if consults_name:
+            out.append("\t\tConsultsOriginalName: map[string]struct{}{\n")
+            for cls_name in sorted(consults_name):
+                out.append(f"\t\t\t{gostr(cls_name)}: {{}},\n")
+            out.append("\t\t},\n")
         binary, unary = render_operators(P, exp, Dialect, name)
         out.append(strstrmap("BinarySQL", binary))
         out.append(strstrmap("UnarySQL", unary))

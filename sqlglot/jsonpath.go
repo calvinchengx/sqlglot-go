@@ -593,3 +593,11 @@ func digitValue(r rune) int {
 		}
 	}
 }
+
+// jsonPathDashesInKeys reports whether this dialect's JSONPath tokenizer reads
+// a dash as part of a key rather than as a token of its own. BigQuery's does
+// -- and a NUMBER too, so `$.x-1` is one key -- and Databricks inherits the
+// same behaviour from Spark (Dialect.JSONPathTokenizer.VAR_TOKENS).
+func (p *parser) jsonPathDashesInKeys() bool {
+	return p.dialect == "bigquery" || p.dialect == "databricks"
+}

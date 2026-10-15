@@ -389,12 +389,28 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 		return nil, err
 	}
 	for {
-		c := p.curr()
-		if c == nil {
-			return this, nil
+		// A SIDE and a KIND may stand in front of the operation word --
+		// `SELECT 1 INNER UNION ALL SELECT 3` -- and are read here, where
+		// the reference reads them (Parser.parse_set_operation,
+		// _parse_join_parts).
+		mark := p.index
+		var side, setKind any
+		if p.atAny(TokLEFT, TokRIGHT, TokFULL) {
+			side = strings.ToUpper(p.curr().Text)
+			p.advance()
 		}
-		class, ok := setOperations[c.Type]
+		if p.atAny(TokINNER, TokOUTER) {
+			setKind = strings.ToUpper(p.curr().Text)
+			p.advance()
+		}
+		c := p.curr()
+		var class string
+		var ok bool
+		if c != nil {
+			class, ok = setOperations[c.Type]
+		}
 		if !ok {
+			p.index = mark
 			return this, nil
 		}
 		p.advance()
@@ -407,20 +423,68 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 		case p.match(TokDISTINCT):
 			distinct = true
 		}
+		// `BY NAME`, `STRICT CORRESPONDING` and `CORRESPONDING` all say the
+		// operands are matched by column NAME rather than by position, and a
+		// bare CORRESPONDING also makes the join INNER
+		// (Parser.parse_set_operation).
 		var byName any
-		if p.atWords("BY", "NAME") {
+		kind := setKind
+		switch {
+		case p.atWords("BY", "NAME"):
 			p.advance()
 			p.advance()
 			byName = true
+		case p.atWords("STRICT", "CORRESPONDING"):
+			p.advance()
+			p.advance()
+			byName = true
+		}
+		if p.atWords("CORRESPONDING") {
+			p.advance()
+			byName = true
+			// A bare CORRESPONDING makes the join INNER, unless a side or a
+			// kind was already written.
+			if side == nil && kind == nil {
+				kind = "INNER"
+			}
+		}
+		// `BY (a, b)` or `ON (a, b)` names the columns to match on.
+		var onColumns []*Expression
+		if byName == true && (p.atWords("ON") || p.atWords("BY")) {
+			p.advance()
+			if !p.match(TokL_PAREN) {
+				return nil, p.unsupported("CORRESPONDING without a parenthesised column list")
+			}
+			columns, err := p.parseExpressionList()
+			if err != nil {
+				return nil, err
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed CORRESPONDING column list")
+			}
+			onColumns = columns
 		}
 
 		right, err := p.parseSelectOrParenthesised()
 		if err != nil {
 			return nil, err
 		}
+		// A parenthesised query that was aliased becomes a Subquery with a
+		// TABLE alias when it stands as a set operation's operand:
+		// `(SELECT 1) AS x UNION ALL (SELECT 2)` names each side
+		// (Parser.parse_set_operation).
+		if this != nil && this.Class == "Alias" {
+			if sub, _ := this.Args["this"].(*Expression); sub != nil && sub.Class == "Subquery" {
+				if alias, _ := this.Args["alias"].(*Expression); alias != nil {
+					sub.Set("alias", New("TableAlias", Arg{"this", alias}))
+					putComments(sub, this.Comments)
+					this = sub
+				}
+			}
+		}
 		this = New(class,
 			Arg{"this", this}, Arg{"distinct", distinct}, Arg{"by_name", byName},
-			Arg{"expression", right}, Arg{"side", nil}, Arg{"kind", nil}, Arg{"on", nil})
+			Arg{"expression", right}, Arg{"side", side}, Arg{"kind", kind}, Arg{"on", onColumns})
 		p.liftSetOpModifiers(this, right)
 		// A PARENTHESISED right-hand side keeps nothing to lift: the closing
 		// parenthesis ended it, so a trailing ORDER BY, LIMIT or OFFSET was
@@ -666,6 +730,16 @@ func (p *parser) parseSelect() (*Expression, error) {
 		return nil, p.unsupported("SELECT ALL")
 	}
 
+	// `SELECT AS STRUCT ...` / `SELECT AS VALUE ...` names what the
+	// projections build, and the reference records it as the SELECT's kind
+	// (Parser._parse_select).
+	var kind any
+	if p.at(TokALIAS) && (p.nextWords("STRUCT") || p.nextWords("VALUE")) {
+		p.advance() // AS
+		kind = strings.ToUpper(p.curr().Text)
+		p.advance()
+	}
+
 	modifiers := p.parseSelectOperationModifiers()
 
 	// TOP is read before the projections and lands in the slot Select
@@ -688,6 +762,9 @@ func (p *parser) parseSelect() (*Expression, error) {
 	sel := New("Select")
 	for _, k := range selectPrefix {
 		sel.Set(k, nil)
+	}
+	if kind != nil {
+		sel.Set("kind", kind)
 	}
 	if hint != nil {
 		sel.Set("hint", hint)
@@ -778,17 +855,17 @@ func (p *parser) atSelectOperationModifier() bool {
 // FROM and JOINs, run once query modifiers are done.
 func applyImplicitUnnests(sel *Expression) {
 	fromTable := sel.Args["from_"].(*Expression).This()
-	refs := map[string]bool{strings.ToLower(aliasOrName(fromTable)): true}
+	refs := map[string]bool{normalizedRef(fromTable): true}
 	joinsAny, _ := sel.Args["joins"].([]*Expression)
 	for _, join := range joinsAny {
 		table := join.This()
 		if table == nil {
 			continue
 		}
-		ref := strings.ToLower(aliasOrName(table))
+		ref := normalizedRef(table)
 		if table.Class == "Table" && join.Args["on"] == nil {
 			parts := tableParts(table)
-			if len(parts) > 1 && len(parts) <= 4 && refs[strings.ToLower(parts[0].Name())] {
+			if len(parts) > 1 && len(parts) <= 4 && refs[normalizedName(parts[0])] {
 				if column := tableToColumn(table); column != nil {
 					unnest := New("Unnest", Arg{"expressions", []*Expression{column}})
 					if alias, ok := table.Args["alias"].(*Expression); ok && alias != nil {
@@ -804,15 +881,38 @@ func applyImplicitUnnests(sel *Expression) {
 	}
 }
 
-// aliasOrName is the reference's `.alias_or_name`: a node's own alias where
-// it has one, else its name.
-func aliasOrName(e *Expression) string {
+// normalizedRef is a relation's name as the reference compares it: its alias
+// where it has one, else its own name, case-folded the way
+// normalize_identifiers folds it (Parser._implicit_unnests_to_explicit).
+func normalizedRef(e *Expression) string {
 	if alias, ok := e.Args["alias"].(*Expression); ok && alias != nil {
 		if this, ok2 := alias.Args["this"].(*Expression); ok2 && this != nil {
-			return this.Name()
+			return normalizedName(this)
 		}
 	}
-	return e.Name()
+	return normalizedName(e)
+}
+
+// normalizedName is the reference's normalize_identifiers applied to one
+// name: a QUOTED identifier keeps the spelling it was written with, and only
+// an unquoted one is case-folded. Folding both made
+// “FROM Coordinates, `Coordinates.position` “ look like a nested column of
+// the first table where the reference keeps it a table of its own.
+func normalizedName(e *Expression) string {
+	if e == nil {
+		return ""
+	}
+	if e.Class == "Table" || e.Class == "Column" {
+		if inner := e.This(); inner != nil {
+			e = inner
+		}
+	}
+	if e.Class == "Identifier" {
+		if quoted, _ := e.Args["quoted"].(bool); quoted {
+			return e.Name()
+		}
+	}
+	return strings.ToLower(e.Name())
 }
 
 // tableParts is a Table's `.parts`: catalog and db where present, then the
@@ -1297,7 +1397,17 @@ func (p *parser) atAliasName() bool {
 	if c.Type == TokSTRING {
 		return p.tables.StringAliases
 	}
-	return c.Type == TokVAR || c.Type == TokIDENTIFIER
+	if c.Type == TokVAR || c.Type == TokIDENTIFIER {
+		return true
+	}
+	// A keyword that is an OPERATOR can still name a projection where the
+	// operand it needs was never written: `SELECT a OVERLAPS` is
+	// `a AS OVERLAPS` (Parser.ALIAS_TOKENS, _parse_alias).
+	if c.Type == TokOVERLAPS {
+		next := p.next()
+		return next == nil || endsSelectExpression(next)
+	}
+	return false
 }
 
 // parseConnect reads Oracle's hierarchical query clause. START WITH may
