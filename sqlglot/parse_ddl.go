@@ -8045,12 +8045,12 @@ func (p *parser) parseTablePart() (*Expression, error) {
 			text += "-"
 			// Only the tokens written with NO space between them belong to
 			// the name: `a-b c` names the table `a-b` with the alias `c`.
-			// Only NAME tokens belong to the dashed name: `b-c)` ends at the
-			// bracket, and `x-0.y` runs on through the dot the float token
-			// swallowed.
-			for p.curr() != nil && p.curr().Type != TokDOT &&
-				(p.curr().Type == TokVAR || p.curr().Type == TokIDENTIFIER ||
-					p.curr().Type == TokNUMBER) &&
+			// Only the tokens written with NO space between them belong to
+			// the name, and it ends where a token that FOLLOWS a table part
+			// begins: `a-b c` names the table `a-b` with the alias `c`, and
+			// `b-c)` ends at the bracket
+			// (BigQueryParser.DASHED_TABLE_PART_FOLLOW_TOKENS).
+			for p.curr() != nil && !p.atAny(TokDOT, TokL_PAREN, TokR_PAREN) &&
 				p.connectedTo(p.tokens[p.index-1]) {
 				text += p.curr().Text
 				p.advance()
