@@ -10,7 +10,7 @@ import (
 // signature (BigQueryParser.FUNCTIONS is full of lambdas the probe cannot see).
 func bigqueryOwnedFunction(upper string) bool {
 	switch upper {
-	case "TO_HEX", "LOWER",
+	case "TO_HEX", "LOWER", "EDIT_DISTANCE",
 		"WEEK", "DATE_ADD", "DATE_SUB", "DATETIME_ADD", "DATETIME_SUB",
 		"TIME_ADD", "TIME_SUB", "TIMESTAMP_ADD", "TIMESTAMP_SUB",
 		"SPLIT", "LENGTH", "TO_JSON", "SHA256", "SHA512",
@@ -70,6 +70,25 @@ func (p *parser) buildBigQueryFunction(upper string, args []*Expression) *Expres
 			node.Set("to_json", true)
 			return node
 		}
+	case "EDIT_DISTANCE":
+		// The third argument is a named `max_distance => n`, and the
+		// reference keeps the VALUE rather than the name
+		// (BigQueryParser._build_levenshtein).
+		node := New("Levenshtein")
+		if len(args) >= 1 {
+			node.Set("this", args[0])
+		}
+		if len(args) >= 2 {
+			node.Set("expression", args[1])
+		}
+		if len(args) >= 3 && args[2] != nil {
+			if args[2].Class == "Kwarg" {
+				node.Set("max_dist", childOf(args[2], "expression"))
+			} else {
+				node.Set("max_dist", args[2])
+			}
+		}
+		return node
 	case "LOWER":
 		// `LOWER(TO_HEX(x))` folds into the TO_HEX itself -- the hex it
 		// builds is already lower-case -- and anything else is an ordinary
