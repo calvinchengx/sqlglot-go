@@ -706,9 +706,16 @@ func (p *parser) parseProperty(spec PropertySpec) (*Expression, error) {
 			// _parse_field).
 			var field *Expression
 			var ferr error
-			if p.namesAFunctionCall() {
+			// A primary first -- a literal, an array literal -- then a call,
+			// then a bare name, which is the reference's own order
+			// (Parser._parse_field).
+			switch {
+			case p.at(TokL_BRACKET), p.atPair(TokARRAY, TokL_BRACKET),
+				p.at(TokNUMBER), p.at(TokSTRING), p.at(TokTRUE), p.at(TokFALSE), p.at(TokNULL):
+				field, ferr = p.parsePrimary()
+			case p.namesAFunctionCall():
 				field, ferr = p.parseFunction()
-			} else {
+			default:
 				field, ferr = p.parseIdentifier()
 			}
 			if ferr != nil {
