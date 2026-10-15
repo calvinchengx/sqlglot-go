@@ -58,6 +58,7 @@ func (p *parser) parseJoin() (*Expression, error) {
 		return join, nil
 	}
 
+	mark := p.index
 	c := p.curr()
 	if c == nil {
 		return nil, nil
@@ -118,9 +119,11 @@ func (p *parser) parseJoin() (*Expression, error) {
 	// none follows it.
 	straight := kind != nil && kind.Type == TokSTRAIGHT_JOIN
 	if !p.match(TokJOIN) && !straight {
-		if side != nil || kind != nil || hint != "" {
-			return nil, p.unsupported("join without JOIN")
-		}
+		// A side or a kind with no JOIN after it is not a join at all: it
+		// belongs to what follows -- a set operation's own side and kind,
+		// `SELECT 1 INNER UNION ALL SELECT 3` -- and the reference retreats
+		// rather than refusing (Parser._parse_join).
+		p.index = mark
 		return nil, nil
 	}
 
