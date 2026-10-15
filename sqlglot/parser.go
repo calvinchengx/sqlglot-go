@@ -397,6 +397,9 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokKILL) {
 		return p.parseKill()
 	}
+	if p.at(TokEXPORT) {
+		return p.parseExportData()
+	}
 	if p.at(TokCOPY) {
 		return p.parseCopy()
 	}
@@ -458,4 +461,43 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 var takesQueryModifiers = map[string]bool{
 	"Select": true, "Union": true, "Except": true, "Intersect": true,
 	"Subquery": true, "Table": true, "Values": true,
+}
+
+// parseExportData reads BigQuery's `EXPORT DATA [WITH CONNECTION c]
+// OPTIONS (...) AS <query>` (BigQueryParser._parse_export_data).
+func (p *parser) parseExportData() (*Expression, error) {
+	p.advance() // EXPORT
+	p.matchUnquotedWord("DATA")
+	node := New("Export")
+	var connection any = false
+	if p.atWords("WITH", "CONNECTION") {
+		p.advance()
+		p.advance()
+		name, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		connection = name
+	}
+	node.Set("connection", connection)
+	if p.atWords("OPTIONS") {
+		p.advance()
+		properties, err := p.parseWrappedProperties()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("options", New("Properties", Arg{"expressions", properties}))
+	} else {
+		node.Set("options", nil)
+	}
+	var query *Expression
+	if p.match(TokALIAS) {
+		sel, err := p.parseSelectOrParenthesised()
+		if err != nil {
+			return nil, err
+		}
+		query = sel
+	}
+	node.Set("this", query)
+	return node, nil
 }
