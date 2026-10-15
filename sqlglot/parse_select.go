@@ -389,12 +389,28 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 		return nil, err
 	}
 	for {
-		c := p.curr()
-		if c == nil {
-			return this, nil
+		// A SIDE and a KIND may stand in front of the operation word --
+		// `SELECT 1 INNER UNION ALL SELECT 3` -- and are read here, where
+		// the reference reads them (Parser.parse_set_operation,
+		// _parse_join_parts).
+		mark := p.index
+		var side, setKind any
+		if p.atAny(TokLEFT, TokRIGHT, TokFULL) {
+			side = strings.ToUpper(p.curr().Text)
+			p.advance()
 		}
-		class, ok := setOperations[c.Type]
+		if p.atAny(TokINNER, TokOUTER) {
+			setKind = strings.ToUpper(p.curr().Text)
+			p.advance()
+		}
+		c := p.curr()
+		var class string
+		var ok bool
+		if c != nil {
+			class, ok = setOperations[c.Type]
+		}
 		if !ok {
+			p.index = mark
 			return this, nil
 		}
 		p.advance()
@@ -412,7 +428,7 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 		// bare CORRESPONDING also makes the join INNER
 		// (Parser.parse_set_operation).
 		var byName any
-		var kind any
+		kind := setKind
 		switch {
 		case p.atWords("BY", "NAME"):
 			p.advance()
@@ -426,7 +442,11 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 		if p.atWords("CORRESPONDING") {
 			p.advance()
 			byName = true
-			kind = "INNER"
+			// A bare CORRESPONDING makes the join INNER, unless a side or a
+			// kind was already written.
+			if side == nil && kind == nil {
+				kind = "INNER"
+			}
 		}
 		// `BY (a, b)` or `ON (a, b)` names the columns to match on.
 		var onColumns []*Expression
@@ -451,7 +471,7 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 		}
 		this = New(class,
 			Arg{"this", this}, Arg{"distinct", distinct}, Arg{"by_name", byName},
-			Arg{"expression", right}, Arg{"side", nil}, Arg{"kind", kind}, Arg{"on", onColumns})
+			Arg{"expression", right}, Arg{"side", side}, Arg{"kind", kind}, Arg{"on", onColumns})
 		p.liftSetOpModifiers(this, right)
 		// A PARENTHESISED right-hand side keeps nothing to lift: the closing
 		// parenthesis ended it, so a trailing ORDER BY, LIMIT or OFFSET was
