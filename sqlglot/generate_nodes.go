@@ -107,7 +107,7 @@ func init() {
 		"Identifier":                          (*generator).writeIdentifier,
 		"Literal":                             (*generator).writeLiteral,
 		"National":                            (*generator).writeNationalAsString,
-		"RawString":                           (*generator).writeRawString,
+		"RawString":                           (*generator).writeQuotedString,
 		"ByteString":                          (*generator).writeQuotedString,
 		"UnicodeString":                       (*generator).writeQuotedString,
 		"HexString":                           (*generator).writeQuotedString,
@@ -1600,6 +1600,23 @@ func (g *generator) writeQuotedString(e *Expression) string {
 	if g.dialect == "bigquery" {
 		body, _ := e.Args["this"].(string)
 		switch e.Class {
+		case "RawString":
+			// A raw string's own backslashes are doubled FIRST, and only
+			// then are the control characters spelled out -- the other order
+			// doubles the backslash the escaping itself introduces, and a
+			// newline came back as an escaped backslash-n
+			// (Generator.rawstring_sql).
+			preferred := g.cfg.StringEscapePreferred
+			if preferred != "" {
+				body = strings.ReplaceAll(body, preferred, preferred+preferred)
+			}
+			body = escapeControlCharacters(body)
+			if preferred == "" || preferred == "'" {
+				body = strings.ReplaceAll(body, "'", "''")
+			} else {
+				body = strings.ReplaceAll(body, "'", preferred+"'")
+			}
+			return "'" + body + "'"
 		case "ByteString":
 			if e.Args["is_bytes"] == true {
 				// A byte string's own escapes are already in the text, so a
@@ -1648,30 +1665,6 @@ func (g *generator) writeQuotedString(e *Expression) string {
 func (g *generator) writeNational(e *Expression) string {
 	text, _ := e.Args["this"].(string)
 	return "N'" + escapeStringBody(text, g.cfg.StringEscapePreferred) + "'"
-}
-
-// writeRawString writes a raw string literal. The backslashes the text
-// already holds are doubled FIRST, and only then are the control characters
-// spelled out -- the other order doubles the backslash the escaping itself
-// introduces, and a newline came back as `\n` (Generator.rawstring_sql).
-func (g *generator) writeRawString(e *Expression) string {
-	spec, ok := g.tables.StringClassSQL[e.Class]
-	if !ok {
-		return g.fail(e.Class + ", which this dialect writes in a way that loses it")
-	}
-	template, _, _ := strings.Cut(spec, "\t")
-	body, _ := e.Args["this"].(string)
-	preferred := g.cfg.StringEscapePreferred
-	if preferred != "" {
-		body = strings.ReplaceAll(body, preferred, preferred+preferred)
-	}
-	body = escapeControlCharacters(body)
-	if preferred == "" || preferred == "'" {
-		body = strings.ReplaceAll(body, "'", "''")
-	} else {
-		body = strings.ReplaceAll(body, "'", preferred+"'")
-	}
-	return strings.ReplaceAll(template, "{body}", body)
 }
 
 // writeLowerHex writes HEX(x) wrapped in LOWER: none of this port's dialects

@@ -30,6 +30,11 @@ func Annotate(e *Expression, dialect string) *Expression {
 	// annotate below.
 	t := annotate(e, dialect)
 	if typeKind(t) == "NULL" && !supportsNullType[dialect] {
+		// A dialect with a DEFAULT_NULL_TYPE of its own ends a NULL-typed
+		// node as that type: BigQuery's is BIGINT (BigQuery.DEFAULT_NULL_TYPE).
+		if dialect == "bigquery" {
+			return dataType("BIGINT")
+		}
 		return dataType("UNKNOWN")
 	}
 	return t
@@ -154,14 +159,22 @@ func annotateNode(e *Expression, dialect string) *Expression {
 		// (GenerateDateArray's typing entry).
 		element := "DATE"
 		if e.Class == "GenerateTimestampArray" {
+			// The reference builds this one from the STRING
+			// `ARRAY<TIMESTAMP>` read as BigQuery reads it, where TIMESTAMP
+			// IS the zoned type (BigQuery typing.GenerateTimestampArray).
 			element = "TIMESTAMP"
+			if dialect == "bigquery" {
+				element = "TIMESTAMPTZ"
+			}
 		}
 		return New("DataType", Arg{"this", DataTypeKind("ARRAY")},
 			Arg{"expressions", []*Expression{
 				New("DataType", Arg{"this", DataTypeKind(element)}, Arg{"nested", false})}},
 			Arg{"nested", true})
-	case "DateTrunc", "DateAdd", "DateSub":
-		return annotateTimeUnit(e, dialect)
+	case "Div":
+		return annotateDiv(e, dialect)
+	case "DateTrunc", "DateAdd", "DateSub", "DatetimeTrunc", "TimestampTrunc":
+		return annotateDateFunc(e, dialect)
 	case "Case":
 		return annotateCase(e, dialect)
 	case "Struct":
@@ -205,18 +218,47 @@ func annotateNode(e *Expression, dialect string) *Expression {
 	// VARCHAR -- and a CASE branch is typed by its two results and not by its
 	// condition. The generic binary rule below is right for the rest.
 	if keys, ok := annotateByArgs[dialect][e.Class]; ok {
-		var result *Expression
+		// A LITERAL operand and a non-literal one coerce in a fixed order, as
+		// they do under a binary operator: the reference asks the non-literal
+		// type whether it can become the literal's, never the reverse
+		// (TypeAnnotator._annotate_by_args).
+		var literalType, nonLiteralType *Expression
 		for _, key := range keys {
+			collect := func(node *Expression) {
+				t := annotate(node, dialect)
+				if t == nil {
+					return
+				}
+				if node.Class == "Literal" {
+					literalType = coerceTypes(literalType, t)
+				} else {
+					nonLiteralType = coerceTypes(nonLiteralType, t)
+				}
+			}
 			switch v := e.Args[key].(type) {
 			case *Expression:
-				result = coerceTypes(result, annotate(v, dialect))
+				collect(v)
 			case []*Expression:
 				for _, item := range v {
-					result = coerceTypes(result, annotate(item, dialect))
+					collect(item)
 				}
 			}
 		}
-		return result
+		switch {
+		case literalType != nil && nonLiteralType != nil:
+			if dialect == "bigquery" {
+				lt, nt := typeKind(literalType), typeKind(nonLiteralType)
+				if (integerTypeKinds[lt] && integerTypeKinds[nt]) ||
+					(realTypeKinds[lt] && realTypeKinds[nt]) {
+					return nonLiteralType
+				}
+			}
+			return coerceTypes(nonLiteralType, literalType)
+		case nonLiteralType != nil:
+			return nonLiteralType
+		default:
+			return literalType
+		}
 	}
 
 	// A function returns what its rule says: a fixed type, or its arguments
@@ -270,6 +312,17 @@ func annotateNode(e *Expression, dialect string) *Expression {
 		}
 		switch {
 		case literalType != nil && nonLiteralType != nil:
+			// BigQuery keeps the NON-literal type where both sides sit in the
+			// same family -- `CAST(1 AS BIGNUMERIC) + 1.5` is a BIGNUMERIC,
+			// not the FLOAT64 the literal would coerce it to
+			// (BigQuery.PRIORITIZE_NON_LITERAL_TYPES).
+			if dialect == "bigquery" {
+				lt, nt := typeKind(literalType), typeKind(nonLiteralType)
+				if (integerTypeKinds[lt] && integerTypeKinds[nt]) ||
+					(realTypeKinds[lt] && realTypeKinds[nt]) {
+					return nonLiteralType
+				}
+			}
 			return coerceTypes(nonLiteralType, literalType)
 		case nonLiteralType != nil:
 			return nonLiteralType
@@ -681,7 +734,11 @@ func annotateFunction(e *Expression, dialect string, rule funcReturn) *Expressio
 	// loop turned a real answer (the array's element type) into no answer,
 	// the same failure mode "expression" was added here to avoid for Mod.
 	keys := []string{"this", "expression", "expressions"}
-	if rule.Kind == "element" {
+	if rule.Kind == "element" || rule.Kind == "array" {
+		// An "array" rule wraps the type of ONE argument -- the value whose
+		// elements the call returns -- and never the path or separator
+		// beside it, which has no type of its own
+		// (TypeAnnotator._annotate_by_args(..., array=True)).
 		keys = []string{"this"}
 	}
 	for _, key := range keys {
@@ -833,6 +890,16 @@ func annotateCase(e *Expression, dialect string) *Expression {
 		return nested
 	}
 	if literalType != nil && nonLiteralType != nil {
+		// BigQuery keeps the NON-literal type where both sit in the same
+		// family: `CASE WHEN TRUE THEN 2.5 ELSE CAST(3.5 AS BIGNUMERIC) END`
+		// is a BIGNUMERIC (BigQuery.PRIORITIZE_NON_LITERAL_TYPES).
+		if dialect == "bigquery" {
+			lt, nt := typeKind(literalType), typeKind(nonLiteralType)
+			if (integerTypeKinds[lt] && integerTypeKinds[nt]) ||
+				(realTypeKinds[lt] && realTypeKinds[nt]) {
+				return nonLiteralType
+			}
+		}
 		return coerceTypes(nonLiteralType, literalType)
 	}
 	if nonLiteralType != nil {
@@ -1060,4 +1127,65 @@ func isISODateTime(text string) bool {
 		}
 	}
 	return false
+}
+
+// integerTypeKinds and realTypeKinds are DataType.INTEGER_TYPES and
+// DataType.REAL_TYPES: the two families BigQuery keeps whole when a literal
+// and a non-literal operand sit in the same one.
+var integerTypeKinds = map[string]bool{
+	"BIGINT": true, "INT": true, "INT128": true, "INT256": true,
+	"MEDIUMINT": true, "SMALLINT": true, "TINYINT": true, "UBIGINT": true,
+	"UINT": true, "UINT128": true, "UINT256": true, "UMEDIUMINT": true,
+	"USMALLINT": true, "UTINYINT": true, "BIT": true,
+}
+
+var realTypeKinds = map[string]bool{
+	"DOUBLE": true, "FLOAT": true, "BIGDECIMAL": true, "DECIMAL": true,
+	"DECIMAL32": true, "DECIMAL64": true, "DECIMAL128": true,
+	"DECIMAL256": true, "DECFLOAT": true, "MONEY": true, "SMALLMONEY": true,
+	"UDECIMAL": true, "UDOUBLE": true,
+}
+
+// dateFuncLiteralTypes are the temporal types BigQuery's DATE_ADD family
+// returns for a STRING first argument -- the type the function implicitly
+// casts that argument to (BigQuery typing._DATE_FUNC_LITERAL_TYPE).
+var dateFuncLiteralTypes = map[string]string{
+	"DateAdd": "DATE", "DateSub": "DATE", "DateTrunc": "DATE",
+	"DatetimeTrunc": "DATETIME", "TimestampTrunc": "TIMESTAMPTZ",
+}
+
+// annotateDateFunc types a date function: BigQuery answers with the first
+// argument's own type, or with the function's temporal type where that
+// argument is a string literal, and every other dialect through the neutral
+// time-unit rule (BigQuery typing._annotate_date_func).
+func annotateDateFunc(e *Expression, dialect string) *Expression {
+	if dialect != "bigquery" {
+		return annotateTimeUnit(e, dialect)
+	}
+	this := childOf(e, "this")
+	if this == nil {
+		return dataType("UNKNOWN")
+	}
+	if isStringLiteral(this) {
+		return dataType(dateFuncLiteralTypes[e.Class])
+	}
+	return bareType(annotate(this, dialect))
+}
+
+// annotateDiv types a division. A TYPED division of two integers is a BIGINT
+// -- that is what the dialect's own operator says -- and anything else widens
+// to a DOUBLE unless the coerced type is already a real one
+// (TypeAnnotator._annotate_div).
+func annotateDiv(e *Expression, dialect string) *Expression {
+	left, right := childOf(e, "this"), childOf(e, "expression")
+	leftType, rightType := annotate(left, dialect), annotate(right, dialect)
+	if e.Args["typed"] == true &&
+		integerTypeKinds[typeKind(leftType)] && integerTypeKinds[typeKind(rightType)] {
+		return dataType("BIGINT")
+	}
+	result := coerceTypes(leftType, rightType)
+	if result == nil || !realTypeKinds[typeKind(result)] {
+		return coerceTypes(result, dataType("DOUBLE"))
+	}
+	return result
 }
