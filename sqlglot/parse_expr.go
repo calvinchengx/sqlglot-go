@@ -2999,6 +2999,19 @@ func (p *parser) parseCase() (*Expression, error) {
 // until its node is ported. The list is generated, not guessed.
 func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	name := p.curr().Text
+	// A dialect that PRESERVES_ORIGINAL_NAMES records the name a call was
+	// WRITTEN with, and writes that name back where the class's own writer is
+	// the fallback -- `LOG(x)` is an Ln, and comes out LOG
+	// (Parser._parse_function, Generator.function_fallback_sql).
+	defer func() {
+		if err != nil || builtFn == nil || builtFn.Class == "Anonymous" {
+			return
+		}
+		if _, ok := p.tables.ConsultsOriginalName[builtFn.Class]; !ok {
+			return
+		}
+		builtFn.originalName = name
+	}()
 	quotedName := p.curr().Type == TokIDENTIFIER
 	upper := strings.ToUpper(name)
 	if p.dialect == "bigquery" && bigqueryOwnedParser(upper) && p.next() != nil && p.next().Type == TokL_PAREN {

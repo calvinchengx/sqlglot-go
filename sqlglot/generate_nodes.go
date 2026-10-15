@@ -183,6 +183,7 @@ func init() {
 		"RegexpExtractAll":                    (*generator).writeRegexpFlagged,
 		"DateTrunc":                           (*generator).writeDateTrunc,
 		"Ln":                                  (*generator).writeLn,
+		"JSONStripNulls":                      (*generator).writeJSONStripNulls,
 		"Predict":                             (*generator).writePredict,
 		"GenerateEmbedding":                   (*generator).writeGenerateEmbedding,
 		"GenerateText":                        (*generator).writeGenerateText,
@@ -557,7 +558,7 @@ func (g *generator) writeSelect(e *Expression) string {
 	add(g.child(e, "match"))
 	add(g.child(e, "where"))
 	add(g.child(e, "connect"))
-	add(g.child(e, "group"))
+	add(g.writeGroupClause(e))
 	add(g.child(e, "having"))
 	// The clauses that sit between HAVING and ORDER BY: Hive's three reducer
 	// clauses, then the WINDOW and QUALIFY a dialect writes there. BigQuery
@@ -1455,6 +1456,25 @@ func (g *generator) writeDistinct(e *Expression) string {
 }
 
 func (g *generator) writeColumn(e *Expression) string {
+	// A qualifier that was written inside ONE pair of backticks is written
+	// back as one identifier, with only the name after it separate:
+	// `` `db.t`.`c` `` (BigQueryGenerator.column_parts).
+	if g.dialect == "bigquery" && e.quotedColumn {
+		var names []string
+		for _, key := range []string{"catalog", "db", "table"} {
+			child, _ := e.Args[key].(*Expression)
+			if child == nil {
+				continue
+			}
+			names = append(names, child.Name())
+		}
+		last := g.child(e, "this")
+		if len(names) == 0 {
+			return last
+		}
+		return g.node(New("Identifier",
+			Arg{"this", strings.Join(names, ".")}, Arg{"quoted", true})) + "." + last
+	}
 	parts := []string{}
 	for _, key := range []string{"catalog", "db", "table", "this"} {
 		if key == "table" && g.mergeTarget[e] {
@@ -1956,6 +1976,77 @@ func (g *generator) tableArgument(e *Expression, key string) string {
 		return "TABLE " + out
 	}
 	return out
+}
+
+// writeGroupClause writes GROUP BY. BigQuery replaces a grouped expression
+// that repeats a projection with that projection's alias, but only when the
+// query also orders -- it is a workaround for grouping by an expression and
+// then ordering by the alias (BigQueryGenerator._alias_ordered_group).
+func (g *generator) writeGroupClause(e *Expression) string {
+	group, _ := e.Args["group"].(*Expression)
+	if group == nil {
+		return ""
+	}
+	if g.dialect == "bigquery" {
+		if order, _ := e.Args["order"].(*Expression); order != nil {
+			group = aliasGroupedExpressions(e, group)
+		}
+	}
+	return g.node(group)
+}
+
+// aliasGroupedExpressions swaps a grouped expression for the alias of a
+// projection that holds the same expression.
+func aliasGroupedExpressions(e, group *Expression) *Expression {
+	projections, _ := e.Args["expressions"].([]*Expression)
+	grouped, _ := group.Args["expressions"].([]*Expression)
+	if len(grouped) == 0 {
+		return group
+	}
+	replaced := make([]*Expression, len(grouped))
+	copy(replaced, grouped)
+	changed := false
+	for i, expr := range grouped {
+		if expr == nil || isPlainNumericLiteral(expr) {
+			continue
+		}
+		for _, proj := range projections {
+			if proj == nil || proj.Class != "Alias" {
+				continue
+			}
+			inner, _ := proj.Args["this"].(*Expression)
+			alias, _ := proj.Args["alias"].(*Expression)
+			if inner == nil || alias == nil || !inner.Equal(expr) {
+				continue
+			}
+			replaced[i] = New("Column", Arg{"this", alias})
+			changed = true
+			break
+		}
+	}
+	if !changed {
+		return group
+	}
+	out := group.Copy()
+	out.Set("expressions", replaced)
+	return out
+}
+
+// writeJSONStripNulls writes the call with every argument the tree holds, in
+// the class's own order: the named arguments are keys of their own rather
+// than positions in a list, and the recorded spelling was probed without them
+// (Generator.function_fallback_sql).
+func (g *generator) writeJSONStripNulls(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	parts := []string{g.child(e, "this")}
+	for _, key := range []string{"expression", "include_arrays", "remove_empty"} {
+		if s := g.child(e, key); s != "" {
+			parts = append(parts, s)
+		}
+	}
+	return "JSON_STRIP_NULLS(" + strings.Join(parts, ", ") + ")"
 }
 
 // writeLn writes the natural logarithm. BigQuery spells it LOG, where the
@@ -2723,7 +2814,11 @@ func (g *generator) writeColumnDef(e *Expression) string {
 	return leading + g.child(e, "this") + sep + kind + trailing
 }
 
-func (g *generator) writeAnonymous(e *Expression) string { return g.anonymous(e, true) }
+func (g *generator) writeAnonymous(e *Expression) string {
+	// BigQuery does not normalize a function's name, so a call keeps the case
+	// it was written with (BigQuery.NORMALIZE_FUNCTIONS, Generator.func).
+	return g.anonymous(e, g.dialect != "bigquery")
+}
 
 func (g *generator) anonymous(e *Expression, upper bool) string {
 	name, quoted := anonymousName(e)
@@ -2960,6 +3055,27 @@ func (g *generator) writeBracket(e *Expression) string {
 	// would emit `x[i]` for a statement the reference writes as a function.
 	if spec, ok := g.functionSpelling(e); ok {
 		return g.namedFunction(e, spec)
+	}
+	// BigQuery names the numbering inside the brackets again: an offset of 0
+	// is OFFSET(...), of 1 ORDINAL(...), and a safe subscript puts SAFE_ in
+	// front of either (BigQueryGenerator.bracket_sql).
+	if g.dialect == "bigquery" {
+		items, _ := e.Args["expressions"].([]*Expression)
+		parts := make([]string, 0, len(items))
+		for _, item := range items {
+			parts = append(parts, g.node(item))
+		}
+		inner := strings.Join(parts, ", ")
+		switch e.Args["offset"] {
+		case 0:
+			inner = "OFFSET(" + inner + ")"
+		case 1:
+			inner = "ORDINAL(" + inner + ")"
+		}
+		if e.Args["safe"] == true {
+			inner = "SAFE_" + inner
+		}
+		return g.childOperand(e) + "[" + inner + "]"
 	}
 	// Written back in the dialect's own numbering: the parser subtracted the
 	// offset, so writing adds it again. Without this the port read `a[1]`
@@ -3470,6 +3586,12 @@ func (g *generator) writeTableAlias(e *Expression) string {
 	out := g.child(e, "this")
 	columns, _ := e.Args["columns"].([]*Expression)
 	if len(columns) == 0 {
+		return out
+	}
+	// BigQuery has no named columns in a table alias, and none in a CTE
+	// either, so the list is dropped rather than written
+	// (BigQuery.SUPPORTS_TABLE_ALIAS_COLUMNS, Generator.tablealias_sql).
+	if g.dialect == "bigquery" {
 		return out
 	}
 	// A column list with no name gets one of the generator's own, unless the

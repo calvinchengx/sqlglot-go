@@ -55,6 +55,16 @@ type Expression struct {
 	rawType        *Expression
 	rawTypeDialect string
 	rawTypeKnown   bool
+	// originalName is the name a call was WRITTEN with, for the dialects that
+	// preserve original names: BigQuery reads `LOG(x)` as an Ln and writes it
+	// back as LOG, because the name is the call's own rather than the
+	// class's. The reference keeps it in the node's meta, which this port
+	// does not carry; this is the same signal without the map.
+	originalName string
+	// quotedColumn marks a Column whose qualifier was written inside ONE pair
+	// of backticks -- `` `db.t`.`c` `` -- which BigQuery writes back the same
+	// way.
+	quotedColumn bool
 	// quotedTable marks a Table whose qualified name was written inside ONE
 	// pair of backticks, which is how BigQuery writes it back. The reference
 	// keeps this in the node's meta, which this port does not carry; the flag
@@ -349,7 +359,8 @@ func (e *Expression) Copy() *Expression {
 		return nil
 	}
 	out := &Expression{Class: e.Class, Args: map[string]any{}, Type: e.Type.Copy(),
-		Comments: append([]string(nil), e.Comments...), quotedTable: e.quotedTable}
+		Comments: append([]string(nil), e.Comments...), quotedTable: e.quotedTable,
+		originalName: e.originalName, quotedColumn: e.quotedColumn}
 	for _, key := range e.Keys {
 		switch v := e.Args[key].(type) {
 		case *Expression:

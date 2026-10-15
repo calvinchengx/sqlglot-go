@@ -786,7 +786,16 @@ func (g *generator) namedFunction(e *Expression, spec FuncSQL) string {
 	// Keyed by ARITY as well as index: DuckDB wraps ROUND's second argument in
 	// a cast when the call has four arguments and not when it has two, and
 	// applying that at every arity refused ordinary two-argument calls.
-	return spec.Name + "(" + strings.Join(parts, ", ") + ")"
+	// A dialect that PRESERVES_ORIGINAL_NAMES writes the name the call was
+	// WRITTEN with, where the class's own writer is the fallback -- `LOG(x)`
+	// is an Ln and comes back out LOG (Generator.function_fallback_sql).
+	name := spec.Name
+	if e.originalName != "" {
+		if _, consults := g.tables.ConsultsOriginalName[e.Class]; consults {
+			name = e.originalName
+		}
+	}
+	return name + "(" + strings.Join(parts, ", ") + ")"
 }
 
 // isLiteral reports whether an argument is a literal of either kind. A literal

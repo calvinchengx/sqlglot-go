@@ -519,11 +519,15 @@ func bigqueryColumnParts(col *Expression) *Expression {
 	for _, w := range words[4:] {
 		newThis = New("Dot", Arg{"this", newThis}, Arg{"expression", ident(w)})
 	}
-	return New("Column",
+	out := New("Column",
 		Arg{"this", newThis},
 		Arg{"table", ident(words[2])},
 		Arg{"db", ident(words[1])},
 		Arg{"catalog", ident(words[0])})
+	// The qualifier was written inside one pair of backticks, and that is how
+	// it goes back out (BigQueryGenerator.column_parts).
+	out.quotedColumn = true
+	return out
 }
 
 // bigqueryBracketOffset names the numbering a subscript's own function asks
