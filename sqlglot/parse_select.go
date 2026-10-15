@@ -666,6 +666,16 @@ func (p *parser) parseSelect() (*Expression, error) {
 		return nil, p.unsupported("SELECT ALL")
 	}
 
+	// `SELECT AS STRUCT ...` / `SELECT AS VALUE ...` names what the
+	// projections build, and the reference records it as the SELECT's kind
+	// (Parser._parse_select).
+	var kind any
+	if p.at(TokALIAS) && (p.nextWords("STRUCT") || p.nextWords("VALUE")) {
+		p.advance() // AS
+		kind = strings.ToUpper(p.curr().Text)
+		p.advance()
+	}
+
 	modifiers := p.parseSelectOperationModifiers()
 
 	// TOP is read before the projections and lands in the slot Select
@@ -688,6 +698,9 @@ func (p *parser) parseSelect() (*Expression, error) {
 	sel := New("Select")
 	for _, k := range selectPrefix {
 		sel.Set(k, nil)
+	}
+	if kind != nil {
+		sel.Set("kind", kind)
 	}
 	if hint != nil {
 		sel.Set("hint", hint)
@@ -819,7 +832,7 @@ func normalizedRef(e *Expression) string {
 // normalizedName is the reference's normalize_identifiers applied to one
 // name: a QUOTED identifier keeps the spelling it was written with, and only
 // an unquoted one is case-folded. Folding both made
-// ``FROM Coordinates, `Coordinates.position` `` look like a nested column of
+// “FROM Coordinates, `Coordinates.position` “ look like a nested column of
 // the first table where the reference keeps it a table of its own.
 func normalizedName(e *Expression) string {
 	if e == nil {

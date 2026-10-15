@@ -496,6 +496,11 @@ func (g *generator) writeSelect(e *Expression) string {
 	// about what it selects.
 	add(g.child(e, "hint"))
 	add(g.child(e, "distinct"))
+	// `SELECT AS STRUCT ...` names what the projections build, and stands
+	// after the quantifier (Generator.select_sql).
+	if kind, _ := e.Args["kind"].(string); kind != "" {
+		add("AS " + strings.ToUpper(kind))
+	}
 
 	// T-SQL says TOP here; every other dialect says LIMIT at the end. The
 	// tree is the same either way, which is the point: the guard rewrites one
