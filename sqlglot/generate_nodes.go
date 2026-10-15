@@ -8484,6 +8484,15 @@ func (g *generator) writeNullTreatment(e *Expression, words string) string {
 	// aggregate, and after it otherwise (Generator._embed_ignore_nulls).
 	if g.dialect == "bigquery" {
 		if isA("AggFunc", call) {
+			// The words go BEFORE the call's own ordering -- `ARRAY_AGG(x
+			// IGNORE NULLS ORDER BY x LIMIT 1)` -- where BigQuery puts them
+			// (BigQuery.IGNORE_NULLS_BEFORE_ORDER,
+			// Generator._embed_ignore_nulls).
+			copied := call.Copy()
+			if value, _ := copied.Args["this"].(*Expression); isNullModifier(value) {
+				putWordsBeforeModifier(value, e.Class)
+				return g.node(copied)
+			}
 			return g.nullTreatmentInsideCall(e, call, words)
 		}
 		return g.child(e, "this") + " " + words
@@ -8504,6 +8513,30 @@ func (g *generator) writeNullTreatment(e *Expression, words string) string {
 	// it and returned above -- and such a dialect takes them on the window
 	// functions alone, dropping them from every other call.
 	return g.child(e, "this")
+}
+
+// isNullModifier reports whether a node is one of the clauses the null
+// treatment is written in front of.
+func isNullModifier(e *Expression) bool {
+	if e == nil {
+		return false
+	}
+	switch e.Class {
+	case "Order", "Limit", "HavingMax":
+		return true
+	}
+	return false
+}
+
+// putWordsBeforeModifier descends to the innermost modifier's own value and
+// wraps THAT in the words, which is where BigQuery writes them.
+func putWordsBeforeModifier(mod *Expression, class string) {
+	value, _ := mod.Args["this"].(*Expression)
+	if isNullModifier(value) {
+		putWordsBeforeModifier(value, class)
+		return
+	}
+	mod.Set("this", New(class, Arg{"this", value}))
 }
 
 // nullTreatmentInsideCall writes the words among the call's arguments, by

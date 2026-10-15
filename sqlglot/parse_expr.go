@@ -3194,11 +3194,10 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 				return nil, err
 			}
 			args = append(args, arg)
-			// `ARRAY_AGG(x ORDER BY y)`: the ORDER BY belongs to the argument
-			// it follows, and the reference wraps that argument in an Order
-			// rather than hanging the clause off the call. Where the whole
-			// list was collected into a Distinct, the Order wraps THAT, which
-			// is why it is applied below rather than here.
+			// `ARRAY_AGG(x ORDER BY y)`: the ORDER BY belongs to the
+			// argument it follows, and the reference wraps that argument in
+			// an Order rather than hanging the clause off the call. A nulls
+			// modifier may stand between the two, and is read after the loop.
 			if p.at(TokORDER_BY) {
 				p.advance()
 				o, oerr := p.parseOrder()
@@ -3207,8 +3206,6 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 				}
 				order = o
 			}
-			// BigQuery writes a LIMIT inside the call, after the ORDER BY,
-			// and the reference wraps the Order in it.
 			if p.at(TokLIMIT) {
 				p.advance()
 				c := p.curr()
@@ -3230,6 +3227,40 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	if inner != "" {
 		p.advance()
 		p.advance()
+	}
+	// `ARRAY_AGG(x ORDER BY y)`: the ORDER BY belongs to the argument it
+	// follows, and the reference wraps that argument in an Order rather than
+	// hanging the clause off the call. It stands AFTER the nulls modifier and
+	// the HAVING, which is where the reference reads it
+	// (Parser._parse_function_call).
+	if order == nil && p.at(TokORDER_BY) {
+		p.advance()
+		o, oerr := p.parseOrder()
+		if oerr != nil {
+			return nil, oerr
+		}
+		order = o
+	}
+	// BigQuery writes a LIMIT inside the call, after the ORDER BY, and the
+	// reference wraps the Order in it.
+	if limitValue == nil && p.at(TokLIMIT) {
+		p.advance()
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("LIMIT without a value")
+		}
+		p.advance()
+		limitValue = New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})
+	}
+	// The words may also stand AFTER the ordering -- `LAST_VALUE(x ORDER BY x
+	// IGNORE NULLS)` -- where the reference reaches them through the ordered
+	// expression it reads there.
+	if inner == "" {
+		if word := p.atNullsModifier(); word != "" {
+			p.advance()
+			p.advance()
+			inner = word
+		}
 	}
 	// `ANY_VALUE(x HAVING MAX y)` keeps the row whose y is greatest, and the
 	// reference records it as a node of its own around the VALUE
