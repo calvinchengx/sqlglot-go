@@ -697,6 +697,15 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 	if alias != nil {
 		table.Set("alias", alias)
 	}
+	// The time-travel clause may also stand AFTER the alias --
+	// `FROM foo AS t0 FOR SYSTEM_TIME AS OF z` (Parser._parse_table).
+	if word, ok := p.versionPhrase(); ok {
+		version, err := p.parseVersion(word)
+		if err != nil {
+			return nil, err
+		}
+		table.Set("version", version)
+	}
 	// And it may stand AFTER the alias too.
 	if p.atWords("AT") && p.next() != nil && p.next().Type == TokL_PAREN {
 		when, err := p.parseHistoricalData()
@@ -1670,9 +1679,15 @@ func (p *parser) parseUnnestWithAlias(withAlias bool) (*Expression, error) {
 			p.advance() // WITH
 			p.advance() // OFFSET
 			p.match(TokALIAS)
-			name, err := p.parseIdentifier()
-			if err != nil {
-				return nil, err
+			// A name that was not written is `offset`; the reader takes a
+			// NAME only where one can stand (Parser._parse_unnest,
+			// _parse_id_var).
+			var name *Expression
+			if p.atIdentifier() {
+				name, err = p.parseIdentifier()
+				if err != nil {
+					return nil, err
+				}
 			}
 			if name == nil {
 				name = New("Identifier", Arg{"this", "offset"}, Arg{"quoted", false})

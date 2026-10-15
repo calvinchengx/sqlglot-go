@@ -835,7 +835,12 @@ func (g *generator) writeTable(e *Expression) string {
 	// The separator is whatever this dialect puts between a table and its
 	// alias, so the clause can be inserted in front of that alias.
 	if version := g.child(e, "version"); version != "" {
-		if alias != "" && !ordinality && strings.HasSuffix(out, sep+alias) {
+		// BigQuery writes the temporal clause AFTER the alias, and every
+		// other dialect writes it before (Generator.table_sql,
+		// BigQuery.ALIAS_POST_VERSION).
+		if g.dialect == "bigquery" {
+			out += " " + version
+		} else if alias != "" && !ordinality && strings.HasSuffix(out, sep+alias) {
 			name := strings.TrimSuffix(out, sep+alias)
 			out = name + " " + version + sep + alias
 		} else {
