@@ -7576,6 +7576,9 @@ func (g *generator) writeTimeStrToTime(e *Expression) string {
 }
 
 func (g *generator) writeTimeToStr(e *Expression) string {
+	if g.dialect == "bigquery" {
+		return g.writeBigQueryTimeToStr(e)
+	}
 	if g.dialect == "mysql" || g.dialect == "doris" {
 		this, _ := e.Args["this"].(*Expression)
 		if stripped := stripMySQLTsOrDsWrap(this); stripped != this {
@@ -7584,6 +7587,34 @@ func (g *generator) writeTimeToStr(e *Expression) string {
 		}
 	}
 	return g.spell(e)
+}
+
+// writeBigQueryTimeToStr picks between FORMAT_DATE, FORMAT_DATETIME,
+// FORMAT_TIME and FORMAT_TIMESTAMP by the TS_OR_DS cast the value carries,
+// and unwraps that cast rather than writing it: the tree stores
+// `FORMAT_DATETIME(x, f)` as a TimeToStr over a TsOrDsToDatetime
+// (BigQueryGenerator.timetostr_sql).
+func (g *generator) writeBigQueryTimeToStr(e *Expression) string {
+	inner, _ := e.Args["this"].(*Expression)
+	name := "FORMAT_DATE"
+	timeExpr := e
+	if inner != nil {
+		switch inner.Class {
+		case "TsOrDsToDatetime":
+			name, timeExpr = "FORMAT_DATETIME", inner
+		case "TsOrDsToTimestamp":
+			name, timeExpr = "FORMAT_TIMESTAMP", inner
+		case "TsOrDsToTime":
+			name, timeExpr = "FORMAT_TIME", inner
+		case "TsOrDsToDate":
+			name, timeExpr = "FORMAT_DATE", inner
+		}
+	}
+	args := []string{g.child(e, "format"), g.child(timeExpr, "this")}
+	if zone := g.child(e, "zone"); zone != "" {
+		args = append(args, zone)
+	}
+	return name + "(" + strings.Join(args, ", ") + ")"
 }
 
 // writeDeclareItem writes one declared variable: the names, the type, and the
