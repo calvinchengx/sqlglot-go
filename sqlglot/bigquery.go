@@ -195,14 +195,25 @@ func (p *parser) parseBigQueryFunctionParser(upper string) (*Expression, error) 
 				return p.parseBigQueryML("MLTranslate")
 			}
 		}
-		args, err := p.parseBigQueryCSV(p.parseLambda)
+		// A bare TRANSLATE reads its arguments as ordinary expressions; only
+		// the ML. form reads a model and its parameters
+		// (BigQueryParser._parse_translate).
+		args, err := p.parseBigQueryCSV(p.parseBitwise)
 		if err != nil {
 			return nil, err
 		}
 		if !p.match(TokR_PAREN) {
 			return nil, p.unsupported("unclosed TRANSLATE")
 		}
-		return New("Translate", Arg{"expressions", args}), nil
+		// The arguments fill the node's own slots in order
+		// (BigQueryParser._parse_translate, Translate.from_arg_list).
+		node := New("Translate")
+		for i, key := range []string{"this", "from_", "to"} {
+			if i < len(args) {
+				node.Set(key, args[i])
+			}
+		}
+		return node, nil
 	}
 	return nil, p.unsupported(upper)
 }
