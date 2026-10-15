@@ -400,6 +400,9 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.at(TokEXPORT) {
 		return p.parseExportData()
 	}
+	if p.at(TokFOR) && p.dialect == "bigquery" {
+		return p.parseForIn()
+	}
 	if p.at(TokCOPY) {
 		return p.parseCopy()
 	}
@@ -500,4 +503,30 @@ func (p *parser) parseExportData() (*Expression, error) {
 	}
 	node.Set("this", query)
 	return node, nil
+}
+
+// parseForIn reads BigQuery's scripting loop `FOR x IN <range> DO
+// <statement>` (BigQueryParser._parse_for_in).
+func (p *parser) parseForIn() (*Expression, error) {
+	p.advance() // FOR
+	name, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	column := New("Column", Arg{"this", name})
+	if !p.match(TokIN) {
+		return nil, p.unsupported("FOR without IN")
+	}
+	iterable, err := p.parseIn(column)
+	if err != nil {
+		return nil, err
+	}
+	if !p.matchUnquotedWord("DO") {
+		return nil, p.unsupported("FOR IN without DO")
+	}
+	body, err := p.parseStatement()
+	if err != nil {
+		return nil, err
+	}
+	return New("ForIn", Arg{"this", iterable}, Arg{"expression", body}), nil
 }
