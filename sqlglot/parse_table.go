@@ -669,16 +669,13 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 	}
 	// The time-travel clause -- T-SQL's FOR SYSTEM_TIME, Databricks' TIMESTAMP
 	// AS OF, Trino's FOR VERSION AS OF -- reads the table as it stood then,
-	// and goes before the alias. BigQuery alone writes it after the alias,
-	// which this does not read.
-	if p.dialect != "bigquery" {
-		if word, ok := p.versionPhrase(); ok {
-			version, err := p.parseVersion(word)
-			if err != nil {
-				return nil, err
-			}
-			table.Set("version", version)
+	// and goes before the alias.
+	if word, ok := p.versionPhrase(); ok {
+		version, err := p.parseVersion(word)
+		if err != nil {
+			return nil, err
 		}
+		table.Set("version", version)
 	}
 	// `AT (VERSION => 3)` may stand where an alias would, and AT is a word an
 	// implicit alias would otherwise take: `demo AT (VERSION => 2)` would
