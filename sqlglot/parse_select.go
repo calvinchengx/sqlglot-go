@@ -407,11 +407,42 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 		case p.match(TokDISTINCT):
 			distinct = true
 		}
+		// `BY NAME`, `STRICT CORRESPONDING` and `CORRESPONDING` all say the
+		// operands are matched by column NAME rather than by position, and a
+		// bare CORRESPONDING also makes the join INNER
+		// (Parser.parse_set_operation).
 		var byName any
-		if p.atWords("BY", "NAME") {
+		var kind any
+		switch {
+		case p.atWords("BY", "NAME"):
 			p.advance()
 			p.advance()
 			byName = true
+		case p.atWords("STRICT", "CORRESPONDING"):
+			p.advance()
+			p.advance()
+			byName = true
+		}
+		if p.atWords("CORRESPONDING") {
+			p.advance()
+			byName = true
+			kind = "INNER"
+		}
+		// `BY (a, b)` or `ON (a, b)` names the columns to match on.
+		var onColumns []*Expression
+		if byName == true && (p.atWords("ON") || p.atWords("BY")) {
+			p.advance()
+			if !p.match(TokL_PAREN) {
+				return nil, p.unsupported("CORRESPONDING without a parenthesised column list")
+			}
+			columns, err := p.parseExpressionList()
+			if err != nil {
+				return nil, err
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed CORRESPONDING column list")
+			}
+			onColumns = columns
 		}
 
 		right, err := p.parseSelectOrParenthesised()
@@ -420,7 +451,7 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 		}
 		this = New(class,
 			Arg{"this", this}, Arg{"distinct", distinct}, Arg{"by_name", byName},
-			Arg{"expression", right}, Arg{"side", nil}, Arg{"kind", nil}, Arg{"on", nil})
+			Arg{"expression", right}, Arg{"side", nil}, Arg{"kind", kind}, Arg{"on", onColumns})
 		p.liftSetOpModifiers(this, right)
 		// A PARENTHESISED right-hand side keeps nothing to lift: the closing
 		// parenthesis ended it, so a trailing ORDER BY, LIMIT or OFFSET was

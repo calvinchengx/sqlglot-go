@@ -650,7 +650,17 @@ func (g *generator) withPrefix(e *Expression, body string) string {
 }
 
 func (g *generator) writeSetOperation(e *Expression) string {
-	word := strings.ToUpper(e.Class)
+	// The side and the kind stand between the left operand and the word, and
+	// what the operation matches BY comes after it
+	// (Generator.set_operation).
+	lead := ""
+	if side, _ := e.Args["side"].(string); side != "" {
+		lead += side + " "
+	}
+	if kind, _ := e.Args["kind"].(string); kind != "" {
+		lead += kind + " "
+	}
+	word := lead + strings.ToUpper(e.Class)
 	switch {
 	case e.Args["distinct"] == false:
 		word += " ALL"
@@ -662,6 +672,13 @@ func (g *generator) writeSetOperation(e *Expression) string {
 	}
 	if e.Args["by_name"] == true {
 		word += " BY NAME"
+	}
+	if on, _ := e.Args["on"].([]*Expression); len(on) > 0 {
+		names := make([]string, 0, len(on))
+		for _, col := range on {
+			names = append(names, g.node(col))
+		}
+		word += " ON (" + strings.Join(names, ", ") + ")"
 	}
 	parts := []string{g.child(e, "this"), word, g.child(e, "expression")}
 	for _, key := range []string{"cluster", "distribute", "sort", "order", "limit", "offset"} {
