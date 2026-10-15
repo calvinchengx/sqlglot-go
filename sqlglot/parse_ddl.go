@@ -2294,6 +2294,21 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 		p.advance()
 		p.advance()
 		return New("DropPrimaryKey"), nil
+	case p.at(TokDROP) && p.dialect == "bigquery" && p.next() != nil && p.next().Type == TokPRIMARY_KEY:
+		// `DROP PRIMARY KEY IF EXISTS` is not an ALTER either this port or
+		// the reference has a node for: the reference keeps it as a COMMAND
+		// whose text is the rest of the action (Parser._parse_alter).
+		drop := strings.ToUpper(p.curr().Text)
+		p.advance()
+		var words []string
+		for p.curr() != nil && !p.at(TokCOMMA) {
+			words = append(words, p.curr().Text)
+			p.advance()
+		}
+		// The text is everything after the word, SPACE included
+		// (Parser._parse_as_command).
+		return New("Command", Arg{"this", drop},
+			Arg{"expression", " " + strings.Join(words, " ")}), nil
 	case p.at(TokDROP) && p.dialect == "mysql" && p.next() != nil &&
 		(strings.EqualFold(p.next().Text, "INDEX") || strings.EqualFold(p.next().Text, "FOREIGN KEY")):
 		p.advance()

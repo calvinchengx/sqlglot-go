@@ -754,6 +754,33 @@ func (p *parser) parseProperty(spec PropertySpec) (*Expression, error) {
 		}
 		return New(spec.Class, Arg{"expressions", items}), nil
 	case "wrapped-columns", "wrapped-tables":
+		// BigQuery's TRANSFORM takes general EXPRESSIONS between its
+		// parentheses -- each one may name itself -- rather than a column
+		// list (Parser.PROPERTY_PARSERS).
+		if spec.Class == "TransformModelProperty" {
+			if !p.match(TokL_PAREN) {
+				return nil, p.unsupported("TRANSFORM without a list")
+			}
+			var items []*Expression
+			for !p.at(TokR_PAREN) {
+				item, err := p.parseExpression()
+				if err != nil {
+					return nil, err
+				}
+				item, err = p.parseAlias(item)
+				if err != nil {
+					return nil, err
+				}
+				items = append(items, item)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed TRANSFORM")
+			}
+			return New(spec.Class, Arg{"expressions", items}), nil
+		}
 		// Databricks' CLUSTER BY takes AUTO or NONE in place of the column
 		// list -- the word IS the clustering, not a name it sorts by -- and
 		// only those two, matched before the list is tried at all.

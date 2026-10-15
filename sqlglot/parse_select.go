@@ -1408,7 +1408,17 @@ func (p *parser) atAliasName() bool {
 	if c.Type == TokSTRING {
 		return p.tables.StringAliases
 	}
-	return c.Type == TokVAR || c.Type == TokIDENTIFIER
+	if c.Type == TokVAR || c.Type == TokIDENTIFIER {
+		return true
+	}
+	// A keyword that is an OPERATOR can still name a projection where the
+	// operand it needs was never written: `SELECT a OVERLAPS` is
+	// `a AS OVERLAPS` (Parser.ALIAS_TOKENS, _parse_alias).
+	if c.Type == TokOVERLAPS {
+		next := p.next()
+		return next == nil || endsSelectExpression(next)
+	}
+	return false
 }
 
 // parseConnect reads Oracle's hierarchical query clause. START WITH may
