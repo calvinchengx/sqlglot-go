@@ -182,6 +182,9 @@ func init() {
 		"RegexpExtract":                       (*generator).writeRegexpFlagged,
 		"RegexpExtractAll":                    (*generator).writeRegexpFlagged,
 		"DateTrunc":                           (*generator).writeDateTrunc,
+		"Ln":                                  (*generator).writeLn,
+		"Mod":                                 (*generator).writeMod,
+		"Contains":                            (*generator).writeContains,
 		"IgnoreNulls":                         (*generator).writeIgnoreNulls,
 		"RespectNulls":                        (*generator).writeRespectNulls,
 		"TriggerProperties":                   (*generator).writeTriggerProperties,
@@ -1558,6 +1561,28 @@ func (g *generator) escapeSequences(text string) string {
 // template substitutes text VERBATIM and a body holding a quote would end
 // the string early otherwise.
 func (g *generator) writeQuotedString(e *Expression) string {
+	// BigQuery writes a BYTES literal as `b'...'` and an integer HEX_STRING as
+	// `0x...`; the recorded template describes the OTHER shape of each -- a
+	// byte string the dialect does not treat as BYTES, a hex string it does
+	// not treat as an integer -- because the probe could not set the flag
+	// (Generator.bytestring_sql, Generator.hexstring_sql).
+	if g.dialect == "bigquery" {
+		body, _ := e.Args["this"].(string)
+		switch e.Class {
+		case "ByteString":
+			if e.Args["is_bytes"] == true {
+				// A byte string's own escapes are already in the text, so a
+				// backslash is left alone and only the delimiter is escaped
+				// (escape_str(..., escape_backslash=False)).
+				body = escapeControlCharacters(body)
+				return "b'" + strings.ReplaceAll(body, "'", "\\'") + "'"
+			}
+		case "HexString":
+			if e.Args["is_integer"] == true {
+				return "0x" + body
+			}
+		}
+	}
 	spec, ok := g.tables.StringClassSQL[e.Class]
 	if !ok {
 		// This dialect writes the value in a way that loses it -- the neutral
@@ -1599,6 +1624,11 @@ func (g *generator) writeNational(e *Expression) string {
 // lowercase check always takes the LOWER branch here. Presto's own HEX_FUNC
 // is TO_HEX rather than HEX.
 func (g *generator) writeLowerHex(e *Expression) string {
+	// BigQuery spells the function TO_HEX and writes no LOWER around it
+	// (BigQueryGenerator.HEX_FUNC, HEX_LOWERCASE, Generator.lowerhex_sql).
+	if g.dialect == "bigquery" {
+		return "TO_HEX(" + g.child(e, "this") + ")"
+	}
 	name := "HEX"
 	if isPrestoFamily(g.dialect) {
 		name = "TO_HEX"
@@ -1787,6 +1817,57 @@ func (g *generator) writeIf(e *Expression) string {
 	return g.writeCase(New("Case",
 		Arg{"ifs", []*Expression{e}},
 		Arg{"default", childOf(e, "false")}))
+}
+
+// writeLn writes the natural logarithm. BigQuery spells it LOG, where the
+// template every other dialect was probed with spells it LN
+// (BigQueryGenerator, PRESERVE_ORIGINAL_NAMES).
+func (g *generator) writeLn(e *Expression) string {
+	if g.dialect == "bigquery" {
+		return "LOG(" + g.child(e, "this") + ")"
+	}
+	return g.spell(e)
+}
+
+// writeMod writes the remainder. BigQuery takes the parentheses off an
+// operand rather than carrying them through: `MOD((a + 1), b)` is written
+// `MOD(a + 1, b)` (BigQueryGenerator.mod_sql).
+func (g *generator) writeMod(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	args := []string{g.node(unnestParen(childOf(e, "this"))), g.node(unnestParen(childOf(e, "expression")))}
+	return "MOD(" + strings.Join(args, ", ") + ")"
+}
+
+// unnestParen returns what a parenthesised expression holds, and anything
+// else as it stands -- the reference's `exp.Paren.unnest()`.
+func unnestParen(e *Expression) *Expression {
+	if e == nil || e.Class != "Paren" {
+		return e
+	}
+	if inner := childOf(e, "this"); inner != nil {
+		return inner
+	}
+	return e
+}
+
+// writeContains writes BigQuery's CONTAINS_SUBSTR. The parser wraps each
+// operand in a LOWER, and the generator takes it back off -- the LOWER is
+// what the engine does anyway (BigQueryGenerator.contains_sql).
+func (g *generator) writeContains(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	this, expr := childOf(e, "this"), childOf(e, "expression")
+	if this != nil && expr != nil && this.Class == "Lower" && expr.Class == "Lower" {
+		this, expr = childOf(this, "this"), childOf(expr, "this")
+	}
+	args := []string{g.node(this), g.node(expr)}
+	if scope := childOf(e, "json_scope"); scope != nil {
+		args = append(args, g.node(scope))
+	}
+	return "CONTAINS_SUBSTR(" + strings.Join(args, ", ") + ")"
 }
 
 // writeDateTrunc writes DATE_TRUNC. BigQuery reads a string unit as the unit
