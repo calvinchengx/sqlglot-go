@@ -235,20 +235,23 @@ func (p *parser) parseDelete() (*Expression, error) {
 		}
 		earlyReturning = r
 	}
-	if !p.match(TokFROM) {
-		return nil, p.unsupported("DELETE without FROM")
-	}
-	table, err := p.parseTable()
-	if err != nil {
-		return nil, err
-	}
-	// The target may itself be joined -- `DELETE t1 FROM t1 LEFT JOIN t2 ...`.
-	joins, err := p.parseJoins()
-	if err != nil {
-		return nil, err
-	}
-	if len(joins) > 0 {
-		table.Set("joins", joins)
+	// BigQuery writes a DELETE with no FROM at all -- `DELETE t WHERE x = 1`
+	// -- and the target then IS the table named before the WHERE
+	// (Parser._parse_delete).
+	var table *Expression
+	if p.match(TokFROM) {
+		table, err = p.parseTable()
+		if err != nil {
+			return nil, err
+		}
+		// The target may itself be joined -- `DELETE t1 FROM t1 LEFT JOIN t2 ...`.
+		joins, err := p.parseJoins()
+		if err != nil {
+			return nil, err
+		}
+		if len(joins) > 0 {
+			table.Set("joins", joins)
+		}
 	}
 
 	node := New("Delete")
@@ -258,7 +261,14 @@ func (p *parser) parseDelete() (*Expression, error) {
 	if tables != nil {
 		node.Set("tables", tables)
 	}
-	node.Set("this", table)
+	if table != nil {
+		node.Set("this", table)
+	} else {
+		// A DELETE with no FROM records FALSE there rather than nothing:
+		// the reference's `self._match(FROM) and ...` short-circuits
+		// (Parser._parse_delete).
+		node.Set("this", false)
+	}
 	if p.at(TokUSING) {
 		p.advance()
 		source, err := p.parseTable()

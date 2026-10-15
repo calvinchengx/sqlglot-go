@@ -6473,14 +6473,6 @@ func (g *generator) writeDelete(e *Expression) string {
 		}
 	}
 	this := g.child(e, "this")
-	if this == "" {
-		// A DELETE inside an ALTER names no table of its own: the ALTER has
-		// already named it, and what is left is which rows go.
-		if where := g.child(e, "where"); where != "" {
-			return "DELETE " + where
-		}
-		return g.fail(e.Class + " with no table")
-	}
 	// MySQL's Multiple-Table DELETE names, before the FROM, which of the
 	// tables joined there actually lose rows -- and T-SQL's OUTPUT sits in
 	// that very spot, straight after the verb: `DELETE x OUTPUT x.a FROM z`.
@@ -6491,6 +6483,22 @@ func (g *generator) writeDelete(e *Expression) string {
 			parts = append(parts, g.node(t))
 		}
 		tablesWord = " " + strings.Join(parts, ", ")
+	}
+	if this == "" {
+		// A DELETE inside an ALTER names no table of its own: the ALTER has
+		// already named it, and what is left is which rows go. A DELETE with
+		// no FROM at all -- BigQuery's `DELETE t WHERE ...` -- names the
+		// table among the TABLES instead (Generator.delete_sql).
+		if tablesWord != "" {
+			if where := g.child(e, "where"); where != "" {
+				return "DELETE" + tablesWord + " " + where
+			}
+			return "DELETE" + tablesWord
+		}
+		if where := g.child(e, "where"); where != "" {
+			return "DELETE " + where
+		}
+		return g.fail(e.Class + " with no table")
 	}
 	body := "FROM " + this
 	if using, _ := e.Args["using"].([]*Expression); len(using) > 0 {
