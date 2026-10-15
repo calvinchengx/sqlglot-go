@@ -413,7 +413,15 @@ func (p *parser) parseBigQueryLambda() (*Expression, error) {
 	if p.atKwarg() {
 		return p.parseKwarg()
 	}
-	return p.parseLambda()
+	// An arrow is what MAKES it a lambda; without one the argument is the
+	// expression itself, which is how MAKE_INTERVAL(100, 11, ...) reads
+	// (Parser._parse_lambda).
+	if p.atLambda() {
+		if value, err := p.parseLambda(); err != nil || value != nil {
+			return value, err
+		}
+	}
+	return p.parseExpression()
 }
 
 // normalizeBareWeek rewrites a bare WEEK date part into WEEK(SUNDAY): BigQuery
