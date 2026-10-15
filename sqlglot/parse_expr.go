@@ -2999,12 +2999,27 @@ func (p *parser) parseCase() (*Expression, error) {
 // until its node is ported. The list is generated, not guessed.
 func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	name := p.curr().Text
+	// A comment standing in front of the name belongs to the call built from
+	// it -- and to the node this function RETURNS, since the wrapper a
+	// dialect puts around the call is built afterwards from the same token
+	// (Parser.expression, Parser._add_comments).
+	var leading []string
+	if c := p.curr(); c != nil && len(c.Comments) > 0 {
+		leading = append([]string(nil), c.Comments...)
+		c.Comments = nil
+	}
 	// A dialect that PRESERVES_ORIGINAL_NAMES records the name a call was
 	// WRITTEN with, and writes that name back where the class's own writer is
 	// the fallback -- `LOG(x)` is an Ln, and comes out LOG
 	// (Parser._parse_function, Generator.function_fallback_sql).
 	defer func() {
-		if err != nil || builtFn == nil || builtFn.Class == "Anonymous" {
+		if err != nil || builtFn == nil {
+			return
+		}
+		if len(leading) > 0 && builtFn.Class != "Anonymous" {
+			putComments(builtFn, leading)
+		}
+		if builtFn.Class == "Anonymous" {
 			return
 		}
 		if _, ok := p.tables.ConsultsOriginalName[builtFn.Class]; !ok {
