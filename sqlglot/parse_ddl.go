@@ -332,7 +332,8 @@ func (p *parser) parseCreate() (*Expression, error) {
 			return nil, err
 		}
 		expression = query
-	case p.curr() == nil, p.atWords("SHALLOW", "CLONE"), p.atWords("CLONE"):
+	case p.curr() == nil, p.atWords("SHALLOW", "CLONE"), p.atWords("CLONE"),
+		p.atWords("SHALLOW", "COPY"), p.atWords("COPY"):
 		// A table with no columns and no query: the statement makes the name
 		// and nothing else. `CREATE TABLE a` is a whole statement, and so is
 		// one whose shape comes from the table it CLONES.
@@ -409,19 +410,18 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// columns or a query. SHALLOW says the rows are shared until one side
 	// writes to them.
 	var clone *Expression
-	shallow := false
-	if p.atWords("SHALLOW", "CLONE") {
-		p.advance()
-		shallow = true
-	}
-	if p.atWords("CLONE") {
+	shallow := p.matchUnquotedWord("SHALLOW")
+	// COPY is the same node as CLONE with a flag saying the rows are copied
+	// rather than shared (Parser.CLONE_KEYWORDS, _parse_create).
+	if p.atWords("CLONE") || p.atWords("COPY") {
+		copying := strings.EqualFold(p.curr().Text, "COPY")
 		p.advance()
 		source, err := p.parseTableName()
 		if err != nil {
 			return nil, err
 		}
 		clone = New("Clone",
-			Arg{"this", source}, Arg{"shallow", shallow}, Arg{"copy", false})
+			Arg{"this", source}, Arg{"shallow", shallow}, Arg{"copy", copying})
 	}
 	if p.curr() != nil {
 		// A VIEW has no properties of its own left to try after this point --

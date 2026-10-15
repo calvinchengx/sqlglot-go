@@ -5134,6 +5134,11 @@ func (g *generator) writeClone(e *Expression) string {
 	if shallow, _ := e.Args["shallow"].(bool); shallow {
 		out = "SHALLOW "
 	}
+	// COPY is the same node as CLONE with a flag: the rows are copied rather
+	// than shared (Generator.clone_sql, SUPPORTS_TABLE_COPY).
+	if copying, _ := e.Args["copy"].(bool); copying {
+		return out + "COPY " + g.child(e, "this")
+	}
 	return out + "CLONE " + g.child(e, "this")
 }
 
