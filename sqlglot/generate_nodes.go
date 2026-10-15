@@ -183,6 +183,17 @@ func init() {
 		"RegexpExtractAll":                    (*generator).writeRegexpFlagged,
 		"DateTrunc":                           (*generator).writeDateTrunc,
 		"Ln":                                  (*generator).writeLn,
+		"Predict":                             (*generator).writePredict,
+		"GenerateEmbedding":                   (*generator).writeGenerateEmbedding,
+		"GenerateText":                        (*generator).writeGenerateText,
+		"GenerateTable":                       (*generator).writeGenerateTable,
+		"GenerateBool":                        (*generator).writeGenerateBool,
+		"GenerateInt":                         (*generator).writeGenerateInt,
+		"GenerateDouble":                      (*generator).writeGenerateDouble,
+		"MLTranslate":                         (*generator).writeMLTranslate,
+		"MLForecast":                          (*generator).writeMLForecast,
+		"FeaturesAtTime":                      (*generator).writeFeaturesAtTime,
+		"VectorSearch":                        (*generator).writeVectorSearch,
 		"Mod":                                 (*generator).writeMod,
 		"Contains":                            (*generator).writeContains,
 		"IgnoreNulls":                         (*generator).writeIgnoreNulls,
@@ -1817,6 +1828,134 @@ func (g *generator) writeIf(e *Expression) string {
 	return g.writeCase(New("Case",
 		Arg{"ifs", []*Expression{e}},
 		Arg{"default", childOf(e, "false")}))
+}
+
+// writeMLCall writes the shape every BigQuery ML call shares:
+// `NAME(MODEL m, TABLE t, params)`. The TABLE keyword goes in only where the
+// argument IS a table, and a parameters slot that holds nothing is left out
+// entirely (Generator._ml_sql).
+func (g *generator) writeMLCall(e *Expression, name string) string {
+	parts := []string{"MODEL " + g.child(e, "this")}
+	if exprNode, _ := e.Args["expression"].(*Expression); exprNode != nil {
+		exprSQL := g.node(exprNode)
+		if exprNode.Class == "Table" {
+			exprSQL = "TABLE " + exprSQL
+		}
+		parts = append(parts, exprSQL)
+	}
+	if params, _ := e.Args["params_struct"].(*Expression); params != nil {
+		parts = append(parts, g.node(params))
+	}
+	return name + "(" + strings.Join(parts, ", ") + ")"
+}
+
+func (g *generator) writePredict(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "PREDICT")
+}
+
+func (g *generator) writeGenerateEmbedding(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	if e.Args["is_text"] == true {
+		return g.writeMLCall(e, "GENERATE_TEXT_EMBEDDING")
+	}
+	return g.writeMLCall(e, "GENERATE_EMBEDDING")
+}
+
+func (g *generator) writeGenerateText(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "GENERATE_TEXT")
+}
+
+func (g *generator) writeGenerateTable(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "GENERATE_TABLE")
+}
+
+func (g *generator) writeGenerateBool(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "GENERATE_BOOL")
+}
+
+func (g *generator) writeGenerateInt(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "GENERATE_INT")
+}
+
+func (g *generator) writeGenerateDouble(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "GENERATE_DOUBLE")
+}
+
+func (g *generator) writeMLTranslate(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "TRANSLATE")
+}
+
+func (g *generator) writeMLForecast(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	return g.writeMLCall(e, "FORECAST")
+}
+
+// writeFeaturesAtTime writes `FEATURES_AT_TIME([TABLE] t, ...)`; the keyword
+// goes in only for a table (Generator.featuresattime_sql).
+func (g *generator) writeFeaturesAtTime(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	parts := []string{g.tableArgument(e, "this")}
+	for _, key := range []string{"time", "num_rows", "ignore_feature_nulls"} {
+		if s := g.child(e, key); s != "" {
+			parts = append(parts, s)
+		}
+	}
+	return "FEATURES_AT_TIME(" + strings.Join(parts, ", ") + ")"
+}
+
+// writeVectorSearch writes `VECTOR_SEARCH([TABLE] t, c, [TABLE] q, ...)`
+// (Generator.vectorsearch_sql).
+func (g *generator) writeVectorSearch(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	parts := []string{g.tableArgument(e, "this"), g.child(e, "column_to_search")}
+	for _, key := range []string{"query_table", "query_column_to_search", "top_k", "distance_type", "options"} {
+		if s := g.tableArgument(e, key); s != "" {
+			parts = append(parts, s)
+		}
+	}
+	return "VECTOR_SEARCH(" + strings.Join(parts, ", ") + ")"
+}
+
+// tableArgument renders one argument, prefixed with TABLE where it is a table.
+func (g *generator) tableArgument(e *Expression, key string) string {
+	node, _ := e.Args[key].(*Expression)
+	if node == nil {
+		return ""
+	}
+	out := g.node(node)
+	if node.Class == "Table" {
+		return "TABLE " + out
+	}
+	return out
 }
 
 // writeLn writes the natural logarithm. BigQuery spells it LOG, where the
