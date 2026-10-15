@@ -80,6 +80,7 @@ func init() {
 		"TimeStrToTime":                       (*generator).writeTimeStrToTime,
 		"DateDiff":                            (*generator).writeDateDiff,
 		"Trunc":                               (*generator).writeTrunc,
+		"PartitionRange":                      (*generator).writePartitionRange,
 		"Encode":                              (*generator).writeEncodeDecode,
 		"Decode":                              (*generator).writeEncodeDecode,
 		"OpenJSONColumnDef":                   (*generator).writeOpenJSONColumnDef,
@@ -8197,6 +8198,41 @@ func (g *generator) sqliteDateDiff(e *Expression) string {
 		return g.fail(e.Class + " for the unit " + unit)
 	}
 	return "CAST(" + out + " AS INTEGER)"
+}
+
+// writePartitionRange writes Doris's partition range: a partition named and
+// then bounded. ONE bound is `VALUES LESS THAN (x)`; more than one is written
+// as a list of pairs, `VALUES [(a), (b))` (DorisGenerator.partitionrange_sql).
+func (g *generator) writePartitionRange(e *Expression) string {
+	if g.dialect != "doris" {
+		return g.spell(e)
+	}
+	name := g.child(e, "this")
+	switch values := e.Args["expressions"].(type) {
+	case []any:
+		// Doris's bracket form keeps the members as lists OF lists --
+		// `VALUES [('a'), ('b'))` -- so each one is wrapped on its own.
+		parts := make([]string, 0, len(values))
+		for _, v := range values {
+			inner, _ := v.([]*Expression)
+			rendered := make([]string, 0, len(inner))
+			for _, x := range inner {
+				rendered = append(rendered, g.node(x))
+			}
+			parts = append(parts, "("+strings.Join(rendered, ", ")+")")
+		}
+		return "PARTITION " + name + " VALUES [" + strings.Join(parts, ", ") + ")"
+	case []*Expression:
+		if len(values) != 1 {
+			parts := make([]string, 0, len(values))
+			for _, v := range values {
+				parts = append(parts, "("+g.node(v)+")")
+			}
+			return "PARTITION " + name + " VALUES [" + strings.Join(parts, ", ") + ")"
+		}
+		return "PARTITION " + name + " VALUES LESS THAN (" + g.node(values[0]) + ")"
+	}
+	return g.spell(e)
 }
 
 // writeTrunc writes SQLite's TRUNC, which takes the value alone: a precision
