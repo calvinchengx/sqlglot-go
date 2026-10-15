@@ -175,6 +175,8 @@ func init() {
 		"EncodeProperty":                      (*generator).writeEncodeProperty,
 		"DateAdd":                             (*generator).writeDateAdd,
 		"DateSub":                             (*generator).writeDateSub,
+		"ParseDatetime":                       (*generator).writeParseDatetime,
+		"ParseTime":                           (*generator).writeParseDatetime,
 		"TimestampAdd":                        (*generator).writeTimestampAdd,
 		"TimestampSub":                        (*generator).writeTimestampSub,
 		"TimeAdd":                             (*generator).writeTimeAdd,
@@ -8758,6 +8760,12 @@ func (g *generator) nullTreatmentInsideCall(e, call *Expression, words string) s
 // Databricks writes none. A flag says what the call DOES, so where one cannot
 // be written the statement is refused rather than written without it.
 func (g *generator) writeRegexpFlagged(e *Expression) string {
+	// BigQuery names the arguments in the order they were written, with a
+	// POSITION and an OCCURRENCE -- which say WHICH match to take -- following
+	// the pattern where they were given (BigQueryGenerator.TRANSFORMS).
+	if g.dialect == "bigquery" && e.Class != "RegexpReplace" {
+		return g.bigqueryRegexpCall(e)
+	}
 	key, named := g.tables.RegexpFlagArgs[e.Class]
 	if !named {
 		return g.spell(e)
@@ -8783,6 +8791,41 @@ func (g *generator) writeRegexpFlagged(e *Expression) string {
 		}
 	}
 	return g.regexpCallWithFlags(e, key)
+}
+
+// writeParseDatetime writes BigQuery's PARSE_DATETIME and PARSE_TIME, which
+// take the FORMAT first and the string second -- the reverse of the tree's
+// own argument order -- and drop any default year the parser recorded
+// (BigQueryGenerator.TRANSFORMS).
+func (g *generator) writeParseDatetime(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	name := "PARSE_DATETIME"
+	if e.Class == "ParseTime" {
+		name = "PARSE_TIME"
+	}
+	return name + "(" + g.child(e, "format") + ", " + g.child(e, "this") + ")"
+}
+
+// bigqueryRegexpCall writes BigQuery's REGEXP_EXTRACT and
+// REGEXP_EXTRACT_ALL. The extractor keeps its pattern and then, in order, the
+// position and the occurrence that were written; the ALL form takes only the
+// pattern (BigQueryGenerator.TRANSFORMS).
+func (g *generator) bigqueryRegexpCall(e *Expression) string {
+	name := "REGEXP_EXTRACT"
+	keys := []string{"this", "expression", "position", "occurrence"}
+	if e.Class == "RegexpExtractAll" {
+		name = "REGEXP_EXTRACT_ALL"
+		keys = []string{"this", "expression"}
+	}
+	args := make([]string, 0, len(keys))
+	for _, key := range keys {
+		if arg, _ := e.Args[key].(*Expression); arg != nil {
+			args = append(args, g.node(arg))
+		}
+	}
+	return name + "(" + strings.Join(args, ", ") + ")"
 }
 
 // regexpCallWithFlags writes the call with the flags as its last argument.
