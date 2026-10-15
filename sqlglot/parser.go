@@ -433,7 +433,15 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 			return nil, &NotAQueryError{Kind: strings.ToUpper(c.Text)}
 		}
 	}
+	// The reference reads a bare statement as `_parse_alias(_parse_assignment())`,
+	// so an ALIAS belongs to the EXPRESSION and a set operation that follows
+	// takes the aliased expression as its left operand:
+	// `(SELECT 1) AS x UNION ALL (SELECT 2)`.
 	e, err := p.parseExpression()
+	if err != nil {
+		return nil, err
+	}
+	e, err = p.parseAlias(e)
 	if err != nil {
 		return nil, err
 	}
@@ -454,7 +462,7 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 			return nil, err
 		}
 	}
-	return p.parseAlias(e)
+	return e, nil
 }
 
 // takesQueryModifiers are the classes an ORDER BY, a LIMIT or an OFFSET may

@@ -469,6 +469,19 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// A parenthesised query that was aliased becomes a Subquery with a
+		// TABLE alias when it stands as a set operation's operand:
+		// `(SELECT 1) AS x UNION ALL (SELECT 2)` names each side
+		// (Parser.parse_set_operation).
+		if this != nil && this.Class == "Alias" {
+			if sub, _ := this.Args["this"].(*Expression); sub != nil && sub.Class == "Subquery" {
+				if alias, _ := this.Args["alias"].(*Expression); alias != nil {
+					sub.Set("alias", New("TableAlias", Arg{"this", alias}))
+					putComments(sub, this.Comments)
+					this = sub
+				}
+			}
+		}
 		this = New(class,
 			Arg{"this", this}, Arg{"distinct", distinct}, Arg{"by_name", byName},
 			Arg{"expression", right}, Arg{"side", side}, Arg{"kind", kind}, Arg{"on", onColumns})
