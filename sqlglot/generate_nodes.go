@@ -175,6 +175,8 @@ func init() {
 		"EncodeProperty":                      (*generator).writeEncodeProperty,
 		"DateAdd":                             (*generator).writeDateAdd,
 		"DateSub":                             (*generator).writeDateSub,
+		"CurrentTime":                         (*generator).writeCurrentTime,
+		"CurrentTimestamp":                    (*generator).writeCurrentTime,
 		"StrToTime":                           (*generator).writeStrToTime,
 		"StrToDate":                           (*generator).writeStrToTime,
 		"MakeInterval":                        (*generator).writeMakeInterval,
@@ -8795,6 +8797,35 @@ func (g *generator) writeRegexpFlagged(e *Expression) string {
 		}
 	}
 	return g.regexpCallWithFlags(e, key)
+}
+
+// writeCurrentTime writes CURRENT_TIME and CURRENT_TIMESTAMP for SingleStore,
+// where the argument is a fractional-second precision -- and the words
+// UTC_TIME or UTC_TIMESTAMP where it is the word UTC. Any other argument is
+// one the dialect cannot read at all, which the reference says and then
+// writes nothing for (SingleStoreGenerator.currenttime_sql).
+//
+// Every other dialect spells these through the template the reference itself
+// produced.
+func (g *generator) writeCurrentTime(e *Expression) string {
+	if g.dialect != "singlestore" {
+		return g.spell(e)
+	}
+	name := "CURRENT_TIME"
+	if e.Class == "CurrentTimestamp" {
+		name = "CURRENT_TIMESTAMP"
+	}
+	arg, _ := e.Args["this"].(*Expression)
+	if arg == nil {
+		return name + "()"
+	}
+	if text, _ := arg.Args["this"].(string); isStringLiteral(arg) && strings.EqualFold(text, "utc") {
+		return "UTC_" + strings.TrimPrefix(name, "CURRENT_") + "()"
+	}
+	if isNumberLiteral(arg) {
+		return name + "(" + g.node(arg) + ")"
+	}
+	return g.fail(e.Class + " with a timezone, which this dialect does not read")
 }
 
 // writeStrToTime writes BigQuery's two spellings of a string-to-time
