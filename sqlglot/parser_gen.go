@@ -379,6 +379,11 @@ type ParserTables struct {
 	// FormatMapping is the dialect's FORMAT_MAPPING, the table a CAST
 	// ... FORMAT is read through where it has one -- BigQuery's alone.
 	FormatMapping map[string]string
+	// InverseFormatMapping is FORMAT_MAPPING turned round, in the order
+	// the reference built it: two spellings may share a value and the
+	// LAST one wins, which a Go map cannot say. BigQuery spells a
+	// SAFE_CAST's FORMAT through it.
+	InverseFormatMapping map[string]string
 	// FullFormatTimeMapping is TimeMapping with a dialect's OWN full-word
 	// spellings layered over it -- T-SQL's DATENAME(mm, x) wants the full
 	// month name, not the two-digit one TimeMapping's "mm" gives FORMAT.
@@ -4388,6 +4393,14 @@ var parserTables = map[string]*ParserTables{
 			"YYYY":               "YEAR",
 		},
 		InverseTimeMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
+		},
+		InverseFormatMapping: map[string]string{
 			"%Hstrict": "%H",
 			"%Istrict": "%I",
 			"%Mstrict": "%M",
@@ -9611,6 +9624,14 @@ var parserTables = map[string]*ParserTables{
 			"t": "%-I:%M",
 			"u": "%Y-%M-%D %H:%M:%S%z",
 			"y": "%B %Y",
+		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
 		},
 		FullFormatTimeMapping: map[string]string{
 			"H":           "%-H",
@@ -14959,6 +14980,14 @@ var parserTables = map[string]*ParserTables{
 			"%u":        "D",
 			"%y":        "YY",
 			"%z":        "OF",
+		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
 		},
 		TimeFormatArgs: map[string][]int{
 			"TO_CHAR":      {1},
@@ -20356,6 +20385,14 @@ var parserTables = map[string]*ParserTables{
 			"%f_three": "%g",
 			"%f_two":   "%n",
 			"%f_zero":  "%n",
+			"%mstrict": "%m",
+		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
 			"%mstrict": "%m",
 		},
 		TimeFormatArgs: map[string][]int{
@@ -26135,6 +26172,14 @@ var parserTables = map[string]*ParserTables{
 			"%y":       "yy",
 			"%z":       "Z",
 		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
+		},
 		TimeFormatArgs: map[string][]int{
 			"DATE_FORMAT":    {1},
 			"FROM_UNIXTIME":  {1},
@@ -31331,6 +31376,14 @@ var parserTables = map[string]*ParserTables{
 			"%y":        "YY",
 			"%z":        "OF",
 		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
+		},
 		TimeFormatArgs: map[string][]int{
 			"TO_CHAR":      {1},
 			"TO_DATE":      {1},
@@ -36523,6 +36576,14 @@ var parserTables = map[string]*ParserTables{
 			"%y":        "YY",
 			"%z":        "OF",
 		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
+		},
 		TimeFormatArgs: map[string][]int{
 			"TO_CHAR":      {1},
 			"TO_DATE":      {1},
@@ -41551,6 +41612,14 @@ var parserTables = map[string]*ParserTables{
 			"%u":        "D",
 			"%y":        "YY",
 			"%z":        "OF",
+		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
 		},
 		TimeFormatArgs: map[string][]int{
 			"TO_CHAR":      {1},
@@ -46644,6 +46713,14 @@ var parserTables = map[string]*ParserTables{
 			"t": "%-I:%M",
 			"u": "%Y-%M-%D %H:%M:%S%z",
 			"y": "%B %Y",
+		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
 		},
 		TimeFormatArgs: map[string][]int{
 			"FORMAT": {1},
@@ -51869,6 +51946,14 @@ var parserTables = map[string]*ParserTables{
 			"%dstrict":    "%d",
 			"%mstrict":    "%m",
 		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
+		},
 		TimeFormatArgs: map[string][]int{
 			"DATE_FORMAT": {1},
 			"DATE_PARSE":  {1},
@@ -57077,6 +57162,14 @@ var parserTables = map[string]*ParserTables{
 			"%dstrict":    "%d",
 			"%mstrict":    "%m",
 		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
+		},
 		TimeFormatArgs: map[string][]int{
 			"DATE_FORMAT": {1},
 			"DATE_PARSE":  {1},
@@ -62054,6 +62147,14 @@ var parserTables = map[string]*ParserTables{
 			"%w":       "d",
 			"%y":       "yy",
 			"%z":       "tzo",
+		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
 		},
 		TimeFormatArgs: map[string][]int{
 			"DATE_FORMAT": {1},
@@ -67102,6 +67203,14 @@ var parserTables = map[string]*ParserTables{
 			"%W":          "%u",
 			"%dstrict":    "%d",
 			"%mstrict":    "%m",
+		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
 		},
 		TimeFormatArgs: map[string][]int{
 			"DATE_FORMAT":   {1},
@@ -72487,6 +72596,14 @@ var parserTables = map[string]*ParserTables{
 			"%W":          "%u",
 			"%dstrict":    "%d",
 			"%mstrict":    "%m",
+		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
 		},
 		TimeFormatArgs: map[string][]int{
 			"DATE_FORMAT":   {1},
@@ -78045,6 +78162,14 @@ var parserTables = map[string]*ParserTables{
 			"%dstrict":    "%d",
 			"%mstrict":    "%m",
 		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
+		},
 		TimeFormatArgs: map[string][]int{
 			"DATE_FORMAT":   {1},
 			"FROM_UNIXTIME": {1},
@@ -83276,6 +83401,14 @@ var parserTables = map[string]*ParserTables{
 			"%mstrict": "MM",
 			"%u":       "D",
 			"%y":       "YY",
+		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
 		},
 		TimeFormatArgs: map[string][]int{
 			"TO_CHAR":      {1},
@@ -89592,6 +89725,14 @@ var parserTables = map[string]*ParserTables{
 			"%y":       "yy",
 			"%z":       "Z",
 		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
+		},
 		TimeFormatArgs: map[string][]int{
 			"DATE_FORMAT":    {1},
 			"FROM_UNIXTIME":  {1},
@@ -94805,6 +94946,14 @@ var parserTables = map[string]*ParserTables{
 			"%p":       "a",
 			"%y":       "yy",
 			"%z":       "Z",
+		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
 		},
 		TimeFormatArgs: map[string][]int{
 			"DATE_FORMAT":    {1},
@@ -100390,6 +100539,14 @@ var parserTables = map[string]*ParserTables{
 			"%y":       "yy",
 			"%z":       "Z",
 		},
+		InverseFormatMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
+		},
 		TimeFormatArgs: map[string][]int{
 			"DATE_FORMAT":    {1},
 			"FROM_UNIXTIME":  {1},
@@ -105296,6 +105453,14 @@ var parserTables = map[string]*ParserTables{
 			"YYYY":               "YEAR",
 		},
 		InverseTimeMapping: map[string]string{
+			"%Hstrict": "%H",
+			"%Istrict": "%I",
+			"%Mstrict": "%M",
+			"%Sstrict": "%S",
+			"%dstrict": "%d",
+			"%mstrict": "%m",
+		},
+		InverseFormatMapping: map[string]string{
 			"%Hstrict": "%H",
 			"%Istrict": "%I",
 			"%Mstrict": "%M",
@@ -110566,6 +110731,26 @@ var parserTables = map[string]*ParserTables{
 			"tzh":   "%z",
 			"yy":    "%y",
 			"yyyy":  "%Y",
+		},
+		InverseFormatMapping: map[string]string{
+			"%B":       "MONTH",
+			"%H":       "HH24",
+			"%Hstrict": "HH24",
+			"%I":       "HH12",
+			"%Istrict": "HH12",
+			"%M":       "MI",
+			"%Mstrict": "MI",
+			"%S":       "SS",
+			"%Sstrict": "SS",
+			"%Y":       "YYYY",
+			"%b":       "MON",
+			"%d":       "DD",
+			"%dstrict": "DD",
+			"%f":       "SSSSS",
+			"%m":       "MM",
+			"%mstrict": "MM",
+			"%y":       "YY",
+			"%z":       "TZH",
 		},
 		TimeFormatArgs: map[string][]int{
 			"FORMAT_DATE":      {0},

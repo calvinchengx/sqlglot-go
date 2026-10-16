@@ -143,7 +143,7 @@ func (g *generator) node(e *Expression) string {
 	// placeholder, where none of this happens, so the template it produced
 	// writes the stored spelling verbatim -- a different format string, not
 	// another way of writing one.
-	if spelling, known := g.tables.FormatSpellings[e.Class]; known {
+	if spelling, known := g.tables.FormatSpellings[e.Class]; known && !g.spellsFormatInWriter(e) {
 		if format, _ := e.Args["format"].(*Expression); isStringLiteral(format) {
 			switch spelling {
 			case "inverse":
@@ -205,6 +205,11 @@ func (g *generator) node(e *Expression) string {
 	}
 	if isHiveFamily(g.dialect) {
 		if out, handled := g.hiveNode(e); handled {
+			return g.withComments(e, out)
+		}
+	}
+	if g.dialect == "starrocks" {
+		if out, handled := g.starrocksNode(e); handled {
 			return g.withComments(e, out)
 		}
 	}
@@ -314,6 +319,19 @@ func (g *generator) spell(e *Expression) string {
 		return out
 	}
 	return g.fail(e.Class)
+}
+
+// spellsFormatInWriter reports a class whose format the WRITER spells rather
+// than the pre-spelling step above, because WHICH table it uses depends on
+// which form of the call was written. BigQuery spells the ordinary PARSE_*
+// form through INVERSE_TIME_MAPPING and the SAFE_CAST form through
+// INVERSE_FORMAT_MAPPING, both from the same stored format
+// (BigQueryGenerator._str_to_datetime_sql).
+func (g *generator) spellsFormatInWriter(e *Expression) bool {
+	if g.dialect != "bigquery" {
+		return false
+	}
+	return e.Class == "StrToTime" || e.Class == "StrToDate"
 }
 
 // child renders one arg, or "" when it is absent.

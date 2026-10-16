@@ -6473,6 +6473,11 @@ def main() -> int:
         "\t// FormatMapping is the dialect's FORMAT_MAPPING, the table a CAST\n",
         "\t// ... FORMAT is read through where it has one -- BigQuery's alone.\n",
         "\tFormatMapping map[string]string\n",
+        "\t// InverseFormatMapping is FORMAT_MAPPING turned round, in the order\n",
+        "\t// the reference built it: two spellings may share a value and the\n",
+        "\t// LAST one wins, which a Go map cannot say. BigQuery spells a\n",
+        "\t// SAFE_CAST's FORMAT through it.\n",
+        "\tInverseFormatMapping map[string]string\n",
         "\t// FullFormatTimeMapping is TimeMapping with a dialect's OWN full-word\n",
         "\t// spellings layered over it -- T-SQL's DATENAME(mm, x) wants the full\n",
         "\t// month name, not the two-digit one TimeMapping's \"mm\" gives FORMAT.\n",
@@ -7435,7 +7440,8 @@ def main() -> int:
         for field, attr in (("DatePartMapping", "DATE_PART_MAPPING"),
                             ("InverseTimeMapping", "INVERSE_TIME_MAPPING"),
                             ("FormatTimeMapping", "FORMAT_TIME_MAPPING"),
-                            ("FormatMapping", "FORMAT_MAPPING")):
+                            ("FormatMapping", "FORMAT_MAPPING"),
+                            ("InverseFormatMapping", "INVERSE_FORMAT_MAPPING")):
             _m = getattr(_D.get_or_raise(name or None), attr, None) or {}
             if not _m:
                 continue

@@ -89,21 +89,8 @@ func (g *generator) hiveNode(e *Expression) (string, bool) {
 			return out, true
 		}
 	case "PartitionedByProperty":
-		// Hive's PARTITIONED BY names the columns only, even where the
-		// schema beside it restates their types.
-		if g.dialect == "hive" {
-			if schema, _ := e.Args["this"].(*Expression); schema != nil && schema.Class == "Schema" {
-				var parts []string
-				for _, c := range g.expressionsOf(schema) {
-					if c != nil && c.Class == "ColumnDef" {
-						parts = append(parts, g.child(c, "this"))
-					} else {
-						parts = append(parts, g.node(c))
-					}
-				}
-				return "PARTITIONED BY (" + strings.Join(parts, ", ") + ")", true
-			}
-		}
+		// The property's own value, which is a Schema carrying the partition
+		// columns WITH their types (HiveGenerator.TRANSFORMS).
 		return "PARTITIONED BY " + g.child(e, "this"), true
 	case "PartitionedByBucket":
 		return "BUCKET(" + g.child(e, "expression") + ", " + g.child(e, "this") + ")", true
@@ -182,51 +169,145 @@ func (g *generator) hiveNode(e *Expression) (string, bool) {
 	return "", false
 }
 
-// hiveCreate writes a Hive CREATE TABLE whose PARTITIONED BY names columns
-// WITH their types: those definitions belong to the schema, and the partition
-// keeps the bare names (Hive's own partitionable-schema convention). The move
-// is made on a COPY, so the caller's tree is untouched.
+// hiveCreate gives a CREATE's PARTITIONED BY the definitions of the columns
+// it names. In Hive the property acts as an extension of the table's schema,
+// so a property written as an array of NAMES takes the definitions the schema
+// holds and those definitions come OUT of the schema
+// (HiveGenerator.TRANSFORMS, transforms.move_schema_columns_to_partitioned_by).
+//
+// A property that already carries a Schema -- the dialect's own round trip --
+// is left alone, and the move is made on a COPY so the caller's tree is
+// untouched.
 func (g *generator) hiveCreate(e *Expression) (string, bool) {
+	// Spark 3 writes the DATASOURCE shape instead: the definitions go INTO
+	// the table's schema and the property keeps their names
+	// (Spark2Generator.TRANSFORMS,
+	// transforms.move_partitioned_by_to_schema_columns).
+	if g.dialect != "hive" {
+		return g.sparkMoveDefinitionsToSchema(e)
+	}
+	schema, _ := e.Args["this"].(*Expression)
+	props, _ := e.Args["properties"].(*Expression)
+	kind, _ := e.Args["kind"].(string)
+	if schema == nil || schema.Class != "Schema" || props == nil ||
+		(kind != "TABLE" && kind != "VIEW") {
+		return "", false
+	}
+	items, _ := props.Args["expressions"].([]*Expression)
+	var prop *Expression
+	for _, p := range items {
+		if p != nil && p.Class == "PartitionedByProperty" {
+			prop = p
+			break
+		}
+	}
+	if prop == nil {
+		return "", false
+	}
+	named, _ := prop.Args["this"].(*Expression)
+	if named == nil || named.Class == "Schema" {
+		return "", false
+	}
+	columns := map[string]bool{}
+	for _, c := range g.expressionsOf(named) {
+		if c != nil {
+			columns[strings.ToUpper(c.Name())] = true
+		}
+	}
+	if len(columns) == 0 {
+		return "", false
+	}
+	var kept, moved []*Expression
+	for _, c := range g.expressionsOf(schema) {
+		if c != nil && columns[strings.ToUpper(c.Name())] {
+			moved = append(moved, c)
+			continue
+		}
+		kept = append(kept, c)
+	}
+	if len(moved) == 0 {
+		return "", false
+	}
+	copyCreate := e.shallowCopy()
+	newSchema := schema.shallowCopy()
+	newSchema.Set("expressions", kept)
+	copyCreate.Set("this", newSchema)
+	newProps := props.shallowCopy()
+	rewritten := make([]*Expression, 0, len(items))
+	for _, p := range items {
+		if p == prop {
+			rewritten = append(rewritten, New("PartitionedByProperty",
+				Arg{"this", New("Schema", Arg{"expressions", moved})}))
+			continue
+		}
+		rewritten = append(rewritten, p)
+	}
+	newProps.Set("expressions", rewritten)
+	copyCreate.Set("properties", newProps)
+	// Through the CREATE's OWN writer: `spell` skips the per-class writers,
+	// and a CREATE has no template of its own, so it refused the statement
+	// outright.
+	return g.writeCreate(copyCreate), true
+}
+
+// sparkMoveDefinitionsToSchema gives a Spark CREATE the DATASOURCE shape: the
+// partition columns' definitions move into the table's schema and
+// PARTITIONED BY keeps their names, as a Tuple
+// (transforms.move_partitioned_by_to_schema_columns).
+func (g *generator) sparkMoveDefinitionsToSchema(e *Expression) (string, bool) {
 	schema, _ := e.Args["this"].(*Expression)
 	props, _ := e.Args["properties"].(*Expression)
 	if schema == nil || schema.Class != "Schema" || props == nil {
 		return "", false
 	}
 	items, _ := props.Args["expressions"].([]*Expression)
-	var moved []*Expression
-	rewritten := make([]*Expression, 0, len(items))
+	var prop *Expression
 	for _, p := range items {
 		if p != nil && p.Class == "PartitionedByProperty" {
-			if ps, _ := p.Args["this"].(*Expression); ps != nil && ps.Class == "Schema" {
-				var names []*Expression
-				for _, c := range g.expressionsOf(ps) {
-					if c != nil && c.Class == "ColumnDef" {
-						moved = append(moved, c)
-						names = append(names, New("Identifier",
-							Arg{"this", g.child(c, "this")}, Arg{"quoted", false}))
-					} else {
-						names = append(names, c)
-					}
-				}
-				if len(moved) > 0 {
-					p = New("PartitionedByProperty", Arg{"this", New("Schema", Arg{"expressions", names})})
-				}
-			}
+			prop = p
+			break
+		}
+	}
+	if prop == nil {
+		return "", false
+	}
+	ps, _ := prop.Args["this"].(*Expression)
+	if ps == nil || ps.Class != "Schema" {
+		return "", false
+	}
+	defs := g.expressionsOf(ps)
+	if len(defs) == 0 {
+		return "", false
+	}
+	names := make([]*Expression, 0, len(defs))
+	for _, d := range defs {
+		// Every one must be a DEFINITION: a bare name is already the shape
+		// this transform produces, and moving it again would lose nothing
+		// and say nothing.
+		if d == nil || d.Class != "ColumnDef" || d.Args["kind"] == nil {
+			return "", false
+		}
+		names = append(names, New("Identifier",
+			Arg{"this", g.child(d, "this")}, Arg{"quoted", false}))
+	}
+	copyCreate := e.shallowCopy()
+	newSchema := schema.shallowCopy()
+	newSchema.Set("expressions",
+		append(append([]*Expression{}, g.expressionsOf(schema)...), defs...))
+	copyCreate.Set("this", newSchema)
+	newProps := props.shallowCopy()
+	rewritten := make([]*Expression, 0, len(items))
+	for _, p := range items {
+		if p == prop {
+			rewritten = append(rewritten, New("PartitionedByProperty",
+				Arg{"this", New("Tuple", Arg{"expressions", names})}))
+			continue
 		}
 		rewritten = append(rewritten, p)
 	}
-	if len(moved) == 0 {
-		return "", false
-	}
-	// Rebuild the copy with the moved definitions appended to the schema.
-	copyCreate := e.shallowCopy()
-	newSchema := schema.shallowCopy()
-	newSchema.Set("expressions", append(append([]*Expression{}, g.expressionsOf(schema)...), moved...))
-	copyCreate.Set("this", newSchema)
-	newProps := props.shallowCopy()
 	newProps.Set("expressions", rewritten)
 	copyCreate.Set("properties", newProps)
-	return g.spell(copyCreate), true
+	return g.writeCreate(copyCreate), true
 }
 
 // hiveCall writes a call under a different name, passing the node's own

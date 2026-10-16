@@ -79,6 +79,8 @@ func init() {
 		"Iterate":                             (*generator).writeIterate,
 		"TimeStrToTime":                       (*generator).writeTimeStrToTime,
 		"DateDiff":                            (*generator).writeDateDiff,
+		"Trunc":                               (*generator).writeTrunc,
+		"PartitionRange":                      (*generator).writePartitionRange,
 		"Encode":                              (*generator).writeEncodeDecode,
 		"Decode":                              (*generator).writeEncodeDecode,
 		"OpenJSONColumnDef":                   (*generator).writeOpenJSONColumnDef,
@@ -175,6 +177,18 @@ func init() {
 		"EncodeProperty":                      (*generator).writeEncodeProperty,
 		"DateAdd":                             (*generator).writeDateAdd,
 		"DateSub":                             (*generator).writeDateSub,
+		"CurrentTime":                         (*generator).writeCurrentTime,
+		"CurrentTimestamp":                    (*generator).writeCurrentTime,
+		"StrToTime":                           (*generator).writeStrToTime,
+		"StrToDate":                           (*generator).writeStrToTime,
+		"MakeInterval":                        (*generator).writeMakeInterval,
+		"AIForecast":                          (*generator).writeAIForecast,
+		"ParseDatetime":                       (*generator).writeParseDatetime,
+		"ParseTime":                           (*generator).writeParseDatetime,
+		"TimestampAdd":                        (*generator).writeTimestampAdd,
+		"TimestampSub":                        (*generator).writeTimestampSub,
+		"TimeAdd":                             (*generator).writeTimeAdd,
+		"TimeSub":                             (*generator).writeTimeSub,
 		"DatetimeAdd":                         (*generator).writeDatetimeAdd,
 		"DatetimeSub":                         (*generator).writeDatetimeSub,
 		"TableSample":                         (*generator).writeTableSample,
@@ -8132,6 +8146,9 @@ func isUTF8Charset(e *Expression) bool {
 // other forms the reference writes as DATEDIFF of the two dates. The unit
 // is not an argument there, and a TsOrDs wrapper is parser scaffolding.
 func (g *generator) writeDateDiff(e *Expression) string {
+	if g.dialect == "sqlite" {
+		return g.sqliteDateDiff(e)
+	}
 	if g.dialect != "mysql" || e.Args["unit"] == nil {
 		return g.spell(e)
 	}
@@ -8141,6 +8158,91 @@ func (g *generator) writeDateDiff(e *Expression) string {
 		return g.fail(e.Class + " without both dates")
 	}
 	return "DATEDIFF(" + g.node(stripMySQLTsOrDsWrap(this)) + ", " + g.node(stripMySQLTsOrDsWrap(expression)) + ")"
+}
+
+// sqliteDateDiff writes SQLite's DATEDIFF, which the dialect has no function
+// for: the reference subtracts one JULIANDAY from the other -- a difference in
+// DAYS -- scales that by the unit, and casts the result to an integer
+// (SQLiteGenerator.datediff_sql).
+func (g *generator) sqliteDateDiff(e *Expression) string {
+	this, _ := e.Args["this"].(*Expression)
+	expression, _ := e.Args["expression"].(*Expression)
+	if this == nil || expression == nil {
+		return g.fail(e.Class + " without both dates")
+	}
+	unit := "DAY"
+	if u, _ := e.Args["unit"].(*Expression); u != nil && u.Name() != "" {
+		unit = strings.ToUpper(u.Name())
+	}
+	out := "(JULIANDAY(" + g.node(this) + ") - JULIANDAY(" + g.node(expression) + "))"
+	switch unit {
+	case "DAY":
+		// The difference is already in days.
+	case "MONTH":
+		out += " / 30.0"
+	case "YEAR":
+		out += " / 365.0"
+	case "HOUR":
+		out += " * 24.0"
+	case "MINUTE":
+		out += " * 1440.0"
+	case "SECOND":
+		out += " * 86400.0"
+	case "MILLISECOND":
+		out += " * 86400000.0"
+	case "MICROSECOND":
+		out += " * 86400000000.0"
+	case "NANOSECOND":
+		out += " * 8640000000000.0"
+	default:
+		return g.fail(e.Class + " for the unit " + unit)
+	}
+	return "CAST(" + out + " AS INTEGER)"
+}
+
+// writePartitionRange writes Doris's partition range: a partition named and
+// then bounded. ONE bound is `VALUES LESS THAN (x)`; more than one is written
+// as a list of pairs, `VALUES [(a), (b))` (DorisGenerator.partitionrange_sql).
+func (g *generator) writePartitionRange(e *Expression) string {
+	if g.dialect != "doris" {
+		return g.spell(e)
+	}
+	name := g.child(e, "this")
+	switch values := e.Args["expressions"].(type) {
+	case []any:
+		// Doris's bracket form keeps the members as lists OF lists --
+		// `VALUES [('a'), ('b'))` -- so each one is wrapped on its own.
+		parts := make([]string, 0, len(values))
+		for _, v := range values {
+			inner, _ := v.([]*Expression)
+			rendered := make([]string, 0, len(inner))
+			for _, x := range inner {
+				rendered = append(rendered, g.node(x))
+			}
+			parts = append(parts, "("+strings.Join(rendered, ", ")+")")
+		}
+		return "PARTITION " + name + " VALUES [" + strings.Join(parts, ", ") + ")"
+	case []*Expression:
+		if len(values) != 1 {
+			parts := make([]string, 0, len(values))
+			for _, v := range values {
+				parts = append(parts, "("+g.node(v)+")")
+			}
+			return "PARTITION " + name + " VALUES [" + strings.Join(parts, ", ") + ")"
+		}
+		return "PARTITION " + name + " VALUES LESS THAN (" + g.node(values[0]) + ")"
+	}
+	return g.spell(e)
+}
+
+// writeTrunc writes SQLite's TRUNC, which takes the value alone: a precision
+// is written nowhere, as the reference's own writer drops it
+// (SQLiteGenerator.trunc_sql).
+func (g *generator) writeTrunc(e *Expression) string {
+	if g.dialect != "sqlite" {
+		return g.spell(e)
+	}
+	return "TRUNC(" + g.child(e, "this") + ")"
 }
 
 // timeStrWithZone writes MySQL's TIME_STR_TO_TIME when a zone was given.
@@ -8754,6 +8856,25 @@ func (g *generator) nullTreatmentInsideCall(e, call *Expression, words string) s
 // Databricks writes none. A flag says what the call DOES, so where one cannot
 // be written the statement is refused rather than written without it.
 func (g *generator) writeRegexpFlagged(e *Expression) string {
+	// BigQuery names the arguments in the order they were written, with a
+	// POSITION and an OCCURRENCE -- which say WHICH match to take -- following
+	// the pattern where they were given (BigQueryGenerator.TRANSFORMS).
+	if g.dialect == "bigquery" && e.Class != "RegexpReplace" {
+		return g.bigqueryRegexpCall(e)
+	}
+	// Spark names the replacement and then the POSITION the search starts
+	// at, and drops any occurrence the tree carries
+	// (Spark2Generator.TRANSFORMS).
+	if (g.dialect == "spark" || g.dialect == "spark2") && e.Class == "RegexpReplace" {
+		args := []string{g.child(e, "this"), g.child(e, "expression")}
+		if replacement, _ := e.Args["replacement"].(*Expression); replacement != nil {
+			args = append(args, g.node(replacement))
+		}
+		if position, _ := e.Args["position"].(*Expression); position != nil {
+			args = append(args, g.node(position))
+		}
+		return "REGEXP_REPLACE(" + strings.Join(args, ", ") + ")"
+	}
 	key, named := g.tables.RegexpFlagArgs[e.Class]
 	if !named {
 		return g.spell(e)
@@ -8779,6 +8900,176 @@ func (g *generator) writeRegexpFlagged(e *Expression) string {
 		}
 	}
 	return g.regexpCallWithFlags(e, key)
+}
+
+// writeCurrentTime writes CURRENT_TIME and CURRENT_TIMESTAMP for SingleStore,
+// where the argument is a fractional-second precision -- and the words
+// UTC_TIME or UTC_TIMESTAMP where it is the word UTC. Any other argument is
+// one the dialect cannot read at all, which the reference says and then
+// writes nothing for (SingleStoreGenerator.currenttime_sql).
+//
+// Every other dialect spells these through the template the reference itself
+// produced.
+func (g *generator) writeCurrentTime(e *Expression) string {
+	if g.dialect != "singlestore" {
+		return g.spell(e)
+	}
+	name := "CURRENT_TIME"
+	if e.Class == "CurrentTimestamp" {
+		name = "CURRENT_TIMESTAMP"
+	}
+	arg, _ := e.Args["this"].(*Expression)
+	if arg == nil {
+		return name + "()"
+	}
+	if text, _ := arg.Args["this"].(string); isStringLiteral(arg) && strings.EqualFold(text, "utc") {
+		return "UTC_" + strings.TrimPrefix(name, "CURRENT_") + "()"
+	}
+	if isNumberLiteral(arg) {
+		return name + "(" + g.node(arg) + ")"
+	}
+	return g.fail(e.Class + " with a timezone, which this dialect does not read")
+}
+
+// writeStrToTime writes BigQuery's two spellings of a string-to-time
+// conversion. The ordinary one is PARSE_TIMESTAMP or PARSE_DATE, with the
+// format first -- spelled through the dialect's INVERSE_TIME_MAPPING -- and
+// the zone last where one was written. A SAFE one is a SAFE_CAST whose FORMAT
+// is spelled through INVERSE_FORMAT_MAPPING instead, a DIFFERENT table for the
+// same stored format, which is why this writer spells it rather than leaving
+// it to the step that runs before any writer is reached
+// (BigQueryGenerator._str_to_datetime_sql).
+func (g *generator) writeStrToTime(e *Expression) string {
+	// Hive reads a string as a date or a timestamp by CASTing it, where no
+	// format was written to parse it with (HiveGenerator._str_to_date_sql).
+	// A format the CAST subsumes is the same thing; one it does not is left
+	// to the template the reference itself produced.
+	if isHiveFamily(g.dialect) && e.Args["format"] == nil {
+		dtype := "DATE"
+		if e.Class == "StrToTime" {
+			dtype = "TIMESTAMP"
+		}
+		return "CAST(" + g.child(e, "this") + " AS " + dtype + ")"
+	}
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	dtype := "TIMESTAMP"
+	if e.Class == "StrToDate" {
+		dtype = "DATE"
+	}
+	format, _ := e.Args["format"].(*Expression)
+	mapping := g.tables.InverseTimeMapping
+	if e.Args["safe"] == true {
+		mapping = g.tables.InverseFormatMapping
+	}
+	spelled := ""
+	if format != nil {
+		spelled = g.node(format)
+		if raw, ok := format.Args["this"].(string); ok && isStringLiteral(format) {
+			spelled = g.node(New("Literal",
+				Arg{"this", formatTime(raw, mapping)}, Arg{"is_string", true}))
+		}
+	}
+	if e.Args["safe"] == true {
+		out := "SAFE_CAST(" + g.child(e, "this") + " AS " + dtype
+		if spelled != "" {
+			out += " FORMAT " + spelled
+		}
+		return out + ")"
+	}
+	args := make([]string, 0, 3)
+	if spelled != "" {
+		args = append(args, spelled)
+	}
+	args = append(args, g.child(e, "this"))
+	if zone, _ := e.Args["zone"].(*Expression); zone != nil {
+		args = append(args, g.node(zone))
+	}
+	return "PARSE_" + dtype + "(" + strings.Join(args, ", ") + ")"
+}
+
+// writeMakeInterval writes BigQuery's MAKE_INTERVAL, whose parts are named in
+// the class's own argument order -- year, month, week, day, hour, minute,
+// second -- and written only where they were given. The reference has no
+// transform for it and reaches its function fallback, which writes the name
+// and then each present argument in that order (Generator.function_fallback_sql).
+func (g *generator) writeMakeInterval(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	keys := []string{"year", "month", "week", "day", "hour", "minute", "second"}
+	args := make([]string, 0, len(keys))
+	for _, key := range keys {
+		if arg, _ := e.Args[key].(*Expression); arg != nil {
+			args = append(args, g.node(arg))
+		}
+	}
+	return "MAKE_INTERVAL(" + strings.Join(args, ", ") + ")"
+}
+
+// writeAIForecast writes BigQuery's AI.FORECAST. The `AI.` is not written
+// here: it is the db qualifier on the Table the call stands in, which the
+// table writer already puts back. What this adds is the TABLE keyword when
+// the value is a table and the named arguments in their own order
+// (Generator.aiforecast_sql).
+func (g *generator) writeAIForecast(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	args := make([]string, 0, 10)
+	if this, _ := e.Args["this"].(*Expression); this != nil {
+		rendered := g.node(this)
+		if this.Class == "Table" {
+			rendered = "TABLE " + rendered
+		}
+		args = append(args, rendered)
+	}
+	for _, key := range []string{
+		"data_col", "timestamp_col", "model", "id_cols", "horizon",
+		"forecast_end_timestamp", "confidence_level",
+		"output_historical_time_series", "context_window",
+	} {
+		if arg, _ := e.Args[key].(*Expression); arg != nil {
+			args = append(args, g.node(arg))
+		}
+	}
+	return "FORECAST(" + strings.Join(args, ", ") + ")"
+}
+
+// writeParseDatetime writes BigQuery's PARSE_DATETIME and PARSE_TIME, which
+// take the FORMAT first and the string second -- the reverse of the tree's
+// own argument order -- and drop any default year the parser recorded
+// (BigQueryGenerator.TRANSFORMS).
+func (g *generator) writeParseDatetime(e *Expression) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	name := "PARSE_DATETIME"
+	if e.Class == "ParseTime" {
+		name = "PARSE_TIME"
+	}
+	return name + "(" + g.child(e, "format") + ", " + g.child(e, "this") + ")"
+}
+
+// bigqueryRegexpCall writes BigQuery's REGEXP_EXTRACT and
+// REGEXP_EXTRACT_ALL. The extractor keeps its pattern and then, in order, the
+// position and the occurrence that were written; the ALL form takes only the
+// pattern (BigQueryGenerator.TRANSFORMS).
+func (g *generator) bigqueryRegexpCall(e *Expression) string {
+	name := "REGEXP_EXTRACT"
+	keys := []string{"this", "expression", "position", "occurrence"}
+	if e.Class == "RegexpExtractAll" {
+		name = "REGEXP_EXTRACT_ALL"
+		keys = []string{"this", "expression"}
+	}
+	args := make([]string, 0, len(keys))
+	for _, key := range keys {
+		if arg, _ := e.Args[key].(*Expression); arg != nil {
+			args = append(args, g.node(arg))
+		}
+	}
+	return name + "(" + strings.Join(args, ", ") + ")"
 }
 
 // regexpCallWithFlags writes the call with the flags as its last argument.
@@ -8901,6 +9192,42 @@ func (g *generator) writeDateAdd(e *Expression) string {
 
 func (g *generator) writeDateSub(e *Expression) string {
 	return g.writeDateArith(e, "Date", -1)
+}
+
+// writeTimestampAdd and its three siblings write BigQuery's TIMESTAMP_ADD /
+// TIMESTAMP_SUB / TIME_ADD / TIME_SUB, which name their own domain and put the
+// amount and its unit inside an INTERVAL beside the value
+// (BigQueryGenerator.TRANSFORMS, Dialect.date_add_interval_sql).
+//
+// Every other dialect spells these through the template the reference itself
+// produced, so the writer steps aside where it has nothing to add.
+func (g *generator) writeTimestampAdd(e *Expression) string {
+	return g.writeIntervalArith(e, "TIMESTAMP", "ADD")
+}
+
+func (g *generator) writeTimestampSub(e *Expression) string {
+	return g.writeIntervalArith(e, "TIMESTAMP", "SUB")
+}
+
+func (g *generator) writeTimeAdd(e *Expression) string {
+	return g.writeIntervalArith(e, "TIME", "ADD")
+}
+
+func (g *generator) writeTimeSub(e *Expression) string {
+	return g.writeIntervalArith(e, "TIME", "SUB")
+}
+
+func (g *generator) writeIntervalArith(e *Expression, domain, kind string) string {
+	if g.dialect != "bigquery" {
+		return g.spell(e)
+	}
+	this, _ := e.Args["this"].(*Expression)
+	amount, _ := e.Args["expression"].(*Expression)
+	unit, _ := e.Args["unit"].(*Expression)
+	if this == nil || amount == nil {
+		return g.fail(e.Class + " with a missing operand")
+	}
+	return g.dateArithBigQuery(domain+"_"+kind, this, amount, unit)
 }
 
 func (g *generator) writeDatetimeAdd(e *Expression) string {
@@ -9717,8 +10044,12 @@ func (g *generator) writeInitcap(e *Expression) string {
 		}
 		return "REGEXP_REPLACE(" + g.child(e, "this") + ", '(\\w)(\\w*)', x -> UPPER(x[1]) || LOWER(x[2]))"
 	}
-	if custom && g.dialect != "" {
-		return g.fail("INITCAP does not support custom delimiters")
+	// A custom delimiter is written only where the dialect supports one --
+	// BigQuery, Snowflake and the neutral dialect. Everywhere else the
+	// reference warns and DROPS it, writing the call without it
+	// (Generator.initcap_sql, Dialect.INITCAP_SUPPORTS_CUSTOM_DELIMITERS).
+	if custom && g.dialect != "" && g.dialect != "bigquery" && g.dialect != "snowflake" {
+		custom = false
 	}
 	out := "INITCAP(" + g.child(e, "this")
 	if custom {
