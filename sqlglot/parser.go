@@ -285,15 +285,18 @@ func (p *parser) parseStatement() (*Expression, error) {
 	if p.tables.IfIsAStatement && p.atWords("IF") {
 		return p.parseIfStatement()
 	}
-	// A bare IF not immediately followed by "(" is not a function call either
-	// -- in a dialect without a real IF statement, the reference cannot parse
-	// it (NO_PAREN_IF_COMMANDS in _parse_if, gated to the very first token of
-	// the statement) and falls back to a Command. IF(...) is untouched: it is
-	// the ordinary function, parsed generically below.
-	if !p.tables.IfIsAStatement && p.atWords("IF") {
+	// A bare IF not immediately followed by "(" is not a function call. Where
+	// the dialect writes one back as a Command it is left unread here
+	// (NO_PAREN_IF_COMMANDS in _parse_if, gated to the very first token of the
+	// statement); otherwise it is `IF cond THEN a ELSE b END`. IF(...) is
+	// untouched: it is the ordinary function, parsed generically below.
+	if p.atWords("IF") {
 		if next := p.next(); next == nil || next.Type != TokL_PAREN {
-			start := *p.curr()
-			return p.parseAsCommand(start), nil
+			if p.tables.NoParenIfCommands {
+				start := *p.curr()
+				return p.parseAsCommand(start), nil
+			}
+			return p.parseBareIf()
 		}
 	}
 	if p.at(TokSELECT) || p.at(TokPIVOT) || p.at(TokUNPIVOT) || p.at(TokFROM) ||
@@ -304,6 +307,31 @@ func (p *parser) parseStatement() (*Expression, error) {
 		return p.parseDAXFilterQuery()
 	}
 	return p.parseStatementBody()
+}
+
+// parseBareIf reads `IF <cond> THEN <a> [ELSE <b>] END`, the no-parenthesis IF
+// a dialect with NO_PAREN_IF_COMMANDS False reads (Parser._parse_if).
+func (p *parser) parseBareIf() (*Expression, error) {
+	p.advance() // IF
+	condition, err := p.parseDisjunction()
+	if err != nil {
+		return nil, err
+	}
+	p.match(TokTHEN)
+	trueE, err := p.parseDisjunction()
+	if err != nil {
+		return nil, err
+	}
+	var falseE *Expression
+	if p.match(TokELSE) {
+		falseE, err = p.parseDisjunction()
+		if err != nil {
+			return nil, err
+		}
+	}
+	p.match(TokEND)
+	return New("If", Arg{"this", condition}, Arg{"true", trueE},
+		Arg{"false", falseE}), nil
 }
 
 // startsAValuesClause reports whether VALUES here introduces rows.

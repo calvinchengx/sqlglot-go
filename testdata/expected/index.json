@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 10838,
+ "count": 10855,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -17623,6 +17623,11 @@
    "sql": "CHARINDEX(needle, haystack)"
   },
   {
+   "key": "38502f3c7e5eadc8",
+   "dialect": "tableau",
+   "sql": "FIND(haystack, needle)"
+  },
+  {
    "key": "a687493247f0604c",
    "dialect": "materialize",
    "sql": "POSITION(needle IN haystack)"
@@ -17753,6 +17758,11 @@
    "sql": "IIF(INSTR(SUBSTRING(haystack, position), needle) = 0, 0, INSTR(SUBSTRING(haystack, position), needle) + position - 1)"
   },
   {
+   "key": "85d52ed6b61946a1",
+   "dialect": "tableau",
+   "sql": "IF FIND(SUBSTRING(haystack, position), needle) = 0 THEN 0 ELSE FIND(SUBSTRING(haystack, position), needle) + position - 1 END"
+  },
+  {
    "key": "9eff4457606dc0eb",
    "dialect": "trino",
    "sql": "IF(STRPOS(SUBSTR(haystack, position), needle) = 0, 0, STRPOS(SUBSTR(haystack, position), needle) + position - 1)"
@@ -17766,6 +17776,11 @@
    "key": "a5f6edd9a0009306",
    "dialect": "presto",
    "sql": "IF(STRPOS(SUBSTR(haystack, position), needle, occurrence) = 0, 0, STRPOS(SUBSTR(haystack, position), needle, occurrence) + position - 1)"
+  },
+  {
+   "key": "756e916f0f3124fd",
+   "dialect": "tableau",
+   "sql": "IF FINDNTH(SUBSTRING(haystack, position), needle, occurrence) = 0 THEN 0 ELSE FINDNTH(SUBSTRING(haystack, position), needle, occurrence) + position - 1 END"
   },
   {
    "key": "0b4df3d8faca9a6e",
@@ -17873,6 +17888,11 @@
    "sql": "IF(x > 1, 1, 0)"
   },
   {
+   "key": "5bae0c92199996fc",
+   "dialect": "tableau",
+   "sql": "IF x > 1 THEN 1 ELSE 0 END"
+  },
+  {
    "key": "2e45ad3cc01828d2",
    "dialect": "duckdb",
    "sql": "CASE WHEN 1 THEN x ELSE 0 END"
@@ -17890,6 +17910,11 @@
   {
    "key": "cdedb05cde4cbb39",
    "dialect": "spark",
+   "sql": "CASE WHEN 1 THEN x ELSE 0 END"
+  },
+  {
+   "key": "f29bfb6d8cecf644",
+   "dialect": "tableau",
    "sql": "CASE WHEN 1 THEN x ELSE 0 END"
   },
   {
@@ -31443,6 +31468,11 @@
    "sql": "CAST(x AS DOUBLE)"
   },
   {
+   "key": "c341ec5be321fa8f",
+   "dialect": "tableau",
+   "sql": "CAST(x AS DOUBLE)"
+  },
+  {
    "key": "5afae62d3bdf2091",
    "dialect": "databricks",
    "sql": "TO_NUMBER(x, fmt)"
@@ -35258,6 +35288,11 @@
    "sql": "INSTR(haystack, needle, 1, occurrence)"
   },
   {
+   "key": "4618d6b7b967ff89",
+   "dialect": "tableau",
+   "sql": "FINDNTH(haystack, needle, occurrence)"
+  },
+  {
    "key": "356af89c4ffa964f",
    "dialect": "trino",
    "sql": "STRPOS(haystack, needle, occurrence)"
@@ -37306,6 +37341,11 @@
    "key": "4a46b005f489abdc",
    "dialect": "starrocks",
    "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY CASE WHEN c IS NULL THEN 1 ELSE 0 END DESC, c DESC) AS _row_number FROM x) AS _t WHERE _row_number = 1"
+  },
+  {
+   "key": "f08b6c8cbb385baa",
+   "dialect": "tableau",
+   "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
   },
   {
    "key": "b84d189b7be811fa",
@@ -46063,9 +46103,29 @@
    "sql": "arr[1]"
   },
   {
+   "key": "9966dcb4bf82226d",
+   "dialect": "tableau",
+   "sql": "[x]"
+  },
+  {
    "key": "2fed5fa10128b6d8",
    "dialect": "hive",
    "sql": "`x`"
+  },
+  {
+   "key": "14707f8fb0dc4ad8",
+   "dialect": "tableau",
+   "sql": "\"x\""
+  },
+  {
+   "key": "f2384fbec4ae2ce0",
+   "dialect": "tableau",
+   "sql": "'x'"
+  },
+  {
+   "key": "5335a01a2c3339ba",
+   "dialect": "tableau",
+   "sql": "IF x = 'a' THEN y ELSE NULL END"
   },
   {
    "key": "1d5de2da3bf19811",
@@ -46078,6 +46138,11 @@
    "sql": "IF(x = 'a', y, NULL)"
   },
   {
+   "key": "f5aabfbfa78d056e",
+   "dialect": "tableau",
+   "sql": "IFNULL(a, 0)"
+  },
+  {
    "key": "60d077b761dcc55a",
    "dialect": "presto",
    "sql": "COALESCE(a, 0)"
@@ -46088,6 +46153,11 @@
    "sql": "COALESCE(a, 0)"
   },
   {
+   "key": "7b975ff745026d13",
+   "dialect": "tableau",
+   "sql": "COUNTD(a)"
+  },
+  {
    "key": "ad348cf8107ca711",
    "dialect": "presto",
    "sql": "COUNT(DISTINCT a)"
@@ -46096,6 +46166,11 @@
    "key": "2dda0a1a75c3f113",
    "dialect": "hive",
    "sql": "COUNT(DISTINCT a)"
+  },
+  {
+   "key": "3992d7ce86b3a6a4",
+   "dialect": "tableau",
+   "sql": "COUNTD((a))"
   },
   {
    "key": "df47e32527f079c3",
@@ -46111,6 +46186,11 @@
    "key": "6cc0aff74a315a1c",
    "dialect": "hive",
    "sql": "COUNT(DISTINCT (a))"
+  },
+  {
+   "key": "704fcf33b143230f",
+   "dialect": "tableau",
+   "sql": "COUNT(a)"
   },
   {
    "key": "9b69614e8820ceb7",
@@ -46190,6 +46270,11 @@
   {
    "key": "a742c04638d41a24",
    "dialect": "starrocks",
+   "sql": "CREATE TABLE a"
+  },
+  {
+   "key": "794136e3fa78810a",
+   "dialect": "tableau",
    "sql": "CREATE TABLE a"
   },
   {
