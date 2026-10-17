@@ -108,8 +108,12 @@ func (p *parser) parseIntervalBody() (*Expression, error) {
 		}
 	}
 
-	// `HOUR TO SECOND` is one unit spanning two, not two units.
-	if c := p.curr(); c != nil && c.Type == TokVAR && strings.EqualFold(c.Text, "TO") {
+	// `HOUR TO SECOND` is one unit spanning two, not two units -- where the
+	// dialect reads spans at all. ClickHouse does not, so `INTERVAL 1 WEEK TO
+	// VOLUME 'aaa'` keeps its TO for the TTL action to read
+	// (Parser.INTERVAL_SPANS, ClickHouseParser.INTERVAL_SPANS).
+	if c := p.curr(); c != nil && c.Type == TokVAR && strings.EqualFold(c.Text, "TO") &&
+		p.dialect != "clickhouse" {
 		p.advance()
 		end := p.curr()
 		if end == nil {

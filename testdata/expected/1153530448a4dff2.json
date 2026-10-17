@@ -1,0 +1,946 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "SELECT toDate((number * 10) * 86400) AS d1, toDate(number * 86400) AS d2, 'original' AS source FROM numbers(10) WHERE (number % 3) = 1 ORDER BY d2 WITH FILL, d1 WITH FILL STEP 5",
+ "sql": "SELECT toDate((number * 10) * 86400) AS d1, toDate(number * 86400) AS d2, 'original' AS source FROM numbers(10) WHERE (number % 3) = 1 ORDER BY d2 WITH FILL, d1 WITH FILL STEP 5",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "toDate"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 15,
+   "t": "DECIMAL",
+   "x": "number"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 24,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 30,
+   "t": "NUMBER",
+   "x": "86400"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 37,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "d1"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 42,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "toDate"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 51,
+   "t": "DECIMAL",
+   "x": "number"
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 58,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 60,
+   "t": "NUMBER",
+   "x": "86400"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 65,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 67,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 70,
+   "t": "VAR",
+   "x": "d2"
+  },
+  {
+   "c": 73,
+   "e": 72,
+   "l": 1,
+   "s": 72,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 74,
+   "t": "STRING",
+   "x": "original"
+  },
+  {
+   "c": 87,
+   "e": 86,
+   "l": 1,
+   "s": 85,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 88,
+   "t": "VAR",
+   "x": "source"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 95,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 100,
+   "t": "VAR",
+   "x": "numbers"
+  },
+  {
+   "c": 108,
+   "e": 107,
+   "l": 1,
+   "s": 107,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 110,
+   "e": 109,
+   "l": 1,
+   "s": 108,
+   "t": "NUMBER",
+   "x": "10"
+  },
+  {
+   "c": 111,
+   "e": 110,
+   "l": 1,
+   "s": 110,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 117,
+   "e": 116,
+   "l": 1,
+   "s": 112,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 119,
+   "e": 118,
+   "l": 1,
+   "s": 118,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 119,
+   "t": "DECIMAL",
+   "x": "number"
+  },
+  {
+   "c": 127,
+   "e": 126,
+   "l": 1,
+   "s": 126,
+   "t": "MOD",
+   "x": "%"
+  },
+  {
+   "c": 129,
+   "e": 128,
+   "l": 1,
+   "s": 128,
+   "t": "NUMBER",
+   "x": "3"
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 129,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 132,
+   "e": 131,
+   "l": 1,
+   "s": 131,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 134,
+   "e": 133,
+   "l": 1,
+   "s": 133,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 143,
+   "e": 142,
+   "l": 1,
+   "s": 135,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 146,
+   "e": 145,
+   "l": 1,
+   "s": 144,
+   "t": "VAR",
+   "x": "d2"
+  },
+  {
+   "c": 151,
+   "e": 150,
+   "l": 1,
+   "s": 147,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 156,
+   "e": 155,
+   "l": 1,
+   "s": 152,
+   "t": "VAR",
+   "x": "FILL"
+  },
+  {
+   "c": 157,
+   "e": 156,
+   "l": 1,
+   "s": 156,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 160,
+   "e": 159,
+   "l": 1,
+   "s": 158,
+   "t": "VAR",
+   "x": "d1"
+  },
+  {
+   "c": 165,
+   "e": 164,
+   "l": 1,
+   "s": 161,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 170,
+   "e": 169,
+   "l": 1,
+   "s": 166,
+   "t": "VAR",
+   "x": "FILL"
+  },
+  {
+   "c": 175,
+   "e": 174,
+   "l": 1,
+   "s": 171,
+   "t": "VAR",
+   "x": "STEP"
+  },
+  {
+   "c": 177,
+   "e": 176,
+   "l": 1,
+   "s": 176,
+   "t": "NUMBER",
+   "x": "5"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "toDate"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Mul",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 4,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Mul",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "start": 15
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "number"
+  },
+  {
+   "i": 8,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "expression",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "expression",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "86400"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "d1"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 20,
+   "k": "this",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "toDate"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Mul",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 23,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "number"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 23,
+   "k": "expression",
+   "m": {
+    "col": 65,
+    "end": 64,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "86400"
+  },
+  {
+   "i": 28,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 20,
+   "k": "alias",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 70
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "d2"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 34,
+   "k": "this",
+   "m": {
+    "col": 84,
+    "end": 83,
+    "line": 1,
+    "start": 74
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "original"
+  },
+  {
+   "i": 35,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "alias",
+   "m": {
+    "col": 94,
+    "end": 93,
+    "line": 1,
+    "start": 88
+   }
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "source"
+  },
+  {
+   "i": 38,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 41,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 42,
+   "k": "this",
+   "m": {
+    "col": 107,
+    "end": 106,
+    "line": 1,
+    "start": 100
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "numbers"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 43,
+   "k": "expressions",
+   "m": {
+    "col": 110,
+    "end": 109,
+    "line": 1,
+    "start": 108
+   }
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "10"
+  },
+  {
+   "i": 45,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 0,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 48,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 49,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Mod",
+   "i": 50,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 51,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 52,
+   "k": "this",
+   "m": {
+    "col": 125,
+    "end": 124,
+    "line": 1,
+    "start": 119
+   }
+  },
+  {
+   "i": 53,
+   "k": "this",
+   "v": "number"
+  },
+  {
+   "i": 53,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 51,
+   "k": "expression",
+   "m": {
+    "col": 129,
+    "end": 128,
+    "line": 1,
+    "start": 128
+   }
+  },
+  {
+   "i": 56,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 56,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 49,
+   "k": "expression",
+   "m": {
+    "col": 134,
+    "end": 133,
+    "line": 1,
+    "start": 133
+   }
+  },
+  {
+   "i": 59,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 59,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 0,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 62,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 63,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 64,
+   "k": "this",
+   "m": {
+    "col": 146,
+    "end": 145,
+    "line": 1,
+    "start": 144
+   }
+  },
+  {
+   "i": 65,
+   "k": "this",
+   "v": "d2"
+  },
+  {
+   "i": 65,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 63,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.WithFill",
+   "i": 63,
+   "k": "with_fill"
+  },
+  {
+   "i": 69,
+   "k": "from_",
+   "v": false
+  },
+  {
+   "i": 69,
+   "k": "to",
+   "v": false
+  },
+  {
+   "i": 69,
+   "k": "step",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 62,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 73,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 74,
+   "k": "this",
+   "m": {
+    "col": 160,
+    "end": 159,
+    "line": 1,
+    "start": 158
+   }
+  },
+  {
+   "i": 75,
+   "k": "this",
+   "v": "d1"
+  },
+  {
+   "i": 75,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 73,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.WithFill",
+   "i": 73,
+   "k": "with_fill"
+  },
+  {
+   "i": 79,
+   "k": "from_",
+   "v": false
+  },
+  {
+   "i": 79,
+   "k": "to",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 79,
+   "k": "step",
+   "m": {
+    "col": 177,
+    "end": 176,
+    "line": 1,
+    "start": 176
+   }
+  },
+  {
+   "i": 82,
+   "k": "this",
+   "v": "5"
+  },
+  {
+   "i": 82,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

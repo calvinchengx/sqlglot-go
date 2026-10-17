@@ -103,6 +103,30 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 
 // EXTRACT(MONTH FROM d): the unit is a bare word, recorded as a Var.
 func (p *parser) parseExtract() (*Expression, error) {
+	// ClickHouse reads `extract(haystack, pattern)` as an ANONYMOUS call
+	// rather than EXTRACT(unit FROM x) (ClickHouseParser._parse_extract).
+	if p.dialect == "clickhouse" {
+		start := p.index
+		p.advance() // EXTRACT
+		p.advance() // (
+		first, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokFROM) {
+			p.match(TokCOMMA)
+			second, err := p.parseBitwise()
+			if err != nil {
+				return nil, err
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed extract")
+			}
+			return New("Anonymous", Arg{"this", "extract"},
+				Arg{"expressions", []*Expression{first, second}}), nil
+		}
+		p.index = start
+	}
 	p.advance()
 	p.advance()
 	unit := p.curr()
@@ -295,6 +319,16 @@ func (p *parser) parsePosition() (*Expression, error) {
 			return nil, err
 		}
 		node = New("StrPosition", Arg{"this", haystack}, Arg{"substr", argAt(args, 0)})
+	} else if p.dialect == "clickhouse" {
+		// ClickHouse writes the HAYSTACK first -- `POSITION(haystack, needle)`
+		// -- which is the one dialect that reads the comma form the way it
+		// is written (ClickHouseParser._parse_position, haystack_first=True).
+		node = New("StrPosition",
+			Arg{"this", argAt(args, 0)},
+			Arg{"substr", argAt(args, 1)})
+		if start := argAt(args, 2); start != nil {
+			node.Set("position", start)
+		}
 	} else {
 		node = New("StrPosition",
 			Arg{"this", argAt(args, 1)},

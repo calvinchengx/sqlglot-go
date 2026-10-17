@@ -1373,6 +1373,10 @@ func TestJoinUsing(t *testing.T) {
 		// all in the SQL itself.
 		{"SELECT * FROM a JOIN b JOIN c USING (id) USING (id)",
 			"SELECT * FROM a JOIN b JOIN c USING (id) USING (id)"},
+		// A USING with no columns at all names none, and the join is written
+		// as the comma join it is (Parser._parse_using_identifiers, optional).
+		{"SELECT 1 FROM a JOIN b USING", "SELECT 1 FROM a, b"},
+		{"SELECT 1 FROM a JOIN b USING ()", "SELECT 1 FROM a, b"},
 	} {
 		e, err := ParseOne(tc.sql, "")
 		if err != nil {
@@ -1387,9 +1391,7 @@ func TestJoinUsing(t *testing.T) {
 		}
 	}
 	for _, sql := range []string{
-		"SELECT 1 FROM a JOIN b USING",
 		"SELECT 1 FROM a JOIN b USING (x",
-		"SELECT 1 FROM a JOIN b USING ()",
 	} {
 		if _, err := ParseOne(sql, ""); err == nil {
 			t.Errorf("ParseOne(%q) was read; it should be refused", sql)
@@ -3444,6 +3446,12 @@ func TestMerge(t *testing.T) {
 		{"a locking hint with no alias", "",
 			"MERGE INTO mytable WITH (HOLDLOCK) USING m AS S ON id = S.id WHEN MATCHED THEN DELETE",
 			"MERGE INTO mytable WITH (HOLDLOCK) USING m AS S ON id = S.id WHEN MATCHED THEN DELETE"},
+		// A written AS takes ANY token that is not reserved as the alias --
+		// here a NUMBER, which is written back quoted because the bare name
+		// would not read as one (Parser._parse_table_alias, Generator.identifier_sql).
+		{"an alias named by a digit", "",
+			"MERGE INTO t WITH (HOLDLOCK) AS 5 USING s ON a = b WHEN MATCHED THEN DELETE",
+			"MERGE INTO t WITH (HOLDLOCK) AS \"5\" USING s ON a = b WHEN MATCHED THEN DELETE"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, tc.dialect)
@@ -3464,7 +3472,6 @@ func TestMerge(t *testing.T) {
 	}
 	for _, sql := range []string{
 		"MERGE INTO t ON a = b WHEN MATCHED THEN DELETE",
-		"MERGE INTO t WITH (HOLDLOCK) AS 5 USING s ON a = b WHEN MATCHED THEN DELETE",
 		"MERGE INTO t USING s ON a = b",
 		"MERGE INTO t USING s ON a = b WHEN MATCHED THEN TRUNCATE",
 	} {
@@ -11218,11 +11225,10 @@ func TestMoreColumnConstraints(t *testing.T) {
 			t.Errorf("[%s] %s wrote %q (%v)", c.dialect, c.sql, got, err)
 		}
 	}
-	// The words have to be all three, and an ENUM takes strings.
+	// The words have to be all three.
 	for _, c := range []struct{ sql, dialect string }{
 		{"CREATE TABLE t (a INT UNIQUE NULLS DISTINCT)", "postgres"},
 		{"CREATE TABLE t (a INT NOT FOR)", "tsql"},
-		{"CREATE TABLE t (a ENUM(1, 2))", "duckdb"},
 	} {
 		if _, err := ParseOne(c.sql, c.dialect); err == nil {
 			t.Errorf("[%s] %s was read; it should be refused", c.dialect, c.sql)

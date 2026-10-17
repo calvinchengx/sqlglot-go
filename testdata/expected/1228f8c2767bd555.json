@@ -1,0 +1,181 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "jaroWinklerSimilarity(UPPER('hello'), UPPER('world'))",
+ "sql": "jaroWinklerSimilarity(UPPER('hello'), UPPER('world'))",
+ "tokens": [
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "jaroWinklerSimilarity"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 22,
+   "t": "VAR",
+   "x": "UPPER"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 28,
+   "t": "STRING",
+   "x": "hello"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 38,
+   "t": "VAR",
+   "x": "UPPER"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 44,
+   "t": "STRING",
+   "x": "world"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 51,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.math.JarowinklerSimilarity",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "name": "jaroWinklerSimilarity",
+    "start": 0
+   }
+  },
+  {
+   "c": "sqlglot.expressions.string.Upper",
+   "i": 0,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "name": "UPPER",
+    "start": 22
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 28
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "hello"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.string.Upper",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "name": "UPPER",
+    "start": 38
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 5,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 50,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "world"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

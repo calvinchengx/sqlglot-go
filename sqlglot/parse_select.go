@@ -245,68 +245,20 @@ func (p *parser) parseWith() (*Expression, error) {
 				}
 			}
 		}
-		// A CTE is named the way a table is, so a STRING there is a QUOTED
-		// name rather than a literal.
-		alias, err := p.parseTablePart()
-		if err != nil {
-			return nil, err
-		}
-		var cteColumns []*Expression
-		if p.at(TokL_PAREN) && p.next() != nil && p.next().Type != TokSELECT {
-			cols, err := p.parseAliasColumns()
+		cte := p.parseBaseCTE()
+		if cte == nil && p.dialect == "clickhouse" {
+			// ClickHouse also reads a SCALAR CTE: `WITH <expr> AS <name>`
+			// (ClickHouseParser._parse_cte).
+			scalar, err := p.parseScalarCTE()
 			if err != nil {
 				return nil, err
 			}
-			cteColumns = cols
+			cte = scalar
 		}
-		// DuckDB names a RECURSIVE CTE's dedup key before the query: `tbl(a,
-		// b) USING KEY (a) AS (...)`. Ordinary columns still come from the
-		// alias's own list; this is a second, narrower one.
-		var keyExpressions []*Expression
-		if p.atWords("USING", "KEY") {
-			p.advance()
-			p.advance()
-			keys, err := p.parseWrappedCSV(p.parseIdentifier)
-			if err != nil {
-				return nil, err
-			}
-			keyExpressions = keys
-		}
-		// The AS is not always written: `WITH x (SELECT 1)` names the query
-		// straight after the alias, and the reference reads it and writes the
-		// word back in.
-		if !p.match(TokALIAS) && !p.at(TokL_PAREN) {
-			return nil, p.unsupported("CTE without AS")
-		}
-		// PostgreSQL hints whether the CTE is inlined or its own optimisation
-		// fence: `NOT MATERIALIZED` forces inlining, `MATERIALIZED` forces the
-		// fence, and neither leaves the choice to the planner -- the three
-		// states the reference stores as false, true and absent.
-		var materialized any
-		if p.atWords("NOT", "MATERIALIZED") {
-			p.advance()
-			p.advance()
-			materialized = false
-		} else if p.atWords("MATERIALIZED") {
-			p.advance()
-			materialized = true
-		}
-		if !p.match(TokL_PAREN) {
+		if cte == nil {
 			return nil, p.unsupported("CTE without a parenthesised query")
 		}
-		inner, err := p.parseQuery()
-		if err != nil {
-			return nil, err
-		}
-		if !p.match(TokR_PAREN) {
-			return nil, p.unsupported("unclosed CTE")
-		}
-		ctes = append(ctes, New("CTE",
-			Arg{"this", inner},
-			Arg{"alias", New("TableAlias", Arg{"this", alias}, Arg{"columns", cteColumns})},
-			Arg{"materialized", materialized},
-			Arg{"key_expressions", keyExpressions},
-		))
+		ctes = append(ctes, cte)
 		if !p.match(TokCOMMA) && (len(udfs) == 0 || !p.match(TokWITH)) {
 			break
 		}
@@ -415,8 +367,11 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 		}
 		p.advance()
 
-		// UNION is distinct, UNION ALL is not; the reference records which.
-		distinct := true
+		// DISTINCT or ALL says which; where neither is written the dialect's
+		// own default does. The base is distinct; ClickHouse makes EXCEPT
+		// and INTERSECT ALL unless told otherwise (Parser.parse_set_operation,
+		// Dialect.SET_OP_DISTINCT_BY_DEFAULT).
+		distinct, _ := setOpDefaultDistinct(p.dialect, class)
 		switch {
 		case p.match(TokALL):
 			distinct = false
@@ -1182,6 +1137,14 @@ func (p *parser) parseGroup() (*Expression, error) {
 		if len(plain) > 0 {
 			group.Set("expressions", plain)
 		}
+		// `GROUP BY x WITH TOTALS` asks for a total row: a flag on the Group,
+		// not a grouping construct (Parser._parse_group).
+		if p.at(TokWITH) && p.next() != nil && strings.EqualFold(p.next().Text, "TOTALS") {
+			p.advance()
+			p.advance()
+			group.Set("totals", true)
+			continue
+		}
 		var target *[]*Expression
 		var class, key string
 		// `GROUP BY a, b WITH CUBE` writes the word WITH rather than putting
@@ -1400,6 +1363,12 @@ func (p *parser) atAliasName() bool {
 	if c.Type == TokVAR || c.Type == TokIDENTIFIER {
 		return true
 	}
+	// A keyword that is not a clause-starter may still name a projection:
+	// `SELECT col apply` is `col AS apply` (Parser.ALIAS_TOKENS, which holds
+	// every token an identifier may be).
+	if c.Type == TokAPPLY {
+		return true
+	}
 	// A keyword that is an OPERATOR can still name a projection where the
 	// operand it needs was never written: `SELECT a OVERLAPS` is
 	// `a AS OVERLAPS` (Parser.ALIAS_TOKENS, _parse_alias).
@@ -1457,6 +1426,43 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			return err
 		}
 		switch {
+		// PREWHERE filters before the rest of the read, and is written back
+		// where it stands -- before WHERE
+		// (Parser.QUERY_MODIFIER_PARSERS, ClickHouseParser).
+		case p.at(TokPREWHERE):
+			p.advance()
+			cond, err := p.parseDisjunction()
+			if err != nil {
+				return err
+			}
+			if err := p.setOnce(sel, "prewhere", New("PreWhere", Arg{"this", cond})); err != nil {
+				return err
+			}
+		// SETTINGS names the per-query settings on the Select itself
+		// (ClickHouseParser.QUERY_MODIFIER_PARSERS).
+		case p.at(TokSETTINGS):
+			p.advance()
+			var settings []*Expression
+			for {
+				a, err := p.parseAssignment()
+				if err != nil {
+					return err
+				}
+				settings = append(settings, a)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			sel.Set("settings", settings)
+		// FORMAT names how the answer is written out, as a plain identifier
+		// (ClickHouseParser.QUERY_MODIFIER_PARSERS).
+		case p.at(TokFORMAT):
+			p.advance()
+			id, err := p.parseIdentifier()
+			if err != nil {
+				return err
+			}
+			sel.Set("format", id)
 		case p.at(TokWHERE):
 			p.advance()
 			whereComments := p.takeComments()
@@ -1636,7 +1642,12 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 			if p.atWords("ROWS") || p.atWords("ROW") {
 				p.advance()
 			}
-			offset := New("Offset", Arg{"this", nil}, Arg{"expression", e}, Arg{"expressions", nil})
+			offsetBy, err := p.parseLimitBy()
+			if err != nil {
+				return err
+			}
+			offset := New("Offset", Arg{"this", nil}, Arg{"expression", e},
+				Arg{"expressions", offsetBy})
 			if err := p.setOnce(sel, "offset", offset); err != nil {
 				return err
 			}
@@ -1762,8 +1773,75 @@ func (p *parser) parseOrderedList() ([]*Expression, error) {
 			}
 			p.advance()
 		}
-		if c := p.curr(); c != nil && c.Type == TokWITH {
-			return nil, p.unsupported("WITH FILL")
+		// `ORDER BY x WITH FILL [FROM a] [TO b] [STEP c] [INTERPOLATE (...)]`
+		// fills the gaps in a series (Parser._parse_ordered).
+		var withFill *Expression
+		if p.at(TokWITH) && p.next() != nil && strings.EqualFold(p.next().Text, "FILL") {
+			p.advance()
+			p.advance()
+			// The three bounds are recorded even when the statement names
+			// none: absent is FALSE, not nothing, and the dump compares it
+			// (Parser._parse_ordered).
+			withFill = New("WithFill",
+				Arg{"from_", false}, Arg{"to", false}, Arg{"step", false})
+			if p.match(TokFROM) {
+				from, err := p.parseBitwise()
+				if err != nil {
+					return nil, err
+				}
+				withFill.Set("from_", from)
+			}
+			if p.atWords("TO") {
+				p.advance()
+				to, err := p.parseBitwise()
+				if err != nil {
+					return nil, err
+				}
+				withFill.Set("to", to)
+			}
+			if p.atWords("STEP") {
+				p.advance()
+				step, err := p.parseBitwise()
+				if err != nil {
+					return nil, err
+				}
+				withFill.Set("step", step)
+			}
+			if p.atWords("INTERPOLATE") {
+				p.advance()
+				if !p.match(TokL_PAREN) {
+					return nil, p.unsupported("INTERPOLATE without a parenthesised list")
+				}
+				var items []*Expression
+				for !p.at(TokR_PAREN) {
+					// `inter AS inter + 1` names the column FIRST and the
+					// expression it is filled with second: the Alias holds
+					// the expression, and the name is its `alias`
+					// (Parser._parse_name_as_expression).
+					name, err := p.parseIdentifier()
+					if err != nil {
+						return nil, err
+					}
+					item := name
+					if p.match(TokALIAS) {
+						value, err := p.parseDisjunction()
+						if err != nil {
+							return nil, err
+						}
+						// The reference builds this Alias with `alias=`
+						// first, so the dump order is alias-then-this.
+						item = New("Alias", Arg{"alias", name}, Arg{"this", value})
+					}
+					items = append(items, item)
+					if !p.match(TokCOMMA) {
+						break
+					}
+				}
+				if !p.match(TokR_PAREN) {
+					return nil, p.unsupported("INTERPOLATE without a closing parenthesis")
+				}
+				withFill.Set("interpolate", items)
+			}
 		}
 		o := New("Ordered", Arg{"this", e})
 		if hasDirection {
@@ -1773,7 +1851,7 @@ func (p *parser) parseOrderedList() ([]*Expression, error) {
 			nullsFirst = p.nullsFirst(hasDirection && desc)
 		}
 		o.Set("nulls_first", nullsFirst)
-		o.Set("with_fill", nil)
+		o.Set("with_fill", withFill)
 		ordered = append(ordered, o)
 		if !p.match(TokCOMMA) {
 			break
@@ -2468,18 +2546,53 @@ func (p *parser) parseQueryLimit(sel *Expression) error {
 			return p.unsupported("LIMIT offset without a count")
 		}
 	}
-	limit := New("Limit", Arg{"this", nil}, Arg{"expression", e},
-		Arg{"limit_options", options}, Arg{"expressions", nil})
+	limitBy, err := p.parseLimitBy()
+	if err != nil {
+		return err
+	}
+	limit := New("Limit", Arg{"this", nil}, Arg{"expression", e})
+	if offsetExpr != nil {
+		limit.Set("offset", offsetExpr)
+	}
+	limit.Set("limit_options", options)
+	limit.Set("expressions", limitBy)
 	if err := p.setOnce(sel, "limit", limit); err != nil {
 		return err
 	}
 	if offsetExpr != nil {
-		offset := New("Offset", Arg{"this", nil}, Arg{"expression", offsetExpr}, Arg{"expressions", nil})
+		// `LIMIT 1, 2 BY a, b` reads the first number as an OFFSET, and the
+		// reference moves it onto an Offset node of its own -- carrying the
+		// LIMIT BY columns with it, and leaving the Limit with neither
+		// (Parser._parse_query_modifiers).
+		limit.Set("offset", nil)
+		limit.Set("expressions", nil)
+		offset := New("Offset", Arg{"expression", offsetExpr}, Arg{"expressions", limitBy})
 		if err := p.setOnce(sel, "offset", offset); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// parseLimitBy reads ClickHouse's `BY <columns>` tail on a LIMIT or OFFSET,
+// which limits by a group rather than by rows (Parser._parse_limit_by).
+func (p *parser) parseLimitBy() ([]*Expression, error) {
+	if !p.atWords("BY") {
+		return nil, nil
+	}
+	p.advance()
+	var out []*Expression
+	for {
+		e, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, e)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	return out, nil
 }
 
 func (p *parser) parseLimitCount() (*Expression, error) {
@@ -2535,4 +2648,90 @@ func (p *parser) limitValueFollows() bool {
 		return false
 	}
 	return true
+}
+
+// parseBaseCTE reads `name [(cols)] AS (query)`. It consumes NOTHING and
+// returns (nil, nil) where that shape is not there, so a dialect with another
+// spelling can try its own (Parser._parse_cte, _try_parse).
+func (p *parser) parseBaseCTE() *Expression {
+	mark := p.index
+	alias, err := p.parseTablePart()
+	if err != nil || alias == nil {
+		p.index = mark
+		return nil
+	}
+	var cteColumns []*Expression
+	if p.at(TokL_PAREN) && p.next() != nil && p.next().Type != TokSELECT {
+		cols, cerr := p.parseAliasColumns()
+		if cerr != nil {
+			p.index = mark
+			return nil
+		}
+		cteColumns = cols
+	}
+	var keyExpressions []*Expression
+	if p.atWords("USING", "KEY") {
+		p.advance()
+		p.advance()
+		keys, kerr := p.parseWrappedCSV(p.parseIdentifier)
+		if kerr != nil {
+			p.index = mark
+			return nil
+		}
+		keyExpressions = keys
+	}
+	if !p.match(TokALIAS) && !p.at(TokL_PAREN) {
+		p.index = mark
+		return nil
+	}
+	var materialized any
+	if p.atWords("NOT", "MATERIALIZED") {
+		p.advance()
+		p.advance()
+		materialized = false
+	} else if p.atWords("MATERIALIZED") {
+		p.advance()
+		materialized = true
+	}
+	if !p.match(TokL_PAREN) {
+		p.index = mark
+		return nil
+	}
+	inner, err := p.parseQuery()
+	if err != nil {
+		p.index = mark
+		return nil
+	}
+	if !p.match(TokR_PAREN) {
+		p.index = mark
+		return nil
+	}
+	return New("CTE",
+		Arg{"this", inner},
+		Arg{"alias", New("TableAlias", Arg{"this", alias}, Arg{"columns", cteColumns})},
+		Arg{"materialized", materialized},
+		Arg{"key_expressions", keyExpressions},
+	)
+}
+
+// parseScalarCTE reads ClickHouse's `WITH <expr> AS <name>`, where the value
+// is an expression rather than a parenthesised query
+// (ClickHouseParser._parse_cte).
+func (p *parser) parseScalarCTE() (*Expression, error) {
+	this, err := p.parseAssignment()
+	if err != nil {
+		return nil, err
+	}
+	alias, err := p.parseTableAlias()
+	if err != nil {
+		return nil, err
+	}
+	if alias == nil {
+		return nil, p.unsupported("a scalar CTE without a name")
+	}
+	node := New("CTE", Arg{"this", this}, Arg{"alias", alias})
+	// A scalar CTE is written `expr AS name` rather than `name AS (query)`
+	// (ClickHouseGenerator.cte_sql).
+	node.Set("scalar", true)
+	return node, nil
 }

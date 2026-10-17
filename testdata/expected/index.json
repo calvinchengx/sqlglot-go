@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 10300,
+ "count": 10838,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -5818,6 +5818,11 @@
    "sql": "SELECT purchases, LAST_VALUE(item) OVER item_window AS most_popular FROM Produce WINDOW item_window AS (PARTITION BY purchases ORDER BY purchases ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING)"
   },
   {
+   "key": "7f9bfd97abb8ff26",
+   "dialect": "clickhouse",
+   "sql": "SELECT purchases, LAST_VALUE(item) OVER item_window AS most_popular FROM Produce WINDOW item_window AS (PARTITION BY purchases ORDER BY purchases NULLS FIRST ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING)"
+  },
+  {
    "key": "1f44179f35ac9845",
    "dialect": "databricks",
    "sql": "SELECT purchases, LAST_VALUE(item) OVER item_window AS most_popular FROM Produce WINDOW item_window AS (PARTITION BY purchases ORDER BY purchases ROWS BETWEEN 2 PRECEDING AND 2 FOLLOWING)"
@@ -6238,6 +6243,11 @@
    "sql": "SELECT LAST_DAY(CAST('2008-11-25' AS DATE))"
   },
   {
+   "key": "cea1313a12e8bf58",
+   "dialect": "clickhouse",
+   "sql": "SELECT LAST_DAY(CAST('2008-11-25' AS Nullable(DATE)))"
+  },
+  {
    "key": "837fbabd6c4b5ed5",
    "dialect": "mysql",
    "sql": "SELECT LAST_DAY(CAST('2008-11-25' AS DATE))"
@@ -6341,6 +6351,11 @@
    "key": "46e6639c0a15dc54",
    "dialect": "bigquery",
    "sql": "SELECT COUNTIF(x)"
+  },
+  {
+   "key": "da4a7a07d4b98291",
+   "dialect": "clickhouse",
+   "sql": "SELECT countIf(x)"
   },
   {
    "key": "49b2bcb6eea4bd29",
@@ -6658,6 +6673,11 @@
    "sql": "TO_HEX(x)"
   },
   {
+   "key": "fc8253bb0f55d43a",
+   "dialect": "clickhouse",
+   "sql": "LOWER(HEX(x))"
+  },
+  {
    "key": "3d803c4c8df845af",
    "dialect": "duckdb",
    "sql": "LOWER(HEX(x))"
@@ -6696,6 +6716,11 @@
    "key": "48daee70fb2fc2d1",
    "dialect": "bigquery",
    "sql": "UPPER(TO_HEX(x))"
+  },
+  {
+   "key": "6d317c355a76f0da",
+   "dialect": "clickhouse",
+   "sql": "HEX(x)"
   },
   {
    "key": "3752610c9f3cf280",
@@ -6738,6 +6763,11 @@
    "sql": "MD5(x)"
   },
   {
+   "key": "c966278325e5f12c",
+   "dialect": "clickhouse",
+   "sql": "MD5(x)"
+  },
+  {
    "key": "594f2255f6ec82e3",
    "dialect": "presto",
    "sql": "MD5(x)"
@@ -6773,6 +6803,11 @@
    "sql": "SELECT MD5(some_string)"
   },
   {
+   "key": "543a7dacc2fd65bf",
+   "dialect": "clickhouse",
+   "sql": "SELECT LOWER(HEX(MD5(some_string)))"
+  },
+  {
    "key": "4747ae55fdcbc92c",
    "dialect": "presto",
    "sql": "SELECT LOWER(TO_HEX(MD5(some_string)))"
@@ -6785,6 +6820,11 @@
   {
    "key": "838c924b3b4ea3b5",
    "dialect": "bigquery",
+   "sql": "SHA1(x)"
+  },
+  {
+   "key": "102da4f6c5fbab76",
+   "dialect": "clickhouse",
    "sql": "SHA1(x)"
   },
   {
@@ -6805,6 +6845,11 @@
   {
    "key": "7609d3919d46dab4",
    "dialect": "bigquery",
+   "sql": "SHA256(x)"
+  },
+  {
+   "key": "6c5fa7fafae6d25c",
+   "dialect": "clickhouse",
    "sql": "SHA256(x)"
   },
   {
@@ -6845,6 +6890,11 @@
   {
    "key": "fa45689c978adeb0",
    "dialect": "bigquery",
+   "sql": "SHA512(x)"
+  },
+  {
+   "key": "a5fa5af1ab3cf854",
+   "dialect": "clickhouse",
    "sql": "SHA512(x)"
   },
   {
@@ -10838,9 +10888,654 @@
    "sql": "WITH t AS (SELECT '{\"x-y\": \"z\"}' AS c) SELECT JSON_EXTRACT(c, '$.x-y') FROM t"
   },
   {
+   "key": "8af69d8506571f02",
+   "dialect": "clickhouse",
+   "sql": "cast(notEmpty(report_task_id)?report_task_id:'-1' AS text)"
+  },
+  {
+   "key": "a07210f97fa67d86",
+   "dialect": "clickhouse",
+   "sql": "SELECT $$a\\$b$$"
+  },
+  {
+   "key": "484af500dd256d13",
+   "dialect": "clickhouse",
+   "sql": "SELECT 1 SETTINGS log_comment = 'performance'"
+  },
+  {
+   "key": "a37531bfde88c3d4",
+   "dialect": "clickhouse",
+   "sql": "SELECT DISTINCT ON (\"id\") * FROM t"
+  },
+  {
+   "key": "b0799c41e10e3028",
+   "dialect": "clickhouse",
+   "sql": "SELECT 1 OR (1 = 2)"
+  },
+  {
+   "key": "16552e464cb22734",
+   "dialect": "clickhouse",
+   "sql": "SELECT 1 AND (1 = 2)"
+  },
+  {
+   "key": "14046c758171229d",
+   "dialect": "clickhouse",
+   "sql": "SELECT json.a.:Int64"
+  },
+  {
+   "key": "afa4029d8496881c",
+   "dialect": "clickhouse",
+   "sql": "SELECT json.a.:JSON.b.:Int64"
+  },
+  {
+   "key": "208c64e91ae76074",
+   "dialect": "clickhouse",
+   "sql": "SELECT json.a.b.:\"Array(JSON)\".c"
+  },
+  {
+   "key": "f886b43b0ecc8016",
+   "dialect": "clickhouse",
+   "sql": "SELECT json.a.b.:\"Array(Array(JSON))\".c"
+  },
+  {
+   "key": "0c9015791a1d283a",
+   "dialect": "clickhouse",
+   "sql": "SELECT json.a.b[].c"
+  },
+  {
+   "key": "4385b6bb3d735906",
+   "dialect": "clickhouse",
+   "sql": "SELECT json.a.b[][]"
+  },
+  {
+   "key": "c0ea14196ffc88bc",
+   "dialect": "clickhouse",
+   "sql": "WITH arrayJoin([(1, [2, 3])]) AS arr SELECT arr"
+  },
+  {
+   "key": "33ee52252b4e5dcc",
+   "dialect": "clickhouse",
+   "sql": "CAST(1 AS Bool)"
+  },
+  {
+   "key": "695fa19cba182056",
+   "dialect": "clickhouse",
+   "sql": "SELECT toString(CHAR(104.1, 101, 108.9, 108.9, 111, 32))"
+  },
+  {
+   "key": "953d3cafbb1a7309",
+   "dialect": "clickhouse",
+   "sql": "SELECT toFloat(like)"
+  },
+  {
+   "key": "754abaeb6c78173f",
+   "dialect": "clickhouse",
+   "sql": "SELECT like"
+  },
+  {
+   "key": "df3ade449600675d",
+   "dialect": "clickhouse",
+   "sql": "SELECT STR_TO_DATE(str, fmt, tz)"
+  },
+  {
+   "key": "9c06ea3f5e173dfb",
+   "dialect": "clickhouse",
+   "sql": "SELECT STR_TO_DATE('05 12 2000', '%d %m %Y')"
+  },
+  {
+   "key": "7246811efbe17588",
+   "dialect": "clickhouse",
+   "sql": "SELECT EXTRACT(YEAR FROM toDateTime('2023-02-01'))"
+  },
+  {
+   "key": "a97a19a221f795ed",
+   "dialect": "clickhouse",
+   "sql": "extract(haystack, pattern)"
+  },
+  {
+   "key": "95e99341de23ba28",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM x LIMIT 1 UNION ALL SELECT * FROM y"
+  },
+  {
+   "key": "0220bdc57a0f431a",
+   "dialect": "clickhouse",
+   "sql": "SELECT CAST(x AS Tuple(String, Array(Nullable(Float64))))"
+  },
+  {
+   "key": "c9ae1811bc93d90c",
+   "dialect": "clickhouse",
+   "sql": "countIf(x, y)"
+  },
+  {
+   "key": "8fee320036972bae",
+   "dialect": "clickhouse",
+   "sql": "x = y"
+  },
+  {
+   "key": "d743bb440e03f9b1",
+   "dialect": "clickhouse",
+   "sql": "x <> y"
+  },
+  {
+   "key": "c2b47c78a16e7cad",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM (SELECT a FROM b SAMPLE 0.01)"
+  },
+  {
+   "key": "b41227f9ea1a7f8f",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM (SELECT a FROM b SAMPLE 1 / 10 OFFSET 1 / 2)"
+  },
+  {
+   "key": "54e9c7fbc5aa1ed2",
+   "dialect": "clickhouse",
+   "sql": "SELECT sum(foo * bar) FROM bla SAMPLE 10000000"
+  },
+  {
+   "key": "2f5eb42fd3179b06",
+   "dialect": "clickhouse",
+   "sql": "CAST(x AS Nested(ID UInt32, Serial UInt32, EventTime DateTime))"
+  },
+  {
+   "key": "de6a4f85f9df0e70",
+   "dialect": "clickhouse",
+   "sql": "CAST(x AS Enum('hello' = 1, 'world' = 2))"
+  },
+  {
+   "key": "d484b6e941c6c87b",
+   "dialect": "clickhouse",
+   "sql": "CAST(x AS Enum('hello', 'world'))"
+  },
+  {
+   "key": "973275219fbb4c7e",
+   "dialect": "clickhouse",
+   "sql": "CAST(x AS Enum('hello' = 1, 'world'))"
+  },
+  {
+   "key": "235dbb7f59e982bb",
+   "dialect": "clickhouse",
+   "sql": "CAST(x AS Enum8('hello' = -123, 'world'))"
+  },
+  {
+   "key": "e8727af077c518c0",
+   "dialect": "clickhouse",
+   "sql": "CAST(x AS FixedString(1))"
+  },
+  {
+   "key": "914b57fea39821c3",
+   "dialect": "clickhouse",
+   "sql": "CAST(x AS LowCardinality(FixedString))"
+  },
+  {
+   "key": "c79cf25a39929693",
+   "dialect": "clickhouse",
+   "sql": "SELECT isNaN(1.0)"
+  },
+  {
+   "key": "6144439264104505",
+   "dialect": "clickhouse",
+   "sql": "SELECT startsWith('Spider-Man', 'Spi')"
+  },
+  {
+   "key": "9115010a02d53c8c",
+   "dialect": "clickhouse",
+   "sql": "SELECT xor(TRUE, FALSE)"
+  },
+  {
+   "key": "423bc73fd42d2020",
+   "dialect": "clickhouse",
+   "sql": "CAST(['hello'], 'Array(Enum8(''hello'' = 1))')"
+  },
+  {
+   "key": "c781363a170fed50",
+   "dialect": "clickhouse",
+   "sql": "SELECT x, COUNT() FROM y GROUP BY x WITH TOTALS"
+  },
+  {
+   "key": "e396bdbf57f10d17",
+   "dialect": "clickhouse",
+   "sql": "SELECT INTERVAL t.days DAY"
+  },
+  {
+   "key": "77692cef507b523c",
+   "dialect": "clickhouse",
+   "sql": "SELECT match('abc', '([a-z]+)')"
+  },
+  {
+   "key": "a9e865486da00912",
+   "dialect": "clickhouse",
+   "sql": "dictGet(x, 'y')"
+  },
+  {
+   "key": "4c21c55056455792",
+   "dialect": "clickhouse",
+   "sql": "WITH final AS (SELECT 1) SELECT * FROM final"
+  },
+  {
+   "key": "200c8f16c44eda4e",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM x FINAL"
+  },
+  {
+   "key": "6fd6330d20ec157c",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM x AS y FINAL"
+  },
+  {
+   "key": "7d7820e84354870d",
+   "dialect": "clickhouse",
+   "sql": "SELECT event_id FROM \"analytics\".\"events_view\"(final = 1)"
+  },
+  {
+   "key": "ac1ffbbcd6e96632",
+   "dialect": "clickhouse",
+   "sql": "SELECT event_id FROM \"analytics\".\"uniqExactIf\"(final = 1)"
+  },
+  {
+   "key": "beeead82a963f5e2",
+   "dialect": "clickhouse",
+   "sql": "SELECT event_id FROM \"analytics\".\"sum\"(final = 1)"
+  },
+  {
+   "key": "ec50a709e375182c",
+   "dialect": "clickhouse",
+   "sql": "'a' IN mapKeys(map('a', 1, 'b', 2))"
+  },
+  {
+   "key": "d07e1a1b3e7879b5",
+   "dialect": "clickhouse",
+   "sql": "CAST((1, 2) AS Tuple(a Int8, b Int16))"
+  },
+  {
+   "key": "03171331d2c8f3d3",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo LEFT ANY JOIN bla"
+  },
+  {
+   "key": "96a11ed5fd421449",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo LEFT ASOF JOIN bla"
+  },
+  {
+   "key": "4e1b5df00f8bbbb0",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo ASOF JOIN bla"
+  },
+  {
+   "key": "00ce09a955d6bc8d",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo ANY JOIN bla"
+  },
+  {
+   "key": "40983e3a0121b514",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo GLOBAL ANY JOIN bla"
+  },
+  {
+   "key": "5bf6465aa52348e6",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo GLOBAL LEFT ANY JOIN bla"
+  },
+  {
+   "key": "7f6f486772be7d31",
+   "dialect": "clickhouse",
+   "sql": "SELECT quantile(0.5)(a)"
+  },
+  {
+   "key": "15496643f334dc69",
+   "dialect": "clickhouse",
+   "sql": "SELECT quantiles(0.5)(a) AS x FROM t"
+  },
+  {
+   "key": "de9e70ade125977b",
+   "dialect": "clickhouse",
+   "sql": "SELECT quantilesIf(0.5)(a, a > 1) AS x FROM t"
+  },
+  {
+   "key": "418285c2f840f290",
+   "dialect": "clickhouse",
+   "sql": "SELECT quantileState(0.5)(a) AS x FROM t"
+  },
+  {
+   "key": "2b706f41a17d576d",
+   "dialect": "clickhouse",
+   "sql": "SELECT deltaSumMerge(a) AS x FROM t"
+  },
+  {
+   "key": "c943b51c78dd2a2a",
+   "dialect": "clickhouse",
+   "sql": "SELECT quantiles(0.1, 0.2, 0.3)(a)"
+  },
+  {
+   "key": "a97465bf2bdb36c2",
+   "dialect": "clickhouse",
+   "sql": "SELECT quantileTiming(0.5)(RANGE(100))"
+  },
+  {
+   "key": "127849d08f4bb4fc",
+   "dialect": "clickhouse",
+   "sql": "SELECT histogram(5)(a)"
+  },
+  {
+   "key": "0cd0146686be3936",
+   "dialect": "clickhouse",
+   "sql": "SELECT groupUniqArray(2)(a)"
+  },
+  {
+   "key": "16deb2c50f4229e5",
+   "dialect": "clickhouse",
+   "sql": "SELECT exponentialTimeDecayedAvg(60)(a, b)"
+  },
+  {
+   "key": "0fe2a60fc14384e8",
+   "dialect": "clickhouse",
+   "sql": "levenshteinDistance(col1, col2)"
+  },
+  {
+   "key": "ee0161d8332a8fa7",
+   "dialect": "clickhouse",
+   "sql": "jaroWinklerSimilarity('hello', 'world')"
+  },
+  {
+   "key": "c64ac6a011347b69",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo WHERE x GLOBAL IN (SELECT * FROM bar)"
+  },
+  {
+   "key": "bbda92869e5d7e21",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo WHERE x GLOBAL NOT IN (SELECT * FROM bar)"
+  },
+  {
+   "key": "5110a1e158c15d10",
+   "dialect": "clickhouse",
+   "sql": "POSITION(haystack, needle)"
+  },
+  {
+   "key": "9b5e32e0b647bba9",
+   "dialect": "clickhouse",
+   "sql": "POSITION(haystack, needle, position)"
+  },
+  {
+   "key": "397364bda2177012",
+   "dialect": "clickhouse",
+   "sql": "CAST(x AS DATETIME)"
+  },
+  {
+   "key": "85ba97efba49b578",
+   "dialect": "clickhouse",
+   "sql": "CAST(x AS TIMESTAMPTZ)"
+  },
+  {
+   "key": "e442b1107f33cd10",
+   "dialect": "clickhouse",
+   "sql": "CAST(x as MEDIUMINT)"
+  },
+  {
+   "key": "f7cb4db034a53348",
+   "dialect": "clickhouse",
+   "sql": "CAST(x AS DECIMAL(38, 2))"
+  },
+  {
+   "key": "5c0c9e583a6f24e2",
+   "dialect": "clickhouse",
+   "sql": "SELECT arrayJoin([1, 2, 3] AS src) AS dst, 'Hello', src"
+  },
+  {
+   "key": "5bd86401dbbc212d",
+   "dialect": "clickhouse",
+   "sql": "SELECT JSONExtractString('{\"x\": {\"y\": 1}}', 'x', 'y')"
+  },
+  {
+   "key": "fa668dda38882e55",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM table LIMIT 1 BY a, b"
+  },
+  {
+   "key": "dcf7cadc26c880e4",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM table LIMIT 2 OFFSET 1 BY a, b"
+  },
+  {
+   "key": "88a9b1381a937782",
+   "dialect": "clickhouse",
+   "sql": "TRUNCATE TABLE t1 ON CLUSTER test_cluster"
+  },
+  {
+   "key": "b4e345e99dce71d8",
+   "dialect": "clickhouse",
+   "sql": "TRUNCATE TABLE t1 ON CLUSTER '{cluster}'"
+  },
+  {
+   "key": "ff4f360020309aef",
+   "dialect": "clickhouse",
+   "sql": "TRUNCATE DATABASE db"
+  },
+  {
+   "key": "500e0934316a6c8a",
+   "dialect": "clickhouse",
+   "sql": "TRUNCATE DATABASE db ON CLUSTER test_cluster"
+  },
+  {
+   "key": "b850a822744aefce",
+   "dialect": "clickhouse",
+   "sql": "TRUNCATE DATABASE db ON CLUSTER '{cluster}'"
+  },
+  {
+   "key": "8dd3c781df7f4fb4",
+   "dialect": "clickhouse",
+   "sql": "trunc(3.14159, 2)"
+  },
+  {
    "key": "9ee51854d6823fbf",
    "dialect": "postgres",
    "sql": "TRUNC(3.14159, 2)"
+  },
+  {
+   "key": "0ed4cd7d9d096b12",
+   "dialect": "clickhouse",
+   "sql": "EXCHANGE TABLES x.a AND y.b"
+  },
+  {
+   "key": "fa029015fe4b5fe4",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE test (id UInt8) ENGINE=Null()"
+  },
+  {
+   "key": "f4905d0d0c7c999b",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo ORDER BY bar OFFSET 0 ROWS FETCH NEXT 10 ROWS WITH TIES"
+  },
+  {
+   "key": "7884fa92cf442fa5",
+   "dialect": "clickhouse",
+   "sql": "SELECT DATE_BIN(toDateTime('2023-01-01 14:45:00'), INTERVAL '1' MINUTE, toDateTime('2023-01-01 14:35:30'), 'UTC')"
+  },
+  {
+   "key": "1c9365f94f980e67",
+   "dialect": "clickhouse",
+   "sql": "SELECT CAST(1730098800 AS DateTime64) AS DATETIME, 'test' AS interp ORDER BY DATETIME WITH FILL FROM toDateTime64(1730098800, 3) - INTERVAL '7' HOUR TO toDateTime64(1730185140, 3) - INTERVAL '7' HOUR STEP toIntervalSecond(900) INTERPOLATE (interp)"
+  },
+  {
+   "key": "878e5db473873978",
+   "dialect": "clickhouse",
+   "sql": "SELECT number, COUNT() OVER (PARTITION BY number % 3) AS partition_count FROM numbers(10) WINDOW window_name AS (PARTITION BY number) QUALIFY partition_count = 4 ORDER BY number"
+  },
+  {
+   "key": "af218d678fe897a8",
+   "dialect": "clickhouse",
+   "sql": "SELECT id, quantileGK(100, 0.95)(reading) OVER (PARTITION BY id ORDER BY id RANGE BETWEEN 30000 PRECEDING AND CURRENT ROW) AS window FROM table"
+  },
+  {
+   "key": "bd945c4285856c51",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM table LIMIT 1 BY CONCAT(datalayerVariantNo, datalayerProductId, warehouse)"
+  },
+  {
+   "key": "87678db95babb4f9",
+   "dialect": "clickhouse",
+   "sql": "SELECT JSONExtractString('{\"a\": \"hello\", \"b\": [-100, 200.0, 300]}', 'a')"
+  },
+  {
+   "key": "301827ceddf72669",
+   "dialect": "clickhouse",
+   "sql": "ATTACH DATABASE DEFAULT ENGINE = ORDINARY"
+  },
+  {
+   "key": "d40876894d4d3389",
+   "dialect": "clickhouse",
+   "sql": "SELECT n, source FROM (SELECT toFloat32(number % 10) AS n, 'original' AS source FROM numbers(10) WHERE number % 3 = 1) ORDER BY n WITH FILL"
+  },
+  {
+   "key": "c3c0ca720b17e5e7",
+   "dialect": "clickhouse",
+   "sql": "SELECT n, source FROM (SELECT toFloat32(number % 10) AS n, 'original' AS source FROM numbers(10) WHERE number % 3 = 1) ORDER BY n WITH FILL FROM 0 TO 5.51 STEP 0.5"
+  },
+  {
+   "key": "1153530448a4dff2",
+   "dialect": "clickhouse",
+   "sql": "SELECT toDate((number * 10) * 86400) AS d1, toDate(number * 86400) AS d2, 'original' AS source FROM numbers(10) WHERE (number % 3) = 1 ORDER BY d2 WITH FILL, d1 WITH FILL STEP 5"
+  },
+  {
+   "key": "5f3a6072367629fd",
+   "dialect": "clickhouse",
+   "sql": "SELECT n, source, inter FROM (SELECT toFloat32(number % 10) AS n, 'original' AS source, number AS inter FROM numbers(10) WHERE number % 3 = 1) ORDER BY n WITH FILL FROM 0 TO 5.51 STEP 0.5 INTERPOLATE (inter AS inter + 1)"
+  },
+  {
+   "key": "094d3c702fd0ec9d",
+   "dialect": "clickhouse",
+   "sql": "SELECT SUM(1) AS impressions, arrayJoin(cities) AS city, arrayJoin(browsers) AS browser FROM (SELECT ['Istanbul', 'Berlin', 'Bobruisk'] AS cities, ['Firefox', 'Chrome', 'Chrome'] AS browsers) GROUP BY 2, 3"
+  },
+  {
+   "key": "0529fce4f809aeb8",
+   "dialect": "clickhouse",
+   "sql": "SELECT sum(1) AS impressions, (arrayJoin(arrayZip(cities, browsers)) AS t).1 AS city, t.2 AS browser FROM (SELECT ['Istanbul', 'Berlin', 'Bobruisk'] AS cities, ['Firefox', 'Chrome', 'Chrome'] AS browsers) GROUP BY 2, 3"
+  },
+  {
+   "key": "e62b8fe2d7eedef9",
+   "dialect": "clickhouse",
+   "sql": "SELECT CAST(tuple(1 AS \"a\", 2 AS \"b\", 3.0 AS \"c\").2 AS Nullable(String))"
+  },
+  {
+   "key": "8be1a233260e2132",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE test (id UInt8) ENGINE=AggregatingMergeTree() ORDER BY tuple()"
+  },
+  {
+   "key": "098f5009fd218469",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE test UUID '28f1c61c-2970-457a-bffe-454156ddcfef' (n UInt64) ENGINE=MergeTree"
+  },
+  {
+   "key": "a3d5e3a3b21ac5db",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE test ON CLUSTER default (id UInt8) ENGINE=AggregatingMergeTree() ORDER BY tuple()"
+  },
+  {
+   "key": "20231a7eaae6d62a",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE test ON CLUSTER '{cluster}' (id UInt8) ENGINE=AggregatingMergeTree() ORDER BY tuple()"
+  },
+  {
+   "key": "96c91c66f5134e1c",
+   "dialect": "clickhouse",
+   "sql": "CREATE MATERIALIZED VIEW test_view ON CLUSTER cl1 (id UInt8) ENGINE=AggregatingMergeTree() ORDER BY tuple() AS SELECT * FROM test_data"
+  },
+  {
+   "key": "03e39d4e6654cc2e",
+   "dialect": "clickhouse",
+   "sql": "CREATE MATERIALIZED VIEW test_view ON CLUSTER '{cluster}' (id UInt8) ENGINE=AggregatingMergeTree() ORDER BY tuple() AS SELECT * FROM test_data"
+  },
+  {
+   "key": "3748e03e8a54ff0c",
+   "dialect": "clickhouse",
+   "sql": "CREATE MATERIALIZED VIEW test_view ON CLUSTER cl1 TO table1 AS SELECT * FROM test_data"
+  },
+  {
+   "key": "a9c145237684768a",
+   "dialect": "clickhouse",
+   "sql": "CREATE MATERIALIZED VIEW test_view ON CLUSTER '{cluster}' TO table1 AS SELECT * FROM test_data"
+  },
+  {
+   "key": "5b4ca5dac831b41b",
+   "dialect": "clickhouse",
+   "sql": "CREATE MATERIALIZED VIEW test_view TO db.table1 (id UInt8) AS SELECT * FROM test_data"
+  },
+  {
+   "key": "d0a220d4946067e9",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t (foo String CODEC(LZ4HC(9), ZSTD, DELTA), size String ALIAS formatReadableSize(size_bytes), INDEX idx1 a TYPE bloom_filter(0.001) GRANULARITY 1, INDEX idx2 a TYPE set(100) GRANULARITY 2, INDEX idx3 a TYPE minmax GRANULARITY 3)"
+  },
+  {
+   "key": "9273c315f5a45d37",
+   "dialect": "clickhouse",
+   "sql": "SELECT generate_series FROM generate_series(0, 10) AS g(x)"
+  },
+  {
+   "key": "2f0c804b08082ef7",
+   "dialect": "clickhouse",
+   "sql": "SELECT t.c FROM (SELECT arrayJoin([1,2,3,4,5]) AS c) AS t WHERE (t.c + 0) NOT IN (1,2)"
+  },
+  {
+   "key": "8fef63d9f0626f93",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM t1, t2"
+  },
+  {
+   "key": "19752bffdb46c6b4",
+   "dialect": "clickhouse",
+   "sql": "SELECT and(1, 2)"
+  },
+  {
+   "key": "ae97bb35bbdd52ed",
+   "dialect": "clickhouse",
+   "sql": "SELECT or(1, 2)"
+  },
+  {
+   "key": "f10457a8493f225d",
+   "dialect": "clickhouse",
+   "sql": "SELECT generate_series FROM generate_series(0, 10) AS g"
+  },
+  {
+   "key": "e4a8f1e5b1c93d07",
+   "dialect": "clickhouse",
+   "sql": "INSERT INTO tab VALUES ({'key1': 1, 'key2': 10}), ({'key1': 2, 'key2': 20}), ({'key1': 3, 'key2': 30})"
+  },
+  {
+   "key": "4ecae714efb1e0d9",
+   "dialect": "clickhouse",
+   "sql": "SELECT (toUInt8('1') + toUInt8('2')) IS NOT NULL"
+  },
+  {
+   "key": "388f27eaaa041413",
+   "dialect": "clickhouse",
+   "sql": "SELECT $1$foo$1$"
+  },
+  {
+   "key": "2736f04013d33428",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM table LIMIT 1, 2 BY a, b"
+  },
+  {
+   "key": "e829beec9ab19723",
+   "dialect": "clickhouse",
+   "sql": "SELECT SUM(1) AS impressions FROM (SELECT ['Istanbul', 'Berlin', 'Bobruisk'] AS cities) WHERE arrayJoin(cities) IN ['Istanbul', 'Berlin']"
+  },
+  {
+   "key": "5c4fb7d36fc1c2fa",
+   "dialect": "clickhouse",
+   "sql": "SELECT SUBSTRING_INDEX(str, delim, count)"
+  },
+  {
+   "key": "1a41a39f558523bd",
+   "dialect": "clickhouse",
+   "sql": "SELECT SUBSTRING_INDEX('a.b.c.d', '.', 2)"
+  },
+  {
+   "key": "05276018ce4ee070",
+   "dialect": "clickhouse",
+   "sql": "SELECT SUBSTRING_INDEX('a.b.c.d', '.', -2)"
   },
   {
    "key": "0f6847c4bf40831e",
@@ -10858,14 +11553,54 @@
    "sql": "SELECT SUBSTRING_INDEX('a.b.c.d', '.', 2)"
   },
   {
+   "key": "d6d7c1c444a926df",
+   "dialect": "clickhouse",
+   "sql": "SELECT substringIndex('a.b.c.d', '.', 2)"
+  },
+  {
+   "key": "800c3c3b77386716",
+   "dialect": "clickhouse",
+   "sql": "SELECT CAST(STR_TO_DATE(SUBSTRING(a.eta, 1, 10), '%Y-%m-%d') AS Nullable(DATE))"
+  },
+  {
+   "key": "6537871c78eac8ed",
+   "dialect": "clickhouse",
+   "sql": "CHAR(67) || CHAR(65) || CHAR(84)"
+  },
+  {
+   "key": "6f84c799dff1a3c1",
+   "dialect": "clickhouse",
+   "sql": "SELECT lag(salary, 1, 0) OVER (ORDER BY hire_date) AS prev_sal FROM employees"
+  },
+  {
    "key": "ae23e8bab1d4011b",
    "dialect": "duckdb",
    "sql": "SELECT LAG(salary, 1, 0) OVER (ORDER BY hire_date) AS prev_sal FROM employees"
   },
   {
+   "key": "8518076dfa66ce8d",
+   "dialect": "clickhouse",
+   "sql": "SELECT lead(salary, 1, 0) OVER (ORDER BY hire_date) AS prev_sal FROM employees"
+  },
+  {
    "key": "563519797c44bf24",
    "dialect": "duckdb",
    "sql": "SELECT LEAD(salary, 1, 0) OVER (ORDER BY hire_date) AS prev_sal FROM employees"
+  },
+  {
+   "key": "5a7599aaba30887e",
+   "dialect": "clickhouse",
+   "sql": "SELECT lagInFrame(salary, 1, 0) OVER (ORDER BY hire_date) AS prev_sal FROM employees"
+  },
+  {
+   "key": "4d9e5b510e4d5862",
+   "dialect": "clickhouse",
+   "sql": "SELECT leadInFrame(salary, 1, 0) OVER (ORDER BY hire_date) AS prev_sal FROM employees"
+  },
+  {
+   "key": "73c6cd4a68b92c17",
+   "dialect": "clickhouse",
+   "sql": "SELECT CAST(STR_TO_DATE('05 12 2000', '%d %m %Y') AS Nullable(DATE))"
   },
   {
    "key": "9b1f6fff2e43672d",
@@ -10878,9 +11613,24 @@
    "sql": "SELECT CAST(CAST(TO_DATE('05 12 2000', 'DD MM YYYY') AS TIMESTAMP) AS DATE)"
   },
   {
+   "key": "3007587fcd3aab93",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM x PREWHERE y = 1 WHERE z = 2"
+  },
+  {
+   "key": "610fef844ad8665e",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM x AS prewhere"
+  },
+  {
    "key": "416b5e06658a7dff",
    "dialect": "duckdb",
    "sql": "SELECT * FROM x prewhere"
+  },
+  {
+   "key": "fa2c8210b51f27eb",
+   "dialect": "clickhouse",
+   "sql": "SELECT a, b FROM (SELECT * FROM x) AS t(a, b)"
   },
   {
    "key": "179ec7080a70493d",
@@ -10888,14 +11638,34 @@
    "sql": "SELECT a, b FROM (SELECT * FROM x) AS t(a, b)"
   },
   {
+   "key": "7b5e6b6cc9d1ab8a",
+   "dialect": "clickhouse",
+   "sql": "SELECT arrayJoin([1,2,3])"
+  },
+  {
+   "key": "3dcf23e3c7890db0",
+   "dialect": "clickhouse",
+   "sql": "SELECT arrayJoin([1, 2, 3])"
+  },
+  {
    "key": "be2260002312d610",
    "dialect": "postgres",
    "sql": "SELECT UNNEST(ARRAY[1, 2, 3])"
   },
   {
+   "key": "ec97f92c1ffdf858",
+   "dialect": "clickhouse",
+   "sql": "has([1], x)"
+  },
+  {
    "key": "a2414c71c4789a67",
    "dialect": "postgres",
    "sql": "x = any(array[1])"
+  },
+  {
+   "key": "c72ff742f25c3893",
+   "dialect": "clickhouse",
+   "sql": "NOT has([1], x)"
   },
   {
    "key": "5e6fd8e0c865a6b1",
@@ -10911,6 +11681,11 @@
    "key": "c845389903524a27",
    "dialect": "spark",
    "sql": "ARRAY_CONTAINS(ARRAY(1), x)"
+  },
+  {
+   "key": "494a3b8d017a7c2d",
+   "dialect": "clickhouse",
+   "sql": "SELECT CAST('2020-01-01' AS Nullable(DateTime)) + INTERVAL '500' MICROSECOND"
   },
   {
    "key": "b2f1b34e6e9397b3",
@@ -10933,9 +11708,19 @@
    "sql": "SELECT CAST('2020-01-01' AS TIMESTAMP) + INTERVAL '500 MICROSECOND'"
   },
   {
+   "key": "14ca2d6f629ccfda",
+   "dialect": "clickhouse",
+   "sql": "SELECT CURRENT_DATE()"
+  },
+  {
    "key": "d505782aec7648b7",
    "dialect": "postgres",
    "sql": "SELECT CURRENT_DATE"
+  },
+  {
+   "key": "64731d0a45625ad6",
+   "dialect": "clickhouse",
+   "sql": "SELECT CURRENT_TIMESTAMP()"
   },
   {
    "key": "579f039c15b52aff",
@@ -10943,9 +11728,19 @@
    "sql": "SELECT CURRENT_TIMESTAMP"
   },
   {
+   "key": "2af1765c7f6e5af6",
+   "dialect": "clickhouse",
+   "sql": "SELECT match('ThOmAs', CONCAT('(?i)', 'thomas'))"
+  },
+  {
    "key": "5093445dd5d43a7d",
    "dialect": "postgres",
    "sql": "SELECT 'ThOmAs' ~* 'thomas'"
+  },
+  {
+   "key": "718af60d9a346e10",
+   "dialect": "clickhouse",
+   "sql": "SELECT match('ThOmAs', CONCAT('(?i)', x)) FROM t"
   },
   {
    "key": "0bfeffe112afce0d",
@@ -10953,9 +11748,24 @@
    "sql": "SELECT 'ThOmAs' ~* x FROM t"
   },
   {
+   "key": "f8f8c716174178d9",
+   "dialect": "clickhouse",
+   "sql": "SELECT '\\0'"
+  },
+  {
    "key": "20d905301543920c",
    "dialect": "mysql",
    "sql": "SELECT '\u0000'"
+  },
+  {
+   "key": "6728909bc9f50ccd",
+   "dialect": "clickhouse",
+   "sql": "DATE_ADD(DAY, 1, x)"
+  },
+  {
+   "key": "c4b7214ca3580576",
+   "dialect": "clickhouse",
+   "sql": "dateAdd(DAY, 1, x)"
   },
   {
    "key": "edd057cd12c0d6e1",
@@ -10963,9 +11773,24 @@
    "sql": "DATE_ADD('DAY', 1, x)"
   },
   {
+   "key": "56e9c6440abc3a66",
+   "dialect": "clickhouse",
+   "sql": "DATE_DIFF(DAY, a, b)"
+  },
+  {
+   "key": "104543138de292ae",
+   "dialect": "clickhouse",
+   "sql": "dateDiff(DAY, a, b)"
+  },
+  {
    "key": "53c63e16f1249748",
    "dialect": "presto",
    "sql": "DATE_DIFF('DAY', a, b)"
+  },
+  {
+   "key": "14e19c8e261ad5ca",
+   "dialect": "clickhouse",
+   "sql": "SELECT xor(1, 0)"
   },
   {
    "key": "400b338bdb66c245",
@@ -10973,9 +11798,24 @@
    "sql": "SELECT 1 XOR 0"
   },
   {
+   "key": "de0f6af108b4118c",
+   "dialect": "clickhouse",
+   "sql": "SELECT xor(0, 1, xor(1, 0, 0))"
+  },
+  {
+   "key": "873c4ef64dbc7250",
+   "dialect": "clickhouse",
+   "sql": "SELECT xor(xor(0, 1), (xor(xor(1, 0), 0)))"
+  },
+  {
    "key": "cab92b35f66625c5",
    "dialect": "mysql",
    "sql": "SELECT 0 XOR 1 XOR (1 XOR 0 XOR 0)"
+  },
+  {
+   "key": "4f7fda4ab255a28d",
+   "dialect": "clickhouse",
+   "sql": "SELECT xor(xor(1, 0), 1)"
   },
   {
    "key": "68e97dd4a58c6e08",
@@ -10983,9 +11823,24 @@
    "sql": "SELECT 1 XOR 0 XOR 1"
   },
   {
+   "key": "3a703db4e04bf4fc",
+   "dialect": "clickhouse",
+   "sql": "SELECT xor((xor(1, 0)), 1)"
+  },
+  {
    "key": "7b72ddeed193986e",
    "dialect": "mysql",
    "sql": "SELECT (1 XOR 0) XOR 1"
+  },
+  {
+   "key": "0651b8ca2890805f",
+   "dialect": "clickhouse",
+   "sql": "SELECT xor(0, 1, 1, 0)"
+  },
+  {
+   "key": "8c4caa28810143f6",
+   "dialect": "clickhouse",
+   "sql": "CONCAT(a, b)"
   },
   {
    "key": "2ee33d1215883239",
@@ -10998,6 +11853,21 @@
    "sql": "a || b"
   },
   {
+   "key": "33aa0558fe3fe5c0",
+   "dialect": "clickhouse",
+   "sql": "'Enum8(\\'Sunday\\' = 0)'"
+  },
+  {
+   "key": "96c107932fb0eaf0",
+   "dialect": "clickhouse",
+   "sql": "'Enum8(''Sunday'' = 0)'"
+  },
+  {
+   "key": "dbb92157ed3af211",
+   "dialect": "clickhouse",
+   "sql": "SELECT uniq(x) FROM (SELECT any(y) AS x FROM (SELECT 1 AS y))"
+  },
+  {
    "key": "6f33e029dab246f4",
    "dialect": "bigquery",
    "sql": "SELECT APPROX_COUNT_DISTINCT(x) FROM (SELECT ANY_VALUE(y) x FROM (SELECT 1 y))"
@@ -11008,9 +11878,114 @@
    "sql": "SELECT APPROX_COUNT_DISTINCT(x) FROM (SELECT ANY_VALUE(y) AS x FROM (SELECT 1 AS y))"
   },
   {
+   "key": "74ff4ee5a9456e7d",
+   "dialect": "clickhouse",
+   "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC NULLS LAST, lname"
+  },
+  {
+   "key": "30ea139e578b5807",
+   "dialect": "clickhouse",
+   "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC, lname"
+  },
+  {
    "key": "2e6b9e74dc2e0503",
    "dialect": "spark",
    "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC NULLS LAST, lname NULLS LAST"
+  },
+  {
+   "key": "441070cafa6e06da",
+   "dialect": "clickhouse",
+   "sql": "CAST(1 AS NULLABLE(Int64))"
+  },
+  {
+   "key": "82da72def6217569",
+   "dialect": "clickhouse",
+   "sql": "CAST(1 AS Nullable(Int64))"
+  },
+  {
+   "key": "b573513eaf16effa",
+   "dialect": "clickhouse",
+   "sql": "CAST(1 AS Nullable(DateTime64(6, 'UTC')))"
+  },
+  {
+   "key": "88602a44c5fb7309",
+   "dialect": "clickhouse",
+   "sql": "SELECT x #! comment"
+  },
+  {
+   "key": "9ef2acbaee91657e",
+   "dialect": "clickhouse",
+   "sql": "SELECT quantileIf(0.5)(a, true)"
+  },
+  {
+   "key": "675fbe0fb89a1ce1",
+   "dialect": "clickhouse",
+   "sql": "SELECT quantileIf(0.5)(a, TRUE)"
+  },
+  {
+   "key": "0981317b0a8f42be",
+   "dialect": "clickhouse",
+   "sql": "SELECT POSITION(needle IN haystack)"
+  },
+  {
+   "key": "bafb51a18dfb7b40",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM x LIMIT 10 SETTINGS max_results = 100, result = 'break'"
+  },
+  {
+   "key": "cdc9c0cbbce28baf",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM x LIMIT 10 SETTINGS max_results = 100, result_"
+  },
+  {
+   "key": "6f14e2a9b05127a9",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM x FORMAT PrettyCompact"
+  },
+  {
+   "key": "e127215fb0baa0a7",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM x LIMIT 10 SETTINGS max_results = 100, result_ FORMAT PrettyCompact"
+  },
+  {
+   "key": "ce4483dedcb98cc8",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo JOIN bar USING id, name"
+  },
+  {
+   "key": "d8aa304577b21c60",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo JOIN bar USING (id, name)"
+  },
+  {
+   "key": "f530a21e327d2386",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo ANY LEFT JOIN bla ON foo.c1 = bla.c2"
+  },
+  {
+   "key": "1ab199128d1f274a",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo LEFT ANY JOIN bla ON foo.c1 = bla.c2"
+  },
+  {
+   "key": "849ccdcde9fec55b",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo GLOBAL ANY LEFT JOIN bla ON foo.c1 = bla.c2"
+  },
+  {
+   "key": "fc25c85b1c27b913",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo GLOBAL LEFT ANY JOIN bla ON foo.c1 = bla.c2"
+  },
+  {
+   "key": "862f17a620d6d701",
+   "dialect": "clickhouse",
+   "sql": "\n            SELECT\n                loyalty,\n                count()\n            FROM hits SEMI LEFT JOIN users USING (UserID)\n            GROUP BY loyalty\n            ORDER BY loyalty ASC\n            "
+  },
+  {
+   "key": "477dda2c1090f2b5",
+   "dialect": "clickhouse",
+   "sql": "SELECT loyalty, count() FROM hits LEFT SEMI JOIN users USING (UserID) GROUP BY loyalty ORDER BY loyalty ASC"
   },
   {
    "key": "2366745f4ddaf670",
@@ -11018,9 +11993,24 @@
    "sql": "SELECT quantile(a, 0.5)"
   },
   {
+   "key": "898cdd94cb0e3023",
+   "dialect": "clickhouse",
+   "sql": "SELECT median(a)"
+  },
+  {
+   "key": "5a452b4e92437648",
+   "dialect": "clickhouse",
+   "sql": "SELECT quantiles(0.5, 0.4)(a)"
+  },
+  {
    "key": "bc3bca9e10cf0508",
    "dialect": "duckdb",
    "sql": "SELECT quantile(a, [0.5, 0.4])"
+  },
+  {
+   "key": "ae49367e35da7d8b",
+   "dialect": "clickhouse",
+   "sql": "SELECT quantiles(0.5)(a)"
   },
   {
    "key": "34ad1be5c654ccd0",
@@ -11028,9 +12018,154 @@
    "sql": "SELECT quantile(a, [0.5])"
   },
   {
+   "key": "9df968ae772ad1b5",
+   "dialect": "clickhouse",
+   "sql": "SELECT isNaN(x)"
+  },
+  {
+   "key": "8e30695961824a28",
+   "dialect": "clickhouse",
+   "sql": "SELECT IS_NAN(x), ISNAN(x)"
+  },
+  {
+   "key": "8a57b86d991a95c6",
+   "dialect": "clickhouse",
+   "sql": "SELECT isNaN(x), isNaN(x)"
+  },
+  {
+   "key": "bc3a273f3823db24",
+   "dialect": "clickhouse",
+   "sql": "SELECT startsWith('a', 'b')"
+  },
+  {
+   "key": "13636cb9834441c3",
+   "dialect": "clickhouse",
+   "sql": "SELECT STARTS_WITH('a', 'b'), STARTSWITH('a', 'b')"
+  },
+  {
+   "key": "7bcfb28ee2a512d9",
+   "dialect": "clickhouse",
+   "sql": "SELECT startsWith('a', 'b'), startsWith('a', 'b')"
+  },
+  {
+   "key": "444cf0b3a0f8abe4",
+   "dialect": "clickhouse",
+   "sql": "SYSTEM STOP MERGES foo.bar"
+  },
+  {
+   "key": "26566600cd03e9f0",
+   "dialect": "clickhouse",
+   "sql": "INSERT INTO FUNCTION s3('url', 'CSV', 'name String, value UInt32', 'gzip') SELECT name, value FROM existing_table"
+  },
+  {
+   "key": "147f14af8b5fb488",
+   "dialect": "clickhouse",
+   "sql": "INSERT INTO FUNCTION remote('localhost', default.simple_table) VALUES (100, 'inserted via remote()')"
+  },
+  {
+   "key": "001afb5211f0d6c5",
+   "dialect": "clickhouse",
+   "sql": "INSERT INTO TABLE FUNCTION hdfs('hdfs://hdfs1:9000/test', 'TSV', 'name String, column2 UInt32, column3 UInt32') VALUES ('test', 1, 2)"
+  },
+  {
+   "key": "f81dece6411b96e2",
+   "dialect": "clickhouse",
+   "sql": "INSERT INTO t (n.a, n.b) VALUES (1, [1, 2])"
+  },
+  {
+   "key": "8fe243e1b6f3e283",
+   "dialect": "clickhouse",
+   "sql": "SELECT 1 FORMAT TabSeparated"
+  },
+  {
+   "key": "61e9f8c6cbc1fb5e",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM t FORMAT TabSeparated"
+  },
+  {
+   "key": "46b8afae53046961",
+   "dialect": "clickhouse",
+   "sql": "SELECT FORMAT"
+  },
+  {
+   "key": "443060861f4176ac",
+   "dialect": "clickhouse",
+   "sql": "SELECT formatDateTime(NOW(), '%Y-%m-%d', '%T')"
+  },
+  {
+   "key": "9795d3838251499b",
+   "dialect": "clickhouse",
+   "sql": "SELECT formatDateTime(NOW(), '%Y-%m-%d')"
+  },
+  {
    "key": "eab909ab5b1e58b3",
    "dialect": "mysql",
    "sql": "SELECT DATE_FORMAT(NOW(), '%Y-%m-%d')"
+  },
+  {
+   "key": "2718b770df026a96",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE visits DROP PARTITION 201901"
+  },
+  {
+   "key": "0136c30108da6cf0",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE visits DROP PARTITION ALL"
+  },
+  {
+   "key": "ebf7ea740c0e71c4",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE visits DROP PARTITION tuple(toYYYYMM(toDate('2019-01-25')))"
+  },
+  {
+   "key": "57227ae63cd9b93f",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE visits DROP PARTITION ID '201901'"
+  },
+  {
+   "key": "c1164dc57acd7dcf",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE visits REPLACE PARTITION 201901 FROM visits_tmp"
+  },
+  {
+   "key": "24b6051abe71a978",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE visits REPLACE PARTITION ALL FROM visits_tmp"
+  },
+  {
+   "key": "85ee62ea155751f2",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE visits REPLACE PARTITION tuple(toYYYYMM(toDate('2019-01-25'))) FROM visits_tmp"
+  },
+  {
+   "key": "f22cb0aa68301d54",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE visits REPLACE PARTITION ID '201901' FROM visits_tmp"
+  },
+  {
+   "key": "aaab3d1a9809fb6c",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE visits ON CLUSTER test_cluster DROP COLUMN col1"
+  },
+  {
+   "key": "faf818cab599d4a3",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE visits ON CLUSTER '{cluster}' DROP COLUMN col1"
+  },
+  {
+   "key": "0f53810d9ac9ac98",
+   "dialect": "clickhouse",
+   "sql": "DELETE FROM tbl ON CLUSTER test_cluster WHERE date = '2019-01-01'"
+  },
+  {
+   "key": "03d94127c6e3c42c",
+   "dialect": "clickhouse",
+   "sql": "DELETE FROM tbl ON CLUSTER '{cluster}' WHERE date = '2019-01-01'"
+  },
+  {
+   "key": "be6fcfced4a64723",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE t ALTER COLUMN c TYPE Nullable(Int64)"
   },
   {
    "key": "d49bde310ec4e9f3",
@@ -11038,9 +12173,64 @@
    "sql": "ALTER TABLE t ALTER COLUMN c TYPE BIGINT"
   },
   {
+   "key": "73919524bc9bb842",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE t MODIFY COLUMN IF EXISTS c Int64"
+  },
+  {
+   "key": "f4c35b07ff491106",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE t ALTER COLUMN IF EXISTS c TYPE Int64"
+  },
+  {
+   "key": "aba0703419a5dc2d",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE t MODIFY COLUMN c REMOVE DEFAULT"
+  },
+  {
+   "key": "d773456566689a7a",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE t MODIFY TTL d + INTERVAL 1 DAY"
+  },
+  {
+   "key": "bf93d150dc374afa",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE t MODIFY COMMENT 'hi'"
+  },
+  {
+   "key": "f7a305fc5a180a21",
+   "dialect": "clickhouse",
+   "sql": "INSERT INTO t (col1, col2) VALUES ('abcd', 1234)"
+  },
+  {
+   "key": "ef527122210333b3",
+   "dialect": "clickhouse",
+   "sql": "INSERT INTO t (col1, col2) VALUES (('abcd'), (1234))"
+  },
+  {
    "key": "e85ca6cb490730d9",
    "dialect": "postgres",
    "sql": "INSERT INTO t (col1, col2) VALUES (('abcd'), (1234))"
+  },
+  {
+   "key": "786e47385dbd0fad",
+   "dialect": "clickhouse",
+   "sql": "SELECT TRIM(TRAILING ')' FROM '(   Hello, world!   )')"
+  },
+  {
+   "key": "2cb09365c96559fb",
+   "dialect": "clickhouse",
+   "sql": "SELECT TRIM(LEADING '(' FROM '(   Hello, world!   )')"
+  },
+  {
+   "key": "83869c892515ed8f",
+   "dialect": "clickhouse",
+   "sql": "SELECT trimLeft(s, 'xy'), trimRight(s, 'xy'), trimBoth(s, 'xy')"
+  },
+  {
+   "key": "f639960bbd028c7a",
+   "dialect": "clickhouse",
+   "sql": "SELECT TRIM(LEADING 'xy' FROM s), TRIM(TRAILING 'xy' FROM s), TRIM(BOTH 'xy' FROM s)"
   },
   {
    "key": "f1a8fe262a878045",
@@ -11053,9 +12243,184 @@
    "sql": "SELECT TRIM(LEADING 'xy' FROM s), TRIM(TRAILING 'xy' FROM s), TRIM('xy' FROM s)"
   },
   {
+   "key": "ec2743266824682f",
+   "dialect": "clickhouse",
+   "sql": "SELECT LTRIM(s), RTRIM(s), TRIM(s)"
+  },
+  {
+   "key": "665e9a0b4b09abd0",
+   "dialect": "clickhouse",
+   "sql": "SELECT trimLeft(s), trimRight(s), trimBoth(s)"
+  },
+  {
    "key": "1322ac0ee9e54e4b",
    "dialect": "duckdb",
    "sql": "SELECT LTRIM(s), RTRIM(s), TRIM(s)"
+  },
+  {
+   "key": "d18d1b8a08eac4c9",
+   "dialect": "clickhouse",
+   "sql": "SELECT * APPLY(sum) FROM columns_transformers"
+  },
+  {
+   "key": "c50415fb1ac2cfb8",
+   "dialect": "clickhouse",
+   "sql": "SELECT COLUMNS('[jk]') APPLY(toString) FROM columns_transformers"
+  },
+  {
+   "key": "bea252b67c92c953",
+   "dialect": "clickhouse",
+   "sql": "SELECT COLUMNS('[jk]') APPLY(toString) APPLY(length) APPLY(max) FROM columns_transformers"
+  },
+  {
+   "key": "4b5dd12556397fcd",
+   "dialect": "clickhouse",
+   "sql": "SELECT * APPLY(sum), COLUMNS('col') APPLY(sum) APPLY(avg) FROM t"
+  },
+  {
+   "key": "c6a033c244a1dd3b",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM ABC WHERE hasAny(COLUMNS('.*field') APPLY(toUInt64) APPLY(to), (SELECT groupUniqArray(toUInt64(field))))"
+  },
+  {
+   "key": "c7384364e2632515",
+   "dialect": "clickhouse",
+   "sql": "SELECT col apply"
+  },
+  {
+   "key": "39ed1eb0f63cbdde",
+   "dialect": "clickhouse",
+   "sql": "SELECT name FROM data WHERE (SELECT DISTINCT name FROM data) IS NOT NULL"
+  },
+  {
+   "key": "eca118b2cb332486",
+   "dialect": "clickhouse",
+   "sql": "SELECT 1_2_3_4_5"
+  },
+  {
+   "key": "2c411f3d3fd72d6c",
+   "dialect": "clickhouse",
+   "sql": "SELECT 1_b"
+  },
+  {
+   "key": "9e7f7f7d00db0b22",
+   "dialect": "clickhouse",
+   "sql": "SELECT COUNT(1) FROM table SETTINGS additional_table_filters = {'a': 'b', 'c': 'd'}"
+  },
+  {
+   "key": "2800476d6e87811c",
+   "dialect": "clickhouse",
+   "sql": "SELECT arrayConcat([1, 2], [3, 4])"
+  },
+  {
+   "key": "1d79b5f2d66229e4",
+   "dialect": "clickhouse",
+   "sql": "SELECT parseDateTime('2021-01-04+23:00:00', '%Y-%m-%d+%H:%i:%s')"
+  },
+  {
+   "key": "aecf94e6240cb5ab",
+   "dialect": "clickhouse",
+   "sql": "SELECT parseDateTime('2021-01-04+23:00:00', '%Y-%m-%d+%H:%i:%s', 'Asia/Istanbul')"
+  },
+  {
+   "key": "f824146040b3b087",
+   "dialect": "clickhouse",
+   "sql": "farmFingerprint64(x1, x2, x3)"
+  },
+  {
+   "key": "dbff91b6b338656c",
+   "dialect": "clickhouse",
+   "sql": "cityHash64()"
+  },
+  {
+   "key": "2cc31f95069beee5",
+   "dialect": "clickhouse",
+   "sql": "cityHash64(x)"
+  },
+  {
+   "key": "bd276bb3824d897a",
+   "dialect": "clickhouse",
+   "sql": "cityHash64(x, y, z)"
+  },
+  {
+   "key": "204c84e0de493ff9",
+   "dialect": "clickhouse",
+   "sql": "cosineDistance(x, y)"
+  },
+  {
+   "key": "f2afb44b50eada48",
+   "dialect": "clickhouse",
+   "sql": "L2Distance(x, y)"
+  },
+  {
+   "key": "6930ae872ab1ab06",
+   "dialect": "clickhouse",
+   "sql": "tuple(1 = 1, 'foo' = 'foo')"
+  },
+  {
+   "key": "5ca808255c638e72",
+   "dialect": "clickhouse",
+   "sql": "SELECT LIKE(a, b)"
+  },
+  {
+   "key": "0b618d0ac5418d0e",
+   "dialect": "clickhouse",
+   "sql": "SELECT notLike(a, b)"
+  },
+  {
+   "key": "5926cdb19cccfe5e",
+   "dialect": "clickhouse",
+   "sql": "SELECT ilike(a, b)"
+  },
+  {
+   "key": "967d9903d9c05174",
+   "dialect": "clickhouse",
+   "sql": "currentDatabase()"
+  },
+  {
+   "key": "9269e92ee14f25a6",
+   "dialect": "clickhouse",
+   "sql": "currentSchemas(TRUE)"
+  },
+  {
+   "key": "e1507a6c4d33fd19",
+   "dialect": "clickhouse",
+   "sql": "VERSION()"
+  },
+  {
+   "key": "551b83740f70172f",
+   "dialect": "clickhouse",
+   "sql": "SELECT quantilesExactExclusive(0.25, 0.5, 0.75)(x) AS y FROM (SELECT number AS x FROM num)"
+  },
+  {
+   "key": "1b1ed0e83487c11f",
+   "dialect": "clickhouse",
+   "sql": "SELECT or(0, 1, -2)"
+  },
+  {
+   "key": "fa07f571e3a565c1",
+   "dialect": "clickhouse",
+   "sql": "SELECT and(1, 2, 3)"
+  },
+  {
+   "key": "9f97ae2375b8ccc1",
+   "dialect": "clickhouse",
+   "sql": "SELECT or(and(3, 0), 5)"
+  },
+  {
+   "key": "64a80e10b10c45b0",
+   "dialect": "clickhouse",
+   "sql": "SELECT UTCTimestamp()"
+  },
+  {
+   "key": "8cfc5294d5281070",
+   "dialect": "clickhouse",
+   "sql": "SELECT []"
+  },
+  {
+   "key": "5fc009a3452d2c62",
+   "dialect": "clickhouse",
+   "sql": "a / b"
   },
   {
    "key": "24140b08b0e1c52b",
@@ -11068,9 +12433,39 @@
    "sql": "CAST(a AS DOUBLE PRECISION) / b"
   },
   {
+   "key": "ebd1ee4c1c6fd18f",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM VALUES ((1, 1), (2, 1), (3, 1), (4, 1))"
+  },
+  {
+   "key": "a1829b4a96c728e8",
+   "dialect": "clickhouse",
+   "sql": "SELECT type, id FROM VALUES ('id Int, type Int', (1, 1), (2, 1), (3, 1), (4, 1))"
+  },
+  {
+   "key": "b82589f07687f5d4",
+   "dialect": "clickhouse",
+   "sql": "INSERT INTO t (col1, col2) FORMAT Values('abcd', 1234)"
+  },
+  {
+   "key": "0bd3ea17ec912c0e",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM VALUES ((1), (2), (3))"
+  },
+  {
+   "key": "eda74c7b1916161f",
+   "dialect": "clickhouse",
+   "sql": "SELECT col FROM (SELECT 1 AS col) AS _t"
+  },
+  {
    "key": "d742b5df2bedb1cf",
    "dialect": "duckdb",
    "sql": "SELECT col FROM (VALUES (1)) AS _t(col)"
+  },
+  {
+   "key": "dc6de1f09ec8b420",
+   "dialect": "clickhouse",
+   "sql": "SELECT col1, col2 FROM (SELECT 1 AS col1, 2 AS col2 UNION ALL SELECT 3, 4) AS _t"
   },
   {
    "key": "9e227ecbac1efd21",
@@ -11078,14 +12473,494 @@
    "sql": "SELECT col1, col2 FROM (VALUES (1, 2), (3, 4)) AS _t(col1, col2)"
   },
   {
+   "key": "bc9fcfd09300a725",
+   "dialect": "clickhouse",
+   "sql": "WITH 'x' AS foo SELECT foo"
+  },
+  {
+   "key": "4a6d40447db40834",
+   "dialect": "clickhouse",
+   "sql": "WITH ['c'] AS field_names SELECT field_names"
+  },
+  {
+   "key": "8b0517ebd2c7c819",
+   "dialect": "clickhouse",
+   "sql": "WITH SUM(bytes) AS foo SELECT foo FROM system.parts"
+  },
+  {
+   "key": "a50c1d5c8036f3e2",
+   "dialect": "clickhouse",
+   "sql": "WITH (SELECT foo) AS bar SELECT bar + 5"
+  },
+  {
+   "key": "d0d1973456e3cffe",
+   "dialect": "clickhouse",
+   "sql": "WITH test1 AS (SELECT i + 1, j + 1 FROM test1) SELECT * FROM test1"
+  },
+  {
+   "key": "d2457f528322da9a",
+   "dialect": "clickhouse",
+   "sql": "arraySlice(x, 1)"
+  },
+  {
+   "key": "2564f980195e163e",
+   "dialect": "clickhouse",
+   "sql": "x ? 1 : 2"
+  },
+  {
+   "key": "009bd7bfb8142859",
+   "dialect": "clickhouse",
+   "sql": "CASE WHEN x THEN 1 ELSE 2 END"
+  },
+  {
+   "key": "71e049f0aae44b3b",
+   "dialect": "clickhouse",
+   "sql": "IF(BAR(col), sign > 0 ? FOO() : 0, 1)"
+  },
+  {
+   "key": "a5f2ca7962b3a69f",
+   "dialect": "clickhouse",
+   "sql": "CASE WHEN BAR(col) THEN CASE WHEN sign > 0 THEN FOO() ELSE 0 END ELSE 1 END"
+  },
+  {
+   "key": "ac22ac4cf740e03e",
+   "dialect": "clickhouse",
+   "sql": "x AND FOO() > 3 + 2 ? 1 : 2"
+  },
+  {
+   "key": "262e085c62f7f3d4",
+   "dialect": "clickhouse",
+   "sql": "CASE WHEN x AND FOO() > 3 + 2 THEN 1 ELSE 2 END"
+  },
+  {
+   "key": "813f6384b723c325",
+   "dialect": "clickhouse",
+   "sql": "x ? (y ? 1 : 2) : 3"
+  },
+  {
+   "key": "db6fb37dac099cc9",
+   "dialect": "clickhouse",
+   "sql": "CASE WHEN x THEN (CASE WHEN y THEN 1 ELSE 2 END) ELSE 3 END"
+  },
+  {
+   "key": "08f9c6465b069ae7",
+   "dialect": "clickhouse",
+   "sql": "x AND (foo() ? FALSE : TRUE) ? (y ? 1 : 2) : 3"
+  },
+  {
+   "key": "7135997d862dcc33",
+   "dialect": "clickhouse",
+   "sql": "CASE WHEN x AND (CASE WHEN foo() THEN FALSE ELSE TRUE END) THEN (CASE WHEN y THEN 1 ELSE 2 END) ELSE 3 END"
+  },
+  {
+   "key": "4a4e7964339db884",
+   "dialect": "clickhouse",
+   "sql": "SELECT {abc: UInt32}, {b: String}, {c: DateTime},{d: Map(String, Array(UInt8))}, {e: Tuple(UInt8, String)}"
+  },
+  {
+   "key": "67ab7ad5f37991a3",
+   "dialect": "clickhouse",
+   "sql": "SELECT {abc: UInt32}, {b: String}, {c: DateTime}, {d: Map(String, Array(UInt8))}, {e: Tuple(UInt8, String)}"
+  },
+  {
+   "key": "9ea8236438b2b38e",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM {table: Identifier}"
+  },
+  {
+   "key": "1e32fe200d135293",
+   "dialect": "clickhouse",
+   "sql": "SELECT CAST(val AS JSON(\n                col1 String,\n                skip col2,\n                max_dynamic_paths=2\n            ))"
+  },
+  {
+   "key": "fe9ee09b4cb99f3f",
+   "dialect": "clickhouse",
+   "sql": "SELECT CAST(val AS JSON(col1 String, col2 JSON(colA String, SKIP colB)))"
+  },
+  {
+   "key": "7d63e5ef77729c2b",
+   "dialect": "clickhouse",
+   "sql": "\n            CREATE TABLE my_db.my_table\n            (\n                someId UUID,\n                aggregatedColumn AggregateFunction(any, String),\n                aggregatedColumnWithParams AggregateFunction(any(somecolumn), String),\n            )\n            ENGINE = AggregatingMergeTree()\n            ORDER BY (someId)\n                    "
+  },
+  {
+   "key": "5a1e155e8585b70e",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE my_db.my_table (\n  someId UUID,\n  aggregatedColumn AggregateFunction(any, String),\n  aggregatedColumnWithParams AggregateFunction(any(somecolumn), String)\n)\nENGINE=AggregatingMergeTree()\nORDER BY (\n  someId\n)"
+  },
+  {
+   "key": "ae5a6abed51cec95",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t (`projection` Int8)"
+  },
+  {
+   "key": "3fda8b7e5fb63bb2",
+   "dialect": "clickhouse",
+   "sql": "CREATE FUNCTION linear_equation AS (x, k, b) -> k * x + b"
+  },
+  {
+   "key": "697420aeb12269d9",
+   "dialect": "clickhouse",
+   "sql": "CREATE MATERIALIZED VIEW a.b TO a.c (c Int32) AS SELECT * FROM a.d"
+  },
+  {
+   "key": "5305f144619e3af7",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE ip_data (ip4 IPv4, ip6 IPv6) ENGINE=TinyLog()"
+  },
+  {
+   "key": "a950c03040dab6de",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE dates (dt1 Date32) ENGINE=TinyLog()"
+  },
+  {
+   "key": "41644821942d5fb4",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE named_tuples (a Tuple(select String, i Int64))"
+  },
+  {
+   "key": "ce74ca62b30eef96",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t (a String) EMPTY AS SELECT * FROM dummy"
+  },
+  {
+   "key": "3d5db50bc44548c6",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t1 (a String EPHEMERAL, b String EPHEMERAL func(), c String MATERIALIZED func(), d String ALIAS func()) ENGINE=TinyLog()"
+  },
+  {
+   "key": "d2f21f0e72f54d61",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t (a String, b String, c UInt64, PROJECTION p1 (SELECT a, sum(c) GROUP BY a, b), PROJECTION p2 (SELECT b, sum(c) GROUP BY b)) ENGINE=MergeTree()"
+  },
+  {
+   "key": "5395dd94965bba58",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE xyz (ts DateTime, data String) ENGINE=MergeTree() ORDER BY ts SETTINGS index_granularity = 8192 COMMENT '{\"key\": \"value\"}'"
+  },
+  {
+   "key": "a63357cdd0ab8f70",
+   "dialect": "clickhouse",
+   "sql": "INSERT INTO FUNCTION s3('a', 'b', 'c', 'd', 'e') PARTITION BY CONCAT(s1, s2, s3, s4) SETTINGS set1 = 1, set2 = '2' SELECT * FROM some_table SETTINGS foo = 3"
+  },
+  {
+   "key": "636c3556a5472431",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE data5 (\"x\" UInt32, \"y\" UInt32) ENGINE=MergeTree ORDER BY (round(y / 1000000000), cityHash64(x)) SAMPLE BY cityHash64(x)"
+  },
+  {
+   "key": "cdce837d6230a5da",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE foo (x UInt32) TTL time_column + INTERVAL '1' MONTH DELETE WHERE column = 'value'"
+  },
+  {
+   "key": "ecaac0ff22aa96fa",
+   "dialect": "clickhouse",
+   "sql": "CREATE FUNCTION parity_str AS (n) -> IF(n % 2, 'odd', 'even')"
+  },
+  {
+   "key": "d1efa513ccba2916",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE a ENGINE=Memory AS SELECT 1 AS c COMMENT 'foo'"
+  },
+  {
+   "key": "4b7f632f73952151",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t1 (\"x\" UInt32, \"y\" Dynamic, \"z\" Dynamic(max_types = 10)) ENGINE=MergeTree ORDER BY x"
+  },
+  {
+   "key": "85b1af54ae3a2981",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE test_table (id Int32, name String) ENGINE=MergeTree PRIMARY KEY id"
+  },
+  {
+   "key": "89afca329a125c2c",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE test_table (id Int32, name String) ENGINE=MergeTree PRIMARY KEY tuple()"
+  },
+  {
+   "key": "86a3e76d106002f9",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t (a UInt32, CONSTRAINT a_constraint CHECK (a < 10)) ENGINE=MergeTree ORDER BY a"
+  },
+  {
+   "key": "458681e742c5a0a5",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t (a UInt32, CONSTRAINT c1 ASSUME (a > 5)) ENGINE=MergeTree ORDER BY a"
+  },
+  {
+   "key": "1e59c5352cd10097",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t (a UInt32, CONSTRAINT a_constraint CHECK a < 10) ENGINE=MergeTree ORDER BY a"
+  },
+  {
+   "key": "3c869408e66d642c",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t (a UInt32, CONSTRAINT c1 ASSUME a > 5) ENGINE=MergeTree ORDER BY a"
+  },
+  {
+   "key": "b9616385417ccee5",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t (a UInt32, CONSTRAINT t CHECK (SELECT 1)) ENGINE=MergeTree ORDER BY a"
+  },
+  {
+   "key": "96750124859ccb52",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t (a UInt32, CONSTRAINT t ASSUME (SELECT 1)) ENGINE=MergeTree ORDER BY a"
+  },
+  {
+   "key": "8eb26308c8a9293d",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t (check UInt32)"
+  },
+  {
+   "key": "27a6f0bb48ffa8ac",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t (assume UInt32)"
+  },
+  {
+   "key": "d6e04705ed74f08b",
+   "dialect": "clickhouse",
+   "sql": "CREATE DATABASE x"
+  },
+  {
    "key": "af39ac0c713333c0",
    "dialect": "duckdb",
    "sql": "CREATE SCHEMA x"
   },
   {
+   "key": "8ba2a0401672e36e",
+   "dialect": "clickhouse",
+   "sql": "DROP DATABASE x"
+  },
+  {
    "key": "91f88f7228109a42",
    "dialect": "duckdb",
    "sql": "DROP SCHEMA x"
+  },
+  {
+   "key": "244c1dbc6b371896",
+   "dialect": "clickhouse",
+   "sql": "\n            CREATE TABLE example1 (\n               timestamp DateTime,\n               x UInt32 TTL now() + INTERVAL 1 MONTH,\n               y String TTL timestamp + INTERVAL 1 DAY,\n               z String\n            )\n            ENGINE = MergeTree\n            ORDER BY tuple()\n            "
+  },
+  {
+   "key": "2c757a35085b6e5c",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE example1 (\n  timestamp DateTime,\n  x UInt32 TTL now() + INTERVAL '1' MONTH,\n  y String TTL timestamp + INTERVAL '1' DAY,\n  z String\n)\nENGINE=MergeTree\nORDER BY tuple()"
+  },
+  {
+   "key": "3295495aeeca28f6",
+   "dialect": "clickhouse",
+   "sql": "\n            CREATE TABLE test (id UInt64, timestamp DateTime64, data String, max_hits UInt64, sum_hits UInt64) ENGINE = MergeTree\n            PRIMARY KEY (id, toStartOfDay(timestamp), timestamp)\n            TTL timestamp + INTERVAL 1 DAY\n            GROUP BY id, toStartOfDay(timestamp)\n            SET\n               max_hits = max(max_hits),\n               sum_hits = sum(sum_hits)\n            "
+  },
+  {
+   "key": "d09d408250ee6cb0",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE test (\n  id UInt64,\n  timestamp DateTime64,\n  data String,\n  max_hits UInt64,\n  sum_hits UInt64\n)\nENGINE=MergeTree\nPRIMARY KEY (id, dateTrunc('DAY', timestamp), timestamp)\nTTL\n  timestamp + INTERVAL '1' DAY\nGROUP BY\n  id,\n  dateTrunc('DAY', timestamp)\nSET\n  max_hits = max(max_hits),\n  sum_hits = sum(sum_hits)"
+  },
+  {
+   "key": "d958cfd5d151253c",
+   "dialect": "clickhouse",
+   "sql": "\n            CREATE TABLE test (id String, data String) ENGINE = AggregatingMergeTree()\n                ORDER BY tuple()\n            SETTINGS\n                max_suspicious_broken_parts=500,\n                parts_to_throw_insert=100\n            "
+  },
+  {
+   "key": "453125ff21975477",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE test (\n  id String,\n  data String\n)\nENGINE=AggregatingMergeTree()\nORDER BY tuple()\nSETTINGS\n  max_suspicious_broken_parts = 500,\n  parts_to_throw_insert = 100"
+  },
+  {
+   "key": "3f615dd832182749",
+   "dialect": "clickhouse",
+   "sql": "\n            CREATE TABLE example_table\n            (\n                d DateTime,\n                a Int\n            )\n            ENGINE = MergeTree\n            PARTITION BY toYYYYMM(d)\n            ORDER BY d\n            TTL d + INTERVAL 1 MONTH DELETE,\n                d + INTERVAL 1 WEEK TO VOLUME 'aaa',\n                d + INTERVAL 2 WEEK TO DISK 'bbb';\n            "
+  },
+  {
+   "key": "add071f956c34a2c",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE example_table (\n  d DateTime,\n  a Int32\n)\nENGINE=MergeTree\nPARTITION BY toYYYYMM(d)\nORDER BY d\nTTL\n  d + INTERVAL '1' MONTH DELETE,\n  d + INTERVAL '1' WEEK TO VOLUME 'aaa',\n  d + INTERVAL '2' WEEK TO DISK 'bbb'"
+  },
+  {
+   "key": "d9fbf9ac101c125e",
+   "dialect": "clickhouse",
+   "sql": "\n            CREATE TABLE table_with_where\n            (\n                d DateTime,\n                a Int\n            )\n            ENGINE = MergeTree\n            PARTITION BY toYYYYMM(d)\n            ORDER BY d\n            TTL d + INTERVAL 1 MONTH DELETE WHERE toDayOfWeek(d) = 1;\n            "
+  },
+  {
+   "key": "2422819285349911",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE table_with_where (\n  d DateTime,\n  a Int32\n)\nENGINE=MergeTree\nPARTITION BY toYYYYMM(d)\nORDER BY d\nTTL\n  d + INTERVAL '1' MONTH DELETE\nWHERE\n  toDayOfWeek(d) = 1"
+  },
+  {
+   "key": "283cf0265b016608",
+   "dialect": "clickhouse",
+   "sql": "\n            CREATE TABLE table_for_recompression\n            (\n                d DateTime,\n                key UInt64,\n                value String\n            ) ENGINE MergeTree()\n            ORDER BY tuple()\n            PARTITION BY key\n            TTL d + INTERVAL 1 MONTH RECOMPRESS CODEC(ZSTD(17)), d + INTERVAL 1 YEAR RECOMPRESS CODEC(LZ4HC(10))\n            SETTINGS min_rows_for_wide_part = 0, min_bytes_for_wide_part = 0;\n            "
+  },
+  {
+   "key": "8177e1eda0f62160",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE table_for_recompression (\n  d DateTime,\n  key UInt64,\n  value String\n)\nENGINE=MergeTree()\nORDER BY tuple()\nPARTITION BY key\nTTL\n  d + INTERVAL '1' MONTH RECOMPRESS CODEC(ZSTD(17)),\n  d + INTERVAL '1' YEAR RECOMPRESS CODEC(LZ4HC(10))\nSETTINGS\n  min_rows_for_wide_part = 0,\n  min_bytes_for_wide_part = 0"
+  },
+  {
+   "key": "d8418fe7abbd51c6",
+   "dialect": "clickhouse",
+   "sql": "\n            CREATE TABLE table_for_aggregation\n            (\n                d DateTime,\n                k1 Int,\n                k2 Int,\n                x Int,\n                y Int\n            )\n            ENGINE = MergeTree\n            ORDER BY (k1, k2)\n            TTL d + INTERVAL 1 MONTH GROUP BY k1, k2 SET x = max(x), y = min(y);\n            "
+  },
+  {
+   "key": "8620cca8ca44c2e9",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE table_for_aggregation (\n  d DateTime,\n  k1 Int32,\n  k2 Int32,\n  x Int32,\n  y Int32\n)\nENGINE=MergeTree\nORDER BY (k1, k2)\nTTL\n  d + INTERVAL '1' MONTH\nGROUP BY\n  k1,\n  k2\nSET\n  x = max(x),\n  y = min(y)"
+  },
+  {
+   "key": "b05e0ab5ddd398ff",
+   "dialect": "clickhouse",
+   "sql": "\n            CREATE DICTIONARY discounts_dict (\n                advertiser_id UInt64,\n                discount_start_date Date,\n                discount_end_date Date,\n                amount Float64\n            )\n            PRIMARY KEY id\n            SOURCE(CLICKHOUSE(TABLE 'discounts'))\n            LIFETIME(MIN 1 MAX 1000)\n            LAYOUT(RANGE_HASHED(range_lookup_strategy 'max'))\n            RANGE(MIN discount_start_date MAX discount_end_date)\n            "
+  },
+  {
+   "key": "79f23f9ac396a3ba",
+   "dialect": "clickhouse",
+   "sql": "CREATE DICTIONARY discounts_dict (\n  advertiser_id UInt64,\n  discount_start_date DATE,\n  discount_end_date DATE,\n  amount Float64\n)\nPRIMARY KEY (id)\nSOURCE(CLICKHOUSE(\n  TABLE 'discounts'\n))\nLIFETIME(MIN 1 MAX 1000)\nLAYOUT(RANGE_HASHED(\n  range_lookup_strategy 'max'\n))\nRANGE(MIN discount_start_date MAX discount_end_date)"
+  },
+  {
+   "key": "086e05fa228e362e",
+   "dialect": "clickhouse",
+   "sql": "\n            CREATE DICTIONARY my_ip_trie_dictionary (\n                prefix String,\n                asn UInt32,\n                cca2 String DEFAULT '??'\n            )\n            PRIMARY KEY prefix\n            SOURCE(CLICKHOUSE(TABLE 'my_ip_addresses'))\n            LAYOUT(IP_TRIE)\n            LIFETIME(3600);\n            "
+  },
+  {
+   "key": "e15e2a3cdb447bd0",
+   "dialect": "clickhouse",
+   "sql": "CREATE DICTIONARY my_ip_trie_dictionary (\n  prefix String,\n  asn UInt32,\n  cca2 String DEFAULT '??'\n)\nPRIMARY KEY (prefix)\nSOURCE(CLICKHOUSE(\n  TABLE 'my_ip_addresses'\n))\nLAYOUT(IP_TRIE())\nLIFETIME(MIN 0 MAX 3600)"
+  },
+  {
+   "key": "da02c6cc2a21be13",
+   "dialect": "clickhouse",
+   "sql": "\n            CREATE DICTIONARY polygons_test_dictionary\n            (\n                key Array(Array(Array(Tuple(Float64, Float64)))),\n                name String\n            )\n            PRIMARY KEY key\n            SOURCE(CLICKHOUSE(TABLE 'polygons_test_table'))\n            LAYOUT(POLYGON(STORE_POLYGON_KEY_COLUMN 1))\n            LIFETIME(0);\n            "
+  },
+  {
+   "key": "a6f5be5b67441b32",
+   "dialect": "clickhouse",
+   "sql": "CREATE DICTIONARY polygons_test_dictionary (\n  key Array(Array(Array(Tuple(Float64, Float64)))),\n  name String\n)\nPRIMARY KEY (key)\nSOURCE(CLICKHOUSE(\n  TABLE 'polygons_test_table'\n))\nLAYOUT(POLYGON(\n  STORE_POLYGON_KEY_COLUMN 1\n))\nLIFETIME(MIN 0 MAX 0)"
+  },
+  {
+   "key": "a53ccd918d14d226",
+   "dialect": "clickhouse",
+   "sql": "CREATE DICTIONARY dict1 (key UInt64) PRIMARY KEY (key) SOURCE(CLICKHOUSE(HOST 'localhost' PORT tcpPort() USER 'default' DB CURRENT_DATABASE())) LIFETIME(MIN 1 MAX 10) LAYOUT(FLAT())"
+  },
+  {
+   "key": "32bc65b2d29c4e47",
+   "dialect": "clickhouse",
+   "sql": "CREATE DICTIONARY dict1 (key UInt64) PRIMARY KEY (key) SOURCE(FILE(PATH '/tmp/test.csv' FORMAT CSVWithNames)) LIFETIME(MIN 0 MAX 1) LAYOUT(FLAT())"
+  },
+  {
+   "key": "0ee413d5c772872e",
+   "dialect": "clickhouse",
+   "sql": "CREATE DICTIONARY dict1 (key UInt64) PRIMARY KEY (key) SOURCE(NULL()) LAYOUT(CACHE(SIZE_IN_CELLS 1000)) LIFETIME(MIN 0 MAX 1)"
+  },
+  {
+   "key": "0757037ba5b3f5ea",
+   "dialect": "clickhouse",
+   "sql": "CREATE DICTIONARY dict1 (key UInt64) PRIMARY KEY (key) SOURCE(EXECUTABLE(COMMAND 'echo \"1\"' FORMAT TabSeparated)) LIFETIME(MIN 0 MAX 1) LAYOUT(FLAT())"
+  },
+  {
+   "key": "cd54645257f53302",
+   "dialect": "clickhouse",
+   "sql": "\n            CREATE TABLE t (\n                a AggregateFunction(quantiles(0.5, 0.9), UInt64),\n                b AggregateFunction(quantiles, UInt64),\n                c SimpleAggregateFunction(sum, Float64),\n                d AggregateFunction(count)\n            )"
+  },
+  {
+   "key": "825e4e938aea8d11",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t (\n  a AggregateFunction(quantiles(0.5, 0.9), UInt64),\n  b AggregateFunction(quantiles, UInt64),\n  c SimpleAggregateFunction(sum, Float64),\n  d AggregateFunction(count)\n)"
+  },
+  {
+   "key": "02d72f1663510456",
+   "dialect": "clickhouse",
+   "sql": "\n            CREATE TABLE session_log\n            (\n                UserID UInt64,\n                SessionID UUID\n            )\n            ENGINE = MergeTree\n            PARTITION BY sipHash64(UserID) % 16\n            ORDER BY tuple();\n            "
+  },
+  {
+   "key": "76a55ee3626eecc7",
+   "dialect": "clickhouse",
+   "sql": "\n            CREATE TABLE visits\n            (\n                VisitDate Date,\n                Hour UInt8,\n                ClientID UUID\n            )\n            ENGINE = MergeTree()\n            PARTITION BY (toYYYYMM(VisitDate), Hour)\n            ORDER BY Hour;\n            "
+  },
+  {
+   "key": "9194cd91f0e7ece6",
+   "dialect": "clickhouse",
+   "sql": "DROP TABLE t SYNC"
+  },
+  {
+   "key": "3ccf0f807b874fb3",
+   "dialect": "clickhouse",
+   "sql": "DROP DATABASE IF EXISTS d SYNC"
+  },
+  {
+   "key": "d78beef9ef4f464b",
+   "dialect": "clickhouse",
+   "sql": "GRANT SELECT(x, y) ON db.table TO john WITH GRANT OPTION"
+  },
+  {
+   "key": "111a08e68cd93cb1",
+   "dialect": "clickhouse",
+   "sql": "GRANT INSERT(x, y) ON db.table TO john"
+  },
+  {
+   "key": "8631a738ff149cb5",
+   "dialect": "clickhouse",
+   "sql": "REVOKE SELECT(x, y) ON db.table FROM john"
+  },
+  {
+   "key": "d10d5f56a964d5b6",
+   "dialect": "clickhouse",
+   "sql": "REVOKE INSERT(x, y) ON db.table FROM john"
+  },
+  {
+   "key": "81e05d14ce3f71e5",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM arrays_test ARRAY JOIN arr1, arrays_test.arr2 AS foo, ['a', 'b', 'c'] AS elem"
+  },
+  {
+   "key": "32a1dd5f65e04429",
+   "dialect": "clickhouse",
+   "sql": "SELECT s, arr FROM arrays_test ARRAY JOIN arr"
+  },
+  {
+   "key": "d559ff2e829e36c7",
+   "dialect": "clickhouse",
+   "sql": "SELECT s, arr, a FROM arrays_test LEFT ARRAY JOIN arr AS a"
+  },
+  {
+   "key": "9d9f1951099735e8",
+   "dialect": "clickhouse",
+   "sql": "SELECT s, arr_external FROM arrays_test ARRAY JOIN [1, 2, 3] AS arr_external"
+  },
+  {
+   "key": "1fb721e1dd942db8",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM arrays_test ARRAY JOIN [1, 2, 3] AS arr_external1, ['a', 'b', 'c'] AS arr_external2, splitByString(',', 'asd,qwerty,zxc') AS arr_external3"
+  },
+  {
+   "key": "5b39fc35fe8657da",
+   "dialect": "clickhouse",
+   "sql": "SELECT row_number(column1) OVER (PARTITION BY column2 ORDER BY column3) FROM table"
+  },
+  {
+   "key": "4e4d527531258910",
+   "dialect": "clickhouse",
+   "sql": "SELECT row_number() OVER (PARTITION BY column2 ORDER BY column3) FROM table"
+  },
+  {
+   "key": "87adaea8e1a018af",
+   "dialect": "clickhouse",
+   "sql": "SELECT groupConcat(', ')(part_name) FROM system.parts"
+  },
+  {
+   "key": "b298e497745a629d",
+   "dialect": "clickhouse",
+   "sql": "SELECT groupConcat(part_name) FROM t"
+  },
+  {
+   "key": "72e39702492d403e",
+   "dialect": "clickhouse",
+   "sql": "SELECT groupConcat(', ', 2)(part_name) FROM t"
+  },
+  {
+   "key": "75b1678424e0c858",
+   "dialect": "clickhouse",
+   "sql": "SELECT groupConcat(', ')(part_name) FROM t"
   },
   {
    "key": "0d7e3b871c11648b",
@@ -11096,6 +12971,21 @@
    "key": "77b8c3fb28d966c3",
    "dialect": "duckdb",
    "sql": "SELECT LISTAGG(part_name, ', ') FROM t"
+  },
+  {
+   "key": "675bdc2d6eed25a3",
+   "dialect": "clickhouse",
+   "sql": "SELECT TRANSFORM(foo, [1, 2], ['first', 'second']) FROM table"
+  },
+  {
+   "key": "8f842d573b9b1c8f",
+   "dialect": "clickhouse",
+   "sql": "SELECT TRANSFORM(foo, [1, 2], ['first', 'second'], 'default') FROM table"
+  },
+  {
+   "key": "a5face5d2dd228ec",
+   "dialect": "clickhouse",
+   "sql": "toMonday(x)"
   },
   {
    "key": "5fa06da1175e1501",
@@ -11123,6 +13013,11 @@
    "sql": "DATE_TRUNC('WEEK', x)"
   },
   {
+   "key": "62b3c0cfc91e96cd",
+   "dialect": "clickhouse",
+   "sql": "dateTrunc('MONTH', x)"
+  },
+  {
    "key": "660ff4ef286afd90",
    "dialect": "databricks",
    "sql": "TRUNC(x, 'MONTH')"
@@ -11141,6 +13036,16 @@
    "key": "e60530ea9906c3d3",
    "dialect": "spark",
    "sql": "TRUNC(x, 'MONTH')"
+  },
+  {
+   "key": "22e77969acc037f9",
+   "dialect": "clickhouse",
+   "sql": "date_trunc('WEEK', today())"
+  },
+  {
+   "key": "ba23486ac0a03760",
+   "dialect": "clickhouse",
+   "sql": "splitByString('s', x)"
   },
   {
    "key": "d7ef7d00352a308e",
@@ -11168,6 +13073,11 @@
    "sql": "SPLIT(x, CONCAT('\\\\Q', 's', '\\\\E'))"
   },
   {
+   "key": "5406bb0991d0dc1b",
+   "dialect": "clickhouse",
+   "sql": "splitByRegexp('\\\\d+', x)"
+  },
+  {
    "key": "3490b8d2132259ca",
    "dialect": "duckdb",
    "sql": "STRING_SPLIT_REGEX(x, '\\d+')"
@@ -11181,6 +13091,31 @@
    "key": "fe24b5f46f9c8c1e",
    "dialect": "duckdb",
    "sql": "STR_SPLIT_REGEX(x, '\\d+')"
+  },
+  {
+   "key": "f992bceb2d930aa5",
+   "dialect": "clickhouse",
+   "sql": "splitByChar('', x)"
+  },
+  {
+   "key": "0196ef58bd8a6f84",
+   "dialect": "clickhouse",
+   "sql": "CREATE VIEW myschema.myview (c1 String NOT NULL) AS SELECT c1 FROM file('base/dir/*.parquet', Parquet)"
+  },
+  {
+   "key": "3807b7b1b549102f",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM file('path', Parquet) WHERE x > 1"
+  },
+  {
+   "key": "e682ff7805425a6a",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM file('path', Parquet)"
+  },
+  {
+   "key": "f058a20476c76da0",
+   "dialect": "clickhouse",
+   "sql": "SELECT col[1]"
   },
   {
    "key": "a56efec5ab8503bc",
@@ -11201,6 +13136,181 @@
    "key": "25860c27a96ff6d4",
    "dialect": "presto",
    "sql": "SELECT col[1]"
+  },
+  {
+   "key": "763899dbf2f11c95",
+   "dialect": "clickhouse",
+   "sql": "trunc(3.14159)"
+  },
+  {
+   "key": "eb6bd19c6529b616",
+   "dialect": "clickhouse",
+   "sql": "1 AS FORMAT"
+  },
+  {
+   "key": "119d74a9ea712f52",
+   "dialect": "clickhouse",
+   "sql": "ALTER TABLE t MODIFY COLUMN c Int64"
+  },
+  {
+   "key": "6cc9b9e658904287",
+   "dialect": "clickhouse",
+   "sql": "current_timestamp"
+  },
+  {
+   "key": "7bb23a2f3d34d021",
+   "dialect": "clickhouse",
+   "sql": "arrayCompact([1, 1, nan, nan, 2, 3, 3, 3])"
+  },
+  {
+   "key": "a99a0650b599e489",
+   "dialect": "clickhouse",
+   "sql": "arrayConcat([1, 2], [3, 4])"
+  },
+  {
+   "key": "86209a9dc295cc31",
+   "dialect": "clickhouse",
+   "sql": "arrayDistinct([1, 2, 2, 3, 1])"
+  },
+  {
+   "key": "741926bb09d60953",
+   "dialect": "clickhouse",
+   "sql": "arrayExcept([1, 2, 3, 2, 4], [3, 5])"
+  },
+  {
+   "key": "99887bad53a1119a",
+   "dialect": "clickhouse",
+   "sql": "arrayMap(x -> x + 1, arr)"
+  },
+  {
+   "key": "7283e5d2f245bad7",
+   "dialect": "clickhouse",
+   "sql": "arrayFilter(x -> x > 0, arr)"
+  },
+  {
+   "key": "c735f9ee5ed72b80",
+   "dialect": "clickhouse",
+   "sql": "CREATE MATERIALIZED VIEW v TO db.t AS SELECT 1"
+  },
+  {
+   "key": "05176a34c7390113",
+   "dialect": "clickhouse",
+   "sql": "CREATE MATERIALIZED VIEW v REFRESH AS SELECT 1"
+  },
+  {
+   "key": "aa833df53be08851",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t1 (a String MATERIALIZED func())"
+  },
+  {
+   "key": "a92250c48d512b6a",
+   "dialect": "clickhouse",
+   "sql": "SELECT col.^nested, t.col2.^nested, t.col3.^nested.twice FROM t"
+  },
+  {
+   "key": "b180a29b7aee7d07",
+   "dialect": "clickhouse",
+   "sql": "SELECT approx_top_sum(column, weight) FROM t"
+  },
+  {
+   "key": "7527885f97a000c0",
+   "dialect": "clickhouse",
+   "sql": "SELECT approx_top_sum(N)(column, weight) FROM t"
+  },
+  {
+   "key": "5845adac895cde47",
+   "dialect": "clickhouse",
+   "sql": "SELECT approx_top_sum(N, reserved)(column, weight) FROM t"
+  },
+  {
+   "key": "0365fde49c738fdd",
+   "dialect": "clickhouse",
+   "sql": "SELECT uniqExactIf(x, y) FROM t"
+  },
+  {
+   "key": "7a048a5b655fd824",
+   "dialect": "clickhouse",
+   "sql": "SELECT countIfMerge(state) FROM t"
+  },
+  {
+   "key": "dd5feb4087064fa1",
+   "dialect": "clickhouse",
+   "sql": "SELECT uniqExactIfMerge(state) FROM t"
+  },
+  {
+   "key": "049ad14f1c8ba874",
+   "dialect": "clickhouse",
+   "sql": "SELECT avgArgMinIfState(x, y) FROM t"
+  },
+  {
+   "key": "b3ae23aba266b376",
+   "dialect": "clickhouse",
+   "sql": "SELECT quantileIfState(0.5)(col, cond) FROM t"
+  },
+  {
+   "key": "71f1bf1b7a28bd13",
+   "dialect": "clickhouse",
+   "sql": "SELECT sumMap(k, v) FROM t"
+  },
+  {
+   "key": "286cd9805c359f3c",
+   "dialect": "clickhouse",
+   "sql": "SELECT minMap(k, v) FROM t"
+  },
+  {
+   "key": "30c3622157b79f9e",
+   "dialect": "clickhouse",
+   "sql": "SELECT maxMap(k, v) FROM t"
+  },
+  {
+   "key": "60e747d52d7c827c",
+   "dialect": "clickhouse",
+   "sql": "SELECT sumMapIf(k, v, cond) FROM t"
+  },
+  {
+   "key": "7e35e4347e06205e",
+   "dialect": "clickhouse",
+   "sql": "SELECT minMapIf(k, v, cond) FROM t"
+  },
+  {
+   "key": "2ccb17eb1288e84d",
+   "dialect": "clickhouse",
+   "sql": "SELECT maxMapIf(k, v, cond) FROM t"
+  },
+  {
+   "key": "bf0540695154ff85",
+   "dialect": "clickhouse",
+   "sql": "SELECT sumMapState(k, v) FROM t"
+  },
+  {
+   "key": "c6efd97dea2b149b",
+   "dialect": "clickhouse",
+   "sql": "SELECT sumMapIfState(k, v, cond) FROM t"
+  },
+  {
+   "key": "50ef820cd2d50576",
+   "dialect": "clickhouse",
+   "sql": "SELECT sumMergeIfMerge(s) FROM (SELECT sumMergeIfState(agg, 1 = 1) AS s FROM (SELECT sumState(toFloat64(number)) AS agg FROM numbers(10)))"
+  },
+  {
+   "key": "b2b9ec8b6e520ded",
+   "dialect": "clickhouse",
+   "sql": "SELECT groupConcatIf(x, cond) FROM t"
+  },
+  {
+   "key": "064eb318d8489a7a",
+   "dialect": "clickhouse",
+   "sql": "SELECT groupConcatIf(', ')(x, cond) FROM t"
+  },
+  {
+   "key": "182a3715f6347659",
+   "dialect": "clickhouse",
+   "sql": "@macro"
+  },
+  {
+   "key": "d55d0ab0ce9f250c",
+   "dialect": "clickhouse",
+   "sql": "SELECT quantileExactInclusive(0.25)(number) AS x FROM numbers(5)"
   },
   {
    "key": "6717c05a741410d6",
@@ -11566,6 +13676,11 @@
    "key": "9c96409d68d97644",
    "dialect": "hive",
    "sql": "SELECT TYPEOF(1)"
+  },
+  {
+   "key": "869ae61bb49ad188",
+   "dialect": "clickhouse",
+   "sql": "SELECT toTypeName(1)"
   },
   {
    "key": "9fb456819bae7cae",
@@ -12283,6 +14398,11 @@
    "sql": "CAST(a AS STRING)"
   },
   {
+   "key": "d5ca1053301aa582",
+   "dialect": "clickhouse",
+   "sql": "CAST(a AS Nullable(String))"
+  },
+  {
    "key": "316d8891f1acbb39",
    "dialect": "materialize",
    "sql": "CAST(a AS TEXT)"
@@ -12331,6 +14451,11 @@
    "key": "9243725ad9db5b12",
    "dialect": "doris",
    "sql": "CAST(a AS STRING)"
+  },
+  {
+   "key": "8cef50c0da5376ac",
+   "dialect": "clickhouse",
+   "sql": "CAST(a AS Nullable(BINARY(4)))"
   },
   {
    "key": "7e667a95e0b0655a",
@@ -12391,6 +14516,26 @@
    "key": "9779ab91b835b348",
    "dialect": "starrocks",
    "sql": "CAST(a AS VARBINARY(4))"
+  },
+  {
+   "key": "0667533320914459",
+   "dialect": "clickhouse",
+   "sql": "CAST(map('a', '1') AS Map(String, Nullable(String)))"
+  },
+  {
+   "key": "95e27f2046e641c0",
+   "dialect": "clickhouse",
+   "sql": "CAST([1, 2] AS Array(Nullable(Int8)))"
+  },
+  {
+   "key": "4ab1c3e1997c9f8f",
+   "dialect": "clickhouse",
+   "sql": "CAST((1, 2, 3, 4) AS Tuple(a Nullable(Int8), b Nullable(Int16), c Nullable(Int32), d Nullable(Int64)))"
+  },
+  {
+   "key": "89f1334900c4e24b",
+   "dialect": "clickhouse",
+   "sql": "SELECT arrayDistinct(x)"
   },
   {
    "key": "10181eedb8b8f96f",
@@ -12558,6 +14703,11 @@
    "sql": "CAST(a AS FLOAT64)"
   },
   {
+   "key": "cc80e1a60055833b",
+   "dialect": "clickhouse",
+   "sql": "CAST(a AS Nullable(Float64))"
+  },
+  {
    "key": "6ea76a5a6fb58040",
    "dialect": "doris",
    "sql": "CAST(a AS DOUBLE)"
@@ -12651,6 +14801,11 @@
    "key": "70036a9428799de1",
    "dialect": "bigquery",
    "sql": "CREATE TABLE a LIKE b"
+  },
+  {
+   "key": "7cd4566f21cff004",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE a AS b"
   },
   {
    "key": "313d596428cff1b9",
@@ -12883,6 +15038,11 @@
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
   },
   {
+   "key": "7fd0074f4a604bb7",
+   "dialect": "clickhouse",
+   "sql": "SELECT CASE WHEN NOT (a IS NULL) THEN b ELSE c END"
+  },
+  {
    "key": "6a6466a4593087da",
    "dialect": "databricks",
    "sql": "SELECT NVL2(a, b, c)"
@@ -12961,6 +15121,11 @@
    "key": "69e03b967867e5a9",
    "dialect": "bigquery",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
+  },
+  {
+   "key": "2778a96d4b5868be",
+   "dialect": "clickhouse",
+   "sql": "SELECT CASE WHEN NOT (a IS NULL) THEN b END"
   },
   {
    "key": "136e436623bd2ed9",
@@ -13228,6 +15393,11 @@
    "sql": "CAST('2020-01-01' AS TIMESTAMP)"
   },
   {
+   "key": "ee8283c0cdb9f304",
+   "dialect": "clickhouse",
+   "sql": "CAST('2020-01-01' AS DateTime64(6))"
+  },
+  {
    "key": "13f59835f3909d87",
    "dialect": "sqlite",
    "sql": "'2020-01-01'"
@@ -13313,6 +15483,11 @@
    "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP WITH TIME ZONE)"
   },
   {
+   "key": "48d3a2b92d0f7697",
+   "dialect": "clickhouse",
+   "sql": "CAST('2020-01-01 12:13:14' AS DateTime64(6, 'America/Los_Angeles'))"
+  },
+  {
    "key": "50ec52049aa9b006",
    "dialect": "hive",
    "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP)"
@@ -13376,6 +15551,11 @@
    "key": "2b5cbf55101cfdfd",
    "dialect": "trino",
    "sql": "CAST(col AS TIMESTAMP WITH TIME ZONE)"
+  },
+  {
+   "key": "94ce1c77eaf9fd9c",
+   "dialect": "clickhouse",
+   "sql": "CAST(col AS DateTime64(6, 'America/Los_Angeles'))"
   },
   {
    "key": "14ad1d2025dc263a",
@@ -14183,6 +16363,11 @@
    "sql": "DATE_TRUNC('DAY', x)"
   },
   {
+   "key": "b0f34ddcbeb5f3c4",
+   "dialect": "clickhouse",
+   "sql": "dateTrunc('DAY', x, 'UTC')"
+  },
+  {
    "key": "6b6c9c734995a521",
    "dialect": "bigquery",
    "sql": "[0, 1, 2]"
@@ -14308,6 +16493,11 @@
    "sql": "ARRAY_INTERSECT(x, y)"
   },
   {
+   "key": "e5bad5b0c6879598",
+   "dialect": "clickhouse",
+   "sql": "arrayReverse(x)"
+  },
+  {
    "key": "2ed1ad674e9a40fb",
    "dialect": "bigquery",
    "sql": "ARRAY_REVERSE(x)"
@@ -14316,6 +16506,11 @@
    "key": "786ab5a673b65da1",
    "dialect": "duckdb",
    "sql": "ARRAY_REVERSE(x)"
+  },
+  {
+   "key": "03ad2e96ad1fc130",
+   "dialect": "clickhouse",
+   "sql": "arraySlice(x, 1, 3)"
   },
   {
    "key": "ce9ba7618da241fd",
@@ -14393,6 +16588,11 @@
    "sql": "ARRAY_APPEND(arr, x)"
   },
   {
+   "key": "08d9559ad1787ca6",
+   "dialect": "clickhouse",
+   "sql": "arrayMax(x)"
+  },
+  {
    "key": "cc69fdac8860a6b6",
    "dialect": "databricks",
    "sql": "array_max(x)"
@@ -14441,6 +16641,11 @@
    "key": "46b449f6e5ca4fee",
    "dialect": "trino",
    "sql": "ARRAY_MAX(x)"
+  },
+  {
+   "key": "512afc15ae19557b",
+   "dialect": "clickhouse",
+   "sql": "arrayMin(x)"
   },
   {
    "key": "5f6ff5c3721b5825",
@@ -14603,6 +16808,11 @@
    "sql": "JSON_EXTRACT(x, '$[\\'a b\\']')"
   },
   {
+   "key": "732c371d564dcec8",
+   "dialect": "clickhouse",
+   "sql": "JSONExtractString(x, 'a b')"
+  },
+  {
    "key": "063bc69fa5590674",
    "dialect": "duckdb",
    "sql": "x -> '$.\"a b\"'"
@@ -14686,6 +16896,11 @@
    "key": "d3ac9012f75532e1",
    "dialect": "starrocks",
    "sql": "x -> '$.y'"
+  },
+  {
+   "key": "0199699017ac9ceb",
+   "dialect": "clickhouse",
+   "sql": "JSONExtractString(x, 'y')"
   },
   {
    "key": "9fdb8e968e783933",
@@ -14781,6 +16996,11 @@
    "key": "9c18578dcf96695f",
    "dialect": "starrocks",
    "sql": "x -> '$.y[0].z'"
+  },
+  {
+   "key": "8e89c28ccc95f04a",
+   "dialect": "clickhouse",
+   "sql": "JSONExtractString(x, 'y', 1, 'z')"
   },
   {
    "key": "46c065c84f86cf43",
@@ -14958,6 +17178,11 @@
    "sql": "SELECT * FROM x LATERAL VIEW EXPLODE(a) j AS lista LATERAL VIEW EXPLODE(b) k AS listb LATERAL VIEW EXPLODE(c) l AS listc"
   },
   {
+   "key": "06d3a11fe4dd0db2",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM (SELECT * FROM a UNION DISTINCT SELECT * FROM b) AS _l_0 ORDER BY x NULLS FIRST LIMIT 1"
+  },
+  {
    "key": "db2951dba7d3f8d1",
    "dialect": "tsql",
    "sql": "SELECT TOP 1 * FROM (SELECT * FROM a UNION SELECT * FROM b) AS _l_0 ORDER BY x"
@@ -14965,6 +17190,11 @@
   {
    "key": "921d8ef84cb30fb7",
    "dialect": "bigquery",
+   "sql": "SELECT * FROM a UNION DISTINCT SELECT * FROM b"
+  },
+  {
+   "key": "d614fe1a8592ec6a",
+   "dialect": "clickhouse",
    "sql": "SELECT * FROM a UNION DISTINCT SELECT * FROM b"
   },
   {
@@ -14988,6 +17218,11 @@
    "sql": "SELECT * FROM a UNION ALL SELECT * FROM b"
   },
   {
+   "key": "6f86a2cac17d11fc",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM a UNION ALL SELECT * FROM b"
+  },
+  {
    "key": "8167d87f11b63866",
    "dialect": "duckdb",
    "sql": "SELECT * FROM a UNION ALL SELECT * FROM b"
@@ -15005,6 +17240,11 @@
   {
    "key": "69036ff065b57958",
    "dialect": "bigquery",
+   "sql": "SELECT * FROM a INTERSECT DISTINCT SELECT * FROM b"
+  },
+  {
+   "key": "1126eee629720c58",
+   "dialect": "clickhouse",
    "sql": "SELECT * FROM a INTERSECT DISTINCT SELECT * FROM b"
   },
   {
@@ -15028,6 +17268,11 @@
    "sql": "SELECT * FROM a EXCEPT DISTINCT SELECT * FROM b"
   },
   {
+   "key": "4d0e359007d584d4",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM a EXCEPT DISTINCT SELECT * FROM b"
+  },
+  {
    "key": "edc65507a00adc0e",
    "dialect": "duckdb",
    "sql": "SELECT * FROM a EXCEPT SELECT * FROM b"
@@ -15048,6 +17293,11 @@
    "sql": "SELECT * FROM a INTERSECT ALL SELECT * FROM b"
   },
   {
+   "key": "fe98bc9f102bb694",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM a INTERSECT SELECT * FROM b"
+  },
+  {
    "key": "e8070efac8a0cd9a",
    "dialect": "duckdb",
    "sql": "SELECT * FROM a INTERSECT ALL SELECT * FROM b"
@@ -15065,6 +17315,11 @@
   {
    "key": "e158ac136fba05c7",
    "dialect": "bigquery",
+   "sql": "SELECT * FROM a EXCEPT ALL SELECT * FROM b"
+  },
+  {
+   "key": "7e3d08953722fb5c",
+   "dialect": "clickhouse",
    "sql": "SELECT * FROM a EXCEPT ALL SELECT * FROM b"
   },
   {
@@ -15091,6 +17346,11 @@
    "key": "03e0ae3eff6b6c8b",
    "dialect": "sqlite",
    "sql": "a || b || c"
+  },
+  {
+   "key": "19ed624693fde938",
+   "dialect": "clickhouse",
+   "sql": "x ILIKE '%y'"
   },
   {
    "key": "22b666ce7fc1aeb6",
@@ -15161,6 +17421,11 @@
    "key": "e1cea1dae561f96a",
    "dialect": "presto",
    "sql": "LOWER(x) NOT LIKE LOWER('%y')"
+  },
+  {
+   "key": "ba812177a2be1dcb",
+   "dialect": "clickhouse",
+   "sql": "POSITION(needle in haystack)"
   },
   {
    "key": "c4f9e061de78b4ad",
@@ -15308,6 +17573,11 @@
    "sql": "INSTR(haystack, needle)"
   },
   {
+   "key": "d4d59f4e97962856",
+   "dialect": "clickhouse",
+   "sql": "LOCATE(needle, haystack)"
+  },
+  {
    "key": "2939663f455832f5",
    "dialect": "databricks",
    "sql": "LOCATE(needle, haystack)"
@@ -15418,6 +17688,11 @@
    "sql": "LOCATE(needle, haystack, position)"
   },
   {
+   "key": "5fb03412c442a39f",
+   "dialect": "clickhouse",
+   "sql": "LOCATE(needle, haystack, position)"
+  },
+  {
    "key": "ac71c2f4ffe93195",
    "dialect": "databricks",
    "sql": "LOCATE(needle, haystack, position)"
@@ -15498,6 +17773,11 @@
    "sql": "IF(STRPOS(SUBSTR(haystack, position), needle, occurrence) = 0, 0, STRPOS(SUBSTR(haystack, position), needle, occurrence) + position - 1)"
   },
   {
+   "key": "704b69fbbfc8b645",
+   "dialect": "clickhouse",
+   "sql": "CONCAT_WS('-', 'a', 'b')"
+  },
+  {
    "key": "ca826534da5fb470",
    "dialect": "duckdb",
    "sql": "CASE WHEN '-' IS NULL OR 'a' IS NULL OR 'b' IS NULL THEN NULL ELSE CONCAT_WS('-', 'a', 'b') END"
@@ -15518,6 +17798,11 @@
    "sql": "CASE WHEN '-' IS NULL OR 'a' IS NULL OR 'b' IS NULL THEN NULL ELSE CONCAT_WS('-', CAST('a' AS VARCHAR), CAST('b' AS VARCHAR)) END"
   },
   {
+   "key": "cc15ca83ac1a8f16",
+   "dialect": "clickhouse",
+   "sql": "CONCAT_WS('-', x)"
+  },
+  {
    "key": "ee5f2cfb8f39a8d8",
    "dialect": "duckdb",
    "sql": "CASE WHEN '-' IS NULL OR x IS NULL THEN NULL ELSE CONCAT_WS('-', x) END"
@@ -15536,6 +17821,11 @@
    "key": "f34dd95ad2848cac",
    "dialect": "trino",
    "sql": "CASE WHEN '-' IS NULL OR x IS NULL THEN NULL ELSE CONCAT_WS('-', CAST(x AS VARCHAR)) END"
+  },
+  {
+   "key": "9d449413998ba4c6",
+   "dialect": "clickhouse",
+   "sql": "CONCAT(a)"
   },
   {
    "key": "ced10e61351d0c2f",
@@ -15696,6 +17986,11 @@
    "key": "4201d21f7ef5325c",
    "dialect": "bigquery",
    "sql": "EDIT_DISTANCE(col1, col2)"
+  },
+  {
+   "key": "bf4d94215a8d850a",
+   "dialect": "clickhouse",
+   "sql": "editDistance(col1, col2)"
   },
   {
    "key": "3a4e2be809df79b4",
@@ -15873,6 +18168,11 @@
    "sql": "MOD(a, b + 1)"
   },
   {
+   "key": "367a0ddcf7f07b9e",
+   "dialect": "clickhouse",
+   "sql": "arrayFilter(_u -> _u <> target, the_array)"
+  },
+  {
    "key": "17adc7eb68099d2e",
    "dialect": "duckdb",
    "sql": "LIST_FILTER(the_array, _u -> _u <> target)"
@@ -16018,6 +18318,11 @@
    "sql": "SELECT x FROM y LIMIT 3 OFFSET 10"
   },
   {
+   "key": "29235e8f4bd77765",
+   "dialect": "clickhouse",
+   "sql": "`x` + \"y\""
+  },
+  {
    "key": "2f50475cd2bdc992",
    "dialect": "sqlite",
    "sql": "`x` + \"y\""
@@ -16030,6 +18335,11 @@
   {
    "key": "532abbb46b2865c9",
    "dialect": "bigquery",
+   "sql": "[1, 2]"
+  },
+  {
+   "key": "6b7c06fe9c87825a",
+   "dialect": "clickhouse",
    "sql": "[1, 2]"
   },
   {
@@ -16273,6 +18583,11 @@
    "sql": "SELECT 1 # arbitrary content,,, until end-of-line"
   },
   {
+   "key": "422e2dcaa20d3b29",
+   "dialect": "clickhouse",
+   "sql": "SELECT 1 #! arbitrary content,,, until end-of-line"
+  },
+  {
    "key": "b48bb4b58c49272a",
    "dialect": "mysql",
    "sql": "SELECT # comment1\n  x, # comment2\n  y # comment3"
@@ -16280,6 +18595,11 @@
   {
    "key": "9121eb02f0dfb2fc",
    "dialect": "bigquery",
+   "sql": "SELECT # comment1\n  x, # comment2\n  y # comment3"
+  },
+  {
+   "key": "61296e0b5cecae07",
+   "dialect": "clickhouse",
    "sql": "SELECT # comment1\n  x, # comment2\n  y # comment3"
   },
   {
@@ -16438,6 +18758,11 @@
    "sql": "LOG(x)"
   },
   {
+   "key": "fa688c85ae3c512a",
+   "dialect": "clickhouse",
+   "sql": "LOG(x)"
+  },
+  {
    "key": "2c501bc7c86f6b51",
    "dialect": "databricks",
    "sql": "LOG(x)"
@@ -16573,6 +18898,11 @@
    "sql": "SELECT * FROM t QUALIFY COUNT(*) OVER () > 1"
   },
   {
+   "key": "0cc11ccd259550ad",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM t QUALIFY COUNT(*) OVER () > 1"
+  },
+  {
    "key": "b71c2a072cf70c82",
    "dialect": "mysql",
    "sql": "SELECT * FROM (SELECT *, COUNT(*) OVER () AS _w FROM t) AS _t WHERE _w > 1"
@@ -16590,6 +18920,11 @@
   {
    "key": "6dbb6a161bdb658c",
    "dialect": "duckdb",
+   "sql": "SELECT \"user id\", some_id, 1 AS other_id, 2 AS \"2 nd id\" FROM t QUALIFY COUNT(*) OVER () > 1"
+  },
+  {
+   "key": "39ef419851e5f0ae",
+   "dialect": "clickhouse",
    "sql": "SELECT \"user id\", some_id, 1 AS other_id, 2 AS \"2 nd id\" FROM t QUALIFY COUNT(*) OVER () > 1"
   },
   {
@@ -16640,6 +18975,11 @@
   {
    "key": "42da595ef35efc29",
    "dialect": "bigquery",
+   "sql": "SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq"
+  },
+  {
+   "key": "d3205587f3860205",
+   "dialect": "clickhouse",
    "sql": "SELECT * FROM (WITH t AS (SELECT 1 AS c) SELECT c FROM t) AS subq"
   },
   {
@@ -16753,6 +19093,11 @@
    "sql": "RAND()"
   },
   {
+   "key": "10bc150094641018",
+   "dialect": "clickhouse",
+   "sql": "randCanonical()"
+  },
+  {
    "key": "80643b8cfe3956f4",
    "dialect": "databricks",
    "sql": "RAND()"
@@ -16806,6 +19151,11 @@
    "key": "f930c5f701d166d2",
    "dialect": "bigquery",
    "sql": "(ARRAY_LENGTH(arr) = 0 OR ARRAY_LENGTH(ARRAY(SELECT x FROM UNNEST(arr) AS x WHERE pred)) <> 0)"
+  },
+  {
+   "key": "afc1047868e120ab",
+   "dialect": "clickhouse",
+   "sql": "(LENGTH(arr) = 0 OR LENGTH(arrayFilter(x -> pred, arr)) <> 0)"
   },
   {
    "key": "b72d708d4620fb71",
@@ -16943,6 +19293,11 @@
    "sql": "WITH _generated_dates(date_week) AS (SELECT CAST('2020-01-01' AS DATE) AS date_week UNION ALL SELECT CAST(DATEADD(WEEK, 1, date_week) AS DATE) FROM _generated_dates WHERE CAST(DATEADD(WEEK, 1, date_week) AS DATE) <= CAST('2020-02-01' AS DATE)) SELECT * FROM (SELECT date_week AS date_week FROM _generated_dates) AS _generated_dates"
   },
   {
+   "key": "456eb955d7248fb5",
+   "dialect": "clickhouse",
+   "sql": "SELECT 1 EXCEPT SELECT 1"
+  },
+  {
    "key": "2f6e7f50da887810",
    "dialect": "databricks",
    "sql": "SELECT 1 EXCEPT ALL SELECT 1"
@@ -17018,6 +19373,11 @@
    "sql": "TRIM('a' FROM 'abc')"
   },
   {
+   "key": "8940344d2480e98a",
+   "dialect": "clickhouse",
+   "sql": "TRIM(LEADING 'H' FROM 'Hello World')"
+  },
+  {
    "key": "8300a8c24cee8c18",
    "dialect": "bigquery",
    "sql": "LTRIM('Hello World', 'H')"
@@ -17061,6 +19421,11 @@
    "key": "6fa8e83ebcb25ed6",
    "dialect": "databricks",
    "sql": "TRIM(LEADING 'H' FROM 'Hello World')"
+  },
+  {
+   "key": "17c0510d7cd16d62",
+   "dialect": "clickhouse",
+   "sql": "TRIM(TRAILING 'd' FROM 'Hello World')"
   },
   {
    "key": "5f5df414c5b59aea",
@@ -17108,6 +19473,11 @@
    "sql": "TRIM(TRAILING 'd' FROM 'Hello World')"
   },
   {
+   "key": "44531fc95be1f211",
+   "dialect": "clickhouse",
+   "sql": "LTRIM('Hello World')"
+  },
+  {
    "key": "a0afebac52f84aaf",
    "dialect": "bigquery",
    "sql": "LTRIM('Hello World')"
@@ -17131,6 +19501,11 @@
    "key": "98997c501100b1c8",
    "dialect": "databricks",
    "sql": "LTRIM('Hello World')"
+  },
+  {
+   "key": "1971dcbdb7a6fcd3",
+   "dialect": "clickhouse",
+   "sql": "RTRIM('Hello World')"
   },
   {
    "key": "676e7b9ab556ebbe",
@@ -17213,6 +19588,16 @@
    "sql": "GENERATE_UUID()"
   },
   {
+   "key": "1ad4c4ea09122804",
+   "dialect": "clickhouse",
+   "sql": "SELECT 1 AS `x\\``"
+  },
+  {
+   "key": "acc19b5a693df514",
+   "dialect": "clickhouse",
+   "sql": "SELECT 1 AS \"x`\""
+  },
+  {
    "key": "c4d723d516598355",
    "dialect": "mysql",
    "sql": "SCHEMA()"
@@ -17240,6 +19625,11 @@
   {
    "key": "cb187f51cb3dba4a",
    "dialect": "bigquery",
+   "sql": "ASCII('A')"
+  },
+  {
+   "key": "050035e241d7e090",
+   "dialect": "clickhouse",
    "sql": "ASCII('A')"
   },
   {
@@ -17271,6 +19661,11 @@
    "key": "3e1734c510060604",
    "dialect": "tsql",
    "sql": "ASCII('A')"
+  },
+  {
+   "key": "964f74b89c553897",
+   "dialect": "clickhouse",
+   "sql": "SELECT x BETWEEN 2 AND 10"
   },
   {
    "key": "a6516b39075e31e2",
@@ -17313,6 +19708,11 @@
    "sql": "SELECT x BETWEEN 2 AND 10"
   },
   {
+   "key": "9449ea2432a8ec84",
+   "dialect": "clickhouse",
+   "sql": "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)"
+  },
+  {
    "key": "1617bd4b04f406c7",
    "dialect": "dremio",
    "sql": "SELECT x BETWEEN SYMMETRIC 10 AND 2"
@@ -17351,6 +19751,11 @@
    "key": "79ae061d120a337d",
    "dialect": "tsql",
    "sql": "SELECT (x BETWEEN 10 AND 2 OR x BETWEEN 2 AND 10)"
+  },
+  {
+   "key": "7d91085f81955fc6",
+   "dialect": "clickhouse",
+   "sql": "SELECT x BETWEEN 10 AND 2"
   },
   {
    "key": "2ae76e7fe7e8c0d1",
@@ -17580,6 +19985,11 @@
   {
    "key": "4426936e1bc53464",
    "dialect": "trino",
+   "sql": "REVERSE(x)"
+  },
+  {
+   "key": "877f6e67cfbd6373",
+   "dialect": "clickhouse",
    "sql": "REVERSE(x)"
   },
   {
@@ -17843,6 +20253,11 @@
    "sql": "TRANSLATE(x, y, z)"
   },
   {
+   "key": "a725bf180f630c8f",
+   "dialect": "clickhouse",
+   "sql": "TRANSLATE(x, y, z)"
+  },
+  {
    "key": "41eb528f8492305a",
    "dialect": "redshift",
    "sql": "TRANSLATE(x, y, z)"
@@ -17898,6 +20313,11 @@
    "sql": "SOUNDEX(x)"
   },
   {
+   "key": "6db81c1712994849",
+   "dialect": "clickhouse",
+   "sql": "SOUNDEX(x)"
+  },
+  {
    "key": "fb80d9010f842bf1",
    "dialect": "redshift",
    "sql": "SOUNDEX(x)"
@@ -17943,6 +20363,11 @@
    "sql": "GROUPING(x)"
   },
   {
+   "key": "fc500241c8e83d49",
+   "dialect": "clickhouse",
+   "sql": "GROUPING(x)"
+  },
+  {
    "key": "e0eafc0670dde44c",
    "dialect": "redshift",
    "sql": "GROUPING(x)"
@@ -17958,6 +20383,11 @@
    "sql": "GROUPING(col1, col2, col3)"
   },
   {
+   "key": "601f23c1e2180680",
+   "dialect": "clickhouse",
+   "sql": "GROUPING(col1, col2, col3)"
+  },
+  {
    "key": "45d6d5f917cdb17e",
    "dialect": "redshift",
    "sql": "GROUPING(col1, col2, col3)"
@@ -17966,6 +20396,11 @@
    "key": "a16d8e3be7623c3d",
    "dialect": "bigquery",
    "sql": "FARM_FINGERPRINT(x)"
+  },
+  {
+   "key": "a123607bfb5e539b",
+   "dialect": "clickhouse",
+   "sql": "farmFingerprint64(x)"
   },
   {
    "key": "e5c0a1fde4742456",
@@ -18343,6 +20778,11 @@
    "sql": "JSON_KEYS(foo, '$.a')"
   },
   {
+   "key": "61d91dcf047a7d9c",
+   "dialect": "clickhouse",
+   "sql": "SELECT 1 AS \"x\"\"\""
+  },
+  {
    "key": "5c6ea673a4fd5433",
    "dialect": "tsql",
    "sql": "SELECT 1 AS [[x]]]"
@@ -18363,9 +20803,24 @@
    "sql": "SELECT MAX_BY(a, b), MIN_BY(c, d)"
   },
   {
+   "key": "ff6473953496d51a",
+   "dialect": "clickhouse",
+   "sql": "SELECT argMax(a, b), argMin(c, d)"
+  },
+  {
    "key": "fd430dab0cb6f4df",
    "dialect": "doris",
    "sql": "SELECT ARRAY_SUM(x -> x * x, ARRAY(2, 3))"
+  },
+  {
+   "key": "1225504dc52a7e6f",
+   "dialect": "clickhouse",
+   "sql": "SELECT arraySum(x -> x*x, [2, 3])"
+  },
+  {
+   "key": "a1fd166d70e0e09e",
+   "dialect": "clickhouse",
+   "sql": "SELECT arraySum(x -> x * x, [2, 3])"
   },
   {
    "key": "b0fe7be74b71b528",
@@ -21073,9 +23528,24 @@
    "sql": "VARIANCE(a)"
   },
   {
+   "key": "e6f5fd39a0b8c905",
+   "dialect": "clickhouse",
+   "sql": "varSamp(a)"
+  },
+  {
    "key": "a9430dd20132c5fa",
    "dialect": "duckdb",
    "sql": "STDDEV(a)"
+  },
+  {
+   "key": "f4ff36e9f3cfd85c",
+   "dialect": "clickhouse",
+   "sql": "stddevSamp(a)"
+  },
+  {
+   "key": "f945f4dcaad72288",
+   "dialect": "clickhouse",
+   "sql": "dateTrunc('DAY', x)"
   },
   {
    "key": "cd4e2382616c39fe",
@@ -21788,6 +24258,11 @@
    "sql": "TIMESTAMP_MILLIS(x)"
   },
   {
+   "key": "bdbd58dc647c179a",
+   "dialect": "clickhouse",
+   "sql": "fromUnixTimestamp64Milli(CAST(x AS Nullable(Int64)))"
+  },
+  {
    "key": "187a671148896b82",
    "dialect": "mysql",
    "sql": "FROM_UNIXTIME(x / POWER(10, 3))"
@@ -21956,6 +24431,11 @@
    "key": "b8744e7d5f3f4b1d",
    "dialect": "mysql",
    "sql": "SELECT CAST('foo' AS DATETIME)"
+  },
+  {
+   "key": "c8573d9b663548c0",
+   "dialect": "clickhouse",
+   "sql": "SELECT CAST('foo' AS Nullable(DateTime))"
   },
   {
    "key": "7fbc1e54e746cdf1",
@@ -23581,6 +26061,11 @@
    "key": "6fa4da03b4406645",
    "dialect": "bigquery",
    "sql": "TO_HEX(MD5(x))"
+  },
+  {
+   "key": "92076d7d889049fc",
+   "dialect": "clickhouse",
+   "sql": "LOWER(HEX(MD5(x)))"
   },
   {
    "key": "175c202e9a49b1d6",
@@ -25416,6 +27901,11 @@
    "key": "2d97b74c4d21efcf",
    "dialect": "hive",
    "sql": "MAP(a, b, c, d)"
+  },
+  {
+   "key": "69a055f4c6b00429",
+   "dialect": "clickhouse",
+   "sql": "map(a, b, c, d)"
   },
   {
    "key": "9a7698ee1aa9646c",
@@ -27473,6 +29963,11 @@
    "sql": "CREATE TABLE t (foo VARBYTE)"
   },
   {
+   "key": "2585b69a4e097b58",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE t (foo Nullable(String))"
+  },
+  {
    "key": "0c10e41d8325aee1",
    "dialect": "mysql",
    "sql": "'\"abc\"'"
@@ -28558,6 +31053,11 @@
    "sql": "a / NULLIF(b, 0)"
   },
   {
+   "key": "4989249b10236816",
+   "dialect": "clickhouse",
+   "sql": "a / nullIf(b, 0)"
+  },
+  {
    "key": "f99b20ceed8e9b7e",
    "dialect": "databricks",
    "sql": "a / NULLIF(b, 0)"
@@ -28873,6 +31373,11 @@
    "sql": "SELECT RANDOM()"
   },
   {
+   "key": "0a0dba149173ab52",
+   "dialect": "clickhouse",
+   "sql": "SELECT TRIM(BOTH '|' FROM '||Hello ||| world||')"
+  },
+  {
    "key": "7a4f94b82fcefdce",
    "dialect": "duckdb",
    "sql": "SELECT * FROM test WHERE col1 % 4 = 3"
@@ -28988,9 +31493,24 @@
    "sql": "SELECT CAST(STRPTIME('2024-12-12', '%Y-%m-%d') AS DATE)"
   },
   {
+   "key": "6f1cef232018450e",
+   "dialect": "clickhouse",
+   "sql": "COALESCE(NULL, 1)"
+  },
+  {
+   "key": "1b3f01e151390a5b",
+   "dialect": "clickhouse",
+   "sql": "TRIM(BOTH 'h' FROM 'Hello World')"
+  },
+  {
    "key": "01f0f6a3735fa839",
    "dialect": "tsql",
    "sql": "SELECT * FROM t ORDER BY (SELECT NULL) OFFSET 0 ROWS FETCH FIRST 10 ROWS ONLY"
+  },
+  {
+   "key": "c64b02be529187ce",
+   "dialect": "clickhouse",
+   "sql": "dateTrunc('YEAR', CURRENT_TIMESTAMP())"
   },
   {
    "key": "b319a8dc8c71c099",
@@ -30061,6 +32581,11 @@
    "key": "1f398d9c540b01a1",
    "dialect": "postgres",
    "sql": "SELECT JSON_EXTRACT_PATH_TEXT(x, k1, k2, k3) FROM t"
+  },
+  {
+   "key": "1a30fceab352a001",
+   "dialect": "clickhouse",
+   "sql": "SELECT JSONExtractString(x, k1, k2, k3) FROM t"
   },
   {
    "key": "176c5a9ad4377e42",
@@ -31743,6 +34268,11 @@
    "sql": "CONCAT(a, b)"
   },
   {
+   "key": "c09fd060e8f25a40",
+   "dialect": "clickhouse",
+   "sql": "CONCAT(COALESCE(a, ''), COALESCE(b, ''))"
+  },
+  {
    "key": "2dd4f4906b41a75e",
    "dialect": "duckdb",
    "sql": "CONCAT(a, b)"
@@ -31751,6 +34281,11 @@
    "key": "fadf9ae64cd97ec8",
    "dialect": "presto",
    "sql": "CONCAT(COALESCE(CAST(a AS VARCHAR), ''), COALESCE(CAST(b AS VARCHAR), ''))"
+  },
+  {
+   "key": "f14812e785cb1d88",
+   "dialect": "clickhouse",
+   "sql": "a || b"
   },
   {
    "key": "c4ee13db447500f6",
@@ -31956,6 +34491,11 @@
    "key": "fe782dc96a90de75",
    "dialect": "duckdb",
    "sql": "ARRAY_LENGTH(arr, 1)"
+  },
+  {
+   "key": "e5845534e766148e",
+   "dialect": "clickhouse",
+   "sql": "LENGTH(arr)"
   },
   {
    "key": "0ba7a0b0708a33e1",
@@ -32251,6 +34791,11 @@
    "key": "1587946215fb855d",
    "dialect": "postgres",
    "sql": "CREATE FUNCTION add(integer, integer) RETURNS integer AS 'select $1 + $2;' LANGUAGE SQL IMMUTABLE CALLED ON NULL INPUT"
+  },
+  {
+   "key": "8f53ab4eb7298980",
+   "dialect": "clickhouse",
+   "sql": "SELECT JSONExtractString(foo, '12')"
   },
   {
    "key": "1d6bf5f2453a37ca",
@@ -32973,6 +35518,11 @@
    "sql": "CAST(x AS TIMESTAMP)"
   },
   {
+   "key": "e007b01be203105a",
+   "dialect": "clickhouse",
+   "sql": "CAST(x AS DATETIME64)"
+  },
+  {
    "key": "def0a827538bfb8e",
    "dialect": "mysql",
    "sql": "TIMESTAMP(x)"
@@ -33378,6 +35928,11 @@
    "sql": "SELECT MAX_BY(a.id, a.timestamp) FROM a"
   },
   {
+   "key": "5d60bb93b7e20ede",
+   "dialect": "clickhouse",
+   "sql": "SELECT argMax(a.id, a.timestamp) FROM a"
+  },
+  {
    "key": "375f52af854b5d20",
    "dialect": "duckdb",
    "sql": "SELECT MAX_BY(a.id, a.timestamp) FROM a"
@@ -33396,6 +35951,11 @@
    "key": "a30775cfb78f1e79",
    "dialect": "presto",
    "sql": "SELECT MIN_BY(a.id, a.timestamp, 3) FROM a"
+  },
+  {
+   "key": "35326f0d4eceff47",
+   "dialect": "clickhouse",
+   "sql": "SELECT argMin(a.id, a.timestamp) FROM a"
   },
   {
    "key": "ed7673bf342d3d26",
@@ -33446,6 +36006,11 @@
    "key": "173c95d9022113bc",
    "dialect": "bigquery",
    "sql": "ANY_VALUE(x)"
+  },
+  {
+   "key": "60f84f23cc6abc68",
+   "dialect": "clickhouse",
+   "sql": "any(x)"
   },
   {
    "key": "699b2170bc621dd4",
@@ -36498,9 +39063,19 @@
    "sql": "CREATE TABLE testTypes (a DATE)"
   },
   {
+   "key": "7513f86bc127f648",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE testTypes (a DATE32)"
+  },
+  {
    "key": "0c262e2d91a46343",
    "dialect": "singlestore",
    "sql": "CREATE TABLE testTypes (a DATETIME)"
+  },
+  {
+   "key": "c3efa8ce9dc804bd",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE testTypes (a DATETIME64)"
   },
   {
    "key": "70105a0d73ae1305",
@@ -36508,9 +39083,19 @@
    "sql": "CREATE TABLE testTypes (a DECIMAL(9, 3))"
   },
   {
+   "key": "35887c22befd3ad9",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE testTypes (a DECIMAL32(3))"
+  },
+  {
    "key": "c9d3c29e1e74fb59",
    "dialect": "singlestore",
    "sql": "CREATE TABLE testTypes (a DECIMAL(18, 3))"
+  },
+  {
+   "key": "95335a65b3708ffa",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE testTypes (a DECIMAL64(3))"
   },
   {
    "key": "f7fd5664d5362e82",
@@ -36518,9 +39103,19 @@
    "sql": "CREATE TABLE testTypes (a DECIMAL(38, 3))"
   },
   {
+   "key": "5385e3d93b259c75",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE testTypes (a DECIMAL128(3))"
+  },
+  {
    "key": "4a1620cdaf87202e",
    "dialect": "singlestore",
    "sql": "CREATE TABLE testTypes (a DECIMAL(65, 3))"
+  },
+  {
+   "key": "70312211ebffc4e8",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE testTypes (a DECIMAL256(3))"
   },
   {
    "key": "a903e15e18537936",
@@ -36528,9 +39123,24 @@
    "sql": "CREATE TABLE testTypes (a ENUM('a'))"
   },
   {
+   "key": "36e13c76c002e1da",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE testTypes (a ENUM8('a'))"
+  },
+  {
+   "key": "49857bff53645a6c",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE testTypes (a ENUM16('a'))"
+  },
+  {
    "key": "67802d284d16db75",
    "dialect": "singlestore",
    "sql": "CREATE TABLE testTypes (a TEXT(2))"
+  },
+  {
+   "key": "4420a87b91db3bec",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE testTypes (a FIXEDSTRING(2))"
   },
   {
    "key": "c289f9baf15a93e2",
@@ -36541,6 +39151,31 @@
    "key": "a70985bee6112094",
    "dialect": "singlestore",
    "sql": "CREATE TABLE testTypes (a GEOGRAPHYPOINT)"
+  },
+  {
+   "key": "05f7f67da9ad7061",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE testTypes (a POINT)"
+  },
+  {
+   "key": "f990ca00734ffec5",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE testTypes (a RING)"
+  },
+  {
+   "key": "af10e582124a90e1",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE testTypes (a LINESTRING)"
+  },
+  {
+   "key": "2121bba063c87af2",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE testTypes (a POLYGON)"
+  },
+  {
+   "key": "9333f8481892829f",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE testTypes (a MULTIPOLYGON)"
   },
   {
    "key": "d2384cca2b0d61b4",
@@ -36921,6 +39556,11 @@
    "key": "0074b3a751bce873",
    "dialect": "duckdb",
    "sql": "CAST(JARO_WINKLER_SIMILARITY(UPPER('hello'), UPPER('world')) * 100 AS INT)"
+  },
+  {
+   "key": "1228f8c2767bd555",
+   "dialect": "clickhouse",
+   "sql": "jaroWinklerSimilarity(UPPER('hello'), UPPER('world'))"
   },
   {
    "key": "3c14dc9c357d7719",
@@ -37615,6 +40255,11 @@
   {
    "key": "4e40b7131026c47d",
    "dialect": "bigquery",
+   "sql": "POWER(x, 2)"
+  },
+  {
+   "key": "3dea145025d7e206",
+   "dialect": "clickhouse",
    "sql": "POWER(x, 2)"
   },
   {
@@ -38863,6 +41508,11 @@
    "sql": "SELECT CURRENT_VERSION()"
   },
   {
+   "key": "1f5457cc068fe908",
+   "dialect": "clickhouse",
+   "sql": "SELECT VERSION()"
+  },
+  {
    "key": "a321cf59d9dd9ebd",
    "dialect": "trino",
    "sql": "SELECT VERSION()"
@@ -39246,6 +41896,11 @@
    "key": "5c41772e66831d3a",
    "dialect": "bigquery",
    "sql": "ENDS_WITH('abc', 'c')"
+  },
+  {
+   "key": "8a458404a44fa3cf",
+   "dialect": "clickhouse",
+   "sql": "endsWith('abc', 'c')"
   },
   {
    "key": "9e94420cea20fcf7",
@@ -40563,6 +43218,11 @@
    "sql": "WITH tbl AS (SELECT 1 AS id, 'eggy' AS name UNION ALL SELECT NULL AS id, 'jake' AS name) SELECT COUNT(DISTINCT id, name) AS cnt FROM tbl"
   },
   {
+   "key": "ad5bac6f3c4ae339",
+   "dialect": "clickhouse",
+   "sql": "WITH tbl AS (SELECT 1 AS id, 'eggy' AS name UNION ALL SELECT NULL AS id, 'jake' AS name) SELECT COUNT(DISTINCT id, name) AS cnt FROM tbl"
+  },
+  {
    "key": "a7a8ec203bef7d00",
    "dialect": "databricks",
    "sql": "WITH tbl AS (SELECT 1 AS id, 'eggy' AS name UNION ALL SELECT NULL AS id, 'jake' AS name) SELECT COUNT(DISTINCT id, name) AS cnt FROM tbl"
@@ -41166,6 +43826,11 @@
    "key": "2af9b9e26644583b",
    "dialect": "hive",
    "sql": "ARRAY(0, 1, 2)"
+  },
+  {
+   "key": "bf99172c971bda8a",
+   "dialect": "clickhouse",
+   "sql": "SELECT fname, lname, age FROM person ORDER BY age DESC NULLS FIRST, fname ASC, lname NULLS FIRST"
   },
   {
    "key": "a03b7b2f38fd8204",
@@ -42928,6 +45593,11 @@
    "sql": "SELECT MAX_BY(a, b), MIN_BY(a, b) FROM t"
   },
   {
+   "key": "fb01e68364e9dd1d",
+   "dialect": "clickhouse",
+   "sql": "SELECT argMax(a, b), argMin(a, b) FROM t"
+  },
+  {
    "key": "5370fca0223f1130",
    "dialect": "presto",
    "sql": "SELECT MAX_BY(a, b), MIN_BY(a, b) FROM t"
@@ -43465,6 +46135,11 @@
   {
    "key": "22a387715005313d",
    "dialect": "bigquery",
+   "sql": "CREATE TABLE a"
+  },
+  {
+   "key": "4c0c7249f142b4b6",
+   "dialect": "clickhouse",
    "sql": "CREATE TABLE a"
   },
   {
@@ -46873,6 +49548,11 @@
    "sql": "LAST_DAY(CAST(CURRENT_TIMESTAMP() AS DATE))"
   },
   {
+   "key": "9c12d5a1b0a720b5",
+   "dialect": "clickhouse",
+   "sql": "LAST_DAY(CAST(CURRENT_TIMESTAMP() AS Nullable(DATE)))"
+  },
+  {
    "key": "5815efdcf2997f66",
    "dialect": "duckdb",
    "sql": "LAST_DAY(CAST(CURRENT_TIMESTAMP AS DATE))"
@@ -46916,6 +49596,11 @@
    "key": "cb83468548dfcd91",
    "dialect": "bigquery",
    "sql": "LAST_DAY(DATE_ADD(CAST(CURRENT_TIMESTAMP() AS DATE), INTERVAL -1 MONTH))"
+  },
+  {
+   "key": "e7f56599db5cf314",
+   "dialect": "clickhouse",
+   "sql": "LAST_DAY(DATE_ADD(MONTH, -1, CAST(CURRENT_TIMESTAMP() AS Nullable(DATE))))"
   },
   {
    "key": "e98c6964a97f7dc2",
@@ -47501,6 +50186,11 @@
    "key": "16269f2038cd6eac",
    "dialect": "spark2",
    "sql": "SELECT CAST(MONTHS_BETWEEN(CAST('end' AS TIMESTAMP), CAST('start' AS TIMESTAMP)) / 3 AS INT)"
+  },
+  {
+   "key": "5b071058de0572dd",
+   "dialect": "clickhouse",
+   "sql": "SELECT DATE_DIFF(DAY, CAST(CAST(a AS Nullable(DateTime)) AS DateTime64(6)), CAST(CAST(b AS Nullable(DateTime)) AS DateTime64(6))) AS x FROM foo"
   },
   {
    "key": "82886a2e8714b494",

@@ -1,0 +1,123 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "TRUNCATE DATABASE db ON CLUSTER '{cluster}'",
+ "sql": "TRUNCATE DATABASE db ON CLUSTER '{cluster}'",
+ "tokens": [
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 0,
+   "t": "TRUNCATE",
+   "x": "TRUNCATE"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 9,
+   "t": "DATABASE",
+   "x": "DATABASE"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "db"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 21,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "CLUSTER"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 32,
+   "t": "STRING",
+   "x": "{cluster}"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.TruncateTable"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "db",
+   "m": {
+    "col": 20,
+    "end": 19,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "db"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "is_database",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.OnCluster",
+   "i": 0,
+   "k": "cluster"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 43,
+    "end": 42,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "{cluster}"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

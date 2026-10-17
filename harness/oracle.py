@@ -39,7 +39,7 @@ import sys
 
 # Dialects the executor configures. sqlglot's per-dialect suites supply
 # dialect-specific statements; identity.sql supplies the dialect-neutral core.
-DIALECTS = ("tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery")
+DIALECTS = ("tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery", "clickhouse")
 
 
 # Statements chosen to reach the lexical corners sqlglot's own identity corpus
@@ -985,9 +985,16 @@ def json_default(o):
     keeps the corpus faithful to the tree the reference built.
     """
     import sqlglot
+    from sqlglot.dialects.dialect import Dialect
 
     if isinstance(o, sqlglot.exp.Expression):
         return o.dump()
+    # A DIALECT the tree itself carries. ClickHouse's JSON cast keeps one in
+    # the `dialect` slot of its DataType, which the reference's writer
+    # consults for the type names, so the dump NAMES it rather than dropping
+    # the two statements that hold one.
+    if isinstance(o, Dialect):
+        return o.__class__.__name__.lower()
     raise TypeError(f"Object of type {o.__class__.__name__} is not JSON serializable")
 
 

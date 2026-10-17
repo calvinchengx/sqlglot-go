@@ -81,6 +81,10 @@ func init() {
 		"DateDiff":                            (*generator).writeDateDiff,
 		"Trunc":                               (*generator).writeTrunc,
 		"PartitionRange":                      (*generator).writePartitionRange,
+		"ParameterizedAgg":                    (*generator).writeParameterizedAgg,
+		"CombinedParameterizedAgg":            (*generator).writeParameterizedAgg,
+		"AnonymousAggFunc":                    (*generator).writeAnonymousAggFunc,
+		"CombinedAggFunc":                     (*generator).writeAnonymousAggFunc,
 		"Encode":                              (*generator).writeEncodeDecode,
 		"Decode":                              (*generator).writeEncodeDecode,
 		"OpenJSONColumnDef":                   (*generator).writeOpenJSONColumnDef,
@@ -177,6 +181,19 @@ func init() {
 		"EncodeProperty":                      (*generator).writeEncodeProperty,
 		"DateAdd":                             (*generator).writeDateAdd,
 		"DateSub":                             (*generator).writeDateSub,
+		"DateBin":                             (*generator).writeDateBin,
+		"Final":                               (*generator).writeFinal,
+		"WithFill":                            (*generator).writeWithFill,
+		"SettingsProperty":                    (*generator).writeSettingsProperty,
+		"DictProperty":                        (*generator).writeDictProperty,
+		"DictRange":                           (*generator).writeDictRange,
+		"DictSubProperty":                     (*generator).writeDictSubProperty,
+		"OnCluster":                           (*generator).writeOnCluster,
+		"ProjectionDef":                       (*generator).writeProjectionDef,
+		"CastToStrType":                       (*generator).writeCastToStrType,
+		"JSONCast":                            (*generator).writeJSONCast,
+		"MergeTreeTTL":                        (*generator).writeMergeTreeTTL,
+		"MergeTreeTTLAction":                  (*generator).writeMergeTreeTTLAction,
 		"CurrentTime":                         (*generator).writeCurrentTime,
 		"CurrentTimestamp":                    (*generator).writeCurrentTime,
 		"StrToTime":                           (*generator).writeStrToTime,
@@ -221,6 +238,9 @@ func init() {
 		"MacroOverload":                       (*generator).writeMacroOverload,
 		"AlterSet":                            (*generator).writeAlterSet,
 		"Partition":                           (*generator).writePartition,
+		"PartitionId":                         (*generator).writePartitionId,
+		"DropPartition":                       (*generator).writeDropPartition,
+		"ReplacePartition":                    (*generator).writeReplacePartition,
 		"PartitionedByProperty":               (*generator).writePartitionedByProperty,
 		"PartitionByRangePropertyDynamic":     (*generator).writePartitionByRangePropertyDynamic,
 		"UniqueKeyProperty":                   (*generator).writeUniqueKeyProperty,
@@ -577,6 +597,8 @@ func (g *generator) writeSelect(e *Expression) string {
 	}
 
 	add(g.child(e, "match"))
+	// PREWHERE stands in front of WHERE (Generator.query_modifiers).
+	add(g.child(e, "prewhere"))
 	add(g.child(e, "where"))
 	add(g.child(e, "connect"))
 	add(g.writeGroupClause(e))
@@ -650,6 +672,18 @@ func (g *generator) writeSelect(e *Expression) string {
 	for _, lock := range locks {
 		add(g.node(lock))
 	}
+	// ClickHouse's SETTINGS and FORMAT hang off the query and are written
+	// after everything else (ClickHouseGenerator.after_limit_modifiers).
+	if settings, _ := e.Args["settings"].([]*Expression); len(settings) > 0 {
+		names := make([]string, 0, len(settings))
+		for _, setting := range settings {
+			names = append(names, g.node(setting))
+		}
+		add("SETTINGS " + strings.Join(names, ", "))
+	}
+	if format := g.child(e, "format"); format != "" {
+		add("FORMAT " + format)
+	}
 
 	return g.withPrefix(e, strings.Join(parts, " "))
 }
@@ -677,14 +711,19 @@ func (g *generator) writeSetOperation(e *Expression) string {
 		lead += kind + " "
 	}
 	word := lead + strings.ToUpper(e.Class)
-	switch {
-	case e.Args["distinct"] == false:
-		word += " ALL"
-	case e.Args["distinct"] == true && g.dialect == "bigquery":
-		// BigQuery has no DEFAULT for a set operation's DISTINCT -- it reads
-		// a bare UNION as an error -- so the word is always written
-		// (BigQuery.SET_OP_DISTINCT_BY_DEFAULT, Generator.set_operation).
-		word += " DISTINCT"
+	// DISTINCT or ALL is written only where it DIFFERS from what the dialect
+	// makes of a bare set operation. ClickHouse's EXCEPT and INTERSECT are
+	// ALL by default, so a bare one writes nothing and an explicit ALL does
+	// too; BigQuery has no default at all, so both are always written
+	// (Generator.set_operation, SET_OP_DISTINCT_BY_DEFAULT).
+	if distinct, ok := e.Args["distinct"].(bool); ok {
+		if def, hasDef := setOpDefaultDistinct(g.dialect, e.Class); !hasDef || distinct != def {
+			if distinct {
+				word += " DISTINCT"
+			} else {
+				word += " ALL"
+			}
+		}
 	}
 	if e.Args["by_name"] == true {
 		word += " BY NAME"
@@ -736,6 +775,11 @@ func (g *generator) writeWith(e *Expression) string {
 }
 
 func (g *generator) writeCTE(e *Expression) string {
+	// A scalar CTE is `expr AS name`, not `name AS (query)`
+	// (ClickHouseGenerator.cte_sql).
+	if e.Args["scalar"] == true {
+		return g.child(e, "this") + " AS " + g.child(e, "alias")
+	}
 	alias := g.child(e, "alias")
 	g.qualifyDerivedOutputs(e)
 	// DuckDB names a RECURSIVE CTE's dedup key between the alias and AS:
@@ -930,6 +974,15 @@ func (g *generator) joins(e *Expression) string {
 
 func (g *generator) writeJoin(e *Expression) string {
 	this := g.child(e, "this")
+	// `ARRAY JOIN a, b` names further arrays beside the first, and they are
+	// written after it, comma-separated (Generator.join_sql).
+	if extras, _ := e.Args["expressions"].([]*Expression); len(extras) > 0 {
+		parts := make([]string, 0, len(extras))
+		for _, x := range extras {
+			parts = append(parts, g.node(x))
+		}
+		this += ", " + strings.Join(parts, ", ")
+	}
 	// An APPLY writes its own words and is the whole join. A plain LATERAL is
 	// not: it goes where a table goes, so the comma or the JOIN and its ON
 	// are still the enclosing join's to write.
@@ -940,8 +993,15 @@ func (g *generator) writeJoin(e *Expression) string {
 	}
 	words := []string{}
 	// The METHOD comes first: NATURAL says HOW the rows are matched, and the
-	// side and kind say which of them are kept.
-	for _, key := range []string{"method", "side", "kind"} {
+	// side and kind say which of them are kept. GLOBAL, where a dialect has
+	// it, stands between the method and the side (Generator.join_sql).
+	if s, ok := e.Args["method"].(string); ok && s != "" {
+		words = append(words, s)
+	}
+	if s, ok := e.Args["global_"].(string); ok && s != "" {
+		words = append(words, "GLOBAL")
+	}
+	for _, key := range []string{"side", "kind"} {
 		if s, ok := e.Args[key].(string); ok && s != "" {
 			words = append(words, s)
 		}
@@ -1147,20 +1207,27 @@ func (g *generator) writeGroup(e *Expression) string {
 	// ALL and DISTINCT are a prefix. Either can stand alone, and either can
 	// stand in front of CUBE / ROLLUP. An absent flag is neither word.
 	all, flagged := e.Args["all"].(bool)
+	var out string
 	switch {
 	case flagged && all && len(parts) == 0:
-		return " GROUP BY ALL"
+		out = " GROUP BY ALL"
 	case flagged && all:
-		return " GROUP BY ALL " + strings.Join(parts, sep)
+		out = " GROUP BY ALL " + strings.Join(parts, sep)
 	case flagged && len(parts) == 0:
-		return " GROUP BY DISTINCT"
+		out = " GROUP BY DISTINCT"
 	case flagged:
-		return " GROUP BY DISTINCT " + strings.Join(parts, sep)
-	}
-	if len(parts) == 0 {
+		out = " GROUP BY DISTINCT " + strings.Join(parts, sep)
+	case len(parts) == 0:
 		return g.fail("GROUP BY with nothing to group by")
+	default:
+		out = " GROUP BY " + strings.Join(parts, sep)
 	}
-	return " GROUP BY " + strings.Join(parts, sep)
+	// `WITH TOTALS` asks for a total row, and ClickHouse writes it after the
+	// columns (Generator.group_sql, ClickHouseGenerator.GROUPINGS_SEP).
+	if g.dialect == "clickhouse" && e.Args["totals"] == true {
+		out += " WITH TOTALS"
+	}
+	return out
 }
 
 // writeStar writes `*` and what may follow it: EXCEPT drops columns, REPLACE
@@ -1203,7 +1270,48 @@ func (g *generator) writeVarMap(e *Expression) string {
 	for i := range keyItems {
 		parts = append(parts, g.node(keyItems[i]), g.node(valueItems[i]))
 	}
-	return "MAP(" + strings.Join(parts, ", ") + ")"
+	body := strings.Join(parts, ", ")
+	// ClickHouse lower-cases the call, and writes the brace literal instead
+	// when the map is a SETTINGS value
+	// (ClickHouseGenerator._map_sql, _lower_func).
+	if g.dialect == "clickhouse" {
+		// The parent's OWN key is what the reference reads: a map under a
+		// SETTINGS assignment's `expression` sits in a settings list
+		// (ClickHouseGenerator._map_sql, `parent.arg_key`).
+		if parentKey(e.Parent) == "settings" {
+			entries := make([]string, 0, len(keyItems))
+			for i := range keyItems {
+				entries = append(entries, g.node(keyItems[i])+": "+g.node(valueItems[i]))
+			}
+			return "{" + strings.Join(entries, ", ") + "}"
+		}
+		return "map(" + body + ")"
+	}
+	return "MAP(" + body + ")"
+}
+
+// parentKey is the argument key a node sits under in its parent, or "" when it
+// has no parent. The reference reads this directly as `parent.arg_key`; the
+// port keeps no back-pointer to it, so it is found by scanning.
+func parentKey(e *Expression) string {
+	if e == nil || e.Parent == nil {
+		return ""
+	}
+	for _, k := range e.Parent.Keys {
+		switch v := e.Parent.Args[k].(type) {
+		case *Expression:
+			if v == e {
+				return k
+			}
+		case []*Expression:
+			for _, c := range v {
+				if c == e {
+					return k
+				}
+			}
+		}
+	}
+	return ""
 }
 
 // writeToMap writes DuckDB's map literal: the word, then the struct it holds
@@ -1306,17 +1414,51 @@ func (g *generator) writeOrdered(e *Expression) string {
 	// NULLS FIRST/LAST is written only when it DIFFERS from where this dialect
 	// puts nulls by default for that direction -- otherwise the clause says
 	// nothing and the reference leaves it out. T-SQL has no clause at all.
-	if !g.tables.WritesNullsOrdering {
-		return this
+	if g.tables.WritesNullsOrdering {
+		if nullsFirst, ok := e.Args["nulls_first"].(bool); ok && nullsFirst != g.defaultNullsFirst(desc) {
+			if nullsFirst {
+				this += " NULLS FIRST"
+			} else {
+				this += " NULLS LAST"
+			}
+		}
 	}
-	nullsFirst, ok := e.Args["nulls_first"].(bool)
-	if !ok || nullsFirst == g.defaultNullsFirst(desc) {
-		return this
+	// `WITH FILL` fills the gaps in a series (Generator.ordered_sql).
+	if fill := g.child(e, "with_fill"); fill != "" {
+		this += " " + fill
 	}
-	if nullsFirst {
-		return this + " NULLS FIRST"
+	return this
+}
+
+// writeWithFill writes the tail of an ORDER BY that fills a series:
+// `WITH FILL [FROM x] [TO y] [STEP z] [INTERPOLATE (...)]`
+// (Generator.withfill_sql).
+func (g *generator) writeWithFill(e *Expression) string {
+	out := "WITH FILL"
+	if from := g.child(e, "from_"); from != "" {
+		out += " FROM " + from
 	}
-	return this + " NULLS LAST"
+	if to := g.child(e, "to"); to != "" {
+		out += " TO " + to
+	}
+	if step := g.child(e, "step"); step != "" {
+		out += " STEP " + step
+	}
+	if items, _ := e.Args["interpolate"].([]*Expression); len(items) > 0 {
+		parts := make([]string, 0, len(items))
+		for _, item := range items {
+			// An interpolation names the column and then what to fill it
+			// with, written `alias AS column` -- the reverse of an ordinary
+			// alias (Generator.withfill_sql).
+			if item.Class == "Alias" {
+				parts = append(parts, g.child(item, "alias")+" AS "+g.child(item, "this"))
+				continue
+			}
+			parts = append(parts, g.node(item))
+		}
+		out += " INTERPOLATE (" + strings.Join(parts, ", ") + ")"
+	}
+	return out
 }
 
 // defaultNullsFirst is where this dialect puts nulls when the statement does
@@ -1366,7 +1508,22 @@ func (g *generator) writeLimitWord(e *Expression, word string) string {
 	if opts, _ := e.Args["limit_options"].(*Expression); opts != nil {
 		out += g.node(opts)
 	}
+	out += g.limitBy(e)
 	return out
+}
+
+// limitBy writes ClickHouse's `BY <columns>` tail on a LIMIT or OFFSET
+// (Generator.limit_sql, Generator.offset_sql).
+func (g *generator) limitBy(e *Expression) string {
+	by, _ := e.Args["expressions"].([]*Expression)
+	if len(by) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(by))
+	for _, b := range by {
+		parts = append(parts, g.node(b))
+	}
+	return " BY " + strings.Join(parts, ", ")
 }
 
 func (g *generator) writeOffset(e *Expression) string {
@@ -1379,6 +1536,17 @@ func (g *generator) writeOffset(e *Expression) string {
 	if word := g.tables.OffsetRowsWord; word != "" {
 		out += " " + word
 	}
+	// ClickHouse's OFFSET ... FETCH needs a ROW or ROWS keyword after the
+	// count, and only when a FETCH follows it
+	// (ClickHouseGenerator.offset_sql).
+	if g.dialect == "clickhouse" {
+		if e.Parent != nil && e.Parent.Class == "Select" {
+			if limit, _ := e.Parent.Args["limit"].(*Expression); limit != nil && limit.Class == "Fetch" {
+				out += " ROWS"
+			}
+		}
+	}
+	out += g.limitBy(e)
 	return out
 }
 
@@ -1552,6 +1720,13 @@ func (g *generator) writeIdentifier(e *Expression) string {
 	if !quoted && g.tables.ReservedKeywords[strings.ToUpper(name)] {
 		quoted = true
 	}
+	// A name that STARTS WITH A DIGIT is quoted where the dialect cannot read
+	// it back bare (Generator.identifier_sql,
+	// Dialect.IDENTIFIERS_CAN_START_WITH_DIGIT).
+	if !quoted && !identifiersCanStartWithDigit(g.dialect) &&
+		name != "" && name[0] >= '0' && name[0] <= '9' {
+		quoted = true
+	}
 	if !quoted && (!readableAsABareName(name) || !g.lexesBackAsOneName(name)) {
 		// BigQuery names a table with dashes and a star just as it was
 		// written -- `FROM my-table`, `FROM x.*` -- and its own reader takes
@@ -1688,6 +1863,16 @@ func (g *generator) writeQuotedString(e *Expression) string {
 	}
 	template, escapes, _ := strings.Cut(spec, "\t")
 	body, _ := e.Args["this"].(string)
+	// A raw string's own backslashes are doubled FIRST, where the dialect
+	// reads a backslash as a string escape, so the value reads back the same
+	// rather than escaping whatever follows it (Generator.rawstring_sql).
+	if e.Class == "RawString" {
+		// ... but a dialect whose PREFERRED escape IS the backslash already
+		// doubles it below, so only the others need it done here.
+		if _, ok := g.cfg.StringEscapes["\\"]; ok && g.cfg.StringEscapePreferred != "\\" {
+			body = strings.ReplaceAll(body, "\\", "\\\\")
+		}
+	}
 	switch escapes {
 	case "byte":
 		// A byte string goes further than a quoted one: a CONTROL character
@@ -2206,6 +2391,18 @@ func (g *generator) writeDateTrunc(e *Expression) string {
 }
 
 func (g *generator) writeCast(e *Expression) string {
+	// The parser reads a bare ClickHouse STR_TO_DATE as a CAST of StrToDate
+	// to DateTime, and the writer collapses that back to the call it came
+	// from -- but only for the exact bare type the parser built. An explicit
+	// `CAST(x AS DateTime)` carries a parsed type with flags of its own, is a
+	// different node, and keeps its CAST (ClickHouseGenerator.cast_sql).
+	if g.dialect == "clickhouse" && e.Class == "Cast" {
+		if this, _ := e.Args["this"].(*Expression); this != nil && this.Class == "StrToDate" {
+			if to, _ := e.Args["to"].(*Expression); isBareDateTimeType(to) {
+				return g.child(e, "this")
+			}
+		}
+	}
 	word := "CAST"
 	if e.Class == "TryCast" {
 		word = "TRY_CAST"
@@ -2395,6 +2592,25 @@ func cappedPrecisionText(dt *Expression, max int) string {
 // writePlaceholder writes a bound parameter. The spelling is the dialect's:
 // `$name` in DuckDB, `%(name)s` in PostgreSQL, `:name` elsewhere.
 func (g *generator) writePlaceholder(e *Expression) string {
+	// A ClickHouse query parameter is `{name: Type}`
+	// (ClickHouseGenerator.placeholder_sql).
+	if g.dialect == "clickhouse" {
+		kindText := ""
+		switch k := e.Args["kind"].(type) {
+		case *Expression:
+			kindText = g.node(k)
+		case string:
+			kindText = k
+		}
+		if kindText != "" {
+			this, _ := e.Args["this"].(*Expression)
+			name := ""
+			if this != nil {
+				name = this.Name()
+			}
+			return "{" + name + ": " + kindText + "}"
+		}
+	}
 	// A notebook WIDGET writes `{name}` and nothing else the ordinary
 	// spellings below carry -- no dollar sign, no colon, and the raw NAME
 	// rather than however an Identifier would otherwise be quoted.
@@ -2410,7 +2626,9 @@ func (g *generator) writePlaceholder(e *Expression) string {
 	case string:
 		name = v
 	case *Expression:
-		name = g.node(v)
+		// The name goes back in BARE -- the reference's placeholder_sql
+		// writes `expression.name`, never the quoted identifier.
+		name = v.Name()
 	}
 	if name == "" {
 		if jdbc, _ := e.Args["jdbc"].(bool); jdbc {
@@ -2606,7 +2824,17 @@ func capDataTypePrecision(e *Expression, max int) *Expression {
 	)
 }
 
+// writeDataType writes a type, and then lets a dialect that WRAPS one have
+// the last word (clickhouseNullable).
 func (g *generator) writeDataType(e *Expression) string {
+	body := g.dataTypeBody(e)
+	if g.dialect == "clickhouse" {
+		return g.clickhouseNullable(e, body)
+	}
+	return body
+}
+
+func (g *generator) dataTypeBody(e *Expression) string {
 	// An INTERVAL type's `this` is an Interval NODE carrying the unit, not a
 	// type name: `CAST(x AS INTERVAL DAY)`.
 	if inner, ok := e.Args["this"].(*Expression); ok && inner != nil {
@@ -2663,6 +2891,16 @@ func (g *generator) writeDataType(e *Expression) string {
 	if !ok {
 		return g.fail("DataType." + string(kind))
 	}
+	// ClickHouse's type templates were recorded from a nullable-unset type,
+	// so each carries the `Nullable(...)` its writer added. That wrapper
+	// cannot survive composition -- a sized type's template is only the
+	// OPENING of it, and appending the size leaves the parens unbalanced --
+	// so it is taken off here and put back by clickhouseNullable, which is
+	// the one place that knows whether it belongs
+	// (ClickHouseGenerator.datatype_sql).
+	if g.dialect == "clickhouse" {
+		out = clickhouseStripNullable(out)
+	}
 	bareOut := out
 	// The collation a type's values are compared under, where one was named.
 	// It hangs off the TYPE and is written after everything else it carries.
@@ -2699,6 +2937,9 @@ func (g *generator) writeDataType(e *Expression) string {
 		// A type carrying PARAMETERS may take a different name from the bare
 		// one: Databricks writes VARCHAR as STRING and VARCHAR(255) as itself.
 		if sized, ok := g.tables.SizedTypeSQL[string(kind)]; ok {
+			if g.dialect == "clickhouse" {
+				sized = clickhouseStripNullable(sized)
+			}
 			out := sized + "(" + params + ")"
 			// Redshift writes TIMETZ/TIMESTAMPTZ as their bare name plus a
 			// trailing suffix, whatever size the type carries -- the size
@@ -2862,7 +3103,10 @@ func (g *generator) writeColumnDef(e *Expression) string {
 	// declared type in T-SQL, and an identity column is widened to BIGINT in
 	// Databricks, which supports no narrower one.
 	switch {
-	case !g.tables.ComputedKeepsType && hasConstraint(e, "ComputedColumnConstraint"):
+	case !g.tables.ComputedKeepsType && g.dialect != "clickhouse" &&
+		hasConstraint(e, "ComputedColumnConstraint"):
+		// ClickHouse KEEPS the declared type: `c String MATERIALIZED func()`
+		// (ClickHouseGenerator.COMPUTED_COLUMN_WITH_TYPE).
 		kind = ""
 	case g.tables.IdentityWidensType &&
 		hasConstraint(e, "GeneratedAsIdentityColumnConstraint") &&
@@ -2883,8 +3127,9 @@ func (g *generator) writeColumnDef(e *Expression) string {
 
 func (g *generator) writeAnonymous(e *Expression) string {
 	// BigQuery does not normalize a function's name, so a call keeps the case
-	// it was written with (BigQuery.NORMALIZE_FUNCTIONS, Generator.func).
-	return g.anonymous(e, g.dialect != "bigquery")
+	// off (BigQuery.NORMALIZE_FUNCTIONS, ClickHouse.NORMALIZE_FUNCTIONS,
+	// Generator.func).
+	return g.anonymous(e, normalizeFunctionsUpper(g.dialect))
 }
 
 func (g *generator) anonymous(e *Expression, upper bool) string {
@@ -2902,22 +3147,63 @@ func (g *generator) anonymous(e *Expression, upper bool) string {
 	return name + "(" + g.callList(e) + ")"
 }
 
+// normalizeFunctionsUpper reports whether a dialect upper-cases a function's
+// name on the way out (Dialect.NORMALIZE_FUNCTIONS, default "upper").
+func normalizeFunctionsUpper(dialect string) bool {
+	switch dialect {
+	case "bigquery", "clickhouse":
+		return false
+	}
+	return true
+}
+
+// setOpDefaultDistinct is what a dialect makes of a BARE set operation: which
+// flag the word implies when neither DISTINCT nor ALL was written, and whether
+// it has a default at all. The base is true for all three; ClickHouse makes
+// EXCEPT and INTERSECT ALL unless told otherwise; BigQuery has none, so a bare
+// word is an error there and both spellings are always written
+// (Dialect.SET_OP_DISTINCT_BY_DEFAULT, ClickHouse.SET_OP_DISTINCT_BY_DEFAULT,
+// BigQuery.SET_OP_DISTINCT_BY_DEFAULT).
+func setOpDefaultDistinct(dialect, class string) (value bool, hasDefault bool) {
+	switch dialect {
+	case "bigquery":
+		return false, false
+	case "clickhouse":
+		if class == "Except" || class == "Intersect" {
+			return false, true
+		}
+		return false, false
+	}
+	return true, true
+}
+
 func (g *generator) writeIn(e *Expression) string {
+	op := " IN "
+	if g.dialect == "clickhouse" && e.Args["is_global"] == true {
+		// `GLOBAL IN`, and `GLOBAL NOT IN` where a NOT stands over it -- the
+		// NOT does not appear on its own (ClickHouseGenerator.in_sql,
+		// not_sql).
+		if e.Parent != nil && e.Parent.Class == "Not" {
+			op = " GLOBAL NOT IN "
+		} else {
+			op = " GLOBAL IN "
+		}
+	}
 	// A subquery brings its own parentheses; a list is given them here.
 	if q, ok := e.Args["query"].(*Expression); ok && q != nil {
-		return g.childOperand(e) + " IN " + g.node(q)
+		return g.childOperand(e) + op + g.node(q)
 	}
 	// A FIELD rather than a list: `'red' IN flags` asks whether the value is
 	// in the list that column holds, and takes no parentheses of its own.
 	if field, _ := e.Args["field"].(*Expression); field != nil {
-		return g.childOperand(e) + " IN " + g.node(field)
+		return g.childOperand(e) + op + g.node(field)
 	}
 	// `x IN UNNEST(a)` holds the unnested expression under a key of its own,
 	// and it brings its own parentheses (Generator.in_sql).
 	if unnest, _ := e.Args["unnest"].(*Expression); unnest != nil {
-		return g.childOperand(e) + " IN " + g.node(unnest)
+		return g.childOperand(e) + op + g.node(unnest)
 	}
-	return g.childOperand(e) + " IN (" + g.list(e) + ")"
+	return g.childOperand(e) + op + "(" + g.list(e) + ")"
 }
 
 func (g *generator) writeBetween(e *Expression) string {
@@ -2990,7 +3276,17 @@ func (g *generator) writeIs(e *Expression) string {
 	if e.Args["negate"] == true {
 		op = "IS NOT"
 	}
-	return g.binary(e, op)
+	out := g.binary(e, op)
+	// ClickHouse has no `IS NOT`, so a negated predicate is written as a NOT
+	// over the positive one -- and the whole predicate has to be bracketed,
+	// or the NOT takes only the value: `NOT (x IS NULL)`, never
+	// `NOT x IS NULL` (ClickHouseGenerator.is_sql).
+	if g.dialect == "clickhouse" {
+		if e.Parent != nil && e.Parent.Class == "Not" {
+			out = "(" + out + ")"
+		}
+	}
+	return out
 }
 
 // qualifyDerivedOutputs names the unnamed columns of a CTE or derived table,
@@ -4534,7 +4830,20 @@ func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
 			if !ok {
 				return g.fail(e.Class + " over a " + part.Class + " that names no position")
 			}
-			if onlyJSON {
+			// ClickHouse numbers its positions from one and writes the index
+			// it was given, where the tree counts from zero; no other dialect
+			// here shifts a JSON path's subscript (ClickHouseGenerator.
+			// _jsonpathsubscript_sql).
+			if g.dialect == "clickhouse" {
+				if n, err := strconv.Atoi(index); err == nil {
+					index = strconv.Itoa(n + g.tables.IndexOffset)
+				}
+			}
+			// ClickHouse writes the index BARE, where the dialects that ask
+			// for a JSON value quote every part. Keys are always quoted; only
+			// the index is unquoted, and only there
+			// (json_extract_segments(quoted_index=False)).
+			if onlyJSON || g.dialect == "clickhouse" {
 				names = append(names, index)
 			} else {
 				names = append(names, "'"+index+"'")
@@ -4597,7 +4906,12 @@ func jsonSubscriptIndex(part *Expression) (string, bool) {
 // column, and `JSON_EXTRACT_PATH(a, VARIADIC '{}')` names the whole root with
 // an empty array.
 func (g *generator) writeJSONPlainCall(e *Expression, per JSONPerPart) string {
-	name := templateName(per.Call)
+	// The name is taken from the template AS RECORDED rather than upper-cased:
+	// the template was measured from the reference, so it already carries the
+	// case that dialect writes -- `JSON_EXTRACT_PATH_TEXT` for Presto, but
+	// `JSONExtractString` for ClickHouse, whose names are not normalized
+	// (ClickHouse.NORMALIZE_FUNCTIONS, Generator.func).
+	name := templateHead(per.Call)
 	if name == "" {
 		return g.fail(e.Class)
 	}
@@ -4612,9 +4926,16 @@ func (g *generator) writeJSONPlainCall(e *Expression, per JSONPerPart) string {
 	return name + "(" + strings.Join(args, ", ") + ")"
 }
 
-// templateName is the function name a syntax template writes, or "" where the
-// template does not begin with one.
+// templateName is the function name a syntax template writes, upper-cased,
+// or "" where the template does not begin with one. It is the form a
+// LOOKUP is done in; use templateHead where the case has to be kept.
 func templateName(template string) string {
+	return strings.ToUpper(templateHead(template))
+}
+
+// templateHead is the function name a syntax template begins with, in the
+// case it was recorded, or "" where it does not begin with one.
+func templateHead(template string) string {
 	open := strings.Index(template, "(")
 	if open <= 0 {
 		return ""
@@ -4623,7 +4944,7 @@ func templateName(template string) string {
 	if !isBareIdentifier(name) {
 		return ""
 	}
-	return strings.ToUpper(name)
+	return name
 }
 
 // writeJSONKeyValue writes one pair inside JSON_OBJECT. The separator is per
@@ -4840,6 +5161,15 @@ func (g *generator) writeXMLKeyValueOption(e *Expression) string {
 // PostgreSQL attach it to the SEPARATOR), and is refused rather than written
 // in the wrong place.
 func (g *generator) writeGroupConcat(e *Expression) string {
+	// ClickHouse writes the separator and the limit in a FIRST parameter list,
+	// and the expression in a second: `groupConcat(', ', 2)(part_name)`
+	// (ClickHouseGenerator.groupconcat_sql).
+	if g.dialect == "clickhouse" {
+		if lim, _ := e.Args["this"].(*Expression); lim != nil && lim.Class == "Limit" {
+			return "groupConcat(" + g.child(e, "separator") + ", " +
+				g.child(lim, "expression") + ")(" + g.child(lim, "this") + ")"
+		}
+	}
 	// Trino writes the overflow behaviour inside the call, after the
 	// separator; nobody else writes it at all.
 	if overflow := g.child(e, "on_overflow"); overflow != "" {
@@ -4935,6 +5265,36 @@ func (g *generator) bigQueryGroupConcat(e *Expression) (string, bool) {
 // shape of `this` is what says which spelling this is.
 func (g *generator) writeCreate(e *Expression) string {
 	kind, _ := e.Args["kind"].(string)
+	// The kind a dialect SETTLED on may not be the word it writes: ClickHouse
+	// reads DATABASE as SCHEMA and writes DATABASE back
+	// (Generator.create_sql, INVERSE_CREATABLE_KIND_MAPPING).
+	kind = g.inverseCreateKind(kind)
+	// ClickHouse writes a CTAS's COMMENT after the query, and wraps the query
+	// in parentheses when it does, so the comment is not read as part of it
+	// (ClickHouseGenerator.create_sql).
+	ctasComment := ""
+	if g.dialect == "clickhouse" {
+		if body, _ := e.Args["expression"].(*Expression); body != nil && classIsA["Query"][body.Class] {
+			if props, _ := e.Args["properties"].(*Expression); props != nil {
+				items, _ := props.Args["expressions"].([]*Expression)
+				kept := make([]*Expression, 0, len(items))
+				for _, item := range items {
+					if item.Class == "SchemaCommentProperty" {
+						ctasComment = g.node(item)
+						continue
+					}
+					kept = append(kept, item)
+				}
+				if ctasComment != "" {
+					e = e.shallowCopy()
+					newProps := props.shallowCopy()
+					newProps.Set("expressions", kept)
+					e.Set("properties", newProps)
+					e.Set("expression", New("Paren", Arg{"this", body}))
+				}
+			}
+		}
+	}
 	// BigQuery spells a FUNCTION that returns a TABLE `TABLE FUNCTION`, and
 	// unwraps a subquery the statement wrote around its body
 	// (BigQueryGenerator._create_sql).
@@ -5078,10 +5438,22 @@ func (g *generator) writeCreate(e *Expression) string {
 	// T-SQL writes only two parts of a three-part name, dropping the catalog.
 	// It is the dialect's naming rule rather than either statement's, and it
 	// applies to a CREATE the same way it applies to a DROP.
-	if g.tables.TruncatesCatalog && namesACatalog(e.Args["this"]) {
+	// ClickHouse writes the properties it puts after a created object's NAME --
+	// TO <table>, UUID, ON CLUSTER -- between the name and the column list
+	// (ClickHouseGenerator.createable_sql).
+	postName := g.clickhousePostName(e)
+	switch {
+	case g.tables.TruncatesCatalog && namesACatalog(e.Args["this"]):
 		this, _ := e.Args["this"].(*Expression)
 		out += g.node(withoutCatalog(this))
-	} else {
+		out += postName
+	case postName != "":
+		if schema, _ := e.Args["this"].(*Expression); schema != nil && schema.Class == "Schema" {
+			out += g.child(schema, "this") + postName + g.schemaColumnsOnly(schema)
+		} else {
+			out += g.child(e, "this") + postName
+		}
+	default:
 		out += g.child(e, "this")
 	}
 	// A procedure's body may be wrapped in BEGIN and END. The BEGIN is
@@ -5145,7 +5517,55 @@ func (g *generator) writeCreate(e *Expression) string {
 	if clone := g.child(e, "clone"); clone != "" {
 		out += " " + clone
 	}
+	if ctasComment != "" {
+		out += " " + ctasComment
+	}
 	return out + temporarySuffix
+}
+
+// schemaColumnsOnly writes a Schema's parenthesised columns without the name
+// writeSchema puts in front of them, for the caller that has written the name
+// itself.
+func (g *generator) schemaColumnsOnly(e *Expression) string {
+	items, _ := e.Args["expressions"].([]*Expression)
+	if len(items) == 0 {
+		return ""
+	}
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		parts = append(parts, g.node(item))
+	}
+	return " (" + strings.Join(parts, ", ") + ")"
+}
+
+// clickhousePostName writes the properties ClickHouse puts between a created
+// object's name and its column list -- `TO <table>`, `ON CLUSTER <c>` -- and
+// only for the kinds that can carry them
+// (ClickHouseGenerator.createable_sql, ON_CLUSTER_TARGETS).
+func (g *generator) clickhousePostName(e *Expression) string {
+	if g.dialect != "clickhouse" {
+		return ""
+	}
+	switch kind, _ := e.Args["kind"].(string); kind {
+	case "SCHEMA", "DATABASE", "TABLE", "VIEW", "DICTIONARY", "INDEX", "FUNCTION", "NAMED COLLECTION":
+	default:
+		return ""
+	}
+	properties, _ := e.Args["properties"].(*Expression)
+	if properties == nil {
+		return ""
+	}
+	items, _ := properties.Args["expressions"].([]*Expression)
+	parts := make([]string, 0, len(items))
+	for _, item := range items {
+		if g.tables.PropertyLocation[item.Class] == "POST_NAME" {
+			parts = append(parts, g.node(item))
+		}
+	}
+	if len(parts) == 0 {
+		return ""
+	}
+	return " " + strings.Join(parts, " ")
 }
 
 // writeClone writes `[SHALLOW] CLONE <table>` -- the table this one is made
@@ -5573,6 +5993,11 @@ func (g *generator) writeInsert(e *Expression) string {
 			out += "INTO "
 		}
 	}
+	// `INSERT INTO FUNCTION f(...)` names the target with the word FUNCTION
+	// in front of it (Generator.insert_sql).
+	if isFunction, _ := e.Args["is_function"].(bool); isFunction {
+		out += "FUNCTION "
+	}
 	exists := ""
 	if yes, _ := e.Args["exists"].(bool); yes {
 		exists = " IF EXISTS"
@@ -5598,6 +6023,14 @@ func (g *generator) writeInsert(e *Expression) string {
 		target += " BY NAME"
 	}
 	target += exists
+	// ClickHouse names the slice written and the settings for the write,
+	// between the target and the body (Generator.insert_sql).
+	if partition := g.child(e, "partition"); partition != "" {
+		target += " " + partition
+	}
+	if settings := g.child(e, "settings"); settings != "" {
+		target += " " + settings
+	}
 	// The format the files are written in stands right after the target:
 	// `INSERT OVERWRITE DIRECTORY 'x' ... STORED AS TEXTFILE`.
 	if stored := g.child(e, "stored"); stored != "" {
@@ -5665,6 +6098,7 @@ func (g *generator) writeValues(e *Expression) string {
 // writeDrop writes `DROP <kind> [IF EXISTS] <name>`.
 func (g *generator) writeDrop(e *Expression) string {
 	kind, _ := e.Args["kind"].(string)
+	kind = g.inverseCreatableKind(kind)
 	out := "DROP"
 	// The words in front of the kind, then the kind, then the words after it,
 	// each in the order the reference writes them.
@@ -5832,6 +6266,23 @@ func (g *generator) writePrimaryKey(e *Expression) string {
 // writeCompressConstraint writes which of a column's values are stored short:
 // a list, one value, or nothing at all.
 func (g *generator) writeCompressConstraint(e *Expression) string {
+	// ClickHouse spells it CODEC, without a space before the list
+	// (ClickHouseGenerator.TRANSFORMS).
+	if g.dialect == "clickhouse" {
+		switch v := e.Args["this"].(type) {
+		case []*Expression:
+			parts := make([]string, 0, len(v))
+			for _, item := range v {
+				parts = append(parts, g.node(item))
+			}
+			return "CODEC(" + strings.Join(parts, ", ") + ")"
+		case *Expression:
+			if v != nil {
+				return "CODEC(" + g.node(v) + ")"
+			}
+		}
+		return "CODEC"
+	}
 	switch v := e.Args["this"].(type) {
 	case []*Expression:
 		parts := make([]string, 0, len(v))
@@ -5978,6 +6429,15 @@ func (g *generator) writeConstraint(e *Expression) string {
 // spelling is the dialect's whole answer -- PostgreSQL keeps the words
 // GENERATED ALWAYS and STORED, and the neutral dialect writes only `AS x`.
 func (g *generator) writeComputedConstraint(e *Expression) string {
+	// ClickHouse stores it as MATERIALIZED or recomputes it as ALIAS
+	// (ClickHouseGenerator.TRANSFORMS).
+	if g.dialect == "clickhouse" {
+		word := "ALIAS"
+		if persisted, _ := e.Args["persisted"].(bool); persisted {
+			word = "MATERIALIZED"
+		}
+		return word + " " + g.child(e, "this")
+	}
 	// MySQL writes the generated column with the expression unwrapped from
 	// any parentheses it was read with, and always says STORED or VIRTUAL.
 	if g.dialect == "mysql" {
@@ -6129,6 +6589,11 @@ func (g *generator) writeAlter(e *Expression) string {
 		out += "ONLY "
 	}
 	out += g.child(e, "this")
+	// `ON CLUSTER <c>` stands between the table and the actions
+	// (Generator.alter_sql).
+	if cluster := g.child(e, "cluster"); cluster != "" {
+		out += " " + cluster
+	}
 	// Whether the rows already there are tested against what is being added.
 	// Three states: the words CHECK, the word NOCHECK, and neither -- so an
 	// absent argument is not the same as a false one.
@@ -6350,15 +6815,26 @@ func (g *generator) writeAlterColumn(e *Expression) string {
 			return out
 		}
 	}
-	out := "ALTER COLUMN " + g.child(e, "this")
+	out := "ALTER COLUMN"
+	// Whether the column need not be there
+	// (Generator.altercolumn_sql, SUPPORTS_ALTER_COLUMN_IF_EXISTS).
+	if ifExists, _ := e.Args["exists"].(bool); ifExists {
+		out += " IF EXISTS"
+	}
+	out += " " + g.child(e, "this")
 	if visible, _ := e.Args["visible"].(string); visible != "" {
 		return out + " SET " + visible
 	}
 	switch {
 	case e.Args["dtype"] != nil:
 		// The phrase in front of the new type is the dialect's: `SET DATA
-		// TYPE` in most, `TYPE` in Databricks, nothing at all in T-SQL.
-		if word := g.tables.AlterColumnTypeWord; word != "" {
+		// TYPE` in most, `TYPE` in Databricks and ClickHouse, nothing at all
+		// in T-SQL (ClickHouseGenerator.ALTER_SET_TYPE).
+		word := g.tables.AlterColumnTypeWord
+		if g.dialect == "clickhouse" {
+			word = "TYPE"
+		}
+		if word != "" {
 			out += " " + word
 		}
 		out += " " + g.child(e, "dtype")
@@ -7400,9 +7876,15 @@ func (g *generator) writeTableHint(e *Expression) string {
 
 // writeTruncate writes the tables a TRUNCATE empties.
 func (g *generator) writeTruncate(e *Expression) string {
-	out := "TRUNCATE TABLE "
+	// ClickHouse truncates a DATABASE by the same statement
+	// (Generator.truncatetable_sql).
+	target := "TABLE"
+	if isDatabase, _ := e.Args["is_database"].(bool); isDatabase {
+		target = "DATABASE"
+	}
+	out := "TRUNCATE " + target
 	if exists, _ := e.Args["exists"].(bool); exists {
-		out += "IF EXISTS "
+		out += " IF EXISTS"
 	}
 	tables, _ := e.Args["expressions"].([]*Expression)
 	parts := make([]string, 0, len(tables))
@@ -7411,17 +7893,20 @@ func (g *generator) writeTruncate(e *Expression) string {
 		// table writes it itself.
 		parts = append(parts, g.node(table))
 	}
-	out += strings.Join(parts, ", ")
-	// Which slice of the table goes. Written before the rest, and never
-	// dropped: a TRUNCATE that loses its partition empties the whole table.
-	if partition, _ := e.Args["partition"].(*Expression); partition != nil {
-		out += " " + g.node(partition)
+	out += " " + strings.Join(parts, ", ")
+	if cluster := g.child(e, "cluster"); cluster != "" {
+		out += " " + cluster
 	}
 	if identity, _ := e.Args["identity"].(string); identity != "" {
 		out += " " + identity + " IDENTITY"
 	}
 	if option, _ := e.Args["option"].(string); option != "" {
 		out += " " + option
+	}
+	// Which slice of the table goes, written last. Never dropped: a TRUNCATE
+	// that loses its partition empties the whole table.
+	if partition, _ := e.Args["partition"].(*Expression); partition != nil {
+		out += " " + g.node(partition)
 	}
 	return out
 }
@@ -7644,6 +8129,28 @@ func (g *generator) writePartition(e *Expression) string {
 		return "PARTITION(" + g.list(e) + ")"
 	}
 	return strings.ReplaceAll(g.tables.PartitionSQL, "{members}", g.list(e))
+}
+
+// writePartitionId writes a partition named by its ID
+// (ClickHouseGenerator.partitionid_sql).
+func (g *generator) writePartitionId(e *Expression) string {
+	return "ID " + g.child(e, "this")
+}
+
+// writeDropPartition writes `DROP PARTITION ...`
+// (Generator.droppartition_sql).
+func (g *generator) writeDropPartition(e *Expression) string {
+	exists := " "
+	if b, _ := e.Args["exists"].(bool); b {
+		exists = " IF EXISTS "
+	}
+	return "DROP" + exists + g.list(e)
+}
+
+// writeReplacePartition writes `REPLACE PARTITION ... FROM ...`
+// (ClickHouseGenerator.replacepartition_sql).
+func (g *generator) writeReplacePartition(e *Expression) string {
+	return "REPLACE " + g.child(e, "expression") + " FROM " + g.child(e, "source")
 }
 
 // writeAlterSet writes what an `ALTER TABLE ... SET` sets.
@@ -8198,6 +8705,39 @@ func (g *generator) sqliteDateDiff(e *Expression) string {
 		return g.fail(e.Class + " for the unit " + unit)
 	}
 	return "CAST(" + out + " AS INTEGER)"
+}
+
+// writeParameterizedAgg writes ClickHouse's `name(params)(args)`: the
+// parameter list stands between the call and its arguments
+// (Generator.parameterizedagg_sql).
+func (g *generator) writeParameterizedAgg(e *Expression) string {
+	params, _ := e.Args["params"].([]*Expression)
+	parts := make([]string, 0, len(params))
+	for _, p := range params {
+		parts = append(parts, g.node(p))
+	}
+	return e.Name() + "(" + g.list(e) + ")(" + strings.Join(parts, ", ") + ")"
+}
+
+// writeAnonymousAggFunc writes the plain call an aggregate with no parameters
+// takes, under whatever combinators its name carries
+// (Generator.anonymousaggfunc_sql).
+func (g *generator) writeAnonymousAggFunc(e *Expression) string {
+	return e.Name() + "(" + g.list(e) + ")"
+}
+
+// inverseCreatableKind names the kind a dialect WRITES where it read another
+// word for it: ClickHouse reads `DATABASE` as a SCHEMA and writes the word
+// back. The reference keeps a table built by inverting its own
+// (Dialect.INVERSE_CREATABLE_KIND_MAPPING); this inverts the one the probe
+// recorded rather than recording the same data twice.
+func (g *generator) inverseCreatableKind(kind string) string {
+	for read, written := range g.tables.CreatableKindNames {
+		if written == kind {
+			return read
+		}
+	}
+	return kind
 }
 
 // writePartitionRange writes Doris's partition range: a partition named and
@@ -8951,6 +9491,9 @@ func (g *generator) writeStrToTime(e *Expression) string {
 		}
 		return "CAST(" + g.child(e, "this") + " AS " + dtype + ")"
 	}
+	if g.dialect == "clickhouse" && e.Class == "StrToDate" {
+		return g.clickhouseStrToDate(e)
+	}
 	if g.dialect != "bigquery" {
 		return g.spell(e)
 	}
@@ -8987,6 +9530,36 @@ func (g *generator) writeStrToTime(e *Expression) string {
 		args = append(args, g.node(zone))
 	}
 	return "PARSE_" + dtype + "(" + strings.Join(args, ", ") + ")"
+}
+
+// clickhouseStrToDate writes ClickHouse's own string-to-date call. The parser
+// wraps a bare one in the CAST to DateTime it returns, so the call itself is
+// the class's fallback name and arguments; a StrToDate the parser did NOT wrap
+// is cast to DATE here so the value it returns survives
+// (ClickHouseGenerator.strtodate_sql, Generator.function_fallback_sql).
+func (g *generator) clickhouseStrToDate(e *Expression) string {
+	parts := make([]string, 0, 2)
+	wasInCallArgs := g.inCallArgs
+	g.inCallArgs = true
+	for _, key := range classArgKeys[e.Class] {
+		if v, _ := e.Args[key].(*Expression); v != nil {
+			parts = append(parts, g.node(v))
+		}
+	}
+	g.inCallArgs = wasInCallArgs
+	out := "STR_TO_DATE(" + strings.Join(parts, ", ") + ")"
+	if e.Parent == nil || e.Parent.Class != "Cast" {
+		out = "CAST(" + out + " AS DATE)"
+	}
+	return out
+}
+
+// isBareDateTimeType reports whether a DataType is exactly the DATETIME type
+// the reference builds for a StrToDate -- its kind and nothing else, with no
+// nullability or nesting flags a parsed type would carry.
+func isBareDateTimeType(to *Expression) bool {
+	return to != nil && to.Class == "DataType" && len(to.Keys) == 1 &&
+		to.Args["this"] == DataTypeKind("DATETIME")
 }
 
 // writeMakeInterval writes BigQuery's MAKE_INTERVAL, whose parts are named in
@@ -9190,6 +9763,151 @@ func (g *generator) writeDateAdd(e *Expression) string {
 	return g.writeDateArith(e, "Date", 1)
 }
 
+// writeDictProperty writes a DICTIONARY's SOURCE(...) or LAYOUT(...): the
+// kind and its flat list of key/value settings (Generator.dictproperty_sql).
+func (g *generator) writeDictProperty(e *Expression) string {
+	// `this` is the WORD (SOURCE or LAYOUT), kept as a plain string.
+	word, _ := e.Args["this"].(string)
+	kind, _ := e.Args["kind"].(string)
+	settings, _ := e.Args["settings"].([]*Expression)
+	if len(settings) == 0 {
+		return word + "(" + kind + "())"
+	}
+	parts := make([]string, 0, len(settings))
+	for _, s := range settings {
+		parts = append(parts, g.node(s))
+	}
+	return word + "(" + kind + "(" + strings.Join(parts, " ") + "))"
+}
+
+// writeDictRange writes a DICTIONARY's LIFETIME(MIN a MAX b)
+// (Generator.dictrange_sql).
+func (g *generator) writeDictRange(e *Expression) string {
+	word, _ := e.Args["this"].(string)
+	return word + "(MIN " + g.child(e, "min") + " MAX " + g.child(e, "max") + ")"
+}
+
+// writeDictSubProperty writes one `key value` (Generator.dictsubproperty_sql).
+func (g *generator) writeDictSubProperty(e *Expression) string {
+	return g.child(e, "this") + " " + g.child(e, "value")
+}
+
+// writeJSONCast writes ClickHouse's `x .: Type`. A PARAMETERISED type is
+// quoted as an identifier there -- `.":Array(JSON)"` -- where a plain one is
+// bare (ClickHouseGenerator._json_cast_sql).
+func (g *generator) writeJSONCast(e *Expression) string {
+	if g.dialect != "clickhouse" {
+		return g.spell(e)
+	}
+	to := g.child(e, "to")
+	if t, _ := e.Args["to"].(*Expression); t != nil && t.Args["expressions"] != nil {
+		to = g.node(New("Identifier", Arg{"this", to}, Arg{"quoted", true}))
+	}
+	return g.child(e, "this") + ".:" + to
+}
+
+// writeCastToStrType writes `CAST(x, 'type')`, the two-argument cast whose
+// type is written as a string.
+func (g *generator) writeCastToStrType(e *Expression) string {
+	return "CAST(" + g.child(e, "this") + ", " + g.child(e, "to") + ")"
+}
+
+// writeProjectionDef writes `PROJECTION p (query)`
+// (ClickHouseGenerator.projectiondef_sql).
+func (g *generator) writeProjectionDef(e *Expression) string {
+	return "PROJECTION " + g.child(e, "this") + " (" + g.child(e, "expression") + ")"
+}
+
+// writeOnCluster writes `ON CLUSTER <name>`
+// (ClickHouseGenerator.oncluster_sql).
+func (g *generator) writeOnCluster(e *Expression) string {
+	return "ON CLUSTER " + g.child(e, "this")
+}
+
+// writeSettingsProperty writes a CREATE's `SETTINGS k = v, ...`
+// (Generator.TRANSFORMS).
+func (g *generator) writeSettingsProperty(e *Expression) string {
+	return "SETTINGS " + g.list(e)
+}
+
+// writeMergeTreeTTLAction writes one TTL action: the expression and whatever
+// the statement said to do with the part at the deadline
+// (Generator.mergetreettlaction_sql).
+func (g *generator) writeMergeTreeTTLAction(e *Expression) string {
+	out := g.child(e, "this")
+	if e.Args["delete"] == true {
+		out += " DELETE"
+	}
+	if recompress := g.child(e, "recompress"); recompress != "" {
+		out += " RECOMPRESS " + recompress
+	}
+	if disk := g.child(e, "to_disk"); disk != "" {
+		out += " TO DISK " + disk
+	}
+	if volume := g.child(e, "to_volume"); volume != "" {
+		out += " TO VOLUME " + volume
+	}
+	return out
+}
+
+// writeMergeTreeTTL writes a MergeTree TTL: its actions, then WHERE, GROUP BY
+// and SET, each with its own leading space (Generator.mergetreettl_sql).
+func (g *generator) writeMergeTreeTTL(e *Expression) string {
+	where := g.child(e, "where")
+	group := g.child(e, "group")
+	aggregates := ""
+	if items, _ := e.Args["aggregates"].([]*Expression); len(items) > 0 {
+		parts := make([]string, 0, len(items))
+		for _, item := range items {
+			parts = append(parts, g.node(item))
+		}
+		aggregates = " SET " + strings.Join(parts, ", ")
+	}
+	exprs, _ := e.Args["expressions"].([]*Expression)
+	actions := make([]string, 0, len(exprs))
+	for _, a := range exprs {
+		actions = append(actions, g.node(a))
+	}
+	if where == "" && group == "" && aggregates == "" && len(actions) == 1 {
+		return "TTL " + actions[0]
+	}
+	// A clause is written with exactly one space in front of it, whether or
+	// not its own writer brought one (GROUP BY does, WHERE does not).
+	return "TTL " + strings.Join(actions, ", ") + leadSpace(where) + leadSpace(group) + aggregates
+}
+
+// leadSpace puts a leading space in front of a non-empty clause that does not
+// already have one.
+func leadSpace(s string) string {
+	if s == "" || strings.HasPrefix(s, " ") {
+		return s
+	}
+	return " " + s
+}
+
+// writeFinal writes ClickHouse's FINAL, which reads a table as it stands
+// after merges (ClickHouseGenerator.TRANSFORMS).
+func (g *generator) writeFinal(e *Expression) string {
+	return g.child(e, "this") + " FINAL"
+}
+
+// writeDateBin writes DATE_BIN. ClickHouse has no spelling of its own for it,
+// so the reference falls back to the class's own name over the arguments it
+// carries, skipping the ones that are absent
+// (Generator.function_fallback_sql).
+func (g *generator) writeDateBin(e *Expression) string {
+	if g.dialect != "clickhouse" {
+		return g.spell(e)
+	}
+	parts := make([]string, 0, 5)
+	for _, key := range classArgKeys["DateBin"] {
+		if v, _ := e.Args[key].(*Expression); v != nil {
+			parts = append(parts, g.node(v))
+		}
+	}
+	return "DATE_BIN(" + strings.Join(parts, ", ") + ")"
+}
+
 func (g *generator) writeDateSub(e *Expression) string {
 	return g.writeDateArith(e, "Date", -1)
 }
@@ -9303,9 +10021,30 @@ func (g *generator) writeDateArith(e *Expression, domain string, sign int) strin
 		return g.dateArithGenericFallback(name, this, amount, unit, false)
 	case "bigquery":
 		return g.dateArithBigQuery(name, this, amount, unit)
+	case "clickhouse":
+		return g.dateArithClickhouse(name, this, amount, unit)
 	default:
 		return g.dateArithGenericFallback(name, this, amount, unit, domain == "Date" && sign > 0)
 	}
+}
+
+// dateArithClickhouse writes `DATE_ADD(unit, amount, value)`: the unit first
+// and bare, then the amount, then the value -- the order ClickHouse reads and
+// writes (ClickHouseGenerator.TRANSFORMS, _datetime_delta_sql, unit_to_var).
+func (g *generator) dateArithClickhouse(name string, this, amount, unit *Expression) string {
+	unitVar := unit
+	switch {
+	case unit == nil:
+		unitVar = New("Var", Arg{"this", "DAY"})
+	case unit.Class == "Var", unit.Class == "Placeholder", unit.Class == "WeekStart", unit.Class == "Column":
+	default:
+		text := unit.Name()
+		if text == "" {
+			text = "DAY"
+		}
+		unitVar = New("Var", Arg{"this", text})
+	}
+	return name + "(" + g.node(unitVar) + ", " + g.node(amount) + ", " + g.node(this) + ")"
 }
 
 // dateArithBigQuery writes the amount and the unit back inside an INTERVAL:
@@ -10069,4 +10808,26 @@ func initcapUsesDefaultDelimiters(e *Expression) bool {
 	text, _ := delim.Args["this"].(string)
 	isString, _ := delim.Args["is_string"].(bool)
 	return isString && text == initcapDefaultDelimiters
+}
+
+// inverseCreateKind maps a kind a dialect settled on back to the word it
+// writes, the inverse of CREATABLE_KIND_MAPPING
+// (Generator.create_sql, INVERSE_CREATABLE_KIND_MAPPING).
+func (g *generator) inverseCreateKind(kind string) string {
+	for written, settled := range g.tables.CreatableKindNames {
+		if settled == kind {
+			return written
+		}
+	}
+	return kind
+}
+
+// identifiersCanStartWithDigit reports the dialects whose tokenizer reads a
+// name beginning with a digit as one name (Dialect.IDENTIFIERS_CAN_START_WITH_DIGIT).
+func identifiersCanStartWithDigit(dialect string) bool {
+	switch dialect {
+	case "clickhouse", "hive", "spark", "spark2", "databricks", "mysql", "singlestore", "doris", "starrocks":
+		return true
+	}
+	return false
 }

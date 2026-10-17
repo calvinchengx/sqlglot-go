@@ -1,0 +1,50 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "SELECT 12345",
+ "sql": "SELECT 1_2_3_4_5",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 7,
+   "t": "NUMBER",
+   "x": "12345"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 16,
+    "end": 15,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "12345"
+  },
+  {
+   "i": 1,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

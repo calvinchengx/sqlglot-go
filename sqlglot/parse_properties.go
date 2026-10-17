@@ -69,6 +69,15 @@ func (p *parser) parseRisingWaveEncode() (*Expression, bool, error) {
 func (p *parser) parseTableProperties() ([]*Expression, error) {
 	var out []*Expression
 	for {
+		// ClickHouse's own CREATE-table clauses -- ENGINE, ORDER BY,
+		// PARTITION BY, PRIMARY KEY, SAMPLE BY -- have grammars the property
+		// table cannot describe.
+		if prop, own, err := p.parseClickhouseCreateProperty(); err != nil {
+			return nil, err
+		} else if own {
+			out = append(out, prop)
+			continue
+		}
 		// Hive's `USING ICEBERG` names the format a table is stored in -- the
 		// same property `STORED AS ICEBERG` builds, without the hive_format
 		// flag (HiveParser._parse_using_property).

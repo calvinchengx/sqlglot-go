@@ -304,7 +304,17 @@ func (p *parser) parseDelete() (*Expression, error) {
 	} else {
 		node.Set("using", false)
 	}
-	node.Set("cluster", false)
+	// `ON CLUSTER <c>` says which cluster runs it
+	// (Parser._parse_delete, ClickHouseParser._parse_on_property).
+	if p.dialect == "clickhouse" && p.match(TokON) {
+		cluster, err := p.parseClickhouseOnCluster()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("cluster", cluster)
+	} else {
+		node.Set("cluster", false)
+	}
 
 	if p.at(TokWHERE) {
 		p.advance()

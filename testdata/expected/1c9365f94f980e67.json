@@ -1,0 +1,848 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "SELECT CAST(1730098800 AS DateTime64) AS DATETIME, 'test' AS interp ORDER BY DATETIME WITH FILL FROM toDateTime64(1730098800, 3) - INTERVAL '7' HOUR TO toDateTime64(1730185140, 3) - INTERVAL '7' HOUR STEP toIntervalSecond(900) INTERPOLATE (interp)",
+ "sql": "SELECT CAST(1730098800 AS DateTime64) AS DATETIME, 'test' AS interp ORDER BY DATETIME WITH FILL FROM toDateTime64(1730098800, 3) - INTERVAL '7' HOUR TO toDateTime64(1730185140, 3) - INTERVAL '7' HOUR STEP toIntervalSecond(900) INTERPOLATE (interp)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 12,
+   "t": "NUMBER",
+   "x": "1730098800"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 23,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 26,
+   "t": "DATETIME64",
+   "x": "DateTime64"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 38,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 41,
+   "t": "DATETIME",
+   "x": "DATETIME"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 49,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 51,
+   "t": "STRING",
+   "x": "test"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 58,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 61,
+   "t": "VAR",
+   "x": "interp"
+  },
+  {
+   "c": 76,
+   "e": 75,
+   "l": 1,
+   "s": 68,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 77,
+   "t": "DATETIME",
+   "x": "DATETIME"
+  },
+  {
+   "c": 90,
+   "e": 89,
+   "l": 1,
+   "s": 86,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 91,
+   "t": "VAR",
+   "x": "FILL"
+  },
+  {
+   "c": 100,
+   "e": 99,
+   "l": 1,
+   "s": 96,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 113,
+   "e": 112,
+   "l": 1,
+   "s": 101,
+   "t": "VAR",
+   "x": "toDateTime64"
+  },
+  {
+   "c": 114,
+   "e": 113,
+   "l": 1,
+   "s": 113,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 124,
+   "e": 123,
+   "l": 1,
+   "s": 114,
+   "t": "NUMBER",
+   "x": "1730098800"
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 124,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 127,
+   "e": 126,
+   "l": 1,
+   "s": 126,
+   "t": "NUMBER",
+   "x": "3"
+  },
+  {
+   "c": 128,
+   "e": 127,
+   "l": 1,
+   "s": 127,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 129,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 139,
+   "e": 138,
+   "l": 1,
+   "s": 131,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 143,
+   "e": 142,
+   "l": 1,
+   "s": 140,
+   "t": "STRING",
+   "x": "7"
+  },
+  {
+   "c": 148,
+   "e": 147,
+   "l": 1,
+   "s": 144,
+   "t": "VAR",
+   "x": "HOUR"
+  },
+  {
+   "c": 151,
+   "e": 150,
+   "l": 1,
+   "s": 149,
+   "t": "VAR",
+   "x": "TO"
+  },
+  {
+   "c": 164,
+   "e": 163,
+   "l": 1,
+   "s": 152,
+   "t": "VAR",
+   "x": "toDateTime64"
+  },
+  {
+   "c": 165,
+   "e": 164,
+   "l": 1,
+   "s": 164,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 175,
+   "e": 174,
+   "l": 1,
+   "s": 165,
+   "t": "NUMBER",
+   "x": "1730185140"
+  },
+  {
+   "c": 176,
+   "e": 175,
+   "l": 1,
+   "s": 175,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 178,
+   "e": 177,
+   "l": 1,
+   "s": 177,
+   "t": "NUMBER",
+   "x": "3"
+  },
+  {
+   "c": 179,
+   "e": 178,
+   "l": 1,
+   "s": 178,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 181,
+   "e": 180,
+   "l": 1,
+   "s": 180,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 190,
+   "e": 189,
+   "l": 1,
+   "s": 182,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 194,
+   "e": 193,
+   "l": 1,
+   "s": 191,
+   "t": "STRING",
+   "x": "7"
+  },
+  {
+   "c": 199,
+   "e": 198,
+   "l": 1,
+   "s": 195,
+   "t": "VAR",
+   "x": "HOUR"
+  },
+  {
+   "c": 204,
+   "e": 203,
+   "l": 1,
+   "s": 200,
+   "t": "VAR",
+   "x": "STEP"
+  },
+  {
+   "c": 221,
+   "e": 220,
+   "l": 1,
+   "s": 205,
+   "t": "VAR",
+   "x": "toIntervalSecond"
+  },
+  {
+   "c": 222,
+   "e": 221,
+   "l": 1,
+   "s": 221,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 225,
+   "e": 224,
+   "l": 1,
+   "s": 222,
+   "t": "NUMBER",
+   "x": "900"
+  },
+  {
+   "c": 226,
+   "e": 225,
+   "l": 1,
+   "s": 225,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 238,
+   "e": 237,
+   "l": 1,
+   "s": 227,
+   "t": "VAR",
+   "x": "INTERPOLATE"
+  },
+  {
+   "c": 240,
+   "e": 239,
+   "l": 1,
+   "s": 239,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 246,
+   "e": 245,
+   "l": 1,
+   "s": 240,
+   "t": "VAR",
+   "x": "interp"
+  },
+  {
+   "c": 247,
+   "e": 246,
+   "l": 1,
+   "s": 246,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 1,
+   "k": "this",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "DATETIME64"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    },
+    {
+     "i": 0,
+     "k": "nullable",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "1730098800"
+  },
+  {
+   "i": 3,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 2,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 6,
+   "k": "this",
+   "v": "DATETIME64"
+  },
+  {
+   "i": 6,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 6,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 41
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "DATETIME"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 51
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "alias",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 61
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "interp"
+  },
+  {
+   "i": 17,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 0,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 20,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 21,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 85,
+    "end": 84,
+    "line": 1,
+    "start": 77
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "DATETIME"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 21,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.WithFill",
+   "i": 21,
+   "k": "with_fill"
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 27,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 113,
+    "end": 112,
+    "line": 1,
+    "start": 101
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "toDateTime64"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 29,
+   "k": "expressions",
+   "m": {
+    "col": 124,
+    "end": 123,
+    "line": 1,
+    "start": 114
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "1730098800"
+  },
+  {
+   "i": 31,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 29,
+   "k": "expressions",
+   "m": {
+    "col": 127,
+    "end": 126,
+    "line": 1,
+    "start": 126
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 34,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 28,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 37,
+   "k": "this",
+   "m": {
+    "col": 143,
+    "end": 142,
+    "line": 1,
+    "start": 140
+   }
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "7"
+  },
+  {
+   "i": 38,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 37,
+   "k": "unit"
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "HOUR"
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 27,
+   "k": "to"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 43,
+   "k": "this",
+   "m": {
+    "col": 164,
+    "end": 163,
+    "line": 1,
+    "start": 152
+   }
+  },
+  {
+   "i": 44,
+   "k": "this",
+   "v": "toDateTime64"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 44,
+   "k": "expressions",
+   "m": {
+    "col": 175,
+    "end": 174,
+    "line": 1,
+    "start": 165
+   }
+  },
+  {
+   "i": 46,
+   "k": "this",
+   "v": "1730185140"
+  },
+  {
+   "i": 46,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 44,
+   "k": "expressions",
+   "m": {
+    "col": 178,
+    "end": 177,
+    "line": 1,
+    "start": 177
+   }
+  },
+  {
+   "i": 49,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 49,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 43,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 52,
+   "k": "this",
+   "m": {
+    "col": 194,
+    "end": 193,
+    "line": 1,
+    "start": 191
+   }
+  },
+  {
+   "i": 53,
+   "k": "this",
+   "v": "7"
+  },
+  {
+   "i": 53,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 52,
+   "k": "unit"
+  },
+  {
+   "i": 56,
+   "k": "this",
+   "v": "HOUR"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 27,
+   "k": "step",
+   "m": {
+    "col": 221,
+    "end": 220,
+    "line": 1,
+    "start": 205
+   }
+  },
+  {
+   "i": 58,
+   "k": "this",
+   "v": "toIntervalSecond"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 58,
+   "k": "expressions",
+   "m": {
+    "col": 225,
+    "end": 224,
+    "line": 1,
+    "start": 222
+   }
+  },
+  {
+   "i": 60,
+   "k": "this",
+   "v": "900"
+  },
+  {
+   "i": 60,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 27,
+   "k": "interpolate",
+   "m": {
+    "col": 246,
+    "end": 245,
+    "line": 1,
+    "start": 240
+   }
+  },
+  {
+   "i": 63,
+   "k": "this",
+   "v": "interp"
+  },
+  {
+   "i": 63,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

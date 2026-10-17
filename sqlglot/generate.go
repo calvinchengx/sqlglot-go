@@ -305,6 +305,17 @@ func (g *generator) spell(e *Expression) string {
 	}
 	if word, ok := g.tables.UnarySQL[e.Class]; ok {
 		if e.Class == "Not" {
+			// ClickHouse parenthesises an IN under a NOT, and drops the NOT
+			// entirely for a GLOBAL IN, which carries its own negation
+			// (ClickHouseGenerator.not_sql).
+			if g.dialect == "clickhouse" {
+				if inner, _ := e.Args["this"].(*Expression); inner != nil && inner.Class == "In" {
+					if inner.Args["is_global"] == true {
+						return g.node(inner)
+					}
+					return "NOT (" + g.node(inner) + ")"
+				}
+			}
 			g.requireCondition(e, "this")
 			return g.unaryOperand(e, word)
 		}
