@@ -30,6 +30,19 @@ if _os.environ.get("PYTHONHASHSEED") != "0":
     _os.environ["PYTHONHASHSEED"] = "0"
     _os.execv(_sys.executable, [_sys.executable, *_sys.argv])
 
+# The reference's own output is not the same on every interpreter: below 3.11
+# it parses an offset like `+00:00` another way, so MySQL's TIME_STR_TO_TIME
+# renders `DATETIME` where 3.11+ renders `DATETIME(6)`. Regenerating here with
+# an older one rewrites statements that are already correct, which is exactly
+# the kind of silent change this harness exists to catch -- so it refuses.
+if _sys.version_info < (3, 11):
+    raise SystemExit(
+        f"python {_sys.version.split()[0]} is older than 3.11. The reference's "
+        "output differs below 3.11, so regenerating the expectations with it "
+        "would rewrite statements that are already correct. Run with a 3.11+ "
+        "interpreter, e.g. `make PYTHON=python3.11 oracle`."
+    )
+
 import argparse
 import hashlib
 import json

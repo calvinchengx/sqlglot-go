@@ -148,7 +148,10 @@ because a plausible tree the reference never builds is the one thing this port
 must not produce. `go
 test ./...` runs every one through the port and diffs both. The expectations
 are committed, so the Go tests need no Python; regenerating them (`make
-oracle`) refuses to run against any commit other than the one `NOTICE` pins.
+oracle`) refuses to run against any commit other than the one `NOTICE` pins,
+and against any interpreter older than **3.11** -- below it the reference
+itself answers differently (it parses an offset like `+00:00` another way),
+so an older Python would quietly rewrite statements that are already correct.
 
 The keyword and dialect tables the tokenizer reads are generated from the same
 pin rather than transcribed, and CI regenerates and diffs them, because a
@@ -287,7 +290,7 @@ above with the file-and-line prefix stripped.
 
 The remaining targets -- `oracle`, `service`, `lint` -- regenerate the committed
 expectations and the generated tables, or lint in a container. Those need
-Python, a checkout of the pinned sqlglot, and Docker. The asymmetry is
+Python 3.11 or newer, a checkout of the pinned sqlglot, and Docker. The asymmetry is
 deliberate: **contributing to the port needs a Go toolchain; maintaining the
 oracle needs more.** A contributor on Windows is held to exactly the same
 differential as everyone else without installing any of it.

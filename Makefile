@@ -27,10 +27,19 @@ EXEC_PAIRS ?= $(shell echo $${TMPDIR:-/tmp})/sqlglot-go-exec-pairs.jsonl
 # other stacks is the normal case, and a wedged bind is not worth debugging.
 PGPORT ?= 55433
 
-.PHONY: help doctor test oracle oracle-exec postgres postgres-stop service coverage cover gaps lint clean
+.PHONY: help doctor check-python test oracle oracle-exec postgres postgres-stop service coverage cover gaps lint clean
 
 help: ## Show the available targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN{FS=":.*?## "}{printf "  %-12s %s\n", $$1, $$2}'
+
+check-python: ## Fail unless $(PYTHON) is new enough to reproduce the reference's output
+	@$(PYTHON) -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null || { \
+	  echo "$(PYTHON) is older than 3.11, and the reference itself answers"; \
+	  echo "differently below it -- it parses an offset like +00:00 another way,"; \
+	  echo "so regenerating here would silently rewrite statements that are"; \
+	  echo "already correct. Point PYTHON at a 3.11+ interpreter:"; \
+	  echo "  make PYTHON=python3.11 oracle"; \
+	  exit 1; }
 
 doctor: ## Check the toolchain
 	@go version
@@ -41,7 +50,7 @@ doctor: ## Check the toolchain
 test: ## Unit tests and the differential run against the reference
 	go test ./...
 
-oracle: ## Regenerate expectations and generated tables from the PINNED reference (refuses any other)
+oracle: check-python ## Regenerate expectations and generated tables from the PINNED reference (refuses any other)
 	$(PYTHON) harness/oracle.py --sqlglot $(SQLGLOT) --out testdata/expected
 	$(PYTHON) harness/gen_classes.py --sqlglot $(SQLGLOT) > sqlglot/classes_gen.go && gofmt -w sqlglot/classes_gen.go
 	$(PYTHON) harness/gen_tokenizer.py --sqlglot $(SQLGLOT) --out sqlglot && gofmt -w sqlglot/tokentype_gen.go sqlglot/dialects_gen.go
@@ -65,7 +74,7 @@ postgres: ## Start a PostgreSQL for `make oracle-exec` and print the DSN to expo
 postgres-stop: ## Stop it again
 	@docker rm -f sqlglot-go-pg >/dev/null 2>&1 || true
 
-service: ## Re-extract the corpus of SQL data agent service is held to
+service: check-python ## Re-extract the corpus of SQL data agent service is held to
 	$(PYTHON) harness/gen_service_corpus.py --service $(SERVICE) --sqlglot $(SQLGLOT)
 
 fuzz: ## Fuzz the generator and let the reference judge what it finds (SECONDS=45)
