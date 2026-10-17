@@ -108,6 +108,24 @@ func (p *parser) parseAssignment() (*Expression, error) {
 		}
 		return New("PropertyEQ", Arg{"this", this}, Arg{"expression", value}), nil
 	}
+	// ClickHouse's ternary: `cond ? a : b` is an If, read one level up from
+	// the terms it joins (ClickHouseParser._parse_assignment).
+	if p.dialect == "clickhouse" && p.at(TokPLACEHOLDER) {
+		p.advance()
+		trueE, err := p.parseAssignment()
+		if err != nil {
+			return nil, err
+		}
+		var falseE any = false
+		if p.match(TokCOLON) {
+			f, err := p.parseAssignment()
+			if err != nil {
+				return nil, err
+			}
+			falseE = f
+		}
+		return New("If", Arg{"this", this}, Arg{"true", trueE}, Arg{"false", falseE}), nil
+	}
 	return this, nil
 }
 
@@ -194,6 +212,24 @@ func (p *parser) parseRange() (*Expression, error) {
 		case c.Type == TokIS:
 			p.advance()
 			this, err = p.parseIs(this)
+		case c.Type == TokGLOBAL:
+			// ClickHouse's GLOBAL IN: the same In, flagged, with an optional
+			// NOT in front (ClickHouseParser._parse_global_in).
+			p.advance()
+			negated := p.match(TokNOT)
+			if !p.match(TokIN) {
+				return nil, p.unsupported("GLOBAL without IN")
+			}
+			in, gerr := p.parseIn(this)
+			if gerr != nil {
+				return nil, gerr
+			}
+			in.Set("is_global", true)
+			if negated {
+				this = New("Not", Arg{"this", in})
+			} else {
+				this = in
+			}
 		case c.Type == TokIN:
 			p.advance()
 			this, err = p.parseIn(this)
@@ -486,6 +522,16 @@ func (p *parser) parseIn(this *Expression) (*Expression, error) {
 		}
 	}
 	if !p.match(TokL_PAREN) {
+		// `x IN [a, b]` is the same list written with brackets
+		// (ClickHouseParser._parse_in, through _parse_bracket).
+		if p.dialect == "clickhouse" && p.at(TokL_BRACKET) {
+			arr, aerr := p.parsePrimary()
+			if aerr != nil {
+				return nil, aerr
+			}
+			items, _ := arr.Args["expressions"].([]*Expression)
+			return New("In", Arg{"this", this}, Arg{"expressions", items}), nil
+		}
 		// `'red' IN flags` asks whether the value is in the LIST that column
 		// holds, rather than in a list written here. The reference keeps
 		// what follows under a key of its own.
@@ -650,6 +696,13 @@ func (p *parser) parseBitwise() (*Expression, error) {
 		// one tier out. The arrows join them in PostgreSQL and DuckDB; in
 		// every other dialect parseColumnOps takes them at the accessor tier.
 		if class, ok := p.tables.JSONOperatorsAtBitwise[c.Type]; ok {
+			// ClickHouse's `?` is its TERNARY, and the reference reads it one
+			// level up, at the assignment -- so its operand is the whole
+			// condition, not the deepest term. Left here for parseAssignment
+			// (ClickHouseParser._parse_assignment).
+			if class == "If" {
+				return this, nil
+			}
 			if c.Type == TokARROW || c.Type == TokDARROW {
 				this, err = p.consumeJSONArrow(this, p.parseTerm)
 				if err != nil {
@@ -1036,6 +1089,28 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 				continue
 			}
 		}
+		// `x .: Type` is ClickHouse's JSON cast: the same JSONCast `JSON_CAST`
+		// builds (Parser.COLUMN_OPERATORS). The type may be written INSIDE a
+		// quoted name -- `.:"Array(JSON)"` -- which the reference tokenizes
+		// and reads as a type (Parser._parse_types, DataType.from_str).
+		if p.match(TokDOTCOLON) {
+			var to *Expression
+			var err error
+			if c := p.curr(); c != nil && c.Type == TokIDENTIFIER {
+				text := c.Text
+				p.advance()
+				to, err = p.parseDataTypeText(text)
+			} else {
+				to, err = p.parseDataType()
+			}
+			if err != nil {
+				return nil, err
+			}
+			cast := New("JSONCast", Arg{"this", this}, Arg{"to", to})
+			cast.Type = to
+			this = cast
+			continue
+		}
 		if p.match(TokDCOLON) {
 			to, err := p.parseDataType()
 			if err != nil {
@@ -1175,6 +1250,28 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 			// still an ARRAY where one may stand, which is why this is here
 			// and not in the reader below.
 			if p.at(TokR_BRACKET) {
+				// ClickHouse's `x[]` casts x to Array(JSON), and each further
+				// pair nests the array (ClickHouseParser._parse_bracket).
+				if p.dialect == "clickhouse" {
+					var elem any = New("DataType",
+						Arg{"this", DataTypeKind("JSON")}, Arg{"dialect", p.dialect},
+						Arg{"nullable", false})
+					for {
+						elem = New("DataType", Arg{"this", DataTypeKind("ARRAY")},
+							Arg{"expressions", []*Expression{elem.(*Expression)}},
+							Arg{"nested", true})
+						p.advance() // ]
+						if !p.atPair(TokL_BRACKET, TokR_BRACKET) {
+							break
+						}
+						p.advance() // [
+					}
+					this = New("JSONCast", Arg{"this", this}, Arg{"to", elem})
+					// The reference's dump carries the node's inferred TYPE as
+					// `t`, and for a JSON cast that type is the `to` itself.
+					this.Type = elem.(*Expression)
+					continue
+				}
 				return nil, p.unsupported("subscript with no index")
 			}
 			items, err := p.parseBracketItems(true)
@@ -1215,6 +1312,17 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 		// where the reference continues it too -- its `_parse_column_ops`
 		// loops over brackets and dots together, and only the run of plain
 		// names collapses into a Column.
+		// ClickHouse's `.^` reads one field of a nested JSON object:
+		// `col.^nested` (ClickHouseParser.COLUMN_OPERATORS, DOTCARET).
+		if p.dialect == "clickhouse" && p.at(TokDOTCARET) {
+			p.advance()
+			field, err := p.parseColumn()
+			if err != nil {
+				return nil, err
+			}
+			this = New("NestedJSONSelect", Arg{"this", this}, Arg{"expression", field})
+			continue
+		}
 		if p.at(TokDOT) {
 			field, isCall, err := p.parseDotField()
 			if err != nil {
@@ -1338,6 +1446,16 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return nil, p.unsupported("expression")
 	}
 
+	// ClickHouse reads AND, OR and XOR as FUNCTION names when a parenthesis
+	// follows -- `or(1, 2)` is the connector over its arguments -- where the
+	// same tokens are operators everywhere else
+	// (ClickHouseParser.FUNCTION_PARSERS, Parser._parse_connector_function).
+	if p.dialect == "clickhouse" && (c.Type == TokAND || c.Type == TokOR || c.Type == TokXOR) {
+		if n := p.next(); n != nil && n.Type == TokL_PAREN {
+			return p.parseFunction()
+		}
+	}
+
 	// MySQL's `_utf8mb4 'text'`: a character set introducer in front of a literal.
 	if c.Type == TokINTRODUCER {
 		p.advance()
@@ -1447,6 +1565,14 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		if p.daxBraceValues() {
 			return p.parseDAXBraceValues()
 		}
+		// A ClickHouse query parameter is `{name: Type}` -- a name, a colon
+		// and a TYPE -- rather than the map literal the same braces open
+		// (ClickHouseParser.PLACEHOLDER_PARSERS, _parse_query_parameter).
+		if p.dialect == "clickhouse" {
+			if ph, handled := p.parseClickhouseQueryParameter(); handled {
+				return ph, nil
+			}
+		}
 		p.advance()
 		var items []*Expression
 		for !p.at(TokR_BRACE) {
@@ -1472,6 +1598,12 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		}
 		if !p.match(TokR_BRACE) {
 			return nil, p.unsupported("unclosed struct")
+		}
+		// ClickHouse reads `{'k': v}` as a MAP literal rather than a struct:
+		// every key and value becomes an entry of two parallel arrays
+		// (ClickHouseParser._parse_bracket).
+		if p.dialect == "clickhouse" {
+			return clickhouseVarMap(items), nil
 		}
 		return New("Struct", Arg{"expressions", items}), nil
 	}
@@ -1514,7 +1646,12 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	//
 	// ALL is left alone: `SELECT ALL x` is the quantity modifier rather than
 	// a quantifier, and `ALL()` is a Tuple.
-	if p.at(TokANY) && p.next() != nil && !endsSelectExpression(p.next()) {
+	// ClickHouse's `any(...)` is the AGGREGATE, not a quantifier: `any` is a
+	// name in its function table and its quantifier form is the comparison
+	// above, which the earlier block has already taken. Reading it here built
+	// an Any over a Paren, which writes back as `ANY(x)`.
+	if p.at(TokANY) && p.next() != nil && !endsSelectExpression(p.next()) &&
+		(p.dialect != "clickhouse" || p.next().Type != TokL_PAREN) {
 		p.advance()
 		inner, err := p.parsePrimary()
 		if err != nil {
@@ -2012,6 +2149,24 @@ func newStar() *Expression {
 // one and refuse the statement for having no SELECT after it.
 func (p *parser) starModifiers(star *Expression) (*Expression, error) {
 	for {
+		// ClickHouse applies a function to every column a `*` names:
+		// `* APPLY(sum)` (ClickHouseParser._parse_star_ops).
+		if p.dialect == "clickhouse" && p.at(TokAPPLY) {
+			p.advance()
+			if !p.match(TokL_PAREN) {
+				return nil, p.unsupported("APPLY without a parenthesis")
+			}
+			name := p.parseIDVarAny()
+			if name == nil {
+				return nil, p.unsupported("APPLY without a name")
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed APPLY")
+			}
+			star = New("Apply", Arg{"this", star},
+				Arg{"expression", New("Var", Arg{"this", name.Name()})})
+			continue
+		}
 		var key string
 		switch {
 		// EXCEPT and EXCLUDE are one list under two words -- DuckDB writes
@@ -2051,6 +2206,30 @@ func (p *parser) starModifiers(star *Expression) (*Expression, error) {
 		}
 		star.Set(key, items)
 	}
+}
+
+// parseDataTypeText parses a type WRITTEN AS TEXT, which ClickHouse allows
+// inside a quoted name: `.:"Array(JSON)"` (Parser._parse_types,
+// exp.DataType.from_str).
+func (p *parser) parseDataTypeText(text string) (*Expression, error) {
+	tk, err := NewTokenizer(p.dialect)
+	if err != nil {
+		return nil, err
+	}
+	toks, err := tk.Tokenize(text)
+	if err != nil {
+		return nil, err
+	}
+	cfg := tk.Config()
+	sub := &parser{tokens: toks, cfg: cfg, tables: cfg.Tables, dialect: p.dialect, sql: text}
+	dt, err := sub.parseDataType()
+	if err != nil {
+		return nil, err
+	}
+	if sub.curr() != nil {
+		return nil, p.unsupported("a quoted type with trailing tokens")
+	}
+	return dt, nil
 }
 
 // dotted reads `.name` after something that is not part of an identifier
@@ -2179,6 +2358,18 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 		return nil, err
 	}
 	if !p.match(TokALIAS) {
+		// `CAST(x, 'type')` names the type as a STRING rather than reading
+		// it as a type (Parser._parse_cast).
+		if p.match(TokCOMMA) {
+			to, err := p.parsePrimary()
+			if err != nil {
+				return nil, err
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed CAST")
+			}
+			return New("CastToStrType", Arg{"this", this}, Arg{"to", to}), nil
+		}
 		return nil, p.unsupported("CAST without AS")
 	}
 	// The collation belongs to the TYPE here, not to a column: inside a cast
@@ -2383,6 +2574,14 @@ func (p *parser) parseDataType() (*Expression, error) {
 			return true
 		})
 	}
+	// ClickHouse marks every type it READS as not nullable -- that is its
+	// default -- so that one written `Nullable(...)` can be told from one
+	// that was not, which is what its writer consults
+	// (ClickHouseParser._parse_types).
+	if p.dialect == "clickhouse" && dt != nil && dt.Class == "DataType" &&
+		dt.Args["nullable"] != true {
+		dt.Set("nullable", false)
+	}
 	return dt, nil
 }
 
@@ -2581,12 +2780,58 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 				Arg{"this", DataTypeKind("USER-DEFINED")},
 				Arg{"kind", named}), nil
 		}
+		// ClickHouse's `Nullable(T)` is not a type of its own: it IS the
+		// inner type with the nullability flag set, which is how the
+		// reference keeps it (the base parser's NULLABLE branch).
+		if p.dialect == "clickhouse" && c.Type == TokNULLABLE &&
+			p.next() != nil && p.next().Type == TokL_PAREN {
+			p.advance() // NULLABLE
+			p.advance() // (
+			inner, err := p.parseCollatedDataType()
+			if err != nil {
+				return nil, err
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed Nullable")
+			}
+			if inner != nil && inner.Class == "DataType" {
+				inner.Set("nullable", true)
+			}
+			return inner, nil
+		}
 		return nil, p.unsupported("type " + c.Text)
 	}
 	if c.Type == TokMAP && p.next() != nil && p.next().Type == TokL_BRACKET {
 		if dt := p.parseBracketedMapType(); dt != nil {
 			return dt, nil
 		}
+	}
+	// ClickHouse's Dynamic type takes assignments rather than sizes:
+	// `Dynamic(max_types = 10)` (Parser._parse_types, TYPE_TOKENS).
+	if c.Type == TokDYNAMIC {
+		p.advance()
+		dt := New("DataType", Arg{"this", DataTypeKind("DYNAMIC")})
+		if p.at(TokL_PAREN) {
+			p.advance()
+			var params []*Expression
+			for !p.at(TokR_PAREN) {
+				e, perr := p.parseAssignment()
+				if perr != nil {
+					return nil, perr
+				}
+				params = append(params, e)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("unclosed Dynamic")
+			}
+			dt.Set("expressions", params)
+		}
+		dt.Set("nested", false)
+		dt.Set("nullable", false)
+		return dt, nil
 	}
 	// INTERVAL as a type carries a UNIT, and the DataType's `this` is an
 	// Interval node rather than a type name -- `CAST(x AS INTERVAL DAY)` is
@@ -2598,7 +2843,8 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 	}
 	// An ENUM or a MySQL SET carries the VALUES it may take rather than a
 	// size: they are strings, and what a sized type takes there is a number.
-	if (c.Type == TokENUM || c.Type == TokSET) && p.next() != nil && p.next().Type == TokL_PAREN {
+	if (c.Type == TokENUM || c.Type == TokENUM8 || c.Type == TokENUM16 ||
+		c.Type == TokSET) && p.next() != nil && p.next().Type == TokL_PAREN {
 		p.advance()
 		p.advance() // the opening parenthesis
 		// `ENUM ()` takes no members at all -- PostgreSQL writes exactly this
@@ -2608,7 +2854,9 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 		var members []*Expression
 		if !p.at(TokR_PAREN) {
 			for {
-				m, err := p.parseTypeMember()
+				// An ENUM member is an EQUALITY, so `Enum('a' = 1)` keeps the
+				// value it is given (Parser._parse_types).
+				m, err := p.parseEquality()
 				if err != nil {
 					return nil, err
 				}
@@ -2625,6 +2873,71 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 			Arg{"this", DataTypeKind(kind)},
 			Arg{"expressions", members},
 			Arg{"nested", false}), nil
+	}
+	// ClickHouse's AGGREGATEFUNCTION takes a function (or its name) and then
+	// column types (Parser._parse_types, is_aggregate).
+	if (kind == "AGGREGATEFUNCTION" || kind == "SIMPLEAGGREGATEFUNCTION") &&
+		p.dialect == "clickhouse" && p.next() != nil && p.next().Type == TokL_PAREN {
+		p.advance()
+		p.advance() // the opening parenthesis
+		var params []*Expression
+		var funcOrIdent *Expression
+		var err error
+		if p.atIdentifier() && p.next() != nil && p.next().Type == TokL_PAREN {
+			// The reference reads this name with anonymous=True, so a name
+			// that is otherwise a class of its own -- `any(x)` is AnyValue --
+			// stays the AnonymousAggFunc the aggregate resolver makes of it
+			// (ClickHouseParser._parse_function).
+			funcOrIdent, err = p.parseClickhouseAnonymousFunc()
+			if err != nil {
+				return nil, err
+			}
+		} else {
+			funcOrIdent = p.parseIDVarAny()
+		}
+		if funcOrIdent == nil {
+			return nil, p.unsupported("an aggregate type without a function")
+		}
+		params = append(params, funcOrIdent)
+		if p.match(TokCOMMA) {
+			for {
+				arg, err := p.parseDataType()
+				if err != nil {
+					return nil, err
+				}
+				params = append(params, arg)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed aggregate type")
+		}
+		return New("DataType", Arg{"this", DataTypeKind(kind)},
+			Arg{"expressions", params}, Arg{"nested", false}), nil
+	}
+	// ClickHouse's JSON type takes a list of column definitions and SKIP
+	// clauses rather than sizes (Parser._parse_types, _parse_json_type_arg).
+	if kind == "JSON" && p.dialect == "clickhouse" && p.next() != nil && p.next().Type == TokL_PAREN {
+		p.advance()
+		p.advance() // the opening parenthesis
+		var params []*Expression
+		for !p.at(TokR_PAREN) {
+			param, err := p.parseClickhouseJSONTypeArg()
+			if err != nil {
+				return nil, err
+			}
+			params = append(params, param)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed JSON type")
+		}
+		return New("DataType", Arg{"this", DataTypeKind("JSON")},
+			Arg{"expressions", params}, Arg{"nested", false}), nil
 	}
 	p.advance()
 
@@ -2783,8 +3096,9 @@ func (p *parser) parseIntervalType() *Expression {
 		// and it carries none, where a type WRITTEN with parameters does.
 		return New("DataType", Arg{"this", DataTypeKind("INTERVAL")})
 	}
-	// `DAY TO HOUR` is a span, which is one unit made of two.
-	if p.atWords("TO") {
+	// `DAY TO HOUR` is a span, which is one unit made of two -- where the
+	// dialect reads spans at all (Parser.INTERVAL_SPANS).
+	if p.dialect != "clickhouse" && p.atWords("TO") {
 		p.advance()
 		if to := p.intervalUnit(); to != nil {
 			unit = New("IntervalSpan", Arg{"this", unit}, Arg{"expression", to})
@@ -2828,6 +3142,13 @@ func (p *parser) parseTypeSize() (*Expression, error) {
 		p.advance()
 		v := New("Var", Arg{"this", strings.ToUpper(c.Text)})
 		return New("DataTypeParam", Arg{"this", v}), nil
+	case c.Type == TokSTRING:
+		// A string parameter: `DateTime64(6, 'UTC')` names a time zone where
+		// every other size is a number, and the reference keeps it literal
+		// (Parser._parse_type_size).
+		p.advance()
+		return New("DataTypeParam", Arg{"this",
+			New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})}), nil
 	case c.Type == TokL_PAREN:
 		// `VARCHAR((50))`: the size is itself parenthesised, and the
 		// reference keeps the parentheses rather than folding them away.
@@ -2842,6 +3163,63 @@ func (p *parser) parseTypeSize() (*Expression, error) {
 		return New("DataTypeParam", Arg{"this", New("Paren", Arg{"this", inner.Args["this"]})}), nil
 	}
 	return nil, p.unsupported("non-numeric type parameter")
+}
+
+// parseClickhouseAnonymousFunc reads a call as the ANONYMOUS function it is,
+// and lets ClickHouse's aggregate resolver name it -- `any(x)` becomes an
+// AnonymousAggFunc rather than the AnyValue it would otherwise be
+// (ClickHouseParser._parse_function, anonymous=True).
+func (p *parser) parseClickhouseAnonymousFunc() (*Expression, error) {
+	name := p.curr().Text
+	p.advance() // the name
+	p.advance() // the opening parenthesis
+	args, err := p.parseCallArgsCSV()
+	if err != nil {
+		return nil, err
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed " + name)
+	}
+	return p.clickhouseAggFunc(New("Anonymous", Arg{"this", name}, Arg{"expressions", args})), nil
+}
+
+// parseClickhouseJSONTypeArg reads one argument of ClickHouse's JSON type: a
+// SKIP clause, a `name=value` parameter, or the name and type of a column
+// (Parser._parse_json_type_arg).
+func (p *parser) parseClickhouseJSONTypeArg() (*Expression, error) {
+	if p.atWords("SKIP") {
+		p.advance()
+		regexp := p.match(TokRLIKE)
+		col, err := p.parseColumn()
+		if err != nil {
+			return nil, err
+		}
+		if col != nil && col.Class == "Column" {
+			col = col.This()
+		}
+		return New("SkipJSONColumn", Arg{"regexp", regexp}, Arg{"expression", col}), nil
+	}
+	col, err := p.parseColumn()
+	if err != nil {
+		return nil, err
+	}
+	name := col
+	if col != nil && col.Class == "Column" {
+		name = col.This()
+	}
+	if p.match(TokEQ) {
+		value, err := p.parsePrimary()
+		if err != nil {
+			return nil, err
+		}
+		return New("EQ", Arg{"this", New("Var", Arg{"this", name.Name()})},
+			Arg{"expression", value}), nil
+	}
+	kind, err := p.parseDataType()
+	if err != nil {
+		return nil, err
+	}
+	return New("ColumnDef", Arg{"this", name}, Arg{"kind", kind}), nil
 }
 
 // parseStructField reads one member of a STRUCT-like type. The colon is
@@ -2862,7 +3240,18 @@ func (p *parser) parseStructField() (*Expression, error) {
 	p.index = mark
 	name, err := p.parseIdentifier()
 	if err != nil {
-		return nil, err
+		// A member may be NAMED by a keyword -- `Tuple(select String)` -- and
+		// the reference reads the name with `_parse_id_var`
+		// (Parser._parse_struct_types).
+		// A member may be NAMED by a token that is a keyword but not RESERVED
+		// -- `Tuple(select String)` in ClickHouse -- and the reference reads
+		// the name through `_parse_type(fallback_to_identifier=True)`
+		// (Parser._parse_struct_types).
+		if id := p.advanceAnyIdentifier(); id != nil {
+			name = id
+		} else {
+			return nil, err
+		}
 	}
 	p.match(TokCOLON)
 	kind, err := p.parseDataType()
@@ -3032,6 +3421,274 @@ func (p *parser) parseCase() (*Expression, error) {
 // named "COUNT" -- and each has its own argument shape. Producing Anonymous for
 // one of those would be a divergence, so a name the reference knows is refused
 // until its node is ported. The list is generated, not guessed.
+// clickhouseFunctionParser reads the calls whose grammar ClickHouse gives its
+// own parser (ClickHouseParser.FUNCTION_PARSERS). On entry the cursor is on the
+// name; a handled call consumes the name, the parentheses and the arguments
+// and returns its node.
+func (p *parser) clickhouseFunctionParser(upper string) (bool, *Expression, error) {
+	switch upper {
+	case "XOR", "AND", "OR":
+		p.advance()
+		p.advance() // the opening parenthesis
+		args, err := p.parseCallArgsCSV()
+		if err != nil {
+			return true, nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return true, nil, p.unsupported(upper + " without a closing parenthesis")
+		}
+		if upper == "XOR" {
+			return true, combineConnector("Xor", args), nil
+		}
+		if len(args) == 0 {
+			return true, nil, p.unsupported(upper + " with no arguments")
+		}
+		class := "And"
+		if upper == "OR" {
+			class = "Or"
+		}
+		return true, New("Paren", Arg{"this", combineConnector(class, args)}), nil
+	case "QUANTILE", "MEDIAN":
+		// `quantile(0.5)(a)` and `median(a)`: the first list is the quantile,
+		// the second the argument, and MEDIAN is QUANTILE of one half
+		// (ClickHouseParser._parse_quantile).
+		p.advance()
+		p.advance() // the opening parenthesis
+		this, err := p.parseCallArgumentAliased(false)
+		if err != nil {
+			return true, nil, err
+		}
+		params, hasParams, err := p.parseClickhouseFuncParams()
+		if err != nil {
+			return true, nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return true, nil, p.unsupported("unclosed " + upper)
+		}
+		if hasParams {
+			return true, New("Quantile", Arg{"this", params[0]}, Arg{"quantile", this}), nil
+		}
+		return true, New("Quantile", Arg{"this", this},
+			Arg{"quantile", New("Literal", Arg{"this", "0.5"}, Arg{"is_string", false})}), nil
+	case "SPLITBYSTRING", "SPLITBYREGEXP":
+		// `splitByString(sep, s)` and `splitByRegexp(re, s)`
+		// (ClickHouseParser.FUNCTIONS, _build_split).
+		p.advance()
+		p.advance() // the opening parenthesis
+		args, err := p.parseCallArgsCSV()
+		if err != nil {
+			return true, nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return true, nil, p.unsupported("unclosed " + upper)
+		}
+		class := "Split"
+		if upper == "SPLITBYREGEXP" {
+			class = "RegexpSplit"
+		}
+		node := New(class)
+		if a := argAt(args, 1); a != nil {
+			node.Set("this", a)
+		}
+		if a := argAt(args, 0); a != nil {
+			node.Set("expression", a)
+		}
+		if a := argAt(args, 2); a != nil {
+			node.Set("limit", a)
+		}
+		return true, node, nil
+	case "SPLITBYCHAR":
+		// A ONE-byte separator splits with Split; anything else stays the
+		// anonymous call (ClickHouseParser._build_split_by_char).
+		p.advance()
+		p.advance() // the opening parenthesis
+		args, err := p.parseCallArgsCSV()
+		if err != nil {
+			return true, nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return true, nil, p.unsupported("unclosed splitByChar")
+		}
+		if sep := argAt(args, 0); sep != nil && sep.Class == "Literal" && sep.Args["is_string"] == true {
+			if text, _ := sep.Args["this"].(string); len(text) == 1 {
+				node := New("Split")
+				if a := argAt(args, 1); a != nil {
+					node.Set("this", a)
+				}
+				node.Set("expression", sep)
+				if a := argAt(args, 2); a != nil {
+					node.Set("limit", a)
+				}
+				return true, node, nil
+			}
+		}
+		return true, New("Anonymous", Arg{"this", "splitByChar"},
+			Arg{"expressions", args}), nil
+	case "GROUPCONCAT":
+		// `groupConcat(sep)(expr)` and `groupConcat(expr)`
+		// (ClickHouseParser._parse_group_concat).
+		p.advance()
+		p.advance() // the opening parenthesis
+		args, err := p.parseCallArgsCSV()
+		if err != nil {
+			return true, nil, err
+		}
+		params, hasParams, err := p.parseClickhouseFuncParams()
+		if err != nil {
+			return true, nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return true, nil, p.unsupported("unclosed groupConcat")
+		}
+		node := New("GroupConcat")
+		this := argAt(args, 0)
+		if hasParams {
+			this = argAt(params, 0)
+			// `groupConcat(sep, limit)(expr)` keeps the limit by wrapping the
+			// expression in it (ClickHouseParser._parse_group_concat).
+			if limit := argAt(args, 1); limit != nil && this != nil {
+				this = New("Limit", Arg{"this", this}, Arg{"expression", limit})
+			}
+		}
+		if this != nil {
+			node.Set("this", this)
+		}
+		if sep := argAt(args, 0); hasParams && sep != nil {
+			node.Set("separator", sep)
+		}
+		return true, node, nil
+	case "COLUMNS":
+		// `COLUMNS('regex') [APPLY(f)]*` selects columns by pattern and
+		// transforms them (ClickHouseParser._parse_columns).
+		p.advance()
+		p.advance() // the opening parenthesis
+		inner, err := p.parseCallArgumentAliased(false)
+		if err != nil {
+			return true, nil, err
+		}
+		node := New("Columns", Arg{"this", inner})
+		for p.at(TokR_PAREN) && p.next() != nil && strings.EqualFold(p.next().Text, "APPLY") &&
+			p.peekAt(2) != nil && p.peekAt(2).Type == TokL_PAREN {
+			p.advance() // the closing parenthesis
+			p.advance() // APPLY
+			p.advance() // (
+			name := p.parseIDVarAny()
+			if name == nil {
+				return true, nil, p.unsupported("APPLY without a name")
+			}
+			node = New("Apply", Arg{"this", node},
+				Arg{"expression", New("Var", Arg{"this", name.Name()})})
+		}
+		if !p.match(TokR_PAREN) {
+			return true, nil, p.unsupported("unclosed COLUMNS")
+		}
+		return true, node, nil
+	case "TUPLE":
+		// `tuple(a, b)` is a Struct over its arguments, which may name
+		// themselves (ClickHouseParser.FUNCTION_PARSERS, Struct.from_arg_list).
+		p.advance()
+		p.advance() // the opening parenthesis
+		args, err := p.parseCallArgsCSVAliased(true)
+		if err != nil {
+			return true, nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return true, nil, p.unsupported("unclosed tuple")
+		}
+		return true, New("Struct", Arg{"expressions", args}), nil
+	case "ARRAYJOIN":
+		p.advance()
+		p.advance() // the opening parenthesis
+		inner, err := p.parseCallArgumentAliased(true)
+		if err != nil {
+			return true, nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return true, nil, p.unsupported("unclosed arrayJoin")
+		}
+		return true, New("Explode", Arg{"this", inner}), nil
+	}
+	return false, nil, nil
+}
+
+// parseClickhouseFuncParams reads the SECOND parenthesised list a ClickHouse
+// aggregate may carry: `quantile(0.5)(a)` (ClickHouseParser._parse_func_params).
+// The closing parenthesis is left for the caller, as the reference leaves it
+// for _parse_function_call.
+func (p *parser) parseClickhouseFuncParams() ([]*Expression, bool, error) {
+	if !p.at(TokR_PAREN) || p.next() == nil || p.next().Type != TokL_PAREN {
+		return nil, false, nil
+	}
+	p.advance() // the first list's closing parenthesis
+	p.advance() // the second list's opening parenthesis
+	args, err := p.parseCallArgsCSV()
+	if err != nil {
+		return nil, false, err
+	}
+	return args, true, nil
+}
+
+// parseCallArgsCSV reads a call's arguments as a comma-separated list, closed
+// by the caller.
+func (p *parser) parseCallArgsCSV() ([]*Expression, error) {
+	return p.parseCallArgsCSVAliased(false)
+}
+
+// parseCallArgsCSVAliased is the same reader for a call whose arguments may
+// name themselves.
+func (p *parser) parseCallArgsCSVAliased(alias bool) ([]*Expression, error) {
+	var args []*Expression
+	if p.at(TokR_PAREN) {
+		return args, nil
+	}
+	wasInCallArgs := p.inCallArgs
+	p.inCallArgs = true
+	defer func() { p.inCallArgs = wasInCallArgs }()
+	for {
+		arg, err := p.parseCallArgumentAliased(alias)
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	return args, nil
+}
+
+// combineConnector folds a connector over its arguments the way the
+// reference's `_combine` does: left-nested, with every operand that is itself
+// a connector wrapped in parentheses so precedence survives, the first among
+// them included once there is more than one.
+func combineConnector(class string, args []*Expression) *Expression {
+	conds := make([]*Expression, 0, len(args))
+	for _, a := range args {
+		if a != nil {
+			conds = append(conds, a)
+		}
+	}
+	if len(conds) == 0 {
+		return nil
+	}
+	this := conds[0]
+	if len(conds) > 1 {
+		this = wrapConnector(this)
+	}
+	for _, e := range conds[1:] {
+		this = New(class, Arg{"this", this}, Arg{"expression", wrapConnector(e)})
+	}
+	return this
+}
+
+// wrapConnector brackets a connector where the reference's `_wrap` does.
+func wrapConnector(e *Expression) *Expression {
+	if e != nil && classIsA["Connector"][e.Class] {
+		return New("Paren", Arg{"this", e})
+	}
+	return e
+}
+
 func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	name := p.curr().Text
 	// A comment standing in front of the name belongs to the call built from
@@ -3090,6 +3747,14 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		// BigQuery's SAFE_CAST is the same reader, flagged safe.
 		return p.castOrConversion(upper == "TRY_CAST" || upper == "SAFE_CAST")
 	}
+	// ClickHouse gives a handful of names a grammar of their own, and the
+	// words are OPERATORS elsewhere -- OR, AND, XOR -- so the syntax table the
+	// probe recorded does not describe them (ClickHouseParser.FUNCTION_PARSERS).
+	if p.dialect == "clickhouse" {
+		if handled, node, err := p.clickhouseFunctionParser(upper); handled {
+			return node, err
+		}
+	}
 	if _, syntax := p.tables.SyntaxFunctions[upper]; syntax {
 		return p.parseSyntaxFunction(upper)
 	}
@@ -3111,7 +3776,8 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	// builder with) builds a bare MAP(...) through its own reference builder
 	// rather than a probeable signature -- see buildVarMap -- so it is not
 	// turned away here despite having none.
-	isVarMap := upper == "MAP" && (p.dialect == "databricks" || p.dialect == "starrocks" || isHiveFamily(p.dialect))
+	isVarMap := upper == "MAP" && (p.dialect == "databricks" || p.dialect == "starrocks" ||
+		p.dialect == "clickhouse" || isHiveFamily(p.dialect))
 	// Dremio's DATETYPE has no generic fallback shape at all -- unlike
 	// DATE_ADD/DATE_SUB's cast-interval builder, which still probes fine
 	// through its own fallback_builder -- so it is not turned away here
@@ -3227,6 +3893,24 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		}
 	}
 	p.inCallArgs = wasInCallArgs
+	// ClickHouse's AND, OR and XOR are connectors written as calls: AND and
+	// OR wrap in the parentheses they were written with, XOR is a Xor node
+	// (ClickHouseParser.FUNCTION_PARSERS, Parser._parse_connector_function).
+	if p.dialect == "clickhouse" {
+		switch upper {
+		case "AND", "OR":
+			if len(args) == 0 {
+				return nil, p.unsupported(upper + " with no arguments")
+			}
+			class := "And"
+			if upper == "OR" {
+				class = "Or"
+			}
+			return New("Paren", Arg{"this", combineConnector(class, args)}), nil
+		case "XOR":
+			return combineConnector("Xor", args), nil
+		}
+	}
 	// `SUM(x IGNORE NULLS)` puts the modifier INSIDE the parentheses and the
 	// reference still wraps the whole call in it.
 	inner := p.atNullsModifier()
@@ -3655,7 +4339,96 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	if quotedName {
 		this = New("Identifier", Arg{"this", name}, Arg{"quoted", true})
 	}
-	return New("Anonymous", Arg{"this", this}, Arg{"expressions", args}), nil
+	anon := New("Anonymous", Arg{"this", this}, Arg{"expressions", args})
+	// ClickHouse splits an aggregate into a parameter list and an argument
+	// list -- `quantile(0.5)(a)` -- and gives the node a class of its own
+	// according to the name's combinators (ClickHouseParser._parse_function).
+	if p.dialect == "clickhouse" {
+		return p.clickhouseAggFunc(anon), nil
+	}
+	return anon, nil
+}
+
+// clickhouseAggFunc gives an anonymous call the aggregate class ClickHouse's
+// own resolver calls for. A name that is not an aggregate is left as it was.
+func (p *parser) clickhouseAggFunc(anon *Expression) *Expression {
+	_, suffixes, ok := p.resolveClickhouseAgg(anon.Name())
+	if !ok {
+		return anon
+	}
+	params := p.parseClickhouseAggParams()
+	name := anon.Args["this"]
+	args := anon.Args["expressions"]
+	switch {
+	case len(suffixes) > 0 && params != nil:
+		node := New("CombinedParameterizedAgg", Arg{"this", name}, Arg{"expressions", args})
+		node.Set("params", params)
+		return node
+	case len(suffixes) > 0:
+		return New("CombinedAggFunc", Arg{"this", name}, Arg{"expressions", args})
+	case params != nil:
+		node := New("ParameterizedAgg", Arg{"this", name}, Arg{"expressions", args})
+		node.Set("params", params)
+		return node
+	}
+	return New("AnonymousAggFunc", Arg{"this", name}, Arg{"expressions", args})
+}
+
+// parseClickhouseAggParams reads the SECOND parenthesised list of a
+// ClickHouse aggregate, where there is one.
+func (p *parser) parseClickhouseAggParams() []*Expression {
+	if !p.match(TokL_PAREN) {
+		return nil
+	}
+	var params []*Expression
+	for {
+		item, err := p.parseExpression()
+		if err != nil || item == nil {
+			break
+		}
+		params = append(params, item)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	p.match(TokR_PAREN)
+	return params
+}
+
+// resolveClickhouseAgg strips combinators off an aggregate's name until what
+// is left is one the dialect knows, LONGEST suffix first -- so `quantilesIf`
+// resolves to `quantiles` with `If` rather than to `quantile` with `sIf`
+// (ClickHouseParser._resolve_clickhouse_agg).
+func (p *parser) resolveClickhouseAgg(name string) (string, []string, bool) {
+	if len(p.tables.AggFunctions) == 0 {
+		return "", nil, false
+	}
+	known := func(n string) bool {
+		for _, f := range p.tables.AggFunctions {
+			if f == n {
+				return true
+			}
+		}
+		return false
+	}
+	var acc []string
+	for cur := name; ; {
+		if known(cur) {
+			return cur, acc, true
+		}
+		matched := ""
+		for _, suf := range p.tables.AggFuncSuffixes {
+			if len(cur) > len(suf) && strings.HasSuffix(cur, suf) {
+				matched = suf
+				break
+			}
+		}
+		if matched == "" {
+			return "", nil, false
+		}
+		acc = append([]string{matched}, acc...)
+		cur = cur[:len(cur)-len(matched)]
+	}
 }
 
 // buildFunction fills a function node's arguments from the call's, following
@@ -3954,6 +4727,14 @@ func (p *parser) buildFromSpec(name, class string, keys []FuncArg, args []*Expre
 			// Var(args[i].name upper-cased), and the argument node itself does
 			// not appear in the result at all.
 			if a.Index < len(args) {
+				// The slot becomes a Var only where the argument IS one of
+				// the things a unit can be written as -- a Var, a Literal, or
+				// a one-part Column. A call or a subquery stays the node it is,
+				// which is the reference's own rule (TimeUnit.__init__).
+				if !wrappableUnitArg(args[a.Index]) {
+					node.Set(a.Key, args[a.Index])
+					continue
+				}
 				// An argument with no NAME to take is kept as the node it is,
 				// where that is what the reference does: PostgreSQL's
 				// DATE_BIN puts a subquery straight into its unit slot.
@@ -4004,6 +4785,85 @@ func (p *parser) buildFromSpec(name, class string, keys []FuncArg, args []*Expre
 		}
 	}
 	return node
+}
+
+// wrappableUnitArg reports whether an argument put into a unit slot is one
+// the reference turns into a Var. Its rule is exact: a Var, a Literal, or a
+// Column of ONE part; anything else -- a call, a subquery, a qualified column
+// -- is kept as it stands (TimeUnit.__init__, TimeUnit.VAR_LIKE).
+func wrappableUnitArg(e *Expression) bool {
+	switch e.Class {
+	case "Var", "Literal":
+		return true
+	case "Column":
+		return e.Args["table"] == nil && e.Args["db"] == nil && e.Args["catalog"] == nil
+	}
+	return false
+}
+
+// parseClickhouseQueryParameter reads `{name: Type}` -- a query parameter --
+// where a map literal opens with the same brace. handled is false, and nothing
+// is consumed, when the braces are not one
+// (ClickHouseParser._parse_query_parameter).
+func (p *parser) parseClickhouseQueryParameter() (*Expression, bool) {
+	mark := p.index
+	if !p.match(TokL_BRACE) {
+		return nil, false
+	}
+	var this *Expression
+	if p.atIdentifier() {
+		this = p.parseIDVarAny()
+	}
+	if this == nil || !p.match(TokCOLON) {
+		p.index = mark
+		return nil, false
+	}
+	// `IDENTIFIER` is read before the type reader, which would otherwise take
+	// it for a user-defined type (ClickHouseParser._parse_query_parameter).
+	var kind *Expression
+	kindStr := ""
+	if p.atWords("IDENTIFIER") {
+		p.advance()
+		kindStr = "Identifier"
+	} else if dt, err := p.parseDataType(); err == nil && dt != nil {
+		kind = dt
+	} else {
+		p.index = mark
+		return nil, false
+	}
+	if !p.match(TokR_BRACE) {
+		p.index = mark
+		return nil, false
+	}
+	// An unquoted name becomes a Var, as the reference unwraps it.
+	if this.Class == "Identifier" && this.Args["quoted"] != true {
+		this = New("Var", Arg{"this", this.Name()})
+	}
+	var kindArg any = kind
+	if kindStr != "" {
+		kindArg = kindStr
+	}
+	return New("Placeholder", Arg{"this", this}, Arg{"kind", kindArg}), true
+}
+
+// clickhouseVarMap turns the items of a `{'k': v}` brace into ClickHouse's
+// VarMap: the keys become a string-literal array and the values a parallel
+// one. A member that is not a key-value pair ends the run, as it does in the
+// reference, and what was read so far is still returned.
+func clickhouseVarMap(items []*Expression) *Expression {
+	keys := New("Array")
+	values := New("Array")
+	for _, item := range items {
+		if item.Class != "PropertyEQ" {
+			break
+		}
+		key, _ := item.Args["this"].(*Expression)
+		value, _ := item.Args["expression"].(*Expression)
+		keys.Append("expressions",
+			New("Literal", Arg{"this", key.Name()}, Arg{"is_string", true}))
+		values.Append("expressions", value)
+	}
+	return New("VarMap", Arg{"keys", keys}, Arg{"values", values})
 }
 
 // parseColumn reads a possibly-qualified column reference: name, table.name,
@@ -4077,6 +4937,15 @@ func (p *parser) parseColumn() (*Expression, error) {
 				parts = append(parts, New("Identifier", Arg{"this", name}, Arg{"quoted", true}))
 				continue
 			}
+		}
+		// After a dot, a NUMBER names a FIELD rather than a value: `t.2` reads
+		// a column whose name is the literal 2 (Parser._parse_field, which
+		// tries _parse_number).
+		if c := p.curr(); c != nil && c.Type == TokNUMBER {
+			p.advance()
+			parts = append(parts, New("Literal",
+				Arg{"this", c.Text}, Arg{"is_string", false}))
+			continue
 		}
 		// After a dot, `null` and `true` are names, not values -- and the
 		// reference builds a bare Identifier for them, with no `quoted` arg

@@ -1,0 +1,399 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "SELECT loyalty, count() FROM hits LEFT SEMI JOIN users USING (UserID) GROUP BY loyalty ORDER BY loyalty ASC",
+ "sql": "SELECT loyalty, count() FROM hits LEFT SEMI JOIN users USING (UserID) GROUP BY loyalty ORDER BY loyalty ASC",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "loyalty"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "count"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 24,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "hits"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 34,
+   "t": "LEFT",
+   "x": "LEFT"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 39,
+   "t": "SEMI",
+   "x": "SEMI"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 44,
+   "t": "JOIN",
+   "x": "JOIN"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 49,
+   "t": "VAR",
+   "x": "users"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 55,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 61,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 62,
+   "t": "VAR",
+   "x": "UserID"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 68,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 70,
+   "t": "GROUP_BY",
+   "x": "GROUP BY"
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 79,
+   "t": "VAR",
+   "x": "loyalty"
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 87,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 103,
+   "e": 102,
+   "l": 1,
+   "s": 96,
+   "t": "VAR",
+   "x": "loyalty"
+  },
+  {
+   "c": 107,
+   "e": 106,
+   "l": 1,
+   "s": 104,
+   "t": "ASC",
+   "x": "ASC"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "loyalty"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.Count",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 21,
+    "end": 20,
+    "line": 1,
+    "name": "count",
+    "start": 16
+   }
+  },
+  {
+   "i": 5,
+   "k": "big_int",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "hits"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Join",
+   "i": 0,
+   "k": "joins"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 49
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "users"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 12,
+   "k": "side",
+   "v": "LEFT"
+  },
+  {
+   "i": 12,
+   "k": "kind",
+   "v": "SEMI"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "using",
+   "m": {
+    "col": 68,
+    "end": 67,
+    "line": 1,
+    "start": 62
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "UserID"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Group",
+   "i": 0,
+   "k": "group"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 22,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 23,
+   "k": "this",
+   "m": {
+    "col": 86,
+    "end": 85,
+    "line": 1,
+    "start": 79
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "loyalty"
+  },
+  {
+   "i": 24,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 0,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 27,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 28,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 29,
+   "k": "this",
+   "m": {
+    "col": 103,
+    "end": 102,
+    "line": 1,
+    "start": 96
+   }
+  },
+  {
+   "i": 30,
+   "k": "this",
+   "v": "loyalty"
+  },
+  {
+   "i": 30,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 28,
+   "k": "desc",
+   "v": false
+  },
+  {
+   "i": 28,
+   "k": "nulls_first",
+   "v": false
+  }
+ ]
+}

@@ -63,37 +63,73 @@ func (p *parser) parseJoin() (*Expression, error) {
 	if c == nil {
 		return nil, nil
 	}
-	// A METHOD says how the rows are matched rather than which of them are
-	// kept: NATURAL joins on every column the two tables share, ASOF on the
-	// nearest match rather than an equal one.
-	var method *Token
-	if _, isMethod := p.tables.JoinMethods[c.Type]; isMethod {
-		// NATURAL joins on every column the two tables share; POSITIONAL on
-		// the row's position in each; ASOF on the nearest row rather than an
-		// equal one. All three are the method rather than the side or the
-		// kind, and all three are written back the same way.
-		if !strings.EqualFold(c.Text, "NATURAL") &&
-			!strings.EqualFold(c.Text, "POSITIONAL") &&
-			!strings.EqualFold(c.Text, "ASOF") {
-			return nil, p.unsupported("join method " + c.Text)
-		}
-		method = c
-		p.advance()
-		c = p.curr()
-		if c == nil {
-			return nil, p.unsupported("a join method with no join")
-		}
-	}
-
-	var side, kind *Token
-	if _, ok := p.tables.JoinSides[c.Type]; ok {
-		side = c
-		p.advance()
-	}
-	if c2 := p.curr(); c2 != nil {
-		if _, ok := p.tables.JoinKinds[c2.Type]; ok {
-			kind = c2
+	var method, side, kind *Token
+	if p.dialect == "clickhouse" {
+		// ClickHouse reads the parts in its OWN order -- GLOBAL, then a kind,
+		// then a side, then another kind -- and folds the pair into
+		// (global, side, kind), so `ANY LEFT JOIN` and `LEFT ANY JOIN` are
+		// the same tree. Its JOIN_KINDS carry ALL, ANY, ASOF and ARRAY on top
+		// of the base ones (ClickHouseParser._parse_join_parts).
+		if p.at(TokGLOBAL) {
+			method = p.curr()
 			p.advance()
+		}
+		var kindPre *Token
+		if c := p.curr(); c != nil {
+			if _, ok := p.tables.JoinKinds[c.Type]; ok {
+				kindPre = c
+				p.advance()
+			}
+		}
+		if c := p.curr(); c != nil {
+			if _, ok := p.tables.JoinSides[c.Type]; ok {
+				side = c
+				p.advance()
+			}
+		}
+		if c := p.curr(); c != nil {
+			if _, ok := p.tables.JoinKinds[c.Type]; ok {
+				kind = c
+				p.advance()
+			}
+		}
+		// `side or kind, kind_pre or kind`.
+		if side == nil {
+			side = kind
+		}
+		if kindPre != nil {
+			kind = kindPre
+		}
+	} else {
+		// A METHOD says how the rows are matched rather than which of them
+		// are kept: NATURAL joins on every column the two tables share, ASOF
+		// on the nearest match rather than an equal one.
+		if _, isMethod := p.tables.JoinMethods[c.Type]; isMethod {
+			// NATURAL joins on every column the two tables share; POSITIONAL
+			// on the row's position in each; ASOF on the nearest row rather
+			// than an equal one. All three are the method rather than the
+			// side or the kind, and all three are written back the same way.
+			if !strings.EqualFold(c.Text, "NATURAL") &&
+				!strings.EqualFold(c.Text, "POSITIONAL") &&
+				!strings.EqualFold(c.Text, "ASOF") {
+				return nil, p.unsupported("join method " + c.Text)
+			}
+			method = c
+			p.advance()
+			c = p.curr()
+			if c == nil {
+				return nil, p.unsupported("a join method with no join")
+			}
+		}
+		if _, ok := p.tables.JoinSides[c.Type]; ok {
+			side = c
+			p.advance()
+		}
+		if c2 := p.curr(); c2 != nil {
+			if _, ok := p.tables.JoinKinds[c2.Type]; ok {
+				kind = c2
+				p.advance()
+			}
 		}
 	}
 
@@ -132,6 +168,23 @@ func (p *parser) parseJoin() (*Expression, error) {
 		return nil, err
 	}
 	join := New("Join", Arg{"this", table})
+	// `ARRAY JOIN arr1, arr2` names more than one array, and they ride as
+	// further table references beside the first
+	// (Parser._parse_join).
+	if p.dialect == "clickhouse" && kind != nil && kind.Type == TokARRAY && p.match(TokCOMMA) {
+		var extra []*Expression
+		for {
+			t, err := p.parseTable()
+			if err != nil {
+				return nil, err
+			}
+			extra = append(extra, t)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		join.Set("expressions", extra)
+	}
 	// The reference sets the method before the side, and a dump compares key
 	// order.
 	if method != nil {
@@ -210,17 +263,33 @@ func (p *parser) parseJoin() (*Expression, error) {
 		// ON at all, and one named by its METHOD is not touched either.
 		join.Set("on", New("Boolean", Arg{"this", true}))
 	}
-	return p.attachJoinPivots(join)
+	join, err = p.attachJoinPivots(join)
+	if err != nil {
+		return nil, err
+	}
+	if p.dialect == "clickhouse" {
+		// GLOBAL is recorded on the join's own `global_` rather than as its
+		// method, and an ARRAY JOIN names COLUMNS, not tables
+		// (ClickHouseParser._parse_join).
+		if method != nil {
+			join.Set("method", nil)
+			join.Set("global_", strings.ToUpper(method.Text))
+		}
+		if k, _ := join.Args["kind"].(string); k == "ARRAY" {
+			replaceArrayJoinTables(join)
+		}
+	}
+	return join, nil
 }
 
 // parseUsingColumns reads `(x, y)` after USING, already past the word
 // itself. The reference keeps the columns as bare IDENTIFIERS, not columns.
 func (p *parser) parseUsingColumns() ([]*Expression, error) {
-	if !p.match(TokL_PAREN) {
-		return nil, p.unsupported("USING without a column list")
-	}
+	// The parentheses are OPTIONAL: `USING id, name` and `USING (id, name)`
+	// are the same join (Parser._parse_using_identifiers).
+	wrapped := p.match(TokL_PAREN)
 	var columns []*Expression
-	for {
+	for p.atIdentifier() {
 		column, err := p.parseIdentifier()
 		if err != nil {
 			return nil, err
@@ -230,7 +299,7 @@ func (p *parser) parseUsingColumns() ([]*Expression, error) {
 			break
 		}
 	}
-	if !p.match(TokR_PAREN) {
+	if wrapped && !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed USING")
 	}
 	return columns, nil
@@ -395,6 +464,27 @@ func (p *parser) parseTable() (*Expression, error) {
 	if p.dialect == "redshift" && p.at(TokUNPIVOT) {
 		return p.redshiftSuperUnpivot()
 	}
+	// ClickHouse lets an ARRAY take the place of a table in an ARRAY JOIN:
+	// `ARRAY JOIN [1, 2, 3] AS arr` (Parser._parse_table, an Alias over an
+	// Array rather than a Table).
+	if p.dialect == "clickhouse" && p.at(TokL_BRACKET) {
+		arr, err := p.parsePrimary()
+		if err != nil {
+			return nil, err
+		}
+		ta, err := p.parseTableAlias()
+		if err != nil {
+			return nil, err
+		}
+		if ta != nil {
+			alias := ta
+			if inner, _ := ta.Args["this"].(*Expression); inner != nil {
+				alias = inner
+			}
+			return New("Alias", Arg{"this", arr}, Arg{"alias", alias}), nil
+		}
+		return arr, nil
+	}
 	// DuckDB names a relation in FRONT of it too: `FROM foo: bar` is
 	// `FROM bar AS foo`, the same prefix alias the projection list takes.
 	if p.tables.PrefixAlias && p.atAliasName() {
@@ -466,6 +556,13 @@ func (p *parser) parseTable() (*Expression, error) {
 	// fuzz findings, and the second time the same shortcut has cost that.
 	if param := p.parseParameter(); param != nil {
 		return p.tableRest(New("Table", Arg{"this", param}))
+	}
+	// A ClickHouse query parameter may name a table: `FROM {table: Identifier}`
+	// (ClickHouseParser.PLACEHOLDER_PARSERS, _parse_query_parameter).
+	if p.dialect == "clickhouse" && p.at(TokL_BRACE) {
+		if ph, handled := p.parseClickhouseQueryParameter(); handled {
+			return p.tableRest(New("Table", Arg{"this", ph}))
+		}
 	}
 	// Databricks reads a bare `{df}` in a FROM clause as a notebook widget
 	// naming the table, the same Placeholder any other expression reads it
@@ -800,6 +897,23 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 			table.Set("alias", alias)
 		}
 	}
+	// ClickHouse's FINAL reads the table as it stands after merges, and wraps
+	// the relation it follows (ClickHouseParser._parse_table).
+	if p.dialect == "clickhouse" && p.at(TokFINAL) {
+		p.advance()
+		table = New("Final", Arg{"this", table})
+	}
+	// ClickHouse names the one output column a `generate_series(n) AS g` gives
+	// after the function itself, on the alias
+	// (ClickHouseParser._parse_table).
+	if p.dialect == "clickhouse" && table.Class == "Table" {
+		if inner, _ := table.Args["this"].(*Expression); inner != nil && inner.Class == "GenerateSeries" {
+			if alias, _ := table.Args["alias"].(*Expression); alias != nil && alias.Args["columns"] == nil {
+				alias.Set("columns", []*Expression{
+					New("Identifier", Arg{"this", "generate_series"}, Arg{"quoted", false})})
+			}
+		}
+	}
 	return p.liftSnowflakeTable(table)
 }
 
@@ -1071,6 +1185,15 @@ func unpivotTarget(e *Expression, unpivot bool) *Expression {
 // and is kept as a Var rather than as a name.
 func (p *parser) parseTableSample() (*Expression, error) {
 	p.advance() // TABLESAMPLE
+	// ClickHouse says `SAMPLE <expr>` with no parentheses and no method
+	// (Parser._parse_table_sample, TABLESAMPLE_REQUIRES_PARENS).
+	if p.dialect == "clickhouse" {
+		size, err := p.parseFactor()
+		if err != nil {
+			return nil, err
+		}
+		return New("TableSample", Arg{"size", size}), nil
+	}
 
 	args := []Arg{}
 	method := p.tables.DefaultSampleMethod
@@ -1501,7 +1624,16 @@ func (p *parser) parseTableAlias() (*Expression, error) {
 	}
 	id, err := p.parseIdentifier()
 	if err != nil {
-		return nil, err
+		// After a written AS, ANY token names the alias -- `FROM x AS prewhere`
+		// (Parser._parse_table_alias, _parse_id_var(any_token=True)).
+		if !explicit {
+			return nil, err
+		}
+		if any := p.advanceAnyIdentifier(); any != nil {
+			id = any
+		} else {
+			return nil, err
+		}
 	}
 	columns, err := p.parseAliasColumns()
 	if err != nil {
@@ -1521,7 +1653,16 @@ func (p *parser) parseWideTableAlias() (*Expression, error) {
 	}
 	id, err := p.parseIdentifier()
 	if err != nil {
-		return nil, err
+		// After a written AS, ANY token names the alias -- `FROM x AS prewhere`
+		// (Parser._parse_table_alias, _parse_id_var(any_token=True)).
+		if !explicit {
+			return nil, err
+		}
+		if any := p.advanceAnyIdentifier(); any != nil {
+			id = any
+		} else {
+			return nil, err
+		}
 	}
 	columns, err := p.parseAliasColumns()
 	if err != nil {

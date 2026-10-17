@@ -1,0 +1,764 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "CREATE TABLE t (a AggregateFunction(quantiles(0.5, 0.9), UInt64), b AggregateFunction(quantiles, UInt64), c SimpleAggregateFunction(sum, Float64), d AggregateFunction(count))",
+ "sql": "CREATE TABLE t (\n  a AggregateFunction(quantiles(0.5, 0.9), UInt64),\n  b AggregateFunction(quantiles, UInt64),\n  c SimpleAggregateFunction(sum, Float64),\n  d AggregateFunction(count)\n)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "t"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 3,
+   "e": 19,
+   "l": 2,
+   "s": 19,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 21,
+   "e": 37,
+   "l": 2,
+   "s": 21,
+   "t": "AGGREGATEFUNCTION",
+   "x": "AggregateFunction"
+  },
+  {
+   "c": 22,
+   "e": 38,
+   "l": 2,
+   "s": 38,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 47,
+   "l": 2,
+   "s": 39,
+   "t": "VAR",
+   "x": "quantiles"
+  },
+  {
+   "c": 32,
+   "e": 48,
+   "l": 2,
+   "s": 48,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 35,
+   "e": 51,
+   "l": 2,
+   "s": 49,
+   "t": "NUMBER",
+   "x": "0.5"
+  },
+  {
+   "c": 36,
+   "e": 52,
+   "l": 2,
+   "s": 52,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 40,
+   "e": 56,
+   "l": 2,
+   "s": 54,
+   "t": "NUMBER",
+   "x": "0.9"
+  },
+  {
+   "c": 41,
+   "e": 57,
+   "l": 2,
+   "s": 57,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 42,
+   "e": 58,
+   "l": 2,
+   "s": 58,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 49,
+   "e": 65,
+   "l": 2,
+   "s": 60,
+   "t": "UBIGINT",
+   "x": "UInt64"
+  },
+  {
+   "c": 50,
+   "e": 66,
+   "l": 2,
+   "s": 66,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 51,
+   "e": 67,
+   "l": 2,
+   "s": 67,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 3,
+   "e": 71,
+   "l": 3,
+   "s": 71,
+   "t": "VAR",
+   "x": "b"
+  },
+  {
+   "c": 21,
+   "e": 89,
+   "l": 3,
+   "s": 73,
+   "t": "AGGREGATEFUNCTION",
+   "x": "AggregateFunction"
+  },
+  {
+   "c": 22,
+   "e": 90,
+   "l": 3,
+   "s": 90,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 99,
+   "l": 3,
+   "s": 91,
+   "t": "VAR",
+   "x": "quantiles"
+  },
+  {
+   "c": 32,
+   "e": 100,
+   "l": 3,
+   "s": 100,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 39,
+   "e": 107,
+   "l": 3,
+   "s": 102,
+   "t": "UBIGINT",
+   "x": "UInt64"
+  },
+  {
+   "c": 40,
+   "e": 108,
+   "l": 3,
+   "s": 108,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 41,
+   "e": 109,
+   "l": 3,
+   "s": 109,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 3,
+   "e": 113,
+   "l": 4,
+   "s": 113,
+   "t": "VAR",
+   "x": "c"
+  },
+  {
+   "c": 27,
+   "e": 137,
+   "l": 4,
+   "s": 115,
+   "t": "SIMPLEAGGREGATEFUNCTION",
+   "x": "SimpleAggregateFunction"
+  },
+  {
+   "c": 28,
+   "e": 138,
+   "l": 4,
+   "s": 138,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 141,
+   "l": 4,
+   "s": 139,
+   "t": "VAR",
+   "x": "sum"
+  },
+  {
+   "c": 32,
+   "e": 142,
+   "l": 4,
+   "s": 142,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 40,
+   "e": 150,
+   "l": 4,
+   "s": 144,
+   "t": "DOUBLE",
+   "x": "Float64"
+  },
+  {
+   "c": 41,
+   "e": 151,
+   "l": 4,
+   "s": 151,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 42,
+   "e": 152,
+   "l": 4,
+   "s": 152,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 3,
+   "e": 156,
+   "l": 5,
+   "s": 156,
+   "t": "VAR",
+   "x": "d"
+  },
+  {
+   "c": 21,
+   "e": 174,
+   "l": 5,
+   "s": 158,
+   "t": "AGGREGATEFUNCTION",
+   "x": "AggregateFunction"
+  },
+  {
+   "c": 22,
+   "e": 175,
+   "l": 5,
+   "s": 175,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 180,
+   "l": 5,
+   "s": 176,
+   "t": "VAR",
+   "x": "count"
+  },
+  {
+   "c": 28,
+   "e": 181,
+   "l": 5,
+   "s": 181,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 1,
+   "e": 183,
+   "l": 6,
+   "s": 183,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 14,
+    "end": 13,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 3,
+    "end": 19,
+    "line": 2,
+    "start": 19
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "AGGREGATEFUNCTION"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.AnonymousAggFunc",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "quantiles"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 12,
+   "k": "expressions",
+   "m": {
+    "col": 35,
+    "end": 51,
+    "line": 2,
+    "start": 49
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "0.5"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 12,
+   "k": "expressions",
+   "m": {
+    "col": 40,
+    "end": 56,
+    "line": 2,
+    "start": 54
+   }
+  },
+  {
+   "i": 17,
+   "k": "this",
+   "v": "0.9"
+  },
+  {
+   "i": 17,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 20,
+   "k": "this",
+   "v": "UBIGINT"
+  },
+  {
+   "i": 20,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 20,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 26,
+   "k": "this",
+   "m": {
+    "col": 3,
+    "end": 71,
+    "line": 3,
+    "start": 71
+   }
+  },
+  {
+   "i": 27,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 27,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 26,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 30,
+   "k": "this",
+   "v": "AGGREGATEFUNCTION"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "expressions",
+   "m": {
+    "col": 31,
+    "end": 99,
+    "line": 3,
+    "start": 91
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "quantiles"
+  },
+  {
+   "i": 32,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 30,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 35,
+   "k": "this",
+   "v": "UBIGINT"
+  },
+  {
+   "i": 35,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 35,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 30,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 30,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 41,
+   "k": "this",
+   "m": {
+    "col": 3,
+    "end": 113,
+    "line": 4,
+    "start": 113
+   }
+  },
+  {
+   "i": 42,
+   "k": "this",
+   "v": "c"
+  },
+  {
+   "i": 42,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 41,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 45,
+   "k": "this",
+   "v": "SIMPLEAGGREGATEFUNCTION"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 45,
+   "k": "expressions",
+   "m": {
+    "col": 31,
+    "end": 141,
+    "line": 4,
+    "start": 139
+   }
+  },
+  {
+   "i": 47,
+   "k": "this",
+   "v": "sum"
+  },
+  {
+   "i": 47,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 45,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 50,
+   "k": "this",
+   "v": "DOUBLE"
+  },
+  {
+   "i": 50,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 50,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 45,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 45,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 56,
+   "k": "this",
+   "m": {
+    "col": 3,
+    "end": 156,
+    "line": 5,
+    "start": 156
+   }
+  },
+  {
+   "i": 57,
+   "k": "this",
+   "v": "d"
+  },
+  {
+   "i": 57,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 56,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 60,
+   "k": "this",
+   "v": "AGGREGATEFUNCTION"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 60,
+   "k": "expressions",
+   "m": {
+    "col": 27,
+    "end": 180,
+    "line": 5,
+    "start": 176
+   }
+  },
+  {
+   "i": 62,
+   "k": "this",
+   "v": "count"
+  },
+  {
+   "i": 62,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 60,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 60,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

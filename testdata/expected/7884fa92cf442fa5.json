@@ -1,0 +1,310 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "SELECT DATE_BIN(toDateTime('2023-01-01 14:45:00'), INTERVAL '1' MINUTE, toDateTime('2023-01-01 14:35:30'), 'UTC')",
+ "sql": "SELECT DATE_BIN(toDateTime('2023-01-01 14:45:00'), INTERVAL '1' MINUTE, toDateTime('2023-01-01 14:35:30'), 'UTC')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "DATE_BIN"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "toDateTime"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 27,
+   "t": "STRING",
+   "x": "2023-01-01 14:45:00"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 48,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 49,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 59,
+   "e": 58,
+   "l": 1,
+   "s": 51,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 60,
+   "t": "STRING",
+   "x": "1"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 64,
+   "t": "VAR",
+   "x": "MINUTE"
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 70,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 72,
+   "t": "VAR",
+   "x": "toDateTime"
+  },
+  {
+   "c": 83,
+   "e": 82,
+   "l": 1,
+   "s": 82,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 104,
+   "e": 103,
+   "l": 1,
+   "s": 83,
+   "t": "STRING",
+   "x": "2023-01-01 14:35:30"
+  },
+  {
+   "c": 105,
+   "e": 104,
+   "l": 1,
+   "s": 104,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 105,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 112,
+   "e": 111,
+   "l": 1,
+   "s": 107,
+   "t": "STRING",
+   "x": "UTC"
+  },
+  {
+   "c": 113,
+   "e": 112,
+   "l": 1,
+   "s": 112,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.DateBin",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "name": "DATE_BIN",
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "toDateTime"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 48,
+    "end": 47,
+    "line": 1,
+    "start": 27
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "2023-01-01 14:45:00"
+  },
+  {
+   "i": 4,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "this",
+   "m": {
+    "col": 63,
+    "end": 62,
+    "line": 1,
+    "start": 60
+   }
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 7,
+   "k": "unit"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "MINUTE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 1,
+   "k": "unit",
+   "m": {
+    "col": 82,
+    "end": 81,
+    "line": 1,
+    "start": 72
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "toDateTime"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 13,
+   "k": "expressions",
+   "m": {
+    "col": 104,
+    "end": 103,
+    "line": 1,
+    "start": 83
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "2023-01-01 14:35:30"
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "zone",
+   "m": {
+    "col": 112,
+    "end": 111,
+    "line": 1,
+    "start": 107
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "UTC"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

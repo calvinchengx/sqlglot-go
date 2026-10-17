@@ -1,0 +1,298 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "CREATE MATERIALIZED VIEW test_view ON CLUSTER '{cluster}' TO table1 AS SELECT * FROM test_data",
+ "sql": "CREATE MATERIALIZED VIEW test_view ON CLUSTER '{cluster}' TO table1 AS SELECT * FROM test_data",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "MATERIALIZED"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 20,
+   "t": "VIEW",
+   "x": "VIEW"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 25,
+   "t": "VAR",
+   "x": "test_view"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 35,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 38,
+   "t": "VAR",
+   "x": "CLUSTER"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 46,
+   "t": "STRING",
+   "x": "{cluster}"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 58,
+   "t": "VAR",
+   "x": "TO"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 61,
+   "t": "VAR",
+   "x": "table1"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 68,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 77,
+   "e": 76,
+   "l": 1,
+   "s": 71,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 78,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 80,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 94,
+   "e": 93,
+   "l": 1,
+   "s": 85,
+   "t": "VAR",
+   "x": "test_data"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "test_view"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "VIEW"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 9,
+   "k": "expressions",
+   "m": {
+    "col": 79,
+    "end": 78,
+    "line": 1,
+    "start": 78
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 9,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 11,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 94,
+    "end": 93,
+    "line": 1,
+    "start": 85
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "test_data"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.MaterializedProperty",
+   "i": 17,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.OnCluster",
+   "i": 17,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 57,
+    "end": 56,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "{cluster}"
+  },
+  {
+   "i": 20,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.ToTableProperty",
+   "i": 17,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 23,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 61
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "table1"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

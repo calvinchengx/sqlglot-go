@@ -1,0 +1,124 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "CAST(['hello'], 'Array(Enum8(''hello'' = 1))')",
+ "sql": "CAST(['hello'], 'Array(Enum8(''hello'' = 1))')",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 4,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 5,
+   "t": "L_BRACKET",
+   "x": "["
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 6,
+   "t": "STRING",
+   "x": "hello"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "R_BRACKET",
+   "x": "]"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 14,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 16,
+   "t": "STRING",
+   "x": "Array(Enum8('hello' = 1))"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 45,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.functions.CastToStrType"
+  },
+  {
+   "c": "sqlglot.expressions.array.Array",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 6
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "hello"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "to",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "Array(Enum8('hello' = 1))"
+  },
+  {
+   "i": 5,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

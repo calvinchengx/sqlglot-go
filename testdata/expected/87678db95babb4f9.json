@@ -1,0 +1,129 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "SELECT JSONExtractString('{\"a\": \"hello\", \"b\": [-100, 200.0, 300]}', 'a')",
+ "sql": "SELECT JSONExtractString('{\"a\": \"hello\", \"b\": [-100, 200.0, 300]}', 'a')",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "JSONExtractString"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 25,
+   "t": "STRING",
+   "x": "{\"a\": \"hello\", \"b\": [-100, 200.0, 300]}"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 66,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 71,
+   "e": 70,
+   "l": 1,
+   "s": 68,
+   "t": "STRING",
+   "x": "a"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 71,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.json.JSONExtractScalar",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "name": "JSONExtractString",
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 66,
+    "end": 65,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "{\"a\": \"hello\", \"b\": [-100, 200.0, 300]}"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.JSONPath",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathRoot",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.JSONPathKey",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 1,
+   "k": "only_json_types",
+   "v": false
+  }
+ ]
+}

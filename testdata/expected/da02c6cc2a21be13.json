@@ -1,0 +1,873 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "CREATE DICTIONARY polygons_test_dictionary (key Array(Array(Array(Tuple(Float64, Float64)))), name String) PRIMARY KEY (key) SOURCE(CLICKHOUSE(TABLE 'polygons_test_table')) LAYOUT(POLYGON(STORE_POLYGON_KEY_COLUMN 1)) LIFETIME(MIN 0 MAX 0)",
+ "sql": "\n            CREATE DICTIONARY polygons_test_dictionary\n            (\n                key Array(Array(Array(Tuple(Float64, Float64)))),\n                name String\n            )\n            PRIMARY KEY key\n            SOURCE(CLICKHOUSE(TABLE 'polygons_test_table'))\n            LAYOUT(POLYGON(STORE_POLYGON_KEY_COLUMN 1))\n            LIFETIME(0);\n            ",
+ "tokens": [
+  {
+   "c": 18,
+   "e": 18,
+   "l": 2,
+   "s": 13,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 29,
+   "e": 29,
+   "l": 2,
+   "s": 20,
+   "t": "DICTIONARY",
+   "x": "DICTIONARY"
+  },
+  {
+   "c": 54,
+   "e": 54,
+   "l": 2,
+   "s": 31,
+   "t": "VAR",
+   "x": "polygons_test_dictionary"
+  },
+  {
+   "c": 13,
+   "e": 68,
+   "l": 3,
+   "s": 68,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 19,
+   "e": 88,
+   "l": 4,
+   "s": 86,
+   "t": "VAR",
+   "x": "key"
+  },
+  {
+   "c": 25,
+   "e": 94,
+   "l": 4,
+   "s": 90,
+   "t": "ARRAY",
+   "x": "Array"
+  },
+  {
+   "c": 26,
+   "e": 95,
+   "l": 4,
+   "s": 95,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 100,
+   "l": 4,
+   "s": 96,
+   "t": "ARRAY",
+   "x": "Array"
+  },
+  {
+   "c": 32,
+   "e": 101,
+   "l": 4,
+   "s": 101,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 37,
+   "e": 106,
+   "l": 4,
+   "s": 102,
+   "t": "ARRAY",
+   "x": "Array"
+  },
+  {
+   "c": 38,
+   "e": 107,
+   "l": 4,
+   "s": 107,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 43,
+   "e": 112,
+   "l": 4,
+   "s": 108,
+   "t": "STRUCT",
+   "x": "Tuple"
+  },
+  {
+   "c": 44,
+   "e": 113,
+   "l": 4,
+   "s": 113,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 51,
+   "e": 120,
+   "l": 4,
+   "s": 114,
+   "t": "DOUBLE",
+   "x": "Float64"
+  },
+  {
+   "c": 52,
+   "e": 121,
+   "l": 4,
+   "s": 121,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 60,
+   "e": 129,
+   "l": 4,
+   "s": 123,
+   "t": "DOUBLE",
+   "x": "Float64"
+  },
+  {
+   "c": 61,
+   "e": 130,
+   "l": 4,
+   "s": 130,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 62,
+   "e": 131,
+   "l": 4,
+   "s": 131,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 63,
+   "e": 132,
+   "l": 4,
+   "s": 132,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 64,
+   "e": 133,
+   "l": 4,
+   "s": 133,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 65,
+   "e": 134,
+   "l": 4,
+   "s": 134,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 20,
+   "e": 155,
+   "l": 5,
+   "s": 152,
+   "t": "VAR",
+   "x": "name"
+  },
+  {
+   "c": 27,
+   "e": 162,
+   "l": 5,
+   "s": 157,
+   "t": "TEXT",
+   "x": "String"
+  },
+  {
+   "c": 13,
+   "e": 176,
+   "l": 6,
+   "s": 176,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 23,
+   "e": 200,
+   "l": 7,
+   "s": 190,
+   "t": "PRIMARY_KEY",
+   "x": "PRIMARY KEY"
+  },
+  {
+   "c": 27,
+   "e": 204,
+   "l": 7,
+   "s": 202,
+   "t": "VAR",
+   "x": "key"
+  },
+  {
+   "c": 18,
+   "e": 223,
+   "l": 8,
+   "s": 218,
+   "t": "VAR",
+   "x": "SOURCE"
+  },
+  {
+   "c": 19,
+   "e": 224,
+   "l": 8,
+   "s": 224,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 29,
+   "e": 234,
+   "l": 8,
+   "s": 225,
+   "t": "VAR",
+   "x": "CLICKHOUSE"
+  },
+  {
+   "c": 30,
+   "e": 235,
+   "l": 8,
+   "s": 235,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 35,
+   "e": 240,
+   "l": 8,
+   "s": 236,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 57,
+   "e": 262,
+   "l": 8,
+   "s": 242,
+   "t": "STRING",
+   "x": "polygons_test_table"
+  },
+  {
+   "c": 58,
+   "e": 263,
+   "l": 8,
+   "s": 263,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 59,
+   "e": 264,
+   "l": 8,
+   "s": 264,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 18,
+   "e": 283,
+   "l": 9,
+   "s": 278,
+   "t": "VAR",
+   "x": "LAYOUT"
+  },
+  {
+   "c": 19,
+   "e": 284,
+   "l": 9,
+   "s": 284,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 26,
+   "e": 291,
+   "l": 9,
+   "s": 285,
+   "t": "POLYGON",
+   "x": "POLYGON"
+  },
+  {
+   "c": 27,
+   "e": 292,
+   "l": 9,
+   "s": 292,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 51,
+   "e": 316,
+   "l": 9,
+   "s": 293,
+   "t": "VAR",
+   "x": "STORE_POLYGON_KEY_COLUMN"
+  },
+  {
+   "c": 53,
+   "e": 318,
+   "l": 9,
+   "s": 318,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 54,
+   "e": 319,
+   "l": 9,
+   "s": 319,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 55,
+   "e": 320,
+   "l": 9,
+   "s": 320,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 20,
+   "e": 341,
+   "l": 10,
+   "s": 334,
+   "t": "VAR",
+   "x": "LIFETIME"
+  },
+  {
+   "c": 21,
+   "e": 342,
+   "l": 10,
+   "s": 342,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 22,
+   "e": 343,
+   "l": 10,
+   "s": 343,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 23,
+   "e": 344,
+   "l": 10,
+   "s": 344,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 24,
+   "e": 345,
+   "l": 10,
+   "s": 345,
+   "t": "SEMICOLON",
+   "x": ";"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 54,
+    "end": 54,
+    "line": 2,
+    "start": 31
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "polygons_test_dictionary"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 19,
+    "end": 88,
+    "line": 4,
+    "start": 86
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "key"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "ARRAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 12,
+   "k": "this",
+   "v": "ARRAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 12,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 14,
+   "k": "this",
+   "v": "ARRAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 14,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 16,
+   "k": "this",
+   "v": "STRUCT"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 16,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 18,
+   "k": "this",
+   "v": "DOUBLE"
+  },
+  {
+   "i": 18,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 18,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 16,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 22,
+   "k": "this",
+   "v": "DOUBLE"
+  },
+  {
+   "i": 22,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 22,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 16,
+   "k": "nested",
+   "v": true
+  },
+  {
+   "i": 16,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 14,
+   "k": "nested",
+   "v": true
+  },
+  {
+   "i": 14,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 12,
+   "k": "nested",
+   "v": true
+  },
+  {
+   "i": 12,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": true
+  },
+  {
+   "i": 10,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 34,
+   "k": "this",
+   "m": {
+    "col": 20,
+    "end": 155,
+    "line": 5,
+    "start": 152
+   }
+  },
+  {
+   "i": 35,
+   "k": "this",
+   "v": "name"
+  },
+  {
+   "i": 35,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 34,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 38,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 38,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 38,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "DICTIONARY"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.PrimaryKey",
+   "i": 47,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 48,
+   "k": "expressions",
+   "m": {
+    "col": 27,
+    "end": 204,
+    "line": 7,
+    "start": 202
+   }
+  },
+  {
+   "i": 49,
+   "k": "this",
+   "v": "key"
+  },
+  {
+   "i": 49,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.constraints.IndexParameters",
+   "i": 48,
+   "k": "include"
+  },
+  {
+   "i": 52,
+   "k": "with_storage",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictProperty",
+   "i": 47,
+   "k": "expressions"
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "SOURCE"
+  },
+  {
+   "i": 54,
+   "k": "kind",
+   "v": "CLICKHOUSE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictSubProperty",
+   "i": 54,
+   "k": "settings"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 57,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 240,
+    "line": 8,
+    "start": 236
+   }
+  },
+  {
+   "i": 58,
+   "k": "this",
+   "v": "TABLE"
+  },
+  {
+   "i": 58,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 57,
+   "k": "value",
+   "m": {
+    "col": 57,
+    "end": 262,
+    "line": 8,
+    "start": 242
+   }
+  },
+  {
+   "i": 61,
+   "k": "this",
+   "v": "polygons_test_table"
+  },
+  {
+   "i": 61,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictProperty",
+   "i": 47,
+   "k": "expressions"
+  },
+  {
+   "i": 64,
+   "k": "this",
+   "v": "LAYOUT"
+  },
+  {
+   "i": 64,
+   "k": "kind",
+   "v": "POLYGON"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictSubProperty",
+   "i": 64,
+   "k": "settings"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 67,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 316,
+    "line": 9,
+    "start": 293
+   }
+  },
+  {
+   "i": 68,
+   "k": "this",
+   "v": "STORE_POLYGON_KEY_COLUMN"
+  },
+  {
+   "i": 68,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 67,
+   "k": "value",
+   "m": {
+    "col": 53,
+    "end": 318,
+    "line": 9,
+    "start": 318
+   }
+  },
+  {
+   "i": 71,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 71,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictRange",
+   "i": 47,
+   "k": "expressions"
+  },
+  {
+   "i": 74,
+   "k": "this",
+   "v": "LIFETIME"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 74,
+   "k": "min"
+  },
+  {
+   "i": 76,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 76,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 74,
+   "k": "max",
+   "m": {
+    "col": 22,
+    "end": 343,
+    "line": 10,
+    "start": 343
+   }
+  },
+  {
+   "i": 79,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 79,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

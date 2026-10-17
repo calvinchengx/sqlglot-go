@@ -1,0 +1,498 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "CREATE TABLE session_log (UserID UInt64, SessionID UUID) ENGINE=MergeTree PARTITION BY sipHash64(UserID) % 16 ORDER BY tuple()",
+ "sql": "\n            CREATE TABLE session_log\n            (\n                UserID UInt64,\n                SessionID UUID\n            )\n            ENGINE = MergeTree\n            PARTITION BY sipHash64(UserID) % 16\n            ORDER BY tuple();\n            ",
+ "tokens": [
+  {
+   "c": 18,
+   "e": 18,
+   "l": 2,
+   "s": 13,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 24,
+   "e": 24,
+   "l": 2,
+   "s": 20,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 36,
+   "e": 36,
+   "l": 2,
+   "s": 26,
+   "t": "VAR",
+   "x": "session_log"
+  },
+  {
+   "c": 13,
+   "e": 50,
+   "l": 3,
+   "s": 50,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 22,
+   "e": 73,
+   "l": 4,
+   "s": 68,
+   "t": "VAR",
+   "x": "UserID"
+  },
+  {
+   "c": 29,
+   "e": 80,
+   "l": 4,
+   "s": 75,
+   "t": "UBIGINT",
+   "x": "UInt64"
+  },
+  {
+   "c": 30,
+   "e": 81,
+   "l": 4,
+   "s": 81,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 25,
+   "e": 107,
+   "l": 5,
+   "s": 99,
+   "t": "VAR",
+   "x": "SessionID"
+  },
+  {
+   "c": 30,
+   "e": 112,
+   "l": 5,
+   "s": 109,
+   "t": "UUID",
+   "x": "UUID"
+  },
+  {
+   "c": 13,
+   "e": 126,
+   "l": 6,
+   "s": 126,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 18,
+   "e": 145,
+   "l": 7,
+   "s": 140,
+   "t": "VAR",
+   "x": "ENGINE"
+  },
+  {
+   "c": 20,
+   "e": 147,
+   "l": 7,
+   "s": 147,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 30,
+   "e": 157,
+   "l": 7,
+   "s": 149,
+   "t": "VAR",
+   "x": "MergeTree"
+  },
+  {
+   "c": 24,
+   "e": 182,
+   "l": 8,
+   "s": 171,
+   "t": "PARTITION_BY",
+   "x": "PARTITION BY"
+  },
+  {
+   "c": 34,
+   "e": 192,
+   "l": 8,
+   "s": 184,
+   "t": "VAR",
+   "x": "sipHash64"
+  },
+  {
+   "c": 35,
+   "e": 193,
+   "l": 8,
+   "s": 193,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 41,
+   "e": 199,
+   "l": 8,
+   "s": 194,
+   "t": "VAR",
+   "x": "UserID"
+  },
+  {
+   "c": 42,
+   "e": 200,
+   "l": 8,
+   "s": 200,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 44,
+   "e": 202,
+   "l": 8,
+   "s": 202,
+   "t": "MOD",
+   "x": "%"
+  },
+  {
+   "c": 47,
+   "e": 205,
+   "l": 8,
+   "s": 204,
+   "t": "NUMBER",
+   "x": "16"
+  },
+  {
+   "c": 20,
+   "e": 226,
+   "l": 9,
+   "s": 219,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 26,
+   "e": 232,
+   "l": 9,
+   "s": 228,
+   "t": "STRUCT",
+   "x": "tuple"
+  },
+  {
+   "c": 27,
+   "e": 233,
+   "l": 9,
+   "s": 233,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 28,
+   "e": 234,
+   "l": 9,
+   "s": 234,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 29,
+   "e": 235,
+   "l": 9,
+   "s": 235,
+   "t": "SEMICOLON",
+   "x": ";"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 36,
+    "line": 2,
+    "start": 26
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "session_log"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 73,
+    "line": 4,
+    "start": 68
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "UserID"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "UBIGINT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 107,
+    "line": 5,
+    "start": 99
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "SessionID"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 14,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 18,
+   "k": "this",
+   "v": "UUID"
+  },
+  {
+   "i": 18,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 18,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.EngineProperty",
+   "i": 27,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 28,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 157,
+    "line": 7,
+    "start": 149
+   }
+  },
+  {
+   "i": 29,
+   "k": "this",
+   "v": "MergeTree"
+  },
+  {
+   "i": 29,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.PartitionedByProperty",
+   "i": 27,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Mod",
+   "i": 32,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 33,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 192,
+    "line": 8,
+    "start": 184
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "sipHash64"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 34,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 36,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 199,
+    "line": 8,
+    "start": 194
+   }
+  },
+  {
+   "i": 37,
+   "k": "this",
+   "v": "UserID"
+  },
+  {
+   "i": 37,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 33,
+   "k": "expression",
+   "m": {
+    "col": 47,
+    "end": 205,
+    "line": 8,
+    "start": 204
+   }
+  },
+  {
+   "i": 40,
+   "k": "this",
+   "v": "16"
+  },
+  {
+   "i": 40,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Order",
+   "i": 27,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 43,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.array.Struct",
+   "i": 44,
+   "k": "this"
+  },
+  {
+   "i": 44,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

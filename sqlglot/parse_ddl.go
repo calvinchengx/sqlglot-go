@@ -169,6 +169,15 @@ func (p *parser) parseCreate() (*Expression, error) {
 		return nil, p.unsupported("CREATE with SQL SECURITY before something other than a VIEW")
 	}
 	kind := strings.ToUpper(kindToken.Text)
+	// The word AS WRITTEN decides whether the name is a database reference;
+	// the kind it settles on afterwards does not.
+	writtenKind := kind
+	// A dialect may call the same thing another name: ClickHouse's
+	// CREATABLE_KIND_MAPPING makes a DATABASE a SCHEMA
+	// (Dialect.CREATABLE_KIND_MAPPING).
+	if renamed, ok := p.tables.CreatableKindNames[kind]; ok {
+		kind = renamed
+	}
 	// The kinds this dialect creates are its own -- T-SQL alone spells a
 	// procedure PROC -- but only some of them have a body this port knows how
 	// to read, and the rest are refused by name below. An INDEX may be TWO
@@ -230,9 +239,11 @@ func (p *parser) parseCreate() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	// A SCHEMA is a DATABASE reference rather than a table in one, so its
-	// name lands on `db` and leaves `this` empty.
-	if kind == "SCHEMA" {
+	// A `CREATE SCHEMA` is a DATABASE reference rather than a table in one,
+	// so its name lands on `db` and leaves `this` empty -- but a
+	// `CREATE DATABASE` keeps its name on `this`, renamed or not
+	// (Parser._parse_create, is_db_reference).
+	if writtenKind == "SCHEMA" {
 		table, err = asDatabaseReference(table)
 		if err != nil {
 			return nil, err
@@ -296,7 +307,10 @@ func (p *parser) parseCreate() (*Expression, error) {
 		// results are given, and carry only what is said ABOUT them.
 		var columns []*Expression
 		var err error
-		if kind == "VIEW" {
+		// A ClickHouse VIEW names its columns WITH their types, the same way a
+		// table does -- `CREATE VIEW v (c1 String NOT NULL)` is a column
+		// definition, not a bare name (Parser._parse_schema).
+		if kind == "VIEW" && p.dialect != "clickhouse" {
 			columns, err = p.parseViewColumns()
 		} else {
 			columns, err = p.parseColumnDefs()
@@ -345,6 +359,12 @@ func (p *parser) parseCreate() (*Expression, error) {
 		// one whose shape comes from the table it CLONES.
 		this = table
 	default:
+		// ClickHouse leaves the words it cannot read in place, and the
+		// reference turns the whole statement into a Command rather than
+		// failing it (Parser._parse_create: tokens left over are a Command).
+		if p.dialect == "clickhouse" {
+			return p.parseAsCommand(start), nil
+		}
 		return nil, p.unsupported("CREATE " + kind + " without columns or a query")
 	}
 	// Redshift's own `WITH NO SCHEMA BINDING` says the view is not checked
@@ -429,7 +449,9 @@ func (p *parser) parseCreate() (*Expression, error) {
 		clone = New("Clone",
 			Arg{"this", source}, Arg{"shallow", shallow}, Arg{"copy", copying})
 	}
-	if p.curr() != nil {
+	if c := p.curr(); c != nil && c.Type != TokSEMICOLON {
+		// A trailing SEMICOLON is the statement separator, not a token this
+		// CREATE failed to read; the top level consumes it.
 		// A VIEW has no properties of its own left to try after this point --
 		// the reference's own give-up, `CREATE VIEW v AS SELECT ... WITH
 		// CHECK OPTION`, which this port has no node for. A TABLE still has
@@ -528,10 +550,17 @@ func (p *parser) parseTrailingIndex() (*Expression, error) {
 // read: a constraint, a default, a generated column -- anything that is not
 // simply a name and a type -- is refused rather than dropped, because dropping
 // one changes what the table IS.
+// columnDefsEnd reports the closing parenthesis with a comma already behind
+// it: a dialect that reads a trailing comma takes that as the end of the list
+// rather than an error (Parser._parse_csv).
+func (p *parser) columnDefsEnd() bool {
+	return p.dialect == "clickhouse" && p.at(TokR_PAREN)
+}
+
 func (p *parser) parseColumnDefs() ([]*Expression, error) {
 	p.advance() // the opening parenthesis
 	var out []*Expression
-	for {
+	for !p.columnDefsEnd() {
 		// `LIKE other` copies another table's shape into this one. It stands
 		// where a column definition would and is a property rather than a
 		// column, so it goes into the same list under a class of its own.
@@ -626,6 +655,39 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 			}
 			def := New("ColumnDef", Arg{"this", name}, Arg{"kind", kind},
 				Arg{"constraints", append([]*Expression{computed}, rest...)})
+			out = append(out, def)
+			if !p.match(TokCOMMA) {
+				break
+			}
+			continue
+		}
+		// ClickHouse's MATERIALIZED and ALIAS compute a column from an
+		// expression rather than storing it, and the word stands AFTER the
+		// type (Parser._parse_column_def).
+		if p.dialect == "clickhouse" && (p.atWords("MATERIALIZED") || p.atWords("ALIAS")) {
+			persisted := strings.EqualFold(p.curr().Text, "MATERIALIZED")
+			p.advance()
+			expr, err := p.parseDisjunction()
+			if err != nil {
+				return nil, err
+			}
+			// The reference records `not_null` beside `persisted`, FALSE
+			// where the statement did not say NOT NULL
+			// (Parser._parse_column_def).
+			notNull := p.atWords("NOT", "NULL")
+			if notNull {
+				p.advance()
+				p.advance()
+			}
+			computed := New("ComputedColumnConstraint",
+				Arg{"this", expr}, Arg{"persisted", persisted}, Arg{"not_null", notNull})
+			rest, err := p.parseColumnConstraints()
+			if err != nil {
+				return nil, err
+			}
+			def := New("ColumnDef", Arg{"this", name}, Arg{"kind", kind},
+				Arg{"constraints", append([]*Expression{
+					New("ColumnConstraint", Arg{"kind", computed})}, rest...)})
 			out = append(out, def)
 			if !p.match(TokCOMMA) {
 				break
@@ -931,10 +993,26 @@ func (p *parser) parseInsert() (*Expression, error) {
 	if p.atWords("TABLE") {
 		p.advance()
 	}
-
-	table, err := p.parseTableName()
-	if err != nil {
-		return nil, err
+	// `INSERT INTO [TABLE] FUNCTION f(...)` writes through a table function
+	// rather than into a table (Parser._parse_insert).
+	isFunction := p.match(TokFUNCTION)
+	var table *Expression
+	if isFunction {
+		if p.curr() == nil {
+			return nil, p.unsupported("INSERT INTO FUNCTION with no function")
+		}
+		table, err = p.parseFunction()
+		if err != nil {
+			return nil, err
+		}
+		if table == nil {
+			return nil, p.unsupported("INSERT INTO FUNCTION with no function")
+		}
+	} else {
+		table, err = p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
 	}
 	// The partition hangs off the TABLE, not off the INSERT -- the Insert's
 	// own `partition` stays false. It says which partition is written, which
@@ -1027,8 +1105,46 @@ func (p *parser) parseInsert() (*Expression, error) {
 		defaultValues = true
 	}
 
+	// ClickHouse names the slice written and the settings for the write, in
+	// front of the source (Parser._parse_insert).
+	var partition, settings any = false, false
+	if p.dialect == "clickhouse" {
+		if p.atWords("PARTITION BY") {
+			p.advance()
+			p.match(TokEQ)
+			field, err := p.parseAssignment()
+			if err != nil {
+				return nil, err
+			}
+			partition = New("PartitionedByProperty", Arg{"this", field})
+		}
+		if p.atWords("SETTINGS") {
+			p.advance()
+			var assignments []*Expression
+			for {
+				a, err := p.parseAssignment()
+				if err != nil {
+					return nil, err
+				}
+				assignments = append(assignments, a)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			settings = New("SettingsProperty", Arg{"expressions", assignments})
+		}
+	}
+
 	var expression *Expression
 	switch {
+	case p.dialect == "clickhouse" && p.at(TokFORMAT):
+		// `INSERT ... FORMAT Values(...)`: the FORMAT word and the format's
+		// own name stand in front of the values.
+		p.advance()
+		if p.atWords("Values") {
+			p.advance()
+		}
+		expression, err = p.parseValuesRows()
 	case p.dialect == "mysql" && p.at(TokSET):
 		this, expression, err = p.parseMySQLInsertSet(this)
 	// Redshift takes VALUES out of its keyword table, so the word arrives
@@ -1090,11 +1206,11 @@ func (p *parser) parseInsert() (*Expression, error) {
 	}
 
 	return putComments(New("Insert",
-		Arg{"hint", hint}, Arg{"is_function", false}, Arg{"this", this},
+		Arg{"hint", hint}, Arg{"is_function", isFunction}, Arg{"this", this},
 		Arg{"stored", false}, Arg{"by_name", byName}, Arg{"exists", exists},
 		Arg{"where", replaceWhere}, Arg{"using", replaceUsing},
-		Arg{"partition", false},
-		Arg{"settings", false}, Arg{"default", defaultValues},
+		Arg{"partition", partition},
+		Arg{"settings", settings}, Arg{"default", defaultValues},
 		Arg{"expression", expression},
 		Arg{"conflict", conflict}, Arg{"returning", returning},
 		Arg{"overwrite", overwrite}, Arg{"alternative", alternativeOrNil(alternative)},
@@ -1153,8 +1269,18 @@ func (p *parser) parseInsertColumns() ([]*Expression, error) {
 			return nil, err
 		}
 		// Bare IDENTIFIERS, not columns: nothing here refers to anything, it
-		// only names which columns are being written.
-		out = append(out, id)
+		// only names which columns are being written. A DOTTED name is a Dot
+		// of two of them rather than one (`_parse_field`).
+		member := id
+		for p.at(TokDOT) {
+			p.advance()
+			field, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
+			}
+			member = New("Dot", Arg{"this", member}, Arg{"expression", field})
+		}
+		out = append(out, member)
 		if !p.match(TokCOMMA) {
 			break
 		}
@@ -1267,6 +1393,13 @@ func (p *parser) parseWithSerdeProperties() *Expression {
 // parseValues reads `VALUES (1, 2), (3, 4)` -- a list of rows.
 func (p *parser) parseValues() (*Expression, error) {
 	p.advance() // VALUES
+	return p.parseValuesRows()
+}
+
+// parseValuesRows reads the ROWS of a VALUES list, with the word itself
+// already consumed -- `INSERT ... FORMAT Values(...)` names the format rather
+// than the keyword.
+func (p *parser) parseValuesRows() (*Expression, error) {
 	var rows []*Expression
 	for {
 		row, err := p.valueRowMembers()
@@ -1280,7 +1413,20 @@ func (p *parser) parseValues() (*Expression, error) {
 				row[i] = New("Var", Arg{"this", strings.ToUpper(member.Name())})
 			}
 		}
-		rows = append(rows, New("Tuple", Arg{"expressions", row}))
+		rowTuple := New("Tuple", Arg{"expressions", row})
+		// ClickHouse reads a VALUES row as a tuple-of-tuples: each column
+		// value gets a Tuple of its own, so `VALUES (1, 2)` names two columns
+		// rather than one. A row whose last value is ALREADY a tuple was
+		// written that way and is left alone, which also keeps the rewrite
+		// idempotent (ClickHouseParser._parse_value).
+		if p.dialect == "clickhouse" && len(row) > 0 && row[len(row)-1].Class != "Tuple" {
+			wrapped := make([]*Expression, len(row))
+			for i, member := range row {
+				wrapped[i] = New("Tuple", Arg{"expressions", []*Expression{unnest(member)}})
+			}
+			rowTuple.Set("expressions", wrapped)
+		}
+		rows = append(rows, rowTuple)
 		if !p.match(TokCOMMA) {
 			break
 		}
@@ -1342,6 +1488,12 @@ func (p *parser) parseDrop() (*Expression, error) {
 		return nil, p.unsupported("DROP " + strings.ToUpper(kindToken.Text))
 	}
 	kind := strings.ToUpper(kindToken.Text)
+	// The word AS WRITTEN decides whether the name is a database reference;
+	// the kind it settles on afterwards does not. ClickHouse calls a DATABASE
+	// a SCHEMA, but `DROP DATABASE x` still names a database, not a schema
+	// (Parser._parse_drop: `is_db_reference=kind == "SCHEMA"` on the WRITTEN
+	// word).
+	isDBReference := kind == "SCHEMA"
 	p.advance()
 	// A dialect may call the same thing another name; the reference records
 	// the name it settles on rather than the word that was written.
@@ -1363,7 +1515,7 @@ func (p *parser) parseDrop() (*Expression, error) {
 	// A TABLE or a VIEW may name several at once; everything else names one.
 	var tables []*Expression
 	for {
-		table, err := p.parseDroppedName(kind)
+		table, err := p.parseDroppedName(isDBReference)
 		if err != nil {
 			return nil, err
 		}
@@ -1423,15 +1575,15 @@ func (p *parser) parseDrop() (*Expression, error) {
 	), nil
 }
 
-// parseDroppedName reads what a DROP names. A SCHEMA is a DATABASE reference
-// rather than a table in one, so its name lands on `db` and leaves `this`
-// empty -- which is how the reference tells the two apart.
-func (p *parser) parseDroppedName(kind string) (*Expression, error) {
+// parseDroppedName reads what a DROP names. A DROP SCHEMA is a DATABASE
+// reference rather than a table in one, so its name lands on `db` and leaves
+// `this` empty -- which is how the reference tells the two apart.
+func (p *parser) parseDroppedName(isDBReference bool) (*Expression, error) {
 	name, err := p.parseTableName()
 	if err != nil {
 		return nil, err
 	}
-	if kind == "SCHEMA" {
+	if isDBReference {
 		return asDatabaseReference(name)
 	}
 	return name, nil
@@ -1740,9 +1892,10 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			p.advance()
 			kind = New("InlineLengthColumnConstraint", Arg{"this",
 				New("Literal", Arg{"this", n.Text}, Arg{"is_string", false})})
-		case p.atWords("COMPRESS"):
+		case p.atWords("COMPRESS"), (p.dialect == "clickhouse" && p.atWords("CODEC")):
 			// Which values are stored short. A list, one value, or nothing
 			// at all -- and the reference keeps whichever was written.
+			// ClickHouse spells it CODEC (ClickHouseParser.CONSTRAINT_PARSERS).
 			p.advance()
 			kind = New("CompressColumnConstraint")
 			switch {
@@ -1803,6 +1956,27 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			p.advance()
 			kind = New("PathColumnConstraint",
 				Arg{"this", New("Literal", Arg{"this", path.Text}, Arg{"is_string", true})})
+		case p.dialect == "clickhouse" && p.atWords("EPHEMERAL"):
+			// A value computed on the fly and never stored
+			// (Parser.CONSTRAINT_PARSERS).
+			p.advance()
+			kind = New("EphemeralColumnConstraint")
+			if p.curr() != nil && !p.at(TokCOMMA) && !p.at(TokR_PAREN) && !p.at(TokGT) {
+				value, err := p.parseBitwise()
+				if err != nil {
+					return nil, err
+				}
+				kind.Set("this", value)
+			}
+		case p.dialect == "clickhouse" && p.atWords("TTL"):
+			// A column's TTL: when the value is due to be moved or removed
+			// (Parser.CONSTRAINT_PARSERS).
+			p.advance()
+			e, err := p.parseBitwise()
+			if err != nil {
+				return nil, err
+			}
+			kind = New("MergeTreeTTL", Arg{"expressions", []*Expression{e}})
 		case p.atWords("COMMENT"):
 			p.advance()
 			c := p.curr()
@@ -2053,6 +2227,16 @@ func (p *parser) parseAlter() (*Expression, error) {
 		check = nil
 	}
 
+	// `ON CLUSTER <c>` says which cluster runs the change
+	// (Parser._parse_alter_table, ClickHouseParser._parse_on_property).
+	var cluster *Expression
+	if p.dialect == "clickhouse" && p.match(TokON) {
+		cluster, err = p.parseClickhouseOnCluster()
+		if err != nil {
+			return nil, err
+		}
+	}
+
 	// A VIEW names its columns where a TABLE names its columns, and the
 	// reference reads them as the schema of the name.
 	if kind == "VIEW" && p.at(TokL_PAREN) {
@@ -2103,7 +2287,14 @@ func (p *parser) parseAlter() (*Expression, error) {
 	// A CASCADE says the change goes on to what depends on the table, and the
 	// reference reads it where the dialect supports it.
 	cascade := isHiveFamily(p.dialect) && p.matchUnquotedWord("CASCADE")
+	// The reference builds an Alter only when EVERY token was read; anything
+	// left over makes the whole statement a Command rather than an Alter
+	// (Parser._parse_alter) -- ClickHouse reads a MODIFY it cannot finish
+	// this way, leaving the words in place.
 	if p.curr() != nil {
+		if p.dialect == "clickhouse" {
+			return p.parseAsCommand(start), nil
+		}
 		return nil, p.unsupported("ALTER with more than this port reads")
 	}
 	return New("Alter",
@@ -2113,7 +2304,7 @@ func (p *parser) parseAlter() (*Expression, error) {
 		Arg{"actions", actions},
 		Arg{"only", only},
 		Arg{"options", options},
-		Arg{"cluster", nil},
+		Arg{"cluster", cluster},
 		Arg{"not_valid", notValid},
 		Arg{"check", check},
 		Arg{"cascade", cascade},
@@ -2214,8 +2405,56 @@ func (p *parser) atAlterActionWord() bool {
 }
 
 // parseAlterAction reads one thing this ALTER does.
+// parseClickhousePartition reads `PARTITION <expr>`, `PARTITION ID '<id>'` or
+// `PARTITION ALL`, with PARTITION at the cursor
+// (ClickHouseParser._parse_partition).
+func (p *parser) parseClickhousePartition() (*Expression, error) {
+	if !p.atWords("PARTITION") {
+		return nil, p.unsupported("a partition without PARTITION")
+	}
+	p.advance()
+	if p.atWords("ID") {
+		p.advance()
+		str := p.tryParseStringLiteral()
+		if str == nil {
+			return nil, p.unsupported("PARTITION ID without a string")
+		}
+		return New("Partition", Arg{"expressions", []*Expression{
+			New("PartitionId", Arg{"this", str})}}), nil
+	}
+	var exprs []*Expression
+	for {
+		e, err := p.parseAssignment()
+		if err != nil {
+			return nil, err
+		}
+		exprs = append(exprs, e)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	return New("Partition", Arg{"expressions", exprs}), nil
+}
+
 func (p *parser) parseAlterAction() (*Expression, error) {
 	switch {
+	case p.dialect == "clickhouse" && p.atWords("REPLACE") &&
+		p.next() != nil && strings.EqualFold(p.next().Text, "PARTITION"):
+		// `REPLACE PARTITION <p> FROM <table>`
+		// (ClickHouseParser._parse_alter_table_replace).
+		p.advance() // REPLACE
+		part, err := p.parseClickhousePartition()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokFROM) {
+			return nil, p.unsupported("REPLACE PARTITION without FROM")
+		}
+		source, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		return New("ReplacePartition", Arg{"expression", part}, Arg{"source", source}), nil
 	case p.dialect == "mysql" && p.atWords("AUTO_INCREMENT"):
 		return p.parseMySQLAutoIncrementAction()
 	case p.atWords("DELETE"):
@@ -2350,6 +2589,18 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 		// than a Drop: what goes is a slice of the table's rows, not part of
 		// its shape.
 		if p.atWords("PARTITION") {
+			if p.dialect == "clickhouse" {
+				// ClickHouse's own partition form: `PARTITION <expr>`,
+				// `PARTITION ID '<id>'` (ClickHouseParser._parse_partition).
+				part, err := p.parseClickhousePartition()
+				if err != nil {
+					return nil, err
+				}
+				return New("DropPartition",
+					Arg{"expressions", []*Expression{part}},
+					Arg{"exists", exists},
+				), nil
+			}
 			partitions, err := p.parseDroppedPartitions()
 			if err != nil {
 				return nil, err
@@ -2586,6 +2837,23 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			return nil, err
 		}
 		return New("RenameColumn", Arg{"this", from}, Arg{"to", to}), nil
+	case p.dialect == "clickhouse" && p.atWords("MODIFY", "COLUMN"):
+		// ClickHouse spells a retype `MODIFY COLUMN`, and reads it as the
+		// ALTER COLUMN it means rather than MySQL's MODIFY
+		// (ClickHouseParser._parse_alter_table_alter).
+		p.advance()
+		p.advance()
+		return p.parseAlteredColumn()
+	case p.dialect == "clickhouse" && p.atWords("MODIFY"):
+		// Any OTHER `MODIFY` -- TTL, ORDER BY, COMMENT -- is a property, and
+		// the reference wraps them in an AlterModifySqlSecurity
+		// (ClickHouseParser._parse_alter_table_alter).
+		p.advance() // MODIFY
+		props, err := p.parseTableProperties()
+		if err != nil {
+			return nil, err
+		}
+		return New("AlterModifySqlSecurity", Arg{"expressions", props}), nil
 	case p.atWords("MODIFY"), p.atWords("CHANGE"):
 		rename := p.atWords("CHANGE")
 		p.advance()
@@ -2771,6 +3039,14 @@ func (p *parser) parseAlteredColumn() (*Expression, error) {
 	if p.dialect != "mysql" && p.atWords("INDEX") && p.next() != nil && p.next().Type != TokDROP {
 		return nil, p.unsupported("ALTER INDEX in this dialect")
 	}
+	// `ALTER COLUMN IF EXISTS c` says the column need not be there
+	// (Parser._parse_column_def_with_exists).
+	exists := false
+	if p.atWords("IF", "EXISTS") {
+		p.advance()
+		p.advance()
+		exists = true
+	}
 	name, err := p.parseIdentifier()
 	if err != nil {
 		return nil, err
@@ -2872,6 +3148,9 @@ func (p *parser) parseAlteredColumn() (*Expression, error) {
 				action.Set("allow_null", true)
 			}
 		}
+	}
+	if exists {
+		action.Set("exists", true)
 	}
 	return action, nil
 }
@@ -3017,6 +3296,11 @@ func (p *parser) atTableConstraint() bool {
 		p.atWords("FULLTEXT") || p.atWords("SPATIAL")) {
 		return true
 	}
+	// ClickHouse's PROJECTION and INDEX are table elements like constraints
+	// (ClickHouseParser._parse_constraint, SCHEMA_UNNAMED_CONSTRAINTS).
+	if p.dialect == "clickhouse" && (p.at(TokPROJECTION) || p.atWords("INDEX")) {
+		return true
+	}
 	return p.at(TokCONSTRAINT) || p.at(TokPRIMARY_KEY) ||
 		p.at(TokFOREIGN_KEY) || p.atWords("UNIQUE") ||
 		p.atWords("EXCLUDE") || p.atWords("PERIOD", "FOR", "SYSTEM_TIME") ||
@@ -3029,6 +3313,68 @@ func (p *parser) atTableConstraint() bool {
 // a shape of its own rather than the wrapper a named COLUMN constraint uses --
 // the two look alike in the text and are different nodes.
 func (p *parser) parseTableConstraint() (*Expression, error) {
+	if p.dialect == "clickhouse" && p.at(TokPROJECTION) {
+		// `PROJECTION p (SELECT ...)` (ClickHouseParser._parse_projection_def).
+		p.advance()
+		name, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokL_PAREN) {
+			return nil, p.unsupported("PROJECTION without a query")
+		}
+		stmt, err := p.parseStatement()
+		if err != nil {
+			return nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed PROJECTION")
+		}
+		return New("ProjectionDef", Arg{"this", name}, Arg{"expression", stmt}), nil
+	}
+	if p.dialect == "clickhouse" && p.atWords("INDEX") {
+		// `INDEX name expr TYPE type(args) GRANULARITY n`
+		// (ClickHouseParser._parse_index_constraint).
+		p.advance()
+		name := p.parseIDVarAny()
+		if name == nil {
+			return nil, p.unsupported("INDEX without a name")
+		}
+		expr, err := p.parseAssignment()
+		if err != nil {
+			return nil, err
+		}
+		var indexType any = false
+		if p.atWords("TYPE") {
+			p.advance()
+			if p.next() != nil && p.next().Type == TokL_PAREN {
+				fn, err := p.parsePrimary()
+				if err != nil {
+					return nil, err
+				}
+				indexType = fn
+			} else {
+				c := p.curr()
+				if c == nil {
+					return nil, p.unsupported("INDEX TYPE without a name")
+				}
+				p.advance()
+				indexType = New("Var", Arg{"this", c.Text})
+			}
+		}
+		var granularity any = false
+		if p.atWords("GRANULARITY") {
+			p.advance()
+			g, err := p.parseTerm()
+			if err != nil {
+				return nil, err
+			}
+			granularity = g
+		}
+		return New("IndexColumnConstraint", Arg{"this", name},
+			Arg{"expression", expr}, Arg{"index_type", indexType},
+			Arg{"granularity", granularity}), nil
+	}
 	if p.at(TokCONSTRAINT) {
 		p.advance()
 		name, err := p.parseIdentifier()
@@ -3303,7 +3649,28 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		}
 		return New("PeriodForSystemTimeConstraint",
 			Arg{"this", columns[0]}, Arg{"expression", columns[1]}), nil
+	case p.atWords("ASSUME") && p.dialect == "clickhouse":
+		// ClickHouse's ASSUME says what the engine may take for granted, and
+		// reads the same wrapped condition a CHECK does
+		// (ClickHouseParser._parse_assume_constraint).
+		p.advance()
+		condition, err := p.parseClickhouseWrappedSelectOrAssignment()
+		if err != nil {
+			return nil, err
+		}
+		return New("AssumeColumnConstraint", Arg{"this", condition}), nil
 	case p.atWords("CHECK"):
+		// ClickHouse reads the condition either as an assignment or as a
+		// whole SELECT, and records no ENFORCED flag
+		// (ClickHouseParser._parse_check_constraint).
+		if p.dialect == "clickhouse" {
+			p.advance()
+			condition, err := p.parseClickhouseWrappedSelectOrAssignment()
+			if err != nil {
+				return nil, err
+			}
+			return New("CheckColumnConstraint", Arg{"this", condition}), nil
+		}
 		p.advance()
 		if !p.match(TokL_PAREN) {
 			return nil, p.unsupported("CHECK without a condition")
@@ -3318,7 +3685,28 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		return New("CheckColumnConstraint",
 			Arg{"this", condition}, Arg{"enforced", p.atWords("ENFORCED") && p.advanced()}), nil
 	}
+
 	return nil, p.unsupported("a table constraint this port does not read")
+}
+
+func (p *parser) parseClickhouseWrappedSelectOrAssignment() (*Expression, error) {
+	// The parentheses are OPTIONAL: `CHECK a < 10` and `CHECK (a < 10)` are
+	// the same constraint (ClickHouseParser._parse_check_constraint).
+	wrapped := p.match(TokL_PAREN)
+	var inner *Expression
+	var err error
+	if p.at(TokSELECT) {
+		inner, err = p.parseSelect()
+	} else {
+		inner, err = p.parseAssignment()
+	}
+	if err != nil {
+		return nil, err
+	}
+	if wrapped && !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed constraint")
+	}
+	return inner, nil
 }
 
 // advanced consumes the current token and reports true, so a match and a
@@ -3972,6 +4360,16 @@ func (p *parser) parseFunctionBody() (body, returns *Expression, err error) {
 		}
 		return New("Return", Arg{"this", inner}), nil, nil
 	case p.match(TokALIAS):
+		// A ClickHouse function's body is a lambda -- `AS (x, k, b) -> k * x
+		// + b` -- and nothing else follows the AS
+		// (ClickHouseParser._parse_user_defined_function_expression).
+		if p.dialect == "clickhouse" && p.atLambda() {
+			lam, err := p.parseLambda()
+			if err != nil {
+				return nil, nil, err
+			}
+			return lam, nil, nil
+		}
 		// `AS TABLE <query>` is DuckDB's way of saying the function returns a
 		// table; elsewhere those words are not a return type at all, and
 		// reading them as one would build a property the reference never made.
@@ -4621,6 +5019,9 @@ func (p *parser) parseTruncate() (*Expression, error) {
 		return p.parseFunction()
 	}
 	p.advance() // TRUNCATE
+	// ClickHouse truncates a DATABASE by the same statement, and the word is
+	// read before TABLE (Parser._parse_truncate_table).
+	isDatabase := p.match(TokDATABASE)
 	// TABLE is optional everywhere (`TRUNCATE t` is the same statement),
 	// which is how the reference reads it too.
 	p.matchUnquotedWord("TABLE")
@@ -4642,6 +5043,14 @@ func (p *parser) parseTruncate() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// A DATABASE reference puts its one-part name on `db` rather than on
+		// `this` (Parser._parse_truncate_table, is_db_reference).
+		if isDatabase {
+			table, err = asDatabaseReference(table)
+			if err != nil {
+				return nil, err
+			}
+		}
 		// `t2*` says the table AND everything that inherits from it, which is
 		// the default -- the star is written and recorded nowhere.
 		if p.at(TokSTAR) {
@@ -4657,7 +5066,16 @@ func (p *parser) parseTruncate() (*Expression, error) {
 	}
 
 	node := New("TruncateTable", Arg{"expressions", tables},
-		Arg{"is_database", false}, Arg{"exists", exists})
+		Arg{"is_database", isDatabase}, Arg{"exists", exists})
+	// `ON CLUSTER <c>` says which cluster runs it
+	// (Parser._parse_truncate_table, ClickHouseParser._parse_on_property).
+	if p.dialect == "clickhouse" && p.match(TokON) {
+		cluster, err := p.parseClickhouseOnCluster()
+		if err != nil {
+			return nil, err
+		}
+		node.Set("cluster", cluster)
+	}
 	// Only a slice of the table's rows: `TRUNCATE TABLE t PARTITION(a = 1)`.
 	// What stands inside the parentheses is whatever picks the partition out,
 	// which need not be an equality -- `city LIKE 'LA'` picks one too.
@@ -7178,6 +7596,21 @@ func (p *parser) showKindIsPrefix(phrase string) bool {
 // parseIDVarAny is the reference's _parse_id_var(any_token=True): an
 // identifier if one reads, and ANY single token otherwise -- `SHOW PLAN JSON
 // 25` names the target `25`, which is a number rather than a name.
+// advanceAnyIdentifier reads ANY token that is not reserved as an Identifier,
+// which is what the reference's _parse_id_var(any_token=True) does through
+// _advance_any: reserved words are refused, everything else is named.
+func (p *parser) advanceAnyIdentifier() *Expression {
+	c := p.curr()
+	if c == nil {
+		return nil
+	}
+	if _, reserved := p.tables.ReservedTokens[c.Type]; reserved {
+		return nil
+	}
+	p.advance()
+	return New("Identifier", Arg{"this", c.Text}, Arg{"quoted", c.Type == TokSTRING})
+}
+
 func (p *parser) parseIDVarAny() *Expression {
 	saved := p.index
 	if id, err := p.parseIdentifier(); err == nil && id != nil {

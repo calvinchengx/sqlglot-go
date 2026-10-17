@@ -31,7 +31,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery", "clickhouse")
 
 def gostr(s: str) -> str:
     """Quote a string as Go source.
@@ -4090,6 +4090,13 @@ def composite_type_sql(dialect: str) -> dict[str, str]:
         tmpl = m
         if key_inner in tmpl:
             tmpl = tmpl.replace(key_inner, "{key}", 1)
+        else:
+            # The scalar probe can carry a wrapper the MAP does not put on
+            # its KEY: ClickHouse writes TEXT as `Nullable(String)` while a
+            # map's key is the bare `String`. One layer off is what finds it.
+            bare = re.sub(r"^[A-Za-z_][A-Za-z0-9_]*\((.*)\)$", r"\1", key_inner)
+            if bare != key_inner and bare in tmpl:
+                tmpl = tmpl.replace(bare, "{key}", 1)
         if inner in tmpl:
             tmpl = tmpl.replace(inner, "{value}", 1)
         if "{key}" not in tmpl or "{value}" not in tmpl:
@@ -4143,12 +4150,22 @@ def quantifier_query_sql(dialect: str) -> dict[str, str]:
 
         def render(n):
             written = e.sql(dialect=dialect or None)
+            if "a = " not in written:
+                # The dialect rewrites the COMPARISON itself -- ClickHouse
+                # turns `a = ANY (SELECT 1)` into `has(SELECT 1, a)` -- so
+                # there is no quantifier template to record. The writer that
+                # does the rewrite owns the spelling, and the check below
+                # still raises for a quantifier that IS written but mangled.
+                return None
             tail = written[written.index("a = ") + 4 :]
             if not tail.startswith(word) or "SELECT 1" not in tail:
                 raise SystemExit(f"{dialect}: {word} over a query rendered {tail!r}")
             return tail.replace("SELECT 1", "{query}", 1)
 
-        out[cls] = render(node)
+        rendered = render(node)
+        if rendered is None:
+            continue
+        out[cls] = rendered
         # The SAME node written two ways. A quantifier over a Subquery keeps
         # the parentheses the subquery already carries; over a BARE query the
         # reference supplies its own and drops the space -- `ANY(SELECT 1)`
@@ -4157,8 +4174,11 @@ def quantifier_query_sql(dialect: str) -> dict[str, str]:
         inner = node.this
         if isinstance(inner, exp.Subquery):
             node.set("this", inner.this)
-            out[cls + "Unwrapped"] = render(node)
+            unwrapped = render(node)
             node.set("this", inner)
+            if unwrapped is None:
+                continue
+            out[cls + "Unwrapped"] = unwrapped
         else:
             out[cls + "Unwrapped"] = out[cls]
     return out
@@ -6478,6 +6498,13 @@ def main() -> int:
         "\t// LAST one wins, which a Go map cannot say. BigQuery spells a\n",
         "\t// SAFE_CAST's FORMAT through it.\n",
         "\tInverseFormatMapping map[string]string\n",
+        "\t// AggFunctions are the aggregate function NAMES a dialect splits\n",
+        "\t// into a parameter list and an argument list -- ClickHouse's\n",
+        "\t// `quantile(0.5)(a)`. AggFuncSuffixes are the COMBINATORS that may\n",
+        "\t// follow one, longest first, which is the order the reference\n",
+        "\t// strips them in.\n",
+        "\tAggFunctions    []string\n",
+        "\tAggFuncSuffixes []string\n",
         "\t// FullFormatTimeMapping is TimeMapping with a dialect's OWN full-word\n",
         "\t// spellings layered over it -- T-SQL's DATENAME(mm, x) wants the full\n",
         "\t// month name, not the two-digit one TimeMapping's \"mm\" gives FORMAT.\n",
@@ -7448,6 +7475,21 @@ def main() -> int:
             out.append(f"\t\t{field}: map[string]string{{\n")
             for k in sorted(_m):
                 out.append(f"\t\t\t{gostr(k)}: {gostr(_m[k])},\n")
+            out.append("\t\t},\n")
+        _agg = getattr(P, "AGG_FUNCTIONS", None) or ()
+        if _agg:
+            out.append("\t\tAggFunctions: []string{\n")
+            for f in sorted(_agg):
+                out.append(f"\t\t\t{gostr(f)},\n")
+            out.append("\t\t},\n")
+        _suf = getattr(P, "AGG_FUNCTIONS_SUFFIXES", None) or ()
+        if _suf:
+            # The reference's own order, longest first: the resolver strips
+            # suffixes in the order it finds them and a shorter one first
+            # would take the wrong bite out of `quantilesIf`.
+            out.append("\t\tAggFuncSuffixes: []string{\n")
+            for f in _suf:
+                out.append(f"\t\t\t{gostr(f)},\n")
             out.append("\t\t},\n")
         _fftm = full_format_time_mapping(name)
         if _fftm:

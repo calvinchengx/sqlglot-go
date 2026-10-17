@@ -1,0 +1,713 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "CREATE TABLE my_db.my_table (someId UUID, aggregatedColumn AggregateFunction(any, String), aggregatedColumnWithParams AggregateFunction(any(somecolumn), String)) ENGINE=AggregatingMergeTree() ORDER BY (someId)",
+ "sql": "CREATE TABLE my_db.my_table (\n  someId UUID,\n  aggregatedColumn AggregateFunction(any, String),\n  aggregatedColumnWithParams AggregateFunction(any(somecolumn), String)\n)\nENGINE=AggregatingMergeTree()\nORDER BY (\n  someId\n)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 7,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "my_db"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 19,
+   "t": "VAR",
+   "x": "my_table"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 8,
+   "e": 37,
+   "l": 2,
+   "s": 32,
+   "t": "VAR",
+   "x": "someId"
+  },
+  {
+   "c": 13,
+   "e": 42,
+   "l": 2,
+   "s": 39,
+   "t": "UUID",
+   "x": "UUID"
+  },
+  {
+   "c": 14,
+   "e": 43,
+   "l": 2,
+   "s": 43,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 18,
+   "e": 62,
+   "l": 3,
+   "s": 47,
+   "t": "VAR",
+   "x": "aggregatedColumn"
+  },
+  {
+   "c": 36,
+   "e": 80,
+   "l": 3,
+   "s": 64,
+   "t": "AGGREGATEFUNCTION",
+   "x": "AggregateFunction"
+  },
+  {
+   "c": 37,
+   "e": 81,
+   "l": 3,
+   "s": 81,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 40,
+   "e": 84,
+   "l": 3,
+   "s": 82,
+   "t": "ANY",
+   "x": "any"
+  },
+  {
+   "c": 41,
+   "e": 85,
+   "l": 3,
+   "s": 85,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 48,
+   "e": 92,
+   "l": 3,
+   "s": 87,
+   "t": "TEXT",
+   "x": "String"
+  },
+  {
+   "c": 49,
+   "e": 93,
+   "l": 3,
+   "s": 93,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 50,
+   "e": 94,
+   "l": 3,
+   "s": 94,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 28,
+   "e": 123,
+   "l": 4,
+   "s": 98,
+   "t": "VAR",
+   "x": "aggregatedColumnWithParams"
+  },
+  {
+   "c": 46,
+   "e": 141,
+   "l": 4,
+   "s": 125,
+   "t": "AGGREGATEFUNCTION",
+   "x": "AggregateFunction"
+  },
+  {
+   "c": 47,
+   "e": 142,
+   "l": 4,
+   "s": 142,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 50,
+   "e": 145,
+   "l": 4,
+   "s": 143,
+   "t": "ANY",
+   "x": "any"
+  },
+  {
+   "c": 51,
+   "e": 146,
+   "l": 4,
+   "s": 146,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 61,
+   "e": 156,
+   "l": 4,
+   "s": 147,
+   "t": "VAR",
+   "x": "somecolumn"
+  },
+  {
+   "c": 62,
+   "e": 157,
+   "l": 4,
+   "s": 157,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 63,
+   "e": 158,
+   "l": 4,
+   "s": 158,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 70,
+   "e": 165,
+   "l": 4,
+   "s": 160,
+   "t": "TEXT",
+   "x": "String"
+  },
+  {
+   "c": 71,
+   "e": 166,
+   "l": 4,
+   "s": 166,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 1,
+   "e": 168,
+   "l": 5,
+   "s": 168,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 6,
+   "e": 175,
+   "l": 6,
+   "s": 170,
+   "t": "VAR",
+   "x": "ENGINE"
+  },
+  {
+   "c": 7,
+   "e": 176,
+   "l": 6,
+   "s": 176,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 27,
+   "e": 196,
+   "l": 6,
+   "s": 177,
+   "t": "VAR",
+   "x": "AggregatingMergeTree"
+  },
+  {
+   "c": 28,
+   "e": 197,
+   "l": 6,
+   "s": 197,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 29,
+   "e": 198,
+   "l": 6,
+   "s": 198,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 8,
+   "e": 207,
+   "l": 7,
+   "s": 200,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 10,
+   "e": 209,
+   "l": 7,
+   "s": 209,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 8,
+   "e": 218,
+   "l": 8,
+   "s": 213,
+   "t": "VAR",
+   "x": "someId"
+  },
+  {
+   "c": 1,
+   "e": 220,
+   "l": 9,
+   "s": 220,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 26,
+    "line": 1,
+    "start": 19
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "my_table"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "db",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "my_db"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 8,
+    "end": 37,
+    "line": 2,
+    "start": 32
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "someId"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 9,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 13,
+   "k": "this",
+   "v": "UUID"
+  },
+  {
+   "i": 13,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 13,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 62,
+    "line": 3,
+    "start": 47
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "aggregatedColumn"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 17,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 21,
+   "k": "this",
+   "v": "AGGREGATEFUNCTION"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "expressions",
+   "m": {
+    "col": 40,
+    "end": 84,
+    "line": 3,
+    "start": 82
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "any"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 21,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 26,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 26,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 26,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 21,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 21,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 32,
+   "k": "this",
+   "m": {
+    "col": 28,
+    "end": 123,
+    "line": 4,
+    "start": 98
+   }
+  },
+  {
+   "i": 33,
+   "k": "this",
+   "v": "aggregatedColumnWithParams"
+  },
+  {
+   "i": 33,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 32,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 36,
+   "k": "this",
+   "v": "AGGREGATEFUNCTION"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.AnonymousAggFunc",
+   "i": 36,
+   "k": "expressions"
+  },
+  {
+   "i": 38,
+   "k": "this",
+   "v": "any"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 38,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 40,
+   "k": "this",
+   "m": {
+    "col": 61,
+    "end": 156,
+    "line": 4,
+    "start": 147
+   }
+  },
+  {
+   "i": 41,
+   "k": "this",
+   "v": "somecolumn"
+  },
+  {
+   "i": 41,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 36,
+   "k": "expressions"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 44,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 44,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 44,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 36,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 36,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.EngineProperty",
+   "i": 55,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 56,
+   "k": "this",
+   "m": {
+    "col": 27,
+    "end": 196,
+    "line": 6,
+    "start": 177
+   }
+  },
+  {
+   "i": 57,
+   "k": "this",
+   "v": "AggregatingMergeTree"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Order",
+   "i": 55,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 59,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 60,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 61,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 62,
+   "k": "this",
+   "m": {
+    "col": 8,
+    "end": 218,
+    "line": 8,
+    "start": 213
+   }
+  },
+  {
+   "i": 63,
+   "k": "this",
+   "v": "someId"
+  },
+  {
+   "i": 63,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 60,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

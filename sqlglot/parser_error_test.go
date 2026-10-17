@@ -14,7 +14,7 @@ func TestAnUnsupportedStatementNamesItsConstruct(t *testing.T) {
 	for _, tc := range []struct {
 		sql, dialect, construct string
 	}{
-		{"SELECT a FROM t1 JOIN t2 USING", "tsql", "USING without a column list"},
+		{"CAST(a INT)", "", "CAST without AS"},
 		{"SELECT a FROM t GROUP BY ROLLUP", "tsql", "a grouping without its arguments"},
 	} {
 		_, err := ParseOne(tc.sql, tc.dialect)

@@ -1,0 +1,751 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "CREATE TABLE example1 (timestamp DateTime, x UInt32 TTL now() + INTERVAL '1' MONTH, y String TTL timestamp + INTERVAL '1' DAY, z String) ENGINE=MergeTree ORDER BY tuple()",
+ "sql": "\n            CREATE TABLE example1 (\n               timestamp DateTime,\n               x UInt32 TTL now() + INTERVAL 1 MONTH,\n               y String TTL timestamp + INTERVAL 1 DAY,\n               z String\n            )\n            ENGINE = MergeTree\n            ORDER BY tuple()\n            ",
+ "tokens": [
+  {
+   "c": 18,
+   "e": 18,
+   "l": 2,
+   "s": 13,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 24,
+   "e": 24,
+   "l": 2,
+   "s": 20,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 33,
+   "e": 33,
+   "l": 2,
+   "s": 26,
+   "t": "VAR",
+   "x": "example1"
+  },
+  {
+   "c": 35,
+   "e": 35,
+   "l": 2,
+   "s": 35,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 24,
+   "e": 60,
+   "l": 3,
+   "s": 52,
+   "t": "TIMESTAMP",
+   "x": "timestamp"
+  },
+  {
+   "c": 33,
+   "e": 69,
+   "l": 3,
+   "s": 62,
+   "t": "DATETIME",
+   "x": "DateTime"
+  },
+  {
+   "c": 34,
+   "e": 70,
+   "l": 3,
+   "s": 70,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 16,
+   "e": 87,
+   "l": 4,
+   "s": 87,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 23,
+   "e": 94,
+   "l": 4,
+   "s": 89,
+   "t": "UINT",
+   "x": "UInt32"
+  },
+  {
+   "c": 27,
+   "e": 98,
+   "l": 4,
+   "s": 96,
+   "t": "VAR",
+   "x": "TTL"
+  },
+  {
+   "c": 31,
+   "e": 102,
+   "l": 4,
+   "s": 100,
+   "t": "VAR",
+   "x": "now"
+  },
+  {
+   "c": 32,
+   "e": 103,
+   "l": 4,
+   "s": 103,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 33,
+   "e": 104,
+   "l": 4,
+   "s": 104,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 35,
+   "e": 106,
+   "l": 4,
+   "s": 106,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 44,
+   "e": 115,
+   "l": 4,
+   "s": 108,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 46,
+   "e": 117,
+   "l": 4,
+   "s": 117,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 52,
+   "e": 123,
+   "l": 4,
+   "s": 119,
+   "t": "VAR",
+   "x": "MONTH"
+  },
+  {
+   "c": 53,
+   "e": 124,
+   "l": 4,
+   "s": 124,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 16,
+   "e": 141,
+   "l": 5,
+   "s": 141,
+   "t": "VAR",
+   "x": "y"
+  },
+  {
+   "c": 23,
+   "e": 148,
+   "l": 5,
+   "s": 143,
+   "t": "TEXT",
+   "x": "String"
+  },
+  {
+   "c": 27,
+   "e": 152,
+   "l": 5,
+   "s": 150,
+   "t": "VAR",
+   "x": "TTL"
+  },
+  {
+   "c": 37,
+   "e": 162,
+   "l": 5,
+   "s": 154,
+   "t": "TIMESTAMP",
+   "x": "timestamp"
+  },
+  {
+   "c": 39,
+   "e": 164,
+   "l": 5,
+   "s": 164,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 48,
+   "e": 173,
+   "l": 5,
+   "s": 166,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 50,
+   "e": 175,
+   "l": 5,
+   "s": 175,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 54,
+   "e": 179,
+   "l": 5,
+   "s": 177,
+   "t": "VAR",
+   "x": "DAY"
+  },
+  {
+   "c": 55,
+   "e": 180,
+   "l": 5,
+   "s": 180,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 16,
+   "e": 197,
+   "l": 6,
+   "s": 197,
+   "t": "VAR",
+   "x": "z"
+  },
+  {
+   "c": 23,
+   "e": 204,
+   "l": 6,
+   "s": 199,
+   "t": "TEXT",
+   "x": "String"
+  },
+  {
+   "c": 13,
+   "e": 218,
+   "l": 7,
+   "s": 218,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 18,
+   "e": 237,
+   "l": 8,
+   "s": 232,
+   "t": "VAR",
+   "x": "ENGINE"
+  },
+  {
+   "c": 20,
+   "e": 239,
+   "l": 8,
+   "s": 239,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 30,
+   "e": 249,
+   "l": 8,
+   "s": 241,
+   "t": "VAR",
+   "x": "MergeTree"
+  },
+  {
+   "c": 20,
+   "e": 270,
+   "l": 9,
+   "s": 263,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 26,
+   "e": 276,
+   "l": 9,
+   "s": 272,
+   "t": "STRUCT",
+   "x": "tuple"
+  },
+  {
+   "c": 27,
+   "e": 277,
+   "l": 9,
+   "s": 277,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 28,
+   "e": 278,
+   "l": 9,
+   "s": 278,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 33,
+    "line": 2,
+    "start": 26
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "example1"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 24,
+    "end": 60,
+    "line": 3,
+    "start": 52
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "timestamp"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "DATETIME"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 87,
+    "line": 4,
+    "start": 87
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 14,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 18,
+   "k": "this",
+   "v": "UINT"
+  },
+  {
+   "i": 18,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 18,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 14,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.ddl.MergeTreeTTL",
+   "i": 22,
+   "k": "kind"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Add",
+   "i": 23,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 102,
+    "line": 4,
+    "start": 100
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "now"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 24,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 27,
+   "k": "this"
+  },
+  {
+   "i": 28,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 28,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 27,
+   "k": "unit"
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "MONTH"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 33,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 141,
+    "line": 5,
+    "start": 141
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 33,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 37,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 37,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 37,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 33,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.ddl.MergeTreeTTL",
+   "i": 41,
+   "k": "kind"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Add",
+   "i": 42,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 43,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 44,
+   "k": "this",
+   "m": {
+    "col": 37,
+    "end": 162,
+    "line": 5,
+    "start": 154
+   }
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "timestamp"
+  },
+  {
+   "i": 45,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 43,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 48,
+   "k": "this"
+  },
+  {
+   "i": 49,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 49,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 48,
+   "k": "unit"
+  },
+  {
+   "i": 52,
+   "k": "this",
+   "v": "DAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 54,
+   "k": "this",
+   "m": {
+    "col": 16,
+    "end": 197,
+    "line": 6,
+    "start": 197
+   }
+  },
+  {
+   "i": 55,
+   "k": "this",
+   "v": "z"
+  },
+  {
+   "i": 55,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 54,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 58,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 58,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 58,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.EngineProperty",
+   "i": 67,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 68,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 249,
+    "line": 8,
+    "start": 241
+   }
+  },
+  {
+   "i": 69,
+   "k": "this",
+   "v": "MergeTree"
+  },
+  {
+   "i": 69,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Order",
+   "i": 67,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 72,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.array.Struct",
+   "i": 73,
+   "k": "this"
+  },
+  {
+   "i": 73,
+   "k": "nulls_first",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

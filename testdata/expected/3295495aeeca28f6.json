@@ -1,0 +1,1233 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "CREATE TABLE test (id UInt64, timestamp DateTime64, data String, max_hits UInt64, sum_hits UInt64) ENGINE=MergeTree PRIMARY KEY (id, dateTrunc('DAY', timestamp), timestamp) TTL timestamp + INTERVAL '1' DAY GROUP BY id, dateTrunc('DAY', timestamp) SET max_hits = max(max_hits), sum_hits = sum(sum_hits)",
+ "sql": "\n            CREATE TABLE test (id UInt64, timestamp DateTime64, data String, max_hits UInt64, sum_hits UInt64) ENGINE = MergeTree\n            PRIMARY KEY (id, toStartOfDay(timestamp), timestamp)\n            TTL timestamp + INTERVAL 1 DAY\n            GROUP BY id, toStartOfDay(timestamp)\n            SET\n               max_hits = max(max_hits),\n               sum_hits = sum(sum_hits)\n            ",
+ "tokens": [
+  {
+   "c": 18,
+   "e": 18,
+   "l": 2,
+   "s": 13,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 24,
+   "e": 24,
+   "l": 2,
+   "s": 20,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 29,
+   "e": 29,
+   "l": 2,
+   "s": 26,
+   "t": "VAR",
+   "x": "test"
+  },
+  {
+   "c": 31,
+   "e": 31,
+   "l": 2,
+   "s": 31,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 33,
+   "e": 33,
+   "l": 2,
+   "s": 32,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 40,
+   "e": 40,
+   "l": 2,
+   "s": 35,
+   "t": "UBIGINT",
+   "x": "UInt64"
+  },
+  {
+   "c": 41,
+   "e": 41,
+   "l": 2,
+   "s": 41,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 51,
+   "e": 51,
+   "l": 2,
+   "s": 43,
+   "t": "TIMESTAMP",
+   "x": "timestamp"
+  },
+  {
+   "c": 62,
+   "e": 62,
+   "l": 2,
+   "s": 53,
+   "t": "DATETIME64",
+   "x": "DateTime64"
+  },
+  {
+   "c": 63,
+   "e": 63,
+   "l": 2,
+   "s": 63,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 68,
+   "e": 68,
+   "l": 2,
+   "s": 65,
+   "t": "VAR",
+   "x": "data"
+  },
+  {
+   "c": 75,
+   "e": 75,
+   "l": 2,
+   "s": 70,
+   "t": "TEXT",
+   "x": "String"
+  },
+  {
+   "c": 76,
+   "e": 76,
+   "l": 2,
+   "s": 76,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 85,
+   "e": 85,
+   "l": 2,
+   "s": 78,
+   "t": "VAR",
+   "x": "max_hits"
+  },
+  {
+   "c": 92,
+   "e": 92,
+   "l": 2,
+   "s": 87,
+   "t": "UBIGINT",
+   "x": "UInt64"
+  },
+  {
+   "c": 93,
+   "e": 93,
+   "l": 2,
+   "s": 93,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 102,
+   "e": 102,
+   "l": 2,
+   "s": 95,
+   "t": "VAR",
+   "x": "sum_hits"
+  },
+  {
+   "c": 109,
+   "e": 109,
+   "l": 2,
+   "s": 104,
+   "t": "UBIGINT",
+   "x": "UInt64"
+  },
+  {
+   "c": 110,
+   "e": 110,
+   "l": 2,
+   "s": 110,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 117,
+   "e": 117,
+   "l": 2,
+   "s": 112,
+   "t": "VAR",
+   "x": "ENGINE"
+  },
+  {
+   "c": 119,
+   "e": 119,
+   "l": 2,
+   "s": 119,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 129,
+   "e": 129,
+   "l": 2,
+   "s": 121,
+   "t": "VAR",
+   "x": "MergeTree"
+  },
+  {
+   "c": 23,
+   "e": 153,
+   "l": 3,
+   "s": 143,
+   "t": "PRIMARY_KEY",
+   "x": "PRIMARY KEY"
+  },
+  {
+   "c": 25,
+   "e": 155,
+   "l": 3,
+   "s": 155,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 157,
+   "l": 3,
+   "s": 156,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 28,
+   "e": 158,
+   "l": 3,
+   "s": 158,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 41,
+   "e": 171,
+   "l": 3,
+   "s": 160,
+   "t": "VAR",
+   "x": "toStartOfDay"
+  },
+  {
+   "c": 42,
+   "e": 172,
+   "l": 3,
+   "s": 172,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 51,
+   "e": 181,
+   "l": 3,
+   "s": 173,
+   "t": "TIMESTAMP",
+   "x": "timestamp"
+  },
+  {
+   "c": 52,
+   "e": 182,
+   "l": 3,
+   "s": 182,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 53,
+   "e": 183,
+   "l": 3,
+   "s": 183,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 63,
+   "e": 193,
+   "l": 3,
+   "s": 185,
+   "t": "TIMESTAMP",
+   "x": "timestamp"
+  },
+  {
+   "c": 64,
+   "e": 194,
+   "l": 3,
+   "s": 194,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 15,
+   "e": 210,
+   "l": 4,
+   "s": 208,
+   "t": "VAR",
+   "x": "TTL"
+  },
+  {
+   "c": 25,
+   "e": 220,
+   "l": 4,
+   "s": 212,
+   "t": "TIMESTAMP",
+   "x": "timestamp"
+  },
+  {
+   "c": 27,
+   "e": 222,
+   "l": 4,
+   "s": 222,
+   "t": "PLUS",
+   "x": "+"
+  },
+  {
+   "c": 36,
+   "e": 231,
+   "l": 4,
+   "s": 224,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 38,
+   "e": 233,
+   "l": 4,
+   "s": 233,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 42,
+   "e": 237,
+   "l": 4,
+   "s": 235,
+   "t": "VAR",
+   "x": "DAY"
+  },
+  {
+   "c": 20,
+   "e": 258,
+   "l": 5,
+   "s": 251,
+   "t": "GROUP_BY",
+   "x": "GROUP BY"
+  },
+  {
+   "c": 23,
+   "e": 261,
+   "l": 5,
+   "s": 260,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 24,
+   "e": 262,
+   "l": 5,
+   "s": 262,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 37,
+   "e": 275,
+   "l": 5,
+   "s": 264,
+   "t": "VAR",
+   "x": "toStartOfDay"
+  },
+  {
+   "c": 38,
+   "e": 276,
+   "l": 5,
+   "s": 276,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 47,
+   "e": 285,
+   "l": 5,
+   "s": 277,
+   "t": "TIMESTAMP",
+   "x": "timestamp"
+  },
+  {
+   "c": 48,
+   "e": 286,
+   "l": 5,
+   "s": 286,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 15,
+   "e": 302,
+   "l": 6,
+   "s": 300,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 23,
+   "e": 326,
+   "l": 7,
+   "s": 319,
+   "t": "VAR",
+   "x": "max_hits"
+  },
+  {
+   "c": 25,
+   "e": 328,
+   "l": 7,
+   "s": 328,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 29,
+   "e": 332,
+   "l": 7,
+   "s": 330,
+   "t": "VAR",
+   "x": "max"
+  },
+  {
+   "c": 30,
+   "e": 333,
+   "l": 7,
+   "s": 333,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 38,
+   "e": 341,
+   "l": 7,
+   "s": 334,
+   "t": "VAR",
+   "x": "max_hits"
+  },
+  {
+   "c": 39,
+   "e": 342,
+   "l": 7,
+   "s": 342,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 40,
+   "e": 343,
+   "l": 7,
+   "s": 343,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 23,
+   "e": 367,
+   "l": 8,
+   "s": 360,
+   "t": "VAR",
+   "x": "sum_hits"
+  },
+  {
+   "c": 25,
+   "e": 369,
+   "l": 8,
+   "s": 369,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 29,
+   "e": 373,
+   "l": 8,
+   "s": 371,
+   "t": "VAR",
+   "x": "sum"
+  },
+  {
+   "c": 30,
+   "e": 374,
+   "l": 8,
+   "s": 374,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 38,
+   "e": 382,
+   "l": 8,
+   "s": 375,
+   "t": "VAR",
+   "x": "sum_hits"
+  },
+  {
+   "c": 39,
+   "e": 383,
+   "l": 8,
+   "s": 383,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 29,
+    "line": 2,
+    "start": 26
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "test"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 33,
+    "line": 2,
+    "start": 32
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "UBIGINT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 51,
+    "line": 2,
+    "start": 43
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "timestamp"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 14,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 18,
+   "k": "this",
+   "v": "DATETIME64"
+  },
+  {
+   "i": 18,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 18,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 68,
+    "end": 68,
+    "line": 2,
+    "start": 65
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "data"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 22,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 26,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 26,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 26,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "this",
+   "m": {
+    "col": 85,
+    "end": 85,
+    "line": 2,
+    "start": 78
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "max_hits"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 30,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 34,
+   "k": "this",
+   "v": "UBIGINT"
+  },
+  {
+   "i": 34,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 34,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 38,
+   "k": "this",
+   "m": {
+    "col": 102,
+    "end": 102,
+    "line": 2,
+    "start": 95
+   }
+  },
+  {
+   "i": 39,
+   "k": "this",
+   "v": "sum_hits"
+  },
+  {
+   "i": 39,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 38,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 42,
+   "k": "this",
+   "v": "UBIGINT"
+  },
+  {
+   "i": 42,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 42,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.EngineProperty",
+   "i": 51,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 52,
+   "k": "this",
+   "m": {
+    "col": 129,
+    "end": 129,
+    "line": 2,
+    "start": 121
+   }
+  },
+  {
+   "i": 53,
+   "k": "this",
+   "v": "MergeTree"
+  },
+  {
+   "i": 53,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.PrimaryKey",
+   "i": 51,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 56,
+   "k": "expressions",
+   "m": {
+    "col": 27,
+    "end": 157,
+    "line": 3,
+    "start": 156
+   }
+  },
+  {
+   "i": 57,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 57,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.TimestampTrunc",
+   "i": 56,
+   "k": "expressions",
+   "m": {
+    "col": 41,
+    "end": 171,
+    "line": 3,
+    "name": "toStartOfDay",
+    "start": 160
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 60,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 61,
+   "k": "this",
+   "m": {
+    "col": 51,
+    "end": 181,
+    "line": 3,
+    "start": 173
+   }
+  },
+  {
+   "i": 62,
+   "k": "this",
+   "v": "timestamp"
+  },
+  {
+   "i": 62,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 60,
+   "k": "unit"
+  },
+  {
+   "i": 65,
+   "k": "this",
+   "v": "DAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 56,
+   "k": "expressions",
+   "m": {
+    "col": 63,
+    "end": 193,
+    "line": 3,
+    "start": 185
+   }
+  },
+  {
+   "i": 67,
+   "k": "this",
+   "v": "timestamp"
+  },
+  {
+   "i": 67,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.constraints.IndexParameters",
+   "i": 56,
+   "k": "include"
+  },
+  {
+   "i": 70,
+   "k": "with_storage",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.MergeTreeTTL",
+   "i": 51,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Add",
+   "i": 72,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 73,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 74,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 220,
+    "line": 4,
+    "start": 212
+   }
+  },
+  {
+   "i": 75,
+   "k": "this",
+   "v": "timestamp"
+  },
+  {
+   "i": 75,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 73,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 78,
+   "k": "this"
+  },
+  {
+   "i": 79,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 79,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 78,
+   "k": "unit"
+  },
+  {
+   "i": 82,
+   "k": "this",
+   "v": "DAY"
+  },
+  {
+   "c": "sqlglot.expressions.query.Group",
+   "i": 72,
+   "k": "group"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 84,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 85,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 261,
+    "line": 5,
+    "start": 260
+   }
+  },
+  {
+   "i": 86,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 86,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.TimestampTrunc",
+   "i": 84,
+   "k": "expressions",
+   "m": {
+    "col": 37,
+    "end": 275,
+    "line": 5,
+    "name": "toStartOfDay",
+    "start": 264
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 89,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 90,
+   "k": "this",
+   "m": {
+    "col": 47,
+    "end": 285,
+    "line": 5,
+    "start": 277
+   }
+  },
+  {
+   "i": 91,
+   "k": "this",
+   "v": "timestamp"
+  },
+  {
+   "i": 91,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 89,
+   "k": "unit"
+  },
+  {
+   "i": 94,
+   "k": "this",
+   "v": "DAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.SetItem",
+   "i": 72,
+   "k": "aggregates"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 96,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 97,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 98,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 326,
+    "line": 7,
+    "start": 319
+   }
+  },
+  {
+   "i": 99,
+   "k": "this",
+   "v": "max_hits"
+  },
+  {
+   "i": 99,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Max",
+   "i": 97,
+   "k": "expression",
+   "m": {
+    "col": 29,
+    "end": 332,
+    "line": 7,
+    "name": "max",
+    "start": 330
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 102,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 103,
+   "k": "this",
+   "m": {
+    "col": 38,
+    "end": 341,
+    "line": 7,
+    "start": 334
+   }
+  },
+  {
+   "i": 104,
+   "k": "this",
+   "v": "max_hits"
+  },
+  {
+   "i": 104,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.ddl.SetItem",
+   "i": 72,
+   "k": "aggregates"
+  },
+  {
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 107,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 108,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 109,
+   "k": "this",
+   "m": {
+    "col": 23,
+    "end": 367,
+    "line": 8,
+    "start": 360
+   }
+  },
+  {
+   "i": 110,
+   "k": "this",
+   "v": "sum_hits"
+  },
+  {
+   "i": 110,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.aggregate.Sum",
+   "i": 108,
+   "k": "expression",
+   "m": {
+    "col": 29,
+    "end": 373,
+    "line": 8,
+    "name": "sum",
+    "start": 371
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 113,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 114,
+   "k": "this",
+   "m": {
+    "col": 38,
+    "end": 382,
+    "line": 8,
+    "start": 375
+   }
+  },
+  {
+   "i": 115,
+   "k": "this",
+   "v": "sum_hits"
+  },
+  {
+   "i": 115,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

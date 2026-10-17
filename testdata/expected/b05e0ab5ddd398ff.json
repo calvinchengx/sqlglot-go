@@ -1,0 +1,904 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "CREATE DICTIONARY discounts_dict (advertiser_id UInt64, discount_start_date DATE, discount_end_date DATE, amount Float64) PRIMARY KEY (id) SOURCE(CLICKHOUSE(TABLE 'discounts')) LIFETIME(MIN 1 MAX 1000) LAYOUT(RANGE_HASHED(range_lookup_strategy 'max')) RANGE(MIN discount_start_date MAX discount_end_date)",
+ "sql": "\n            CREATE DICTIONARY discounts_dict (\n                advertiser_id UInt64,\n                discount_start_date Date,\n                discount_end_date Date,\n                amount Float64\n            )\n            PRIMARY KEY id\n            SOURCE(CLICKHOUSE(TABLE 'discounts'))\n            LIFETIME(MIN 1 MAX 1000)\n            LAYOUT(RANGE_HASHED(range_lookup_strategy 'max'))\n            RANGE(MIN discount_start_date MAX discount_end_date)\n            ",
+ "tokens": [
+  {
+   "c": 18,
+   "e": 18,
+   "l": 2,
+   "s": 13,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 29,
+   "e": 29,
+   "l": 2,
+   "s": 20,
+   "t": "DICTIONARY",
+   "x": "DICTIONARY"
+  },
+  {
+   "c": 44,
+   "e": 44,
+   "l": 2,
+   "s": 31,
+   "t": "VAR",
+   "x": "discounts_dict"
+  },
+  {
+   "c": 46,
+   "e": 46,
+   "l": 2,
+   "s": 46,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 29,
+   "e": 76,
+   "l": 3,
+   "s": 64,
+   "t": "VAR",
+   "x": "advertiser_id"
+  },
+  {
+   "c": 36,
+   "e": 83,
+   "l": 3,
+   "s": 78,
+   "t": "UBIGINT",
+   "x": "UInt64"
+  },
+  {
+   "c": 37,
+   "e": 84,
+   "l": 3,
+   "s": 84,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 35,
+   "e": 120,
+   "l": 4,
+   "s": 102,
+   "t": "VAR",
+   "x": "discount_start_date"
+  },
+  {
+   "c": 40,
+   "e": 125,
+   "l": 4,
+   "s": 122,
+   "t": "DATE",
+   "x": "Date"
+  },
+  {
+   "c": 41,
+   "e": 126,
+   "l": 4,
+   "s": 126,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 33,
+   "e": 160,
+   "l": 5,
+   "s": 144,
+   "t": "VAR",
+   "x": "discount_end_date"
+  },
+  {
+   "c": 38,
+   "e": 165,
+   "l": 5,
+   "s": 162,
+   "t": "DATE",
+   "x": "Date"
+  },
+  {
+   "c": 39,
+   "e": 166,
+   "l": 5,
+   "s": 166,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 22,
+   "e": 189,
+   "l": 6,
+   "s": 184,
+   "t": "VAR",
+   "x": "amount"
+  },
+  {
+   "c": 30,
+   "e": 197,
+   "l": 6,
+   "s": 191,
+   "t": "DOUBLE",
+   "x": "Float64"
+  },
+  {
+   "c": 13,
+   "e": 211,
+   "l": 7,
+   "s": 211,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 23,
+   "e": 235,
+   "l": 8,
+   "s": 225,
+   "t": "PRIMARY_KEY",
+   "x": "PRIMARY KEY"
+  },
+  {
+   "c": 26,
+   "e": 238,
+   "l": 8,
+   "s": 237,
+   "t": "VAR",
+   "x": "id"
+  },
+  {
+   "c": 18,
+   "e": 257,
+   "l": 9,
+   "s": 252,
+   "t": "VAR",
+   "x": "SOURCE"
+  },
+  {
+   "c": 19,
+   "e": 258,
+   "l": 9,
+   "s": 258,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 29,
+   "e": 268,
+   "l": 9,
+   "s": 259,
+   "t": "VAR",
+   "x": "CLICKHOUSE"
+  },
+  {
+   "c": 30,
+   "e": 269,
+   "l": 9,
+   "s": 269,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 35,
+   "e": 274,
+   "l": 9,
+   "s": 270,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 47,
+   "e": 286,
+   "l": 9,
+   "s": 276,
+   "t": "STRING",
+   "x": "discounts"
+  },
+  {
+   "c": 48,
+   "e": 287,
+   "l": 9,
+   "s": 287,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 49,
+   "e": 288,
+   "l": 9,
+   "s": 288,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 20,
+   "e": 309,
+   "l": 10,
+   "s": 302,
+   "t": "VAR",
+   "x": "LIFETIME"
+  },
+  {
+   "c": 21,
+   "e": 310,
+   "l": 10,
+   "s": 310,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 24,
+   "e": 313,
+   "l": 10,
+   "s": 311,
+   "t": "VAR",
+   "x": "MIN"
+  },
+  {
+   "c": 26,
+   "e": 315,
+   "l": 10,
+   "s": 315,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 30,
+   "e": 319,
+   "l": 10,
+   "s": 317,
+   "t": "VAR",
+   "x": "MAX"
+  },
+  {
+   "c": 35,
+   "e": 324,
+   "l": 10,
+   "s": 321,
+   "t": "NUMBER",
+   "x": "1000"
+  },
+  {
+   "c": 36,
+   "e": 325,
+   "l": 10,
+   "s": 325,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 18,
+   "e": 344,
+   "l": 11,
+   "s": 339,
+   "t": "VAR",
+   "x": "LAYOUT"
+  },
+  {
+   "c": 19,
+   "e": 345,
+   "l": 11,
+   "s": 345,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 31,
+   "e": 357,
+   "l": 11,
+   "s": 346,
+   "t": "VAR",
+   "x": "RANGE_HASHED"
+  },
+  {
+   "c": 32,
+   "e": 358,
+   "l": 11,
+   "s": 358,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 53,
+   "e": 379,
+   "l": 11,
+   "s": 359,
+   "t": "VAR",
+   "x": "range_lookup_strategy"
+  },
+  {
+   "c": 59,
+   "e": 385,
+   "l": 11,
+   "s": 381,
+   "t": "STRING",
+   "x": "max"
+  },
+  {
+   "c": 60,
+   "e": 386,
+   "l": 11,
+   "s": 386,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 61,
+   "e": 387,
+   "l": 11,
+   "s": 387,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 17,
+   "e": 405,
+   "l": 12,
+   "s": 401,
+   "t": "RANGE",
+   "x": "RANGE"
+  },
+  {
+   "c": 18,
+   "e": 406,
+   "l": 12,
+   "s": 406,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 21,
+   "e": 409,
+   "l": 12,
+   "s": 407,
+   "t": "VAR",
+   "x": "MIN"
+  },
+  {
+   "c": 41,
+   "e": 429,
+   "l": 12,
+   "s": 411,
+   "t": "VAR",
+   "x": "discount_start_date"
+  },
+  {
+   "c": 45,
+   "e": 433,
+   "l": 12,
+   "s": 431,
+   "t": "VAR",
+   "x": "MAX"
+  },
+  {
+   "c": 63,
+   "e": 451,
+   "l": 12,
+   "s": 435,
+   "t": "VAR",
+   "x": "discount_end_date"
+  },
+  {
+   "c": 64,
+   "e": 452,
+   "l": 12,
+   "s": 452,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 44,
+    "line": 2,
+    "start": 31
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "discounts_dict"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 29,
+    "end": 76,
+    "line": 3,
+    "start": 64
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "advertiser_id"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "UBIGINT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 120,
+    "line": 4,
+    "start": 102
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "discount_start_date"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 14,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 18,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 18,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 18,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 160,
+    "line": 5,
+    "start": 144
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "discount_end_date"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 22,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 26,
+   "k": "this",
+   "v": "DATE"
+  },
+  {
+   "i": 26,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 26,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "this",
+   "m": {
+    "col": 22,
+    "end": 189,
+    "line": 6,
+    "start": 184
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "amount"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 30,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 34,
+   "k": "this",
+   "v": "DOUBLE"
+  },
+  {
+   "i": 34,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 34,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "DICTIONARY"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.PrimaryKey",
+   "i": 43,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 44,
+   "k": "expressions",
+   "m": {
+    "col": 26,
+    "end": 238,
+    "line": 8,
+    "start": 237
+   }
+  },
+  {
+   "i": 45,
+   "k": "this",
+   "v": "id"
+  },
+  {
+   "i": 45,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.constraints.IndexParameters",
+   "i": 44,
+   "k": "include"
+  },
+  {
+   "i": 48,
+   "k": "with_storage",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictProperty",
+   "i": 43,
+   "k": "expressions"
+  },
+  {
+   "i": 50,
+   "k": "this",
+   "v": "SOURCE"
+  },
+  {
+   "i": 50,
+   "k": "kind",
+   "v": "CLICKHOUSE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictSubProperty",
+   "i": 50,
+   "k": "settings"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 53,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 274,
+    "line": 9,
+    "start": 270
+   }
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "TABLE"
+  },
+  {
+   "i": 54,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 53,
+   "k": "value",
+   "m": {
+    "col": 47,
+    "end": 286,
+    "line": 9,
+    "start": 276
+   }
+  },
+  {
+   "i": 57,
+   "k": "this",
+   "v": "discounts"
+  },
+  {
+   "i": 57,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictRange",
+   "i": 43,
+   "k": "expressions"
+  },
+  {
+   "i": 60,
+   "k": "this",
+   "v": "LIFETIME"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 60,
+   "k": "min",
+   "m": {
+    "col": 26,
+    "end": 315,
+    "line": 10,
+    "start": 315
+   }
+  },
+  {
+   "i": 62,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 62,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 60,
+   "k": "max",
+   "m": {
+    "col": 35,
+    "end": 324,
+    "line": 10,
+    "start": 321
+   }
+  },
+  {
+   "i": 65,
+   "k": "this",
+   "v": "1000"
+  },
+  {
+   "i": 65,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictProperty",
+   "i": 43,
+   "k": "expressions"
+  },
+  {
+   "i": 68,
+   "k": "this",
+   "v": "LAYOUT"
+  },
+  {
+   "i": 68,
+   "k": "kind",
+   "v": "RANGE_HASHED"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictSubProperty",
+   "i": 68,
+   "k": "settings"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 71,
+   "k": "this",
+   "m": {
+    "col": 53,
+    "end": 379,
+    "line": 11,
+    "start": 359
+   }
+  },
+  {
+   "i": 72,
+   "k": "this",
+   "v": "range_lookup_strategy"
+  },
+  {
+   "i": 72,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 71,
+   "k": "value",
+   "m": {
+    "col": 59,
+    "end": 385,
+    "line": 11,
+    "start": 381
+   }
+  },
+  {
+   "i": 75,
+   "k": "this",
+   "v": "max"
+  },
+  {
+   "i": 75,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictRange",
+   "i": 43,
+   "k": "expressions"
+  },
+  {
+   "i": 78,
+   "k": "this",
+   "v": "RANGE"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 78,
+   "k": "min"
+  },
+  {
+   "i": 80,
+   "k": "this",
+   "v": "discount_start_date"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 78,
+   "k": "max"
+  },
+  {
+   "i": 82,
+   "k": "this",
+   "v": "discount_end_date"
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

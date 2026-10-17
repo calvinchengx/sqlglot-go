@@ -1,0 +1,745 @@
+{
+ "dialect": "clickhouse",
+ "rendered": "CREATE DICTIONARY my_ip_trie_dictionary (prefix String, asn UInt32, cca2 String DEFAULT '??') PRIMARY KEY (prefix) SOURCE(CLICKHOUSE(TABLE 'my_ip_addresses')) LAYOUT(IP_TRIE()) LIFETIME(MIN 0 MAX 3600)",
+ "sql": "CREATE DICTIONARY my_ip_trie_dictionary (\n  prefix String,\n  asn UInt32,\n  cca2 String DEFAULT '??'\n)\nPRIMARY KEY (prefix)\nSOURCE(CLICKHOUSE(\n  TABLE 'my_ip_addresses'\n))\nLAYOUT(IP_TRIE())\nLIFETIME(MIN 0 MAX 3600)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 7,
+   "t": "DICTIONARY",
+   "x": "DICTIONARY"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 18,
+   "t": "VAR",
+   "x": "my_ip_trie_dictionary"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 8,
+   "e": 49,
+   "l": 2,
+   "s": 44,
+   "t": "VAR",
+   "x": "prefix"
+  },
+  {
+   "c": 15,
+   "e": 56,
+   "l": 2,
+   "s": 51,
+   "t": "TEXT",
+   "x": "String"
+  },
+  {
+   "c": 16,
+   "e": 57,
+   "l": 2,
+   "s": 57,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 5,
+   "e": 63,
+   "l": 3,
+   "s": 61,
+   "t": "VAR",
+   "x": "asn"
+  },
+  {
+   "c": 12,
+   "e": 70,
+   "l": 3,
+   "s": 65,
+   "t": "UINT",
+   "x": "UInt32"
+  },
+  {
+   "c": 13,
+   "e": 71,
+   "l": 3,
+   "s": 71,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 6,
+   "e": 78,
+   "l": 4,
+   "s": 75,
+   "t": "VAR",
+   "x": "cca2"
+  },
+  {
+   "c": 13,
+   "e": 85,
+   "l": 4,
+   "s": 80,
+   "t": "TEXT",
+   "x": "String"
+  },
+  {
+   "c": 21,
+   "e": 93,
+   "l": 4,
+   "s": 87,
+   "t": "DEFAULT",
+   "x": "DEFAULT"
+  },
+  {
+   "c": 26,
+   "e": 98,
+   "l": 4,
+   "s": 95,
+   "t": "STRING",
+   "x": "??"
+  },
+  {
+   "c": 1,
+   "e": 100,
+   "l": 5,
+   "s": 100,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 11,
+   "e": 112,
+   "l": 6,
+   "s": 102,
+   "t": "PRIMARY_KEY",
+   "x": "PRIMARY KEY"
+  },
+  {
+   "c": 13,
+   "e": 114,
+   "l": 6,
+   "s": 114,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 19,
+   "e": 120,
+   "l": 6,
+   "s": 115,
+   "t": "VAR",
+   "x": "prefix"
+  },
+  {
+   "c": 20,
+   "e": 121,
+   "l": 6,
+   "s": 121,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 6,
+   "e": 128,
+   "l": 7,
+   "s": 123,
+   "t": "VAR",
+   "x": "SOURCE"
+  },
+  {
+   "c": 7,
+   "e": 129,
+   "l": 7,
+   "s": 129,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 17,
+   "e": 139,
+   "l": 7,
+   "s": 130,
+   "t": "VAR",
+   "x": "CLICKHOUSE"
+  },
+  {
+   "c": 18,
+   "e": 140,
+   "l": 7,
+   "s": 140,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 7,
+   "e": 148,
+   "l": 8,
+   "s": 144,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 25,
+   "e": 166,
+   "l": 8,
+   "s": 150,
+   "t": "STRING",
+   "x": "my_ip_addresses"
+  },
+  {
+   "c": 1,
+   "e": 168,
+   "l": 9,
+   "s": 168,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 2,
+   "e": 169,
+   "l": 9,
+   "s": 169,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 6,
+   "e": 176,
+   "l": 10,
+   "s": 171,
+   "t": "VAR",
+   "x": "LAYOUT"
+  },
+  {
+   "c": 7,
+   "e": 177,
+   "l": 10,
+   "s": 177,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 14,
+   "e": 184,
+   "l": 10,
+   "s": 178,
+   "t": "VAR",
+   "x": "IP_TRIE"
+  },
+  {
+   "c": 15,
+   "e": 185,
+   "l": 10,
+   "s": 185,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 16,
+   "e": 186,
+   "l": 10,
+   "s": 186,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 17,
+   "e": 187,
+   "l": 10,
+   "s": 187,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 8,
+   "e": 196,
+   "l": 11,
+   "s": 189,
+   "t": "VAR",
+   "x": "LIFETIME"
+  },
+  {
+   "c": 9,
+   "e": 197,
+   "l": 11,
+   "s": 197,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 12,
+   "e": 200,
+   "l": 11,
+   "s": 198,
+   "t": "VAR",
+   "x": "MIN"
+  },
+  {
+   "c": 14,
+   "e": 202,
+   "l": 11,
+   "s": 202,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 18,
+   "e": 206,
+   "l": 11,
+   "s": 204,
+   "t": "VAR",
+   "x": "MAX"
+  },
+  {
+   "c": 23,
+   "e": 211,
+   "l": 11,
+   "s": 208,
+   "t": "NUMBER",
+   "x": "3600"
+  },
+  {
+   "c": 24,
+   "e": 212,
+   "l": 11,
+   "s": 212,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Schema",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 18
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "my_ip_trie_dictionary"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 8,
+    "end": 49,
+    "line": 2,
+    "start": 44
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "prefix"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 6,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 10,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 10,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 10,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 14,
+   "k": "this",
+   "m": {
+    "col": 5,
+    "end": 63,
+    "line": 3,
+    "start": 61
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": "asn"
+  },
+  {
+   "i": 15,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 14,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 18,
+   "k": "this",
+   "v": "UINT"
+  },
+  {
+   "i": 18,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 18,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.ColumnDef",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 22,
+   "k": "this",
+   "m": {
+    "col": 6,
+    "end": 78,
+    "line": 4,
+    "start": 75
+   }
+  },
+  {
+   "i": 23,
+   "k": "this",
+   "v": "cca2"
+  },
+  {
+   "i": 23,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 22,
+   "k": "kind"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 26,
+   "k": "this",
+   "v": "TEXT"
+  },
+  {
+   "i": 26,
+   "k": "nested",
+   "v": false
+  },
+  {
+   "i": 26,
+   "k": "nullable",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.ColumnConstraint",
+   "i": 22,
+   "k": "constraints"
+  },
+  {
+   "c": "sqlglot.expressions.constraints.DefaultColumnConstraint",
+   "i": 30,
+   "k": "kind"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 31,
+   "k": "this",
+   "m": {
+    "col": 26,
+    "end": 98,
+    "line": 4,
+    "start": 95
+   }
+  },
+  {
+   "i": 32,
+   "k": "this",
+   "v": "??"
+  },
+  {
+   "i": 32,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "DICTIONARY"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.constraints.PrimaryKey",
+   "i": 40,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 41,
+   "k": "expressions",
+   "m": {
+    "col": 19,
+    "end": 120,
+    "line": 6,
+    "start": 115
+   }
+  },
+  {
+   "i": 42,
+   "k": "this",
+   "v": "prefix"
+  },
+  {
+   "i": 42,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.constraints.IndexParameters",
+   "i": 41,
+   "k": "include"
+  },
+  {
+   "i": 45,
+   "k": "with_storage",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictProperty",
+   "i": 40,
+   "k": "expressions"
+  },
+  {
+   "i": 47,
+   "k": "this",
+   "v": "SOURCE"
+  },
+  {
+   "i": 47,
+   "k": "kind",
+   "v": "CLICKHOUSE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictSubProperty",
+   "i": 47,
+   "k": "settings"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 50,
+   "k": "this",
+   "m": {
+    "col": 7,
+    "end": 148,
+    "line": 8,
+    "start": 144
+   }
+  },
+  {
+   "i": 51,
+   "k": "this",
+   "v": "TABLE"
+  },
+  {
+   "i": 51,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 50,
+   "k": "value",
+   "m": {
+    "col": 25,
+    "end": 166,
+    "line": 8,
+    "start": 150
+   }
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "my_ip_addresses"
+  },
+  {
+   "i": 54,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictProperty",
+   "i": 40,
+   "k": "expressions"
+  },
+  {
+   "i": 57,
+   "k": "this",
+   "v": "LAYOUT"
+  },
+  {
+   "i": 57,
+   "k": "kind",
+   "v": "IP_TRIE"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.DictRange",
+   "i": 40,
+   "k": "expressions"
+  },
+  {
+   "i": 60,
+   "k": "this",
+   "v": "LIFETIME"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 60,
+   "k": "min",
+   "m": {
+    "col": 14,
+    "end": 202,
+    "line": 11,
+    "start": 202
+   }
+  },
+  {
+   "i": 62,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 62,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 60,
+   "k": "max",
+   "m": {
+    "col": 23,
+    "end": 211,
+    "line": 11,
+    "start": 208
+   }
+  },
+  {
+   "i": 65,
+   "k": "this",
+   "v": "3600"
+  },
+  {
+   "i": 65,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}
