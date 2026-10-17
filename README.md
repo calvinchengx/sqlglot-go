@@ -9,9 +9,9 @@ what a read-only SQL guard needs. Every construct in a parsed statement is a
 visible node; a construct the port does not know is a parse error, never a
 silent pass.
 
-**What it covers:** the tokenizer, parser, and generator for twenty-four named
+**What it covers:** the tokenizer, parser, and generator for twenty-five named
 dialects plus neutral; the first consumer's corpus; and simplify, annotate,
-diff, anonymize, and JSONPath. **What it does not cover yet:** 9
+diff, anonymize, and JSONPath. **What it does not cover yet:** 8
 named dialects with no consumer. A transpiler is not a product goal. The
 order is a measured gap, not the library's table of contents.
 `docs/17-sqlglot-go.md` in
@@ -87,6 +87,7 @@ Regenerate with `make service`; nothing in it is authored here.
 | sqlite | 255/255 | 255 | 255 | 0 | 0 |
 | bigquery | 1012/1012 | 1012 | 1012 | 0 | 0 |
 | clickhouse | 538/538 | 538 | 538 | 0 | 0 |
+| tableau | 17/17 | 17 | 17 | 0 | 0 |
 | dax | 18/18 | 18 | 18 | 0 | 0 |
 | oracle | 159/159 | 159 | 159 | 0 | 0 |
 | snowflake | 551/551 | 551 | 551 | 0 | 0 |
@@ -97,7 +98,7 @@ that matters** and must be zero: it counts statements the port parsed into a
 *different* tree than the reference. Unparsed is the honest size of the gap.
 
 The port also writes SQL back out, and is held to the reference's own output
-string for string: **10,838 of the statements it parses are written back
+string for string: **10,855 of the statements it parses are written back
 identically, none is written wrongly, and none is refused**, and the guard's own rewrite -- inject a row ceiling, emit --
 lands as `TOP 500` in T-SQL and `LIMIT 500` in DuckDB from the same edit to the
 same node. Where a dialect would transform a statement in a way the port does
@@ -109,14 +110,14 @@ The tokenizer is complete and has no gap tier: every statement the reference
 lexes, the port lexes into the same tokens — same types, same text, same line,
 column and offsets, same attached comments. A tokenizer has nowhere to
 legitimately give up, because the parser above it cannot see what it drops.
-The configured reference corpus parses in full: **10,838 of 10,838**, with
+The configured reference corpus parses in full: **10,855 of 10,855**, with
 nothing unparsed. A construct outside that grammar is still an
 `ErrUnsupported`, never a tree that merely looks plausible. That is why
 **mismatched is zero** and is the number to watch.
 
 ## How it is verified
 
-`testdata/expected/` holds 10,838 statements — sqlglot's own `identity.sql`, its
+`testdata/expected/` holds 10,855 statements — sqlglot's own `identity.sql`, its
 **whole** dialect suite, and a set chosen to reach the lexical corners those
 miss — each with the token stream and the tree the reference produced.
 
@@ -147,7 +148,10 @@ because a plausible tree the reference never builds is the one thing this port
 must not produce. `go
 test ./...` runs every one through the port and diffs both. The expectations
 are committed, so the Go tests need no Python; regenerating them (`make
-oracle`) refuses to run against any commit other than the one `NOTICE` pins.
+oracle`) refuses to run against any commit other than the one `NOTICE` pins,
+and against any interpreter older than **3.11** -- below it the reference
+itself answers differently (it parses an offset like `+00:00` another way),
+so an older Python would quietly rewrite statements that are already correct.
 
 The keyword and dialect tables the tokenizer reads are generated from the same
 pin rather than transcribed, and CI regenerates and diffs them, because a
@@ -286,7 +290,7 @@ above with the file-and-line prefix stripped.
 
 The remaining targets -- `oracle`, `service`, `lint` -- regenerate the committed
 expectations and the generated tables, or lint in a container. Those need
-Python, a checkout of the pinned sqlglot, and Docker. The asymmetry is
+Python 3.11 or newer, a checkout of the pinned sqlglot, and Docker. The asymmetry is
 deliberate: **contributing to the port needs a Go toolchain; maintaining the
 oracle needs more.** A contributor on Windows is held to exactly the same
 differential as everyone else without installing any of it.

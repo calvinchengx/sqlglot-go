@@ -124,6 +124,7 @@ func init() {
 		"Paren":                               (*generator).writeParen,
 		"Case":                                (*generator).writeCase,
 		"If":                                  (*generator).writeIf,
+		"Count":                               (*generator).writeCount,
 		"Cast":                                (*generator).writeCast,
 		"TryCast":                             (*generator).writeCast,
 		"DataType":                            (*generator).writeDataType,
@@ -2099,6 +2100,18 @@ func (g *generator) writeIf(e *Expression) string {
 	return g.writeCase(New("Case",
 		Arg{"ifs", []*Expression{e}},
 		Arg{"default", childOf(e, "false")}))
+}
+
+// writeCount writes a COUNT. A dialect that spells a count of a DISTINCT of
+// its own folds the DISTINCT into the name and takes its ARGUMENTS as the
+// call's own -- Tableau's `COUNTD(a)` (TableauGenerator.count_sql).
+func (g *generator) writeCount(e *Expression) string {
+	if g.dialect == "tableau" {
+		if this, _ := e.Args["this"].(*Expression); this != nil && this.Class == "Distinct" {
+			return "COUNTD(" + g.callList(this) + ")"
+		}
+	}
+	return g.spell(e)
 }
 
 // writeMLCall writes the shape every BigQuery ML call shares:

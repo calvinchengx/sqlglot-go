@@ -31,7 +31,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery", "clickhouse")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery", "clickhouse", "tableau")
 
 def gostr(s: str) -> str:
     """Quote a string as Go source.
@@ -6329,6 +6329,10 @@ def main() -> int:
         "\t// IfIsAStatement says a bare IF opens a STATEMENT in this dialect --\n",
         "\t// `IF <cond> BEGIN ... END` -- rather than being a call or a name.\n",
         "\tIfIsAStatement bool\n",
+        "\t// NoParenIfCommands says a bare IF with no parenthesis is written back\n",
+        "\t// as a Command rather than read as `IF cond THEN a ELSE b END`\n",
+        "\t// (Parser.NO_PAREN_IF_COMMANDS).\n",
+        "\tNoParenIfCommands bool\n",
         "\t// AlterCollateIsVar says the name a COLLATE gives is kept as a Var\n",
         "\t// rather than as an Identifier, and AlterColumnTypeTakesNull that a\n",
         "\t// retyped column may say NOT NULL or NULL after its new type.\n",
@@ -7218,6 +7222,9 @@ def main() -> int:
         except Exception:  # noqa: BLE001 -- a dialect that will not read it
             _if_statement = False
         out.append(f"\t\tIfIsAStatement: {str(_if_statement).lower()},\n")
+        out.append(
+            f"\t\tNoParenIfCommands: {str(bool(getattr(P, 'NO_PAREN_IF_COMMANDS', True))).lower()},\n"
+        )
         try:
             _alt = _sg.parse_one(
                 "ALTER TABLE a ALTER COLUMN b CHAR(10) COLLATE abc", read=name or None
