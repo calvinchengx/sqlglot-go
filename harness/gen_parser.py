@@ -1796,6 +1796,14 @@ def alter_column_type_word(dialect: str) -> str:
     except Exception:  # noqa: BLE001
         return "SET DATA TYPE"
 
+    if "ALTER COLUMN" not in text:
+        # The dialect writes the change some other way -- MySQL's `MODIFY
+        # COLUMN`, Hive's `CHANGE COLUMN zzcol zzcol` -- so no such phrase
+        # exists. Read off the rendering, the slice between the column and the
+        # type came back as the second column name (`zzcol`), which is not a
+        # phrase at all.
+        return ""
+
     attribute = getattr(
         Dialect.get_or_raise(dialect or None).generator_class, "ALTER_SET_TYPE", ""
     )
