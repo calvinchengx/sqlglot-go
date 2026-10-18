@@ -91158,7 +91158,7 @@ var parserTables = map[string]*ParserTables{
 		UniqueConstraintWritten:   false,
 		AlterAddColumnWord:        true,
 		AlterRepeatsAdd:           true,
-		AlterColumnTypeWord:       "zzcol",
+		AlterColumnTypeWord:       "",
 		CreateExistsWritten: map[string]bool{
 			"DATABASE":  true,
 			"FUNCTION":  true,

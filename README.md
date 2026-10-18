@@ -11,9 +11,10 @@ silent pass.
 
 **What it covers:** the tokenizer, parser, and generator for twenty-eight named
 dialects plus neutral; the first consumer's corpus; and simplify, annotate,
-diff, anonymize, and JSONPath. **What it does not cover yet:** 5
-named dialects with no consumer. A transpiler is not a product goal. The
-order is a measured gap, not the library's table of contents.
+diff, anonymize, and JSONPath. **What it does not cover yet:** 5 named dialects
+with no consumer -- `athena`, `drill`, `exasol`, `prql` and `teradata`. (`prql`
+is not SQL at all: it is a pipelined query language.) A transpiler is not a
+product goal. The order is a measured gap, not the library's table of contents.
 `docs/17-sqlglot-go.md` in
 [data-agent-service](https://github.com/calvinchengx/data-agent-service),
 whose Go executor is the first consumer, is stale.

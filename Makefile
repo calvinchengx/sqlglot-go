@@ -43,9 +43,12 @@ check-python: ## Fail unless $(PYTHON) is new enough to reproduce the reference'
 
 doctor: ## Check the toolchain
 	@go version
-	@$(PYTHON) --version || echo "$(PYTHON) NOT found (only needed for make oracle and make service)"
+	@$(PYTHON) -c 'import sys; v=sys.version_info; print("python:", sys.version.split()[0], "(ok, 3.11 or newer)" if v >= (3, 11) else "(TOO OLD: regenerating the expectations needs 3.11 or newer)")' 2>/dev/null || echo "$(PYTHON) NOT found (only needed for make oracle and make service)"
 	@test -d $(SQLGLOT) && echo "reference: $(SQLGLOT) @ $$(git -C $(SQLGLOT) rev-parse --short HEAD)" || echo "reference NOT found at $(SQLGLOT) (only needed for make oracle)"
 	@$(PYTHON) -c 'import duckdb; print("duckdb:", duckdb.__version__)' 2>/dev/null || echo "duckdb NOT found (only needed for make oracle-exec)"
+	@echo "lint: $(GOLANGCI), in a container (make lint; needs Docker)"
+	@echo "      natively it has to read this toolchain's export data -- pin it to a"
+	@echo "      Go release it knows, or let the container pick the pair (make lint)"
 
 test: ## Unit tests and the differential run against the reference
 	go test ./...
