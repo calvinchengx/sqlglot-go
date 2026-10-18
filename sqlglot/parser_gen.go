@@ -216,6 +216,10 @@ type ParserTables struct {
 	// as a Command rather than read as `IF cond THEN a ELSE b END`
 	// (Parser.NO_PAREN_IF_COMMANDS).
 	NoParenIfCommands bool
+	// IntervalSpans says `HOUR TO SECOND` reads as one unit spanning two
+	// rather than leaving its TO for whatever follows
+	// (Parser.INTERVAL_SPANS).
+	IntervalSpans bool
 	// AlterCollateIsVar says the name a COLLATE gives is kept as a Var
 	// rather than as an Identifier, and AlterColumnTypeTakesNull that a
 	// retyped column may say NOT NULL or NULL after its new type.
@@ -3139,6 +3143,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -8192,6 +8197,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: true,
 		IfIsAStatement:           true,
 		NoParenIfCommands:        false,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        true,
 		AlterColumnTypeTakesNull: true,
 		OpclassFollowWords: map[string]struct{}{
@@ -13557,6 +13563,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -18892,6 +18899,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -24511,6 +24519,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -30029,6 +30038,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -35385,6 +35395,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -40436,6 +40447,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -45480,6 +45492,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: true,
 		IfIsAStatement:           true,
 		NoParenIfCommands:        false,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        true,
 		AlterColumnTypeTakesNull: true,
 		OpclassFollowWords: map[string]struct{}{
@@ -50586,6 +50599,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -55852,6 +55866,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -61022,6 +61037,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -65940,6 +65956,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -71374,6 +71391,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -76967,6 +76985,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -82261,6 +82280,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -88378,6 +88398,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -93587,6 +93608,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -98862,6 +98884,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -104356,6 +104379,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -109292,6 +109316,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -115116,6 +115141,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            false,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -118480,7 +118506,7 @@ var parserTables = map[string]*ParserTables{
 		AlterSetListIsSettings:   true,
 		AlterSetIsWrapped:        false,
 		ComputedColumnSpelling:   "Nullable(Int32) ALIAS {expr}",
-		ComputedKeepsType:        false,
+		ComputedKeepsType:        true,
 		IdentityWritten:          true,
 		IdentityWidensType:       false,
 		SetItemSeparator:         " = ",
@@ -118513,7 +118539,7 @@ var parserTables = map[string]*ParserTables{
 		UniqueConstraintWritten:   true,
 		AlterAddColumnWord:        true,
 		AlterRepeatsAdd:           true,
-		AlterColumnTypeWord:       "SET DATA TYPE",
+		AlterColumnTypeWord:       "TYPE",
 		CreateExistsWritten: map[string]bool{
 			"DICTIONARY": true,
 			"FUNCTION":   true,
@@ -120916,6 +120942,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        false,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{
@@ -125744,6 +125771,7 @@ var parserTables = map[string]*ParserTables{
 		ColumnDefaultAfterEquals: false,
 		IfIsAStatement:           false,
 		NoParenIfCommands:        true,
+		IntervalSpans:            true,
 		AlterCollateIsVar:        false,
 		AlterColumnTypeTakesNull: false,
 		OpclassFollowWords: map[string]struct{}{

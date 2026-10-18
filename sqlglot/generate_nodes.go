@@ -3116,10 +3116,11 @@ func (g *generator) writeColumnDef(e *Expression) string {
 	// declared type in T-SQL, and an identity column is widened to BIGINT in
 	// Databricks, which supports no narrower one.
 	switch {
-	case !g.tables.ComputedKeepsType && g.dialect != "clickhouse" &&
+	case !g.tables.ComputedKeepsType &&
 		hasConstraint(e, "ComputedColumnConstraint"):
-		// ClickHouse KEEPS the declared type: `c String MATERIALIZED func()`
-		// (ClickHouseGenerator.COMPUTED_COLUMN_WITH_TYPE).
+		// A computed column has no declared type in a dialect whose writer
+		// does not keep it -- ClickHouse's does, and says so with the flag
+		// (Generator.COMPUTED_COLUMN_WITH_TYPE).
 		kind = ""
 	case g.tables.IdentityWidensType &&
 		hasConstraint(e, "GeneratedAsIdentityColumnConstraint") &&
@@ -6842,11 +6843,8 @@ func (g *generator) writeAlterColumn(e *Expression) string {
 	case e.Args["dtype"] != nil:
 		// The phrase in front of the new type is the dialect's: `SET DATA
 		// TYPE` in most, `TYPE` in Databricks and ClickHouse, nothing at all
-		// in T-SQL (ClickHouseGenerator.ALTER_SET_TYPE).
+		// in T-SQL (Generator.ALTER_SET_TYPE).
 		word := g.tables.AlterColumnTypeWord
-		if g.dialect == "clickhouse" {
-			word = "TYPE"
-		}
 		if word != "" {
 			out += " " + word
 		}

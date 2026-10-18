@@ -3098,7 +3098,7 @@ func (p *parser) parseIntervalType() *Expression {
 	}
 	// `DAY TO HOUR` is a span, which is one unit made of two -- where the
 	// dialect reads spans at all (Parser.INTERVAL_SPANS).
-	if p.dialect != "clickhouse" && p.atWords("TO") {
+	if p.tables.IntervalSpans && p.atWords("TO") {
 		p.advance()
 		if to := p.intervalUnit(); to != nil {
 			unit = New("IntervalSpan", Arg{"this", unit}, Arg{"expression", to})
