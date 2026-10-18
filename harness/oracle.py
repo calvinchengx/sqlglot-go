@@ -52,7 +52,7 @@ import sys
 
 # Dialects the executor configures. sqlglot's per-dialect suites supply
 # dialect-specific statements; identity.sql supplies the dialect-neutral core.
-DIALECTS = ("tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery", "clickhouse", "tableau", "dune")
+DIALECTS = ("tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery", "clickhouse", "tableau", "dune", "druid", "solr")
 
 
 # Statements chosen to reach the lexical corners sqlglot's own identity corpus
