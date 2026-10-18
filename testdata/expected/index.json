@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 10857,
+ "count": 10871,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -21543,6 +21543,61 @@
    "sql": "x NOT ILIKE '%y' ESCAPE '#'"
   },
   {
+   "key": "77306f3ae7b6ebd5",
+   "dialect": "druid",
+   "sql": "SELECT MOD(1000, 60)"
+  },
+  {
+   "key": "5fd743b7c5aa9789",
+   "dialect": "druid",
+   "sql": "SELECT CEIL(__time TO WEEK) FROM t"
+  },
+  {
+   "key": "25598530cbdc4573",
+   "dialect": "druid",
+   "sql": "SELECT CEIL(col) FROM t"
+  },
+  {
+   "key": "1054fe16be85f866",
+   "dialect": "druid",
+   "sql": "SELECT CEIL(price, 2) AS rounded_price FROM t"
+  },
+  {
+   "key": "916f290fdf166541",
+   "dialect": "druid",
+   "sql": "SELECT FLOOR(__time TO WEEK) FROM t"
+  },
+  {
+   "key": "165db83abc30f9ba",
+   "dialect": "druid",
+   "sql": "SELECT FLOOR(col) FROM t"
+  },
+  {
+   "key": "5dc7af3468ca0b7e",
+   "dialect": "druid",
+   "sql": "SELECT FLOOR(price, 2) AS rounded_price FROM t"
+  },
+  {
+   "key": "26a7b145c10139b1",
+   "dialect": "druid",
+   "sql": "SELECT CURRENT_TIMESTAMP"
+  },
+  {
+   "key": "52d237f442f21fc9",
+   "dialect": "druid",
+   "sql": "SELECT ARRAY[1, 2, 3]"
+  },
+  {
+   "key": "8fdba6d3da54116a",
+   "dialect": "druid",
+   "sql": "FLOOR(__time TO WEEK)"
+  },
+  {
+   "key": "a7e35b1d9fc99a7f",
+   "dialect": "druid",
+   "sql": "SELECT JSON_VALUE(x, '$.a' RETURNING BIGINT) FROM t"
+  },
+  {
    "key": "ed66701443f4ba1b",
    "dialect": "duckdb",
    "sql": "TRUNC(3.14159, 2)"
@@ -42516,6 +42571,21 @@
    "key": "4dc13e244ac8651c",
    "dialect": "duckdb",
    "sql": "SELECT * FROM t1, t2"
+  },
+  {
+   "key": "8f8a5013eb846640",
+   "dialect": "solr",
+   "sql": "SELECT `default`.column FROM t"
+  },
+  {
+   "key": "41e80795acfd5af4",
+   "dialect": "solr",
+   "sql": "SELECT column FROM t WHERE column = 'val'"
+  },
+  {
+   "key": "4c91f4bb0050bae6",
+   "dialect": "solr",
+   "sql": "a || b"
   },
   {
    "key": "91c3ef9d9c6471e9",
