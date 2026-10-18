@@ -1775,11 +1775,19 @@ def alter_add_conventions(dialect: str) -> tuple[bool, bool]:
 def alter_column_type_word(dialect: str) -> str:
     """What comes between an altered column and its NEW type.
 
-    `SET DATA TYPE` almost everywhere, `TYPE` in Databricks, and nothing at
-    all in T-SQL. Read off a rendering, because the phrase lives in the
-    dialect's writer rather than in any table.
+    `SET DATA TYPE` almost everywhere, `TYPE` in Databricks and ClickHouse, and
+    nothing at all in T-SQL.
+
+    The reference names it in the writer's ALTER_SET_TYPE -- but a dialect that
+    overrides alter_sql wholesale does not use that: MySQL writes `MODIFY COLUMN
+    zzcol BIGINT` and Hive `CHANGE COLUMN zzcol zzcol BIGINT`. So the attribute
+    counts only where the rendering bears it out, and otherwise the word is read
+    off the rendering. That read used to look for the word BIGINT, which a
+    dialect that widens or wraps the type -- ClickHouse's `Nullable(Int64)` --
+    never writes, so it fell back to the default for exactly those dialects.
     """
     import sqlglot
+    from sqlglot.dialects.dialect import Dialect
 
     try:
         text = sqlglot.parse_one(
@@ -1787,6 +1795,13 @@ def alter_column_type_word(dialect: str) -> str:
         ).sql(dialect=dialect or None)
     except Exception:  # noqa: BLE001
         return "SET DATA TYPE"
+
+    attribute = getattr(
+        Dialect.get_or_raise(dialect or None).generator_class, "ALTER_SET_TYPE", ""
+    )
+    if attribute and f" {attribute} " in text:
+        return attribute
+
     head = text.find("zzcol ")
     tail = text.find("BIGINT")
     if head < 0 or tail < 0 or tail < head:
@@ -2036,8 +2051,20 @@ def computed_column_spelling(dialect: str) -> tuple[str, bool]:
         ).sql(dialect=dialect or None)
     except Exception:  # noqa: BLE001
         return "", False
+    from sqlglot.dialects.dialect import Dialect
+
     inside = text[text.index("(") + 1 : text.rindex(")")]
-    kept = " INT" in inside or " INTEGER" in inside
+    # Whether the type survives is the writer's COMPUTED_COLUMN_WITH_TYPE, not
+    # a guess from the rendering: that guess looked for ` INT`, and a dialect
+    # that spells the type differently -- ClickHouse's `Nullable(Int32)` --
+    # read as if it had dropped it.
+    kept = getattr(
+        Dialect.get_or_raise(dialect or None).generator_class,
+        "COMPUTED_COLUMN_WITH_TYPE",
+        " INT" in inside or " INTEGER" in inside,
+    )
+    if not isinstance(kept, bool):
+        kept = " INT" in inside or " INTEGER" in inside
     spelling = inside.split("zzcol", 1)[1]
     for word in (" INTEGER", " INT"):
         if spelling.startswith(word):
@@ -6333,6 +6360,10 @@ def main() -> int:
         "\t// as a Command rather than read as `IF cond THEN a ELSE b END`\n",
         "\t// (Parser.NO_PAREN_IF_COMMANDS).\n",
         "\tNoParenIfCommands bool\n",
+        "\t// IntervalSpans says `HOUR TO SECOND` reads as one unit spanning two\n",
+        "\t// rather than leaving its TO for whatever follows\n",
+        "\t// (Parser.INTERVAL_SPANS).\n",
+        "\tIntervalSpans bool\n",
         "\t// AlterCollateIsVar says the name a COLLATE gives is kept as a Var\n",
         "\t// rather than as an Identifier, and AlterColumnTypeTakesNull that a\n",
         "\t// retyped column may say NOT NULL or NULL after its new type.\n",
@@ -7224,6 +7255,9 @@ def main() -> int:
         out.append(f"\t\tIfIsAStatement: {str(_if_statement).lower()},\n")
         out.append(
             f"\t\tNoParenIfCommands: {str(bool(getattr(P, 'NO_PAREN_IF_COMMANDS', True))).lower()},\n"
+        )
+        out.append(
+            f"\t\tIntervalSpans: {str(bool(getattr(P, 'INTERVAL_SPANS', True))).lower()},\n"
         )
         try:
             _alt = _sg.parse_one(

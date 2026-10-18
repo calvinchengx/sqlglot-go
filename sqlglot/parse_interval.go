@@ -113,7 +113,7 @@ func (p *parser) parseIntervalBody() (*Expression, error) {
 	// VOLUME 'aaa'` keeps its TO for the TTL action to read
 	// (Parser.INTERVAL_SPANS, ClickHouseParser.INTERVAL_SPANS).
 	if c := p.curr(); c != nil && c.Type == TokVAR && strings.EqualFold(c.Text, "TO") &&
-		p.dialect != "clickhouse" {
+		p.tables.IntervalSpans {
 		p.advance()
 		end := p.curr()
 		if end == nil {
