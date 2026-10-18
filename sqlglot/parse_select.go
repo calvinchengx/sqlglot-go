@@ -1401,7 +1401,13 @@ func (p *parser) parseConnect() (*Expression, error) {
 	if nocycle {
 		p.advance()
 	}
+	// PRIOR is a prefix only here, and in every dialect -- the reference puts
+	// it in the no-paren function table for this one call
+	// (Parser._parse_connect_with_prior).
+	was := p.inConnectBy
+	p.inConnectBy = true
 	connect, err := p.parseDisjunction()
+	p.inConnectBy = was
 	if err != nil {
 		return nil, err
 	}

@@ -37,6 +37,8 @@ func init() {
 		"Lock":                                (*generator).writeLock,
 		"RecursiveWithSearch":                 (*generator).writeRecursiveWithSearch,
 		"Connect":                             (*generator).writeConnect,
+		"Prior":                               (*generator).writePrior,
+		"ConnectByRoot":                       (*generator).writeConnectByRoot,
 		"JSON":                                (*generator).writeJSON,
 		"Select":                              (*generator).writeSelect,
 		"Copy":                                (*generator).writeCopy,
@@ -1931,6 +1933,19 @@ func (g *generator) writeConnect(e *Expression) string {
 		nocycle = " NOCYCLE"
 	}
 	return out + " CONNECT BY" + nocycle + " " + g.child(e, "connect")
+}
+
+// writePrior writes the hierarchy prefix Oracle reads and every dialect
+// writes back the same way (Generator.prior_sql).
+func (g *generator) writePrior(e *Expression) string {
+	return "PRIOR " + g.child(e, "this")
+}
+
+// writeConnectByRoot writes CONNECT_BY_ROOT, which is a no-paren function of
+// the BASE parser rather than an Oracle one, so it stands in every dialect
+// (Generator.connectbyroot_sql).
+func (g *generator) writeConnectByRoot(e *Expression) string {
+	return "CONNECT_BY_ROOT " + g.child(e, "this")
 }
 
 // writeJSON writes the predicate's own right-hand side: `IS JSON`, and the
