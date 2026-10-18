@@ -62,6 +62,11 @@ type parser struct {
 	// inCallArgs is set while reading a call's own argument list, where a
 	// trailing IGNORE NULLS belongs to the CALL rather than to the argument.
 	inCallArgs bool
+	// inConnectBy is set while reading a CONNECT BY's own condition, which is
+	// the one place PRIOR is a prefix rather than a name -- the reference
+	// registers it as a no-paren function parser for that call alone and takes
+	// it away after (Parser._parse_connect_with_prior).
+	inConnectBy bool
 	// inFromSubquery marks a query being parsed as a parenthesised FROM item,
 	// which is the one path on which the reference stamps `unpivot` false.
 	inFromSubquery bool

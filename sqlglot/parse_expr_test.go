@@ -1473,6 +1473,16 @@ func TestConnectBy(t *testing.T) {
 		// The same guard applies to a subquery's own WIDE alias reading.
 		{"SELECT * FROM (SELECT 1) START WITH id = 1 CONNECT BY x = y",
 			"SELECT * FROM (SELECT 1) START WITH id = 1 CONNECT BY x = y"},
+		// PRIOR is a prefix inside the clause in EVERY dialect, not only
+		// Oracle: the reference registers it as a no-paren function parser for
+		// this call alone and takes it away afterwards
+		// (Parser._parse_connect_with_prior).
+		{"SELECT * FROM t CONNECT BY PRIOR a = b",
+			"SELECT * FROM t CONNECT BY PRIOR a = b"},
+		// CONNECT_BY_ROOT is a no-paren function of the BASE parser, so it
+		// stands outside the clause too, and in every dialect.
+		{"SELECT CONNECT_BY_ROOT a FROM t",
+			"SELECT CONNECT_BY_ROOT a FROM t"},
 	} {
 		e, err := ParseOne(tc.sql, "")
 		if err != nil {
