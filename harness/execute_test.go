@@ -54,6 +54,9 @@ func TestEmitExecutionPairs(t *testing.T) {
 		}
 		rec := map[string]string{"dialect": c.Dialect, "sql": c.SQL, "reference": c.Rendered}
 		tree, perr := sqlglot.ParseOne(c.SQL, c.Dialect)
+		if perr == nil && samplesIn(tree) {
+			rec["samples"] = "true"
+		}
 		switch {
 		case perr != nil:
 			rec["port_error"] = perr.Error()
@@ -78,4 +81,18 @@ func TestEmitExecutionPairs(t *testing.T) {
 		emitted++
 	}
 	t.Logf("emitted %d statements to %s", emitted, dest)
+}
+
+// samplesIn reports whether a statement samples, which leaves it unable to
+// arbitrate anything.
+//
+// A sample is a RANDOM DRAW, so two runs of the SAME statement need not agree
+// -- and a small one is stable often enough that the execution oracle's
+// repeated looks cannot tell. `SELECT * FROM tbl USING SAMPLE 10%` returned
+// the same rows three times and nothing on the fourth, so an unstable INPUT
+// was reported as the port's rewrite being wrong when the rewrite was right.
+// The tree says a statement samples, so it is recorded here rather than
+// guessed at there.
+func samplesIn(tree *sqlglot.Expression) bool {
+	return len(tree.FindAll("TableSample")) > 0
 }

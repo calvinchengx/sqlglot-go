@@ -243,6 +243,14 @@ input was not enough — `USING SAMPLE 10%` returned the same thing twice and
 something different on the sixth run, and an unstable rewrite was reported as
 a divergence that was not one.
 
+Detecting it by looking has a floor, though, and sampling is under it: a small
+sample is *stable* often enough that no number of looks can tell, so the same
+statement was still reported as a divergence — this time as the port's rewrite
+being wrong when the rewrite was right. A statement that samples cannot
+arbitrate anything, and the **tree** says so, so the emitter records it
+(`TableSample`) and the oracle sets it aside on what it IS rather than on what
+it happened to return.
+
 Neither Databricks nor the neutral dialect has an engine here: Spark is not a
 service container, and the neutral dialect rewrites 8 statements out of 997,
 so there would be almost nothing to compare.
