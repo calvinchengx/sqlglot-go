@@ -1512,6 +1512,54 @@ func TestConnectBy(t *testing.T) {
 // read as false or absent -- not defaulted -- where the word was not
 // written. The kind specifically dumps as `false`, not as nothing, since the
 // reference's own match-and-return short-circuits to the boolean itself.
+// A table name is read as the reference reads it, and the two kinds of
+// MISSING part are not the same. The name before any dot may simply not be
+// there -- `FROM .a` -- and is then DROPPED rather than named as empty; a part
+// after a dot that is not there is the empty string instead, and is KEPT,
+// because `FROM a..b` really does name the empty qualifier
+// (Parser._parse_table_parts, `_parse_table_part() or ""`).
+func TestTablePartsWithMissingQualifiers(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT x FROM .a", "SELECT x FROM a"},
+		{"SELECT x FROM .a.b", "SELECT x FROM a.b"},
+		// An empty KEPT qualifier goes back out as the empty segment it was.
+		{"SELECT x FROM ..a", "SELECT x FROM .a"},
+		{"SELECT x FROM ...a", "SELECT x FROM ..a"},
+		{"SELECT x FROM a..b", "SELECT x FROM a..b"},
+		{"SELECT x FROM a.b", "SELECT x FROM a.b"},
+	} {
+		e, err := ParseOne(tc.sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, ""); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+}
+
+// A select list is a CSV, and reading it as one is what stops a leading comma
+// from being taken for the comma JOIN the FROM clause writes. An item that
+// cannot begin is skipped, not an error and not a join
+// (Parser._parse_csv, _parse_select).
+func TestSelectListIsACSV(t *testing.T) {
+	for _, tc := range []struct{ sql, want string }{
+		{"SELECT ,x", "SELECT x"},
+		{"SELECT , t", "SELECT t"},
+		{"SELECT x, , y", "SELECT x, y"},
+		{"SELECT ,,x", "SELECT x"},
+		{"SELECT ,x FROM t", "SELECT x FROM t"},
+	} {
+		e, err := ParseOne(tc.sql, "")
+		if err != nil {
+			t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+		}
+		if got, err := Generate(e, ""); err != nil || got != tc.want {
+			t.Errorf("%q wrote %q (%v), want %q", tc.sql, got, err, tc.want)
+		}
+	}
+}
+
 func TestIsJSON(t *testing.T) {
 	for _, tc := range []struct{ sql, want string }{
 		{`SELECT js, js IS JSON AS "json?"`,

@@ -977,30 +977,41 @@ func (p *parser) parseTop() (*Expression, error) {
 }
 
 func (p *parser) parseProjections() ([]*Expression, error) {
+	// The list is read the way the reference's `_parse_csv` reads it, and that
+	// is not the same as a list of projections: an item that cannot begin is
+	// SKIPPED rather than ending the list, so `SELECT ,x` names one column and
+	// `SELECT x, , y` names two. Reading it as a CSV is also what keeps a
+	// leading comma from being taken for the comma JOIN the FROM clause
+	// writes (Parser._parse_csv).
 	var out []*Expression
 	for {
-		// A SELECT may name nothing at all -- `SELECT TOP 10 PERCENT` is a
-		// whole statement in T-SQL, and `SELECT FROM t` is what the reference
-		// writes for a query with no projections. It records no projections
-		// rather than an empty list.
-		//
-		// The test is the reference's own: a projection is missing when the
-		// token in front of it cannot begin one, which is exactly the case
-		// where the parse fails having consumed nothing.
 		start := p.index
 		e, err := p.parseProjection()
 		if err != nil {
-			if len(out) == 0 && p.index == start {
-				return nil, nil
+			// An error that consumed nothing is an EMPTY item, which is not an
+			// error at all; one that consumed something is.
+			if p.index != start {
+				return nil, err
 			}
-			return nil, err
+			e = nil
 		}
-		out = append(out, e)
+		if e != nil {
+			out = append(out, e)
+		}
 		if !p.match(TokCOMMA) {
 			break
 		}
 		// A comment after the comma belongs to the item before it.
-		putComments(e, p.takeComments())
+		if e != nil {
+			putComments(e, p.takeComments())
+		}
+	}
+	// A SELECT may name nothing at all -- `SELECT TOP 10 PERCENT` is a whole
+	// statement in T-SQL, and `SELECT FROM t` is what the reference writes for
+	// a query with no projections. It records no projections rather than an
+	// empty list.
+	if len(out) == 0 {
+		return nil, nil
 	}
 	return out, nil
 }

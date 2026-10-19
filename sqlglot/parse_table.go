@@ -407,32 +407,50 @@ func (p *parser) startsATable(t *Token) bool {
 // never reached at all is left absent (Go nil), which is a different thing
 // the dump must tell apart.
 func tableQualifiedParts(seq []*Expression) (this, db, catalog any) {
+	// Each slot carries the part AND whether it was WRITTEN. The name before
+	// any dot may simply not be there -- `FROM .a` -- and the reference has
+	// None in that slot, which is dropped. A part AFTER a dot that is not
+	// there is the empty string instead, and is KEPT: `FROM a..b` names the
+	// empty qualifier (Parser._parse_table_parts, `_parse_table_part() or ""`).
 	thisExpr := seq[0]
+	thisWritten := thisExpr != nil
 	var dbExpr, catalogExpr *Expression
-	var dbSet, catalogSet bool
+	var dbWritten, catalogWritten bool
 	catalogTruthy := false
 	for _, next := range seq[1:] {
 		if catalogTruthy {
-			thisExpr = New("Dot", Arg{"this", thisExpr}, Arg{"expression", next})
+			// Past the first qualifier the name nests in Dots, and the same
+			// rule holds inside them: a part that is not there is the empty
+			// string, never a dropped key (`a...b`).
+			thisExpr = New("Dot",
+				Arg{"this", qualifierValue(thisExpr, thisWritten)},
+				Arg{"expression", next})
+			thisWritten = true
 			continue
 		}
-		catalogExpr, catalogSet = dbExpr, dbSet
-		dbExpr, dbSet = thisExpr, true
+		catalogExpr, catalogWritten = dbExpr, dbWritten
+		dbExpr, dbWritten = thisExpr, thisWritten
 		thisExpr = next
+		// Past the first dot a missing part is the empty string, so the slot
+		// counts as written from here on.
+		thisWritten = true
 		catalogTruthy = catalogExpr != nil
 	}
-	return thisExpr, qualifierValue(dbExpr, dbSet), qualifierValue(catalogExpr, catalogSet)
+	return qualifierValue(thisExpr, true), qualifierValue(dbExpr, dbWritten), qualifierValue(catalogExpr, catalogWritten)
 }
 
-func qualifierValue(part *Expression, set bool) any {
-	switch {
-	case !set:
+// qualifierValue turns one slot into the argument to carry: the part itself
+// when it was written, the empty string when it was a dot with nothing after
+// it, and NOTHING at all -- nil, so the caller sets no key -- when the name
+// before any dot was never there.
+func qualifierValue(part *Expression, written bool) any {
+	if !written {
 		return nil
-	case part == nil:
-		return ""
-	default:
-		return part
 	}
+	if part == nil {
+		return ""
+	}
+	return part
 }
 
 // redshiftSuperUnpivot reads the relation after UNPIVOT and wraps it. The
