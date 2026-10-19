@@ -33,13 +33,13 @@ Counts are from one run (555 divergences) and are illustrative.
 
 | class | ~ | example | why it is not writable SQL |
 |---|--:|---|---|
-| `ScopeResolution -> Cast` | 198 | `00::A`, `$::"0\`"` | a cast of a NUMBER, or of a lone `$`, to a type named `A`; the reference reads the two-part spelling as a user-defined type |
+| `ScopeResolution -> Cast` | 198 | `00::A`, `$::"0\`"` | a cast of a NUMBER, or of a lone `$`, to a type named `A`; the reference reads the two-part spelling as a user-defined type. Reports under several labels — see below |
 | `Alias -> Column` | 64 | control characters | mutated names |
 | `Literal -> Literal` | 59 | `00[0][0]` | subscripting a small integer |
 | `Var -> Column` | 47 | `SET 0=0X` | a SET whose value is a digit-initial bare word; `SET x = y` is right |
 | `HexString -> Identifier` | 33 | `:00A.0XA0` | a leading colon |
 | `Column -> Dot` | 28 | `AF.*.A` | a `*` in the middle of a dotted name |
-| `Literal -> JSONPath` | 28 | `0->.0.` | an arrow with no left operand and a trailing dot |
+| `Literal -> JSONPath` | 28 | `0->.0.` | an arrow with no left operand and a trailing dot. Reports under several labels — see below |
 | `Alias -> Array` | 8 | `[: :]` | an unterminated slice with no members |
 | `Anonymous -> All` | 7 | `0<All(0)` | `ALL` applied to a CALL, not a query |
 | `Paren -> Subquery` | 6 | `((FROM A)A)` | a FROM-first query with no projection, aliased |
@@ -47,6 +47,26 @@ Counts are from one run (555 divergences) and are illustrative.
 | `Identifier -> DataType` | 5 | `UNION<A>` | a type-parameter list after `UNION` |
 | `Alias -> EQ` | 4 | `SELECT 0X=0` | a comparison whose left side is the hex-looking word `0X` |
 | others | <5 each | | `HexString -> Var`, `RawString -> Var`, `Placeholder -> Struct` (`{}`), `ByteString -> Var`, `IfBlock -> If`, `Set -> Var`, `Paren -> Tuple` — all single mutations |
+
+## The labels move; the families do not
+
+The fuzzer names a divergence `want -> got` from the two nodes that differ, so
+ONE family comes back under several labels depending on where the mutation
+lands. A session that reports a label not in the table above has not
+necessarily found a class that is not here — check it against the families
+first.
+
+Two families account for most of the labels a session reports:
+
+| family | input | labels seen |
+|---|---|---|
+| an arrow on a small integer | `0->'…'`, `0->.0.` | `Literal -> JSONPath`, `JSONPath -> Literal`, `<scalar> -> JSONPathKey`, `<scalar> -> <scalar>` |
+| a cast of a number to a type named `A` | `0::A`, `0::A.0` | `ScopeResolution -> Cast`, `Cast -> Dot`, `ScopeResolution -> Dot` |
+
+A 300-second session reported 732 divergences and every class in it was one of
+the families above: 165 `ScopeResolution -> Cast`, 233
+`HexString -> Identifier`, and the two families re-labelled 24 + 50 + 14 + 8
+ways. Nothing in it was a statement a caller can write.
 
 Roughly 40% of every session's input contains a control character, which is
 worse than a fragment: sqlglot's answers there are not a specification, and no
