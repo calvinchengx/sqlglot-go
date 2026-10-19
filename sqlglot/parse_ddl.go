@@ -7128,6 +7128,24 @@ func (p *parser) parseAnalyzeStatistics() (*Expression, error) {
 	case p.atUnquotedWord("NOSCAN"):
 		p.advance()
 		node.Set("this", "NOSCAN")
+	case p.atUnquotedWord("SAMPLE"):
+		// `SAMPLE <n> [PERCENT]`: the number is what was sampled and the word
+		// after it says in what, remembered ONLY where it was written --
+		// `SAMPLE 5` and `SAMPLE 5 PERCENT` are different trees
+		// (Parser._parse_analyze_statistics).
+		p.advance()
+		c := p.curr()
+		if c == nil || c.Type != TokNUMBER {
+			return nil, p.unsupported("SAMPLE without a number")
+		}
+		p.advance()
+		var sampleKind any
+		if p.match(TokPERCENT) {
+			sampleKind = "PERCENT"
+		}
+		node.Set("expressions", []*Expression{New("AnalyzeSample",
+			Arg{"sample", New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})},
+			Arg{"kind", sampleKind})})
 	case p.at(TokFOR):
 		p.advance()
 		switch {
