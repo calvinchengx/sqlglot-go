@@ -31,6 +31,10 @@ The verdicts:
                    CURRENT_TIME, RANDOM. Excluded rather than denylisted by
                    keyword, so the harness discovers the class instead of
                    being told it.
+  sampled          set aside because the TREE says the statement samples. A
+                   sample is a random draw, so it cannot arbitrate, and a small
+                   one repeats by luck -- which is how an unstable input came
+                   to be reported as a divergence.
   unrunnable       DuckDB will not run what it was GIVEN, so there is nothing
                    to compare the port against. Most of the corpus: it is a
                    transpiler's test suite, not a workload.
@@ -257,6 +261,17 @@ def run(engine: Engine, pairs, known) -> tuple[dict[str, int], list[dict[str, st
 
     for rec in pairs:
         if rec.get("dialect") != engine.dialect:
+            continue
+        if rec.get("samples") == "true":
+            # A sample is a RANDOM DRAW, so two runs of the SAME statement need
+            # not agree -- and a small one is stable often enough that the
+            # looks below cannot tell. `SELECT * FROM tbl USING SAMPLE 10%`
+            # returned the same rows three times and nothing on the fourth, so
+            # an unstable INPUT was read as the port's rewrite being wrong when
+            # the rewrite was right. The tree records that a statement samples
+            # (harness/execute_test.go), so it is set aside on what it IS
+            # rather than on what it happened to return.
+            bump("sampled: nondeterministic by construction")
             continue
         src = rec["sql"]
         try:
