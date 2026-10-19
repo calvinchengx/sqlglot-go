@@ -5758,9 +5758,15 @@ func (p *parser) parseQualifiedName() (*Expression, error) {
 			// which is not SQL. The generator fuzzer found it.
 			var arg *Expression
 			var err error
-			if p.atLambda() {
+			switch {
+			case p.atLambda():
 				arg, err = p.parseLambda()
-			} else {
+			case p.atKwarg():
+				// `dfs.\`f.xlsx\`(type => 'excel')`: a named argument is a
+				// Kwarg here exactly as it is in an unqualified call
+				// (Parser._parse_function_call, _parse_kwarg).
+				arg, err = p.parseKwarg()
+			default:
 				arg, err = p.parseExpression()
 			}
 			if err != nil {

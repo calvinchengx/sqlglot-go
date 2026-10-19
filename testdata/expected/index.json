@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 10871,
+ "count": 10942,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -14403,6 +14403,11 @@
    "sql": "CAST(a AS Nullable(String))"
   },
   {
+   "key": "f6e2bb926745bb85",
+   "dialect": "drill",
+   "sql": "CAST(a AS VARCHAR)"
+  },
+  {
    "key": "316d8891f1acbb39",
    "dialect": "materialize",
    "sql": "CAST(a AS TEXT)"
@@ -14456,6 +14461,11 @@
    "key": "8cef50c0da5376ac",
    "dialect": "clickhouse",
    "sql": "CAST(a AS Nullable(BINARY(4)))"
+  },
+  {
+   "key": "cc79256995ec6594",
+   "dialect": "drill",
+   "sql": "CAST(a AS VARBINARY(4))"
   },
   {
    "key": "7e667a95e0b0655a",
@@ -14578,6 +14588,11 @@
    "sql": "CAST(a AS VARCHAR)"
   },
   {
+   "key": "a03d1e0ed32a548a",
+   "dialect": "drill",
+   "sql": "CAST(a AS VARCHAR(3))"
+  },
+  {
    "key": "b40915dd0930f86a",
    "dialect": "duckdb",
    "sql": "CAST(a AS TEXT(3))"
@@ -14631,6 +14646,11 @@
    "key": "cd2a2e70291cbb4c",
    "dialect": "doris",
    "sql": "CAST(a AS VARCHAR(3))"
+  },
+  {
+   "key": "0f3f1001a1675369",
+   "dialect": "drill",
+   "sql": "CAST(a AS INTEGER)"
   },
   {
    "key": "ff07ede529314fe2",
@@ -14710,6 +14730,11 @@
   {
    "key": "6ea76a5a6fb58040",
    "dialect": "doris",
+   "sql": "CAST(a AS DOUBLE)"
+  },
+  {
+   "key": "c3d845068f0a0f27",
+   "dialect": "drill",
    "sql": "CAST(a AS DOUBLE)"
   },
   {
@@ -14816,6 +14841,11 @@
    "key": "7598fd2fb8e0bf5b",
    "dialect": "doris",
    "sql": "CREATE TABLE a LIKE b"
+  },
+  {
+   "key": "70ab3bbe5090ed74",
+   "dialect": "drill",
+   "sql": "CREATE TABLE a AS SELECT * FROM b LIMIT 0"
   },
   {
    "key": "22209aa99e873265",
@@ -15058,6 +15088,11 @@
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
   },
   {
+   "key": "4ee2ca05ad7bff0b",
+   "dialect": "drill",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
+  },
+  {
    "key": "ce55540c098a126c",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
@@ -15143,6 +15178,11 @@
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
   },
   {
+   "key": "92ebf03effa271ca",
+   "dialect": "drill",
+   "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
+  },
+  {
    "key": "203e7c5b2629a801",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
@@ -15223,6 +15263,11 @@
    "sql": "DATE_PARSE(x, '%Y-%m-%dT%T')"
   },
   {
+   "key": "dee7cb4df9d414dc",
+   "dialect": "drill",
+   "sql": "TO_TIMESTAMP(x, 'yyyy-MM-dd''T''HH:mm:ss')"
+  },
+  {
    "key": "ff69936bea6b0168",
    "dialect": "redshift",
    "sql": "TO_TIMESTAMP(x, 'YYYY-MM-DDTHH24:MI:SS')"
@@ -15231,6 +15276,11 @@
    "key": "21979f5330d9d11e",
    "dialect": "spark",
    "sql": "TO_TIMESTAMP(x, 'yyyy-M-dTH:m:s')"
+  },
+  {
+   "key": "8866b6c12e9e6221",
+   "dialect": "drill",
+   "sql": "TO_TIMESTAMP('2020-01-01', 'yyyy-MM-dd')"
   },
   {
    "key": "cf72cb3a6c6b6314",
@@ -15261,6 +15311,11 @@
    "key": "99e7aaa5281e7acf",
    "dialect": "spark",
    "sql": "TO_TIMESTAMP('2020-01-01', 'yyyy-M-d')"
+  },
+  {
+   "key": "e4f17677f1b1061f",
+   "dialect": "drill",
+   "sql": "TO_TIMESTAMP(x, 'yy')"
   },
   {
    "key": "45045ab897ccb027",
@@ -15321,6 +15376,11 @@
    "key": "553c57b7b9bf6c84",
    "dialect": "doris",
    "sql": "UNIX_TIMESTAMP('2020-01-01', '%Y-%m-%d')"
+  },
+  {
+   "key": "5347af6e06f26406",
+   "dialect": "drill",
+   "sql": "CAST('2020-01-01' AS DATE)"
   },
   {
    "key": "ff9587e5af50e2d2",
@@ -15396,6 +15456,11 @@
    "key": "ee8283c0cdb9f304",
    "dialect": "clickhouse",
    "sql": "CAST('2020-01-01' AS DateTime64(6))"
+  },
+  {
+   "key": "44aeaba402b4f402",
+   "dialect": "drill",
+   "sql": "CAST('2020-01-01' AS TIMESTAMP)"
   },
   {
    "key": "13f59835f3909d87",
@@ -15488,6 +15553,11 @@
    "sql": "CAST('2020-01-01 12:13:14' AS DateTime64(6, 'America/Los_Angeles'))"
   },
   {
+   "key": "80f1eaa09338a2e6",
+   "dialect": "drill",
+   "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP)"
+  },
+  {
    "key": "50ec52049aa9b006",
    "dialect": "hive",
    "sql": "CAST('2020-01-01 12:13:14-08:00' AS TIMESTAMP)"
@@ -15558,6 +15628,11 @@
    "sql": "CAST(col AS DateTime64(6, 'America/Los_Angeles'))"
   },
   {
+   "key": "8daae208be72e6cc",
+   "dialect": "drill",
+   "sql": "CAST(col AS TIMESTAMP)"
+  },
+  {
    "key": "14ad1d2025dc263a",
    "dialect": "hive",
    "sql": "CAST(col AS TIMESTAMP)"
@@ -15608,6 +15683,11 @@
    "sql": "FORMAT_DATE('%F', x)"
   },
   {
+   "key": "5c9d0492230baa4e",
+   "dialect": "drill",
+   "sql": "TO_CHAR(x, 'yyyy-MM-dd')"
+  },
+  {
    "key": "4c408e5bd5aa605e",
    "dialect": "duckdb",
    "sql": "STRFTIME(x, '%Y-%m-%d')"
@@ -15653,6 +15733,11 @@
    "sql": "FORMAT(a, 'yyyy-MM-dd HH:mm:ss.ffffff')"
   },
   {
+   "key": "7cef11e53396bd9e",
+   "dialect": "drill",
+   "sql": "CAST(x AS VARCHAR)"
+  },
+  {
    "key": "7f95120b9ad4f607",
    "dialect": "duckdb",
    "sql": "CAST(x AS TEXT)"
@@ -15676,6 +15761,11 @@
    "key": "9a281569d73b6772",
    "dialect": "doris",
    "sql": "CAST(x AS STRING)"
+  },
+  {
+   "key": "140b1e2a3ec4aefe",
+   "dialect": "drill",
+   "sql": "UNIX_TIMESTAMP(x)"
   },
   {
    "key": "0cb9093fafc31cf6",
@@ -15848,6 +15938,11 @@
    "sql": "CAST(FROM_UNIXTIME(x) AS VARCHAR)"
   },
   {
+   "key": "1fdcbb6965166075",
+   "dialect": "drill",
+   "sql": "CAST(TO_DATE(x, 'yyyyMMdd') AS INT)"
+  },
+  {
    "key": "a9cbd8bf5fbb988d",
    "dialect": "duckdb",
    "sql": "CAST(STRFTIME(x, '%Y%m%d') AS INT)"
@@ -15861,6 +15956,11 @@
    "key": "6367719d1ee4b258",
    "dialect": "presto",
    "sql": "CAST(DATE_FORMAT(x, '%Y%m%d') AS INT)"
+  },
+  {
+   "key": "8d91e0495e3d5d9d",
+   "dialect": "drill",
+   "sql": "TO_DATE(CAST(x AS VARCHAR), 'yyyyMMdd')"
   },
   {
    "key": "e605a2424a401c14",
@@ -15905,6 +16005,11 @@
   {
    "key": "d6f4a823ed15fa46",
    "dialect": "bigquery",
+   "sql": "DATE_ADD(x, INTERVAL 1 DAY)"
+  },
+  {
+   "key": "224ec2fa511e4c81",
+   "dialect": "drill",
    "sql": "DATE_ADD(x, INTERVAL 1 DAY)"
   },
   {
@@ -16163,6 +16268,11 @@
    "sql": "NEXT_DAY(x, y)"
   },
   {
+   "key": "4d1be7774b9ea5c5",
+   "dialect": "drill",
+   "sql": "TO_DATE(x, 'yyyy-MM-dd''T''HH:mm:ss')"
+  },
+  {
    "key": "16fee5a25630b660",
    "dialect": "starrocks",
    "sql": "STR_TO_DATE(x, '%Y-%m-%dT%T')"
@@ -16186,6 +16296,11 @@
    "key": "87a02b6289a3ece5",
    "dialect": "doris",
    "sql": "STR_TO_DATE(x, '%Y-%m-%dT%T')"
+  },
+  {
+   "key": "ccb4171655b86c19",
+   "dialect": "drill",
+   "sql": "CAST(x AS DATE)"
   },
   {
    "key": "f6fcfab124020a5d",
@@ -16238,6 +16353,11 @@
    "sql": "CAST(x AS DATE)"
   },
   {
+   "key": "375983d4eb4f7544",
+   "dialect": "drill",
+   "sql": "DATE_ADD(CAST('2021-02-01' AS DATE), INTERVAL 1 DAY)"
+  },
+  {
    "key": "c9ca75b3dd089b4c",
    "dialect": "duckdb",
    "sql": "CAST('2021-02-01' AS DATE) + INTERVAL 1 DAY"
@@ -16278,6 +16398,11 @@
    "sql": "DATE_ADD(CURRENT_DATE, 1)"
   },
   {
+   "key": "97cdd6024f477d0e",
+   "dialect": "drill",
+   "sql": "DATE_ADD(CAST('2020-01-01' AS DATE), INTERVAL 1 DAY)"
+  },
+  {
    "key": "7a3d85af6c5859dc",
    "dialect": "duckdb",
    "sql": "CAST('2020-01-01' AS DATE) + INTERVAL 1 DAY"
@@ -16301,6 +16426,11 @@
    "key": "42f75d4be0db2624",
    "dialect": "dremio",
    "sql": "DATE_ADD(CAST('2020-01-01' AS DATE), 1)"
+  },
+  {
+   "key": "951bf864a9950bc2",
+   "dialect": "drill",
+   "sql": "CAST('2022-01-01' AS TIMESTAMP)"
   },
   {
    "key": "b0fb85b70fa4c960",
@@ -16396,6 +16526,11 @@
    "key": "30d17ed0a61ce9bc",
    "dialect": "duckdb",
    "sql": "ARRAY_LENGTH(x)"
+  },
+  {
+   "key": "7c47b5e2d040ea27",
+   "dialect": "drill",
+   "sql": "REPEATED_COUNT(x)"
   },
   {
    "key": "4c465ef44b7aa1e5",
@@ -17088,6 +17223,11 @@
    "sql": "JSON_EXTRACT(x, '$.y.*')"
   },
   {
+   "key": "5fae33299702ffc7",
+   "dialect": "drill",
+   "sql": "SELECT a FROM x CROSS JOIN UNNEST(y) AS t(a)"
+  },
+  {
    "key": "7c06d61934b50ecc",
    "dialect": "presto",
    "sql": "SELECT a FROM x CROSS JOIN UNNEST(y) AS t(a)"
@@ -17096,6 +17236,11 @@
    "key": "9460212d8fe2e127",
    "dialect": "spark",
    "sql": "SELECT a FROM x LATERAL VIEW EXPLODE(y) t AS a"
+  },
+  {
+   "key": "78064354361fbe02",
+   "dialect": "drill",
+   "sql": "SELECT a, b FROM x CROSS JOIN UNNEST(y, z) AS t(a, b)"
   },
   {
    "key": "868a6b84ce6e055c",
@@ -17210,6 +17355,11 @@
   {
    "key": "4cbc5e124bcda40b",
    "dialect": "spark",
+   "sql": "SELECT * FROM a UNION SELECT * FROM b"
+  },
+  {
+   "key": "15b6a95e917377d6",
+   "dialect": "drill",
    "sql": "SELECT * FROM a UNION SELECT * FROM b"
   },
   {
@@ -17368,6 +17518,11 @@
    "sql": "LOWER(x) LIKE LOWER('%y')"
   },
   {
+   "key": "d93e142db86bef6c",
+   "dialect": "drill",
+   "sql": "ILIKE(x, '%y')"
+  },
+  {
    "key": "032f5472a56fc9b8",
    "dialect": "hive",
    "sql": "LOWER(x) LIKE LOWER('%y')"
@@ -17413,6 +17568,11 @@
    "sql": "x NOT ILIKE '%y'"
   },
   {
+   "key": "9308b930cd480748",
+   "dialect": "drill",
+   "sql": "NOT ILIKE(x, '%y')"
+  },
+  {
    "key": "971425edc1b1c118",
    "dialect": "hive",
    "sql": "LOWER(x) NOT LIKE LOWER('%y')"
@@ -17430,6 +17590,11 @@
   {
    "key": "c4f9e061de78b4ad",
    "dialect": "databricks",
+   "sql": "POSITION(needle in haystack)"
+  },
+  {
+   "key": "461d8b2f39d66b1b",
+   "dialect": "drill",
    "sql": "POSITION(needle in haystack)"
   },
   {
@@ -17495,6 +17660,11 @@
   {
    "key": "db5664beb1992a73",
    "dialect": "bigquery",
+   "sql": "STRPOS(haystack, needle)"
+  },
+  {
+   "key": "b26b30e1bbf9a151",
+   "dialect": "drill",
    "sql": "STRPOS(haystack, needle)"
   },
   {
@@ -17723,6 +17893,11 @@
    "sql": "CHARINDEX(needle, haystack, position)"
   },
   {
+   "key": "5501d845b24c856b",
+   "dialect": "drill",
+   "sql": "`IF`(STRPOS(SUBSTRING(haystack, position), needle) = 0, 0, STRPOS(SUBSTRING(haystack, position), needle) + position - 1)"
+  },
+  {
    "key": "9021bc31796c5928",
    "dialect": "duckdb",
    "sql": "CASE WHEN STRPOS(SUBSTRING(haystack, position), needle) = 0 THEN 0 ELSE STRPOS(SUBSTRING(haystack, position), needle) + position - 1 END"
@@ -17853,6 +18028,11 @@
    "sql": "a"
   },
   {
+   "key": "d03d4375e18a4695",
+   "dialect": "drill",
+   "sql": "CONCAT(a)"
+  },
+  {
    "key": "a62055639ba1a6b0",
    "dialect": "duckdb",
    "sql": "CONCAT(a)"
@@ -17866,6 +18046,11 @@
    "key": "1aa9f4afa29ab533",
    "dialect": "tsql",
    "sql": "CONCAT(a)"
+  },
+  {
+   "key": "c4a14722294c4d05",
+   "dialect": "drill",
+   "sql": "`IF`(x > 1, 1, 0)"
   },
   {
    "key": "9b1931c265c87442",
@@ -17893,6 +18078,11 @@
    "sql": "IF x > 1 THEN 1 ELSE 0 END"
   },
   {
+   "key": "1b44484f106cecb6",
+   "dialect": "drill",
+   "sql": "CASE WHEN 1 THEN x ELSE 0 END"
+  },
+  {
    "key": "2e45ad3cc01828d2",
    "dialect": "duckdb",
    "sql": "CASE WHEN 1 THEN x ELSE 0 END"
@@ -17916,6 +18106,11 @@
    "key": "f29bfb6d8cecf644",
    "dialect": "tableau",
    "sql": "CASE WHEN 1 THEN x ELSE 0 END"
+  },
+  {
+   "key": "bbbfdd6db0d448fc",
+   "dialect": "drill",
+   "sql": "x[y]"
   },
   {
    "key": "9aedd300471a1376",
@@ -17960,6 +18155,11 @@
   {
    "key": "5d04a8c79008e73b",
    "dialect": "bigquery",
+   "sql": "TRUE OR NULL AS `foo`"
+  },
+  {
+   "key": "81a31b39accdd7ee",
+   "dialect": "drill",
    "sql": "TRUE OR NULL AS `foo`"
   },
   {
@@ -18018,6 +18218,11 @@
    "sql": "editDistance(col1, col2)"
   },
   {
+   "key": "d8a9522a0e00df6b",
+   "dialect": "drill",
+   "sql": "LEVENSHTEIN_DISTANCE(col1, col2)"
+  },
+  {
    "key": "3a4e2be809df79b4",
    "dialect": "duckdb",
    "sql": "LEVENSHTEIN(col1, col2)"
@@ -18071,6 +18276,11 @@
    "key": "2063664df12fa087",
    "dialect": "duckdb",
    "sql": "LEVENSHTEIN(COALESCE(col1, col2), COALESCE(col2, col1))"
+  },
+  {
+   "key": "d8b20e72d02701ae",
+   "dialect": "drill",
+   "sql": "LEVENSHTEIN_DISTANCE(COALESCE(col1, col2), COALESCE(col2, col1))"
   },
   {
    "key": "1ba5f51fa1351b93",
@@ -18136,6 +18346,11 @@
    "key": "918ebd1cbc8ce643",
    "dialect": "starrocks",
    "sql": "a / b"
+  },
+  {
+   "key": "43fcdc7575d2188d",
+   "dialect": "drill",
+   "sql": "CAST(a AS DOUBLE) / b"
   },
   {
    "key": "ec6a73dbd7dd6e03",
@@ -18493,6 +18708,11 @@
    "sql": "SELECT 1 'foo'"
   },
   {
+   "key": "b3adb9871b02b8bd",
+   "dialect": "drill",
+   "sql": "SELECT y AS x FROM my_table AS t"
+  },
+  {
    "key": "0b3ea4df20fe354f",
    "dialect": "hive",
    "sql": "SELECT y AS x FROM my_table AS t"
@@ -18506,6 +18726,11 @@
    "key": "5864c7b92b153a1a",
    "dialect": "sqlite",
    "sql": "SELECT y AS x FROM my_table AS t"
+  },
+  {
+   "key": "a76c3b3da3098841",
+   "dialect": "drill",
+   "sql": "SELECT * FROM (SELECT * FROM my_table AS t) AS tbl"
   },
   {
    "key": "4fef7c8d43d3fb86",
@@ -18793,6 +19018,11 @@
    "sql": "LOG(x)"
   },
   {
+   "key": "69ab74be1db40dea",
+   "dialect": "drill",
+   "sql": "LOG(x)"
+  },
+  {
    "key": "a31723806cf6dd20",
    "dialect": "hive",
    "sql": "LOG(x)"
@@ -18810,6 +19040,11 @@
   {
    "key": "ba28176b265c4c14",
    "dialect": "databricks",
+   "sql": "LOG(b, n)"
+  },
+  {
+   "key": "0ef353ac180bc50b",
+   "dialect": "drill",
    "sql": "LOG(b, n)"
   },
   {
@@ -19130,6 +19365,11 @@
   {
    "key": "a4816d2bdb5f9629",
    "dialect": "doris",
+   "sql": "RAND()"
+  },
+  {
+   "key": "bcbdeb7e7e7904b8",
+   "dialect": "drill",
    "sql": "RAND()"
   },
   {
@@ -21513,9 +21753,34 @@
    "sql": "TO_CHAR(3.14, UPPER('abcd'))"
   },
   {
+   "key": "fd31a6f29605bc65",
+   "dialect": "drill",
+   "sql": "SELECT * FROM table(dfs.`test_data.xlsx`(type => 'excel', sheetName => 'secondSheet'))"
+  },
+  {
+   "key": "7e09e999b3fc8350",
+   "dialect": "drill",
+   "sql": "SELECT * FROM (SELECT * FROM t) PIVOT(avg(c1) AS ac1 FOR c2 IN ('V' AS v))"
+  },
+  {
+   "key": "f9036586ec6f68a3",
+   "dialect": "drill",
+   "sql": "SELECT '2021-01-01' + INTERVAL 1 MONTH"
+  },
+  {
+   "key": "594490e4ca6b32c7",
+   "dialect": "drill",
+   "sql": "SELECT '2021-01-01' + INTERVAL '1' MONTH"
+  },
+  {
    "key": "d4390222121870c4",
    "dialect": "mysql",
    "sql": "SELECT '2021-01-01' + INTERVAL '1' MONTH"
+  },
+  {
+   "key": "70808961c97132ed",
+   "dialect": "drill",
+   "sql": "SELECT ILIKE(x, '%y')"
   },
   {
    "key": "01f6ef552c186bb6",
@@ -21528,9 +21793,19 @@
    "sql": "SELECT x ILIKE '%y'"
   },
   {
+   "key": "f0ea188e9277b9de",
+   "dialect": "drill",
+   "sql": "SELECT NOT ILIKE(x, '%y')"
+  },
+  {
    "key": "f3c26c6d2591f9da",
    "dialect": "postgres",
    "sql": "SELECT NOT x ILIKE '%y'"
+  },
+  {
+   "key": "a981c4bca3504a48",
+   "dialect": "drill",
+   "sql": "SELECT ILIKE(x, '%y', '#')"
   },
   {
    "key": "4e0e32d4503a8fb8",
@@ -21538,9 +21813,39 @@
    "sql": "SELECT x ILIKE '%y' ESCAPE '#'"
   },
   {
+   "key": "1792146852525cb1",
+   "dialect": "drill",
+   "sql": "NOT ILIKE(x, '%y', '#')"
+  },
+  {
    "key": "8ef884cd03abf090",
    "dialect": "postgres",
    "sql": "x NOT ILIKE '%y' ESCAPE '#'"
+  },
+  {
+   "key": "a786a8c1ec3e8773",
+   "dialect": "drill",
+   "sql": "ILIKE(x, 'a') OR ILIKE(x, 'b')"
+  },
+  {
+   "key": "b58ee60169305095",
+   "dialect": "drill",
+   "sql": "ILIKE(x, 'a', '#') OR ILIKE(x, 'b', '#')"
+  },
+  {
+   "key": "c88e8f383333f9f7",
+   "dialect": "drill",
+   "sql": "x LIKE 'a' OR x LIKE 'b'"
+  },
+  {
+   "key": "f66e6d7532440071",
+   "dialect": "drill",
+   "sql": "ANALYZE TABLE tbl COMPUTE STATISTICS"
+  },
+  {
+   "key": "26be9e7560feff6d",
+   "dialect": "drill",
+   "sql": "ANALYZE TABLE tbl COMPUTE STATISTICS SAMPLE 5 PERCENT"
   },
   {
    "key": "77306f3ae7b6ebd5",
@@ -27298,6 +27603,11 @@
    "sql": "'\\\\\\\\a'"
   },
   {
+   "key": "1735eb98d499885b",
+   "dialect": "drill",
+   "sql": "'\\\\\\\\a'"
+  },
+  {
    "key": "a8a67d18b659d0bc",
    "dialect": "duckdb",
    "sql": "'\\\\a'"
@@ -31158,6 +31468,11 @@
    "sql": "a / NULLIF(b, 0)"
   },
   {
+   "key": "d8484759fa69d3e1",
+   "dialect": "drill",
+   "sql": "CAST(a AS DOUBLE) / NULLIF(b, 0)"
+  },
+  {
    "key": "e04775045c67be82",
    "dialect": "postgres",
    "sql": "CAST(a AS DOUBLE PRECISION) / NULLIF(b, 0)"
@@ -31493,6 +31808,11 @@
    "sql": "CAST(x AS DOUBLE)"
   },
   {
+   "key": "cc7321665a31e182",
+   "dialect": "drill",
+   "sql": "CAST(x AS DOUBLE)"
+  },
+  {
    "key": "8ebe3c37e5bf0d41",
    "dialect": "hive",
    "sql": "CAST(x AS DOUBLE)"
@@ -31540,6 +31860,11 @@
   {
    "key": "5afae62d3bdf2091",
    "dialect": "databricks",
+   "sql": "TO_NUMBER(x, fmt)"
+  },
+  {
+   "key": "8a2ac28a54d5b4e5",
+   "dialect": "drill",
    "sql": "TO_NUMBER(x, fmt)"
   },
   {
@@ -34563,6 +34888,11 @@
    "sql": "CARDINALITY(arr)"
   },
   {
+   "key": "36cb28134b4880b7",
+   "dialect": "drill",
+   "sql": "REPEATED_COUNT(arr)"
+  },
+  {
    "key": "9576a6faba1f8c0b",
    "dialect": "hive",
    "sql": "SIZE(arr)"
@@ -36123,6 +36453,11 @@
    "sql": "ANY_VALUE(x)"
   },
   {
+   "key": "92ec5b3e6fce55e2",
+   "dialect": "drill",
+   "sql": "ANY_VALUE(x)"
+  },
+  {
    "key": "d74b83184749c7c5",
    "dialect": "hive",
    "sql": "FIRST(x)"
@@ -37370,6 +37705,11 @@
   {
    "key": "ed7b1f6f3f211166",
    "dialect": "databricks",
+   "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
+  },
+  {
+   "key": "4834352fe038e089",
+   "dialect": "drill",
    "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
   },
   {
@@ -40353,6 +40693,11 @@
    "sql": "TO_CHAR(x, y)"
   },
   {
+   "key": "43ffda268935cf3c",
+   "dialect": "drill",
+   "sql": "TO_CHAR(x, y)"
+  },
+  {
    "key": "299f760328512246",
    "dialect": "postgres",
    "sql": "TO_CHAR(x, y)"
@@ -40371,6 +40716,11 @@
    "key": "e04f5fda1fe106bb",
    "dialect": "databricks",
    "sql": "POWER(x, 2)"
+  },
+  {
+   "key": "69ce3d013f3155b4",
+   "dialect": "drill",
+   "sql": "POW(x, 2)"
   },
   {
    "key": "9b4c35f73394aa88",
@@ -46305,6 +46655,11 @@
   {
    "key": "97f640c0964f0ed2",
    "dialect": "databricks",
+   "sql": "CREATE TABLE a"
+  },
+  {
+   "key": "88c2c2897df7845a",
+   "dialect": "drill",
    "sql": "CREATE TABLE a"
   },
   {

@@ -6487,7 +6487,6 @@ func TestAnalyzeRefusals(t *testing.T) {
 		// The other words the reference accepts where COMPUTE stands, each
 		// of which builds a node of its own.
 		"ANALYZE TABLE t DELETE STATISTICS",
-		"ANALYZE TABLE t COMPUTE STATISTICS SAMPLE 5 PERCENT",
 		"ANALYZE TABLE t COMPUTE STATISTICS FOR SOMETHING",
 		"ANALYZE TABLE t COMPUTE THINGS",
 		"ANALYZE BUFFER_USAGE_LIMIT TBL",

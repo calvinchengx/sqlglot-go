@@ -2434,14 +2434,15 @@ func (g *generator) writeCast(e *Expression) string {
 	word := "CAST"
 	if e.Class == "TryCast" {
 		word = "TRY_CAST"
-		// The Hive family has no TRY_CAST of its own: a plain TryCast (the one
-		// a non-strict CAST builds) writes CAST, and only the `safe` variant
-		// an explicit TRY_CAST builds keeps the word.
-		if isHiveFamily(g.dialect) {
-			safe, _ := e.Args["safe"].(bool)
-			if !safe {
-				word = "CAST"
-			}
+		// Two different rules, and both are the dialect's own: a dialect whose
+		// TRANSFORMS map a TryCast to the plain cast writer writes CAST
+		// whatever its `safe` flag says (no_trycast_sql); Spark's lambda keeps
+		// TRY_CAST when the flag is set and writes CAST when it is not. That
+		// is a different question again from whether TRY_CAST exists at all,
+		// which is TrySupported.
+		safe, _ := e.Args["safe"].(bool)
+		if g.tables.TryCastWritesAsCast || (g.tables.TryCastUnlessSafe && !safe) {
+			word = "CAST"
 		}
 	}
 	// Dremio's own CURRENT_DATE_UTC() parses into this exact shape (see
@@ -2744,7 +2745,30 @@ func (g *generator) writeParameter(e *Expression) string {
 // writeEscape writes the escape character a LIKE was given. Every dialect
 // this port configures spells it the same way.
 func (g *generator) writeEscape(e *Expression) string {
+	// Drill folds the escape into the call the ILIKE became, so no ESCAPE
+	// clause is written at all (DrillGenerator.escape_sql).
+	if g.dialect == "drill" {
+		if inner, _ := e.Args["this"].(*Expression); inner != nil && inner.Class == "ILike" {
+			if esc, _ := e.Args["expression"].(*Expression); esc != nil {
+				return g.drillILike(inner, esc)
+			}
+		}
+	}
 	return g.child(e, "this") + " ESCAPE " + g.child(e, "expression")
+}
+
+// drillILike writes Drill's `ILIKE(a, b[, escape])`, with the negation kept
+// OUTSIDE the call (DrillGenerator._ilike_func_sql).
+func (g *generator) drillILike(e *Expression, escape *Expression) string {
+	out := "ILIKE(" + g.child(e, "this") + ", " + g.child(e, "expression")
+	if escape != nil {
+		out += ", " + g.node(escape)
+	}
+	out += ")"
+	if e.Args["negate"] == true {
+		out = "NOT " + out
+	}
+	return out
 }
 
 // writeNamedTypeWord writes a PseudoType or ObjectIdentifier -- neither
@@ -3158,7 +3182,7 @@ func (g *generator) writeAnonymous(e *Expression) string {
 	// BigQuery does not normalize a function's name, so a call keeps the case
 	// off (BigQuery.NORMALIZE_FUNCTIONS, ClickHouse.NORMALIZE_FUNCTIONS,
 	// Generator.func).
-	return g.anonymous(e, normalizeFunctionsUpper(g.dialect))
+	return g.anonymous(e, g.tables.NormalizeFunctions == "upper")
 }
 
 func (g *generator) anonymous(e *Expression, upper bool) string {
@@ -3174,16 +3198,6 @@ func (g *generator) anonymous(e *Expression, upper bool) string {
 		name = open + strings.ReplaceAll(name, close, close+close) + close
 	}
 	return name + "(" + g.callList(e) + ")"
-}
-
-// normalizeFunctionsUpper reports whether a dialect upper-cases a function's
-// name on the way out (Dialect.NORMALIZE_FUNCTIONS, default "upper").
-func normalizeFunctionsUpper(dialect string) bool {
-	switch dialect {
-	case "bigquery", "clickhouse":
-		return false
-	}
-	return true
 }
 
 // setOpDefaultDistinct is what a dialect makes of a BARE set operation: which
@@ -3271,6 +3285,12 @@ func (g *generator) writeDot(e *Expression) string {
 // writeLike carries the negation on the node, as the reference does: NOT LIKE
 // is one operator, not a Not wrapping a Like.
 func (g *generator) writeLike(e *Expression) string {
+	// Drill writes ILIKE as a CALL, taking the escape character as its third
+	// argument rather than an ESCAPE clause
+	// (DrillGenerator.ilike_sql, _ilike_func_sql).
+	if g.dialect == "drill" && e.Class == "ILike" {
+		return g.drillILike(e, nil)
+	}
 	op := g.tables.BinarySQL[e.Class]
 	if e.Args["negate"] == true {
 		op = "NOT " + op
@@ -8822,6 +8842,14 @@ func (g *generator) timeStrWithZone(e *Expression) string {
 // writeTimeStrToTime: MySQL keeps the fractional-second precision of a
 // literal when no zone was given (timestrtotime_sql, include_precision).
 func (g *generator) writeTimeStrToTime(e *Expression) string {
+	// Drill reads a timestamp out of the string with a CAST and drops the
+	// format, whatever it was (DrillGenerator, timestrtotime_sql).
+	if g.dialect == "drill" {
+		if this, _ := e.Args["this"].(*Expression); this != nil {
+			return g.node(New("Cast", Arg{"this", this},
+				Arg{"to", New("DataType", Arg{"this", DataTypeKind("TIMESTAMP")})}))
+		}
+	}
 	if g.dialect == "mysql" && e.Args["zone"] != nil {
 		return g.timeStrWithZone(e)
 	}
@@ -9786,7 +9814,19 @@ func (g *generator) writeTableSample(e *Expression) string {
 // and no generic FuncSpec/SyntaxSQL template covers the shape for most of
 // them, so each is written out directly rather than probed for.
 func (g *generator) writeDateAdd(e *Expression) string {
+	if g.dialect == "drill" {
+		return g.drillDateArith(e, "ADD")
+	}
 	return g.writeDateArith(e, "Date", 1)
+}
+
+// drillDateArith writes Drill's DATE_ADD / DATE_SUB over an interval: the
+// delta is RE-wrapped in an Interval whose unit comes from the node, and the
+// node carries none -- so the unit is DAY even where the interval written was
+// HOUR (DrillGenerator.TRANSFORMS, date_add_sql).
+func (g *generator) drillDateArith(e *Expression, kind string) string {
+	return "DATE_" + kind + "(" + g.child(e, "this") +
+		", INTERVAL (" + g.child(e, "expression") + ") DAY)"
 }
 
 // writeDictProperty writes a DICTIONARY's SOURCE(...) or LAYOUT(...): the
@@ -9935,6 +9975,9 @@ func (g *generator) writeDateBin(e *Expression) string {
 }
 
 func (g *generator) writeDateSub(e *Expression) string {
+	if g.dialect == "drill" {
+		return g.drillDateArith(e, "SUB")
+	}
 	return g.writeDateArith(e, "Date", -1)
 }
 

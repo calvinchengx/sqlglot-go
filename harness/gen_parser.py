@@ -31,7 +31,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery", "clickhouse", "tableau", "dune", "druid", "solr")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery", "clickhouse", "tableau", "dune", "druid", "solr", "drill")
 
 def gostr(s: str) -> str:
     """Quote a string as Go source.
@@ -6468,6 +6468,16 @@ def main() -> int:
         "\t// TrySupported: TRY_CAST exists; where it does not, a TryCast is\n",
         "\t// written CAST.\n",
         "\tTrySupported bool\n",
+        "\t// TryCastWritesAsCast says a TryCast is written CAST whatever its\n",
+        "\t// `safe` flag (no_trycast_sql); TryCastUnlessSafe says it is written\n",
+        "\t// CAST only when the flag is unset, which is Spark's own lambda. Both\n",
+        "\t// are FALSE where TRY_CAST is always written.\n",
+        "\tTryCastWritesAsCast bool\n",
+        "\tTryCastUnlessSafe   bool\n",
+        "\t// NormalizeFunctions is what a function's NAME is put through on the\n",
+        "\t// way out: \"upper\", \"lower\", or nothing at all\n",
+        "\t// (Dialect.NORMALIZE_FUNCTIONS).\n",
+        "\tNormalizeFunctions string\n",
         "\t// StringSensitiveArgs are argument positions where a STRING\n",
         "\t// LITERAL makes the reference build something structurally\n",
         "\t// different: PostgreSQL reads a string step to GENERATE_SERIES as\n",
@@ -7842,6 +7852,49 @@ def main() -> int:
         out.append(
             "\t\tTrySupported: %s,\n"
             % str(bool(getattr(Dialect.get_or_raise(name or None).generator_class, "TRY_SUPPORTED", True))).lower()
+        )
+        from sqlglot import expressions as _expc
+
+        # Asked, not read: a dialect may write a TryCast as CAST through a
+        # TRANSFORM of its own rather than through `no_trycast_sql` -- Spark
+        # maps TryCast to a lambda, and an identity check on the function
+        # called that a no. Rendering the same node both ways settles it.
+        def _try_cast_shape(d: str) -> tuple[bool, bool]:
+            """(always CAST, CAST unless `safe`) for a TryCast in this dialect.
+
+            Asked, not read: a dialect may write a TryCast as CAST through a
+            TRANSFORM of its own rather than `no_trycast_sql` -- Spark maps
+            TryCast to a lambda that keeps TRY_CAST when `safe` is set, and an
+            identity check on the function called that a no.
+            """
+            try:
+                cast_sql = _expc.Cast(
+                    this=_expc.column("x"), to=_expc.DataType.build("INT")
+                ).sql(dialect=d or None)
+
+                def try_sql(safe: bool) -> str:
+                    return _expc.TryCast(
+                        this=_expc.column("x"),
+                        to=_expc.DataType.build("INT"),
+                        safe=safe,
+                    ).sql(dialect=d or None)
+
+                safe_sql, unsafe_sql = try_sql(True), try_sql(False)
+            except Exception:  # noqa: BLE001 -- a dialect that will not render it
+                return False, False
+            return safe_sql == cast_sql, (unsafe_sql == cast_sql and safe_sql != cast_sql)
+
+        _always, _unless_safe = _try_cast_shape(name)
+        out.append(
+            "\t\tTryCastWritesAsCast: %s,\n" % str(_always).lower()
+        )
+        out.append(
+            "\t\tTryCastUnlessSafe: %s,\n" % str(_unless_safe).lower()
+        )
+        _nf = getattr(Dialect.get_or_raise(name or None), "NORMALIZE_FUNCTIONS", True)
+        out.append(
+            "\t\tNormalizeFunctions: %s,\n"
+            % gostr({True: "upper", "upper": "upper", "lower": "lower"}.get(_nf, ""))
         )
         _dg = Dialect.get_or_raise(name or None)
         # These live on the GENERATOR class, not the Dialect, so they are read
