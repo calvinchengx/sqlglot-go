@@ -4515,6 +4515,14 @@ func (p *parser) parseParameterName() *Expression {
 	}
 	p.advance()
 	p.advance()
+	// The Hive family reads a parameter with its OWN reader, and that one
+	// records whether a `:` and a second name followed as FALSE rather than
+	// leaving the argument out (HiveParser._parse_parameter). Databricks
+	// extends Hive, so `FROM @t` carries it too.
+	if hiveParameterReader(p.dialect) {
+		return New("Parameter",
+			Arg{"this", New("Var", Arg{"this", n.Text})}, Arg{"expression", false})
+	}
 	return New("Parameter", Arg{"this", New("Var", Arg{"this", n.Text})})
 }
 

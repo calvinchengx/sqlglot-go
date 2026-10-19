@@ -1560,6 +1560,81 @@ func TestSelectListIsACSV(t *testing.T) {
 	}
 }
 
+// An APPLY is a bare join -- a kind with no ON and no USING -- so where the
+// dialect records a bare join as `ON TRUE`, it records an APPLY that way too.
+// The kind cannot exclude it: an APPLY's kind is written on the LATERAL, not
+// on the JOIN, so the check the other joins go through sees nothing
+// (Parser._parse_join, ADD_JOIN_ON_TRUE). Found by fuzzing; Databricks and
+// T-SQL are the two sides of it.
+func TestApplyJoinsTakeOnTrueWhereBareJoinsDo(t *testing.T) {
+	applied := func(dialect, sql string) bool {
+		t.Helper()
+		e, err := ParseOne(sql, dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q, %q): %v", sql, dialect, err)
+		}
+		joins, _ := e.Args["joins"].([]*Expression)
+		if len(joins) == 0 {
+			t.Fatalf("%q (%s) read no join", sql, dialect)
+		}
+		return joins[0].Args["on"] != nil
+	}
+	for _, sql := range []string{
+		"SELECT * FROM t OUTER APPLY g(1)",
+		"SELECT * FROM t CROSS APPLY g(1)",
+		"SELECT * FROM t OUTER APPLY (SELECT 1) x",
+	} {
+		if !applied("databricks", sql) {
+			t.Errorf("databricks %q: the APPLY join records no ON, and a bare join there records ON TRUE", sql)
+		}
+		// T-SQL has no such rule, and must not gain one.
+		if applied("tsql", sql) {
+			t.Errorf("tsql %q: the APPLY join recorded an ON, and a bare join there records none", sql)
+		}
+	}
+}
+
+// The Hive family reads a parameter with a reader of its own, and that one
+// records whether a `:` and a second name followed as FALSE rather than
+// leaving the argument out. Databricks reaches it through Spark, so it is NOT
+// the same set as the dialect family that shares Hive's other grammar
+// (HiveParser._parse_parameter).
+func TestHiveFamilyParameterRecordsTheAbsentColon(t *testing.T) {
+	recorded := func(dialect, sql string) bool {
+		t.Helper()
+		e, err := ParseOne(sql, dialect)
+		if err != nil {
+			t.Fatalf("ParseOne(%q, %q): %v", sql, dialect, err)
+		}
+		p, _ := e.Args["from_"].(*Expression)
+		if p == nil {
+			t.Fatalf("%q (%s) read no FROM", sql, dialect)
+		}
+		tbl, _ := p.Args["this"].(*Expression)
+		param, _ := tbl.Args["this"].(*Expression)
+		if param == nil || param.Class != "Parameter" {
+			t.Fatalf("%q (%s) did not read a parameter: %v", sql, dialect, tbl.Args["this"])
+		}
+		_, present := param.Args["expression"]
+		return present
+	}
+	for _, dialect := range []string{"hive", "spark", "spark2", "databricks"} {
+		if !recorded(dialect, "SELECT * FROM @t") {
+			t.Errorf("%s: `FROM @t` records no `expression`, and its parameter reader records one", dialect)
+		}
+	}
+	// Every other dialect either records none or does not read the form at
+	// all -- tsql reads it and records none, which is the pair that matters.
+	for _, dialect := range []string{"tsql", "postgres", "duckdb"} {
+		if _, err := ParseOne("SELECT * FROM @t", dialect); err != nil {
+			continue
+		}
+		if recorded(dialect, "SELECT * FROM @t") {
+			t.Errorf("%s: `FROM @t` recorded an `expression`, and its reader records none", dialect)
+		}
+	}
+}
+
 func TestIsJSON(t *testing.T) {
 	for _, tc := range []struct{ sql, want string }{
 		{`SELECT js, js IS JSON AS "json?"`,

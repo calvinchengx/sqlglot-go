@@ -344,7 +344,15 @@ func (p *parser) parseApply(cross bool) (*Expression, error) {
 	default:
 		return nil, p.unsupported("APPLY over something the port cannot read")
 	}
-	return New("Join", Arg{"this", lateral}, Arg{"pivots", nil}), nil
+	join := New("Join", Arg{"this", lateral}, Arg{"pivots", nil})
+	// APPLY is a bare join -- a kind with no ON and no USING -- so where the
+	// dialect records a bare join as `ON TRUE`, it records this one that way
+	// too. The kind check cannot exclude it: the kind of an APPLY is written
+	// on the Lateral, not on the Join (Parser._parse_join, ADD_JOIN_ON_TRUE).
+	if p.tables.BareJoinIsOnTrue {
+		join.Set("on", New("Boolean", Arg{"this", true}))
+	}
+	return join, nil
 }
 
 // parseQualifiedCall reads `f(…)` or `schema.f(…)`, which the reference

@@ -9,6 +9,15 @@ func isHiveFamily(dialect string) bool {
 	return dialect == "hive" || dialect == "spark2" || dialect == "spark"
 }
 
+// hiveParameterReader reports the dialects whose parameter reader is Hive's.
+// It is NOT the same set as isHiveFamily: Databricks reaches it through Spark,
+// and that reader is the one that records whether a `:` and a second name
+// followed as FALSE rather than leaving the argument out
+// (HiveParser._parse_parameter).
+func hiveParameterReader(dialect string) bool {
+	return isHiveFamily(dialect) || dialect == "databricks"
+}
+
 // isTrueBoolean reports whether a node is the literal TRUE.
 func isTrueBoolean(e *Expression) bool {
 	if e == nil || e.Class != "Boolean" {
