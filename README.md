@@ -157,6 +157,21 @@ and against any interpreter older than **3.11** -- below it the reference
 itself answers differently (it parses an offset like `+00:00` another way),
 so an older Python would quietly rewrite statements that are already correct.
 
+### What the corpus cannot see
+
+A saturated corpus cannot find a bug, and every bug found since it reached
+zero has come from outside it. `make fuzz-differential` is one of the two
+harnesses that look outside: it mutates statements the port **parses** and has
+the reference judge every tree. It is what found the two rules the corpus
+never wrote — a missing table qualifier that must be dropped before any dot
+but kept after one, and a select list that is a CSV rather than a list of
+projections.
+
+Its residue — the classes that remain, each judged and explained — is recorded
+in `docs/fuzz-residue.md`. That file is the floor: a later session reporting a
+class not named there has found something, and the comparison is by class,
+never by total, because the fuzzer explores differently on every run.
+
 The keyword and dialect tables the tokenizer reads are generated from the same
 pin rather than transcribed, and CI regenerates and diffs them, because a
 hand-edited table is a divergence the port has no logic to catch.
