@@ -360,6 +360,19 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.opensDAXEvaluate() {
 		return p.parseDAXEvaluate()
 	}
+	// Teradata opens three statements with a word another dialect only uses
+	// inside one: DATABASE is its USE, REPLACE its CREATE, and LOCKING wraps
+	// a query in how that query takes its locks
+	// (TeradataParser.STATEMENT_PARSERS).
+	if p.tables.DatabaseOpensUse && p.at(TokDATABASE) {
+		return p.parseUse()
+	}
+	if p.tables.ReplaceOpensCreate && p.at(TokREPLACE) {
+		return p.parseCreate()
+	}
+	if p.tables.LockingIsStatement && p.at(TokLOCK) {
+		return p.parseLockingStatement()
+	}
 	if p.at(TokCREATE) {
 		return p.parseCreate()
 	}

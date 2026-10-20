@@ -1,0 +1,54 @@
+{
+ "dialect": "teradata",
+ "rendered": "COLLECT STATS ON tbl COLUMNS(col)",
+ "sql": "COLLECT STATS ON tbl COLUMNS(col)",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "COMMAND",
+   "x": "COLLECT"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "STRING",
+   "x": "STATS ON tbl COLUMNS(col)"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "COLLECT"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "STATS ON tbl COLUMNS(col)"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

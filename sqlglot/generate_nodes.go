@@ -34,6 +34,8 @@ func init() {
 		"InputOutputFormat":                   (*generator).writeInputOutputFormat,
 		"StorageHandlerProperty":              (*generator).writeStorageHandlerProperty,
 		"LockingProperty":                     (*generator).writeLockingProperty,
+		"LockingStatement":                    (*generator).writeLockingStatement,
+		"QueryBand":                           (*generator).writeQueryBand,
 		"Lock":                                (*generator).writeLock,
 		"RecursiveWithSearch":                 (*generator).writeRecursiveWithSearch,
 		"Connect":                             (*generator).writeConnect,
@@ -5542,8 +5544,19 @@ func (g *generator) writeCreate(e *Expression) string {
 		items, _ := properties.Args["expressions"].([]*Expression)
 		for _, item := range items {
 			switch item.Class {
+			case "PartitionedByProperty":
+				// Only where POST_EXPRESSION: a dialect that writes this
+				// property in a WITH list or straight after the schema writes
+				// it THERE, and would otherwise write it twice
+				// (TeradataGenerator.PROPERTIES_LOCATION).
+				if g.tables.PropertyLocation[item.Class] != "POST_EXPRESSION" {
+					continue
+				}
+				if text := g.node(item); text != "" {
+					out += " " + text
+				}
 			case "WithDataProperty", "SequenceProperties", "TriggerProperties",
-				"OnCommitProperty", "NoPrimaryIndexProperty":
+				"NoPrimaryIndexProperty":
 				// An empty spelling is the property omitted, as DuckDB omits
 				// everything a trigger says about itself and writes the name.
 				if text := g.node(item); text != "" {
@@ -5561,6 +5574,19 @@ func (g *generator) writeCreate(e *Expression) string {
 	if indexes, _ := e.Args["indexes"].([]*Expression); len(indexes) > 0 {
 		for _, index := range indexes {
 			out += " " + g.node(index)
+		}
+	}
+	// POST_INDEX: what the statement says AFTER those indexes, which is where
+	// ON COMMIT belongs on a table that has them
+	// (TeradataGenerator.PROPERTIES_LOCATION, OnCommitProperty).
+	if properties, _ := e.Args["properties"].(*Expression); properties != nil {
+		items, _ := properties.Args["expressions"].([]*Expression)
+		for _, item := range items {
+			if item.Class == "OnCommitProperty" {
+				if text := g.node(item); text != "" {
+					out += " " + text
+				}
+			}
 		}
 	}
 	if clone := g.child(e, "clone"); clone != "" {
@@ -5748,6 +5774,25 @@ func (g *generator) writeStorageHandlerProperty(e *Expression) string {
 // writeLockingProperty writes Teradata's own LOCKING clause, every piece of
 // it optional and each written only where the one before it was: a NAME
 // stands only after a DATABASE, TABLE or VIEW kind, never after ROW.
+// writeQueryBand writes Teradata's `QUERY_BAND = <band> [UPDATE] [FOR <scope>]`
+// (Generator.queryband_sql).
+func (g *generator) writeQueryBand(e *Expression) string {
+	out := "QUERY_BAND = " + g.child(e, "this")
+	if update, _ := e.Args["update"].(bool); update {
+		out += " UPDATE"
+	}
+	if scope, _ := e.Args["scope"].(string); scope != "" {
+		out += " FOR " + scope
+	}
+	return out
+}
+
+// writeLockingStatement writes the clause and the query it locks, one after
+// the other (TeradataGenerator.lockingstatement_sql).
+func (g *generator) writeLockingStatement(e *Expression) string {
+	return g.child(e, "this") + " " + g.child(e, "expression")
+}
+
 func (g *generator) writeLockingProperty(e *Expression) string {
 	out := "LOCKING"
 	if kind, _ := e.Args["kind"].(string); kind != "" {
@@ -5851,9 +5896,10 @@ func (g *generator) writeProperties(e *Expression) (before string, out string, f
 			if item.Class != "TemporaryProperty" {
 				beforeKind = append(beforeKind, g.node(item))
 			}
-		case "POST_EXPRESSION", "POST_NAME", "POST_ALIAS":
+		case "POST_EXPRESSION", "POST_NAME", "POST_ALIAS", "POST_INDEX":
 			// Written elsewhere in the statement, by the code that owns that
-			// place -- TEMPORARY before the kind, WITH DATA after the query.
+			// place -- TEMPORARY before the kind, WITH DATA after the query,
+			// ON COMMIT after a table's own indexes.
 		case "UNSUPPORTED":
 			// The dialect has nowhere to say this, and says nothing: DuckDB
 			// writes no storage format at all. Dropping it is the reference's
@@ -7056,6 +7102,12 @@ func (g *generator) writeUpdate(e *Expression) string {
 		head += " SET " + g.list(e)
 	}
 	returning := g.child(e, "returning")
+	// Teradata drops the clause from an UPDATE and keeps it on a DELETE, so
+	// this is read on the UPDATE rather than taken from the DELETE
+	// (TeradataGenerator.UPDATE, which writes neither).
+	if !g.tables.UpdateWritesReturning {
+		returning = ""
+	}
 	from := g.child(e, "from_")
 	where := g.child(e, "where")
 	options := g.writeQueryHintOptions(e)
@@ -7856,6 +7908,15 @@ func (g *generator) writeIndexParameters(params *Expression) string {
 	if space, _ := params.Args["tablespace"].(*Expression); space != nil {
 		out += " USING INDEX TABLESPACE " + g.node(space)
 	}
+	// Where the index is partitioned, written between the storage and the
+	// rows it covers (Generator.indexparameters_sql).
+	if partitions, _ := params.Args["partition_by"].([]*Expression); len(partitions) > 0 {
+		parts := make([]string, 0, len(partitions))
+		for _, item := range partitions {
+			parts = append(parts, g.node(item))
+		}
+		out += " PARTITION BY " + strings.Join(parts, ", ")
+	}
 	// A PARTIAL index covers only the rows a condition picks out.
 	if where, _ := params.Args["where"].(*Expression); where != nil {
 		out += " " + g.node(where)
@@ -7959,7 +8020,11 @@ func (g *generator) writeTruncate(e *Expression) string {
 
 // writeUse writes the database, schema or role a session moves to.
 func (g *generator) writeUse(e *Expression) string {
-	out := "USE "
+	word := g.tables.UseWord
+	if word == "" {
+		word = "USE"
+	}
+	out := word + " "
 	if kind := g.child(e, "kind"); kind != "" {
 		out += kind + " "
 	}
