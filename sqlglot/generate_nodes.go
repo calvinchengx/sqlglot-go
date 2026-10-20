@@ -9069,6 +9069,20 @@ func (g *generator) writeTimeToStr(e *Expression) string {
 	if g.dialect == "bigquery" {
 		return g.writeBigQueryTimeToStr(e)
 	}
+	// The format a tree keeps is in %-form; a dialect that has a TIME_MAPPING
+	// of its own writes it back in its own words (Generator.timetostr_sql,
+	// `format_time(..., inverse=True)`).
+	if g.dialect == "exasol" {
+		format := g.child(e, "format")
+		if f, _ := e.Args["format"].(*Expression); f != nil {
+			if raw, ok := f.Args["this"].(string); ok && isStringLiteral(f) {
+				format = g.node(New("Literal",
+					Arg{"this", formatTime(raw, g.tables.InverseTimeMapping)},
+					Arg{"is_string", true}))
+			}
+		}
+		return "TO_CHAR(" + g.child(e, "this") + ", " + format + ")"
+	}
 	if g.dialect == "mysql" || g.dialect == "doris" {
 		this, _ := e.Args["this"].(*Expression)
 		if stripped := stripMySQLTsOrDsWrap(this); stripped != this {

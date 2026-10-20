@@ -4732,6 +4732,10 @@ func (p *parser) buildFunction(name string, spec FuncSpec, args []*Expression) *
 		switch name {
 		case "EVERY":
 			return New("All", Arg{"this", argAt(args, 0)})
+		case "TO_CHAR":
+			return p.toCharOrTimeToStr(args)
+		case "TRUNC":
+			return p.truncOrDateTrunc(args)
 		}
 	}
 	node := p.buildFromSpec(name, spec.Class, spec.Args, args)
