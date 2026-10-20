@@ -330,6 +330,23 @@ func (p *parser) parseRange() (*Expression, error) {
 			this = comprehension
 		default:
 			if _, isRange := p.tables.RangeTokens[c.Type]; isRange {
+				// Exasol's REGEXP_LIKE is the one range operator whose node
+				// carries a CONSTANT beside its two operands -- it is a FULL
+				// match, so the reference records `full_match: true` on it
+				// (ExasolParser.RANGE_PARSERS). The probe records an operator
+				// only where the result is a plain two-argument binary, so
+				// this one is skipped there and read here.
+				if p.dialect == "exasol" && c.Type == TokRLIKE {
+					p.advance()
+					var right *Expression
+					right, err = p.parseJSONArrow()
+					if err != nil {
+						return nil, err
+					}
+					this = New("RegexpLike", Arg{"this", this},
+						Arg{"expression", right}, Arg{"full_match", true})
+					break
+				}
 				return nil, p.unsupported("range operator " + c.Text)
 			}
 			if negate {
@@ -4340,6 +4357,14 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 			args[i] = wrapped
 		}
 		for _, i := range p.tables.StringSensitiveArgs[strings.ToUpper(name)] {
+			// Exasol's TRUNC READS a string argument rather than being
+			// surprised by one: the string is what chooses a DateTrunc over a
+			// Trunc, and the port writes that builder itself
+			// (exasol_funcs.go). Refusing here would refuse the very case the
+			// builder exists for.
+			if p.dialect == "exasol" && upper == "TRUNC" {
+				continue
+			}
 			if isTimeFormatArg(formatArgs, i) {
 				continue
 			}

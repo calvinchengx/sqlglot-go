@@ -2402,6 +2402,12 @@ func (g *generator) writeContains(e *Expression) string {
 // -- where every other dialect writes the template it was probed with
 // (BigQueryGenerator.datetrunc_sql).
 func (g *generator) writeDateTrunc(e *Expression) string {
+	// Exasol drops a CAST around the value and writes a string one as a typed
+	// literal, so the cast the tree carries never reaches the page
+	// (ExasolGenerator._trunc_sql).
+	if g.dialect == "exasol" {
+		return g.writeExasolTrunc(e, "DATE")
+	}
 	if g.dialect != "bigquery" {
 		// Every other dialect keeps the spelling it was read with -- Oracle's
 		// TRUNC(x), the template a probed dialect was given, and so on.
@@ -8153,6 +8159,11 @@ func (g *generator) writeTruncate(e *Expression) string {
 
 // writeUse writes the database, schema or role a session moves to.
 func (g *generator) writeUse(e *Expression) string {
+	// Exasol opens a schema rather than switching to it, and says so first
+	// (ExasolGenerator.use_sql).
+	if g.dialect == "exasol" {
+		return "OPEN SCHEMA " + g.child(e, "this")
+	}
 	word := g.tables.UseWord
 	if word == "" {
 		word = "USE"
@@ -10044,6 +10055,33 @@ func (g *generator) writeTableSample(e *Expression) string {
 		out += " " + sample.SeedKeyword + " (" + seed + ")"
 	}
 	return out
+}
+
+// writeExasolTrunc writes `DATE_TRUNC('<unit>', <value>)`, where the value is
+// written WITHOUT a cast around it and a string value becomes `DATE '...'` or
+// `TIMESTAMP '...'` (ExasolGenerator._trunc_sql).
+func (g *generator) writeExasolTrunc(e *Expression, kind string) string {
+	node, _ := e.Args["this"].(*Expression)
+	if node != nil && node.Class == "Cast" {
+		node = node.This()
+	}
+	value := ""
+	if node != nil {
+		if isStringLiteral(node) {
+			text, _ := node.Args["this"].(string)
+			if kind == "TIMESTAMP" {
+				text = strings.ReplaceAll(text, "T", " ")
+			}
+			value = kind + " '" + text + "'"
+		} else {
+			value = g.node(node)
+		}
+	}
+	unit := ""
+	if u, _ := e.Args["unit"].(*Expression); u != nil {
+		unit = u.Name()
+	}
+	return "DATE_TRUNC('" + unit + "', " + value + ")"
 }
 
 // writeDateAdd, writeDateSub, writeDatetimeAdd and writeDatetimeSub write a
