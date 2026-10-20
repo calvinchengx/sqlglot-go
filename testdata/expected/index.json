@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 11072,
+ "count": 11244,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -15943,6 +15943,11 @@
    "sql": "FROM_UNIXTIME(x)"
   },
   {
+   "key": "5fe0a0fce2979f60",
+   "dialect": "exasol",
+   "sql": "FROM_POSIX_TIME(x)"
+  },
+  {
    "key": "7f06b6db1c1146c4",
    "dialect": "duckdb",
    "sql": "CAST(TO_TIMESTAMP(x) AS TEXT)"
@@ -20178,6 +20183,11 @@
    "sql": "WEEKOFYEAR(CAST('2025-01-01' AS DATE))"
   },
   {
+   "key": "ea8404421f945b2e",
+   "dialect": "exasol",
+   "sql": "WEEK(CAST('2025-01-01' AS DATE))"
+  },
+  {
    "key": "76c51f841e84f2c3",
    "dialect": "hive",
    "sql": "WEEKOFYEAR(CAST('2025-01-01' AS DATE))"
@@ -20343,6 +20353,11 @@
    "sql": "REGR_COUNT(x, y)"
   },
   {
+   "key": "8b91637f16ee326a",
+   "dialect": "exasol",
+   "sql": "REGR_COUNT(x, y)"
+  },
+  {
    "key": "5e166cd1a4809c1b",
    "dialect": "hive",
    "sql": "REGR_COUNT(x, y)"
@@ -20383,6 +20398,11 @@
    "sql": "REGR_INTERCEPT(x, y)"
   },
   {
+   "key": "296e795e14966ec3",
+   "dialect": "exasol",
+   "sql": "REGR_INTERCEPT(x, y)"
+  },
+  {
    "key": "2d8423114b76896b",
    "dialect": "hive",
    "sql": "REGR_INTERCEPT(x, y)"
@@ -20415,6 +20435,11 @@
   {
    "key": "7650a03b955a0f3a",
    "dialect": "duckdb",
+   "sql": "REGR_R2(x, y)"
+  },
+  {
+   "key": "7e1e928a362e1350",
+   "dialect": "exasol",
    "sql": "REGR_R2(x, y)"
   },
   {
@@ -20453,6 +20478,11 @@
    "sql": "REGR_SLOPE(x, y)"
   },
   {
+   "key": "cb08c626cf83b772",
+   "dialect": "exasol",
+   "sql": "REGR_SLOPE(x, y)"
+  },
+  {
    "key": "11846d7254cded69",
    "dialect": "postgres",
    "sql": "REGR_SLOPE(x, y)"
@@ -20485,6 +20515,11 @@
   {
    "key": "8a5aaedf58b8d7eb",
    "dialect": "duckdb",
+   "sql": "REGR_SXX(x, y)"
+  },
+  {
+   "key": "93d0d66ced6a1350",
+   "dialect": "exasol",
    "sql": "REGR_SXX(x, y)"
   },
   {
@@ -20523,6 +20558,11 @@
    "sql": "REGR_SXY(x, y)"
   },
   {
+   "key": "9c519b34bd07d5f6",
+   "dialect": "exasol",
+   "sql": "REGR_SXY(x, y)"
+  },
+  {
    "key": "23f9a45988a86c81",
    "dialect": "hive",
    "sql": "REGR_SXY(x, y)"
@@ -20555,6 +20595,11 @@
   {
    "key": "1034eb992ba0e525",
    "dialect": "duckdb",
+   "sql": "REGR_SYY(x, y)"
+  },
+  {
+   "key": "59e106eb76acf204",
+   "dialect": "exasol",
    "sql": "REGR_SYY(x, y)"
   },
   {
@@ -26248,9 +26293,239 @@
    "sql": "CAST(x AS UINT256)"
   },
   {
+   "key": "bc64b01e053a5b62",
+   "dialect": "exasol",
+   "sql": "SELECT 1 AS [x]"
+  },
+  {
+   "key": "31c673492c0ce050",
+   "dialect": "exasol",
+   "sql": "SYSTIMESTAMP"
+  },
+  {
+   "key": "5fd67bedcfb66a96",
+   "dialect": "exasol",
+   "sql": "SELECT SYSTIMESTAMP()"
+  },
+  {
+   "key": "b970924545a44db3",
+   "dialect": "exasol",
+   "sql": "SELECT SYSTIMESTAMP(6)"
+  },
+  {
+   "key": "f9ef4eedddb1e6c5",
+   "dialect": "exasol",
+   "sql": "SELECT CURDATE()"
+  },
+  {
+   "key": "a5023b1f3828abe9",
+   "dialect": "exasol",
+   "sql": "SELECT USER"
+  },
+  {
+   "key": "0b7781526b869347",
+   "dialect": "exasol",
+   "sql": "SELECT USER()"
+  },
+  {
+   "key": "379f3c7032b14d1f",
+   "dialect": "exasol",
+   "sql": "SELECT CURRENT_USER"
+  },
+  {
+   "key": "9ed372f9e6573046",
+   "dialect": "exasol",
+   "sql": "SELECT NOW()"
+  },
+  {
+   "key": "e9292ab79d94a8fb",
+   "dialect": "exasol",
+   "sql": "SELECT FROM_POSIX_TIME(1234567890)"
+  },
+  {
+   "key": "580d25a9825c1326",
+   "dialect": "exasol",
+   "sql": "SELECT FROM_POSIX_TIME(col)"
+  },
+  {
    "key": "b58e254a5a5f1982",
    "dialect": "mysql",
    "sql": "SELECT FROM_UNIXTIME(col)"
+  },
+  {
+   "key": "bb66ac8002f35cfa",
+   "dialect": "exasol",
+   "sql": "select foo, bar from table_1 minus select foo, bar from table_2"
+  },
+  {
+   "key": "d45de0835bd3ab65",
+   "dialect": "exasol",
+   "sql": "SELECT TEST.*, 1 FROM TEST"
+  },
+  {
+   "key": "ac54f6cacab40dce",
+   "dialect": "exasol",
+   "sql": "SELECT t.*, 1 FROM t"
+  },
+  {
+   "key": "42ff186b2242e43d",
+   "dialect": "exasol",
+   "sql": "SELECT t.* FROM t"
+  },
+  {
+   "key": "3a1229a2be09c2fb",
+   "dialect": "exasol",
+   "sql": "SELECT * FROM t"
+  },
+  {
+   "key": "73242e1777444dff",
+   "dialect": "exasol",
+   "sql": "WITH t AS (SELECT 1 AS x) SELECT t.*, 3 FROM t"
+  },
+  {
+   "key": "c3aaaee2f6647233",
+   "dialect": "exasol",
+   "sql": "WITH t1 AS (SELECT 1 AS c1), t2 AS (SELECT 2 AS c2) SELECT t1.*, t2.*, 3 FROM t1, t2"
+  },
+  {
+   "key": "d7c5900185452ac8",
+   "dialect": "exasol",
+   "sql": "SELECT \"A\".*, \"B\".*, 3 FROM \"A\" JOIN \"B\" ON 1 = 1"
+  },
+  {
+   "key": "5bc0d40c05ecc66a",
+   "dialect": "exasol",
+   "sql": "SELECT s.*, q.*, 7 FROM (SELECT 1 AS x) AS s CROSS JOIN (SELECT 2 AS y) AS q"
+  },
+  {
+   "key": "1b71dfb1b4ec94e2",
+   "dialect": "exasol",
+   "sql": "CAST(x AS BLOB)"
+  },
+  {
+   "key": "66b96b56b53f0b8d",
+   "dialect": "exasol",
+   "sql": "CAST(x AS LONGBLOB)"
+  },
+  {
+   "key": "92eddb3141df483b",
+   "dialect": "exasol",
+   "sql": "CAST(x AS LONGTEXT)"
+  },
+  {
+   "key": "ed56e51791478f1f",
+   "dialect": "exasol",
+   "sql": "CAST(x AS MEDIUMBLOB)"
+  },
+  {
+   "key": "74f699a0450f58a3",
+   "dialect": "exasol",
+   "sql": "CAST(x AS MEDIUMTEXT)"
+  },
+  {
+   "key": "c4aaa2d626ab4ef4",
+   "dialect": "exasol",
+   "sql": "CAST(x AS TINYBLOB)"
+  },
+  {
+   "key": "3eb220328ce1fd1a",
+   "dialect": "exasol",
+   "sql": "CAST(x AS TINYTEXT)"
+  },
+  {
+   "key": "fcf7c2ae44709fa2",
+   "dialect": "exasol",
+   "sql": "CAST(x AS TEXT)"
+  },
+  {
+   "key": "3489e7ae59c8c428",
+   "dialect": "exasol",
+   "sql": "SELECT CAST((CAST(202305 AS INT) - 100) AS LONG VARCHAR) AS CAL_YEAR_WEEK_ADJUSTED"
+  },
+  {
+   "key": "4a5490339fedbdef",
+   "dialect": "exasol",
+   "sql": "CAST(x AS VARBINARY)"
+  },
+  {
+   "key": "50c030384d304e26",
+   "dialect": "exasol",
+   "sql": "CAST(x AS VARCHAR)"
+  },
+  {
+   "key": "cc7c4d9f46fb9c6c",
+   "dialect": "exasol",
+   "sql": "CAST(x AS CHAR)"
+  },
+  {
+   "key": "a886930c811e5bd3",
+   "dialect": "exasol",
+   "sql": "CAST(x AS TINYINT)"
+  },
+  {
+   "key": "c74caa554c921277",
+   "dialect": "exasol",
+   "sql": "CAST(x AS SMALLINT)"
+  },
+  {
+   "key": "fd315f68d8244dce",
+   "dialect": "exasol",
+   "sql": "CAST(x AS INT)"
+  },
+  {
+   "key": "7e12b0df31c90a1f",
+   "dialect": "exasol",
+   "sql": "CAST(x AS MEDIUMINT)"
+  },
+  {
+   "key": "ba7e553b7b858ccf",
+   "dialect": "exasol",
+   "sql": "CAST(x AS BIGINT)"
+  },
+  {
+   "key": "e6d7df47900de7b4",
+   "dialect": "exasol",
+   "sql": "CAST(x AS FLOAT)"
+  },
+  {
+   "key": "ac10364125077c9e",
+   "dialect": "exasol",
+   "sql": "CAST(x AS DOUBLE)"
+  },
+  {
+   "key": "895f66bd656936bb",
+   "dialect": "exasol",
+   "sql": "CAST(x AS DECIMAL32)"
+  },
+  {
+   "key": "dec14c2cbe08217a",
+   "dialect": "exasol",
+   "sql": "CAST(x AS DECIMAL64)"
+  },
+  {
+   "key": "4b221ff630f98488",
+   "dialect": "exasol",
+   "sql": "CAST(x AS DECIMAL128)"
+  },
+  {
+   "key": "46ca2de9809ab21e",
+   "dialect": "exasol",
+   "sql": "CAST(x AS DECIMAL256)"
+  },
+  {
+   "key": "394df14e7b53e178",
+   "dialect": "exasol",
+   "sql": "CAST(x AS DATE)"
+  },
+  {
+   "key": "12226d2683d7d769",
+   "dialect": "exasol",
+   "sql": "CAST(x AS DATETIME)"
+  },
+  {
+   "key": "72a8cb7f03216234",
+   "dialect": "exasol",
+   "sql": "CAST(x AS TIMESTAMP)"
   },
   {
    "key": "a068d69ebbfb3bf5",
@@ -26263,6 +26538,26 @@
    "sql": "CAST(x AS SMALLDATETIME)"
   },
   {
+   "key": "998589512d3dec8c",
+   "dialect": "exasol",
+   "sql": "CAST(x AS BOOLEAN)"
+  },
+  {
+   "key": "fba358bdd1631a2f",
+   "dialect": "exasol",
+   "sql": "CAST(x AS TIMESTAMPLTZ)"
+  },
+  {
+   "key": "de65b23010564d3f",
+   "dialect": "exasol",
+   "sql": "CAST(x AS TIMESTAMP(3) WITH LOCAL TIME ZONE)"
+  },
+  {
+   "key": "59d12a521c102ff4",
+   "dialect": "exasol",
+   "sql": "SELECT MOD(x, 10)"
+  },
+  {
    "key": "f97c80e385033797",
    "dialect": "teradata",
    "sql": "SELECT x MOD 10"
@@ -26271,6 +26566,11 @@
    "key": "e71a2a58bcb2a7d2",
    "dialect": "mysql",
    "sql": "SELECT x % 10"
+  },
+  {
+   "key": "c99551467fcb7018",
+   "dialect": "exasol",
+   "sql": "SELECT BIT_AND(x, 1)"
   },
   {
    "key": "6aa9ce7f05dda7f0",
@@ -26293,6 +26593,11 @@
    "sql": "SELECT x & 1"
   },
   {
+   "key": "0639ecc91b670288",
+   "dialect": "exasol",
+   "sql": "SELECT BIT_OR(x, 1)"
+  },
+  {
    "key": "8d24a0cf539b80a0",
    "dialect": "duckdb",
    "sql": "SELECT x | 1"
@@ -26311,6 +26616,11 @@
    "key": "9f7ae58d5f997955",
    "dialect": "hive",
    "sql": "SELECT x | 1"
+  },
+  {
+   "key": "79b9b213356c8eba",
+   "dialect": "exasol",
+   "sql": "SELECT BIT_XOR(x, 1)"
   },
   {
    "key": "40d9c7a9da8b4af3",
@@ -26333,6 +26643,11 @@
    "sql": "SELECT XOR(x, 1)"
   },
   {
+   "key": "22b5c26dc2952ef7",
+   "dialect": "exasol",
+   "sql": "SELECT BIT_NOT(x)"
+  },
+  {
    "key": "3716020ec9a187d4",
    "dialect": "duckdb",
    "sql": "SELECT ~x"
@@ -26351,6 +26666,11 @@
    "key": "02227c7bd805c174",
    "dialect": "hive",
    "sql": "SELECT ~x"
+  },
+  {
+   "key": "45dd9604c326fc08",
+   "dialect": "exasol",
+   "sql": "SELECT BIT_LSHIFT(x, 1)"
   },
   {
    "key": "7bf13bd4448f85b9",
@@ -26373,6 +26693,11 @@
    "sql": "SELECT BITWISE_LEFT_SHIFT(x, 1)"
   },
   {
+   "key": "95ecb1c3f67a8522",
+   "dialect": "exasol",
+   "sql": "SELECT BIT_RSHIFT(x, 1)"
+  },
+  {
    "key": "2a134bb39a768cbd",
    "dialect": "spark",
    "sql": "SELECT SHIFTRIGHT(x, 1)"
@@ -26393,9 +26718,19 @@
    "sql": "SELECT BITWISE_RIGHT_SHIFT(x, 1)"
   },
   {
+   "key": "cbf4016c3ede3469",
+   "dialect": "exasol",
+   "sql": "SELECT department, EVERY(age >= 30) AS EVERY FROM employee_table GROUP BY department"
+  },
+  {
    "key": "b932fa36eff5041f",
    "dialect": "duckdb",
    "sql": "SELECT department, ALL (age >= 30) AS EVERY FROM employee_table GROUP BY department"
+  },
+  {
+   "key": "4289ac7d037ea510",
+   "dialect": "exasol",
+   "sql": "SELECT APPROXIMATE_COUNT_DISTINCT(y)"
   },
   {
    "key": "753767fcf6edc91e",
@@ -26408,9 +26743,59 @@
    "sql": "SELECT APPROXIMATE COUNT(DISTINCT y)"
   },
   {
+   "key": "fd42b0c28153143f",
+   "dialect": "exasol",
+   "sql": "TO_CHAR(CAST(TO_DATE(date, 'YYYYMMDD') AS TIMESTAMP), 'DY') AS day_of_week"
+  },
+  {
+   "key": "ffb7ff3a09103c3b",
+   "dialect": "exasol",
+   "sql": "SELECT TO_CHAR(12345.67890, '9999999.999999999') AS TO_CHAR"
+  },
+  {
+   "key": "dce93e993504b889",
+   "dialect": "exasol",
+   "sql": "SELECT TO_CHAR(DATE '1999-12-31') AS TO_CHAR"
+  },
+  {
+   "key": "e8e35b20620ceaed",
+   "dialect": "exasol",
+   "sql": "SELECT TO_CHAR(TIMESTAMP '1999-12-31 23:59:00', 'HH24:MI:SS DD-MM-YYYY') AS TO_CHAR"
+  },
+  {
+   "key": "cb91d325ee5284f3",
+   "dialect": "exasol",
+   "sql": "SELECT TO_CHAR(12345.6789) AS TO_CHAR"
+  },
+  {
+   "key": "49ffa629db6fcd42",
+   "dialect": "exasol",
+   "sql": "SELECT TO_CHAR(-12345.67890, '000G000G000D000000MI') AS TO_CHAR"
+  },
+  {
+   "key": "663a587400750e6c",
+   "dialect": "exasol",
+   "sql": "SELECT TO_CHAR(CAST('2009-10-04 22:23:00' AS TIMESTAMP), 'DAY MONTH YYYY')"
+  },
+  {
    "key": "29f571800a413d31",
    "dialect": "mysql",
    "sql": "SELECT DATE_FORMAT('2009-10-04 22:23:00', '%W %M %Y')"
+  },
+  {
+   "key": "c654811430992501",
+   "dialect": "exasol",
+   "sql": "SELECT id, department, hire_date, GROUP_CONCAT(id ORDER BY hire_date SEPARATOR ',') OVER (PARTITION BY department rows between 1 preceding and 1 following) GROUP_CONCAT_RESULT from employee_table ORDER BY department, hire_date"
+  },
+  {
+   "key": "a4e1909fac24d896",
+   "dialect": "exasol",
+   "sql": "GROUP_CONCAT(DISTINCT x ORDER BY y DESC)"
+  },
+  {
+   "key": "c620d6d7c8abc533",
+   "dialect": "exasol",
+   "sql": "LISTAGG(DISTINCT x, ',') WITHIN GROUP (ORDER BY y DESC)"
   },
   {
    "key": "f59c0e726485899c",
@@ -26428,6 +26813,46 @@
    "sql": "LISTAGG(DISTINCT x, ',') WITHIN GROUP (ORDER BY y DESC)"
   },
   {
+   "key": "fe37870010fdef3f",
+   "dialect": "exasol",
+   "sql": "SELECT LISTAGG(x, ',') WITHIN GROUP (ORDER BY y) FROM t"
+  },
+  {
+   "key": "8c4eaeaf1964c9e1",
+   "dialect": "exasol",
+   "sql": "LISTAGG(x, ',' ON OVERFLOW ERROR) WITHIN GROUP (ORDER BY y)"
+  },
+  {
+   "key": "83176796063f088e",
+   "dialect": "exasol",
+   "sql": "LISTAGG(x, ',' ON OVERFLOW TRUNCATE '...' WITH COUNT) WITHIN GROUP (ORDER BY y)"
+  },
+  {
+   "key": "29443a057b0c6289",
+   "dialect": "exasol",
+   "sql": "LISTAGG(x, ',' ON OVERFLOW TRUNCATE '...' WITHOUT COUNT) WITHIN GROUP (ORDER BY y)"
+  },
+  {
+   "key": "dfc8f784530896b2",
+   "dialect": "exasol",
+   "sql": "EDIT_DISTANCE(col1, col2)"
+  },
+  {
+   "key": "0de20718cd400e86",
+   "dialect": "exasol",
+   "sql": "STRPOS(haystack, needle)"
+  },
+  {
+   "key": "f56ab99dcd3936fc",
+   "dialect": "exasol",
+   "sql": "INSTR(haystack, needle)"
+  },
+  {
+   "key": "7d06275443536d68",
+   "dialect": "exasol",
+   "sql": "SELECT REGEXP_SUBSTR('My mail address is my_mail@yahoo.com', '(?i)[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}') AS EMAIL"
+  },
+  {
    "key": "1674dc7c2fe36255",
    "dialect": "bigquery",
    "sql": "SELECT REGEXP_EXTRACT('My mail address is my_mail@yahoo.com', '(?i)[a-z0-9._%+-]+@[a-z0-9.-]+\\\\.[a-z]{2,4}') AS EMAIL"
@@ -26438,9 +26863,19 @@
    "sql": "SELECT REGEXP_EXTRACT('My mail address is my_mail@yahoo.com', '(?i)[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,4}') AS EMAIL"
   },
   {
+   "key": "830e7a21580376bd",
+   "dialect": "exasol",
+   "sql": "SELECT SUBSTR('www.apache.org', 1, NVL(NULLIF(INSTR('www.apache.org', '.', 1, 2), 0) - 1, LENGTH('www.apache.org')))"
+  },
+  {
    "key": "599592ba03acadc5",
    "dialect": "databricks",
    "sql": "SELECT substring_index('www.apache.org', '.', 2)"
+  },
+  {
+   "key": "1edbbe8481d83af7",
+   "dialect": "exasol",
+   "sql": "SELECT SUBSTR('555A66A777', 1, NVL(NULLIF(INSTR('555A66A777', 'a', 1, 2), 0) - 1, LENGTH('555A66A777')))"
   },
   {
    "key": "d0cba71d54160a11",
@@ -26448,14 +26883,54 @@
    "sql": "SELECT substring_index('555A66A777' COLLATE UTF8_BINARY, 'a', 2)"
   },
   {
+   "key": "541db8130376e2fa",
+   "dialect": "exasol",
+   "sql": "SELECT SUBSTR('555A66A777', 1, NVL(NULLIF(INSTR(LOWER('555A66A777'), 'a', 1, 2), 0) - 1, LENGTH('555A66A777')))"
+  },
+  {
    "key": "c8135c21c67326c4",
    "dialect": "databricks",
    "sql": "SELECT substring_index('555A66A777' COLLATE UTF8_LCASE, 'a', 2)"
   },
   {
+   "key": "fc9f87a4187eaffd",
+   "dialect": "exasol",
+   "sql": "SELECT SUBSTR('A|a|A', 1, NVL(NULLIF(INSTR(LOWER('A|a|A'), LOWER('A'), 1, 2), 0) - 1, LENGTH('A|a|A')))"
+  },
+  {
    "key": "5e34ac59a76981c8",
    "dialect": "databricks",
    "sql": "SELECT substring_index('A|a|A' COLLATE UTF8_LCASE, 'A' COLLATE UTF8_LCASE, 2)"
+  },
+  {
+   "key": "6509d2f78d1750dd",
+   "dialect": "exasol",
+   "sql": "SELECT TO_DATE('31-12-1999', 'dd-mm-yyyy') AS TO_DATE"
+  },
+  {
+   "key": "a87e08d3e04ab5bf",
+   "dialect": "exasol",
+   "sql": "SELECT TO_DATE('31-12-1999', 'dd-mm-YY') AS TO_DATE"
+  },
+  {
+   "key": "bf91aeb9a6ea350f",
+   "dialect": "exasol",
+   "sql": "SELECT TO_DATE('31-DECEMBER-1999', 'DD-MONTH-YYYY') AS TO_DATE"
+  },
+  {
+   "key": "f8c7b6ac8294d619",
+   "dialect": "exasol",
+   "sql": "SELECT TO_DATE('31-DEC-1999', 'DD-MON-YYYY') AS TO_DATE"
+  },
+  {
+   "key": "a0ef7abd8bde9c89",
+   "dialect": "exasol",
+   "sql": "SELECT WEEKOFYEAR('2024-05-22')"
+  },
+  {
+   "key": "ec2767b5030fd90b",
+   "dialect": "exasol",
+   "sql": "SELECT TO_CHAR(CAST('2024-07-08 13:45:00' AS TIMESTAMP), 'DY')"
   },
   {
    "key": "86c15af250b81f93",
@@ -26468,6 +26943,11 @@
    "sql": "SELECT DATE_FORMAT(CAST('2024-07-08 13:45:00' AS TIMESTAMP), 'EEE')"
   },
   {
+   "key": "0997d5282cd9757c",
+   "dialect": "exasol",
+   "sql": "TO_DATE(x, 'YYYY-MM-DD')"
+  },
+  {
    "key": "5e1db865dd8c5ee6",
    "dialect": "spark",
    "sql": "TO_DATE(x)"
@@ -26476,6 +26956,11 @@
    "key": "407617d4c04273b3",
    "dialect": "databricks",
    "sql": "TO_DATE(x)"
+  },
+  {
+   "key": "8f7506c96be07197",
+   "dialect": "exasol",
+   "sql": "TO_DATE(x, 'YYYY')"
   },
   {
    "key": "56a1176a084c76b7",
@@ -26503,6 +26988,16 @@
    "sql": "TO_DATE(x, 'yyyy')"
   },
   {
+   "key": "b68bf40cfae36920",
+   "dialect": "exasol",
+   "sql": "SELECT CONVERT_TZ(CAST('2012-03-25 02:30:00' AS TIMESTAMP), 'Europe/Berlin', 'UTC', 'INVALID REJECT AMBIGUOUS REJECT') AS CONVERT_TZ"
+  },
+  {
+   "key": "e43199b22b45fed8",
+   "dialect": "exasol",
+   "sql": "SELECT CONVERT_TZ('2012-05-10 12:00:00', 'Europe/Berlin', 'America/New_York')"
+  },
+  {
    "key": "f152a079702945ae",
    "dialect": "mysql",
    "sql": "SELECT CONVERT_TZ('2012-05-10 12:00:00', 'Europe/Berlin', 'America/New_York')"
@@ -26528,9 +27023,49 @@
    "sql": "SELECT CAST('2012-05-10 12:00:00' AS TIMESTAMP) AT TIME ZONE 'Europe/Berlin' AT TIME ZONE 'America/New_York'"
   },
   {
+   "key": "03138444b65a83dd",
+   "dialect": "exasol",
+   "sql": "TIME_TO_STR(b, '%Y-%m-%d %H:%M:%S')"
+  },
+  {
+   "key": "30fc5d86b78fec69",
+   "dialect": "exasol",
+   "sql": "SELECT TIME_TO_STR(CAST(STR_TO_TIME(date, '%Y%m%d') AS DATE), '%a') AS day_of_week"
+  },
+  {
+   "key": "c45e2094d0652f12",
+   "dialect": "exasol",
+   "sql": "SELECT CAST(CAST(CURRENT_TIMESTAMP() AS TIMESTAMP) AT TIME ZONE 'CET' AS DATE) - 1"
+  },
+  {
+   "key": "871ec24adfa6da7c",
+   "dialect": "exasol",
+   "sql": "SELECT quarter('2016-08-31')"
+  },
+  {
+   "key": "c38cef748622bb0d",
+   "dialect": "exasol",
+   "sql": "SELECT CEIL(MONTH(TO_DATE('2016-08-31'))/3)"
+  },
+  {
    "key": "2fb8f635c0b225c0",
    "dialect": "databricks",
    "sql": "SELECT QUARTER('2016-08-31')"
+  },
+  {
+   "key": "8b509766c5e7d6c4",
+   "dialect": "exasol",
+   "sql": "SELECT TRUNC(123.456, 2) AS TRUNC"
+  },
+  {
+   "key": "eca636c3e366196e",
+   "dialect": "exasol",
+   "sql": "SELECT DIV(1234, 2) AS DIV"
+  },
+  {
+   "key": "23aa243c18f1c925",
+   "dialect": "exasol",
+   "sql": "TRUNC(price, 2)"
   },
   {
    "key": "f25f6af65f1a6af4",
@@ -26548,6 +27083,16 @@
    "sql": "ROUND(price, 2, 1)"
   },
   {
+   "key": "07d7875e7aee8166",
+   "dialect": "exasol",
+   "sql": "TRUNC(CAST(x AS TIMESTAMP), 'Q')"
+  },
+  {
+   "key": "21f4e7f677bc9654",
+   "dialect": "exasol",
+   "sql": "DATE_TRUNC('QUARTER', x)"
+  },
+  {
    "key": "34771610123272f7",
    "dialect": "spark",
    "sql": "SELECT CURRENT_USER()"
@@ -26558,9 +27103,29 @@
    "sql": "SELECT CURRENT_USER"
   },
   {
+   "key": "ee05a1579299e65f",
+   "dialect": "exasol",
+   "sql": "CREATE OR REPLACE VIEW \"schema\".\"v\" (\"col\" COMMENT IS 'desc') AS SELECT \"src_col\" AS \"col\""
+  },
+  {
    "key": "83b18e4c731481a1",
    "dialect": "databricks",
    "sql": "CREATE OR REPLACE VIEW `schema`.`v` (`col` COMMENT 'desc') AS SELECT `src_col` AS `col`"
+  },
+  {
+   "key": "5cfd9e7aa5fb8b5c",
+   "dialect": "exasol",
+   "sql": "HASH_SHA(x)"
+  },
+  {
+   "key": "9ad7d27352283aa7",
+   "dialect": "exasol",
+   "sql": "HASH_SHA1(x)"
+  },
+  {
+   "key": "42390ced188db371",
+   "dialect": "exasol",
+   "sql": "HASH_MD5(x)"
   },
   {
    "key": "6fa4da03b4406645",
@@ -26593,6 +27158,16 @@
    "sql": "LOWER(TO_HEX(MD5(x)))"
   },
   {
+   "key": "960e9a2df204727e",
+   "dialect": "exasol",
+   "sql": "HASHTYPE_MD5(x)"
+  },
+  {
+   "key": "6d8e80c3f31033d1",
+   "dialect": "exasol",
+   "sql": "HASH_SHA256(x)"
+  },
+  {
    "key": "8852a8a1087d73b8",
    "dialect": "presto",
    "sql": "LOWER(TO_HEX(SHA256(x)))"
@@ -26603,6 +27178,11 @@
    "sql": "LOWER(TO_HEX(SHA256(x)))"
   },
   {
+   "key": "944222cb15277484",
+   "dialect": "exasol",
+   "sql": "HASH_SHA512(x)"
+  },
+  {
    "key": "20f09f0c0eccf03c",
    "dialect": "presto",
    "sql": "LOWER(TO_HEX(SHA512(x)))"
@@ -26611,6 +27191,16 @@
    "key": "73f9ff581365b1b7",
    "dialect": "trino",
    "sql": "LOWER(TO_HEX(SHA512(x)))"
+  },
+  {
+   "key": "9140211707bec755",
+   "dialect": "exasol",
+   "sql": "SELECT NULLIFZERO(1) NIZ1"
+  },
+  {
+   "key": "c69078c6ee0a3016",
+   "dialect": "exasol",
+   "sql": "SELECT IF 1 = 0 THEN NULL ELSE 1 ENDIF AS NIZ1"
   },
   {
    "key": "c6ff90dcad179e17",
@@ -26638,6 +27228,16 @@
    "sql": "SELECT CASE WHEN 1 = 0 THEN NULL ELSE 1 END AS NIZ1"
   },
   {
+   "key": "905e8a1e0efd733e",
+   "dialect": "exasol",
+   "sql": "SELECT ZEROIFNULL(NULL) NIZ1"
+  },
+  {
+   "key": "22d07f195715cc3e",
+   "dialect": "exasol",
+   "sql": "SELECT IF NULL IS NULL THEN 0 ELSE NULL ENDIF AS NIZ1"
+  },
+  {
    "key": "db7c91f34ad8bd0c",
    "dialect": "sqlite",
    "sql": "SELECT IIF(NULL IS NULL, 0, NULL) AS NIZ1"
@@ -26663,6 +27263,61 @@
    "sql": "SELECT CASE WHEN NULL IS NULL THEN 0 ELSE NULL END AS NIZ1"
   },
   {
+   "key": "0f747b9584f71521",
+   "dialect": "exasol",
+   "sql": "SELECT name, age, IF age < 18 THEN 'underaged' ELSE 'adult' ENDIF AS LEGALITY FROM persons"
+  },
+  {
+   "key": "2151646a9a5f9e27",
+   "dialect": "exasol",
+   "sql": "SELECT HASHTYPE_MD5(a, b, c, d)"
+  },
+  {
+   "key": "7f2da60a39c8be7e",
+   "dialect": "exasol",
+   "sql": "SELECT {d'2024-01-01'}"
+  },
+  {
+   "key": "d12f43d5bba9fb52",
+   "dialect": "exasol",
+   "sql": "SELECT {ts'2024-01-01 12:00:00'}"
+  },
+  {
+   "key": "cc5c6f2185af3dac",
+   "dialect": "exasol",
+   "sql": "SELECT ID FROM local WHERE \"LOCAL\".ID IS NULL"
+  },
+  {
+   "key": "5e742ade15428ec4",
+   "dialect": "exasol",
+   "sql": "SELECT YEAR(a_date) AS \"a_year\" FROM MY_SUMMARY_TABLE GROUP BY LOCAL.\"a_year\""
+  },
+  {
+   "key": "c5707d890ff98fcc",
+   "dialect": "exasol",
+   "sql": "SELECT a_year AS a_year FROM \"LOCAL\" GROUP BY \"LOCAL\".a_year"
+  },
+  {
+   "key": "ff5e48cfccf6c4f3",
+   "dialect": "exasol",
+   "sql": "SELECT YEAR(a_date) AS A_YEAR FROM my_table WHERE a_year > 2020"
+  },
+  {
+   "key": "75386c67a31fe012",
+   "dialect": "exasol",
+   "sql": "SELECT SUM(amount) AS Total FROM my_table HAVING TOTAL > 10000"
+  },
+  {
+   "key": "2b5f419e4770d638",
+   "dialect": "exasol",
+   "sql": "SELECT x REGEXP_LIKE '.*pattern.*'"
+  },
+  {
+   "key": "c900922cfa1c9143",
+   "dialect": "exasol",
+   "sql": "SELECT a REGEXP_LIKE '.*x.*'"
+  },
+  {
    "key": "25062e3ab253285e",
    "dialect": "hive",
    "sql": "SELECT a RLIKE 'x'"
@@ -26683,9 +27338,34 @@
    "sql": "SELECT REGEXP_LIKE(a, '.*x.*')"
   },
   {
+   "key": "ccc48d5395cbd187",
+   "dialect": "exasol",
+   "sql": "SELECT JSON_VALUE('{\"d\":\"a\"}', '$.d' NULL ON ERROR) AS x"
+  },
+  {
    "key": "0f81c1d81d80033b",
    "dialect": "trino",
    "sql": "SELECT JSON_VALUE('{\"d\":\"a\"}', '$.d' NULL ON ERROR) AS x"
+  },
+  {
+   "key": "31f406f5b2412dd8",
+   "dialect": "exasol",
+   "sql": "SELECT JSON_EXTRACT('{\"firstname\" : \"Ann\", \"surname\" : \"Smith\", \"age\" : 29}', '$.firstname', '$.surname', '$.age') EMITS (firstname VARCHAR(100), surname VARCHAR(100), age INT)"
+  },
+  {
+   "key": "ae35b4e68a0c250c",
+   "dialect": "exasol",
+   "sql": "SELECT JSON_EXTRACT(x, '$.a') s FROM t"
+  },
+  {
+   "key": "cd9dfbfd89be7a05",
+   "dialect": "exasol",
+   "sql": "SELECT id, city, COUNT(*) FROM dealer GROUP BY ALL"
+  },
+  {
+   "key": "3ad41d0971103090",
+   "dialect": "exasol",
+   "sql": "SELECT id, city, COUNT(*) FROM dealer GROUP BY 1, 2"
   },
   {
    "key": "746bbb149604627b",
@@ -26693,9 +27373,29 @@
    "sql": "SELECT id, city, COUNT(*) FROM dealer GROUP BY ALL"
   },
   {
+   "key": "4376152e39b96295",
+   "dialect": "exasol",
+   "sql": "SELECT car_model, COUNT(DISTINCT city) FROM dealer GROUP BY ALL"
+  },
+  {
+   "key": "0732181867ce5ef0",
+   "dialect": "exasol",
+   "sql": "SELECT car_model, COUNT(DISTINCT city) FROM dealer GROUP BY 1"
+  },
+  {
    "key": "cf243567e0aefc43",
    "dialect": "databricks",
    "sql": "SELECT car_model, COUNT(DISTINCT city) FROM dealer GROUP BY ALL"
+  },
+  {
+   "key": "66894f3d476bd9da",
+   "dialect": "exasol",
+   "sql": "SELECT car_model, city FROM dealer GROUP BY ALL"
+  },
+  {
+   "key": "e3bd5c2780a320d6",
+   "dialect": "exasol",
+   "sql": "SELECT car_model, city FROM dealer GROUP BY 1, 2"
   },
   {
    "key": "c46fa82b20653d95",
@@ -26703,9 +27403,29 @@
    "sql": "SELECT car_model, city FROM dealer GROUP BY ALL"
   },
   {
+   "key": "b45e09f95109780d",
+   "dialect": "exasol",
+   "sql": "SELECT COUNT(*) FROM dealer GROUP BY ALL"
+  },
+  {
+   "key": "f7bd7d9c8ddae5e8",
+   "dialect": "exasol",
+   "sql": "SELECT COUNT(*) FROM dealer"
+  },
+  {
    "key": "3c8721a367323292",
    "dialect": "databricks",
    "sql": "SELECT COUNT(*) FROM dealer GROUP BY ALL"
+  },
+  {
+   "key": "566d4ca5bc1fa20e",
+   "dialect": "exasol",
+   "sql": "SELECT UPPER(city), COUNT(*) FROM dealer GROUP BY ALL"
+  },
+  {
+   "key": "bf2012a718d89add",
+   "dialect": "exasol",
+   "sql": "SELECT UPPER(city), COUNT(*) FROM dealer GROUP BY 1"
   },
   {
    "key": "1388608b4648163b",
@@ -26713,9 +27433,29 @@
    "sql": "SELECT UPPER(city), COUNT(*) FROM dealer GROUP BY ALL"
   },
   {
+   "key": "c3b5246190c2889c",
+   "dialect": "exasol",
+   "sql": "SELECT city AS c, COUNT(*) + 1 FROM dealer GROUP BY ALL"
+  },
+  {
+   "key": "a392d974f5d337f3",
+   "dialect": "exasol",
+   "sql": "SELECT city AS c, COUNT(*) + 1 FROM dealer GROUP BY 1"
+  },
+  {
    "key": "b2bbb39f3216dcd9",
    "dialect": "databricks",
    "sql": "SELECT city AS c, COUNT(*) + 1 FROM dealer GROUP BY ALL"
+  },
+  {
+   "key": "776f1c9f593406c8",
+   "dialect": "exasol",
+   "sql": "SELECT city, COUNT(*) OVER () FROM dealer GROUP BY ALL"
+  },
+  {
+   "key": "296603ba3b9ff4ac",
+   "dialect": "exasol",
+   "sql": "SELECT city, COUNT(*) OVER () FROM dealer GROUP BY 1"
   },
   {
    "key": "0ea15a26f3857b5a",
@@ -26723,9 +27463,24 @@
    "sql": "SELECT city, COUNT(*) OVER () FROM dealer GROUP BY ALL"
   },
   {
+   "key": "7339c177076e4981",
+   "dialect": "exasol",
+   "sql": "SELECT * FROM t GROUP BY ALL"
+  },
+  {
+   "key": "5f57d1a3a7e9f273",
+   "dialect": "exasol",
+   "sql": "SELECT DISTINCT * FROM t"
+  },
+  {
    "key": "2b1e95410ebb43d1",
    "dialect": "databricks",
    "sql": "SELECT * FROM t GROUP BY ALL"
+  },
+  {
+   "key": "9f54a1d139e69c89",
+   "dialect": "exasol",
+   "sql": "OPEN SCHEMA test"
   },
   {
    "key": "86c6c3076a51808d",
@@ -26733,9 +27488,19 @@
    "sql": "USE test"
   },
   {
+   "key": "99bffaa25d307ed5",
+   "dialect": "exasol",
+   "sql": "OPEN SCHEMA \"my_database\""
+  },
+  {
    "key": "053c21f35cba848b",
    "dialect": "mysql",
    "sql": "USE `my_database`"
+  },
+  {
+   "key": "313c3ae29f120ff2",
+   "dialect": "exasol",
+   "sql": "SELECT TABLE_NAME FROM SYS.EXA_ALL_TABLES WHERE TABLE_SCHEMA = 'TEST'"
   },
   {
    "key": "5b0b86ed809ae7cd",
@@ -26743,9 +27508,19 @@
    "sql": "SHOW TABLES FROM test"
   },
   {
+   "key": "c6016588e5a82cca",
+   "dialect": "exasol",
+   "sql": "SELECT TABLE_NAME FROM SYS.EXA_ALL_TABLES WHERE TABLE_SCHEMA = CURRENT_SCHEMA"
+  },
+  {
    "key": "af23daae5e7fc871",
    "dialect": "mysql",
    "sql": "SHOW TABLES"
+  },
+  {
+   "key": "f96be0776760f905",
+   "dialect": "exasol",
+   "sql": "SELECT SCHEMA_NAME FROM SYS.EXA_SCHEMAS"
   },
   {
    "key": "a80838adf5e7712e",
@@ -26758,9 +27533,19 @@
    "sql": "SHOW SCHEMAS"
   },
   {
+   "key": "2c194fe7a40d04db",
+   "dialect": "exasol",
+   "sql": "SELECT city, COUNT(*) AS cnt FROM t GROUP BY LOCAL.cnt"
+  },
+  {
    "key": "734ce099a6c19c1b",
    "dialect": "mysql",
    "sql": "SELECT city, COUNT(*) AS cnt FROM t GROUP BY cnt"
+  },
+  {
+   "key": "8b258c41638c0962",
+   "dialect": "exasol",
+   "sql": "SELECT YEAR(TO_DATE(a_date)) AS a_year FROM t GROUP BY LOCAL.a_year"
   },
   {
    "key": "7bd67168562798de",
@@ -26768,14 +27553,29 @@
    "sql": "SELECT YEAR(a_date) AS a_year FROM t GROUP BY a_year"
   },
   {
+   "key": "43f2298a802c8469",
+   "dialect": "exasol",
+   "sql": "SELECT city, COUNT(*) FROM t GROUP BY city"
+  },
+  {
    "key": "4d864d7001ed4b21",
    "dialect": "mysql",
    "sql": "SELECT city, COUNT(*) FROM t GROUP BY city"
   },
   {
+   "key": "60d88423c400677d",
+   "dialect": "exasol",
+   "sql": "SELECT COUNT(*) AS cnt FROM t HAVING LOCAL.cnt > 1"
+  },
+  {
    "key": "7c70b9f421786c42",
    "dialect": "mysql",
    "sql": "SELECT COUNT(*) AS cnt FROM t HAVING cnt > 1"
+  },
+  {
+   "key": "0492a85ae502a618",
+   "dialect": "exasol",
+   "sql": "SELECT VAR_POP(current_salary)"
   },
   {
    "key": "0e9c06c519abdbb3",
@@ -26786,6 +27586,11 @@
    "key": "673bdcb8a8796a1c",
    "dialect": "presto",
    "sql": "SELECT VAR_POP(current_salary)"
+  },
+  {
+   "key": "c4afc0a0d0a79596",
+   "dialect": "exasol",
+   "sql": "REGEXP_REPLACE(subject, pattern, replacement, position, occurrence)"
   },
   {
    "key": "ef101fc3cf2f9e63",
@@ -26813,6 +27618,11 @@
    "sql": "REGEXP_REPLACE(subject, pattern, replacement, position, occurrence)"
   },
   {
+   "key": "4f6ff06aace52f09",
+   "dialect": "exasol",
+   "sql": "SELECT TO_CHAR(CAST('1999-12-31' AS DATE)) AS TO_CHAR"
+  },
+  {
    "key": "cb2ab06a40123b4a",
    "dialect": "redshift",
    "sql": "SELECT CAST(CAST('1999-12-31' AS DATE) AS VARCHAR(MAX)) AS TO_CHAR"
@@ -26823,9 +27633,34 @@
    "sql": "SELECT CAST(CAST('1999-12-31' AS DATE) AS TEXT) AS TO_CHAR"
   },
   {
+   "key": "8ca589ae1c56c9e5",
+   "dialect": "exasol",
+   "sql": "CURRENT_SCHEMA"
+  },
+  {
+   "key": "a82271e82c7983e2",
+   "dialect": "exasol",
+   "sql": "SELECT CAST(ADD_DAYS(ADD_MONTHS(DATE_TRUNC('MONTH', DATE '2008-11-25'), 1), -1) AS DATE)"
+  },
+  {
    "key": "e961d152cc926a1e",
    "dialect": "databricks",
    "sql": "SELECT LAST_DAY('2008-11-25')"
+  },
+  {
+   "key": "cfec1707b9f039e4",
+   "dialect": "exasol",
+   "sql": "TRUNC(123.456, 2)"
+  },
+  {
+   "key": "27b73bb0d4717081",
+   "dialect": "exasol",
+   "sql": "TRUNC(3.14159)"
+  },
+  {
+   "key": "befa3de80bc541a4",
+   "dialect": "exasol",
+   "sql": "TRUNC(CAST(x AS DATE))"
   },
   {
    "key": "398d450e2c84203d",
@@ -27741,6 +28576,11 @@
    "key": "32d6c9dccdd89f8a",
    "dialect": "duckdb",
    "sql": "REGEXP_MATCHES(a, 'x')"
+  },
+  {
+   "key": "4686a2cef3716c3e",
+   "dialect": "exasol",
+   "sql": "a REGEXP_LIKE '.*x.*'"
   },
   {
    "key": "347aaee3626f1db1",
@@ -30708,6 +31548,11 @@
    "sql": "SELECT DATE_FORMAT('2017-06-15', '%Y')"
   },
   {
+   "key": "439186b87d54866b",
+   "dialect": "exasol",
+   "sql": "SELECT TO_CHAR(CAST('2017-06-15' AS TIMESTAMP), 'YYYY')"
+  },
+  {
    "key": "431257f83c2eaf7f",
    "dialect": "mysql",
    "sql": "SELECT DATE_FORMAT('2017-06-15', '%m')"
@@ -30721,6 +31566,11 @@
    "key": "d2257f8d0842ed44",
    "dialect": "mysql",
    "sql": "SELECT DATE_FORMAT('2017-06-15', '%Y-%m-%d')"
+  },
+  {
+   "key": "d89f4ef8cb387639",
+   "dialect": "exasol",
+   "sql": "SELECT TO_CHAR(CAST('2017-06-15' AS TIMESTAMP), 'YYYY-MM-DD')"
   },
   {
    "key": "7aee0bf067a51778",
@@ -30751,6 +31601,11 @@
    "key": "c99b653439945f42",
    "dialect": "mysql",
    "sql": "SELECT DATE_FORMAT('2007-10-04 22:23:00', '%T')"
+  },
+  {
+   "key": "8a8a60fbe72147c2",
+   "dialect": "exasol",
+   "sql": "SELECT TO_CHAR(CAST('2007-10-04 22:23:00' AS TIMESTAMP), 'HH:MI:SS')"
   },
   {
    "key": "bb581a9740adadbc",
@@ -30826,6 +31681,11 @@
    "key": "23e8bc6965f72e18",
    "dialect": "mysql",
    "sql": "SELECT DATEDIFF(x, y)"
+  },
+  {
+   "key": "d1a669fe68747078",
+   "dialect": "exasol",
+   "sql": "SELECT DAYS_BETWEEN(x, y)"
   },
   {
    "key": "1eef99e28c7e0fde",
