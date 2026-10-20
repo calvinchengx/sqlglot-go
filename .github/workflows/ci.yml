@@ -64,7 +64,14 @@ jobs:
           go-version-file: go.mod
       - name: test coverage floor
         run: |
-          go test ./... -coverpkg=./sqlglot/ -coverprofile=cover.out >/dev/null
+          # The output is kept, not thrown away: a failing test prints to
+          # STDOUT, so `>/dev/null` hid the one thing this step exists to
+          # report. It is printed only when the run fails, which keeps a
+          # passing log as short as it was.
+          if ! go test ./... -coverpkg=./sqlglot/ -coverprofile=cover.out > /tmp/test.log 2>&1; then
+            tail -n 80 /tmp/test.log
+            exit 1
+          fi
           pct=$(go tool cover -func=cover.out | awk '/^total:/ {print substr($3, 1, length($3)-1)}')
           echo "coverage: $pct%"
           awk -v p="$pct" 'BEGIN { if (p+0 < 95) { print "below the 95% floor"; exit 1 } }'
