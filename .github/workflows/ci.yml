@@ -62,9 +62,39 @@ jobs:
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod
+      # setup-go caches on a hash of go.sum, and this module HAS NO go.sum --
+      # it depends on nothing outside the standard library -- so its restore
+      # fails on every run and the instrumented build below starts cold every
+      # time. Measured cold: 10.6 GB and ~350 s. Warm: 9 s and 400 MB.
+      #
+      # Go's build cache is content-addressed, so a rolling key still gets a
+      # hit for every package that did not change: the key is unique per run
+      # (so a fresh save always happens) and the restore prefix takes the most
+      # recent one.
+      - uses: actions/cache@v4
+        with:
+          path: ~/.cache/go-build
+          key: go-build-${{ runner.os }}-${{ github.run_id }}
+          restore-keys: |
+            go-build-${{ runner.os }}-
       - name: test coverage floor
+        env:
+          # The compiler instruments the whole package at once, and that peak
+          # is what takes this runner down mid-step. The limit is SOFT and
+          # bottoms out at 7.8 GB -- 2 GiB and 3 GiB both measured 7.8, since
+          # the compiler's live heap is that size -- against 10.6 GB without
+          # it, for the same 95.2% and about the same wall time.
+          GOMEMLIMIT: 3GiB
+          GOGC: "40"
         run: |
-          go test ./... -coverpkg=./sqlglot/ -coverprofile=cover.out >/dev/null
+          # The output is kept, not thrown away: a failing test prints to
+          # STDOUT, so `>/dev/null` hid the one thing this step exists to
+          # report. It is printed only when the run fails, which keeps a
+          # passing log as short as it was.
+          if ! go test ./... -coverpkg=./sqlglot/ -coverprofile=cover.out > /tmp/test.log 2>&1; then
+            tail -n 80 /tmp/test.log
+            exit 1
+          fi
           pct=$(go tool cover -func=cover.out | awk '/^total:/ {print substr($3, 1, length($3)-1)}')
           echo "coverage: $pct%"
           awk -v p="$pct" 'BEGIN { if (p+0 < 95) { print "below the 95% floor"; exit 1 } }'
@@ -87,6 +117,14 @@ jobs:
       - name: a short fuzz for parser panics
         run: go test ./sqlglot/ -run=XXX -fuzz=FuzzParseOneNeverPanics -fuzztime=45s -timeout=10m
       - uses: golangci/golangci-lint-action@v7
+        # The same cap the coverage step carries, for the same reason: the
+        # analyser type-checks the whole package, and without a bound it was
+        # killed here with no output at all -- four times before the coverage
+        # step was fixed, and once after it, which is the only reason this
+        # step was ever reached.
+        env:
+          GOMEMLIMIT: 3GiB
+          GOGC: "40"
         with:
           version: v2.13.1
           working-directory: .
