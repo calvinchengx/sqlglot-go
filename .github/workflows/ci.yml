@@ -15,9 +15,17 @@ jobs:
   differential:
     name: Against the reference (${{ matrix.name }})
     runs-on: ${{ matrix.os }}
-    # macOS runners are slow, and the corpus has grown to ~9,300 statements
-    # across 23 dialects: 10 minutes no longer covers the differential there.
-    timeout-minutes: 25
+    # macOS runners are slow, and the corpus has grown to 11,072 statements
+    # across 31 dialect entries: 10 minutes no longer covers the differential
+    # there, and 25 does not either.
+    #
+    # Measured on run 39431560879, the same commit: linux/amd64 9m53s,
+    # linux/arm64 8m39s, windows/amd64 8m26s, windows/arm64 9m30s -- and
+    # macos/arm64, where `go vet ./...` alone took 14m35s and the differential
+    # run was still going when the 25-minute bound cancelled it. The compile
+    # is not cached on that platform either, since setup-go can key nothing in
+    # a module with no go.sum.
+    timeout-minutes: 45
     # The port has no dependencies and no native library, so it runs wherever
     # Go does -- but "should work on Windows" is a claim, and developers work
     # on Windows machines of both architectures. The differential run is the
@@ -56,7 +64,15 @@ jobs:
     # job past its own bound -- carried this one past ten minutes while the
     # lint was still running, so the bound is widened rather than the work
     # trimmed.
-    timeout-minutes: 25
+    #
+    # Measured on run 39421248117, and the reason this is 40 rather than 25:
+    # coverage 10m14s, fuzz 6m02s, then lint was STILL RUNNING when the job
+    # was cancelled at the 25-minute bound. Nothing was stuck; the work is
+    # simply bigger than the bound. The build cache added for the same job
+    # buys little here -- the instrumented compile that dominates it is of the
+    # package every pull request changes, and this module has no third-party
+    # dependencies to reuse.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
