@@ -3,7 +3,6 @@ package sqlglot
 import (
 	"strings"
 	"testing"
-	"time"
 )
 
 // A builder that supplies a CONSTANT node -- one holding no argument at all --
@@ -4901,22 +4900,29 @@ func TestCreateIndex(t *testing.T) {
 // DEEP copy at each level copies the whole subtree again one level down, which
 // is quadratic in the depth. A few thousand nested operators took a second,
 // and the generator fuzzer's own worker was killed for hanging on one.
+//
+// The instrument is ALLOCATIONS rather than wall-clock time, because that is
+// what the bug changes: a quadratic reader allocates four times as much when
+// the depth doubles, a linear one twice as much, and the ratio does not care
+// how busy the machine is. Timing it measured the RUNNER instead -- on a
+// shared CI machine this failed at "28ms against 4ms" with nothing wrong, and
+// no tolerance small enough to catch a quadratic copy is large enough to
+// survive that.
 func TestDeepNestingIsLinear(t *testing.T) {
-	cost := func(depth int) time.Duration {
+	alloc := func(depth int) float64 {
 		sql := "(" + strings.Repeat("!", depth) + "(0)).A()"
-		start := time.Now()
-		if _, err := ParseOne(sql, "tsql"); err != nil {
-			t.Fatalf("ParseOne at depth %d: %v", depth, err)
-		}
-		return time.Since(start)
+		return testing.AllocsPerRun(5, func() {
+			if _, err := ParseOne(sql, "tsql"); err != nil {
+				t.Fatalf("ParseOne at depth %d: %v", depth, err)
+			}
+		})
 	}
-	// Warm, then compare a doubling. Linear work doubles; the quadratic
-	// version took four times as long, and a factor of three leaves room for
-	// a slow machine without letting that back in.
-	cost(400)
-	small, large := cost(800), cost(1600)
-	if large > 3*small+10*time.Millisecond {
-		t.Errorf("doubling the depth cost %v against %v: more than linear", large, small)
+	small, large := alloc(800), alloc(1600)
+	// Measured: 9,668 at 800 and 19,270 at 1,600 -- a factor of 1.99. Three
+	// leaves room for a step that touches a few fixed-size things too, and
+	// still refuses the factor of four the quadratic copy gave.
+	if large > 3*small {
+		t.Errorf("doubling the depth cost %.0f allocations against %.0f: more than linear", large, small)
 	}
 }
 
