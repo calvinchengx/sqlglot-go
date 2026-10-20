@@ -2783,7 +2783,8 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 				dotted := New("Identifier",
 					Arg{"this", c.Text}, Arg{"quoted", c.Type == TokIDENTIFIER})
 				for n := p.next(); p.at(TokDOT) && n != nil &&
-					(n.Type == TokVAR || n.Type == TokIDENTIFIER); n = p.next() {
+					(n.Type != TokL_PAREN && n.Type != TokR_PAREN &&
+						n.Type != TokCOMMA && n.Type != TokDOT); n = p.next() {
 					p.advance()
 					p.advance()
 					dotted = New("Dot", Arg{"this", dotted}, Arg{"expression",
@@ -2799,7 +2800,8 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 				// USER-DEFINED type's own qualifier -- came back unreadable.
 				text, _ := named.(string)
 				for n := p.next(); p.at(TokDOT) && n != nil &&
-					(n.Type == TokVAR || n.Type == TokIDENTIFIER); n = p.next() {
+					(n.Type != TokL_PAREN && n.Type != TokR_PAREN &&
+						n.Type != TokCOMMA && n.Type != TokDOT); n = p.next() {
 					p.advance()
 					p.advance()
 					text += "." + n.Text

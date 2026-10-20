@@ -319,9 +319,15 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// because the reference keeps them in one list in that order.
 	// A comma after the name says the words that follow are the table's own
 	// settings rather than columns: `CREATE TABLE a, NO FALLBACK, NO LOG
-	// (a INT)` (Parser._parse_create, POST_NAME).
-	p.match(TokCOMMA)
-	afterName, err := p.parseTableProperties()
+	// (a INT)`. That list is read by the BEFORE reader, which is the one the
+	// reference hands POST_NAME properties to (Parser._parse_create,
+	// `_parse_properties(before=True)`).
+	var afterName []*Expression
+	if p.match(TokCOMMA) {
+		afterName, err = p.parseTablePropertiesBefore()
+	} else {
+		afterName, err = p.parseTableProperties()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -417,6 +423,13 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// INDEX j (b)` -- name themselves after the table's own body, one after
 	// another until a word standing there is not one.
 	var indexes []*Expression
+	// A comma between two indexes becomes an EMPTY SequenceProperties, which
+	// looks like a mistake because it is one the reference makes: its property
+	// reader ends in a SEQUENCE reader that consumes a leading COMMA before
+	// deciding the words after it are not a sequence, and returns the node it
+	// had already built (Parser._parse_sequence_properties, `_match(COMMA)`
+	// ahead of the loop). The tree is what is compared, so it is what is built.
+	var commaProps []*Expression
 	if kind == "TABLE" {
 		for {
 			index, err := p.parseTrailingIndex()
@@ -427,7 +440,9 @@ func (p *parser) parseCreate() (*Expression, error) {
 				break
 			}
 			indexes = append(indexes, index)
-			p.match(TokCOMMA)
+			if p.match(TokCOMMA) {
+				commaProps = append(commaProps, New("SequenceProperties"))
+			}
 		}
 	}
 	// `WITH NO DATA` says the table is SHAPED by the query rather than filled
@@ -466,6 +481,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// Whatever stood between the columns and the query comes first, in the
 	// order it was written.
 	afterSchema = append(afterColumns, afterSchema...)
+	afterSchema = append(afterSchema, commaProps...)
 	// A TABLE interleaves its trailing indexes with the properties between
 	// them, and keeps going until neither appears:
 	// `PRIMARY INDEX (y) PARTITION BY y INDEX (y)` is index, property, index

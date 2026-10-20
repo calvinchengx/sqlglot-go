@@ -38,6 +38,7 @@ func init() {
 		"QueryBand":                           (*generator).writeQueryBand,
 		"TranslateCharacters":                 (*generator).writeTranslateCharacters,
 		"RangeN":                              (*generator).writeRangeN,
+		"BlockCompressionProperty":            (*generator).writeBlockCompressionProperty,
 		"Lock":                                (*generator).writeLock,
 		"RecursiveWithSearch":                 (*generator).writeRecursiveWithSearch,
 		"Connect":                             (*generator).writeConnect,
@@ -2855,7 +2856,16 @@ func (g *generator) lexesBackAsABareVar(part string) bool {
 		return true
 	}
 	toks, err := tk.Tokenize(part)
-	if err != nil || len(toks) != 1 || toks[0].Type != TokVAR || !strings.EqualFold(toks[0].Text, part) {
+	if err != nil || len(toks) != 1 || !strings.EqualFold(toks[0].Text, part) {
+		return false
+	}
+	// The name AFTER a dot may be any WORD, including one that is a type name
+	// in this position: `SYSUDTLIB.INT` names a type through a schema whose
+	// last part reads as a type, and the reference writes it bare. Only a
+	// token that would break the name apart -- a delimiter, or a QUOTED name
+	// whose text is not what was written -- has to be quoted.
+	switch toks[0].Type {
+	case TokL_PAREN, TokR_PAREN, TokCOMMA, TokDOT, TokSTRING, TokIDENTIFIER:
 		return false
 	}
 	return !g.wroteDollar || !strings.Contains(part, "$")
@@ -5439,7 +5449,13 @@ func (g *generator) writeCreate(e *Expression) string {
 	if unique, _ := e.Args["unique"].(bool); unique {
 		out += "UNIQUE "
 	}
-	if g.hasTemporaryProperty(e) {
+	// TEMPORARY is a POST_CREATE property like SET and GLOBAL, and the
+	// reference writes those in the order the statement gave them:
+	// `CREATE SET GLOBAL TEMPORARY TABLE`. It is only lifted out of that list
+	// when nothing else comes before it, which is the ordinary
+	// `CREATE TEMPORARY TABLE`.
+	temporaryFirst := g.temporaryPropertyComesFirst(e)
+	if g.hasTemporaryProperty(e) && temporaryFirst {
 		this, _ := e.Args["this"].(*Expression)
 		switch {
 		// T-SQL says it in the NAME rather than with the word, and where the
@@ -5512,6 +5528,27 @@ func (g *generator) writeCreate(e *Expression) string {
 	// TO <table>, UUID, ON CLUSTER -- between the name and the column list
 	// (ClickHouseGenerator.createable_sql).
 	postName := g.clickhousePostName(e)
+	// POST_NAME: the settings that stand between a table's NAME and its
+	// columns, written with a comma in front of each -- Teradata's
+	// `CREATE TABLE a, NO FALLBACK, NO LOG (a INT)`
+	// (TeradataGenerator.createable_sql, POST_NAME).
+	nameSettings := ""
+	if properties, _ := e.Args["properties"].(*Expression); properties != nil {
+		items, _ := properties.Args["expressions"].([]*Expression)
+		var parts []string
+		for _, item := range items {
+			if g.tables.PropertyLocation[item.Class] != "POST_NAME" {
+				continue
+			}
+			// The recorded spellings bring their own leading space, because
+			// they are written inside a statement; here the comma is the
+			// separator, so it is the comma's space that is used.
+			if text := strings.TrimSpace(g.node(item)); text != "" {
+				parts = append(parts, ", "+text)
+			}
+		}
+		nameSettings = strings.Join(parts, "")
+	}
 	switch {
 	case g.tables.TruncatesCatalog && namesACatalog(e.Args["this"]):
 		this, _ := e.Args["this"].(*Expression)
@@ -5522,6 +5559,13 @@ func (g *generator) writeCreate(e *Expression) string {
 			out += g.child(schema, "this") + postName + g.schemaColumnsOnly(schema)
 		} else {
 			out += g.child(e, "this") + postName
+		}
+	case nameSettings != "":
+		if schema, _ := e.Args["this"].(*Expression); schema != nil && schema.Class == "Schema" {
+			out += g.child(schema, "this") + nameSettings + " " +
+				strings.TrimSpace(g.schemaColumnsOnly(schema))
+		} else {
+			out += g.child(e, "this") + nameSettings
 		}
 	default:
 		out += g.child(e, "this")
@@ -5804,6 +5848,25 @@ func (g *generator) writeTranslateCharacters(e *Expression) string {
 	return out + ")"
 }
 
+// writeBlockCompressionProperty writes `BLOCKCOMPRESSION=<how>`, where AUTOTEMP
+// names the columns to choose between rather than a mode
+// (Generator.blockcompressionproperty_sql).
+func (g *generator) writeBlockCompressionProperty(e *Expression) string {
+	prop := ""
+	if autotemp, _ := e.Args["autotemp"].(*Expression); autotemp != nil {
+		prop = "AUTOTEMP(" + g.list(autotemp) + ")"
+	} else if on, _ := e.Args["always"].(bool); on {
+		prop = "ALWAYS"
+	} else if on, _ := e.Args["default"].(bool); on {
+		prop = "DEFAULT"
+	} else if on, _ := e.Args["manual"].(bool); on {
+		prop = "MANUAL"
+	} else if on, _ := e.Args["never"].(bool); on {
+		prop = "NEVER"
+	}
+	return "BLOCKCOMPRESSION=" + prop
+}
+
 // writeRangeN writes `RANGE_N(x BETWEEN a, b [EACH n])`
 // (TeradataGenerator.rangen_sql).
 func (g *generator) writeRangeN(e *Expression) string {
@@ -5932,8 +5995,9 @@ func (g *generator) writeProperties(e *Expression) (before string, out string, f
 		case "POST_CREATE":
 			// Between CREATE and the kind: `CREATE EXTERNAL TABLE t`. The
 			// caller writes these, because they are already behind it by the
-			// time the properties are reached.
-			if item.Class != "TemporaryProperty" {
+			// time the properties are reached -- except TEMPORARY, which the
+			// caller lifts out only when it stands first.
+			if item.Class != "TemporaryProperty" || !g.temporaryPropertyComesFirst(e) {
 				beforeKind = append(beforeKind, g.node(item))
 			}
 		case "POST_EXPRESSION", "POST_NAME", "POST_ALIAS", "POST_INDEX":
@@ -11054,4 +11118,23 @@ func identifiersCanStartWithDigit(dialect string) bool {
 		return true
 	}
 	return false
+}
+
+// temporaryPropertyComesFirst reports whether a TEMPORARY property stands
+// before every other POST_CREATE one, which is when the caller writes it on
+// its own rather than in the list
+// (TeradataGenerator writes SET GLOBAL TEMPORARY in the order given).
+func (g *generator) temporaryPropertyComesFirst(e *Expression) bool {
+	properties, _ := e.Args["properties"].(*Expression)
+	if properties == nil {
+		return true
+	}
+	items, _ := properties.Args["expressions"].([]*Expression)
+	for _, item := range items {
+		if g.tables.PropertyLocation[item.Class] != "POST_CREATE" {
+			continue
+		}
+		return item.Class == "TemporaryProperty"
+	}
+	return true
 }

@@ -12357,13 +12357,14 @@ func TestUserDefinedTypes(t *testing.T) {
 		{`0::"d_.NNNN_"`, "duckdb", "CAST(0 AS d_.NNNN_)"},
 		{`CAST(0 AS a.b.c)`, "duckdb", ""},
 		// A dotted part that would not read back bare -- because it holds a
-		// character no bare name can carry (a NUL byte, here), or because it
-		// would lex as something other than a NAME (a number) -- is quoted on
-		// the way back out. Writing it bare produced SQL that failed to
-		// reparse with "unclosed CAST at .": found by `make fuzz` against the
-		// Python reference.
-		{"\"\"::\"\x00.0\"", "duckdb", "CAST(\"\" AS \"\x00\".\"0\")"},
-		{"\"\"::\"\x00.0\"", "tsql", "CAST([] AS [\x00].[0])"},
+		// character no bare name can carry (a NUL byte, here) is quoted on the
+		// way back out. A part that merely LEXES as something other than a
+		// name, like the number here, is written bare -- which is what the
+		// reference does, and what the port can now read back: the reader
+		// after a dot takes any word, because a type may be named through a
+		// schema whose last part is a type (`SYSUDTLIB.INT`).
+		{"\"\"::\"\x00.0\"", "duckdb", "CAST(\"\" AS \"\x00\".0)"},
+		{"\"\"::\"\x00.0\"", "tsql", "CAST([] AS [\x00].0)"},
 	} {
 		want := c.want
 		if want == "" {
