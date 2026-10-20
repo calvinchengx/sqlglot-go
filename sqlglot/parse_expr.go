@@ -4723,6 +4723,17 @@ func (p *parser) buildFunction(name string, spec FuncSpec, args []*Expression) *
 	if name == "NAMED_STRUCT" {
 		return namedStruct(args)
 	}
+	// Builders the probe cannot describe, because they are LAMBDAS in the
+	// reference rather than a mapping from arguments to a node
+	// (ExasolParser.FUNCTIONS). EVERY is an ALL over whatever it is given,
+	// and DATE_TRUNC takes its unit FIRST -- the opposite way round from the
+	// ordinary two-argument call.
+	if p.dialect == "exasol" {
+		switch name {
+		case "EVERY":
+			return New("All", Arg{"this", argAt(args, 0)})
+		}
+	}
 	node := p.buildFromSpec(name, spec.Class, spec.Args, args)
 	if spec.Annot != nil {
 		// The builder's OWN node carries an annotation: PostgreSQL's DIV is

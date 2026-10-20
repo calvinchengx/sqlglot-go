@@ -3554,6 +3554,13 @@ func (g *generator) writeSlice(e *Expression) string {
 // not of the operator above it. Comparing an ALL against an ANY suggested
 // otherwise, and this used to refuse on the strength of that.
 func (g *generator) writeQuantifier(e *Expression) string {
+	// Exasol writes a quantifier as a CALL rather than as an operator: ALL is
+	// EVERY, and the operand goes inside the parentheses whatever it is --
+	// `EVERY(age >= 30)` and, over a query, `EVERY(SELECT 1)`
+	// (ExasolGenerator.TRANSFORMS, `exp.All: rename_func("EVERY")`).
+	if g.dialect == "exasol" && e.Class == "All" {
+		return "EVERY(" + g.child(e, "this") + ")"
+	}
 	this, _ := e.Args["this"].(*Expression)
 	if this == nil {
 		return g.fail("quantifier without an operand")
