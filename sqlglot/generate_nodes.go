@@ -4321,6 +4321,27 @@ func (g *generator) jsonPathUnion(part *Expression) string {
 // a template substitutes text knowing none, so anything that could need
 // brackets is refused rather than written flat.
 func (g *generator) writeJSONExtractOp(e *Expression) string {
+	// Exasol's JSON_EXTRACT takes its arguments as a LIST rather than as
+	// this/expression, and may name the columns it emits
+	// (ExasolGenerator.jsonextract_sql).
+	if g.dialect == "exasol" {
+		var parts []string
+		for _, key := range []string{"this", "expression"} {
+			if c := g.child(e, key); c != "" {
+				parts = append(parts, c)
+			}
+		}
+		if items, _ := e.Args["expressions"].([]*Expression); len(items) > 0 {
+			for _, item := range items {
+				parts = append(parts, g.node(item))
+			}
+		}
+		out := "JSON_EXTRACT(" + strings.Join(parts, ", ") + ")"
+		if emits := g.child(e, "emits"); emits != "" {
+			out += " EMITS " + emits
+		}
+		return out
+	}
 	// Trino's JSON_QUERY: the same node as an extraction, flagged, with the
 	// wrapper, quote and error clauses written inside the call.
 	if q, _ := e.Args["json_query"].(bool); q {

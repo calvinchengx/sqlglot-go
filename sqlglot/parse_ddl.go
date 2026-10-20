@@ -2062,6 +2062,10 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			kind = New("MergeTreeTTL", Arg{"expressions", []*Expression{e}})
 		case p.atWords("COMMENT"):
 			p.advance()
+			// Exasol writes the IS as part of the constraint:
+			// `col COMMENT IS 'desc'` (ExasolParser.CONSTRAINT_PARSERS).
+			// A dialect that writes the string directly is unaffected.
+			p.match(TokIS)
 			c := p.curr()
 			if c == nil || c.Type != TokSTRING {
 				return nil, p.unsupported("COMMENT without a string")
