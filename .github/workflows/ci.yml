@@ -56,7 +56,15 @@ jobs:
     # job past its own bound -- carried this one past ten minutes while the
     # lint was still running, so the bound is widened rather than the work
     # trimmed.
-    timeout-minutes: 25
+    #
+    # Measured on run 39421248117, and the reason this is 40 rather than 25:
+    # coverage 10m14s, fuzz 6m02s, then lint was STILL RUNNING when the job
+    # was cancelled at the 25-minute bound. Nothing was stuck; the work is
+    # simply bigger than the bound. The build cache added for the same job
+    # buys little here -- the instrumented compile that dominates it is of the
+    # package every pull request changes, and this module has no third-party
+    # dependencies to reuse.
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
