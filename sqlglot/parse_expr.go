@@ -1031,6 +1031,21 @@ func (p *parser) parsePostfix() (*Expression, error) {
 func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 	this = p.oracleDateLiteral(this)
 	for {
+		// Teradata's `(FORMAT '...')` after a column overrides how its value
+		// is shown. It is a PHRASE rather than a call, which is why the
+		// reference reads it here and makes the function reader refuse the
+		// parenthesis (TeradataParser._parse_column_ops, _parse_function).
+		if p.at(TokL_PAREN) && p.next() != nil && p.next().Type == TokFORMAT {
+			p.advance() // (
+			p.advance() // FORMAT
+			format := p.tryParseStringLiteral()
+			if format == nil {
+				return nil, p.unsupported("FORMAT without a string")
+			}
+			p.match(TokR_PAREN)
+			this = New("FormatPhrase", Arg{"this", this}, Arg{"format", format})
+			continue
+		}
 		// SingleStore's column operators are its own (SingleStoreParser
 		// .COLUMN_OPERATORS): `:>` and `!:` CAST, where every other dialect's
 		// `::` does, and `::`/`::$`/`::%`/`::?` EXTRACT JSON, where every
@@ -2099,7 +2114,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			!p.namesItselfNotACall(c) {
 			return nil, p.unsupported("no-paren function " + strings.ToUpper(c.Text))
 		}
-		if n := p.next(); n != nil && n.Type == TokL_PAREN {
+		if n := p.next(); n != nil && n.Type == TokL_PAREN && !p.formatPhraseFollows() {
 			if _, canName := p.tables.FuncTokens[c.Type]; !canName {
 				return nil, p.unsupported("call named by a token that cannot name one")
 			}
@@ -2110,7 +2125,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 	// A word that is an OPERATOR here may still name a call: `ILIKE(x, 'z')`
 	// and `XOR(a, b)` are the same names read the other way, and the token
 	// table already says which of them may name one.
-	if n := p.next(); n != nil && n.Type == TokL_PAREN {
+	if n := p.next(); n != nil && n.Type == TokL_PAREN && !p.formatPhraseFollows() {
 		if _, canName := p.tables.FuncTokens[c.Type]; canName {
 			return p.parseFunction()
 		}
@@ -2372,10 +2387,26 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 		}
 		return nil, p.unsupported("CAST without AS")
 	}
+	// Teradata names the FORMAT where the TYPE would go: `CAST(x AS FORMAT
+	// 'YYYY-DD')` has no type at all, and the reference reads the format
+	// before the type (Parser._parse_cast). The type is UNKNOWN, which the
+	// generator drops in favour of the phrase.
+	var format *Expression
+	formatFirst := false
+	if p.at(TokFORMAT) {
+		p.advance()
+		format = p.tryParseStringLiteral()
+		if format == nil {
+			return nil, p.unsupported("CAST AS FORMAT without a format")
+		}
+		formatFirst = true
+	}
 	// The collation belongs to the TYPE here, not to a column: inside a cast
 	// there is no column for it to belong to.
-	to, err := p.parseCollatedDataType()
-	if err != nil {
+	var to *Expression
+	if formatFirst {
+		to = New("DataType", Arg{"this", DataTypeKind("UNKNOWN")})
+	} else if to, err = p.parseCollatedDataType(); err != nil {
 		return nil, err
 	}
 	// `CAST(x AS CHAR CHARACTER SET latin1)` casts to a character set.
@@ -2404,8 +2435,7 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 	}
 	// `CAST(x AS STRING FORMAT 'DAY')` names the format the value is read or
 	// written with (Parser._parse_cast).
-	var format *Expression
-	if p.atWords("FORMAT") {
+	if format == nil && p.atWords("FORMAT") {
 		p.advance()
 		// The format may be written inside parentheses
 		// (Parser._parse_cast, _parse_wrapped).
@@ -6225,4 +6255,13 @@ func concatCoalesce(dialect string) bool {
 		return true
 	}
 	return false
+}
+
+// formatPhraseFollows reports Teradata's `col (FORMAT '...')`, where the
+// parenthesis opens a column PHRASE rather than a call, so the name is read
+// as a column and the phrase is attached to it
+// (TeradataParser._parse_function, _parse_column_ops).
+func (p *parser) formatPhraseFollows() bool {
+	return p.dialect == "teradata" && p.index+2 < len(p.tokens) &&
+		p.tokens[p.index+2].Type == TokFORMAT
 }

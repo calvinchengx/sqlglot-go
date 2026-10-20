@@ -6774,7 +6774,7 @@ def main() -> int:
         "\t// HoistsInsertWith: a WITH inside an INSERT is written in FRONT of\n",
         "\t// the statement here, and left where it was written elsewhere.\n",
         "\tHoistsInsertWith bool\n",
-        "\t// ReturningWord is what this dialect calls a RETURNING clause, and\n\t// ReturningEnd whether it is written after the WHERE rather than\n\t// straight after the verb.\n\tReturningWord string\n\tReturningEnd  bool\n\t// UpdateWritesReturning: an UPDATE writes its clause at all.\n\t// Teradata drops it from an UPDATE and keeps it on a DELETE, so\n\t// this is not the same question as ReturningEnd.\n\tUpdateWritesReturning bool\n\t// IndexParamsDropOn: an index's own `ON <field>` is un-read, and the\n\t// words are handed back to the statement that follows it. Teradata\n\t// overrides _parse_index_params to do exactly that, so `ON COMMIT` is\n\t// read as the property it is rather than as the index's target.\n\tIndexParamsDropOn bool\n\t// StatementWords are the keywords this dialect opens a statement of its\n\t// own with, beyond the ones every dialect has: Teradata's DATABASE is a\n\t// USE, its REPLACE a CREATE and its LOCKING a statement with a query\n\t// inside it (Map\'s STATEMENT_PARSERS keys, by the node each builds).\n\tDatabaseOpensUse   bool\n\tReplaceOpensCreate bool\n\tLockingIsStatement bool\n\t// QueryBandIsSetItem: SET QUERY_BAND is a statement of its own.\n\tQueryBandIsSetItem bool\n\t// TableSampleCSV: a sample takes a comma-separated list of sizes.\n\tTableSampleCSV bool\n\t// UseWord is what the dialect calls USE: Teradata writes the statement\n\t// as DATABASE <name> (TeradataGenerator.TRANSFORMS, exp.Use).\n\tUseWord string\n",
+        "\t// ReturningWord is what this dialect calls a RETURNING clause, and\n\t// ReturningEnd whether it is written after the WHERE rather than\n\t// straight after the verb.\n\tReturningWord string\n\tReturningEnd  bool\n\t// UpdateWritesReturning: an UPDATE writes its clause at all.\n\t// Teradata drops it from an UPDATE and keeps it on a DELETE, so\n\t// this is not the same question as ReturningEnd.\n\tUpdateWritesReturning bool\n\t// IndexParamsDropOn: an index's own `ON <field>` is un-read, and the\n\t// words are handed back to the statement that follows it. Teradata\n\t// overrides _parse_index_params to do exactly that, so `ON COMMIT` is\n\t// read as the property it is rather than as the index's target.\n\tIndexParamsDropOn bool\n\t// StatementWords are the keywords this dialect opens a statement of its\n\t// own with, beyond the ones every dialect has: Teradata's DATABASE is a\n\t// USE, its REPLACE a CREATE and its LOCKING a statement with a query\n\t// inside it (Map\'s STATEMENT_PARSERS keys, by the node each builds).\n\tDatabaseOpensUse   bool\n\tReplaceOpensCreate bool\n\tLockingIsStatement bool\n\t// QueryBandIsSetItem: SET QUERY_BAND is a statement of its own.\n\tQueryBandIsSetItem bool\n\t// TableSampleCSV: a sample takes a comma-separated list of sizes.\n\tTableSampleCSV bool\n\t// UseWord is what the dialect calls USE: Teradata writes the statement\n\t// as DATABASE <name> (TeradataGenerator.TRANSFORMS, exp.Use).\n\tUseWord string\n\t// SafeCastPrefix is what stands in front of CAST for a try-cast: TRY_ for\n\t// TRY_CAST, SAFE_ for SAFE_CAST, and plain TRY for Teradata's TRYCAST\n\t// (Generator.cast_sql\'s safe_prefix).\n\tSafeCastPrefix string\n",
         "\t// MergeWithoutTarget: a MERGE branch's assignments are written without\n\t// the target's own name in front of them here.\n\tMergeWithoutTarget bool\n\t// NormalizeUnquoted and NormalizeQuoted are the case a name is COMPARED\n\t// in -- lower, upper, or empty for as-written.\n\tNormalizeUnquoted string\n\tNormalizeQuoted   string\n",
         "	// CreateExistsWritten says, per kind, whether IF NOT EXISTS survives\n\t// being written. TemporaryWritten says the same of TEMPORARY.\n\tCreateExistsWritten map[string]bool\n\tTemporaryWritten    map[string]bool\n\t// ViewColumnCommentWritten: a view column keeps its COMMENT here.\n\tViewColumnCommentWritten bool\n",
         "\t// AlterAddColumnWord: an ALTER writes the word COLUMN after ADD here,\n\t// and AlterRepeatsAdd whether each added column gets its own ADD.\n\tAlterAddColumnWord bool\n\tAlterRepeatsAdd    bool\n\t// AlterColumnTypeWord is what comes between an altered column and its\n\t// new type -- SET DATA TYPE, TYPE, or nothing at all.\n\tAlterColumnTypeWord string\n",
@@ -8231,6 +8231,27 @@ def main() -> int:
             "\t\tQueryBandIsSetItem: %s,\n"
             % str("QUERY_BAND" in getattr(_pc, "SET_PARSERS", {})).lower()
         )
+        try:
+            _safe = (
+                _expc.TryCast(
+                    this=_expc.column("x"), to=_expc.DataType.build("INT"), safe=True
+                )
+                .sql(dialect=name or None)
+                .split("(")[0]
+            )
+            _plain = (
+                _expc.Cast(this=_expc.column("x"), to=_expc.DataType.build("INT"))
+                .sql(dialect=name or None)
+                .split("(")[0]
+            )
+            _prefix = (
+                _safe[: len(_safe) - len(_plain)]
+                if _safe != _plain and _safe.endswith(_plain)
+                else ""
+            )
+        except Exception:  # noqa: BLE001 -- a dialect that will not render it
+            _prefix = ""
+        out.append("\t\tSafeCastPrefix: %s,\n" % gostr(_prefix))
         try:
             _use_words = (
                 _expc.Use(this=_expc.table_("zzu")).sql(dialect=name or None).split()

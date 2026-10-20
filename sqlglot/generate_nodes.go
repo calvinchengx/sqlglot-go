@@ -36,6 +36,8 @@ func init() {
 		"LockingProperty":                     (*generator).writeLockingProperty,
 		"LockingStatement":                    (*generator).writeLockingStatement,
 		"QueryBand":                           (*generator).writeQueryBand,
+		"TranslateCharacters":                 (*generator).writeTranslateCharacters,
+		"RangeN":                              (*generator).writeRangeN,
 		"Lock":                                (*generator).writeLock,
 		"RecursiveWithSearch":                 (*generator).writeRecursiveWithSearch,
 		"Connect":                             (*generator).writeConnect,
@@ -2421,6 +2423,17 @@ func (g *generator) writeDateTrunc(e *Expression) string {
 }
 
 func (g *generator) writeCast(e *Expression) string {
+	// A type of UNKNOWN with a format beside it says the statement named no
+	// type at all: the phrase takes its place
+	// (TeradataGenerator.cast_sql pops the type before writing).
+	if e.Args["format"] != nil {
+		if to, _ := e.Args["to"].(*Expression); to != nil {
+			if kind, _ := to.Args["this"].(DataTypeKind); kind == "UNKNOWN" {
+				return "CAST(" + g.child(e, "this") + " AS FORMAT " +
+					g.child(e, "format") + ")"
+			}
+		}
+	}
 	// The parser reads a bare ClickHouse STR_TO_DATE as a CAST of StrToDate
 	// to DateTime, and the writer collapses that back to the call it came
 	// from -- but only for the exact bare type the parser built. An explicit
@@ -2435,7 +2448,13 @@ func (g *generator) writeCast(e *Expression) string {
 	}
 	word := "CAST"
 	if e.Class == "TryCast" {
-		word = "TRY_CAST"
+		// What stands in front of CAST is the dialect's own: TRY_ makes
+		// TRY_CAST, SAFE_ makes SAFE_CAST, and Teradata writes TRYCAST
+		// (Generator.cast_sql's safe_prefix).
+		word = g.tables.SafeCastPrefix + "CAST"
+		if g.tables.SafeCastPrefix == "" {
+			word = "TRY_CAST"
+		}
 		// Two different rules, and both are the dialect's own: a dialect whose
 		// TRANSFORMS map a TryCast to the plain cast writer writes CAST
 		// whatever its `safe` flag says (no_trycast_sql); Spark's lambda keeps
@@ -5774,6 +5793,27 @@ func (g *generator) writeStorageHandlerProperty(e *Expression) string {
 // writeLockingProperty writes Teradata's own LOCKING clause, every piece of
 // it optional and each written only where the one before it was: a NAME
 // stands only after a DATABASE, TABLE or VIEW kind, never after ROW.
+// writeTranslateCharacters writes `TRANSLATE(x USING <charset> [WITH ERROR])`
+// (Generator.translatecharacters_sql).
+func (g *generator) writeTranslateCharacters(e *Expression) string {
+	charset, _ := e.Args["expression"].(string)
+	out := "TRANSLATE(" + g.child(e, "this") + " USING " + charset
+	if withError, _ := e.Args["with_error"].(bool); withError {
+		out += " WITH ERROR"
+	}
+	return out + ")"
+}
+
+// writeRangeN writes `RANGE_N(x BETWEEN a, b [EACH n])`
+// (TeradataGenerator.rangen_sql).
+func (g *generator) writeRangeN(e *Expression) string {
+	out := "RANGE_N(" + g.child(e, "this") + " BETWEEN " + g.list(e)
+	if each := g.child(e, "each"); each != "" {
+		out += " EACH " + each
+	}
+	return out + ")"
+}
+
 // writeQueryBand writes Teradata's `QUERY_BAND = <band> [UPDATE] [FOR <scope>]`
 // (Generator.queryband_sql).
 func (g *generator) writeQueryBand(e *Expression) string {
@@ -7091,6 +7131,28 @@ func (g *generator) writeAlterRename(e *Expression) string {
 // action of a MERGE branch it has the list alone, or -- DuckDB's `WHEN MATCHED
 // THEN UPDATE` -- neither.
 func (g *generator) writeUpdate(e *Expression) string {
+	// Teradata writes the FROM between the target and the SET, because it
+	// READS it there: `UPDATE A FROM x AS a SET c = 1 WHERE ...`
+	// (TeradataGenerator.update_sql).
+	if g.dialect == "teradata" {
+		out := g.withPrefix(e, "UPDATE")
+		if hint := g.child(e, "hint"); hint != "" {
+			out += " " + hint
+		}
+		if this := g.child(e, "this"); this != "" {
+			out += " " + this
+		}
+		if from := g.child(e, "from_"); from != "" {
+			out += " " + from
+		}
+		if items, _ := e.Args["expressions"].([]*Expression); len(items) > 0 {
+			out += " SET " + g.list(e)
+		}
+		if where := g.child(e, "where"); where != "" {
+			out += " " + where
+		}
+		return out
+	}
 	head := g.withPrefix(e, "UPDATE")
 	if hint := g.child(e, "hint"); hint != "" {
 		head += " " + hint
@@ -9613,6 +9675,20 @@ func (g *generator) writeStrToTime(e *Expression) string {
 	if g.dialect == "clickhouse" && e.Class == "StrToDate" {
 		return g.clickhouseStrToDate(e)
 	}
+	// Teradata reads the string with a CAST and names the format in a phrase
+	// of its own, mapped back to the words it was written with
+	// (TeradataGenerator.TRANSFORMS, exp.StrToDate).
+	if g.dialect == "teradata" && e.Class == "StrToDate" {
+		spelled := g.child(e, "format")
+		if format, _ := e.Args["format"].(*Expression); format != nil {
+			if raw, ok := format.Args["this"].(string); ok && isStringLiteral(format) {
+				spelled = g.node(New("Literal",
+					Arg{"this", formatTime(raw, g.tables.InverseTimeMapping)},
+					Arg{"is_string", true}))
+			}
+		}
+		return "CAST(" + g.child(e, "this") + " AS DATE FORMAT " + spelled + ")"
+	}
 	if g.dialect != "bigquery" {
 		return g.spell(e)
 	}
@@ -9852,7 +9928,21 @@ func (g *generator) writeTableSample(e *Expression) string {
 		}
 		expr += size
 	}
-	if sample.RequiresParens {
+	// A dialect with TABLESAMPLE_CSV keeps a LIST of sizes rather than one
+	// size or one percent, and writes them as they were given
+	// (TeradataGenerator.tablesample_sql, Generator.tablesample_sql).
+	csvList := false
+	if items, _ := e.Args["expressions"].([]*Expression); len(items) > 0 {
+		parts := make([]string, 0, len(items))
+		for _, item := range items {
+			parts = append(parts, g.node(item))
+		}
+		expr = strings.Join(parts, ", ")
+		// A list already says everything a parenthesis would, and the
+		// dialect that keeps one writes it WITHOUT them.
+		csvList = true
+	}
+	if sample.RequiresParens && !csvList {
 		expr = "(" + expr + ")"
 	}
 	// The word is the TABLE form, with the space in front the table writer
