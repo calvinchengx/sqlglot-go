@@ -1606,6 +1606,33 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			}
 		}
 		p.advance()
+		// Exasol's ODBC datetime literal: `{d'2024-01-01'}` is a Date and
+		// `{ts'2024-01-01 12:00:00'}` a Timestamp, which is the only ODBC
+		// shape any dialect in the corpus has
+		// (ExasolParser.ODBC_DATETIME_LITERALS,
+		// Parser._parse_odbc_datetime_literal).
+		if p.dialect == "exasol" {
+			if c := p.curr(); c != nil && (c.Type == TokVAR || c.Type == TokIDENTIFIER) {
+				class := ""
+				switch strings.ToLower(c.Text) {
+				case "d":
+					class = "Date"
+				case "ts":
+					class = "Timestamp"
+				}
+				if class != "" && p.next() != nil && p.next().Type == TokSTRING {
+					p.advance()
+					lit := p.tryParseStringLiteral()
+					if lit == nil {
+						return nil, p.unsupported("ODBC literal without a string")
+					}
+					if !p.match(TokR_BRACE) {
+						return nil, p.unsupported("ODBC literal without a closing brace")
+					}
+					return New(class, Arg{"this", lit}), nil
+				}
+			}
+		}
 		var items []*Expression
 		for !p.at(TokR_BRACE) {
 			key := p.curr()
