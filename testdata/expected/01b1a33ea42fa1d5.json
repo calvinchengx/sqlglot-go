@@ -1,0 +1,149 @@
+{
+ "dialect": "teradata",
+ "rendered": "LOCKING ROW FOR EXCLUSIVE SELECT * FROM table1",
+ "sql": "LOCKING ROW FOR EXCLUSIVE SELECT * FROM table1",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "LOCK",
+   "x": "LOCKING"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 8,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 12,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "EXCLUSIVE"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 26,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 35,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "table1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.LockingStatement"
+  },
+  {
+   "c": "sqlglot.expressions.properties.LockingProperty",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "i": 1,
+   "k": "kind",
+   "v": "ROW"
+  },
+  {
+   "i": 1,
+   "k": "for_or_in",
+   "v": "FOR"
+  },
+  {
+   "i": 1,
+   "k": "lock_type",
+   "v": "EXCLUSIVE"
+  },
+  {
+   "i": 1,
+   "k": "override",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 6,
+   "k": "expressions",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 33
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 6,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 46,
+    "end": 45,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "table1"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

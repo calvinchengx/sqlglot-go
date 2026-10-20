@@ -1,0 +1,149 @@
+{
+ "dialect": "teradata",
+ "rendered": "LOCKING ROW FOR SHARE SELECT * FROM table1",
+ "sql": "LOCKING ROW FOR SHARE SELECT * FROM table1",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "LOCK",
+   "x": "LOCKING"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 8,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 12,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "SHARE"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 22,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 31,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 36,
+   "t": "VAR",
+   "x": "table1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.LockingStatement"
+  },
+  {
+   "c": "sqlglot.expressions.properties.LockingProperty",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "i": 1,
+   "k": "kind",
+   "v": "ROW"
+  },
+  {
+   "i": 1,
+   "k": "for_or_in",
+   "v": "FOR"
+  },
+  {
+   "i": 1,
+   "k": "lock_type",
+   "v": "SHARE"
+  },
+  {
+   "i": 1,
+   "k": "override",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 6,
+   "k": "expressions",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 6,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 42,
+    "end": 41,
+    "line": 1,
+    "start": 36
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "table1"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

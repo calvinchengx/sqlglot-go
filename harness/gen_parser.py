@@ -31,7 +31,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery", "clickhouse", "tableau", "dune", "druid", "solr", "drill")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery", "clickhouse", "tableau", "dune", "druid", "solr", "drill", "teradata")
 
 def gostr(s: str) -> str:
     """Quote a string as Go source.
@@ -1443,13 +1443,16 @@ def hoists_insert_with(dialect: str) -> bool:
     return text.upper().startswith("WITH")
 
 
-def returning_conventions(dialect: str) -> tuple[str, bool]:
-    """How a RETURNING clause is spelled, and whether it comes LAST.
+def returning_conventions(dialect: str) -> tuple[str, bool, bool]:
+    """How a RETURNING clause is spelled, whether it comes LAST, and whether
+    an UPDATE writes one at all.
 
     T-SQL calls it OUTPUT and writes it early -- straight after SET in an
     UPDATE, straight after the verb in a DELETE -- where everyone else writes
-    it after the WHERE. One trait with two consequences, so both statements
-    are asked and the answers have to agree.
+    it after the WHERE. That looked like one trait with two consequences, and
+    the two answers were asserted to agree; Teradata does not agree. It drops
+    the clause from an UPDATE outright and keeps it on a DELETE, so the two
+    statements are asked separately.
     """
     import sqlglot
 
@@ -1461,18 +1464,15 @@ def returning_conventions(dialect: str) -> tuple[str, bool]:
             "DELETE FROM t WHERE b = 2 RETURNING zzret", read="postgres"
         ).sql(dialect=dialect or None)
     except Exception:  # noqa: BLE001
-        return "RETURNING", True
+        return "RETURNING", True, True
 
     # The clause is not necessarily last, so the word is the one in FRONT of
     # the marker rather than the second from the end.
     head = update.split("zzret")[0].split()
     word = head[-1] if head else "RETURNING"
-    update_last = update.rstrip().endswith("zzret")
-    delete_last = delete.rstrip().endswith("zzret")
-    assert update_last == delete_last, (
-        "%s writes RETURNING last in one statement and not the other" % dialect
-    )
-    return word, update_last
+    # Whether the UPDATE kept the clause at all is a different question from
+    # where it put it, and Teradata answers it no.
+    return word, delete.rstrip().endswith("zzret"), "zzret" in update
 
 
 def cast_coercions(exp, dialect, cls_name, keys):
@@ -6774,7 +6774,7 @@ def main() -> int:
         "\t// HoistsInsertWith: a WITH inside an INSERT is written in FRONT of\n",
         "\t// the statement here, and left where it was written elsewhere.\n",
         "\tHoistsInsertWith bool\n",
-        "\t// ReturningWord is what this dialect calls a RETURNING clause, and\n\t// ReturningEnd whether it is written after the WHERE rather than\n\t// straight after the verb.\n\tReturningWord string\n\tReturningEnd  bool\n",
+        "\t// ReturningWord is what this dialect calls a RETURNING clause, and\n\t// ReturningEnd whether it is written after the WHERE rather than\n\t// straight after the verb.\n\tReturningWord string\n\tReturningEnd  bool\n\t// UpdateWritesReturning: an UPDATE writes its clause at all.\n\t// Teradata drops it from an UPDATE and keeps it on a DELETE, so\n\t// this is not the same question as ReturningEnd.\n\tUpdateWritesReturning bool\n\t// IndexParamsDropOn: an index's own `ON <field>` is un-read, and the\n\t// words are handed back to the statement that follows it. Teradata\n\t// overrides _parse_index_params to do exactly that, so `ON COMMIT` is\n\t// read as the property it is rather than as the index's target.\n\tIndexParamsDropOn bool\n\t// StatementWords are the keywords this dialect opens a statement of its\n\t// own with, beyond the ones every dialect has: Teradata's DATABASE is a\n\t// USE, its REPLACE a CREATE and its LOCKING a statement with a query\n\t// inside it (Map\'s STATEMENT_PARSERS keys, by the node each builds).\n\tDatabaseOpensUse   bool\n\tReplaceOpensCreate bool\n\tLockingIsStatement bool\n\t// QueryBandIsSetItem: SET QUERY_BAND is a statement of its own.\n\tQueryBandIsSetItem bool\n\t// TableSampleCSV: a sample takes a comma-separated list of sizes.\n\tTableSampleCSV bool\n\t// UseWord is what the dialect calls USE: Teradata writes the statement\n\t// as DATABASE <name> (TeradataGenerator.TRANSFORMS, exp.Use).\n\tUseWord string\n\t// SafeCastPrefix is what stands in front of CAST for a try-cast: TRY_ for\n\t// TRY_CAST, SAFE_ for SAFE_CAST, and plain TRY for Teradata's TRYCAST\n\t// (Generator.cast_sql\'s safe_prefix).\n\tSafeCastPrefix string\n",
         "\t// MergeWithoutTarget: a MERGE branch's assignments are written without\n\t// the target's own name in front of them here.\n\tMergeWithoutTarget bool\n\t// NormalizeUnquoted and NormalizeQuoted are the case a name is COMPARED\n\t// in -- lower, upper, or empty for as-written.\n\tNormalizeUnquoted string\n\tNormalizeQuoted   string\n",
         "	// CreateExistsWritten says, per kind, whether IF NOT EXISTS survives\n\t// being written. TemporaryWritten says the same of TEMPORARY.\n\tCreateExistsWritten map[string]bool\n\tTemporaryWritten    map[string]bool\n\t// ViewColumnCommentWritten: a view column keeps its COMMENT here.\n\tViewColumnCommentWritten bool\n",
         "\t// AlterAddColumnWord: an ALTER writes the word COLUMN after ADD here,\n\t// and AlterRepeatsAdd whether each added column gets its own ADD.\n\tAlterAddColumnWord bool\n\tAlterRepeatsAdd    bool\n\t// AlterColumnTypeWord is what comes between an altered column and its\n\t// new type -- SET DATA TYPE, TYPE, or nothing at all.\n\tAlterColumnTypeWord string\n",
@@ -8214,9 +8214,63 @@ def main() -> int:
         _nu, _nq = identifier_normalization(name)
         out.append(f"\t\tNormalizeUnquoted: {gostr(_nu)},\n")
         out.append(f"\t\tNormalizeQuoted: {gostr(_nq)},\n")
-        _rw, _re = returning_conventions(name)
+        _rw, _re, _ruw = returning_conventions(name)
         out.append(f"\t\tReturningWord: {gostr(_rw)},\n")
         out.append("\t\tReturningEnd: %s,\n" % str(_re).lower())
+        out.append("\t\tUpdateWritesReturning: %s,\n" % str(_ruw).lower())
+        from sqlglot import parser as _parser_mod
+
+        from sqlglot.tokens import TokenType as _TT
+
+        _pc = Dialect.get_or_raise(name or None).parser_class
+        _stmt = getattr(_pc, "STATEMENT_PARSERS", {})
+        out.append("\t\tDatabaseOpensUse: %s,\n" % str(_TT.DATABASE in _stmt).lower())
+        out.append("\t\tReplaceOpensCreate: %s,\n" % str(_TT.REPLACE in _stmt).lower())
+        out.append("\t\tLockingIsStatement: %s,\n" % str(_TT.LOCK in _stmt).lower())
+        out.append(
+            "\t\tQueryBandIsSetItem: %s,\n"
+            % str("QUERY_BAND" in getattr(_pc, "SET_PARSERS", {})).lower()
+        )
+        try:
+            _safe = (
+                _expc.TryCast(
+                    this=_expc.column("x"), to=_expc.DataType.build("INT"), safe=True
+                )
+                .sql(dialect=name or None)
+                .split("(")[0]
+            )
+            _plain = (
+                _expc.Cast(this=_expc.column("x"), to=_expc.DataType.build("INT"))
+                .sql(dialect=name or None)
+                .split("(")[0]
+            )
+            _prefix = (
+                _safe[: len(_safe) - len(_plain)]
+                if _safe != _plain and _safe.endswith(_plain)
+                else ""
+            )
+        except Exception:  # noqa: BLE001 -- a dialect that will not render it
+            _prefix = ""
+        out.append("\t\tSafeCastPrefix: %s,\n" % gostr(_prefix))
+        try:
+            _use_words = (
+                _expc.Use(this=_expc.table_("zzu")).sql(dialect=name or None).split()
+            )
+            _use_word = _use_words[0] if _use_words else "USE"
+        except Exception:  # noqa: BLE001 -- a dialect that will not render it
+            _use_word = "USE"
+        out.append("\t\tUseWord: %s,\n" % gostr(_use_word))
+        out.append(
+            "\t\tTableSampleCSV: %s,\n"
+            % str(bool(getattr(_pc, "TABLESAMPLE_CSV", False))).lower()
+        )
+        out.append(
+            "\t\tIndexParamsDropOn: %s,\n"
+            % str(
+                Dialect.get_or_raise(name or None).parser_class._parse_index_params
+                is not _parser_mod.Parser._parse_index_params
+            ).lower()
+        )
         out.append(f"\t\tRenameTarget: {gostr(rename_target(name))},\n")
         out.append(
             "\t\tTruncatesCatalog: %s,\n"

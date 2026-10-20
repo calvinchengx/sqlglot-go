@@ -11,6 +11,15 @@ import "strings"
 // Entered with the name current and the opening parenthesis after it.
 func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 	switch upper {
+	// Teradata's three: its own spelling of TRY_CAST, a TRANSLATE that
+	// names a charset instead of taking one, and RANGE_N's BETWEEN list
+	// (TeradataParser.FUNCTION_PARSERS).
+	case "TRYCAST":
+		return p.castOrConversion(true)
+	case "TRANSLATE":
+		return p.parseTranslateCharacters()
+	case "RANGE_N":
+		return p.parseRangeN()
 	case "EXTRACT":
 		return p.parseExtract()
 	case "TRIM":
@@ -1704,4 +1713,68 @@ func (p *parser) parseInitcap() (*Expression, error) {
 		return nil, p.unsupported("unclosed INITCAP")
 	}
 	return New("Initcap", Arg{"this", this}, Arg{"expression", delim}), nil
+}
+
+// parseTranslateCharacters reads `TRANSLATE(x USING <charset> [WITH ERROR])`:
+// the charset is a bare word kept as itself, not an expression
+// (TeradataParser._parse_translate).
+func (p *parser) parseTranslateCharacters() (*Expression, error) {
+	p.advance() // TRANSLATE
+	p.advance() // (
+	this, err := p.parseAssignment()
+	if err != nil {
+		return nil, err
+	}
+	var charset string
+	if p.match(TokUSING) {
+		c := p.curr()
+		if c == nil {
+			return nil, p.unsupported("TRANSLATE USING without a charset")
+		}
+		charset = strings.ToUpper(c.Text)
+		p.advance()
+	}
+	withError := false
+	if p.atWords("WITH", "ERROR") {
+		p.advance()
+		p.advance()
+		withError = true
+	}
+	p.match(TokR_PAREN)
+	return New("TranslateCharacters", Arg{"this", this},
+		Arg{"expression", charset}, Arg{"with_error", withError}), nil
+}
+
+// parseRangeN reads `RANGE_N(x BETWEEN a, b AND c [EACH n])`: the bounds are a
+// comma list, so the AND belongs to the last bound rather than to the clause
+// (TeradataParser._parse_rangen).
+func (p *parser) parseRangeN() (*Expression, error) {
+	p.advance() // RANGE_N
+	p.advance() // (
+	this, err := p.parseIdentifier()
+	if err != nil {
+		return nil, err
+	}
+	p.match(TokBETWEEN)
+	var exprs []*Expression
+	for {
+		item, err := p.parseAssignment()
+		if err != nil {
+			return nil, err
+		}
+		exprs = append(exprs, item)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	var each *Expression
+	if p.matchUnquotedWord("EACH") {
+		each, err = p.parseAssignment()
+		if err != nil {
+			return nil, err
+		}
+	}
+	p.match(TokR_PAREN)
+	return New("RangeN", Arg{"this", this}, Arg{"expressions", exprs},
+		Arg{"each", each}), nil
 }

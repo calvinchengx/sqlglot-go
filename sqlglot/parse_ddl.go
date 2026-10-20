@@ -23,6 +23,10 @@ import (
 // SELECT` differ in what `this` holds, not just in what follows it.
 func (p *parser) parseCreate() (*Expression, error) {
 	start := *p.curr()
+	// Teradata's REPLACE stands where CREATE does and means the same CREATE
+	// with `replace` set (Parser._parse_create, `start.token_type ==
+	// TokenType.REPLACE`).
+	replaceVerb := p.at(TokREPLACE)
 	p.advance() // CREATE
 	leading := p.takeComments()
 	afterCreate := p.index
@@ -31,7 +35,7 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// T-SQL's ALTER both mean `replace`, Databricks' REFRESH means
 	// `refresh`. Which words a dialect takes, and what each means, is the
 	// dialect's business and is read from its table.
-	replace, refresh := false, false
+	replace, refresh := replaceVerb, false
 	if p.atWords("OR") && p.next() != nil {
 		if flag, ok := p.tables.CreateOrFlags[strings.ToUpper(p.next().Text)]; ok {
 			p.advance()
@@ -95,6 +99,32 @@ func (p *parser) parseCreate() (*Expression, error) {
 		}
 		if prop := p.oracleTemporaryScope(); prop != nil {
 			modifiers = append(modifiers, prop)
+			continue
+		}
+		// SET and MULTISET are PROPERTIES in front of the kind, each carrying
+		// the flag that says which -- Teradata writes `CREATE SET TABLE`
+		// (Parser.PROPERTY_PARSERS).
+		if p.atWords("SET") || p.atWords("MULTISET") {
+			multi := strings.EqualFold(word.Text, "MULTISET")
+			p.advance()
+			modifiers = append(modifiers, New("SetProperty", Arg{"multi", multi}))
+			continue
+		}
+		// VOLATILE is a VolatileProperty only when it stands straight after
+		// the verb; after anything else it is a StabilityProperty naming the
+		// word (Parser._parse_volatile_property, PRE_VOLATILE_TOKENS).
+		if p.atWords("VOLATILE") {
+			volatile := New("VolatileProperty")
+			if p.index > 0 {
+				switch p.tokens[p.index-1].Type {
+				case TokCREATE, TokREPLACE, TokUNIQUE:
+				default:
+					volatile = New("StabilityProperty", Arg{"this",
+						New("Literal", Arg{"this", "VOLATILE"}, Arg{"is_string", true})})
+				}
+			}
+			p.advance()
+			modifiers = append(modifiers, volatile)
 			continue
 		}
 		if class, ok := p.tables.CreateProperties[strings.ToUpper(word.Text)]; ok {
@@ -287,7 +317,17 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// and the columns -- `CREATE TABLE z WITH (FORMAT='parquet') AS SELECT 1`
 	// -- and some after them. Both are read, in the order they were written,
 	// because the reference keeps them in one list in that order.
-	afterName, err := p.parseTableProperties()
+	// A comma after the name says the words that follow are the table's own
+	// settings rather than columns: `CREATE TABLE a, NO FALLBACK, NO LOG
+	// (a INT)`. That list is read by the BEFORE reader, which is the one the
+	// reference hands POST_NAME properties to (Parser._parse_create,
+	// `_parse_properties(before=True)`).
+	var afterName []*Expression
+	if p.match(TokCOMMA) {
+		afterName, err = p.parseTablePropertiesBefore()
+	} else {
+		afterName, err = p.parseTableProperties()
+	}
 	if err != nil {
 		return nil, err
 	}
@@ -383,6 +423,13 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// INDEX j (b)` -- name themselves after the table's own body, one after
 	// another until a word standing there is not one.
 	var indexes []*Expression
+	// A comma between two indexes becomes an EMPTY SequenceProperties, which
+	// looks like a mistake because it is one the reference makes: its property
+	// reader ends in a SEQUENCE reader that consumes a leading COMMA before
+	// deciding the words after it are not a sequence, and returns the node it
+	// had already built (Parser._parse_sequence_properties, `_match(COMMA)`
+	// ahead of the loop). The tree is what is compared, so it is what is built.
+	var commaProps []*Expression
 	if kind == "TABLE" {
 		for {
 			index, err := p.parseTrailingIndex()
@@ -393,7 +440,9 @@ func (p *parser) parseCreate() (*Expression, error) {
 				break
 			}
 			indexes = append(indexes, index)
-			p.match(TokCOMMA)
+			if p.match(TokCOMMA) {
+				commaProps = append(commaProps, New("SequenceProperties"))
+			}
 		}
 	}
 	// `WITH NO DATA` says the table is SHAPED by the query rather than filled
@@ -432,6 +481,29 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// Whatever stood between the columns and the query comes first, in the
 	// order it was written.
 	afterSchema = append(afterColumns, afterSchema...)
+	afterSchema = append(afterSchema, commaProps...)
+	// A TABLE interleaves its trailing indexes with the properties between
+	// them, and keeps going until neither appears:
+	// `PRIMARY INDEX (y) PARTITION BY y INDEX (y)` is index, property, index
+	// (Parser._parse_create, create_token_type == TABLE).
+	if kind == "TABLE" {
+		for {
+			more, err := p.parseTableProperties()
+			if err != nil {
+				return nil, err
+			}
+			afterSchema = append(afterSchema, more...)
+			index, err := p.parseTrailingIndex()
+			if err != nil {
+				return nil, err
+			}
+			if index == nil {
+				break
+			}
+			indexes = append(indexes, index)
+			p.match(TokCOMMA)
+		}
+	}
 	// `CLONE other` makes the new table from an existing one rather than from
 	// columns or a query. SHALLOW says the rows are shared until one side
 	// writes to them.
@@ -482,10 +554,15 @@ func (p *parser) parseCreate() (*Expression, error) {
 	// The words in front of the kind, in the order they were written.
 	items = append(items, modifiers...)
 	items = append(items, afterName...)
-	items = append(items, afterSchema...)
+	// Properties go in the order they were READ, and WITH DATA stands before
+	// whatever a table says after it -- `WITH DATA PRIMARY INDEX (c) ON
+	// COMMIT PRESERVE ROWS` reads the promise, then the index, then the
+	// clause (Parser._parse_create: every property is appended as it is
+	// found).
 	if withData != nil {
 		items = append(items, withData)
 	}
+	items = append(items, afterSchema...)
 	items = append(items, locking...)
 	var properties *Expression
 	if len(items) > 0 {
@@ -533,9 +610,15 @@ func (p *parser) parseTrailingIndex() (*Expression, error) {
 		return nil, nil
 	}
 	p.advance()
-	name, err := p.parseIdentifier()
-	if err != nil {
-		return nil, err
+	// The index's name is OPTIONAL: `PRIMARY INDEX (id)` names none and goes
+	// straight to its parameters (Parser._parse_index, `_parse_id_var()`).
+	var name *Expression
+	if !p.at(TokL_PAREN) {
+		var err error
+		name, err = p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
 	}
 	params, err := p.parseIndexParameters()
 	if err != nil {
@@ -4863,6 +4946,22 @@ func (p *parser) parseIndexParameters() (*Expression, error) {
 		}
 		include = names
 	}
+	// Where the index is partitioned, which is a list rather than a node
+	// (Parser._parse_index_params, `_parse_partition_by`).
+	var partitionBy []*Expression
+	if p.at(TokPARTITION_BY) {
+		p.advance()
+		for {
+			item, err := p.parseDisjunction()
+			if err != nil {
+				return nil, err
+			}
+			partitionBy = append(partitionBy, item)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+	}
 	// How the index is STORED, as a list of settings under one WITH.
 	if p.at(TokWITH) {
 		p.advance()
@@ -4896,6 +4995,7 @@ func (p *parser) parseIndexParameters() (*Expression, error) {
 	}
 	// What the index is put ON: a filegroup by name, or a partition scheme
 	// with the column it is partitioned by.
+	onMark := p.index
 	if p.atWords("ON") {
 		p.advance()
 		read, err := p.parseIndexOn()
@@ -4904,9 +5004,17 @@ func (p *parser) parseIndexParameters() (*Expression, error) {
 		}
 		on = read
 	}
+	// `ON COMMIT DELETE ROWS` after an index is the table's property, not
+	// the index's target: the dialect un-reads it here and the statement
+	// reads it again as a property (TeradataParser._parse_index_params).
+	if on != nil && p.tables.IndexParamsDropOn {
+		on = nil
+		p.index = onMark
+	}
 	params.Set("using", using)
 	params.Set("columns", columns)
 	params.Set("include", include)
+	params.Set("partition_by", partitionBy)
 	params.Set("where", where)
 	params.Set("with_storage", storage)
 	params.Set("tablespace", tablespace)
@@ -5694,6 +5802,28 @@ func (p *parser) parseSet() (*Expression, error) {
 		Arg{"unset", false}, Arg{"tag", false}), nil
 }
 
+// parseLockingStatement reads Teradata's `LOCKING <what> FOR <type> <query>`:
+// the clause says how the query behind it takes its locks
+// (TeradataParser._parse_locking_statement).
+func (p *parser) parseLockingStatement() (*Expression, error) {
+	property := p.parseLockingProperty()
+	// `LOCKING` on its own is a truncated statement rather than one with an
+	// empty query: the reference raises "Expected SELECT statement after
+	// LOCKING clause" and this refuses for the same reason.
+	if p.curr() == nil {
+		return nil, p.unsupported("LOCKING without a query")
+	}
+	query, err := p.parseSelect()
+	if err != nil {
+		return nil, err
+	}
+	if query == nil {
+		return nil, p.unsupported("LOCKING without a query")
+	}
+	return New("LockingStatement",
+		Arg{"this", property}, Arg{"expression", query}), nil
+}
+
 // parseMySQLUnquotedField is the reference's own `_parse_unquoted_field`: a
 // quoted string is read as itself, and anything else -- a bare word, or a
 // keyword like DEFAULT -- is read as a Var of its own text instead.
@@ -5753,6 +5883,39 @@ func (p *parser) parseTransactionCharacteristics() []*Expression {
 // in front of it.
 func (p *parser) parseSetStatementItem() (*Expression, error) {
 	mark := p.index
+	// Teradata's own SET QUERY_BAND names the band, whether it updates the
+	// one already set, and the scope it applies to
+	// (TeradataParser.SET_PARSERS, _parse_query_band).
+	if p.tables.QueryBandIsSetItem && p.atWords("QUERY_BAND") {
+		p.advance()
+		p.match(TokEQ)
+		var band *Expression
+		// The bare WORD, not a string that happens to spell it: `'NONE'` is a
+		// band called NONE, and `NONE` is none at all
+		// (TeradataParser._parse_query_band, `_match_text_seq`).
+		if p.atUnquotedWord("NONE") {
+			p.advance()
+			band = New("Var", Arg{"this", "NONE"})
+		} else {
+			band = p.tryParseStringLiteral()
+			if band == nil {
+				return nil, p.unsupported("QUERY_BAND without a string")
+			}
+		}
+		update := p.matchUnquotedWord("UPDATE")
+		p.match(TokFOR)
+		var scope any
+		if p.atWords("SESSION", "VOLATILE") {
+			p.advance()
+			p.advance()
+			scope = "SESSION VOLATILE"
+		} else if p.atWords("SESSION") || p.atWords("TRANSACTION") {
+			scope = strings.ToUpper(p.curr().Text)
+			p.advance()
+		}
+		return New("QueryBand", Arg{"this", band}, Arg{"scope", scope},
+			Arg{"update", update}), nil
+	}
 	// `SET [GLOBAL|SESSION] TRANSACTION ...` is the reference's own base
 	// `_parse_set_transaction`, universal rather than a MySQL-only shape,
 	// even though MySQL's corpus is the first to exercise it here.

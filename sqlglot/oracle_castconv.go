@@ -36,6 +36,25 @@ func (p *parser) readConversionCast() (*Expression, error) {
 	if !p.match(TokALIAS) {
 		return nil, p.unsupported("CAST without AS")
 	}
+	// Teradata's `CAST(x AS FORMAT '...')` names no type at all: the type is
+	// UNKNOWN and the FORMAT phrase says how the value is read, which the
+	// generator then writes in place of the type (Parser._parse_types'
+	// FORMAT branch, TeradataGenerator.cast_sql).
+	if p.at(TokFORMAT) {
+		p.advance()
+		raw := p.tryParseStringLiteral()
+		if raw == nil {
+			return nil, p.unsupported("CAST AS FORMAT without a format")
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed CAST")
+		}
+		to := New("DataType", Arg{"this", DataTypeKind("UNKNOWN")})
+		cast := New("Cast", Arg{"this", this}, Arg{"to", to},
+			Arg{"format", raw}, Arg{"default", nil})
+		cast.Type = to
+		return p.keep(cast), nil
+	}
 	to, err := p.parseCollatedDataType()
 	if err != nil {
 		return nil, err

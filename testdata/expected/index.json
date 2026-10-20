@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 10942,
+ "count": 11072,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -13713,6 +13713,11 @@
    "sql": "CREATE TABLE t1 AS (SELECT c FROM t2)"
   },
   {
+   "key": "8df324b674c28ad8",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE t1 AS (SELECT c FROM t2) WITH DATA"
+  },
+  {
    "key": "f999b3f943f0ffc9",
    "dialect": "databricks",
    "sql": "SELECT X'1A2B'"
@@ -15143,6 +15148,11 @@
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
   },
   {
+   "key": "fc878ecc6c253bc7",
+   "dialect": "teradata",
+   "sql": "SELECT NVL2(a, b, c)"
+  },
+  {
    "key": "40172a480d99e2d5",
    "dialect": "trino",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b ELSE c END"
@@ -15231,6 +15241,11 @@
    "key": "5211858b246129d4",
    "dialect": "starrocks",
    "sql": "SELECT CASE WHEN NOT a IS NULL THEN b END"
+  },
+  {
+   "key": "be29e6e2ad89d0ca",
+   "dialect": "teradata",
+   "sql": "SELECT NVL2(a, b)"
   },
   {
    "key": "527378cf9a5d080e",
@@ -17643,6 +17658,11 @@
    "sql": "POSITION(needle in haystack)"
   },
   {
+   "key": "8abe9a4efcf82411",
+   "dialect": "teradata",
+   "sql": "POSITION(needle in haystack)"
+  },
+  {
    "key": "130e6ee49a3323a5",
    "dialect": "trino",
    "sql": "POSITION(needle in haystack)"
@@ -17743,6 +17763,11 @@
    "sql": "INSTR(haystack, needle)"
   },
   {
+   "key": "b53203cdaf2170f2",
+   "dialect": "teradata",
+   "sql": "INSTR(haystack, needle)"
+  },
+  {
    "key": "d4d59f4e97962856",
    "dialect": "clickhouse",
    "sql": "LOCATE(needle, haystack)"
@@ -17780,6 +17805,11 @@
   {
    "key": "994a73183d2363b9",
    "dialect": "starrocks",
+   "sql": "LOCATE(needle, haystack)"
+  },
+  {
+   "key": "f8f1c17168a6c659",
+   "dialect": "teradata",
    "sql": "LOCATE(needle, haystack)"
   },
   {
@@ -17863,6 +17893,11 @@
    "sql": "LOCATE(needle, haystack, position)"
   },
   {
+   "key": "7c5b574121940579",
+   "dialect": "teradata",
+   "sql": "LOCATE(needle, haystack, position)"
+  },
+  {
    "key": "5fb03412c442a39f",
    "dialect": "clickhouse",
    "sql": "LOCATE(needle, haystack, position)"
@@ -17880,6 +17915,11 @@
   {
    "key": "8a791e555e0fbf67",
    "dialect": "doris",
+   "sql": "INSTR(haystack, needle, position)"
+  },
+  {
+   "key": "e03c4dfacd1b021a",
+   "dialect": "teradata",
    "sql": "INSTR(haystack, needle, position)"
   },
   {
@@ -17945,6 +17985,11 @@
   {
    "key": "240c4306b077be9d",
    "dialect": "bigquery",
+   "sql": "INSTR(haystack, needle, position, occurrence)"
+  },
+  {
+   "key": "33e646a52274da3f",
+   "dialect": "teradata",
    "sql": "INSTR(haystack, needle, position, occurrence)"
   },
   {
@@ -18368,6 +18413,11 @@
    "sql": "CAST(a AS REAL) / b"
   },
   {
+   "key": "a63addf104981ef3",
+   "dialect": "teradata",
+   "sql": "CAST(a AS DOUBLE PRECISION) / b"
+  },
+  {
    "key": "1c07c2427e87baf9",
    "dialect": "trino",
    "sql": "CAST(a AS DOUBLE) / b"
@@ -18536,6 +18586,11 @@
    "key": "84980c4bdb367c70",
    "dialect": "sqlite",
    "sql": "SELECT * FROM data LIMIT 20 OFFSET 10"
+  },
+  {
+   "key": "beea57c74ae856fb",
+   "dialect": "teradata",
+   "sql": "SELECT TOP 10 x FROM y"
   },
   {
    "key": "cd7588fec4ae91a6",
@@ -18998,6 +19053,11 @@
    "sql": "LOG(x)"
   },
   {
+   "key": "dd7ad0ef9a482f04",
+   "dialect": "teradata",
+   "sql": "LOG(x)"
+  },
+  {
    "key": "bac3626182822873",
    "dialect": "dremio",
    "sql": "LOG(x)"
@@ -19145,6 +19205,11 @@
   {
    "key": "48c0835d0773f2cd",
    "dialect": "presto",
+   "sql": "CAST(x AS some_udt)"
+  },
+  {
+   "key": "d132886ceab069be",
+   "dialect": "teradata",
    "sql": "CAST(x AS some_udt)"
   },
   {
@@ -19451,6 +19516,11 @@
    "key": "da1780853f11c99f",
    "dialect": "spark2",
    "sql": "(SIZE(arr) = 0 OR SIZE(FILTER(arr, x -> pred)) <> 0)"
+  },
+  {
+   "key": "06ce1e461b2e65ab",
+   "dialect": "teradata",
+   "sql": "(CARDINALITY(arr) = 0 OR CARDINALITY(FILTER(arr, x -> pred)) <> 0)"
   },
   {
    "key": "82f8064198f1171c",
@@ -20293,6 +20363,11 @@
    "sql": "REGR_COUNT(x, y)"
   },
   {
+   "key": "15b5c69b6a9f20b2",
+   "dialect": "teradata",
+   "sql": "REGR_COUNT(x, y)"
+  },
+  {
    "key": "cfb8584582fcb325",
    "dialect": "trino",
    "sql": "REGR_COUNT(x, y)"
@@ -20328,6 +20403,11 @@
    "sql": "REGR_INTERCEPT(x, y)"
   },
   {
+   "key": "43b4969284d0ee88",
+   "dialect": "teradata",
+   "sql": "REGR_INTERCEPT(x, y)"
+  },
+  {
    "key": "cc1ff7dd41246fe8",
    "dialect": "databricks",
    "sql": "REGR_R2(x, y)"
@@ -20358,6 +20438,11 @@
    "sql": "REGR_R2(x, y)"
   },
   {
+   "key": "fa039e28d159c8b3",
+   "dialect": "teradata",
+   "sql": "REGR_R2(x, y)"
+  },
+  {
    "key": "5afee2d16cfd2c07",
    "dialect": "databricks",
    "sql": "REGR_SLOPE(x, y)"
@@ -20380,6 +20465,11 @@
   {
    "key": "9e77efd28d0f845a",
    "dialect": "spark",
+   "sql": "REGR_SLOPE(x, y)"
+  },
+  {
+   "key": "5ef4987572793235",
+   "dialect": "teradata",
    "sql": "REGR_SLOPE(x, y)"
   },
   {
@@ -20418,6 +20508,11 @@
    "sql": "REGR_SXX(x, y)"
   },
   {
+   "key": "d593b25dd2fcd334",
+   "dialect": "teradata",
+   "sql": "REGR_SXX(x, y)"
+  },
+  {
    "key": "b066b547543078f3",
    "dialect": "databricks",
    "sql": "REGR_SXY(x, y)"
@@ -20448,6 +20543,11 @@
    "sql": "REGR_SXY(x, y)"
   },
   {
+   "key": "b252ecc227ae35d6",
+   "dialect": "teradata",
+   "sql": "REGR_SXY(x, y)"
+  },
+  {
    "key": "92cf38c46e7be57e",
    "dialect": "databricks",
    "sql": "REGR_SYY(x, y)"
@@ -20475,6 +20575,11 @@
   {
    "key": "23b82d22b01c9b19",
    "dialect": "spark",
+   "sql": "REGR_SYY(x, y)"
+  },
+  {
+   "key": "ca986a70cf68e2f4",
+   "dialect": "teradata",
    "sql": "REGR_SYY(x, y)"
   },
   {
@@ -26158,6 +26263,11 @@
    "sql": "CAST(x AS SMALLDATETIME)"
   },
   {
+   "key": "f97c80e385033797",
+   "dialect": "teradata",
+   "sql": "SELECT x MOD 10"
+  },
+  {
    "key": "e71a2a58bcb2a7d2",
    "dialect": "mysql",
    "sql": "SELECT x % 10"
@@ -31488,6 +31598,11 @@
    "sql": "CAST(a AS DOUBLE PRECISION) / NULLIF(b, 0)"
   },
   {
+   "key": "387187d2eeb31d75",
+   "dialect": "teradata",
+   "sql": "CAST(a AS DOUBLE PRECISION) / NULLIF(b, 0)"
+  },
+  {
    "key": "a93019d00b8e27ea",
    "dialect": "trino",
    "sql": "CAST(a AS DOUBLE) / NULLIF(b, 0)"
@@ -31798,6 +31913,11 @@
    "sql": "CURRENT_TIMESTAMP BETWEEN TO_DATE(f.C_SDATE, 'YYYY/MM/DD') AND TO_DATE(f.C_EDATE, 'YYYY/MM/DD')"
   },
   {
+   "key": "8ea74338ad42e4ab",
+   "dialect": "teradata",
+   "sql": "TO_NUMBER(expr, fmt, nlsparam)"
+  },
+  {
    "key": "d846e7977df00ab0",
    "dialect": "bigquery",
    "sql": "CAST(x AS FLOAT64)"
@@ -31858,6 +31978,11 @@
    "sql": "CAST(x AS DOUBLE)"
   },
   {
+   "key": "c74812868bbccfa4",
+   "dialect": "teradata",
+   "sql": "TO_NUMBER(x)"
+  },
+  {
    "key": "5afae62d3bdf2091",
    "dialect": "databricks",
    "sql": "TO_NUMBER(x, fmt)"
@@ -31880,6 +32005,11 @@
   {
    "key": "bec81e882bb89810",
    "dialect": "redshift",
+   "sql": "TO_NUMBER(x, fmt)"
+  },
+  {
+   "key": "1e125fc6193c09ac",
+   "dialect": "teradata",
    "sql": "TO_NUMBER(x, fmt)"
   },
   {
@@ -34893,6 +35023,11 @@
    "sql": "REPEATED_COUNT(arr)"
   },
   {
+   "key": "4cebc8c1ab984add",
+   "dialect": "teradata",
+   "sql": "CARDINALITY(arr)"
+  },
+  {
    "key": "9576a6faba1f8c0b",
    "dialect": "hive",
    "sql": "SIZE(arr)"
@@ -35693,6 +35828,11 @@
    "sql": "STRPOS(haystack, needle, occurrence)"
   },
   {
+   "key": "6226d0f4741c9ccc",
+   "dialect": "teradata",
+   "sql": "INSTR(haystack, needle, 1, occurrence)"
+  },
+  {
    "key": "e1d821f7968ab0cb",
    "dialect": "presto",
    "sql": "FROM_UNIXTIME(a, b)"
@@ -36373,6 +36513,11 @@
    "sql": "SELECT MAX_BY(a.id, a.timestamp) FROM a"
   },
   {
+   "key": "6266b40c87934f99",
+   "dialect": "teradata",
+   "sql": "SELECT MAX_BY(a.id, a.timestamp) FROM a"
+  },
+  {
    "key": "dad7756cf26111f3",
    "dialect": "duckdb",
    "sql": "SELECT ARG_MAX(a.id, a.timestamp) FROM a"
@@ -36396,6 +36541,11 @@
    "key": "a4c6f42185c35fff",
    "dialect": "spark",
    "sql": "SELECT MIN_BY(a.id, a.timestamp) FROM a"
+  },
+  {
+   "key": "fcfd9e13144e7143",
+   "dialect": "teradata",
+   "sql": "SELECT MIN_BY(a.id, a.timestamp, 3) FROM a"
   },
   {
    "key": "51f9ca1f9a416867",
@@ -37750,6 +37900,11 @@
   {
    "key": "f08b6c8cbb385baa",
    "dialect": "tableau",
+   "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
+  },
+  {
+   "key": "c9f093b9edcca860",
+   "dialect": "teradata",
    "sql": "SELECT a, b FROM (SELECT a AS a, b AS b, ROW_NUMBER() OVER (PARTITION BY a ORDER BY c DESC NULLS FIRST) AS _row_number FROM x) AS _t WHERE _row_number = 1"
   },
   {
@@ -40703,6 +40858,11 @@
    "sql": "TO_CHAR(x, y)"
   },
   {
+   "key": "d066b42f75e982fb",
+   "dialect": "teradata",
+   "sql": "TO_CHAR(x, y)"
+  },
+  {
    "key": "4e40b7131026c47d",
    "dialect": "bigquery",
    "sql": "POWER(x, 2)"
@@ -40766,6 +40926,11 @@
    "key": "abaf1ceccb88bd66",
    "dialect": "starrocks",
    "sql": "POWER(x, 2)"
+  },
+  {
+   "key": "2c0d79aac6c74718",
+   "dialect": "teradata",
+   "sql": "x ** 2"
   },
   {
    "key": "2a3910c19028053e",
@@ -42316,6 +42481,11 @@
    "key": "18597fdd1c499122",
    "dialect": "mysql",
    "sql": "CREATE OR REPLACE TABLE a (id INT)"
+  },
+  {
+   "key": "2a42782ea53aef9b",
+   "dialect": "teradata",
+   "sql": "CREATE MULTISET TABLE a (b INT)"
   },
   {
    "key": "7147241a84231e35",
@@ -46633,14 +46803,244 @@
    "sql": "COUNT(a)"
   },
   {
+   "key": "125fba4067a4a6b2",
+   "dialect": "teradata",
+   "sql": "RANDOM(l, u)"
+  },
+  {
+   "key": "baa7b580e90036bc",
+   "dialect": "teradata",
+   "sql": "SELECT TOP 10 * FROM tbl"
+  },
+  {
+   "key": "14ae60824515130e",
+   "dialect": "teradata",
+   "sql": "SELECT * FROM tbl SAMPLE 5"
+  },
+  {
+   "key": "230ec0bc26b513d2",
+   "dialect": "teradata",
+   "sql": "SELECT * FROM tbl SAMPLE 0.33, .25, .1"
+  },
+  {
+   "key": "42082619ab9cf1ca",
+   "dialect": "teradata",
+   "sql": "DATABASE tduser"
+  },
+  {
    "key": "4e09ae147eb31d59",
    "dialect": "databricks",
    "sql": "USE tduser"
   },
   {
+   "key": "e7d12ef437abb001",
+   "dialect": "teradata",
+   "sql": "SELECT 0x1d"
+  },
+  {
+   "key": "45674ecfdbe7e280",
+   "dialect": "teradata",
+   "sql": "SELECT X'1D'"
+  },
+  {
+   "key": "99c79951446ef908",
+   "dialect": "teradata",
+   "sql": "SELECT x'1d'"
+  },
+  {
+   "key": "53f2aa9ffc78f7bd",
+   "dialect": "teradata",
+   "sql": "TRANSLATE(x USING LATIN_TO_UNICODE)"
+  },
+  {
+   "key": "9cd9c05b22dbd299",
+   "dialect": "teradata",
+   "sql": "TRANSLATE(x USING LATIN_TO_UNICODE WITH ERROR)"
+  },
+  {
+   "key": "bcbcd2d54d785558",
+   "dialect": "teradata",
+   "sql": "LOCKING ROW FOR ACCESS SELECT * FROM table1"
+  },
+  {
+   "key": "126a0cf191badbb8",
+   "dialect": "teradata",
+   "sql": "LOCKING TABLE table1 FOR ACCESS SELECT col1, col2 FROM table1"
+  },
+  {
+   "key": "5538fc764719ff7a",
+   "dialect": "teradata",
+   "sql": "LOCKING ROW FOR SHARE SELECT * FROM table1"
+  },
+  {
+   "key": "4eae2d7b6b825a46",
+   "dialect": "teradata",
+   "sql": "LOCKING DATABASE db1 FOR READ SELECT * FROM table1"
+  },
+  {
+   "key": "01b1a33ea42fa1d5",
+   "dialect": "teradata",
+   "sql": "LOCKING ROW FOR EXCLUSIVE SELECT * FROM table1"
+  },
+  {
+   "key": "cb29c7efd04ab523",
+   "dialect": "teradata",
+   "sql": "LOCKING VIEW view1 FOR ACCESS SELECT * FROM view1"
+  },
+  {
+   "key": "a4da836c80b3279d",
+   "dialect": "teradata",
+   "sql": "LOCKING ROW FOR ACCESS SELECT col1, col2 FROM table1 WHERE col1 > 10"
+  },
+  {
+   "key": "bc6ab9f62d865cae",
+   "dialect": "teradata",
+   "sql": "LOCKING TABLE table1 FOR ACCESS SELECT * FROM table1 JOIN table2 ON table1.id = table2.id"
+  },
+  {
+   "key": "b89aa49c9f73051c",
+   "dialect": "teradata",
+   "sql": "CREATE VIEW view_b AS LOCKING ROW FOR ACCESS SELECT COL1, COL2 FROM table_b"
+  },
+  {
+   "key": "92568202b645e623",
+   "dialect": "teradata",
+   "sql": "UPDATE A FROM schema.tableA AS A, (SELECT col1 FROM schema.tableA GROUP BY col1) AS B SET col2 = '' WHERE A.col1 = B.col1"
+  },
+  {
    "key": "0dce6f6b789efe94",
    "dialect": "mysql",
    "sql": "UPDATE A JOIN `schema`.tableA AS A ON TRUE JOIN (SELECT col1 FROM `schema`.tableA GROUP BY col1) AS B ON TRUE SET A.col2 = '' WHERE A.col1 = B.col1"
+  },
+  {
+   "key": "c4fdbfabb2e25ee5",
+   "dialect": "teradata",
+   "sql": "COLLECT STATISTICS ON tbl INDEX(col)"
+  },
+  {
+   "key": "5f00484d99e99987",
+   "dialect": "teradata",
+   "sql": "COLLECT STATS ON tbl COLUMNS(col)"
+  },
+  {
+   "key": "5b02d5f545744093",
+   "dialect": "teradata",
+   "sql": "COLLECT STATS COLUMNS(col) ON tbl"
+  },
+  {
+   "key": "bcc06cc667d9b4da",
+   "dialect": "teradata",
+   "sql": "HELP STATISTICS personel.employee"
+  },
+  {
+   "key": "08cf875ebf0889bf",
+   "dialect": "teradata",
+   "sql": "HELP STATISTICS personnel.employee FROM my_qcd"
+  },
+  {
+   "key": "0775067311cb3a81",
+   "dialect": "teradata",
+   "sql": "REPLACE VIEW view_b (COL1, COL2) AS LOCKING ROW FOR ACCESS SELECT COL1, COL2 FROM table_b"
+  },
+  {
+   "key": "8dcc684c405f3a8d",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE x (y INT) PRIMARY INDEX (y) PARTITION BY y INDEX (y)"
+  },
+  {
+   "key": "70dc445371b7ab8e",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE x (y INT) PARTITION BY y INDEX (y)"
+  },
+  {
+   "key": "b27d5532023ced30",
+   "dialect": "teradata",
+   "sql": "CREATE MULTISET VOLATILE TABLE my_table (id INT) PRIMARY INDEX (id) ON COMMIT PRESERVE ROWS"
+  },
+  {
+   "key": "1a8798142cd200b2",
+   "dialect": "teradata",
+   "sql": "CREATE SET VOLATILE TABLE my_table (id INT) PRIMARY INDEX (id) ON COMMIT DELETE ROWS"
+  },
+  {
+   "key": "925e2e6e51a2f5df",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE a (b INT) PRIMARY INDEX (y) PARTITION BY RANGE_N(b BETWEEN 'a', 'b' AND 'c' EACH '1')"
+  },
+  {
+   "key": "7198add3b5de8ee2",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE a (b INT) PARTITION BY RANGE_N(b BETWEEN 0, 1 AND 2 EACH 1)"
+  },
+  {
+   "key": "1fbbcd6ff4297da6",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE a (b INT) PARTITION BY RANGE_N(b BETWEEN *, 1 AND * EACH b) INDEX (a)"
+  },
+  {
+   "key": "88cb1960939f9862",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE a, NO FALLBACK PROTECTION, NO LOG, NO JOURNAL, CHECKSUM=ON, NO MERGEBLOCKRATIO, BLOCKCOMPRESSION=ALWAYS (a INT)"
+  },
+  {
+   "key": "b78829afc9924e74",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE a, WITH JOURNAL TABLE=x.y.z, CHECKSUM=OFF, MERGEBLOCKRATIO=1, DATABLOCKSIZE=10 KBYTES (a INT)"
+  },
+  {
+   "key": "075bbc29f20b17b8",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE a, BEFORE JOURNAL, AFTER JOURNAL, FREESPACE=1, DEFAULT DATABLOCKSIZE, BLOCKCOMPRESSION=DEFAULT (a INT)"
+  },
+  {
+   "key": "48f6255f57022a8b",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE a, DUAL JOURNAL, DUAL AFTER JOURNAL, MERGEBLOCKRATIO=1 PERCENT, DATABLOCKSIZE=10 KILOBYTES (a INT)"
+  },
+  {
+   "key": "e7e41b77301eba92",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE a, DUAL BEFORE JOURNAL, LOCAL AFTER JOURNAL, MAXIMUM DATABLOCKSIZE, BLOCKCOMPRESSION=AUTOTEMP(c1 INT) (a INT)"
+  },
+  {
+   "key": "b81c6f00e62987cb",
+   "dialect": "teradata",
+   "sql": "CREATE VOLATILE MULTISET TABLE a, NOT LOCAL AFTER JOURNAL, FREESPACE=1 PERCENT, DATABLOCKSIZE=10 BYTES, WITH NO CONCURRENT ISOLATED LOADING FOR ALL (a INT)"
+  },
+  {
+   "key": "c04ad00f60b5fb18",
+   "dialect": "teradata",
+   "sql": "CREATE VOLATILE SET TABLE example1 AS (SELECT col1, col2, col3 FROM table1) WITH DATA PRIMARY INDEX (col1) ON COMMIT PRESERVE ROWS"
+  },
+  {
+   "key": "34a89f488a101cc1",
+   "dialect": "teradata",
+   "sql": "CREATE SET GLOBAL TEMPORARY TABLE a, NO BEFORE JOURNAL, NO AFTER JOURNAL, MINIMUM DATABLOCKSIZE, BLOCKCOMPRESSION=NEVER (a INT)"
+  },
+  {
+   "key": "98975a8c244cd79c",
+   "dialect": "teradata",
+   "sql": "\n            CREATE SET TABLE test, NO FALLBACK, NO BEFORE JOURNAL, NO AFTER JOURNAL,\n            CHECKSUM = DEFAULT (x INT, y INT, z CHAR(30), a INT, b DATE, e INT)\n            PRIMARY INDEX (a),\n            INDEX(x, y)\n            "
+  },
+  {
+   "key": "2224a582575c13cc",
+   "dialect": "teradata",
+   "sql": "CREATE SET TABLE test, NO FALLBACK, NO BEFORE JOURNAL, NO AFTER JOURNAL, CHECKSUM=DEFAULT (x INT, y INT, z CHAR(30), a INT, b DATE, e INT) PRIMARY INDEX (a) INDEX (x, y)"
+  },
+  {
+   "key": "bb632e47ccba4611",
+   "dialect": "teradata",
+   "sql": "REPLACE VIEW a AS (SELECT b FROM c)"
+  },
+  {
+   "key": "a6a4af3c27500f88",
+   "dialect": "teradata",
+   "sql": "CREATE OR REPLACE VIEW a AS (SELECT b FROM c)"
+  },
+  {
+   "key": "3bb362a3559dbb79",
+   "dialect": "teradata",
+   "sql": "CREATE VOLATILE TABLE a"
   },
   {
    "key": "22a387715005313d",
@@ -46723,9 +47123,44 @@
    "sql": "CREATE TABLE a"
   },
   {
+   "key": "32c625d6a31832eb",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE db.foo (id INT NOT NULL, valid_date DATE FORMAT 'YYYY-MM-DD', measurement INT COMPRESS)"
+  },
+  {
+   "key": "28576bfc3862969f",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE db.foo (id INT NOT NULL, valid_date DATE FORMAT 'YYYY-MM-DD', measurement INT COMPRESS (1, 2, 3))"
+  },
+  {
+   "key": "45848349941a2a2e",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE db.foo (id INT NOT NULL, valid_date DATE FORMAT 'YYYY-MM-DD' COMPRESS (CAST('9999-09-09' AS DATE)), measurement INT)"
+  },
+  {
+   "key": "f90f6172ee34dd7f",
+   "dialect": "teradata",
+   "sql": "INS INTO x SELECT * FROM y"
+  },
+  {
+   "key": "496a71793a84fc75",
+   "dialect": "teradata",
+   "sql": "INSERT INTO x SELECT * FROM y"
+  },
+  {
+   "key": "1879cc76c1f79a70",
+   "dialect": "teradata",
+   "sql": "a MOD b"
+  },
+  {
    "key": "6822137af8b6c439",
    "dialect": "mysql",
    "sql": "a % b"
+  },
+  {
+   "key": "66fe4015ccd01cfb",
+   "dialect": "teradata",
+   "sql": "a ** b"
   },
   {
    "key": "0b3f48f41dadd767",
@@ -46733,9 +47168,84 @@
    "sql": "POWER(a, b)"
   },
   {
+   "key": "7a38cde7480cacb9",
+   "dialect": "teradata",
+   "sql": "a LT b"
+  },
+  {
+   "key": "e6de78354796bb2a",
+   "dialect": "teradata",
+   "sql": "a LE b"
+  },
+  {
+   "key": "98499a0bf04b6289",
+   "dialect": "teradata",
+   "sql": "a GT b"
+  },
+  {
+   "key": "1a1d7cdf2c029a6c",
+   "dialect": "teradata",
+   "sql": "a GE b"
+  },
+  {
+   "key": "e405d35776350f42",
+   "dialect": "teradata",
+   "sql": "a ^= b"
+  },
+  {
+   "key": "87f326f930a677eb",
+   "dialect": "teradata",
+   "sql": "a NE b"
+  },
+  {
+   "key": "2df1f7c5be7af037",
+   "dialect": "teradata",
+   "sql": "a NOT= b"
+  },
+  {
+   "key": "ab01dc962544675f",
+   "dialect": "teradata",
+   "sql": "a EQ b"
+  },
+  {
+   "key": "421162fae5b54972",
+   "dialect": "teradata",
+   "sql": "SEL a FROM b"
+  },
+  {
+   "key": "46c4112f097152f3",
+   "dialect": "teradata",
+   "sql": "SELECT col1, col2 FROM dbc.table1 WHERE col1 EQ 'value1' MINUS SELECT col1, col2 FROM dbc.table2"
+  },
+  {
+   "key": "e9ab61e164d91f8c",
+   "dialect": "teradata",
+   "sql": "UPD a SET b = 1"
+  },
+  {
+   "key": "e0eedb9a683d7a2b",
+   "dialect": "teradata",
+   "sql": "DEL FROM a"
+  },
+  {
+   "key": "59b32ad10098136f",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE z (a ST_GEOMETRY(1))"
+  },
+  {
    "key": "adbd34cc44a406f5",
    "dialect": "redshift",
    "sql": "CREATE TABLE z (a GEOMETRY(1))"
+  },
+  {
+   "key": "6d1326c01affa9dd",
+   "dialect": "teradata",
+   "sql": "CREATE TABLE z (a SYSUDTLIB.INT)"
+  },
+  {
+   "key": "d1fe8b2b0733fba4",
+   "dialect": "teradata",
+   "sql": "CAST('1992-01' AS DATE FORMAT 'YYYY-DD')"
   },
   {
    "key": "a6c05eda0be5594e",
@@ -46763,6 +47273,56 @@
    "sql": "TO_DATE('1992-01', 'yyyy-d')"
   },
   {
+   "key": "4a5accb7bbc8f6ae",
+   "dialect": "teradata",
+   "sql": "CAST('1992-01' AS FORMAT 'YYYY-DD')"
+  },
+  {
+   "key": "514048ab7e406466",
+   "dialect": "teradata",
+   "sql": "TRYCAST('-2.5' AS DECIMAL(5, 2))"
+  },
+  {
+   "key": "9a97c0e6aa5ff600",
+   "dialect": "teradata",
+   "sql": "SELECT ('a' || 'b') (FORMAT '...')"
+  },
+  {
+   "key": "23de5db353d4eb7e",
+   "dialect": "teradata",
+   "sql": "SELECT Col1 (FORMAT '+9999') FROM Test1"
+  },
+  {
+   "key": "8273814e95f0217b",
+   "dialect": "teradata",
+   "sql": "SELECT date_col (FORMAT 'YYYY-MM-DD') FROM t"
+  },
+  {
+   "key": "11f2ca37aba1dcee",
+   "dialect": "teradata",
+   "sql": "SELECT CAST(Col1 AS INTEGER) FROM Test1"
+  },
+  {
+   "key": "b0e27d3b919b40eb",
+   "dialect": "teradata",
+   "sql": "CAST(CURRENT_TIMESTAMP(6) AS TIMESTAMP WITH TIME ZONE)"
+  },
+  {
+   "key": "118be5b75f657cb1",
+   "dialect": "teradata",
+   "sql": "CURRENT_TIMESTAMP"
+  },
+  {
+   "key": "d5c48d50936215e1",
+   "dialect": "teradata",
+   "sql": "SELECT '2023-01-01' + INTERVAL '5' YEAR"
+  },
+  {
+   "key": "ccf510b6766cbbbd",
+   "dialect": "teradata",
+   "sql": "SELECT '2023-01-01' - INTERVAL '5' YEAR"
+  },
+  {
    "key": "1c83e129d2475f08",
    "dialect": "sqlite",
    "sql": "SELECT DATE_SUB('2023-01-01', 5, YEAR)"
@@ -46773,14 +47333,99 @@
    "sql": "SELECT DATE_SUB('2023-01-01', -5, YEAR)"
   },
   {
+   "key": "ad847bed752faee6",
+   "dialect": "teradata",
+   "sql": "SELECT (90 * INTERVAL '1' DAY)"
+  },
+  {
+   "key": "f7db50b8cb0dfd51",
+   "dialect": "teradata",
+   "sql": "SELECT (7 * INTERVAL '1' DAY)"
+  },
+  {
+   "key": "360f3e2cd2f2ecc9",
+   "dialect": "teradata",
+   "sql": "SELECT '2023-01-01' + (90 * INTERVAL '5' DAY)"
+  },
+  {
+   "key": "0ec11ca38ccd570d",
+   "dialect": "teradata",
+   "sql": "SELECT '2023-01-01' + (7 * INTERVAL '5' DAY)"
+  },
+  {
+   "key": "d5045261178253af",
+   "dialect": "teradata",
+   "sql": "CAST(TO_CHAR(x, 'Q') AS INT)"
+  },
+  {
    "key": "2105991219b04367",
    "dialect": "bigquery",
    "sql": "EXTRACT(QUARTER FROM x)"
   },
   {
+   "key": "b7369d1f82e7ce12",
+   "dialect": "teradata",
+   "sql": "EXTRACT(MONTH FROM x)"
+  },
+  {
    "key": "4a1d39ae1783a2a7",
    "dialect": "bigquery",
    "sql": "EXTRACT(MONTH FROM x)"
+  },
+  {
+   "key": "35e59bcb82df0f03",
+   "dialect": "teradata",
+   "sql": "SET QUERY_BAND = 'app=myapp;' FOR SESSION"
+  },
+  {
+   "key": "903ea02f2eb5c664",
+   "dialect": "teradata",
+   "sql": "SET QUERY_BAND = 'app=myapp;user=john;' FOR TRANSACTION"
+  },
+  {
+   "key": "feb5b83d474d853c",
+   "dialect": "teradata",
+   "sql": "SET QUERY_BAND = 'priority=high;' UPDATE FOR SESSION"
+  },
+  {
+   "key": "4b1a575d8617c2ff",
+   "dialect": "teradata",
+   "sql": "SET QUERY_BAND = 'workload=batch;' UPDATE FOR TRANSACTION"
+  },
+  {
+   "key": "9c172e6af8843536",
+   "dialect": "teradata",
+   "sql": "SET QUERY_BAND = 'org=Finance;report=Fin123;' FOR SESSION"
+  },
+  {
+   "key": "85988dbfbe7d6a50",
+   "dialect": "teradata",
+   "sql": "SET QUERY_BAND = NONE FOR SESSION"
+  },
+  {
+   "key": "d91de98dfe852fae",
+   "dialect": "teradata",
+   "sql": "SET QUERY_BAND = NONE FOR SESSION VOLATILE"
+  },
+  {
+   "key": "229c6ff9e2012a54",
+   "dialect": "teradata",
+   "sql": "SET QUERY_BAND = 'priority=high;' UPDATE FOR SESSION VOLATILE"
+  },
+  {
+   "key": "cddc10c179784cb2",
+   "dialect": "teradata",
+   "sql": "SET QUERY_BAND = 'NONE' FOR SESSION"
+  },
+  {
+   "key": "b12eaf91f35bd9af",
+   "dialect": "teradata",
+   "sql": "SET QUERY_BAND = '' FOR SESSION"
+  },
+  {
+   "key": "6485cb9c23e7d975",
+   "dialect": "teradata",
+   "sql": "RENAME TABLE emp TO employee"
   },
   {
    "key": "684d29cde481af9c",
@@ -49891,6 +50536,11 @@
    "key": "d6e9b5ddb7124a1d",
    "dialect": "spark",
    "sql": "SELECT DISTINCT * FROM A LIMIT 3"
+  },
+  {
+   "key": "827b2684ba1ddbf0",
+   "dialect": "teradata",
+   "sql": "SELECT DISTINCT TOP 3 * FROM A"
   },
   {
    "key": "c320f39095220cbc",

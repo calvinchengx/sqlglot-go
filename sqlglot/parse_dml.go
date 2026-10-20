@@ -26,6 +26,28 @@ func (p *parser) parseUpdate() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	// Teradata writes the FROM before the SET rather than after it:
+	// `UPDATE A FROM t AS a SET c = 1 WHERE ...`, which the reference reads
+	// straight after the table (TeradataParser._parse_update). It is the
+	// same clause, in the other place.
+	var fromFirst *Expression
+	if p.dialect == "teradata" && p.at(TokFROM) {
+		fromFirst, err = p.parseFrom()
+		if err != nil {
+			return nil, err
+		}
+		// A comma list is a JOIN on the clause's first table, which is how
+		// the reference's `_parse_from(joins=True)` reads it.
+		fromJoins, jerr := p.parseJoins()
+		if jerr != nil {
+			return nil, jerr
+		}
+		if len(fromJoins) > 0 {
+			if first, _ := fromFirst.Args["this"].(*Expression); first != nil {
+				first.Set("joins", fromJoins)
+			}
+		}
+	}
 	// `UPDATE t1 AS a, t2 AS b JOIN t3 AS c ON ... SET ...` updates THROUGH a
 	// join, comma or explicit, which the reference reads exactly as a FROM
 	// clause's and records as joins on the target table.
@@ -49,6 +71,11 @@ func (p *parser) parseUpdate() (*Expression, error) {
 		node.Set("hint", hint)
 	}
 	node.Set("this", table)
+	// Set in SOURCE order, so a FROM read BEFORE the assignments is recorded
+	// before them too -- the dump compares the order arguments were set in.
+	if fromFirst != nil {
+		node.Set("from_", fromFirst)
+	}
 	node.Set("expressions", assignments)
 	// Set in SOURCE order, because that is the order the reference assigns
 	// them in and therefore the order they dump in. T-SQL writes RETURNING
@@ -57,7 +84,7 @@ func (p *parser) parseUpdate() (*Expression, error) {
 	if err := p.readReturning(node); err != nil {
 		return nil, err
 	}
-	if p.at(TokFROM) {
+	if fromFirst == nil && p.at(TokFROM) {
 		from, err := p.parseFrom()
 		if err != nil {
 			return nil, err

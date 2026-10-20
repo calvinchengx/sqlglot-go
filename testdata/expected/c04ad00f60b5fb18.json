@@ -1,0 +1,513 @@
+{
+ "dialect": "teradata",
+ "rendered": "CREATE VOLATILE SET TABLE example1 AS (SELECT col1, col2, col3 FROM table1) WITH DATA PRIMARY INDEX (col1) ON COMMIT PRESERVE ROWS",
+ "sql": "CREATE VOLATILE SET TABLE example1 AS (SELECT col1, col2, col3 FROM table1) WITH DATA PRIMARY INDEX (col1) ON COMMIT PRESERVE ROWS",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "CREATE",
+   "x": "CREATE"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "VOLATILE",
+   "x": "VOLATILE"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 16,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 20,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "example1"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 35,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 38,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 39,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 46,
+   "t": "VAR",
+   "x": "col1"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 52,
+   "t": "VAR",
+   "x": "col2"
+  },
+  {
+   "c": 57,
+   "e": 56,
+   "l": 1,
+   "s": 56,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 58,
+   "t": "VAR",
+   "x": "col3"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 63,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 74,
+   "e": 73,
+   "l": 1,
+   "s": 68,
+   "t": "VAR",
+   "x": "table1"
+  },
+  {
+   "c": 75,
+   "e": 74,
+   "l": 1,
+   "s": 74,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 80,
+   "e": 79,
+   "l": 1,
+   "s": 76,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 85,
+   "e": 84,
+   "l": 1,
+   "s": 81,
+   "t": "VAR",
+   "x": "DATA"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 86,
+   "t": "VAR",
+   "x": "PRIMARY"
+  },
+  {
+   "c": 99,
+   "e": 98,
+   "l": 1,
+   "s": 94,
+   "t": "INDEX",
+   "x": "INDEX"
+  },
+  {
+   "c": 101,
+   "e": 100,
+   "l": 1,
+   "s": 100,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 105,
+   "e": 104,
+   "l": 1,
+   "s": 101,
+   "t": "VAR",
+   "x": "col1"
+  },
+  {
+   "c": 106,
+   "e": 105,
+   "l": 1,
+   "s": 105,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 109,
+   "e": 108,
+   "l": 1,
+   "s": 107,
+   "t": "ON",
+   "x": "ON"
+  },
+  {
+   "c": 116,
+   "e": 115,
+   "l": 1,
+   "s": 110,
+   "t": "COMMIT",
+   "x": "COMMIT"
+  },
+  {
+   "c": 125,
+   "e": 124,
+   "l": 1,
+   "s": 117,
+   "t": "VAR",
+   "x": "PRESERVE"
+  },
+  {
+   "c": 130,
+   "e": 129,
+   "l": 1,
+   "s": 126,
+   "t": "ROWS",
+   "x": "ROWS"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Create"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 34,
+    "end": 33,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "example1"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "TABLE"
+  },
+  {
+   "i": 0,
+   "k": "replace",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "refresh",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Subquery",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "col1"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 56,
+    "end": 55,
+    "line": 1,
+    "start": 52
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "col2"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 19,
+   "k": "this",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 58
+   }
+  },
+  {
+   "i": 20,
+   "k": "this",
+   "v": "col3"
+  },
+  {
+   "i": 20,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 10,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 23,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 74,
+    "end": 73,
+    "line": 1,
+    "start": 68
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "table1"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.properties.Properties",
+   "i": 0,
+   "k": "properties"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.VolatileProperty",
+   "i": 29,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.SetProperty",
+   "i": 29,
+   "k": "expressions"
+  },
+  {
+   "i": 31,
+   "k": "multi",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.WithDataProperty",
+   "i": 29,
+   "k": "expressions"
+  },
+  {
+   "i": 33,
+   "k": "no",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.properties.OnCommitProperty",
+   "i": 29,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Index",
+   "i": 0,
+   "k": "indexes"
+  },
+  {
+   "i": 36,
+   "k": "unique",
+   "v": false
+  },
+  {
+   "i": 36,
+   "k": "primary",
+   "v": true
+  },
+  {
+   "i": 36,
+   "k": "amp",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.constraints.IndexParameters",
+   "i": 36,
+   "k": "params"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 40,
+   "k": "columns"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 41,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 42,
+   "k": "this",
+   "m": {
+    "col": 105,
+    "end": 104,
+    "line": 1,
+    "start": 101
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "col1"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 41,
+   "k": "nulls_first",
+   "v": true
+  },
+  {
+   "i": 40,
+   "k": "with_storage",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "concurrently",
+   "v": false
+  }
+ ]
+}

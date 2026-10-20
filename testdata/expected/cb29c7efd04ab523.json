@@ -1,0 +1,183 @@
+{
+ "dialect": "teradata",
+ "rendered": "LOCKING VIEW view1 FOR ACCESS SELECT * FROM view1",
+ "sql": "LOCKING VIEW view1 FOR ACCESS SELECT * FROM view1",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "LOCK",
+   "x": "LOCKING"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 8,
+   "t": "VIEW",
+   "x": "VIEW"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 13,
+   "t": "VAR",
+   "x": "view1"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 19,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "ACCESS"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 30,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 39,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 44,
+   "t": "VAR",
+   "x": "view1"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.LockingStatement"
+  },
+  {
+   "c": "sqlglot.expressions.properties.LockingProperty",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 13
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "view1"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "kind",
+   "v": "VIEW"
+  },
+  {
+   "i": 1,
+   "k": "for_or_in",
+   "v": "FOR"
+  },
+  {
+   "i": 1,
+   "k": "lock_type",
+   "v": "ACCESS"
+  },
+  {
+   "i": 1,
+   "k": "override",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 10,
+   "k": "expressions",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 10,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 12,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 13,
+   "k": "this",
+   "m": {
+    "col": 49,
+    "end": 48,
+    "line": 1,
+    "start": 44
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "view1"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

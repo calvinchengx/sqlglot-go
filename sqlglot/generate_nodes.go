@@ -34,6 +34,11 @@ func init() {
 		"InputOutputFormat":                   (*generator).writeInputOutputFormat,
 		"StorageHandlerProperty":              (*generator).writeStorageHandlerProperty,
 		"LockingProperty":                     (*generator).writeLockingProperty,
+		"LockingStatement":                    (*generator).writeLockingStatement,
+		"QueryBand":                           (*generator).writeQueryBand,
+		"TranslateCharacters":                 (*generator).writeTranslateCharacters,
+		"RangeN":                              (*generator).writeRangeN,
+		"BlockCompressionProperty":            (*generator).writeBlockCompressionProperty,
 		"Lock":                                (*generator).writeLock,
 		"RecursiveWithSearch":                 (*generator).writeRecursiveWithSearch,
 		"Connect":                             (*generator).writeConnect,
@@ -2419,6 +2424,17 @@ func (g *generator) writeDateTrunc(e *Expression) string {
 }
 
 func (g *generator) writeCast(e *Expression) string {
+	// A type of UNKNOWN with a format beside it says the statement named no
+	// type at all: the phrase takes its place
+	// (TeradataGenerator.cast_sql pops the type before writing).
+	if e.Args["format"] != nil {
+		if to, _ := e.Args["to"].(*Expression); to != nil {
+			if kind, _ := to.Args["this"].(DataTypeKind); kind == "UNKNOWN" {
+				return "CAST(" + g.child(e, "this") + " AS FORMAT " +
+					g.child(e, "format") + ")"
+			}
+		}
+	}
 	// The parser reads a bare ClickHouse STR_TO_DATE as a CAST of StrToDate
 	// to DateTime, and the writer collapses that back to the call it came
 	// from -- but only for the exact bare type the parser built. An explicit
@@ -2433,7 +2449,13 @@ func (g *generator) writeCast(e *Expression) string {
 	}
 	word := "CAST"
 	if e.Class == "TryCast" {
-		word = "TRY_CAST"
+		// What stands in front of CAST is the dialect's own: TRY_ makes
+		// TRY_CAST, SAFE_ makes SAFE_CAST, and Teradata writes TRYCAST
+		// (Generator.cast_sql's safe_prefix).
+		word = g.tables.SafeCastPrefix + "CAST"
+		if g.tables.SafeCastPrefix == "" {
+			word = "TRY_CAST"
+		}
 		// Two different rules, and both are the dialect's own: a dialect whose
 		// TRANSFORMS map a TryCast to the plain cast writer writes CAST
 		// whatever its `safe` flag says (no_trycast_sql); Spark's lambda keeps
@@ -2834,7 +2856,16 @@ func (g *generator) lexesBackAsABareVar(part string) bool {
 		return true
 	}
 	toks, err := tk.Tokenize(part)
-	if err != nil || len(toks) != 1 || toks[0].Type != TokVAR || !strings.EqualFold(toks[0].Text, part) {
+	if err != nil || len(toks) != 1 || !strings.EqualFold(toks[0].Text, part) {
+		return false
+	}
+	// The name AFTER a dot may be any WORD, including one that is a type name
+	// in this position: `SYSUDTLIB.INT` names a type through a schema whose
+	// last part reads as a type, and the reference writes it bare. Only a
+	// token that would break the name apart -- a delimiter, or a QUOTED name
+	// whose text is not what was written -- has to be quoted.
+	switch toks[0].Type {
+	case TokL_PAREN, TokR_PAREN, TokCOMMA, TokDOT, TokSTRING, TokIDENTIFIER:
 		return false
 	}
 	return !g.wroteDollar || !strings.Contains(part, "$")
@@ -5418,7 +5449,13 @@ func (g *generator) writeCreate(e *Expression) string {
 	if unique, _ := e.Args["unique"].(bool); unique {
 		out += "UNIQUE "
 	}
-	if g.hasTemporaryProperty(e) {
+	// TEMPORARY is a POST_CREATE property like SET and GLOBAL, and the
+	// reference writes those in the order the statement gave them:
+	// `CREATE SET GLOBAL TEMPORARY TABLE`. It is only lifted out of that list
+	// when nothing else comes before it, which is the ordinary
+	// `CREATE TEMPORARY TABLE`.
+	temporaryFirst := g.temporaryPropertyComesFirst(e)
+	if g.hasTemporaryProperty(e) && temporaryFirst {
 		this, _ := e.Args["this"].(*Expression)
 		switch {
 		// T-SQL says it in the NAME rather than with the word, and where the
@@ -5491,6 +5528,27 @@ func (g *generator) writeCreate(e *Expression) string {
 	// TO <table>, UUID, ON CLUSTER -- between the name and the column list
 	// (ClickHouseGenerator.createable_sql).
 	postName := g.clickhousePostName(e)
+	// POST_NAME: the settings that stand between a table's NAME and its
+	// columns, written with a comma in front of each -- Teradata's
+	// `CREATE TABLE a, NO FALLBACK, NO LOG (a INT)`
+	// (TeradataGenerator.createable_sql, POST_NAME).
+	nameSettings := ""
+	if properties, _ := e.Args["properties"].(*Expression); properties != nil {
+		items, _ := properties.Args["expressions"].([]*Expression)
+		var parts []string
+		for _, item := range items {
+			if g.tables.PropertyLocation[item.Class] != "POST_NAME" {
+				continue
+			}
+			// The recorded spellings bring their own leading space, because
+			// they are written inside a statement; here the comma is the
+			// separator, so it is the comma's space that is used.
+			if text := strings.TrimSpace(g.node(item)); text != "" {
+				parts = append(parts, ", "+text)
+			}
+		}
+		nameSettings = strings.Join(parts, "")
+	}
 	switch {
 	case g.tables.TruncatesCatalog && namesACatalog(e.Args["this"]):
 		this, _ := e.Args["this"].(*Expression)
@@ -5501,6 +5559,13 @@ func (g *generator) writeCreate(e *Expression) string {
 			out += g.child(schema, "this") + postName + g.schemaColumnsOnly(schema)
 		} else {
 			out += g.child(e, "this") + postName
+		}
+	case nameSettings != "":
+		if schema, _ := e.Args["this"].(*Expression); schema != nil && schema.Class == "Schema" {
+			out += g.child(schema, "this") + nameSettings + " " +
+				strings.TrimSpace(g.schemaColumnsOnly(schema))
+		} else {
+			out += g.child(e, "this") + nameSettings
 		}
 	default:
 		out += g.child(e, "this")
@@ -5542,8 +5607,19 @@ func (g *generator) writeCreate(e *Expression) string {
 		items, _ := properties.Args["expressions"].([]*Expression)
 		for _, item := range items {
 			switch item.Class {
+			case "PartitionedByProperty":
+				// Only where POST_EXPRESSION: a dialect that writes this
+				// property in a WITH list or straight after the schema writes
+				// it THERE, and would otherwise write it twice
+				// (TeradataGenerator.PROPERTIES_LOCATION).
+				if g.tables.PropertyLocation[item.Class] != "POST_EXPRESSION" {
+					continue
+				}
+				if text := g.node(item); text != "" {
+					out += " " + text
+				}
 			case "WithDataProperty", "SequenceProperties", "TriggerProperties",
-				"OnCommitProperty", "NoPrimaryIndexProperty":
+				"NoPrimaryIndexProperty":
 				// An empty spelling is the property omitted, as DuckDB omits
 				// everything a trigger says about itself and writes the name.
 				if text := g.node(item); text != "" {
@@ -5561,6 +5637,19 @@ func (g *generator) writeCreate(e *Expression) string {
 	if indexes, _ := e.Args["indexes"].([]*Expression); len(indexes) > 0 {
 		for _, index := range indexes {
 			out += " " + g.node(index)
+		}
+	}
+	// POST_INDEX: what the statement says AFTER those indexes, which is where
+	// ON COMMIT belongs on a table that has them
+	// (TeradataGenerator.PROPERTIES_LOCATION, OnCommitProperty).
+	if properties, _ := e.Args["properties"].(*Expression); properties != nil {
+		items, _ := properties.Args["expressions"].([]*Expression)
+		for _, item := range items {
+			if item.Class == "OnCommitProperty" {
+				if text := g.node(item); text != "" {
+					out += " " + text
+				}
+			}
 		}
 	}
 	if clone := g.child(e, "clone"); clone != "" {
@@ -5748,6 +5837,65 @@ func (g *generator) writeStorageHandlerProperty(e *Expression) string {
 // writeLockingProperty writes Teradata's own LOCKING clause, every piece of
 // it optional and each written only where the one before it was: a NAME
 // stands only after a DATABASE, TABLE or VIEW kind, never after ROW.
+// writeTranslateCharacters writes `TRANSLATE(x USING <charset> [WITH ERROR])`
+// (Generator.translatecharacters_sql).
+func (g *generator) writeTranslateCharacters(e *Expression) string {
+	charset, _ := e.Args["expression"].(string)
+	out := "TRANSLATE(" + g.child(e, "this") + " USING " + charset
+	if withError, _ := e.Args["with_error"].(bool); withError {
+		out += " WITH ERROR"
+	}
+	return out + ")"
+}
+
+// writeBlockCompressionProperty writes `BLOCKCOMPRESSION=<how>`, where AUTOTEMP
+// names the columns to choose between rather than a mode
+// (Generator.blockcompressionproperty_sql).
+func (g *generator) writeBlockCompressionProperty(e *Expression) string {
+	prop := ""
+	if autotemp, _ := e.Args["autotemp"].(*Expression); autotemp != nil {
+		prop = "AUTOTEMP(" + g.list(autotemp) + ")"
+	} else if on, _ := e.Args["always"].(bool); on {
+		prop = "ALWAYS"
+	} else if on, _ := e.Args["default"].(bool); on {
+		prop = "DEFAULT"
+	} else if on, _ := e.Args["manual"].(bool); on {
+		prop = "MANUAL"
+	} else if on, _ := e.Args["never"].(bool); on {
+		prop = "NEVER"
+	}
+	return "BLOCKCOMPRESSION=" + prop
+}
+
+// writeRangeN writes `RANGE_N(x BETWEEN a, b [EACH n])`
+// (TeradataGenerator.rangen_sql).
+func (g *generator) writeRangeN(e *Expression) string {
+	out := "RANGE_N(" + g.child(e, "this") + " BETWEEN " + g.list(e)
+	if each := g.child(e, "each"); each != "" {
+		out += " EACH " + each
+	}
+	return out + ")"
+}
+
+// writeQueryBand writes Teradata's `QUERY_BAND = <band> [UPDATE] [FOR <scope>]`
+// (Generator.queryband_sql).
+func (g *generator) writeQueryBand(e *Expression) string {
+	out := "QUERY_BAND = " + g.child(e, "this")
+	if update, _ := e.Args["update"].(bool); update {
+		out += " UPDATE"
+	}
+	if scope, _ := e.Args["scope"].(string); scope != "" {
+		out += " FOR " + scope
+	}
+	return out
+}
+
+// writeLockingStatement writes the clause and the query it locks, one after
+// the other (TeradataGenerator.lockingstatement_sql).
+func (g *generator) writeLockingStatement(e *Expression) string {
+	return g.child(e, "this") + " " + g.child(e, "expression")
+}
+
 func (g *generator) writeLockingProperty(e *Expression) string {
 	out := "LOCKING"
 	if kind, _ := e.Args["kind"].(string); kind != "" {
@@ -5847,13 +5995,15 @@ func (g *generator) writeProperties(e *Expression) (before string, out string, f
 		case "POST_CREATE":
 			// Between CREATE and the kind: `CREATE EXTERNAL TABLE t`. The
 			// caller writes these, because they are already behind it by the
-			// time the properties are reached.
-			if item.Class != "TemporaryProperty" {
+			// time the properties are reached -- except TEMPORARY, which the
+			// caller lifts out only when it stands first.
+			if item.Class != "TemporaryProperty" || !g.temporaryPropertyComesFirst(e) {
 				beforeKind = append(beforeKind, g.node(item))
 			}
-		case "POST_EXPRESSION", "POST_NAME", "POST_ALIAS":
+		case "POST_EXPRESSION", "POST_NAME", "POST_ALIAS", "POST_INDEX":
 			// Written elsewhere in the statement, by the code that owns that
-			// place -- TEMPORARY before the kind, WITH DATA after the query.
+			// place -- TEMPORARY before the kind, WITH DATA after the query,
+			// ON COMMIT after a table's own indexes.
 		case "UNSUPPORTED":
 			// The dialect has nowhere to say this, and says nothing: DuckDB
 			// writes no storage format at all. Dropping it is the reference's
@@ -7045,6 +7195,28 @@ func (g *generator) writeAlterRename(e *Expression) string {
 // action of a MERGE branch it has the list alone, or -- DuckDB's `WHEN MATCHED
 // THEN UPDATE` -- neither.
 func (g *generator) writeUpdate(e *Expression) string {
+	// Teradata writes the FROM between the target and the SET, because it
+	// READS it there: `UPDATE A FROM x AS a SET c = 1 WHERE ...`
+	// (TeradataGenerator.update_sql).
+	if g.dialect == "teradata" {
+		out := g.withPrefix(e, "UPDATE")
+		if hint := g.child(e, "hint"); hint != "" {
+			out += " " + hint
+		}
+		if this := g.child(e, "this"); this != "" {
+			out += " " + this
+		}
+		if from := g.child(e, "from_"); from != "" {
+			out += " " + from
+		}
+		if items, _ := e.Args["expressions"].([]*Expression); len(items) > 0 {
+			out += " SET " + g.list(e)
+		}
+		if where := g.child(e, "where"); where != "" {
+			out += " " + where
+		}
+		return out
+	}
 	head := g.withPrefix(e, "UPDATE")
 	if hint := g.child(e, "hint"); hint != "" {
 		head += " " + hint
@@ -7056,6 +7228,12 @@ func (g *generator) writeUpdate(e *Expression) string {
 		head += " SET " + g.list(e)
 	}
 	returning := g.child(e, "returning")
+	// Teradata drops the clause from an UPDATE and keeps it on a DELETE, so
+	// this is read on the UPDATE rather than taken from the DELETE
+	// (TeradataGenerator.UPDATE, which writes neither).
+	if !g.tables.UpdateWritesReturning {
+		returning = ""
+	}
 	from := g.child(e, "from_")
 	where := g.child(e, "where")
 	options := g.writeQueryHintOptions(e)
@@ -7856,6 +8034,15 @@ func (g *generator) writeIndexParameters(params *Expression) string {
 	if space, _ := params.Args["tablespace"].(*Expression); space != nil {
 		out += " USING INDEX TABLESPACE " + g.node(space)
 	}
+	// Where the index is partitioned, written between the storage and the
+	// rows it covers (Generator.indexparameters_sql).
+	if partitions, _ := params.Args["partition_by"].([]*Expression); len(partitions) > 0 {
+		parts := make([]string, 0, len(partitions))
+		for _, item := range partitions {
+			parts = append(parts, g.node(item))
+		}
+		out += " PARTITION BY " + strings.Join(parts, ", ")
+	}
 	// A PARTIAL index covers only the rows a condition picks out.
 	if where, _ := params.Args["where"].(*Expression); where != nil {
 		out += " " + g.node(where)
@@ -7959,7 +8146,11 @@ func (g *generator) writeTruncate(e *Expression) string {
 
 // writeUse writes the database, schema or role a session moves to.
 func (g *generator) writeUse(e *Expression) string {
-	out := "USE "
+	word := g.tables.UseWord
+	if word == "" {
+		word = "USE"
+	}
+	out := word + " "
 	if kind := g.child(e, "kind"); kind != "" {
 		out += kind + " "
 	}
@@ -9548,6 +9739,20 @@ func (g *generator) writeStrToTime(e *Expression) string {
 	if g.dialect == "clickhouse" && e.Class == "StrToDate" {
 		return g.clickhouseStrToDate(e)
 	}
+	// Teradata reads the string with a CAST and names the format in a phrase
+	// of its own, mapped back to the words it was written with
+	// (TeradataGenerator.TRANSFORMS, exp.StrToDate).
+	if g.dialect == "teradata" && e.Class == "StrToDate" {
+		spelled := g.child(e, "format")
+		if format, _ := e.Args["format"].(*Expression); format != nil {
+			if raw, ok := format.Args["this"].(string); ok && isStringLiteral(format) {
+				spelled = g.node(New("Literal",
+					Arg{"this", formatTime(raw, g.tables.InverseTimeMapping)},
+					Arg{"is_string", true}))
+			}
+		}
+		return "CAST(" + g.child(e, "this") + " AS DATE FORMAT " + spelled + ")"
+	}
 	if g.dialect != "bigquery" {
 		return g.spell(e)
 	}
@@ -9787,7 +9992,21 @@ func (g *generator) writeTableSample(e *Expression) string {
 		}
 		expr += size
 	}
-	if sample.RequiresParens {
+	// A dialect with TABLESAMPLE_CSV keeps a LIST of sizes rather than one
+	// size or one percent, and writes them as they were given
+	// (TeradataGenerator.tablesample_sql, Generator.tablesample_sql).
+	csvList := false
+	if items, _ := e.Args["expressions"].([]*Expression); len(items) > 0 {
+		parts := make([]string, 0, len(items))
+		for _, item := range items {
+			parts = append(parts, g.node(item))
+		}
+		expr = strings.Join(parts, ", ")
+		// A list already says everything a parenthesis would, and the
+		// dialect that keeps one writes it WITHOUT them.
+		csvList = true
+	}
+	if sample.RequiresParens && !csvList {
 		expr = "(" + expr + ")"
 	}
 	// The word is the TABLE form, with the space in front the table writer
@@ -10899,4 +11118,23 @@ func identifiersCanStartWithDigit(dialect string) bool {
 		return true
 	}
 	return false
+}
+
+// temporaryPropertyComesFirst reports whether a TEMPORARY property stands
+// before every other POST_CREATE one, which is when the caller writes it on
+// its own rather than in the list
+// (TeradataGenerator writes SET GLOBAL TEMPORARY in the order given).
+func (g *generator) temporaryPropertyComesFirst(e *Expression) bool {
+	properties, _ := e.Args["properties"].(*Expression)
+	if properties == nil {
+		return true
+	}
+	items, _ := properties.Args["expressions"].([]*Expression)
+	for _, item := range items {
+		if g.tables.PropertyLocation[item.Class] != "POST_CREATE" {
+			continue
+		}
+		return item.Class == "TemporaryProperty"
+	}
+	return true
 }

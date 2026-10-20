@@ -1,0 +1,115 @@
+{
+ "dialect": "teradata",
+ "rendered": "SET QUERY_BAND = 'priority=high;' UPDATE FOR SESSION",
+ "sql": "SET QUERY_BAND = 'priority=high;' UPDATE FOR SESSION",
+ "tokens": [
+  {
+   "c": 3,
+   "e": 2,
+   "l": 1,
+   "s": 0,
+   "t": "SET",
+   "x": "SET"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 4,
+   "t": "VAR",
+   "x": "QUERY_BAND"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 17,
+   "t": "STRING",
+   "x": "priority=high;"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 34,
+   "t": "UPDATE",
+   "x": "UPDATE"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 41,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 45,
+   "t": "SESSION",
+   "x": "SESSION"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Set"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.QueryBand",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "priority=high;"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "scope",
+   "v": "SESSION"
+  },
+  {
+   "i": 1,
+   "k": "update",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "unset",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "tag",
+   "v": false
+  }
+ ]
+}

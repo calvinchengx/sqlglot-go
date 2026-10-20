@@ -1211,6 +1211,23 @@ func unpivotTarget(e *Expression, unpivot bool) *Expression {
 // and is kept as a Var rather than as a name.
 func (p *parser) parseTableSample() (*Expression, error) {
 	p.advance() // TABLESAMPLE
+	// A dialect with TABLESAMPLE_CSV takes a comma-separated list of SIZES
+	// and no parentheses: `SAMPLE 0.33, .25, .1`, and `SAMPLE 5` is one of
+	// them (Parser._parse_table_sample).
+	if p.tables.TableSampleCSV {
+		var items []*Expression
+		for {
+			item, err := p.parsePrimary()
+			if err != nil {
+				return nil, err
+			}
+			items = append(items, item)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		return New("TableSample", Arg{"expressions", items}), nil
+	}
 	// ClickHouse says `SAMPLE <expr>` with no parentheses and no method
 	// (Parser._parse_table_sample, TABLESAMPLE_REQUIRES_PARENS).
 	if p.dialect == "clickhouse" {
@@ -1617,6 +1634,10 @@ func (p *parser) namesAFunctionCall() bool {
 	// A next token implies a current one, so curr is safe below.
 	n := p.next()
 	if n == nil || n.Type != TokL_PAREN {
+		return false
+	}
+	// Teradata's `col (FORMAT '...')` is a column PHRASE rather than a call.
+	if p.formatPhraseFollows() {
 		return false
 	}
 	// FuncTokens ALONE, which is the reference's own rule -- and it already
