@@ -117,6 +117,14 @@ jobs:
       - name: a short fuzz for parser panics
         run: go test ./sqlglot/ -run=XXX -fuzz=FuzzParseOneNeverPanics -fuzztime=45s -timeout=10m
       - uses: golangci/golangci-lint-action@v7
+        # The same cap the coverage step carries, for the same reason: the
+        # analyser type-checks the whole package, and without a bound it was
+        # killed here with no output at all -- four times before the coverage
+        # step was fixed, and once after it, which is the only reason this
+        # step was ever reached.
+        env:
+          GOMEMLIMIT: 3GiB
+          GOGC: "40"
         with:
           version: v2.13.1
           working-directory: .
