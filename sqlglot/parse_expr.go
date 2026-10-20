@@ -1740,6 +1740,28 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return New(class), nil
 	}
 
+	// `IF cond THEN a [ELSE b] END` is an EXPRESSION as well as a statement,
+	// and the reference reads both from ONE reader (Parser._parse_if, the
+	// FUNCTION_PARSERS entry for IF). The parenthesised form is the ordinary
+	// function and is read further down; this is the bare one.
+	if p.atWords("IF") {
+		// A dot after the word makes it a NAME qualified by what follows --
+		// `if.x` -- exactly as the CASE branch below says of `case.*`.
+		if n := p.next(); n != nil && n.Type != TokL_PAREN && n.Type != TokDOT {
+			// The word is no more than a NAME when nothing that could be a
+			// condition follows -- `SELECT if, a` -- so a failed read puts
+			// the parser back where it was rather than failing the
+			// statement (Parser._parse_if, which retreats and returns None).
+			node, ok, err := p.tryParseIfExpression()
+			if err != nil {
+				return nil, err
+			}
+			if ok {
+				return node, nil
+			}
+		}
+	}
+
 	switch c.Type {
 	case TokCASE:
 		// `case.*` is a COLUMN qualified by a table called case. The
@@ -6266,4 +6288,50 @@ func concatCoalesce(dialect string) bool {
 func (p *parser) formatPhraseFollows() bool {
 	return p.dialect == "teradata" && p.index+2 < len(p.tokens) &&
 		p.tokens[p.index+2].Type == TokFORMAT
+}
+
+// tryParseIfExpression reads `IF <cond> THEN <a> [ELSE <b>] END`. It reports
+// FALSE with the parser put back where it was when the word turns out to be a
+// name instead: `SELECT if, a` is a column, and the reference retreats rather
+// than failing (Parser._parse_if).
+func (p *parser) tryParseIfExpression() (*Expression, bool, error) {
+	mark := p.index
+	p.advance() // IF
+	// A comma or a closing parenthesis after the word ends the matter: it is
+	// a NAME there, and the reference's `_parse_disjunction` returns None for
+	// both where this one would consume them.
+	if c := p.curr(); c == nil || c.Type == TokCOMMA || c.Type == TokR_PAREN {
+		p.index = mark
+		return nil, false, nil
+	}
+	afterIf := p.index
+	condition, err := p.parseDisjunction()
+	if err != nil {
+		p.index = mark
+		return nil, false, err
+	}
+	// A condition that read NOTHING is not a condition: at a comma the
+	// disjunction hands back a node without consuming a token, and taking
+	// that as the condition turned `SELECT if, a` into a broken IF.
+	if condition == nil || p.index == afterIf {
+		p.index = mark
+		return nil, false, nil
+	}
+	p.match(TokTHEN)
+	trueArm, err := p.parseDisjunction()
+	if err != nil {
+		p.index = mark
+		return nil, false, err
+	}
+	var falseArm *Expression
+	if p.match(TokELSE) {
+		falseArm, err = p.parseDisjunction()
+		if err != nil {
+			p.index = mark
+			return nil, false, err
+		}
+	}
+	p.match(TokEND)
+	return New("If", Arg{"this", condition}, Arg{"true", trueArm},
+		Arg{"false", falseArm}), true, nil
 }
