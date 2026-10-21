@@ -11,8 +11,11 @@ package sqlglot
 // the tree keeps.
 func (p *parser) toCharOrTimeToStr(args []*Expression) *Expression {
 	this := argAt(args, 0)
+	if len(args) == 2 && this != nil {
+		annotateInPlace(this, p.dialect)
+	}
 	if len(args) == 2 && this != nil &&
-		temporalTypeKinds[typeKind(Annotate(this, p.dialect))] {
+		temporalTypeKinds[typeKind(this.Type)] {
 		format := argAt(args, 1)
 		if lit, ok := format.Args["this"].(string); ok && format.Class == "Literal" {
 			format = New("Literal",
@@ -34,10 +37,12 @@ func (p *parser) truncOrDateTrunc(args []*Expression) *Expression {
 	if this == nil {
 		return New("Anonymous", Arg{"this", "TRUNC"}, Arg{"expressions", args})
 	}
-	thisType := typeKind(Annotate(this, p.dialect))
+	annotateInPlace(this, p.dialect)
+	thisType := typeKind(this.Type)
 	secondType := ""
 	if second != nil {
-		secondType = typeKind(Annotate(second, p.dialect))
+		annotateInPlace(second, p.dialect)
+		secondType = typeKind(second.Type)
 	}
 	if (temporalTypeKinds[thisType] && second != nil) || textTypeKinds[secondType] {
 		return New("DateTrunc", Arg{"this", this}, Arg{"unit", second})
@@ -48,4 +53,19 @@ func (p *parser) truncOrDateTrunc(args []*Expression) *Expression {
 			Arg{"fractions_supported", false})
 	}
 	return New("Anonymous", Arg{"this", "TRUNC"}, Arg{"expressions", args})
+}
+
+// annotateInPlace stamps a type on an argument the way the reference's builder
+// does. `build_trunc` and `build_timetostr_or_tochar` call `annotate_types` on
+// the node they were handed, which MUTATES it -- and the differential compares
+// the annotation, so a port that read the type without recording it agrees
+// about the answer and disagrees about the tree.
+func annotateInPlace(e *Expression, dialect string) {
+	if e == nil || e.Type != nil {
+		return
+	}
+	AnnotateFully(e, dialect)
+	if e.Type == nil {
+		e.Type = Annotate(e, dialect)
+	}
 }

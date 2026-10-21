@@ -104,7 +104,10 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 	// One parser under four names: DuckDB spells the same aggregate
 	// GROUP_CONCAT, LISTAGG and STRINGAGG as well as STRING_AGG.
 	case "GROUP_CONCAT":
-		if p.dialect == "mysql" {
+		// Exasol reads it the same way MySQL does -- the SEPARATOR is a
+		// trailing KEYWORD and the ORDER BY stands inside the call
+		// (ExasolParser.FUNCTION_PARSERS, `_parse_group_concat`).
+		if p.dialect == "mysql" || p.dialect == "exasol" {
 			return p.parseMySQLGroupConcat()
 		}
 		return p.parseStringAgg()
