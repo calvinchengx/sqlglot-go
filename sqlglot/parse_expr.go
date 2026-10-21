@@ -330,6 +330,23 @@ func (p *parser) parseRange() (*Expression, error) {
 			this = comprehension
 		default:
 			if _, isRange := p.tables.RangeTokens[c.Type]; isRange {
+				// Exasol's REGEXP_LIKE is the one range operator whose node
+				// carries a CONSTANT beside its two operands -- it is a FULL
+				// match, so the reference records `full_match: true` on it
+				// (ExasolParser.RANGE_PARSERS). The probe records an operator
+				// only where the result is a plain two-argument binary, so
+				// this one is skipped there and read here.
+				if p.dialect == "exasol" && c.Type == TokRLIKE {
+					p.advance()
+					var right *Expression
+					right, err = p.parseJSONArrow()
+					if err != nil {
+						return nil, err
+					}
+					this = New("RegexpLike", Arg{"this", this},
+						Arg{"expression", right}, Arg{"full_match", true})
+					break
+				}
 				return nil, p.unsupported("range operator " + c.Text)
 			}
 			if negate {
@@ -1589,6 +1606,33 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			}
 		}
 		p.advance()
+		// Exasol's ODBC datetime literal: `{d'2024-01-01'}` is a Date and
+		// `{ts'2024-01-01 12:00:00'}` a Timestamp, which is the only ODBC
+		// shape any dialect in the corpus has
+		// (ExasolParser.ODBC_DATETIME_LITERALS,
+		// Parser._parse_odbc_datetime_literal).
+		if p.dialect == "exasol" {
+			if c := p.curr(); c != nil && (c.Type == TokVAR || c.Type == TokIDENTIFIER) {
+				class := ""
+				switch strings.ToLower(c.Text) {
+				case "d":
+					class = "Date"
+				case "ts":
+					class = "Timestamp"
+				}
+				if class != "" && p.next() != nil && p.next().Type == TokSTRING {
+					p.advance()
+					lit := p.tryParseStringLiteral()
+					if lit == nil {
+						return nil, p.unsupported("ODBC literal without a string")
+					}
+					if !p.match(TokR_BRACE) {
+						return nil, p.unsupported("ODBC literal without a closing brace")
+					}
+					return New(class, Arg{"this", lit}), nil
+				}
+			}
+		}
 		var items []*Expression
 		for !p.at(TokR_BRACE) {
 			key := p.curr()
@@ -4340,6 +4384,14 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 			args[i] = wrapped
 		}
 		for _, i := range p.tables.StringSensitiveArgs[strings.ToUpper(name)] {
+			// Exasol's TRUNC READS a string argument rather than being
+			// surprised by one: the string is what chooses a DateTrunc over a
+			// Trunc, and the port writes that builder itself
+			// (exasol_funcs.go). Refusing here would refuse the very case the
+			// builder exists for.
+			if p.dialect == "exasol" && upper == "TRUNC" {
+				continue
+			}
 			if isTimeFormatArg(formatArgs, i) {
 				continue
 			}
@@ -4722,6 +4774,21 @@ func (p *parser) buildFunction(name string, spec FuncSpec, args []*Expression) *
 	// a Struct, which the spec's own argument list cannot describe.
 	if name == "NAMED_STRUCT" {
 		return namedStruct(args)
+	}
+	// Builders the probe cannot describe, because they are LAMBDAS in the
+	// reference rather than a mapping from arguments to a node
+	// (ExasolParser.FUNCTIONS). EVERY is an ALL over whatever it is given,
+	// and DATE_TRUNC takes its unit FIRST -- the opposite way round from the
+	// ordinary two-argument call.
+	if p.dialect == "exasol" {
+		switch name {
+		case "EVERY":
+			return New("All", Arg{"this", argAt(args, 0)})
+		case "TO_CHAR":
+			return p.toCharOrTimeToStr(args)
+		case "TRUNC":
+			return p.truncOrDateTrunc(args)
+		}
 	}
 	node := p.buildFromSpec(name, spec.Class, spec.Args, args)
 	if spec.Annot != nil {
@@ -5106,7 +5173,24 @@ func (p *parser) parseColumn() (*Expression, error) {
 	if p.dialect == "bigquery" && out.Class == "Column" {
 		out = bigqueryColumnParts(out)
 	}
+	// Exasol writes `LOCAL.cnt` where LOCAL names the PROJECTION rather than a
+	// table, and its parser drops the qualifier as it reads the column -- the
+	// generator puts it back (ExasolParser._parse_column,
+	// ExasolGenerator.select_sql).
+	if p.dialect == "exasol" && out.Class == "Column" {
+		if table, _ := out.Args["table"].(*Expression); table != nil &&
+			table.Class == "Identifier" &&
+			!quotedName(table) && strings.EqualFold(table.Name(), "LOCAL") {
+			out.Set("table", nil)
+		}
+	}
 	return p.daxBracketColumn(out)
+}
+
+// quotedName reports whether an Identifier was written quoted.
+func quotedName(e *Expression) bool {
+	q, _ := e.Args["quoted"].(bool)
+	return q
 }
 
 func (p *parser) parseIdentifier() (*Expression, error) { return p.parseIdentifierWhere(false) }

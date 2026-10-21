@@ -31,7 +31,7 @@ import pathlib
 import re
 import sys
 
-DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery", "clickhouse", "tableau", "dune", "druid", "solr", "drill", "teradata")
+DIALECTS = ("", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery", "clickhouse", "tableau", "dune", "druid", "solr", "drill", "teradata", "exasol")
 
 def gostr(s: str) -> str:
     """Quote a string as Go source.
@@ -4193,7 +4193,11 @@ def quantifier_query_sql(dialect: str) -> dict[str, str]:
                 # still raises for a quantifier that IS written but mangled.
                 return None
             tail = written[written.index("a = ") + 4 :]
-            if not tail.startswith(word) or "SELECT 1" not in tail:
+            # A dialect may spell the quantifier its OWN way -- Exasol writes
+            # ALL as EVERY -- so the template is whatever it rendered, as long
+            # as the query is still in it and the operator is still a call.
+            # Requiring the word back refused a correct answer.
+            if "SELECT 1" not in tail or not tail.rstrip().endswith(")"):
                 raise SystemExit(f"{dialect}: {word} over a query rendered {tail!r}")
             return tail.replace("SELECT 1", "{query}", 1)
 

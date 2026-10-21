@@ -20,6 +20,37 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseTranslateCharacters()
 	case "RANGE_N":
 		return p.parseRangeN()
+	case "JSON_EXTRACT":
+		// Exasol keeps JSON_EXTRACT's arguments as a plain LIST -- there is
+		// no path grammar, the path stays the string it was written with --
+		// and an EMITS schema may follow it
+		// (ExasolParser._parse_json_extract).
+		p.advance() // the name
+		p.advance() // (
+		var args []*Expression
+		for {
+			arg, err := p.parseExpression()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, arg)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed JSON_EXTRACT")
+		}
+		node := New("JSONExtract", Arg{"expressions", args})
+		if p.atWords("EMITS") {
+			p.advance()
+			columns, err := p.parseColumnDefs()
+			if err != nil {
+				return nil, err
+			}
+			node.Set("emits", New("Schema", Arg{"expressions", columns}))
+		}
+		return node, nil
 	case "EXTRACT":
 		return p.parseExtract()
 	case "TRIM":
@@ -73,7 +104,10 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 	// One parser under four names: DuckDB spells the same aggregate
 	// GROUP_CONCAT, LISTAGG and STRINGAGG as well as STRING_AGG.
 	case "GROUP_CONCAT":
-		if p.dialect == "mysql" {
+		// Exasol reads it the same way MySQL does -- the SEPARATOR is a
+		// trailing KEYWORD and the ORDER BY stands inside the call
+		// (ExasolParser.FUNCTION_PARSERS, `_parse_group_concat`).
+		if p.dialect == "mysql" || p.dialect == "exasol" {
 			return p.parseMySQLGroupConcat()
 		}
 		return p.parseStringAgg()

@@ -7,7 +7,10 @@
 // See NOTICE for the reference commit this port is measured against.
 package sqlglot
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"strings"
+)
 
 // Expression is one node of a parsed statement.
 //
@@ -89,7 +92,49 @@ func New(class string, args ...Arg) *Expression {
 	for _, a := range args {
 		e.Set(a.Key, a.Value)
 	}
+	// DateTrunc unabbreviates its unit as it is BUILT rather than as it is
+	// written: `TRUNC(x, 'Q')` carries QUARTER in the tree, and the
+	// `unabbreviate` switch is not an argument at all
+	// (expressions/temporal.py, DateTrunc.__init__).
+	if class == "DateTrunc" {
+		normalizeDateTruncUnit(e)
+	}
 	return e
+}
+
+// unabbreviatedUnitName is the reference's TimeUnit.UNABBREVIATED_UNIT_NAME --
+// a fixed reference-level constant, not a per-dialect fact, so it is written
+// out here rather than generated.
+var unabbreviatedUnitName = map[string]string{
+	"D": "DAY", "H": "HOUR", "M": "MINUTE", "MS": "MILLISECOND",
+	"NS": "NANOSECOND", "Q": "QUARTER", "S": "SECOND", "US": "MICROSECOND",
+	"W": "WEEK", "Y": "YEAR",
+}
+
+// normalizeDateTruncUnit rewrites the unit into the Literal the reference
+// stores, unabbreviating it where it is one of the ten short spellings. A
+// unit that is not var-like -- a function call, or a qualified column -- is
+// left alone, which is the reference's own condition.
+func normalizeDateTruncUnit(e *Expression) {
+	unit, _ := e.Args["unit"].(*Expression)
+	if unit == nil {
+		return
+	}
+	switch unit.Class {
+	case "Var", "Literal":
+	case "Column":
+		// A qualified column names something else, not a unit.
+		if len(unit.FindAll("Identifier")) != 1 {
+			return
+		}
+	default:
+		return
+	}
+	name := strings.ToUpper(unit.Name())
+	if full, ok := unabbreviatedUnitName[name]; ok {
+		name = full
+	}
+	e.Set("unit", New("Literal", Arg{"this", name}, Arg{"is_string", true}))
 }
 
 // Set assigns one arg, adopting any child expressions.

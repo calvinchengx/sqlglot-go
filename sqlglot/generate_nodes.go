@@ -222,6 +222,7 @@ func init() {
 		"RegexpExtract":                       (*generator).writeRegexpFlagged,
 		"RegexpExtractAll":                    (*generator).writeRegexpFlagged,
 		"DateTrunc":                           (*generator).writeDateTrunc,
+		"TimestampTrunc":                      (*generator).writeTimestampTrunc,
 		"Ln":                                  (*generator).writeLn,
 		"JSONStripNulls":                      (*generator).writeJSONStripNulls,
 		"Predict":                             (*generator).writePredict,
@@ -517,6 +518,21 @@ func (g *generator) writeSelect(e *Expression) string {
 	// port does not build. Refuse rather than write the un-transformed query.
 	if g.dialect == "starrocks" && hasGenerateDateArrayUnnest(e) {
 		return g.fail("UNNEST(GENERATE_DATE_ARRAY(...)), which this dialect rewrites as a recursive CTE")
+	}
+	// Exasol writes `GROUP BY ALL` out before anything else: as the POSITIONS
+	// of the projections that are not aggregates, or as a DISTINCT where the
+	// projection is a star (ExasolGenerator._group_by_all).
+	if g.dialect == "exasol" {
+		if rewritten := exasolGroupByAll(e); rewritten != nil {
+			return g.node(rewritten)
+		}
+	}
+	// Exasol writes a bare column that names an output ALIAS as
+	// `LOCAL.<alias>` (ExasolGenerator.select_sql, prefix_local).
+	if g.dialect == "exasol" {
+		if rewritten := exasolPrefixLocal(e); rewritten != nil {
+			return g.node(rewritten)
+		}
 	}
 	if g.tables.EliminatesDistinctOn {
 		if rewritten := eliminateDistinctOn(e); rewritten != nil {
@@ -2402,6 +2418,12 @@ func (g *generator) writeContains(e *Expression) string {
 // -- where every other dialect writes the template it was probed with
 // (BigQueryGenerator.datetrunc_sql).
 func (g *generator) writeDateTrunc(e *Expression) string {
+	// Exasol drops a CAST around the value and writes a string one as a typed
+	// literal, so the cast the tree carries never reaches the page
+	// (ExasolGenerator._trunc_sql).
+	if g.dialect == "exasol" {
+		return g.writeExasolTrunc(e, "DATE")
+	}
 	if g.dialect != "bigquery" {
 		// Every other dialect keeps the spelling it was read with -- Oracle's
 		// TRUNC(x), the template a probed dialect was given, and so on.
@@ -2910,6 +2932,14 @@ func capDataTypePrecision(e *Expression, max int) *Expression {
 // writeDataType writes a type, and then lets a dialect that WRAPS one have
 // the last word (clickhouseNullable).
 func (g *generator) writeDataType(e *Expression) string {
+	// Exasol fixes TIMESTAMP WITH LOCAL TIME ZONE at precision 3 and does not
+	// allow another, so it writes the words alone whatever the tree carries
+	// (ExasolGenerator.datatype_sql).
+	if g.dialect == "exasol" {
+		if kind, _ := e.Args["this"].(DataTypeKind); kind == "TIMESTAMPLTZ" {
+			return "TIMESTAMP WITH LOCAL TIME ZONE"
+		}
+	}
 	body := g.dataTypeBody(e)
 	if g.dialect == "clickhouse" {
 		return g.clickhouseNullable(e, body)
@@ -3554,6 +3584,13 @@ func (g *generator) writeSlice(e *Expression) string {
 // not of the operator above it. Comparing an ALL against an ANY suggested
 // otherwise, and this used to refuse on the strength of that.
 func (g *generator) writeQuantifier(e *Expression) string {
+	// Exasol writes a quantifier as a CALL rather than as an operator: ALL is
+	// EVERY, and the operand goes inside the parentheses whatever it is --
+	// `EVERY(age >= 30)` and, over a query, `EVERY(SELECT 1)`
+	// (ExasolGenerator.TRANSFORMS, `exp.All: rename_func("EVERY")`).
+	if g.dialect == "exasol" && e.Class == "All" {
+		return "EVERY(" + g.child(e, "this") + ")"
+	}
 	this, _ := e.Args["this"].(*Expression)
 	if this == nil {
 		return g.fail("quantifier without an operand")
@@ -4308,6 +4345,27 @@ func (g *generator) jsonPathUnion(part *Expression) string {
 // a template substitutes text knowing none, so anything that could need
 // brackets is refused rather than written flat.
 func (g *generator) writeJSONExtractOp(e *Expression) string {
+	// Exasol's JSON_EXTRACT takes its arguments as a LIST rather than as
+	// this/expression, and may name the columns it emits
+	// (ExasolGenerator.jsonextract_sql).
+	if g.dialect == "exasol" {
+		var parts []string
+		for _, key := range []string{"this", "expression"} {
+			if c := g.child(e, key); c != "" {
+				parts = append(parts, c)
+			}
+		}
+		if items, _ := e.Args["expressions"].([]*Expression); len(items) > 0 {
+			for _, item := range items {
+				parts = append(parts, g.node(item))
+			}
+		}
+		out := "JSON_EXTRACT(" + strings.Join(parts, ", ") + ")"
+		if emits := g.child(e, "emits"); emits != "" {
+			out += " EMITS " + emits
+		}
+		return out
+	}
 	// Trino's JSON_QUERY: the same node as an extraction, flagged, with the
 	// wrapper, quote and error clauses written inside the call.
 	if q, _ := e.Args["json_query"].(bool); q {
@@ -4754,6 +4812,12 @@ func (g *generator) unnestCall(e, alias *Expression) string {
 }
 
 func (g *generator) writeAtTimeZone(e *Expression) string {
+	// Exasol has no AT TIME ZONE: the shift is a call, from UTC
+	// (ExasolGenerator.TRANSFORMS, exp.AtTimeZone).
+	if g.dialect == "exasol" {
+		return "CONVERT_TZ(" + g.child(e, "this") + ", 'UTC', " +
+			g.child(e, "zone") + ")"
+	}
 	// A dialect with a CALL for this writes the call: Databricks spells the
 	// same node FROM_UTC_TIMESTAMP(x, zone). The operator is the fallback,
 	// not the rule -- writing it everywhere put an `AT TIME ZONE` where
@@ -5250,10 +5314,10 @@ func (g *generator) writeGroupConcat(e *Expression) string {
 				g.child(lim, "expression") + ")(" + g.child(lim, "this") + ")"
 		}
 	}
-	// Trino writes the overflow behaviour inside the call, after the
-	// separator; nobody else writes it at all.
+	// Trino and Exasol write the overflow behaviour inside the call, after
+	// the separator; nobody else writes it at all.
 	if overflow := g.child(e, "on_overflow"); overflow != "" {
-		if g.dialect != "trino" {
+		if g.dialect != "trino" && g.dialect != "exasol" {
 			return g.fail(e.Class + " with an overflow behaviour, which this dialect writes away")
 		}
 		plain := e.shallowCopy()
@@ -6768,6 +6832,11 @@ func (g *generator) writeCommentConstraint(e *Expression) string {
 	if !g.tables.ColumnCommentWritten {
 		return ""
 	}
+	// Exasol writes the IS as part of the constraint, which is also how it
+	// reads it (ExasolParser.CONSTRAINT_PARSERS).
+	if g.dialect == "exasol" {
+		return "COMMENT IS " + g.child(e, "this")
+	}
 	return "COMMENT " + g.child(e, "this")
 }
 
@@ -8146,6 +8215,11 @@ func (g *generator) writeTruncate(e *Expression) string {
 
 // writeUse writes the database, schema or role a session moves to.
 func (g *generator) writeUse(e *Expression) string {
+	// Exasol opens a schema rather than switching to it, and says so first
+	// (ExasolGenerator.use_sql).
+	if g.dialect == "exasol" {
+		return "OPEN SCHEMA " + g.child(e, "this")
+	}
 	word := g.tables.UseWord
 	if word == "" {
 		word = "USE"
@@ -9062,6 +9136,20 @@ func (g *generator) writeTimeToStr(e *Expression) string {
 	if g.dialect == "bigquery" {
 		return g.writeBigQueryTimeToStr(e)
 	}
+	// The format a tree keeps is in %-form; a dialect that has a TIME_MAPPING
+	// of its own writes it back in its own words (Generator.timetostr_sql,
+	// `format_time(..., inverse=True)`).
+	if g.dialect == "exasol" {
+		format := g.child(e, "format")
+		if f, _ := e.Args["format"].(*Expression); f != nil {
+			if raw, ok := f.Args["this"].(string); ok && isStringLiteral(f) {
+				format = g.node(New("Literal",
+					Arg{"this", formatTime(raw, g.tables.InverseTimeMapping)},
+					Arg{"is_string", true}))
+			}
+		}
+		return "TO_CHAR(" + g.child(e, "this") + ", " + format + ")"
+	}
 	if g.dialect == "mysql" || g.dialect == "doris" {
 		this, _ := e.Args["this"].(*Expression)
 		if stripped := stripMySQLTsOrDsWrap(this); stripped != this {
@@ -9742,6 +9830,27 @@ func (g *generator) writeStrToTime(e *Expression) string {
 	// Teradata reads the string with a CAST and names the format in a phrase
 	// of its own, mapped back to the words it was written with
 	// (TeradataGenerator.TRANSFORMS, exp.StrToDate).
+	// Exasol writes the string in with TO_DATE/TO_TIMESTAMP, and the stored
+	// format back in the words it was written with
+	// (ExasolGenerator.TRANSFORMS, `format_time(..., inverse=True)`).
+	if g.dialect == "exasol" {
+		// StrToTime is a TO_DATE here as well as StrToDate: Exasol has no
+		// two-argument TO_TIMESTAMP, and its TRANSFORMS say so
+		// (`exp.StrToTime: ... self.func("TO_DATE", ...)`).
+		name := "TO_DATE"
+		format := g.child(e, "format")
+		if f, _ := e.Args["format"].(*Expression); f != nil {
+			if raw, ok := f.Args["this"].(string); ok && isStringLiteral(f) {
+				format = g.node(New("Literal",
+					Arg{"this", formatTime(raw, g.tables.InverseTimeMapping)},
+					Arg{"is_string", true}))
+			}
+		}
+		if format != "" {
+			return name + "(" + g.child(e, "this") + ", " + format + ")"
+		}
+		return name + "(" + g.child(e, "this") + ")"
+	}
 	if g.dialect == "teradata" && e.Class == "StrToDate" {
 		spelled := g.child(e, "format")
 		if format, _ := e.Args["format"].(*Expression); format != nil {
@@ -10025,6 +10134,33 @@ func (g *generator) writeTableSample(e *Expression) string {
 	return out
 }
 
+// writeExasolTrunc writes `DATE_TRUNC('<unit>', <value>)`, where the value is
+// written WITHOUT a cast around it and a string value becomes `DATE '...'` or
+// `TIMESTAMP '...'` (ExasolGenerator._trunc_sql).
+func (g *generator) writeExasolTrunc(e *Expression, kind string) string {
+	node, _ := e.Args["this"].(*Expression)
+	if node != nil && node.Class == "Cast" {
+		node = node.This()
+	}
+	value := ""
+	if node != nil {
+		if isStringLiteral(node) {
+			text, _ := node.Args["this"].(string)
+			if kind == "TIMESTAMP" {
+				text = strings.ReplaceAll(text, "T", " ")
+			}
+			value = kind + " '" + text + "'"
+		} else {
+			value = g.node(node)
+		}
+	}
+	unit := ""
+	if u, _ := e.Args["unit"].(*Expression); u != nil {
+		unit = u.Name()
+	}
+	return "DATE_TRUNC('" + unit + "', " + value + ")"
+}
+
 // writeDateAdd, writeDateSub, writeDatetimeAdd and writeDatetimeSub write a
 // date or datetime shifted by an amount. Each dialect spells this its own
 // way -- an operator (`d + INTERVAL 1 DAY`), a unit-first call
@@ -10033,6 +10169,9 @@ func (g *generator) writeTableSample(e *Expression) string {
 // and no generic FuncSpec/SyntaxSQL template covers the shape for most of
 // them, so each is written out directly rather than probed for.
 func (g *generator) writeDateAdd(e *Expression) string {
+	if g.dialect == "exasol" {
+		return g.writeExasolDateArith(e, false)
+	}
 	if g.dialect == "drill" {
 		return g.drillDateArith(e, "ADD")
 	}
@@ -10194,6 +10333,9 @@ func (g *generator) writeDateBin(e *Expression) string {
 }
 
 func (g *generator) writeDateSub(e *Expression) string {
+	if g.dialect == "exasol" {
+		return g.writeExasolDateArith(e, true)
+	}
 	if g.dialect == "drill" {
 		return g.drillDateArith(e, "SUB")
 	}
@@ -11137,4 +11279,214 @@ func (g *generator) temporaryPropertyComesFirst(e *Expression) bool {
 		return item.Class == "TemporaryProperty"
 	}
 	return true
+}
+
+// exasolPrefixLocal is ExasolGenerator.select_sql's prefix_local: a bare
+// column that names an output ALIAS is written `LOCAL.<alias>` -- in WHERE,
+// GROUP BY and HAVING it may name any alias the query projects, and inside a
+// later select item any alias BEFORE it. A table actually called LOCAL is
+// quoted, so the two cannot be confused.
+//
+// Returns nil where nothing needed rewriting, so the caller's ordinary path
+// runs unchanged.
+func exasolPrefixLocal(e *Expression) *Expression {
+	selects, _ := e.Args["expressions"].([]*Expression)
+	aliases := map[string]*Expression{}
+	for _, sel := range selects {
+		if sel.Class != "Alias" {
+			continue
+		}
+		if alias, _ := sel.Args["alias"].(*Expression); alias != nil {
+			aliases[strings.ToLower(alias.Name())] = alias
+		}
+	}
+	localRewritten = false
+	out := e.Copy()
+	// The quoting does not depend on an alias existing: a table actually
+	// named LOCAL is always quoted, so `LOCAL.x` can only mean the
+	// projection.
+	quoteLocalAll(out)
+	if len(aliases) == 0 {
+		if !localRewritten {
+			return nil
+		}
+		return out
+	}
+	for _, key := range []string{"where", "group", "having"} {
+		if arg, _ := out.Args[key].(*Expression); arg != nil {
+			preferLocal(arg, aliases)
+		}
+	}
+	seen := map[string]*Expression{}
+	items, _ := out.Args["expressions"].([]*Expression)
+	for _, sel := range items {
+		if sel.Class != "Alias" {
+			continue
+		}
+		if inner, _ := sel.Args["this"].(*Expression); inner != nil {
+			preferLocal(inner, seen)
+		}
+		if alias, _ := sel.Args["alias"].(*Expression); alias != nil {
+			seen[strings.ToLower(alias.Name())] = alias
+		}
+	}
+	if !localRewritten {
+		return nil
+	}
+	return out
+}
+
+// quoteLocalAll quotes every Table named LOCAL in the statement, so that a
+// `LOCAL.x` written afterwards can only mean the projection.
+func quoteLocalAll(e *Expression) {
+	if e == nil {
+		return
+	}
+	if e.Class == "Table" {
+		if name, _ := e.Args["this"].(*Expression); name != nil &&
+			name.Class == "Identifier" && !quotedName(name) &&
+			strings.EqualFold(name.Name(), "LOCAL") {
+			// The reference REPLACES the identifier with an upper-cased one
+			// as well as quoting it, so `FROM local` becomes `FROM "LOCAL"`.
+			name.Set("this", "LOCAL")
+			name.Set("quoted", true)
+			localRewritten = true
+		}
+	}
+	for _, key := range append([]string(nil), e.Keys...) {
+		switch v := e.Args[key].(type) {
+		case *Expression:
+			quoteLocalAll(v)
+		case []*Expression:
+			for _, item := range v {
+				quoteLocalAll(item)
+			}
+		}
+	}
+}
+
+// preferLocal rewrites every bare column in the subtree that names a visible
+// alias as `LOCAL.<alias>`.
+func preferLocal(e *Expression, visible map[string]*Expression) {
+	if e == nil {
+		return
+	}
+	if e.Class == "Column" {
+		if table, _ := e.Args["table"].(*Expression); table == nil {
+			if alias, ok := visible[strings.ToLower(e.Name())]; ok {
+				e.Set("this", alias.Copy())
+				e.Set("table", New("Identifier", Arg{"this", "LOCAL"}, Arg{"quoted", false}))
+				localRewritten = true
+			}
+		}
+	}
+	for _, key := range append([]string(nil), e.Keys...) {
+		switch v := e.Args[key].(type) {
+		case *Expression:
+			preferLocal(v, visible)
+		case []*Expression:
+			for _, item := range v {
+				preferLocal(item, visible)
+			}
+		}
+	}
+}
+
+// localRewritten records that a rewrite changed something.
+var localRewritten bool
+
+// exasolGroupByAll is ExasolGenerator._group_by_all. `GROUP BY ALL` means
+// "group by everything that is not an aggregate", which Exasol writes as the
+// POSITIONS of those projections; over a star projection it is a DISTINCT
+// instead. A star with an aggregate among its projections is refused by the
+// reference, so it is refused here too.
+func exasolGroupByAll(e *Expression) *Expression {
+	if e == nil || e.Class != "Select" {
+		return nil
+	}
+	group, _ := e.Args["group"].(*Expression)
+	if group == nil {
+		return nil
+	}
+	if all, _ := group.Args["all"].(bool); !all {
+		return nil
+	}
+	projections, _ := e.Args["expressions"].([]*Expression)
+	hasAgg := func(node *Expression) bool {
+		found := false
+		node.Walk(func(n *Expression) bool {
+			if isA("AggFunc", n) {
+				found = true
+				return false
+			}
+			return true
+		})
+		return found
+	}
+	star := len(projections) == 1 && projections[0].Class == "Star"
+	out := e.Copy()
+	if star {
+		for _, projection := range projections {
+			if hasAgg(projection) {
+				return nil
+			}
+		}
+		out.Set("distinct", New("Distinct"))
+		out.Set("group", nil)
+		return out
+	}
+	var positions []*Expression
+	for i, projection := range projections {
+		if !hasAgg(projection) {
+			positions = append(positions, New("Literal",
+				Arg{"this", strconv.Itoa(i + 1)}, Arg{"is_string", false}))
+		}
+	}
+	groupCopy, _ := out.Args["group"].(*Expression)
+	if len(positions) == 0 {
+		out.Set("group", nil)
+		return out
+	}
+	groupCopy.Set("expressions", positions)
+	groupCopy.Set("all", nil)
+	return out
+}
+
+// writeExasolDateArith writes `ADD_<UNIT>S(x, offset)` -- Exasol's own spelling
+// for both a date add and a date sub, where the sub negates the offset rather
+// than naming a different function (ExasolGenerator._add_date_sql).
+func (g *generator) writeExasolDateArith(e *Expression, sub bool) string {
+	if e.Args["unit"] != nil {
+		sub = e.Class == "DateSub"
+	}
+	unit := "DAY"
+	offset := g.child(e, "expression")
+	// The unit may sit on the NODE -- `ADD_MONTHS(x, 1)` is a DateAdd with a
+	// unit and a bare offset -- or inside an Interval expression.
+	if u, _ := e.Args["unit"].(*Expression); u != nil && u.Name() != "" {
+		unit = strings.ToUpper(u.Name())
+	}
+	if interval, _ := e.Args["expression"].(*Expression); interval != nil &&
+		interval.Class == "Interval" {
+		if u, _ := interval.Args["unit"].(*Expression); u != nil && u.Name() != "" {
+			unit = strings.ToUpper(u.Name())
+		}
+		offset = g.child(interval, "this")
+	}
+	if sub {
+		offset = "-" + offset
+	}
+	return "ADD_" + unit + "S(" + g.child(e, "this") + ", " + offset + ")"
+}
+
+// writeTimestampTrunc writes DATE_TRUNC's other node the way Exasol does,
+// and every other dialect with the spelling it was read with. Exasol's
+// `_timestamp_trunc_sql` is `_trunc_sql` with the TIMESTAMP kind; where the
+// value is a string it writes a typed literal, and the cast around it is
+// dropped either way.
+func (g *generator) writeTimestampTrunc(e *Expression) string {
+	if g.dialect == "exasol" {
+		return g.writeExasolTrunc(e, "TIMESTAMP")
+	}
+	return g.spell(e)
 }

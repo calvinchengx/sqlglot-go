@@ -373,6 +373,17 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 	if p.tables.LockingIsStatement && p.at(TokLOCK) {
 		return p.parseLockingStatement()
 	}
+	// Exasol opens a schema with words of its own rather than USE
+	// (ExasolParser._parse_statement).
+	if p.dialect == "exasol" && p.atWords("OPEN", "SCHEMA") {
+		p.advance()
+		p.advance()
+		table, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		return New("Use", Arg{"this", table}), nil
+	}
 	if p.at(TokCREATE) {
 		return p.parseCreate()
 	}
