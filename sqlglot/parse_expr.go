@@ -5173,7 +5173,24 @@ func (p *parser) parseColumn() (*Expression, error) {
 	if p.dialect == "bigquery" && out.Class == "Column" {
 		out = bigqueryColumnParts(out)
 	}
+	// Exasol writes `LOCAL.cnt` where LOCAL names the PROJECTION rather than a
+	// table, and its parser drops the qualifier as it reads the column -- the
+	// generator puts it back (ExasolParser._parse_column,
+	// ExasolGenerator.select_sql).
+	if p.dialect == "exasol" && out.Class == "Column" {
+		if table, _ := out.Args["table"].(*Expression); table != nil &&
+			table.Class == "Identifier" &&
+			!quotedName(table) && strings.EqualFold(table.Name(), "LOCAL") {
+			out.Set("table", nil)
+		}
+	}
 	return p.daxBracketColumn(out)
+}
+
+// quotedName reports whether an Identifier was written quoted.
+func quotedName(e *Expression) bool {
+	q, _ := e.Args["quoted"].(bool)
+	return q
 }
 
 func (p *parser) parseIdentifier() (*Expression, error) { return p.parseIdentifierWhere(false) }
