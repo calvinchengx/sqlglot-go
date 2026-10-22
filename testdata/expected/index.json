@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 11244,
+ "count": 11306,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -4903,6 +4903,121 @@
    "sql": "SELECT MATCH(\"table\") AGAINST('x') FROM t"
   },
   {
+   "key": "383b4d148f85289f",
+   "dialect": "athena",
+   "sql": "SELECT '\\d+'"
+  },
+  {
+   "key": "b5f03c9f79caaaa4",
+   "dialect": "athena",
+   "sql": "SELECT 'foo''bar'"
+  },
+  {
+   "key": "1e0322cbd3dd71c6",
+   "dialect": "athena",
+   "sql": "CREATE TABLE IF NOT EXISTS t (name STRING) LOCATION 's3://bucket/tmp/mytable/' TBLPROPERTIES ('table_type'='iceberg', 'FORMAT'='parquet')"
+  },
+  {
+   "key": "31d0fb6181644e1a",
+   "dialect": "athena",
+   "sql": "UNLOAD (SELECT name1, address1, comment1, key1 FROM table1) TO 's3://amzn-s3-demo-bucket/ partitioned/' WITH (format = 'TEXTFILE', partitioned_by = ARRAY['key1'])"
+  },
+  {
+   "key": "853cd32a55def22f",
+   "dialect": "athena",
+   "sql": "USING EXTERNAL FUNCTION some_function(input VARBINARY)\n            RETURNS VARCHAR\n                LAMBDA 'some-name'\n            SELECT\n            some_function(1)"
+  },
+  {
+   "key": "eb00b6bfb04bf082",
+   "dialect": "athena",
+   "sql": "/* leading comment */CREATE SCHEMA foo"
+  },
+  {
+   "key": "ca8d2d3d2386ccda",
+   "dialect": "athena",
+   "sql": "/* leading comment */SELECT * FROM foo"
+  },
+  {
+   "key": "b9221e5d52fcd9b7",
+   "dialect": "athena",
+   "sql": "CREATE EXTERNAL TABLE foo (id INT) COMMENT 'test comment'"
+  },
+  {
+   "key": "cb981fbb8feec38a",
+   "dialect": "athena",
+   "sql": "CREATE EXTERNAL TABLE george.t (id INT COMMENT 'foo \\\\ bar') LOCATION 's3://my-bucket/'"
+  },
+  {
+   "key": "5505422772abba3e",
+   "dialect": "athena",
+   "sql": "CREATE EXTERNAL TABLE my_table (id BIGINT COMMENT 'this is the row\\'s id') LOCATION 's3://my-s3-bucket'"
+  },
+  {
+   "key": "a3b4d6246d197465",
+   "dialect": "athena",
+   "sql": "CREATE EXTERNAL TABLE foo (id INT, val STRING) CLUSTERED BY (id, val) INTO 10 BUCKETS"
+  },
+  {
+   "key": "13a308a4cceec33d",
+   "dialect": "athena",
+   "sql": "CREATE EXTERNAL TABLE foo (id INT, val STRING) STORED AS PARQUET LOCATION 's3://foo' TBLPROPERTIES ('has_encryped_data'='true', 'classification'='test')"
+  },
+  {
+   "key": "92fd846e3158fcc2",
+   "dialect": "athena",
+   "sql": "CREATE EXTERNAL TABLE IF NOT EXISTS foo (a INT, b STRING) ROW FORMAT SERDE 'org.openx.data.jsonserde.JsonSerDe' WITH SERDEPROPERTIES ('case.insensitive'='FALSE') LOCATION 's3://table/path'"
+  },
+  {
+   "key": "e353662829fc0dd7",
+   "dialect": "athena",
+   "sql": "CREATE EXTERNAL TABLE x (y INT) ROW FORMAT SERDE 'serde' ROW FORMAT DELIMITED FIELDS TERMINATED BY '1' WITH SERDEPROPERTIES ('input.regex'='')"
+  },
+  {
+   "key": "cfedf5eac9e63b74",
+   "dialect": "athena",
+   "sql": "CREATE EXTERNAL TABLE `my_table` (`a7` ARRAY<DATE>) ROW FORMAT SERDE 'a' STORED AS INPUTFORMAT 'b' OUTPUTFORMAT 'c' LOCATION 'd' TBLPROPERTIES ('e'='f')"
+  },
+  {
+   "key": "dba121a9de15e0d5",
+   "dialect": "athena",
+   "sql": "CREATE TABLE iceberg_table (`id` BIGINT, `data` STRING, category STRING) PARTITIONED BY (category, BUCKET(16, id)) LOCATION 's3://amzn-s3-demo-bucket/your-folder/' TBLPROPERTIES ('table_type'='ICEBERG', 'write_compression'='snappy')"
+  },
+  {
+   "key": "59cd6c020b6b41ab",
+   "dialect": "athena",
+   "sql": "CREATE OR REPLACE TABLE iceberg_table (`id` BIGINT, `data` STRING, category STRING) PARTITIONED BY (category, BUCKET(16, id)) LOCATION 's3://amzn-s3-demo-bucket/your-folder/' TBLPROPERTIES ('table_type'='ICEBERG', 'write_compression'='snappy')"
+  },
+  {
+   "key": "3b1471e346dba2c3",
+   "dialect": "athena",
+   "sql": "CREATE TABLE foo WITH (table_type='ICEBERG', location='s3://foo/', format='orc', partitioning=ARRAY['bucket(id, 5)']) AS SELECT * FROM a"
+  },
+  {
+   "key": "4cc3c5c2e49bf047",
+   "dialect": "athena",
+   "sql": "CREATE TABLE foo WITH (table_type='HIVE', external_location='s3://foo/', format='parquet', partitioned_by=ARRAY['ds']) AS SELECT * FROM a"
+  },
+  {
+   "key": "5e8482bc98f08837",
+   "dialect": "athena",
+   "sql": "CREATE TABLE foo AS WITH foo AS (SELECT a, b FROM bar) SELECT * FROM foo"
+  },
+  {
+   "key": "37e7618e8974db94",
+   "dialect": "athena",
+   "sql": "ALTER TABLE `foo`.`bar` ADD COLUMN `end_ts` BIGINT"
+  },
+  {
+   "key": "925c162bb402974d",
+   "dialect": "athena",
+   "sql": "ALTER TABLE `foo` DROP COLUMN `id`"
+  },
+  {
+   "key": "0e69c18f1de956c2",
+   "dialect": "athena",
+   "sql": "SELECT CAST(ds AS VARCHAR) AS ds FROM (VALUES ('2022-01-01')) AS t(ds)"
+  },
+  {
    "key": "f15e86c1bdc7dc7a",
    "dialect": "hive",
    "sql": "SELECT CAST(ds AS STRING) AS ds FROM (VALUES ('2022-01-01')) AS t(ds)"
@@ -4911,6 +5026,126 @@
    "key": "4a968e025e9ce366",
    "dialect": "trino",
    "sql": "SELECT CAST(ds AS VARCHAR) AS ds FROM (VALUES ('2022-01-01')) AS t(ds)"
+  },
+  {
+   "key": "c366d4a2d64a50dd",
+   "dialect": "athena",
+   "sql": "CREATE SCHEMA `foo`"
+  },
+  {
+   "key": "9f058c660743efc8",
+   "dialect": "athena",
+   "sql": "CREATE SCHEMA foo"
+  },
+  {
+   "key": "5f58dab0a0fb6254",
+   "dialect": "athena",
+   "sql": "CREATE EXTERNAL TABLE `foo` (`id` INT) LOCATION 's3://foo/'"
+  },
+  {
+   "key": "81d3e0c103a250a5",
+   "dialect": "athena",
+   "sql": "CREATE EXTERNAL TABLE foo (id INT) LOCATION 's3://foo/'"
+  },
+  {
+   "key": "0efa68f9609760e3",
+   "dialect": "athena",
+   "sql": "CREATE TABLE foo AS SELECT * FROM a"
+  },
+  {
+   "key": "e05ed00c04d2b176",
+   "dialect": "athena",
+   "sql": "CREATE TABLE \"foo\" AS SELECT * FROM \"a\""
+  },
+  {
+   "key": "e0c2e95a08799b4e",
+   "dialect": "athena",
+   "sql": "DROP VIEW IF EXISTS \"foo\".\"bar\""
+  },
+  {
+   "key": "71492408d5b60446",
+   "dialect": "athena",
+   "sql": "CREATE VIEW \"foo\" AS SELECT \"id\" FROM \"tbl\""
+  },
+  {
+   "key": "e752f53a3bd59de8",
+   "dialect": "athena",
+   "sql": "CREATE VIEW foo AS SELECT id FROM tbl"
+  },
+  {
+   "key": "5864cac89728c0a4",
+   "dialect": "athena",
+   "sql": "DROP TABLE `foo`"
+  },
+  {
+   "key": "4fbd77322bf492c2",
+   "dialect": "athena",
+   "sql": "DROP TABLE foo"
+  },
+  {
+   "key": "b720d5d82215fe5c",
+   "dialect": "athena",
+   "sql": "CREATE SCHEMA \"foo\""
+  },
+  {
+   "key": "e2c04acb56768043",
+   "dialect": "athena",
+   "sql": "DROP TABLE \"foo\""
+  },
+  {
+   "key": "76d031599faec189",
+   "dialect": "athena",
+   "sql": "DESCRIBE foo.bar"
+  },
+  {
+   "key": "8ffafe3603d755a4",
+   "dialect": "athena",
+   "sql": "CREATE TABLE \"foo\" AS WITH \"foo\" AS (SELECT \"a\", \"b\" FROM \"bar\") SELECT * FROM \"foo\""
+  },
+  {
+   "key": "0e1097c6d659f79b",
+   "dialect": "athena",
+   "sql": "SELECT a AS foo FROM tbl"
+  },
+  {
+   "key": "7478d108f373f2c3",
+   "dialect": "athena",
+   "sql": "SELECT \"a\" AS \"foo\" FROM \"tbl\""
+  },
+  {
+   "key": "5b3ce737edd623a6",
+   "dialect": "athena",
+   "sql": "INSERT INTO foo (id) VALUES (1)"
+  },
+  {
+   "key": "b83963824175f07c",
+   "dialect": "athena",
+   "sql": "INSERT INTO \"foo\" (\"id\") VALUES (1)"
+  },
+  {
+   "key": "88bb6954e810eef6",
+   "dialect": "athena",
+   "sql": "UPDATE foo SET id = 3 WHERE id = 7"
+  },
+  {
+   "key": "3b6e2934156ff48d",
+   "dialect": "athena",
+   "sql": "UPDATE \"foo\" SET \"id\" = 3 WHERE \"id\" = 7"
+  },
+  {
+   "key": "9f3571cf44ff1078",
+   "dialect": "athena",
+   "sql": "DELETE FROM foo WHERE id > 10"
+  },
+  {
+   "key": "d8695d292ff15560",
+   "dialect": "athena",
+   "sql": "DELETE FROM \"foo\" WHERE \"id\" > 10"
+  },
+  {
+   "key": "7966bc5ca012f02c",
+   "dialect": "athena",
+   "sql": "WITH foo AS (SELECT a, b FROM bar) SELECT * FROM foo"
   },
   {
    "key": "ad95ec7e8ed8c902",
@@ -16743,6 +16978,11 @@
    "sql": "ARRAY_APPEND(arr, x)"
   },
   {
+   "key": "958528b68b3d88c1",
+   "dialect": "athena",
+   "sql": "array_max(x)"
+  },
+  {
    "key": "08d9559ad1787ca6",
    "dialect": "clickhouse",
    "sql": "arrayMax(x)"
@@ -16773,6 +17013,11 @@
    "sql": "array_max(x)"
   },
   {
+   "key": "bf512e0a5024fd29",
+   "dialect": "athena",
+   "sql": "ARRAY_MAX(x)"
+  },
+  {
    "key": "b90c7d7d79a376fc",
    "dialect": "databricks",
    "sql": "ARRAY_MAX(x)"
@@ -16796,6 +17041,11 @@
    "key": "46b449f6e5ca4fee",
    "dialect": "trino",
    "sql": "ARRAY_MAX(x)"
+  },
+  {
+   "key": "c859ac5350a37921",
+   "dialect": "athena",
+   "sql": "array_min(x)"
   },
   {
    "key": "512afc15ae19557b",
@@ -16826,6 +17076,11 @@
    "key": "17a3daea3c859c34",
    "dialect": "trino",
    "sql": "array_min(x)"
+  },
+  {
+   "key": "af8ff582b3ae00b6",
+   "dialect": "athena",
+   "sql": "ARRAY_MIN(x)"
   },
   {
    "key": "6072dadfa2f60fb8",
@@ -16883,6 +17138,11 @@
    "sql": "SELECT ARRAY_EXCEPT(ARRAY[1, 2, 3], ARRAY[2])"
   },
   {
+   "key": "0bcaec1d3ecc2eae",
+   "dialect": "athena",
+   "sql": "SELECT ARRAY_EXCEPT(ARRAY[1, 2, 3], ARRAY[2])"
+  },
+  {
    "key": "82a5810caf9f7612",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN [1, 2, 3] IS NULL OR [2] IS NULL THEN NULL ELSE LIST_FILTER(LIST_DISTINCT([1, 2, 3]), e -> LENGTH(LIST_FILTER([2], x -> x IS NOT DISTINCT FROM e)) = 0) END"
@@ -16908,6 +17168,11 @@
    "sql": "SELECT array_position(array[1, 2, 3], 2)"
   },
   {
+   "key": "21a9d114bfd8e1e6",
+   "dialect": "athena",
+   "sql": "SELECT array_position(array[1, 2, 3], 2)"
+  },
+  {
    "key": "cc6dbe5724ed9711",
    "dialect": "spark",
    "sql": "SELECT ARRAY_POSITION(ARRAY(1, 2, 3), 2)"
@@ -16925,6 +17190,11 @@
   {
    "key": "dec1db00689b88b0",
    "dialect": "presto",
+   "sql": "SELECT ARRAY_POSITION(ARRAY[1, 2, 3], 2)"
+  },
+  {
+   "key": "9a6a86811d361bbf",
+   "dialect": "athena",
    "sql": "SELECT ARRAY_POSITION(ARRAY[1, 2, 3], 2)"
   },
   {
@@ -17603,6 +17873,11 @@
    "sql": "LOWER(x) NOT LIKE LOWER('%y')"
   },
   {
+   "key": "9de094c77c924bfd",
+   "dialect": "athena",
+   "sql": "POSITION(needle in haystack)"
+  },
+  {
    "key": "ba812177a2be1dcb",
    "dialect": "clickhouse",
    "sql": "POSITION(needle in haystack)"
@@ -17681,6 +17956,11 @@
    "key": "543ff968df116b50",
    "dialect": "spark2",
    "sql": "POSITION(needle, haystack)"
+  },
+  {
+   "key": "b7c0fab5eeaee623",
+   "dialect": "athena",
+   "sql": "STRPOS(haystack, needle)"
   },
   {
    "key": "db5664beb1992a73",
@@ -17818,6 +18098,11 @@
    "sql": "LOCATE(needle, haystack)"
   },
   {
+   "key": "5038c21fd74982ea",
+   "dialect": "athena",
+   "sql": "CHARINDEX(needle, haystack)"
+  },
+  {
    "key": "efc3ff87d24b34e6",
    "dialect": "databricks",
    "sql": "CHARINDEX(needle, haystack)"
@@ -17936,6 +18221,11 @@
    "key": "69d159f11a9570ba",
    "dialect": "tsql",
    "sql": "CHARINDEX(needle, haystack, position)"
+  },
+  {
+   "key": "8d356c99a7dee79f",
+   "dialect": "athena",
+   "sql": "IF(STRPOS(SUBSTR(haystack, position), needle) = 0, 0, STRPOS(SUBSTR(haystack, position), needle) + position - 1)"
   },
   {
    "key": "5501d845b24c856b",
@@ -18860,6 +19150,11 @@
   {
    "key": "6a03e30d789b0245",
    "dialect": "bigquery",
+   "sql": "SELECT * FROM (SELECT 1 AS col) apply"
+  },
+  {
+   "key": "48eb15a21c72ca4e",
+   "dialect": "athena",
    "sql": "SELECT * FROM (SELECT 1 AS col) apply"
   },
   {
@@ -35753,6 +36048,11 @@
    "sql": "SELECT U&'Hello winter \\2603 !'"
   },
   {
+   "key": "5010ebcbb08e6af8",
+   "dialect": "athena",
+   "sql": "SELECT U&'can''t'"
+  },
+  {
    "key": "c2b376d46ad362a1",
    "dialect": "bigquery",
    "sql": "SELECT 'can\\'t'"
@@ -35770,6 +36070,11 @@
   {
    "key": "5793a8ddee494f14",
    "dialect": "postgres",
+   "sql": "SELECT U&'a\nb'"
+  },
+  {
+   "key": "41fe3c760d4ee1b0",
+   "dialect": "athena",
    "sql": "SELECT U&'a\nb'"
   },
   {
@@ -44115,6 +44420,11 @@
   {
    "key": "d3d9805e6bc330bf",
    "dialect": "trino",
+   "sql": "CREATE TABLE test WITH (format='PARQUET') AS SELECT 1"
+  },
+  {
+   "key": "27bbea0a153fef86",
+   "dialect": "athena",
    "sql": "CREATE TABLE test WITH (format='PARQUET') AS SELECT 1"
   },
   {

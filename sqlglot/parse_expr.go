@@ -5517,7 +5517,7 @@ func (p *parser) atWords(words ...string) bool {
 		// `[IF]` is a column called IF, and reading it as the keyword left
 		// the port unable to read back what it had written. The generator
 		// fuzzer found it.
-		if p.tokens[p.index+i].Type == TokIDENTIFIER {
+		if isTextMatchExcluded(p.tokens[p.index+i].Type) {
 			return false
 		}
 		if !strings.EqualFold(p.tokens[p.index+i].Text, w) {
@@ -6418,4 +6418,19 @@ func (p *parser) tryParseIfExpression() (*Expression, bool, error) {
 	p.match(TokEND)
 	return New("If", Arg{"this", condition}, Arg{"true", trueArm},
 		Arg{"false", falseArm}), true, nil
+}
+
+// isTextMatchExcluded reports whether a token type is one the reference keeps
+// out of WORD matching: the token's TEXT is not what was written, so matching
+// on it reads a quoted name -- or a STRING -- as the keyword it spells.
+// `TBLPROPERTIES ('FORMAT'='parquet')` names a property CALLED FORMAT rather
+// than the STORED AS property, and reading the quoted key as the word turned
+// it into one (Parser.TEXT_MATCH_EXCLUDED_TOKENS).
+func isTextMatchExcluded(t TokenType) bool {
+	switch t {
+	case TokBIT_STRING, TokBYTE_STRING, TokHEREDOC_STRING, TokHEX_STRING,
+		TokIDENTIFIER, TokNATIONAL_STRING, TokRAW_STRING, TokSTRING:
+		return true
+	}
+	return false
 }

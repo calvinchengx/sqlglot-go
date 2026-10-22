@@ -1,0 +1,158 @@
+{
+ "dialect": "athena",
+ "rendered": "USING EXTERNAL FUNCTION some_function(input VARBINARY)\n            RETURNS VARCHAR\n                LAMBDA 'some-name'\n            SELECT\n            some_function(1)",
+ "sql": "USING EXTERNAL FUNCTION some_function(input VARBINARY)\n            RETURNS VARCHAR\n                LAMBDA 'some-name'\n            SELECT\n            some_function(1)",
+ "tokens": [
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 0,
+   "t": "USING",
+   "x": "USING"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 6,
+   "t": "VAR",
+   "x": "EXTERNAL"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 15,
+   "t": "FUNCTION",
+   "x": "FUNCTION"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 24,
+   "t": "VAR",
+   "x": "some_function"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 43,
+   "e": 42,
+   "l": 1,
+   "s": 38,
+   "t": "VAR",
+   "x": "input"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 44,
+   "t": "VARBINARY",
+   "x": "VARBINARY"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 19,
+   "e": 73,
+   "l": 2,
+   "s": 67,
+   "t": "VAR",
+   "x": "RETURNS"
+  },
+  {
+   "c": 27,
+   "e": 81,
+   "l": 2,
+   "s": 75,
+   "t": "VARCHAR",
+   "x": "VARCHAR"
+  },
+  {
+   "c": 22,
+   "e": 104,
+   "l": 3,
+   "s": 99,
+   "t": "VAR",
+   "x": "LAMBDA"
+  },
+  {
+   "c": 34,
+   "e": 116,
+   "l": 3,
+   "s": 106,
+   "t": "STRING",
+   "x": "some-name"
+  },
+  {
+   "c": 18,
+   "e": 135,
+   "l": 4,
+   "s": 130,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 25,
+   "e": 161,
+   "l": 5,
+   "s": 149,
+   "t": "VAR",
+   "x": "some_function"
+  },
+  {
+   "c": 26,
+   "e": 162,
+   "l": 5,
+   "s": 162,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 27,
+   "e": 163,
+   "l": 5,
+   "s": 163,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 28,
+   "e": 164,
+   "l": 5,
+   "s": 164,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "USING"
+  },
+  {
+   "i": 0,
+   "k": "expression",
+   "v": " EXTERNAL FUNCTION some_function(input VARBINARY)\n            RETURNS VARCHAR\n                LAMBDA 'some-name'\n            SELECT\n            some_function(1)"
+  }
+ ]
+}

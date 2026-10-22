@@ -97,6 +97,64 @@ func (t *Tokenizer) reset() {
 
 // Tokenize returns the tokens of one SQL string.
 func (t *Tokenizer) Tokenize(sql string) (toks []Token, err error) {
+	// Athena's tokenizer is Hive's and Trino's COMBINED, and it exists to be
+	// thrown away: the statement is tokenized once to decide which engine
+	// would run it, and then again with that engine's own tokenizer, because
+	// the two disagree about quoting and about what a word means. The Hive
+	// stream is marked with a leading token the parser reads
+	// (sqlglot/dialects/athena.py, Athena.Tokenizer.tokenize).
+	if t.cfg.Name == "athena" {
+		return t.tokenizeAthena(sql)
+	}
+	return t.tokenizeRaw(sql)
+}
+
+// tokenizeAthena tokenizes with the combined tables, decides, and re-tokenizes
+// with the engine that would run the statement.
+func (t *Tokenizer) tokenizeAthena(sql string) ([]Token, error) {
+	combined, err := t.tokenizeRaw(sql)
+	if err != nil {
+		return nil, err
+	}
+	engine := "trino"
+	if athenaReadsAsHive(combined) {
+		engine = "hive"
+	}
+	if engine == "hive" {
+		engineTokenizer, err := NewTokenizer("hive")
+		if err != nil {
+			return nil, err
+		}
+		toks, err := engineTokenizer.tokenizeRaw(sql)
+		if err != nil {
+			return nil, err
+		}
+		marker := Token{Type: TokHIVE_TOKEN_STREAM, Text: "", Line: 1, Col: 1}
+		return append([]Token{marker}, toks...), nil
+	}
+	// The Trino half is Trino's tokenizer with one word added: Athena reads
+	// UNLOAD as a COMMAND (sqlglot/dialects/athena.py, _TrinoTokenizer).
+	trino := &Tokenizer{cfg: athenaTrinoConfig()}
+	return trino.tokenizeRaw(sql)
+}
+
+// athenaTrinoConfig is Trino's tokenizer tables with Athena's one addition.
+// The rest is shared, because the Trino half of Athena IS Trino.
+func athenaTrinoConfig() *Config {
+	base, _ := ConfigFor("trino")
+	copied := *base
+	keywords := make(map[string]TokenType, len(base.Keywords)+1)
+	for k, v := range base.Keywords {
+		keywords[k] = v
+	}
+	keywords["UNLOAD"] = TokCOMMAND
+	copied.Keywords = keywords
+	// A name of its own so the routing above does not run again on it.
+	copied.Name = "athena_trino"
+	return &copied
+}
+
+func (t *Tokenizer) tokenizeRaw(sql string) (toks []Token, err error) {
 	t.reset()
 	t.sql = []rune(sql)
 	t.size = len(t.sql)

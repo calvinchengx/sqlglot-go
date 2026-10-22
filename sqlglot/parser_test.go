@@ -415,11 +415,11 @@ func TestParseErrorsFromTheTokenizer(t *testing.T) {
 }
 
 func TestParseUnknownDialect(t *testing.T) {
-	_, err := ParseOne("SELECT 1", "athena")
+	_, err := ParseOne("SELECT 1", "not_a_dialect")
 	if err == nil {
 		t.Fatal("want an error for a dialect the port does not configure")
 	}
-	if !strings.Contains(err.Error(), "athena") {
+	if !strings.Contains(err.Error(), "not_a_dialect") {
 		t.Errorf("the error should name the dialect asked for: %s", err)
 	}
 }

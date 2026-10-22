@@ -2,6 +2,7 @@ package sqlglot
 
 import (
 	"errors"
+	"fmt"
 	"strings"
 )
 
@@ -39,6 +40,9 @@ var ErrMultipleStatements = errors.New("sqlglot-go: more than one statement")
 
 // ParseOne parses a single statement in a dialect and returns its tree.
 func ParseOne(sql, dialect string) (*Expression, error) {
+	if dialect == "athena" {
+		return parseAthena(sql)
+	}
 	tk, err := NewTokenizer(dialect)
 	if err != nil {
 		return nil, err
@@ -594,4 +598,39 @@ func (p *parser) parseForIn() (*Expression, error) {
 		return nil, err
 	}
 	return New("ForIn", Arg{"this", iterable}, Arg{"expression", body}), nil
+}
+
+// parseAthena reads a statement with the engine that would RUN it.
+//
+// The tokenizer has already chosen: it tokenizes with Athena's combined
+// tables, decides, and re-tokenizes with the engine's own, marking a Hive
+// stream with a leading token (see Tokenizer.tokenizeAthena). This reads that
+// marker and parses with the engine's tables
+// (sqlglot/parsers/athena.py, AthenaParser.parse).
+func parseAthena(sql string) (*Expression, error) {
+	tk, err := NewTokenizer("athena")
+	if err != nil {
+		return nil, err
+	}
+	toks, err := tk.Tokenize(sql)
+	if err != nil {
+		return nil, err
+	}
+	engine := "trino"
+	if len(toks) > 0 && toks[0].Type == TokHIVE_TOKEN_STREAM {
+		engine = "hive"
+		toks = toks[1:]
+	}
+	cfg, ok := ConfigFor(engine)
+	if !ok {
+		return nil, fmt.Errorf("sqlglot: no parser for dialect %q", engine)
+	}
+	p := &parser{tokens: toks, cfg: cfg, tables: cfg.Tables, dialect: engine, sql: sql}
+	// Athena's Trino parser reads a bare USING as a Command, which is the one
+	// statement it adds to Trino's own set
+	// (sqlglot/parsers/athena.py, AthenaTrinoParser.STATEMENT_PARSERS).
+	if engine == "trino" && p.at(TokUSING) {
+		return p.parseAsCommand(*p.curr()), nil
+	}
+	return p.parseOne()
 }

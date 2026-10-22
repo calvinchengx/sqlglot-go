@@ -40,11 +40,31 @@ func (e *GenerateError) Is(target error) bool { return target == ErrGenerate }
 
 // Generate renders a tree as SQL in a dialect.
 func Generate(e *Expression, dialect string) (string, error) {
+	// Athena writes a statement with the engine that would RUN it, decided
+	// from the TREE rather than from the tokens that chose the reader -- by
+	// the time a tree exists there are no tokens
+	// (sqlglot/generators/athena.py, _generate_as_hive).
+	athena := dialect == "athena"
+	if athena {
+		if athenaWritesAsHive(e) {
+			dialect = "hive"
+		} else {
+			dialect = "trino"
+		}
+	}
 	cfg, ok := ConfigFor(dialect)
 	if !ok {
 		return "", fmt.Errorf("sqlglot: no generator for dialect %q (have %v)", dialect, Dialects())
 	}
 	g := &generator{cfg: cfg, tables: cfg.Tables, dialect: dialect, root: e}
+	// The Trino side of Athena is Trino with two property spellings changed,
+	// so the tables are Trino's and the flag says which spellings.
+	if athena && dialect == "trino" {
+		g.athenaTrino = true
+	}
+	if athena && dialect == "hive" {
+		e = athenaHiveAlter(e)
+	}
 	out := g.node(e)
 	if g.err != nil {
 		return "", g.err
@@ -73,6 +93,10 @@ type generator struct {
 	// inColumnList marks a table's COLUMN list, where a definition is spelled
 	// `a STRING` rather than as the struct field `a: STRING`.
 	inColumnList bool
+	// athenaTrino marks the Trino half of Athena, whose two property spellings
+	// differ from Trino's own (sqlglot/generators/athena.py,
+	// AthenaTrinoGenerator).
+	athenaTrino bool
 	// pathOwner is the extraction class whose path is being written, because
 	// a path's separators depend on the call it appears in.
 	pathOwner string
@@ -1043,4 +1067,25 @@ func (g *generator) nextName() string {
 	name := fmt.Sprintf("_t%d", g.nameIndex)
 	g.nameIndex++
 	return name
+}
+
+// athenaHiveAlter writes an ALTER TABLE's added columns the way Athena's Hive
+// half does: `ADD COLUMNS (a INT)` rather than `ADD COLUMN a INT`, which is a
+// Schema of the actions rather than the actions themselves
+// (sqlglot/generators/athena.py, _HiveGenerator.alter_sql).
+func athenaHiveAlter(e *Expression) *Expression {
+	if e == nil || e.Class != "Alter" {
+		return e
+	}
+	if kind, _ := e.Args["kind"].(string); kind != "TABLE" {
+		return e
+	}
+	actions, _ := e.Args["actions"].([]*Expression)
+	if len(actions) == 0 || actions[0] == nil || actions[0].Class != "ColumnDef" {
+		return e
+	}
+	out := e.Copy()
+	acts, _ := out.Args["actions"].([]*Expression)
+	out.Set("actions", []*Expression{New("Schema", Arg{"expressions", acts})})
+	return out
 }
