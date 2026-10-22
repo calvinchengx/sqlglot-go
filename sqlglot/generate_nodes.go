@@ -251,6 +251,7 @@ func init() {
 		"DropPartition":                       (*generator).writeDropPartition,
 		"ReplacePartition":                    (*generator).writeReplacePartition,
 		"PartitionedByProperty":               (*generator).writePartitionedByProperty,
+		"LocationProperty":                    (*generator).writeLocationProperty,
 		"PartitionByRangePropertyDynamic":     (*generator).writePartitionByRangePropertyDynamic,
 		"UniqueKeyProperty":                   (*generator).writeUniqueKeyProperty,
 		"OnConflict":                          (*generator).writeOnConflict,
@@ -5601,7 +5602,7 @@ func (g *generator) writeCreate(e *Expression) string {
 		items, _ := properties.Args["expressions"].([]*Expression)
 		var parts []string
 		for _, item := range items {
-			if g.tables.PropertyLocation[item.Class] != "POST_NAME" {
+			if g.propertyLocation(item.Class) != "POST_NAME" {
 				continue
 			}
 			// The recorded spellings bring their own leading space, because
@@ -5676,7 +5677,7 @@ func (g *generator) writeCreate(e *Expression) string {
 				// property in a WITH list or straight after the schema writes
 				// it THERE, and would otherwise write it twice
 				// (TeradataGenerator.PROPERTIES_LOCATION).
-				if g.tables.PropertyLocation[item.Class] != "POST_EXPRESSION" {
+				if g.propertyLocation(item.Class) != "POST_EXPRESSION" {
 					continue
 				}
 				if text := g.node(item); text != "" {
@@ -5760,7 +5761,7 @@ func (g *generator) clickhousePostName(e *Expression) string {
 	items, _ := properties.Args["expressions"].([]*Expression)
 	parts := make([]string, 0, len(items))
 	for _, item := range items {
-		if g.tables.PropertyLocation[item.Class] == "POST_NAME" {
+		if g.propertyLocation(item.Class) == "POST_NAME" {
 			parts = append(parts, g.node(item))
 		}
 	}
@@ -5838,7 +5839,7 @@ func (g *generator) writePropertyList(e *Expression) string {
 	// anywhere else is written elsewhere.
 	var root, with []string
 	for _, item := range items {
-		switch g.tables.PropertyLocation[item.Class] {
+		switch g.propertyLocation(item.Class) {
 		case "POST_WITH":
 			with = append(with, g.node(item))
 		case "POST_SCHEMA":
@@ -6038,7 +6039,7 @@ func (g *generator) writeProperties(e *Expression) (before string, out string, f
 	var beforeKind []string
 	movedSecurity, security := false, ""
 	for _, item := range items {
-		switch g.tables.PropertyLocation[item.Class] {
+		switch g.propertyLocation(item.Class) {
 		case "POST_SCHEMA":
 			// MySQL writes a VIEW's SQL SECURITY (the first one) after the
 			// other words in front of the kind, not after its name.
@@ -7647,7 +7648,7 @@ func (g *generator) writeFunctionRest(e *Expression, out string) string {
 			// A property the dialect writes inside its own list -- a UDF's
 			// `OPTIONS (...)` -- is gathered here and written as one clause
 			// (Generator.properties_sql, WITH_PROPERTIES_PREFIX).
-			if g.tables.PropertyLocation[item.Class] == "POST_WITH" {
+			if g.propertyLocation(item.Class) == "POST_WITH" {
 				withProps = append(withProps, g.node(item))
 				continue
 			}
@@ -11273,7 +11274,7 @@ func (g *generator) temporaryPropertyComesFirst(e *Expression) bool {
 	}
 	items, _ := properties.Args["expressions"].([]*Expression)
 	for _, item := range items {
-		if g.tables.PropertyLocation[item.Class] != "POST_CREATE" {
+		if g.propertyLocation(item.Class) != "POST_CREATE" {
 			continue
 		}
 		return item.Class == "TemporaryProperty"
@@ -11489,4 +11490,86 @@ func (g *generator) writeTimestampTrunc(e *Expression) string {
 		return g.writeExasolTrunc(e, "TIMESTAMP")
 	}
 	return g.spell(e)
+}
+
+// writeLocationProperty writes Athena's `external_location=` -- or `location=`
+// for an Iceberg table, which is the one thing that changes the spelling
+// (AthenaTrinoGenerator._location_property_sql).
+func (g *generator) writeLocationProperty(e *Expression) string {
+	if !g.athenaTrino {
+		return g.spell(e)
+	}
+	name := "external_location"
+	if isIcebergTable(e.Parent) {
+		name = "location"
+	}
+	return name + "=" + g.child(e, "this")
+}
+
+// athenaPartitionedBy writes the same property the way Athena's Trino half
+// does: `partitioned_by=`, or `partitioning=` for an Iceberg table
+// (AthenaTrinoGenerator._partitioned_by_property_sql).
+func (g *generator) athenaPartitionedBy(e *Expression) string {
+	name := "partitioned_by"
+	if isIcebergTable(e.Parent) {
+		name = "partitioning"
+	}
+	return name + "=" + g.child(e, "this")
+}
+
+// isIcebergTable reports whether a property list says the table is Iceberg,
+// which is what decides between the two spellings above.
+func isIcebergTable(properties *Expression) bool {
+	if properties == nil || properties.Class != "Properties" {
+		return false
+	}
+	items, _ := properties.Args["expressions"].([]*Expression)
+	for _, item := range items {
+		if item.Class != "Property" || !strings.EqualFold(propertyKeyText(item), "table_type") {
+			continue
+		}
+		value, _ := item.Args["value"].(*Expression)
+		return value != nil && strings.EqualFold(propertyValueText(value), "iceberg")
+	}
+	return false
+}
+
+// propertyKeyText is a Property's name, which may have been written as a
+// quoted literal or as a bare word -- `Name()` reads the first and not the
+// second, and the second is what `WITH (table_type=…)` writes.
+func propertyKeyText(e *Expression) string {
+	switch v := e.Args["this"].(type) {
+	case string:
+		return v
+	case *Expression:
+		if v.Class == "Var" {
+			s, _ := v.Args["this"].(string)
+			return s
+		}
+		return v.Name()
+	}
+	return ""
+}
+
+// propertyValueText is a Property's value the same way: a bare word is a Var.
+func propertyValueText(e *Expression) string {
+	if e == nil {
+		return ""
+	}
+	if e.Class == "Var" {
+		s, _ := e.Args["this"].(string)
+		return s
+	}
+	return e.Name()
+}
+
+// propertyLocation is where a property is written, with Athena's Trino half
+// overruling Trino for the one spelling it moves: `external_location=` belongs
+// in the WITH list there rather than after the schema
+// (AthenaTrinoGenerator.PROPERTIES_LOCATION).
+func (g *generator) propertyLocation(class string) string {
+	if g.athenaTrino && class == "LocationProperty" {
+		return "POST_WITH"
+	}
+	return g.tables.PropertyLocation[class]
 }

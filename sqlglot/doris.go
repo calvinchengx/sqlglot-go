@@ -11,6 +11,9 @@ import "strings"
 // `PARTITION BY ((c1, c2))`. Doris therefore writes the property itself and
 // every other dialect keeps the template.
 func (g *generator) writePartitionedByProperty(e *Expression) string {
+	if g.athenaTrino {
+		return g.athenaPartitionedBy(e)
+	}
 	if g.dialect == "starrocks" {
 		// StarRocks partitions by an expression and writes no parentheses.
 		if this, _ := e.Args["this"].(*Expression); this != nil && this.Class == "Schema" {

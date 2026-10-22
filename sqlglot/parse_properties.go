@@ -290,7 +290,12 @@ func (p *parser) atProperty() (PropertySpec, int, bool) {
 		if p.atWords(fields...) {
 			return p.tables.PropertySpecs[word], len(fields), true
 		}
-		if c := p.curr(); c != nil && strings.EqualFold(strings.Join(strings.Fields(c.Text), " "), word) {
+		// A single token may spell a two-word property -- the tokenizer joins
+		// `CLUSTER BY` and leaves `PARTITIONED BY` apart -- so its TEXT is
+		// tried as well. A quoted name or a STRING is NOT, for the reason
+		// atWords gives: `'FORMAT'` is a property CALLED FORMAT.
+		if c := p.curr(); c != nil && !isTextMatchExcluded(c.Type) &&
+			strings.EqualFold(strings.Join(strings.Fields(c.Text), " "), word) {
 			return p.tables.PropertySpecs[word], 1, true
 		}
 	}
@@ -1004,6 +1009,43 @@ func (p *parser) parseSchemaProperty() ([]*Expression, error) {
 	}
 	var out []*Expression
 	for {
+		// Trino's `PARTITIONED BY (bucket(id, 5))` is a partition TRANSFORM
+		// rather than a call: PartitionedByBucket, whose arguments are written
+		// (column, count) and kept the other way round, because Hive writes
+		// them (count, column) and both canonicalise to Trino's order
+		// (Parser._parse_partitioned_by_bucket_or_truncate).
+		if (p.atWords("BUCKET") || p.atWords("TRUNCATE")) &&
+			p.next() != nil && p.next().Type == TokL_PAREN {
+			class := "PartitionedByBucket"
+			if p.atWords("TRUNCATE") {
+				class = "PartitionByTruncate"
+			}
+			p.advance()
+			p.advance()
+			var args []*Expression
+			for {
+				arg, err := p.parsePrimary()
+				if err != nil {
+					return nil, err
+				}
+				args = append(args, arg)
+				if !p.match(TokCOMMA) {
+					break
+				}
+			}
+			if !p.match(TokR_PAREN) {
+				return nil, p.unsupported("partition transform without a closing parenthesis")
+			}
+			first, second := argAt(args, 0), argAt(args, 1)
+			if first != nil && first.Class == "Literal" {
+				first, second = second, first
+			}
+			out = append(out, New(class, Arg{"this", first}, Arg{"expression", second}))
+			if !p.match(TokCOMMA) {
+				break
+			}
+			continue
+		}
 		// Doris's `PARTITION BY (DATE_TRUNC(c2, 'MONTH'))` puts a CALL where
 		// the other dialects put a column name; read it as the expression it
 		// is, since a column definition cannot start with one.

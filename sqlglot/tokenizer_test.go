@@ -169,11 +169,11 @@ func TestTokenizeErrors(t *testing.T) {
 	})
 
 	t.Run("unknown dialect", func(t *testing.T) {
-		_, err := Tokenize("SELECT 1", "athena")
+		_, err := Tokenize("SELECT 1", "not_a_dialect")
 		if err == nil {
 			t.Fatal("want an error for a dialect the port does not configure")
 		}
-		if !strings.Contains(err.Error(), "athena") || !strings.Contains(err.Error(), "duckdb") {
+		if !strings.Contains(err.Error(), "not_a_dialect") || !strings.Contains(err.Error(), "duckdb") {
 			t.Errorf("the error should name both the ask and what is available: %s", err)
 		}
 	})
@@ -244,7 +244,7 @@ func TestDialectsAreConfigured(t *testing.T) {
 			t.Errorf("%q: empty tables", d)
 		}
 	}
-	if _, ok := ConfigFor("athena"); ok {
+	if _, ok := ConfigFor("not_a_dialect"); ok {
 		t.Error("ConfigFor reported a dialect the port does not have")
 	}
 }

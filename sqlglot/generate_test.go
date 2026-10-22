@@ -657,7 +657,7 @@ func TestGenerateRefusals(t *testing.T) {
 		t.Errorf("Error() = %q, want %q", err.Error(), want)
 	}
 
-	_, err = Generate(New("Select"), "athena")
+	_, err = Generate(New("Select"), "not_a_dialect")
 	if err == nil {
 		t.Fatal("an unknown dialect should not be written")
 	}
@@ -744,7 +744,7 @@ func TestFunctionName(t *testing.T) {
 	if _, ok := FunctionName(nil, ""); ok {
 		t.Error("nil is not a function")
 	}
-	if _, ok := FunctionName(New("Count"), "athena"); ok {
+	if _, ok := FunctionName(New("Count"), "not_a_dialect"); ok {
 		t.Error("an unknown dialect has no function names")
 	}
 }

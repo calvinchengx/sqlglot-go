@@ -502,7 +502,7 @@ def main() -> int:
     # The dialects the executor configures. The fixture also carries BigQuery
     # cases -- BIGNUMERIC, FLOAT64, ARRAY<STRING> -- and a type the port has no
     # dialect for is not a gap in the port.
-    OURS = {"", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery", "clickhouse", "tableau", "dune", "druid", "solr", "drill", "teradata", "exasol"}
+    OURS = {"", "tsql", "postgres", "duckdb", "databricks", "redshift", "materialize", "risingwave", "fabric", "presto", "trino", "dremio", "mysql", "doris", "starrocks", "singlestore", "hive", "spark2", "spark", "sqlite", "bigquery", "clickhouse", "tableau", "dune", "druid", "solr", "drill", "teradata", "exasol", "athena"}
     cases = []
     skipped = 0
     for meta, sql, expected in load_pairs(a.sqlglot):
