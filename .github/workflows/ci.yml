@@ -277,6 +277,12 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install duckdb 'psycopg[binary]'
+      # PINNED, like the reference: the execution floor is a COUNT of
+      # statements both engines agree on, and an unpinned engine moves that
+      # count on its own. DuckDB 2.0 classifies differently from 1.5 -- the
+      # same corpus, the same port, a different number -- so the floor was
+      # measuring the engine as much as the port. Raised deliberately when
+      # the corpus or the port improves; not by a pip upgrade.
+      - run: pip install 'duckdb==1.5.5' 'psycopg[binary]'
       - name: run it through both engines and compare the rows
         run: make oracle-exec
