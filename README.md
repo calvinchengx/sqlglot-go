@@ -9,11 +9,13 @@ what a read-only SQL guard needs. Every construct in a parsed statement is a
 visible node; a construct the port does not know is a parse error, never a
 silent pass.
 
-**What it covers:** the tokenizer, parser, and generator for thirty-two named
+**What it covers:** the tokenizer, parser, and generator for thirty-three named
 dialects plus neutral; the first consumer's corpus; and simplify, annotate,
-diff, anonymize, and JSONPath. **What it does not cover yet:** 1 named dialect
-with no consumer -- `prql`. (`prql`
-is not SQL at all: it is a pipelined query language.) A transpiler is not a
+diff, anonymize, and JSONPath. That is **every dialect the reference has**,
+including `prql` -- which is not SQL at all but a pipelined query language, and
+whose parser tables are the port's one hand-derived exception, because the
+probe derives tables by asking SQL questions it cannot answer
+(`sqlglot/prql_tables.go`). A transpiler is not a
 product goal. The order is a measured gap, not the library's table of contents.
 `docs/17-sqlglot-go.md` in
 [data-agent-service](https://github.com/calvinchengx/data-agent-service),
@@ -96,6 +98,7 @@ Regenerate with `make service`; nothing in it is authored here.
 | teradata | 130/130 | 130 | 130 | 0 | 0 |
 | exasol | 172/172 | 172 | 172 | 0 | 0 |
 | athena | 62/62 | 62 | 62 | 0 | 0 |
+| prql | 29/29 | 29 | 29 | 0 | 0 |
 | dax | 18/18 | 18 | 18 | 0 | 0 |
 | oracle | 159/159 | 159 | 159 | 0 | 0 |
 | snowflake | 551/551 | 551 | 551 | 0 | 0 |
@@ -106,7 +109,7 @@ that matters** and must be zero: it counts statements the port parsed into a
 *different* tree than the reference. Unparsed is the honest size of the gap.
 
 The port also writes SQL back out, and is held to the reference's own output
-string for string: **11,306 of the statements it parses are written back
+string for string: **11,335 of the statements it parses are written back
 identically, none is written wrongly, and none is refused**, and the guard's own rewrite -- inject a row ceiling, emit --
 lands as `TOP 500` in T-SQL and `LIMIT 500` in DuckDB from the same edit to the
 same node. Where a dialect would transform a statement in a way the port does
@@ -118,14 +121,14 @@ The tokenizer is complete and has no gap tier: every statement the reference
 lexes, the port lexes into the same tokens — same types, same text, same line,
 column and offsets, same attached comments. A tokenizer has nowhere to
 legitimately give up, because the parser above it cannot see what it drops.
-The configured reference corpus parses in full: **11,306 of 11,306**, with
+The configured reference corpus parses in full: **11,335 of 11,335**, with
 nothing unparsed. A construct outside that grammar is still an
 `ErrUnsupported`, never a tree that merely looks plausible. That is why
 **mismatched is zero** and is the number to watch.
 
 ## How it is verified
 
-`testdata/expected/` holds 11,306 statements — sqlglot's own `identity.sql`, its
+`testdata/expected/` holds 11,335 statements — sqlglot's own `identity.sql`, its
 **whole** dialect suite, and a set chosen to reach the lexical corners those
 miss — each with the token stream and the tree the reference produced.
 

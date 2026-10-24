@@ -43,6 +43,9 @@ func ParseOne(sql, dialect string) (*Expression, error) {
 	if dialect == "athena" {
 		return parseAthena(sql)
 	}
+	if dialect == "prql" {
+		return parsePRQL(sql)
+	}
 	tk, err := NewTokenizer(dialect)
 	if err != nil {
 		return nil, err
@@ -633,4 +636,23 @@ func parseAthena(sql string) (*Expression, error) {
 		return p.parseAsCommand(*p.curr()), nil
 	}
 	return p.parseOne()
+}
+
+// parsePRQL reads a pipeline. PRQL is not SQL -- there is no SELECT to start
+// from, the statement starts at a TABLE and each transform rewrites the query
+// built so far -- so it has a reader of its own over the NEUTRAL tables
+// (sqlglot/parsers/prql.py; see prql_tables.go for why its tables are not
+// derived).
+func parsePRQL(sql string) (*Expression, error) {
+	tk, err := NewTokenizer("prql")
+	if err != nil {
+		return nil, err
+	}
+	toks, err := tk.Tokenize(sql)
+	if err != nil {
+		return nil, err
+	}
+	cfg := tk.Config()
+	p := &parser{tokens: toks, cfg: cfg, tables: cfg.Tables, dialect: "prql", sql: sql}
+	return p.parsePRQLStatement()
 }
