@@ -1,6 +1,6 @@
 {
  "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
- "count": 11306,
+ "count": 11335,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -38656,6 +38656,151 @@
    "key": "19a57cc4589978cd",
    "dialect": "presto",
    "sql": "TRUNCATE(3.14159)"
+  },
+  {
+   "key": "17be01f244fa7167",
+   "dialect": "prql",
+   "sql": "from x"
+  },
+  {
+   "key": "9889f299dee77acc",
+   "dialect": "prql",
+   "sql": "from x derive a + 1"
+  },
+  {
+   "key": "d1b3dd2baca26bc3",
+   "dialect": "prql",
+   "sql": "from x derive x = a + 1"
+  },
+  {
+   "key": "24c0b74e54f3f5fc",
+   "dialect": "prql",
+   "sql": "from x derive {a + 1}"
+  },
+  {
+   "key": "54bf6a63d682f0d2",
+   "dialect": "prql",
+   "sql": "from x derive {x = a + 1, b}"
+  },
+  {
+   "key": "c5fd7a280cdb137d",
+   "dialect": "prql",
+   "sql": "from x derive {x = a + 1, b} select {y = x, 2}"
+  },
+  {
+   "key": "66a99e1e2cf22d8e",
+   "dialect": "prql",
+   "sql": "from x take 10"
+  },
+  {
+   "key": "51110288f034a6f6",
+   "dialect": "prql",
+   "sql": "from x take 10 take 5"
+  },
+  {
+   "key": "5210b5c5fec178b3",
+   "dialect": "prql",
+   "sql": "from x filter age > 25"
+  },
+  {
+   "key": "baf0e1aab586e760",
+   "dialect": "prql",
+   "sql": "from x derive {x = a + 1, b} filter age > 25"
+  },
+  {
+   "key": "09be724280b0f0b5",
+   "dialect": "prql",
+   "sql": "from x filter dept != 'IT'"
+  },
+  {
+   "key": "84103173443ba4ba",
+   "dialect": "prql",
+   "sql": "from x filter p == 'product' select { a, b }"
+  },
+  {
+   "key": "e1502d46941d2210",
+   "dialect": "prql",
+   "sql": "from x filter age > 25 filter age < 27"
+  },
+  {
+   "key": "85329746291e3f2d",
+   "dialect": "prql",
+   "sql": "from x filter (age > 25 && age < 27)"
+  },
+  {
+   "key": "89c039e980de11fc",
+   "dialect": "prql",
+   "sql": "from x filter (age > 25 || age < 27)"
+  },
+  {
+   "key": "8917aa7e8c9a2148",
+   "dialect": "prql",
+   "sql": "from x filter (age > 25 || age < 22) filter age > 26 filter age < 27"
+  },
+  {
+   "key": "651d8c2ae8650b49",
+   "dialect": "prql",
+   "sql": "from x sort age"
+  },
+  {
+   "key": "c5c2a4cd5fe1fb59",
+   "dialect": "prql",
+   "sql": "from x sort {-age}"
+  },
+  {
+   "key": "90584ffeb824f01a",
+   "dialect": "prql",
+   "sql": "from x sort {age, name}"
+  },
+  {
+   "key": "0cb6eea2c7b276c9",
+   "dialect": "prql",
+   "sql": "from x sort {-age, +name}"
+  },
+  {
+   "key": "601f2082c7965f97",
+   "dialect": "prql",
+   "sql": "from x append y"
+  },
+  {
+   "key": "fe27834e3fe35846",
+   "dialect": "prql",
+   "sql": "from x remove y"
+  },
+  {
+   "key": "7139d5c05c9cfdbb",
+   "dialect": "prql",
+   "sql": "from x intersect y"
+  },
+  {
+   "key": "55b3df7f89548f2a",
+   "dialect": "prql",
+   "sql": "from x filter a == null filter null != b"
+  },
+  {
+   "key": "f78e8516d7b266bd",
+   "dialect": "prql",
+   "sql": "from x filter (a > 1 || null != b || c != null)"
+  },
+  {
+   "key": "00a755d3fcd0ff6e",
+   "dialect": "prql",
+   "sql": "from a aggregate { average x }"
+  },
+  {
+   "key": "7c635bd5e9f01a6c",
+   "dialect": "prql",
+   "sql": "from a aggregate { average x, min y, ct = sum z }"
+  },
+  {
+   "key": "41b2ae0fe8be89b9",
+   "dialect": "prql",
+   "sql": "from a aggregate { average x, min y, sum z }"
+  },
+  {
+   "key": "3dbf8a21c7ba4596",
+   "dialect": "prql",
+   "sql": "from a aggregate { min y, b = stddev x, max z }"
   },
   {
    "key": "77b75800949f2fdc",
