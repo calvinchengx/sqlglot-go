@@ -1,0 +1,54 @@
+{
+ "dialect": "postgres",
+ "rendered": "LOCK TABLE foo, bar IN SHARE ROW EXCLUSIVE MODE",
+ "sql": "LOCK TABLE foo, bar IN SHARE ROW EXCLUSIVE MODE",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "LOCK",
+   "x": "LOCK"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 43,
+   "t": "STRING",
+   "x": "TABLE foo, bar IN SHARE ROW EXCLUSIVE MODE"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "LOCK"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 47,
+    "end": 46,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "TABLE foo, bar IN SHARE ROW EXCLUSIVE MODE"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

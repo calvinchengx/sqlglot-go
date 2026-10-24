@@ -1,0 +1,249 @@
+{
+ "dialect": "redshift",
+ "rendered": "WITH qualify AS (SELECT 1 AS x) SELECT * FROM qualify",
+ "sql": "WITH qualify AS (SELECT 1 AS x) SELECT * FROM qualify",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "WITH",
+   "x": "WITH"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 5,
+   "t": "QUALIFY",
+   "x": "qualify"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 13,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 17,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 26,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 32,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 41,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 46,
+   "t": "QUALIFY",
+   "x": "qualify"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 46
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "qualify"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.With",
+   "i": 0,
+   "k": "with_"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.CTE",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 9,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 25,
+    "end": 24,
+    "line": 1,
+    "start": 24
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "alias",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 14,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 8,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 12,
+    "end": 11,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "qualify"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

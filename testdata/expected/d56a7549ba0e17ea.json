@@ -1,0 +1,260 @@
+{
+ "dialect": "sqlite",
+ "rendered": "SELECT DATE(d, (-n) || ' MONTH') FROM t",
+ "sql": "SELECT DATE(d, (-n) || ' MONTH') FROM t",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "d"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "VAR",
+   "x": "n"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 18,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 20,
+   "t": "DPIPE",
+   "x": "||"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 23,
+   "t": "STRING",
+   "x": " MONTH"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 33,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 38,
+   "t": "VAR",
+   "x": "t"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.Date",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "d"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.DPipe",
+   "i": 1,
+   "k": "zone"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Neg",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 18,
+    "end": 17,
+    "line": 1,
+    "start": 17
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "n"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "expression",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": " MONTH"
+  },
+  {
+   "i": 13,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 6,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 18,
+   "k": "this",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 38
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

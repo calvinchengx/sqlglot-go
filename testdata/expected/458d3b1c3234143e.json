@@ -1,0 +1,459 @@
+{
+ "dialect": "tsql",
+ "rendered": "SELECT t.x FROM (VALUES (1)) AS t(x) UNION ALL SELECT 2 ORDER BY (t.x)",
+ "sql": "SELECT t.x FROM (VALUES (1)) AS t(x) UNION ALL SELECT 2 ORDER BY (t.x)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "t"
+  },
+  {
+   "c": 9,
+   "e": 8,
+   "l": 1,
+   "s": 8,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 10,
+   "e": 9,
+   "l": 1,
+   "s": 9,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 11,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 17,
+   "t": "VALUES",
+   "x": "VALUES"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 25,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 26,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 27,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 29,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "VAR",
+   "x": "t"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 34,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 37,
+   "t": "UNION",
+   "x": "UNION"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 43,
+   "t": "ALL",
+   "x": "ALL"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 47,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 54,
+   "t": "NUMBER",
+   "x": "2"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 56,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 65,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 66,
+   "t": "VAR",
+   "x": "t"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 67,
+   "t": "DOT",
+   "x": "."
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 68,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 69,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Union"
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 10,
+    "end": 9,
+    "line": 1,
+    "start": 9
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "table",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 6,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 1,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Values",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.Tuple",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 11,
+   "k": "expressions",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.TableAlias",
+   "i": 10,
+   "k": "alias"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 33,
+    "end": 32,
+    "line": 1,
+    "start": 32
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "columns",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 19,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 19,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "distinct",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 23,
+   "k": "expressions",
+   "m": {
+    "col": 55,
+    "end": 54,
+    "line": 1,
+    "start": 54
+   }
+  },
+  {
+   "i": 24,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 24,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 0,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 27,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 28,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 29,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "this",
+   "m": {
+    "col": 69,
+    "end": 68,
+    "line": 1,
+    "start": 68
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "table",
+   "m": {
+    "col": 67,
+    "end": 66,
+    "line": 1,
+    "start": 66
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 34,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 28,
+   "k": "nulls_first",
+   "v": true
+  }
+ ]
+}

@@ -1,6 +1,6 @@
 {
  "dialect": "bigquery",
- "rendered": "SELECT INT64(JSON_QUERY(PARSE_JSON('{\"key\": 2000}'), '$.key'))",
+ "rendered": "SELECT INT64(JSON_QUERY(JSON '{\"key\": 2000}', '$.key'))",
  "sql": "SELECT INT64(JSON_QUERY(JSON '{\"key\": 2000}', '$.key'))",
  "tokens": [
   {
@@ -148,6 +148,11 @@
    "v": true
   },
   {
+   "i": 3,
+   "k": "is_literal",
+   "v": true
+  },
+  {
    "c": "sqlglot.expressions.query.JSONPath",
    "i": 2,
    "k": "expression"
@@ -155,17 +160,17 @@
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathRoot",
-   "i": 7,
+   "i": 8,
    "k": "expressions"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathKey",
-   "i": 7,
+   "i": 8,
    "k": "expressions"
   },
   {
-   "i": 9,
+   "i": 10,
    "k": "this",
    "v": "key"
   }

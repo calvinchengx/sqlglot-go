@@ -1,0 +1,169 @@
+{
+ "dialect": "sqlite",
+ "rendered": "SELECT GROUP_CONCAT(DISTINCT x ORDER BY y DESC)",
+ "sql": "SELECT GROUP_CONCAT(DISTINCT x ORDER BY y DESC)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "GROUP_CONCAT"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 20,
+   "t": "DISTINCT",
+   "x": "DISTINCT"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 31,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "y"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 42,
+   "t": "DESC",
+   "x": "DESC"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 46,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.aggregate.GroupConcat",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Distinct",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 3,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 4,
+   "k": "this",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 29
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 2,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "y"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 8,
+   "k": "desc",
+   "v": true
+  },
+  {
+   "i": 8,
+   "k": "nulls_first",
+   "v": false
+  }
+ ]
+}

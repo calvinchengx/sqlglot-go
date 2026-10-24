@@ -1,6 +1,6 @@
 {
  "dialect": "tsql",
- "rendered": "WITH vartab(v) AS (SELECT '[{\"attr\": [{\"name\": \"banana\"}]}]') SELECT ISNULL(ISNULL(JSON_QUERY(v, '$[0].attr[0].name'), JSON_VALUE(v, '$[0].attr[0].name')), ISNULL(JSON_QUERY(v, '$[0].attr[0].name'), JSON_VALUE(v, '$[0].attr[0].name'))) FROM vartab",
+ "rendered": "WITH vartab(v) AS (SELECT '[{\"attr\": [{\"name\": \"banana\"}]}]') SELECT ISNULL(JSON_QUERY(v, '$[0].attr[0].name'), JSON_VALUE(v, '$[0].attr[0].name')) FROM vartab",
  "sql": "WITH vartab(v) AS (SELECT '[{\"attr\": [{\"name\": \"banana\"}]}]') SELECT ISNULL(JSON_QUERY(v, '$[0].attr[0].name'), JSON_VALUE(v, '$[0].attr[0].name')) FROM vartab",
  "tokens": [
   {
@@ -345,6 +345,11 @@
    "v": "name"
   },
   {
+   "i": 2,
+   "k": "json_query",
+   "v": true
+  },
+  {
    "a": true,
    "c": "sqlglot.expressions.json.JSONExtractScalar",
    "i": 1,
@@ -358,12 +363,12 @@
   },
   {
    "c": "sqlglot.expressions.core.Column",
-   "i": 17,
+   "i": 18,
    "k": "this"
   },
   {
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 18,
+   "i": 19,
    "k": "this",
    "m": {
     "col": 124,
@@ -373,74 +378,74 @@
    }
   },
   {
-   "i": 19,
+   "i": 20,
    "k": "this",
    "v": "v"
   },
   {
-   "i": 19,
+   "i": 20,
    "k": "quoted",
    "v": false
   },
   {
    "c": "sqlglot.expressions.query.JSONPath",
-   "i": 17,
+   "i": 18,
    "k": "expression"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathRoot",
-   "i": 22,
+   "i": 23,
    "k": "expressions"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathSubscript",
-   "i": 22,
+   "i": 23,
    "k": "expressions"
   },
   {
-   "i": 24,
+   "i": 25,
    "k": "this",
    "v": 0
   },
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathKey",
-   "i": 22,
+   "i": 23,
    "k": "expressions"
   },
   {
-   "i": 26,
+   "i": 27,
    "k": "this",
    "v": "attr"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathSubscript",
-   "i": 22,
+   "i": 23,
    "k": "expressions"
   },
   {
-   "i": 28,
+   "i": 29,
    "k": "this",
    "v": 0
   },
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathKey",
-   "i": 22,
+   "i": 23,
    "k": "expressions"
   },
   {
-   "i": 30,
+   "i": 31,
    "k": "this",
    "v": "name"
   },
   {
-   "i": 17,
+   "i": 18,
    "k": "scalar_only",
-   "v": false
+   "v": true
   },
   {
    "i": 1,
@@ -454,12 +459,12 @@
   },
   {
    "c": "sqlglot.expressions.query.Table",
-   "i": 34,
+   "i": 35,
    "k": "this"
   },
   {
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 35,
+   "i": 36,
    "k": "this",
    "m": {
     "col": 159,
@@ -469,12 +474,12 @@
    }
   },
   {
-   "i": 36,
+   "i": 37,
    "k": "this",
    "v": "vartab"
   },
   {
-   "i": 36,
+   "i": 37,
    "k": "quoted",
    "v": false
   },
@@ -486,18 +491,18 @@
   {
    "a": true,
    "c": "sqlglot.expressions.query.CTE",
-   "i": 39,
+   "i": 40,
    "k": "expressions"
   },
   {
    "c": "sqlglot.expressions.query.Select",
-   "i": 40,
+   "i": 41,
    "k": "this"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Literal",
-   "i": 41,
+   "i": 42,
    "k": "expressions",
    "m": {
     "col": 60,
@@ -507,23 +512,23 @@
    }
   },
   {
-   "i": 42,
+   "i": 43,
    "k": "this",
    "v": "[{\"attr\": [{\"name\": \"banana\"}]}]"
   },
   {
-   "i": 42,
+   "i": 43,
    "k": "is_string",
    "v": true
   },
   {
    "c": "sqlglot.expressions.query.TableAlias",
-   "i": 40,
+   "i": 41,
    "k": "alias"
   },
   {
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 45,
+   "i": 46,
    "k": "this",
    "m": {
     "col": 11,
@@ -533,19 +538,19 @@
    }
   },
   {
-   "i": 46,
+   "i": 47,
    "k": "this",
    "v": "vartab"
   },
   {
-   "i": 46,
+   "i": 47,
    "k": "quoted",
    "v": false
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 45,
+   "i": 46,
    "k": "columns",
    "m": {
     "col": 13,
@@ -555,12 +560,12 @@
    }
   },
   {
-   "i": 49,
+   "i": 50,
    "k": "this",
    "v": "v"
   },
   {
-   "i": 49,
+   "i": 50,
    "k": "quoted",
    "v": false
   }

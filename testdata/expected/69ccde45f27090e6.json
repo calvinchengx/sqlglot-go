@@ -1,0 +1,54 @@
+{
+ "dialect": "postgres",
+ "rendered": "LOCK foo IN ACCESS EXCLUSIVE MODE NOWAIT",
+ "sql": "LOCK foo IN ACCESS EXCLUSIVE MODE NOWAIT",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "LOCK",
+   "x": "LOCK"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 34,
+   "t": "STRING",
+   "x": "foo IN ACCESS EXCLUSIVE MODE NOWAIT"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.ddl.Command"
+  },
+  {
+   "i": 0,
+   "k": "this",
+   "v": "LOCK"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "expression",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 34
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "foo IN ACCESS EXCLUSIVE MODE NOWAIT"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

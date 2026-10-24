@@ -1,0 +1,337 @@
+{
+ "dialect": "mysql",
+ "rendered": "SELECT CONCAT(COALESCE(a, ''), COALESCE(b, '')) FROM t",
+ "sql": "SELECT CONCAT(COALESCE(a, ''), COALESCE(b, '')) FROM t",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CONCAT"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 14,
+   "t": "VAR",
+   "x": "COALESCE"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 22,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 24,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 26,
+   "t": "STRING",
+   "x": ""
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 31,
+   "t": "VAR",
+   "x": "COALESCE"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "b"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 43,
+   "t": "STRING",
+   "x": ""
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 45,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 47,
+   "e": 46,
+   "l": 1,
+   "s": 46,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 48,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 54,
+   "e": 53,
+   "l": 1,
+   "s": 53,
+   "t": "VAR",
+   "x": "t"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.string.Concat",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Coalesce",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 14
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 2,
+   "k": "expressions",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": ""
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Coalesce",
+   "i": 1,
+   "k": "expressions",
+   "m": {
+    "col": 39,
+    "end": 38,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 11,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 40
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 12,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 10,
+   "k": "expressions",
+   "m": {
+    "col": 45,
+    "end": 44,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 15,
+   "k": "this",
+   "v": ""
+  },
+  {
+   "i": 15,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "coalesce",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 20,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 21,
+   "k": "this",
+   "m": {
+    "col": 54,
+    "end": 53,
+    "line": 1,
+    "start": 53
+   }
+  },
+  {
+   "i": 22,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 22,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

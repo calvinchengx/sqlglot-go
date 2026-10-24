@@ -1,6 +1,6 @@
 {
  "dialect": "materialize",
- "rendered": "DATE_TRUNC('DAY', x)",
+ "rendered": "DATE_TRUNC('DAY', x, 'UTC')",
  "sql": "DATE_TRUNC('DAY', x, 'UTC')",
  "tokens": [
   {
@@ -113,6 +113,27 @@
    "i": 5,
    "k": "this",
    "v": "DAY"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "zone",
+   "m": {
+    "col": 26,
+    "end": 25,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "UTC"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": true
   }
  ]
 }

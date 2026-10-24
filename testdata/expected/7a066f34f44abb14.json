@@ -1,6 +1,6 @@
 {
  "dialect": "tsql",
- "rendered": "ISNULL(ISNULL(JSON_QUERY(x, '$.y'), JSON_VALUE(x, '$.y')), ISNULL(JSON_QUERY(x, '$.y'), JSON_VALUE(x, '$.y')))",
+ "rendered": "ISNULL(JSON_QUERY(x, '$.y'), JSON_VALUE(x, '$.y'))",
  "sql": "ISNULL(JSON_QUERY(x, '$.y'), JSON_VALUE(x, '$.y'))",
  "tokens": [
   {
@@ -202,6 +202,11 @@
    "v": "y"
   },
   {
+   "i": 1,
+   "k": "json_query",
+   "v": true
+  },
+  {
    "a": true,
    "c": "sqlglot.expressions.json.JSONExtractScalar",
    "i": 0,
@@ -215,12 +220,12 @@
   },
   {
    "c": "sqlglot.expressions.core.Column",
-   "i": 10,
+   "i": 11,
    "k": "this"
   },
   {
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 11,
+   "i": 12,
    "k": "this",
    "m": {
     "col": 41,
@@ -230,41 +235,41 @@
    }
   },
   {
-   "i": 12,
+   "i": 13,
    "k": "this",
    "v": "x"
   },
   {
-   "i": 12,
+   "i": 13,
    "k": "quoted",
    "v": false
   },
   {
    "c": "sqlglot.expressions.query.JSONPath",
-   "i": 10,
+   "i": 11,
    "k": "expression"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathRoot",
-   "i": 15,
+   "i": 16,
    "k": "expressions"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathKey",
-   "i": 15,
+   "i": 16,
    "k": "expressions"
   },
   {
-   "i": 17,
+   "i": 18,
    "k": "this",
    "v": "y"
   },
   {
-   "i": 10,
+   "i": 11,
    "k": "scalar_only",
-   "v": false
+   "v": true
   },
   {
    "i": 0,

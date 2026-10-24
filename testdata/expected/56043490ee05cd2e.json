@@ -1,0 +1,233 @@
+{
+ "dialect": "postgres",
+ "rendered": "SELECT 1 AS x OFFSET 1 FETCH FIRST 2 ROWS ONLY",
+ "sql": "SELECT 1 AS x OFFSET 1 ROW FETCH FIRST 2 ROWS ONLY",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 9,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 14,
+   "t": "OFFSET",
+   "x": "OFFSET"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 21,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 26,
+   "e": 25,
+   "l": 1,
+   "s": 23,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 27,
+   "t": "FETCH",
+   "x": "FETCH"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 33,
+   "t": "FIRST",
+   "x": "FIRST"
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 39,
+   "t": "NUMBER",
+   "x": "2"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 41,
+   "t": "ROWS",
+   "x": "ROWS"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 46,
+   "t": "ONLY",
+   "x": "ONLY"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Fetch",
+   "i": 0,
+   "k": "limit"
+  },
+  {
+   "i": 8,
+   "k": "direction",
+   "v": "FIRST"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "count",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 39
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "2"
+  },
+  {
+   "i": 10,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.LimitOptions",
+   "i": 8,
+   "k": "limit_options"
+  },
+  {
+   "i": 13,
+   "k": "percent",
+   "v": false
+  },
+  {
+   "i": 13,
+   "k": "rows",
+   "v": true
+  },
+  {
+   "i": 13,
+   "k": "with_ties",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Offset",
+   "i": 0,
+   "k": "offset"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 17,
+   "k": "expression",
+   "m": {
+    "col": 22,
+    "end": 21,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 18,
+   "k": "is_string",
+   "v": false
+  }
+ ]
+}

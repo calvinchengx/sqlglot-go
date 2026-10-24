@@ -1,0 +1,310 @@
+{
+ "dialect": "sqlite",
+ "rendered": "CAST((JULIANDAY(a) - JULIANDAY(b)) * 86400000000000.0 AS INTEGER)",
+ "sql": "CAST((JULIANDAY(a) - JULIANDAY(b)) * 86400000000000.0 AS INTEGER)",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 5,
+   "e": 4,
+   "l": 1,
+   "s": 4,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 5,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 6,
+   "t": "VAR",
+   "x": "JULIANDAY"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 19,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 21,
+   "t": "VAR",
+   "x": "JULIANDAY"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "VAR",
+   "x": "b"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 32,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 33,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 37,
+   "t": "NUMBER",
+   "x": "86400000000000.0"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 54,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 64,
+   "e": 63,
+   "l": 1,
+   "s": 57,
+   "t": "INT",
+   "x": "INTEGER"
+  },
+  {
+   "c": 65,
+   "e": 64,
+   "l": 1,
+   "s": 64,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.functions.Cast",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "INT"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Mul",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Sub",
+   "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 6
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "JULIANDAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 6,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 7,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Anonymous",
+   "i": 3,
+   "k": "expression",
+   "m": {
+    "col": 30,
+    "end": 29,
+    "line": 1,
+    "start": 21
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "JULIANDAY"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 10,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 12,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 31
+   }
+  },
+  {
+   "i": 13,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 13,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "expression",
+   "m": {
+    "col": 53,
+    "end": 52,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "86400000000000.0"
+  },
+  {
+   "i": 16,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 0,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 19,
+   "k": "this",
+   "v": "INT"
+  },
+  {
+   "i": 19,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

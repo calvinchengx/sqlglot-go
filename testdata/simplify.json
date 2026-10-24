@@ -1,5 +1,5 @@
 {
- "reference": "ceb5111421e9aa6135f7c650c1995ee19f9528a2",
+ "reference": "c7778cf56d90e409c75e59b82842544b118fa850",
  "pairs": [
   {
    "dialect": "",
@@ -230,6 +230,91 @@
    "dialect": "",
    "sql": "NOT (NOT TRUE)",
    "expected": "TRUE"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT (a = b)",
+   "expected": "a <> b"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT c = NOT (a = b) AS result FROM comparisons ORDER BY a, b, c",
+   "expected": "SELECT c = (a <> b) AS result FROM comparisons ORDER BY a, b, c"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT c = NOT (a <> b) AS result FROM comparisons ORDER BY a, b, c",
+   "expected": "SELECT c = (a = b) AS result FROM comparisons ORDER BY a, b, c"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT c = NOT (a < b) AS result FROM comparisons ORDER BY a, b, c",
+   "expected": "SELECT c = (a >= b) AS result FROM comparisons ORDER BY a, b, c"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT c = NOT (a <= b) AS result FROM comparisons ORDER BY a, b, c",
+   "expected": "SELECT c = (a > b) AS result FROM comparisons ORDER BY a, b, c"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT c = NOT (a > b) AS result FROM comparisons ORDER BY a, b, c",
+   "expected": "SELECT c = (a <= b) AS result FROM comparisons ORDER BY a, b, c"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT c = NOT (a >= b) AS result FROM comparisons ORDER BY a, b, c",
+   "expected": "SELECT c = (a < b) AS result FROM comparisons ORDER BY a, b, c"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT c <> NOT (a = b) AS result FROM comparisons ORDER BY a, b, c",
+   "expected": "SELECT c <> (a <> b) AS result FROM comparisons ORDER BY a, b, c"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT c <> NOT (a <> b) AS result FROM comparisons ORDER BY a, b, c",
+   "expected": "SELECT c <> (a = b) AS result FROM comparisons ORDER BY a, b, c"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT c <> NOT (a < b) AS result FROM comparisons ORDER BY a, b, c",
+   "expected": "SELECT c <> (a >= b) AS result FROM comparisons ORDER BY a, b, c"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT c <> NOT (a <= b) AS result FROM comparisons ORDER BY a, b, c",
+   "expected": "SELECT c <> (a > b) AS result FROM comparisons ORDER BY a, b, c"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT c <> NOT (a > b) AS result FROM comparisons ORDER BY a, b, c",
+   "expected": "SELECT c <> (a <= b) AS result FROM comparisons ORDER BY a, b, c"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT c <> NOT (a >= b) AS result FROM comparisons ORDER BY a, b, c",
+   "expected": "SELECT c <> (a < b) AS result FROM comparisons ORDER BY a, b, c"
+  },
+  {
+   "dialect": "",
+   "sql": "1 - NOT (b = b)",
+   "expected": "1 - (b <> b)"
+  },
+  {
+   "dialect": "",
+   "sql": "2 || NOT (b = 2)",
+   "expected": "2 || (b <> 2)"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT c = NOT (a = ALL (SELECT b FROM t)) FROM t",
+   "expected": "SELECT c = (a <> ANY(SELECT b FROM t)) FROM t"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT c = NOT (a <> ANY (SELECT b FROM t)) FROM t",
+   "expected": "SELECT c = (a = ALL ((SELECT b FROM t))) FROM t"
   },
   {
    "dialect": "",
@@ -562,6 +647,41 @@
    "expected": "SELECT x"
   },
   {
+   "dialect": "duckdb",
+   "sql": "SELECT COUNT(*) FILTER (WHERE TRUE) FROM x",
+   "expected": "SELECT COUNT(*) FILTER(WHERE TRUE) FROM x"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "COUNT(*) FILTER (WHERE 1 = 1)",
+   "expected": "COUNT(*) FILTER(WHERE TRUE)"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT COUNT(a) FILTER (WHERE TRUE) AS count_value, SUM(DISTINCT a) FILTER (WHERE 1 = 1) AS sum_value FROM x",
+   "expected": "SELECT COUNT(a) FILTER(WHERE TRUE) AS count_value, SUM(DISTINCT a) FILTER(WHERE TRUE) AS sum_value FROM x"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT COUNT(*) FILTER (WHERE TRUE), SUM(a) FILTER (WHERE TRUE) FROM x WHERE FALSE",
+   "expected": "SELECT COUNT(*) FILTER(WHERE TRUE), SUM(a) FILTER(WHERE TRUE) FROM x WHERE FALSE"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT COUNT(*) FILTER (WHERE FALSE) AS count_value, SUM(a) FILTER (WHERE NULL) AS null_sum, SUM(a) FILTER (WHERE a > 1 AND TRUE) AS sum_value FROM x",
+   "expected": "SELECT COUNT(*) FILTER(WHERE FALSE) AS count_value, SUM(a) FILTER(WHERE NULL) AS null_sum, SUM(a) FILTER(WHERE a > 1) AS sum_value FROM x"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT a, SUM(a) FILTER (WHERE TRUE) OVER () FROM x ORDER BY a",
+   "expected": "SELECT a, SUM(a) FILTER(WHERE TRUE) OVER () FROM x ORDER BY a"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT COUNT(*) FILTER (WHERE TRUE) FROM x WHERE TRUE",
+   "expected": "SELECT COUNT(*) FILTER(WHERE TRUE) FROM x"
+  },
+  {
    "dialect": "",
    "sql": "SELECT x FROM y JOIN z ON TRUE",
    "expected": "SELECT x FROM y CROSS JOIN z"
@@ -569,7 +689,7 @@
   {
    "dialect": "",
    "sql": "SELECT x FROM y RIGHT JOIN z ON TRUE",
-   "expected": "SELECT x FROM y CROSS JOIN z"
+   "expected": "SELECT x FROM y RIGHT JOIN z ON TRUE"
   },
   {
    "dialect": "",
@@ -1304,12 +1424,12 @@
   {
    "dialect": "",
    "sql": "x > 1 AND x < 2 AND x > 3",
-   "expected": "FALSE"
+   "expected": "x < 2 AND x > 3"
   },
   {
    "dialect": "",
    "sql": "x > 1 AND x < 1",
-   "expected": "FALSE"
+   "expected": "x < 1 AND x > 1"
   },
   {
    "dialect": "",
@@ -1319,7 +1439,7 @@
   {
    "dialect": "",
    "sql": "x = 1 AND x < 1",
-   "expected": "FALSE"
+   "expected": "x < 1 AND x = 1"
   },
   {
    "dialect": "",
@@ -1334,7 +1454,7 @@
   {
    "dialect": "",
    "sql": "x = 1 AND x <= 0.9",
-   "expected": "FALSE"
+   "expected": "x <= 0.9 AND x = 1"
   },
   {
    "dialect": "",
@@ -1344,7 +1464,7 @@
   {
    "dialect": "",
    "sql": "x = 1 AND x > 1",
-   "expected": "FALSE"
+   "expected": "x = 1 AND x > 1"
   },
   {
    "dialect": "",
@@ -1354,7 +1474,7 @@
   {
    "dialect": "",
    "sql": "x = 1 AND x >= 2",
-   "expected": "FALSE"
+   "expected": "x = 1 AND x >= 2"
   },
   {
    "dialect": "",
@@ -1364,7 +1484,17 @@
   {
    "dialect": "",
    "sql": "x <> 1 AND x = 1",
-   "expected": "FALSE"
+   "expected": "x <> 1 AND x = 1"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT x.a FROM x WHERE NOT (x.a < 1 AND x.a > 3)",
+   "expected": "SELECT x.a FROM x WHERE x.a <= 3 OR x.a >= 1"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT x.a, COALESCE(x.a < 1 AND x.a > 3, TRUE) AS r FROM x",
+   "expected": "SELECT x.a, COALESCE(x.a < 1 AND x.a > 3, TRUE) AS r FROM x"
   },
   {
    "dialect": "",
@@ -1554,7 +1684,7 @@
   {
    "dialect": "",
    "sql": "x > CAST('2023-01-01' AS DATE) AND x < CAST('2023-01-01' AS DATETIME)",
-   "expected": "FALSE"
+   "expected": "x < CAST('2023-01-01' AS DATETIME) AND x > CAST('2023-01-01' AS DATE)"
   },
   {
    "dialect": "",
@@ -1569,7 +1699,7 @@
   {
    "dialect": "",
    "sql": "CAST(x AS INT) < -500 AND CAST(x AS INT) >= -1",
-   "expected": "FALSE"
+   "expected": "CAST(x AS INT) < -500 AND CAST(x AS INT) >= -1"
   },
   {
    "dialect": "",
@@ -1584,7 +1714,7 @@
   {
    "dialect": "",
    "sql": "-500 > CAST(x AS INT) AND -1 <= CAST(x AS INT)",
-   "expected": "FALSE"
+   "expected": "CAST(x AS INT) < -500 AND CAST(x AS INT) >= -1"
   },
   {
    "dialect": "",
@@ -1607,6 +1737,36 @@
    "expected": "CAST(x AS INT) < 0 AND CAST(x AS INT) >= -500"
   },
   {
+   "dialect": "duckdb",
+   "sql": "SELECT COALESCE(a, NULL, 1) = 1 AS eq FROM x",
+   "expected": "SELECT COALESCE(a, NULL) = 1 OR COALESCE(a, NULL) IS NULL AS eq FROM x"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT 1 = COALESCE(a, NULL, 1) AS eq FROM x",
+   "expected": "SELECT COALESCE(a, NULL) = 1 OR COALESCE(a, NULL) IS NULL AS eq FROM x"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT 0 < COALESCE(a, NULL, -1) AS gt FROM x",
+   "expected": "SELECT COALESCE(a, NULL, -1) > 0 AS gt FROM x"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT COALESCE(a, NULL, b, 3) = 3 AS eq FROM x",
+   "expected": "SELECT COALESCE(a, NULL, b) = 3 OR COALESCE(a, NULL, b) IS NULL AS eq FROM x"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT COALESCE(a, NULL, NULL, 1) = 1 AS eq FROM x",
+   "expected": "SELECT COALESCE(a, NULL, NULL) = 1 OR COALESCE(a, NULL, NULL) IS NULL AS eq FROM x"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "SELECT COALESCE(a, NULL) = 1 AS eq FROM x",
+   "expected": "SELECT COALESCE(a, NULL) = 1 AS eq FROM x"
+  },
+  {
    "dialect": "",
    "sql": "COALESCE(x)",
    "expected": "x"
@@ -1625,6 +1785,36 @@
    "dialect": "",
    "sql": "2 = COALESCE(x, 1)",
    "expected": "NOT x IS NULL AND x = 2"
+  },
+  {
+   "dialect": "",
+   "sql": "1 < COALESCE(x, 0)",
+   "expected": "NOT x IS NULL AND x > 1"
+  },
+  {
+   "dialect": "",
+   "sql": "0 >= COALESCE(x, 1)",
+   "expected": "NOT x IS NULL AND x <= 0"
+  },
+  {
+   "dialect": "",
+   "sql": "-1 < COALESCE(x, 0)",
+   "expected": "x > -1 OR x IS NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "1 < COALESCE(x, y, 0)",
+   "expected": "COALESCE(x, y) > 1 AND NOT COALESCE(x, y) IS NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "0 >= COALESCE(x, y, 1)",
+   "expected": "COALESCE(x, y) <= 0 AND NOT COALESCE(x, y) IS NULL"
+  },
+  {
+   "dialect": "",
+   "sql": "1 < COALESCE(x, 0, 5)",
+   "expected": "NOT x IS NULL AND x > 1"
   },
   {
    "dialect": "",
@@ -2238,6 +2428,126 @@
   },
   {
    "dialect": "",
+   "sql": "x + INTERVAL '2' MONTH = CAST('2024-02-29' AS DATE)",
+   "expected": "x + INTERVAL '2' MONTH = CAST('2024-02-29' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '2' MONTH = CAST('2024-04-30' AS DATE)",
+   "expected": "x + INTERVAL '2' MONTH = CAST('2024-04-30' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '2' MONTH = CAST('2024-03-31' AS DATE)",
+   "expected": "x = CAST('2024-01-31' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '1' MONTH = CAST('2024-01-15' AS DATE)",
+   "expected": "x = CAST('2023-12-15' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '2' MONTH > CAST('2024-03-31' AS DATE)",
+   "expected": "x > CAST('2024-01-31' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '2' MONTH > CAST('2024-04-30' AS DATE)",
+   "expected": "x + INTERVAL '2' MONTH > CAST('2024-04-30' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '2' MONTH < CAST('2024-02-29 12:00:00' AS DATETIME)",
+   "expected": "x + INTERVAL '2' MONTH < CAST('2024-02-29 12:00:00' AS DATETIME)"
+  },
+  {
+   "dialect": "",
+   "sql": "x - INTERVAL '1' MONTH = CAST('2024-01-31' AS DATE)",
+   "expected": "x - INTERVAL '1' MONTH = CAST('2024-01-31' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '1' YEAR = CAST('2025-02-28' AS DATE)",
+   "expected": "x + INTERVAL '1' YEAR = CAST('2025-02-28' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '1' YEAR = CAST('2025-03-28' AS DATE)",
+   "expected": "x = CAST('2024-03-28' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '1' QUARTER = CAST('2024-02-29' AS DATE)",
+   "expected": "x + INTERVAL '1' QUARTER = CAST('2024-02-29' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '1' QUARTER = CAST('2024-01-15' AS DATE)",
+   "expected": "x = CAST('2023-10-15' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '1' MONTH < CAST('2024-01-15' AS DATE)",
+   "expected": "x < CAST('2023-12-15' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '2' MONTH <= CAST('2024-02-29' AS DATE)",
+   "expected": "x + INTERVAL '2' MONTH <= CAST('2024-02-29' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x - INTERVAL '2' MONTH >= CAST('2024-01-31' AS DATE)",
+   "expected": "x >= CAST('2024-03-31' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '2' MONTH > CAST('2024-03-31 12:00:00' AS DATETIME)",
+   "expected": "x > CAST('2024-01-31 12:00:00' AS DATETIME)"
+  },
+  {
+   "dialect": "",
+   "sql": "DATE_ADD(x, 1, MONTH) < CAST('2024-01-15' AS DATE)",
+   "expected": "x < CAST('2023-12-15' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '1' YEAR < CAST('2025-03-28' AS DATE)",
+   "expected": "x < CAST('2024-03-28' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '1' YEAR >= CAST('2025-02-28' AS DATE)",
+   "expected": "x + INTERVAL '1' YEAR >= CAST('2025-02-28' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '1' QUARTER > CAST('2024-01-15' AS DATE)",
+   "expected": "x > CAST('2023-10-15' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x - INTERVAL '1' QUARTER <= CAST('2024-02-29' AS DATE)",
+   "expected": "x - INTERVAL '1' QUARTER <= CAST('2024-02-29' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '1' MONTH <> CAST('2024-01-15' AS DATE)",
+   "expected": "x <> CAST('2023-12-15' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '2' MONTH <> CAST('2024-02-29' AS DATE)",
+   "expected": "x + INTERVAL '2' MONTH <> CAST('2024-02-29' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "x - INTERVAL '1' YEAR <> CAST('2024-02-29' AS DATE)",
+   "expected": "x - INTERVAL '1' YEAR <> CAST('2024-02-29' AS DATE)"
+  },
+  {
+   "dialect": "",
    "sql": "DATE_ADD(DATE_ADD(DATE_TRUNC('week', DATE_SUB(x, 1, DAY)), 1, DAY), 1, YEAR) < CAST('2021-01-08' AS DATE)",
    "expected": "x < CAST('2020-01-14' AS DATE)"
   },
@@ -2249,12 +2559,12 @@
   {
    "dialect": "",
    "sql": "x = 5 AND y = x",
-   "expected": "x = 5 AND y = 5"
+   "expected": "x = 5 AND x = y"
   },
   {
    "dialect": "",
    "sql": "5 = x AND y = x",
-   "expected": "x = 5 AND y = 5"
+   "expected": "x = 5 AND x = y"
   },
   {
    "dialect": "",
@@ -2264,7 +2574,7 @@
   {
    "dialect": "",
    "sql": "(x = 5 AND y = x) OR y = 1",
-   "expected": "(x = 5 AND y = 5) OR y = 1"
+   "expected": "(x = 5 AND x = y) OR y = 1"
   },
   {
    "dialect": "",
@@ -2274,17 +2584,17 @@
   {
    "dialect": "",
    "sql": "t.x = 'a' AND y = CONCAT_WS('-', t.x, 'b')",
-   "expected": "t.x = 'a' AND y = 'a-b'"
+   "expected": "t.x = 'a' AND y = CONCAT_WS('-', t.x, 'b')"
   },
   {
    "dialect": "",
    "sql": "x = 5 AND y = x AND y + 1 < 5",
-   "expected": "FALSE"
+   "expected": "x = 5 AND x = y AND y < 4"
   },
   {
    "dialect": "",
    "sql": "x = 5 AND x = 6",
-   "expected": "FALSE"
+   "expected": "x = 5 AND x = 6"
   },
   {
    "dialect": "",
@@ -2309,27 +2619,27 @@
   {
    "dialect": "",
    "sql": "x = 1 AND x = y AND (SELECT z FROM t WHERE a AND (b OR c))",
-   "expected": "(SELECT z FROM t WHERE a AND (b OR c)) AND x = 1 AND y = 1"
+   "expected": "(SELECT z FROM t WHERE a AND (b OR c)) AND x = 1 AND x = y"
   },
   {
    "dialect": "",
    "sql": "t1.a = 39 AND t2.b = t1.a AND t3.c = t2.b",
-   "expected": "t1.a = 39 AND t2.b = 39 AND t3.c = 39"
+   "expected": "t1.a = 39 AND t1.a = t2.b AND t2.b = t3.c"
   },
   {
    "dialect": "",
    "sql": "x = 1 AND CASE WHEN x = 5 THEN FALSE ELSE TRUE END",
-   "expected": "x = 1"
+   "expected": "CASE WHEN x = 5 THEN FALSE ELSE TRUE END AND x = 1"
   },
   {
    "dialect": "",
    "sql": "x = 1 AND IF(x = 5, FALSE, TRUE)",
-   "expected": "x = 1"
+   "expected": "CASE WHEN x = 5 THEN FALSE ELSE TRUE END AND x = 1"
   },
   {
    "dialect": "",
    "sql": "x = 1 AND CASE x WHEN 5 THEN FALSE ELSE TRUE END",
-   "expected": "x = 1"
+   "expected": "CASE WHEN x = 5 THEN FALSE ELSE TRUE END AND x = 1"
   },
   {
    "dialect": "",
@@ -2339,7 +2649,7 @@
   {
    "dialect": "",
    "sql": "x = 1 AND CASE WHEN y = 5 THEN x = z END",
-   "expected": "CASE WHEN y = 5 THEN z = 1 END AND x = 1"
+   "expected": "CASE WHEN y = 5 THEN x = z END AND x = 1"
   },
   {
    "dialect": "",
@@ -2435,6 +2745,71 @@
    "dialect": "",
    "sql": "CASE x1 + x2 WHEN x3 THEN x4 WHEN x5 + x6 THEN x7 ELSE x8 END",
    "expected": "CASE WHEN x3 = (x1 + x2) THEN x4 WHEN (x1 + x2) = (x5 + x6) THEN x7 ELSE x8 END"
+  },
+  {
+   "dialect": "",
+   "sql": "x * CASE WHEN FALSE THEN NULL ELSE a - b END",
+   "expected": "x * (a - b)"
+  },
+  {
+   "dialect": "",
+   "sql": "x * (CASE WHEN 1 IS NULL THEN NULL ELSE 1 - b END)",
+   "expected": "x * (1 - b)"
+  },
+  {
+   "dialect": "",
+   "sql": "x - CASE WHEN TRUE THEN a + b ELSE c END",
+   "expected": "x - (a + b)"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN FALSE THEN NULL ELSE a - b END * x",
+   "expected": "(a - b) * x"
+  },
+  {
+   "dialect": "",
+   "sql": "x / CASE WHEN FALSE THEN 1 ELSE a * b END",
+   "expected": "x / (a * b)"
+  },
+  {
+   "dialect": "",
+   "sql": "x + CASE WHEN TRUE THEN a * b ELSE c END",
+   "expected": "x + a * b"
+  },
+  {
+   "dialect": "",
+   "sql": "x * IF(TRUE, a - b, c)",
+   "expected": "x * (a - b)"
+  },
+  {
+   "dialect": "",
+   "sql": "x * IF(FALSE, c, a - b)",
+   "expected": "x * (a - b)"
+  },
+  {
+   "dialect": "",
+   "sql": "x * CASE WHEN TRUE THEN IF(FALSE, c, a - b) ELSE c END",
+   "expected": "x * (a - b)"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN TRUE THEN NOT p ELSE FALSE END || 'x'",
+   "expected": "(NOT p) || 'x'"
+  },
+  {
+   "dialect": "",
+   "sql": "IF(FALSE, FALSE, NOT p) || 'x'",
+   "expected": "(NOT p) || 'x'"
+  },
+  {
+   "dialect": "",
+   "sql": "NOT CASE WHEN TRUE THEN a AND b ELSE c END",
+   "expected": "NOT a OR NOT b"
+  },
+  {
+   "dialect": "",
+   "sql": "-CASE WHEN TRUE THEN a + b ELSE c END",
+   "expected": "-(a + b)"
   },
   {
    "dialect": "",

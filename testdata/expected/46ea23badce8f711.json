@@ -1,6 +1,6 @@
 {
  "dialect": "postgres",
- "rendered": "SELECT EXTRACT(minute FROM CAST('2023-01-04 04:05:06.789' AS TIMESTAMP))",
+ "rendered": "SELECT EXTRACT(MINUTE FROM CAST('2023-01-04 04:05:06.789' AS TIMESTAMP))",
  "sql": "SELECT DATE_PART('minute', timestamp '2023-01-04 04:05:06.789')",
  "tokens": [
   {
@@ -86,7 +86,7 @@
   {
    "i": 2,
    "k": "this",
-   "v": "minute"
+   "v": "MINUTE"
   },
   {
    "c": "sqlglot.expressions.functions.Cast",

@@ -1,6 +1,6 @@
 {
  "dialect": "sqlite",
- "rendered": "GROUP_CONCAT(DISTINCT a || b || c)",
+ "rendered": "GROUP_CONCAT(DISTINCT a || b || c, '')",
  "sql": "GROUP_CONCAT(DISTINCT a || b || c, '')",
  "tokens": [
   {
@@ -94,13 +94,7 @@
  ],
  "tree": [
   {
-   "c": "sqlglot.expressions.aggregate.GroupConcat",
-   "m": {
-    "col": 12,
-    "end": 11,
-    "line": 1,
-    "start": 0
-   }
+   "c": "sqlglot.expressions.aggregate.GroupConcat"
   },
   {
    "c": "sqlglot.expressions.core.Distinct",
@@ -207,10 +201,9 @@
    "v": true
   },
   {
-   "a": true,
    "c": "sqlglot.expressions.core.Literal",
-   "i": 1,
-   "k": "expressions",
+   "i": 0,
+   "k": "separator",
    "m": {
     "col": 37,
     "end": 36,

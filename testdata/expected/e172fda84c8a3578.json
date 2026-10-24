@@ -1,6 +1,6 @@
 {
  "dialect": "redshift",
- "rendered": "SELECT EXTRACT(month FROM CAST('20220502' AS DATE))",
+ "rendered": "SELECT EXTRACT(MONTH FROM CAST('20220502' AS DATE))",
  "sql": "SELECT DATE_PART(month, date '20220502')",
  "tokens": [
   {
@@ -86,7 +86,7 @@
   {
    "i": 2,
    "k": "this",
-   "v": "month"
+   "v": "MONTH"
   },
   {
    "c": "sqlglot.expressions.functions.Cast",

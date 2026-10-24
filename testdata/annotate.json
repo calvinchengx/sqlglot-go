@@ -261,6 +261,41 @@
    "type": "BIGNUMERIC"
   },
   {
+   "dialect": "duckdb",
+   "sql": "CAST('2019-01-10' AS DATE) AT TIME ZONE 'UTC'",
+   "type": "TIMESTAMPTZ"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "CAST('2019-01-10 02:03:04' AS TIMESTAMP) AT TIME ZONE 'UTC'",
+   "type": "TIMESTAMPTZ"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "CAST('2019-01-10 02:03:04' AS TIMESTAMP_S) AT TIME ZONE 'UTC'",
+   "type": "TIMESTAMPTZ"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "CAST('2019-01-10 02:03:04' AS TIMESTAMP_MS) AT TIME ZONE 'UTC'",
+   "type": "TIMESTAMPTZ"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "CAST('2019-01-10 02:03:04' AS TIMESTAMP_NS) AT TIME ZONE 'UTC'",
+   "type": "TIMESTAMPTZ"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "CAST('2019-01-10 02:03:04+00' AS TIMESTAMPTZ) AT TIME ZONE 'UTC'",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "duckdb",
+   "sql": "CAST('02:03:04+00' AS TIMETZ) AT TIME ZONE 'UTC'",
+   "type": "TIMETZ"
+  },
+  {
    "dialect": "",
    "sql": "ABS(1)",
    "type": "INT"
@@ -2134,6 +2169,21 @@
    "dialect": "postgres",
    "sql": "FORMAT('Hello %s, %1$s', 'World')",
    "type": "TEXT"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "LOCALTIMESTAMP",
+   "type": "TIMESTAMP"
+  },
+  {
+   "dialect": "athena",
+   "sql": "FLOOR(2.5)",
+   "type": "DOUBLE"
+  },
+  {
+   "dialect": "athena",
+   "sql": "CEIL(5.5)",
+   "type": "DOUBLE"
   },
   {
    "dialect": "trino",

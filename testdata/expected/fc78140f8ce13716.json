@@ -1,6 +1,6 @@
 {
  "dialect": "postgres",
- "rendered": "SELECT EXTRACT(month FROM CAST('2017-03-01' AS DATE))",
+ "rendered": "SELECT EXTRACT(MONTH FROM CAST('2017-03-01' AS DATE))",
  "sql": "SELECT DATE_PART('month', '2017-03-01'::DATE)",
  "tokens": [
   {
@@ -94,7 +94,7 @@
   {
    "i": 2,
    "k": "this",
-   "v": "month"
+   "v": "MONTH"
   },
   {
    "c": "sqlglot.expressions.functions.Cast",

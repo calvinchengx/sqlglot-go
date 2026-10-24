@@ -1,6 +1,6 @@
 {
  "dialect": "tsql",
- "rendered": "WITH vartab(v) AS (SELECT '{\"attr\": [{\"name\": \"banana\"}]}') SELECT ISNULL(ISNULL(JSON_QUERY(v, '$.attr[0].name'), JSON_VALUE(v, '$.attr[0].name')), ISNULL(JSON_QUERY(v, '$.attr[0].name'), JSON_VALUE(v, '$.attr[0].name'))) FROM vartab",
+ "rendered": "WITH vartab(v) AS (SELECT '{\"attr\": [{\"name\": \"banana\"}]}') SELECT ISNULL(JSON_QUERY(v, '$.attr[0].name'), JSON_VALUE(v, '$.attr[0].name')) FROM vartab",
  "sql": "WITH vartab(v) AS (SELECT '{\"attr\": [{\"name\": \"banana\"}]}') SELECT ISNULL(JSON_QUERY(v, '$.attr[0].name'), JSON_VALUE(v, '$.attr[0].name')) FROM vartab",
  "tokens": [
   {
@@ -334,6 +334,11 @@
    "v": "name"
   },
   {
+   "i": 2,
+   "k": "json_query",
+   "v": true
+  },
+  {
    "a": true,
    "c": "sqlglot.expressions.json.JSONExtractScalar",
    "i": 1,
@@ -347,12 +352,12 @@
   },
   {
    "c": "sqlglot.expressions.core.Column",
-   "i": 15,
+   "i": 16,
    "k": "this"
   },
   {
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 16,
+   "i": 17,
    "k": "this",
    "m": {
     "col": 119,
@@ -362,63 +367,63 @@
    }
   },
   {
-   "i": 17,
+   "i": 18,
    "k": "this",
    "v": "v"
   },
   {
-   "i": 17,
+   "i": 18,
    "k": "quoted",
    "v": false
   },
   {
    "c": "sqlglot.expressions.query.JSONPath",
-   "i": 15,
+   "i": 16,
    "k": "expression"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathRoot",
-   "i": 20,
+   "i": 21,
    "k": "expressions"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathKey",
-   "i": 20,
+   "i": 21,
    "k": "expressions"
   },
   {
-   "i": 22,
+   "i": 23,
    "k": "this",
    "v": "attr"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathSubscript",
-   "i": 20,
+   "i": 21,
    "k": "expressions"
   },
   {
-   "i": 24,
+   "i": 25,
    "k": "this",
    "v": 0
   },
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathKey",
-   "i": 20,
+   "i": 21,
    "k": "expressions"
   },
   {
-   "i": 26,
+   "i": 27,
    "k": "this",
    "v": "name"
   },
   {
-   "i": 15,
+   "i": 16,
    "k": "scalar_only",
-   "v": false
+   "v": true
   },
   {
    "i": 1,
@@ -432,12 +437,12 @@
   },
   {
    "c": "sqlglot.expressions.query.Table",
-   "i": 30,
+   "i": 31,
    "k": "this"
   },
   {
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 31,
+   "i": 32,
    "k": "this",
    "m": {
     "col": 151,
@@ -447,12 +452,12 @@
    }
   },
   {
-   "i": 32,
+   "i": 33,
    "k": "this",
    "v": "vartab"
   },
   {
-   "i": 32,
+   "i": 33,
    "k": "quoted",
    "v": false
   },
@@ -464,18 +469,18 @@
   {
    "a": true,
    "c": "sqlglot.expressions.query.CTE",
-   "i": 35,
+   "i": 36,
    "k": "expressions"
   },
   {
    "c": "sqlglot.expressions.query.Select",
-   "i": 36,
+   "i": 37,
    "k": "this"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Literal",
-   "i": 37,
+   "i": 38,
    "k": "expressions",
    "m": {
     "col": 58,
@@ -485,23 +490,23 @@
    }
   },
   {
-   "i": 38,
+   "i": 39,
    "k": "this",
    "v": "{\"attr\": [{\"name\": \"banana\"}]}"
   },
   {
-   "i": 38,
+   "i": 39,
    "k": "is_string",
    "v": true
   },
   {
    "c": "sqlglot.expressions.query.TableAlias",
-   "i": 36,
+   "i": 37,
    "k": "alias"
   },
   {
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 41,
+   "i": 42,
    "k": "this",
    "m": {
     "col": 11,
@@ -511,19 +516,19 @@
    }
   },
   {
-   "i": 42,
+   "i": 43,
    "k": "this",
    "v": "vartab"
   },
   {
-   "i": 42,
+   "i": 43,
    "k": "quoted",
    "v": false
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 41,
+   "i": 42,
    "k": "columns",
    "m": {
     "col": 13,
@@ -533,12 +538,12 @@
    }
   },
   {
-   "i": 45,
+   "i": 46,
    "k": "this",
    "v": "v"
   },
   {
-   "i": 45,
+   "i": 46,
    "k": "quoted",
    "v": false
   }

@@ -1,0 +1,248 @@
+{
+ "dialect": "tsql",
+ "rendered": "SELECT 1 AS x ORDER BY x FOR JSON PATH OPTION(RECOMPILE)",
+ "sql": "SELECT 1 AS x ORDER BY x FOR JSON PATH OPTION(RECOMPILE)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 8,
+   "e": 7,
+   "l": 1,
+   "s": 7,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 9,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 14,
+   "t": "ORDER_BY",
+   "x": "ORDER BY"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 25,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 33,
+   "e": 32,
+   "l": 1,
+   "s": 29,
+   "t": "JSON",
+   "x": "JSON"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 34,
+   "t": "VAR",
+   "x": "PATH"
+  },
+  {
+   "c": 45,
+   "e": 44,
+   "l": 1,
+   "s": 39,
+   "t": "OPTION",
+   "x": "OPTION"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 45,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 55,
+   "e": 54,
+   "l": 1,
+   "s": 46,
+   "t": "VAR",
+   "x": "RECOMPILE"
+  },
+  {
+   "c": 56,
+   "e": 55,
+   "l": 1,
+   "s": 55,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Alias",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 8,
+    "end": 7,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "alias",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 5,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 5,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Order",
+   "i": 0,
+   "k": "order"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Ordered",
+   "i": 8,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 24,
+    "end": 23,
+    "line": 1,
+    "start": 23
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 9,
+   "k": "nulls_first",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.ForClause",
+   "i": 0,
+   "k": "for_"
+  },
+  {
+   "i": 15,
+   "k": "kind",
+   "v": "JSON"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.QueryOption",
+   "i": 15,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 17,
+   "k": "this"
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "PATH"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.QueryOption",
+   "i": 0,
+   "k": "options"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 20,
+   "k": "this"
+  },
+  {
+   "i": 21,
+   "k": "this",
+   "v": "RECOMPILE"
+  }
+ ]
+}

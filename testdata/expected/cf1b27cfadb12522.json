@@ -1,0 +1,239 @@
+{
+ "dialect": "duckdb",
+ "rendered": "SELECT d + INTERVAL (-1) DAY FROM t",
+ "sql": "SELECT DATE_ADD(d, INTERVAL (-1) DAY) FROM t",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "DATE_ADD"
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "d"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 27,
+   "e": 26,
+   "l": 1,
+   "s": 19,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 30,
+   "e": 29,
+   "l": 1,
+   "s": 29,
+   "t": "DASH",
+   "x": "-"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "NUMBER",
+   "x": "1"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 33,
+   "t": "VAR",
+   "x": "DAY"
+  },
+  {
+   "c": 37,
+   "e": 36,
+   "l": 1,
+   "s": 36,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 38,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 43,
+   "t": "VAR",
+   "x": "t"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.DateAdd",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 15,
+    "end": 14,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "d"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Neg",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 6,
+   "k": "unit"
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "DAY"
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 14,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 15,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 43
+   }
+  },
+  {
+   "i": 16,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 16,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

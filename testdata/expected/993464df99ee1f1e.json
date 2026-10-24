@@ -1,0 +1,111 @@
+{
+ "dialect": "duckdb",
+ "rendered": "SELECT CAST(NULL AS TIMESTAMPTZ)",
+ "sql": "SELECT CAST(NULL AS TIMESTAMPTZ)",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "VAR",
+   "x": "CAST"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 12,
+   "t": "NULL",
+   "x": "NULL"
+  },
+  {
+   "c": 19,
+   "e": 18,
+   "l": 1,
+   "s": 17,
+   "t": "ALIAS",
+   "x": "AS"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 20,
+   "t": "TIMESTAMPTZ",
+   "x": "TIMESTAMPTZ"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 31,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.functions.Cast",
+   "i": 0,
+   "k": "expressions",
+   "t": [
+    {
+     "c": "sqlglot.expressions.datatypes.DataType"
+    },
+    {
+     "c": "DataType.Type",
+     "i": 0,
+     "k": "this",
+     "v": "TIMESTAMPTZ"
+    },
+    {
+     "i": 0,
+     "k": "nested",
+     "v": false
+    }
+   ]
+  },
+  {
+   "c": "sqlglot.expressions.core.Null",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.DataType",
+   "i": 1,
+   "k": "to"
+  },
+  {
+   "c": "DataType.Type",
+   "i": 3,
+   "k": "this",
+   "v": "TIMESTAMPTZ"
+  },
+  {
+   "i": 3,
+   "k": "nested",
+   "v": false
+  }
+ ]
+}

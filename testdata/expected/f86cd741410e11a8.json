@@ -1,0 +1,247 @@
+{
+ "dialect": "sqlite",
+ "rendered": "SELECT DATE(d, (n) || ' DAY') FROM t",
+ "sql": "SELECT DATE(d, (n) || ' DAY') FROM t",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 7,
+   "t": "DATE",
+   "x": "DATE"
+  },
+  {
+   "c": 12,
+   "e": 11,
+   "l": 1,
+   "s": 11,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 12,
+   "t": "VAR",
+   "x": "d"
+  },
+  {
+   "c": 14,
+   "e": 13,
+   "l": 1,
+   "s": 13,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 16,
+   "e": 15,
+   "l": 1,
+   "s": 15,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 17,
+   "e": 16,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "n"
+  },
+  {
+   "c": 18,
+   "e": 17,
+   "l": 1,
+   "s": 17,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 21,
+   "e": 20,
+   "l": 1,
+   "s": 19,
+   "t": "DPIPE",
+   "x": "||"
+  },
+  {
+   "c": 28,
+   "e": 27,
+   "l": 1,
+   "s": 22,
+   "t": "STRING",
+   "x": " DAY"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 28,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 34,
+   "e": 33,
+   "l": 1,
+   "s": 30,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 35,
+   "t": "VAR",
+   "x": "t"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.temporal.Date",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 11,
+    "end": 10,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 2,
+   "k": "this",
+   "m": {
+    "col": 13,
+    "end": 12,
+    "line": 1,
+    "start": 12
+   }
+  },
+  {
+   "i": 3,
+   "k": "this",
+   "v": "d"
+  },
+  {
+   "i": 3,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.DPipe",
+   "i": 1,
+   "k": "zone"
+  },
+  {
+   "c": "sqlglot.expressions.core.Paren",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 8,
+   "k": "this",
+   "m": {
+    "col": 17,
+    "end": 16,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "n"
+  },
+  {
+   "i": 9,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "expression",
+   "m": {
+    "col": 28,
+    "end": 27,
+    "line": 1,
+    "start": 22
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": " DAY"
+  },
+  {
+   "i": 12,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 6,
+   "k": "safe",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 0,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 16,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 17,
+   "k": "this",
+   "m": {
+    "col": 36,
+    "end": 35,
+    "line": 1,
+    "start": 35
+   }
+  },
+  {
+   "i": 18,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 18,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}
