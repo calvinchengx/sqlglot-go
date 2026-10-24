@@ -134,11 +134,12 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 	out = simplifyCoalesce(out, parent, dialect)
 	out = simplifyConcat(out)
 	out = simplifyNot(out, parent, dialect)
+	out = flattenConnectors(out)
 	out = sortXor(out, dialect)
 	out = uniqSort(out, parent, dialect)
 	out = absorb(out, parent)
 	out = simplifyConnectors(out, parent)
-	out = simplifyParens(out, parent)
+	out = simplifyParens(out, parent, dialect)
 	out = sortComparison(out, dialect)
 	out = simplifyEquality(out)
 	out = simplifyStartsWith(out)
@@ -149,134 +150,50 @@ func isA(base string, e *Expression) bool {
 	return e != nil && classIsA[base][e.Class]
 }
 
-// simplifyParens drops parentheses the reference would not write.
-//
-// The reference's own conditions are wider than this, and porting them
-// literally was unsound HERE. Its generator re-inserts whatever parentheses
-// precedence requires; this port's does not, so dropping a pair the reference
-// would drop produced SQL that no longer parses -- `INTERVAL (13 - x) DAY`
-// became `INTERVAL 13 - x DAY`, and `~(-1)` became `~-1`, which is not an
-// operator. Every one of those was caught by the execution oracle, and none
-// of them could have been caught by comparing strings against sqlglot,
-// because sqlglot is not asked to simplify those statements at all.
-//
-// So the rule is narrowed to the case the port can be sure of: a condition
-// inside a connector, where the parentheses carry no precedence the writer
-// will not restore. Everything else keeps them. An extra pair is noise; a
-// missing one is a different statement.
-func simplifyParens(e, parent *Expression) *Expression {
+// simplifyParens drops parentheses the reference would not write. This is
+// the reference's own `simplify_parens`, rule for rule: its GENERATOR writes
+// a Paren node verbatim and relies on the tree for grouping, so the tree a
+// simplification produces has to carry exactly the ones the reference's does.
+func simplifyParens(e, parent *Expression, dialect string) *Expression {
 	if e.Class != "Paren" {
 		return e
 	}
-	this, _ := e.Args["this"].(*Expression)
+	this := childOf(e, "this")
 	if this == nil {
 		return e
 	}
-	parentClass := ""
-	if parent != nil {
-		parentClass = parent.Class
-	}
-	arithmeticParent := parentClass == "Add" || parentClass == "Sub" ||
-		parentClass == "Mul" || parentClass == "Div"
-
-	// Arithmetic is handled in a switch of its OWN, entirely separate from
-	// the boolean-only one below: the two guards were written for different
-	// operators, and widening the shared one to admit an arithmetic parent
-	// would also have widened the Predicate/Connector cases below to fire
-	// under it -- `a - (b < c)` dropping to `a - b < c` reads back as
-	// `(a - b) < c`, a different statement. Only the cases actually verified
-	// against the reference are ported: an atomic operand (nothing left of
-	// it to bind wrong), Add-in-Add and Mul-in-Mul by associativity, and
-	// Mul-in-Add/Sub by precedence. Sub-in-Sub, Sub-in-Add and anything
-	// under Div beyond a bare literal are NOT associative the same way and
-	// stay untouched.
-	if (this.Class == "Literal" || this.Class == "Column") && arithmeticParent {
-		return this
-	}
-	if this.Class == "Add" && parentClass == "Add" {
-		// `x + (y + z)` is `x + y + z`: Add is associative, so which side of
-		// it the grouping was written on carries no meaning. Once the pair
-		// is gone the child is a direct Add operand of its parent, which is
-		// what lets flatFold see across it on a later pass.
-		return this
-	}
-	if this.Class == "Mul" && parentClass == "Mul" {
-		return this // Same, for Mul.
-	}
-	if this.Class == "Mul" && (parentClass == "Add" || parentClass == "Sub") {
-		// Mul binds tighter than Add or Sub, so its parentheses are always
-		// redundant there -- the same reason a Predicate's are under a
-		// Connector, just one precedence tier down.
-		return this
-	}
-	if arithmeticParent {
+	parentIsPredicate := parent != nil && isA("Predicate", parent)
+	// A subquery, or a Bracket's own subscript, needs its parentheses.
+	if this.Class == "Select" {
 		return e
 	}
-	// A Paren directly wrapping another Paren is redundant regardless of
-	// what encloses either of them: two layers of grouping never mean
-	// anything a plain layer would not.
-	if this.Class == "Paren" {
-		return this
-	}
-
-	// A parent that is not itself a Condition or a Binary operator -- WHERE,
-	// HAVING, the top of the statement -- needs no grouping around a
-	// boolean-shaped or Unary `this` at all, the same as parent being nil.
-	// This is scoped to those two cases specifically -- a Connector, a
-	// Predicate, or a Unary (Neg, BitwiseNot; Not and Paren itself are
-	// already handled their own way) -- rather than every non-Condition/
-	// Binary parent, because a NUMERIC Binary child (an INTERVAL's own
-	// amount, say) is neither Condition nor Binary either, and DuckDB's own
-	// grammar needs the parens THERE kept around a non-literal amount; the
-	// fuzzer found exactly that the one time this was tried unconditionally.
-	// A Unary `this`, unlike an arbitrary Binary one, is always safe to drop
-	// here: nothing above a clause wrapper can misread `-x` or `~x` written
-	// without its own parens, the way it could misread a `+`/`-` operand.
-	clauseWrapper := parent != nil && !isA("Condition", parent) && !isA("Binary", parent) &&
-		(isA("Connector", this) || isA("Predicate", this) || isA("Unary", this))
-	// An atomic operand -- a bare Column, Literal, Boolean or Null -- binds
-	// tighter than a COMPARISON above it, the same way one already does
-	// under a Connector or a NOT: `(x.a) IS NULL` needs its parens no more
-	// than `x.a IS NULL` alone would, whatever the qualified column's own
-	// dotted path looks like. Scoped to `comparisons`, not the wider
-	// Predicate class: ANY/ALL/SOME are Predicates too, and THEIR parens are
-	// part of the call syntax itself -- `ANY(t.value)` is not `ANY t.value`.
-	atomicThis := this.Class == "Boolean" || this.Class == "Null" || this.Class == "Literal" || this.Class == "Column"
-	underPredicate := atomicThis && parent != nil && comparisons[parent.Class]
-	// A bare atomic operand sitting directly in a SELECT's own expression
-	// list needs no grouping either, the same reason it needs none under a
-	// comparison above it: nothing about a Select's list position gives
-	// meaning to parentheses around one of its items. Scoped to the Select
-	// node itself, not every non-Condition/Binary parent -- that wider
-	// version is what regressed the INTERVAL case, because it also caught a
-	// Binary child, which this does not.
-	selectWrapper := atomicThis && parent != nil && parent.Class == "Select"
-	if parent != nil && !isA("Connector", parent) && parentClass != "Not" && !clauseWrapper && !underPredicate && !selectWrapper {
+	if parent != nil && (isA("SubqueryPredicate", parent) || parent.Class == "Bracket") {
 		return e
 	}
-	switch {
-	case parent == nil, clauseWrapper, underPredicate, selectWrapper:
-		// Parentheses around the whole statement carry no precedence.
-	case isA("Connector", this):
-		// `A AND (A OR B)` is NOT `A AND A OR B`: AND binds tighter, so
-		// dropping the pair re-associates the statement into `(A AND A) OR B`
-		// and asks a different question. Only a connector nested inside the
-		// SAME connector is associative and safe to flatten.
-		if this.Class != parent.Class {
+	// RisingWave needs the parentheses to read a STRUCT field access.
+	if parent != nil && parent.Class == "Dot" && dialect == "risingwave" {
+		if r := childOf(parent, "expression"); r != nil &&
+			(r.Class == "Identifier" || r.Class == "Star") {
 			return e
 		}
-	case isA("Predicate", this):
-		// A comparison binds tighter than any connector and than NOT, so its
-		// parentheses are decoration.
-	case this.Class == "Not":
-		// NOT binds tighter than any connector or another NOT above it, so
-		// `NOT (NOT a)` needs its parens no more than `NOT a` alone would --
-		// `NOT NOT a` reads back the same tree either way.
-	case this.Class == "Boolean", this.Class == "Null", this.Class == "Literal", this.Class == "Column":
-	default:
-		return e
 	}
-	return this
+	if isA("Predicate", this) || this.Class == "Not" {
+		if parentIsPredicate ||
+			(parent != nil && (parent.Class == "Neg" || parent.Class == "BitwiseNot")) ||
+			(parent != nil && isA("Binary", parent) && !isA("Connector", parent)) {
+			return e
+		}
+		return this
+	}
+	if parent == nil ||
+		(!isA("Condition", parent) && !isA("Binary", parent)) ||
+		parent.Class == "Paren" || !isA("Binary", this) ||
+		(this.Class == "Add" && parent.Class == "Add") ||
+		(this.Class == "Mul" && parent.Class == "Mul") ||
+		(this.Class == "Mul" && (parent.Class == "Add" || parent.Class == "Sub")) {
+		return this
+	}
+	return e
 }
 
 // nullOK are the comparisons that TOLERATE a null operand, so folding one
@@ -1023,7 +940,11 @@ func simplifyNot(e, parent *Expression, dialect string) *Expression {
 			}
 			right = New(flipped, Arg{"this", inner})
 		}
-		return New(to, Arg{"this", left}, Arg{"expression", right})
+		// The complement is PARENTHESISED: it is the replacement for a NOT
+		// that stood in an operand position, and a bare comparison there
+		// would re-associate (simplify_not's exp.paren).
+		return New("Paren", Arg{"this",
+			New(to, Arg{"this", left}, Arg{"expression", right})})
 	}
 	// De Morgan's law, but only through an explicit Paren: valid SQL always
 	// writes one around an AND/OR directly under NOT, so this is the shape
@@ -1952,13 +1873,13 @@ func simplifyConditionals(e, parent *Expression) *Expression {
 		}
 		this := childOf(e, "this")
 		if alwaysTrue(this) {
-			return childOf(e, "true")
+			return wrapParenAlways(childOf(e, "true"))
 		}
 		if alwaysFalse(this) {
 			if f := childOf(e, "false"); f != nil {
-				return f
+				return wrapParenAlways(f)
 			}
-			return New("Null")
+			return wrapParenAlways(New("Null"))
 		}
 	}
 	return e
@@ -1990,7 +1911,7 @@ func simplifyCase(e *Expression) *Expression {
 			changed = true
 		}
 		if alwaysTrue(cond) {
-			return childOf(ifNode, "true")
+			return wrapParenAlways(childOf(ifNode, "true"))
 		}
 		if alwaysFalse(cond) {
 			changed = true
@@ -2006,9 +1927,9 @@ func simplifyCase(e *Expression) *Expression {
 	}
 	if len(kept) == 0 {
 		if def := childOf(e, "default"); def != nil {
-			return def
+			return wrapParenAlways(def)
 		}
-		return New("Null")
+		return wrapParenAlways(New("Null"))
 	}
 	e.Set("ifs", kept)
 	return e
@@ -2395,6 +2316,39 @@ func flatFold(e *Expression) *Expression {
 	queue := chainOperands(e, e.Class)
 	if out := flatMerge(queue, e.Class, func(a, b *Expression) *Expression { return foldNumbers(e, a, b) }); out != nil {
 		return out
+	}
+	return e
+}
+
+// wrapParenAlways is the reference's `exp.paren`: a branch taken out of a
+// CASE or IF replaces the whole conditional, which may have been an operand,
+// so the grouping it stood with is preserved. simplifyParens drops the pair
+// again wherever nothing needs it.
+func wrapParenAlways(e *Expression) *Expression {
+	if e == nil {
+		return New("Null")
+	}
+	if e.Class == "Paren" {
+		return e
+	}
+	return New("Paren", Arg{"this", e})
+}
+
+// flattenConnectors is the reference's `flatten`: a connector operand that
+// is the SAME connector, possibly behind parentheses, is hoisted into the
+// parent -- `A AND (B AND C)` becomes `A AND B AND C`.
+func flattenConnectors(e *Expression) *Expression {
+	if !isA("Connector", e) {
+		return e
+	}
+	for _, key := range []string{"this", "expression"} {
+		child := childOf(e, key)
+		if child == nil {
+			continue
+		}
+		if inner := unnest(child); inner != nil && inner.Class == e.Class {
+			e.Set(key, inner)
+		}
 	}
 	return e
 }
