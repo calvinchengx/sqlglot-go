@@ -155,8 +155,13 @@ func anonymizeTokens(tokens []Token, cfg *Config) []Token {
 			// and FUNCTION_PARSERS together -- not the narrower Functions
 			// table, which only holds the ones this port has WORKED OUT how
 			// to build; a name recognized but not yet built is still a
-			// function name and still not sensitive.
-			if _, named := tables.NamedFunctions[strings.ToUpper(tok.Text)]; named {
+			// function name and still not sensitive. A dialect the port
+			// registers BY HAND adds its own names beside the neutral set.
+			name := strings.ToUpper(tok.Text)
+			if _, named := tables.NamedFunctions[name]; named {
+				continue
+			}
+			if _, named := extraCallNames[cfg.Name][name]; named {
 				continue
 			}
 		}

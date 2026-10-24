@@ -60,6 +60,8 @@ oracle: check-python ## Regenerate expectations and generated tables from the PI
 	$(PYTHON) harness/gen_parser.py --sqlglot $(SQLGLOT) && gofmt -w sqlglot/parser_gen.go
 	$(PYTHON) harness/gen_simplify.py --sqlglot $(SQLGLOT)
 	$(PYTHON) harness/gen_annotate.py --sqlglot $(SQLGLOT)
+	$(PYTHON) harness/gen_anonymize.py --sqlglot $(SQLGLOT)
+	$(PYTHON) harness/gen_callnames.py --sqlglot $(SQLGLOT) > sqlglot/callnames_gen.go && gofmt -w sqlglot/callnames_gen.go
 
 oracle-exec: ## Run the port's SQL through an engine and check it MEANS the same
 	@DAS_EXEC_EMIT=$(EXEC_PAIRS) go test ./harness/ -run TestEmitExecutionPairs

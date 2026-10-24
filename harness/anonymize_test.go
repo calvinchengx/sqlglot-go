@@ -63,7 +63,7 @@ func TestAnonymizeAgainstReference(t *testing.T) {
 
 func assertAnonymizeFloor(t *testing.T, agreed int) {
 	t.Helper()
-	const floor = 4508 // raised by hand as anonymize grows; never lowered here
+	const floor = 11612 // raised by hand as anonymize grows; never lowered here
 	if agreed < floor {
 		t.Errorf("Anonymize REGRESSED: %d agreed, floor %d", agreed, floor)
 	}
