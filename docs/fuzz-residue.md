@@ -3,7 +3,7 @@
 What `make fuzz-differential` still reports, and why each class is not a
 statement a caller can write.
 
-The corpus is saturated — 10,871 statements, 0 unparsed, 0 mismatched — so it
+The corpus is saturated — 11,335 statements, 0 unparsed, 0 mismatched — so it
 can no longer find anything, and every bug found since has come from outside
 it: `CONNECT BY … PRIOR` from the first consumer, and two rules from fuzzing
 (the empty table qualifier, and a select list read as a CSV). Those two are
