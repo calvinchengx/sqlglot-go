@@ -1,6 +1,9 @@
 package sqlglot
 
-import "strings"
+import (
+	"maps"
+	"strings"
+)
 
 // sqliteNode writes the classes SQLite's generator handles its own way
 // (SQLiteGenerator.TRANSFORMS). The second return says whether the class was
@@ -36,11 +39,30 @@ func (g *generator) sqliteNode(e *Expression) (string, bool) {
 		}
 		return "JSON_EXTRACT(" + strings.Join(parts, ", ") + ")", true
 
+	case "AutoIncrementColumnConstraint":
+		// AUTOINCREMENT is only valid on an INTEGER PRIMARY KEY, and is
+		// dropped where it is not (SQLiteGenerator.autoincrementcolumnconstraint_sql).
+		if col := ancestorColumnDef(e); col != nil && columnHasPrimaryKey(col) {
+			return "AUTOINCREMENT", true
+		}
+		return "", true
+
 	case "GroupConcat":
 		// SQLite folds the separator into a DISTINCT argument, and an EMPTY
-		// one there is dropped again on the way out.
+		// one there is dropped again on the way out. An ORDER BY folded into
+		// the first argument follows the separator instead -- unless the call
+		// is a window function, where SQLite rejects it
+		// (SQLiteGenerator.groupconcat_sql -> groupconcat_sql).
 		parts := []string{}
 		inner, _ := e.Args["this"].(*Expression)
+		var ordering *Expression
+		if inner != nil && inner.Class == "Order" {
+			ordering = inner
+			inner = childOf(inner, "this")
+		}
+		if ordering != nil && sqliteGroupConcatInWindow(e) {
+			ordering = nil
+		}
 		if inner != nil && inner.Class == "Distinct" {
 			innerCopy := inner.shallowCopy()
 			items, _ := inner.Args["expressions"].([]*Expression)
@@ -55,19 +77,28 @@ func (g *generator) sqliteNode(e *Expression) (string, bool) {
 			}
 			innerCopy.Set("expressions", kept)
 			parts = append(parts, g.node(innerCopy))
-		} else {
-			parts = append(parts, g.child(e, "this"))
+		} else if inner != nil {
+			parts = append(parts, g.node(inner))
 		}
 		if sep := g.child(e, "separator"); sep != "" {
 			parts = append(parts, sep)
 		}
-		return "GROUP_CONCAT(" + strings.Join(parts, ", ") + ")", true
+		args := strings.Join(parts, ", ")
+		if ordering != nil {
+			// The ordering goes INSIDE the closing parenthesis, after every
+			// argument (dialects.dialect.groupconcat_sql).
+			order := New("Order", Arg{"expressions", ordering.Args["expressions"]})
+			args += " " + strings.TrimSpace(g.node(order))
+		}
+		return "GROUP_CONCAT(" + args + ")", true
 
 	case "WindowSpec":
 		// SQLite writes `RANGE CURRENT ROW` for that one frame.
 		kind, _ := e.Args["kind"].(string)
 		start, _ := e.Args["start"].(string)
-		if strings.EqualFold(kind, "RANGE") && strings.EqualFold(start, "CURRENT ROW") {
+		// Only a frame that ENDS nowhere collapses to the short spelling.
+		if e.Args["end"] == nil && strings.EqualFold(kind, "RANGE") &&
+			strings.EqualFold(start, "CURRENT ROW") {
 			return "RANGE CURRENT ROW", true
 		}
 
@@ -228,4 +259,56 @@ func (g *generator) sqliteGeneratedToAutoIncrement(e *Expression) (string, bool)
 	copied := e.shallowCopy()
 	copied.Set("constraints", kept)
 	return g.writeColumnDef(copied), true
+}
+
+// ancestorColumnDef finds the column definition a constraint belongs to.
+func ancestorColumnDef(e *Expression) *Expression {
+	for node := e.Parent; node != nil; node = node.Parent {
+		if node.Class == "ColumnDef" {
+			return node
+		}
+	}
+	return nil
+}
+
+// columnHasPrimaryKey reports whether a column definition carries a PRIMARY
+// KEY constraint.
+func columnHasPrimaryKey(col *Expression) bool {
+	constraints, _ := col.Args["constraints"].([]*Expression)
+	for _, c := range constraints {
+		if c == nil {
+			continue
+		}
+		if c.Class == "PrimaryKeyColumnConstraint" {
+			return true
+		}
+		if kind := childOf(c, "kind"); kind != nil && kind.Class == "PrimaryKeyColumnConstraint" {
+			return true
+		}
+	}
+	return false
+}
+
+// sqliteGroupConcatInWindow reports whether the GROUP_CONCAT is the call of a
+// window function, possibly through a FILTER (SQLiteGenerator.groupconcat_sql).
+func sqliteGroupConcatInWindow(e *Expression) bool {
+	node := e
+	if parent := e.Parent; parent != nil && parent.Class == "Filter" {
+		node = parent
+	}
+	window := node.Parent
+	return window != nil && window.Class == "Window" && childOf(window, "this") == node
+}
+
+// The probe drives each class on its own, and SQLite writes AUTOINCREMENT
+// only where the constraint sits on an INTEGER PRIMARY KEY -- which a bare
+// instance is not, so it looked suppressed. It is written here instead.
+func init() {
+	tables := parserTables["sqlite"]
+	if tables == nil {
+		return
+	}
+	suppressed := maps.Clone(tables.SuppressedWriteClasses)
+	delete(suppressed, "AutoIncrementColumnConstraint")
+	tables.SuppressedWriteClasses = suppressed
 }

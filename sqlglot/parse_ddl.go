@@ -1233,7 +1233,10 @@ func (p *parser) parseInsert() (*Expression, error) {
 	// Redshift takes VALUES out of its keyword table, so the word arrives
 	// as a name. The reference still matches the text, and a multi-row
 	// insert is the same Values either way.
-	case p.atWords("VALUES"):
+	// `INSERT ... VALUE (1)` is the same statement as VALUES: the reference
+	// allows the synonym for an insert and nowhere else
+	// (Parser._parse_derived_table_values, allow_value_synonym).
+	case p.atWords("VALUES"), p.atWords("VALUE"):
 		expression, err = p.parseValues()
 	case p.at(TokSELECT), p.at(TokWITH):
 		expression, err = p.parseQuery()
@@ -1585,8 +1588,19 @@ func (p *parser) parseDrop() (*Expression, error) {
 	}
 
 	// PostgreSQL drops an index without locking the table, and says so BEFORE
-	// the IF EXISTS.
-	concurrently := p.matchUnquotedWord("CONCURRENTLY")
+	// the IF EXISTS. The word is only that when an INDEX follows it: MySQL
+	// spells its own `DROP INDEX index_name ON tbl` with a name that may be
+	// the word `concurrently`, so what comes AFTER it decides
+	// (Parser._parse_drop).
+	concurrently := false
+	if kind == "INDEX" && p.atWords("CONCURRENTLY") {
+		if n := p.next(); n != nil {
+			if _, idVar := p.tables.IDVarTokens[n.Type]; idVar {
+				p.advance()
+				concurrently = true
+			}
+		}
+	}
 
 	exists := false
 	if p.atWords("IF", "EXISTS") {
@@ -1631,6 +1645,17 @@ func (p *parser) parseDrop() (*Expression, error) {
 		}
 	}
 
+	// `ON <name>` names the cluster the drop applies to
+	// (Parser._parse_drop -> _parse_on_property).
+	var cluster *Expression
+	if p.match(TokON) {
+		name := p.parseIDVarAny()
+		if name == nil {
+			return nil, p.unsupported("ON without a name")
+		}
+		cluster = New("OnProperty", Arg{"this", name})
+	}
+
 	// The words after the names, in the order the reference reads them.
 	cascade := p.matchUnquotedWord("CASCADE")
 	restrict := false
@@ -1653,7 +1678,7 @@ func (p *parser) parseDrop() (*Expression, error) {
 		Arg{"temporary", temporary}, Arg{"materialized", materialized},
 		Arg{"cascade", cascade}, Arg{"restrict", restrict},
 		Arg{"constraints", constraints}, Arg{"purge", purge},
-		Arg{"cluster", nil}, Arg{"concurrently", concurrently},
+		Arg{"cluster", cluster}, Arg{"concurrently", concurrently},
 		Arg{"sync", sync}, Arg{"iceberg", false}, Arg{"force", force},
 	), nil
 }
@@ -1918,6 +1943,17 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 				kind = New("UniqueColumnConstraint")
 				break
 			}
+			// MySQL and the dialects that inherit it read UNIQUE its own way
+			// here too: no NULLS flag, key parts that are COLUMNS, and index
+			// options (MySQLParser._parse_unique).
+			if isMySQLFamily(p.dialect) {
+				unique, err := p.parseMySQLUniqueConstraint()
+				if err != nil {
+					return nil, err
+				}
+				kind = unique
+				break
+			}
 			p.advance()
 			_ = isConstraintWord
 			// `NULLS NOT DISTINCT` makes two NULLs equal for the purpose of
@@ -2060,6 +2096,12 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 				return nil, err
 			}
 			kind = New("MergeTreeTTL", Arg{"expressions", []*Expression{e}})
+		// MySQL's `BINARY` attribute on a character column: the column is
+		// compared byte-wise, and it is a constraint of its own with nothing
+		// in it (MySQLParser.CONSTRAINT_PARSERS).
+		case p.atWords("BINARY"):
+			p.advance()
+			kind = New("BinaryColumnConstraint")
 		case p.atWords("COMMENT"):
 			p.advance()
 			// Exasol writes the IS as part of the constraint:
@@ -2741,6 +2783,11 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// A dialect that records an outer-join mark on a column records it
+		// here too (Parser._parse_column).
+		if p.tables.SupportsColumnJoinMarks && name != nil && name.Class == "Column" {
+			name.Set("join_mark", p.match(TokJOIN_MARKER))
+		}
 		cascade, restrict := false, false
 		switch {
 		case p.atWords("CASCADE"):
@@ -2945,6 +2992,17 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 		rename := p.atWords("CHANGE")
 		p.advance()
 		return p.parseMySQLModifyColumn(rename)
+	case isMySQLFamily(p.dialect) && p.atWords("COMMENT"):
+		// MySQL's `ALTER TABLE t COMMENT [=] 'text'` restates the table
+		// comment (MySQLParser.ALTER_PARSERS).
+		p.advance()
+		p.match(TokEQ)
+		p.match(TokALIAS)
+		field, err := p.parseMySQLUnquotedField()
+		if err != nil {
+			return nil, err
+		}
+		return New("SchemaCommentProperty", Arg{"this", field}), nil
 	}
 	return nil, p.unsupported("an ALTER TABLE action this port does not read")
 }
@@ -3643,6 +3701,12 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 			p.advance()
 			return New("UniqueColumnConstraint"), nil
 		}
+		// MySQL and the dialects that inherit it read a table-level UNIQUE
+		// its own way: no NULLS flag, key parts that are COLUMNS, and index
+		// options after the list (MySQLParser._parse_unique).
+		if isMySQLFamily(p.dialect) {
+			return p.parseMySQLUniqueConstraint()
+		}
 		p.advance()
 		// MySQL (and the reference's own base rule, universally) allows
 		// KEY or INDEX right after UNIQUE, said or not -- `UNIQUE KEY`
@@ -3832,7 +3896,9 @@ func (p *parser) parseMySQLIndexConstraint(kind string) (*Expression, error) {
 		p.advance()
 		indexType = c.Text
 	}
-	members, err := p.parseWrappedOrderedColumns()
+	// A key part is a COLUMN, with an Ordered wrapper only where a direction
+	// was written (MySQLParser._parse_index_key_part).
+	members, err := p.parseMySQLIndexKeyParts()
 	if err != nil {
 		return nil, err
 	}
@@ -3862,24 +3928,6 @@ func (p *parser) parseMySQLIndexConstraint(kind string) (*Expression, error) {
 		return nil, p.unsupported("an index constraint with options this port does not read")
 	}
 	return node, nil
-}
-
-// parseWrappedOrderedColumns is the reference's own `_parse_wrapped_csv(self
-// ._parse_ordered)`: a parenthesised CSV of columns, each always wrapped in
-// Ordered whatever the dialect -- unlike PRIMARY KEY's own column list
-// (parseKeyColumns), which some dialects keep bare instead.
-func (p *parser) parseWrappedOrderedColumns() ([]*Expression, error) {
-	if !p.match(TokL_PAREN) {
-		return nil, p.unsupported("an index constraint without its columns")
-	}
-	out, err := p.parseOrderedList()
-	if err != nil {
-		return nil, err
-	}
-	if !p.match(TokR_PAREN) {
-		return nil, p.unsupported("unclosed index column list")
-	}
-	return out, nil
 }
 
 func (p *parser) parseKeyColumns() ([]*Expression, error) {

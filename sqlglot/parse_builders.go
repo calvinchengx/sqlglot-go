@@ -59,10 +59,20 @@ func (p *parser) buildFormat(args []*Expression) (*Expression, error) {
 // hasDateField reports whether a format spelling names any date or time field.
 //
 // The reference asks a regexp -- `([dD]{1,2})|([mM]{1,2})|([yY]{1,4})|
-// ([hH]{1,2})|([sS]{1,2})` -- but it asks it with `search`, so the repetition
-// counts never decide anything: one of these characters anywhere is a match.
+// ([hH]{1,2})|([sS]{1,2})|([fF]{2,7})` -- but it asks it with `search`, so the
+// repetition counts never decide anything except for `f`, which needs two.
 func hasDateField(s string) bool {
-	return strings.ContainsAny(s, "dDmMyYhHsS")
+	if strings.ContainsAny(s, "dDmMyYhHsS") {
+		return true
+	}
+	// A fraction of a second is written with at least TWO `f`s: the
+	// reference's regexp is `([fF]{2,7})`, so one alone names no field.
+	for i := 0; i+1 < len(s); i++ {
+		if (s[i] == 'f' || s[i] == 'F') && (s[i+1] == 'f' || s[i+1] == 'F') {
+			return true
+		}
+	}
+	return false
 }
 
 // buildDateDiff is T-SQL's DATEDIFF and DATEDIFF_BIG:

@@ -302,8 +302,10 @@ func init() {
 		"DefaultColumnConstraint":             (*generator).writeDefaultConstraint,
 		"PrimaryKeyColumnConstraint":          (*generator).writePrimaryKeyConstraint,
 		"UniqueColumnConstraint":              (*generator).writeUniqueConstraint,
+		"OnProperty":                          (*generator).writeOnProperty,
 		"AutoIncrementColumnConstraint":       (*generator).writeAutoIncrementConstraint,
 		"CommentColumnConstraint":             (*generator).writeCommentConstraint,
+		"BinaryColumnConstraint":              (*generator).writeBinaryConstraint,
 		"CollateColumnConstraint":             (*generator).writeCollateConstraint,
 		"Insert":                              (*generator).writeInsert,
 		"Update":                              (*generator).writeUpdate,
@@ -687,11 +689,10 @@ func (g *generator) writeSelect(e *Expression) string {
 	for _, lateral := range laterals {
 		add(g.node(lateral))
 	}
-	// T-SQL's OPTION (...) sits after the query's own clauses and before
-	// FOR XML / FOR JSON, which is the reference's own order.
-	add(g.writeQueryHintOptions(e))
-	// FOR XML / FOR JSON / FOR BROWSE comes after the query's own clauses.
+	// FOR XML / FOR JSON / FOR BROWSE comes after the query's own clauses,
+	// and T-SQL's OPTION (...) after that (Generator.query_modifiers).
 	add(g.child(e, "for_"))
+	add(g.writeQueryHintOptions(e))
 	// Row locking comes last, and there may be more than one of them.
 	locks, _ := e.Args["locks"].([]*Expression)
 	for _, lock := range locks {
@@ -761,10 +762,30 @@ func (g *generator) writeSetOperation(e *Expression) string {
 		word += " ON (" + strings.Join(names, ", ") + ")"
 	}
 	parts := []string{g.child(e, "this"), word, g.child(e, "expression")}
-	for _, key := range []string{"cluster", "distribute", "sort", "order", "limit", "offset"} {
-		if s := g.child(e, key); s != "" {
+	for _, key := range []string{"cluster", "distribute", "sort"} {
+		if s := g.child(e, key); s != "" && s != " " {
 			parts = append(parts, s)
 		}
+	}
+	if order := strings.TrimSpace(g.child(e, "order")); order != "" {
+		parts = append(parts, order)
+	}
+	// The same order a SELECT writes LIMIT and OFFSET in: a FETCH comes
+	// after its offset, a LIMIT before it (Generator.query_modifiers).
+	limit, _ := e.Args["limit"].(*Expression)
+	offset := strings.TrimSpace(g.child(e, "offset"))
+	if limit != nil && limit.Class == "Fetch" {
+		if offset != "" {
+			parts = append(parts, offset)
+		}
+		parts = append(parts, strings.TrimSpace(g.node(limit)))
+	} else if limit != nil {
+		parts = append(parts, strings.TrimSpace(g.node(limit)))
+		if offset != "" {
+			parts = append(parts, offset)
+		}
+	} else if offset != "" {
+		parts = append(parts, offset)
 	}
 	return g.withPrefix(e, strings.Join(parts, " "))
 }
@@ -1118,6 +1139,21 @@ func (g *generator) writeLateral(e *Expression) string {
 		}
 		return out
 	}
+	// UNNEST ... WITH ORDINALITY stores the number's COLUMN NAME on the
+	// Unnest, while the alias it belongs to is the LATERAL's -- so the name
+	// is appended to that alias's column list here (Generator.lateral_sql).
+	if unnest, _ := e.Args["this"].(*Expression); unnest != nil && unnest.Class == "Unnest" {
+		if off, _ := unnest.Args["offset"].(*Expression); off != nil {
+			if alias, _ := e.Args["alias"].(*Expression); alias != nil {
+				alias = alias.Copy()
+				columns, _ := alias.Args["columns"].([]*Expression)
+				alias.Set("columns", append(append([]*Expression{}, columns...), off))
+				bare := unnest.Copy()
+				bare.Set("offset", nil)
+				return "LATERAL " + g.node(bare) + " WITH ORDINALITY AS " + g.node(alias)
+			}
+		}
+	}
 	out := "LATERAL " + g.child(e, "this")
 	// The ordinality goes between the relation and the alias, as it does on
 	// a table: the words say the rows are numbered and the alias names both
@@ -1217,13 +1253,20 @@ func (g *generator) writeGroup(e *Expression) string {
 		parts = append(parts, plain)
 	}
 	// A CUBE or ROLLUP written in the WITH form follows the columns with a
-	// SPACE rather than a comma (the reference's own GROUPINGS_SEP rule).
+	// SPACE rather than a comma, and so does a GROUPING SETS suffix in the
+	// dialects that write one (Generator.group_sql, GROUPINGS_SEP,
+	// SUPPORTS_GROUPING_SETS_AS_SUFFIX).
 	sep := ", "
 	for _, key := range []string{"grouping_sets", "cube", "rollup"} {
 		items, _ := e.Args[key].([]*Expression)
 		for _, item := range items {
 			text := g.node(item)
 			if text == "WITH CUBE" || text == "WITH ROLLUP" {
+				sep = " "
+			}
+			if key == "grouping_sets" && len(parts) > 0 &&
+				text != "WITH CUBE" && text != "WITH ROLLUP" &&
+				supportsGroupingSetsSuffix(g.dialect) {
 				sep = " "
 			}
 			parts = append(parts, text)
@@ -2377,11 +2420,26 @@ func (g *generator) writeLn(e *Expression) string {
 // operand rather than carrying them through: `MOD((a + 1), b)` is written
 // `MOD(a + 1, b)` (BigQueryGenerator.mod_sql).
 func (g *generator) writeMod(e *Expression) string {
-	if g.dialect != "bigquery" {
-		return g.spell(e)
+	if g.dialect == "bigquery" {
+		args := []string{g.node(unnestParen(childOf(e, "this"))), g.node(unnestParen(childOf(e, "expression")))}
+		return "MOD(" + strings.Join(args, ", ") + ")"
 	}
-	args := []string{g.node(unnestParen(childOf(e, "this"))), g.node(unnestParen(childOf(e, "expression")))}
-	return "MOD(" + strings.Join(args, ", ") + ")"
+	out := g.spell(e)
+	// A Mod on the RIGHT of a tighter multiplicative operator is
+	// parenthesised, or it would re-associate: `2 ** (8 MOD 5)`
+	// (Generator.mod_sql, MOD_PAREN_PARENT_TYPES).
+	if parent := e.Parent; parent != nil && childOf(parent, "expression") == e {
+		switch parent.Class {
+		case "Mul", "Div", "IntDiv", "Mod":
+			return "(" + out + ")"
+		case "Pow":
+			// Teradata adds POW to the list; no other dialect does.
+			if g.dialect == "teradata" {
+				return "(" + out + ")"
+			}
+		}
+	}
+	return out
 }
 
 // unnestParen returns what a parenthesised expression holds, and anything
@@ -4370,6 +4428,15 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 	// Trino's JSON_QUERY: the same node as an extraction, flagged, with the
 	// wrapper, quote and error clauses written inside the call.
 	if q, _ := e.Args["json_query"].(bool); q {
+		// T-SQL writes JSON_QUERY on its own, with the path as written
+		// (TSQLGenerator._json_extract_sql).
+		if g.dialect == "tsql" {
+			path, _ := e.Args["expression"].(*Expression)
+			if path == nil {
+				return g.fail("JSON_QUERY without a path")
+			}
+			return "JSON_QUERY(" + g.child(e, "this") + ", " + g.node(path) + ")"
+		}
 		if g.dialect != "trino" {
 			return g.fail("JSON_QUERY, which this dialect does not write")
 		}
@@ -4393,6 +4460,15 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 	// of JSON asks both and takes whichever is not null, writing the value
 	// and the path twice. One node, two calls: a spelling rather than a
 	// rewrite, so the template carries the operand in both places.
+	// T-SQL writes a scalar-only extraction as JSON_VALUE on its own
+	// (TSQLGenerator._json_extract_sql).
+	if scalar, _ := e.Args["scalar_only"].(bool); scalar && g.dialect == "tsql" {
+		path, _ := e.Args["expression"].(*Expression)
+		if path == nil {
+			return g.fail("JSON_VALUE without a path")
+		}
+		return "JSON_VALUE(" + g.child(e, "this") + ", " + g.node(path) + ")"
+	}
 	if twice, ok := g.tables.JSONExtractTwiceSQL[e.Class]; ok && twice != "" {
 		return g.writeJSONExtractTwice(e, twice)
 	}
@@ -4428,7 +4504,11 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 	}
 	form = g.jsonExtractName(e, form)
 	this, _ := e.Args["this"].(*Expression)
-	if !isAtomForOperator(this) && !writesAsACall(g.node(this)) {
+	// A CALL form puts the operand in argument position, where anything may
+	// stand; only an OPERATOR form needs it to bind tightly enough.
+	callForm := strings.Contains(form, "(") &&
+		(!strings.Contains(form, "{this}") || strings.Index(form, "(") < strings.Index(form, "{this}"))
+	if !callForm && !isAtomForOperator(this) && !writesAsACall(g.node(this)) {
 		return g.fail(e.Class + " over a compound expression")
 	}
 	path, _ := e.Args["expression"].(*Expression)
@@ -4928,9 +5008,6 @@ func isSafeLeadingOperand(g *generator, e *Expression) bool {
 // same flag the parser read off the reference.
 func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
 	this, _ := e.Args["this"].(*Expression)
-	if !isAtomForOperator(this) && !writesAsACall(g.node(this)) {
-		return g.fail(e.Class + " over a compound expression")
-	}
 	path, _ := e.Args["expression"].(*Expression)
 	if path == nil || path.Class != "JSONPath" {
 		// No PARTS to spread, but arguments all the same: the reference
@@ -4957,14 +5034,9 @@ func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
 			// which is already `this`.
 		case "JSONPathKey":
 			name, _ := part.Args["this"].(string)
-			// The key is written VERBATIM, quote and all. A key holding a
-			// quote comes out as `JSON_EXTRACT_PATH(col, 'fr'uit')`, which
-			// neither this port nor the reference can read back -- upstream
-			// sqlglot bug (8). It is written anyway, because the contract
-			// here is to say what the reference says: escaping the quote
-			// would be a silent, invisible divergence in the one place the
-			// differential could not warn anyone about it.
-			names = append(names, "'"+name+"'")
+			// The key is a STRING, so a quote in it is escaped the way this
+			// dialect escapes one (Generator.json_extract_segments).
+			names = append(names, "'"+escapeStringBody(name, g.cfg.StringEscapePreferred)+"'")
 		case "JSONPathSubscript":
 			// A number naming a position in an array. The CALL form quotes it
 			// like any other part; the operator chain writes it bare, which
@@ -5008,6 +5080,11 @@ func (g *generator) writeJSONPerPart(e *Expression, per JSONPerPart) string {
 			return g.fail(e.Class)
 		}
 		return head + strings.Join(names, ", ") + tail
+	}
+	// The CHAIN form is operators, so its first operand has to bind tightly
+	// enough to stand in front of one.
+	if !isAtomForOperator(this) && !writesAsACall(g.node(this)) {
+		return g.fail(e.Class + " over a compound expression")
 	}
 	out := g.node(this)
 	for _, name := range names {
@@ -6188,7 +6265,11 @@ func (g *generator) writeSchema(e *Expression) string {
 	g.inColumnList = true
 	parts := make([]string, 0, len(items))
 	for _, item := range items {
-		parts = append(parts, g.node(item))
+		// A constraint this dialect writes as nothing leaves no separator
+		// behind, so the column list stays well formed.
+		if text := g.node(item); text != "" {
+			parts = append(parts, text)
+		}
 	}
 	g.inColumnList = was
 	columns := "(" + strings.Join(parts, ", ") + ")"
@@ -6394,6 +6475,11 @@ func (g *generator) writeDrop(e *Expression) string {
 		names = append(names, g.node(t))
 	}
 	out += strings.Join(names, ", ")
+	// `ON <cluster>` names where the drop applies, after the names and
+	// before any signature (Generator.drop_sql).
+	if cluster := g.child(e, "cluster"); cluster != "" {
+		out += " " + cluster
+	}
 	// A FUNCTION or a PROCEDURE may be named with its SIGNATURE, because a
 	// name alone need not say which of them is meant.
 	if signature, _ := e.Args["expressions"].([]*Expression); len(signature) > 0 {
@@ -6474,9 +6560,11 @@ func (g *generator) writeAutoIncrementConstraint(e *Expression) string {
 
 func (g *generator) writeUniqueConstraint(e *Expression) string {
 	if !g.tables.UniqueConstraintWritten {
-		// This dialect has no such constraint and the reference DROPS it,
-		// which silently gives up the guarantee the statement was making.
-		return g.fail(e.Class + ", which this dialect writes nowhere")
+		// This dialect has no such constraint and the reference DROPS it --
+		// `CREATE TABLE t (a INT, UNIQUE (a))` is written without the rule
+		// (Spark, Hive and Databricks all do). The port says what the
+		// reference says, so the guarantee is dropped the same way.
+		return ""
 	}
 	out := "UNIQUE"
 	// Two NULLs count as equal here, so a second row holding one breaks the
@@ -6491,6 +6579,16 @@ func (g *generator) writeUniqueConstraint(e *Expression) string {
 	// MySQL's `UNIQUE (b) USING BTREE` names the index after the columns.
 	if indexType, ok := e.Args["index_type"].(string); ok && indexType != "" {
 		out += " USING " + indexType
+	}
+	// Index options follow the list, each one after the other: comment,
+	// visibility, key block size and the rest
+	// (Generator.indexconstraintoption_sql).
+	if options, _ := e.Args["options"].([]*Expression); len(options) > 0 {
+		for _, opt := range options {
+			if written := g.node(opt); written != "" {
+				out += " " + written
+			}
+		}
 	}
 	// SQLite names what happens when the rule is broken, last of all.
 	if onConflict := g.child(e, "on_conflict"); onConflict != "" {
@@ -7813,6 +7911,14 @@ func (g *generator) writeStabilityProperty(e *Expression) string {
 		}
 		return "NOT DETERMINISTIC"
 	}
+	// Spark (and Databricks, which subclasses it) writes the standard
+	// words too (SparkGenerator.TRANSFORMS).
+	if g.dialect == "spark" || g.dialect == "databricks" {
+		if word == "IMMUTABLE" {
+			return "DETERMINISTIC"
+		}
+		return "NOT DETERMINISTIC"
+	}
 	// Trino has only DETERMINISTIC and its negation.
 	if g.dialect == "trino" {
 		if word == "IMMUTABLE" {
@@ -9012,7 +9118,7 @@ func (g *generator) sqliteDateDiff(e *Expression) string {
 	case "MICROSECOND":
 		out += " * 86400000000.0"
 	case "NANOSECOND":
-		out += " * 8640000000000.0"
+		out += " * 86400000000000.0"
 	default:
 		return g.fail(e.Class + " for the unit " + unit)
 	}
@@ -9641,6 +9747,38 @@ func (g *generator) writeNullTreatment(e *Expression, words string) string {
 	call, _ := e.Args["this"].(*Expression)
 	if call == nil {
 		return g.fail(e.Class + " over nothing")
+	}
+	// StarRocks writes the words after the call's FIRST argument for the four
+	// window functions that take them, and rejects RESPECT NULLS outright
+	// (StarRocksGenerator.ignorenulls_sql).
+	if g.dialect == "starrocks" {
+		switch call.Class {
+		case "FirstValue", "LastValue", "Lag", "Lead":
+			if e.Class == "RespectNulls" {
+				return g.child(e, "this")
+			}
+			name := call.Class
+			if spec, ok := g.functionSpelling(call); ok {
+				name = spec.Name
+			}
+			args := []string{}
+			if first, _ := call.Args["this"].(*Expression); first != nil {
+				args = append(args, g.node(first)+" IGNORE NULLS")
+			}
+			for _, key := range []string{"offset", "default"} {
+				if v, _ := call.Args[key].(*Expression); v != nil {
+					args = append(args, g.node(v))
+				}
+			}
+			return name + "(" + strings.Join(args, ", ") + ")"
+		}
+		return g.child(e, "this") + " " + words
+	}
+	// MySQL has no IGNORE NULLS and writes the call alone
+	// (MySQLGenerator.ignorenulls_sql). RESPECT NULLS is a different
+	// question and MySQL does not override it, so it is written normally.
+	if e.Class == "IgnoreNulls" && isMySQLFamily(g.dialect) {
+		return g.child(e, "this")
 	}
 	// BigQuery writes the words INSIDE the call whenever the call is an
 	// aggregate, and after it otherwise (Generator._embed_ignore_nulls).
@@ -10643,7 +10781,6 @@ func (g *generator) dateArithDremio(name string, this, amount, unit *Expression)
 // argument annotates with a real temporal type, and a dialect whose own
 // DATE_ADD already accepts anything never needs to see it written back.
 func (g *generator) dateArithMySQL(name string, this, amount, unit *Expression) string {
-	this = stripMySQLTsOrDsWrap(this)
 	interval := New("Interval", Arg{"this", amount}, Arg{"unit", unit})
 	return name + "(" + g.node(this) + ", " + g.node(interval) + ")"
 }
@@ -10890,6 +11027,18 @@ func (g *generator) writeShow(e *Expression) string {
 			target = " " + text
 		}
 	}
+	// SHOW CREATE names a possibly qualified object and has no FROM clause,
+	// so the database is prefixed onto the name instead
+	// (MySQLGenerator.show_sql).
+	dbPart := prefixed("FROM", "db")
+	if strings.HasPrefix(name, "CREATE") {
+		if d, _ := e.Args["db"].(*Expression); d != nil {
+			if t, _ := e.Args["target"].(*Expression); t != nil {
+				target = " " + g.node(d) + "." + g.node(t)
+			}
+			dbPart = ""
+		}
+	}
 	switch name {
 	case "COLUMNS", "INDEX":
 		target = " FROM" + target
@@ -10942,7 +11091,7 @@ func (g *generator) writeShow(e *Expression) string {
 		json = " JSON"
 	}
 	return "SHOW" + full + global + " " + name + json + target + prefixed("FOR TABLE", "for_table") +
-		types + prefixed("FROM", "db") + prefixed("FOR QUERY", "query") + prefixed("IN", "log") +
+		types + dbPart + prefixed("FOR QUERY", "query") + prefixed("IN", "log") +
 		prefixed("FROM", "position") + prefixed("FOR CHANNEL", "channel") + mutexOrStatus +
 		prefixed("LIKE", "like") + where + offset + limit + prefixed("FOR GROUP", "for_group") +
 		prefixed("FOR USER", "for_user") + prefixed("FOR ROLE", "for_role") +
@@ -11572,4 +11721,23 @@ func (g *generator) propertyLocation(class string) string {
 		return "POST_WITH"
 	}
 	return g.tables.PropertyLocation[class]
+}
+
+// writeBinaryConstraint writes MySQL's bare `BINARY` column attribute.
+func (g *generator) writeBinaryConstraint(e *Expression) string { return "BINARY" }
+
+// writeOnProperty writes `ON <name>`, the placement a statement applies to
+// (Generator.PROPERTIES_LOCATION / `exp.OnProperty: ON {this}`).
+func (g *generator) writeOnProperty(e *Expression) string {
+	return "ON " + g.child(e, "this")
+}
+
+// supportsGroupingSetsSuffix reports the dialects that write a GROUPING SETS
+// suffix with no comma before it (Generator.SUPPORTS_GROUPING_SETS_AS_SUFFIX).
+func supportsGroupingSetsSuffix(dialect string) bool {
+	switch dialect {
+	case "hive", "spark", "spark2", "databricks", "athena":
+		return true
+	}
+	return false
 }

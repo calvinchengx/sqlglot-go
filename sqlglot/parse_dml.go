@@ -135,13 +135,14 @@ func (p *parser) parseUpdate() (*Expression, error) {
 	return putComments(node, leading), nil
 }
 
-// parseAssignments reads the `a = 1, b = 2` of a SET clause. Each is an
-// ordinary equality -- the reference keeps them as EQ nodes rather than as a
-// pair -- so anything that is not one is refused rather than reshaped.
+// parseAssignments reads the `a = 1, b = 2` of a SET clause, an ON CONFLICT
+// DO UPDATE, or a MERGE branch. Each is an assignment -- the reference keeps
+// them as EQ nodes rather than as a pair -- so anything that is not one is
+// refused rather than reshaped.
 func (p *parser) parseAssignments() ([]*Expression, error) {
 	var out []*Expression
 	for {
-		e, err := p.parseExpression()
+		e, err := p.parseUpdateAssignment()
 		if err != nil {
 			return nil, err
 		}
@@ -153,6 +154,28 @@ func (p *parser) parseAssignments() ([]*Expression, error) {
 			return out, nil
 		}
 	}
+}
+
+// parseUpdateAssignment is the reference's own `_parse_update_assignment`:
+// the left side is a comparison, and the value is a DISJUNCTION, so
+// `a = x OR y, b = x AND y` is two assignments whose values are the OR and
+// the AND. Reading the whole item as one expression would see `(a = x) OR y`
+// and refuse it for not being an assignment at all.
+func (p *parser) parseUpdateAssignment() (*Expression, error) {
+	this, err := p.parseComparison()
+	if err != nil {
+		return nil, err
+	}
+	if !p.at(TokEQ) {
+		return this, nil
+	}
+	p.advance()
+	comments := p.takeComments()
+	right, err := p.parseDisjunction()
+	if err != nil {
+		return nil, err
+	}
+	return putComments(New("EQ", Arg{"this", this}, Arg{"expression", right}), comments), nil
 }
 
 // readReturning sets `returning` on a statement if one is written here. It

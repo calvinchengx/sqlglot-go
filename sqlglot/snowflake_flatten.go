@@ -37,27 +37,8 @@ func spellSnowflakeFlatten(tables *ParserTables) {
 	generators["TableFromRows"] = (*generator).writeSnowflakeRows
 }
 
-// liftSnowflakeTable turns the table a TABLE(...) call was wrapped in
-// into the row source itself. The alias, the joins, the pivots, and the
-// sample belong to that source.
-func (p *parser) liftSnowflakeTable(table *Expression) (*Expression, error) {
-	if p.dialect != "snowflake" || table == nil || table.Class != "Table" {
-		return table, nil
-	}
-	inner, _ := table.Args["this"].(*Expression)
-	if inner == nil || inner.Class != "TableFromRows" {
-		return table, nil
-	}
-	for _, key := range []string{"alias", "joins", "pivots", "sample"} {
-		if value, ok := table.Args[key]; ok {
-			inner.Set(key, value)
-		}
-	}
-	return inner, nil
-}
-
 func (g *generator) writeSnowflakeRows(e *Expression) string {
-	if g.dialect != "snowflake" {
+	if g.dialect != "snowflake" && g.dialect != "starrocks" {
 		return g.spell(e)
 	}
 	if _, ok := e.Args["joins"]; ok {

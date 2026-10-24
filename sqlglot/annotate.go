@@ -69,6 +69,12 @@ func annotateNode(e *Expression, dialect string) *Expression {
 	if t, ok := fixedTimeFromParts(e, dialect); ok {
 		return t
 	}
+	// DuckDB types AT TIME ZONE by what it is applied TO: a timestamp without
+	// a zone becomes TIMESTAMPTZ, one WITH a zone becomes TIMESTAMP, and a
+	// TIME with a zone stays TIMETZ (typing/duckdb.py).
+	if e.Class == "AtTimeZone" && dialect == "duckdb" {
+		return annotateDuckDBAtTimeZone(e, dialect)
+	}
 	switch e.Class {
 	case "Literal":
 		// A string is VARCHAR, a whole number INT, anything else DOUBLE.
@@ -1267,4 +1273,17 @@ func setOpFirstColumnType(e *Expression, dialect string) *Expression {
 		result = coerceTypes(result, t)
 	}
 	return bareType(result)
+}
+
+// annotateDuckDBAtTimeZone is the reference's `_annotate_at_time_zone`.
+func annotateDuckDBAtTimeZone(e *Expression, dialect string) *Expression {
+	switch typeKind(annotate(childOf(e, "this"), dialect)) {
+	case "DATE", "TIMESTAMP", "TIMESTAMPNTZ", "TIMESTAMP_S", "TIMESTAMP_MS", "TIMESTAMP_NS":
+		return dataType("TIMESTAMPTZ")
+	case "TIMESTAMPTZ":
+		return dataType("TIMESTAMP")
+	case "TIMETZ":
+		return dataType("TIMETZ")
+	}
+	return dataType("UNKNOWN")
 }

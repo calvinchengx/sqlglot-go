@@ -11,8 +11,84 @@ import "strings"
 // `start: "UNBOUNDED"`, `start_side: "PRECEDING"`, `end: "CURRENT ROW"` -- so
 // nothing is being invented here, only read back.
 func (p *parser) parseWindow(this *Expression) (*Expression, error) {
+	// An aggregate argument that said IGNORE NULLS keeps the words OUTSIDE
+	// the call once it has a window: the reference lifts the treatment out
+	// and wraps the whole call (Parser._parse_window).
+	if lifted := liftNullTreatment(this); lifted != nil {
+		this = lifted
+	}
 	p.advance() // OVER
 	return p.windowBody(this, "OVER")
+}
+
+// liftNullTreatment moves an IGNORE NULLS / RESPECT NULLS wrapper off the
+// argument it was written on and around the call itself. A call's argument
+// is wrapped whole, so the treatment is always a direct child.
+func liftNullTreatment(call *Expression) *Expression {
+	if call == nil || !classIsA["AggFunc"][call.Class] {
+		return nil
+	}
+	found := findNullTreatment(call)
+	if found == nil || found == call {
+		return nil
+	}
+	inner, _ := found.Args["this"].(*Expression)
+	if parent := found.Parent; parent != nil {
+		replaceChild(parent, found, inner)
+	}
+	return New(found.Class, Arg{"this", call})
+}
+
+// findNullTreatment searches a call's arguments for an IGNORE/RESPECT NULLS
+// wrapper, breadth-first the way the reference's find_in_scope searches.
+func findNullTreatment(root *Expression) *Expression {
+	queue := []*Expression{root}
+	for len(queue) > 0 {
+		node := queue[0]
+		queue = queue[1:]
+		if node != root && (node.Class == "IgnoreNulls" || node.Class == "RespectNulls") {
+			return node
+		}
+		for _, key := range classArgKeys[node.Class] {
+			switch v := node.Args[key].(type) {
+			case *Expression:
+				if v != nil {
+					queue = append(queue, v)
+				}
+			case []*Expression:
+				for _, item := range v {
+					if item != nil {
+						queue = append(queue, item)
+					}
+				}
+			}
+		}
+	}
+	return nil
+}
+
+// replaceChild swaps one node for another inside its parent, whether the
+// parent holds a single argument or a list.
+func replaceChild(parent, old, replacement *Expression) {
+	for _, key := range classArgKeys[parent.Class] {
+		switch v := parent.Args[key].(type) {
+		case *Expression:
+			if v == old {
+				parent.Set(key, replacement)
+				return
+			}
+		case []*Expression:
+			for i, item := range v {
+				if item == old {
+					v[i] = replacement
+					if replacement != nil {
+						replacement.Parent = parent
+					}
+					return
+				}
+			}
+		}
+	}
 }
 
 // parseNamedWindow reads one entry of a `WINDOW w AS (...)` clause. It is the
