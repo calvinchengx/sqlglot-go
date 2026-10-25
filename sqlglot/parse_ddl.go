@@ -8989,7 +8989,36 @@ func (p *parser) parseTablePart() (*Expression, error) {
 		}
 		return id, nil
 	}
+	// T-SQL's bare table hint -- `dbo.t (NOLOCK)` -- must not turn the name
+	// into a CALL: where the parentheses hold a bare hint word and nothing
+	// else, the name is a table part (TSQLParser._parse_table_part).
+	if (p.dialect == "tsql" || p.dialect == "fabric") && p.atBareTableHintCall() {
+		return p.parseIdentifierWhere(true)
+	}
 	return p.daxTableCall(p.parseIdentifierWhere(true))
+}
+
+// bareTableHints are the words T-SQL writes in parentheses right after a
+// table's name (TSQLParser.BARE_TABLE_HINTS).
+var bareTableHints = map[string]bool{
+	"NOLOCK": true, "READUNCOMMITTED": true, "UPDLOCK": true,
+	"REPEATABLEREAD": true, "SERIALIZABLE": true, "READCOMMITTED": true,
+	"TABLOCK": true, "TABLOCKX": true, "PAGLOCK": true, "ROWLOCK": true,
+	"NOWAIT": true, "READPAST": true, "XLOCK": true, "SNAPSHOT": true,
+	"NOEXPAND": true,
+}
+
+// atBareTableHintCall reports whether the cursor holds `name ( HINT )`, where
+// HINT is one of those words.
+func (p *parser) atBareTableHintCall() bool {
+	if p.curr() == nil {
+		return false
+	}
+	open, hint, close := p.peekAt(1), p.peekAt(2), p.peekAt(3)
+	if open == nil || open.Type != TokL_PAREN || hint == nil || close == nil || close.Type != TokR_PAREN {
+		return false
+	}
+	return bareTableHints[strings.ToUpper(hint.Text)]
 }
 
 // connectedTo reports whether the token now current was written with NO space

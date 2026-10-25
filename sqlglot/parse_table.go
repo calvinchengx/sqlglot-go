@@ -704,7 +704,10 @@ func (p *parser) parseTable() (*Expression, error) {
 		// would be refused for the wrong reason. Reading a local file through
 		// `main.read_csv_auto('/etc/passwd')` is a real bypass, and the audit
 		// line has to name it.
-		if p.namesAFunctionCall() {
+		//
+		// T-SQL's bare table hint looks like a call and is not one:
+		// `FROM dbo.t (NOLOCK)`.
+		if p.namesAFunctionCall() && !p.atBareTableHintCall() {
 			// Some names are not a Table here at all: `FROM UNNEST(x)` is an
 			// Unnest in the reference. Wrapping the call in a Table writes the
 			// same SQL back and is a different tree, so it is refused.
@@ -896,6 +899,27 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 	}
 	if alias != nil {
 		table.Set("alias", alias)
+	}
+	// T-SQL reads `dbo.t (NOLOCK)` as a bare table HINT, not as an alias
+	// whose column list happens to hold one word: the parenthesis arrives as
+	// an unnamed alias, and is moved onto the table as a WithTableHint
+	// (TSQLParser._parse_table).
+	if (p.dialect == "tsql" || p.dialect == "fabric") && table.Class == "Table" &&
+		table.Args["hints"] == nil && alias != nil {
+		if hint := bareTableHintOf(alias); hint != nil && tablePartsAreIdentifiers(table) {
+			alias.Set("columns", nil)
+			// The unnamed alias was only the hint: whatever follows is the
+			// table's REAL alias, read now.
+			if name, _ := alias.Args["this"].(*Expression); name == nil {
+				realAlias, aerr := p.parseTableAlias()
+				if aerr != nil {
+					return nil, aerr
+				}
+				table.Set("alias", realAlias)
+			}
+			table.Set("hints", []*Expression{New("WithTableHint",
+				Arg{"expressions", []*Expression{New("Var", Arg{"this", hint.Name()})}})})
+		}
 	}
 	// The time-travel clause may also stand AFTER the alias --
 	// `FROM foo AS t0 FOR SYSTEM_TIME AS OF z` (Parser._parse_table).
@@ -1763,6 +1787,20 @@ func (p *parser) parseTableAlias() (*Expression, error) {
 	}
 	explicit := p.match(TokALIAS)
 	if !explicit && !p.atAliasName() {
+		// T-SQL's bare table hint arrives as an UNNAMED alias whose column
+		// list holds one word -- `FROM dbo.t (NOLOCK)` -- and _parse_table
+		// turns it into a hint (Parser._parse_table_alias reads the
+		// parentheses even with no name).
+		if (p.dialect == "tsql" || p.dialect == "fabric") && p.at(TokL_PAREN) {
+			columns, cerr := p.parseAliasColumns()
+			if cerr != nil {
+				return nil, cerr
+			}
+			if len(columns) == 0 {
+				return nil, nil
+			}
+			return New("TableAlias", Arg{"columns", columns}), nil
+		}
 		return nil, nil
 	}
 	// The NAME may be absent where a column list follows: `UNNEST(x) AS (a)`.
@@ -2542,4 +2580,30 @@ func flattenDot(e *Expression) []*Expression {
 		}
 	}
 	return out
+}
+
+// bareTableHintOf returns the hint an alias's single column names, where that
+// column is one of T-SQL's bare table hints.
+func bareTableHintOf(alias *Expression) *Expression {
+	columns, _ := alias.Args["columns"].([]*Expression)
+	if len(columns) != 1 || columns[0].Class != "Identifier" {
+		return nil
+	}
+	quoted, _ := columns[0].Args["quoted"].(bool)
+	if quoted || !bareTableHints[strings.ToUpper(columns[0].Name())] {
+		return nil
+	}
+	return columns[0]
+}
+
+// tablePartsAreIdentifiers reports whether every part of a table's name is a
+// plain identifier.
+func tablePartsAreIdentifiers(table *Expression) bool {
+	for _, key := range []string{"this", "db", "catalog"} {
+		part, _ := table.Args[key].(*Expression)
+		if part != nil && part.Class != "Identifier" {
+			return false
+		}
+	}
+	return true
 }
