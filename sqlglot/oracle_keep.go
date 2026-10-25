@@ -61,7 +61,7 @@ func (p *parser) oracleKeep(this *Expression, err error) (*Expression, error) {
 		out = outer
 	}
 	if marked {
-		out.Set("join_mark", false)
+		out.Set("join_mark", true)
 	}
 	return out, nil
 }

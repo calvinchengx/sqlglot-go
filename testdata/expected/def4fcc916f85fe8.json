@@ -1,6 +1,6 @@
 {
  "dialect": "duckdb",
- "rendered": "SELECT LIST_SORT(x, 'ASC')",
+ "rendered": "SELECT LIST_SORT(x)",
  "sql": "SELECT LIST_SORT(x, 'ASC')",
  "tokens": [
   {
@@ -66,7 +66,7 @@
   },
   {
    "a": true,
-   "c": "sqlglot.expressions.array.SortArray",
+   "c": "sqlglot.expressions.array.ArraySort",
    "i": 0,
    "k": "expressions",
    "m": {
@@ -103,25 +103,14 @@
    "v": false
   },
   {
-   "c": "sqlglot.expressions.core.Literal",
+   "c": "sqlglot.expressions.core.Boolean",
    "i": 1,
-   "k": "asc",
-   "m": {
-    "col": 25,
-    "end": 24,
-    "line": 1,
-    "start": 20
-   }
+   "k": "nulls_first"
   },
   {
    "i": 6,
    "k": "this",
-   "v": "ASC"
-  },
-  {
-   "i": 6,
-   "k": "is_string",
-   "v": true
+   "v": false
   }
  ]
 }

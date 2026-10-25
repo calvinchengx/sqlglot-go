@@ -1,6 +1,6 @@
 {
  "dialect": "drill",
- "rendered": "TO_DATE(x, CONCAT('yyyy-MM-dd', 'T', 'HH:mm:ss'))",
+ "rendered": "TO_DATE(x, 'yyyy-MM-dd''T''HH:mm:ss')",
  "sql": "TO_DATE(x, 'yyyy-MM-dd''T''HH:mm:ss')",
  "tokens": [
   {
@@ -36,28 +36,12 @@
    "x": ","
   },
   {
-   "c": 23,
-   "e": 22,
-   "l": 1,
-   "s": 11,
-   "t": "STRING",
-   "x": "yyyy-MM-dd"
-  },
-  {
-   "c": 26,
-   "e": 25,
-   "l": 1,
-   "s": 23,
-   "t": "STRING",
-   "x": "T"
-  },
-  {
    "c": 36,
    "e": 35,
    "l": 1,
-   "s": 26,
+   "s": 11,
    "t": "STRING",
-   "x": "HH:mm:ss"
+   "x": "yyyy-MM-dd'T'HH:mm:ss"
   },
   {
    "c": 37,
@@ -112,67 +96,24 @@
   },
   {
    "a": true,
-   "c": "sqlglot.expressions.string.Concat",
-   "i": 0,
-   "k": "expressions"
-  },
-  {
-   "a": true,
    "c": "sqlglot.expressions.core.Literal",
-   "i": 6,
+   "i": 0,
    "k": "expressions",
    "m": {
-    "col": 23,
-    "end": 22,
+    "col": 36,
+    "end": 35,
     "line": 1,
     "start": 11
    }
   },
   {
-   "i": 7,
-   "k": "this",
-   "v": "yyyy-MM-dd"
-  },
-  {
-   "i": 7,
-   "k": "is_string",
-   "v": true
-  },
-  {
-   "a": true,
-   "c": "sqlglot.expressions.core.Literal",
    "i": 6,
-   "k": "expressions"
-  },
-  {
-   "i": 10,
    "k": "this",
-   "v": "T"
-  },
-  {
-   "i": 10,
-   "k": "is_string",
-   "v": true
-  },
-  {
-   "a": true,
-   "c": "sqlglot.expressions.core.Literal",
-   "i": 6,
-   "k": "expressions"
-  },
-  {
-   "i": 13,
-   "k": "this",
-   "v": "HH:mm:ss"
-  },
-  {
-   "i": 13,
-   "k": "is_string",
-   "v": true
+   "v": "yyyy-MM-dd'T'HH:mm:ss"
   },
   {
    "i": 6,
-   "k": "coalesce",
+   "k": "is_string",
    "v": true
   }
  ]

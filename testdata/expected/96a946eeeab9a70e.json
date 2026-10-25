@@ -1,6 +1,6 @@
 {
  "dialect": "duckdb",
- "rendered": "LIST_FILTER(['a', NULL, 'b', NULL, 'c'], _u -> NOT _u IS NULL)",
+ "rendered": "LIST_FILTER(['a', NULL, 'b', NULL, 'c'], LAMBDA _u : NOT _u IS NULL)",
  "sql": "ARRAY_COMPACT(['a', NULL, 'b', NULL, 'c'])",
  "tokens": [
   {
@@ -208,6 +208,11 @@
    "i": 10,
    "k": "is_string",
    "v": true
+  },
+  {
+   "i": 1,
+   "k": "value_constructor",
+   "v": false
   }
  ]
 }

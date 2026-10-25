@@ -28,8 +28,8 @@ func (p *parser) oracleHierarchyPrefix() (*Expression, bool, error) {
 		return nil, true, err
 	}
 	node := New(class, Arg{"this", inner})
-	if p.tables.SupportsColumnJoinMarks {
-		node.Set("join_mark", p.match(TokJOIN_MARKER))
+	if p.tables.SupportsColumnJoinMarks && p.match(TokJOIN_MARKER) {
+		node.Set("join_mark", true)
 	}
 	return node, true, nil
 }

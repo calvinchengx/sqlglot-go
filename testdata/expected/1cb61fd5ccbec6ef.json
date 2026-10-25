@@ -1,6 +1,6 @@
 {
  "dialect": "duckdb",
- "rendered": "LIST_FILTER([[1, 2], NULL, [3, 4]], _u -> NOT _u IS NULL)",
+ "rendered": "LIST_FILTER([[1, 2], NULL, [3, 4]], LAMBDA _u : NOT _u IS NULL)",
  "sql": "ARRAY_COMPACT([[1, 2], NULL, [3, 4]])",
  "tokens": [
   {
@@ -214,6 +214,11 @@
    "v": false
   },
   {
+   "i": 2,
+   "k": "value_constructor",
+   "v": false
+  },
+  {
    "a": true,
    "c": "sqlglot.expressions.core.Null",
    "i": 1,
@@ -228,7 +233,7 @@
   {
    "a": true,
    "c": "sqlglot.expressions.core.Literal",
-   "i": 10,
+   "i": 11,
    "k": "expressions",
    "m": {
     "col": 31,
@@ -238,19 +243,19 @@
    }
   },
   {
-   "i": 11,
+   "i": 12,
    "k": "this",
    "v": "3"
   },
   {
-   "i": 11,
+   "i": 12,
    "k": "is_string",
    "v": false
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Literal",
-   "i": 10,
+   "i": 11,
    "k": "expressions",
    "m": {
     "col": 34,
@@ -260,13 +265,23 @@
    }
   },
   {
-   "i": 14,
+   "i": 15,
    "k": "this",
    "v": "4"
   },
   {
-   "i": 14,
+   "i": 15,
    "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 11,
+   "k": "value_constructor",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "value_constructor",
    "v": false
   }
  ]

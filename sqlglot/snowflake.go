@@ -7,11 +7,13 @@ package sqlglot
 // construct this port does not read is refused rather than given a tree
 // that means less than the input.
 func init() {
-	registerSnowflake(parserTables[""], dialectConfigs[""])
+	// The tokenizer configuration is the reference's own, generated with the
+	// rest of them; only the parser's vocabulary starts from the neutral one.
+	registerSnowflake(parserTables[""], dialectConfigs["snowflake"])
 }
 
-// registerSnowflake installs the dialect. Block comments do not nest:
-// the first end mark closes them, which is the reference tokenizer's rule.
+// registerSnowflake installs the dialect. Block comments do not nest in
+// Snowflake, which the generated configuration already records.
 func registerSnowflake(src *ParserTables, base *Config) {
 	if src == nil || base == nil {
 		return
@@ -22,6 +24,5 @@ func registerSnowflake(src *ParserTables, base *Config) {
 	cfg.Name = "snowflake"
 	cfg.trie = nil
 	cfg.Tables = nil
-	cfg.NestedComments = false
 	dialectConfigs["snowflake"] = &cfg
 }

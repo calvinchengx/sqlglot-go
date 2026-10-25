@@ -35,6 +35,7 @@ func (p *parser) parseInterval() (*Expression, error) {
 // parseIntervalBody reads the quantity, unit and any further units of one
 // INTERVAL, with the INTERVAL word already consumed.
 func (p *parser) parseIntervalBody() (*Expression, error) {
+	fractionInString := false
 	// INTERVAL is a NAME wherever what follows it is not a quantity: `SELECT
 	// interval` selects a column, and `WHERE interval IS NULL` tests one. The
 	// reference reads the operand and puts everything back where it did not
@@ -105,6 +106,11 @@ func (p *parser) parseIntervalBody() (*Expression, error) {
 		if len(parts) == 1 {
 			this = New("Literal", Arg{"this", parts[0][1]}, Arg{"is_string", true})
 			unit = New("Var", Arg{"this", p.normalisedIntervalUnit(parts[0][2])})
+			// A FRACTIONAL amount written with its unit in one string is a
+			// different interval from the same number written apart:
+			// `INTERVAL '1.5 DAY'` vs `INTERVAL '1.5' DAY`
+			// (Parser._parse_interval, Interval.fraction_in_string).
+			fractionInString = strings.Contains(parts[0][1], ".")
 		}
 	}
 
@@ -126,6 +132,9 @@ func (p *parser) parseIntervalBody() (*Expression, error) {
 	}
 
 	interval := New("Interval", Arg{"this", this}, Arg{"unit", unit})
+	if fractionInString {
+		interval.Set("fraction_in_string", true)
+	}
 
 	// `INTERVAL '5' HOURS '30' MINUTES` is a SUM of intervals, with an
 	// optional PLUS between the parts (the reference's _parse_interval).

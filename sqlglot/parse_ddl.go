@@ -1649,11 +1649,21 @@ func (p *parser) parseDrop() (*Expression, error) {
 	// (Parser._parse_drop -> _parse_on_property).
 	var cluster *Expression
 	if p.match(TokON) {
-		name := p.parseIDVarAny()
-		if name == nil {
-			return nil, p.unsupported("ON without a name")
+		// `DROP INDEX i ON db.t` names a TABLE after ON; every other kind
+		// names a plain identifier (Parser._parse_drop).
+		if kind == "INDEX" {
+			name, nerr := p.parseTableName()
+			if nerr != nil {
+				return nil, nerr
+			}
+			cluster = New("OnProperty", Arg{"this", name})
+		} else {
+			name := p.parseIDVarAny()
+			if name == nil {
+				return nil, p.unsupported("ON without a name")
+			}
+			cluster = New("OnProperty", Arg{"this", name})
 		}
-		cluster = New("OnProperty", Arg{"this", name})
 	}
 
 	// The words after the names, in the order the reference reads them.
@@ -2784,9 +2794,10 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			return nil, err
 		}
 		// A dialect that records an outer-join mark on a column records it
-		// here too (Parser._parse_column).
-		if p.tables.SupportsColumnJoinMarks && name != nil && name.Class == "Column" {
-			name.Set("join_mark", p.match(TokJOIN_MARKER))
+		// here too (Parser._parse_column), and only when it was written.
+		if p.tables.SupportsColumnJoinMarks && name != nil && name.Class == "Column" &&
+			p.match(TokJOIN_MARKER) {
+			name.Set("join_mark", true)
 		}
 		cascade, restrict := false, false
 		switch {
@@ -5708,8 +5719,9 @@ func (p *parser) parsePrivilegeColumns() ([]*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		if p.tables.SupportsColumnJoinMarks && col != nil && col.Class == "Column" {
-			col.Set("join_mark", p.match(TokJOIN_MARKER))
+		if p.tables.SupportsColumnJoinMarks && col != nil && col.Class == "Column" &&
+			p.match(TokJOIN_MARKER) {
+			col.Set("join_mark", true)
 		}
 		return col, nil
 	})

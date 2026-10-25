@@ -39,9 +39,6 @@ func (p *parser) readOracleObjectAgg() (*Expression, error) {
 	}
 	node.Set("return_type", false)
 	node.Set("encoding", false)
-	if p.tables.SupportsColumnJoinMarks {
-		node.Set("join_mark", false)
-	}
 	if err != nil {
 		return nil, err
 	}

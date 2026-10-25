@@ -1,6 +1,7 @@
 package sqlglot
 
 import (
+	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -1809,6 +1810,13 @@ func (g *generator) writeIdentifier(e *Expression) string {
 			return g.fail(e.Class + " whose name is not a name")
 		}
 	}
+	// The value a dialect writes for an identifier's own escaped sequences,
+	// before the closing delimiter is doubled (Generator.identifier_sql).
+	if len(g.cfg.IdentifierEscapedSequences) > 0 {
+		for _, ch := range sortedStringKeys(g.cfg.IdentifierEscapedSequences) {
+			name = strings.ReplaceAll(name, ch, g.cfg.IdentifierEscapedSequences[ch])
+		}
+	}
 	// T-SQL's mark for a temporary table, which the parser took off the name
 	// and recorded here. It goes INSIDE the quoting -- `[#foo]`, not `#[foo]`
 	// -- because it is part of the name as the engine reads it.
@@ -1854,27 +1862,22 @@ func (g *generator) writeLiteral(e *Expression) string {
 }
 
 func (g *generator) supportsEscapedSequences() bool {
-	_, ok := g.cfg.StringEscapes["\\"]
-	return ok && len(g.cfg.UnescapedSequences) > 0
+	return g.cfg.StringsSupportEscapedSequences
 }
 
 // escapeSequences is the reference's ESCAPED_SEQUENCES step: a dialect whose
 // strings read a backslash as an escape writes a control character (and the
-// backslash itself) back as the two characters that spell it.
+// backslash itself) back as the characters that spell it. The table is READ
+// from the reference rather than reversed from UnescapedSequences: Snowflake
+// maps `\\a` to `a`, which cannot be reversed without losing the escape.
 func (g *generator) escapeSequences(text string) string {
 	var out strings.Builder
 	for _, r := range text {
-		written := false
-		for spelled, ch := range g.cfg.UnescapedSequences {
-			if ch == string(r) {
-				out.WriteString(spelled)
-				written = true
-				break
-			}
+		if spelled, ok := g.cfg.EscapedSequences[string(r)]; ok {
+			out.WriteString(spelled)
+			continue
 		}
-		if !written {
-			out.WriteRune(r)
-		}
+		out.WriteRune(r)
 	}
 	return out.String()
 }
@@ -1912,11 +1915,12 @@ func (g *generator) writeQuotedString(e *Expression) string {
 			return "'" + body + "'"
 		case "ByteString":
 			if e.Args["is_bytes"] == true {
-				// A byte string's own escapes are already in the text, so a
-				// backslash is left alone and only the delimiter is escaped
-				// (escape_str(..., escape_backslash=False)).
-				body = escapeControlCharacters(body)
-				return "b'" + strings.ReplaceAll(body, "'", "\\'") + "'"
+				// The body is escaped like any other (Generator.escape_str):
+				// its sequences are written back as what they stand for, and
+				// a byte above ASCII is written as `\xNN` so it is not
+				// re-encoded as a UTF-8 character when read again.
+				body = g.byteStringBody(body)
+				return "b'" + body + "'"
 			}
 		case "HexString":
 			if e.Args["is_integer"] == true {
@@ -11754,4 +11758,38 @@ func (g *generator) writeBitwiseNot(e *Expression) string {
 		return g.unary(e, op)
 	}
 	return g.spell(e)
+}
+
+// sortedStringKeys returns a map's keys in a stable order.
+func sortedStringKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// byteStringBody escapes a byte literal's value: its sequences as the dialect
+// spells them, a byte above ASCII as `\xNN`, and the delimiter last.
+func (g *generator) byteStringBody(text string) string {
+	if g.cfg.ByteStringsSupportEscapedSequences {
+		text = g.escapeSequences(text)
+		if _, ok := g.cfg.NumericEscapes["x"]; ok {
+			var out strings.Builder
+			for _, r := range text {
+				if r >= 0x80 && r <= 0xFF {
+					out.WriteString(fmt.Sprintf("\\x%02x", r))
+					continue
+				}
+				out.WriteRune(r)
+			}
+			text = out.String()
+		}
+	}
+	preferred := g.cfg.StringEscapePreferred
+	if preferred == "" {
+		preferred = "'"
+	}
+	return strings.ReplaceAll(text, "'", preferred+"'")
 }

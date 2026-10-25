@@ -6920,6 +6920,11 @@ def main() -> int:
         "\t// what nulls_first records on an Ordered node. It differs per\n",
         "\t// dialect and is not derivable from ASC or DESC alone.\n",
         "\tNullOrdering string\n",
+        "\t// ISPredicatePrecedence is where IS binds: HIGH (above comparisons),\n",
+        "\t// COMPARISON, EQUALITY, or LOW (below both). Snowflake and Redshift\n",
+        "\t// keep the historical HIGH; Postgres, ClickHouse, Oracle and Spark2\n",
+        "\t// are LOW (Parser.IS_PREDICATE_PRECEDENCE).\n",
+        "\tISPredicatePrecedence string\n",
         "\t// A trailing ORDER BY, LIMIT or OFFSET after a set operation belongs to\n",
         "\t// the set operation, not to the query on its right. The reference\n",
         "\t// parses it onto the right-hand query and then moves it up; which of\n",
@@ -8510,6 +8515,10 @@ def main() -> int:
             f"{str(is_not_null_wraps_in_not(name)).lower()},\n"
         )
         out.append(f"\t\tNullOrdering: {gostr(d.NULL_ORDERING)},\n")
+        out.append(
+            "\t\tISPredicatePrecedence: "
+            f"{gostr(P.IS_PREDICATE_PRECEDENCE.name)},\n"
+        )
         out.append(
             f"\t\tModifiersAttachedToSetOp: {str(bool(P.MODIFIERS_ATTACHED_TO_SET_OP)).lower()},\n"
         )

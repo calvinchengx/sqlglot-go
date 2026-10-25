@@ -134,15 +134,150 @@ func (p *parser) parseDisjunction() (*Expression, error) {
 }
 
 func (p *parser) parseConjunction() (*Expression, error) {
-	return p.parseBinary(p.tables.Conjunction, p.parseEquality)
+	this, err := p.parseBinary(p.tables.Conjunction, p.parseEquality)
+	if err != nil {
+		return nil, err
+	}
+	// MySQL puts XOR at the conjunction tier, and its right-hand side is a
+	// CONJUNCTION rather than an equality (MySQLParser._parse_conjunction).
+	if isMySQLFamily(p.dialect) {
+		for p.at(TokXOR) {
+			p.advance()
+			comments := p.takeComments()
+			right, rerr := p.parseBinary(p.tables.Conjunction, p.parseEquality)
+			if rerr != nil {
+				return nil, rerr
+			}
+			this = putComments(New("Xor", Arg{"this", this}, Arg{"expression", right}), comments)
+		}
+	}
+	return this, nil
 }
 
 func (p *parser) parseEquality() (*Expression, error) {
-	return p.parseBinary(p.tables.Equality, p.parseComparison)
+	return p.parseEqualityWith(true)
+}
+
+// parseEqualityWith is the reference's _parse_equality(parse_is=...): where IS
+// binds at or below this tier, a postfix predicate is read HERE rather than
+// inside the range tier, and can itself be an operand of a comparison.
+func (p *parser) parseEqualityWith(parseIs bool) (*Expression, error) {
+	this, err := p.parseComparison()
+	if err != nil {
+		return nil, err
+	}
+	for {
+		if c := p.curr(); c != nil {
+			if class, ok := p.tables.Equality[c.Type]; ok {
+				p.advance()
+				comments := p.takeComments()
+				right, rerr := p.parseComparison()
+				if rerr != nil {
+					return nil, rerr
+				}
+				this = p.buildPredicate(class, this, right, comments, false)
+				continue
+			}
+		}
+		if parseIs && p.isPredicateAhead() {
+			index := p.index
+			ranged, rerr := p.parseRangeFrom(this, true)
+			if rerr != nil {
+				return nil, rerr
+			}
+			this, rerr = p.parseComparisonFrom(ranged)
+			if rerr != nil {
+				return nil, rerr
+			}
+			if p.index == index {
+				break
+			}
+			continue
+		}
+		break
+	}
+	return this, nil
 }
 
 func (p *parser) parseComparison() (*Expression, error) {
 	return p.parseBinary(p.tables.Comparison, p.parseRange)
+}
+
+// parseComparisonFrom continues a comparison chain from a node already read.
+func (p *parser) parseComparisonFrom(this *Expression) (*Expression, error) {
+	return p.parseBinaryFrom(this, p.tables.Comparison, p.parseRange)
+}
+
+// isPredicateAhead reports whether a postfix IS/ISNULL/NOTNULL (or `NOT NULL`)
+// stands here and belongs to the EQUALITY tier rather than this one.
+func (p *parser) isPredicateAhead() bool {
+	if p.tables.ISPredicatePrecedence == "" || p.tables.ISPredicatePrecedence == "HIGH" {
+		return false
+	}
+	c := p.curr()
+	if c == nil {
+		return false
+	}
+	switch c.Type {
+	case TokIS, TokISNULL, TokNOTNULL:
+		return true
+	case TokNOT:
+		n := p.next()
+		return n != nil && n.Type == TokNULL
+	}
+	return false
+}
+
+// classInOps reports whether a node class is one of an operator table's.
+func (p *parser) classInOps(ops map[TokenType]string, class string) bool {
+	for _, c := range ops {
+		if c == class {
+			return true
+		}
+	}
+	return false
+}
+
+// buildPredicate is the reference's _build_predicate: it preserves the
+// grouping an IS (and the null-safe comparisons) needs, on either side, and
+// braces a predicate that stands as an OPERAND of a comparison.
+func (p *parser) buildPredicate(class string, this, expression *Expression, comments []string, negate bool) *Expression {
+	isPredicate := class == "Is" || class == "NullSafeEQ" || class == "NullSafeNEQ"
+	predicate := func(e *Expression) bool {
+		return e != nil && (e.Class == "Is" || e.Class == "NullSafeEQ" || e.Class == "NullSafeNEQ")
+	}
+	if isPredicate {
+		if this != nil && (isA("Connector", this) || this.Class == "Not" || this.Class == "NullSafeNEQ" ||
+			p.classInOps(p.tables.Equality, this.Class) ||
+			p.classInOps(p.tables.Comparison, this.Class) ||
+			(class != "Is" && this.Class == "Is")) {
+			this = New("Paren", Arg{"this", this})
+		}
+		if expression != nil && (isA("Predicate", expression) || isA("Connector", expression) ||
+			expression.Class == "Not" || expression.Class == "Escape") {
+			expression = New("Paren", Arg{"this", expression})
+		}
+	} else {
+		inner := this
+		if this != nil && this.Class == "Not" {
+			inner = childOf(this, "this")
+		}
+		if predicate(inner) {
+			this = New("Paren", Arg{"this", this})
+		}
+		innerE := expression
+		if expression != nil && expression.Class == "Not" {
+			innerE = childOf(expression, "this")
+		}
+		if predicate(innerE) {
+			expression = New("Paren", Arg{"this", expression})
+		}
+	}
+	node := New(class, Arg{"this", this}, Arg{"expression", expression})
+	if negate {
+		node.Set("negate", true)
+	}
+	return putComments(node, comments)
 }
 
 // parseRange handles IS, IN, BETWEEN and the LIKE family, including their
@@ -153,15 +288,30 @@ func (p *parser) parseComparison() (*Expression, error) {
 // reference treats the two differently and so must this. A NOT that turns out
 // not to introduce a range is put back.
 func (p *parser) parseRange() (*Expression, error) {
-	if prefixed, handled, err := p.oracleHierarchyPrefix(); handled {
-		return prefixed, err
-	}
-	this, err := p.parseJSONArrow()
-	if err != nil {
-		return nil, err
+	return p.parseRangeFrom(nil, false)
+}
+
+// parseRangeFrom reads the range tier, optionally CONTINUING from a node
+// already read and optionally consuming a postfix IS that belongs here.
+func (p *parser) parseRangeFrom(this *Expression, parseIs bool) (*Expression, error) {
+	if this == nil {
+		if prefixed, handled, err := p.oracleHierarchyPrefix(); handled {
+			return prefixed, err
+		}
+		var err error
+		this, err = p.parseJSONArrow()
+		if err != nil {
+			return nil, err
+		}
 	}
 
+	var err error
 	for {
+		// Where IS binds below this tier it is not read here at all: the
+		// EQUALITY tier takes it, and may then hand the result back.
+		if !parseIs && p.isPredicateAhead() {
+			return this, nil
+		}
 		negate := p.match(TokNOT)
 		c := p.curr()
 		if c == nil {
@@ -177,7 +327,7 @@ func (p *parser) parseRange() (*Expression, error) {
 		case negate && c.Type == TokNULL:
 			// `a NOT NULL` is a negated IS NULL; the negation wraps below.
 			p.advance()
-			this = New("Is", Arg{"this", this}, Arg{"expression", New("Null")})
+			this = p.buildPredicate("Is", this, New("Null"), nil, false)
 		// PostgreSQL writes `x ISNULL` and `x NOTNULL` for the two IS NULL
 		// tests. The first is exactly `IS NULL`; the second is a NEGATED Is
 		// in the dialect that keeps one and a Not around an Is in the
@@ -199,15 +349,14 @@ func (p *parser) parseRange() (*Expression, error) {
 			}
 		case c.Type == TokISNULL:
 			p.advance()
-			this = New("Is", Arg{"this", this}, Arg{"expression", New("Null")})
+			this = p.buildPredicate("Is", this, New("Null"), nil, false)
 		case c.Type == TokNOTNULL:
 			p.advance()
 			if p.tables.NormalizeNotNull {
 				this = New("Not", Arg{"this",
-					New("Is", Arg{"this", this}, Arg{"expression", New("Null")})})
+					p.buildPredicate("Is", this, New("Null"), nil, false)})
 			} else {
-				this = New("Is", Arg{"this", this},
-					Arg{"expression", New("Null")}, Arg{"negate", true})
+				this = p.buildPredicate("Is", this, New("Null"), nil, true)
 			}
 		case c.Type == TokIS:
 			p.advance()
@@ -365,8 +514,12 @@ func (p *parser) parseRange() (*Expression, error) {
 
 		if negate {
 			this = negateRange(this)
-			// A negation followed by another range operator is parenthesised,
-			// so `NOT a LIKE b LIKE c` cannot re-associate.
+		}
+		// A negation -- written, or a Not around an Is -- followed by another
+		// range operator is parenthesised, so it cannot re-associate
+		// (Parser._parse_range).
+		if negate || (this.Class == "Not" && childOf(this, "this") != nil &&
+			childOf(this, "this").Class == "Is") {
 			if n := p.curr(); n != nil {
 				_, isRange := p.tables.RangeTokens[n.Type]
 				if n.Type == TokNOT || isRange {
@@ -464,7 +617,7 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 		if !p.match(TokFROM) {
 			return nil, p.unsupported("IS DISTINCT without FROM")
 		}
-		other, err := p.parseBitwise()
+		other, err := p.parseIsRhs(true)
 		if err != nil {
 			return nil, err
 		}
@@ -472,7 +625,7 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 		if negate {
 			class = "NullSafeEQ"
 		}
-		return New(class, Arg{"this", this}, Arg{"expression", other}), nil
+		return p.buildPredicate(class, this, other, nil, false), nil
 	}
 
 	var expression *Expression
@@ -521,14 +674,29 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 	// the same, and exactly the divergence this port exists to prevent. The
 	// flag is probed from the reference; see harness/gen_parser.py.
 	if negate && expression.Class == "Null" && !p.tables.IsNotNullWrapsInNot {
-		return p.parseColumnOps(New("Is",
-			Arg{"this", this}, Arg{"expression", expression}, Arg{"negate", true}))
+		return p.parseColumnOps(p.buildPredicate("Is", this, expression, nil, true))
 	}
-	is := New("Is", Arg{"this", this}, Arg{"expression", expression})
+	is := p.buildPredicate("Is", this, expression, nil, false)
 	if negate {
 		return p.parseColumnOps(New("Not", Arg{"this", is}))
 	}
 	return p.parseColumnOps(is)
+}
+
+// parseIsRhs is the reference's _parse_is_rhs: how much of the right-hand
+// side belongs to the predicate depends on where IS binds in this dialect.
+func (p *parser) parseIsRhs(distinct bool) (*Expression, error) {
+	if distinct {
+		switch p.tables.ISPredicatePrecedence {
+		case "LOW":
+			return p.parseEqualityWith(false)
+		case "EQUALITY":
+			return p.parseComparison()
+		case "COMPARISON":
+			return p.parseRange()
+		}
+	}
+	return p.parseBitwise()
 }
 
 func (p *parser) parseIn(this *Expression) (*Expression, error) {
@@ -608,6 +776,12 @@ func (p *parser) parseIn(this *Expression) (*Expression, error) {
 }
 
 func (p *parser) parseBetween(this *Expression) (*Expression, error) {
+	// The grouping a BETWEEN's operand already carries is preserved when the
+	// predicate is rewritten into comparisons (Parser._parse_between).
+	if this != nil && (this.Class == "Is" || this.Class == "NullSafeEQ" ||
+		this.Class == "NullSafeNEQ") {
+		this = New("Paren", Arg{"this", this})
+	}
 	// PostgreSQL's SYMMETRIC swaps the bounds when they arrive the wrong way
 	// round, so `BETWEEN SYMMETRIC 10 AND 2` matches where the plain form
 	// matches nothing. Neither word is a keyword token -- the reference
@@ -896,6 +1070,11 @@ func (p *parser) parseBinary(ops map[TokenType]string, next func() (*Expression,
 	if err != nil {
 		return nil, err
 	}
+	return p.parseBinaryFrom(this, ops, next)
+}
+
+// parseBinaryFrom runs one precedence level from a node already read.
+func (p *parser) parseBinaryFrom(this *Expression, ops map[TokenType]string, next func() (*Expression, error)) (*Expression, error) {
 	for {
 		c := p.curr()
 		if c == nil {
@@ -970,6 +1149,24 @@ func (p *parser) parseUnary() (*Expression, error) {
 			return p.parseMySQLBinaryPrefix()
 		}
 	}
+	// MySQL and the dialects that inherit it read NOT their own way: the
+	// EXCLAMATION MARK binds tighter than the word, so its negation is
+	// parenthesised to keep that grouping (MySQLParser._parse_not).
+	if isMySQLFamily(p.dialect) && c.Type == TokNOT {
+		p.advance()
+		if c.Text == "!" {
+			inner, err := p.parseUnary()
+			if err != nil {
+				return nil, err
+			}
+			return New("Paren", Arg{"this", New("Not", Arg{"this", inner})}), nil
+		}
+		inner, err := p.parseEquality()
+		if err != nil {
+			return nil, err
+		}
+		return New("Not", Arg{"this", inner}), nil
+	}
 	class, isUnary := p.tables.UnaryOps[c.Type]
 	if !isUnary {
 		return p.oracleNthValueFrom(p.parsePostfix())
@@ -1019,10 +1216,13 @@ func (p *parser) parsePostfix() (*Expression, error) {
 	// records no join_mark on a plain `1` inside `ROWS BETWEEN 1 PRECEDING`.
 	// A Column, a Cast, a call: everything else this function can return
 	// does go through it, and does carry the mark.
+	// The mark is recorded only where it was actually written: the reference
+	// no longer stamps a `join_mark: false` on every column.
 	if p.tables.SupportsColumnJoinMarks && out != nil && !p.noJoinMark[out] &&
 		out.Class != "Literal" && out.Class != "Boolean" && out.Class != "Null" &&
-		out.Class != "Interval" && out.Class != "Table" && out.Class != "Star" {
-		out.Set("join_mark", p.match(TokJOIN_MARKER))
+		out.Class != "Interval" && out.Class != "Table" && out.Class != "Star" &&
+		p.match(TokJOIN_MARKER) {
+		out.Set("join_mark", true)
 	}
 	// AT TIME ZONE is not one of the reference's own COLUMN_OPERATORS --
 	// `_parse_column_ops` is only brackets, dots and `::` casts -- so it is
@@ -1758,15 +1958,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		arr := New("Array", Arg{"expressions", items})
-		if p.tables.HasDistinctArrayConstructors {
-			arr.Set("bracket_notation", true)
-		}
-		// BigQuery marks an array built from a BRACKET, which is what decides
-		// how it is written back (BigQueryParser._parse_bracket).
-		if p.dialect == "bigquery" {
-			arr.Set("struct_name_inheritance", true)
-		}
+		arr := p.arrayConstructor(items, TokL_BRACKET)
 		return arr, nil
 	}
 
@@ -1784,15 +1976,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		arr := New("Array", Arg{"expressions", items})
-		if p.tables.HasDistinctArrayConstructors {
-			arr.Set("bracket_notation", true)
-		}
-		// BigQuery marks an array built from a BRACKET, which is what decides
-		// how it is written back (BigQueryParser._parse_bracket).
-		if p.dialect == "bigquery" {
-			arr.Set("struct_name_inheritance", true)
-		}
+		arr := p.arrayConstructor(items, TokL_BRACKET)
 		return arr, nil
 	}
 
@@ -6496,4 +6680,21 @@ func (p *parser) quotedTypePreserved(name string) bool {
 		return false
 	}
 	return name == "char"
+}
+
+// arrayConstructor is the reference's build_array_constructor: an Array built
+// from a bracket records whether its single member is a QUERY (a value
+// constructor), whether the dialect distinguishes the bracket spelling, and
+// -- in BigQuery -- that the bracket decides how a struct field inherits its
+// name (Generator: Array.args, BigQueryParser._parse_bracket).
+func (p *parser) arrayConstructor(items []*Expression, bracketKind TokenType) *Expression {
+	arr := New("Array", Arg{"expressions", items})
+	arr.Set("value_constructor", len(items) == 1 && isQuery(items[0]))
+	if p.tables.HasDistinctArrayConstructors {
+		arr.Set("bracket_notation", bracketKind == TokL_BRACKET)
+	}
+	if p.dialect == "bigquery" {
+		arr.Set("struct_name_inheritance", true)
+	}
+	return arr
 }
