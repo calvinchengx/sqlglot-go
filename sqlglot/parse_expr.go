@@ -4208,6 +4208,12 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	if p.dialect == "starrocks" && upper == "TIME_SLICE" {
 		return p.parseStarrocksTimeSlice()
 	}
+	// Oracle reads JSON_VALUE through its own SQL/JSON grammar, with the
+	// RETURNING type and the ON EMPTY/ON ERROR clauses the generic path
+	// cannot see (OracleParser.FUNCTION_PARSERS, _parse_json_value).
+	if p.dialect == "oracle" && upper == "JSON_VALUE" {
+		return p.parseJSONValue()
+	}
 	if _, syntax := p.tables.SyntaxFunctions[upper]; syntax {
 		return p.parseSyntaxFunction(upper)
 	}

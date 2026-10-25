@@ -1,6 +1,7 @@
 package sqlglot
 
 func init() {
+	generators["JSONArrayAgg"] = (*generator).writeJSONArrayAgg
 	parserTables["oracle"].SyntaxFunctions["JSON_ARRAYAGG"] = struct{}{}
 	spell := parserTables["oracle"].SyntaxSQL["JSONArrayAgg"]
 	parserTables["oracle"].SyntaxSQL["JSONArrayAgg"] = append(append([]SyntaxTemplate{}, spell...),
@@ -62,4 +63,28 @@ func spellOracleJSONArrayAgg(node *Expression) *Expression {
 		out.Set("order", order)
 	}
 	return out
+}
+
+// writeJSONArrayAgg is the reference's own jsonarrayagg_sql: the value, then
+// an ordering, a null handling, a RETURNING type and a STRICT, each written
+// only where the tree carries one. Another dialect spells the same node its
+// own way, which the probed tables already know.
+func (g *generator) writeJSONArrayAgg(e *Expression) string {
+	if g.dialect != "oracle" {
+		return g.spell(e)
+	}
+	out := "JSON_ARRAYAGG(" + g.child(e, "this")
+	if order := g.child(e, "order"); order != "" {
+		out += " " + order
+	}
+	if nulls, _ := e.Args["null_handling"].(string); nulls != "" {
+		out += " " + nulls
+	}
+	if ret := g.child(e, "return_type"); ret != "" {
+		out += " RETURNING " + ret
+	}
+	if strict, _ := e.Args["strict"].(bool); strict {
+		out += " STRICT"
+	}
+	return out + ")"
 }
