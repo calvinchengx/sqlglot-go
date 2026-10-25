@@ -2315,6 +2315,22 @@ func (p *parser) parseLateral() (*Expression, error) {
 			return nil, err
 		}
 	}
+	// Snowflake names the columns a FLATTEN produces, giving the LATERAL an
+	// alias of `_flattened` where none was written
+	// (SnowflakeParser._parse_lateral, FLATTEN_COLUMNS).
+	if p.dialect == "snowflake" && this != nil && this.Class == "Explode" {
+		columns := make([]*Expression, 0, len(flattenColumns))
+		for _, name := range flattenColumns {
+			columns = append(columns, New("Identifier", Arg{"this", name}, Arg{"quoted", false}))
+		}
+		if alias == nil {
+			alias = New("TableAlias", Arg{"this",
+				New("Identifier", Arg{"this", "_flattened"}, Arg{"quoted", false})},
+				Arg{"columns", columns})
+		} else if existing, _ := alias.Args["columns"].([]*Expression); len(existing) == 0 {
+			alias.Set("columns", columns)
+		}
+	}
 	return New("Lateral",
 		Arg{"this", this},
 		Arg{"view", false},
@@ -2323,6 +2339,10 @@ func (p *parser) parseLateral() (*Expression, error) {
 		Arg{"cross_apply", nil},
 		Arg{"ordinality", ordinality}), nil
 }
+
+// flattenColumns are the columns a Snowflake FLATTEN produces
+// (SnowflakeParser.FLATTEN_COLUMNS).
+var flattenColumns = []string{"SEQ", "KEY", "PATH", "INDEX", "VALUE", "THIS"}
 
 // parseTableHint reads `WITH (NOLOCK, INDEX(i))`, the advice T-SQL gives an
 // engine about how to read a table.
