@@ -3179,6 +3179,12 @@ func (g *generator) dataTypeBody(e *Expression) string {
 		}
 		return g.node(bare) + collate
 	}
+	// A dialect with no temporal precision DROPS the parameter rather than
+	// writing a type it cannot read (PrestoGenerator.datatype_sql,
+	// HiveGenerator.datatype_sql).
+	if temporalTypes[kind] && dropsTemporalPrecision(g.dialect) {
+		e = New("DataType", Arg{"this", e.Args["this"]}, Arg{"nested", e.Args["nested"]})
+	}
 	params := g.list(e)
 	// An ENUM's members are its VALUES rather than its parameters, and
 	// PostgreSQL spells them apart from every other parameterised type: a
@@ -12082,4 +12088,15 @@ func isTeradataDefaultFrame(spec *Expression) bool {
 	return text("kind") == "ROWS" && text("start") == "UNBOUNDED" &&
 		text("start_side") == "PRECEDING" && text("end") == "UNBOUNDED" &&
 		text("end_side") == "FOLLOWING"
+}
+
+// dropsTemporalPrecision reports whether the dialect writes a temporal type
+// without its precision: Presto and the Hive family, where a parameterised
+// TIME or TIMESTAMP has no spelling.
+func dropsTemporalPrecision(dialect string) bool {
+	switch dialect {
+	case "presto", "hive", "spark", "spark2":
+		return true
+	}
+	return false
 }
