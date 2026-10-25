@@ -2520,11 +2520,7 @@ func (p *parser) parseAlter() (*Expression, error) {
 			return nil, err
 		}
 	}
-	extra, err := p.alterOptions(kind)
-	if err != nil {
-		return nil, err
-	}
-	options = append(options, extra...)
+	options = append(options, p.alterOptions(kind)...)
 	// A constraint added NOT VALID is not checked against the rows already
 	// there. It is recorded on the statement rather than on the constraint.
 	notValid := p.atWords("NOT", "VALID")

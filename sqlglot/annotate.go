@@ -1369,53 +1369,6 @@ func annotateDuckDBAtTimeZone(e *Expression, dialect string) *Expression {
 	return dataType("UNKNOWN")
 }
 
-// annotateSkippingMaps stamps a tree the way AnnotateFully does, except that
-// a map LITERAL is walked into and never stamped -- which is what the
-// reference's annotator does with one under a subscript.
-func annotateSkippingMaps(e *Expression, dialect string) bool {
-	if e == nil {
-		return true
-	}
-	if e.Class == "DataType" {
-		return AnnotateFully(e, dialect)
-	}
-	complete := true
-	for _, key := range e.Keys {
-		switch v := e.Args[key].(type) {
-		case *Expression:
-			complete = annotateSkippingMaps(v, dialect) && complete
-		case []*Expression:
-			for _, k := range v {
-				complete = annotateSkippingMaps(k, dialect) && complete
-			}
-		}
-	}
-	if e.Class == "ToMap" || e.Type != nil {
-		return complete
-	}
-	t := Annotate(e, dialect)
-	if t == nil {
-		return false
-	}
-	e.Type = t
-	// A STRUCT's type is built from COPIES of its field names, and the
-	// reference stamps those too -- there they are the very nodes the struct
-	// was built from.
-	if e.Class == "Struct" {
-		if params, _ := t.Args["expressions"].([]*Expression); len(params) > 0 {
-			for _, param := range params {
-				if param == nil || param.Class != "ColumnDef" {
-					continue
-				}
-				if name, _ := param.Args["this"].(*Expression); name != nil && name.Type == nil {
-					AnnotateFully(name, dialect)
-				}
-			}
-		}
-	}
-	return complete
-}
-
 // mapLiteralUnderBracket reports whether a node is a subscript over a map
 // LITERAL, which is the shape the reference walks without stamping the map.
 func mapLiteralUnderBracket(e *Expression) bool {

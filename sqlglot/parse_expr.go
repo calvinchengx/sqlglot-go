@@ -308,7 +308,7 @@ func (p *parser) parseRangeFrom(this *Expression, parseIs bool) (*Expression, er
 	// Doris's full-text MATCH operators are ranges of their own:
 	// `c MATCH_PHRASE 'x' [USING ANALYZER a]` (DorisParser._parse_range).
 	if p.dialect == "doris" {
-		if out, handled, merr := p.parseDorisMatch(this, parseIs); handled {
+		if out, handled, merr := p.parseDorisMatch(this); handled {
 			return out, merr
 		}
 	}
@@ -5677,14 +5677,11 @@ func (p *parser) atIdentifierWhere(namingATable bool) bool {
 	return ok
 }
 
-// afterComparison reports whether the token just consumed was a comparison or
-// a LIKE. `ALL` and `ANY` are quantifiers only THERE: in a select list,
-// `ALL (age >= 30) AS every` is an ordinary call to a function named ALL, and
-// reading it as a quantifier built a node the reference never makes.
 // quantifierHere reports whether ALL or ANY at the cursor, followed by
-// parentheses, is a quantifier. After a comparison it is, except over an
-// empty argument list. Standing alone it is one only over a query:
-// ALL(SELECT 1) is a quantifier, while ALL() and ALL(1, 2) are calls.
+// parentheses, is a quantifier rather than a call. After LIKE or ILIKE it
+// always is; otherwise the token straight after the parenthesis decides -- a
+// QUERY makes it one, and anything else is a call
+// (Parser._parse_function, SUBQUERY_TOKENS).
 func (p *parser) quantifierHere() bool {
 	if p.atEmptyArgList() {
 		return false
@@ -5701,24 +5698,9 @@ func (p *parser) quantifierHere() bool {
 	// Otherwise the token straight after the parenthesis decides: a QUERY
 	// makes the word a quantifier and anything else a call, whether or not a
 	// comparison stands in front of it. `a = ALL ((SELECT b))` is therefore a
-	// call to a function named ALL, its argument a parenthesised subquery
-	// (Parser._parse_function, SUBQUERY_TOKENS).
+	// call to a function named ALL, its argument a parenthesised subquery.
 	inner := p.peekAt(2)
 	return inner != nil && (inner.Type == TokSELECT || inner.Type == TokWITH || inner.Type == TokFROM)
-}
-
-func (p *parser) afterComparison() bool {
-	if p.index == 0 {
-		return false
-	}
-	prev := p.tokens[p.index-1].Type
-	if _, ok := p.tables.Comparison[prev]; ok {
-		return true
-	}
-	if _, ok := p.tables.Equality[prev]; ok {
-		return true
-	}
-	return prev == TokLIKE || prev == TokILIKE
 }
 
 // singlestoreJSONPath turns the name after a SingleStore `::`/`::$`/`::%` into
@@ -6874,7 +6856,7 @@ var dorisMatchOperators = map[string]bool{
 // parseDorisMatch reads `[NOT] <MATCH-OP> <expr> [USING ANALYZER <name>]`. It
 // reports false, with the cursor where it found it, where the word is not one
 // of those operators -- an implicit alias named MATCH, for one.
-func (p *parser) parseDorisMatch(this *Expression, parseIs bool) (*Expression, bool, error) {
+func (p *parser) parseDorisMatch(this *Expression) (*Expression, bool, error) {
 	index := p.index
 	left := this
 	if left == nil {
@@ -6993,7 +6975,9 @@ func sqliteHexInteger(text string) (string, bool) {
 	if err != nil {
 		return "", false
 	}
-	signed := int64(value)
+	// SQLite reads the value as a signed 64-bit two's-complement number, so
+	// the wrap is the point of the conversion.
+	signed := int64(value) //nolint:gosec // two's-complement wrap is intended
 	return strconv.FormatInt(signed, 10), true
 }
 

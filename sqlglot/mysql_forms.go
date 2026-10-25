@@ -81,36 +81,6 @@ func (p *parser) parseMySQLProfileType() *Expression {
 // actions: `ADD COLUMN x INT, ALGORITHM=INPLACE, LOCK=EXCLUSIVE`. The comma
 // is still current. Anything that is not a property is left where it stands,
 // because a comma there still separates two actions.
-func (p *parser) parseAlterOptions() ([]*Expression, error) {
-	if !p.at(TokCOMMA) {
-		return nil, nil
-	}
-	mark := p.index
-	p.advance()
-	if _, _, ok := p.atProperty(); !ok {
-		p.index = mark
-		return nil, nil
-	}
-	var out []*Expression
-	for {
-		spec, n, ok := p.atProperty()
-		if !ok {
-			break
-		}
-		for i := 0; i < n; i++ {
-			p.advance()
-		}
-		prop, err := p.parseProperty(spec)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, prop)
-		if !p.match(TokCOMMA) {
-			break
-		}
-	}
-	return out, nil
-}
 
 // parseMySQLIndexOptions reads what an index may say after its columns:
 // KEY_BLOCK_SIZE, USING, WITH PARSER, COMMENT, VISIBLE, INVISIBLE,
@@ -467,9 +437,9 @@ func (p *parser) parseUnrecognizedAlter(start Token, kind string) (*Expression, 
 // alterOptions reads MySQL's properties after an ALTER TABLE's actions.
 // Every other statement carries an empty list, which is what the node had
 // before those properties were read.
-func (p *parser) alterOptions(kind string) ([]*Expression, error) {
+func (p *parser) alterOptions(kind string) []*Expression {
 	if kind != "TABLE" || !isMySQLFamily(p.dialect) {
-		return []*Expression{}, nil
+		return []*Expression{}
 	}
 	// The table's properties may also come AFTER the actions, with or
 	// without a comma in front of them: `ADD COLUMN c INT
@@ -488,7 +458,7 @@ func (p *parser) alterOptions(kind string) ([]*Expression, error) {
 		}
 		out = append(out, props...)
 	}
-	return out, nil
+	return out
 }
 
 func (p *parser) parseCreateDatabase(table *Expression, kind string, replace, refresh, exists bool) (*Expression, error) {

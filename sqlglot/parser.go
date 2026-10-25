@@ -60,14 +60,14 @@ func ParseOne(sql, dialect string) (*Expression, error) {
 		return p.finishDAX(p.parseStatement())
 	}
 	tree, perr := p.parseOne()
-	p.finishBareHints(tree)
+	p.finishBareHints()
 	return tree, perr
 }
 
 // finishBareHints moves a T-SQL table hint the parser attached while reading
 // the table to the END of the table's arguments, which is where the
 // reference's own conversion leaves it -- after the joins and pivots.
-func (p *parser) finishBareHints(tree *Expression) {
+func (p *parser) finishBareHints() {
 	for table := range p.bareHintTables {
 		if table == nil || table.Args["hints"] == nil {
 			continue

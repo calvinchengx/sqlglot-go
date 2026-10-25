@@ -12150,7 +12150,7 @@ func (g *generator) byteStringBody(text string) string {
 			var out strings.Builder
 			for _, r := range text {
 				if r >= 0x80 && r <= 0xFF {
-					out.WriteString(fmt.Sprintf("\\x%02x", r))
+					fmt.Fprintf(&out, "\\x%02x", r)
 					continue
 				}
 				out.WriteRune(r)
