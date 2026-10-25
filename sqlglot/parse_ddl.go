@@ -676,6 +676,19 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// In ADD COLUMNS a DOTTED name adds a field to a struct column:
+		// `ADD COLUMNS (a.b INT)` names a field of a
+		// (SparkParser._parse_add_column, _parse_field_def).
+		if p.inAddColumns {
+			for p.at(TokDOT) && p.next() != nil && p.next().Type != TokSTAR {
+				p.advance()
+				field, ferr := p.parseIdentifier()
+				if ferr != nil {
+					return nil, ferr
+				}
+				name = New("Dot", Arg{"this", name}, Arg{"expression", field})
+			}
+		}
 		// A column may be COMPUTED from the others rather than stored:
 		// `b AS (a * 2) PERSISTED NOT NULL`. It names no type -- the type is
 		// whatever the expression yields -- so this is read before the type
@@ -782,6 +795,18 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// Where the column goes among the ones already there:
+		// `ADD COLUMNS (b INT AFTER a)` (Parser._parse_column_def).
+		var position *Expression
+		if p.atWords("FIRST") || p.atWords("AFTER") {
+			word := strings.ToUpper(p.curr().Text)
+			p.advance()
+			where, perr := p.parseColumn()
+			if perr != nil {
+				return nil, perr
+			}
+			position = New("ColumnPosition", Arg{"this", where}, Arg{"position", word})
+		}
 		// A column with neither a type nor a constraint stays a bare NAME,
 		// not a ColumnDef (`CREATE TABLE t (x, y)`).
 		if kind == nil && len(constraints) == 0 {
@@ -794,6 +819,9 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 		def := New("ColumnDef", Arg{"this", name}, Arg{"kind", kind})
 		if len(constraints) > 0 {
 			def.Set("constraints", constraints)
+		}
+		if position != nil {
+			def.Set("position", position)
 		}
 		out = append(out, def)
 		if !p.match(TokCOMMA) {
@@ -3243,7 +3271,10 @@ func (p *parser) parseAddedColumn(exists bool) (*Expression, error) {
 		if (p.dialect != "oracle" && !isHiveFamily(p.dialect)) || exists {
 			return nil, p.unsupported("ADD of a parenthesised column list")
 		}
+		wasAddColumns := p.inAddColumns
+		p.inAddColumns = true
 		cols, err := p.parseColumnDefs()
+		p.inAddColumns = wasAddColumns
 		if err != nil {
 			return nil, err
 		}

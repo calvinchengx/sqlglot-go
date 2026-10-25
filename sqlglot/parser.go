@@ -84,6 +84,9 @@ type parser struct {
 	// sql is the statement as written, so a Command the reference builds by
 	// giving up can keep the exact text after the keyword.
 	sql string
+	// inAddColumns marks a Hive `ADD COLUMNS (...)` list, where a dotted name
+	// adds a field to a struct column rather than naming a column.
+	inAddColumns bool
 	// inMultitableInsert marks the INSERTs of Hive's FROM-first multi-table
 	// insert, where the end of one INSERT is the next INSERT rather than the
 	// end of the statement.
