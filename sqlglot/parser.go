@@ -59,7 +59,27 @@ func ParseOne(sql, dialect string) (*Expression, error) {
 	if dialect == "dax" {
 		return p.finishDAX(p.parseStatement())
 	}
-	return p.parseOne()
+	tree, perr := p.parseOne()
+	p.finishBareHints(tree)
+	return tree, perr
+}
+
+// finishBareHints moves a T-SQL table hint the parser attached while reading
+// the table to the END of the table's arguments, which is where the
+// reference's own conversion leaves it -- after the joins and pivots.
+func (p *parser) finishBareHints(tree *Expression) {
+	for table := range p.bareHintTables {
+		if table == nil || table.Args["hints"] == nil {
+			continue
+		}
+		keys := make([]string, 0, len(table.Keys))
+		for _, k := range table.Keys {
+			if k != "hints" {
+				keys = append(keys, k)
+			}
+		}
+		table.Keys = append(keys, "hints")
+	}
 }
 
 // parser walks a token stream. The cursor mirrors the reference's: index
@@ -87,6 +107,11 @@ type parser struct {
 	// athenaStream marks a statement Athena hands to the Hive or Trino
 	// reader: a few of its own shapes are read only there.
 	athenaStream bool
+	// bareHintTables are the tables whose parenthesised T-SQL hint was moved
+	// onto the table by the parser; the key is moved to the END of their
+	// argument list once the statement is read, which is where the
+	// reference's own conversion leaves it.
+	bareHintTables map[*Expression]bool
 	// inAddColumns marks a Hive `ADD COLUMNS (...)` list, where a dotted name
 	// adds a field to a struct column rather than naming a column.
 	inAddColumns bool

@@ -923,6 +923,13 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 			}
 			table.Set("hints", []*Expression{New("WithTableHint",
 				Arg{"expressions", []*Expression{New("Var", Arg{"this", hint.Name()})}})})
+			// The reference sets this hint LAST -- its conversion runs after
+			// the joins and pivots the table already carries -- so the key is
+			// moved there once the statement is read.
+			if p.bareHintTables == nil {
+				p.bareHintTables = map[*Expression]bool{}
+			}
+			p.bareHintTables[table] = true
 		}
 	}
 	// The time-travel clause may also stand AFTER the alias --
