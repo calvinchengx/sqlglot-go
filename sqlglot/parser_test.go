@@ -293,6 +293,19 @@ func TestRefusals(t *testing.T) {
 		{"a REPLACE USING that names no column", "INSERT INTO t REPLACE USING (,) VALUES (1)",
 			"databricks"},
 		{"an INSERT alias that is not a name", "INSERT INTO t AS SELECT VALUES (1)", "databricks"},
+		// The tail of the string-escape campaign: the ways its new
+		// constructs can run out or name something they cannot read.
+		{"an unclosed LIST_VALUE", "SELECT LIST_VALUE(1", "duckdb"},
+		{"a TIME_SLICE with one argument", "SELECT TIME_SLICE(dt)", "starrocks"},
+		{"an unclosed TIME_SLICE", "SELECT TIME_SLICE(dt, 5", "starrocks"},
+		{"a map entry without a colon", "SELECT MAP {'a' 1}", "duckdb"},
+		{"an unclosed map literal", "SELECT MAP {'a': 1", "duckdb"},
+		{"a JSONExtractRaw with no arguments", "SELECT JSONExtractRaw()", "clickhouse"},
+		{"an unclosed JSONExtractRaw", "SELECT JSONExtractRaw(x", "clickhouse"},
+		{"a PARTITION bound that is not a string",
+			"REFRESH MATERIALIZED VIEW mv PARTITION START (1)", "starrocks"},
+		{"an unclosed PARTITION bound",
+			"REFRESH MATERIALIZED VIEW mv PARTITION START ('2020-01-01'", "starrocks"},
 		// Every way a PARTITION OF can run out or say which rows it holds in
 		// a spelling the port does not read.
 		{"a partition of nothing", "CREATE TABLE p PARTITION OF cities", "postgres"},
