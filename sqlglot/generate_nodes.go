@@ -951,12 +951,18 @@ func (g *generator) writeTable(e *Expression) string {
 	// The temporal clause comes before the alias, as it does in the text.
 	// The separator is whatever this dialect puts between a table and its
 	// alias, so the clause can be inserted in front of that alias.
+	pendingVersion := ""
 	if version := g.child(e, "version"); version != "" {
 		// BigQuery writes the temporal clause AFTER the alias, and every
 		// other dialect writes it before (Generator.table_sql,
 		// BigQuery.ALIAS_POST_VERSION).
 		if g.dialect == "bigquery" {
 			out += " " + version
+		} else if aliasAfterSample {
+			// The TABLESAMPLE stands in FRONT of the temporal clause where
+			// both come before the alias
+			// (Generator.table_sql, ALIAS_POST_TABLESAMPLE).
+			pendingVersion = version
 		} else if alias != "" && !ordinality && strings.HasSuffix(out, sep+alias) {
 			name := strings.TrimSuffix(out, sep+alias)
 			out = name + " " + version + sep + alias
@@ -986,6 +992,9 @@ func (g *generator) writeTable(e *Expression) string {
 	// TABLESAMPLE hangs off the table, after the alias. Its own template
 	// carries the space in front of it, the way the reference returns it.
 	out += g.child(e, "sample")
+	if pendingVersion != "" {
+		out += " " + pendingVersion
+	}
 	if aliasAfterSample && alias != "" {
 		out += sep + alias
 	}
