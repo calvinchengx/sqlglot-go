@@ -866,6 +866,23 @@ func AnnotateFully(e *Expression, dialect string) bool {
 		return false
 	}
 	e.Type = t
+	// A STRUCT's type is built from COPIES of its field names, and the
+	// reference stamps those too -- there they are the very nodes the struct
+	// was built from.
+	if e.Class == "Struct" {
+		if params, _ := t.Args["expressions"].([]*Expression); len(params) > 0 {
+			for _, param := range params {
+				if param == nil || param.Class != "ColumnDef" {
+					continue
+				}
+				if name, _ := param.Args["this"].(*Expression); name != nil && name.Type == nil {
+					if nt := Annotate(name, dialect); nt != nil {
+						name.Type = nt
+					}
+				}
+			}
+		}
+	}
 	return complete
 }
 
@@ -1046,7 +1063,7 @@ func ApplyIndexOffset(this *Expression, items []*Expression, offset int, dialect
 	if this.Class == "ToMap" || mapLiteralUnderBracket(this) {
 		// The reference walks the map's CHILDREN -- so the struct inside it
 		// is typed -- and leaves the map itself unstamped.
-		annotateChildrenOf(this, dialect)
+		annotateSkippingMaps(this, dialect)
 		switch typeKind(annotate(this, dialect)) {
 		case "UNKNOWN", "ARRAY":
 		default:
@@ -1313,31 +1330,53 @@ func annotateDuckDBAtTimeZone(e *Expression, dialect string) *Expression {
 	return dataType("UNKNOWN")
 }
 
-// annotateChildrenOf walks a node's children, stamping them as AnnotateFully
-// does -- except that a ToMap is walked into but never stamped, which is what
-// the reference's annotator does with one.
-func annotateChildrenOf(e *Expression, dialect string) {
+// annotateSkippingMaps stamps a tree the way AnnotateFully does, except that
+// a map LITERAL is walked into and never stamped -- which is what the
+// reference's annotator does with one under a subscript.
+func annotateSkippingMaps(e *Expression, dialect string) bool {
 	if e == nil {
-		return
+		return true
 	}
+	if e.Class == "DataType" {
+		return AnnotateFully(e, dialect)
+	}
+	complete := true
 	for _, key := range e.Keys {
 		switch v := e.Args[key].(type) {
 		case *Expression:
-			if v.Class == "ToMap" {
-				annotateChildrenOf(v, dialect)
-				continue
-			}
-			AnnotateFully(v, dialect)
+			complete = annotateSkippingMaps(v, dialect) && complete
 		case []*Expression:
 			for _, k := range v {
-				if k.Class == "ToMap" {
-					annotateChildrenOf(k, dialect)
-					continue
-				}
-				AnnotateFully(k, dialect)
+				complete = annotateSkippingMaps(k, dialect) && complete
 			}
 		}
 	}
+	if e.Class == "ToMap" || e.Type != nil {
+		return complete
+	}
+	t := Annotate(e, dialect)
+	if t == nil {
+		return false
+	}
+	e.Type = t
+	// A STRUCT's type is built from COPIES of its field names, and the
+	// reference stamps those too -- there they are the very nodes the struct
+	// was built from.
+	if e.Class == "Struct" {
+		if params, _ := t.Args["expressions"].([]*Expression); len(params) > 0 {
+			for _, param := range params {
+				if param == nil || param.Class != "ColumnDef" {
+					continue
+				}
+				if name, _ := param.Args["this"].(*Expression); name != nil && name.Type == nil {
+					if nt := Annotate(name, dialect); nt != nil {
+						name.Type = nt
+					}
+				}
+			}
+		}
+	}
+	return complete
 }
 
 // mapLiteralUnderBracket reports whether a node is a subscript over a map
@@ -1346,6 +1385,11 @@ func mapLiteralUnderBracket(e *Expression) bool {
 	if e == nil || e.Class != "Bracket" {
 		return false
 	}
+	// A subscript may be applied more than once -- `MAP{...}[1][2]` -- and
+	// the map is still underneath.
 	inner, _ := e.Args["this"].(*Expression)
+	for inner != nil && inner.Class == "Bracket" {
+		inner, _ = inner.Args["this"].(*Expression)
+	}
 	return inner != nil && inner.Class == "ToMap"
 }
