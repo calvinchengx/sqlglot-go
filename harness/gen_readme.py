@@ -116,6 +116,45 @@ def prose_claims(text: str, cov: dict) -> None:
             f"generate_test.go's floor is {floor.group(1)}"
         )
 
+    # The optimizer's contract: the pair count is a file, and "folded exactly"
+    # is the test's own floor. Both are numbers a sentence states and no table
+    # covers, and both had drifted -- the prose said 511/491 when the file held
+    # 616 pairs and the test folded 543.
+    simplify = load(ROOT / "testdata" / "simplify.json")
+    pairs = len(simplify["pairs"])
+    folded = re.search(
+        r"const floor = (\d+)", (ROOT / "harness" / "simplify_test.go").read_text()
+    )
+    if not folded:
+        raise SystemExit("could not find `const floor` in harness/simplify_test.go")
+    claim(text, r"(\d+) pairs pinning what each statement becomes", pairs,
+          "the simplify contract's pair count", "testdata/simplify.json")
+    claim(text, r"\*\*(\d+) are folded exactly\*\*", folded.group(1),
+          "the statements the optimizer folds exactly", "simplify_test.go's floor")
+
+    # The execution oracle: its floors and its recorded divergences are one
+    # file, and the README states them in a sentence.
+    execution = load(ROOT / "testdata" / "execution.json")
+    floors = execution["comparable_floor"]
+    claim(text, r"comparable DuckDB statements fall below \*\*(\d+)\*\*",
+          floors["duckdb"], "the DuckDB execution floor", "testdata/execution.json")
+    claim(text, r"or Postgres below \*\*(\d+)\*\*", floors["postgres"],
+          "the Postgres execution floor", "testdata/execution.json")
+    claim(text, r"\*\*(\d+)\*\* known divergences are recorded",
+          len(execution["known_divergences"]),
+          "the recorded execution divergences", "testdata/execution.json")
+
+
+def claim(text: str, pattern: str, want: object, what: str, source: str) -> None:
+    """Hold one number a sentence states to the file that measures it."""
+    found = re.search(pattern, text)
+    if not found:
+        raise Stale(f"the README no longer states {what}")
+    if found.group(1) != str(want):
+        raise Stale(
+            f"the README says {found.group(1)} for {what}, but {source} says {want}"
+        )
+
 
 def main() -> int:
     ap = argparse.ArgumentParser()

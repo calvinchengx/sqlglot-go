@@ -19,7 +19,8 @@ probe derives tables by asking SQL questions it cannot answer
 product goal. The order is a measured gap, not the library's table of contents.
 `docs/17-sqlglot-go.md` in
 [data-agent-service](https://github.com/calvinchengx/data-agent-service),
-whose Go executor is the first consumer, is stale.
+whose Go executor is the first consumer, is the plan and the record of how it
+went; it tracks this repository's pin and release.
 
 ## Coverage against data agent service
 
@@ -187,8 +188,8 @@ hand-edited table is a divergence the port has no logic to catch.
 
 `sqlglot.Simplify` is the first thing in the port that CHANGES a tree rather
 than reproducing one, and it is held to the reference's own contract —
-`testdata/simplify.json`, 511 pairs pinning what each statement becomes.
-**491 are folded exactly**; the rest the port declines to fold that far,
+`testdata/simplify.json`, 616 pairs pinning what each statement becomes.
+**543 are folded exactly**; the rest the port declines to fold that far,
 which costs nothing: the statement still means what it meant.
 
 Every rewrite must also **survive being written down**: the port writes the
@@ -227,8 +228,8 @@ So there is one more harness, and it is the only one here whose failure means
 differ". `make oracle-exec` takes each statement as it was written, what
 the port writes back, and what the port *simplifies* it to, runs them **all**
 on a real engine, and compares the
-results. The build fails if comparable DuckDB statements fall below **385**,
-or Postgres below **83**. Fifteen known divergences are recorded and are not
+results. The build fails if comparable DuckDB statements fall below **370**,
+or Postgres below **83**. **16** known divergences are recorded and are not
 worked around. PostgreSQL is skipped without `PGDSN`; CI supplies it as a
 service container and `make postgres` starts one locally. An engine it cannot
 reach is skipped with a note, not a failure.
