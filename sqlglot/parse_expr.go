@@ -2194,9 +2194,17 @@ func (p *parser) parsePrimary() (*Expression, error) {
 						if text, ok := inner.Args["this"].(string); ok {
 							digits = fractionalSecondDigits(text)
 						}
-						kind.Set("expressions", []*Expression{New("DataTypeParam",
+						// A fresh node: the parameters stand BEFORE `nested`,
+						// which is the order the reference assigns them in --
+						// and a type that carried no `nested` gains none.
+						params := Arg{"expressions", []*Expression{New("DataTypeParam",
 							Arg{"this", New("Literal",
-								Arg{"this", strconv.Itoa(digits)}, Arg{"is_string", false})})})
+								Arg{"this", strconv.Itoa(digits)}, Arg{"is_string", false})})}}
+						kindArgs := []Arg{{"this", kind.Args["this"]}, params}
+						if nested, ok := kind.Args["nested"]; ok {
+							kindArgs = append(kindArgs, Arg{"nested", nested})
+						}
+						kind = New("DataType", kindArgs...)
 					}
 				}
 			}
