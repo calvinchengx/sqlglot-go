@@ -20,6 +20,42 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseTranslateCharacters()
 	case "RANGE_N":
 		return p.parseRangeN()
+	case "WEIGHT_STRING":
+		// MySQL's WEIGHT_STRING takes one argument, optionally followed by
+		// AS <type>; the undocumented four-argument form is an ordinary
+		// anonymous call (Parser._parse_weight_string).
+		p.advance() // the name
+		p.advance() // (
+		var args []*Expression
+		for {
+			arg, err := p.parseAssignment()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, arg)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		var to *Expression
+		if len(args) == 1 && p.match(TokALIAS) {
+			typ, err := p.parseDataType()
+			if err != nil {
+				return nil, err
+			}
+			to = typ
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed WEIGHT_STRING")
+		}
+		if len(args) != 1 {
+			return New("Anonymous", Arg{"this", upper}, Arg{"expressions", args}), nil
+		}
+		node := New("WeightString", Arg{"this", args[0]})
+		if to != nil {
+			node.Set("to", to)
+		}
+		return node, nil
 	case "JSON_EXTRACT":
 		// Exasol keeps JSON_EXTRACT's arguments as a plain LIST -- there is
 		// no path grammar, the path stays the string it was written with --

@@ -2240,6 +2240,12 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			// than in the loop below so the name is set BEFORE the kind, which
 			// is the order the reference assigns them in.
 			p.advance()
+			// A RESERVED kind straight after the word names no constraint:
+			// `CONSTRAINT CHECK (a > 0)` is the unnamed one
+			// (Parser._parse_column_def, RESERVED_CONSTRAINT_KINDS).
+			if p.atReservedConstraintKind() {
+				continue
+			}
 			name, err := p.parseIdentifier()
 			if err != nil {
 				return nil, err
@@ -2601,6 +2607,24 @@ func (p *parser) parseAlterActions() ([]*Expression, error) {
 			return nil, err
 		}
 		actions = append(actions, action)
+		// A dialect that does not need DROP repeated may name several columns
+		// after one: `DROP COLUMN col1, col2`
+		// (Parser._parse_alter_drop_action, ALTER_TABLE_DROP_REQUIRED_FOR_EACH_COLUMN).
+		if !alterTableDropRequiredForEachColumn(p.dialect) {
+			if drop := action; drop != nil && drop.Class == "Drop" {
+				if kind, _ := drop.Args["kind"].(string); kind == "COLUMN" {
+					for p.at(TokCOMMA) && p.nextIsAColumnName() {
+						p.advance()
+						column, cerr := p.parseColumn()
+						if cerr != nil {
+							return nil, cerr
+						}
+						tables, _ := drop.Args["tables"].([]*Expression)
+						drop.Set("tables", append(tables, column))
+					}
+				}
+			}
+		}
 		if !p.at(TokCOMMA) || p.atMySQLAlterOption() {
 			return actions, nil
 		}
@@ -2665,6 +2689,22 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			return nil, err
 		}
 		return New("ReplacePartition", Arg{"expression", part}, Arg{"source", source}), nil
+	case isHiveFamily(p.dialect) && p.atWords("REPLACE"):
+		// Hive's `REPLACE COLUMNS (...)` gives the table a new shape
+		// (HiveParser._parse_alter_table_replace_columns).
+		p.advance() // REPLACE
+		if !p.atWords("COLUMNS") {
+			return nil, p.unsupported("ALTER REPLACE without COLUMNS")
+		}
+		p.advance() // COLUMNS
+		if !p.at(TokL_PAREN) {
+			return nil, p.unsupported("REPLACE COLUMNS without a list")
+		}
+		columns, err := p.parseColumnDefs()
+		if err != nil {
+			return nil, err
+		}
+		return New("ReplaceColumns", Arg{"expressions", columns}), nil
 	case isMySQLFamily(p.dialect) && p.atWords("FORCE"):
 		// `ALTER TABLE t FORCE` rebuilds the table, and the reference keeps
 		// the word as a property ACTION (MySQLParser.ALTER_PARSERS).
@@ -9566,3 +9606,28 @@ func alterColumnTypeRequiresKeyword(dialect string) bool {
 // errAlterGiveUp reports an ALTER action the reference itself declines to
 // read, which turns the statement into a Command of its whole text.
 var errAlterGiveUp = errors.New("sqlglot-go: alter give-up")
+
+// alterTableDropRequiredForEachColumn reports whether every dropped column needs
+// its own DROP COLUMN -- true everywhere but T-SQL and Snowflake, which take a
+// list after one.
+func alterTableDropRequiredForEachColumn(dialect string) bool {
+	switch dialect {
+	case "tsql", "snowflake", "fabric":
+		return false
+	}
+	return true
+}
+
+// nextIsAColumnName reports whether the token after the cursor could name a
+// column in a DROP's list.
+func (p *parser) nextIsAColumnName() bool {
+	n := p.next()
+	if n == nil {
+		return false
+	}
+	if n.Type == TokVAR || n.Type == TokIDENTIFIER {
+		return true
+	}
+	_, ok := p.tables.IDVarTokens[n.Type]
+	return ok
+}

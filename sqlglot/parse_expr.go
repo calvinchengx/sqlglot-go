@@ -4077,6 +4077,12 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 			return node, err
 		}
 	}
+	// StarRocks' TIME_SLICE takes a boundary word the probe's signature does
+	// not show, because the builder only sets `kind` when it is there
+	// (StarRocksParser.FUNCTIONS, _build_time_slice).
+	if p.dialect == "starrocks" && upper == "TIME_SLICE" {
+		return p.parseStarrocksTimeSlice()
+	}
 	if _, syntax := p.tables.SyntaxFunctions[upper]; syntax {
 		return p.parseSyntaxFunction(upper)
 	}
@@ -6718,10 +6724,10 @@ func (p *parser) parseDorisMatch(this *Expression, parseIs bool) (*Expression, b
 		kind = strings.ToUpper(c.Text)[i+1:]
 	}
 	expr, err := p.parseBitwise()
-	if err != nil {
-		return nil, true, err
-	}
-	if expr == nil {
+	if err != nil || expr == nil {
+		// Nothing follows the word, so it names the projection instead of
+		// matching anything: `SELECT c match_any` is `c AS match_any`
+		// (DorisParser._parse_range).
 		p.index = index
 		return nil, false, nil
 	}

@@ -311,6 +311,7 @@ func init() {
 		"Nearest":                             (*generator).writeNearest,
 		"Disconnect":                          (*generator).writeDisconnect,
 		"MultitableInserts":                   (*generator).writeMultitableInserts,
+		"ReplaceColumns":                      (*generator).writeReplaceColumns,
 		"Match":                               (*generator).writeMatch,
 		"CollateColumnConstraint":             (*generator).writeCollateConstraint,
 		"Insert":                              (*generator).writeInsert,
@@ -7043,9 +7044,9 @@ func (g *generator) writeAlter(e *Expression) string {
 			// or a CONSTRAINT -- and the kind is written the same way the
 			// statement-level DROP writes it.
 			tables, _ := action.Args["tables"].([]*Expression)
-			if len(tables) != 1 {
+			if len(tables) == 0 {
 				g.inColumnList = was
-				return g.fail(e.Class + " dropping more than one thing")
+				return g.fail(e.Class + " dropping nothing")
 			}
 			kind, _ := action.Args["kind"].(string)
 			if kind == "" {
@@ -7055,7 +7056,13 @@ func (g *generator) writeAlter(e *Expression) string {
 			if exists, _ := action.Args["exists"].(bool); exists {
 				text += "IF EXISTS "
 			}
-			text += g.node(tables[0])
+			// One DROP may name SEVERAL columns, comma-separated
+			// (Generator.drop_sql).
+			dropped := make([]string, 0, len(tables))
+			for _, table := range tables {
+				dropped = append(dropped, g.node(table))
+			}
+			text += strings.Join(dropped, ", ")
 			if cascade, _ := action.Args["cascade"].(bool); cascade {
 				text += " CASCADE"
 			}
@@ -11879,4 +11886,16 @@ func (g *generator) writeMatch(e *Expression) string {
 		out += " USING ANALYZER " + analyzer
 	}
 	return out
+}
+
+// writeReplaceColumns writes Hive's `REPLACE COLUMNS (...)` action
+// (Generator.replacecolumns_sql).
+func (g *generator) writeReplaceColumns(e *Expression) string {
+	parts := []string{}
+	if items, _ := e.Args["expressions"].([]*Expression); len(items) > 0 {
+		for _, item := range items {
+			parts = append(parts, g.node(item))
+		}
+	}
+	return "REPLACE COLUMNS (" + strings.Join(parts, ", ") + ")"
 }

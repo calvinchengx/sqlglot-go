@@ -1324,7 +1324,7 @@ func (p *parser) parseAlias(this *Expression) (*Expression, error) {
 		}
 		return New("Aliases", Arg{"this", this}, Arg{"expressions", names}), nil
 	}
-	if !explicit && !p.atAliasName() {
+	if !explicit && !p.atProjectionAlias() {
 		return this, nil
 	}
 	// After a written AS, ANY token that is not reserved is the name: `SELECT
@@ -2859,4 +2859,35 @@ func (p *parser) parseMultitableInserts(sel *Expression) (*Expression, error) {
 	}
 	p.inMultitableInsert = wasMultitable
 	return New("MultitableInserts", Arg{"expressions", inserts}, Arg{"source", source}), nil
+}
+
+// atProjectionAlias reports whether the word at the cursor may name a
+// projection without AS. It is wider than atAliasName: ALIAS_TOKENS holds
+// every token an identifier may be, so T-SQL's `SELECT 1 output` is
+// `1 AS output` even though OUTPUT is a keyword.
+func (p *parser) atProjectionAlias() bool {
+	if p.atAliasName() {
+		return true
+	}
+	c := p.curr()
+	if c == nil || c.Type == TokSTRING {
+		return false
+	}
+	// A word that STARTS a clause is the clause's, not an alias.
+	if c.Type == TokFROM || c.Type == TokWHERE || c.Type == TokGROUP_BY ||
+		c.Type == TokHAVING || c.Type == TokORDER_BY || c.Type == TokLIMIT ||
+		c.Type == TokOFFSET || c.Type == TokUNION || c.Type == TokINTERSECT ||
+		c.Type == TokEXCEPT || c.Type == TokQUALIFY || c.Type == TokWINDOW ||
+		c.Type == TokJOIN || c.Type == TokLEFT || c.Type == TokRIGHT ||
+		c.Type == TokFULL || c.Type == TokINNER || c.Type == TokCROSS ||
+		c.Type == TokON || c.Type == TokUSING || c.Type == TokLATERAL ||
+		c.Type == TokSELECT {
+		return false
+	}
+	// T-SQL reads OUTPUT as a name here as well as a keyword: it puts
+	// RETURNING into ALIAS_TOKENS, so `SELECT 1 output` is `1 AS output`.
+	if (p.dialect == "tsql" || p.dialect == "fabric") && c.Type == TokRETURNING {
+		return true
+	}
+	return false
 }

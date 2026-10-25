@@ -5,7 +5,7 @@ import "strings"
 // Snowflake writes TIME_SLICE with the unit as a string, whatever form
 // the unit was read in. A missing unit is the day.
 func init() {
-	generators["TimeSlice"] = (*generator).writeSnowflakeTimeSlice
+	generators["TimeSlice"] = (*generator).writeStarrocksTimeSlice
 }
 
 func (g *generator) writeSnowflakeTimeSlice(e *Expression) string {

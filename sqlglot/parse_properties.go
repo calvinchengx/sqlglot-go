@@ -279,6 +279,11 @@ func (p *parser) parseTableProperties() ([]*Expression, error) {
 			return nil, err
 		}
 		out = append(out, prop)
+		// Properties may be written one after another with a comma between
+		// them -- `ENGINE=InnoDB, COMMENT='c' ROW_FORMAT=DYNAMIC` -- and the
+		// comma belongs to the list rather than to whatever follows it
+		// (Parser._parse_properties).
+		p.match(TokCOMMA)
 	}
 }
 

@@ -3,6 +3,7 @@ package sqlglot
 import (
 	"fmt"
 	"math/big"
+	"runtime/debug"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -165,7 +166,7 @@ func (t *Tokenizer) tokenizeRaw(sql string) (toks []Token, err error) {
 			start := max(t.current-50, 0)
 			end := max(min(t.current+50, t.size-1), start)
 			err = &TokenError{
-				Msg:     fmt.Sprintf("Error tokenizing: %v", r),
+				Msg:     fmt.Sprintf("Error tokenizing: %v @%s", r, debug.Stack()),
 				Start:   start,
 				End:     end,
 				Snippet: string(t.sql[start:end]),
