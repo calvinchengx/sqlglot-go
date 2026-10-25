@@ -556,19 +556,21 @@ func (p *parser) parseRangeFrom(this *Expression, parseIs bool) (*Expression, er
 // standing where expected means this was not a comprehension at all, the
 // same as the reference's own retreat.
 func (p *parser) parseComprehension(this *Expression) (*Expression, bool, error) {
-	expression, err := p.parseColumn()
+	// The loop VARIABLE is a NAME, not a column: `[x FOR x IN l]`
+	// (Parser._parse_comprehension, _parse_id_var).
+	expression, err := p.parseIdentifier()
 	if err != nil {
 		return nil, false, nil
 	}
+	// The index name is written only where it was: an absent one is NO
+	// argument at all, not a false one (Parser._parse_comprehension).
 	var position any
 	if p.match(TokCOMMA) {
-		pos, perr := p.parseColumn()
+		pos, perr := p.parseIdentifier()
 		if perr != nil {
 			return nil, false, nil
 		}
 		position = pos
-	} else {
-		position = false
 	}
 	if !p.match(TokIN) {
 		return nil, false, nil
@@ -6019,6 +6021,10 @@ func (p *parser) parseMapLiteral() (*Expression, error) {
 		subscripts = append(subscripts, part...)
 	}
 	if len(subscripts) > 0 {
+		// The subscript TYPES what it reads, which the reference's dump
+		// shows: the map's field types are known the moment a key is read
+		// off it.
+		AnnotateFully(this, p.dialect)
 		this = New("Bracket", Arg{"this", this}, Arg{"expressions", subscripts})
 	}
 	return New("ToMap", Arg{"this", this}), nil
