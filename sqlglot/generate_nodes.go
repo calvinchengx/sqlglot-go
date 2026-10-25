@@ -1415,6 +1415,20 @@ func (g *generator) writeToMap(e *Expression) string {
 	if g.dialect == "materialize" && inner.Class == "Select" {
 		return "MAP(" + g.node(inner) + ")"
 	}
+	// A subscripted map holds a Bracket over the Struct: the entries are
+	// written inside the braces, and the subscripts after them.
+	if inner.Class == "Bracket" {
+		shape, _ := inner.Args["this"].(*Expression)
+		if shape == nil || shape.Class != "Struct" {
+			return g.fail(e.Class)
+		}
+		subscripts, _ := inner.Args["expressions"].([]*Expression)
+		parts := make([]string, 0, len(subscripts))
+		for _, sub := range subscripts {
+			parts = append(parts, g.node(sub))
+		}
+		return g.writeToMap(New("ToMap", Arg{"this", shape})) + "[" + strings.Join(parts, ", ") + "]"
+	}
 	if inner.Class != "Struct" {
 		return g.fail(e.Class)
 	}
@@ -3590,10 +3604,15 @@ func (g *generator) writeArray(e *Expression) string {
 	// a different thing and is written the same way everywhere -- `ARRAY(...)`
 	// -- whatever the dialect brackets a list with. DuckDB writes `[1, 2]`
 	// for the list and `ARRAY(SELECT 1)` for the query.
-	items, _ := e.Args["expressions"].([]*Expression)
-	for _, item := range items {
-		if holdsAQuery(item) {
-			return "ARRAY(" + g.list(e) + ")"
+	// A VALUE CONSTRUCTOR keeps its subquery as an ELEMENT -- `[(SELECT 1)]`
+	// -- where an array built from a query supplies the rows
+	// (dialect.py, inline_array_unless_query).
+	if e.Args["value_constructor"] != true {
+		items, _ := e.Args["expressions"].([]*Expression)
+		for _, item := range items {
+			if holdsAQuery(item) {
+				return "ARRAY(" + g.list(e) + ")"
+			}
 		}
 	}
 	// Redshift is the one dialect that writes `ARRAY[...]` and `ARRAY(...)`
@@ -3743,7 +3762,9 @@ func (g *generator) writeQuantifier(e *Expression) string {
 // isQuery reports whether a node is a query rather than a value.
 func isQuery(e *Expression) bool {
 	switch e.Class {
-	case "Select", "Union", "Intersect", "Except":
+	// Subquery is a Query in the reference too: `[(SELECT 1)]` keeps its
+	// subquery as the array's ELEMENT (exp.Query).
+	case "Select", "Union", "Intersect", "Except", "Subquery":
 		return true
 	}
 	return false

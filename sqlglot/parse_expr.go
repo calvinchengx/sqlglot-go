@@ -4083,6 +4083,12 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	if p.dialect == "duckdb" && (upper == "LIST_SORT" || upper == "ARRAY_REVERSE_SORT") {
 		return p.parseDuckDBListSort(upper)
 	}
+	// LIST_VALUE marks a single-QUERY argument as a value constructor, so
+	// `LIST_VALUE((SELECT 1))` keeps its subquery as the array's element
+	// (DuckDBParser.FUNCTIONS).
+	if p.dialect == "duckdb" && upper == "LIST_VALUE" {
+		return p.parseDuckDBListValue()
+	}
 	// StarRocks' TIME_SLICE takes a boundary word the probe's signature does
 	// not show, because the builder only sets `kind` when it is there
 	// (StarRocksParser.FUNCTIONS, _build_time_slice).
@@ -5999,7 +6005,23 @@ func (p *parser) parseMapLiteral() (*Expression, error) {
 	if !p.match(TokR_BRACE) {
 		return nil, p.unsupported("unclosed map literal")
 	}
-	return New("ToMap", Arg{"this", New("Struct", Arg{"expressions", items})}), nil
+	// A subscript binds INSIDE the map, not to it: `MAP {...}['a']` is a
+	// ToMap over a Bracket over the Struct (DuckDBParser._parse_map,
+	// `ToMap(this=self._parse_bracket())`).
+	this := New("Struct", Arg{"expressions", items})
+	var subscripts []*Expression
+	for p.at(TokL_BRACKET) {
+		p.advance()
+		part, err := p.parseBracketItems(true)
+		if err != nil {
+			return nil, err
+		}
+		subscripts = append(subscripts, part...)
+	}
+	if len(subscripts) > 0 {
+		this = New("Bracket", Arg{"this", this}, Arg{"expressions", subscripts})
+	}
+	return New("ToMap", Arg{"this", this}), nil
 }
 
 // parseMaterializeMap reads Materialize's own MAP grammar: `MAP(SELECT ...)`

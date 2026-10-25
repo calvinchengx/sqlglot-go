@@ -9352,7 +9352,7 @@ func TestArrayOverAQuery(t *testing.T) {
 	// the list and `ARRAY(SELECT 1)` for the query, so the two spellings of
 	// the query form meet in the middle.
 	for _, tc := range []struct{ sql, want string }{
-		{"SELECT [(SELECT 1)]", "SELECT ARRAY((SELECT 1))"},
+		{"SELECT [(SELECT 1)]", "SELECT [(SELECT 1)]"},
 		{"SELECT ARRAY((SELECT 1))", "SELECT ARRAY((SELECT 1))"},
 		{"SELECT ARRAY(SELECT id FROM t)", "SELECT ARRAY(SELECT id FROM t)"},
 	} {

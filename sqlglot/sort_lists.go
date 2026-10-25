@@ -100,3 +100,29 @@ func (g *generator) writeArraySort(e *Expression) string {
 func init() {
 	generators["ArraySort"] = (*generator).writeArraySort
 }
+
+// parseDuckDBListValue reads LIST_VALUE's arguments as an Array, marking the
+// one-query form as a value constructor (DuckDBParser.FUNCTIONS).
+//
+// Entered with the name current and the opening parenthesis after it.
+func (p *parser) parseDuckDBListValue() (*Expression, error) {
+	p.advance() // the name
+	p.advance() // (
+	var args []*Expression
+	for {
+		arg, err := p.parseAssignment()
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed LIST_VALUE")
+	}
+	arr := New("Array", Arg{"expressions", args})
+	arr.Set("value_constructor", len(args) == 1 && isQuery(args[0]))
+	return arr, nil
+}
