@@ -1043,7 +1043,10 @@ func ApplyIndexOffset(this *Expression, items []*Expression, offset int, dialect
 	// (its `_annotate_to_map` never runs on a detached node), so it is typed
 	// here without writing anything down. Everything else is stamped before
 	// the test, which is what the reference's annotate_types does.
-	if this.Class == "ToMap" {
+	if this.Class == "ToMap" || mapLiteralUnderBracket(this) {
+		// The reference walks the map's CHILDREN -- so the struct inside it
+		// is typed -- and leaves the map itself unstamped.
+		annotateChildrenOf(this, dialect)
 		switch typeKind(annotate(this, dialect)) {
 		case "UNKNOWN", "ARRAY":
 		default:
@@ -1308,4 +1311,41 @@ func annotateDuckDBAtTimeZone(e *Expression, dialect string) *Expression {
 		return dataType("TIMETZ")
 	}
 	return dataType("UNKNOWN")
+}
+
+// annotateChildrenOf walks a node's children, stamping them as AnnotateFully
+// does -- except that a ToMap is walked into but never stamped, which is what
+// the reference's annotator does with one.
+func annotateChildrenOf(e *Expression, dialect string) {
+	if e == nil {
+		return
+	}
+	for _, key := range e.Keys {
+		switch v := e.Args[key].(type) {
+		case *Expression:
+			if v.Class == "ToMap" {
+				annotateChildrenOf(v, dialect)
+				continue
+			}
+			AnnotateFully(v, dialect)
+		case []*Expression:
+			for _, k := range v {
+				if k.Class == "ToMap" {
+					annotateChildrenOf(k, dialect)
+					continue
+				}
+				AnnotateFully(k, dialect)
+			}
+		}
+	}
+}
+
+// mapLiteralUnderBracket reports whether a node is a subscript over a map
+// LITERAL, which is the shape the reference walks without stamping the map.
+func mapLiteralUnderBracket(e *Expression) bool {
+	if e == nil || e.Class != "Bracket" {
+		return false
+	}
+	inner, _ := e.Args["this"].(*Expression)
+	return inner != nil && inner.Class == "ToMap"
 }

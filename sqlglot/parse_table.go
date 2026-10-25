@@ -1284,6 +1284,21 @@ func (p *parser) pivotColumns(aggregates, values []*Expression) ([]*Expression, 
 				base = alias.Name()
 			}
 		}
+		// StarRocks names a multi-column pivot value by its members in
+		// braces: `FOR (c2, c3) IN ((1, 1))` is the column `{1,1}`
+		// (StarRocksParser._parse_pivot).
+		if p.dialect == "starrocks" && value.Class == "Tuple" {
+			members, _ := value.Args["expressions"].([]*Expression)
+			parts := make([]string, 0, len(members))
+			for _, member := range members {
+				text, err := Generate(member, p.dialect)
+				if err != nil {
+					return nil, err
+				}
+				parts = append(parts, text)
+			}
+			base = "{" + strings.Join(parts, ",") + "}"
+		}
 		if len(names) == 0 {
 			out = append(out, identifierFor(base))
 			continue
