@@ -190,6 +190,16 @@ func (p *parser) parseFromFirst() (*Expression, error) {
 	if len(joins) > 0 {
 		table.Set("joins", joins)
 	}
+	// LATERAL VIEWs stand between the FROM and the SELECT they belong to,
+	// and land on the SELECT (Parser._parse_statement).
+	var laterals []*Expression
+	for p.atWords("LATERAL", "VIEW") {
+		view, verr := p.parseLateralView()
+		if verr != nil {
+			return nil, verr
+		}
+		laterals = append(laterals, view)
+	}
 
 	projections := []*Expression{newStar()}
 	distinct := false
@@ -215,6 +225,10 @@ func (p *parser) parseFromFirst() (*Expression, error) {
 	sel.Set("from_", New("From", Arg{"this", table}))
 	if err := p.parseQueryModifiers(sel); err != nil {
 		return nil, err
+	}
+	if len(laterals) > 0 {
+		existing, _ := sel.Args["laterals"].([]*Expression)
+		sel.Set("laterals", append(laterals, existing...))
 	}
 	return sel, nil
 }
