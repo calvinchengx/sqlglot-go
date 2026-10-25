@@ -2614,10 +2614,12 @@ func (g *generator) writeDateTrunc(e *Expression) string {
 }
 
 func (g *generator) writeCast(e *Expression) string {
-	// A type of UNKNOWN with a format beside it says the statement named no
-	// type at all: the phrase takes its place
-	// (TeradataGenerator.cast_sql pops the type before writing).
-	if e.Args["format"] != nil {
+	// Teradata's `CAST(x AS FORMAT 'y')` names no type at all, and its writer
+	// POPS the UNKNOWN before writing, so the phrase takes the type's place
+	// (TeradataGenerator.cast_sql). Every other dialect writes the type it was
+	// given -- Oracle's `CAST(x AS UNKNOWN FORMAT 'y')` -- which the tail
+	// below does.
+	if g.dialect == "teradata" && e.Args["format"] != nil {
 		if to, _ := e.Args["to"].(*Expression); to != nil {
 			if kind, _ := to.Args["this"].(DataTypeKind); kind == "UNKNOWN" {
 				return "CAST(" + g.child(e, "this") + " AS FORMAT " +
@@ -2743,7 +2745,20 @@ func (g *generator) writeCast(e *Expression) string {
 		}
 		return out + ")"
 	}
-	return word + "(" + g.child(e, "this") + " AS " + g.child(e, "to") + ")"
+	// The generic shape, in the reference's own order: the type, then a
+	// DEFAULT ... ON CONVERSION ERROR, then a FORMAT phrase, then an action
+	// (Generator.cast_sql).
+	out := word + "(" + g.child(e, "this") + " AS " + g.child(e, "to")
+	if def := g.child(e, "default"); def != "" {
+		out += " DEFAULT " + def + " ON CONVERSION ERROR"
+	}
+	if format := g.child(e, "format"); format != "" {
+		out += " FORMAT " + format
+	}
+	if action := g.child(e, "action"); action != "" {
+		out += " " + action
+	}
+	return out + ")"
 }
 
 // castChild is one of a cast's arguments, or nothing.

@@ -1,28 +1,29 @@
 package sqlglot
 
+import "strings"
+
 func init() {
-	spellOracleToChar()
+	generators["ToChar"] = (*generator).writeToChar
 }
 
-// Oracle writes TO_CHAR of one argument, and of a value with a format
-// and an NLS parameter. The neutral templates only know the two-argument
-// form.
-func spellOracleToChar() {
-	tables := parserTables["oracle"]
-	if tables == nil || tables.SyntaxSQL == nil {
-		return
+// writeToChar writes Oracle's TO_CHAR with the arguments the node carries, in
+// the reference's own order: the value, the format and the NLS parameter
+// (OracleGenerator.TRANSFORMS, exp.ToChar: function_fallback_sql).
+//
+// The generic `tochar_sql` writes `CAST(x AS TEXT)` and refuses a format, which
+// is right for a dialect with no TO_CHAR of its own; Oracle has one, so it
+// keeps the call -- with one argument, two, or three. Another dialect spells
+// the same node its own way, which the probed tables already know.
+func (g *generator) writeToChar(e *Expression) string {
+	if g.dialect != "oracle" {
+		return g.spell(e)
 	}
-	for _, word := range []struct {
-		keys  []string
-		spell string
-	}{
-		{keys: []string{"this"}, spell: "TO_CHAR({this})"},
-		{keys: []string{"this", "format", "nlsparam"}, spell: "TO_CHAR({this}, {format}, {nlsparam})"},
-	} {
-		tables.SyntaxSQL["ToChar"] = append(tables.SyntaxSQL["ToChar"], SyntaxTemplate{
-			Keys:     word.keys,
-			Marked:   word.keys,
-			Template: word.spell,
-		})
+	args := []string{g.child(e, "this")}
+	if format := g.child(e, "format"); format != "" {
+		args = append(args, format)
 	}
+	if nls := g.child(e, "nlsparam"); nls != "" {
+		args = append(args, nls)
+	}
+	return "TO_CHAR(" + strings.Join(args, ", ") + ")"
 }

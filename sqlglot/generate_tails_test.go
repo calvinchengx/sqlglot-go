@@ -225,6 +225,15 @@ func TestGeneratorTails(t *testing.T) {
 		{"databricks", "SELECT x:a.b", "SELECT x:a.b"},
 		{"databricks", "SELECT c1:item.price", "SELECT c1:item.price"},
 		{"databricks", "SELECT x:a[0]", "SELECT x:a[0]"},
+		// Oracle's TO_CHAR keeps its call with one, two or three arguments,
+		// and its CAST of a FORMAT phrase writes the UNKNOWN type it was
+		// given -- where Teradata pops it.
+		{"oracle", "SELECT TO_CHAR(x) FROM dual", "SELECT TO_CHAR(x) FROM dual"},
+		{"oracle", "SELECT TO_CHAR(x, 'YYYY') FROM dual", "SELECT TO_CHAR(x, 'YYYY') FROM dual"},
+		{"oracle", "SELECT TO_CHAR(x, 'YYYY', 'NLS_DATE_LANGUAGE=AMERICAN') FROM dual",
+			"SELECT TO_CHAR(x, 'YYYY', 'NLS_DATE_LANGUAGE=AMERICAN') FROM dual"},
+		{"oracle", "SELECT CAST(x AS FORMAT 'Y4') FROM dual",
+			"SELECT CAST(x AS UNKNOWN FORMAT 'Y4') FROM dual"},
 		// A FROM-first statement keeps the comment on its FROM.
 		{"hive", "-- a\nFROM x INSERT OVERWRITE TABLE t SELECT k", "/* a */ FROM x INSERT OVERWRITE TABLE t SELECT k"},
 	}
