@@ -5716,7 +5716,12 @@ func (g *generator) writeCreate(e *Expression) string {
 					newProps := props.shallowCopy()
 					newProps.Set("expressions", kept)
 					e.Set("properties", newProps)
-					e.Set("expression", New("Paren", Arg{"this", body}))
+					// A query already written inside a Subquery needs no
+					// second pair of parentheses
+					// (ClickHouseGenerator.create_sql).
+					if body.Class != "Subquery" {
+						e.Set("expression", New("Paren", Arg{"this", body}))
+					}
 				}
 			}
 		}
