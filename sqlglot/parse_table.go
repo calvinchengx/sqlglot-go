@@ -921,8 +921,12 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 				}
 				table.Set("alias", realAlias)
 			}
+			// The hint's own comment moves onto the word it names
+			// (TSQLParser._parse_table).
+			hintVar := New("Var", Arg{"this", hint.Name()})
+			hintVar.Comments = append(hintVar.Comments, hint.Comments...)
 			table.Set("hints", []*Expression{New("WithTableHint",
-				Arg{"expressions", []*Expression{New("Var", Arg{"this", hint.Name()})}})})
+				Arg{"expressions", []*Expression{hintVar}})})
 			// The reference sets this hint LAST -- its conversion runs after
 			// the joins and pivots the table already carries -- so the key is
 			// moved there once the statement is read.
