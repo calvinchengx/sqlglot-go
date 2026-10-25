@@ -4505,6 +4505,14 @@ func (g *generator) writeJSONPath(e *Expression) string {
 			// `$.y[*]`. It carries no text of its own, so it is written by
 			// putting the star in the slot rather than by escaping anything.
 			if inner, ok := part.Args["this"].(*Expression); ok && inner != nil {
+				// A SLICE stands where an index would -- `$[1:2]` is a
+				// subscript over a JSONPathSlice -- and is written with its
+				// bounds joined by colons, an explicit empty bound as
+				// nothing at all (jsonpath.py, JSON_PATH_PART_TRANSFORMS).
+				if inner.Class == "JSONPathSlice" {
+					out += "[" + jsonPathSliceText(inner) + "]"
+					continue
+				}
 				if inner.Class != "JSONPathWildcard" {
 					return g.fail(inner.Class + " in a JSON path")
 				}
@@ -4588,6 +4596,31 @@ func (g *generator) writeJSONPath(e *Expression) string {
 		return g.fail("a JSON path that writes nothing")
 	}
 	return out + pieces.Close
+}
+
+// jsonPathSliceText writes a slice's bounds joined by colons. A bound that was
+// never reached is skipped, and one that was reached but left empty (`$[:2]`'s
+// start) writes nothing -- the two look the same here and differ only in the
+// tree.
+func jsonPathSliceText(slice *Expression) string {
+	bounds := make([]string, 0, 3)
+	for _, key := range []string{"start", "end", "step"} {
+		value, present := slice.Args[key]
+		if !present || value == nil {
+			continue
+		}
+		switch v := value.(type) {
+		case bool:
+			bounds = append(bounds, "")
+		case int:
+			bounds = append(bounds, strconv.Itoa(v))
+		case float64:
+			bounds = append(bounds, strconv.FormatFloat(v, 'f', -1, 64))
+		default:
+			bounds = append(bounds, "")
+		}
+	}
+	return strings.Join(bounds, ":")
 }
 
 // jsonPathUnion writes a bracket of several indexes or keys with no
