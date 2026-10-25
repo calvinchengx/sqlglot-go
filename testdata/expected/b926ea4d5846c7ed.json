@@ -1,6 +1,6 @@
 {
  "dialect": "postgres",
- "rendered": "SELECT EXTRACT(epoch FROM CAST('2023-01-04 04:05:06.789' AS TIMESTAMP))",
+ "rendered": "SELECT EXTRACT(EPOCH FROM CAST('2023-01-04 04:05:06.789' AS TIMESTAMP))",
  "sql": "SELECT DATE_PART('epoch', CAST('2023-01-04 04:05:06.789' AS TIMESTAMP))",
  "tokens": [
   {
@@ -118,7 +118,7 @@
   {
    "i": 2,
    "k": "this",
-   "v": "epoch"
+   "v": "EPOCH"
   },
   {
    "c": "sqlglot.expressions.functions.Cast",

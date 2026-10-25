@@ -940,7 +940,26 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 			}
 		}
 	}
-	return p.liftSnowflakeTable(table)
+	return liftTableFromRows(table)
+}
+
+// liftTableFromRows turns the table a TABLE(...) call was wrapped in into
+// the row source itself. The alias, the joins, the pivots, and the sample
+// belong to that source (Parser._parse_table).
+func liftTableFromRows(table *Expression) (*Expression, error) {
+	if table == nil || table.Class != "Table" {
+		return table, nil
+	}
+	inner, _ := table.Args["this"].(*Expression)
+	if inner == nil || inner.Class != "TableFromRows" {
+		return table, nil
+	}
+	for _, key := range []string{"alias", "joins", "pivots", "sample"} {
+		if value, ok := table.Args[key]; ok {
+			inner.Set(key, value)
+		}
+	}
+	return inner, nil
 }
 
 // parsePivots reads the run of PIVOT and UNPIVOT clauses after a table.

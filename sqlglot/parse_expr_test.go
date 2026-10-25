@@ -181,29 +181,22 @@ func TestJSONExtractAsOperand(t *testing.T) {
 	}
 }
 
-// A dialect with no ONE call that reads both an object and a scalar out of
-// JSON asks both and takes whichever is not null.
-//
-// `ISNULL(JSON_QUERY(x, p), JSON_VALUE(x, p))` is one node written as two
-// calls, so the value and the path each appear twice. That makes reading such
-// a statement back give a COALESCE of two extractions rather than the one it
-// was written from -- and each of those is then written as a pair of its own.
-// The reference does the same; the doubling is the spelling, not a fault in
-// it.
+// T-SQL's two JSON calls are two NODES, and each writes back as itself:
+// JSON_QUERY keeps the object-or-array form, JSON_VALUE the scalar one
+// (TSQLGenerator._json_extract_sql). A generic extraction -- one the dialect
+// has no single call for -- is still written as the pair of calls that asks
+// both and takes whichever is not null.
 func TestJSONExtractWrittenTwice(t *testing.T) {
 	for _, tc := range []struct{ sql, want string }{
-		{"SELECT JSON_QUERY(x)", "SELECT ISNULL(JSON_QUERY(x, '$'), JSON_VALUE(x, '$'))"},
-		{"SELECT JSON_VALUE(x, '$.y')", "SELECT ISNULL(JSON_QUERY(x, '$.y'), JSON_VALUE(x, '$.y'))"},
-		{`SELECT JSON_QUERY(x, '$."a b"')`,
-			`SELECT ISNULL(JSON_QUERY(x, '$."a b"'), JSON_VALUE(x, '$."a b"'))`},
-		{"SELECT JSON_QUERY(x, '$.y[0].z')",
-			"SELECT ISNULL(JSON_QUERY(x, '$.y[0].z'), JSON_VALUE(x, '$.y[0].z'))"},
-		// A mode word is not path syntax. The reference keeps the string,
-		// and the first consumer writes `lax $.b`.
+		{"SELECT JSON_QUERY(x)", "SELECT JSON_QUERY(x, '$')"},
+		{"SELECT JSON_VALUE(x, '$.y')", "SELECT JSON_VALUE(x, '$.y')"},
+		{`SELECT JSON_QUERY(x, '$."a b"')`, `SELECT JSON_QUERY(x, '$."a b"')`},
+		{"SELECT JSON_QUERY(x, '$.y[0].z')", "SELECT JSON_QUERY(x, '$.y[0].z')"},
+		// A mode word is not path syntax. The reference keeps the string.
 		{"SELECT JSON_QUERY(a, 'lax $.b') FROM dbo.t",
-			"SELECT ISNULL(JSON_QUERY(a, 'lax $.b'), JSON_VALUE(a, 'lax $.b')) FROM dbo.t"},
+			"SELECT JSON_QUERY(a, 'lax $.b') FROM dbo.t"},
 		{"SELECT JSON_VALUE(a, 'strict $.b') FROM dbo.t",
-			"SELECT ISNULL(JSON_QUERY(a, 'strict $.b'), JSON_VALUE(a, 'strict $.b')) FROM dbo.t"},
+			"SELECT JSON_VALUE(a, 'strict $.b') FROM dbo.t"},
 	} {
 		e, err := ParseOne(tc.sql, "tsql")
 		if err != nil {
@@ -1930,11 +1923,12 @@ func TestGroupings(t *testing.T) {
 		{"a rollup", "SELECT a FROM t GROUP BY ROLLUP(a)", "SELECT a FROM t GROUP BY ROLLUP (a)"},
 		{"beside a column", "SELECT a FROM t GROUP BY a, ROLLUP(b)",
 			"SELECT a FROM t GROUP BY a, ROLLUP (b)"},
-		// Written first, but the columns still come first on the way out.
+		// The grouping constructs and the columns are ONE list, written back
+		// in the order they were written (Parser._parse_group).
 		{"before a column", "SELECT a FROM t GROUP BY ROLLUP(a), b",
-			"SELECT a FROM t GROUP BY b, ROLLUP (a)"},
+			"SELECT a FROM t GROUP BY ROLLUP (a), b"},
 		{"all three", "SELECT a FROM t GROUP BY CUBE(a), ROLLUP(b), GROUPING SETS ((c))",
-			"SELECT a FROM t GROUP BY GROUPING SETS ((c)), CUBE (a), ROLLUP (b)"},
+			"SELECT a FROM t GROUP BY CUBE (a), ROLLUP (b), GROUPING SETS ((c))"},
 		// `()` is the grouping that groups everything, and is a row of nothing.
 		{"an empty grouping", "SELECT a FROM t GROUP BY GROUPING SETS (a, (b, c), ())",
 			"SELECT a FROM t GROUP BY GROUPING SETS (a, (b, c), ())"},
@@ -4055,9 +4049,8 @@ func TestTableConstraints(t *testing.T) {
 			}
 		})
 	}
-	// Databricks has no UNIQUE at all, and the reference DROPS it -- silently
-	// giving up the guarantee the statement was making. The port refuses
-	// rather than writing a table that promises less than it was asked to.
+	// Databricks has no UNIQUE at all, and the reference DROPS it. The port
+	// writes what the reference writes.
 	for _, sql := range []string{
 		"CREATE TABLE z (a INT UNIQUE)",
 		"CREATE TABLE z (a INT, UNIQUE (a))",
@@ -4066,8 +4059,9 @@ func TestTableConstraints(t *testing.T) {
 		if err != nil {
 			t.Fatalf("ParseOne(%q): %v", sql, err)
 		}
-		if got, err := Generate(e, "databricks"); err == nil {
-			t.Errorf("%q wrote %q; Databricks drops the constraint", sql, got)
+		if got, err := Generate(e, "databricks"); err != nil ||
+			got != "CREATE TABLE z (a INT)" {
+			t.Errorf("%q wrote %q (%v); Databricks drops the constraint", sql, got, err)
 		}
 	}
 	for _, sql := range []string{
@@ -4140,10 +4134,11 @@ func TestCreateFunction(t *testing.T) {
 			"CREATE FUNCTION f() RETURNS INT NO SQL RETURN 1"},
 		// DETERMINISTIC is the standard SQL word for what IMMUTABLE says, and
 		// the reference folds it into that property rather than keeping a
-		// class of its own -- so it does not write back as itself.
+		// class of its own. Spark and Databricks write the standard word
+		// back (SparkGenerator.TRANSFORMS).
 		{"deterministic folds into immutable", "databricks",
 			"CREATE FUNCTION f() RETURNS INT DETERMINISTIC RETURN 1",
-			"CREATE FUNCTION f() RETURNS INT IMMUTABLE RETURN 1"},
+			"CREATE FUNCTION f() RETURNS INT DETERMINISTIC RETURN 1"},
 		// A second RETURNS, which is how the reference records this phrase.
 		{"returns null on null input", "postgres",
 			"CREATE FUNCTION add(INT) RETURNS INT LANGUAGE SQL RETURNS NULL ON NULL INPUT AS 'x'",
@@ -7848,19 +7843,19 @@ func TestDatePart(t *testing.T) {
 		}
 	}
 
-	// PostgreSQL takes a STRING and keeps whatever was inside it -- the same
-	// `mm` that T-SQL normalises stays `mm` here.
+	// PostgreSQL makes the part a bare Var of its own NAME, uppercased
+	// (PostgresParser._parse_date_part).
 	e, err := ParseOne("SELECT DATE_PART('mm', x)", "postgres")
 	if err != nil {
 		t.Fatalf("ParseOne: %v", err)
 	}
 	call := e.Args["expressions"].([]*Expression)[0]
 	unit, _ := call.Args["this"].(*Expression)
-	if unit == nil || unit.Class != "Var" || unit.Args["this"] != "mm" {
+	if unit == nil || unit.Class != "Var" || unit.Args["this"] != "MM" {
 		t.Errorf("PostgreSQL normalised the unit: %v", unit)
 	}
 	// And it writes back as an EXTRACT, which is what the reference emits.
-	if got, err := Generate(e, "postgres"); err != nil || got != "SELECT EXTRACT(mm FROM x)" {
+	if got, err := Generate(e, "postgres"); err != nil || got != "SELECT EXTRACT(MM FROM x)" {
 		t.Errorf("wrote %q, %v", got, err)
 	}
 
@@ -10255,12 +10250,15 @@ func TestJSONExtractGuards(t *testing.T) {
 	if got, err := Generate(none, "postgres"); err == nil {
 		t.Errorf("wrote %q over a path with no parts", got)
 	}
-	// A left side that is neither an atom nor a call.
+	// A left side that is neither an atom nor a call, where the form is a
+	// CALL: the operand is an argument, so precedence cannot bite and the
+	// reference writes it as it stands.
 	loose := extract(New("Or",
 		Arg{"this", column("a")}, Arg{"expression", column("b")}), path(
 		New("JSONPathKey", Arg{"this", "k"})))
-	if got, err := Generate(loose, "postgres"); err == nil {
-		t.Errorf("wrote %q over a connector", got)
+	if got, err := Generate(loose, "postgres"); err != nil ||
+		got != "JSON_EXTRACT_PATH(a OR b, 'k')" {
+		t.Errorf("wrote %q (%v)", got, err)
 	}
 	// And one whose path is a compound expression rather than a path.
 	compound := New("JSONExtract", Arg{"this", column("a")},
@@ -10450,13 +10448,14 @@ func TestJSONExtractOverAnother(t *testing.T) {
 	if got, err := Generate(e, "tsql"); err == nil {
 		t.Errorf("wrote %d characters for a chain of five", len(got))
 	}
-	// One on its own is still written.
+	// One on its own is a scalar-only extraction, which T-SQL writes as
+	// JSON_VALUE alone (TSQLGenerator._json_extract_sql).
 	one, err := ParseOne("SELECT JSON_VALUE(x, '$.y')", "tsql")
 	if err != nil {
 		t.Fatalf("ParseOne: %v", err)
 	}
 	if got, err := Generate(one, "tsql"); err != nil ||
-		got != "SELECT ISNULL(JSON_QUERY(x, '$.y'), JSON_VALUE(x, '$.y'))" {
+		got != "SELECT JSON_VALUE(x, '$.y')" {
 		t.Errorf("wrote %q (%v)", got, err)
 	}
 }

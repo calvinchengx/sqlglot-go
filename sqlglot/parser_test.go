@@ -431,8 +431,9 @@ func TestPrecedenceLevelsThatAreEasyToCollapse(t *testing.T) {
 	for _, c := range []struct{ name, sql, dialect, want string }{
 		// EQUALITY is looser than COMPARISON: a = (b > c), not (a = b) > c.
 		{"equality below comparison", "a = b > c", "", "EQ Column Identifier GT Column Identifier Column Identifier"},
-		// MOD is an additive operator, so a % (b * c), not (a % b) * c.
-		{"modulo binds like addition", "a % b * c", "", "Mod Column Identifier Mul Column Identifier Column Identifier"},
+		// MOD sits with MULTIPLICATION, and both are left-associative, so
+		// (a % b) * c. The reference moved MOD down to this tier.
+		{"modulo binds with multiplication", "a % b * c", "", "Mul Mod Column Identifier Column Identifier Column Identifier"},
 		// BITWISE sits between comparison and addition.
 		{"bitwise below addition", "a & b + c", "", "BitwiseAnd Column Identifier Add Column Identifier Column Identifier"},
 		{"multiplication binds tighter", "a + b * c", "", "Add Column Identifier Mul Column Identifier Column Identifier"},

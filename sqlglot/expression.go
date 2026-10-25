@@ -73,6 +73,10 @@ type Expression struct {
 	// keeps this in the node's meta, which this port does not carry; the flag
 	// is the same signal without the map.
 	quotedTable bool
+	// fromTop marks a Limit that T-SQL's TOP wrote. The reference records it
+	// in the node's meta, and it decides whether a trailing LIMIT/FETCH
+	// belongs to this query or to the set operation above it.
+	fromTop bool
 }
 
 // Arg is one named argument of a node, in the order it was given.

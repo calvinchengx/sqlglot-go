@@ -1,6 +1,6 @@
 {
  "dialect": "hive",
- "rendered": "CAST(1.0 AS DECIMAL)",
+ "rendered": "CAST('1.0' AS DECIMAL(1, 0))",
  "sql": "1.0bd",
  "tokens": [
   {
@@ -42,8 +42,45 @@
      "v": "DECIMAL"
     },
     {
+     "a": true,
+     "c": "sqlglot.expressions.datatypes.DataTypeParam",
      "i": 0,
-     "k": "nested",
+     "k": "expressions"
+    },
+    {
+     "c": "sqlglot.expressions.core.Literal",
+     "i": 2,
+     "k": "this"
+    },
+    {
+     "i": 3,
+     "k": "this",
+     "v": "1"
+    },
+    {
+     "i": 3,
+     "k": "is_string",
+     "v": false
+    },
+    {
+     "a": true,
+     "c": "sqlglot.expressions.datatypes.DataTypeParam",
+     "i": 0,
+     "k": "expressions"
+    },
+    {
+     "c": "sqlglot.expressions.core.Literal",
+     "i": 6,
+     "k": "this"
+    },
+    {
+     "i": 7,
+     "k": "this",
+     "v": "0"
+    },
+    {
+     "i": 7,
+     "k": "is_string",
      "v": false
     }
    ]
@@ -51,13 +88,7 @@
   {
    "c": "sqlglot.expressions.core.Literal",
    "i": 0,
-   "k": "this",
-   "m": {
-    "col": 5,
-    "end": 4,
-    "line": 1,
-    "start": 0
-   }
+   "k": "this"
   },
   {
    "i": 1,
@@ -67,7 +98,7 @@
   {
    "i": 1,
    "k": "is_string",
-   "v": false
+   "v": true
   },
   {
    "c": "sqlglot.expressions.datatypes.DataType",
@@ -81,8 +112,45 @@
    "v": "DECIMAL"
   },
   {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
    "i": 4,
-   "k": "nested",
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 6,
+   "k": "this"
+  },
+  {
+   "i": 7,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 7,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 4,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 10,
+   "k": "this"
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 11,
+   "k": "is_string",
    "v": false
   }
  ]

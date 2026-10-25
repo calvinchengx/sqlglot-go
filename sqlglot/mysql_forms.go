@@ -2,6 +2,17 @@ package sqlglot
 
 import "strings"
 
+// isMySQLFamily reports whether a dialect inherits MySQL's parser rules:
+// Doris, SingleStore and StarRocks subclass MySQL and take its ALTER
+// dispatch unchanged.
+func isMySQLFamily(dialect string) bool {
+	switch dialect {
+	case "mysql", "doris", "singlestore", "starrocks":
+		return true
+	}
+	return false
+}
+
 // parseLeadingHint reads a MySQL optimizer hint sitting between the verb and
 // its target: `UPDATE /*+ MAX_EXECUTION_TIME(1) */ t` and the same shape on
 // DELETE. The hint is absent on every other statement, and the caller sets it
@@ -407,7 +418,7 @@ func (p *parser) readHintItem() (item *Expression, cont bool, err error) {
 // withMySQLColumnPrefix wraps `username(16)` as a column prefix. Anywhere
 // else the identifier is returned as it was.
 func (p *parser) withMySQLColumnPrefix(id *Expression) (*Expression, error) {
-	if p.dialect != "mysql" || !p.at(TokL_PAREN) {
+	if !isMySQLFamily(p.dialect) || !p.at(TokL_PAREN) {
 		return id, nil
 	}
 	p.advance()
@@ -600,4 +611,174 @@ func (p *parser) parseOnUpdateConstraint() (*Expression, error) {
 		return nil, err
 	}
 	return New("OnUpdateColumnConstraint", Arg{"this", value}), nil
+}
+
+// parseMySQLUniqueConstraint is MySQL's own `_parse_unique`. Three things
+// differ from the reference's base rule: no NULLS flag is recorded, the key
+// parts are COLUMNS rather than bare names, and index options may follow the
+// list. The index type may be written on either side of the list, and the
+// one before it wins.
+func (p *parser) parseMySQLUniqueConstraint() (*Expression, error) {
+	p.advance() // UNIQUE
+	if p.atWords("KEY") || p.atWords("INDEX") {
+		p.advance()
+	}
+	// `_parse_unique_key`: a name, unless the word standing here starts a
+	// different constraint (`UNIQUE COMMENT 'x'` names no index) or is the
+	// index type.
+	var name *Expression
+	if !p.at(TokL_PAREN) && !p.at(TokUSING) {
+		startsConstraint := false
+		if c := p.curr(); c != nil && c.Type != TokIDENTIFIER {
+			_, startsConstraint = mysqlConstraintStarts[strings.ToUpper(c.Text)]
+		}
+		if !startsConstraint && p.atIdentifier() {
+			id, err := p.parseIdentifier()
+			if err != nil {
+				return nil, err
+			}
+			name = id
+		}
+	}
+	indexType, err := p.parseMySQLIndexTypeAttr()
+	if err != nil {
+		return nil, err
+	}
+	if !p.at(TokL_PAREN) {
+		return New("UniqueColumnConstraint",
+			Arg{"this", name}, Arg{"index_type", indexType}), nil
+	}
+	parts, err := p.parseMySQLIndexKeyParts()
+	if err != nil {
+		return nil, err
+	}
+	schema := New("Schema", Arg{"expressions", parts})
+	if name != nil {
+		schema = New("Schema", Arg{"this", name}, Arg{"expressions", parts})
+	}
+	// `index_type or self._parse_index_type()`: only read a second one when
+	// the first was not written.
+	if indexType == nil {
+		if indexType, err = p.parseMySQLIndexTypeAttr(); err != nil {
+			return nil, err
+		}
+	}
+	options, err := p.parseMySQLIndexOptions()
+	if err != nil {
+		return nil, err
+	}
+	node := New("UniqueColumnConstraint",
+		Arg{"this", schema}, Arg{"index_type", indexType})
+	if len(options) > 0 {
+		node.Set("options", options)
+	}
+	return node, nil
+}
+
+// parseMySQLIndexTypeAttr is `_parse_index_type`: the word after USING, or
+// nil when there is none.
+func (p *parser) parseMySQLIndexTypeAttr() (any, error) {
+	if !p.match(TokUSING) {
+		return nil, nil
+	}
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("USING without an index type")
+	}
+	p.advance()
+	return c.Text, nil
+}
+
+// parseMySQLIndexKeyParts reads an index's parenthesised key parts. A part is
+// a column, which may carry a prefix length and an explicit direction
+// (MySQLParser._parse_index_key_part).
+func (p *parser) parseMySQLIndexKeyParts() ([]*Expression, error) {
+	if !p.match(TokL_PAREN) {
+		return nil, p.unsupported("an index without its columns")
+	}
+	var out []*Expression
+	for {
+		part, err := p.parseMySQLIndexKeyPart()
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, part)
+		if !p.match(TokCOMMA) {
+			break
+		}
+	}
+	if !p.match(TokR_PAREN) {
+		return nil, p.unsupported("unclosed column list")
+	}
+	return out, nil
+}
+
+func (p *parser) parseMySQLIndexKeyPart() (*Expression, error) {
+	var part *Expression
+	var err error
+	// key_part: {col_name [(length)] | (expr)} -- only a prefixed column is
+	// followed by "(" (MySQLParser._parse_index_constraint_part).
+	if !p.at(TokL_PAREN) && p.next() != nil && p.next().Type == TokL_PAREN {
+		id, ierr := p.parseIdentifier()
+		if ierr != nil {
+			return nil, ierr
+		}
+		part, err = p.withMySQLColumnPrefix(id)
+	} else {
+		part, err = p.parseDisjunction()
+	}
+	if err != nil {
+		return nil, err
+	}
+	desc, hasDirection := false, false
+	switch {
+	case p.match(TokDESC):
+		desc, hasDirection = true, true
+	case p.match(TokASC):
+		desc, hasDirection = false, true
+	}
+	nullsFirst, saidSo := false, false
+	if c := p.curr(); c != nil && strings.EqualFold(c.Text, "NULLS") {
+		p.advance()
+		n := p.curr()
+		if n == nil {
+			return nil, p.unsupported("NULLS without FIRST or LAST")
+		}
+		switch {
+		case strings.EqualFold(n.Text, "FIRST"):
+			nullsFirst, saidSo = true, true
+		case strings.EqualFold(n.Text, "LAST"):
+			nullsFirst, saidSo = false, true
+		default:
+			return nil, p.unsupported("NULLS without FIRST or LAST")
+		}
+		p.advance()
+	}
+	// Only an EXPLICIT direction keeps the Ordered wrapper: an implicit one
+	// would carry this dialect's NULL ordering into another
+	// (MySQLParser._parse_index_key_part).
+	if !hasDirection {
+		return part, nil
+	}
+	ordered := New("Ordered", Arg{"this", part}, Arg{"desc", desc})
+	if !saidSo {
+		nullsFirst = p.nullsFirst(desc)
+	}
+	ordered.Set("nulls_first", nullsFirst)
+	return ordered, nil
+}
+
+// mysqlConstraintStarts are the words that begin a column constraint rather
+// than name an index (MySQL CONSTRAINTS / Parser.CONSTRAINT_PARSERS).
+var mysqlConstraintStarts = map[string]struct{}{
+	"AUTOINCREMENT": {}, "AUTO_INCREMENT": {}, "BINARY": {}, "BUCKET": {},
+	"CASESPECIFIC": {}, "CHECK": {}, "CLUSTERED": {}, "COLLATE": {},
+	"COMMENT": {}, "COMPRESS": {}, "DEFAULT": {}, "ENCODE": {},
+	"EPHEMERAL": {}, "EXCLUDE": {}, "FOREIGN KEY": {}, "FORMAT": {},
+	"FULLTEXT": {}, "GENERATED": {}, "IDENTITY": {}, "INDEX": {},
+	"INLINE": {}, "INVISIBLE": {}, "KEY": {}, "LIKE": {},
+	"NONCLUSTERED": {}, "NOT": {}, "NULL": {}, "ON": {}, "PATH": {},
+	"PERIOD": {}, "PRIMARY KEY": {}, "REFERENCES": {}, "SPATIAL": {},
+	"TITLE": {}, "TRUNCATE": {}, "TTL": {}, "UNIQUE": {}, "UPPERCASE": {},
+	"WITH": {}, "ZEROFILL": {},
 }

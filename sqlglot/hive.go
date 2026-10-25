@@ -1,6 +1,10 @@
 package sqlglot
 
-import "fmt"
+import (
+	"fmt"
+	"strconv"
+	"strings"
+)
 
 // isHiveFamily reports whether a dialect inherits Hive's own parser and
 // generator behaviour -- Hive itself, and the two Spark subclasses that add
@@ -332,4 +336,92 @@ func (p *parser) parseLambdaOrExpression() (*Expression, error) {
 	}
 	p.index = mark
 	return p.parseExpression()
+}
+
+// hiveDecimalSuffix reports the dialects whose numeric-literal suffix BD
+// infers a DECIMAL precision and scale. Databricks reaches the same builder
+// through Spark.
+func hiveDecimalSuffix(dialect string) bool {
+	return isHiveFamily(dialect) || dialect == "databricks"
+}
+
+// hiveBDDecimal builds the literal and DECIMAL type a BD-suffixed number
+// stands for: the DIGITS of the number give the precision and the exponent
+// gives the scale, trailing fractional zeros are dropped, and a negative
+// scale is folded into the precision (HiveParser.build_cast).
+func hiveBDDecimal(this *Expression) (*Expression, *Expression) {
+	if this == nil {
+		return nil, nil
+	}
+	text := this.Name()
+	digits, exponent := decimalDigits(text)
+	if len(digits) == 0 {
+		return nil, nil
+	}
+	precision, scale := len(digits), -exponent
+
+	allZero := true
+	for _, d := range digits {
+		if d != 0 {
+			allZero = false
+			break
+		}
+	}
+	if allZero {
+		precision, scale = 1, 0
+	} else {
+		for scale > 0 && digits[precision-1] == 0 {
+			precision--
+			scale--
+		}
+	}
+	if scale < 0 {
+		precision -= scale
+		scale = 0
+	}
+	if precision < scale {
+		precision = scale
+	}
+	params := []*Expression{
+		New("DataTypeParam", Arg{"this", New("Literal",
+			Arg{"this", strconv.Itoa(precision)}, Arg{"is_string", false})}),
+		New("DataTypeParam", Arg{"this", New("Literal",
+			Arg{"this", strconv.Itoa(scale)}, Arg{"is_string", false})}),
+	}
+	dt := New("DataType",
+		Arg{"this", DataTypeKind("DECIMAL")}, Arg{"expressions", params})
+	return New("Literal", Arg{"this", text}, Arg{"is_string", true}), dt
+}
+
+// decimalDigits splits a decimal literal the way Python's Decimal.as_tuple
+// does: the significant digits of the coefficient (leading zeros dropped,
+// at least one kept) and the exponent.
+func decimalDigits(text string) ([]int, int) {
+	s := strings.TrimSpace(strings.ToUpper(text))
+	if strings.HasPrefix(s, "+") || strings.HasPrefix(s, "-") {
+		s = s[1:]
+	}
+	exponent := 0
+	if i := strings.IndexByte(s, 'E'); i >= 0 {
+		if e, err := strconv.Atoi(s[i+1:]); err == nil {
+			exponent = e
+		}
+		s = s[:i]
+	}
+	intPart, fracPart := s, ""
+	if i := strings.IndexByte(s, '.'); i >= 0 {
+		intPart, fracPart = s[:i], s[i+1:]
+	}
+	coeff := intPart + fracPart
+	digits := make([]int, 0, len(coeff))
+	for _, r := range coeff {
+		if r < '0' || r > '9' {
+			continue
+		}
+		digits = append(digits, int(r-'0'))
+	}
+	for len(digits) > 1 && digits[0] == 0 {
+		digits = digits[1:]
+	}
+	return digits, exponent - len(fracPart)
 }

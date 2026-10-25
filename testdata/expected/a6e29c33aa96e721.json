@@ -1,6 +1,6 @@
 {
  "dialect": "tsql",
- "rendered": "ISNULL(ISNULL(JSON_QUERY('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4'), JSON_VALUE('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4')), ISNULL(JSON_QUERY('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4'), JSON_VALUE('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4')))",
+ "rendered": "ISNULL(JSON_QUERY('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4'), JSON_VALUE('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4'))",
  "sql": "ISNULL(JSON_QUERY('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4'), JSON_VALUE('{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}', '$.f4'))",
  "tokens": [
   {
@@ -197,6 +197,11 @@
    "v": "f4"
   },
   {
+   "i": 1,
+   "k": "json_query",
+   "v": true
+  },
+  {
    "a": true,
    "c": "sqlglot.expressions.json.JSONExtractScalar",
    "i": 0,
@@ -210,7 +215,7 @@
   },
   {
    "c": "sqlglot.expressions.core.Literal",
-   "i": 9,
+   "i": 10,
    "k": "this",
    "m": {
     "col": 126,
@@ -220,41 +225,41 @@
    }
   },
   {
-   "i": 10,
+   "i": 11,
    "k": "this",
    "v": "{\"f2\":{\"f3\":1},\"f4\":{\"f5\":99,\"f6\":\"foo\"}}"
   },
   {
-   "i": 10,
+   "i": 11,
    "k": "is_string",
    "v": true
   },
   {
    "c": "sqlglot.expressions.query.JSONPath",
-   "i": 9,
+   "i": 10,
    "k": "expression"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathRoot",
-   "i": 13,
+   "i": 14,
    "k": "expressions"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.query.JSONPathKey",
-   "i": 13,
+   "i": 14,
    "k": "expressions"
   },
   {
-   "i": 15,
+   "i": 16,
    "k": "this",
    "v": "f4"
   },
   {
-   "i": 9,
+   "i": 10,
    "k": "scalar_only",
-   "v": false
+   "v": true
   },
   {
    "i": 0,

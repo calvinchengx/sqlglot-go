@@ -1,6 +1,6 @@
 {
  "dialect": "tsql",
- "rendered": "ISNULL(JSON_QUERY(r.JSON, '$.Attr_INT'), JSON_VALUE(r.JSON, '$.Attr_INT'))",
+ "rendered": "JSON_QUERY(r.JSON, '$.Attr_INT')",
  "sql": "JSON_QUERY(r.JSON, '$.Attr_INT')",
  "tokens": [
   {
@@ -146,6 +146,11 @@
    "i": 10,
    "k": "this",
    "v": "Attr_INT"
+  },
+  {
+   "i": 0,
+   "k": "json_query",
+   "v": true
   }
  ]
 }

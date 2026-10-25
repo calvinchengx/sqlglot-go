@@ -1,6 +1,6 @@
 {
  "dialect": "bigquery",
- "rendered": "SELECT PARSE_JSON('\"foo\"') AS json_data",
+ "rendered": "SELECT JSON '\"foo\"' AS json_data",
  "sql": "SELECT JSON '\"foo\"' AS json_data",
  "tokens": [
   {
@@ -81,6 +81,11 @@
    "v": true
   },
   {
+   "i": 2,
+   "k": "is_literal",
+   "v": true
+  },
+  {
    "c": "sqlglot.expressions.core.Identifier",
    "i": 1,
    "k": "alias",
@@ -92,12 +97,12 @@
    }
   },
   {
-   "i": 6,
+   "i": 7,
    "k": "this",
    "v": "json_data"
   },
   {
-   "i": 6,
+   "i": 7,
    "k": "quoted",
    "v": false
   }

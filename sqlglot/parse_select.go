@@ -363,7 +363,7 @@ func (p *parser) parseSetOperations(this *Expression) (*Expression, error) {
 		}
 		if !ok {
 			p.index = mark
-			return this, nil
+			return p.finishSetOpModifiers(this)
 		}
 		p.advance()
 
@@ -463,7 +463,10 @@ func (p *parser) liftSetOpModifiers(setOp, right *Expression) {
 		return
 	}
 	for _, key := range p.tables.SetOpModifiers {
-		if value, _ := right.Args[key].(*Expression); value != nil {
+		value, _ := right.Args[key].(*Expression)
+		// A TOP stays on its own operand: a trailing LIMIT/FETCH is what
+		// limits the whole result (Parser._parse_set_operations).
+		if value != nil && (key != "limit" || !value.fromTop) {
 			right.Set(key, nil)
 			setOp.Set(key, value)
 		}
@@ -973,6 +976,9 @@ func (p *parser) parseTop() (*Expression, error) {
 	if options := p.parseLimitOptions(); options != nil {
 		limit.Set("limit_options", options)
 	}
+	// A trailing LIMIT/FETCH after a TOP belongs to the set operation above
+	// this query, not to the query itself (Parser._parse_query_modifiers).
+	limit.fromTop = true
 	return limit, nil
 }
 
@@ -1120,6 +1126,8 @@ func (p *parser) parseGroup() (*Expression, error) {
 		p.advance()
 		group.Set("all", false)
 	}
+	// A GROUP BY with nothing before the next clause is an error, unless ALL
+	// or DISTINCT said what it groups by (Parser._parse_group).
 	if p.groupClauseEnds() {
 		if _, ok := group.Args["all"]; !ok {
 			return nil, p.unsupported("GROUP BY with nothing to group by")
@@ -1127,76 +1135,90 @@ func (p *parser) parseGroup() (*Expression, error) {
 		return group, nil
 	}
 
-	// Reserve the column list so a column that appears AFTER a CUBE still
-	// dumps before it. An empty list is not a record.
-	group.Set("expressions", []*Expression{})
-	var plain, sets, cube, rollup []*Expression
-	for {
-		for !p.atGroupConstruct() && !p.groupClauseEnds() {
-			e, err := p.parseExpression()
+	// The columns and the grouping constructs are ONE list, in written order:
+	// `GROUP BY a, ROLLUP(b)` records both under `expressions`, and only the
+	// Hive suffix forms (`GROUP BY a WITH CUBE`, `... GROUPING SETS`) use a
+	// key of their own (Parser._parse_group).
+	var expressions []*Expression
+	for !p.groupClauseEnds() {
+		for {
+			e, err := p.parseGroupElement()
 			if err != nil {
 				return nil, err
 			}
-			plain = append(plain, e)
+			if e != nil {
+				expressions = append(expressions, e)
+			}
 			if !p.match(TokCOMMA) {
 				break
 			}
-			if p.atGroupConstruct() || p.groupClauseEnds() {
-				break
-			}
 		}
-		if len(plain) > 0 {
-			group.Set("expressions", plain)
-		}
-		// `GROUP BY x WITH TOTALS` asks for a total row: a flag on the Group,
-		// not a grouping construct (Parser._parse_group).
-		if p.at(TokWITH) && p.next() != nil && strings.EqualFold(p.next().Text, "TOTALS") {
-			p.advance()
-			p.advance()
-			group.Set("totals", true)
-			continue
-		}
-		var target *[]*Expression
-		var class, key string
-		// `GROUP BY a, b WITH CUBE` writes the word WITH rather than putting
-		// the columns inside the construct, and the construct then holds no
-		// columns of its own.
-		if p.at(TokWITH) && p.next() != nil &&
-			(p.next().Type == TokCUBE || p.next().Type == TokROLLUP) {
-			p.advance() // WITH
+		group.Set("expressions", expressions)
+
+		before := p.index
+		withPrefix := p.match(TokWITH)
+		switch {
+		case p.at(TokCUBE), p.at(TokROLLUP):
 			class, key := "Cube", "cube"
 			if p.at(TokROLLUP) {
 				class, key = "Rollup", "rollup"
 			}
 			p.advance()
+			var members []*Expression
+			if !withPrefix {
+				var err error
+				members, err = p.parseParenthesisedList()
+				if err != nil {
+					return nil, err
+				}
+			}
 			existing, _ := group.Args[key].([]*Expression)
-			group.Set(key, append(existing, New(class, Arg{"expressions", []*Expression{}})))
-			p.match(TokCOMMA)
-			continue
-		}
-		switch {
+			group.Set(key, append(existing, New(class, Arg{"expressions", members})))
 		case p.at(TokGROUPING_SETS):
-			target, class, key = &sets, "GroupingSets", "grouping_sets"
-		case p.at(TokCUBE):
-			target, class, key = &cube, "Cube", "cube"
-		case p.at(TokROLLUP):
-			target, class, key = &rollup, "Rollup", "rollup"
-		default:
+			p.advance()
+			members, err := p.parseParenthesisedList()
+			if err != nil {
+				return nil, err
+			}
+			existing, _ := group.Args["grouping_sets"].([]*Expression)
+			group.Set("grouping_sets",
+				append(existing, New("GroupingSets", Arg{"expressions", members})))
 			return group, nil
+		case p.atWords("TOTALS"):
+			p.advance()
+			group.Set("totals", true)
+		}
+		// Nothing after the columns was consumed: the group is finished, and
+		// a WITH that did not introduce CUBE or ROLLUP is put back.
+		if before <= p.index && p.index <= before+1 {
+			p.index = before
+			break
+		}
+	}
+	return group, nil
+}
+
+// parseGroupElement reads one member of the GROUP BY list: a grouping
+// construct, or an ordinary expression.
+func (p *parser) parseGroupElement() (*Expression, error) {
+	switch {
+	case p.at(TokGROUPING_SETS), p.at(TokCUBE), p.at(TokROLLUP):
+		class := "Cube"
+		switch {
+		case p.at(TokROLLUP):
+			class = "Rollup"
+		case p.at(TokGROUPING_SETS):
+			class = "GroupingSets"
 		}
 		p.advance()
 		members, err := p.parseParenthesisedList()
 		if err != nil {
 			return nil, err
 		}
-		*target = append(*target, New(class, Arg{"expressions", members}))
-		group.Set(key, *target)
-		p.match(TokCOMMA)
+		return New(class, Arg{"expressions", members}), nil
+	default:
+		return p.parseDisjunction()
 	}
-}
-
-func (p *parser) atGroupConstruct() bool {
-	return p.at(TokCUBE) || p.at(TokROLLUP) || p.at(TokGROUPING_SETS)
 }
 
 // groupClauseEnds reports whether the token in front of us belongs to the
@@ -1441,6 +1463,14 @@ func (p *parser) parseQueryModifiers(sel *Expression) error {
 	for {
 		if err := p.attachMatchRecognize(sel); err != nil {
 			return err
+		}
+		// A LIMIT/FETCH after a TOP is deferred to the set operation: it
+		// limits the whole result, not this operand
+		// (Parser._parse_query_modifiers).
+		if p.at(TokLIMIT) || p.at(TokFETCH) {
+			if limit, _ := sel.Args["limit"].(*Expression); limit != nil && limit.fromTop {
+				return nil
+			}
 		}
 		switch {
 		// PREWHERE filters before the rest of the read, and is written back
@@ -2531,10 +2561,10 @@ func (p *parser) opensASetOperation() bool {
 }
 
 // parseLimitCount reads the number (or expression) after LIMIT. Parsing
-// `LIMIT 10%` as a term builds a Mod and then fails for want of a right-hand
-// side -- or, with OFFSET after it, consumes `%` and leaves a leftover. The
-// reference backtracks, reads a factor, and leaves `%` for parseLimitOptions,
-// so `10%` and `10 PERCENT` are the same tree.
+// `LIMIT 10%` as an ordinary term builds a Mod and then fails for want of a
+// right-hand side -- or, with OFFSET after it, consumes `%` and leaves a
+// leftover. The reference reads the term with modulo switched off and leaves
+// `%` for parseLimitOptions, so `10%` and `10 PERCENT` are the same tree.
 
 // parseQueryLimit reads LIMIT, including the older `LIMIT offset, count`
 // spelling. The first expression is the offset and is hoisted onto the
@@ -2613,13 +2643,30 @@ func (p *parser) parseLimitBy() ([]*Expression, error) {
 }
 
 func (p *parser) parseLimitCount() (*Expression, error) {
-	mark := p.index
-	e, err := p.parseTerm()
-	if err != nil || (e != nil && e.Class == "Mod") {
-		p.index = mark
-		return p.parseFactor()
+	// `LIMIT 10%` is a share, not a modulo: the reference reads the term with
+	// modulo switched off, which leaves the `%` for parseLimitOptions
+	// (Parser._parse_limit -> _parse_term(parse_mod=False)).
+	return p.parseBinary(withoutMod(p.tables.Term), p.parseFactorNoMod)
+}
+
+// parseFactorNoMod is parseFactor with `%` left for the caller.
+func (p *parser) parseFactorNoMod() (*Expression, error) {
+	return p.parseBinary(withoutMod(p.tables.Factor), p.oracleKeepOperand)
+}
+
+// withoutMod returns the operator set with `%` removed, so a LIMIT count
+// stops before a percent sign.
+func withoutMod(ops map[TokenType]string) map[TokenType]string {
+	if _, ok := ops[TokMOD]; !ok {
+		return ops
 	}
-	return e, nil
+	out := make(map[TokenType]string, len(ops))
+	for tt, class := range ops {
+		if tt != TokMOD {
+			out[tt] = class
+		}
+	}
+	return out
 }
 
 // parseLimitOptions reads what may follow a LIMIT's count: `PERCENT` says the
@@ -2751,4 +2798,30 @@ func (p *parser) parseScalarCTE() (*Expression, error) {
 	// (ClickHouseGenerator.cte_sql).
 	node.Set("scalar", true)
 	return node, nil
+}
+
+// finishSetOpModifiers reads a trailing LIMIT or FETCH onto the set operation
+// itself. The reference parses it here because the last operand's own
+// modifiers were already read and lifted, and a TOP on that operand deferred
+// them (Parser._parse_set_operations).
+func (p *parser) finishSetOpModifiers(this *Expression) (*Expression, error) {
+	if this == nil || !isSetOperationClass(this.Class) {
+		return this, nil
+	}
+	if !p.at(TokLIMIT) && !p.at(TokFETCH) {
+		return this, nil
+	}
+	if err := p.parseQueryModifiers(this); err != nil {
+		return nil, err
+	}
+	return this, nil
+}
+
+// isSetOperationClass reports whether a class is one of the set operations.
+func isSetOperationClass(class string) bool {
+	switch class {
+	case "Union", "Except", "Intersect":
+		return true
+	}
+	return false
 }

@@ -1129,6 +1129,37 @@ func (p *parser) parseCallArgument() (*Expression, error) {
 // and the same words inside a call the reference knows would be an argument
 // followed by a stray word.
 func (p *parser) parseCallArgumentAliased(alias bool) (*Expression, error) {
+	e, err := p.parseCallArgumentInner(alias)
+	if err != nil || e == nil {
+		return e, err
+	}
+	// An argument may say what the call does with NULLs: `LEAD(x IGNORE
+	// NULLS, 1, 0)`. The words belong to the ARGUMENT here and are lifted
+	// onto the call once its window is read (Parser._parse_lambda).
+	return p.parseRespectOrIgnoreNulls(e), nil
+}
+
+// parseRespectOrIgnoreNulls reads the postfix `IGNORE NULLS` or
+// `RESPECT NULLS` an argument may carry (Parser._parse_respect_or_ignore_nulls).
+// The reference only tries at all when the next token is a word.
+func (p *parser) parseRespectOrIgnoreNulls(this *Expression) *Expression {
+	if c := p.curr(); c == nil || c.Type != TokVAR {
+		return this
+	}
+	if p.atWords("IGNORE", "NULLS") {
+		p.advance()
+		p.advance()
+		return New("IgnoreNulls", Arg{"this", this})
+	}
+	if p.atWords("RESPECT", "NULLS") {
+		p.advance()
+		p.advance()
+		return New("RespectNulls", Arg{"this", this})
+	}
+	return this
+}
+
+func (p *parser) parseCallArgumentInner(alias bool) (*Expression, error) {
 	switch {
 	case p.atLambda():
 		return p.parseLambda()
@@ -1431,10 +1462,12 @@ func (p *parser) parseDatePart(normalise bool) (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		// A name is taken OFF a column or a string and made into a bare unit;
-		// anything else is kept as the node it is.
+		// A name is taken OFF a column or a string and made into a bare unit,
+		// uppercased: PostgreSQL records the part it was given, not the case
+		// it was written in (PostgresParser._parse_date_part). Anything else
+		// is kept as the node it is.
 		if part != nil && (part.Class == "Column" || part.Class == "Literal") {
-			part = New("Var", Arg{"this", part.Name()})
+			part = New("Var", Arg{"this", strings.ToUpper(part.Name())})
 		}
 		unit = part
 	}

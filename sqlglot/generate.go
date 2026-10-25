@@ -56,6 +56,11 @@ func Generate(e *Expression, dialect string) (string, error) {
 	if !ok {
 		return "", fmt.Errorf("sqlglot: no generator for dialect %q (have %v)", dialect, Dialects())
 	}
+	// T-SQL has no boolean type and writes a bare value used as a condition
+	// as an explicit comparison (TSQLGenerator.ENSURE_BOOLS).
+	if dialect == "tsql" {
+		e = ensureBoolsTSQL(e.Copy())
+	}
 	g := &generator{cfg: cfg, tables: cfg.Tables, dialect: dialect, root: e}
 	// The Trino side of Athena is Trino with two property spellings changed,
 	// so the tables are Trino's and the flag says which spellings.
@@ -412,7 +417,12 @@ func (g *generator) listSep(e *Expression, sep string) string {
 	items, _ := e.Args["expressions"].([]*Expression)
 	parts := make([]string, 0, len(items))
 	for _, item := range items {
-		parts = append(parts, g.node(item))
+		// A node this dialect writes as NOTHING -- a constraint it does not
+		// enforce -- is left out of the list entirely rather than leaving a
+		// stray separator behind.
+		if text := g.node(item); text != "" {
+			parts = append(parts, text)
+		}
 	}
 	return strings.Join(parts, sep)
 }

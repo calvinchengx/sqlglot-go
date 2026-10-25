@@ -214,11 +214,16 @@ func (p *parser) parseRange() (*Expression, error) {
 			this, err = p.parseIs(this)
 		case c.Type == TokGLOBAL:
 			// ClickHouse's GLOBAL IN: the same In, flagged, with an optional
-			// NOT in front (ClickHouseParser._parse_global_in).
+			// NOT in front (ClickHouseParser._parse_global_in). A GLOBAL that
+			// does not introduce an IN is left where it is: the join syntax
+			// reads it next (`GLOBAL ANY LEFT JOIN`), and consuming it here
+			// would lose it.
+			mark := p.index
 			p.advance()
 			negated := p.match(TokNOT)
 			if !p.match(TokIN) {
-				return nil, p.unsupported("GLOBAL without IN")
+				p.index = mark
+				return this, nil
 			}
 			in, gerr := p.parseIn(this)
 			if gerr != nil {
@@ -1047,6 +1052,14 @@ func (p *parser) parsePostfix() (*Expression, error) {
 // test rather than the NULL.
 func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 	this = p.oracleDateLiteral(this)
+	// A call whose ARGUMENT carried IGNORE NULLS keeps the words outside the
+	// call: `SUM(x IGNORE NULLS)` is IgnoreNulls(Sum(x)), because the
+	// reference lifts the treatment off the argument and around the whole
+	// call once the function is built (Parser._parse_function_call ->
+	// _parse_window).
+	if lifted := liftNullTreatment(this); lifted != nil {
+		this = lifted
+	}
 	for {
 		// Teradata's `(FORMAT '...')` after a column overrides how its value
 		// is shown. It is a PHRASE rather than a call, which is why the
@@ -1144,6 +1157,7 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 			continue
 		}
 		if p.match(TokDCOLON) {
+			typeToken := p.curr()
 			to, err := p.parseDataType()
 			if err != nil {
 				return nil, err
@@ -1154,6 +1168,18 @@ func (p *parser) parseColumnOps(this *Expression) (*Expression, error) {
 			class := "Cast"
 			if !p.tables.StrictCast {
 				class = "TryCast"
+			}
+			// `1.0BD` names a DECIMAL whose precision and scale come from
+			// the literal itself, and casts the TEXT so nothing is rounded
+			// on the way (HiveParser.build_cast).
+			if typeToken != nil && hiveDecimalSuffix(p.dialect) &&
+				strings.EqualFold(typeToken.Text, "BD") {
+				if literal, dt := hiveBDDecimal(this); literal != nil {
+					cast := New(class, Arg{"this", literal}, Arg{"to", dt})
+					cast.Type = dt
+					this = cast
+					continue
+				}
 			}
 			to = p.hiveCastType(to)
 			cast := New(class, Arg{"this", this}, Arg{"to", to})
@@ -1946,7 +1972,9 @@ func (p *parser) parsePrimary() (*Expression, error) {
 			// reference reads it straight into a ParseJSON, the same node
 			// the JSON_PARSE/JSON_VALID family of functions build.
 			if kind.Args["this"] == DataTypeKind("JSON") {
-				return New("ParseJSON", Arg{"this", inner}), nil
+				// The literal form, which writes back as JSON '...' rather
+				// than JSON_PARSE(...) (Parser.TYPE_LITERAL_PARSERS).
+				return New("ParseJSON", Arg{"this", inner}, Arg{"is_literal", true}), nil
 			}
 			// Presto reads a TIMESTAMP/TIME literal carrying a zone offset
 			// or name as TIMESTAMPTZ/TIMETZ instead -- the type the literal
@@ -2802,6 +2830,16 @@ func (p *parser) parseBaseDataType() (*Expression, error) {
 	}
 	kind, ok := p.tables.TypeTokens[c.Type]
 	if !ok {
+		// PostgreSQL keeps a quoted type of its own as USER-DEFINED:
+		// `CAST(65 AS "char")` is a type named char, not the CHAR type
+		// (Parser.QUOTED_TYPES_TO_PRESERVE).
+		if c.Type == TokIDENTIFIER && p.quotedTypePreserved(c.Text) {
+			p.advance()
+			return New("DataType",
+				Arg{"this", DataTypeKind("USER-DEFINED")},
+				Arg{"kind", New("Identifier",
+					Arg{"this", c.Text}, Arg{"quoted", true})}), nil
+		}
 		// A type may be written in QUOTES -- T-SQL brackets one, `[a] [int]`
 		// -- which makes it an identifier to the tokenizer rather than a type
 		// word. The reference lexes the identifier's TEXT again and takes the
@@ -3705,6 +3743,20 @@ func (p *parser) clickhouseFunctionParser(upper string) (bool, *Expression, erro
 			return true, nil, p.unsupported("unclosed arrayJoin")
 		}
 		return true, New("Explode", Arg{"this", inner}), nil
+	case "VIEW":
+		// `view(SELECT ...)`: a table function over a query, and the name is
+		// recorded in lowercase (ClickHouseParser.FUNCTION_PARSERS).
+		p.advance()
+		p.advance() // the opening parenthesis
+		query, err := p.parseSelect()
+		if err != nil {
+			return true, nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return true, nil, p.unsupported("unclosed view")
+		}
+		return true, New("Anonymous", Arg{"this", "view"},
+			Arg{"expressions", []*Expression{query}}), nil
 	}
 	return false, nil, nil
 }
@@ -6433,4 +6485,15 @@ func isTextMatchExcluded(t TokenType) bool {
 		return true
 	}
 	return false
+}
+
+// quotedTypePreserved reports whether a quoted type name is kept as a type of
+// its own rather than re-read as the keyword it spells. PostgreSQL names
+// exactly one, and Redshift inherits it
+// (PostgresParser.QUOTED_TYPES_TO_PRESERVE).
+func (p *parser) quotedTypePreserved(name string) bool {
+	if p.dialect != "postgres" && p.dialect != "redshift" {
+		return false
+	}
+	return name == "char"
 }

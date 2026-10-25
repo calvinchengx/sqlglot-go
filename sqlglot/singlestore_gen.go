@@ -46,6 +46,18 @@ func (g *generator) singlestoreNode(e *Expression) (string, bool) {
 	case "JSONExtract", "JSONBExtract", "JSONExtractScalar", "JSONBExtractScalar":
 		return g.singlestoreJSONExtract(e), true
 
+	case "Collate":
+		// `x :> LONGTEXT COLLATE 'c'`, and no second cast where the cast is
+		// already there (SingleStoreGenerator.collate_sql).
+		if cast := childOf(e, "this"); cast != nil && cast.Class == "Cast" {
+			if to := childOf(cast, "to"); to != nil {
+				if k, _ := to.Args["this"].(DataTypeKind); k == "LONGTEXT" {
+					return g.node(cast) + " COLLATE " + g.child(e, "expression"), true
+				}
+			}
+		}
+		return g.child(e, "this") + " :> LONGTEXT COLLATE " + g.child(e, "expression"), true
+
 	case "JSONExists":
 		if from, _ := e.Args["from_dcolonqmark"].(bool); from {
 			path, _ := e.Args["path"].(string)
