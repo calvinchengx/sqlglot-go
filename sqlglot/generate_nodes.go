@@ -3936,6 +3936,15 @@ func (g *generator) writeInterval(e *Expression) string {
 		return "INTERVAL " + g.node(this)
 	}
 	unitSQL := g.node(unit)
+	// DuckDB keeps a fraction inside the string: it truncates
+	// `INTERVAL '1.5' DAY` but not `INTERVAL '1.5 DAY'`
+	// (DuckDBGenerator.interval_sql).
+	if g.dialect == "duckdb" && e.Args["fraction_in_string"] == true &&
+		this != nil && unit.Class == "Var" {
+		text, _ := this.Args["this"].(string)
+		return "INTERVAL '" + escapeStringBody(text, g.cfg.StringEscapePreferred) +
+			" " + unitSQL + "'"
+	}
 	if !g.tables.IntervalAllowsPluralForm {
 		if singular, ok := timePartSingulars[unitSQL]; ok {
 			unitSQL = singular
