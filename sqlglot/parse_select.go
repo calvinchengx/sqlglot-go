@@ -279,12 +279,23 @@ func (p *parser) parseWith() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	// A SEARCH clause may be followed by a CYCLE clause of its own, which is
+	// a second node on the With rather than part of the first.
+	var cycle *Expression
+	if search != nil {
+		if kind, _ := search.Args["kind"].(string); kind != "CYCLE" && p.atWords("CYCLE") {
+			cycle, err = p.parseRecursiveWithSearch()
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 	var udfArg any
 	if len(udfs) > 0 {
 		udfArg = udfs
 	}
 	return New("With", Arg{"expressions", ctes}, Arg{"recursive", recursiveArg},
-		Arg{"search", search}, Arg{"udfs", udfArg}), nil
+		Arg{"search", search}, Arg{"cycle", cycle}, Arg{"udfs", udfArg}), nil
 }
 
 // parseRecursiveWithSearch reads the SEARCH or CYCLE clause that may follow a
@@ -323,7 +334,21 @@ func (p *parser) parseRecursiveWithSearch() (*Expression, error) {
 			return nil, err
 		}
 	}
-	var using *Expression
+	// CYCLE marks the rows that repeat the starting one: `TO <value>` and
+	// `DEFAULT <value>` name the marks, and USING names the path column.
+	var to, defaultExpr, using *Expression
+	if p.matchWords("TO") {
+		to, err = p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+	}
+	if p.matchWords("DEFAULT") {
+		defaultExpr, err = p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+	}
 	if p.match(TokUSING) {
 		using, err = p.parseIdentifier()
 		if err != nil {
@@ -331,7 +356,8 @@ func (p *parser) parseRecursiveWithSearch() (*Expression, error) {
 		}
 	}
 	return New("RecursiveWithSearch",
-		Arg{"kind", kind}, Arg{"this", this}, Arg{"expression", expression}, Arg{"using", using}), nil
+		Arg{"kind", kind}, Arg{"this", this}, Arg{"expression", expression},
+		Arg{"to", to}, Arg{"default", defaultExpr}, Arg{"using", using}), nil
 }
 
 // setOperations are the words that chain two queries together.

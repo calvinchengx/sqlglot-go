@@ -806,6 +806,11 @@ func (g *generator) writeWith(e *Expression) string {
 	if s := g.child(e, "search"); s != "" {
 		search = " " + s
 	}
+	// A SEARCH may be followed by a CYCLE of its own, written after it
+	// (Generator.with_sql).
+	if c := g.child(e, "cycle"); c != "" {
+		search += " " + c
+	}
 	udfs := ""
 	if items, _ := e.Args["udfs"].([]*Expression); len(items) > 0 {
 		parts := make([]string, 0, len(items))
@@ -2076,11 +2081,18 @@ func (g *generator) writeRecursiveWithSearch(e *Expression) string {
 	if kind != "CYCLE" {
 		verb = "SEARCH " + kind + " FIRST BY"
 	}
-	using := ""
+	to, defaultExpr, using := "", "", ""
+	if v := g.child(e, "to"); v != "" {
+		to = " TO " + v
+	}
+	if v := g.child(e, "default"); v != "" {
+		defaultExpr = " DEFAULT " + v
+	}
 	if u := g.child(e, "using"); u != "" {
 		using = " USING " + u
 	}
-	return verb + " " + g.child(e, "this") + " SET " + g.child(e, "expression") + using
+	return verb + " " + g.child(e, "this") + " SET " + g.child(e, "expression") +
+		to + defaultExpr + using
 }
 
 // escapeStringBody escapes a quote the way THIS DIALECT escapes it.
