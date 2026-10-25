@@ -523,6 +523,13 @@ func (g *generator) selectOperationModifiers(e *Expression) string {
 }
 
 func (g *generator) writeSelect(e *Expression) string {
+	// A dialect with no QUALIFY rewrites the query into an outer select over
+	// a subquery instead (HiveGenerator.TRANSFORMS, eliminate_qualify).
+	if writesQualifyAsHive(g.dialect) && e.Args["qualify"] != nil {
+		if rewritten, ok := eliminateQualify(e); ok && rewritten != e {
+			return g.writeSelect(rewritten)
+		}
+	}
 	// StarRocks rewrites UNNEST(GENERATE_DATE_ARRAY(...)) into a recursive CTE
 	// (transforms.unnest_generate_date_array_using_recursive_cte), which this
 	// port does not build. Refuse rather than write the un-transformed query.
@@ -4399,7 +4406,58 @@ func (g *generator) writePropertyEQ(e *Expression) string {
 }
 
 func (g *generator) writeFilter(e *Expression) string {
+	// A dialect with no FILTER of its own folds the condition into the
+	// aggregate instead (dialect.py, no_filter_sql).
+	switch g.dialect {
+	case "tsql", "bigquery", "snowflake", "fabric":
+		if out, ok := g.filterAsAggregateArgument(e); ok {
+			return out
+		}
+		return g.fail("a FILTER this dialect cannot rewrite")
+	}
 	return g.child(e, "this") + " FILTER(" + g.child(e, "expression") + ")"
+}
+
+// filterAsAggregateArgument rewrites `AGG(x) FILTER(WHERE cond)` into the
+// conditional aggregation the dialect can read: the condition joins the
+// aggregate's own argument, since aggregates skip NULLs
+// (dialect.py, no_filter_sql).
+func (g *generator) filterAsAggregateArgument(e *Expression) (string, bool) {
+	agg, _ := e.Args["this"].(*Expression)
+	if agg == nil {
+		return "", false
+	}
+	if agg.Class == "IgnoreNulls" {
+		agg = childOf(agg, "this")
+	}
+	if agg == nil {
+		return "", false
+	}
+	where, _ := e.Args["expression"].(*Expression)
+	cond := childOf(where, "this")
+	if cond == nil {
+		return "", false
+	}
+	var aggArg *Expression
+	if agg.Class == "Anonymous" {
+		if items, _ := agg.Args["expressions"].([]*Expression); len(items) > 0 {
+			aggArg = items[0]
+		}
+	} else {
+		aggArg = childOf(agg, "this")
+	}
+	// Folding the condition into COUNT_IF's predicate avoids an IF that
+	// returns a predicate, which a dialect without a boolean type rejects.
+	if agg.Class == "CountIf" && (aggArg == nil || aggArg.Class != "Distinct") {
+		combined := New("And", Arg{"this", cond}, Arg{"expression", aggArg})
+		return g.node(New("CountIf", Arg{"this", combined})), true
+	}
+	// `COUNT(*/t.*) FILTER (WHERE cond)` counts qualifying rows, and a star
+	// can be no IF's argument.
+	if agg.Class == "Count" && (aggArg == nil || aggArg.Class == "Star") {
+		return g.node(New("CountIf", Arg{"this", cond})), true
+	}
+	return "", false
 }
 
 // keyDelimiter reports the quote a JSON path form wraps its key in, or "" if
