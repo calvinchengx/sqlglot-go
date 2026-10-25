@@ -134,15 +134,150 @@ func (p *parser) parseDisjunction() (*Expression, error) {
 }
 
 func (p *parser) parseConjunction() (*Expression, error) {
-	return p.parseBinary(p.tables.Conjunction, p.parseEquality)
+	this, err := p.parseBinary(p.tables.Conjunction, p.parseEquality)
+	if err != nil {
+		return nil, err
+	}
+	// MySQL puts XOR at the conjunction tier, and its right-hand side is a
+	// CONJUNCTION rather than an equality (MySQLParser._parse_conjunction).
+	if isMySQLFamily(p.dialect) {
+		for p.at(TokXOR) {
+			p.advance()
+			comments := p.takeComments()
+			right, rerr := p.parseBinary(p.tables.Conjunction, p.parseEquality)
+			if rerr != nil {
+				return nil, rerr
+			}
+			this = putComments(New("Xor", Arg{"this", this}, Arg{"expression", right}), comments)
+		}
+	}
+	return this, nil
 }
 
 func (p *parser) parseEquality() (*Expression, error) {
-	return p.parseBinary(p.tables.Equality, p.parseComparison)
+	return p.parseEqualityWith(true)
+}
+
+// parseEqualityWith is the reference's _parse_equality(parse_is=...): where IS
+// binds at or below this tier, a postfix predicate is read HERE rather than
+// inside the range tier, and can itself be an operand of a comparison.
+func (p *parser) parseEqualityWith(parseIs bool) (*Expression, error) {
+	this, err := p.parseComparison()
+	if err != nil {
+		return nil, err
+	}
+	for {
+		if c := p.curr(); c != nil {
+			if class, ok := p.tables.Equality[c.Type]; ok {
+				p.advance()
+				comments := p.takeComments()
+				right, rerr := p.parseComparison()
+				if rerr != nil {
+					return nil, rerr
+				}
+				this = p.buildPredicate(class, this, right, comments, false)
+				continue
+			}
+		}
+		if parseIs && p.isPredicateAhead() {
+			index := p.index
+			ranged, rerr := p.parseRangeFrom(this, true)
+			if rerr != nil {
+				return nil, rerr
+			}
+			this, rerr = p.parseComparisonFrom(ranged)
+			if rerr != nil {
+				return nil, rerr
+			}
+			if p.index == index {
+				break
+			}
+			continue
+		}
+		break
+	}
+	return this, nil
 }
 
 func (p *parser) parseComparison() (*Expression, error) {
 	return p.parseBinary(p.tables.Comparison, p.parseRange)
+}
+
+// parseComparisonFrom continues a comparison chain from a node already read.
+func (p *parser) parseComparisonFrom(this *Expression) (*Expression, error) {
+	return p.parseBinaryFrom(this, p.tables.Comparison, p.parseRange)
+}
+
+// isPredicateAhead reports whether a postfix IS/ISNULL/NOTNULL (or `NOT NULL`)
+// stands here and belongs to the EQUALITY tier rather than this one.
+func (p *parser) isPredicateAhead() bool {
+	if p.tables.ISPredicatePrecedence == "" || p.tables.ISPredicatePrecedence == "HIGH" {
+		return false
+	}
+	c := p.curr()
+	if c == nil {
+		return false
+	}
+	switch c.Type {
+	case TokIS, TokISNULL, TokNOTNULL:
+		return true
+	case TokNOT:
+		n := p.next()
+		return n != nil && n.Type == TokNULL
+	}
+	return false
+}
+
+// classInOps reports whether a node class is one of an operator table's.
+func (p *parser) classInOps(ops map[TokenType]string, class string) bool {
+	for _, c := range ops {
+		if c == class {
+			return true
+		}
+	}
+	return false
+}
+
+// buildPredicate is the reference's _build_predicate: it preserves the
+// grouping an IS (and the null-safe comparisons) needs, on either side, and
+// braces a predicate that stands as an OPERAND of a comparison.
+func (p *parser) buildPredicate(class string, this, expression *Expression, comments []string, negate bool) *Expression {
+	isPredicate := class == "Is" || class == "NullSafeEQ" || class == "NullSafeNEQ"
+	predicate := func(e *Expression) bool {
+		return e != nil && (e.Class == "Is" || e.Class == "NullSafeEQ" || e.Class == "NullSafeNEQ")
+	}
+	if isPredicate {
+		if this != nil && (isA("Connector", this) || this.Class == "Not" || this.Class == "NullSafeNEQ" ||
+			p.classInOps(p.tables.Equality, this.Class) ||
+			p.classInOps(p.tables.Comparison, this.Class) ||
+			(class != "Is" && this.Class == "Is")) {
+			this = New("Paren", Arg{"this", this})
+		}
+		if expression != nil && (isA("Predicate", expression) || isA("Connector", expression) ||
+			expression.Class == "Not" || expression.Class == "Escape") {
+			expression = New("Paren", Arg{"this", expression})
+		}
+	} else {
+		inner := this
+		if this != nil && this.Class == "Not" {
+			inner = childOf(this, "this")
+		}
+		if predicate(inner) {
+			this = New("Paren", Arg{"this", this})
+		}
+		innerE := expression
+		if expression != nil && expression.Class == "Not" {
+			innerE = childOf(expression, "this")
+		}
+		if predicate(innerE) {
+			expression = New("Paren", Arg{"this", expression})
+		}
+	}
+	node := New(class, Arg{"this", this}, Arg{"expression", expression})
+	if negate {
+		node.Set("negate", true)
+	}
+	return putComments(node, comments)
 }
 
 // parseRange handles IS, IN, BETWEEN and the LIKE family, including their
@@ -153,15 +288,37 @@ func (p *parser) parseComparison() (*Expression, error) {
 // reference treats the two differently and so must this. A NOT that turns out
 // not to introduce a range is put back.
 func (p *parser) parseRange() (*Expression, error) {
-	if prefixed, handled, err := p.oracleHierarchyPrefix(); handled {
-		return prefixed, err
-	}
-	this, err := p.parseJSONArrow()
-	if err != nil {
-		return nil, err
+	return p.parseRangeFrom(nil, false)
+}
+
+// parseRangeFrom reads the range tier, optionally CONTINUING from a node
+// already read and optionally consuming a postfix IS that belongs here.
+func (p *parser) parseRangeFrom(this *Expression, parseIs bool) (*Expression, error) {
+	if this == nil {
+		if prefixed, handled, err := p.oracleHierarchyPrefix(); handled {
+			return prefixed, err
+		}
+		var err error
+		this, err = p.parseJSONArrow()
+		if err != nil {
+			return nil, err
+		}
 	}
 
+	// Doris's full-text MATCH operators are ranges of their own:
+	// `c MATCH_PHRASE 'x' [USING ANALYZER a]` (DorisParser._parse_range).
+	if p.dialect == "doris" {
+		if out, handled, merr := p.parseDorisMatch(this); handled {
+			return out, merr
+		}
+	}
+	var err error
 	for {
+		// Where IS binds below this tier it is not read here at all: the
+		// EQUALITY tier takes it, and may then hand the result back.
+		if !parseIs && p.isPredicateAhead() {
+			return this, nil
+		}
 		negate := p.match(TokNOT)
 		c := p.curr()
 		if c == nil {
@@ -177,7 +334,7 @@ func (p *parser) parseRange() (*Expression, error) {
 		case negate && c.Type == TokNULL:
 			// `a NOT NULL` is a negated IS NULL; the negation wraps below.
 			p.advance()
-			this = New("Is", Arg{"this", this}, Arg{"expression", New("Null")})
+			this = p.buildPredicate("Is", this, New("Null"), nil, false)
 		// PostgreSQL writes `x ISNULL` and `x NOTNULL` for the two IS NULL
 		// tests. The first is exactly `IS NULL`; the second is a NEGATED Is
 		// in the dialect that keeps one and a Not around an Is in the
@@ -199,15 +356,14 @@ func (p *parser) parseRange() (*Expression, error) {
 			}
 		case c.Type == TokISNULL:
 			p.advance()
-			this = New("Is", Arg{"this", this}, Arg{"expression", New("Null")})
+			this = p.buildPredicate("Is", this, New("Null"), nil, false)
 		case c.Type == TokNOTNULL:
 			p.advance()
 			if p.tables.NormalizeNotNull {
 				this = New("Not", Arg{"this",
-					New("Is", Arg{"this", this}, Arg{"expression", New("Null")})})
+					p.buildPredicate("Is", this, New("Null"), nil, false)})
 			} else {
-				this = New("Is", Arg{"this", this},
-					Arg{"expression", New("Null")}, Arg{"negate", true})
+				this = p.buildPredicate("Is", this, New("Null"), nil, true)
 			}
 		case c.Type == TokIS:
 			p.advance()
@@ -365,8 +521,12 @@ func (p *parser) parseRange() (*Expression, error) {
 
 		if negate {
 			this = negateRange(this)
-			// A negation followed by another range operator is parenthesised,
-			// so `NOT a LIKE b LIKE c` cannot re-associate.
+		}
+		// A negation -- written, or a Not around an Is -- followed by another
+		// range operator is parenthesised, so it cannot re-associate
+		// (Parser._parse_range).
+		if negate || (this.Class == "Not" && childOf(this, "this") != nil &&
+			childOf(this, "this").Class == "Is") {
 			if n := p.curr(); n != nil {
 				_, isRange := p.tables.RangeTokens[n.Type]
 				if n.Type == TokNOT || isRange {
@@ -396,19 +556,21 @@ func (p *parser) parseRange() (*Expression, error) {
 // standing where expected means this was not a comprehension at all, the
 // same as the reference's own retreat.
 func (p *parser) parseComprehension(this *Expression) (*Expression, bool, error) {
-	expression, err := p.parseColumn()
+	// The loop VARIABLE is a NAME, not a column: `[x FOR x IN l]`
+	// (Parser._parse_comprehension, _parse_id_var).
+	expression, err := p.parseIdentifier()
 	if err != nil {
 		return nil, false, nil
 	}
+	// The index name is written only where it was: an absent one is NO
+	// argument at all, not a false one (Parser._parse_comprehension).
 	var position any
 	if p.match(TokCOMMA) {
-		pos, perr := p.parseColumn()
+		pos, perr := p.parseIdentifier()
 		if perr != nil {
 			return nil, false, nil
 		}
 		position = pos
-	} else {
-		position = false
 	}
 	if !p.match(TokIN) {
 		return nil, false, nil
@@ -464,7 +626,7 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 		if !p.match(TokFROM) {
 			return nil, p.unsupported("IS DISTINCT without FROM")
 		}
-		other, err := p.parseBitwise()
+		other, err := p.parseIsRhs(true)
 		if err != nil {
 			return nil, err
 		}
@@ -472,14 +634,17 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 		if negate {
 			class = "NullSafeEQ"
 		}
-		return New(class, Arg{"this", this}, Arg{"expression", other}), nil
+		return p.buildPredicate(class, this, other, nil, false), nil
 	}
 
 	var expression *Expression
 	// `x IS UNKNOWN` is `x IS NULL`: the reference gives UNKNOWN no node of its
 	// own after IS, it simply builds a Null. The negated form then picks up the
 	// dialect's NOT shape below, exactly as `IS NOT NULL` does.
-	if p.match(TokNULL) || p.match(TokUNKNOWN) {
+	// SQLite reads the whole right-hand side through its own comparison
+	// reader, so `IS NULL < FALSE` keeps the comparison INSIDE the predicate
+	// and the NULL is not consumed on its own (SQLiteParser._parse_is_rhs).
+	if p.dialect != "sqlite" && (p.match(TokNULL) || p.match(TokUNKNOWN)) {
 		expression = New("Null")
 	} else if p.match(TokJSON) {
 		// `x IS JSON [VALUE|SCALAR|ARRAY|OBJECT] [WITH|WITHOUT] [UNIQUE
@@ -508,7 +673,7 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 		expression = New("JSON", Arg{"this", kind}, Arg{"with_", with_}, Arg{"unique", unique})
 	} else {
 		var err error
-		expression, err = p.parseBitwise()
+		expression, err = p.parseIsRhs(false)
 		if err != nil {
 			return nil, err
 		}
@@ -521,14 +686,55 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 	// the same, and exactly the divergence this port exists to prevent. The
 	// flag is probed from the reference; see harness/gen_parser.py.
 	if negate && expression.Class == "Null" && !p.tables.IsNotNullWrapsInNot {
-		return p.parseColumnOps(New("Is",
-			Arg{"this", this}, Arg{"expression", expression}, Arg{"negate", true}))
+		return p.parseColumnOps(p.buildPredicate("Is", this, expression, nil, true))
 	}
-	is := New("Is", Arg{"this", this}, Arg{"expression", expression})
+	is := p.buildPredicate("Is", this, expression, nil, false)
 	if negate {
 		return p.parseColumnOps(New("Not", Arg{"this", is}))
 	}
 	return p.parseColumnOps(is)
+}
+
+// parseIsRhs is the reference's _parse_is_rhs: how much of the right-hand
+// side belongs to the predicate depends on where IS binds in this dialect.
+func (p *parser) parseIsRhs(distinct bool) (*Expression, error) {
+	// SQLite puts ordering comparisons INSIDE what follows IS, where range
+	// predicates bind below it -- and it does so for IS DISTINCT FROM too,
+	// whose flag its own reader ignores (SQLiteParser._parse_is_rhs).
+	if p.dialect == "sqlite" {
+		this, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		for {
+			c := p.curr()
+			if c == nil {
+				break
+			}
+			class, ok := p.tables.Comparison[c.Type]
+			if !ok {
+				break
+			}
+			p.advance()
+			right, rerr := p.parseBitwise()
+			if rerr != nil {
+				return nil, rerr
+			}
+			this = New(class, Arg{"this", this}, Arg{"expression", right})
+		}
+		return this, nil
+	}
+	if distinct {
+		switch p.tables.ISPredicatePrecedence {
+		case "LOW":
+			return p.parseEqualityWith(false)
+		case "EQUALITY":
+			return p.parseComparison()
+		case "COMPARISON":
+			return p.parseRange()
+		}
+	}
+	return p.parseBitwise()
 }
 
 func (p *parser) parseIn(this *Expression) (*Expression, error) {
@@ -608,6 +814,12 @@ func (p *parser) parseIn(this *Expression) (*Expression, error) {
 }
 
 func (p *parser) parseBetween(this *Expression) (*Expression, error) {
+	// The grouping a BETWEEN's operand already carries is preserved when the
+	// predicate is rewritten into comparisons (Parser._parse_between).
+	if this != nil && (this.Class == "Is" || this.Class == "NullSafeEQ" ||
+		this.Class == "NullSafeNEQ") {
+		this = New("Paren", Arg{"this", this})
+	}
 	// PostgreSQL's SYMMETRIC swaps the bounds when they arrive the wrong way
 	// round, so `BETWEEN SYMMETRIC 10 AND 2` matches where the plain form
 	// matches nothing. Neither word is a keyword token -- the reference
@@ -896,6 +1108,11 @@ func (p *parser) parseBinary(ops map[TokenType]string, next func() (*Expression,
 	if err != nil {
 		return nil, err
 	}
+	return p.parseBinaryFrom(this, ops, next)
+}
+
+// parseBinaryFrom runs one precedence level from a node already read.
+func (p *parser) parseBinaryFrom(this *Expression, ops map[TokenType]string, next func() (*Expression, error)) (*Expression, error) {
 	for {
 		c := p.curr()
 		if c == nil {
@@ -970,6 +1187,24 @@ func (p *parser) parseUnary() (*Expression, error) {
 			return p.parseMySQLBinaryPrefix()
 		}
 	}
+	// MySQL and the dialects that inherit it read NOT their own way: the
+	// EXCLAMATION MARK binds tighter than the word, so its negation is
+	// parenthesised to keep that grouping (MySQLParser._parse_not).
+	if isMySQLFamily(p.dialect) && c.Type == TokNOT {
+		p.advance()
+		if c.Text == "!" {
+			inner, err := p.parseUnary()
+			if err != nil {
+				return nil, err
+			}
+			return New("Paren", Arg{"this", New("Not", Arg{"this", inner})}), nil
+		}
+		inner, err := p.parseEquality()
+		if err != nil {
+			return nil, err
+		}
+		return New("Not", Arg{"this", inner}), nil
+	}
 	class, isUnary := p.tables.UnaryOps[c.Type]
 	if !isUnary {
 		return p.oracleNthValueFrom(p.parsePostfix())
@@ -1019,10 +1254,13 @@ func (p *parser) parsePostfix() (*Expression, error) {
 	// records no join_mark on a plain `1` inside `ROWS BETWEEN 1 PRECEDING`.
 	// A Column, a Cast, a call: everything else this function can return
 	// does go through it, and does carry the mark.
+	// The mark is recorded only where it was actually written: the reference
+	// no longer stamps a `join_mark: false` on every column.
 	if p.tables.SupportsColumnJoinMarks && out != nil && !p.noJoinMark[out] &&
 		out.Class != "Literal" && out.Class != "Boolean" && out.Class != "Null" &&
-		out.Class != "Interval" && out.Class != "Table" && out.Class != "Star" {
-		out.Set("join_mark", p.match(TokJOIN_MARKER))
+		out.Class != "Interval" && out.Class != "Table" && out.Class != "Star" &&
+		p.match(TokJOIN_MARKER) {
+		out.Set("join_mark", true)
 	}
 	// AT TIME ZONE is not one of the reference's own COLUMN_OPERATORS --
 	// `_parse_column_ops` is only brackets, dots and `::` casts -- so it is
@@ -1758,15 +1996,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		arr := New("Array", Arg{"expressions", items})
-		if p.tables.HasDistinctArrayConstructors {
-			arr.Set("bracket_notation", true)
-		}
-		// BigQuery marks an array built from a BRACKET, which is what decides
-		// how it is written back (BigQueryParser._parse_bracket).
-		if p.dialect == "bigquery" {
-			arr.Set("struct_name_inheritance", true)
-		}
+		arr := p.arrayConstructor(items, TokL_BRACKET)
 		return arr, nil
 	}
 
@@ -1784,15 +2014,7 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		arr := New("Array", Arg{"expressions", items})
-		if p.tables.HasDistinctArrayConstructors {
-			arr.Set("bracket_notation", true)
-		}
-		// BigQuery marks an array built from a BRACKET, which is what decides
-		// how it is written back (BigQueryParser._parse_bracket).
-		if p.dialect == "bigquery" {
-			arr.Set("struct_name_inheritance", true)
-		}
+		arr := p.arrayConstructor(items, TokL_BRACKET)
 		return arr, nil
 	}
 
@@ -1910,6 +2132,16 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return New("UnicodeString", Arg{"this", c.Text}, Arg{"escape", escape}), nil
 	case TokHEX_STRING:
 		p.advance()
+		// SQLite tells `0x0a` from `X'0a'` by how it was WRITTEN: the first
+		// is an integer, the second a blob (SQLiteParser._parse_hex_string).
+		if p.dialect == "sqlite" {
+			if prefix := sliceRunes(p.sql, c.Start, c.Start+2); strings.EqualFold(prefix, "0x") {
+				if value, ok := sqliteHexInteger(c.Text); ok {
+					return New("Literal", Arg{"this", value}, Arg{"is_string", false}), nil
+				}
+			}
+			return New("HexString", Arg{"this", c.Text}), nil
+		}
 		// BigQuery and ClickHouse read a hex literal as an INTEGER, which
 		// records it as one (Parser.NUMERIC_PARSERS).
 		if p.dialect == "bigquery" || p.dialect == "clickhouse" {
@@ -1986,6 +2218,32 @@ func (p *parser) parsePrimary() (*Expression, error) {
 						kind = New("DataType", Arg{"this", DataTypeKind("TIMESTAMPTZ")})
 					case DataTypeKind("TIME"):
 						kind = New("DataType", Arg{"this", DataTypeKind("TIMETZ")})
+					}
+				}
+			}
+			// Trino names the PRECISION a temporal literal carries: the
+			// number of fractional digits, or 0 where it has none
+			// (TrinoParser._parse_temporal_literal).
+			if p.dialect == "trino" {
+				switch kind.Args["this"] {
+				case DataTypeKind("TIMESTAMP"), DataTypeKind("TIMESTAMPTZ"),
+					DataTypeKind("TIME"), DataTypeKind("TIMETZ"):
+					if params, _ := kind.Args["expressions"].([]*Expression); len(params) == 0 {
+						digits := 0
+						if text, ok := inner.Args["this"].(string); ok {
+							digits = fractionalSecondDigits(text)
+						}
+						// A fresh node: the parameters stand BEFORE `nested`,
+						// which is the order the reference assigns them in --
+						// and a type that carried no `nested` gains none.
+						params := Arg{"expressions", []*Expression{New("DataTypeParam",
+							Arg{"this", New("Literal",
+								Arg{"this", strconv.Itoa(digits)}, Arg{"is_string", false})})}}
+						kindArgs := []Arg{{"this", kind.Args["this"]}, params}
+						if nested, ok := kind.Args["nested"]; ok {
+							kindArgs = append(kindArgs, Arg{"nested", nested})
+						}
+						kind = New("DataType", kindArgs...)
 					}
 				}
 			}
@@ -2503,29 +2761,10 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 	} else if to, err = p.parseCollatedDataType(); err != nil {
 		return nil, err
 	}
-	// `CAST(x AS CHAR CHARACTER SET latin1)` casts to a character set.
-	if kind, _ := to.Args["this"].(DataTypeKind); kind == "CHAR" && p.dialect == "mysql" && (p.at(TokCHARACTER_SET) || p.atWords("CHARACTER", "SET")) {
-		if p.at(TokCHARACTER_SET) {
-			p.advance()
-		} else {
-			p.advance()
-			p.advance()
-		}
-		c := p.curr()
-		if c == nil {
-			return nil, p.unsupported("CHARACTER SET without a name")
-		}
-		var name *Expression
-		switch c.Type {
-		case TokSTRING:
-			name = New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
-		case TokIDENTIFIER:
-			return nil, p.unsupported("CHARACTER SET a quoted name")
-		default:
-			name = New("Var", Arg{"this", c.Text})
-		}
-		p.advance()
-		to = New("DataType", Arg{"this", DataTypeKind("CHARACTER_SET")}, Arg{"kind", name})
+	// `CAST(x AS CHAR CHARACTER SET latin1)` casts to a character set
+	// (Parser._parse_char_charset).
+	if to, err = p.parseCharCharset(to); err != nil {
+		return nil, err
 	}
 	// `CAST(x AS STRING FORMAT 'DAY')` names the format the value is read or
 	// written with (Parser._parse_cast).
@@ -3563,6 +3802,52 @@ func (p *parser) parseCase() (*Expression, error) {
 // and returns its node.
 func (p *parser) clickhouseFunctionParser(upper string) (bool, *Expression, error) {
 	switch upper {
+	case "JSONEXTRACTRAW", "JSONEXTRACTSTRING":
+		// ClickHouse's JSON extractors name the path as ARGUMENTS, one key
+		// or position each, and index from ONE
+		// (ClickHouseParser.FUNCTIONS, build_json_extract_path).
+		p.advance() // the name
+		p.advance() // the opening parenthesis
+		args, err := p.parseCallArgsCSV()
+		if err != nil {
+			return true, nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return true, nil, p.unsupported(upper + " without a closing parenthesis")
+		}
+		if len(args) == 0 {
+			return true, nil, p.unsupported(upper + " with no arguments")
+		}
+		class := "JSONExtract"
+		if upper == "JSONEXTRACTSTRING" {
+			class = "JSONExtractScalar"
+		}
+		segments := []*Expression{New("JSONPathRoot")}
+		for _, arg := range args[1:] {
+			text, isLit := literalText(arg)
+			if arg == nil || arg.Class != "Literal" {
+				// A path the reference cannot read is carried through
+				// untouched rather than guessed at.
+				node := New(class, Arg{"this", args[0]})
+				if len(args) > 1 {
+					node.Set("expression", args[1])
+				}
+				if len(args) > 2 {
+					node.Set("expressions", args[2:])
+				}
+				return true, node, nil
+			}
+			if n, ok := pythonInt(text); ok && !isStringLiteral(arg) {
+				segments = append(segments, New("JSONPathSubscript", Arg{"this", n - 1}))
+				continue
+			}
+			_ = isLit
+			segments = append(segments, New("JSONPathKey", Arg{"this", text}))
+		}
+		return true, New(class,
+			Arg{"this", args[0]},
+			Arg{"expression", New("JSONPath", Arg{"expressions", segments})},
+			Arg{"only_json_types", true}), nil
 	case "XOR", "AND", "OR":
 		p.advance()
 		p.advance() // the opening parenthesis
@@ -3864,7 +4149,7 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		if builtFn.Class == "Anonymous" {
 			return
 		}
-		if _, ok := p.tables.ConsultsOriginalName[builtFn.Class]; !ok {
+		if !consultsOriginalName(p.tables, p.dialect, builtFn) {
 			return
 		}
 		builtFn.originalName = name
@@ -3904,6 +4189,30 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		if handled, node, err := p.clickhouseFunctionParser(upper); handled {
 			return node, err
 		}
+	}
+	// DuckDB's LIST_SORT and ARRAY_REVERSE_SORT read their order and null
+	// placement as strings, which the probe's signature does not show
+	// (DuckDBParser.FUNCTIONS, _build_list_sort).
+	if p.dialect == "duckdb" && (upper == "LIST_SORT" || upper == "ARRAY_REVERSE_SORT") {
+		return p.parseDuckDBListSort(upper)
+	}
+	// LIST_VALUE marks a single-QUERY argument as a value constructor, so
+	// `LIST_VALUE((SELECT 1))` keeps its subquery as the array's element
+	// (DuckDBParser.FUNCTIONS).
+	if p.dialect == "duckdb" && upper == "LIST_VALUE" {
+		return p.parseDuckDBListValue()
+	}
+	// StarRocks' TIME_SLICE takes a boundary word the probe's signature does
+	// not show, because the builder only sets `kind` when it is there
+	// (StarRocksParser.FUNCTIONS, _build_time_slice).
+	if p.dialect == "starrocks" && upper == "TIME_SLICE" {
+		return p.parseStarrocksTimeSlice()
+	}
+	// Oracle reads JSON_VALUE through its own SQL/JSON grammar, with the
+	// RETURNING type and the ON EMPTY/ON ERROR clauses the generic path
+	// cannot see (OracleParser.FUNCTION_PARSERS, _parse_json_value).
+	if p.dialect == "oracle" && upper == "JSON_VALUE" {
+		return p.parseJSONValue()
 	}
 	if _, syntax := p.tables.SyntaxFunctions[upper]; syntax {
 		return p.parseSyntaxFunction(upper)
@@ -4177,6 +4486,13 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		// own hand-written shape is the only one this special case is for.
 		if p.dialect == "tsql" {
 			return p.buildDateDiff(upper, args, upper == "DATEDIFF_BIG")
+		}
+		// MySQL's DATEDIFF compares two DATE PARTS and names no unit; the
+		// probe's signature carries one because T-SQL's spelling does
+		// (MySQLParser.FUNCTIONS).
+		if isMySQLFamily(p.dialect) && upper == "DATEDIFF" && len(args) == 2 {
+			return New("DateDiff", Arg{"this", argAt(args, 0)},
+				Arg{"expression", argAt(args, 1)}, Arg{"date_part_boundary", true}), nil
 		}
 	}
 	if upper == "DATENAME" && len(p.tables.FullFormatTimeMapping) > 0 {
@@ -5367,37 +5683,30 @@ func (p *parser) atIdentifierWhere(namingATable bool) bool {
 	return ok
 }
 
-// afterComparison reports whether the token just consumed was a comparison or
-// a LIKE. `ALL` and `ANY` are quantifiers only THERE: in a select list,
-// `ALL (age >= 30) AS every` is an ordinary call to a function named ALL, and
-// reading it as a quantifier built a node the reference never makes.
 // quantifierHere reports whether ALL or ANY at the cursor, followed by
-// parentheses, is a quantifier. After a comparison it is, except over an
-// empty argument list. Standing alone it is one only over a query:
-// ALL(SELECT 1) is a quantifier, while ALL() and ALL(1, 2) are calls.
+// parentheses, is a quantifier rather than a call. After LIKE or ILIKE it
+// always is; otherwise the token straight after the parenthesis decides -- a
+// QUERY makes it one, and anything else is a call
+// (Parser._parse_function, SUBQUERY_TOKENS).
 func (p *parser) quantifierHere() bool {
 	if p.atEmptyArgList() {
 		return false
 	}
-	if p.afterComparison() {
-		return true
+	// After LIKE or ILIKE the word is a quantifier whatever it holds, and the
+	// operand is read as an ordinary expression (Parser._parse_function
+	// backtracks over the parenthesis for exactly this case).
+	if p.index > 0 {
+		switch p.tokens[p.index-1].Type {
+		case TokLIKE, TokILIKE:
+			return true
+		}
 	}
+	// Otherwise the token straight after the parenthesis decides: a QUERY
+	// makes the word a quantifier and anything else a call, whether or not a
+	// comparison stands in front of it. `a = ALL ((SELECT b))` is therefore a
+	// call to a function named ALL, its argument a parenthesised subquery.
 	inner := p.peekAt(2)
 	return inner != nil && (inner.Type == TokSELECT || inner.Type == TokWITH || inner.Type == TokFROM)
-}
-
-func (p *parser) afterComparison() bool {
-	if p.index == 0 {
-		return false
-	}
-	prev := p.tokens[p.index-1].Type
-	if _, ok := p.tables.Comparison[prev]; ok {
-		return true
-	}
-	if _, ok := p.tables.Equality[prev]; ok {
-		return true
-	}
-	return prev == TokLIKE || prev == TokILIKE
 }
 
 // singlestoreJSONPath turns the name after a SingleStore `::`/`::$`/`::%` into
@@ -5815,7 +6124,36 @@ func (p *parser) parseMapLiteral() (*Expression, error) {
 	if !p.match(TokR_BRACE) {
 		return nil, p.unsupported("unclosed map literal")
 	}
-	return New("ToMap", Arg{"this", New("Struct", Arg{"expressions", items})}), nil
+	// A subscript binds INSIDE the map, not to it: `MAP {...}['a']` is a
+	// ToMap over a Bracket over the Struct (DuckDBParser._parse_map,
+	// `ToMap(this=self._parse_bracket())`).
+	this := New("Struct", Arg{"expressions", items})
+	var subscripts []*Expression
+	for p.dialect == "duckdb" && p.at(TokL_BRACKET) {
+		p.advance()
+		part, err := p.parseBracketItems(true)
+		if err != nil {
+			return nil, err
+		}
+		subscripts = append(subscripts, part...)
+	}
+	if len(subscripts) > 0 {
+		// The subscript TYPES what it reads, which the reference's dump
+		// shows: the map's field types are known the moment a key is read
+		// off it.
+		AnnotateFully(this, p.dialect)
+		// Where the map's own type is UNKNOWN the INDEX is typed too, which
+		// is what the reference's apply_index_offset does once the base
+		// fails its test -- and only then.
+		switch typeKind(this.Type) {
+		case "UNKNOWN", "ARRAY":
+			for _, sub := range subscripts {
+				AnnotateFully(sub, p.dialect)
+			}
+		}
+		this = New("Bracket", Arg{"this", this}, Arg{"expressions", subscripts})
+	}
+	return New("ToMap", Arg{"this", this}), nil
 }
 
 // parseMaterializeMap reads Materialize's own MAP grammar: `MAP(SELECT ...)`
@@ -6496,4 +6834,174 @@ func (p *parser) quotedTypePreserved(name string) bool {
 		return false
 	}
 	return name == "char"
+}
+
+// arrayConstructor is the reference's build_array_constructor: an Array built
+// from a bracket records whether its single member is a QUERY (a value
+// constructor), whether the dialect distinguishes the bracket spelling, and
+// -- in BigQuery -- that the bracket decides how a struct field inherits its
+// name (Generator: Array.args, BigQueryParser._parse_bracket).
+func (p *parser) arrayConstructor(items []*Expression, bracketKind TokenType) *Expression {
+	arr := New("Array", Arg{"expressions", items})
+	arr.Set("value_constructor", len(items) == 1 && isQuery(items[0]))
+	if p.tables.HasDistinctArrayConstructors {
+		arr.Set("bracket_notation", bracketKind == TokL_BRACKET)
+	}
+	if p.dialect == "bigquery" {
+		arr.Set("struct_name_inheritance", true)
+	}
+	return arr
+}
+
+// dorisMatchOperators are Doris's full-text search operators.
+var dorisMatchOperators = map[string]bool{
+	"MATCH": true, "MATCH_ALL": true, "MATCH_ANY": true, "MATCH_PHRASE": true,
+	"MATCH_PHRASE_EDGE": true, "MATCH_PHRASE_PREFIX": true, "MATCH_REGEXP": true,
+}
+
+// parseDorisMatch reads `[NOT] <MATCH-OP> <expr> [USING ANALYZER <name>]`. It
+// reports false, with the cursor where it found it, where the word is not one
+// of those operators -- an implicit alias named MATCH, for one.
+func (p *parser) parseDorisMatch(this *Expression) (*Expression, bool, error) {
+	index := p.index
+	left := this
+	if left == nil {
+		var err error
+		left, err = p.parseBitwise()
+		if err != nil {
+			return nil, true, err
+		}
+	}
+	negate := p.match(TokNOT)
+	c := p.curr()
+	if c == nil || c.Type != TokVAR || !dorisMatchOperators[strings.ToUpper(c.Text)] {
+		p.index = index
+		return nil, false, nil
+	}
+	p.advance()
+	kind := ""
+	if i := strings.IndexByte(strings.ToUpper(c.Text), '_'); i >= 0 {
+		kind = strings.ToUpper(c.Text)[i+1:]
+	}
+	expr, err := p.parseBitwise()
+	if err != nil || expr == nil {
+		// Nothing follows the word, so it names the projection instead of
+		// matching anything: `SELECT c match_any` is `c AS match_any`
+		// (DorisParser._parse_range).
+		p.index = index
+		return nil, false, nil
+	}
+	var analyzer any
+	if p.atWords("USING", "ANALYZER") {
+		p.advance()
+		p.advance()
+		if lit := p.tryParseStringLiteral(); lit != nil {
+			analyzer = lit
+		} else if id := p.parseIDVarAny(); id != nil {
+			analyzer = id
+		} else {
+			return nil, true, p.unsupported("USING ANALYZER without a name")
+		}
+	}
+	args := []Arg{{"this", left}, {"expression", expr}}
+	if kind != "" {
+		args = append(args, Arg{"kind", kind})
+	}
+	if analyzer != nil {
+		args = append(args, Arg{"analyzer", analyzer})
+	}
+	node := New("Match", args...)
+	if negate {
+		node = New("Not", Arg{"this", node})
+	}
+	return node, true, nil
+}
+
+// parseCharCharset reads MySQL's `CHAR[(N)] CHARACTER SET name` suffix, which
+// turns the type into a CHARACTER_SET one and keeps its length
+// (Parser._parse_char_charset).
+func (p *parser) parseCharCharset(to *Expression) (*Expression, error) {
+	if to == nil || p.dialect != "mysql" {
+		return to, nil
+	}
+	if kind, _ := to.Args["this"].(DataTypeKind); kind != "CHAR" {
+		return to, nil
+	}
+	switch {
+	case p.at(TokCHARACTER_SET):
+		p.advance()
+	case p.atWords("CHARACTER", "SET"):
+		p.advance()
+		p.advance()
+	default:
+		return to, nil
+	}
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("CHARACTER SET without a name")
+	}
+	var name *Expression
+	if c.Type == TokSTRING {
+		name = New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
+	} else {
+		name = New("Var", Arg{"this", c.Text})
+	}
+	p.advance()
+	to.Set("this", DataTypeKind("CHARACTER_SET"))
+	to.Set("kind", name)
+	return to, nil
+}
+
+// fractionalSecondDigits counts the digits after the fractional point of a
+// time's seconds -- `01:02:03.1234` is 4 -- and 0 where there is none.
+func fractionalSecondDigits(text string) int {
+	for i := 0; i+1 < len(text); i++ {
+		if text[i] != ':' {
+			continue
+		}
+		j := i + 1
+		for j < len(text) && text[j] >= '0' && text[j] <= '9' {
+			j++
+		}
+		if j < len(text) && text[j] == '.' {
+			k := j + 1
+			for k < len(text) && text[k] >= '0' && text[k] <= '9' {
+				k++
+			}
+			return k - j - 1
+		}
+	}
+	return 0
+}
+
+// sqliteHexInteger reads a `0x...` literal as SQLite does: an unsigned 64-bit
+// value folded into the signed range.
+func sqliteHexInteger(text string) (string, bool) {
+	value, err := strconv.ParseUint(strings.TrimPrefix(strings.TrimPrefix(text, "0x"), "0X"), 16, 64)
+	if err != nil {
+		return "", false
+	}
+	// SQLite reads the value as a signed 64-bit two's-complement number, so
+	// the wrap is the point of the conversion.
+	signed := int64(value) //nolint:gosec // two's-complement wrap is intended
+	return strconv.FormatInt(signed, 10), true
+}
+
+// consultsOriginalName reports whether a dialect writes a call back with the
+// name it was WRITTEN with. Three keep it for every function
+// (Dialect.ORIGINAL_NAME_META_KEY): BigQuery, ClickHouse and Drill.
+func consultsOriginalName(tables *ParserTables, dialect string, e *Expression) bool {
+	if e == nil {
+		return false
+	}
+	if _, ok := tables.ConsultsOriginalName[e.Class]; ok {
+		return true
+	}
+	// The three that keep a call's own spelling do it for EVERY function, so
+	// there is no class list to consult -- only the dialect.
+	switch dialect {
+	case "bigquery", "clickhouse", "drill":
+		return e.Class != "Anonymous"
+	}
+	return false
 }

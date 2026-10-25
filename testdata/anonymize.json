@@ -4932,6 +4932,16 @@
   },
   {
    "dialect": "athena",
+   "rendered": "SELECT 'a'",
+   "sql": "SELECT '\\'"
+  },
+  {
+   "dialect": "athena",
+   "rendered": "SELECT * FROM a WHERE aaab LIKE 'aaac' ESCAPE 'd'",
+   "sql": "SELECT * FROM t WHERE name LIKE 'a\\_%' ESCAPE '\\'"
+  },
+  {
+   "dialect": "athena",
    "rendered": "CCREATE TABLE aa NOT EXISTS b (aaac STRING) aaaaaaad 'aaaaaaaaaaaaaaaaaaaaaaae' aaaaaaaaaaaaf ('aaaaaaaaag'='aaaaaah', 'aaaaai'='aaaaaaj')",
    "sql": "CREATE TABLE IF NOT EXISTS t (name STRING) LOCATION 's3://bucket/tmp/mytable/' TBLPROPERTIES ('table_type'='iceberg', 'FORMAT'='parquet')"
   },
@@ -4954,6 +4964,21 @@
    "dialect": "athena",
    "rendered": "/* ....... ....... */SELECT * FROM aaa",
    "sql": "/* leading comment */SELECT * FROM foo"
+  },
+  {
+   "dialect": "athena",
+   "rendered": "MMSCK REPAIR ..... aaa",
+   "sql": "MSCK REPAIR TABLE foo"
+  },
+  {
+   "dialect": "athena",
+   "rendered": "mmsck repair ..... aaa",
+   "sql": "msck repair table foo"
+  },
+  {
+   "dialect": "athena",
+   "rendered": "CCREATE DATABASE aaa COMMENT \"aaab\"",
+   "sql": "CREATE DATABASE foo COMMENT \"a\\\"b\""
   },
   {
    "dialect": "athena",
@@ -5164,6 +5189,16 @@
    "dialect": "athena",
    "rendered": "WITH aaa AS (SELECT b, c FROM aad) SELECT * FROM aaa",
    "sql": "WITH foo AS (SELECT a, b FROM bar) SELECT * FROM foo"
+  },
+  {
+   "dialect": "athena",
+   "rendered": "CREATE TABLE a WITH (format='aaaaaab') AS USING aaaaaaac FUNCTION d(e VARCHAR) aaaaaaf VARCHAR aaaaag 'h' SELECT d('i') AS j",
+   "sql": "CREATE TABLE t WITH (format='PARQUET') AS USING EXTERNAL FUNCTION f(x VARCHAR) RETURNS VARCHAR LAMBDA 'l' SELECT f('a') AS b"
+  },
+  {
+   "dialect": "athena",
+   "rendered": "CREATE TABLE a WITH (format='aaaaaab') AS SELECT 3 AS d",
+   "sql": "CREATE TABLE t WITH (format='PARQUET') AS SELECT 1 AS a"
   },
   {
    "dialect": "bigquery",
@@ -5882,7 +5917,7 @@
   },
   {
    "dialect": "bigquery",
-   "rendered": "SELECT b\"aaaaaaaaaa\"",
+   "rendered": "SELECT b\"aaa\naaaaaa\"",
    "sql": "SELECT b\"\\x0a$'x'00\""
   },
   {
@@ -7587,6 +7622,26 @@
   },
   {
    "dialect": "bigquery",
+   "rendered": "SELECT [(SELECT 1), 2]",
+   "sql": "SELECT [(SELECT 1), 2]"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT [1, (SELECT 2)]",
+   "sql": "SELECT [1, (SELECT 2)]"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT [STRUCT((SELECT 1) AS b), STRUCT(3 AS b)]",
+   "sql": "SELECT [STRUCT((SELECT 1) AS a), STRUCT(2 AS a)]"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT [COALESCE((SELECT 1), 2), 3]",
+   "sql": "SELECT [COALESCE((SELECT 1), 0), 2]"
+  },
+  {
+   "dialect": "bigquery",
    "rendered": "SELECT ARRAY(SELECT DISTINCT a FROM UNNEST(aaaaaaaaaaab) AS a) AS aaaaaaaaaaaaac",
    "sql": "SELECT ARRAY(SELECT DISTINCT x FROM UNNEST(some_numbers) AS x) AS unique_numbers"
   },
@@ -7942,11 +7997,6 @@
   },
   {
    "dialect": "starrocks",
-   "rendered": "DATE_DIFF('aaa', CAST('aaaaaaaaab' AS DATE), CAST('aaaaaaaaac' AS DATE))",
-   "sql": "DATE_DIFF('DAY', CAST('2010-07-07' AS DATE), CAST('2008-12-25' AS DATE))"
-  },
-  {
-   "dialect": "starrocks",
    "rendered": "DATEDIFF(CAST('aaaaaaaaaa' AS DATE), CAST('aaaaaaaaab' AS DATE))",
    "sql": "DATEDIFF(CAST('2010-07-07' AS DATE), CAST('2008-12-25' AS DATE))"
   },
@@ -8292,8 +8342,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT ARRAY_TO_STRING(LIST_TRANSFORM(['aaaa', 'aab', NULL], c -> COALESCE(c, 'aaaaaad')), 'ae') AS text",
-   "sql": "SELECT ARRAY_TO_STRING(LIST_TRANSFORM(['cake', 'pie', NULL], x -> COALESCE(x, 'MISSING')), '--') AS text"
+   "rendered": "SELECT ARRAY_TO_STRING(LIST_TRANSFORM(['aaaa', 'aab', NULL], aaaaac d : COALESCE(CAST(d AS TEXT), 'aaaaaae')), 'af') AS text",
+   "sql": "SELECT ARRAY_TO_STRING(LIST_TRANSFORM(['cake', 'pie', NULL], LAMBDA x : COALESCE(CAST(x AS TEXT), 'MISSING')), '--') AS text"
   },
   {
    "dialect": "bigquery",
@@ -8657,6 +8707,16 @@
   },
   {
    "dialect": "bigquery",
+   "rendered": "FROM_HEX('aaaa')",
+   "sql": "FROM_HEX('CAFE')"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "UNHEX('aaaa')",
+   "sql": "UNHEX('CAFE')"
+  },
+  {
+   "dialect": "bigquery",
    "rendered": "TO_CODE_POINTS('aaa')",
    "sql": "TO_CODE_POINTS('foo')"
   },
@@ -8847,13 +8907,13 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CAST(e'a' AS BLOB)",
-   "sql": "SELECT CAST(e'a' AS BLOB)"
+   "rendered": "SELECT CAST('a' AS BLOB)",
+   "sql": "SELECT CAST('a' AS BLOB)"
   },
   {
    "dialect": "postgres",
-   "rendered": "SELECT CAST(e'a' AS BYTEA)",
-   "sql": "SELECT CAST(e'a' AS BYTEA)"
+   "rendered": "SELECT DECODE('aa', 'aab')",
+   "sql": "SELECT DECODE('61', 'hex')"
   },
   {
    "dialect": "bigquery",
@@ -9632,6 +9692,16 @@
   },
   {
    "dialect": "bigquery",
+   "rendered": "SELECT JSON_EXTRACT_SCALAR(a, 'aab')",
+   "sql": "SELECT JSON_EXTRACT_SCALAR(j, '$.a')"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT JSONExtractString(a, 'b')",
+   "sql": "SELECT JSONExtractString(j, 'a')"
+  },
+  {
+   "dialect": "bigquery",
    "rendered": "SELECT JSON_QUERY('aaaaaaaaa aaaaaaaaaaaa aaaa', 'aaaaaab')",
    "sql": "SELECT JSON_QUERY('{\"class\": {\"students\": []}}', '$.class')"
   },
@@ -10039,6 +10109,11 @@
    "dialect": "bigquery",
    "rendered": "SELECT * FROM UNNEST(a) WITH OFFSET EXCEPT DISTINCT SELECT * FROM UNNEST(b) WITH OFFSET",
    "sql": "SELECT * FROM UNNEST(x) WITH OFFSET EXCEPT DISTINCT SELECT * FROM UNNEST(y) WITH OFFSET"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT [STRUCT((SELECT 1) AS b)]",
+   "sql": "SELECT [STRUCT((SELECT 1) AS a)]"
   },
   {
    "dialect": "bigquery",
@@ -10887,6 +10962,26 @@
   },
   {
    "dialect": "bigquery",
+   "rendered": "SELECT SUM(APPROX_QUANTILES(a, 2)[3]) OVER () FROM d",
+   "sql": "SELECT SUM(APPROX_QUANTILES(x, 2)[1]) OVER () FROM t"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT SUM(APPROX_PERCENTILE(a, 1.1)) OVER () FROM c",
+   "sql": "SELECT SUM(APPROX_PERCENTILE(x, 0.5)) OVER () FROM t"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT SUM((SELECT APPROX_QUANTILES(a, 2)[3] FROM d)) OVER () FROM e",
+   "sql": "SELECT SUM((SELECT APPROX_QUANTILES(x, 2)[1] FROM t)) OVER () FROM u"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT SUM((SELECT APPROX_PERCENTILE(a, 1.1) FROM c)) OVER () FROM d",
+   "sql": "SELECT SUM((SELECT APPROX_PERCENTILE(x, 0.5) FROM t)) OVER () FROM u"
+  },
+  {
+   "dialect": "bigquery",
    "rendered": "APPROX_QUANTILES(a, 2)",
    "sql": "APPROX_QUANTILES(x, 1)"
   },
@@ -11462,6 +11557,21 @@
   },
   {
    "dialect": "clickhouse",
+   "rendered": "SELECT * FROM aaa PASTE JOIN aab",
+   "sql": "SELECT * FROM foo PASTE JOIN bla"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT * FROM aaa AS b PASTE JOIN aac AS d PASTE JOIN aae AS f",
+   "sql": "SELECT * FROM foo AS a PASTE JOIN bla AS b PASTE JOIN baz AS c"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT paste(paste) FROM paste AS paste",
+   "sql": "SELECT paste(paste) FROM paste AS paste"
+  },
+  {
+   "dialect": "clickhouse",
    "rendered": "SELECT * FROM aaa GLOBAL ANY JOIN aab",
    "sql": "SELECT * FROM foo GLOBAL ANY JOIN bla"
   },
@@ -11547,6 +11657,11 @@
   },
   {
    "dialect": "clickhouse",
+   "rendered": "SELECT groupBitAnd(a) OVER (PARTITION BY b) FROM c",
+   "sql": "SELECT groupBitAnd(x) OVER (PARTITION BY y) FROM t"
+  },
+  {
+   "dialect": "clickhouse",
    "rendered": "aaaaaaaaaaaa(b)",
    "sql": "toDayOfMonth(x)"
   },
@@ -11554,6 +11669,56 @@
    "dialect": "clickhouse",
    "rendered": "aaaaaaaaaaa(b)",
    "sql": "toDayOfYear(x)"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "toDayOfWeek(a)",
+   "sql": "toDayOfWeek(x)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "ISODOW(a)",
+   "sql": "ISODOW(x)"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "toISOWeek(a)",
+   "sql": "toISOWeek(x)"
+  },
+  {
+   "dialect": "presto",
+   "rendered": "WEEK(a)",
+   "sql": "WEEK(x)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "WEEKOFYEAR(a)",
+   "sql": "WEEKOFYEAR(x)"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "toISOYear(a)",
+   "sql": "toISOYear(x)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "EXTRACT(aaaaaaa FROM b)",
+   "sql": "EXTRACT(ISOYEAR FROM x)"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "toDayOfWeek(a, 2)",
+   "sql": "toDayOfWeek(x, 3)"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "toISOWeek(a, 'aab')",
+   "sql": "toISOWeek(x, 'UTC')"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "toISOYear(a, 'aab')",
+   "sql": "toISOYear(x, 'UTC')"
   },
   {
    "dialect": "clickhouse",
@@ -11604,6 +11769,11 @@
    "dialect": "clickhouse",
    "rendered": "SELECT JSONExtractString('aaaaa aaaaa aaa', 'b', 'c')",
    "sql": "SELECT JSONExtractString('{\"x\": {\"y\": 1}}', 'x', 'y')"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT JSONExtractRaw('aaaaa aaaaa aaa', 'b', 'c')",
+   "sql": "SELECT JSONExtractRaw('{\"x\": {\"y\": 1}}', 'x', 'y')"
   },
   {
    "dialect": "clickhouse",
@@ -11774,6 +11944,16 @@
    "dialect": "clickhouse",
    "rendered": "SELECT JSONExtractString('aaaaa aaaaaaaa aaaa aaaaaa aaaaaa aaaaa', 'b')",
    "sql": "SELECT JSONExtractString('{\"a\": \"hello\", \"b\": [-100, 200.0, 300]}', 'a')"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT JSONExtractRaw(aaaaaaa, 'aaaaab'), JSONExtractString(aaaaaaa, 'aaaaab')",
+   "sql": "SELECT JSONExtractRaw(payload, 'amount'), JSONExtractString(payload, 'amount')"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT aaaaaaa -> 'aaaaab', aaaaaaa ->> 'aaaaab'",
+   "sql": "SELECT payload -> 'amount', payload ->> 'amount'"
   },
   {
    "dialect": "clickhouse",
@@ -12147,6 +12327,21 @@
   },
   {
    "dialect": "clickhouse",
+   "rendered": "SELECT countMatches(a, 'b')",
+   "sql": "SELECT countMatches(s, 'a')"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT countMatches(aaaaaaaaaaaaa(b, 3), CONCAT('aaaad', 'aae'))",
+   "sql": "SELECT countMatches(substringUTF8(s, 3), CONCAT('(?is)', 'a.b'))"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT countMatches(aaaaaaaaaaaaa(b, 3), 'd')",
+   "sql": "SELECT countMatches(substringUTF8(s, 1), 'a')"
+  },
+  {
+   "dialect": "clickhouse",
    "rendered": "SELECT 'aa'",
    "sql": "SELECT '\\0'"
   },
@@ -12154,6 +12349,36 @@
    "dialect": "mysql",
    "rendered": "SELECT 'a'",
    "sql": "SELECT '\u0000'"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT 'aa'",
+   "sql": "SELECT '\\0'"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT \"aaa\"",
+   "sql": "SELECT \"a\\\\\""
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT \"aaaaaa\"",
+   "sql": "SELECT \"a\\\\\"\"b\""
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT `aaaa`",
+   "sql": "SELECT `a\\\\b`"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT \"aaaa\"",
+   "sql": "SELECT \"a\\\\b\""
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT \"aaa\"",
+   "sql": "SELECT \"a\\b\""
   },
   {
    "dialect": "clickhouse",
@@ -12417,8 +12642,13 @@
   },
   {
    "dialect": "clickhouse",
-   "rendered": "SELECT isNaN(a)",
-   "sql": "SELECT isNaN(x)"
+   "rendered": "SELECT isNaN(a), arrayReverse(b)",
+   "sql": "SELECT isNaN(x), arrayReverse(a)"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT IS_NAN(a), ARRAY_REVERSE(b)",
+   "sql": "SELECT IS_NAN(x), ARRAY_REVERSE(a)"
   },
   {
    "dialect": "clickhouse",
@@ -12429,6 +12659,46 @@
    "dialect": "clickhouse",
    "rendered": "SELECT isNaN(a), isNaN(a)",
    "sql": "SELECT isNaN(x), isNaN(x)"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT isInfinite(a)",
+   "sql": "SELECT isInfinite(x)"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT IS_INF(a)",
+   "sql": "SELECT IS_INF(x)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT ISINF(a)",
+   "sql": "SELECT ISINF(x)"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT POSITION(a, 'b') > 3",
+   "sql": "SELECT POSITION(s, 'a') > 0"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT CONTAINS(a, 'b')",
+   "sql": "SELECT CONTAINS(s, 'a')"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT POSITION(LOWER(a), LOWER('b')) > 3",
+   "sql": "SELECT POSITION(LOWER(s), LOWER('a')) > 0"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT CONTAINS_SUBSTR(a, 'b')",
+   "sql": "SELECT CONTAINS_SUBSTR(s, 'a')"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT (POSITION(a, 'b') > 3) = (POSITION(d, 'e') > 3) FROM f WHERE NOT POSITION(a, 'b') > 3 AND g",
+   "sql": "SELECT (POSITION(s, 'a') > 0) = (POSITION(t, 'b') > 0) FROM x WHERE NOT POSITION(s, 'a') > 0 AND y"
   },
   {
    "dialect": "clickhouse",
@@ -12817,6 +13087,21 @@
   },
   {
    "dialect": "clickhouse",
+   "rendered": "SELECT CAST(JSONExtractRaw(a, 'b') AS Nullable(String)) FROM aaac",
+   "sql": "SELECT CAST(JSONExtractRaw(v, 'a') AS Nullable(String)) FROM data"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT CAST(a -> 'b' AS TEXT) FROM aaac",
+   "sql": "SELECT CAST(v -> 'a' AS TEXT) FROM data"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT JSONExtractRaw(a, 'b') FROM aaac",
+   "sql": "SELECT JSONExtractRaw(v, 'a') FROM data"
+  },
+  {
+   "dialect": "clickhouse",
    "rendered": "SELECT * FROM a AS b JOIN c AS d ON b.ae = d.ae GLOBAL ANY LEFT JOIN f AS g ON b.ae = g.ae",
    "sql": "SELECT * FROM t AS a JOIN s AS b ON a.id = b.id GLOBAL ANY LEFT JOIN u AS c ON a.id = c.id"
   },
@@ -13067,6 +13352,11 @@
   },
   {
    "dialect": "clickhouse",
+   "rendered": "CREATE TABLE a aaaaab=aaaaac AS (SELECT 4 AS e) COMMENT 'aaf'",
+   "sql": "CREATE TABLE a ENGINE=Memory AS (SELECT 1 AS c) COMMENT 'foo'"
+  },
+  {
+   "dialect": "clickhouse",
    "rendered": "CREATE TABLE aa (\"b\" UInt32, \"c\" Dynamic, \"d\" Dynamic(aaaaaaaae = 15)) aaaaag=aaaaaaaah ORDER BY b",
    "sql": "CREATE TABLE t1 (\"x\" UInt32, \"y\" Dynamic, \"z\" Dynamic(max_types = 10)) ENGINE=MergeTree ORDER BY x"
   },
@@ -13182,12 +13472,12 @@
   },
   {
    "dialect": "clickhouse",
-   "rendered": "\n            CREATE TABLE aaaaaaaaaaaaaaaa\n            (\n                b DateTime,\n                c Int\n            )\n            aaaaad = aaaaaaaae\n            PARTITION BY aaaaaaaf(b)\n            ORDER BY b\n            aag b + INTERVAL 8 aaaai DELETE WHERE aaaaaaaaaaj(b) = 8;\n            ",
+   "rendered": "\n            CREATE TABLE aaaaaaaaaaaaaaaa\n            (\n                b DateTime,\n                c Int\n            )\n            aaaaad = aaaaaaaae\n            PARTITION BY aaaaaaaf(b)\n            ORDER BY b\n            aag b + INTERVAL 8 aaaai DELETE WHERE toDayOfWeek(b) = 8;\n            ",
    "sql": "\n            CREATE TABLE table_with_where\n            (\n                d DateTime,\n                a Int\n            )\n            ENGINE = MergeTree\n            PARTITION BY toYYYYMM(d)\n            ORDER BY d\n            TTL d + INTERVAL 1 MONTH DELETE WHERE toDayOfWeek(d) = 1;\n            "
   },
   {
    "dialect": "clickhouse",
-   "rendered": "CREATE TABLE aaaaaaaaaaaaaaaa (\n  b DateTime,\n  c Int32\n)\naaaaad=aaaaaaaae\nPARTITION BY aaaaaaaf(b)\nORDER BY b\naag\n  b + INTERVAL 'h' aaaai DELETE\nWHERE\n  aaaaaaaaaaj(b) = 2",
+   "rendered": "CREATE TABLE aaaaaaaaaaaaaaaa (\n  b DateTime,\n  c Int32\n)\naaaaad=aaaaaaaae\nPARTITION BY aaaaaaaf(b)\nORDER BY b\naag\n  b + INTERVAL 'h' aaaai DELETE\nWHERE\n  toDayOfWeek(b) = 1",
    "sql": "CREATE TABLE table_with_where (\n  d DateTime,\n  a Int32\n)\nENGINE=MergeTree\nPARTITION BY toYYYYMM(d)\nORDER BY d\nTTL\n  d + INTERVAL '1' MONTH DELETE\nWHERE\n  toDayOfWeek(d) = 1"
   },
   {
@@ -13597,6 +13887,11 @@
   },
   {
    "dialect": "clickhouse",
+   "rendered": "SELECT aaaaaaaaaaa(JSONExtractRaw(b, 'c'), 'aaaaaaaaaaaaaaad') FROM aaae",
+   "sql": "SELECT JSONExtract(JSONExtractRaw(v, 'a'), 'Nullable(String)') FROM data"
+  },
+  {
+   "dialect": "clickhouse",
    "rendered": "arrayMap(a -> a + 2, aac)",
    "sql": "arrayMap(x -> x + 1, arr)"
   },
@@ -13629,6 +13924,11 @@
    "dialect": "clickhouse",
    "rendered": "SELECT aaa.^nested, b.aaac.^nested, b.aaad.^nested.aaaae FROM b",
    "sql": "SELECT col.^nested, t.col2.^nested, t.col3.^nested.twice FROM t"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "SELECT aaaaaaaaaaaaa(b, c) FROM d",
+   "sql": "SELECT groupBitAndIf(x, y) FROM t"
   },
   {
    "dialect": "clickhouse",
@@ -13739,6 +14039,26 @@
    "dialect": "clickhouse",
    "rendered": "SELECT arrayMap((a, b) -> a * b, [3, 4, 5], [15, 16, 17]) AS aaaaaaai",
    "sql": "SELECT arrayMap((a, b) -> a * b, [1, 2, 3], [10, 20, 30]) AS products"
+  },
+  {
+   "dialect": "databricks",
+   "rendered": "CREATE TABLE a (ab TIMESTAMP(3))",
+   "sql": "CREATE TABLE t (ts TIMESTAMP(9))"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "CREATE TABLE a (ab TIMESTAMP)",
+   "sql": "CREATE TABLE t (ts TIMESTAMP)"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "CREATE TABLE a (ab TIMESTAMP)",
+   "sql": "CREATE TABLE t (ts TIMESTAMP)"
+  },
+  {
+   "dialect": "spark2",
+   "rendered": "CREATE TABLE a (ab TIMESTAMP)",
+   "sql": "CREATE TABLE t (ts TIMESTAMP)"
   },
   {
    "dialect": "databricks",
@@ -14231,9 +14551,19 @@
    "sql": "UNIFORM(1, 10, 5)"
   },
   {
+   "dialect": "duckdb",
+   "rendered": "CAST(FLOOR(1 + (ABS(aaab(3)) % 1000003) / 1000000.4 * (15 - 1 + 1)) AS BIGINT)",
+   "sql": "CAST(FLOOR(1 + (ABS(HASH(5)) % 1000000) / 1000000.0 * (10 - 1 + 1)) AS BIGINT)"
+  },
+  {
    "dialect": "databricks",
    "rendered": "UNIFORM(1, 11)",
    "sql": "UNIFORM(1, 10)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "CAST(FLOOR(1 + RANDOM() * (11 - 1 + 1)) AS BIGINT)",
+   "sql": "CAST(FLOOR(1 + RANDOM() * (10 - 1 + 1)) AS BIGINT)"
   },
   {
    "dialect": "databricks",
@@ -15717,7 +16047,7 @@
   },
   {
    "dialect": "drill",
-   "rendered": "TO_TIMESTAMP(a, 'aaaaaaaaab''c''aaaaaaad')",
+   "rendered": "TO_TIMESTAMP(a, 'aaaaaaaaaaaaaaaaaaaaaab')",
    "sql": "TO_TIMESTAMP(x, 'yyyy-MM-dd''T''HH:mm:ss')"
   },
   {
@@ -16727,7 +17057,7 @@
   },
   {
    "dialect": "drill",
-   "rendered": "aaaaaaa(b, 'aaaaaaaaac''d''aaaaaaae')",
+   "rendered": "aaaaaaa(b, 'aaaaaaaaaaaaaaaaaaaaaac')",
    "sql": "TO_DATE(x, 'yyyy-MM-dd''T''HH:mm:ss')"
   },
   {
@@ -17142,26 +17472,6 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "LIST_SORT(a)",
-   "sql": "LIST_SORT(x)"
-  },
-  {
-   "dialect": "hive",
-   "rendered": "SORT_ARRAY(a)",
-   "sql": "SORT_ARRAY(x)"
-  },
-  {
-   "dialect": "presto",
-   "rendered": "ARRAY_SORT(a)",
-   "sql": "ARRAY_SORT(x)"
-  },
-  {
-   "dialect": "spark",
-   "rendered": "SORT_ARRAY(a)",
-   "sql": "SORT_ARRAY(x)"
-  },
-  {
-   "dialect": "duckdb",
    "rendered": "LIST_PREPEND(a, aab)",
    "sql": "LIST_PREPEND(x, arr)"
   },
@@ -17347,8 +17657,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN [1, 2, 3] IS NULL OR [2] IS NULL THEN NULL ELSE LIST_FILTER(LIST_DISTINCT([1, 2, 3]), d -> LENGTH(LIST_FILTER([2], e -> e IS NOT DISTINCT FROM d)) = 6) END",
-   "sql": "SELECT CASE WHEN [1, 2, 3] IS NULL OR [2] IS NULL THEN NULL ELSE LIST_FILTER(LIST_DISTINCT([1, 2, 3]), e -> LENGTH(LIST_FILTER([2], x -> x IS NOT DISTINCT FROM e)) = 0) END"
+   "rendered": "SELECT CASE WHEN [1, 2, 3] IS NULL OR [2] IS NULL THEN NULL ELSE LIST_FILTER(LIST_DISTINCT([1, 2, 3]), aaaaad e : LENGTH(LIST_FILTER([2], aaaaad f : f IS NOT DISTINCT FROM e)) = 7) END",
+   "sql": "SELECT CASE WHEN [1, 2, 3] IS NULL OR [2] IS NULL THEN NULL ELSE LIST_FILTER(LIST_DISTINCT([1, 2, 3]), LAMBDA e : LENGTH(LIST_FILTER([2], LAMBDA x : x IS NOT DISTINCT FROM e)) = 0) END"
   },
   {
    "dialect": "spark",
@@ -17437,8 +17747,8 @@
   },
   {
    "dialect": "clickhouse",
-   "rendered": "JSONExtractString(a, 'a b')",
-   "sql": "JSONExtractString(x, 'a b')"
+   "rendered": "JSONExtractRaw(a, 'a b')",
+   "sql": "JSONExtractRaw(x, 'a b')"
   },
   {
    "dialect": "duckdb",
@@ -17491,6 +17801,11 @@
    "sql": "JSON_EXTRACT(x, '$.y')"
   },
   {
+   "dialect": "clickhouse",
+   "rendered": "JSONExtractRaw(a, 'b')",
+   "sql": "JSONExtractRaw(x, 'y')"
+  },
+  {
    "dialect": "duckdb",
    "rendered": "a -> 'b'",
    "sql": "x -> 'y'"
@@ -17526,11 +17841,6 @@
    "sql": "x -> '$.y'"
   },
   {
-   "dialect": "clickhouse",
-   "rendered": "JSONExtractString(a, 'b')",
-   "sql": "JSONExtractString(x, 'y')"
-  },
-  {
    "dialect": "duckdb",
    "rendered": "a -> 'aab'",
    "sql": "x -> '$.y'"
@@ -17554,6 +17864,11 @@
    "dialect": "bigquery",
    "rendered": "JSON_EXTRACT_SCALAR(a, 'aab')",
    "sql": "JSON_EXTRACT_SCALAR(x, '$.y')"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "JSONExtractString(a, 'b')",
+   "sql": "JSONExtractString(x, 'y')"
   },
   {
    "dialect": "duckdb",
@@ -17594,6 +17909,11 @@
    "dialect": "bigquery",
    "rendered": "JSON_EXTRACT(a, 'aaaaaaab')",
    "sql": "JSON_EXTRACT(x, '$.y[0].z')"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "JSONExtractRaw(a, 'b', 3, 'd')",
+   "sql": "JSONExtractRaw(x, 'y', 1, 'z')"
   },
   {
    "dialect": "duckdb",
@@ -17626,11 +17946,6 @@
    "sql": "x -> '$.y[0].z'"
   },
   {
-   "dialect": "clickhouse",
-   "rendered": "JSONExtractString(a, 'b', 3, 'd')",
-   "sql": "JSONExtractString(x, 'y', 1, 'z')"
-  },
-  {
    "dialect": "postgres",
    "rendered": "JSON_EXTRACT_PATH(a, 'b', 'c', 'd')",
    "sql": "JSON_EXTRACT_PATH(x, 'y', '0', 'z')"
@@ -17654,6 +17969,11 @@
    "dialect": "bigquery",
    "rendered": "JSON_EXTRACT_SCALAR(a, 'aaaaaaab')",
    "sql": "JSON_EXTRACT_SCALAR(x, '$.y[0].z')"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "JSONExtractString(a, 'b', 3, 'd')",
+   "sql": "JSONExtractString(x, 'y', 1, 'z')"
   },
   {
    "dialect": "duckdb",
@@ -18992,8 +19312,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "LIST_FILTER(aaaaaaaaa, ab -> ab <> aaaaac)",
-   "sql": "LIST_FILTER(the_array, _u -> _u <> target)"
+   "rendered": "LIST_FILTER(aaaaaaaaa, aaaaab ac : ac <> aaaaad)",
+   "sql": "LIST_FILTER(the_array, LAMBDA _u : _u <> target)"
   },
   {
    "dialect": "bigquery",
@@ -19084,31 +19404,6 @@
    "dialect": "mysql",
    "rendered": "SELECT * FROM a LIMIT 11",
    "sql": "SELECT * FROM t LIMIT 10"
-  },
-  {
-   "dialect": "databricks",
-   "rendered": "WITH a AS (SELECT 2 AS all) SELECT 2 FROM a LIMIT all",
-   "sql": "WITH t AS (SELECT 1 AS all) SELECT 1 FROM t LIMIT all"
-  },
-  {
-   "dialect": "duckdb",
-   "rendered": "WITH a AS (SELECT 2 AS all) SELECT 2 FROM a LIMIT all",
-   "sql": "WITH t AS (SELECT 1 AS all) SELECT 1 FROM t LIMIT all"
-  },
-  {
-   "dialect": "presto",
-   "rendered": "WITH a AS (SELECT 2 AS all) SELECT 2 FROM a LIMIT all",
-   "sql": "WITH t AS (SELECT 1 AS all) SELECT 1 FROM t LIMIT all"
-  },
-  {
-   "dialect": "postgres",
-   "rendered": "WITH a AS (SELECT 2 AS all) SELECT 2 FROM a LIMIT all",
-   "sql": "WITH t AS (SELECT 1 AS all) SELECT 1 FROM t LIMIT all"
-  },
-  {
-   "dialect": "spark",
-   "rendered": "WITH a AS (SELECT 2 AS all) SELECT 2 FROM a LIMIT all",
-   "sql": "WITH t AS (SELECT 1 AS all) SELECT 1 FROM t LIMIT all"
   },
   {
    "dialect": "sqlite",
@@ -19697,8 +19992,8 @@
   },
   {
    "dialect": "tsql",
-   "rendered": "SELECT COUNT_IF(aaa % 2 = 3) FROM aad",
-   "sql": "SELECT COUNT_IF(col % 2 = 0) FROM foo"
+   "rendered": "SELECT COUNT(IIF(aaa % 2 = 3, 4, NULL)) FROM aae",
+   "sql": "SELECT COUNT(IIF(col % 2 = 0, 1, NULL)) FROM foo"
   },
   {
    "dialect": "postgres",
@@ -19729,6 +20024,11 @@
    "dialect": "sqlite",
    "rendered": "SELECT SUM(IIF(aaa % 2 = 3, 4, 3)) FILTER(WHERE aaa < 1004) FROM aaf",
    "sql": "SELECT SUM(IIF(col % 2 = 0, 1, 0)) FILTER(WHERE col < 1000) FROM foo"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "SELECT COUNT(IIF(aaa < 1001 AND aaa % 3 = 4, 5, NULL)) FROM aaf",
+   "sql": "SELECT COUNT(IIF(col < 1000 AND col % 2 = 0, 1, NULL)) FROM foo"
   },
   {
    "dialect": "postgres",
@@ -20027,8 +20327,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "(ARRAY_LENGTH(aaa) = 2 OR ARRAY_LENGTH(LIST_FILTER(aaa, c -> aaad)) <> 2)",
-   "sql": "(ARRAY_LENGTH(arr) = 0 OR ARRAY_LENGTH(LIST_FILTER(arr, x -> pred)) <> 0)"
+   "rendered": "(ARRAY_LENGTH(aaa) = 2 OR ARRAY_LENGTH(LIST_FILTER(aaa, aaaaac d : aaae)) <> 2)",
+   "sql": "(ARRAY_LENGTH(arr) = 0 OR ARRAY_LENGTH(LIST_FILTER(arr, LAMBDA x : pred)) <> 0)"
   },
   {
    "dialect": "postgres",
@@ -20464,6 +20764,21 @@
    "dialect": "clickhouse",
    "rendered": "SELECT 1 AS \"ab\"",
    "sql": "SELECT 1 AS \"x`\""
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT SUM(IF(a = 'ab', c, NULL)), COUNTIF(a > 4), COUNT(DISTINCT IF(a > 4, c, NULL)) FROM e",
+   "sql": "SELECT SUM(IF(c = 'US', x, NULL)), COUNTIF(c > 1), COUNT(DISTINCT IF(c > 1, x, NULL)) FROM t"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "SELECT SUM(IIF(a = 'ab', c, NULL)), COUNT(IIF(a > 4, 4, NULL)), COUNT_BIG(DISTINCT IIF(a > 4, c, NULL)) FROM e",
+   "sql": "SELECT SUM(IIF(c = 'US', x, NULL)), COUNT(IIF(c > 1, 1, NULL)), COUNT_BIG(DISTINCT IIF(c > 1, x, NULL)) FROM t"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT ARRAY_AGG(IF(a > 2, c, NULL) aaaaad aaaae ORDER BY f) FROM g",
+   "sql": "SELECT ARRAY_AGG(IF(c > 1, x, NULL) IGNORE NULLS ORDER BY y) FROM t"
   },
   {
    "dialect": "mysql",
@@ -21957,6 +22272,86 @@
   },
   {
    "dialect": "doris",
+   "rendered": "SELECT * FROM a WHERE b aaaaaaaaaaac 'aaaaa aaaaa ad'",
+   "sql": "SELECT * FROM t WHERE c MATCH_PHRASE 'word1 word2 ~3'"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT * FROM a WHERE b aaaaaaaaaaac 'aaaaa aaaaa aad'",
+   "sql": "SELECT * FROM t WHERE c MATCH_PHRASE 'word1 word2 ~3+'"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT * FROM a WHERE b aaaac 'aaaaa aaaad' USING aaaaaaae aaaaaaaaaaaf",
+   "sql": "SELECT * FROM t WHERE c MATCH 'hello world' USING ANALYZER std_analyzer"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT * FROM a WHERE b aaaaaaaac 'd' USING aaaaaaae `aaaaaaaaaaf`",
+   "sql": "SELECT * FROM t WHERE c MATCH_ANY 'x' USING ANALYZER `kw_analyzer`"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT * FROM a WHERE b aaaac 'd' USING aaaaaaae 'aaaaaaaf'",
+   "sql": "SELECT * FROM t WHERE c MATCH 'x' USING ANALYZER 'standard'"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT * FROM a WHERE b NOT aaaaaaaac ('d') USING aaaaaaae 'aaaaaaaf'",
+   "sql": "SELECT * FROM t WHERE c NOT MATCH_ANY ('x') USING ANALYZER 'standard'"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT * FROM a WHERE b aaaaaaaaaaac 'aaaaaaaaaad'",
+   "sql": "SELECT * FROM t WHERE c match_regexp '^key_word.*'"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT * FROM a WHERE NOT b aaaaaaaac 'd' AND e aaaaaaaaf 'g' OR h = 9",
+   "sql": "SELECT * FROM t WHERE NOT c MATCH_ANY 'x' AND d MATCH_ALL 'y' OR e = 1"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT * FROM a WHERE b NOT aaaaaaaac 'aaaaa aaaad'",
+   "sql": "SELECT * FROM t WHERE c NOT MATCH_ALL 'word1 word2'"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT * FROM a WHERE b NOT LIKE 'ac'",
+   "sql": "SELECT * FROM t WHERE c NOT LIKE 'x%'"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT a AS aaaaaaaab FROM c",
+   "sql": "SELECT c AS match_any FROM t"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT a aaaaaaaab FROM c",
+   "sql": "SELECT c match_any FROM t"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT a aaaaaaaab",
+   "sql": "SELECT c match_any"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT * FROM a WHERE b aaaac 'd'",
+   "sql": "SELECT * FROM t WHERE c MATCH 'x'"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "SELECT * FROM a WHERE b MATCH 'c'",
+   "sql": "SELECT * FROM t WHERE c MATCH 'x'"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT * FROM a WHERE b aaaaaaaac 'd'",
+   "sql": "SELECT * FROM t WHERE c MATCH_ALL 'x'"
+  },
+  {
+   "dialect": "doris",
    "rendered": "ANALYZE TABLE aaa",
    "sql": "ANALYZE TABLE tbl"
   },
@@ -22582,6 +22977,86 @@
   },
   {
    "dialect": "duckdb",
+   "rendered": "SELECT * FROM a JOIN ab (aaac left) d USING (ae)",
+   "sql": "SELECT * FROM a JOIN BY (TYPE left) b USING (id)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT * FROM a LEFT JOIN b USING (ac)",
+   "sql": "SELECT * FROM a LEFT JOIN b USING (id)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT * FROM a LEFT JOIN b USING (ac)",
+   "sql": "SELECT * FROM a LEFT JOIN b USING (id)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT a.ab, aaaaaaaaaaaaaaaaac FROM a JOIN ad (aaae aaaf) g ON a.ab = g.ab",
+   "sql": "SELECT a.id, __mark_join_marker FROM a JOIN BY (TYPE MARK) b ON a.id = b.id"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT * FROM a JOIN ab (aaac inner) d ON a.ae = d.ae JOIN f ON d.ae = f.ae",
+   "sql": "SELECT * FROM a JOIN BY (TYPE inner) b ON a.id = b.id JOIN c ON b.id = c.id"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT connect, disconnect FROM a",
+   "sql": "SELECT connect, disconnect FROM t"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT a.ab, c.ab FROM a JOIN c aaaaaad 5 af aaaaaaag ABS(a.ab - c.ab)",
+   "sql": "SELECT a.id, b.id FROM a JOIN b NEAREST 1 BY DISTANCE ABS(a.id - b.id)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT a.ab, c.ab FROM a JOIN c aaaaad aaaaaae 6 ag aaaaaaah ABS(a.ab - c.ab)",
+   "sql": "SELECT a.id, b.id FROM a JOIN b APPROX NEAREST 1 BY DISTANCE ABS(a.id - b.id)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT a.ab, c.ab FROM a JOIN c aaaaaad 5 af aaaaaaag ABS(a.ab - c.ab) JOIN h ON c.ab = h.ab WHERE a.ab > 9 ORDER BY a.ab",
+   "sql": "SELECT a.id, b.id FROM a JOIN b NEAREST 1 BY DISTANCE ABS(a.id - b.id) JOIN c ON b.id = c.id WHERE a.id > 0 ORDER BY a.id"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT * FROM a JOIN b aaaaaac 4 ae aaaaaaaf ABS(a.ag - b.ag) JOIN h aaaaaac 9 ae aaaaaaaf ABS(b.ag - h.ag)",
+   "sql": "SELECT * FROM a JOIN b NEAREST 1 BY DISTANCE ABS(a.id - b.id) JOIN c NEAREST 2 BY DISTANCE ABS(b.id - c.id)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT * FROM a LEFT JOIN (SELECT * FROM b WHERE ac > 4) AS b aaaaaae 6 ag aaaaaaah ABS(a.ac - b.ac)",
+   "sql": "SELECT * FROM a LEFT JOIN (SELECT * FROM b WHERE id > 0) AS b NEAREST 1 BY DISTANCE ABS(a.id - b.id)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT * FROM a aaaaaab JOIN c aaaaad ON aaaaaab.ae = aaaaad.ae",
+   "sql": "SELECT * FROM a nearest JOIN b approx ON nearest.id = approx.id"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT * FROM a JOIN b AS \"aaaaaac\" aaaaaad 5 af aaaaaaag ABS(a.ah - \"aaaaaac\".ah)",
+   "sql": "SELECT * FROM a JOIN b AS \"nearest\" NEAREST 1 BY DISTANCE ABS(a.id - \"nearest\".id)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT a.ab, c.ab FROM a LEFT JOIN c aaaaaad 5 af aaaaaaag ABS(a.ab - c.ab)",
+   "sql": "SELECT a.id, b.id FROM a LEFT JOIN b NEAREST 1 BY DISTANCE ABS(a.id - b.id)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT * FROM a JOIN b aaaaaac 4 ae aaaaaaaf ABS(a.ag - b.ag)",
+   "sql": "SELECT * FROM a JOIN b NEAREST 1 BY DISTANCE ABS(a.id - b.id)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT NULL IS NOT NULL IS NULL",
+   "sql": "SELECT NULL IS NOT NULL IS NULL"
+  },
+  {
+   "dialect": "duckdb",
    "rendered": "TRUNC(1.00000, 2)",
    "sql": "TRUNC(3.14159, 2)"
   },
@@ -22589,6 +23064,16 @@
    "dialect": "duckdb",
    "rendered": "SELECT ([1,2,3])[:-:-1]",
    "sql": "SELECT ([1,2,3])[:-:-1]"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT ([1,2,3,4,5])[4:-:-2]",
+   "sql": "SELECT ([1,2,3,4,5])[4:-:-2]"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT ([1,2,3,4,5])[2:-:1]",
+   "sql": "SELECT ([1,2,3,4,5])[2:-:1]"
   },
   {
    "dialect": "duckdb",
@@ -22742,8 +23227,23 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN aaaaa IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(aab, c -> COALESCE(CAST(c AS TEXT), '')), aaaaa) END",
-   "sql": "SELECT CASE WHEN delim IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(arr, x -> COALESCE(CAST(x AS TEXT), '')), delim) END"
+   "rendered": "SELECT CASE WHEN aaaaa IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(aab, aaaaac d : COALESCE(CAST(d AS TEXT), '')), aaaaa) END",
+   "sql": "SELECT CASE WHEN delim IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(arr, LAMBDA x : COALESCE(CAST(x AS TEXT), '')), delim) END"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT ARRAY_TO_STRING(LIST_TRANSFORM([1, 2, 3, NULL, 4], aaaaae f : COALESCE(CAST(f AS TEXT), 'g')), 'h')",
+   "sql": "SELECT ARRAY_TO_STRING(LIST_TRANSFORM([1, 2, 3, NULL, 5], LAMBDA x : COALESCE(CAST(x AS TEXT), '*')), ',')"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT ARRAY_TO_STRING(ARRAY[1, 2, 3, NULL, 4], 'e', 'f')",
+   "sql": "SELECT ARRAY_TO_STRING(ARRAY[1, 2, 3, NULL, 5], ',', '*')"
+  },
+  {
+   "dialect": "presto",
+   "rendered": "SELECT ARRAY_JOIN(ARRAY[1, 2, 3, NULL, 4], 'e', 'f')",
+   "sql": "SELECT ARRAY_JOIN(ARRAY[1, 2, 3, NULL, 5], ',', '*')"
   },
   {
    "dialect": "duckdb",
@@ -22899,6 +23399,16 @@
    "dialect": "duckdb",
    "rendered": "SELECT RANGE(1, 2, -2)",
    "sql": "SELECT RANGE(5, 1, -1)"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT GENERATE_ARRAY(1, 2 + 2, -2)",
+   "sql": "SELECT GENERATE_ARRAY(5, 1 + 1, -1)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT GENERATE_SERIES(1, 2 + 2, -2)",
+   "sql": "SELECT GENERATE_SERIES(5, 1 + 1, -1)"
   },
   {
    "dialect": "spark",
@@ -23572,6 +24082,21 @@
   },
   {
    "dialect": "duckdb",
+   "rendered": "SELECT a ->> ('ab' || c)",
+   "sql": "SELECT a ->> ('$.' || f)"
+  },
+  {
+   "dialect": "databricks",
+   "rendered": "SELECT GET_JSON_OBJECT(a, CONCAT('ab', c))",
+   "sql": "SELECT GET_JSON_OBJECT(a, CONCAT('$.', f))"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT JSON_EXTRACT_STRING(a, 'ab' || c)",
+   "sql": "SELECT JSON_EXTRACT_STRING(a, '$.' || f)"
+  },
+  {
+   "dialect": "duckdb",
    "rendered": "SELECT ($$aaaaaaaaaaaa$$)",
    "sql": "SELECT ($$hello)'world$$)"
   },
@@ -23727,8 +24252,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT LIST_TRANSFORM(STR_SPLIT_REGEX('aaa a aaa ', 'b'), c -> TRIM(c))",
-   "sql": "SELECT LIST_TRANSFORM(STR_SPLIT_REGEX('abc , dfg ', ','), x -> TRIM(x))"
+   "rendered": "SELECT LIST_TRANSFORM(STR_SPLIT_REGEX('aaa a aaa ', 'b'), aaaaac d : TRIM(d))",
+   "sql": "SELECT LIST_TRANSFORM(STR_SPLIT_REGEX('abc , dfg ', ','), LAMBDA x : TRIM(x))"
   },
   {
    "dialect": "spark",
@@ -23737,8 +24262,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT LIST_FILTER([1, 2, 3], d -> d > 1)",
-   "sql": "SELECT LIST_FILTER([4, 5, 6], x -> x > 4)"
+   "rendered": "SELECT LIST_FILTER([1, 2, 3], aaaaad e : e > 1)",
+   "sql": "SELECT LIST_FILTER([4, 5, 6], LAMBDA x : x > 4)"
   },
   {
    "dialect": "spark",
@@ -23752,8 +24277,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "LIST_FILTER([1, NULL, 2, NULL, 3], ad -> NOT ad IS NULL)",
-   "sql": "LIST_FILTER([1, NULL, 2, NULL, 3], _u -> NOT _u IS NULL)"
+   "rendered": "LIST_FILTER([1, NULL, 2, NULL, 3], aaaaad ae : NOT ae IS NULL)",
+   "sql": "LIST_FILTER([1, NULL, 2, NULL, 3], LAMBDA _u : NOT _u IS NULL)"
   },
   {
    "dialect": "duckdb",
@@ -23762,8 +24287,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "LIST_FILTER(NULL, aa -> NOT aa IS NULL)",
-   "sql": "LIST_FILTER(NULL, _u -> NOT _u IS NULL)"
+   "rendered": "LIST_FILTER(NULL, aaaaaa ab : NOT ab IS NULL)",
+   "sql": "LIST_FILTER(NULL, LAMBDA _u : NOT _u IS NULL)"
   },
   {
    "dialect": "duckdb",
@@ -23772,8 +24297,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "LIST_FILTER([], aa -> NOT aa IS NULL)",
-   "sql": "LIST_FILTER([], _u -> NOT _u IS NULL)"
+   "rendered": "LIST_FILTER([], aaaaaa ab : NOT ab IS NULL)",
+   "sql": "LIST_FILTER([], LAMBDA _u : NOT _u IS NULL)"
   },
   {
    "dialect": "duckdb",
@@ -23782,8 +24307,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "LIST_FILTER(['a', NULL, 'b', NULL, 'c'], ad -> NOT ad IS NULL)",
-   "sql": "LIST_FILTER(['a', NULL, 'b', NULL, 'c'], _u -> NOT _u IS NULL)"
+   "rendered": "LIST_FILTER(['a', NULL, 'b', NULL, 'c'], aaaaad ae : NOT ae IS NULL)",
+   "sql": "LIST_FILTER(['a', NULL, 'b', NULL, 'c'], LAMBDA _u : NOT _u IS NULL)"
   },
   {
    "dialect": "duckdb",
@@ -23792,8 +24317,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "LIST_FILTER([[1, 2], NULL, [3, 4]], ae -> NOT ae IS NULL)",
-   "sql": "LIST_FILTER([[1, 2], NULL, [3, 4]], _u -> NOT _u IS NULL)"
+   "rendered": "LIST_FILTER([[1, 2], NULL, [3, 4]], aaaaae af : NOT af IS NULL)",
+   "sql": "LIST_FILTER([[1, 2], NULL, [3, 4]], LAMBDA _u : NOT _u IS NULL)"
   },
   {
    "dialect": "duckdb",
@@ -23802,8 +24327,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "LIST_FILTER([1, 2, 3, 4, 5], af -> NOT af IS NULL)",
-   "sql": "LIST_FILTER([1, 2, 3, 4, 5], _u -> NOT _u IS NULL)"
+   "rendered": "LIST_FILTER([1, 2, 3, 4, 5], aaaaaf ag : NOT ag IS NULL)",
+   "sql": "LIST_FILTER([1, 2, 3, 4, 5], LAMBDA _u : NOT _u IS NULL)"
   },
   {
    "dialect": "duckdb",
@@ -23899,6 +24424,26 @@
    "dialect": "duckdb",
    "rendered": "SELECT TRY_CAST('aaaaaaa' AS DECIMAL(11, 3))",
    "sql": "SELECT TRY_CAST('12.3456' AS DECIMAL(10, 2))"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "VAR_POP(a)",
+   "sql": "VAR_POP(x)"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "VAR_POP(a)",
+   "sql": "VAR_POP(x)"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "VAR_POP(a)",
+   "sql": "VAR_POP(x)"
+  },
+  {
+   "dialect": "singlestore",
+   "rendered": "VAR_POP(a)",
+   "sql": "VAR_POP(x)"
   },
   {
    "dialect": "duckdb",
@@ -24282,31 +24827,6 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "ARRAY_REVERSE_SORT(a)",
-   "sql": "ARRAY_REVERSE_SORT(x)"
-  },
-  {
-   "dialect": "presto",
-   "rendered": "ARRAY_SORT(a, (b, c) -> CASE WHEN b < c THEN 4 WHEN b > c THEN -4 ELSE 5 END)",
-   "sql": "ARRAY_SORT(x, (a, b) -> CASE WHEN a < b THEN 1 WHEN a > b THEN -1 ELSE 0 END)"
-  },
-  {
-   "dialect": "hive",
-   "rendered": "SORT_ARRAY(a, FALSE)",
-   "sql": "SORT_ARRAY(x, FALSE)"
-  },
-  {
-   "dialect": "spark",
-   "rendered": "SORT_ARRAY(a, FALSE)",
-   "sql": "SORT_ARRAY(x, FALSE)"
-  },
-  {
-   "dialect": "duckdb",
-   "rendered": "LIST_REVERSE_SORT(a)",
-   "sql": "LIST_REVERSE_SORT(x)"
-  },
-  {
-   "dialect": "duckdb",
    "rendered": "SELECT LIST_SORT(a, 'aab')",
    "sql": "SELECT LIST_SORT(x, 'ASC')"
   },
@@ -24337,8 +24857,43 @@
   },
   {
    "dialect": "duckdb",
+   "rendered": "SELECT LIST_SORT(a, 'aaab', 'aaaaa aaaac')",
+   "sql": "SELECT LIST_SORT(x, 'desc', 'nulls first')"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT ARRAY_REVERSE_SORT(a, 'aaaaa aaaab')",
+   "sql": "SELECT ARRAY_REVERSE_SORT(x, 'NULLS FIRST')"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT LIST_REVERSE_SORT(a)",
+   "sql": "SELECT LIST_REVERSE_SORT(x)"
+  },
+  {
+   "dialect": "duckdb",
    "rendered": "SELECT LIST_SORT(a, 'ab' || 'ac')",
    "sql": "SELECT LIST_SORT(x, 'DE' || 'SC')"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT LIST_SORT(a, 'aab')",
+   "sql": "SELECT LIST_SORT(x, 'foo')"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT LIST_SORT(a, \"aab\")",
+   "sql": "SELECT LIST_SORT(x, \"asc\")"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT ARRAY_SORT(a, 'aab', 'aac')",
+   "sql": "SELECT ARRAY_SORT(x, 'ASC', 'bad')"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "LIST_SORT(a, 'ab' || 'ac')",
+   "sql": "LIST_SORT(x, 'DE' || 'SC')"
   },
   {
    "dialect": "duckdb",
@@ -24606,6 +25161,26 @@
    "sql": "VARIANCE(a)"
   },
   {
+   "dialect": "mysql",
+   "rendered": "VAR_SAMP(a)",
+   "sql": "VAR_SAMP(a)"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "VAR_SAMP(a)",
+   "sql": "VAR_SAMP(a)"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "VAR_SAMP(a)",
+   "sql": "VAR_SAMP(a)"
+  },
+  {
+   "dialect": "singlestore",
+   "rendered": "VAR_SAMP(a)",
+   "sql": "VAR_SAMP(a)"
+  },
+  {
    "dialect": "clickhouse",
    "rendered": "aaaaaaa(b)",
    "sql": "varSamp(a)"
@@ -24614,6 +25189,26 @@
    "dialect": "duckdb",
    "rendered": "STDDEV(a)",
    "sql": "STDDEV(a)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "STDDEV_SAMP(a)",
+   "sql": "STDDEV_SAMP(a)"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "STDDEV_SAMP(a)",
+   "sql": "STDDEV_SAMP(a)"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "STDDEV_SAMP(a)",
+   "sql": "STDDEV_SAMP(a)"
+  },
+  {
+   "dialect": "singlestore",
+   "rendered": "STDDEV_SAMP(a)",
+   "sql": "STDDEV_SAMP(a)"
   },
   {
    "dialect": "clickhouse",
@@ -24667,8 +25262,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT COLUMNS(a -> a LIKE 'aaaab') FROM aaaaaac",
-   "sql": "SELECT COLUMNS(c -> c LIKE '%num%') FROM numbers"
+   "rendered": "SELECT COLUMNS(aaaaaa b : b LIKE 'aaaac') FROM aaaaaad",
+   "sql": "SELECT COLUMNS(LAMBDA c : c LIKE '%num%') FROM numbers"
   },
   {
    "dialect": "duckdb",
@@ -24754,6 +25349,26 @@
    "dialect": "duckdb",
    "rendered": "SELECT REGEXP_MATCHES('aaaaaa', 'aaaaab', 'c')",
    "sql": "SELECT REGEXP_MATCHES('ThOmAs', 'thomas', 'i')"
+  },
+  {
+   "dialect": "redshift",
+   "rendered": "SELECT 'aaaaaa' ~* 'aaaaab'",
+   "sql": "SELECT 'ThOmAs' ~* 'thomas'"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT REGEXP_MATCHES(a, 'b', 'ac')",
+   "sql": "SELECT REGEXP_MATCHES(x, 'a', 'ic')"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT a ~ 'b'",
+   "sql": "SELECT x ~ 'a'"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT REGEXP_MATCHES(a, 'b', '')",
+   "sql": "SELECT REGEXP_MATCHES(x, 'a', '')"
   },
   {
    "dialect": "duckdb",
@@ -25082,6 +25697,81 @@
   },
   {
    "dialect": "duckdb",
+   "rendered": "SELECT ARRAY_SLICE([1, 2, 3, 4], 2, 3)",
+   "sql": "SELECT ARRAY_SLICE([1, 2, 3, 4], 2, 3)"
+  },
+  {
+   "dialect": "spark2",
+   "rendered": "SELECT SLICE(ARRAY(1, 2, 3, 4), 2, 2)",
+   "sql": "SELECT SLICE(ARRAY(1, 2, 3, 4), 2, 2)"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "SELECT SLICE(ARRAY(1, 2, 3, 4), 2, 2)",
+   "sql": "SELECT SLICE(ARRAY(1, 2, 3, 4), 2, 2)"
+  },
+  {
+   "dialect": "databricks",
+   "rendered": "SELECT SLICE(ARRAY(1, 2, 3, 4), 2, 2)",
+   "sql": "SELECT SLICE(ARRAY(1, 2, 3, 4), 2, 2)"
+  },
+  {
+   "dialect": "presto",
+   "rendered": "SELECT SLICE(ARRAY[1, 2, 3, 4], 2, 2)",
+   "sql": "SELECT SLICE(ARRAY[1, 2, 3, 4], 2, 2)"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT SLICE(ARRAY[1, 2, 3, 4], 2, 2)",
+   "sql": "SELECT SLICE(ARRAY[1, 2, 3, 4], 2, 2)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "ARRAY_SLICE(a, 2, 3)",
+   "sql": "ARRAY_SLICE(x, 0, 2)"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "SLICE(a, 2, 3)",
+   "sql": "SLICE(x, 1, 2)"
+  },
+  {
+   "dialect": "presto",
+   "rendered": "SLICE(a, 2, 3)",
+   "sql": "SLICE(x, 1, 2)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "ARRAY_SLICE(a, 2, 3)",
+   "sql": "ARRAY_SLICE(x, 3, 2)"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "SLICE(a, 2, 3)",
+   "sql": "SLICE(x, 3, 0)"
+  },
+  {
+   "dialect": "presto",
+   "rendered": "SLICE(a, 2, 3)",
+   "sql": "SLICE(x, 3, 0)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "ARRAY_SLICE(CASE WHEN RANDOM() < 1.0 THEN [2] ELSE [2, 3] END, -2, 3)",
+   "sql": "ARRAY_SLICE(CASE WHEN RANDOM() < 0.5 THEN [1] ELSE [1, 2] END, -1, 2)"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "SLICE(CASE WHEN RAND() < 1.0 THEN ARRAY(2) ELSE ARRAY(2, 3) END, -2, 3)",
+   "sql": "SLICE(CASE WHEN RAND() < 0.5 THEN ARRAY(1) ELSE ARRAY(1, 2) END, -1, 2)"
+  },
+  {
+   "dialect": "presto",
+   "rendered": "SLICE(CASE WHEN RAND() < 1.0 THEN ARRAY[2] ELSE ARRAY[2, 3] END, -2, 3)",
+   "sql": "SLICE(CASE WHEN RAND() < 0.5 THEN ARRAY[1] ELSE ARRAY[1, 2] END, -1, 2)"
+  },
+  {
+   "dialect": "duckdb",
    "rendered": "CASE WHEN [1, 2, 3] IS NULL THEN NULL ELSE LIST_CONCAT([13], [1, 2, 3]) END",
    "sql": "CASE WHEN [1, 2, 3] IS NULL THEN NULL ELSE LIST_CONCAT([99], [1, 2, 3]) END"
   },
@@ -25122,18 +25812,33 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "CASE WHEN aaaaaa IS NULL THEN NULL ELSE LIST_FILTER(aaaaaaaab, ac -> ac <> aaaaaa) END",
-   "sql": "CASE WHEN target IS NULL THEN NULL ELSE LIST_FILTER(the_array, _u -> _u <> target) END"
+   "rendered": "CASE WHEN [1, 2, 3] IS NULL THEN NULL ELSE LIST_CONCAT([1, 2, 3], [13]) END",
+   "sql": "CASE WHEN [1, 2, 3] IS NULL THEN NULL ELSE LIST_CONCAT([1, 2, 3], [99]) END"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "ARRAY_INSERT(ARRAY(1, 2, 3), -1, 13)",
+   "sql": "ARRAY_INSERT(ARRAY(1, 2, 3), -1, 99)"
+  },
+  {
+   "dialect": "databricks",
+   "rendered": "ARRAY_INSERT(ARRAY(1, 2, 3), -1, 13)",
+   "sql": "ARRAY_INSERT(ARRAY(1, 2, 3), -1, 99)"
   },
   {
    "dialect": "duckdb",
-   "rendered": "LIST_FILTER([1, 2, 3], ad -> ad <> 2)",
-   "sql": "LIST_FILTER([1, 2, 3], _u -> _u <> 2)"
+   "rendered": "CASE WHEN aaaaaa IS NULL THEN NULL ELSE LIST_FILTER(aaaaaaaab, aaaaac ad : ad <> aaaaaa) END",
+   "sql": "CASE WHEN target IS NULL THEN NULL ELSE LIST_FILTER(the_array, LAMBDA _u : _u <> target) END"
   },
   {
    "dialect": "duckdb",
-   "rendered": "CASE WHEN NULL IS NULL THEN NULL ELSE LIST_FILTER([1, 2, 3], ad -> ad <> NULL) END",
-   "sql": "CASE WHEN NULL IS NULL THEN NULL ELSE LIST_FILTER([1, 2, 3], _u -> _u <> NULL) END"
+   "rendered": "LIST_FILTER([1, 2, 3], aaaaad ae : ae <> 2)",
+   "sql": "LIST_FILTER([1, 2, 3], LAMBDA _u : _u <> 2)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "CASE WHEN NULL IS NULL THEN NULL ELSE LIST_FILTER([1, 2, 3], aaaaad ae : ae <> NULL) END",
+   "sql": "CASE WHEN NULL IS NULL THEN NULL ELSE LIST_FILTER([1, 2, 3], LAMBDA _u : _u <> NULL) END"
   },
   {
    "dialect": "duckdb",
@@ -25304,6 +26009,51 @@
    "dialect": "duckdb",
    "rendered": "SELECT INTERVAL 'a' aaaaaab",
    "sql": "SELECT INTERVAL '1' QUARTER"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT INTERVAL 'aaa aaa'",
+   "sql": "SELECT INTERVAL '1.5 DAY'"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT INTERVAL 'aaa' aab",
+   "sql": "SELECT INTERVAL '1.5' DAY"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT INTERVAL 'aaa' aaaab",
+   "sql": "SELECT INTERVAL '1.5' MONTH"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT CAST('aaaaaaaaaa' AS TIMESTAMP) + INTERVAL 'aaaaaa aaaaab'",
+   "sql": "SELECT CAST('2024-01-01' AS TIMESTAMP) + INTERVAL '-10.75 MINUTE'"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT CAST('aaaaaaaaaa' AS TIMESTAMP) + INTERVAL 'aaaaaa aaaaab'",
+   "sql": "SELECT CAST('2024-01-01' AS TIMESTAMP) + INTERVAL '-10.75 MINUTE'"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT INTERVAL 'aaa aaaaaa'",
+   "sql": "SELECT INTERVAL '1.5 SECOND'"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT INTERVAL 'aaa' aaaaab",
+   "sql": "SELECT INTERVAL '1.5' SECOND"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT INTERVAL 'aaa aaaaaaa'",
+   "sql": "SELECT INTERVAL '1.0 QUARTER'"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT INTERVAL 'a aaaaa'",
+   "sql": "SELECT INTERVAL '3 MONTH'"
   },
   {
    "dialect": "duckdb",
@@ -25587,6 +26337,11 @@
   },
   {
    "dialect": "duckdb",
+   "rendered": "SELECT a, COUNT(*) OVER b AS c FROM aad WHERE a > 5 GROUP BY a HAVING COUNT(*) > 5 WINDOW b AS (ORDER BY a) QUALIFY c > 5 USING aaaaaf aaaaag (17 PERCENT) ORDER BY a LIMIT 9 OFFSET 1",
+   "sql": "SELECT a, COUNT(*) OVER w AS c FROM tbl WHERE a > 0 GROUP BY a HAVING COUNT(*) > 0 WINDOW w AS (ORDER BY a) QUALIFY c > 0 USING SAMPLE SYSTEM (50 PERCENT) ORDER BY a LIMIT 3 OFFSET 1"
+  },
+  {
+   "dialect": "duckdb",
    "rendered": "SELECT * FROM aaaaaaa TABLESAMPLE aaaaaaaab (3 ROWS) aaaaaaaaad (14)",
    "sql": "SELECT * FROM example TABLESAMPLE RESERVOIR (3 ROWS) REPEATABLE (82)"
   },
@@ -25614,6 +26369,21 @@
    "dialect": "duckdb",
    "rendered": "ARRAY((SELECT aa FROM b))",
    "sql": "ARRAY((SELECT id FROM t))"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "[(SELECT aa FROM b), 3]",
+   "sql": "[(SELECT id FROM t), 2]"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT [{'a': (SELECT 2)}]",
+   "sql": "SELECT [{'a': (SELECT 1)}]"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT LIST_VALUE((SELECT 1))",
+   "sql": "SELECT LIST_VALUE((SELECT 1))"
   },
   {
    "dialect": "duckdb",
@@ -26207,6 +26977,11 @@
   },
   {
    "dialect": "duckdb",
+   "rendered": "FROM (FROM aa SELECT aaab UNION ALL SELECT aaac FROM ad)",
+   "sql": "FROM (FROM t1 SELECT foo1 UNION ALL SELECT foo2 FROM t2)"
+  },
+  {
+   "dialect": "duckdb",
    "rendered": "WITH aa AS (FROM (FROM ab SELECT aaac, aaad)) FROM aa",
    "sql": "WITH t1 AS (FROM (FROM t2 SELECT foo1, foo2)) FROM t1"
   },
@@ -26417,6 +27192,11 @@
   },
   {
    "dialect": "duckdb",
+   "rendered": "SELECT MAP {a.b: a.c} FROM (SELECT 'd' AS b, 14 AS c) AS a",
+   "sql": "SELECT MAP {t.k: t.v} FROM (SELECT 'a' AS k, 10 AS v) AS t"
+  },
+  {
+   "dialect": "duckdb",
    "rendered": "MAP {1: 'b', 3: 'd'}",
    "sql": "MAP {1: 'a', 2: 'b'}"
   },
@@ -26617,13 +27397,13 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT MAP_FROM_ENTRIES(LIST_FILTER(aaaaaaaaaaa(CAST({'b': 3, 'd': 5, 'f': 7} AS MAP(TEXT, DECIMAL(17, 9)))), j -> NOT j.aak IN ('b', 'd')))",
-   "sql": "SELECT MAP_FROM_ENTRIES(LIST_FILTER(MAP_ENTRIES(CAST({'a': 1, 'b': 2, 'c': 3} AS MAP(TEXT, DECIMAL(38, 0)))), x -> NOT x.key IN ('a', 'b')))"
+   "rendered": "SELECT MAP_FROM_ENTRIES(LIST_FILTER(aaaaaaaaaaa(CAST({'b': 3, 'd': 5, 'f': 7} AS MAP(TEXT, DECIMAL(17, 9)))), aaaaaj k : NOT k.aal IN ('b', 'd')))",
+   "sql": "SELECT MAP_FROM_ENTRIES(LIST_FILTER(MAP_ENTRIES(CAST({'a': 1, 'b': 2, 'c': 3} AS MAP(TEXT, DECIMAL(38, 0)))), LAMBDA x : NOT x.key IN ('a', 'b')))"
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT aa, MAP_FROM_ENTRIES(LIST_FILTER(aaaaaaaaaab(aaaac), d -> NOT d.aae IN (aaaaaaaf, aaaaaaag))) AS aaaaaaaaaaaaaaaaah FROM aaaaaaaai",
-   "sql": "SELECT id, MAP_FROM_ENTRIES(LIST_FILTER(MAP_ENTRIES(attrs), x -> NOT x.key IN (del_key1, del_key2))) AS attrs_after_delete FROM demo_maps"
+   "rendered": "SELECT aa, MAP_FROM_ENTRIES(LIST_FILTER(aaaaaaaaaab(aaaac), aaaaad e : NOT e.aaf IN (aaaaaaag, aaaaaaah))) AS aaaaaaaaaaaaaaaaai FROM aaaaaaaaj",
+   "sql": "SELECT id, MAP_FROM_ENTRIES(LIST_FILTER(MAP_ENTRIES(attrs), LAMBDA x : NOT x.key IN (del_key1, del_key2))) AS attrs_after_delete FROM demo_maps"
   },
   {
    "dialect": "duckdb",
@@ -26677,6 +27457,16 @@
   },
   {
    "dialect": "duckdb",
+   "rendered": "SELECT CONCAT_WS('a', 'b', 'c')",
+   "sql": "SELECT CONCAT_WS('-', 'a', 'b')"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT CONCAT_WS('a', ['b', NULL, 'c'])",
+   "sql": "SELECT CONCAT_WS('-', ['a', NULL, 'b'])"
+  },
+  {
+   "dialect": "duckdb",
    "rendered": "WITH aaaaa AS (SELECT [{'b': 3, 'd': 5}, {'b': 5, 'd': 6}] AS aag) SELECT h.aag['d'] FROM aaaaa, UNNEST(aaaaa.aag) AS h(aag) WHERE h.aag['b'] = 3",
    "sql": "WITH _data AS (SELECT [{'a': 1, 'b': 2}, {'a': 2, 'b': 3}] AS col) SELECT t.col['b'] FROM _data, UNNEST(_data.col) AS t(col) WHERE t.col['a'] = 1"
   },
@@ -26719,6 +27509,11 @@
    "dialect": "duckdb",
    "rendered": "SELECT aaaaaaaaaa(RANGE(2, 3), d -> {'ae': LIST_VALUE(2, 6, 7)[d], 'ah': LIST_VALUE(2, 6, 7)[d]})",
    "sql": "SELECT LIST_APPLY(RANGE(1, 4), i -> {'f1': LIST_VALUE(1, 2, 3)[i], 'f2': LIST_VALUE(1, 2, 3)[i]})"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "DISCONNECT",
+   "sql": "DISCONNECT"
   },
   {
    "dialect": "duckdb",
@@ -27721,6 +28516,11 @@
    "sql": "HASH_SHA256(x)"
   },
   {
+   "dialect": "postgres",
+   "rendered": "ENCODE(SHA256(a), 'aab')",
+   "sql": "ENCODE(SHA256(x), 'hex')"
+  },
+  {
    "dialect": "presto",
    "rendered": "LOWER(TO_HEX(SHA256(a)))",
    "sql": "LOWER(TO_HEX(SHA256(x)))"
@@ -28427,6 +29227,16 @@
   },
   {
    "dialect": "fabric",
+   "rendered": "CAST(CAST(a AS DATETIMEOFFSET(2)) ac TIME aaad 'aaaaaaa aaaaaaaa aaae' AS DATETIME2(2))",
+   "sql": "CAST(CAST(x AS DATETIMEOFFSET(6)) AT TIME ZONE 'Pacific Standard Time' AS DATETIME2(6))"
+  },
+  {
+   "dialect": "fabric",
+   "rendered": "CAST(CAST(a AS DATETIMEOFFSET(2)) ac TIME aaad 'aaaaaaa aaaaaaaa aaae' AS DATETIME2(2))",
+   "sql": "CAST(CAST(x AS DATETIMEOFFSET(3)) AT TIME ZONE 'Pacific Standard Time' AS DATETIME2(3))"
+  },
+  {
+   "dialect": "fabric",
    "rendered": "UNIX_TO_TIME(column)",
    "sql": "UNIX_TO_TIME(column)"
   },
@@ -28479,6 +29289,46 @@
    "dialect": "tsql",
    "rendered": "CREATE TABLE a (aab CHAR(aac))",
    "sql": "CREATE TABLE t (col CHAR(MAX))"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "ALTER TABLE aaaaaaaa aab aaaac NUMERIC(13, 5), aaaaaf VARCHAR(106)",
+   "sql": "ALTER TABLE Payments ADD Stock NUMERIC(38, 0), dropid VARCHAR(500)"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "SELECT FALSE IS DISTINCT FROM NULL = NULL",
+   "sql": "SELECT FALSE IS DISTINCT FROM NULL = NULL"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL",
+   "sql": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL",
+   "sql": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL",
+   "sql": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "SELECT FALSE IS DISTINCT FROM NULL < NULL",
+   "sql": "SELECT FALSE IS DISTINCT FROM NULL < NULL"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "SELECT FALSE IS DISTINCT FROM (NULL < NULL)",
+   "sql": "SELECT FALSE IS DISTINCT FROM (NULL < NULL)"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "SELECT FALSE IS DISTINCT FROM (NULL < NULL)",
+   "sql": "SELECT FALSE IS DISTINCT FROM (NULL < NULL)"
   },
   {
    "dialect": "hive",
@@ -28847,6 +29697,11 @@
   },
   {
    "dialect": "hive",
+   "rendered": "ALTER TABLE a REPLACE COLUMNS (b INT COMMENT 'c', d STRING) aaaaaae",
+   "sql": "ALTER TABLE X REPLACE COLUMNS (y INT COMMENT 'c', z STRING) CASCADE"
+  },
+  {
+   "dialect": "hive",
    "rendered": "CREATE aaaaaaaa TABLE b (c INT) ROW FORMAT aaaad 'aaaae' ROW FORMAT aaaaaaaaf aaaaag aaaaaaaaah ai 'j' WITH SERDEPROPERTIES ('aaaaaaaaaak'='')",
    "sql": "CREATE EXTERNAL TABLE x (y INT) ROW FORMAT SERDE 'serde' ROW FORMAT DELIMITED FIELDS TERMINATED BY '1' WITH SERDEPROPERTIES ('input.regex'='')"
   },
@@ -29042,6 +29897,16 @@
   },
   {
    "dialect": "hive",
+   "rendered": "FROM a LATERAL VIEW EXPLODE(b) c AS d SELECT d",
+   "sql": "FROM x LATERAL VIEW EXPLODE(y) t AS a SELECT a"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "SELECT * FROM (FROM a LATERAL VIEW EXPLODE(b) c AS d SELECT d) AS e",
+   "sql": "SELECT * FROM (FROM x LATERAL VIEW EXPLODE(y) t AS a SELECT a) AS q"
+  },
+  {
+   "dialect": "hive",
    "rendered": "'aa'",
    "sql": "'\\''"
   },
@@ -29112,8 +29977,8 @@
   },
   {
    "dialect": "drill",
-   "rendered": "'aaaaa'",
-   "sql": "'\\\\\\\\a'"
+   "rendered": "'aaa'",
+   "sql": "'\\\\a'"
   },
   {
    "dialect": "duckdb",
@@ -29777,26 +30642,6 @@
   },
   {
    "dialect": "hive",
-   "rendered": "SELECT SORT_ARRAY(a, FALSE)",
-   "sql": "SELECT SORT_ARRAY(x, FALSE)"
-  },
-  {
-   "dialect": "duckdb",
-   "rendered": "SELECT ARRAY_REVERSE_SORT(a)",
-   "sql": "SELECT ARRAY_REVERSE_SORT(x)"
-  },
-  {
-   "dialect": "spark",
-   "rendered": "SELECT SORT_ARRAY(a, FALSE)",
-   "sql": "SELECT SORT_ARRAY(x, FALSE)"
-  },
-  {
-   "dialect": "presto",
-   "rendered": "SELECT ARRAY_SORT(a, (b, c) -> CASE WHEN b < c THEN 4 WHEN b > c THEN -4 ELSE 5 END)",
-   "sql": "SELECT ARRAY_SORT(x, (a, b) -> CASE WHEN a < b THEN 1 WHEN a > b THEN -1 ELSE 0 END)"
-  },
-  {
-   "dialect": "hive",
    "rendered": "GET_JSON_OBJECT(a, 'aaaaab')",
    "sql": "GET_JSON_OBJECT(x, '$.name')"
   },
@@ -29977,8 +30822,8 @@
   },
   {
    "dialect": "presto",
-   "rendered": "CAST(CAST(a AS DOUBLE) / b AS INTEGER)",
-   "sql": "CAST(CAST(x AS DOUBLE) / y AS INTEGER)"
+   "rendered": "CAST(TRUNCATE(CAST(a AS DOUBLE) / b) AS BIGINT)",
+   "sql": "CAST(TRUNCATE(CAST(x AS DOUBLE) / y) AS BIGINT)"
   },
   {
    "dialect": "hive",
@@ -30432,6 +31277,91 @@
   },
   {
    "dialect": "hive",
+   "rendered": "FROM a INSERT OVERWRITE TABLE b SELECT c, d",
+   "sql": "FROM x INSERT OVERWRITE TABLE a SELECT k, v"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "FROM a INSERT INTO TABLE b SELECT c",
+   "sql": "FROM x INSERT INTO TABLE a SELECT k"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "FROM a AS b INSERT OVERWRITE TABLE c PARTITION(ad = 'e') SELECT b.f, b.g['h'] AS h WHERE b.ai = 'aaj' INSERT OVERWRITE TABLE k PARTITION(ad) SELECT b.f, b.ad WHERE b.ai = 'aaaaaal' INSERT INTO h SELECT b.ai, COUNT(DISTINCT b.f) AS am GROUP BY b.ai",
+   "sql": "FROM x AS v INSERT OVERWRITE TABLE a PARTITION(ds = '1') SELECT v.k, v.m['c'] AS c WHERE v.os = 'ios' INSERT OVERWRITE TABLE b PARTITION(ds) SELECT v.k, v.ds WHERE v.os = 'android' INSERT INTO c SELECT v.os, COUNT(DISTINCT v.k) AS uv GROUP BY v.os"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "FROM a INSERT OVERWRITE aaaab aaaaaaaac 'aaaaad' SELECT e INSERT OVERWRITE aaaaaaaac 'aaaaaf' ROW FORMAT aaaaaaaag aaaaah aaaaaaaaai aj 'k' SELECT l",
+   "sql": "FROM x INSERT OVERWRITE LOCAL DIRECTORY '/tmp/a' SELECT k INSERT OVERWRITE DIRECTORY '/tmp/b' ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' SELECT v"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "FROM a JOIN b ON a.c = b.c LEFT JOIN d ON a.c = d.c INSERT OVERWRITE TABLE e SELECT a.c, d.f",
+   "sql": "FROM a JOIN b ON a.k = b.k LEFT JOIN c ON a.k = c.k INSERT OVERWRITE TABLE t SELECT a.k, c.v"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "FROM (SELECT a, b FROM c WHERE b > 4) AS e INSERT OVERWRITE TABLE f SELECT e.a",
+   "sql": "FROM (SELECT k, v FROM x WHERE v > 0) AS s INSERT OVERWRITE TABLE t SELECT s.k"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "FROM a LATERAL VIEW EXPLODE(aab) c AS d LATERAL VIEW OUTER EXPLODE(e) f AS ag, ah INSERT OVERWRITE TABLE i SELECT d, ag",
+   "sql": "FROM x LATERAL VIEW EXPLODE(arr) a AS c LATERAL VIEW OUTER EXPLODE(m) b AS mk, mv INSERT OVERWRITE TABLE t SELECT c, mk"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "FROM a INSERT OVERWRITE TABLE b SELECT c, COUNT(*) WHERE d > 5 GROUP BY c HAVING COUNT(*) > 6 ORDER BY c LIMIT 16 INSERT INTO h SELECT DISTINCT c DISTRIBUTE BY c SORT BY c",
+   "sql": "FROM x INSERT OVERWRITE TABLE a SELECT k, COUNT(*) WHERE v > 1 GROUP BY k HAVING COUNT(*) > 2 ORDER BY k LIMIT 10 INSERT INTO b SELECT DISTINCT k DISTRIBUTE BY k SORT BY k"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "WITH a AS (SELECT 2 AS c) FROM a INSERT OVERWRITE TABLE d SELECT c INSERT INTO e SELECT c",
+   "sql": "WITH c AS (SELECT 1 AS k) FROM c INSERT OVERWRITE TABLE a SELECT k INSERT INTO b SELECT k"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "-- .\nFROM a\n-- .\nINSERT OVERWRITE TABLE b SELECT c\n-- .\nINSERT INTO d SELECT e",
+   "sql": "-- a\nFROM x\n-- b\nINSERT OVERWRITE TABLE t SELECT k\n-- c\nINSERT INTO u SELECT v"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "FROM (FROM a LATERAL VIEW EXPLODE(aab) c AS d SELECT e, d) AS f INSERT INTO g SELECT f.d INSERT INTO h SELECT f.e",
+   "sql": "FROM (FROM x LATERAL VIEW EXPLODE(arr) a AS c SELECT k, c) AS s INSERT INTO t SELECT s.c INSERT INTO u SELECT s.k"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "FROM a INSERT INTO b SELECT c QUALIFY ROW_NUMBER() OVER (PARTITION BY d ORDER BY c) = 5",
+   "sql": "FROM x INSERT INTO t SELECT v QUALIFY ROW_NUMBER() OVER (PARTITION BY k ORDER BY v) = 1"
+  },
+  {
+   "dialect": "databricks",
+   "rendered": "FROM a INSERT INTO b SELECT c QUALIFY ROW_NUMBER() OVER (PARTITION BY d ORDER BY c) = 5",
+   "sql": "FROM x INSERT INTO t SELECT v QUALIFY ROW_NUMBER() OVER (PARTITION BY k ORDER BY v) = 1"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "FROM a INSERT OVERWRITE TABLE b SELECT c",
+   "sql": "FROM x INSERT OVERWRITE TABLE a SELECT k"
+  },
+  {
+   "dialect": "spark2",
+   "rendered": "FROM a INSERT OVERWRITE TABLE b SELECT c",
+   "sql": "FROM x INSERT OVERWRITE TABLE a SELECT k"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "FROM a INSERT OVERWRITE TABLE b SELECT c",
+   "sql": "FROM x INSERT OVERWRITE TABLE a SELECT k"
+  },
+  {
+   "dialect": "databricks",
+   "rendered": "FROM a INSERT OVERWRITE TABLE b SELECT c",
+   "sql": "FROM x INSERT OVERWRITE TABLE a SELECT k"
+  },
+  {
+   "dialect": "hive",
    "rendered": "TRUNC(aaaaaaaa, 'ab')",
    "sql": "TRUNC(date_col, 'MM')"
   },
@@ -30439,6 +31369,11 @@
    "dialect": "hive",
    "rendered": "EXISTS(aaa, b -> b % 3 = 4)",
    "sql": "EXISTS(col, x -> x % 2 = 0)"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "FROM a INSERT OVERWRITE TABLE b SELECT c INSERT INTO d SELECT e WHERE c > 6",
+   "sql": "FROM x INSERT OVERWRITE TABLE a SELECT k INSERT INTO b SELECT v WHERE k > 0"
   },
   {
    "dialect": "materialize",
@@ -30599,6 +31534,66 @@
    "dialect": "materialize",
    "rendered": "SELECT MAP(SELECT 'a', 2)",
    "sql": "SELECT MAP(SELECT 'a', 1)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT TRUE XOR FALSE AND FALSE",
+   "sql": "SELECT TRUE XOR FALSE AND FALSE"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT !1 + 2",
+   "sql": "SELECT !2 + 1"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT (NOT 1) + 2",
+   "sql": "SELECT (NOT 2) + 1"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "SELECT (NOT 1) + 2",
+   "sql": "SELECT (NOT 2) + 1"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT NOT 1 + 2",
+   "sql": "SELECT NOT 2 + 1"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT STDDEV_POP(a), STDDEV_POP(a), VAR_POP(a) FROM b",
+   "sql": "SELECT STDDEV_POP(x), STDDEV_POP(x), VAR_POP(x) FROM t"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT STD(a), STDDEV(a), VARIANCE(a) FROM b",
+   "sql": "SELECT STD(x), STDDEV(x), VARIANCE(x) FROM t"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT STD(a), STDDEV(a), VARIANCE(a) FROM b",
+   "sql": "SELECT STD(x), STDDEV(x), VARIANCE(x) FROM t"
+  },
+  {
+   "dialect": "doris",
+   "rendered": "SELECT STD(a), STDDEV(a), VARIANCE(a) FROM b",
+   "sql": "SELECT STD(x), STDDEV(x), VARIANCE(x) FROM t"
+  },
+  {
+   "dialect": "singlestore",
+   "rendered": "SELECT STD(a), STDDEV(a), VARIANCE(a) FROM b",
+   "sql": "SELECT STD(x), STDDEV(x), VARIANCE(x) FROM t"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT STDDEV_POP(a), STDDEV_POP(a), VAR_POP(a) FROM b",
+   "sql": "SELECT STDDEV_POP(x), STDDEV_POP(x), VAR_POP(x) FROM t"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT STDDEV_POP(a), VAR_POP(a), STDDEV_SAMP(a), VAR_SAMP(a) FROM b",
+   "sql": "SELECT STDDEV_POP(x), VAR_POP(x), STDDEV_SAMP(x), VAR_SAMP(x) FROM t"
   },
   {
    "dialect": "mysql",
@@ -30767,6 +31762,26 @@
   },
   {
    "dialect": "mysql",
+   "rendered": "ALTER TABLE a aab FOREIGN KEY ac (d) REFERENCES e (d)",
+   "sql": "ALTER TABLE t ADD FOREIGN KEY fk (a) REFERENCES p (a)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a aab CONSTRAINT FOREIGN KEY ac (d) REFERENCES e (d)",
+   "sql": "ALTER TABLE t ADD CONSTRAINT FOREIGN KEY fk (a) REFERENCES p (a)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a aab CONSTRAINT c FOREIGN KEY ad (e) REFERENCES f (e)",
+   "sql": "ALTER TABLE t ADD CONSTRAINT c FOREIGN KEY fk (a) REFERENCES p (a)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "CREATE TABLE a (b INT, FOREIGN KEY ac (b) REFERENCES d (b))",
+   "sql": "CREATE TABLE t (a INT, FOREIGN KEY fk (a) REFERENCES p (a))"
+  },
+  {
+   "dialect": "mysql",
    "rendered": "ALTER TABLE a DROP PRIMARY KEY",
    "sql": "ALTER TABLE t DROP PRIMARY KEY"
   },
@@ -30774,6 +31789,46 @@
    "dialect": "mysql",
    "rendered": "ALTER TABLE a DROP COLUMN b, DROP PRIMARY KEY, DROP INDEX `c`",
    "sql": "ALTER TABLE t DROP COLUMN c, DROP PRIMARY KEY, DROP INDEX `i`"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a DROP KEY b",
+   "sql": "ALTER TABLE t DROP KEY k"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a aab CONSTRAINT UNIQUE aaac (d)",
+   "sql": "ALTER TABLE t ADD CONSTRAINT UNIQUE uq_a (a)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "CREATE TABLE a (b INT, CONSTRAINT PRIMARY KEY (b))",
+   "sql": "CREATE TABLE t (a INT, CONSTRAINT PRIMARY KEY (a))"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "CREATE TABLE a (b INT CONSTRAINT aaaac (b > 4))",
+   "sql": "CREATE TABLE t (a INT CONSTRAINT CHECK (a > 0))"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a aab CONSTRAINT FOREIGN KEY (c) REFERENCES d (c)",
+   "sql": "ALTER TABLE t ADD CONSTRAINT FOREIGN KEY (a) REFERENCES p (a)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "CREATE TABLE a (b BIGINT SIGNED, c DECIMAL(4, 5) SIGNED)",
+   "sql": "CREATE TABLE t (a BIGINT SIGNED, b DECIMAL(5, 2) SIGNED)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a aab COLUMN c INT SIGNED NOT NULL",
+   "sql": "ALTER TABLE t ADD COLUMN a INT SIGNED NOT NULL"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a DROP COLUMN b, aaaaaaaac=aaaaaad",
+   "sql": "ALTER TABLE t DROP COLUMN a, ALGORITHM=INPLACE"
   },
   {
    "dialect": "mysql",
@@ -30879,6 +31934,16 @@
    "dialect": "mysql",
    "rendered": "ALTER TABLE a COMMENT 'ab'",
    "sql": "ALTER TABLE t COMMENT 'hi'"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a aaaaab=aaaaac PARTITION BY LIST (d) (PARTITION ae VALUES IN (6))",
+   "sql": "ALTER TABLE t ENGINE=InnoDB PARTITION BY LIST (a) (PARTITION p0 VALUES IN (1))"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a aaaaaaaaab=aaaaaaaaac aaaaaaaaaaaaad=5",
+   "sql": "ALTER TABLE t ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8"
   },
   {
    "dialect": "mysql",
@@ -31152,6 +32217,21 @@
   },
   {
    "dialect": "mysql",
+   "rendered": "ALTER TABLE a aab PRIMARY KEY (c) aaaaaaaaaaaaad=5",
+   "sql": "ALTER TABLE t ADD PRIMARY KEY (a) KEY_BLOCK_SIZE=8"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a aab PRIMARY KEY (c) COMMENT 'd'",
+   "sql": "ALTER TABLE t ADD PRIMARY KEY (a) COMMENT 'c'"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "CREATE TABLE a (b INT, PRIMARY KEY (b) USING aaaac aaaaaaaaaaaaad = 5 COMMENT 'f')",
+   "sql": "CREATE TABLE t (a INT, PRIMARY KEY (a) USING BTREE KEY_BLOCK_SIZE = 8 COMMENT 'c')"
+  },
+  {
+   "dialect": "mysql",
    "rendered": "ALTER TABLE a aab UNIQUE KEY c (d(14))",
    "sql": "ALTER TABLE t ADD UNIQUE KEY u (c(20))"
   },
@@ -31182,8 +32262,38 @@
   },
   {
    "dialect": "mysql",
+   "rendered": "CREATE TABLE a (b INT) aaaaaaaaaaaaac=4",
+   "sql": "CREATE TABLE t (a INT) KEY_BLOCK_SIZE=8"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "CREATE TABLE a (b INT) aaaaac=aaaaad aaaaaaaaaaaaae=6 aaaaaaag=107",
+   "sql": "CREATE TABLE t (a INT) ENGINE=InnoDB KEY_BLOCK_SIZE=8 MAX_ROWS=100"
+  },
+  {
+   "dialect": "mysql",
    "rendered": "CREATE TABLE a (b DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) DEFAULT CHARSET=aaac aaaaaaaaad=aaaaaae",
    "sql": "CREATE TABLE t (c DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a aab COLUMN c VARCHAR(13) aaaae NULL, aab COLUMN f BINARY(16) NULL",
+   "sql": "ALTER TABLE t ADD COLUMN c VARCHAR(25) ASCII NULL, ADD COLUMN a BINARY(16) NULL"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "CREATE TABLE a (b VARCHAR(3) aaaaaad BINARY, e VARCHAR(3) BINARY aaaaf)",
+   "sql": "CREATE TABLE t (a VARCHAR(5) UNICODE BINARY, b VARCHAR(5) BINARY ASCII)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "CREATE TABLE a (b INT) aaaaac=aaaaad, COMMENT='e' aaaaaaaaaf=aaaaaag",
+   "sql": "CREATE TABLE t (a INT) ENGINE=InnoDB, COMMENT='c' ROW_FORMAT=DYNAMIC"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "CREATE TABLE a (b INT) aaaaac=aaaaad, /* . */ aaaaaaaaae=aaaaaaf",
+   "sql": "CREATE TABLE t (a INT) ENGINE=InnoDB, /* c */ ROW_FORMAT=DYNAMIC"
   },
   {
    "dialect": "mysql",
@@ -31282,6 +32392,11 @@
   },
   {
    "dialect": "mysql",
+   "rendered": "ALTER TABLE a RENAME INDEX any ab c",
+   "sql": "ALTER TABLE t RENAME INDEX any TO b"
+  },
+  {
+   "dialect": "mysql",
    "rendered": "ALTER TABLE a RENAME KEY b ac d",
    "sql": "ALTER TABLE t RENAME KEY a TO b"
   },
@@ -31344,6 +32459,11 @@
    "dialect": "mysql",
    "rendered": "CREATE FUNCTION a () aaaaaab VARCHAR aaaaaaac aad SQL SECURITY aaaaaae SELECT 'aaf'",
    "sql": "CREATE FUNCTION f () RETURNS VARCHAR LANGUAGE SQL SQL SECURITY INVOKER SELECT 'abc'"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a aab COLUMN c INT aaaaaaaaaaaaaaaaaaaaaaaaad='ae', aab COLUMN f INT",
+   "sql": "ALTER TABLE t ADD COLUMN c INT SECONDARY_ENGINE_ATTRIBUTE='{}', ADD COLUMN z INT"
   },
   {
    "dialect": "mysql",
@@ -31419,6 +32539,11 @@
    "dialect": "mysql",
    "rendered": "ALTER TABLE a DROP b, DROP COLUMN any aaaaaaac",
    "sql": "ALTER TABLE t DROP b, DROP COLUMN any RESTRICT"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a DROP COLUMN charset aaaaaaab",
+   "sql": "ALTER TABLE t DROP COLUMN charset RESTRICT"
   },
   {
    "dialect": "mysql",
@@ -32234,6 +33359,26 @@
    "dialect": "mysql",
    "rendered": "CONVERT('a' USING binary)",
    "sql": "CONVERT('a' USING binary)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT CAST('aa' AS CHAR(2) CHARACTER SET aaaaaac)",
+   "sql": "SELECT CAST('ab' AS CHAR(4) CHARACTER SET utf8mb4)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT CAST('aa' AS CHAR(2) CHARSET binary)",
+   "sql": "SELECT CAST('ab' AS CHAR(4) CHARSET binary)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT CONVERT('aaa', CHAR(2) CHARACTER SET aaaaac)",
+   "sql": "SELECT CONVERT('abc', CHAR(2) CHARACTER SET latin1)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT CONVERT('aaa', CHAR CHARACTER SET aaaaab)",
+   "sql": "SELECT CONVERT('abc', CHAR CHARACTER SET latin1)"
   },
   {
    "dialect": "mysql",
@@ -33502,8 +34647,83 @@
   },
   {
    "dialect": "mysql",
+   "rendered": "SELECT GROUP_CONCAT(a ORDER BY CASE WHEN a IS NULL THEN 2 ELSE 3 END, a) AS a FROM d",
+   "sql": "SELECT GROUP_CONCAT(v ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v) AS v FROM t"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT ARRAY_AGG(a ORDER BY a) AS a FROM b",
+   "sql": "SELECT ARRAY_AGG(v ORDER BY v) AS v FROM t"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT GROUP_CONCAT(a ORDER BY CASE WHEN a IS NULL THEN 2 ELSE 3 END, a SEPARATOR 'd') AS a FROM e",
+   "sql": "SELECT GROUP_CONCAT(v ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v SEPARATOR ',') AS v FROM t"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT LISTAGG(a, 'b') aaaaac aaaad (ORDER BY a) AS a FROM e",
+   "sql": "SELECT LISTAGG(v, ',') WITHIN GROUP (ORDER BY v) AS v FROM t"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT a AS b, GROUP_CONCAT(b ORDER BY CASE WHEN b IS NULL THEN 3 ELSE 4 END, b) AS e FROM f GROUP BY a",
+   "sql": "SELECT x AS v, GROUP_CONCAT(v ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v) AS w FROM t GROUP BY x"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT a AS b, ARRAY_AGG(b ORDER BY b) AS c FROM d GROUP BY a",
+   "sql": "SELECT x AS v, ARRAY_AGG(v ORDER BY v) AS w FROM t GROUP BY x"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "WITH a AS (SELECT b AS c, d AS e FROM f UNION ALL SELECT b, d FROM g ORDER BY CASE WHEN c IS NULL THEN 8 ELSE 9 END, c LIMIT 8) SELECT e AS c FROM a",
+   "sql": "WITH c AS (SELECT a AS v, b AS x FROM t UNION ALL SELECT a, b FROM u ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v LIMIT 1) SELECT x AS v FROM c"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "WITH a AS (SELECT b AS c, d AS e FROM f UNION ALL SELECT b, d FROM g ORDER BY c LIMIT 8) SELECT e AS c FROM a",
+   "sql": "WITH c AS (SELECT a AS v, b AS x FROM t UNION ALL SELECT a, b FROM u ORDER BY v LIMIT 1) SELECT x AS v FROM c"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT a + 2 AS c FROM d UNION ALL SELECT e FROM f ORDER BY CASE WHEN c IS NULL THEN 2 ELSE 7 END, c",
+   "sql": "SELECT a + 1 AS v FROM t UNION ALL SELECT b FROM u ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT a + 2 AS c FROM d UNION ALL SELECT e FROM f ORDER BY c",
+   "sql": "SELECT a + 1 AS v FROM t UNION ALL SELECT b FROM u ORDER BY v"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT a AS b, ROW_NUMBER() OVER (ORDER BY CASE WHEN b IS NULL THEN 3 ELSE 4 END, b) AS ae FROM f",
+   "sql": "SELECT x AS v, ROW_NUMBER() OVER (ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v) AS rn FROM t"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT a AS b, ROW_NUMBER() OVER (ORDER BY b) AS ac FROM d",
+   "sql": "SELECT x AS v, ROW_NUMBER() OVER (ORDER BY v) AS rn FROM t"
+  },
+  {
+   "dialect": "mysql",
    "rendered": "SELECT aaa ab TIME aaac 'aad'",
    "sql": "SELECT foo AT TIME ZONE 'UTC'"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a FORCE",
+   "sql": "ALTER TABLE t FORCE"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a aab COLUMN c INT, DROP d, aab COLUMN e INT",
+   "sql": "ALTER TABLE t ADD COLUMN a INT, DROP b, ADD COLUMN c INT"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "DROP INDEX a ON ab.c",
+   "sql": "DROP INDEX i ON db.t"
   },
   {
    "dialect": "duckdb",
@@ -33567,6 +34787,26 @@
   },
   {
    "dialect": "mysql",
+   "rendered": "SELECT WEIGHT_STRING('aa', 2, 3, 2)",
+   "sql": "SELECT WEIGHT_STRING('ab', 0, 3, 0)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a DROP aaaab c",
+   "sql": "ALTER TABLE t DROP CHECK c"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a aab aaaaaaac INDEX d (e)",
+   "sql": "ALTER TABLE t ADD FULLTEXT INDEX i (s)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "ALTER TABLE a aab aaaaaac INDEX d (e)",
+   "sql": "ALTER TABLE t ADD SPATIAL INDEX i (g)"
+  },
+  {
+   "dialect": "mysql",
    "rendered": "ALTER TABLE a DROP COLUMN `aaaaaab`",
    "sql": "ALTER TABLE t DROP COLUMN `cascade`"
   },
@@ -33582,8 +34822,38 @@
   },
   {
    "dialect": "mysql",
+   "rendered": "ALTER TABLE a DROP COLUMN charset",
+   "sql": "ALTER TABLE t DROP COLUMN charset"
+  },
+  {
+   "dialect": "mysql",
    "rendered": "ALTER TABLE a DROP INDEX aaaaaaaaaaab",
    "sql": "ALTER TABLE t DROP INDEX concurrently"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "SELECT * FROM aaaaa TIMESTAMP AS ab 'aaaaaaaaaa aaaaaaac' TABLESAMPLE (13 PERCENT) AS e",
+   "sql": "SELECT * FROM sales TIMESTAMP AS OF '2026-10-10 12:00:00' TABLESAMPLE (10 PERCENT) AS s"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT * FROM aaaaa AS b FOR aaaaaaaaaac AS ad 'aaaaaaaaaa aaaaaaae'",
+   "sql": "SELECT * FROM sales AS s FOR SYSTEM_TIME AS OF '2026-10-10 12:00:00'"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT * FROM aaaaa AS b FOR aaaaaaaaaac AS ad PARSE_TIMESTAMP('aa aaaaaaaaae', 'aaaaaaaaaa aaaaaaaf')",
+   "sql": "SELECT * FROM sales AS s FOR SYSTEM_TIME AS OF PARSE_TIMESTAMP('%F %H:%M:%E6S', '2026-10-10 12:00:00')"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT * FROM aaaaa AS b FOR aaaaaaaaaac AS ad 'aaaaaaaaaa aaaaaaaaaaaaaae'",
+   "sql": "SELECT * FROM sales AS s FOR SYSTEM_TIME AS OF '2026-10-10 12:00:00.123456'"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "SELECT * FROM aaaaa TIMESTAMP AS ab 'aaaaaaaaaa aaaaaaaaaaaaaac' AS d",
+   "sql": "SELECT * FROM sales TIMESTAMP AS OF '2026-10-10 12:00:00.123456' AS s"
   },
   {
    "dialect": "postgres",
@@ -33736,6 +35006,16 @@
    "sql": "CAST('2022-01-01' AS DATE)"
   },
   {
+   "dialect": "duckdb",
+   "rendered": "SELECT STRFTIME(a, 'aaaab')",
+   "sql": "SELECT STRFTIME(x, '%G-%V')"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT FORMAT_DATE('aaaaa', b)",
+   "sql": "SELECT FORMAT_DATE('%G-%V', x)"
+  },
+  {
    "dialect": "postgres",
    "rendered": "CAST(a AS aab.aac)",
    "sql": "CAST(x AS sch.udt)"
@@ -33777,8 +35057,8 @@
   },
   {
    "dialect": "mysql",
-   "rendered": "TRUNCATE(1.00000)",
-   "sql": "TRUNCATE(3.14159)"
+   "rendered": "TRUNCATE(1.00000, 2)",
+   "sql": "TRUNCATE(3.14159, 0)"
   },
   {
    "dialect": "tsql",
@@ -33799,6 +35079,106 @@
    "dialect": "spark",
    "rendered": "CAST(1.00000 AS BIGINT)",
    "sql": "CAST(3.14159 AS BIGINT)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT a = b IS NULL FROM c",
+   "sql": "SELECT a = b IS NULL FROM t"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT a = (b IS NULL) FROM c",
+   "sql": "SELECT a = (b IS NULL) FROM t"
+  },
+  {
+   "dialect": "redshift",
+   "rendered": "SELECT a = b IS NULL FROM c",
+   "sql": "SELECT a = b IS NULL FROM t"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT FALSE IS DISTINCT FROM NULL = NULL",
+   "sql": "SELECT FALSE IS DISTINCT FROM NULL = NULL"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT FALSE IS DISTINCT FROM (NULL = NULL)",
+   "sql": "SELECT FALSE IS DISTINCT FROM (NULL = NULL)"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "SELECT FALSE IS DISTINCT FROM (NULL = NULL)",
+   "sql": "SELECT FALSE IS DISTINCT FROM (NULL = NULL)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT NULL IS NULL = FALSE",
+   "sql": "SELECT NULL IS NULL = FALSE"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT a = b IS NOT NULL FROM c",
+   "sql": "SELECT a = b IS NOT NULL FROM t"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT a = b NOTNULL FROM c",
+   "sql": "SELECT a = b NOTNULL FROM t"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT a IS NOT NULL IS NULL FROM b",
+   "sql": "SELECT a IS NOT NULL IS NULL FROM t"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT a IS NULL IS NOT NULL FROM b",
+   "sql": "SELECT a IS NULL IS NOT NULL FROM t"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT NULL IS NOT NULL IS FALSE",
+   "sql": "SELECT NULL IS NOT NULL IS FALSE"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "CREATE TABLE a (b INT, c BOOLEAN aaaaaaaad aaaaae AS (b IS NULL) aaaaaf)",
+   "sql": "CREATE TABLE t (a INT, b BOOLEAN GENERATED ALWAYS AS (a IS NULL) STORED)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "CREATE TABLE a (b INT, c BOOLEAN aaaaaaaad aaaaae AS (b = 6 IS NULL) aaaaag)",
+   "sql": "CREATE TABLE t (a INT, b BOOLEAN GENERATED ALWAYS AS (a = 1 IS NULL) STORED)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT JSON_VALUE(a, 'aab' RETURNING BIGINT) FROM c",
+   "sql": "SELECT JSON_VALUE(j, '$.a' RETURNING BIGINT) FROM t"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT JSON_VALUE('aaaaaaaaaaaaaaaaaaaaa', 'b' RETURNING TIMESTAMP WITH TIME aaac)",
+   "sql": "SELECT JSON_VALUE('\"2020-01-01T01:02:03\"', '$' RETURNING TIMESTAMP WITH TIME ZONE)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT JSON_VALUE('aa', 'b' RETURNING BIGINT)",
+   "sql": "SELECT JSON_VALUE('42', '$' RETURNING BIGINT)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT JSON_VALUE(a, b) FROM (VALUES (CAST('aaaaaaac' AS JSONB), CAST('aad' AS aaaaaaae))) AS f(a, b)",
+   "sql": "SELECT JSON_VALUE(j, p) FROM (VALUES (CAST('{\"a\":42}' AS JSONB), CAST('$.a' AS JSONPATH))) AS t(j, p)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT JSON_VALUE('aaaaaaaa', 'b' || 'ac')",
+   "sql": "SELECT JSON_VALUE('{\"a\":42}', '$' || '.a')"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT JSON_VALUE('aaaaaaaa', CASE WHEN TRUE THEN 'aab' ELSE 'aac' END)",
+   "sql": "SELECT JSON_VALUE('{\"a\":42}', CASE WHEN TRUE THEN '$.a' ELSE '$.b' END)"
   },
   {
    "dialect": "postgres",
@@ -33859,6 +35239,31 @@
    "dialect": "postgres",
    "rendered": "SHA384(a)",
    "sql": "SHA384(x)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT SHA256(a)",
+   "sql": "SELECT SHA256(x)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT UNHEX(SHA256(a))",
+   "sql": "SELECT UNHEX(SHA256(x))"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT ENCODE(SHA256(a), 'aab')",
+   "sql": "SELECT ENCODE(SHA256(x), 'hex')"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT SHA256(a)",
+   "sql": "SELECT SHA256(x)"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "SELECT SHA2(a, 101)",
+   "sql": "SELECT SHA2(x, 256)"
   },
   {
    "dialect": "postgres",
@@ -34087,8 +35492,8 @@
   },
   {
    "dialect": "postgres",
-   "rendered": "SELECT e'aaaaaaaaaa'",
-   "sql": "SELECT e'\\xDEADBEEF'"
+   "rendered": "SELECT e'aaaaaaaaaaa'",
+   "sql": "SELECT e'\\x44EADBEEF'"
   },
   {
    "dialect": "postgres",
@@ -35662,6 +37067,16 @@
   },
   {
    "dialect": "postgres",
+   "rendered": "SELECT TO_CHAR(a, 'aaaaaab')",
+   "sql": "SELECT TO_CHAR(x, 'IYYY-IW')"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT TO_CHAR(a, 'aaaaaab')",
+   "sql": "SELECT TO_CHAR(x, 'iyyy-iw')"
+  },
+  {
+   "dialect": "postgres",
    "rendered": "SELECT aa, aa IS JSON AS \"aaaab\", aa IS JSON aaaac AS \"aaaaaad\", aa IS JSON aaaaae AS \"aaaaaad\", aa IS JSON OBJECT AS \"aaaaaaf\", aa IS JSON ARRAY AS \"aaaaag\" FROM h",
    "sql": "SELECT js, js IS JSON AS \"json?\", js IS JSON VALUE AS \"scalar?\", js IS JSON SCALAR AS \"scalar?\", js IS JSON OBJECT AS \"object?\", js IS JSON ARRAY AS \"array?\" FROM t"
   },
@@ -35784,6 +37199,11 @@
    "dialect": "postgres",
    "rendered": "SELECT * FROM aaa WHERE ab = ?",
    "sql": "SELECT * FROM foo WHERE id = ?"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "a ^@ b",
+   "sql": "a ^@ b"
   },
   {
    "dialect": "postgres",
@@ -36282,6 +37702,21 @@
   },
   {
    "dialect": "postgres",
+   "rendered": "ALTER TABLE a ALTER COLUMN b aaaaaac",
+   "sql": "ALTER TABLE t ALTER COLUMN b RESTART"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "ALTER TABLE a ALTER COLUMN b SET aaaaaaaaac 103",
+   "sql": "ALTER TABLE t ALTER COLUMN b SET STATISTICS 100"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "ALTER TABLE a ALTER COLUMN b aaaaaac (aad e 'f')",
+   "sql": "ALTER TABLE t ALTER COLUMN b OPTIONS (ADD x 'a')"
+  },
+  {
+   "dialect": "postgres",
    "rendered": "CREATE TABLE a (aab integer ARRAY[3])",
    "sql": "CREATE TABLE t (col integer ARRAY[3])"
   },
@@ -36552,6 +37987,11 @@
   },
   {
    "dialect": "postgres",
+   "rendered": "ALTER TABLE a DROP COLUMN partitioned_by aaaaaab",
+   "sql": "ALTER TABLE t DROP COLUMN partitioned_by CASCADE"
+  },
+  {
+   "dialect": "postgres",
    "rendered": "SELECT * FROM UNNEST(ARRAY[1, 2], ARRAY['aac', 'aad', 'aae']) AS f(g, h)",
    "sql": "SELECT * FROM UNNEST(ARRAY[1, 2], ARRAY['foo', 'bar', 'baz']) AS x(a, b)"
   },
@@ -36699,6 +38139,16 @@
    "dialect": "postgres",
    "rendered": "SELECT U&'aaaaaa aaaaa' aaaaaab 'c' AS aaaad",
    "sql": "SELECT U&'can''t !0061' UESCAPE '!' AS label"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT U&'aaaaaaaaaaaa', U&'aaaaaaaaaab' aaaaaac 'd', U&'aaae', U&'aaaaaaaaaf'",
+   "sql": "SELECT U&'d\\0061t\\0061', U&'d!+000061ta' UESCAPE '!', U&'a\\\\b', U&'\\D83D\\DE00'"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT 'aaaa', 'aaaa', 'aab', 'c'",
+   "sql": "SELECT 'data', 'data', 'a\\b', '\ud83d\ude00'"
   },
   {
    "dialect": "postgres",
@@ -36957,6 +38407,16 @@
   },
   {
    "dialect": "postgres",
+   "rendered": "WITH RECURSIVE aaaaaaaaaaaa(ab, aaac, aaad, aaaae) AS (SELECT f.ab, f.aaac, f.aaad, 7 FROM aaaah AS f UNION ALL SELECT f.ab, f.aaac, f.aaad, ai.aaaae + 7 FROM aaaah AS f, aaaaaaaaaaaa AS ai WHERE f.ab = ai.aaac) aaaaj ab SET aaaaaaak al 'm' DEFAULT 'n' USING aaao SELECT * FROM aaaaaaaaaaaa",
+   "sql": "WITH RECURSIVE search_graph(id, link, data, depth) AS (SELECT g.id, g.link, g.data, 1 FROM graph AS g UNION ALL SELECT g.id, g.link, g.data, sg.depth + 1 FROM graph AS g, search_graph AS sg WHERE g.id = sg.link) CYCLE id SET is_cycle TO 'Y' DEFAULT 'N' USING path SELECT * FROM search_graph"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "WITH RECURSIVE aaaaaaaaaaaa(ab, aaac, aaad, aaaae) AS (SELECT f.ab, f.aaac, f.aaad, 7 FROM aaaah AS f UNION ALL SELECT f.ab, f.aaac, f.aaad, ai.aaaae + 7 FROM aaaah AS f, aaaaaaaaaaaa AS ai WHERE f.ab = ai.aaac) aaaaaj aaaak FIRST al ab SET aaaaaaam aaaan ab SET aaaaaaao USING aaap SELECT * FROM aaaaaaaaaaaa ORDER BY aaaaaaam",
+   "sql": "WITH RECURSIVE search_graph(id, link, data, depth) AS (SELECT g.id, g.link, g.data, 1 FROM graph AS g UNION ALL SELECT g.id, g.link, g.data, sg.depth + 1 FROM graph AS g, search_graph AS sg WHERE g.id = sg.link) SEARCH DEPTH FIRST BY id SET ordercol CYCLE id SET is_cycle USING path SELECT * FROM search_graph ORDER BY ordercol"
+  },
+  {
+   "dialect": "postgres",
    "rendered": "SELECT a -> ('b' || 'c')",
    "sql": "SELECT a -> ('x' || 'y')"
   },
@@ -37191,11 +38651,6 @@
    "sql": "ALTER TABLE t DROP COLUMN if CASCADE, DROP COLUMN b"
   },
   {
-   "dialect": "clickhouse",
-   "rendered": "SELECT JSONExtractString(aaa, 'ab')",
-   "sql": "SELECT JSONExtractString(foo, '12')"
-  },
-  {
    "dialect": "postgres",
    "rendered": "1::\"aab\"",
    "sql": "1::\"int\""
@@ -37234,6 +38689,21 @@
    "dialect": "postgres",
    "rendered": "ALTER TABLE a DROP CONSTRAINT aaaaaaab",
    "sql": "ALTER TABLE t DROP CONSTRAINT restrict"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "ALTER TABLE a DROP COLUMN partitioned_by",
+   "sql": "ALTER TABLE t DROP COLUMN partitioned_by"
+  },
+  {
+   "dialect": "presto",
+   "rendered": "APPROX_PERCENTILE(a, 1.1, 1.02)",
+   "sql": "APPROX_PERCENTILE(x, 0.5, 0.01)"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "APPROX_QUANTILES(a, 2)[3]",
+   "sql": "APPROX_QUANTILES(x, 2)[1]"
   },
   {
    "dialect": "presto",
@@ -37519,6 +38989,11 @@
    "dialect": "postgres",
    "rendered": "CAST(a AS TIMETZ(2))",
    "sql": "CAST(x AS TIMETZ(5))"
+  },
+  {
+   "dialect": "presto",
+   "rendered": "CAST(a AS TIME WITH TIME aaab)",
+   "sql": "CAST(x AS TIME WITH TIME ZONE)"
   },
   {
    "dialect": "redshift",
@@ -38226,11 +39701,6 @@
    "sql": "SELECT SHA256(x)"
   },
   {
-   "dialect": "duckdb",
-   "rendered": "SELECT UNHEX(SHA256(a))",
-   "sql": "SELECT UNHEX(SHA256(x))"
-  },
-  {
    "dialect": "bigquery",
    "rendered": "SELECT SHA256(a)",
    "sql": "SELECT SHA256(x)"
@@ -38254,11 +39724,6 @@
    "dialect": "presto",
    "rendered": "SELECT LOWER(TO_HEX(SHA256(a)))",
    "sql": "SELECT LOWER(TO_HEX(SHA256(x)))"
-  },
-  {
-   "dialect": "spark",
-   "rendered": "SELECT SHA2(a, 101)",
-   "sql": "SELECT SHA2(x, 256)"
   },
   {
    "dialect": "presto",
@@ -38751,34 +40216,14 @@
    "sql": "SELECT ARRAY_SORT(x, (left, right) -> -1)"
   },
   {
-   "dialect": "duckdb",
-   "rendered": "SELECT ARRAY_SORT(a)",
-   "sql": "SELECT ARRAY_SORT(x)"
-  },
-  {
    "dialect": "presto",
    "rendered": "SELECT ARRAY_SORT(a, (\"aaab\", \"aaaac\") -> -4)",
    "sql": "SELECT ARRAY_SORT(x, (\"left\", \"right\") -> -1)"
   },
   {
-   "dialect": "hive",
-   "rendered": "SELECT SORT_ARRAY(a)",
-   "sql": "SELECT SORT_ARRAY(x)"
-  },
-  {
    "dialect": "spark",
    "rendered": "SELECT ARRAY_SORT(a, (left, right) -> -2)",
    "sql": "SELECT ARRAY_SORT(x, (left, right) -> -1)"
-  },
-  {
-   "dialect": "presto",
-   "rendered": "SELECT ARRAY_SORT(a)",
-   "sql": "SELECT ARRAY_SORT(x)"
-  },
-  {
-   "dialect": "spark",
-   "rendered": "SELECT ARRAY_SORT(a)",
-   "sql": "SELECT ARRAY_SORT(x)"
   },
   {
    "dialect": "presto",
@@ -39297,7 +40742,7 @@
   },
   {
    "dialect": "spark",
-   "rendered": "'aaaaa aaaaaa aaaaaa a'",
+   "rendered": "'aaaaaaaaaa aaaaaa a a'",
    "sql": "'Hello winter \\u2603 !'"
   },
   {
@@ -41387,6 +42832,26 @@
   },
   {
    "dialect": "singlestore",
+   "rendered": "SELECT ('a' RLIKE 'aaaaaaab')",
+   "sql": "SELECT ('a' RLIKE '^[\u0000-\u007f]*$')"
+  },
+  {
+   "dialect": "singlestore",
+   "rendered": "SELECT ('a' RLIKE 'aaaaaaaab')",
+   "sql": "SELECT ('a' RLIKE '^[\\0-\u007f]*$')"
+  },
+  {
+   "dialect": "singlestore",
+   "rendered": "SELECT 1 + ('b' RLIKE 'aaaaaaaac')",
+   "sql": "SELECT 1 + ('a' RLIKE '^[\\0-\u007f]*$')"
+  },
+  {
+   "dialect": "singlestore",
+   "rendered": "SELECT NOT ('a' RLIKE 'aaaaaaaab')",
+   "sql": "SELECT NOT ('\u00e9' RLIKE '^[\\0-\u007f]*$')"
+  },
+  {
+   "dialect": "singlestore",
    "rendered": "SELECT 'a' RLIKE 'b'",
    "sql": "SELECT 'a' RLIKE 'b'"
   },
@@ -41409,11 +42874,6 @@
    "dialect": "singlestore",
    "rendered": "SELECT REGEXP_SUBSTR('aaaa', 'b', 3, 3, 'd')",
    "sql": "SELECT REGEXP_SUBSTR('adog', 'O', 1, 1, 'c')"
-  },
-  {
-   "dialect": "singlestore",
-   "rendered": "SELECT ('a' RLIKE 'aaaaaaab')",
-   "sql": "SELECT ('a' RLIKE '^[\u0000-\u007f]*$')"
   },
   {
    "dialect": "singlestore",
@@ -42162,8 +43622,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT (SELECT CASE WHEN a IS NULL OR LENGTH(a) = 2 THEN NULL WHEN LENGTH(a) <> LENGTH(LIST_FILTER(a, aac -> aac BETWEEN 2 AND 10003)) THEN NULL WHEN LENGTH(a) < 5 THEN UNHEX(aaaaaf('aaag', LENGTH(a)) || h || REPEAT('ai', GREATEST(2, 1 - LENGTH(a)) * 2)) ELSE UNHEX('aaaaaaaaaaaaaaaaaaal' || h) END FROM (SELECT a, COALESCE(aaaaaaaaaam(LIST_TRANSFORM(a, aan -> aaaaaf('aaaaaaao', CAST(aan AS INT) & 115, (CAST(aan AS INT) >> 8) & 115)), (aar, aas) -> aar || aas, ''), '') AS h FROM (SELECT LIST_SORT(LIST_DISTINCT(LIST(t) FILTER(WHERE NOT t IS NULL))) AS a))) FROM u",
-   "sql": "SELECT (SELECT CASE WHEN l IS NULL OR LENGTH(l) = 0 THEN NULL WHEN LENGTH(l) <> LENGTH(LIST_FILTER(l, __v -> __v BETWEEN 0 AND 32767)) THEN NULL WHEN LENGTH(l) < 5 THEN UNHEX(PRINTF('%04X', LENGTH(l)) || h || REPEAT('00', GREATEST(0, 4 - LENGTH(l)) * 2)) ELSE UNHEX('08000000000000000000' || h) END FROM (SELECT l, COALESCE(LIST_REDUCE(LIST_TRANSFORM(l, __x -> PRINTF('%02X%02X', CAST(__x AS INT) & 255, (CAST(__x AS INT) >> 8) & 255)), (__a, __b) -> __a || __b, ''), '') AS h FROM (SELECT LIST_SORT(LIST_DISTINCT(LIST(v) FILTER(WHERE NOT v IS NULL))) AS l))) FROM t"
+   "rendered": "SELECT (SELECT CASE WHEN a IS NULL OR LENGTH(a) = 2 THEN NULL WHEN LENGTH(a) <> LENGTH(LIST_FILTER(a, aaaaac aad : aad BETWEEN 2 AND 10004)) THEN NULL WHEN LENGTH(a) < 6 THEN UNHEX(aaaaag('aaah', LENGTH(a)) || i || REPEAT('aj', GREATEST(2, 2 - LENGTH(a)) * 3)) ELSE UNHEX('aaaaaaaaaaaaaaaaaaam' || i) END FROM (SELECT a, COALESCE(aaaaaaaaaan(LIST_TRANSFORM(a, aaaaac aao : aaaaag('aaaaaaap', CAST(aao AS INT) & 116, (CAST(aao AS INT) >> 9) & 116)), aaaaac aas, aat : aas || aat, ''), '') AS i FROM (SELECT LIST_SORT(LIST_DISTINCT(LIST(u) FILTER(WHERE NOT u IS NULL))) AS a))) FROM v",
+   "sql": "SELECT (SELECT CASE WHEN l IS NULL OR LENGTH(l) = 0 THEN NULL WHEN LENGTH(l) <> LENGTH(LIST_FILTER(l, LAMBDA __v : __v BETWEEN 0 AND 32767)) THEN NULL WHEN LENGTH(l) < 5 THEN UNHEX(PRINTF('%04X', LENGTH(l)) || h || REPEAT('00', GREATEST(0, 4 - LENGTH(l)) * 2)) ELSE UNHEX('08000000000000000000' || h) END FROM (SELECT l, COALESCE(LIST_REDUCE(LIST_TRANSFORM(l, LAMBDA __x : PRINTF('%02X%02X', CAST(__x AS INT) & 255, (CAST(__x AS INT) >> 8) & 255)), LAMBDA __a, __b : __a || __b, ''), '') AS h FROM (SELECT LIST_SORT(LIST_DISTINCT(LIST(v) FILTER(WHERE NOT v IS NULL))) AS l))) FROM t"
   },
   {
    "dialect": "duckdb",
@@ -42337,13 +43797,13 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN CAST(aa AS MAP(TEXT, INT)) IS NULL OR CAST(ab AS MAP(TEXT, INT)) IS NULL THEN NULL ELSE MAP_FROM_ENTRIES(LIST_FILTER(LIST_TRANSFORM(LIST_DISTINCT(LIST_CONCAT(MAP_KEYS(CAST(aa AS MAP(TEXT, INT))), MAP_KEYS(CAST(ab AS MAP(TEXT, INT))))), aac -> STRUCT_PACK(aad := aac, aaaae := COALESCE(CAST(ab AS MAP(TEXT, INT))[aac], CAST(aa AS MAP(TEXT, INT))[aac]))), aaf -> NOT aaf.aaaae IS NULL)) END",
-   "sql": "SELECT CASE WHEN CAST(m1 AS MAP(TEXT, INT)) IS NULL OR CAST(m2 AS MAP(TEXT, INT)) IS NULL THEN NULL ELSE MAP_FROM_ENTRIES(LIST_FILTER(LIST_TRANSFORM(LIST_DISTINCT(LIST_CONCAT(MAP_KEYS(CAST(m1 AS MAP(TEXT, INT))), MAP_KEYS(CAST(m2 AS MAP(TEXT, INT))))), __k -> STRUCT_PACK(key := __k, value := COALESCE(CAST(m2 AS MAP(TEXT, INT))[__k], CAST(m1 AS MAP(TEXT, INT))[__k]))), __x -> NOT __x.value IS NULL)) END"
+   "rendered": "SELECT CASE WHEN CAST(aa AS MAP(TEXT, INT)) IS NULL OR CAST(ab AS MAP(TEXT, INT)) IS NULL THEN NULL ELSE MAP_FROM_ENTRIES(LIST_FILTER(LIST_TRANSFORM(LIST_DISTINCT(LIST_CONCAT(MAP_KEYS(CAST(aa AS MAP(TEXT, INT))), MAP_KEYS(CAST(ab AS MAP(TEXT, INT))))), aaaaac aad : STRUCT_PACK(aae := aad, aaaaf := COALESCE(CAST(ab AS MAP(TEXT, INT))[aad], CAST(aa AS MAP(TEXT, INT))[aad]))), aaaaac aag : NOT aag.aaaaf IS NULL)) END",
+   "sql": "SELECT CASE WHEN CAST(m1 AS MAP(TEXT, INT)) IS NULL OR CAST(m2 AS MAP(TEXT, INT)) IS NULL THEN NULL ELSE MAP_FROM_ENTRIES(LIST_FILTER(LIST_TRANSFORM(LIST_DISTINCT(LIST_CONCAT(MAP_KEYS(CAST(m1 AS MAP(TEXT, INT))), MAP_KEYS(CAST(m2 AS MAP(TEXT, INT))))), LAMBDA __k : STRUCT_PACK(key := __k, value := COALESCE(CAST(m2 AS MAP(TEXT, INT))[__k], CAST(m1 AS MAP(TEXT, INT))[__k]))), LAMBDA __x : NOT __x.value IS NULL)) END"
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN CAST(MAP() AS MAP(TEXT, INT)) IS NULL OR CAST({'a': 2} AS MAP(TEXT, INT)) IS NULL THEN NULL ELSE MAP_FROM_ENTRIES(LIST_FILTER(LIST_TRANSFORM(LIST_DISTINCT(LIST_CONCAT(MAP_KEYS(CAST(MAP() AS MAP(TEXT, INT))), MAP_KEYS(CAST({'a': 2} AS MAP(TEXT, INT))))), aac -> STRUCT_PACK(aad := aac, aaaae := COALESCE(CAST({'a': 2} AS MAP(TEXT, INT))[aac], CAST(MAP() AS MAP(TEXT, INT))[aac]))), aaf -> NOT aaf.aaaae IS NULL)) END",
-   "sql": "SELECT CASE WHEN CAST(MAP() AS MAP(TEXT, INT)) IS NULL OR CAST({'a': 1} AS MAP(TEXT, INT)) IS NULL THEN NULL ELSE MAP_FROM_ENTRIES(LIST_FILTER(LIST_TRANSFORM(LIST_DISTINCT(LIST_CONCAT(MAP_KEYS(CAST(MAP() AS MAP(TEXT, INT))), MAP_KEYS(CAST({'a': 1} AS MAP(TEXT, INT))))), __k -> STRUCT_PACK(key := __k, value := COALESCE(CAST({'a': 1} AS MAP(TEXT, INT))[__k], CAST(MAP() AS MAP(TEXT, INT))[__k]))), __x -> NOT __x.value IS NULL)) END"
+   "rendered": "SELECT CASE WHEN CAST(MAP() AS MAP(TEXT, INT)) IS NULL OR CAST({'a': 2} AS MAP(TEXT, INT)) IS NULL THEN NULL ELSE MAP_FROM_ENTRIES(LIST_FILTER(LIST_TRANSFORM(LIST_DISTINCT(LIST_CONCAT(MAP_KEYS(CAST(MAP() AS MAP(TEXT, INT))), MAP_KEYS(CAST({'a': 2} AS MAP(TEXT, INT))))), aaaaac aad : STRUCT_PACK(aae := aad, aaaaf := COALESCE(CAST({'a': 2} AS MAP(TEXT, INT))[aad], CAST(MAP() AS MAP(TEXT, INT))[aad]))), aaaaac aag : NOT aag.aaaaf IS NULL)) END",
+   "sql": "SELECT CASE WHEN CAST(MAP() AS MAP(TEXT, INT)) IS NULL OR CAST({'a': 1} AS MAP(TEXT, INT)) IS NULL THEN NULL ELSE MAP_FROM_ENTRIES(LIST_FILTER(LIST_TRANSFORM(LIST_DISTINCT(LIST_CONCAT(MAP_KEYS(CAST(MAP() AS MAP(TEXT, INT))), MAP_KEYS(CAST({'a': 1} AS MAP(TEXT, INT))))), LAMBDA __k : STRUCT_PACK(key := __k, value := COALESCE(CAST({'a': 1} AS MAP(TEXT, INT))[__k], CAST(MAP() AS MAP(TEXT, INT))[__k]))), LAMBDA __x : NOT __x.value IS NULL)) END"
   },
   {
    "dialect": "duckdb",
@@ -42402,8 +43862,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN ARRAY_LENGTH(aaa) <> aaaaaaaaab(aaa) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER(aaa, ac -> NOT ac IS NULL)), NULL) ELSE LIST_DISTINCT(aaa) END",
-   "sql": "SELECT CASE WHEN ARRAY_LENGTH(col) <> LIST_COUNT(col) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER(col, _u -> NOT _u IS NULL)), NULL) ELSE LIST_DISTINCT(col) END"
+   "rendered": "SELECT CASE WHEN ARRAY_LENGTH(aaa) <> aaaaaaaaab(aaa) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER(aaa, aaaaac ad : NOT ad IS NULL)), NULL) ELSE LIST_DISTINCT(aaa) END",
+   "sql": "SELECT CASE WHEN ARRAY_LENGTH(col) <> LIST_COUNT(col) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER(col, LAMBDA _u : NOT _u IS NULL)), NULL) ELSE LIST_DISTINCT(col) END"
   },
   {
    "dialect": "duckdb",
@@ -42427,18 +43887,13 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT LIST_SORT(a, aab, 'aaaaa aaaac')",
-   "sql": "SELECT LIST_SORT(x, foo, 'NULLS FIRST')"
+   "rendered": "SELECT CASE WHEN 'aaa' = '' AND 'aaaaab' = '' THEN NULL WHEN 'aaa' = '' AND 3 = 3 THEN 'aaaaab' WHEN 'aaa' = '' THEN NULL WHEN 3 < 4 THEN NULL WHEN 'aaaaab' IS NULL OR 'aaa' IS NULL OR 3 IS NULL THEN NULL ELSE LIST_FILTER(aaaaaaaaaaaaaaaaaaaae('aaaaab', CASE WHEN 'aaa' = '' THEN '' ELSE 'f' || REGEXP_REPLACE('aaa', 'aaaaaaaaaaaaaaaaaaaaaag', 'aaah', 'i') || 'j' END), aaaaak l : NOT l = '')[3] END",
+   "sql": "SELECT CASE WHEN '$/.' = '' AND 'a$b/cg' = '' THEN NULL WHEN '$/.' = '' AND 1 = 1 THEN 'a$b/cg' WHEN '$/.' = '' THEN NULL WHEN 1 < 0 THEN NULL WHEN 'a$b/cg' IS NULL OR '$/.' IS NULL OR 1 IS NULL THEN NULL ELSE LIST_FILTER(REGEXP_SPLIT_TO_ARRAY('a$b/cg', CASE WHEN '$/.' = '' THEN '' ELSE '[' || REGEXP_REPLACE('$/.', '([\\[\\]^.\\-*+?(){}|$\\\\])', '\\\\\\1', 'g') || ']' END), LAMBDA x : NOT x = '')[1] END"
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN 'aaa' = '' AND 'aaaaab' = '' THEN NULL WHEN 'aaa' = '' AND 3 = 3 THEN 'aaaaab' WHEN 'aaa' = '' THEN NULL WHEN 3 < 4 THEN NULL WHEN 'aaaaab' IS NULL OR 'aaa' IS NULL OR 3 IS NULL THEN NULL ELSE LIST_FILTER(aaaaaaaaaaaaaaaaaaaae('aaaaab', CASE WHEN 'aaa' = '' THEN '' ELSE 'f' || REGEXP_REPLACE('aaa', 'aaaaaaaaaaaaaaaaaaaaaag', 'aaah', 'i') || 'j' END), k -> NOT k = '')[3] END",
-   "sql": "SELECT CASE WHEN '$/.' = '' AND 'a$b/cg' = '' THEN NULL WHEN '$/.' = '' AND 1 = 1 THEN 'a$b/cg' WHEN '$/.' = '' THEN NULL WHEN 1 < 0 THEN NULL WHEN 'a$b/cg' IS NULL OR '$/.' IS NULL OR 1 IS NULL THEN NULL ELSE LIST_FILTER(REGEXP_SPLIT_TO_ARRAY('a$b/cg', CASE WHEN '$/.' = '' THEN '' ELSE '[' || REGEXP_REPLACE('$/.', '([\\[\\]^.\\-*+?(){}|$\\\\])', '\\\\\\1', 'g') || ']' END), x -> NOT x = '')[1] END"
-  },
-  {
-   "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN ' ' = '' AND 'ab' = '' THEN NULL WHEN ' ' = '' AND 3 = 3 THEN 'ab' WHEN ' ' = '' THEN NULL WHEN 3 < 4 THEN NULL WHEN 'ab' IS NULL OR ' ' IS NULL OR 3 IS NULL THEN NULL ELSE LIST_FILTER(aaaaaaaaaaaaaaaaaaaae('ab', CASE WHEN ' ' = '' THEN '' ELSE 'f' || REGEXP_REPLACE(' ', 'aaaaaaaaaaaaaaaaaaaaaag', 'aaah', 'i') || 'j' END), k -> NOT k = '')[3] END",
-   "sql": "SELECT CASE WHEN ' ' = '' AND 'ab' = '' THEN NULL WHEN ' ' = '' AND 1 = 1 THEN 'ab' WHEN ' ' = '' THEN NULL WHEN 1 < 0 THEN NULL WHEN 'ab' IS NULL OR ' ' IS NULL OR 1 IS NULL THEN NULL ELSE LIST_FILTER(REGEXP_SPLIT_TO_ARRAY('ab', CASE WHEN ' ' = '' THEN '' ELSE '[' || REGEXP_REPLACE(' ', '([\\[\\]^.\\-*+?(){}|$\\\\])', '\\\\\\1', 'g') || ']' END), x -> NOT x = '')[1] END"
+   "rendered": "SELECT CASE WHEN ' ' = '' AND 'ab' = '' THEN NULL WHEN ' ' = '' AND 3 = 3 THEN 'ab' WHEN ' ' = '' THEN NULL WHEN 3 < 4 THEN NULL WHEN 'ab' IS NULL OR ' ' IS NULL OR 3 IS NULL THEN NULL ELSE LIST_FILTER(aaaaaaaaaaaaaaaaaaaae('ab', CASE WHEN ' ' = '' THEN '' ELSE 'f' || REGEXP_REPLACE(' ', 'aaaaaaaaaaaaaaaaaaaaaag', 'aaah', 'i') || 'j' END), aaaaak l : NOT l = '')[3] END",
+   "sql": "SELECT CASE WHEN ' ' = '' AND 'ab' = '' THEN NULL WHEN ' ' = '' AND 1 = 1 THEN 'ab' WHEN ' ' = '' THEN NULL WHEN 1 < 0 THEN NULL WHEN 'ab' IS NULL OR ' ' IS NULL OR 1 IS NULL THEN NULL ELSE LIST_FILTER(REGEXP_SPLIT_TO_ARRAY('ab', CASE WHEN ' ' = '' THEN '' ELSE '[' || REGEXP_REPLACE(' ', '([\\[\\]^.\\-*+?(){}|$\\\\])', '\\\\\\1', 'g') || ']' END), LAMBDA x : NOT x = '')[1] END"
   },
   {
    "dialect": "postgres",
@@ -42532,8 +43987,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN [1, 2] IS NULL OR [2, 3] IS NULL THEN NULL ELSE LIST_TRANSFORM(LIST_FILTER(aaaaaaad([1, 2], GENERATE_SERIES(1, LENGTH([1, 2]))), aaae -> (LENGTH(LIST_FILTER([1, 2][1:aaae[2]], f -> f IS NOT DISTINCT FROM aaae[1])) <= LENGTH(LIST_FILTER([2, 3], f -> f IS NOT DISTINCT FROM aaae[1])))), aaae -> aaae[1]) END",
-   "sql": "SELECT CASE WHEN [1, 2] IS NULL OR [2, 3] IS NULL THEN NULL ELSE LIST_TRANSFORM(LIST_FILTER(LIST_ZIP([1, 2], GENERATE_SERIES(1, LENGTH([1, 2]))), pair -> (LENGTH(LIST_FILTER([1, 2][1:pair[2]], e -> e IS NOT DISTINCT FROM pair[1])) <= LENGTH(LIST_FILTER([2, 3], e -> e IS NOT DISTINCT FROM pair[1])))), pair -> pair[1]) END"
+   "rendered": "SELECT CASE WHEN [1, 2] IS NULL OR [2, 3] IS NULL THEN NULL ELSE LIST_TRANSFORM(LIST_FILTER(aaaaaaad([1, 2], GENERATE_SERIES(1, LENGTH([1, 2]))), aaaaae aaaf : (LENGTH(LIST_FILTER([1, 2][1:aaaf[2]], aaaaae g : g IS NOT DISTINCT FROM aaaf[1])) <= LENGTH(LIST_FILTER([2, 3], aaaaae g : g IS NOT DISTINCT FROM aaaf[1])))), aaaaae aaaf : aaaf[1]) END",
+   "sql": "SELECT CASE WHEN [1, 2] IS NULL OR [2, 3] IS NULL THEN NULL ELSE LIST_TRANSFORM(LIST_FILTER(LIST_ZIP([1, 2], GENERATE_SERIES(1, LENGTH([1, 2]))), LAMBDA pair : (LENGTH(LIST_FILTER([1, 2][1:pair[2]], LAMBDA e : e IS NOT DISTINCT FROM pair[1])) <= LENGTH(LIST_FILTER([2, 3], LAMBDA e : e IS NOT DISTINCT FROM pair[1])))), LAMBDA pair : pair[1]) END"
   },
   {
    "dialect": "duckdb",
@@ -43357,18 +44812,18 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN '' IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(a, a -> COALESCE(CAST(a AS TEXT), '')), '') END",
-   "sql": "SELECT CASE WHEN '' IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(x, x -> COALESCE(CAST(x AS TEXT), '')), '') END"
+   "rendered": "SELECT CASE WHEN '' IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(a, aaaaab a : COALESCE(CAST(a AS TEXT), '')), '') END",
+   "sql": "SELECT CASE WHEN '' IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(x, LAMBDA x : COALESCE(CAST(x AS TEXT), '')), '') END"
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN NULL IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(a, a -> COALESCE(CAST(a AS TEXT), '')), NULL) END",
-   "sql": "SELECT CASE WHEN NULL IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(x, x -> COALESCE(CAST(x AS TEXT), '')), NULL) END"
+   "rendered": "SELECT CASE WHEN NULL IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(a, aaaaab a : COALESCE(CAST(a AS TEXT), '')), NULL) END",
+   "sql": "SELECT CASE WHEN NULL IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(x, LAMBDA x : COALESCE(CAST(x AS TEXT), '')), NULL) END"
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN 'a' IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM([], b -> COALESCE(CAST(b AS TEXT), '')), 'a') END",
-   "sql": "SELECT CASE WHEN ',' IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM([], x -> COALESCE(CAST(x AS TEXT), '')), ',') END"
+   "rendered": "SELECT CASE WHEN 'a' IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM([], aaaaab c : COALESCE(CAST(c AS TEXT), '')), 'a') END",
+   "sql": "SELECT CASE WHEN ',' IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM([], LAMBDA x : COALESCE(CAST(x AS TEXT), '')), ',') END"
   },
   {
    "dialect": "spark",
@@ -43607,8 +45062,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "(SELECT JSON_OBJECT('aaaaa', LIST(aaaab ORDER BY aaac aaaad FIRST), 'aaae', 'aaaaaaf', 'aaaaaag', 8) FROM (SELECT aaac, LIST_MIN(LIST_TRANSFORM(aaai, aaj -> aaak(CAST(aaj AS TEXT) || CAST(aaac AS TEXT)))) AS aaaab FROM (SELECT LIST(aaal) AS aaai), RANGE(4, 5) AS o(aaac)))",
-   "sql": "(SELECT JSON_OBJECT('state', LIST(min_h ORDER BY seed NULLS FIRST), 'type', 'minhash', 'version', 1) FROM (SELECT seed, LIST_MIN(LIST_TRANSFORM(vals, __v -> HASH(CAST(__v AS TEXT) || CAST(seed AS TEXT)))) AS min_h FROM (SELECT LIST(col1) AS vals), RANGE(0, 4) AS t(seed)))"
+   "rendered": "(SELECT JSON_OBJECT('aaaaa', LIST(aaaab ORDER BY aaac aaaad FIRST), 'aaae', 'aaaaaaf', 'aaaaaag', 8) FROM (SELECT aaac, LIST_MIN(LIST_TRANSFORM(aaai, aaaaaj aak : aaal(CAST(aak AS TEXT) || CAST(aaac AS TEXT)))) AS aaaab FROM (SELECT LIST(aaam) AS aaai), RANGE(5, 6) AS p(aaac)))",
+   "sql": "(SELECT JSON_OBJECT('state', LIST(min_h ORDER BY seed NULLS FIRST), 'type', 'minhash', 'version', 1) FROM (SELECT seed, LIST_MIN(LIST_TRANSFORM(vals, LAMBDA __v : HASH(CAST(__v AS TEXT) || CAST(seed AS TEXT)))) AS min_h FROM (SELECT LIST(col1) AS vals), RANGE(0, 4) AS t(seed)))"
   },
   {
    "dialect": "duckdb",
@@ -44082,13 +45537,13 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN ARRAY_LENGTH(['a', NULL, 'b', NULL]) <> aaaaaaaaac(['a', NULL, 'b', NULL]) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER(['a', NULL, 'b', NULL], ad -> NOT ad IS NULL)), NULL) ELSE LIST_DISTINCT(['a', NULL, 'b', NULL]) END",
-   "sql": "SELECT CASE WHEN ARRAY_LENGTH(['A', NULL, 'B', NULL]) <> LIST_COUNT(['A', NULL, 'B', NULL]) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER(['A', NULL, 'B', NULL], _u -> NOT _u IS NULL)), NULL) ELSE LIST_DISTINCT(['A', NULL, 'B', NULL]) END"
+   "rendered": "SELECT CASE WHEN ARRAY_LENGTH(['a', NULL, 'b', NULL]) <> aaaaaaaaac(['a', NULL, 'b', NULL]) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER(['a', NULL, 'b', NULL], aaaaad ae : NOT ae IS NULL)), NULL) ELSE LIST_DISTINCT(['a', NULL, 'b', NULL]) END",
+   "sql": "SELECT CASE WHEN ARRAY_LENGTH(['A', NULL, 'B', NULL]) <> LIST_COUNT(['A', NULL, 'B', NULL]) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER(['A', NULL, 'B', NULL], LAMBDA _u : NOT _u IS NULL)), NULL) ELSE LIST_DISTINCT(['A', NULL, 'B', NULL]) END"
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN ARRAY_LENGTH([1, 2, 2, 3, 1]) <> aaaaaaaaad([1, 2, 2, 3, 1]) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER([1, 2, 2, 3, 1], ae -> NOT ae IS NULL)), NULL) ELSE LIST_DISTINCT([1, 2, 2, 3, 1]) END",
-   "sql": "SELECT CASE WHEN ARRAY_LENGTH([1, 2, 2, 3, 1]) <> LIST_COUNT([1, 2, 2, 3, 1]) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER([1, 2, 2, 3, 1], _u -> NOT _u IS NULL)), NULL) ELSE LIST_DISTINCT([1, 2, 2, 3, 1]) END"
+   "rendered": "SELECT CASE WHEN ARRAY_LENGTH([1, 2, 2, 3, 1]) <> aaaaaaaaad([1, 2, 2, 3, 1]) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER([1, 2, 2, 3, 1], aaaaae af : NOT af IS NULL)), NULL) ELSE LIST_DISTINCT([1, 2, 2, 3, 1]) END",
+   "sql": "SELECT CASE WHEN ARRAY_LENGTH([1, 2, 2, 3, 1]) <> LIST_COUNT([1, 2, 2, 3, 1]) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER([1, 2, 2, 3, 1], LAMBDA _u : NOT _u IS NULL)), NULL) ELSE LIST_DISTINCT([1, 2, 2, 3, 1]) END"
   },
   {
    "dialect": "duckdb",
@@ -44102,18 +45557,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "CAST(FLOOR(1 + RANDOM() * (11 - 1 + 1)) AS BIGINT)",
-   "sql": "CAST(FLOOR(1 + RANDOM() * (10 - 1 + 1)) AS BIGINT)"
-  },
-  {
-   "dialect": "duckdb",
-   "rendered": "CAST(FLOOR(1 + (ABS(aaab(3)) % 1000003) / 1000000.4 * (15 - 1 + 1)) AS BIGINT)",
-   "sql": "CAST(FLOOR(1 + (ABS(HASH(5)) % 1000000) / 1000000.0 * (10 - 1 + 1)) AS BIGINT)"
-  },
-  {
-   "dialect": "duckdb",
-   "rendered": "1 + (2 * SQRT(-3 * LN(GREATEST((ABS(aaad(14)) % 1000005) / 1000000.6, 8e-10))) * COS(3 * PI() * (ABS(aaad(14 + 2)) % 1000005) / 1000000.6))",
-   "sql": "0 + (1 * SQRT(-2 * LN(GREATEST((ABS(HASH(42)) % 1000000) / 1000000.0, 1e-10))) * COS(2 * PI() * (ABS(HASH(42 + 1)) % 1000000) / 1000000.0))"
+   "rendered": "1 + (2 * SQRT(-3 * LN(GREATEST((ABS(aaad(14)) % 1000005) / 1000000.6, 8e-10))) * COS(3 * PI() * ((ABS(aaad(14 + 2)) % 1000005) / 1000000.6)))",
+   "sql": "0 + (1 * SQRT(-2 * LN(GREATEST((ABS(HASH(42)) % 1000000) / 1000000.0, 1e-10))) * COS(2 * PI() * ((ABS(HASH(42 + 1)) % 1000000) / 1000000.0)))"
   },
   {
    "dialect": "duckdb",
@@ -44122,8 +45567,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "10.0 + (1.1 * SQRT(-3 * LN(GREATEST((ABS(aaad(5)) % 1000005) / 1000000.6, 8e-10))) * COS(3 * PI() * (ABS(aaad(5 + 9)) % 1000005) / 1000000.6))",
-   "sql": "10.5 + (2.5 * SQRT(-2 * LN(GREATEST((ABS(HASH(5)) % 1000000) / 1000000.0, 1e-10))) * COS(2 * PI() * (ABS(HASH(5 + 1)) % 1000000) / 1000000.0))"
+   "rendered": "10.0 + (1.1 * SQRT(-3 * LN(GREATEST((ABS(aaad(5)) % 1000005) / 1000000.6, 8e-10))) * COS(3 * PI() * ((ABS(aaad(5 + 9)) % 1000005) / 1000000.6)))",
+   "sql": "10.5 + (2.5 * SQRT(-2 * LN(GREATEST((ABS(HASH(5)) % 1000000) / 1000000.0, 1e-10))) * COS(2 * PI() * ((ABS(HASH(5 + 1)) % 1000000) / 1000000.0)))"
   },
   {
    "dialect": "duckdb",
@@ -44477,13 +45922,13 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "CASE WHEN [1, 2] IS NULL OR [3, 4] IS NULL OR [4, 5] IS NULL THEN NULL WHEN LENGTH([1, 2]) = 6 AND LENGTH([3, 4]) = 6 AND LENGTH([4, 5]) = 6 THEN [{'ag': NULL, 'ah': NULL, 'ai': NULL}] ELSE LIST_TRANSFORM(RANGE(6, CASE WHEN LENGTH([1, 2]) IS NULL OR LENGTH([3, 4]) IS NULL OR LENGTH([4, 5]) IS NULL THEN NULL ELSE GREATEST(LENGTH([1, 2]), LENGTH([3, 4]), LENGTH([4, 5])) END), aaj -> {'ag': COALESCE([1, 2], [])[aaj + 1], 'ah': COALESCE([3, 4], [])[aaj + 1], 'ai': COALESCE([4, 5], [])[aaj + 1]}) END",
-   "sql": "CASE WHEN [1, 2] IS NULL OR [3, 4] IS NULL OR [4, 5] IS NULL THEN NULL WHEN LENGTH([1, 2]) = 0 AND LENGTH([3, 4]) = 0 AND LENGTH([4, 5]) = 0 THEN [{'$1': NULL, '$2': NULL, '$3': NULL}] ELSE LIST_TRANSFORM(RANGE(0, CASE WHEN LENGTH([1, 2]) IS NULL OR LENGTH([3, 4]) IS NULL OR LENGTH([4, 5]) IS NULL THEN NULL ELSE GREATEST(LENGTH([1, 2]), LENGTH([3, 4]), LENGTH([4, 5])) END), __i -> {'$1': COALESCE([1, 2], [])[__i + 1], '$2': COALESCE([3, 4], [])[__i + 1], '$3': COALESCE([4, 5], [])[__i + 1]}) END"
+   "rendered": "CASE WHEN [1, 2] IS NULL OR [3, 4] IS NULL OR [4, 5] IS NULL THEN NULL WHEN LENGTH([1, 2]) = 6 AND LENGTH([3, 4]) = 6 AND LENGTH([4, 5]) = 6 THEN [{'ag': NULL, 'ah': NULL, 'ai': NULL}] ELSE LIST_TRANSFORM(RANGE(6, CASE WHEN LENGTH([1, 2]) IS NULL OR LENGTH([3, 4]) IS NULL OR LENGTH([4, 5]) IS NULL THEN NULL ELSE GREATEST(LENGTH([1, 2]), LENGTH([3, 4]), LENGTH([4, 5])) END), aaaaaj aak : {'ag': COALESCE([1, 2], [])[aak + 1], 'ah': COALESCE([3, 4], [])[aak + 1], 'ai': COALESCE([4, 5], [])[aak + 1]}) END",
+   "sql": "CASE WHEN [1, 2] IS NULL OR [3, 4] IS NULL OR [4, 5] IS NULL THEN NULL WHEN LENGTH([1, 2]) = 0 AND LENGTH([3, 4]) = 0 AND LENGTH([4, 5]) = 0 THEN [{'$1': NULL, '$2': NULL, '$3': NULL}] ELSE LIST_TRANSFORM(RANGE(0, CASE WHEN LENGTH([1, 2]) IS NULL OR LENGTH([3, 4]) IS NULL OR LENGTH([4, 5]) IS NULL THEN NULL ELSE GREATEST(LENGTH([1, 2]), LENGTH([3, 4]), LENGTH([4, 5])) END), LAMBDA __i : {'$1': COALESCE([1, 2], [])[__i + 1], '$2': COALESCE([3, 4], [])[__i + 1], '$3': COALESCE([4, 5], [])[__i + 1]}) END"
   },
   {
    "dialect": "duckdb",
-   "rendered": "CASE WHEN [1, 2, 3] IS NULL THEN NULL WHEN LENGTH([1, 2, 3]) = 4 THEN [{'ae': NULL}] ELSE LIST_TRANSFORM(RANGE(4, LENGTH([1, 2, 3])), aaf -> {'ae': COALESCE([1, 2, 3], [])[aaf + 1]}) END",
-   "sql": "CASE WHEN [1, 2, 3] IS NULL THEN NULL WHEN LENGTH([1, 2, 3]) = 0 THEN [{'$1': NULL}] ELSE LIST_TRANSFORM(RANGE(0, LENGTH([1, 2, 3])), __i -> {'$1': COALESCE([1, 2, 3], [])[__i + 1]}) END"
+   "rendered": "CASE WHEN [1, 2, 3] IS NULL THEN NULL WHEN LENGTH([1, 2, 3]) = 4 THEN [{'ae': NULL}] ELSE LIST_TRANSFORM(RANGE(4, LENGTH([1, 2, 3])), aaaaaf aag : {'ae': COALESCE([1, 2, 3], [])[aag + 1]}) END",
+   "sql": "CASE WHEN [1, 2, 3] IS NULL THEN NULL WHEN LENGTH([1, 2, 3]) = 0 THEN [{'$1': NULL}] ELSE LIST_TRANSFORM(RANGE(0, LENGTH([1, 2, 3])), LAMBDA __i : {'$1': COALESCE([1, 2, 3], [])[__i + 1]}) END"
   },
   {
    "dialect": "duckdb",
@@ -44559,6 +46004,11 @@
    "dialect": "bigquery",
    "rendered": "CREATE TABLE FUNCTION a() aaaaaab TABLE <c INT64> AS SELECT 4",
    "sql": "CREATE TABLE FUNCTION a() RETURNS TABLE <b INT64> AS SELECT 1"
+  },
+  {
+   "dialect": "redshift",
+   "rendered": "SELECT aa.ab, ac.ad FROM aa, ac WHERE aa.ab = ac.ad (+)",
+   "sql": "SELECT t1.c1, t2.c2 FROM t1, t2 WHERE t1.c1 = t2.c2 (+)"
   },
   {
    "dialect": "spark",
@@ -44722,23 +46172,23 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN aaaaaaa IS NULL OR aaaaaab IS NULL THEN NULL WHEN aaaaaab = '' THEN 3 WHEN LENGTH(REGEXP_EXTRACT_ALL(aaaaaaa, aaaaaab)) < 4 THEN 3 ELSE 4 + COALESCE(aaaaaaae(LIST_TRANSFORM(STRING_SPLIT_REGEX(aaaaaaa, aaaaaab)[4:4], f -> LENGTH(f))), 3) + COALESCE(aaaaaaae(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(aaaaaaa, aaaaaab)[4:4 - 4], f -> LENGTH(f))), 3) + 3 END",
-   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(subject, pattern)) < 1 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(subject, pattern)[1:1], x -> LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(subject, pattern)[1:1 - 1], x -> LENGTH(x))), 0) + 0 END"
+   "rendered": "SELECT CASE WHEN aaaaaaa IS NULL OR aaaaaab IS NULL THEN NULL WHEN aaaaaab = '' THEN 3 WHEN LENGTH(REGEXP_EXTRACT_ALL(aaaaaaa, aaaaaab)) < 4 THEN 3 ELSE 4 + COALESCE(aaaaaaae(LIST_TRANSFORM(STRING_SPLIT_REGEX(aaaaaaa, aaaaaab)[4:4], aaaaaf g : LENGTH(g))), 3) + COALESCE(aaaaaaae(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(aaaaaaa, aaaaaab)[4:4 - 4], aaaaaf g : LENGTH(g))), 3) + 3 END",
+   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(subject, pattern)) < 1 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(subject, pattern)[1:1], LAMBDA x : LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(subject, pattern)[1:1 - 1], LAMBDA x : LENGTH(x))), 0) + 0 END"
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN aaaaaaa IS NULL OR aaaaaab IS NULL OR 3 IS NULL THEN NULL WHEN aaaaaab = '' THEN 4 WHEN LENGTH(REGEXP_EXTRACT_ALL(SUBSTRING(aaaaaaa, 3), aaaaaab)) < 5 THEN 4 ELSE 5 + COALESCE(aaaaaaaf(LIST_TRANSFORM(STRING_SPLIT_REGEX(SUBSTRING(aaaaaaa, 3), aaaaaab)[5:5], g -> LENGTH(g))), 4) + COALESCE(aaaaaaaf(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(SUBSTRING(aaaaaaa, 3), aaaaaab)[5:5 - 5], g -> LENGTH(g))), 4) + 3 - 5 END",
-   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL OR 5 IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(SUBSTRING(subject, 5), pattern)) < 1 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(SUBSTRING(subject, 5), pattern)[1:1], x -> LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(SUBSTRING(subject, 5), pattern)[1:1 - 1], x -> LENGTH(x))), 0) + 5 - 1 END"
+   "rendered": "SELECT CASE WHEN aaaaaaa IS NULL OR aaaaaab IS NULL OR 3 IS NULL THEN NULL WHEN aaaaaab = '' THEN 4 WHEN LENGTH(REGEXP_EXTRACT_ALL(SUBSTRING(aaaaaaa, 3), aaaaaab)) < 5 THEN 4 ELSE 5 + COALESCE(aaaaaaaf(LIST_TRANSFORM(STRING_SPLIT_REGEX(SUBSTRING(aaaaaaa, 3), aaaaaab)[5:5], aaaaag h : LENGTH(h))), 4) + COALESCE(aaaaaaaf(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(SUBSTRING(aaaaaaa, 3), aaaaaab)[5:5 - 5], aaaaag h : LENGTH(h))), 4) + 3 - 5 END",
+   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL OR 5 IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(SUBSTRING(subject, 5), pattern)) < 1 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(SUBSTRING(subject, 5), pattern)[1:1], LAMBDA x : LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(SUBSTRING(subject, 5), pattern)[1:1 - 1], LAMBDA x : LENGTH(x))), 0) + 5 - 1 END"
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN aaaaaaa IS NULL OR aaaaaab IS NULL OR 3 IS NULL OR 4 IS NULL THEN NULL WHEN aaaaaab = '' THEN 5 WHEN LENGTH(REGEXP_EXTRACT_ALL(aaaaaaa, aaaaaab)) < 4 THEN 5 ELSE 3 + COALESCE(aaaaaaaf(LIST_TRANSFORM(STRING_SPLIT_REGEX(aaaaaaa, aaaaaab)[3:4], g -> LENGTH(g))), 5) + COALESCE(aaaaaaaf(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(aaaaaaa, aaaaaab)[3:4 - 3], g -> LENGTH(g))), 5) + 5 END",
-   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL OR 1 IS NULL OR 2 IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(subject, pattern)) < 2 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(subject, pattern)[1:2], x -> LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(subject, pattern)[1:2 - 1], x -> LENGTH(x))), 0) + 0 END"
+   "rendered": "SELECT CASE WHEN aaaaaaa IS NULL OR aaaaaab IS NULL OR 3 IS NULL OR 4 IS NULL THEN NULL WHEN aaaaaab = '' THEN 5 WHEN LENGTH(REGEXP_EXTRACT_ALL(aaaaaaa, aaaaaab)) < 4 THEN 5 ELSE 3 + COALESCE(aaaaaaaf(LIST_TRANSFORM(STRING_SPLIT_REGEX(aaaaaaa, aaaaaab)[3:4], aaaaag h : LENGTH(h))), 5) + COALESCE(aaaaaaaf(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(aaaaaaa, aaaaaab)[3:4 - 3], aaaaag h : LENGTH(h))), 5) + 5 END",
+   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL OR 1 IS NULL OR 2 IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(subject, pattern)) < 2 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(subject, pattern)[1:2], LAMBDA x : LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(subject, pattern)[1:2 - 1], LAMBDA x : LENGTH(x))), 0) + 0 END"
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN aaaaaaa IS NULL OR aaaaaab IS NULL OR 3 IS NULL OR 3 IS NULL OR 4 IS NULL OR 'ae' IS NULL THEN NULL WHEN aaaaaab = '' THEN 4 WHEN LENGTH(REGEXP_EXTRACT_ALL(aaaaaaa, 'aaaaf' || aaaaaab)) < 3 THEN 4 ELSE 3 + COALESCE(aaaaaaag(LIST_TRANSFORM(STRING_SPLIT_REGEX(aaaaaaa, 'aaaaf' || aaaaaab)[3:3], h -> LENGTH(h))), 4) + COALESCE(aaaaaaag(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(aaaaaaa, 'aaaaf' || aaaaaab)[3:3 - 3], h -> LENGTH(h))), 4) + 4 END",
-   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL OR 1 IS NULL OR 1 IS NULL OR 0 IS NULL OR 'im' IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(subject, '(?im)' || pattern)) < 1 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(subject, '(?im)' || pattern)[1:1], x -> LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(subject, '(?im)' || pattern)[1:1 - 1], x -> LENGTH(x))), 0) + 0 END"
+   "rendered": "SELECT CASE WHEN aaaaaaa IS NULL OR aaaaaab IS NULL OR 3 IS NULL OR 3 IS NULL OR 4 IS NULL OR 'ae' IS NULL THEN NULL WHEN aaaaaab = '' THEN 4 WHEN LENGTH(REGEXP_EXTRACT_ALL(aaaaaaa, 'aaaaf' || aaaaaab)) < 3 THEN 4 ELSE 3 + COALESCE(aaaaaaag(LIST_TRANSFORM(STRING_SPLIT_REGEX(aaaaaaa, 'aaaaf' || aaaaaab)[3:3], aaaaah i : LENGTH(i))), 4) + COALESCE(aaaaaaag(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(aaaaaaa, 'aaaaf' || aaaaaab)[3:3 - 3], aaaaah i : LENGTH(i))), 4) + 4 END",
+   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL OR 1 IS NULL OR 1 IS NULL OR 0 IS NULL OR 'im' IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(subject, '(?im)' || pattern)) < 1 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(subject, '(?im)' || pattern)[1:1], LAMBDA x : LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(subject, '(?im)' || pattern)[1:1 - 1], LAMBDA x : LENGTH(x))), 0) + 0 END"
   },
   {
    "dialect": "bigquery",
@@ -45112,8 +46562,8 @@
   },
   {
    "dialect": "duckdb",
-   "rendered": "SELECT CASE WHEN [1, 2, 3] IS NULL OR [2] IS NULL THEN NULL ELSE LIST_TRANSFORM(LIST_FILTER(aaaaaaad([1, 2, 3], GENERATE_SERIES(1, LENGTH([1, 2, 3]))), aaae -> (LENGTH(LIST_FILTER([1, 2, 3][1:aaae[2]], f -> f IS NOT DISTINCT FROM aaae[1])) > LENGTH(LIST_FILTER([2], f -> f IS NOT DISTINCT FROM aaae[1])))), aaae -> aaae[1]) END",
-   "sql": "SELECT CASE WHEN [1, 2, 3] IS NULL OR [2] IS NULL THEN NULL ELSE LIST_TRANSFORM(LIST_FILTER(LIST_ZIP([1, 2, 3], GENERATE_SERIES(1, LENGTH([1, 2, 3]))), pair -> (LENGTH(LIST_FILTER([1, 2, 3][1:pair[2]], e -> e IS NOT DISTINCT FROM pair[1])) > LENGTH(LIST_FILTER([2], e -> e IS NOT DISTINCT FROM pair[1])))), pair -> pair[1]) END"
+   "rendered": "SELECT CASE WHEN [1, 2, 3] IS NULL OR [2] IS NULL THEN NULL ELSE LIST_TRANSFORM(LIST_FILTER(aaaaaaad([1, 2, 3], GENERATE_SERIES(1, LENGTH([1, 2, 3]))), aaaaae aaaf : (LENGTH(LIST_FILTER([1, 2, 3][1:aaaf[2]], aaaaae g : g IS NOT DISTINCT FROM aaaf[1])) > LENGTH(LIST_FILTER([2], aaaaae g : g IS NOT DISTINCT FROM aaaf[1])))), aaaaae aaaf : aaaf[1]) END",
+   "sql": "SELECT CASE WHEN [1, 2, 3] IS NULL OR [2] IS NULL THEN NULL ELSE LIST_TRANSFORM(LIST_FILTER(LIST_ZIP([1, 2, 3], GENERATE_SERIES(1, LENGTH([1, 2, 3]))), LAMBDA pair : (LENGTH(LIST_FILTER([1, 2, 3][1:pair[2]], LAMBDA e : e IS NOT DISTINCT FROM pair[1])) > LENGTH(LIST_FILTER([2], LAMBDA e : e IS NOT DISTINCT FROM pair[1])))), LAMBDA pair : pair[1]) END"
   },
   {
    "dialect": "duckdb",
@@ -45174,6 +46624,26 @@
    "dialect": "solr",
    "rendered": "a || b",
    "sql": "a || b"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "'aaaaaaaaaa'",
+   "sql": "'\\U0001F600'"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "r'aaaaaaaaaaaa'",
+   "sql": "r'\\u0041\\101\\z'"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "'aaaaaaaaa'",
+   "sql": "'U0001F600'"
+  },
+  {
+   "dialect": "spark2",
+   "rendered": "'aaaaaaaaaa'",
+   "sql": "'\\U0001F600'"
   },
   {
    "dialect": "spark",
@@ -45414,6 +46884,11 @@
    "dialect": "spark",
    "rendered": "ALTER TABLE aaaaaaaaaaa aab COLUMNS (aaaaaaac STRING, aad TIMESTAMP)",
    "sql": "ALTER TABLE StudentInfo ADD COLUMNS (LastName STRING, DOB TIMESTAMP)"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "ALTER TABLE a aab COLUMNS (c.d INT COMMENT 'e' aaaaf g, h.i.j STRING)",
+   "sql": "ALTER TABLE t ADD COLUMNS (a.b INT COMMENT 'x' AFTER c, d.e.f STRING)"
   },
   {
    "dialect": "spark",
@@ -45689,6 +47164,11 @@
    "dialect": "spark",
    "rendered": "REFRESH TABLE a.b.c",
    "sql": "REFRESH TABLE a.b.c"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "REFRESH FUNCTION aa.aaaab",
+   "sql": "REFRESH FUNCTION db.func1"
   },
   {
    "dialect": "spark",
@@ -46571,11 +48051,6 @@
    "sql": "ARRAY_SORT(x, (left, right) -> -1)"
   },
   {
-   "dialect": "duckdb",
-   "rendered": "ARRAY_SORT(a)",
-   "sql": "ARRAY_SORT(x)"
-  },
-  {
    "dialect": "presto",
    "rendered": "ARRAY_SORT(a, (\"aaab\", \"aaaac\") -> -4)",
    "sql": "ARRAY_SORT(x, (\"left\", \"right\") -> -1)"
@@ -47042,6 +48517,16 @@
   },
   {
    "dialect": "spark",
+   "rendered": "FROM a INSERT OVERWRITE TABLE b PARTITION(ac = 'd') SELECT e WHERE f > 7 INSERT INTO h SELECT e, f",
+   "sql": "FROM x INSERT OVERWRITE TABLE a PARTITION(ds = '1') SELECT k WHERE v > 0 INSERT INTO b SELECT k, v"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "FROM (SELECT a, b FROM c QUALIFY ROW_NUMBER() OVER (PARTITION BY a ORDER BY b) = 4) AS e INSERT INTO f SELECT e.b INSERT INTO g SELECT e.a",
+   "sql": "FROM (SELECT k, v FROM x QUALIFY ROW_NUMBER() OVER (PARTITION BY k ORDER BY v) = 1) AS s INSERT INTO t SELECT s.v INSERT INTO u SELECT s.k"
+  },
+  {
+   "dialect": "spark",
    "rendered": "INSERT OVERWRITE TABLE table WITH aaa AS (SELECT aaab FROM aaaaaaaaaac) SELECT aaab FROM aaa",
    "sql": "INSERT OVERWRITE TABLE table WITH cte AS (SELECT cola FROM other_table) SELECT cola FROM cte"
   },
@@ -47212,6 +48697,21 @@
   },
   {
    "dialect": "spark",
+   "rendered": "SELECT EXPLODE(a) AS b, (SELECT MAX(c) FROM (SELECT EXPLODE(ARRAY(4, 5)) AS c)) AS f FROM aag",
+   "sql": "SELECT EXPLODE(x) AS a, (SELECT MAX(b) FROM (SELECT EXPLODE(ARRAY(1, 2)) AS b)) AS m FROM tbl"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT IF(aaa = aaaab, c, NULL) AS c, (SELECT MAX(d) FROM (SELECT IF(aaa = aaaab, d, NULL) AS d FROM UNNEST(GENERATE_ARRAY(5, GREATEST(ARRAY_LENGTH([6, 7])) - 6)) AS aaa CROSS JOIN UNNEST([6, 7]) AS d WITH OFFSET AS aaaab WHERE aaa = aaaab OR (aaa > (ARRAY_LENGTH([6, 7]) - 6) AND aaaab = (ARRAY_LENGTH([6, 7]) - 6)))) AS h FROM aai CROSS JOIN UNNEST(GENERATE_ARRAY(5, GREATEST(ARRAY_LENGTH(j)) - 6)) AS aaa CROSS JOIN UNNEST(j) AS c WITH OFFSET AS aaaab WHERE aaa = aaaab OR (aaa > (ARRAY_LENGTH(j) - 6) AND aaaab = (ARRAY_LENGTH(j) - 6))",
+   "sql": "SELECT IF(pos = pos_2, a, NULL) AS a, (SELECT MAX(b) FROM (SELECT IF(pos = pos_2, b, NULL) AS b FROM UNNEST(GENERATE_ARRAY(0, GREATEST(ARRAY_LENGTH([1, 2])) - 1)) AS pos CROSS JOIN UNNEST([1, 2]) AS b WITH OFFSET AS pos_2 WHERE pos = pos_2 OR (pos > (ARRAY_LENGTH([1, 2]) - 1) AND pos_2 = (ARRAY_LENGTH([1, 2]) - 1)))) AS m FROM tbl CROSS JOIN UNNEST(GENERATE_ARRAY(0, GREATEST(ARRAY_LENGTH(x)) - 1)) AS pos CROSS JOIN UNNEST(x) AS a WITH OFFSET AS pos_2 WHERE pos = pos_2 OR (pos > (ARRAY_LENGTH(x) - 1) AND pos_2 = (ARRAY_LENGTH(x) - 1))"
+  },
+  {
+   "dialect": "presto",
+   "rendered": "SELECT IF(aa.aab = aaac.aaaad, aaac.e) AS e, (SELECT MAX(f) FROM (SELECT IF(aa.aab = aaac.aaaad, aaac.f) AS f FROM UNNEST(SEQUENCE(7, GREATEST(CARDINALITY(ARRAY[7, 8])))) AS aa(aab) CROSS JOIN UNNEST(ARRAY[7, 8]) WITH ORDINALITY AS aaac(f, aaaad) WHERE aa.aab = aaac.aaaad OR (aa.aab > CARDINALITY(ARRAY[7, 8]) AND aaac.aaaad = CARDINALITY(ARRAY[7, 8])))) AS i FROM aaj CROSS JOIN UNNEST(SEQUENCE(7, GREATEST(CARDINALITY(k)))) AS aa(aab) CROSS JOIN UNNEST(k) WITH ORDINALITY AS aaac(e, aaaad) WHERE aa.aab = aaac.aaaad OR (aa.aab > CARDINALITY(k) AND aaac.aaaad = CARDINALITY(k))",
+   "sql": "SELECT IF(_u.pos = _u_2.pos_2, _u_2.a) AS a, (SELECT MAX(b) FROM (SELECT IF(_u.pos = _u_2.pos_2, _u_2.b) AS b FROM UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(ARRAY[1, 2])))) AS _u(pos) CROSS JOIN UNNEST(ARRAY[1, 2]) WITH ORDINALITY AS _u_2(b, pos_2) WHERE _u.pos = _u_2.pos_2 OR (_u.pos > CARDINALITY(ARRAY[1, 2]) AND _u_2.pos_2 = CARDINALITY(ARRAY[1, 2])))) AS m FROM tbl CROSS JOIN UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(x)))) AS _u(pos) CROSS JOIN UNNEST(x) WITH ORDINALITY AS _u_2(a, pos_2) WHERE _u.pos = _u_2.pos_2 OR (_u.pos > CARDINALITY(x) AND _u_2.pos_2 = CARDINALITY(x))"
+  },
+  {
+   "dialect": "spark",
    "rendered": "SELECT * FROM aa.aaaaab MINUS SELECT * FROM aa.aaaaac",
    "sql": "SELECT * FROM db.table1 MINUS SELECT * FROM db.table2"
   },
@@ -47322,6 +48822,21 @@
   },
   {
    "dialect": "spark",
+   "rendered": "SLICE(a, 2, 3)",
+   "sql": "SLICE(x, 2, 3)"
+  },
+  {
+   "dialect": "clickhouse",
+   "rendered": "arraySlice(a, 2, 3)",
+   "sql": "arraySlice(x, 2, 3)"
+  },
+  {
+   "dialect": "presto",
+   "rendered": "SLICE(a, 2, 3)",
+   "sql": "SLICE(x, 2, 3)"
+  },
+  {
+   "dialect": "spark",
    "rendered": "DECLARE aaa b INT",
    "sql": "DECLARE VAR x INT"
   },
@@ -47399,6 +48914,51 @@
    "dialect": "spark",
    "rendered": "TRUNC(aaaaaaaa, 'ab')",
    "sql": "TRUNC(date_col, 'MM')"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "SELECT 'a' LIKE 'a' NOT LIKE 'b'",
+   "sql": "SELECT 'x' LIKE 'x' NOT LIKE '1'"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "SELECT NULL IS NULL < FALSE IN (1)",
+   "sql": "SELECT NULL IS NULL < FALSE IN (0)"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "SELECT FALSE IS DISTINCT FROM TRUE IS DISTINCT FROM FALSE",
+   "sql": "SELECT FALSE IS DISTINCT FROM TRUE IS DISTINCT FROM FALSE"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "SELECT (FALSE IS DISTINCT FROM TRUE) IS DISTINCT FROM FALSE",
+   "sql": "SELECT (FALSE IS DISTINCT FROM TRUE) IS DISTINCT FROM FALSE"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT (FALSE IS DISTINCT FROM TRUE) IS DISTINCT FROM FALSE",
+   "sql": "SELECT (FALSE IS DISTINCT FROM TRUE) IS DISTINCT FROM FALSE"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "SELECT NULL IS NULL < FALSE",
+   "sql": "SELECT NULL IS NULL < FALSE"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "SELECT FALSE IS DISTINCT FROM NULL = NULL",
+   "sql": "SELECT FALSE IS DISTINCT FROM NULL = NULL"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL",
+   "sql": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL",
+   "sql": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL"
   },
   {
    "dialect": "sqlite",
@@ -47801,9 +49361,29 @@
    "sql": "SELECT MIN(a, b) FROM t"
   },
   {
+   "dialect": "duckdb",
+   "rendered": "SELECT CASE WHEN a IS NULL OR b IS NULL THEN NULL ELSE LEAST(a, b) END FROM c",
+   "sql": "SELECT CASE WHEN a IS NULL OR b IS NULL THEN NULL ELSE LEAST(a, b) END FROM t"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT LEAST(a, b) FROM c",
+   "sql": "SELECT LEAST(a, b) FROM t"
+  },
+  {
    "dialect": "sqlite",
    "rendered": "SELECT MAX(a, b) FROM c",
    "sql": "SELECT MAX(a, b) FROM t"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT CASE WHEN a IS NULL OR b IS NULL THEN NULL ELSE GREATEST(a, b) END FROM c",
+   "sql": "SELECT CASE WHEN a IS NULL OR b IS NULL THEN NULL ELSE GREATEST(a, b) END FROM t"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT GREATEST(a, b) FROM c",
+   "sql": "SELECT GREATEST(a, b) FROM t"
   },
   {
    "dialect": "sqlite",
@@ -48127,6 +49707,26 @@
   },
   {
    "dialect": "sqlite",
+   "rendered": "SELECT a ->> ('ab' || c)",
+   "sql": "SELECT a ->> ('$.' || f)"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "SELECT GET_JSON_OBJECT(a, CONCAT('ab', c))",
+   "sql": "SELECT GET_JSON_OBJECT(a, CONCAT('$.', f))"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "SELECT a -> ('ab' || c)",
+   "sql": "SELECT a -> ('$.' || f)"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT JSON_EXTRACT(a, CONCAT('ab', c))",
+   "sql": "SELECT JSON_EXTRACT(a, CONCAT('$.', f))"
+  },
+  {
+   "dialect": "sqlite",
    "rendered": "SELECT 1 * 2 || 3",
    "sql": "SELECT 2 * 3 || 4"
   },
@@ -48257,13 +49857,18 @@
   },
   {
    "dialect": "sqlite",
-   "rendered": "SELECT 0Xaa",
-   "sql": "SELECT 0XCC"
+   "rendered": "SELECT x'aa'",
+   "sql": "SELECT x'CC'"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT UNHEX('aa')",
+   "sql": "SELECT UNHEX('CC')"
   },
   {
    "dialect": "sqlite",
-   "rendered": "SELECT x'aa'",
-   "sql": "SELECT x'CC'"
+   "rendered": "SELECT X'aa', 0xaa",
+   "sql": "SELECT X'0a', 0x0a"
   },
   {
    "dialect": "sqlite",
@@ -48354,6 +49959,16 @@
    "dialect": "sqlite",
    "rendered": "INSERT OR ROLLBACK INTO aaa (b, c) VALUES (4, 5)",
    "sql": "INSERT OR ROLLBACK INTO foo (x, y) VALUES (1, 2)"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "INSERT INTO aaa AS b (c, d) VALUES (5, 6)",
+   "sql": "INSERT INTO foo AS f (x, y) VALUES (1, 2)"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "INSERT INTO aaa AS b (c, d) VALUES (5, 6) ON aaaaaaag(c) ah UPDATE SET d = b.d + 5",
+   "sql": "INSERT INTO foo AS f (x, y) VALUES (1, 2) ON CONFLICT(x) DO UPDATE SET y = f.y + 1"
   },
   {
    "dialect": "sqlite",
@@ -48597,6 +50212,11 @@
   },
   {
    "dialect": "starrocks",
+   "rendered": "ALTER TABLE a PARTITION BY DATE_TRUNC('aaaab', ac) aaaaaaaaaad ae aaaf (g) aaaaaah 9",
+   "sql": "ALTER TABLE t PARTITION BY DATE_TRUNC('MONTH', dt) DISTRIBUTED BY HASH (a) BUCKETS 4"
+  },
+  {
+   "dialect": "starrocks",
    "rendered": "SELECT ARRAY_AGG(a) FROM b",
    "sql": "SELECT ARRAY_AGG(a) FROM x"
   },
@@ -48604,6 +50224,16 @@
    "dialect": "starrocks",
    "rendered": "SELECT aaaaaaaaaaaaaaaaaa(10.1, 10.2, 10.3, 10.4)",
    "sql": "SELECT ST_DISTANCE_SPHERE(10.1, 20.2, 30.3, 40.4)"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT LIKE('aaa', 'ab')",
+   "sql": "SELECT LIKE('xyz', 'x%')"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT TO_DAYS(aa) FROM b",
+   "sql": "SELECT TO_DAYS(dt) FROM t"
   },
   {
    "dialect": "starrocks",
@@ -48797,6 +50427,46 @@
   },
   {
    "dialect": "starrocks",
+   "rendered": "REFRESH aaaaaaaaaaaa VIEW aaaaab",
+   "sql": "REFRESH MATERIALIZED VIEW lo_mv1"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "REFRESH aaaaaaaaaaaa VIEW aaaaab FORCE",
+   "sql": "REFRESH MATERIALIZED VIEW lo_mv1 FORCE"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "REFRESH aaaaaaaaaaaa VIEW aaaaab WITH aaac aaad",
+   "sql": "REFRESH MATERIALIZED VIEW lo_mv1 WITH SYNC MODE"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "REFRESH aaaaaaaaaaaa VIEW aaaaab WITH aaaac aaad",
+   "sql": "REFRESH MATERIALIZED VIEW lo_mv1 WITH ASYNC MODE"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "REFRESH aaaaaaaaaaaa VIEW aaaaab PARTITION START (\"aaaaaaaaac\") END (\"aaaaaaaaad\")",
+   "sql": "REFRESH MATERIALIZED VIEW lo_mv1 PARTITION START (\"2020-02-01\") END (\"2020-03-01\")"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "REFRESH aaaaaaaaaa aaaaaaab",
+   "sql": "REFRESH DICTIONARY dict_obj"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "REFRESH aaaaaaaaaaa",
+   "sql": "REFRESH CONNECTIONS"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "REFRESH aaaaaaaaaaa FORCE",
+   "sql": "REFRESH CONNECTIONS FORCE"
+  },
+  {
+   "dialect": "starrocks",
    "rendered": "CREATE TABLE aaa (aaab DECIMAL(3, 4), aaae DECIMAL32(3, 4), aaaf DECIMAL64(16, 17), aaai DECIMAL128(19, 17)) aaaaaaaaaak al aaam (aaae) aaaaaan 4",
    "sql": "CREATE TABLE foo (col0 DECIMAL(9, 1), col1 DECIMAL32(9, 1), col2 DECIMAL64(18, 10), col3 DECIMAL128(38, 10)) DISTRIBUTED BY HASH (col1) BUCKETS 1"
   },
@@ -48834,6 +50504,11 @@
    "dialect": "starrocks",
    "rendered": "ALTER TABLE aa RENAME ab",
    "sql": "ALTER TABLE t1 RENAME t2"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "ALTER TABLE a aab COLUMN c INT ad ae, aab COLUMN f INT",
+   "sql": "ALTER TABLE t ADD COLUMN c INT TO r1, ADD COLUMN d INT"
   },
   {
    "dialect": "starrocks",
@@ -48952,6 +50627,11 @@
   },
   {
    "dialect": "starrocks",
+   "rendered": "SELECT * FROM TABLE(UNNEST([1, 2], ['c', 'd'])) AS e(f, g)",
+   "sql": "SELECT * FROM TABLE(UNNEST([1, 2], ['a', 'b'])) AS t(x, y)"
+  },
+  {
+   "dialect": "starrocks",
    "rendered": "SELECT aa, b.aaac, b.aaaaad FROM aaaaaaaaaaaae, unnest(split(aaac, \"f\"), aaaaad) AS b(aaac,aaaaad)",
    "sql": "SELECT id, t.type, t.scores FROM example_table, unnest(split(type, \";\"), scores) AS t(type,scores)"
   },
@@ -48989,6 +50669,16 @@
    "dialect": "starrocks",
    "rendered": "SELECT aa, b.aaac, b.aaaaad FROM aaaaaaaaaaaaaae CROSS JOIN LATERAL UNNEST(SPLIT(aaac, 'f'), aaaaad) AS b(aaac, aaaaad)",
    "sql": "SELECT id, t.type, t.scores FROM example_table_2 CROSS JOIN LATERAL UNNEST(SPLIT(type, ';'), scores) AS t(type, scores)"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT * FROM (SELECT 1 AS ab) AS c, UNNEST([1, 4], ['e', 'f'])",
+   "sql": "SELECT * FROM (SELECT 1 AS id) AS s, UNNEST([1, 2], ['a', 'b'])"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT * FROM (SELECT 1 AS ab) AS c, UNNEST([1, 4], ['e', 'f']) AS g",
+   "sql": "SELECT * FROM (SELECT 1 AS id) AS s, UNNEST([1, 2], ['a', 'b']) AS t"
   },
   {
    "dialect": "starrocks",
@@ -49152,8 +50842,183 @@
   },
   {
    "dialect": "starrocks",
+   "rendered": "SELECT TIME_SLICE(aa, 2, 'aaaaac', 'aaaad')",
+   "sql": "SELECT TIME_SLICE(dt, 5, 'minute', 'floor')"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT TIME_SLICE(aa, 2, 'aaaaac', 'aaad')",
+   "sql": "SELECT TIME_SLICE(dt, 5, 'minute', 'ceil')"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT TIME_SLICE(aa, INTERVAL 2 aaaaac)",
+   "sql": "SELECT TIME_SLICE(dt, INTERVAL 5 MINUTE)"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT TIME_SLICE(aa, INTERVAL 2 aaaaac, aaaad)",
+   "sql": "SELECT TIME_SLICE(dt, INTERVAL 5 MINUTE, floor)"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "CREATE TABLE a (ab DATETIME) PARTITION BY TIME_SLICE(ab, INTERVAL 3 aad) aaaaaaaaaae af aaag (ab)",
+   "sql": "CREATE TABLE t (dt DATETIME) PARTITION BY TIME_SLICE(dt, INTERVAL 7 DAY) DISTRIBUTED BY HASH (dt)"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT TIME_SLICE(aa, INTERVAL 2 aaaaac, aaad)",
+   "sql": "SELECT TIME_SLICE(dt, INTERVAL 5 MINUTE, CEIL)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT TIME_BUCKET(INTERVAL 1 aaaaab, ac) + INTERVAL 1 aaaaab",
+   "sql": "SELECT TIME_BUCKET(INTERVAL 5 MINUTE, dt) + INTERVAL 5 MINUTE"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT TIME_SLICE(aa, INTERVAL 2 aac, aaaad)",
+   "sql": "SELECT TIME_SLICE(dt, INTERVAL 1 DAY, FLOOR)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT TIME_BUCKET(INTERVAL 1 aab, ac)",
+   "sql": "SELECT TIME_BUCKET(INTERVAL 1 DAY, dt)"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT DATEDIFF(CAST('aaaaaaaaaa aaaaaaaa' AS DATETIME), CAST('aaaaaaaaaa aaaaaaab' AS DATETIME))",
+   "sql": "SELECT DATEDIFF(CAST('2026-03-11 01:00:00' AS DATETIME), CAST('2026-03-10 23:00:00' AS DATETIME))"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT DATE_DIFF('aaa', CAST('aaaaaaaaaa aaaaaaab' AS TIMESTAMP), CAST('aaaaaaaaaa aaaaaaac' AS TIMESTAMP))",
+   "sql": "SELECT DATE_DIFF('DAY', CAST('2026-03-10 23:00:00' AS TIMESTAMP), CAST('2026-03-11 01:00:00' AS TIMESTAMP))"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT DATE_DIFF('aaa', CAST('aaaaaaaaaa aaaaaaab' AS DATETIME), CAST('aaaaaaaaaa aaaaaaac' AS DATETIME))",
+   "sql": "SELECT DATE_DIFF('DAY', CAST('2026-03-11 01:00:00' AS DATETIME), CAST('2026-03-10 23:00:00' AS DATETIME))"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT 'aaa' AS b",
+   "sql": "SELECT 'a#b' AS c"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT 1 AS `aab`",
+   "sql": "SELECT 1 AS `a#b`"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT 1 AS b -- . . .. .",
+   "sql": "SELECT 1 AS a -- , 2 AS b"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT * FROM aa PIVOT (SUM(ab) AS aaaaac, AVG(ad) AS aaaaae FOR af IN (7, 8, 9, 1, 2))",
+   "sql": "SELECT * FROM t1 PIVOT (SUM(c1) AS sum_c1, AVG(c2) AS avg_c2 FOR c3 IN (1, 2, 3, 4, 5))"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT * FROM aa PIVOT(SUM(ab) FOR ac IN (4 AS aae, 6 AS aag))",
+   "sql": "SELECT * FROM t1 PIVOT(SUM(c1) FOR c3 IN (1 AS one, 2 AS two))"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT * FROM aa PIVOT(SUM(ab) FOR (ac, ad) IN ((5, 5), (6, 6)))",
+   "sql": "SELECT * FROM t1 PIVOT(SUM(c1) FOR (c2, c3) IN ((1, 1), (2, 2)))"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT * FROM aa UNPIVOT(b FOR c IN (ad, ae))",
+   "sql": "SELECT * FROM t1 UNPIVOT(c FOR k IN (c1, c2))"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT admin, cancel, export, stop FROM a",
+   "sql": "SELECT admin, cancel, export, stop FROM t"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT TRANSLATE(a, 'b', 'c'), aaaaaaaad FROM e",
+   "sql": "SELECT TRANSLATE(c, 'a', 'b'), translate FROM t"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT map{1:\"aaaab\", 3:\"aaaaad\", 5:\"aaaf\"} AS aaaag",
+   "sql": "SELECT map{1:\"apple\", 2:\"orange\", 3:\"pear\"} AS fruit"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT map{true:map{1.00:\"aab\"}, false:map{}} AS aaac",
+   "sql": "SELECT map{true:map{3.13:\"abc\"}, false:map{}} AS nest"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT MAP{1:NULL}",
+   "sql": "SELECT MAP{1:NULL}"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT MAP{1:2, 3:NULL}[1]",
+   "sql": "SELECT MAP{1:2, 3:NULL}[1]"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT MAP{1:MAP{2:1}, 3:NULL}[1][2]",
+   "sql": "SELECT MAP{1:MAP{2:1}, 3:NULL}[1][2]"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT map, a.map, map[2] FROM a",
+   "sql": "SELECT map, t.map, map[1] FROM t"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT MAP{'a':2, 'c':4}['a'] AS e",
+   "sql": "SELECT MAP{'a':1, 'b':2}['a'] AS x"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT MAP {'a': 2, 'c': 4}['a'] AS e",
+   "sql": "SELECT MAP {'a': 1, 'b': 2}['a'] AS x"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT MAP{'a':2, 'c':4} AS e",
+   "sql": "SELECT MAP{'a':1, 'b':2} AS m"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT MAP {'a': 2, 'c': 4} AS e",
+   "sql": "SELECT MAP {'a': 1, 'b': 2} AS m"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT MAP{a.b:12}[4] FROM (SELECT 4 AS b) AS a CROSS JOIN (SELECT 5 AS b) AS f",
+   "sql": "SELECT MAP{t.k:10}[1] FROM (SELECT 1 AS k) AS t CROSS JOIN (SELECT 2 AS k) AS u"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT MAP{a:b}['c'] FROM (SELECT 'c' AS a, 13 AS b) AS e",
+   "sql": "SELECT MAP{k:v}['a'] FROM (SELECT 'a' AS k, 10 AS v) AS t"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT MAP {a: b}['c'] FROM (SELECT 'c' AS a, 13 AS b) AS e",
+   "sql": "SELECT MAP {k: v}['a'] FROM (SELECT 'a' AS k, 10 AS v) AS t"
+  },
+  {
+   "dialect": "starrocks",
    "rendered": "ARRAY_FLATTEN(aaa)",
    "sql": "ARRAY_FLATTEN(arr)"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "REFRESH aaaaaaaaaaaa VIEW ab.aaaaac PARTITION START ('aaaaaaaaad') END ('aaaaaaaaae') FORCE WITH aaaf aaag",
+   "sql": "REFRESH MATERIALIZED VIEW db.lo_mv1 PARTITION START ('2020-02-01') END ('2020-03-01') FORCE WITH SYNC MODE"
   },
   {
    "dialect": "spark",
@@ -49162,8 +51027,33 @@
   },
   {
    "dialect": "starrocks",
+   "rendered": "CREATE TABLE a (ab INT, ac HLL aaaaaaaad) aaaaaaaae KEY (ab) aaaaaaaaaaf ag aaah (ab)",
+   "sql": "CREATE TABLE t (k1 INT, v1 HLL HLL_UNION) AGGREGATE KEY (k1) DISTRIBUTED BY HASH (k1)"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "DELETE FROM a WHERE b = 3",
+   "sql": "DELETE FROM t WHERE a = 1"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "ALTER TABLE a aab COLUMN c INT",
+   "sql": "ALTER TABLE t ADD COLUMN c INT"
+  },
+  {
+   "dialect": "starrocks",
    "rendered": "aaa[2]",
    "sql": "arr[1]"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "CREATE TABLE aaaaaaaaaaaaa (aaaaaab LARGEINT NOT NULL COMMENT 'aa aa aaac', date DATE NOT NULL COMMENT 'aaaa aa aaaad', aaaaaaaae VARCHAR(15) COMMENT 'aaaaaaaaa aa aaag', ah BIGINT aai DEFAULT 'j' COMMENT 'aaaaa aaaa aaaak') aaaaaaaal KEY (aaaaaab, date, aaaaaaaae) aaaaaaaaaam an aaao (aaaaaab)",
+   "sql": "CREATE TABLE aggregate_tbl (site_id LARGEINT NOT NULL COMMENT 'id of site', date DATE NOT NULL COMMENT 'time of event', city_code VARCHAR(20) COMMENT 'city_code of user', pv BIGINT SUM DEFAULT '0' COMMENT 'total page views') AGGREGATE KEY (site_id, date, city_code) DISTRIBUTED BY HASH (site_id)"
+  },
+  {
+   "dialect": "starrocks",
+   "rendered": "SELECT MAP{1:1, 2:2, 3:3} AS aaaaaad",
+   "sql": "SELECT MAP{1:1, 2:2, 3:3} AS numbers"
   },
   {
    "dialect": "starrocks",
@@ -49292,6 +51182,21 @@
   },
   {
    "dialect": "teradata",
+   "rendered": "SELECT * FROM a SAMPLE 101",
+   "sql": "SELECT * FROM t SAMPLE 100"
+  },
+  {
+   "dialect": "teradata",
+   "rendered": "SELECT * FROM a SAMPLE 1.01",
+   "sql": "SELECT * FROM t SAMPLE 0.25"
+  },
+  {
+   "dialect": "teradata",
+   "rendered": "SELECT * FROM a SAMPLE 1.1, 1.02",
+   "sql": "SELECT * FROM t SAMPLE 0.6, 0.25"
+  },
+  {
+   "dialect": "teradata",
    "rendered": "DATABASE aaaaaa",
    "sql": "DATABASE tduser"
   },
@@ -49364,6 +51269,16 @@
    "dialect": "teradata",
    "rendered": "LOCKING TABLE aaaaaa FOR aaaaab SELECT * FROM aaaaaa JOIN aaaaac ON aaaaaa.ad = aaaaac.ad",
    "sql": "LOCKING TABLE table1 FOR ACCESS SELECT * FROM table1 JOIN table2 ON table1.id = table2.id"
+  },
+  {
+   "dialect": "teradata",
+   "rendered": "LOCKING ROW FOR aaaaaa SELECT * FROM b",
+   "sql": "LOCKING ROW FOR ACCESS SELECT * FROM t"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT * FROM a",
+   "sql": "SELECT * FROM t"
   },
   {
    "dialect": "teradata",
@@ -49902,8 +51817,98 @@
   },
   {
    "dialect": "teradata",
+   "rendered": "SELECT SUM(a) OVER (PARTITION BY b ORDER BY c) FROM d",
+   "sql": "SELECT SUM(x) OVER (PARTITION BY p ORDER BY d) FROM t"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT SUM(a) OVER (PARTITION BY b ORDER BY c aaaad FIRST ROWS BETWEEN aaaaaaaae aaaaaaaaf AND aaaaaaaae aaaaaaaag) FROM h",
+   "sql": "SELECT SUM(x) OVER (PARTITION BY p ORDER BY d NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) FROM t"
+  },
+  {
+   "dialect": "teradata",
+   "rendered": "SELECT COUNT(*) OVER (ORDER BY a) FROM b",
+   "sql": "SELECT COUNT(*) OVER (ORDER BY d) FROM t"
+  },
+  {
+   "dialect": "teradata",
+   "rendered": "SELECT SUM(a) OVER (PARTITION BY b) FROM c",
+   "sql": "SELECT SUM(x) OVER (PARTITION BY p) FROM t"
+  },
+  {
+   "dialect": "teradata",
+   "rendered": "SELECT RANK() OVER (ORDER BY a), ROW_NUMBER() OVER (ORDER BY a), LAG(b) OVER (ORDER BY a), FIRST_VALUE(b) OVER (ORDER BY a) FROM c",
+   "sql": "SELECT RANK() OVER (ORDER BY d), ROW_NUMBER() OVER (ORDER BY d), LAG(x) OVER (ORDER BY d), FIRST_VALUE(x) OVER (ORDER BY d) FROM t"
+  },
+  {
+   "dialect": "teradata",
+   "rendered": "SELECT SUM(a) OVER (ORDER BY b ROWS aaaaaaaac aaaaaaaad) FROM e",
+   "sql": "SELECT SUM(x) OVER (ORDER BY d ROWS UNBOUNDED PRECEDING) FROM t"
+  },
+  {
+   "dialect": "teradata",
+   "rendered": "SELECT AVG(a) OVER (ORDER BY b ROWS BETWEEN aaaaaaaac aaaaaaaad AND aaaaaaaac aaaaaaaae) FROM f",
+   "sql": "SELECT AVG(x) OVER (ORDER BY d ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) FROM t"
+  },
+  {
+   "dialect": "teradata",
    "rendered": "RENAME ..... ... .. aaaaa aa",
    "sql": "RENAME TABLE emp TO employee"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "DAY_OF_WEEK(a) * 2",
+   "sql": "DAY_OF_WEEK(x) * 2"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "(MOD(EXTRACT(aaaaaaaaa FROM b) + 3, 4) + 5) * 6",
+   "sql": "(MOD(EXTRACT(DAYOFWEEK FROM x) + 5, 7) + 1) * 2"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "CAST(FROM_BASE(SUBSTR(TO_HEX(MD5(CAST(CAST(aaa AS VARCHAR) AS VARBINARY))),2,12),13) AS DECIMAL(14, 6))",
+   "sql": "CAST(FROM_BASE(SUBSTR(TO_HEX(MD5(CAST(CAST(col AS VARCHAR) AS VARBINARY))),1,14),16) AS DECIMAL(38, 0))"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "CAST(CAST(REGEXP_REPLACE(SUBSTRING(UPPER(TO_HEX(MD5(CAST(CAST(aaa AS STRING) AS BYTES)))), 2, 12), 'aaaaaaad', 'aaaae') AS INT64) AS BIGNUMERIC)",
+   "sql": "CAST(CAST(REGEXP_REPLACE(SUBSTRING(UPPER(TO_HEX(MD5(CAST(CAST(col AS STRING) AS BYTES)))), 1, 14), '^([+-]?)', '\\\\10x') AS INT64) AS BIGNUMERIC)"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "FROM_BASE('aaa', 11)",
+   "sql": "FROM_BASE('-ff', 16)"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "CAST(REGEXP_REPLACE('aaa', 'aaaaaaab', 'aaaac') AS INT64)",
+   "sql": "CAST(REGEXP_REPLACE('-ff', '^([+-]?)', '\\\\10x') AS INT64)"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "CAST(a AS DECIMAL(11, 3))",
+   "sql": "CAST(x AS DECIMAL(30, 0))"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "CAST(a AS DECIMAL(11, 3))",
+   "sql": "CAST(x AS DECIMAL(29, 0))"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "CAST(a AS NUMERIC)",
+   "sql": "CAST(x AS NUMERIC)"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "CAST(a AS DECIMAL(11, 12))",
+   "sql": "CAST(x AS DECIMAL(20, 10))"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "CAST(a AS DECIMAL(11))",
+   "sql": "CAST(x AS DECIMAL(38))"
   },
   {
    "dialect": "trino",
@@ -49934,6 +51939,16 @@
    "dialect": "trino",
    "rendered": "SELECT CONCAT_WS('a', CAST(NULL AS ARRAY(VARCHAR)))",
    "sql": "SELECT CONCAT_WS('-', CAST(NULL AS ARRAY(VARCHAR)))"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT TIMESTAMP 'aaaaaaaaaa'",
+   "sql": "SELECT TIMESTAMP '2020-01-01'"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT DATE_ADD('aaaaaaaaaaa', 2, TIMESTAMP 'aaaaaaaaaa aaaaaaac')",
+   "sql": "SELECT DATE_ADD('MILLISECOND', 1, TIMESTAMP '2020-01-01 00:00:00')"
   },
   {
    "dialect": "trino",
@@ -50002,6 +52017,26 @@
   },
   {
    "dialect": "trino",
+   "rendered": "SELECT TIMESTAMP 'aaaaaaaaaa aaaaaaaaaaaaa'",
+   "sql": "SELECT TIMESTAMP '2026-03-01 00:00:00.1234'"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT TIMESTAMP 'aaaaaaaaaa aaaaaaaaaaaaaaaaaa'",
+   "sql": "SELECT TIMESTAMP '2026-03-01 00:00:00.123456789'"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT TIMESTAMP 'aaaaaaaaaa aaaaaaaaaaaaa aaaaaa'",
+   "sql": "SELECT TIMESTAMP '2026-03-01 00:00:00.1234 +02:00'"
+  },
+  {
+   "dialect": "trino",
+   "rendered": "SELECT TIME 'aaaaaaaaaaaaa'",
+   "sql": "SELECT TIME '01:02:03.1234'"
+  },
+  {
+   "dialect": "trino",
    "rendered": "SELECT TIME 'aaaaaaaaaaaa aaaaaa'",
    "sql": "SELECT TIME '01:02:03.456 -08:00'"
   },
@@ -50017,8 +52052,8 @@
   },
   {
    "dialect": "trino",
-   "rendered": "SELECT CAST('aaaaaaaaaaaa aaaaaa' AS TIME WITH TIME aaab)",
-   "sql": "SELECT CAST('01:02:03.456 -08:00' AS TIME WITH TIME ZONE)"
+   "rendered": "SELECT CAST('aaaaaaaaaaaa aaaaaa' AS TIME(2) WITH TIME aaac)",
+   "sql": "SELECT CAST('01:02:03.456 -08:00' AS TIME(3) WITH TIME ZONE)"
   },
   {
    "dialect": "trino",
@@ -50057,8 +52092,8 @@
   },
   {
    "dialect": "trino",
-   "rendered": "SELECT CAST('aaaaaaaaaa aaaaaaaa aaaaaa' AS TIMESTAMP WITH TIME aaab)",
-   "sql": "SELECT CAST('2012-10-31 01:00:00 +02:00' AS TIMESTAMP WITH TIME ZONE)"
+   "rendered": "SELECT CAST('aaaaaaaaaa aaaaaaaa aaaaaa' AS TIMESTAMP(2) WITH TIME aaac)",
+   "sql": "SELECT CAST('2012-10-31 01:00:00 +02:00' AS TIMESTAMP(0) WITH TIME ZONE)"
   },
   {
    "dialect": "trino",
@@ -50687,6 +52722,16 @@
   },
   {
    "dialect": "tsql",
+   "rendered": "SELECT output FROM a",
+   "sql": "SELECT output FROM t"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "SELECT 1 output",
+   "sql": "SELECT 1 output"
+  },
+  {
+   "dialect": "tsql",
    "rendered": "SELECT TOP (SELECT 1) * FROM b",
    "sql": "SELECT TOP (SELECT 1) * FROM t"
   },
@@ -50828,7 +52873,7 @@
   {
    "dialect": "tsql",
    "rendered": "SELECT TOP 10 b.aaaaaaac, d.e.aaaaf('aaaaaaaaaaaaaaaaaaaaaaaaaaag', 'aaaah') AS aaaaaaaaaaaaai FROM aaaaaaaaaaaj.aak.aaaaaaaaaal AS b(aaaaam) CROSS APPLY aaaaaaaaaan.aaaao('aaaaaaaaaaap') AS q(r)",
-   "sql": "SELECT TOP 10 s.RECORDID, n.c.VALUE('(/*:FORM_ROOT/*:SOME_TAG)[1]', 'float') AS SOME_TAG_VALUE FROM source_table.dbo.source_data AS s(nolock) CROSS APPLY FormContent.nodes('/*:FORM_ROOT') AS N(C)"
+   "sql": "SELECT TOP 10 s.RECORDID, n.c.value('(/*:FORM_ROOT/*:SOME_TAG)[1]', 'float') AS SOME_TAG_VALUE FROM source_table.dbo.source_data AS s(nolock) CROSS APPLY FormContent.nodes('/*:FORM_ROOT') AS N(C)"
   },
   {
    "dialect": "tsql",
@@ -51582,6 +53627,21 @@
   },
   {
    "dialect": "tsql",
+   "rendered": "SELECT STRING_AGG(a, 'b') aaaaac aaaad (ORDER BY CASE WHEN a IS NULL THEN 5 ELSE 6 END, a) AS a FROM g",
+   "sql": "SELECT STRING_AGG(v, ',') WITHIN GROUP (ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v) AS v FROM t"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "SELECT a AS b, STRING_AGG(b, 'c') aaaaad aaaae (ORDER BY CASE WHEN b IS NULL THEN 6 ELSE 7 END, b) AS h FROM i GROUP BY a",
+   "sql": "SELECT x AS v, STRING_AGG(v, ',') WITHIN GROUP (ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v) AS w FROM t GROUP BY x"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT a AS b, STRING_AGG(b, 'c' ORDER BY b) AS d FROM e GROUP BY a",
+   "sql": "SELECT x AS v, STRING_AGG(v, ',' ORDER BY v) AS w FROM t GROUP BY x"
+  },
+  {
+   "dialect": "tsql",
    "rendered": "SELECT aaa FROM b OPTION(aaaac = 'aad')",
    "sql": "SELECT col FROM t OPTION(LABEL = 'foo')"
   },
@@ -51612,11 +53672,6 @@
   },
   {
    "dialect": "postgres",
-   "rendered": "SELECT * FROM a",
-   "sql": "SELECT * FROM t"
-  },
-  {
-   "dialect": "duckdb",
    "rendered": "SELECT * FROM a",
    "sql": "SELECT * FROM t"
   },
@@ -53682,6 +55737,61 @@
   },
   {
    "dialect": "tsql",
+   "rendered": "UPDATE aaa.b (aaaaaac) SET d = 5",
+   "sql": "UPDATE dbo.t (ROWLOCK) SET x = 1"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "DELETE FROM aaa.b (aaaaaac)",
+   "sql": "DELETE FROM dbo.t (ROWLOCK)"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "SELECT * FROM aaa.b (aaaaac) JOIN aaa.d AS d (aaaaaae) ON b.af = d.af",
+   "sql": "SELECT * FROM dbo.t (NOLOCK) JOIN dbo.u AS u (ROWLOCK) ON t.id = u.id"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "SELECT * FROM aaa.b (aaaaac) AS d JOIN aaa.e AS e ON d.af = e.af",
+   "sql": "SELECT * FROM dbo.t (NOLOCK) AS s JOIN dbo.u AS u ON s.id = u.id"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "SELECT * FROM aaa.b AS c /* ..... */ (aaaaad /* .... */)",
+   "sql": "SELECT * FROM dbo.t AS s /* alias */ (NOLOCK /* hint */)"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "INSERT INTO aaa.b (aaaaac) SELECT 4",
+   "sql": "INSERT INTO dbo.t (nolock) SELECT 1"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "UPDATE a SET b = 3 FROM aad.e AS a (aaaaaaf) JOIN aad.g AS g ON a.ah = g.ah",
+   "sql": "UPDATE s SET x = 1 FROM dbo.t AS s (ROWLOCK) JOIN dbo.u AS u ON s.id = u.id"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "SELECT * FROM aaa.b AS c (aaaaad) PIVOT(SUM(e) FOR af IN ([g])) AS h",
+   "sql": "SELECT * FROM dbo.t AS s (NOLOCK) PIVOT(SUM(x) FOR id IN ([1])) AS p"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "SELECT * FROM aaa.b (aaaaac)",
+   "sql": "SELECT * FROM dbo.t (NOLOCK)"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "SELECT * FROM aaa.b WITH (aaaaac)",
+   "sql": "SELECT * FROM dbo.t WITH (NOLOCK)"
+  },
+  {
+   "dialect": "spark",
+   "rendered": "SELECT * FROM aaa.b",
+   "sql": "SELECT * FROM dbo.t"
+  },
+  {
+   "dialect": "tsql",
    "rendered": "SELECT * FROM OPENJSON(@aaaa)",
    "sql": "SELECT * FROM OPENJSON(@json)"
   },
@@ -53994,6 +56104,16 @@
    "dialect": "tsql",
    "rendered": "GO",
    "sql": "GO"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "DROP INDEX aa EXISTS b ON aac.d",
+   "sql": "DROP INDEX IF EXISTS i ON dbo.t"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "ALTER TABLE aaa DROP COLUMN aaab, aaac",
+   "sql": "ALTER TABLE tbl DROP COLUMN col1, col2"
   },
   {
    "dialect": "tsql",
@@ -54872,7 +56992,7 @@
   },
   {
    "dialect": "oracle",
-   "rendered": "ANALYZE TABLE aa.aab aaaaaaaaaaac(aad = 'aad', aae = 'aae')",
+   "rendered": "ANALYZE TABLE aa.aab SUBPARTITION(aac = 'aac', aad = 'aad')",
    "sql": "ANALYZE TABLE db.tbl SUBPARTITION(foo = 'foo', bar = 'bar')"
   },
   {
@@ -58061,5 +60181,5 @@
    "sql": "LOCALTIMESTAMP(3)"
   }
  ],
- "reference": "c7778cf56d90e409c75e59b82842544b118fa850"
+ "reference": "78b24a744adb8d5dc0eb285f067087338b60f266"
 }

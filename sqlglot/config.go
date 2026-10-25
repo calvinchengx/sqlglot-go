@@ -32,26 +32,42 @@ type Config struct {
 	// and `'` as escapes but writes only `\`; StringEscapes alone cannot
 	// tell the two apart once order is gone, which is why this exists
 	// alongside it rather than replacing it.
-	StringEscapePreferred            string
-	ByteStringEscapes                set
-	IdentifierEscapes                set
-	EscapeFollowChars                set
-	Commands                         ttset
-	CommandPrefixTokens              ttset
-	NestedComments                   bool
-	HintStart                        string
-	TokensPrecedingHint              ttset
-	HasBitStrings                    bool
-	HasHexStrings                    bool
-	NumericLiterals                  map[string]string
-	VarSingleTokens                  set
-	StringEscapesAllowedInRawStrings bool
-	HeredocTagIsIdentifier           bool
-	HeredocStringAlternative         TokenType
-	NumbersCanBeUnderscoreSeparated  bool
-	NumbersCanHaveDecimals           bool
-	IdentifiersCanStartWithDigit     bool
-	UnescapedSequences               map[string]string
+	StringEscapePreferred string
+	ByteStringEscapes     set
+	IdentifierEscapes     set
+	// NumericEscapes is keyed by the character after the backslash: "x" for
+	// `\x41`, "u"/"U" for `\u0041`, and "0" for an OCTAL escape (`\101`,
+	// which has no letter of its own). Each value is base, minimum digits,
+	// maximum digits, and the largest value the escape may encode.
+	NumericEscapes           map[string][4]int
+	DropUnknownEscapes       bool
+	NumericEscapesAreBytes   bool
+	ByteStringsAreBytes      bool
+	LoneSurrogateReplacement string
+	// EscapedSequences is the WRITE-side counterpart of UnescapedSequences,
+	// and is read off the reference rather than reversed here: Snowflake maps
+	// `\\a` to `a`, which cannot be reversed back to `\a` without losing
+	// the escape.
+	EscapedSequences                   map[string]string
+	IdentifierEscapedSequences         map[string]string
+	StringsSupportEscapedSequences     bool
+	ByteStringsSupportEscapedSequences bool
+	Commands                           ttset
+	CommandPrefixTokens                ttset
+	NestedComments                     bool
+	HintStart                          string
+	TokensPrecedingHint                ttset
+	HasBitStrings                      bool
+	HasHexStrings                      bool
+	NumericLiterals                    map[string]string
+	VarSingleTokens                    set
+	StringEscapesAllowedInRawStrings   bool
+	HeredocTagIsIdentifier             bool
+	HeredocStringAlternative           TokenType
+	NumbersCanBeUnderscoreSeparated    bool
+	NumbersCanHaveDecimals             bool
+	IdentifiersCanStartWithDigit       bool
+	UnescapedSequences                 map[string]string
 
 	// Tables is the parser's vocabulary for this dialect.
 	Tables *ParserTables

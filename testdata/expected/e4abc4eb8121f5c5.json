@@ -1,0 +1,613 @@
+{
+ "dialect": "spark",
+ "rendered": "FROM x INSERT OVERWRITE TABLE a PARTITION(ds = '1') SELECT k WHERE v > 0 INSERT INTO b SELECT k, v",
+ "sql": "FROM x INSERT OVERWRITE TABLE a PARTITION(ds = '1') SELECT k WHERE v > 0 INSERT INTO b SELECT k, v",
+ "tokens": [
+  {
+   "c": 4,
+   "e": 3,
+   "l": 1,
+   "s": 0,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 5,
+   "t": "VAR",
+   "x": "x"
+  },
+  {
+   "c": 13,
+   "e": 12,
+   "l": 1,
+   "s": 7,
+   "t": "INSERT",
+   "x": "INSERT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 14,
+   "t": "OVERWRITE",
+   "x": "OVERWRITE"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 24,
+   "t": "TABLE",
+   "x": "TABLE"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "VAR",
+   "x": "a"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 32,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 41,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 44,
+   "e": 43,
+   "l": 1,
+   "s": 42,
+   "t": "VAR",
+   "x": "ds"
+  },
+  {
+   "c": 46,
+   "e": 45,
+   "l": 1,
+   "s": 45,
+   "t": "EQ",
+   "x": "="
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 47,
+   "t": "STRING",
+   "x": "1"
+  },
+  {
+   "c": 51,
+   "e": 50,
+   "l": 1,
+   "s": 50,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 58,
+   "e": 57,
+   "l": 1,
+   "s": 52,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 60,
+   "e": 59,
+   "l": 1,
+   "s": 59,
+   "t": "VAR",
+   "x": "k"
+  },
+  {
+   "c": 66,
+   "e": 65,
+   "l": 1,
+   "s": 61,
+   "t": "WHERE",
+   "x": "WHERE"
+  },
+  {
+   "c": 68,
+   "e": 67,
+   "l": 1,
+   "s": 67,
+   "t": "VAR",
+   "x": "v"
+  },
+  {
+   "c": 70,
+   "e": 69,
+   "l": 1,
+   "s": 69,
+   "t": "GT",
+   "x": ">"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 71,
+   "t": "NUMBER",
+   "x": "0"
+  },
+  {
+   "c": 79,
+   "e": 78,
+   "l": 1,
+   "s": 73,
+   "t": "INSERT",
+   "x": "INSERT"
+  },
+  {
+   "c": 84,
+   "e": 83,
+   "l": 1,
+   "s": 80,
+   "t": "INTO",
+   "x": "INTO"
+  },
+  {
+   "c": 86,
+   "e": 85,
+   "l": 1,
+   "s": 85,
+   "t": "VAR",
+   "x": "b"
+  },
+  {
+   "c": 93,
+   "e": 92,
+   "l": 1,
+   "s": 87,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 95,
+   "e": 94,
+   "l": 1,
+   "s": 94,
+   "t": "VAR",
+   "x": "k"
+  },
+  {
+   "c": 96,
+   "e": 95,
+   "l": 1,
+   "s": 95,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 98,
+   "e": 97,
+   "l": 1,
+   "s": 97,
+   "t": "VAR",
+   "x": "v"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.MultitableInserts"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.Insert",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "i": 1,
+   "k": "is_function",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 1,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
+   "k": "this",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "a"
+  },
+  {
+   "i": 4,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Partition",
+   "i": 3,
+   "k": "partition"
+  },
+  {
+   "i": 7,
+   "k": "subpartition",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.EQ",
+   "i": 7,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 9,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 10,
+   "k": "this",
+   "m": {
+    "col": 44,
+    "end": 43,
+    "line": 1,
+    "start": 42
+   }
+  },
+  {
+   "i": 11,
+   "k": "this",
+   "v": "ds"
+  },
+  {
+   "i": 11,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 9,
+   "k": "expression",
+   "m": {
+    "col": 50,
+    "end": 49,
+    "line": 1,
+    "start": 47
+   }
+  },
+  {
+   "i": 14,
+   "k": "this",
+   "v": "1"
+  },
+  {
+   "i": 14,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "stored",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "by_name",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "partition",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "settings",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "default",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 1,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 23,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 24,
+   "k": "this",
+   "m": {
+    "col": 60,
+    "end": 59,
+    "line": 1,
+    "start": 59
+   }
+  },
+  {
+   "i": 25,
+   "k": "this",
+   "v": "k"
+  },
+  {
+   "i": 25,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Where",
+   "i": 23,
+   "k": "where"
+  },
+  {
+   "c": "sqlglot.expressions.core.GT",
+   "i": 28,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Column",
+   "i": 29,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 30,
+   "k": "this",
+   "m": {
+    "col": 68,
+    "end": 67,
+    "line": 1,
+    "start": 67
+   }
+  },
+  {
+   "i": 31,
+   "k": "this",
+   "v": "v"
+  },
+  {
+   "i": 31,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 29,
+   "k": "expression",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 71
+   }
+  },
+  {
+   "i": 34,
+   "k": "this",
+   "v": "0"
+  },
+  {
+   "i": 34,
+   "k": "is_string",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "overwrite",
+   "v": true
+  },
+  {
+   "i": 1,
+   "k": "ignore",
+   "v": false
+  },
+  {
+   "i": 1,
+   "k": "source",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.dml.Insert",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "i": 40,
+   "k": "is_function",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 40,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 42,
+   "k": "this",
+   "m": {
+    "col": 86,
+    "end": 85,
+    "line": 1,
+    "start": 85
+   }
+  },
+  {
+   "i": 43,
+   "k": "this",
+   "v": "b"
+  },
+  {
+   "i": 43,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 40,
+   "k": "stored",
+   "v": false
+  },
+  {
+   "i": 40,
+   "k": "by_name",
+   "v": false
+  },
+  {
+   "i": 40,
+   "k": "exists",
+   "v": false
+  },
+  {
+   "i": 40,
+   "k": "partition",
+   "v": false
+  },
+  {
+   "i": 40,
+   "k": "settings",
+   "v": false
+  },
+  {
+   "i": 40,
+   "k": "default",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 40,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 52,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 53,
+   "k": "this",
+   "m": {
+    "col": 95,
+    "end": 94,
+    "line": 1,
+    "start": 94
+   }
+  },
+  {
+   "i": 54,
+   "k": "this",
+   "v": "k"
+  },
+  {
+   "i": 54,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Column",
+   "i": 52,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 57,
+   "k": "this",
+   "m": {
+    "col": 98,
+    "end": 97,
+    "line": 1,
+    "start": 97
+   }
+  },
+  {
+   "i": 58,
+   "k": "this",
+   "v": "v"
+  },
+  {
+   "i": 58,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 40,
+   "k": "overwrite",
+   "v": false
+  },
+  {
+   "i": 40,
+   "k": "ignore",
+   "v": false
+  },
+  {
+   "i": 40,
+   "k": "source",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "source"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 64,
+   "k": "this",
+   "m": {
+    "col": 6,
+    "end": 5,
+    "line": 1,
+    "start": 5
+   }
+  },
+  {
+   "i": 65,
+   "k": "this",
+   "v": "x"
+  },
+  {
+   "i": 65,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

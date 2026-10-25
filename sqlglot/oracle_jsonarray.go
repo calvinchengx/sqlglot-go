@@ -34,9 +34,6 @@ func (p *parser) expressionOrJSONArray() (*Expression, error) {
 	if !p.match(TokR_PAREN) {
 		return nil, p.unsupported("unclosed JSON_ARRAY")
 	}
-	if p.tables.SupportsColumnJoinMarks {
-		array.Set("join_mark", false)
-	}
 	return array, nil
 }
 

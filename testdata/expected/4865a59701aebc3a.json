@@ -1,0 +1,196 @@
+{
+ "dialect": "postgres",
+ "rendered": "SELECT U&'d\\0061t\\0061', U&'d!+000061ta' UESCAPE '!', U&'a\\\\b', U&'\\D83D\\DE00'",
+ "sql": "SELECT U&'d\\0061t\\0061', U&'d!+000061ta' UESCAPE '!', U&'a\\\\b', U&'\\D83D\\DE00'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 23,
+   "e": 22,
+   "l": 1,
+   "s": 7,
+   "t": "UNICODE_STRING",
+   "x": "d\\0061t\\0061"
+  },
+  {
+   "c": 24,
+   "e": 23,
+   "l": 1,
+   "s": 23,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 40,
+   "e": 39,
+   "l": 1,
+   "s": 25,
+   "t": "UNICODE_STRING",
+   "x": "d!+000061ta"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 41,
+   "t": "VAR",
+   "x": "UESCAPE"
+  },
+  {
+   "c": 52,
+   "e": 51,
+   "l": 1,
+   "s": 49,
+   "t": "STRING",
+   "x": "!"
+  },
+  {
+   "c": 53,
+   "e": 52,
+   "l": 1,
+   "s": 52,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 54,
+   "t": "UNICODE_STRING",
+   "x": "a\\\\b"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 62,
+   "t": "COMMA",
+   "x": ","
+  },
+  {
+   "c": 78,
+   "e": 77,
+   "l": 1,
+   "s": 64,
+   "t": "UNICODE_STRING",
+   "x": "\\D83D\\DE00"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.UnicodeString",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 23,
+    "end": 22,
+    "line": 1,
+    "start": 7
+   }
+  },
+  {
+   "i": 1,
+   "k": "this",
+   "v": "d\\0061t\\0061"
+  },
+  {
+   "i": 1,
+   "k": "escape",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.UnicodeString",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 40,
+    "end": 39,
+    "line": 1,
+    "start": 25
+   }
+  },
+  {
+   "i": 4,
+   "k": "this",
+   "v": "d!+000061ta"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 4,
+   "k": "escape",
+   "m": {
+    "col": 52,
+    "end": 51,
+    "line": 1,
+    "start": 49
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "!"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.UnicodeString",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 54
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "a\\\\b"
+  },
+  {
+   "i": 9,
+   "k": "escape",
+   "v": false
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.query.UnicodeString",
+   "i": 0,
+   "k": "expressions",
+   "m": {
+    "col": 78,
+    "end": 77,
+    "line": 1,
+    "start": 64
+   }
+  },
+  {
+   "i": 12,
+   "k": "this",
+   "v": "\\D83D\\DE00"
+  },
+  {
+   "i": 12,
+   "k": "escape",
+   "v": false
+  }
+ ]
+}

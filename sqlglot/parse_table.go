@@ -1,6 +1,10 @@
 package sqlglot
 
-import "strings"
+import (
+	"math"
+	"strconv"
+	"strings"
+)
 
 // FROM and its table references.
 
@@ -56,6 +60,27 @@ func (p *parser) parseJoin() (*Expression, error) {
 			join.Set("kind", "CROSS")
 		}
 		return join, nil
+	}
+
+	// DuckDB names a join's TYPE in a parenthetical of its own -- `JOIN BY
+	// (TYPE left) b` -- which is the SIDE and KIND, read after the join is
+	// built (DuckDBParser._parse_join).
+	duckdbType := ""
+	if p.dialect == "duckdb" && p.atWords("JOIN", "BY", "(", "TYPE") {
+		p.advance() // JOIN
+		p.advance() // BY
+		p.advance() // (
+		p.advance() // TYPE
+		name := p.parseIDVarAny()
+		if name == nil {
+			return nil, p.unsupported("JOIN BY (TYPE ...) without a type")
+		}
+		duckdbType = strings.ToUpper(name.Name())
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed JOIN BY (TYPE ...)")
+		}
+		mark := p.index
+		_ = mark
 	}
 
 	mark := p.index
@@ -154,7 +179,7 @@ func (p *parser) parseJoin() (*Expression, error) {
 	// STRAIGHT_JOIN is the word AND the join: it carries its own JOIN, so
 	// none follows it.
 	straight := kind != nil && kind.Type == TokSTRAIGHT_JOIN
-	if !p.match(TokJOIN) && !straight {
+	if duckdbType == "" && !p.match(TokJOIN) && !straight {
 		// A side or a kind with no JOIN after it is not a join at all: it
 		// belongs to what follows -- a set operation's own side and kind,
 		// `SELECT 1 INNER UNION ALL SELECT 3` -- and the reference retreats
@@ -277,6 +302,60 @@ func (p *parser) parseJoin() (*Expression, error) {
 		}
 		if k, _ := join.Args["kind"].(string); k == "ARRAY" {
 			replaceArrayJoinTables(join)
+		}
+	}
+	if p.dialect == "duckdb" {
+		if duckdbType != "" {
+			// `BY (TYPE left_outer_join)` sets the SIDE and KIND after the
+			// join is built, so they are the node's last arguments.
+			parts := strings.Split(strings.TrimSuffix(duckdbType, "_JOIN"), "_")
+			if len(parts) > 0 && (parts[0] == "LEFT" || parts[0] == "RIGHT" || parts[0] == "FULL") {
+				join.Set("side", parts[0])
+				parts = parts[1:]
+			}
+			if kind := strings.Join(parts, " "); kind != "" {
+				join.Set("kind", kind)
+			}
+		}
+		// `[APPROX] NEAREST n BY DISTANCE|SIMILARITY <expr>` follows the join
+		// (DuckDBParser._parse_join).
+		approximate, hasNearest := false, false
+		if p.atWords("APPROX", "NEAREST") {
+			p.advance()
+			p.advance()
+			approximate, hasNearest = true, true
+		} else if p.atWords("NEAREST") {
+			p.advance()
+			hasNearest = true
+		}
+		if hasNearest {
+			c := p.curr()
+			if c == nil || c.Type != TokNUMBER {
+				return nil, p.unsupported("NEAREST without a count")
+			}
+			p.advance()
+			count := New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})
+			if !p.atWords("BY") {
+				return nil, p.unsupported("NEAREST without BY")
+			}
+			p.advance()
+			similarity := false
+			switch {
+			case p.atWords("DISTANCE"):
+				p.advance()
+			case p.atWords("SIMILARITY"):
+				p.advance()
+				similarity = true
+			default:
+				return nil, p.unsupported("NEAREST without DISTANCE or SIMILARITY")
+			}
+			expr, err := p.parseDisjunction()
+			if err != nil {
+				return nil, err
+			}
+			join.Set("nearest", New("Nearest",
+				Arg{"this", expr}, Arg{"count", count},
+				Arg{"approximate", approximate}, Arg{"similarity", similarity}))
 		}
 	}
 	return join, nil
@@ -629,7 +708,10 @@ func (p *parser) parseTable() (*Expression, error) {
 		// would be refused for the wrong reason. Reading a local file through
 		// `main.read_csv_auto('/etc/passwd')` is a real bypass, and the audit
 		// line has to name it.
-		if p.namesAFunctionCall() {
+		//
+		// T-SQL's bare table hint looks like a call and is not one:
+		// `FROM dbo.t (NOLOCK)`.
+		if p.namesAFunctionCall() && !p.atBareTableHintCall() {
 			// Some names are not a Table here at all: `FROM UNNEST(x)` is an
 			// Unnest in the reference. Wrapping the call in a Table writes the
 			// same SQL back and is a different tree, so it is refused.
@@ -821,6 +903,38 @@ func (p *parser) tableRest(table *Expression) (*Expression, error) {
 	}
 	if alias != nil {
 		table.Set("alias", alias)
+	}
+	// T-SQL reads `dbo.t (NOLOCK)` as a bare table HINT, not as an alias
+	// whose column list happens to hold one word: the parenthesis arrives as
+	// an unnamed alias, and is moved onto the table as a WithTableHint
+	// (TSQLParser._parse_table).
+	if (p.dialect == "tsql" || p.dialect == "fabric") && table.Class == "Table" &&
+		table.Args["hints"] == nil && alias != nil {
+		if hint := bareTableHintOf(alias); hint != nil && tablePartsAreIdentifiers(table) {
+			alias.Set("columns", nil)
+			// The unnamed alias was only the hint: whatever follows is the
+			// table's REAL alias, read now.
+			if name, _ := alias.Args["this"].(*Expression); name == nil {
+				realAlias, aerr := p.parseTableAlias()
+				if aerr != nil {
+					return nil, aerr
+				}
+				table.Set("alias", realAlias)
+			}
+			// The hint's own comment moves onto the word it names
+			// (TSQLParser._parse_table).
+			hintVar := New("Var", Arg{"this", hint.Name()})
+			hintVar.Comments = append(hintVar.Comments, hint.Comments...)
+			table.Set("hints", []*Expression{New("WithTableHint",
+				Arg{"expressions", []*Expression{hintVar}})})
+			// The reference sets this hint LAST -- its conversion runs after
+			// the joins and pivots the table already carries -- so the key is
+			// moved there once the statement is read.
+			if p.bareHintTables == nil {
+				p.bareHintTables = map[*Expression]bool{}
+			}
+			p.bareHintTables[table] = true
+		}
 	}
 	// The time-travel clause may also stand AFTER the alias --
 	// `FROM foo AS t0 FOR SYSTEM_TIME AS OF z` (Parser._parse_table).
@@ -1185,6 +1299,21 @@ func (p *parser) pivotColumns(aggregates, values []*Expression) ([]*Expression, 
 				base = alias.Name()
 			}
 		}
+		// StarRocks names a multi-column pivot value by its members in
+		// braces: `FOR (c2, c3) IN ((1, 1))` is the column `{1,1}`
+		// (StarRocksParser._parse_pivot).
+		if p.dialect == "starrocks" && value.Class == "Tuple" {
+			members, _ := value.Args["expressions"].([]*Expression)
+			parts := make([]string, 0, len(members))
+			for _, member := range members {
+				text, err := Generate(member, p.dialect)
+				if err != nil {
+					return nil, err
+				}
+				parts = append(parts, text)
+			}
+			base = "{" + strings.Join(parts, ",") + "}"
+		}
 		if len(names) == 0 {
 			out = append(out, identifierFor(base))
 			continue
@@ -1245,7 +1374,24 @@ func (p *parser) parseTableSample() (*Expression, error) {
 				break
 			}
 		}
-		return New("TableSample", Arg{"expressions", items}), nil
+		sample := New("TableSample", Arg{"expressions", items})
+		// A single number names a row COUNT or a PROPORTION: an integer is
+		// a size, a fraction a percent scaled by a hundred
+		// (TeradataParser._parse_table_sample).
+		if p.dialect == "teradata" && len(items) == 1 && items[0] != nil && items[0].Class == "Literal" {
+			text, _ := items[0].Args["this"].(string)
+			isString, _ := items[0].Args["is_string"].(bool)
+			if !isString {
+				if scaled, ok := teradataSamplePercent(text); ok {
+					sample.Set("percent", New("Literal", Arg{"this", scaled}, Arg{"is_string", false}))
+					sample.Set("expressions", []*Expression{})
+				} else {
+					sample.Set("size", items[0])
+					sample.Set("expressions", []*Expression{})
+				}
+			}
+		}
+		return sample, nil
 	}
 	// ClickHouse says `SAMPLE <expr>` with no parentheses and no method
 	// (Parser._parse_table_sample, TABLESAMPLE_REQUIRES_PARENS).
@@ -1673,8 +1819,35 @@ func (p *parser) namesAFunctionCall() bool {
 }
 
 func (p *parser) parseTableAlias() (*Expression, error) {
+	// DuckDB's nearest-neighbour clause follows the table and is not an
+	// alias: `b NEAREST 1 BY ...` / `b APPROX NEAREST ...`
+	// (DuckDBParser._parse_table_alias).
+	if p.dialect == "duckdb" {
+		if p.atWords("NEAREST") {
+			if n := p.next(); n != nil && n.Type == TokNUMBER {
+				return nil, nil
+			}
+		}
+		if p.atWords("APPROX", "NEAREST") {
+			return nil, nil
+		}
+	}
 	explicit := p.match(TokALIAS)
 	if !explicit && !p.atAliasName() {
+		// T-SQL's bare table hint arrives as an UNNAMED alias whose column
+		// list holds one word -- `FROM dbo.t (NOLOCK)` -- and _parse_table
+		// turns it into a hint (Parser._parse_table_alias reads the
+		// parentheses even with no name).
+		if (p.dialect == "tsql" || p.dialect == "fabric") && p.at(TokL_PAREN) {
+			columns, cerr := p.parseAliasColumns()
+			if cerr != nil {
+				return nil, cerr
+			}
+			if len(columns) == 0 {
+				return nil, nil
+			}
+			return New("TableAlias", Arg{"columns", columns}), nil
+		}
 		return nil, nil
 	}
 	// The NAME may be absent where a column list follows: `UNNEST(x) AS (a)`.
@@ -1910,10 +2083,12 @@ func (p *parser) parseUnnestWithAlias(withAlias bool) (*Expression, error) {
 		unnestIdent := func() *Expression {
 			return New("Identifier", Arg{"this", "unnest"}, Arg{"quoted", false})
 		}
+		// With several arrays every column is named `unnest`, so none is
+		// added and only the table alias is defaulted.
 		if alias == nil {
-			alias = New("TableAlias", Arg{"this", unnestIdent()},
-				Arg{"columns", []*Expression{unnestIdent()}})
-		} else if cols, _ := alias.Args["columns"].([]*Expression); len(cols) == 0 {
+			alias = New("TableAlias", Arg{"this", unnestIdent()})
+		}
+		if cols, _ := alias.Args["columns"].([]*Expression); len(cols) == 0 && len(items) == 1 {
 			alias.Set("columns", []*Expression{unnestIdent()})
 		}
 	}
@@ -2140,6 +2315,22 @@ func (p *parser) parseLateral() (*Expression, error) {
 			return nil, err
 		}
 	}
+	// Snowflake names the columns a FLATTEN produces, giving the LATERAL an
+	// alias of `_flattened` where none was written
+	// (SnowflakeParser._parse_lateral, FLATTEN_COLUMNS).
+	if p.dialect == "snowflake" && this != nil && this.Class == "Explode" {
+		columns := make([]*Expression, 0, len(flattenColumns))
+		for _, name := range flattenColumns {
+			columns = append(columns, New("Identifier", Arg{"this", name}, Arg{"quoted", false}))
+		}
+		if alias == nil {
+			alias = New("TableAlias", Arg{"this",
+				New("Identifier", Arg{"this", "_flattened"}, Arg{"quoted", false})},
+				Arg{"columns", columns})
+		} else if existing, _ := alias.Args["columns"].([]*Expression); len(existing) == 0 {
+			alias.Set("columns", columns)
+		}
+	}
 	return New("Lateral",
 		Arg{"this", this},
 		Arg{"view", false},
@@ -2148,6 +2339,10 @@ func (p *parser) parseLateral() (*Expression, error) {
 		Arg{"cross_apply", nil},
 		Arg{"ordinality", ordinality}), nil
 }
+
+// flattenColumns are the columns a Snowflake FLATTEN produces
+// (SnowflakeParser.FLATTEN_COLUMNS).
+var flattenColumns = []string{"SEQ", "KEY", "PATH", "INDEX", "VALUE", "THIS"}
 
 // parseTableHint reads `WITH (NOLOCK, INDEX(i))`, the advice T-SQL gives an
 // engine about how to read a table.
@@ -2454,4 +2649,43 @@ func flattenDot(e *Expression) []*Expression {
 		}
 	}
 	return out
+}
+
+// bareTableHintOf returns the hint an alias's single column names, where that
+// column is one of T-SQL's bare table hints.
+func bareTableHintOf(alias *Expression) *Expression {
+	columns, _ := alias.Args["columns"].([]*Expression)
+	if len(columns) != 1 || columns[0].Class != "Identifier" {
+		return nil
+	}
+	quoted, _ := columns[0].Args["quoted"].(bool)
+	if quoted || !bareTableHints[strings.ToUpper(columns[0].Name())] {
+		return nil
+	}
+	return columns[0]
+}
+
+// tablePartsAreIdentifiers reports whether every part of a table's name is a
+// plain identifier.
+func tablePartsAreIdentifiers(table *Expression) bool {
+	for _, key := range []string{"this", "db", "catalog"} {
+		part, _ := table.Args[key].(*Expression)
+		if part != nil && part.Class != "Identifier" {
+			return false
+		}
+	}
+	return true
+}
+
+// teradataSamplePercent turns a fractional SAMPLE size into a percentage, and
+// reports false where the number is an integer (a row count instead).
+func teradataSamplePercent(text string) (string, bool) {
+	value, err := strconv.ParseFloat(text, 64)
+	if err != nil || value == math.Trunc(value) {
+		return "", false
+	}
+	scaled := value * 100
+	// Trim the trailing zeros the way the reference's `normalize` does.
+	formatted := strconv.FormatFloat(scaled, 'f', -1, 64)
+	return formatted, true
 }

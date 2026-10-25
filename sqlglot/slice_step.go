@@ -15,8 +15,10 @@ package sqlglot
 func (p *parser) parseSliceRest(low *Expression) (*Expression, error) {
 	var high *Expression
 	if p.at(TokDASH) && p.next() != nil && p.next().Type == TokCOLON {
+		// DuckDB writes `[a:-:step]` for "the default end", which depends on
+		// the sign of the step: the dash names no end at all
+		// (Parser._parse_slice).
 		p.advance()
-		high = New("Neg", Arg{"this", New("Literal", Arg{"this", "1"}, Arg{"is_string", false})})
 	} else if !p.at(TokR_BRACKET) && !p.at(TokCOMMA) && !p.atSliceStart() {
 		e, err := p.parseExpression()
 		if err != nil {

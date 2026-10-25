@@ -33,7 +33,7 @@ func (p *parser) oracleNthValueFrom(this *Expression, err error) (*Expression, e
 		this = window
 	}
 	if marked {
-		this.Set("join_mark", false)
+		this.Set("join_mark", true)
 	}
 	return this, nil
 }

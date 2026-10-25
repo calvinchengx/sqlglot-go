@@ -1,6 +1,6 @@
 {
  "dialect": "bigquery",
- "rendered": "SAFE_CONVERT_BYTES_TO_STRING(b'\u00c2')",
+ "rendered": "SAFE_CONVERT_BYTES_TO_STRING(b'\\xc3\\x82')",
  "sql": "SAFE_CONVERT_BYTES_TO_STRING(b'\u00c2')",
  "tokens": [
   {
@@ -25,7 +25,7 @@
    "l": 1,
    "s": 29,
    "t": "BYTE_STRING",
-   "x": "\u00c2"
+   "x": "\u00c3\u0082"
   },
   {
    "c": 34,
@@ -40,10 +40,10 @@
   {
    "c": "sqlglot.expressions.string.SafeConvertBytesToString",
    "m": {
+    "bigquery_name": "SAFE_CONVERT_BYTES_TO_STRING",
     "col": 28,
     "end": 27,
     "line": 1,
-    "name": "SAFE_CONVERT_BYTES_TO_STRING",
     "start": 0
    }
   },
@@ -61,7 +61,7 @@
   {
    "i": 1,
    "k": "this",
-   "v": "\u00c2"
+   "v": "\u00c3\u0082"
   },
   {
    "i": 1,

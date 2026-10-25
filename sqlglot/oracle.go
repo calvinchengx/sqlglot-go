@@ -12,9 +12,13 @@ func init() {
 		// Oracle's (+) is a join mark on a column. The reference stamps
 		// every column, false when the mark is absent.
 		tables.SupportsColumnJoinMarks = true
+		// Oracle binds IS BELOW comparisons (OracleParser.IS_PREDICATE_PRECEDENCE).
+		tables.ISPredicatePrecedence = "LOW"
 		parserTables["oracle"] = &tables
 	}
-	base := dialectConfigs[""]
+	// The tokenizer configuration is the reference's own, generated with the
+	// rest of them -- Oracle's alternative quoting (q'[...]') lives there.
+	base := dialectConfigs["oracle"]
 	if base == nil {
 		return
 	}

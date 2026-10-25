@@ -111,6 +111,16 @@ func (p *parser) parseIntoInsert() (*Expression, error) {
 
 func (g *generator) writeMultitableInserts(e *Expression) string {
 	kind, _ := e.Args["kind"].(string)
+	// No kind is Hive's FROM-first form: the source first, then every insert
+	// fed from it (Generator.multitableinserts_sql).
+	if kind == "" {
+		items, _ := e.Args["expressions"].([]*Expression)
+		parts := make([]string, 0, len(items))
+		for _, item := range items {
+			parts = append(parts, g.node(item))
+		}
+		return g.withPrefix(e, "FROM "+g.child(e, "source")+" "+strings.Join(parts, " "))
+	}
 	out := "INSERT " + kind
 	branches, _ := e.Args["expressions"].([]*Expression)
 	for _, branch := range branches {

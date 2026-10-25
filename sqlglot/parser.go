@@ -59,7 +59,27 @@ func ParseOne(sql, dialect string) (*Expression, error) {
 	if dialect == "dax" {
 		return p.finishDAX(p.parseStatement())
 	}
-	return p.parseOne()
+	tree, perr := p.parseOne()
+	p.finishBareHints()
+	return tree, perr
+}
+
+// finishBareHints moves a T-SQL table hint the parser attached while reading
+// the table to the END of the table's arguments, which is where the
+// reference's own conversion leaves it -- after the joins and pivots.
+func (p *parser) finishBareHints() {
+	for table := range p.bareHintTables {
+		if table == nil || table.Args["hints"] == nil {
+			continue
+		}
+		keys := make([]string, 0, len(table.Keys))
+		for _, k := range table.Keys {
+			if k != "hints" {
+				keys = append(keys, k)
+			}
+		}
+		table.Keys = append(keys, "hints")
+	}
 }
 
 // parser walks a token stream. The cursor mirrors the reference's: index
@@ -84,6 +104,27 @@ type parser struct {
 	// sql is the statement as written, so a Command the reference builds by
 	// giving up can keep the exact text after the keyword.
 	sql string
+	// athenaStream marks a statement Athena hands to the Hive or Trino
+	// reader: a few of its own shapes are read only there.
+	athenaStream bool
+	// bareHintTables are the tables whose parenthesised T-SQL hint was moved
+	// onto the table by the parser; the key is moved to the END of their
+	// argument list once the statement is read, which is where the
+	// reference's own conversion leaves it.
+	bareHintTables map[*Expression]bool
+	// inAddColumns marks a Hive `ADD COLUMNS (...)` list, where a dotted name
+	// adds a field to a struct column rather than naming a column.
+	inAddColumns bool
+	// inMultitableInsert marks the INSERTs of Hive's FROM-first multi-table
+	// insert, where the end of one INSERT is the next INSERT rather than the
+	// end of the statement.
+	inMultitableInsert bool
+	// inAlterColumnDef marks the definition of a column an ALTER adds, where
+	// a word the constraint reader does not know ends the definition rather
+	// than failing the statement: the ALTER then reads what follows as its
+	// own options, or gives up and keeps the whole statement as a Command
+	// (Parser._parse_alter).
+	inAlterColumnDef bool
 	// inColumnType marks the type of a COLUMN being read, where a fixed-size
 	// array is a type in every dialect -- outside one, only the dialects that
 	// have them read `INT[3]` that way.
@@ -391,6 +432,11 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 		}
 		return New("Use", Arg{"this", table}), nil
 	}
+	// DuckDB v2 closes a connection with a statement of its own.
+	if p.dialect == "duckdb" && p.atWords("DISCONNECT") {
+		p.advance()
+		return New("Disconnect"), nil
+	}
 	if p.at(TokCREATE) {
 		return p.parseCreate()
 	}
@@ -628,7 +674,7 @@ func parseAthena(sql string) (*Expression, error) {
 	if !ok {
 		return nil, fmt.Errorf("sqlglot: no parser for dialect %q", engine)
 	}
-	p := &parser{tokens: toks, cfg: cfg, tables: cfg.Tables, dialect: engine, sql: sql}
+	p := &parser{tokens: toks, cfg: cfg, tables: cfg.Tables, dialect: engine, sql: sql, athenaStream: true}
 	// Athena's Trino parser reads a bare USING as a Command, which is the one
 	// statement it adds to Trino's own set
 	// (sqlglot/parsers/athena.py, AthenaTrinoParser.STATEMENT_PARSERS).

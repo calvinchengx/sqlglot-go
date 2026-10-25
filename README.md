@@ -69,47 +69,47 @@ Regenerate with `make service`; nothing in it is authored here.
 | Dialect | Tokens | Trees matched | Of | Unparsed | Mismatched |
 |---|---|---|---|---|---|
 | neutral | 1001/1001 | 1001 | 1001 | 0 | 0 |
-| tsql | 632/632 | 632 | 632 | 0 | 0 |
-| postgres | 898/898 | 898 | 898 | 0 | 0 |
-| duckdb | 1657/1657 | 1657 | 1657 | 0 | 0 |
-| databricks | 429/429 | 429 | 429 | 0 | 0 |
-| redshift | 313/313 | 313 | 313 | 0 | 0 |
+| tsql | 651/651 | 651 | 651 | 0 | 0 |
+| postgres | 943/943 | 943 | 943 | 0 | 0 |
+| duckdb | 1718/1718 | 1718 | 1718 | 0 | 0 |
+| databricks | 434/434 | 434 | 434 | 0 | 0 |
+| redshift | 316/316 | 316 | 316 | 0 | 0 |
 | materialize | 52/52 | 52 | 52 | 0 | 0 |
 | risingwave | 15/15 | 15 | 15 | 0 | 0 |
-| fabric | 48/48 | 48 | 48 | 0 | 0 |
-| presto | 599/599 | 599 | 599 | 0 | 0 |
-| trino | 260/260 | 260 | 260 | 0 | 0 |
+| fabric | 50/50 | 50 | 50 | 0 | 0 |
+| presto | 604/604 | 604 | 604 | 0 | 0 |
+| trino | 283/283 | 283 | 283 | 0 | 0 |
 | dremio | 61/61 | 61 | 61 | 0 | 0 |
-| mysql | 693/693 | 693 | 693 | 0 | 0 |
-| doris | 115/115 | 115 | 115 | 0 | 0 |
-| starrocks | 152/152 | 152 | 152 | 0 | 0 |
-| singlestore | 211/211 | 211 | 211 | 0 | 0 |
-| hive | 435/435 | 435 | 435 | 0 | 0 |
-| spark2 | 84/84 | 84 | 84 | 0 | 0 |
-| spark | 859/859 | 859 | 859 | 0 | 0 |
-| sqlite | 290/290 | 290 | 290 | 0 | 0 |
-| bigquery | 1020/1020 | 1020 | 1020 | 0 | 0 |
-| clickhouse | 560/560 | 560 | 560 | 0 | 0 |
+| mysql | 749/749 | 749 | 749 | 0 | 0 |
+| doris | 134/134 | 134 | 134 | 0 | 0 |
+| starrocks | 204/204 | 204 | 204 | 0 | 0 |
+| singlestore | 218/218 | 218 | 218 | 0 | 0 |
+| hive | 453/453 | 453 | 453 | 0 | 0 |
+| spark2 | 88/88 | 88 | 88 | 0 | 0 |
+| spark | 876/876 | 876 | 876 | 0 | 0 |
+| sqlite | 304/304 | 304 | 304 | 0 | 0 |
+| bigquery | 1045/1045 | 1045 | 1045 | 0 | 0 |
+| clickhouse | 592/592 | 592 | 592 | 0 | 0 |
 | tableau | 17/17 | 17 | 17 | 0 | 0 |
 | dune | 2/2 | 2 | 2 | 0 | 0 |
 | druid | 11/11 | 11 | 11 | 0 | 0 |
 | solr | 3/3 | 3 | 3 | 0 | 0 |
 | drill | 71/71 | 71 | 71 | 0 | 0 |
-| teradata | 133/133 | 133 | 133 | 0 | 0 |
+| teradata | 143/143 | 143 | 143 | 0 | 0 |
 | exasol | 172/172 | 172 | 172 | 0 | 0 |
-| athena | 62/62 | 62 | 62 | 0 | 0 |
+| athena | 69/69 | 69 | 69 | 0 | 0 |
 | prql | 29/29 | 29 | 29 | 0 | 0 |
 | dax | 18/18 | 18 | 18 | 0 | 0 |
 | oracle | 159/159 | 159 | 159 | 0 | 0 |
 | snowflake | 551/551 | 551 | 551 | 0 | 0 |
 <!-- coverage:end -->
 
-Reference: sqlglot `c7778cf56d90` (v30.21.0-9). **Mismatched is the number
+Reference: sqlglot `78b24a744adb` (v30.24.0-53). **Mismatched is the number
 that matters** and must be zero: it counts statements the port parsed into a
 *different* tree than the reference. Unparsed is the honest size of the gap.
 
 The port also writes SQL back out, and is held to the reference's own output
-string for string: **11,612 of the statements it parses are written back
+string for string: **12,036 of the statements it parses are written back
 identically, none is written wrongly, and none is refused**, and the guard's own rewrite -- inject a row ceiling, emit --
 lands as `TOP 500` in T-SQL and `LIMIT 500` in DuckDB from the same edit to the
 same node. Where a dialect would transform a statement in a way the port does
@@ -121,14 +121,14 @@ The tokenizer is complete and has no gap tier: every statement the reference
 lexes, the port lexes into the same tokens — same types, same text, same line,
 column and offsets, same attached comments. A tokenizer has nowhere to
 legitimately give up, because the parser above it cannot see what it drops.
-The configured reference corpus parses in full: **11,612 of 11,612**, with
+The configured reference corpus parses in full: **12,036 of 12,036**, with
 nothing unparsed. A construct outside that grammar is still an
 `ErrUnsupported`, never a tree that merely looks plausible. That is why
 **mismatched is zero** and is the number to watch.
 
 ## How it is verified
 
-`testdata/expected/` holds 11,612 statements — sqlglot's own `identity.sql`, its
+`testdata/expected/` holds 12,036 statements — sqlglot's own `identity.sql`, its
 **whole** dialect suite, and a set chosen to reach the lexical corners those
 miss — each with the token stream and the tree the reference produced.
 

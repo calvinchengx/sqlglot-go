@@ -3168,9 +3168,9 @@ func TestInsertAndDrop(t *testing.T) {
 			"INSERT INTO x (y) OUTPUT x.a, x.b INTO l SELECT * FROM z"},
 		// Postgres names the target again so ON CONFLICT can refer to it.
 		{"an aliased target", "postgres",
-			"INSERT INTO newtable AS t(a, b, c) VALUES (1, 2, 3) " +
+			"INSERT INTO newtable AS t (a, b, c) VALUES (1, 2, 3) " +
 				"ON CONFLICT(c) DO UPDATE SET a = t.a + 1 WHERE t.a < 1",
-			"INSERT INTO newtable AS t(a, b, c) VALUES (1, 2, 3) " +
+			"INSERT INTO newtable AS t (a, b, c) VALUES (1, 2, 3) " +
 				"ON CONFLICT(c) DO UPDATE SET a = t.a + 1 WHERE t.a < 1"},
 		{"a drop", "", "DROP TABLE t", "DROP TABLE t"},
 		{"a drop if exists", "", "DROP TABLE IF EXISTS t", "DROP TABLE IF EXISTS t"},
@@ -7206,7 +7206,7 @@ func TestNamedArgument(t *testing.T) {
 			"SELECT MAKE_INTERVAL(years => 1, months => 2, days => 3)"},
 		{"SELECT UNNEST(x, max_depth => 2)", "duckdb", "SELECT UNNEST(x, max_depth => 2)"},
 		// The other arrow in the same position is still a lambda.
-		{"SELECT LIST_TRANSFORM(x, y -> y + 1)", "duckdb", "SELECT LIST_TRANSFORM(x, y -> y + 1)"},
+		{"SELECT LIST_TRANSFORM(x, y -> y + 1)", "duckdb", "SELECT LIST_TRANSFORM(x, LAMBDA y : y + 1)"},
 	} {
 		e, err := ParseOne(c.sql, c.dialect)
 		if err != nil {
@@ -9352,7 +9352,7 @@ func TestArrayOverAQuery(t *testing.T) {
 	// the list and `ARRAY(SELECT 1)` for the query, so the two spellings of
 	// the query form meet in the middle.
 	for _, tc := range []struct{ sql, want string }{
-		{"SELECT [(SELECT 1)]", "SELECT ARRAY((SELECT 1))"},
+		{"SELECT [(SELECT 1)]", "SELECT [(SELECT 1)]"},
 		{"SELECT ARRAY((SELECT 1))", "SELECT ARRAY((SELECT 1))"},
 		{"SELECT ARRAY(SELECT id FROM t)", "SELECT ARRAY(SELECT id FROM t)"},
 	} {

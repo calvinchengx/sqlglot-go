@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"strings"
 	"unicode"
+	"unicode/utf8"
 )
 
 // Token is one lexical token. The fields, and their meanings, are the
@@ -112,30 +113,61 @@ func (t *Tokenizer) Tokenize(sql string) (toks []Token, err error) {
 // tokenizeAthena tokenizes with the combined tables, decides, and re-tokenizes
 // with the engine that would run the statement.
 func (t *Tokenizer) tokenizeAthena(sql string) ([]Token, error) {
-	combined, err := t.tokenizeRaw(sql)
-	if err != nil {
-		return nil, err
+	// The Trino half is Trino's tokenizer with one word added: Athena reads
+	// UNLOAD as a COMMAND (sqlglot/dialects/athena.py, _TrinoTokenizer).
+	trino := &Tokenizer{cfg: athenaTrinoConfig()}
+	trinoToks, trinoErr := trino.tokenizeRaw(sql)
+	if trinoErr == nil && !athenaMayBeHive(trinoToks) {
+		return trinoToks, nil
 	}
-	engine := "trino"
-	if athenaReadsAsHive(combined) {
-		engine = "hive"
-	}
-	if engine == "hive" {
-		engineTokenizer, err := NewTokenizer("hive")
-		if err != nil {
-			return nil, err
+
+	combined, combinedErr := t.tokenizeRaw(sql)
+	if combinedErr != nil {
+		// Combined rules can reject literals valid in only one engine, so
+		// the engine that CAN read them gets the statement
+		// (Athena.Tokenizer.tokenize).
+		if trinoErr == nil && !athenaReadsAsHive(trinoToks) {
+			return trinoToks, nil
 		}
-		toks, err := engineTokenizer.tokenizeRaw(sql)
-		if err != nil {
-			return nil, err
+		hiveTokenizer, herr := NewTokenizer("hive")
+		if herr == nil {
+			if hiveToks, htokErr := hiveTokenizer.tokenizeRaw(sql); htokErr == nil &&
+				athenaReadsAsHive(hiveToks) {
+				marker := Token{Type: TokHIVE_TOKEN_STREAM, Text: "", Line: 1, Col: 1}
+				return append([]Token{marker}, hiveToks...), nil
+			}
+		}
+		return nil, combinedErr
+	}
+	if athenaReadsAsHive(combined) {
+		engineTokenizer, herr := NewTokenizer("hive")
+		if herr != nil {
+			return nil, herr
+		}
+		toks, herr := engineTokenizer.tokenizeRaw(sql)
+		if herr != nil {
+			return nil, herr
 		}
 		marker := Token{Type: TokHIVE_TOKEN_STREAM, Text: "", Line: 1, Col: 1}
 		return append([]Token{marker}, toks...), nil
 	}
-	// The Trino half is Trino's tokenizer with one word added: Athena reads
-	// UNLOAD as a COMMAND (sqlglot/dialects/athena.py, _TrinoTokenizer).
-	trino := &Tokenizer{cfg: athenaTrinoConfig()}
-	return trino.tokenizeRaw(sql)
+	if trinoErr == nil {
+		return trinoToks, nil
+	}
+	return combined, nil
+}
+
+// athenaMayBeHive reports whether the statement could be one Hive would run,
+// judged by its FIRST token alone (athena.py, _may_be_hive).
+func athenaMayBeHive(tokens []Token) bool {
+	if len(tokens) == 0 {
+		return false
+	}
+	switch tokens[0].Type {
+	case TokALTER, TokCREATE, TokDESCRIBE, TokDROP, TokSHOW:
+		return true
+	}
+	return strings.EqualFold(tokens[0].Text, "MSCK")
 }
 
 // athenaTrinoConfig is Trino's tokenizer tables with Athena's one addition.
@@ -658,7 +690,7 @@ func (t *Tokenizer) scanString(start string) bool {
 
 			tag := ""
 			if t.charStr() != end {
-				tag = t.extractString(end, nil, true, !t.cfg.HeredocTagIsIdentifier)
+				tag = t.extractString(end, nil, true, !t.cfg.HeredocTagIsIdentifier, false)
 			}
 
 			if tag != "" && t.cfg.HeredocTagIsIdentifier && (t.end || allDigits(tag) || hasSpace(tag)) {
@@ -680,7 +712,10 @@ func (t *Tokenizer) scanString(start string) bool {
 	if tokenType == TokBYTE_STRING {
 		escapes = t.cfg.ByteStringEscapes
 	}
-	text := t.extractString(end, escapes, tokenType == TokRAW_STRING, true)
+	rawString := tokenType == TokRAW_STRING || tokenType == TokNATIONAL_RAW_STRING ||
+		tokenType == TokHEREDOC_STRING
+	bytesLiteral := tokenType == TokBYTE_STRING && t.cfg.ByteStringsAreBytes
+	text := t.extractString(end, escapes, rawString, true, bytesLiteral)
 
 	if base != 0 && text != "" {
 		if _, ok := parseIntLiteral(text, base); !ok {
@@ -699,7 +734,7 @@ func (t *Tokenizer) scanIdentifier(identifierEnd string) {
 		escapes[k] = struct{}{}
 	}
 	escapes[identifierEnd] = struct{}{}
-	text := t.extractString(identifierEnd, escapes, false, true)
+	text := t.extractString(identifierEnd, escapes, false, true, false)
 	t.add(TokIDENTIFIER, text, true)
 }
 
@@ -727,7 +762,7 @@ func (t *Tokenizer) scanVar() {
 	t.add(tt, "", false)
 }
 
-func (t *Tokenizer) extractString(delimiter string, escapes set, rawString, raiseUnmatched bool) string {
+func (t *Tokenizer) extractString(delimiter string, escapes set, rawString, raiseUnmatched, bytesLiteral bool) string {
 	text := ""
 	delimRunes := []rune(delimiter)
 	delimSize := len(delimRunes)
@@ -764,27 +799,56 @@ func (t *Tokenizer) extractString(delimiter string, escapes set, rawString, rais
 			} else {
 				t.peek, t.peekSet = sql[t.current], true
 			}
-			return string(sql[pos:end])
+			text := string(sql[pos:end])
+			if bytesLiteral && !isASCIIString(text) {
+				text = utf8BytesAsLatin1(text)
+			}
+			return text
 		}
 	}
 
 	for {
-		if !rawString && len(unescaped) > 0 && t.peekSet {
-			if _, ok := escapes[t.charStr()]; ok {
-				if seq, ok := unescaped[t.charStr()+t.peekStr()]; ok {
-					t.advance(2, false)
-					text += seq
-					continue
-				}
+		backslashEscape := !rawString && t.charSet && t.char == '\\' &&
+			hasMember(escapes, "\\")
+
+		// Numeric escapes come first, since they may overlap fixed sequences
+		// (e.g. \000 vs \0).
+		if backslashEscape && len(t.cfg.NumericEscapes) > 0 {
+			if decoded := t.scanNumericEscape(); decoded != "" {
+				text += decoded
+				continue
 			}
 		}
 
-		_, charIsEscape := escapes[t.charStr()]
-		isValidCustomEscape := len(t.cfg.EscapeFollowChars) > 0 && t.charSet && t.char == '\\'
-		if isValidCustomEscape {
-			if _, ok := t.cfg.EscapeFollowChars[t.peekStr()]; ok {
-				isValidCustomEscape = false
+		// An escape at the end of the input is left to the checks below, which
+		// report the unterminated string.
+		if !rawString && len(unescaped) > 0 && t.charSet &&
+			hasMember(escapes, t.charStr()) && t.current+1 < t.size {
+			if seq, ok := unescaped[t.charStr()+t.peekStr()]; ok {
+				// Advance one character at a time so a newline updates the line.
+				if t.peek == '\n' || t.peek == '\r' {
+					t.advance(1, false)
+					t.advance(1, false)
+				} else {
+					t.advance(2, false)
+				}
+				text += seq
+				continue
 			}
+		}
+
+		// Not decoded: drop the backslash if configured, unless the string is
+		// unterminated.
+		if backslashEscape && t.cfg.DropUnknownEscapes && t.current+1 < t.size {
+			peek := t.peekStr()
+			t.advance(1, false)
+			t.advance(1, false)
+			if bytesLiteral {
+				text += utf8BytesAsLatin1(peek)
+			} else {
+				text += peek
+			}
+			continue
 		}
 
 		// An escaped quote just before the closing delimiter has to be eaten
@@ -794,12 +858,13 @@ func (t *Tokenizer) extractString(delimiter string, escapes set, rawString, rais
 		escapedDelimiter := t.peekStr() == delimiter ||
 			(delimSize > 1 && t.peekSet && t.peek == delimRunes[0] && peekIsQuote)
 
+		_, charIsEscape := escapes[t.charStr()]
 		_, peekIsEscape := escapes[t.peekStr()]
 		_, charIsQuote := t.cfg.Quotes[t.charStr()]
 
 		if (t.cfg.StringEscapesAllowedInRawStrings || !rawString) &&
 			charIsEscape &&
-			(escapedDelimiter || peekIsEscape || isValidCustomEscape) &&
+			(escapedDelimiter || peekIsEscape) &&
 			(!charIsQuote || (t.charSet && t.peekSet && t.char == t.peek)) {
 			switch {
 			case escapedDelimiter:
@@ -808,9 +873,6 @@ func (t *Tokenizer) extractString(delimiter string, escapes set, rawString, rais
 				} else {
 					text += t.peekStr()
 				}
-			//nolint:staticcheck // QF1001: kept in the reference's shape, so the port reads against it
-			case isValidCustomEscape && !(t.charSet && t.peekSet && t.char == t.peek):
-				text += t.peekStr()
 			default:
 				text += t.charStr() + t.peekStr()
 			}
@@ -837,11 +899,186 @@ func (t *Tokenizer) extractString(delimiter string, escapes set, rawString, rais
 
 			current := t.current - 1
 			t.advance(1, true)
-			text += string(sql[current : t.current-1])
+			chunk := string(sql[current : t.current-1])
+			if bytesLiteral && !isASCIIString(chunk) {
+				chunk = utf8BytesAsLatin1(chunk)
+			}
+			text += chunk
 		}
 	}
 
 	return text
+}
+
+// hasMember reports whether a character is in an escape set.
+func hasMember(set set, ch string) bool {
+	_, ok := set[ch]
+	return ok
+}
+
+// isASCIIString is Python's str.isascii.
+func isASCIIString(s string) bool {
+	for i := 0; i < len(s); i++ {
+		if s[i] > 0x7f {
+			return false
+		}
+	}
+	return true
+}
+
+// utf8BytesAsLatin1 is Python's `text.encode("utf-8").decode("latin-1")`:
+// each byte of the UTF-8 encoding becomes the code point of the same value.
+func utf8BytesAsLatin1(s string) string {
+	runes := make([]rune, 0, len(s))
+	for i := 0; i < len(s); i++ {
+		runes = append(runes, rune(s[i]))
+	}
+	return string(runes)
+}
+
+// scanNumericEscape decodes the escape starting at the current backslash,
+// according to NumericEscapes. It returns "" when nothing was decoded.
+func (t *Tokenizer) scanNumericEscape() string {
+	sql := t.sql
+	start := t.current
+	peek := t.peekStr()
+	if peek == "" {
+		return ""
+	}
+	isOctal := strings.ContainsRune("01234567", rune(peek[0]))
+	key := peek
+	if isOctal {
+		key = "0"
+	}
+	spec, ok := t.cfg.NumericEscapes[key]
+	if !ok {
+		return ""
+	}
+	base, minDigits, maxDigits, maxValue := spec[0], spec[1], spec[2], spec[3]
+	from := start
+	if !isOctal {
+		from = start + 1
+	}
+	value, end := t.readNumericEscape(from, base, minDigits, maxDigits, maxValue)
+
+	// With byte semantics, octal and hex escapes encode a byte, so octal
+	// values wrap around, e.g. \541 is \x61.
+	isByte := t.cfg.NumericEscapesAreBytes && (base == 8 || maxValue <= 0xFF)
+	if isByte && value >= 0 {
+		value &= 0xFF
+	}
+
+	// A UTF-16 surrogate is only valid as a high half followed by an escaped
+	// low half, e.g. \uD83D\uDE00 is U+1F600.
+	if value >= 0xD800 && value <= 0xDFFF {
+		low, lowEnd := -1, end
+		if value <= 0xDBFF && end+1 < t.size && sql[end] == '\\' &&
+			string(sql[end+1]) == peek {
+			low, lowEnd = t.readNumericEscape(end+2, base, minDigits, maxDigits, maxValue)
+		}
+		if low >= 0xDC00 && low <= 0xDFFF {
+			value = 0x10000 + ((value - 0xD800) << 10) + (low - 0xDC00)
+			end = lowEnd
+		} else if t.cfg.LoneSurrogateReplacement != "" && end < t.size {
+			t.advance(end-start+1, false)
+			return t.cfg.LoneSurrogateReplacement
+		} else {
+			value = -1
+		}
+	}
+
+	// Decode one UTF-8 character at a time, so a multi-byte character spelled
+	// as several byte escapes reads back as itself.
+	if isByte && value >= 0xC2 && value <= 0xF4 {
+		run := []byte{byte(value)}
+		runEnd := end
+		byteCount := 2
+		if value >= 0xE0 {
+			byteCount = 3
+		}
+		if value >= 0xF0 {
+			byteCount = 4
+		}
+		for len(run) < byteCount && runEnd < t.size && sql[runEnd] == '\\' {
+			b, bEnd := t.readByteEscape(runEnd)
+			if b < 0x80 || b > 0xBF {
+				break
+			}
+			run = append(run, byte(b))
+			runEnd = bEnd
+		}
+		if utf8.Valid(run) && runEnd < t.size {
+			t.advance(runEnd-start+1, false)
+			return string(run)
+		}
+	}
+
+	if value >= 0 && end < t.size {
+		t.advance(end-start+1, false)
+		return string(rune(value))
+	}
+	return ""
+}
+
+// readNumericEscape reads up to maxDigits digits from start, stopping before
+// the value exceeds maxValue. It returns -1 when fewer than minDigits were
+// read, and the index one past the last digit.
+func (t *Tokenizer) readNumericEscape(start, base, minDigits, maxDigits, maxValue int) (int, int) {
+	value := 0
+	end := start
+	limit := start + maxDigits
+	if limit > t.size {
+		limit = t.size
+	}
+	for end < limit {
+		d := escapeDigitValue(t.sql[end])
+		if d >= base || value*base+d > maxValue {
+			break
+		}
+		value = value*base + d
+		end++
+	}
+	if end-start >= minDigits {
+		return value, end
+	}
+	return -1, end
+}
+
+// escapeDigitValue is the reference's _DIGIT_VALUES: 0-9 and a-z/A-Z, with anything
+// else mapping to a value no base accepts.
+func escapeDigitValue(ch rune) int {
+	switch {
+	case ch >= '0' && ch <= '9':
+		return int(ch - '0')
+	case ch >= 'a' && ch <= 'z':
+		return int(ch-'a') + 10
+	case ch >= 'A' && ch <= 'Z':
+		return int(ch-'A') + 10
+	}
+	return 16
+}
+
+// readByteEscape reads the numeric escape at pos if it encodes a byte.
+func (t *Tokenizer) readByteEscape(pos int) (int, int) {
+	peek := string(t.sql[pos+1 : pos+2])
+	isOctal := strings.ContainsRune("01234567", rune(peek[0]))
+	key := peek
+	if isOctal {
+		key = "0"
+	}
+	spec, ok := t.cfg.NumericEscapes[key]
+	if !ok || (spec[0] != 8 && spec[3] > 0xFF) {
+		return -1, pos
+	}
+	from := pos + 2
+	if isOctal {
+		from = pos + 1
+	}
+	value, end := t.readNumericEscape(from, spec[0], spec[1], spec[2], spec[3])
+	if value >= 0 {
+		value &= 0xFF
+	}
+	return value, end
 }
 
 // --- Python semantics the port depends on -----------------------------------

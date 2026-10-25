@@ -1,0 +1,149 @@
+{
+ "dialect": "teradata",
+ "rendered": "LOCKING ROW FOR ACCESS SELECT * FROM t",
+ "sql": "LOCKING ROW FOR ACCESS SELECT * FROM t",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "LOCK",
+   "x": "LOCKING"
+  },
+  {
+   "c": 11,
+   "e": 10,
+   "l": 1,
+   "s": 8,
+   "t": "ROW",
+   "x": "ROW"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 12,
+   "t": "FOR",
+   "x": "FOR"
+  },
+  {
+   "c": 22,
+   "e": 21,
+   "l": 1,
+   "s": 16,
+   "t": "VAR",
+   "x": "ACCESS"
+  },
+  {
+   "c": 29,
+   "e": 28,
+   "l": 1,
+   "s": 23,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 31,
+   "e": 30,
+   "l": 1,
+   "s": 30,
+   "t": "STAR",
+   "x": "*"
+  },
+  {
+   "c": 36,
+   "e": 35,
+   "l": 1,
+   "s": 32,
+   "t": "FROM",
+   "x": "FROM"
+  },
+  {
+   "c": 38,
+   "e": 37,
+   "l": 1,
+   "s": 37,
+   "t": "VAR",
+   "x": "t"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.LockingStatement"
+  },
+  {
+   "c": "sqlglot.expressions.properties.LockingProperty",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "i": 1,
+   "k": "kind",
+   "v": "ROW"
+  },
+  {
+   "i": 1,
+   "k": "for_or_in",
+   "v": "FOR"
+  },
+  {
+   "i": 1,
+   "k": "lock_type",
+   "v": "ACCESS"
+  },
+  {
+   "i": 1,
+   "k": "override",
+   "v": false
+  },
+  {
+   "c": "sqlglot.expressions.query.Select",
+   "i": 0,
+   "k": "expression"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.core.Star",
+   "i": 6,
+   "k": "expressions",
+   "m": {
+    "col": 31,
+    "end": 30,
+    "line": 1,
+    "start": 30
+   }
+  },
+  {
+   "c": "sqlglot.expressions.query.From",
+   "i": 6,
+   "k": "from_"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 8,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 9,
+   "k": "this",
+   "m": {
+    "col": 38,
+    "end": 37,
+    "line": 1,
+    "start": 37
+   }
+  },
+  {
+   "i": 10,
+   "k": "this",
+   "v": "t"
+  },
+  {
+   "i": 10,
+   "k": "quoted",
+   "v": false
+  }
+ ]
+}

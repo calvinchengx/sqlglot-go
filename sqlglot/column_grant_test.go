@@ -15,8 +15,10 @@ func TestRedshiftColumnGrant(t *testing.T) {
 	if tree.Class != "Grant" || len(privs) != 2 || len(cols) != 2 || cols[0].Class != "Column" {
 		t.Fatalf("column grant was not a Grant of column privileges: %s", tree.Class)
 	}
-	if mark, ok := cols[0].Args["join_mark"].(bool); !ok || mark {
-		t.Fatalf("redshift column join mark = %#v", cols[0].Args["join_mark"])
+	// The mark is recorded only where it is WRITTEN now, so a column with no
+	// `(+)` carries no join_mark at all.
+	if mark, ok := cols[0].Args["join_mark"]; ok {
+		t.Fatalf("redshift column join mark = %#v, want none", mark)
 	}
 	got, err := Generate(tree, "redshift")
 	if err != nil || got != sql {

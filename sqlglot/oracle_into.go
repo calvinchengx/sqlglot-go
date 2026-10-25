@@ -19,9 +19,6 @@ func (p *parser) oracleBulkCollect(sel *Expression) error {
 		if err != nil {
 			return err
 		}
-		if _, set := col.Args["join_mark"]; !set && p.tables.SupportsColumnJoinMarks {
-			col.Set("join_mark", false)
-		}
 		cols = append(cols, col)
 		if !p.match(TokCOMMA) {
 			break

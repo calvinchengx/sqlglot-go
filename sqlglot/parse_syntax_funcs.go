@@ -20,6 +20,42 @@ func (p *parser) parseSyntaxFunction(upper string) (*Expression, error) {
 		return p.parseTranslateCharacters()
 	case "RANGE_N":
 		return p.parseRangeN()
+	case "WEIGHT_STRING":
+		// MySQL's WEIGHT_STRING takes one argument, optionally followed by
+		// AS <type>; the undocumented four-argument form is an ordinary
+		// anonymous call (Parser._parse_weight_string).
+		p.advance() // the name
+		p.advance() // (
+		var args []*Expression
+		for {
+			arg, err := p.parseAssignment()
+			if err != nil {
+				return nil, err
+			}
+			args = append(args, arg)
+			if !p.match(TokCOMMA) {
+				break
+			}
+		}
+		var to *Expression
+		if len(args) == 1 && p.match(TokALIAS) {
+			typ, err := p.parseDataType()
+			if err != nil {
+				return nil, err
+			}
+			to = typ
+		}
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed WEIGHT_STRING")
+		}
+		if len(args) != 1 {
+			return New("Anonymous", Arg{"this", upper}, Arg{"expressions", args}), nil
+		}
+		node := New("WeightString", Arg{"this", args[0]})
+		if to != nil {
+			node.Set("to", to)
+		}
+		return node, nil
 	case "JSON_EXTRACT":
 		// Exasol keeps JSON_EXTRACT's arguments as a plain LIST -- there is
 		// no path grammar, the path stays the string it was written with --
@@ -1652,6 +1688,11 @@ func (p *parser) parseMySQLConvert(safe bool) (*Expression, error) {
 		// reads as a user-defined one, which the reference does not accept.
 		if kind, _ := to.Args["this"].(DataTypeKind); kind == "USER-DEFINED" {
 			return nil, p.unsupported("CONVERT to a type this dialect does not have")
+		}
+		// MySQL's `CONVERT(x, CHAR(2) CHARACTER SET latin1)` keeps the
+		// length and names the set (Parser._parse_convert).
+		if to, err = p.parseCharCharset(to); err != nil {
+			return nil, err
 		}
 	default:
 		return nil, p.unsupported("CONVERT without a target")

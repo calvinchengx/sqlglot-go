@@ -1,6 +1,7 @@
 package sqlglot
 
 import (
+	"fmt"
 	"regexp"
 	"sort"
 	"strconv"
@@ -307,6 +308,11 @@ func init() {
 		"CommentColumnConstraint":             (*generator).writeCommentConstraint,
 		"BinaryColumnConstraint":              (*generator).writeBinaryConstraint,
 		"BitwiseNot":                          (*generator).writeBitwiseNot,
+		"Nearest":                             (*generator).writeNearest,
+		"Disconnect":                          (*generator).writeDisconnect,
+		"MultitableInserts":                   (*generator).writeMultitableInserts,
+		"ReplaceColumns":                      (*generator).writeReplaceColumns,
+		"Match":                               (*generator).writeMatch,
 		"CollateColumnConstraint":             (*generator).writeCollateConstraint,
 		"Insert":                              (*generator).writeInsert,
 		"Update":                              (*generator).writeUpdate,
@@ -517,6 +523,13 @@ func (g *generator) selectOperationModifiers(e *Expression) string {
 }
 
 func (g *generator) writeSelect(e *Expression) string {
+	// A dialect with no QUALIFY rewrites the query into an outer select over
+	// a subquery instead (HiveGenerator.TRANSFORMS, eliminate_qualify).
+	if writesQualifyAsHive(g.dialect) && e.Args["qualify"] != nil {
+		if rewritten, ok := eliminateQualify(e); ok && rewritten != e {
+			return g.writeSelect(rewritten)
+		}
+	}
 	// StarRocks rewrites UNNEST(GENERATE_DATE_ARRAY(...)) into a recursive CTE
 	// (transforms.unnest_generate_date_array_using_recursive_cte), which this
 	// port does not build. Refuse rather than write the un-transformed query.
@@ -654,6 +667,19 @@ func (g *generator) writeSelect(e *Expression) string {
 		add(windowsSQL)
 		add(qualifySQL)
 	}
+	// DuckDB writes a query's USING SAMPLE here, after QUALIFY and before
+	// ORDER BY (DuckDBGenerator.AFTER_HAVING_MODIFIER_TRANSFORMS).
+	sampleBeforeOrder := false
+	if g.dialect == "duckdb" {
+		if sample := g.child(e, "sample"); sample != "" {
+			if g.tables.SelectSampleWord != "" && g.tables.TableSampleWord != "" {
+				sample = strings.Replace(sample,
+					g.tables.TableSampleWord, g.tables.SelectSampleWord, 1)
+			}
+			add(sample)
+			sampleBeforeOrder = true
+		}
+	}
 	add(g.child(e, "order"))
 
 	// A FETCH is written AFTER the offset where a LIMIT is written before it:
@@ -678,7 +704,7 @@ func (g *generator) writeSelect(e *Expression) string {
 	// A sample hanging off the QUERY rather than a table is the same node
 	// under a different word: DuckDB says USING SAMPLE here and TABLESAMPLE
 	// there. Both words are probed, and the template carries the other one.
-	if sample := g.child(e, "sample"); sample != "" {
+	if sample := g.child(e, "sample"); sample != "" && !sampleBeforeOrder {
 		if g.tables.SelectSampleWord != "" && g.tables.TableSampleWord != "" {
 			sample = strings.Replace(sample,
 				g.tables.TableSampleWord, g.tables.SelectSampleWord, 1)
@@ -799,6 +825,11 @@ func (g *generator) writeWith(e *Expression) string {
 	search := ""
 	if s := g.child(e, "search"); s != "" {
 		search = " " + s
+	}
+	// A SEARCH may be followed by a CYCLE of its own, written after it
+	// (Generator.with_sql).
+	if c := g.child(e, "cycle"); c != "" {
+		search += " " + c
 	}
 	udfs := ""
 	if items, _ := e.Args["udfs"].([]*Expression); len(items) > 0 {
@@ -940,12 +971,18 @@ func (g *generator) writeTable(e *Expression) string {
 	// The temporal clause comes before the alias, as it does in the text.
 	// The separator is whatever this dialect puts between a table and its
 	// alias, so the clause can be inserted in front of that alias.
+	pendingVersion := ""
 	if version := g.child(e, "version"); version != "" {
 		// BigQuery writes the temporal clause AFTER the alias, and every
 		// other dialect writes it before (Generator.table_sql,
 		// BigQuery.ALIAS_POST_VERSION).
 		if g.dialect == "bigquery" {
 			out += " " + version
+		} else if aliasAfterSample {
+			// The TABLESAMPLE stands in FRONT of the temporal clause where
+			// both come before the alias
+			// (Generator.table_sql, ALIAS_POST_TABLESAMPLE).
+			pendingVersion = version
 		} else if alias != "" && !ordinality && strings.HasSuffix(out, sep+alias) {
 			name := strings.TrimSuffix(out, sep+alias)
 			out = name + " " + version + sep + alias
@@ -975,6 +1012,9 @@ func (g *generator) writeTable(e *Expression) string {
 	// TABLESAMPLE hangs off the table, after the alias. Its own template
 	// carries the space in front of it, the way the reference returns it.
 	out += g.child(e, "sample")
+	if pendingVersion != "" {
+		out += " " + pendingVersion
+	}
 	if aliasAfterSample && alias != "" {
 		out += sep + alias
 	}
@@ -1039,6 +1079,20 @@ func (g *generator) writeJoin(e *Expression) string {
 		}
 	}
 	words := []string{}
+	duckdbTypeJoin := false
+	// DuckDB names a MARK or SINGLE join -- and a RIGHT semi/anti one -- by
+	// its own words: `JOIN BY (TYPE MARK)`
+	// (DuckDBGenerator.join_sql).
+	if g.dialect == "duckdb" {
+		kind, _ := e.Args["kind"].(string)
+		side, _ := e.Args["side"].(string)
+		if kind == "MARK" || kind == "SINGLE" ||
+			(side == "RIGHT" && (kind == "SEMI" || kind == "ANTI")) {
+			joined := strings.Trim(strings.Join([]string{side, kind}, "_"), "_")
+			words = append(words, "JOIN", "BY", "(TYPE", joined+")")
+			duckdbTypeJoin = true
+		}
+	}
 	// The METHOD comes first: NATURAL says HOW the rows are matched, and the
 	// side and kind say which of them are kept. GLOBAL, where a dialect has
 	// it, stands between the method and the side (Generator.join_sql).
@@ -1048,9 +1102,11 @@ func (g *generator) writeJoin(e *Expression) string {
 	if s, ok := e.Args["global_"].(string); ok && s != "" {
 		words = append(words, "GLOBAL")
 	}
-	for _, key := range []string{"side", "kind"} {
-		if s, ok := e.Args[key].(string); ok && s != "" {
-			words = append(words, s)
+	if !duckdbTypeJoin {
+		for _, key := range []string{"side", "kind"} {
+			if s, ok := e.Args[key].(string); ok && s != "" {
+				words = append(words, s)
+			}
 		}
 	}
 	// A hint says how the engine should do the join. A dialect that names
@@ -1059,8 +1115,12 @@ func (g *generator) writeJoin(e *Expression) string {
 	if hint, ok := e.Args["hint"].(string); ok && hint != "" && len(g.tables.JoinHints) > 0 {
 		words = append(words, hint)
 	}
+	nearest := ""
+	if n, _ := e.Args["nearest"].(*Expression); n != nil {
+		nearest = g.node(n)
+	}
 	usingColumns, _ := e.Args["using"].([]*Expression)
-	if len(words) == 0 && len(usingColumns) == 0 {
+	if len(words) == 0 && len(usingColumns) == 0 && nearest == "" {
 		if _, hasOn := e.Args["on"].(*Expression); !hasOn {
 			// A comma join over an UNNEST is written as an explicit JOIN in
 			// the dialects that need one: the comma form does not bind the
@@ -1073,11 +1133,20 @@ func (g *generator) writeJoin(e *Expression) string {
 			return ", " + this
 		}
 	}
-	// STRAIGHT_JOIN carries its own JOIN and takes no second one.
-	if len(words) == 1 && words[0] == "STRAIGHT_JOIN" {
+	// STRAIGHT_JOIN carries its own JOIN and takes no second one, and the
+	// `JOIN BY (TYPE ...)` form already said JOIN.
+	switch {
+	case len(words) == 1 && words[0] == "STRAIGHT_JOIN":
 		words = append(words, this)
-	} else {
+	case len(words) > 0 && words[0] == "JOIN":
+		words = append(words, this)
+	default:
 		words = append(words, "JOIN", this)
+	}
+	// The nearest-neighbour clause stands between the table and its ON
+	// (Generator.join_sql).
+	if nearest != "" {
+		words = append(words, nearest)
 	}
 	// The ON operand is a condition, same as WHERE's, and a boolean literal
 	// there picks its condition spelling rather than its value one. Unlike
@@ -1394,6 +1463,35 @@ func (g *generator) writeToMap(e *Expression) string {
 	// anything below -- it never reaches a Struct at all.
 	if g.dialect == "materialize" && inner.Class == "Select" {
 		return "MAP(" + g.node(inner) + ")"
+	}
+	// StarRocks writes the entries tight against the braces and the colons
+	// (StarRocksGenerator.tomap_sql).
+	if g.dialect == "starrocks" && inner.Class == "Struct" {
+		items, _ := inner.Args["expressions"].([]*Expression)
+		parts := make([]string, 0, len(items))
+		for _, item := range items {
+			key, _ := item.Args["this"].(*Expression)
+			value, _ := item.Args["expression"].(*Expression)
+			if key == nil || value == nil {
+				return g.fail(e.Class + " with an entry that is not a pair")
+			}
+			parts = append(parts, g.node(key)+":"+g.node(value))
+		}
+		return "MAP{" + strings.Join(parts, ", ") + "}"
+	}
+	// A subscripted map holds a Bracket over the Struct: the entries are
+	// written inside the braces, and the subscripts after them.
+	if inner.Class == "Bracket" {
+		shape, _ := inner.Args["this"].(*Expression)
+		if shape == nil || shape.Class != "Struct" {
+			return g.fail(e.Class)
+		}
+		subscripts, _ := inner.Args["expressions"].([]*Expression)
+		parts := make([]string, 0, len(subscripts))
+		for _, sub := range subscripts {
+			parts = append(parts, g.node(sub))
+		}
+		return g.writeToMap(New("ToMap", Arg{"this", shape})) + "[" + strings.Join(parts, ", ") + "]"
 	}
 	if inner.Class != "Struct" {
 		return g.fail(e.Class)
@@ -1809,6 +1907,13 @@ func (g *generator) writeIdentifier(e *Expression) string {
 			return g.fail(e.Class + " whose name is not a name")
 		}
 	}
+	// The value a dialect writes for an identifier's own escaped sequences,
+	// before the closing delimiter is doubled (Generator.identifier_sql).
+	if len(g.cfg.IdentifierEscapedSequences) > 0 {
+		for _, ch := range sortedStringKeys(g.cfg.IdentifierEscapedSequences) {
+			name = strings.ReplaceAll(name, ch, g.cfg.IdentifierEscapedSequences[ch])
+		}
+	}
 	// T-SQL's mark for a temporary table, which the parser took off the name
 	// and recorded here. It goes INSIDE the quoting -- `[#foo]`, not `#[foo]`
 	// -- because it is part of the name as the engine reads it.
@@ -1854,27 +1959,22 @@ func (g *generator) writeLiteral(e *Expression) string {
 }
 
 func (g *generator) supportsEscapedSequences() bool {
-	_, ok := g.cfg.StringEscapes["\\"]
-	return ok && len(g.cfg.UnescapedSequences) > 0
+	return g.cfg.StringsSupportEscapedSequences
 }
 
 // escapeSequences is the reference's ESCAPED_SEQUENCES step: a dialect whose
 // strings read a backslash as an escape writes a control character (and the
-// backslash itself) back as the two characters that spell it.
+// backslash itself) back as the characters that spell it. The table is READ
+// from the reference rather than reversed from UnescapedSequences: Snowflake
+// maps `\\a` to `a`, which cannot be reversed without losing the escape.
 func (g *generator) escapeSequences(text string) string {
 	var out strings.Builder
 	for _, r := range text {
-		written := false
-		for spelled, ch := range g.cfg.UnescapedSequences {
-			if ch == string(r) {
-				out.WriteString(spelled)
-				written = true
-				break
-			}
+		if spelled, ok := g.cfg.EscapedSequences[string(r)]; ok {
+			out.WriteString(spelled)
+			continue
 		}
-		if !written {
-			out.WriteRune(r)
-		}
+		out.WriteRune(r)
 	}
 	return out.String()
 }
@@ -1912,11 +2012,12 @@ func (g *generator) writeQuotedString(e *Expression) string {
 			return "'" + body + "'"
 		case "ByteString":
 			if e.Args["is_bytes"] == true {
-				// A byte string's own escapes are already in the text, so a
-				// backslash is left alone and only the delimiter is escaped
-				// (escape_str(..., escape_backslash=False)).
-				body = escapeControlCharacters(body)
-				return "b'" + strings.ReplaceAll(body, "'", "\\'") + "'"
+				// The body is escaped like any other (Generator.escape_str):
+				// its sequences are written back as what they stand for, and
+				// a byte above ASCII is written as `\xNN` so it is not
+				// re-encoded as a UTF-8 character when read again.
+				body = g.byteStringBody(body)
+				return "b'" + body + "'"
 			}
 		case "HexString":
 			if e.Args["is_integer"] == true {
@@ -2058,11 +2159,18 @@ func (g *generator) writeRecursiveWithSearch(e *Expression) string {
 	if kind != "CYCLE" {
 		verb = "SEARCH " + kind + " FIRST BY"
 	}
-	using := ""
+	to, defaultExpr, using := "", "", ""
+	if v := g.child(e, "to"); v != "" {
+		to = " TO " + v
+	}
+	if v := g.child(e, "default"); v != "" {
+		defaultExpr = " DEFAULT " + v
+	}
 	if u := g.child(e, "using"); u != "" {
 		using = " USING " + u
 	}
-	return verb + " " + g.child(e, "this") + " SET " + g.child(e, "expression") + using
+	return verb + " " + g.child(e, "this") + " SET " + g.child(e, "expression") +
+		to + defaultExpr + using
 }
 
 // escapeStringBody escapes a quote the way THIS DIALECT escapes it.
@@ -3027,7 +3135,17 @@ func (g *generator) dataTypeBody(e *Expression) string {
 		if name == "" {
 			return g.fail("a CHARACTER SET type with no name")
 		}
-		return "CHAR CHARACTER SET " + name
+		// The length is written back where one was given
+		// (Generator.datatype_sql).
+		char := "CHAR"
+		if params, _ := e.Args["expressions"].([]*Expression); len(params) > 0 {
+			parts := make([]string, 0, len(params))
+			for _, param := range params {
+				parts = append(parts, g.node(param))
+			}
+			char = "CHAR(" + strings.Join(parts, ", ") + ")"
+		}
+		return char + " CHARACTER SET " + name
 	}
 	// Fabric limits every temporal type but DATE to 6 digits of precision --
 	// TIME(7) writes as TIME(6), and an unparameterised one gets 6 by
@@ -3089,6 +3207,12 @@ func (g *generator) dataTypeBody(e *Expression) string {
 			}
 		}
 		return g.node(bare) + collate
+	}
+	// A dialect with no temporal precision DROPS the parameter rather than
+	// writing a type it cannot read (PrestoGenerator.datatype_sql,
+	// HiveGenerator.datatype_sql).
+	if temporalTypes[kind] && dropsTemporalPrecision(g.dialect) {
+		e = New("DataType", Arg{"this", e.Args["this"]}, Arg{"nested", e.Args["nested"]})
 	}
 	params := g.list(e)
 	// An ENUM's members are its VALUES rather than its parameters, and
@@ -3550,9 +3674,15 @@ func (g *generator) writeArray(e *Expression) string {
 	// a different thing and is written the same way everywhere -- `ARRAY(...)`
 	// -- whatever the dialect brackets a list with. DuckDB writes `[1, 2]`
 	// for the list and `ARRAY(SELECT 1)` for the query.
-	items, _ := e.Args["expressions"].([]*Expression)
-	for _, item := range items {
-		if holdsAQuery(item) {
+	// A VALUE CONSTRUCTOR keeps its subquery as an ELEMENT -- `[(SELECT 1)]`
+	// -- where an array built from a query supplies the rows
+	// (dialect.py, inline_array_unless_query).
+	if e.Args["value_constructor"] != true {
+		items, _ := e.Args["expressions"].([]*Expression)
+		// Only a SINGLE query is written as ARRAY(...): with more elements
+		// the brackets are the array and the query is one of its values
+		// (dialect.py, inline_array_unless_query).
+		if len(items) == 1 && holdsAQuery(items[0]) {
 			return "ARRAY(" + g.list(e) + ")"
 		}
 	}
@@ -3630,13 +3760,22 @@ func (g *generator) writeBracket(e *Expression) string {
 }
 
 func (g *generator) writeSlice(e *Expression) string {
-	out := g.child(e, "this") + ":" + g.child(e, "expression")
-	// A third bound is the step: `[:-1:-1]` walks backward. Absent, the
-	// slice stays the two-bound form it already wrote.
-	if step := g.child(e, "step"); step != "" {
-		out += ":" + step
+	step := g.child(e, "step")
+	// An omitted END is written as `-` in front of a step, because `::` is
+	// the cast operator (Generator.slice_sql).
+	end := g.child(e, "expression")
+	if end == "" && step != "" {
+		end = "-"
 	}
-	return out
+	begin := g.child(e, "this")
+	sql := end
+	if step != "" {
+		sql = end + ":" + step
+	}
+	if sql == "" {
+		return begin + ":"
+	}
+	return begin + ":" + sql
 }
 
 // writeQuantifier writes ALL or ANY before its operand. The two are spaced
@@ -3694,7 +3833,9 @@ func (g *generator) writeQuantifier(e *Expression) string {
 // isQuery reports whether a node is a query rather than a value.
 func isQuery(e *Expression) bool {
 	switch e.Class {
-	case "Select", "Union", "Intersect", "Except":
+	// Subquery is a Query in the reference too: `[(SELECT 1)]` keeps its
+	// subquery as the array's ELEMENT (exp.Query).
+	case "Select", "Union", "Intersect", "Except", "Subquery":
 		return true
 	}
 	return false
@@ -3713,6 +3854,16 @@ func (g *generator) writeWindow(e *Expression) string {
 	partitionItems, _ := e.Args["partition_by"].([]*Expression)
 	order := g.child(e, "order")
 	spec := g.child(e, "spec")
+	// Teradata's window aggregates span the whole partition by default, and
+	// the frame that says so is not written back
+	// (TeradataGenerator.window_sql).
+	if g.dialect == "teradata" && spec != "" && order != "" {
+		if specNode, _ := e.Args["spec"].(*Expression); specNode != nil && isTeradataDefaultFrame(specNode) {
+			if fn, _ := e.Args["this"].(*Expression); isWindowAggregate(fn) {
+				spec = ""
+			}
+		}
+	}
 	// `OVER w` names a window defined elsewhere and adds nothing of its
 	// own -- bare, with no parentheses at all. `OVER (w ORDER BY y)` names
 	// one and EXTENDS it, and needs both: the base window is the first
@@ -3820,6 +3971,15 @@ func (g *generator) writeInterval(e *Expression) string {
 		return "INTERVAL " + g.node(this)
 	}
 	unitSQL := g.node(unit)
+	// DuckDB keeps a fraction inside the string: it truncates
+	// `INTERVAL '1.5' DAY` but not `INTERVAL '1.5 DAY'`
+	// (DuckDBGenerator.interval_sql).
+	if g.dialect == "duckdb" && e.Args["fraction_in_string"] == true &&
+		this != nil && unit.Class == "Var" {
+		text, _ := this.Args["this"].(string)
+		return "INTERVAL '" + escapeStringBody(text, g.cfg.StringEscapePreferred) +
+			" " + unitSQL + "'"
+	}
 	if !g.tables.IntervalAllowsPluralForm {
 		if singular, ok := timePartSingulars[unitSQL]; ok {
 			unitSQL = singular
@@ -3865,6 +4025,11 @@ func (g *generator) writeLambda(e *Expression) string {
 	// own, read off a rendered node; a dialect that has no spelling of its own
 	// drops the distinction and writes the arrow, which is what the empty
 	// template means.
+	// DuckDB (1.3 and later) writes EVERY lambda with the keyword and a
+	// colon, whichever spelling was read (DuckDBGenerator.lambda_sql).
+	if g.dialect == "duckdb" {
+		return "LAMBDA " + head + " : " + g.child(e, "this")
+	}
 	if colon, _ := e.Args["colon"].(bool); colon && g.tables.ColonLambdaWrite != "" {
 		out := strings.ReplaceAll(g.tables.ColonLambdaWrite, "{expressions}", head)
 		return strings.ReplaceAll(out, "{this}", g.child(e, "this"))
@@ -4241,7 +4406,58 @@ func (g *generator) writePropertyEQ(e *Expression) string {
 }
 
 func (g *generator) writeFilter(e *Expression) string {
+	// A dialect with no FILTER of its own folds the condition into the
+	// aggregate instead (dialect.py, no_filter_sql).
+	switch g.dialect {
+	case "tsql", "bigquery", "snowflake", "fabric":
+		if out, ok := g.filterAsAggregateArgument(e); ok {
+			return out
+		}
+		return g.fail("a FILTER this dialect cannot rewrite")
+	}
 	return g.child(e, "this") + " FILTER(" + g.child(e, "expression") + ")"
+}
+
+// filterAsAggregateArgument rewrites `AGG(x) FILTER(WHERE cond)` into the
+// conditional aggregation the dialect can read: the condition joins the
+// aggregate's own argument, since aggregates skip NULLs
+// (dialect.py, no_filter_sql).
+func (g *generator) filterAsAggregateArgument(e *Expression) (string, bool) {
+	agg, _ := e.Args["this"].(*Expression)
+	if agg == nil {
+		return "", false
+	}
+	if agg.Class == "IgnoreNulls" {
+		agg = childOf(agg, "this")
+	}
+	if agg == nil {
+		return "", false
+	}
+	where, _ := e.Args["expression"].(*Expression)
+	cond := childOf(where, "this")
+	if cond == nil {
+		return "", false
+	}
+	var aggArg *Expression
+	if agg.Class == "Anonymous" {
+		if items, _ := agg.Args["expressions"].([]*Expression); len(items) > 0 {
+			aggArg = items[0]
+		}
+	} else {
+		aggArg = childOf(agg, "this")
+	}
+	// Folding the condition into COUNT_IF's predicate avoids an IF that
+	// returns a predicate, which a dialect without a boolean type rejects.
+	if agg.Class == "CountIf" && (aggArg == nil || aggArg.Class != "Distinct") {
+		combined := New("And", Arg{"this", cond}, Arg{"expression", aggArg})
+		return g.node(New("CountIf", Arg{"this", combined})), true
+	}
+	// `COUNT(*/t.*) FILTER (WHERE cond)` counts qualifying rows, and a star
+	// can be no IF's argument.
+	if agg.Class == "Count" && (aggArg == nil || aggArg.Class == "Star") {
+		return g.node(New("CountIf", Arg{"this", cond})), true
+	}
+	return "", false
 }
 
 // keyDelimiter reports the quote a JSON path form wraps its key in, or "" if
@@ -4289,6 +4505,14 @@ func (g *generator) writeJSONPath(e *Expression) string {
 			// `$.y[*]`. It carries no text of its own, so it is written by
 			// putting the star in the slot rather than by escaping anything.
 			if inner, ok := part.Args["this"].(*Expression); ok && inner != nil {
+				// A SLICE stands where an index would -- `$[1:2]` is a
+				// subscript over a JSONPathSlice -- and is written with its
+				// bounds joined by colons, an explicit empty bound as
+				// nothing at all (jsonpath.py, JSON_PATH_PART_TRANSFORMS).
+				if inner.Class == "JSONPathSlice" {
+					out += "[" + jsonPathSliceText(inner) + "]"
+					continue
+				}
 				if inner.Class != "JSONPathWildcard" {
 					return g.fail(inner.Class + " in a JSON path")
 				}
@@ -4372,6 +4596,31 @@ func (g *generator) writeJSONPath(e *Expression) string {
 		return g.fail("a JSON path that writes nothing")
 	}
 	return out + pieces.Close
+}
+
+// jsonPathSliceText writes a slice's bounds joined by colons. A bound that was
+// never reached is skipped, and one that was reached but left empty (`$[:2]`'s
+// start) writes nothing -- the two look the same here and differ only in the
+// tree.
+func jsonPathSliceText(slice *Expression) string {
+	bounds := make([]string, 0, 3)
+	for _, key := range []string{"start", "end", "step"} {
+		value, present := slice.Args[key]
+		if !present || value == nil {
+			continue
+		}
+		switch v := value.(type) {
+		case bool:
+			bounds = append(bounds, "")
+		case int:
+			bounds = append(bounds, strconv.Itoa(v))
+		case float64:
+			bounds = append(bounds, strconv.FormatFloat(v, 'f', -1, 64))
+		default:
+			bounds = append(bounds, "")
+		}
+	}
+	return strings.Join(bounds, ":")
 }
 
 // jsonPathUnion writes a bracket of several indexes or keys with no
@@ -4470,6 +4719,48 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 		}
 		return "JSON_VALUE(" + g.child(e, "this") + ", " + g.node(path) + ")"
 	}
+	// ClickHouse writes the path as ARGUMENTS of one call -- keys quoted,
+	// positions bare and counted from ONE
+	// (ClickHouseGenerator.TRANSFORMS, json_extract_segments).
+	if g.dialect == "clickhouse" && (e.Class == "JSONExtract" || e.Class == "JSONExtractScalar") {
+		name := "JSONExtractRaw"
+		if e.Class == "JSONExtractScalar" {
+			name = "JSONExtractString"
+		}
+		path, _ := e.Args["expression"].(*Expression)
+		if path == nil || path.Class != "JSONPath" {
+			// A path the reference cannot read is carried through as the
+			// ARGUMENTS it was written with, tail and all.
+			args := []string{g.child(e, "this"), g.node(path)}
+			if extras, _ := e.Args["expressions"].([]*Expression); len(extras) > 0 {
+				for _, extra := range extras {
+					args = append(args, g.node(extra))
+				}
+			}
+			return name + "(" + strings.Join(args, ", ") + ")"
+		}
+		parts, _ := path.Args["expressions"].([]*Expression)
+		args := []string{g.child(e, "this")}
+		for _, part := range parts {
+			switch part.Class {
+			case "JSONPathRoot":
+			case "JSONPathSubscript":
+				n, _ := part.Args["this"].(int)
+				args = append(args, strconv.Itoa(n+1))
+			case "JSONPathKey":
+				key, _ := part.Args["this"].(string)
+				args = append(args, "'"+strings.ReplaceAll(key, "'", "''")+"'")
+			default:
+				return g.fail(part.Class + " in a ClickHouse JSON path")
+			}
+		}
+		if extras, _ := e.Args["expressions"].([]*Expression); len(extras) > 0 {
+			for _, extra := range extras {
+				args = append(args, g.node(extra))
+			}
+		}
+		return name + "(" + strings.Join(args, ", ") + ")"
+	}
 	if twice, ok := g.tables.JSONExtractTwiceSQL[e.Class]; ok && twice != "" {
 		return g.writeJSONExtractTwice(e, twice)
 	}
@@ -4564,10 +4855,10 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 // reads JSON_QUERY as the same node as JSON_EXTRACT, and writes back the name
 // it was given (BigQueryGenerator._json_extract_sql).
 func (g *generator) jsonExtractName(e *Expression, form string) string {
-	if e.originalName == "" {
+	if e.originalName == "" || renamedByDialect(g.dialect, e.Class) {
 		return form
 	}
-	if _, consults := g.tables.ConsultsOriginalName[e.Class]; !consults {
+	if !consultsOriginalName(g.tables, g.dialect, e) {
 		return form
 	}
 	if i := strings.Index(form, "("); i > 0 && !strings.ContainsAny(form[:i], " {") {
@@ -4934,6 +5225,14 @@ func (g *generator) writeAtTimeZone(e *Expression) string {
 	// place.
 	if g.dialect == "fabric" {
 		if cast := findCastToInScope(e, "TIMESTAMPTZ"); cast != nil {
+			// A parent that already casts to DATETIME2 says the same thing,
+			// and wrapping again writes it twice
+			// (FabricGenerator.attimezone_sql).
+			if parent := e.Parent; parent != nil && (parent.Class == "Cast" || parent.Class == "TryCast") {
+				if to, _ := parent.Args["to"].(*Expression); to != nil && to.Args["this"] == DataTypeKind("DATETIME2") {
+					return inner
+				}
+			}
 			to, _ := cast.Args["to"].(*Expression)
 			return "CAST(" + inner + " AS DATETIME2(" + cappedPrecisionText(to, 6) + "))"
 		}
@@ -5195,6 +5494,14 @@ func (g *generator) writeJSONKeyValue(e *Expression) string {
 //
 // The space in front is the separator, the way the reference returns it.
 func (g *generator) writePivot(e *Expression) string {
+	// StarRocks has no UNPIVOT, and no named-pivot form either: the clause
+	// is dropped and the relation written without it
+	// (StarRocksGenerator.pivot_sql -> no_pivot_sql).
+	if g.dialect == "starrocks" {
+		if unpivot, _ := e.Args["unpivot"].(bool); unpivot || e.Args["this"] != nil {
+			return ""
+		}
+	}
 	// The STATEMENT form is a different shape -- `PIVOT t ON x USING SUM(y)`,
 	// with the source under `this` -- and the template table already spells
 	// it. Only the postfix form, which hangs off a table and has no source of
@@ -5513,7 +5820,12 @@ func (g *generator) writeCreate(e *Expression) string {
 					newProps := props.shallowCopy()
 					newProps.Set("expressions", kept)
 					e.Set("properties", newProps)
-					e.Set("expression", New("Paren", Arg{"this", body}))
+					// A query already written inside a Subquery needs no
+					// second pair of parentheses
+					// (ClickHouseGenerator.create_sql).
+					if body.Class != "Subquery" {
+						e.Set("expression", New("Paren", Arg{"this", body}))
+					}
 				}
 			}
 		}
@@ -6620,7 +6932,14 @@ func (g *generator) writePrimaryKey(e *Expression) string {
 		out += written
 	}
 	// The words the key carries after it, in the order they were written.
-	if options, _ := e.Args["options"].([]string); len(options) > 0 {
+	// MySQL's are index OPTIONS (KEY_BLOCK_SIZE and friends), not words.
+	if options, _ := e.Args["options"].([]*Expression); len(options) > 0 {
+		parts := make([]string, 0, len(options))
+		for _, opt := range options {
+			parts = append(parts, g.node(opt))
+		}
+		out += " " + strings.Join(parts, " ")
+	} else if options, _ := e.Args["options"].([]string); len(options) > 0 {
 		out += " " + strings.Join(options, " ")
 	}
 	return out
@@ -6742,7 +7061,11 @@ func (g *generator) writeForeignKey(e *Expression) string {
 	if expressions != "" {
 		expressions = " (" + expressions + ")"
 	}
-	out := "FOREIGN KEY" + expressions
+	out := "FOREIGN KEY"
+	if name := g.child(e, "this"); name != "" {
+		out += " " + name
+	}
+	out += expressions
 	if ref := g.child(e, "reference"); ref != "" {
 		out += " " + ref
 	}
@@ -7000,9 +7323,9 @@ func (g *generator) writeAlter(e *Expression) string {
 			// or a CONSTRAINT -- and the kind is written the same way the
 			// statement-level DROP writes it.
 			tables, _ := action.Args["tables"].([]*Expression)
-			if len(tables) != 1 {
+			if len(tables) == 0 {
 				g.inColumnList = was
-				return g.fail(e.Class + " dropping more than one thing")
+				return g.fail(e.Class + " dropping nothing")
 			}
 			kind, _ := action.Args["kind"].(string)
 			if kind == "" {
@@ -7012,7 +7335,13 @@ func (g *generator) writeAlter(e *Expression) string {
 			if exists, _ := action.Args["exists"].(bool); exists {
 				text += "IF EXISTS "
 			}
-			text += g.node(tables[0])
+			// One DROP may name SEVERAL columns, comma-separated
+			// (Generator.drop_sql).
+			dropped := make([]string, 0, len(tables))
+			for _, table := range tables {
+				dropped = append(dropped, g.node(table))
+			}
+			text += strings.Join(dropped, ", ")
 			if cascade, _ := action.Args["cascade"].(bool); cascade {
 				text += " CASCADE"
 			}
@@ -7029,8 +7358,19 @@ func (g *generator) writeAlter(e *Expression) string {
 		}
 	}
 	g.inColumnList = was
-	out += " " + strings.Join(parts, ", ")
-	out += g.alterOptionText(e)
+	if len(parts) > 0 {
+		out += " " + strings.Join(parts, ", ")
+	}
+	// The options follow the actions with a comma BETWEEN them, and with no
+	// comma at all where there are no actions -- `ALTER TABLE t
+	// AUTO_INCREMENT=5` (Generator.alter_sql).
+	if optionsSQL := g.alterOptionText(e); optionsSQL != "" {
+		if len(parts) > 0 {
+			out += ", " + optionsSQL
+		} else {
+			out += " " + optionsSQL
+		}
+	}
 	// A constraint added NOT VALID is not checked against the rows already
 	// there, and the words go after everything the statement does.
 	if notValid, _ := e.Args["not_valid"].(bool); notValid {
@@ -7059,11 +7399,38 @@ func (g *generator) alterOptionText(e *Expression) string {
 	if len(options) == 0 {
 		return ""
 	}
-	parts := make([]string, 0, len(options))
+	// A PARTITION option is written beside the rest with a SPACE, not a
+	// comma: `ALTER TABLE t ENGINE=InnoDB PARTITION BY LIST ...`
+	// (Generator.alter_sql, ALTER_PARTITION_OPTIONS).
+	var plain, partitions []string
 	for _, opt := range options {
-		parts = append(parts, g.node(opt))
+		if g.isAlterPartitionOption(opt) {
+			partitions = append(partitions, g.node(opt))
+			continue
+		}
+		plain = append(plain, g.node(opt))
 	}
-	return ", " + strings.Join(parts, ", ")
+	out := strings.Join(plain, ", ")
+	if len(partitions) > 0 {
+		if out != "" {
+			out += " "
+		}
+		out += strings.Join(partitions, " ")
+	}
+	return out
+}
+
+// isAlterPartitionOption reports whether an ALTER option is one of the
+// dialect's PARTITION options, which are written apart from the others
+// (Generator.ALTER_PARTITION_OPTIONS).
+func (g *generator) isAlterPartitionOption(e *Expression) bool {
+	switch e.Class {
+	case "PartitionByListProperty", "PartitionByRangeProperty":
+		return true
+	case "DistributedByProperty", "PartitionedByProperty":
+		return g.dialect == "starrocks"
+	}
+	return false
 }
 
 func (g *generator) writeAddConstraint(e *Expression) string {
@@ -8831,7 +9198,9 @@ func (g *generator) writeAnalyze(e *Expression) string {
 	if statistics := g.child(e, "expression"); statistics != "" {
 		out += " " + statistics
 	}
-	if properties := g.child(e, "properties"); properties != "" {
+	// DuckDB has no spelling for the WITH (...) block on ANALYZE, so the
+	// reference drops it (its Properties node renders empty there).
+	if properties := g.child(e, "properties"); properties != "" && g.dialect != "duckdb" {
 		out += " " + properties
 	}
 	return out
@@ -9074,6 +9443,19 @@ func isUTF8Charset(e *Expression) bool {
 func (g *generator) writeDateDiff(e *Expression) string {
 	if g.dialect == "sqlite" {
 		return g.sqliteDateDiff(e)
+	}
+	// StarRocks' DATEDIFF compares only the DATE PARTS, so the two-argument
+	// form stays as written (StarRocksGenerator.datediff_sql).
+	if g.dialect == "starrocks" && e.Args["date_part_boundary"] == true {
+		unit, _ := e.Args["unit"].(*Expression)
+		if unit == nil || strings.EqualFold(unit.Name(), "DAY") {
+			this, _ := e.Args["this"].(*Expression)
+			expression, _ := e.Args["expression"].(*Expression)
+			if this == nil || expression == nil {
+				return g.fail(e.Class + " without both dates")
+			}
+			return "DATEDIFF(" + g.node(this) + ", " + g.node(expression) + ")"
+		}
 	}
 	if g.dialect != "mysql" || e.Args["unit"] == nil {
 		return g.spell(e)
@@ -10207,6 +10589,32 @@ func castsToDate(e *Expression) bool {
 // whether the sampling METHOD is written, whether a bare number counts rows or
 // a percentage, and what the repeatable seed is called.
 func (g *generator) writeTableSample(e *Expression) string {
+	// Teradata writes the sample with NO parentheses and no method, and a
+	// percentage back as the fraction it was written with
+	// (TeradataGenerator.tablesample_sql).
+	if g.dialect == "teradata" {
+		size := ""
+		if percent, _ := e.Args["percent"].(*Expression); percent != nil {
+			if text, ok := literalText(percent); ok {
+				if fraction, err := strconv.ParseFloat(text, 64); err == nil {
+					scaled := fraction / 100
+					formatted := strconv.FormatFloat(scaled, 'f', -1, 64)
+					// 100 percent keeps its decimal point, or it reads back
+					// as a row count.
+					if scaled >= 1 {
+						formatted = strconv.FormatFloat(scaled, 'f', 2, 64)
+					}
+					size = formatted
+				}
+			}
+		} else {
+			size = g.child(e, "size")
+		}
+		if size == "" {
+			size = g.list(e)
+		}
+		return " SAMPLE " + size
+	}
 	sample := g.tables.TableSample
 	method := ""
 	if m := g.child(e, "method"); m != "" && sample.WithMethod {
@@ -11754,4 +12162,110 @@ func (g *generator) writeBitwiseNot(e *Expression) string {
 		return g.unary(e, op)
 	}
 	return g.spell(e)
+}
+
+// sortedStringKeys returns a map's keys in a stable order.
+func sortedStringKeys(m map[string]string) []string {
+	keys := make([]string, 0, len(m))
+	for k := range m {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	return keys
+}
+
+// byteStringBody escapes a byte literal's value: its sequences as the dialect
+// spells them, a byte above ASCII as `\xNN`, and the delimiter last.
+func (g *generator) byteStringBody(text string) string {
+	if g.cfg.ByteStringsSupportEscapedSequences {
+		text = g.escapeSequences(text)
+		if _, ok := g.cfg.NumericEscapes["x"]; ok {
+			var out strings.Builder
+			for _, r := range text {
+				if r >= 0x80 && r <= 0xFF {
+					fmt.Fprintf(&out, "\\x%02x", r)
+					continue
+				}
+				out.WriteRune(r)
+			}
+			text = out.String()
+		}
+	}
+	preferred := g.cfg.StringEscapePreferred
+	if preferred == "" {
+		preferred = "'"
+	}
+	return strings.ReplaceAll(text, "'", preferred+"'")
+}
+
+// writeNearest writes DuckDB's nearest-neighbour join clause:
+// `[APPROX] NEAREST n BY DISTANCE|SIMILARITY <expr>` (Generator.nearest_sql).
+func (g *generator) writeNearest(e *Expression) string {
+	approximate := ""
+	if e.Args["approximate"] == true {
+		approximate = "APPROX "
+	}
+	metric := "DISTANCE"
+	if e.Args["similarity"] == true {
+		metric = "SIMILARITY"
+	}
+	return approximate + "NEAREST " + g.child(e, "count") + " BY " + metric + " " +
+		g.child(e, "this")
+}
+
+// writeDisconnect writes DuckDB's DISCONNECT.
+func (g *generator) writeDisconnect(*Expression) string { return "DISCONNECT" }
+
+// writeMatch writes Doris's MATCH family and, elsewhere, the plain binary.
+func (g *generator) writeMatch(e *Expression) string {
+	if g.dialect != "doris" {
+		return g.spell(e)
+	}
+	kind, _ := e.Args["kind"].(string)
+	op := "MATCH"
+	if kind != "" {
+		op = "MATCH_" + kind
+	}
+	out := g.child(e, "this") + " " + op + " " + g.child(e, "expression")
+	if analyzer := g.child(e, "analyzer"); analyzer != "" {
+		out += " USING ANALYZER " + analyzer
+	}
+	return out
+}
+
+// writeReplaceColumns writes Hive's `REPLACE COLUMNS (...)` action
+// (Generator.replacecolumns_sql).
+func (g *generator) writeReplaceColumns(e *Expression) string {
+	parts := []string{}
+	if items, _ := e.Args["expressions"].([]*Expression); len(items) > 0 {
+		for _, item := range items {
+			parts = append(parts, g.node(item))
+		}
+	}
+	return "REPLACE COLUMNS (" + strings.Join(parts, ", ") + ")"
+}
+
+// isTeradataDefaultFrame reports whether a window spec is the default frame
+// Teradata gives a window aggregate with an ORDER BY.
+func isTeradataDefaultFrame(spec *Expression) bool {
+	text := func(key string) string {
+		if v, ok := spec.Args[key].(string); ok {
+			return strings.ToUpper(v)
+		}
+		return ""
+	}
+	return text("kind") == "ROWS" && text("start") == "UNBOUNDED" &&
+		text("start_side") == "PRECEDING" && text("end") == "UNBOUNDED" &&
+		text("end_side") == "FOLLOWING"
+}
+
+// dropsTemporalPrecision reports whether the dialect writes a temporal type
+// without its precision: Presto and the Hive family, where a parameterised
+// TIME or TIMESTAMP has no spelling.
+func dropsTemporalPrecision(dialect string) bool {
+	switch dialect {
+	case "presto", "hive", "spark", "spark2":
+		return true
+	}
+	return false
 }

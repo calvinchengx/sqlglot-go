@@ -1,6 +1,6 @@
 {
  "dialect": "starrocks",
- "rendered": "DATE_DIFF('DAY', CAST('2010-07-07' AS DATE), CAST('2008-12-25' AS DATE))",
+ "rendered": "DATEDIFF(CAST('2010-07-07' AS DATE), CAST('2008-12-25' AS DATE))",
  "sql": "DATEDIFF(CAST('2010-07-07' AS DATE), CAST('2008-12-25' AS DATE))",
  "tokens": [
   {
@@ -259,14 +259,9 @@
    "v": false
   },
   {
-   "c": "sqlglot.expressions.core.Var",
    "i": 0,
-   "k": "unit"
-  },
-  {
-   "i": 15,
-   "k": "this",
-   "v": "DAY"
+   "k": "date_part_boundary",
+   "v": true
   }
  ]
 }

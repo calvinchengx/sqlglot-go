@@ -1,6 +1,6 @@
 {
  "dialect": "duckdb",
- "rendered": "SELECT LIST_TRANSFORM([5, NULL, 6], (x, y) -> COALESCE(x, y, 0) + 1)",
+ "rendered": "SELECT LIST_TRANSFORM([5, NULL, 6], LAMBDA x, y : COALESCE(x, y, 0) + 1)",
  "sql": "SELECT LIST_TRANSFORM([5, NULL, 6], (x, y) -> COALESCE(x, y, 0) + 1)",
  "tokens": [
   {
@@ -300,18 +300,23 @@
    "v": false
   },
   {
+   "i": 2,
+   "k": "value_constructor",
+   "v": false
+  },
+  {
    "c": "sqlglot.expressions.query.Lambda",
    "i": 1,
    "k": "expression"
   },
   {
    "c": "sqlglot.expressions.core.Add",
-   "i": 10,
+   "i": 11,
    "k": "this"
   },
   {
    "c": "sqlglot.expressions.functions.Coalesce",
-   "i": 11,
+   "i": 12,
    "k": "this",
    "m": {
     "col": 54,
@@ -322,7 +327,7 @@
   },
   {
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 12,
+   "i": 13,
    "k": "this",
    "m": {
     "col": 56,
@@ -332,19 +337,19 @@
    }
   },
   {
-   "i": 13,
+   "i": 14,
    "k": "this",
    "v": "x"
   },
   {
-   "i": 13,
+   "i": 14,
    "k": "quoted",
    "v": false
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 12,
+   "i": 13,
    "k": "expressions",
    "m": {
     "col": 59,
@@ -354,19 +359,19 @@
    }
   },
   {
-   "i": 16,
+   "i": 17,
    "k": "this",
    "v": "y"
   },
   {
-   "i": 16,
+   "i": 17,
    "k": "quoted",
    "v": false
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Literal",
-   "i": 12,
+   "i": 13,
    "k": "expressions",
    "m": {
     "col": 62,
@@ -376,18 +381,18 @@
    }
   },
   {
-   "i": 19,
+   "i": 20,
    "k": "this",
    "v": "0"
   },
   {
-   "i": 19,
+   "i": 20,
    "k": "is_string",
    "v": false
   },
   {
    "c": "sqlglot.expressions.core.Literal",
-   "i": 11,
+   "i": 12,
    "k": "expression",
    "m": {
     "col": 67,
@@ -397,19 +402,19 @@
    }
   },
   {
-   "i": 22,
+   "i": 23,
    "k": "this",
    "v": "1"
   },
   {
-   "i": 22,
+   "i": 23,
    "k": "is_string",
    "v": false
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 10,
+   "i": 11,
    "k": "expressions",
    "m": {
     "col": 38,
@@ -419,19 +424,19 @@
    }
   },
   {
-   "i": 25,
+   "i": 26,
    "k": "this",
    "v": "x"
   },
   {
-   "i": 25,
+   "i": 26,
    "k": "quoted",
    "v": false
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 10,
+   "i": 11,
    "k": "expressions",
    "m": {
     "col": 41,
@@ -441,12 +446,12 @@
    }
   },
   {
-   "i": 28,
+   "i": 29,
    "k": "this",
    "v": "y"
   },
   {
-   "i": 28,
+   "i": 29,
    "k": "quoted",
    "v": false
   }

@@ -1,6 +1,6 @@
 {
  "dialect": "trino",
- "rendered": "SELECT CAST('01:02:03.456 -08:00' AS TIME WITH TIME ZONE)",
+ "rendered": "SELECT CAST('01:02:03.456 -08:00' AS TIME(3) WITH TIME ZONE)",
  "sql": "SELECT TIME '01:02:03.456 -08:00'",
  "tokens": [
   {
@@ -46,6 +46,27 @@
      "i": 0,
      "k": "this",
      "v": "TIMETZ"
+    },
+    {
+     "a": true,
+     "c": "sqlglot.expressions.datatypes.DataTypeParam",
+     "i": 0,
+     "k": "expressions"
+    },
+    {
+     "c": "sqlglot.expressions.core.Literal",
+     "i": 2,
+     "k": "this"
+    },
+    {
+     "i": 3,
+     "k": "this",
+     "v": "3"
+    },
+    {
+     "i": 3,
+     "k": "is_string",
+     "v": false
     }
    ]
   },
@@ -80,6 +101,27 @@
    "i": 5,
    "k": "this",
    "v": "TIMETZ"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.DataTypeParam",
+   "i": 5,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 7,
+   "k": "this"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "3"
+  },
+  {
+   "i": 8,
+   "k": "is_string",
+   "v": false
   }
  ]
 }

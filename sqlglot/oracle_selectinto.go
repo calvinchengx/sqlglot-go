@@ -73,9 +73,6 @@ func (p *parser) oracleIntoColumns() ([]*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	if _, set := col.Args["join_mark"]; !set {
-		col.Set("join_mark", false)
-	}
 	if !p.match(TokCOMMA) {
 		return []*Expression{col}, nil
 	}

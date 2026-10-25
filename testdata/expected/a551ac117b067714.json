@@ -1,0 +1,194 @@
+{
+ "dialect": "starrocks",
+ "rendered": "REFRESH MATERIALIZED VIEW lo_mv1 PARTITION START ('2020-02-01') END ('2020-03-01')",
+ "sql": "REFRESH MATERIALIZED VIEW lo_mv1 PARTITION START (\"2020-02-01\") END (\"2020-03-01\")",
+ "tokens": [
+  {
+   "c": 7,
+   "e": 6,
+   "l": 1,
+   "s": 0,
+   "t": "REFRESH",
+   "x": "REFRESH"
+  },
+  {
+   "c": 20,
+   "e": 19,
+   "l": 1,
+   "s": 8,
+   "t": "VAR",
+   "x": "MATERIALIZED"
+  },
+  {
+   "c": 25,
+   "e": 24,
+   "l": 1,
+   "s": 21,
+   "t": "VIEW",
+   "x": "VIEW"
+  },
+  {
+   "c": 32,
+   "e": 31,
+   "l": 1,
+   "s": 26,
+   "t": "VAR",
+   "x": "lo_mv1"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 33,
+   "t": "PARTITION",
+   "x": "PARTITION"
+  },
+  {
+   "c": 48,
+   "e": 47,
+   "l": 1,
+   "s": 43,
+   "t": "BEGIN",
+   "x": "START"
+  },
+  {
+   "c": 50,
+   "e": 49,
+   "l": 1,
+   "s": 49,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 62,
+   "e": 61,
+   "l": 1,
+   "s": 50,
+   "t": "STRING",
+   "x": "2020-02-01"
+  },
+  {
+   "c": 63,
+   "e": 62,
+   "l": 1,
+   "s": 62,
+   "t": "R_PAREN",
+   "x": ")"
+  },
+  {
+   "c": 67,
+   "e": 66,
+   "l": 1,
+   "s": 64,
+   "t": "END",
+   "x": "END"
+  },
+  {
+   "c": 69,
+   "e": 68,
+   "l": 1,
+   "s": 68,
+   "t": "L_PAREN",
+   "x": "("
+  },
+  {
+   "c": 81,
+   "e": 80,
+   "l": 1,
+   "s": 69,
+   "t": "STRING",
+   "x": "2020-03-01"
+  },
+  {
+   "c": 82,
+   "e": 81,
+   "l": 1,
+   "s": 81,
+   "t": "R_PAREN",
+   "x": ")"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.core.Refresh"
+  },
+  {
+   "c": "sqlglot.expressions.query.Table",
+   "i": 0,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 32,
+    "end": 31,
+    "line": 1,
+    "start": 26
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "lo_mv1"
+  },
+  {
+   "i": 2,
+   "k": "quoted",
+   "v": false
+  },
+  {
+   "i": 0,
+   "k": "kind",
+   "v": "MATERIALIZED VIEW"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "partition_start",
+   "m": {
+    "col": 62,
+    "end": 61,
+    "line": 1,
+    "start": 50
+   }
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "2020-02-01"
+  },
+  {
+   "i": 6,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 0,
+   "k": "partition_end",
+   "m": {
+    "col": 81,
+    "end": 80,
+    "line": 1,
+    "start": 69
+   }
+  },
+  {
+   "i": 9,
+   "k": "this",
+   "v": "2020-03-01"
+  },
+  {
+   "i": 9,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "i": 0,
+   "k": "force",
+   "v": false
+  }
+ ]
+}

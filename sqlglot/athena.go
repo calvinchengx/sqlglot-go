@@ -66,8 +66,14 @@ func athenaWritesAsHive(e *Expression) bool {
 				}
 			}
 			// Any CREATE TABLE that is not CREATE TABLE ... AS <query> is
-			// Hive.
+			// Hive -- except a CTAS with a leading USING EXTERNAL FUNCTION
+			// clause, which is Trino's (_generate_as_hive).
 			expr, _ := e.Args["expression"].(*Expression)
+			if expr != nil && expr.Class == "Command" {
+				if word, _ := expr.Args["this"].(string); strings.EqualFold(word, "USING") {
+					return false
+				}
+			}
 			return expr == nil || !isQuery(expr)
 		}
 		// CREATE VIEW is Trino; CREATE SCHEMA, CREATE DATABASE and the rest

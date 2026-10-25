@@ -853,10 +853,9 @@ func (g *generator) namedFunction(e *Expression, spec FuncSQL) string {
 	// WRITTEN with, where the class's own writer is the fallback -- `LOG(x)`
 	// is an Ln and comes back out LOG (Generator.function_fallback_sql).
 	name := spec.Name
-	if e.originalName != "" {
-		if _, consults := g.tables.ConsultsOriginalName[e.Class]; consults {
-			name = e.originalName
-		}
+	if e.originalName != "" && consultsOriginalName(g.tables, g.dialect, e) &&
+		!renamedByDialect(g.dialect, e.Class) {
+		name = e.originalName
 	}
 	return name + "(" + strings.Join(parts, ", ") + ")"
 }
@@ -1098,4 +1097,26 @@ func athenaHiveAlter(e *Expression) *Expression {
 	acts, _ := out.Args["actions"].([]*Expression)
 	out.Set("actions", []*Expression{New("Schema", Arg{"expressions", acts})})
 	return out
+}
+
+// renamedByDialect reports whether the dialect's generator spells the call
+// with a name of its OWN rather than the one it was written with -- a
+// TRANSFORM, which the reference applies before its fallback ever runs.
+func renamedByDialect(dialect, class string) bool {
+	switch dialect {
+	case "clickhouse":
+		switch class {
+		case "CurrentDatabase", "CurrentSchemas", "CurrentUser":
+			return true
+		}
+	case "bigquery":
+		// BigQuery renames a handful through its TRANSFORMS, and those names
+		// are the dialect's own rather than the call's
+		// (BigQueryGenerator.TRANSFORMS).
+		switch class {
+		case "ByteLength":
+			return true
+		}
+	}
+	return false
 }

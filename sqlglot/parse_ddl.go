@@ -1,6 +1,7 @@
 package sqlglot
 
 import (
+	"errors"
 	"slices"
 	"strings"
 	"unicode"
@@ -675,6 +676,19 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// In ADD COLUMNS a DOTTED name adds a field to a struct column:
+		// `ADD COLUMNS (a.b INT)` names a field of a
+		// (SparkParser._parse_add_column, _parse_field_def).
+		if p.inAddColumns {
+			for p.at(TokDOT) && p.next() != nil && p.next().Type != TokSTAR {
+				p.advance()
+				field, ferr := p.parseIdentifier()
+				if ferr != nil {
+					return nil, ferr
+				}
+				name = New("Dot", Arg{"this", name}, Arg{"expression", field})
+			}
+		}
 		// A column may be COMPUTED from the others rather than stored:
 		// `b AS (a * 2) PERSISTED NOT NULL`. It names no type -- the type is
 		// whatever the expression yields -- so this is read before the type
@@ -781,6 +795,18 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// Where the column goes among the ones already there:
+		// `ADD COLUMNS (b INT AFTER a)` (Parser._parse_column_def).
+		var position *Expression
+		if p.atWords("FIRST") || p.atWords("AFTER") {
+			word := strings.ToUpper(p.curr().Text)
+			p.advance()
+			where, perr := p.parseColumn()
+			if perr != nil {
+				return nil, perr
+			}
+			position = New("ColumnPosition", Arg{"this", where}, Arg{"position", word})
+		}
 		// A column with neither a type nor a constraint stays a bare NAME,
 		// not a ColumnDef (`CREATE TABLE t (x, y)`).
 		if kind == nil && len(constraints) == 0 {
@@ -793,6 +819,9 @@ func (p *parser) parseColumnDefs() ([]*Expression, error) {
 		def := New("ColumnDef", Arg{"this", name}, Arg{"kind", kind})
 		if len(constraints) > 0 {
 			def.Set("constraints", constraints)
+		}
+		if position != nil {
+			def.Set("position", position)
 		}
 		out = append(out, def)
 		if !p.match(TokCOMMA) {
@@ -1114,11 +1143,30 @@ func (p *parser) parseInsert() (*Expression, error) {
 	// Only an explicit AS counts. A bare word here is the next clause --
 	// REPLACE, DEFAULT, VALUES -- and reading it as an alias would swallow it.
 	if p.at(TokALIAS) {
-		alias, err := p.parseTableAlias()
-		if err != nil {
-			return nil, err
+		// Only the NAME: a column list after it belongs to the INSERT rather
+		// than to the alias, and is read as the Schema below
+		// (Parser._parse_insert_table -> _parse_schema).
+		p.advance()
+		// A NAME, not any token: `AS SELECT` names nothing, and the words
+		// after it are the query's rather than an alias.
+		var aliasName *Expression
+		if p.atIdentifier() {
+			var aerr error
+			aliasName, aerr = p.parseIdentifier()
+			if aerr != nil {
+				return nil, aerr
+			}
+		} else if c := p.curr(); c != nil {
+			if _, ok := p.tables.IDVarTokens[c.Type]; !ok {
+				return nil, p.unsupported("INSERT AS without a name")
+			}
+			p.advance()
+			aliasName = New("Identifier", Arg{"this", c.Text}, Arg{"quoted", false})
 		}
-		table.Set("alias", alias)
+		if aliasName == nil {
+			return nil, p.unsupported("INSERT AS without a name")
+		}
+		table.Set("alias", New("TableAlias", Arg{"this", aliasName}))
 	}
 	if err := p.oracleInsertAlias(table); err != nil {
 		return nil, err
@@ -1287,7 +1335,7 @@ func (p *parser) parseInsert() (*Expression, error) {
 			return nil, err
 		}
 	}
-	if p.curr() != nil {
+	if p.curr() != nil && !p.inMultitableInsert {
 		return nil, p.unsupported("INSERT with more than this port reads")
 	}
 
@@ -1649,11 +1697,21 @@ func (p *parser) parseDrop() (*Expression, error) {
 	// (Parser._parse_drop -> _parse_on_property).
 	var cluster *Expression
 	if p.match(TokON) {
-		name := p.parseIDVarAny()
-		if name == nil {
-			return nil, p.unsupported("ON without a name")
+		// `DROP INDEX i ON db.t` names a TABLE after ON; every other kind
+		// names a plain identifier (Parser._parse_drop).
+		if kind == "INDEX" {
+			name, nerr := p.parseTableName()
+			if nerr != nil {
+				return nil, nerr
+			}
+			cluster = New("OnProperty", Arg{"this", name})
+		} else {
+			name := p.parseIDVarAny()
+			if name == nil {
+				return nil, p.unsupported("ON without a name")
+			}
+			cluster = New("OnProperty", Arg{"this", name})
 		}
-		cluster = New("OnProperty", Arg{"this", name})
 	}
 
 	// The words after the names, in the order the reference reads them.
@@ -1853,6 +1911,12 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 		out = append(out, New("ColumnConstraint", Arg{"kind", computed}))
 	}
 	for {
+		// MySQL's SIGNED is the default for a numeric type and is ignored
+		// (MySQLParser._parse_column_constraint).
+		if isMySQLFamily(p.dialect) && p.atWords("SIGNED") {
+			p.advance()
+			continue
+		}
 		var kind *Expression
 		switch {
 		case p.atRisingWaveComputed():
@@ -1868,6 +1932,13 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 		case p.at(TokNULL):
 			p.advance()
 			kind = New("NotNullColumnConstraint", Arg{"allow_null", true})
+		case p.dialect == "starrocks" && p.atStarrocksAggregateConstraint():
+			// StarRocks names the aggregate a column is built with where
+			// another dialect names a constraint: `v1 HLL HLL_UNION`
+			// (StarRocksParser.CONSTRAINT_PARSERS).
+			word := strings.ToUpper(p.curr().Text)
+			p.advance()
+			kind = New("Var", Arg{"this", word})
 		case p.dialect == "bigquery" && p.atWords("OPTIONS"):
 			// `a STRING OPTIONS (description='x')` records the settings as a
 			// Properties node (BigQueryParser.CONSTRAINT_PARSERS,
@@ -2102,6 +2173,15 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 		case p.atWords("BINARY"):
 			p.advance()
 			kind = New("BinaryColumnConstraint")
+		// MySQL spells two character sets by a word of their own: ASCII is
+		// latin1 (not the ascii set) and UNICODE is ucs2
+		// (MySQLParser.CONSTRAINT_PARSERS).
+		case p.atWords("ASCII"):
+			p.advance()
+			kind = New("CharacterSetColumnConstraint", Arg{"this", New("Var", Arg{"this", "latin1"})})
+		case p.atWords("UNICODE"):
+			p.advance()
+			kind = New("CharacterSetColumnConstraint", Arg{"this", New("Var", Arg{"this", "ucs2"})})
 		case p.atWords("COMMENT"):
 			p.advance()
 			// Exasol writes the IS as part of the constraint:
@@ -2195,6 +2275,12 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			// than in the loop below so the name is set BEFORE the kind, which
 			// is the order the reference assigns them in.
 			p.advance()
+			// A RESERVED kind straight after the word names no constraint:
+			// `CONSTRAINT CHECK (a > 0)` is the unnamed one
+			// (Parser._parse_column_def, RESERVED_CONSTRAINT_KINDS).
+			if p.atReservedConstraintKind() {
+				continue
+			}
 			name, err := p.parseIdentifier()
 			if err != nil {
 				return nil, err
@@ -2227,6 +2313,20 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			// A `>` ends the list too: the fields of a STRUCT are column
 			// definitions, and what closes them is the angle bracket the
 			// type was opened with rather than a parenthesis.
+			//
+			// So does `word = value`, which is no column constraint in any
+			// dialect: on an ALTER it is a TABLE PROPERTY, read after the
+			// actions (`ADD COLUMN c INT SECONDARY_ENGINE_ATTRIBUTE='{}'`).
+			if p.next() != nil && p.next().Type == TokEQ {
+				return out, nil
+			}
+			// In an ALTER's own column definition a word that is no
+			// constraint ends the definition, and the ALTER reads on
+			// (Parser._parse_column_def ends wherever a constraint does not
+			// begin).
+			if p.inAlterColumnDef && isMySQLFamily(p.dialect) {
+				return out, nil
+			}
 			if p.curr() != nil && !p.at(TokCOMMA) && !p.at(TokR_PAREN) && !p.at(TokGT) {
 				return nil, p.unsupported("a column constraint this port does not read")
 			}
@@ -2386,7 +2486,20 @@ func (p *parser) parseAlter() (*Expression, error) {
 		}
 	}
 
-	var actions []*Expression
+	// MySQL and the dialects that inherit it read the table's PROPERTIES
+	// before the actions: `ALTER TABLE t AUTO_INCREMENT=5` is an Alter whose
+	// `options` hold the property and whose `actions` are empty
+	// (Parser._parse_alter, ALTER_TABLE_REQUIRES_ACTION=False).
+	actions := []*Expression{}
+	options := []*Expression{}
+	mysqlProperties := isMySQLFamily(p.dialect) && kind == "TABLE"
+	if mysqlProperties {
+		props, perr := p.parseTableProperties()
+		if perr != nil {
+			return nil, perr
+		}
+		options = props
+	}
 	if kind == "VIEW" {
 		var command *Expression
 		actions, command, err = p.parseAlterView(start)
@@ -2396,16 +2509,18 @@ func (p *parser) parseAlter() (*Expression, error) {
 		if command != nil {
 			return command, nil
 		}
-	} else {
+	} else if !mysqlProperties || p.curr() != nil {
 		actions, err = p.parseAlterActions()
 		if err != nil {
+			// An action the reference gives up on makes the whole statement
+			// a Command rather than an Alter (Parser._parse_alter).
+			if errors.Is(err, errAlterGiveUp) {
+				return p.parseAsCommand(start), nil
+			}
 			return nil, err
 		}
 	}
-	options, err := p.alterOptions(kind)
-	if err != nil {
-		return nil, err
-	}
+	options = append(options, p.alterOptions(kind)...)
 	// A constraint added NOT VALID is not checked against the rows already
 	// there. It is recorded on the statement rather than on the constraint.
 	notValid := p.atWords("NOT", "VALID")
@@ -2421,7 +2536,10 @@ func (p *parser) parseAlter() (*Expression, error) {
 	// (Parser._parse_alter) -- ClickHouse reads a MODIFY it cannot finish
 	// this way, leaving the words in place.
 	if p.curr() != nil {
-		if p.dialect == "clickhouse" {
+		// MySQL's action list ends where its grammar does, and the words
+		// left over make the statement a Command of the whole text --
+		// `ADD COLUMN c INT TO r1` is one (Parser._parse_alter).
+		if p.dialect == "clickhouse" || isMySQLFamily(p.dialect) && kind == "TABLE" {
 			return p.parseAsCommand(start), nil
 		}
 		return nil, p.unsupported("ALTER with more than this port reads")
@@ -2520,6 +2638,24 @@ func (p *parser) parseAlterActions() ([]*Expression, error) {
 			return nil, err
 		}
 		actions = append(actions, action)
+		// A dialect that does not need DROP repeated may name several columns
+		// after one: `DROP COLUMN col1, col2`
+		// (Parser._parse_alter_drop_action, ALTER_TABLE_DROP_REQUIRED_FOR_EACH_COLUMN).
+		if !alterTableDropRequiredForEachColumn(p.dialect) {
+			if drop := action; drop != nil && drop.Class == "Drop" {
+				if kind, _ := drop.Args["kind"].(string); kind == "COLUMN" {
+					for p.at(TokCOMMA) && p.nextIsAColumnName() {
+						p.advance()
+						column, cerr := p.parseColumn()
+						if cerr != nil {
+							return nil, cerr
+						}
+						tables, _ := drop.Args["tables"].([]*Expression)
+						drop.Set("tables", append(tables, column))
+					}
+				}
+			}
+		}
 		if !p.at(TokCOMMA) || p.atMySQLAlterOption() {
 			return actions, nil
 		}
@@ -2584,6 +2720,27 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			return nil, err
 		}
 		return New("ReplacePartition", Arg{"expression", part}, Arg{"source", source}), nil
+	case isHiveFamily(p.dialect) && p.atWords("REPLACE"):
+		// Hive's `REPLACE COLUMNS (...)` gives the table a new shape
+		// (HiveParser._parse_alter_table_replace_columns).
+		p.advance() // REPLACE
+		if !p.atWords("COLUMNS") {
+			return nil, p.unsupported("ALTER REPLACE without COLUMNS")
+		}
+		p.advance() // COLUMNS
+		if !p.at(TokL_PAREN) {
+			return nil, p.unsupported("REPLACE COLUMNS without a list")
+		}
+		columns, err := p.parseColumnDefs()
+		if err != nil {
+			return nil, err
+		}
+		return New("ReplaceColumns", Arg{"expressions", columns}), nil
+	case isMySQLFamily(p.dialect) && p.atWords("FORCE"):
+		// `ALTER TABLE t FORCE` rebuilds the table, and the reference keeps
+		// the word as a property ACTION (MySQLParser.ALTER_PARSERS).
+		p.advance()
+		return New("ForceProperty"), nil
 	case p.dialect == "mysql" && p.atWords("AUTO_INCREMENT"):
 		return p.parseMySQLAutoIncrementAction()
 	case p.atWords("DELETE"):
@@ -2677,10 +2834,36 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 		// (Parser._parse_as_command).
 		return New("Command", Arg{"this", drop},
 			Arg{"expression", " " + strings.Join(words, " ")}), nil
+	case p.at(TokDROP) && isMySQLFamily(p.dialect) && p.next() != nil &&
+		strings.EqualFold(p.next().Text, "CHECK"):
+		// `ALTER TABLE t DROP CHECK c` is a DROP of a named thing on the
+		// table (MySQLParser._parse_alter_drop_action -> _parse_drop(kind="CHECK")).
+		p.advance()
+		p.advance()
+		name, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		return New("Drop",
+			Arg{"exists", false},
+			Arg{"tables", []*Expression{name}},
+			Arg{"kind", "CHECK"},
+			Arg{"temporary", false}, Arg{"materialized", false},
+			Arg{"cascade", false}, Arg{"restrict", false},
+			Arg{"constraints", false}, Arg{"purge", false},
+			Arg{"concurrently", false},
+			Arg{"sync", false}, Arg{"iceberg", false}, Arg{"force", false},
+		), nil
 	case p.at(TokDROP) && p.dialect == "mysql" && p.next() != nil &&
-		(strings.EqualFold(p.next().Text, "INDEX") || strings.EqualFold(p.next().Text, "FOREIGN KEY")):
+		(strings.EqualFold(p.next().Text, "INDEX") || strings.EqualFold(p.next().Text, "KEY") ||
+			strings.EqualFold(p.next().Text, "FOREIGN KEY")):
 		p.advance()
 		kind := strings.ToUpper(p.curr().Text)
+		// MySQL writes an index as either word, and the reference records
+		// both as INDEX (CREATABLE_KIND_MAPPING).
+		if kind == "KEY" {
+			kind = "INDEX"
+		}
 		p.advance()
 		name, err := p.parseTableName()
 		if err != nil {
@@ -2759,9 +2942,13 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			if !p.match(TokR_PAREN) {
 				return nil, p.unsupported("unclosed DROP COLUMNS")
 			}
+			// Only these three arguments: the reference builds this Drop with
+			// no others (Parser._parse_drop, kind COLUMNS).
 			return New("Drop",
+				Arg{"kind", "COLUMNS"},
 				Arg{"tables", []*Expression{New("Schema", Arg{"expressions", cols})}},
-				Arg{"kind", "COLUMNS"}), nil
+				Arg{"exists", exists},
+			), nil
 		}
 		if constraint {
 			name, err := p.parseTableName()
@@ -2779,14 +2966,29 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 				Arg{"sync", false}, Arg{"iceberg", false}, Arg{"force", false},
 			), nil
 		}
-		name, err := p.parseColumn()
+		// The name may be a KEYWORD the tokenizer knows -- `DROP COLUMN
+		// charset`, `DROP COLUMN partitioned_by` -- and where a column will
+		// not read one, the reference takes ANY token as the name and wraps
+		// it in a Column of its own (Parser._parse_drop, kind COLUMN).
+		var name *Expression
+		var err error
+		if p.atIdentifier() {
+			name, err = p.parseColumn()
+		} else if c := p.curr(); c != nil {
+			p.advance()
+			name = New("Column", Arg{"this",
+				New("Identifier", Arg{"this", c.Text}, Arg{"quoted", c.Type == TokIDENTIFIER})})
+		} else {
+			return nil, p.unsupported("DROP COLUMN without a name")
+		}
 		if err != nil {
 			return nil, err
 		}
 		// A dialect that records an outer-join mark on a column records it
-		// here too (Parser._parse_column).
-		if p.tables.SupportsColumnJoinMarks && name != nil && name.Class == "Column" {
-			name.Set("join_mark", p.match(TokJOIN_MARKER))
+		// here too (Parser._parse_column), and only when it was written.
+		if p.tables.SupportsColumnJoinMarks && name != nil && name.Class == "Column" &&
+			p.match(TokJOIN_MARKER) {
+			name.Set("join_mark", true)
 		}
 		cascade, restrict := false, false
 		switch {
@@ -3065,7 +3267,10 @@ func (p *parser) parseAddedColumn(exists bool) (*Expression, error) {
 		if (p.dialect != "oracle" && !isHiveFamily(p.dialect)) || exists {
 			return nil, p.unsupported("ADD of a parenthesised column list")
 		}
+		wasAddColumns := p.inAddColumns
+		p.inAddColumns = true
 		cols, err := p.parseColumnDefs()
+		p.inAddColumns = wasAddColumns
 		if err != nil {
 			return nil, err
 		}
@@ -3079,7 +3284,10 @@ func (p *parser) parseAddedColumn(exists bool) (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	wasAlterColumn := p.inAlterColumnDef
+	p.inAlterColumnDef = true
 	constraints, err := p.parseColumnConstraints()
+	p.inAlterColumnDef = wasAlterColumn
 	if err != nil {
 		return nil, err
 	}
@@ -3250,8 +3458,15 @@ func (p *parser) parseAlteredColumn() (*Expression, error) {
 			p.advance()
 			p.advance()
 		}
-		if p.atWords("TYPE") {
+		sawType := p.atWords("TYPE")
+		if sawType {
 			p.advance()
+		}
+		// Postgres and its family require the word: `ALTER COLUMN b RESTART`
+		// names no type, and the reference gives the statement up rather than
+		// reading RESTART as one (ALTER_COLUMN_TYPE_REQUIRES_KEYWORD).
+		if !sawType && alterColumnTypeRequiresKeyword(p.dialect) {
+			return nil, errAlterGiveUp
 		}
 		kind, err := p.parseDataType()
 		if err != nil {
@@ -3522,6 +3737,12 @@ func (p *parser) parseTableConstraint() (*Expression, error) {
 	}
 	if p.at(TokCONSTRAINT) {
 		p.advance()
+		// The word is consumed, but a RESERVED kind straight after it names
+		// no constraint at all: `CONSTRAINT FOREIGN KEY ...` is the unnamed
+		// one (Parser._parse_constraint, RESERVED_CONSTRAINT_KINDS).
+		if p.atReservedConstraintKind() {
+			return p.parseTableConstraintKind()
+		}
 		name, err := p.parseIdentifier()
 		if err != nil {
 			return nil, err
@@ -3623,12 +3844,35 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// MySQL's KEY_BLOCK_SIZE, COMMENT and the rest after the key parts
+		// belong to the KEY, not to the table (MySQLParser._parse_primary_key).
+		if isMySQLFamily(p.dialect) {
+			indexOptions, ierr := p.parseMySQLIndexOptions()
+			if ierr != nil {
+				return nil, ierr
+			}
+			if len(indexOptions) > 0 {
+				key.Set("options", indexOptions)
+				return key, nil
+			}
+		}
 		if len(options) > 0 {
 			key.Set("options", options)
 		}
 		return key, nil
 	case p.at(TokFOREIGN_KEY):
 		p.advance()
+		// MySQL may NAME the key here, with no CONSTRAINT in front of it:
+		// `FOREIGN KEY fk (a) REFERENCES ...` (MySQLParser._parse_foreign_key).
+		var fkName *Expression
+		if isMySQLFamily(p.dialect) && p.atIdentifier() && p.next() != nil &&
+			p.next().Type == TokL_PAREN {
+			id, ierr := p.parseIdentifier()
+			if ierr != nil {
+				return nil, ierr
+			}
+			fkName = id
+		}
 		columns, err := p.parseInsertColumns()
 		if err != nil {
 			return nil, err
@@ -3692,6 +3936,10 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		}
 		if len(options) > 0 {
 			node.Set("options", options)
+		}
+		// The name is set LAST, which is where the reference sets it too.
+		if fkName != nil {
+			node.Set("this", fkName)
 		}
 		return node, nil
 	case p.atWords("UNIQUE"):
@@ -4850,6 +5098,13 @@ func (p *parser) parseGenerated() (*Expression, error) {
 // Subquery where `CREATE TABLE t AS SELECT 1` holds the Select itself, and the
 // two are different trees for what an engine runs the same way.
 func (p *parser) parseCreateBody() (*Expression, error) {
+	// Athena's CTAS may name an external function instead of a query --
+	// `AS USING EXTERNAL FUNCTION f(x VARCHAR) RETURNS VARCHAR LAMBDA 'l'
+	// SELECT f('a')` -- which the reference keeps as a Command of the rest
+	// (Parser._parse_create -> _parse_as_command).
+	if p.athenaStream && p.atWords("USING") {
+		return p.parseAsCommand(*p.curr()), nil
+	}
 	if !p.at(TokL_PAREN) {
 		start := p.index
 		query, err := p.parseQuery()
@@ -5708,8 +5963,9 @@ func (p *parser) parsePrivilegeColumns() ([]*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		if p.tables.SupportsColumnJoinMarks && col != nil && col.Class == "Column" {
-			col.Set("join_mark", p.match(TokJOIN_MARKER))
+		if p.tables.SupportsColumnJoinMarks && col != nil && col.Class == "Column" &&
+			p.match(TokJOIN_MARKER) {
+			col.Set("join_mark", true)
 		}
 		return col, nil
 	})
@@ -8767,7 +9023,36 @@ func (p *parser) parseTablePart() (*Expression, error) {
 		}
 		return id, nil
 	}
+	// T-SQL's bare table hint -- `dbo.t (NOLOCK)` -- must not turn the name
+	// into a CALL: where the parentheses hold a bare hint word and nothing
+	// else, the name is a table part (TSQLParser._parse_table_part).
+	if (p.dialect == "tsql" || p.dialect == "fabric") && p.atBareTableHintCall() {
+		return p.parseIdentifierWhere(true)
+	}
 	return p.daxTableCall(p.parseIdentifierWhere(true))
+}
+
+// bareTableHints are the words T-SQL writes in parentheses right after a
+// table's name (TSQLParser.BARE_TABLE_HINTS).
+var bareTableHints = map[string]bool{
+	"NOLOCK": true, "READUNCOMMITTED": true, "UPDLOCK": true,
+	"REPEATABLEREAD": true, "SERIALIZABLE": true, "READCOMMITTED": true,
+	"TABLOCK": true, "TABLOCKX": true, "PAGLOCK": true, "ROWLOCK": true,
+	"NOWAIT": true, "READPAST": true, "XLOCK": true, "SNAPSHOT": true,
+	"NOEXPAND": true,
+}
+
+// atBareTableHintCall reports whether the cursor holds `name ( HINT )`, where
+// HINT is one of those words.
+func (p *parser) atBareTableHintCall() bool {
+	if p.curr() == nil {
+		return false
+	}
+	open, hint, close := p.peekAt(1), p.peekAt(2), p.peekAt(3)
+	if open == nil || open.Type != TokL_PAREN || hint == nil || close == nil || close.Type != TokR_PAREN {
+		return false
+	}
+	return bareTableHints[strings.ToUpper(hint.Text)]
 }
 
 // connectedTo reports whether the token now current was written with NO space
@@ -9362,4 +9647,75 @@ func triggerFailureIsHard(msg string) bool {
 		}
 	}
 	return false
+}
+
+// atReservedConstraintKind reports whether the word at the cursor is a
+// constraint kind that takes no name of its own, even after CONSTRAINT.
+func (p *parser) atReservedConstraintKind() bool {
+	switch {
+	case p.at(TokPRIMARY_KEY), p.at(TokFOREIGN_KEY):
+		return true
+	case p.atWords("CHECK"), p.atWords("UNIQUE"):
+		return true
+	case isMySQLFamily(p.dialect) && (p.atWords("FULLTEXT") || p.atWords("SPATIAL")):
+		return true
+	}
+	return false
+}
+
+// alterColumnTypeRequiresKeyword reports whether an ALTER COLUMN must say TYPE
+// before naming the new type -- Postgres and the dialects that inherit it.
+func alterColumnTypeRequiresKeyword(dialect string) bool {
+	switch dialect {
+	case "postgres", "redshift", "materialize", "risingwave":
+		return true
+	}
+	return false
+}
+
+// errAlterGiveUp reports an ALTER action the reference itself declines to
+// read, which turns the statement into a Command of its whole text.
+var errAlterGiveUp = errors.New("sqlglot-go: alter give-up")
+
+// alterTableDropRequiredForEachColumn reports whether every dropped column needs
+// its own DROP COLUMN -- true everywhere but T-SQL and Snowflake, which take a
+// list after one.
+func alterTableDropRequiredForEachColumn(dialect string) bool {
+	switch dialect {
+	case "tsql", "snowflake", "fabric":
+		return false
+	}
+	return true
+}
+
+// nextIsAColumnName reports whether the token after the cursor could name a
+// column in a DROP's list.
+func (p *parser) nextIsAColumnName() bool {
+	n := p.next()
+	if n == nil {
+		return false
+	}
+	if n.Type == TokVAR || n.Type == TokIDENTIFIER {
+		return true
+	}
+	_, ok := p.tables.IDVarTokens[n.Type]
+	return ok
+}
+
+// starrocksAggregateConstraints are the words StarRocks reads as a column's
+// aggregate function.
+var starrocksAggregateConstraints = map[string]bool{
+	"SUM": true, "MAX": true, "MIN": true, "REPLACE": true,
+	"REPLACE_IF_NOT_NULL": true, "HLL_UNION": true,
+}
+
+// atStarrocksAggregateConstraint reports whether the cursor holds one of those
+// words, and not a call of the same name.
+func (p *parser) atStarrocksAggregateConstraint() bool {
+	c := p.curr()
+	if c == nil || !starrocksAggregateConstraints[strings.ToUpper(c.Text)] {
+		return false
+	}
+	n := p.next()
+	return n == nil || n.Type != TokL_PAREN
 }

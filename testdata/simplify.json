@@ -1,5 +1,5 @@
 {
- "reference": "c7778cf56d90e409c75e59b82842544b118fa850",
+ "reference": "78b24a744adb8d5dc0eb285f067087338b60f266",
  "pairs": [
   {
    "dialect": "",
@@ -335,6 +335,16 @@
    "dialect": "mysql",
    "sql": "A XOR A",
    "expected": "A XOR A"
+  },
+  {
+   "dialect": "mysql",
+   "sql": "TRUE XOR FALSE AND FALSE",
+   "expected": "FALSE XOR TRUE"
+  },
+  {
+   "dialect": "mysql",
+   "sql": "TRUE OR TRUE XOR TRUE",
+   "expected": "TRUE"
   },
   {
    "dialect": "mysql",
@@ -973,6 +983,16 @@
   },
   {
    "dialect": "",
+   "sql": "1.0 / 0",
+   "expected": "1.0 / 0"
+  },
+  {
+   "dialect": "",
+   "sql": "0.0 / 0.0",
+   "expected": "0.0 / 0.0"
+  },
+  {
+   "dialect": "",
    "sql": "10 / 5",
    "expected": "10 / 5"
   },
@@ -1120,6 +1140,26 @@
    "dialect": "",
    "sql": "date '1998-12-01' - interval '90' day",
    "expected": "CAST('1998-09-02' AS DATE)"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST('2020-01-01' AS DATE) + INTERVAL '3000000.0' DAY",
+   "expected": "CAST('2020-01-01' AS DATE) + INTERVAL '3000000.0' DAY"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST('2020-01-01' AS DATE) + INTERVAL '10000.0' YEAR",
+   "expected": "CAST('2020-01-01' AS DATE) + INTERVAL '10000.0' YEAR"
+  },
+  {
+   "dialect": "",
+   "sql": "CAST('2020-01-01' AS DATE) - INTERVAL '2500' YEAR",
+   "expected": "CAST('2020-01-01' AS DATE) - INTERVAL '2500' YEAR"
+  },
+  {
+   "dialect": "",
+   "sql": "x + INTERVAL '10000.0' YEAR = CAST('2020-01-01' AS DATE)",
+   "expected": "x + INTERVAL '10000.0' YEAR = CAST('2020-01-01' AS DATE)"
   },
   {
    "dialect": "",
@@ -2688,8 +2728,68 @@
   },
   {
    "dialect": "",
+   "sql": "CASE WHEN TRUE THEN (SELECT 1) ELSE (SELECT 2) END",
+   "expected": "(SELECT 1)"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN FALSE THEN (SELECT 1) ELSE (SELECT 2) END",
+   "expected": "(SELECT 2)"
+  },
+  {
+   "dialect": "",
+   "sql": "IF(TRUE, (SELECT 1), (SELECT 2))",
+   "expected": "(SELECT 1)"
+  },
+  {
+   "dialect": "",
+   "sql": "IF(FALSE, (SELECT 1), (SELECT 2))",
+   "expected": "(SELECT 2)"
+  },
+  {
+   "dialect": "",
    "sql": "CASE WHEN FALSE THEN x WHEN FALSE THEN y WHEN TRUE THEN z END",
    "expected": "z"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN cond THEN x WHEN TRUE THEN y END",
+   "expected": "CASE WHEN cond THEN x ELSE y END"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN cond THEN x WHEN TRUE THEN y WHEN other_cond THEN z ELSE w END",
+   "expected": "CASE WHEN cond THEN x ELSE y END"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN FALSE THEN w WHEN cond THEN x WHEN NULL THEN y WHEN other_cond THEN z WHEN TRUE THEN v ELSE u END",
+   "expected": "CASE WHEN cond THEN x WHEN other_cond THEN z ELSE v END"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE WHEN cond THEN x WHEN 1 + 1 = 2 THEN y ELSE z END",
+   "expected": "CASE WHEN cond THEN x ELSE y END"
+  },
+  {
+   "dialect": "",
+   "sql": "CASE 1 WHEN x THEN y WHEN 1 THEN z ELSE w END",
+   "expected": "CASE WHEN x = 1 THEN y ELSE z END"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT CASE WHEN a > 1 THEN b WHEN TRUE THEN 2 END AS result FROM comparisons",
+   "expected": "SELECT CASE WHEN a > 1 THEN b ELSE 2 END AS result FROM comparisons"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT CASE WHEN c THEN a WHEN b = 1 THEN b WHEN TRUE THEN 2 WHEN a = 2 THEN 3 ELSE 4 END AS result FROM comparisons",
+   "expected": "SELECT CASE WHEN c THEN a WHEN b = 1 THEN b ELSE 2 END AS result FROM comparisons"
+  },
+  {
+   "dialect": "",
+   "sql": "SELECT CASE 1 WHEN a THEN b WHEN 1 THEN 2 ELSE 3 END AS result FROM comparisons",
+   "expected": "SELECT CASE WHEN a = 1 THEN b ELSE 2 END AS result FROM comparisons"
   },
   {
    "dialect": "",
@@ -2930,6 +3030,56 @@
    "dialect": "",
    "sql": "SELECT IF(NULL = NULL, 1, 100)",
    "expected": "SELECT 100"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "NULL = NULL IS NULL",
+   "expected": "(NULL = NULL) IS NULL"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "FALSE = FALSE IS NULL",
+   "expected": "(FALSE = FALSE) IS NULL"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "NULL = (NULL IS NULL)",
+   "expected": "NULL = TRUE"
+  },
+  {
+   "dialect": "redshift",
+   "sql": "NULL = NULL IS NULL",
+   "expected": "NULL = TRUE"
+  },
+  {
+   "dialect": "sqlite",
+   "sql": "NULL IS NULL BETWEEN 0 AND 0",
+   "expected": "0 <= TRUE AND 0 >= TRUE"
+  },
+  {
+   "dialect": "sqlite",
+   "sql": "NULL NOT NULL IN (0, 1)",
+   "expected": "FALSE IN (0, 1)"
+  },
+  {
+   "dialect": "postgres",
+   "sql": "NULL IS NOT DISTINCT FROM NULL BETWEEN 2 AND 3",
+   "expected": "NULL IS NOT DISTINCT FROM (2 <= NULL AND 3 >= NULL)"
+  },
+  {
+   "dialect": "sqlite",
+   "sql": "a IS b BETWEEN 0 AND 1",
+   "expected": "(a IS b) <= 1 AND (a IS b) >= 0"
+  },
+  {
+   "dialect": "sqlite",
+   "sql": "a IS DISTINCT FROM b BETWEEN 0 AND 1",
+   "expected": "(a IS DISTINCT FROM b) <= 1 AND (a IS DISTINCT FROM b) >= 0"
+  },
+  {
+   "dialect": "sqlite",
+   "sql": "a IS NOT DISTINCT FROM b NOT BETWEEN 0 AND 1",
+   "expected": "(a IS NOT DISTINCT FROM b) < 0 OR (a IS NOT DISTINCT FROM b) > 1"
   }
  ]
 }

@@ -89,6 +89,17 @@ func (p *parser) parseUpdate() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// The clause reads its JOINS too, and they hang off its own table
+		// (Parser._parse_from(joins=True) -> _parse_table(joins=True)).
+		fromJoins, jerr := p.parseJoins()
+		if jerr != nil {
+			return nil, jerr
+		}
+		if len(fromJoins) > 0 {
+			if first, _ := from.Args["this"].(*Expression); first != nil {
+				first.Set("joins", fromJoins)
+			}
+		}
 		node.Set("from_", from)
 	}
 	if p.at(TokWHERE) {

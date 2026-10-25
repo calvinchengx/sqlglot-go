@@ -42,20 +42,18 @@ func TestIdentifierEscapes(t *testing.T) {
 	}
 }
 
-func TestCustomEscapeFollowChars(t *testing.T) {
-	// With a follow-char set, a backslash before anything OUTSIDE that set is
-	// a custom escape and drops out of the text; a backslash before a
-	// backslash is an ordinary escaped escape and both characters stay.
+func TestDropUnknownEscapes(t *testing.T) {
+	// An escape with no meaning drops its backslash and keeps the character
+	// it preceded: that is the reference's DROP_UNKNOWN_ESCAPES.
 	tk := customTokenizer(t, func(c *Config) {
 		c.StringEscapes = set{"\\": {}, "'": {}}
-		c.EscapeFollowChars = set{"n": {}}
+		c.DropUnknownEscapes = true
 		c.UnescapedSequences = nil
 	})
 	for _, c := range []struct{ sql, want string }{
 		{`SELECT 'a\xb'`, `SELECT(SELECT) STRING(axb)`},
-		{`SELECT 'a\\b'`, `SELECT(SELECT) STRING(a\\b)`},
-		// A backslash before a follow char is not a custom escape at all.
-		{`SELECT 'a\nb'`, `SELECT(SELECT) STRING(a\nb)`},
+		{`SELECT 'a\\b'`, `SELECT(SELECT) STRING(a\b)`},
+		{`SELECT 'a\nb'`, `SELECT(SELECT) STRING(anb)`},
 	} {
 		toks, err := tk.Tokenize(c.sql)
 		if err != nil {
@@ -70,7 +68,7 @@ func TestCustomEscapeFollowChars(t *testing.T) {
 func TestEscapeAtEndOfInputIsAnError(t *testing.T) {
 	tk := customTokenizer(t, func(c *Config) {
 		c.StringEscapes = set{"\\": {}, "'": {}}
-		c.EscapeFollowChars = set{"n": {}}
+		c.DropUnknownEscapes = true
 		c.UnescapedSequences = nil
 	})
 	if toks, err := tk.Tokenize(`SELECT 'a\`); err == nil {

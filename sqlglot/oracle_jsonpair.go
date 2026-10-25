@@ -96,11 +96,6 @@ func (p *parser) oracleKeyIsPair() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	if key != nil && key.Class == "Literal" {
-		if _, set := key.Args["join_mark"]; !set {
-			key.Set("join_mark", false)
-		}
-	}
 	if !p.match(TokIS) {
 		return nil, p.unsupported("a JSON key without IS")
 	}

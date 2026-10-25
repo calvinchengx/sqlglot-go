@@ -90,6 +90,11 @@ func (p *parser) parseQueryBody() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// Hive's multi-table insert: `FROM x INSERT ... SELECT ... [INSERT ...]`
+		// (Parser._parse_statement).
+		if p.at(TokINSERT) {
+			return p.parseMultitableInserts(this)
+		}
 		return p.parseSetOperations(this)
 	}
 	// A query may be WRAPPED, and every pair of parentheses is recorded:
@@ -174,6 +179,10 @@ func (p *parser) parseQueryBody() (*Expression, error) {
 // else.
 func (p *parser) parseFromFirst() (*Expression, error) {
 	p.advance() // FROM
+	// A comment written before FROM belongs to the clause, and a multi-table
+	// insert carries it onto the statement itself
+	// (Parser._parse_statement, `comments=from_.comments`).
+	fromComments := p.takeComments()
 	table, err := p.parseTable()
 	if err != nil {
 		return nil, err
@@ -184,6 +193,16 @@ func (p *parser) parseFromFirst() (*Expression, error) {
 	}
 	if len(joins) > 0 {
 		table.Set("joins", joins)
+	}
+	// LATERAL VIEWs stand between the FROM and the SELECT they belong to,
+	// and land on the SELECT (Parser._parse_statement).
+	var laterals []*Expression
+	for p.atWords("LATERAL", "VIEW") {
+		view, verr := p.parseLateralView()
+		if verr != nil {
+			return nil, verr
+		}
+		laterals = append(laterals, view)
 	}
 
 	projections := []*Expression{newStar()}
@@ -207,9 +226,15 @@ func (p *parser) parseFromFirst() (*Expression, error) {
 		sel.Set("distinct", New("Distinct", Arg{"on", nil}))
 	}
 	sel.Set("expressions", projections)
-	sel.Set("from_", New("From", Arg{"this", table}))
+	from := New("From", Arg{"this", table})
+	from.Comments = append(from.Comments, fromComments...)
+	sel.Set("from_", from)
 	if err := p.parseQueryModifiers(sel); err != nil {
 		return nil, err
+	}
+	if len(laterals) > 0 {
+		existing, _ := sel.Args["laterals"].([]*Expression)
+		sel.Set("laterals", append(laterals, existing...))
 	}
 	return sel, nil
 }
@@ -274,12 +299,23 @@ func (p *parser) parseWith() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	// A SEARCH clause may be followed by a CYCLE clause of its own, which is
+	// a second node on the With rather than part of the first.
+	var cycle *Expression
+	if search != nil {
+		if kind, _ := search.Args["kind"].(string); kind != "CYCLE" && p.atWords("CYCLE") {
+			cycle, err = p.parseRecursiveWithSearch()
+			if err != nil {
+				return nil, err
+			}
+		}
+	}
 	var udfArg any
 	if len(udfs) > 0 {
 		udfArg = udfs
 	}
 	return New("With", Arg{"expressions", ctes}, Arg{"recursive", recursiveArg},
-		Arg{"search", search}, Arg{"udfs", udfArg}), nil
+		Arg{"search", search}, Arg{"cycle", cycle}, Arg{"udfs", udfArg}), nil
 }
 
 // parseRecursiveWithSearch reads the SEARCH or CYCLE clause that may follow a
@@ -318,7 +354,23 @@ func (p *parser) parseRecursiveWithSearch() (*Expression, error) {
 			return nil, err
 		}
 	}
-	var using *Expression
+	// CYCLE marks the rows that repeat the starting one: `TO <value>` and
+	// `DEFAULT <value>` name the marks, and USING names the path column.
+	// TO and DEFAULT are recorded FALSE where they were not written, which
+	// is how the reference assigns them (`_match_text_seq("TO") and ...`).
+	var to, defaultExpr, using any = false, false, false
+	if p.matchWords("TO") {
+		to, err = p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+	}
+	if p.matchWords("DEFAULT") {
+		defaultExpr, err = p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+	}
 	if p.match(TokUSING) {
 		using, err = p.parseIdentifier()
 		if err != nil {
@@ -326,7 +378,8 @@ func (p *parser) parseRecursiveWithSearch() (*Expression, error) {
 		}
 	}
 	return New("RecursiveWithSearch",
-		Arg{"kind", kind}, Arg{"this", this}, Arg{"expression", expression}, Arg{"using", using}), nil
+		Arg{"kind", kind}, Arg{"this", this}, Arg{"expression", expression},
+		Arg{"to", to}, Arg{"default", defaultExpr}, Arg{"using", using}), nil
 }
 
 // setOperations are the words that chain two queries together.
@@ -1319,7 +1372,7 @@ func (p *parser) parseAlias(this *Expression) (*Expression, error) {
 		}
 		return New("Aliases", Arg{"this", this}, Arg{"expressions", names}), nil
 	}
-	if !explicit && !p.atAliasName() {
+	if !explicit && !p.atProjectionAlias() {
 		return this, nil
 	}
 	// After a written AS, ANY token that is not reserved is the name: `SELECT
@@ -2821,6 +2874,71 @@ func (p *parser) finishSetOpModifiers(this *Expression) (*Expression, error) {
 func isSetOperationClass(class string) bool {
 	switch class {
 	case "Union", "Except", "Intersect":
+		return true
+	}
+	return false
+}
+
+// parseMultitableInserts reads Hive's FROM-first multi-table insert: the
+// source is the FROM's own relation, and every INSERT that follows names a
+// target fed from it (Parser._parse_statement -> MultitableInserts).
+func (p *parser) parseMultitableInserts(sel *Expression) (*Expression, error) {
+	from, _ := sel.Args["from_"].(*Expression)
+	source, _ := from.Args["this"].(*Expression)
+	if source == nil {
+		return nil, p.unsupported("a multi-table insert without a source")
+	}
+	// A LATERAL VIEW between the source and the INSERTs belongs to the
+	// SOURCE: `FROM x LATERAL VIEW EXPLODE(arr) a AS c INSERT ...`
+	// (Parser._parse_statement).
+	if laterals, _ := sel.Args["laterals"].([]*Expression); len(laterals) > 0 {
+		source.Set("laterals", laterals)
+	}
+	var inserts []*Expression
+	wasMultitable := p.inMultitableInsert
+	p.inMultitableInsert = true
+	for p.at(TokINSERT) {
+		stmt, err := p.parseInsert()
+		if err != nil {
+			p.inMultitableInsert = wasMultitable
+			return nil, err
+		}
+		inserts = append(inserts, stmt)
+	}
+	p.inMultitableInsert = wasMultitable
+	// The FROM's own leading comments belong to the statement
+	// (Parser._parse_statement, `comments=from_.comments`).
+	node := New("MultitableInserts", Arg{"expressions", inserts}, Arg{"source", source})
+	node.Comments = append(node.Comments, from.Comments...)
+	return node, nil
+}
+
+// atProjectionAlias reports whether the word at the cursor may name a
+// projection without AS. It is wider than atAliasName: ALIAS_TOKENS holds
+// every token an identifier may be, so T-SQL's `SELECT 1 output` is
+// `1 AS output` even though OUTPUT is a keyword.
+func (p *parser) atProjectionAlias() bool {
+	if p.atAliasName() {
+		return true
+	}
+	c := p.curr()
+	if c == nil || c.Type == TokSTRING {
+		return false
+	}
+	// A word that STARTS a clause is the clause's, not an alias.
+	if c.Type == TokFROM || c.Type == TokWHERE || c.Type == TokGROUP_BY ||
+		c.Type == TokHAVING || c.Type == TokORDER_BY || c.Type == TokLIMIT ||
+		c.Type == TokOFFSET || c.Type == TokUNION || c.Type == TokINTERSECT ||
+		c.Type == TokEXCEPT || c.Type == TokQUALIFY || c.Type == TokWINDOW ||
+		c.Type == TokJOIN || c.Type == TokLEFT || c.Type == TokRIGHT ||
+		c.Type == TokFULL || c.Type == TokINNER || c.Type == TokCROSS ||
+		c.Type == TokON || c.Type == TokUSING || c.Type == TokLATERAL ||
+		c.Type == TokSELECT {
+		return false
+	}
+	// T-SQL reads OUTPUT as a name here as well as a keyword: it puts
+	// RETURNING into ALIAS_TOKENS, so `SELECT 1 output` is `1 AS output`.
+	if (p.dialect == "tsql" || p.dialect == "fabric") && c.Type == TokRETURNING {
 		return true
 	}
 	return false

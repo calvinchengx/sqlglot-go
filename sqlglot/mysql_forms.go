@@ -81,36 +81,6 @@ func (p *parser) parseMySQLProfileType() *Expression {
 // actions: `ADD COLUMN x INT, ALGORITHM=INPLACE, LOCK=EXCLUSIVE`. The comma
 // is still current. Anything that is not a property is left where it stands,
 // because a comma there still separates two actions.
-func (p *parser) parseAlterOptions() ([]*Expression, error) {
-	if !p.at(TokCOMMA) {
-		return nil, nil
-	}
-	mark := p.index
-	p.advance()
-	if _, _, ok := p.atProperty(); !ok {
-		p.index = mark
-		return nil, nil
-	}
-	var out []*Expression
-	for {
-		spec, n, ok := p.atProperty()
-		if !ok {
-			break
-		}
-		for i := 0; i < n; i++ {
-			p.advance()
-		}
-		prop, err := p.parseProperty(spec)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, prop)
-		if !p.match(TokCOMMA) {
-			break
-		}
-	}
-	return out, nil
-}
 
 // parseMySQLIndexOptions reads what an index may say after its columns:
 // KEY_BLOCK_SIZE, USING, WITH PARSER, COMMENT, VISIBLE, INVISIBLE,
@@ -445,6 +415,11 @@ func (p *parser) atMySQLAlterOption() bool {
 	mark := p.index
 	p.advance()
 	_, _, isProp := p.atProperty()
+	if !isProp {
+		// A key the property table knows no word for is still an option
+		// where it is written `key = value`, as KEY_BLOCK_SIZE is.
+		_, isProp, _ = p.tryParseKeyValueProperty()
+	}
 	p.index = mark
 	return isProp
 }
@@ -462,18 +437,28 @@ func (p *parser) parseUnrecognizedAlter(start Token, kind string) (*Expression, 
 // alterOptions reads MySQL's properties after an ALTER TABLE's actions.
 // Every other statement carries an empty list, which is what the node had
 // before those properties were read.
-func (p *parser) alterOptions(kind string) ([]*Expression, error) {
-	if kind != "TABLE" || p.dialect != "mysql" {
-		return []*Expression{}, nil
+func (p *parser) alterOptions(kind string) []*Expression {
+	if kind != "TABLE" || !isMySQLFamily(p.dialect) {
+		return []*Expression{}
 	}
-	options, err := p.parseAlterOptions()
-	if err != nil {
-		return nil, err
+	// The table's properties may also come AFTER the actions, with or
+	// without a comma in front of them: `ADD COLUMN c INT
+	// SECONDARY_ENGINE_ATTRIBUTE='{}'` is one Alter holding both
+	// (Parser._parse_alter, ALTER_TABLE_MIXED_ACTIONS).
+	var out []*Expression
+	for {
+		mark := p.index
+		if p.at(TokCOMMA) {
+			p.advance()
+		}
+		props, err := p.parseTableProperties()
+		if err != nil || len(props) == 0 {
+			p.index = mark
+			break
+		}
+		out = append(out, props...)
 	}
-	if options == nil {
-		return []*Expression{}, nil
-	}
-	return options, nil
+	return out
 }
 
 func (p *parser) parseCreateDatabase(table *Expression, kind string, replace, refresh, exists bool) (*Expression, error) {

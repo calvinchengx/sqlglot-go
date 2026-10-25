@@ -174,29 +174,24 @@ func (p *parser) parseJSONValue() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	path, err = p.jsonPathArgument(path)
-	if err != nil {
-		return nil, err
-	}
-	var returning any = false
-	if p.match(TokRETURNING) {
-		// The reference reads a column here -- the type's name is one, and
-		// so is a call spelled like a sized type -- and reads a typed
-		// literal as a cast, which this port leaves alone.
-		if c := p.curr(); c == nil || c.Type == TokSTRING {
-			return nil, p.unsupported("RETURNING a typed literal")
-		}
-		var column *Expression
-		var err error
-		if n := p.next(); n != nil && n.Type == TokL_PAREN {
-			column, err = p.parseFunction()
-		} else {
-			column, err = p.parseColumn()
-		}
+	// Postgres keeps the path EXACTLY as written, a string literal like any
+	// other; every other dialect folds it into a JSONPath
+	// (Postgres.Parser.FUNCTIONS, _parse_json_value(json_path=False)).
+	if p.dialect != "postgres" {
+		path, err = p.jsonPathArgument(path)
 		if err != nil {
 			return nil, err
 		}
-		returning = column
+	}
+	var returning any = false
+	if p.match(TokRETURNING) {
+		// RETURNING names a TYPE, sized or not -- `RETURNING DECIMAL(4, 2)`,
+		// `RETURNING BIGINT` (Parser._parse_json_value, _parse_types).
+		typ, err := p.parseDataType()
+		if err != nil {
+			return nil, err
+		}
+		returning = typ
 	}
 	on, err := p.parseOnCondition()
 	if err != nil {

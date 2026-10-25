@@ -1,6 +1,6 @@
 {
- "reference": "c7778cf56d90e409c75e59b82842544b118fa850",
- "count": 11612,
+ "reference": "78b24a744adb8d5dc0eb285f067087338b60f266",
+ "count": 12036,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -4933,6 +4933,16 @@
    "sql": "SELECT 'foo''bar'"
   },
   {
+   "key": "d2646ef7164023bf",
+   "dialect": "athena",
+   "sql": "SELECT '\\'"
+  },
+  {
+   "key": "16d9543b3702d683",
+   "dialect": "athena",
+   "sql": "SELECT * FROM t WHERE name LIKE 'a\\_%' ESCAPE '\\'"
+  },
+  {
    "key": "1e0322cbd3dd71c6",
    "dialect": "athena",
    "sql": "CREATE TABLE IF NOT EXISTS t (name STRING) LOCATION 's3://bucket/tmp/mytable/' TBLPROPERTIES ('table_type'='iceberg', 'FORMAT'='parquet')"
@@ -4956,6 +4966,21 @@
    "key": "ca8d2d3d2386ccda",
    "dialect": "athena",
    "sql": "/* leading comment */SELECT * FROM foo"
+  },
+  {
+   "key": "3c3ec31d0cb378bc",
+   "dialect": "athena",
+   "sql": "MSCK REPAIR TABLE foo"
+  },
+  {
+   "key": "2045a032d6b50a04",
+   "dialect": "athena",
+   "sql": "msck repair table foo"
+  },
+  {
+   "key": "49cea95a56b23918",
+   "dialect": "athena",
+   "sql": "CREATE DATABASE foo COMMENT \"a\\\"b\""
   },
   {
    "key": "b9221e5d52fcd9b7",
@@ -5166,6 +5191,16 @@
    "key": "7966bc5ca012f02c",
    "dialect": "athena",
    "sql": "WITH foo AS (SELECT a, b FROM bar) SELECT * FROM foo"
+  },
+  {
+   "key": "287029e9cb7f7642",
+   "dialect": "athena",
+   "sql": "CREATE TABLE t WITH (format='PARQUET') AS USING EXTERNAL FUNCTION f(x VARCHAR) RETURNS VARCHAR LAMBDA 'l' SELECT f('a') AS b"
+  },
+  {
+   "key": "b9585a8c22789062",
+   "dialect": "athena",
+   "sql": "CREATE TABLE t WITH (format='PARQUET') AS SELECT 1 AS a"
   },
   {
    "key": "ad95ec7e8ed8c902",
@@ -7588,6 +7623,26 @@
    "sql": "SELECT ARRAY(SELECT x FROM UNNEST([0, 1]) AS x)"
   },
   {
+   "key": "35d513e03b82bdae",
+   "dialect": "bigquery",
+   "sql": "SELECT [(SELECT 1), 2]"
+  },
+  {
+   "key": "215f51f27eaa1ea4",
+   "dialect": "bigquery",
+   "sql": "SELECT [1, (SELECT 2)]"
+  },
+  {
+   "key": "4f0de5fe119d7b5f",
+   "dialect": "bigquery",
+   "sql": "SELECT [STRUCT((SELECT 1) AS a), STRUCT(2 AS a)]"
+  },
+  {
+   "key": "17ac0759db29a514",
+   "dialect": "bigquery",
+   "sql": "SELECT [COALESCE((SELECT 1), 0), 2]"
+  },
+  {
    "key": "241c0241778e0692",
    "dialect": "bigquery",
    "sql": "SELECT ARRAY(SELECT DISTINCT x FROM UNNEST(some_numbers) AS x) AS unique_numbers"
@@ -7943,11 +7998,6 @@
    "sql": "DATEDIFF(CAST('2010-07-07' AS DATE), CAST('2008-12-25' AS DATE))"
   },
   {
-   "key": "13975739dbe4dda5",
-   "dialect": "starrocks",
-   "sql": "DATE_DIFF('DAY', CAST('2010-07-07' AS DATE), CAST('2008-12-25' AS DATE))"
-  },
-  {
    "key": "a2cf7e8615efd6d2",
    "dialect": "starrocks",
    "sql": "DATEDIFF(CAST('2010-07-07' AS DATE), CAST('2008-12-25' AS DATE))"
@@ -8293,9 +8343,9 @@
    "sql": "SELECT ARRAY_TO_STRING(['cake', 'pie', NULL], '--', 'MISSING') AS text"
   },
   {
-   "key": "4f1b7a3c8c1fc38e",
+   "key": "df915602bf97481c",
    "dialect": "duckdb",
-   "sql": "SELECT ARRAY_TO_STRING(LIST_TRANSFORM(['cake', 'pie', NULL], x -> COALESCE(x, 'MISSING')), '--') AS text"
+   "sql": "SELECT ARRAY_TO_STRING(LIST_TRANSFORM(['cake', 'pie', NULL], LAMBDA x : COALESCE(CAST(x AS TEXT), 'MISSING')), '--') AS text"
   },
   {
    "key": "ead2e1fd312fca98",
@@ -8658,6 +8708,16 @@
    "sql": "FROM_HEX('foo')"
   },
   {
+   "key": "82f13b66bdfdc76d",
+   "dialect": "bigquery",
+   "sql": "FROM_HEX('CAFE')"
+  },
+  {
+   "key": "2e0535307597742c",
+   "dialect": "clickhouse",
+   "sql": "UNHEX('CAFE')"
+  },
+  {
    "key": "7a7e25b537b4568e",
    "dialect": "bigquery",
    "sql": "TO_CODE_POINTS('foo')"
@@ -8848,14 +8908,14 @@
    "sql": "SELECT b'a'"
   },
   {
-   "key": "91c389f0ee43d883",
+   "key": "137c624fe6321b14",
    "dialect": "duckdb",
-   "sql": "SELECT CAST(e'a' AS BLOB)"
+   "sql": "SELECT CAST('a' AS BLOB)"
   },
   {
-   "key": "ed19eb38ed0e6004",
+   "key": "7103b721874fc589",
    "dialect": "postgres",
-   "sql": "SELECT CAST(e'a' AS BYTEA)"
+   "sql": "SELECT DECODE('61', 'hex')"
   },
   {
    "key": "7b78942c777809c8",
@@ -9633,6 +9693,16 @@
    "sql": "SELECT RANGE(CAST('2022-10-01 14:53:27 America/Los_Angeles' AS TIMESTAMP), CAST('2022-10-01 16:00:00 America/Los_Angeles' AS TIMESTAMP))"
   },
   {
+   "key": "feb8db08483bf358",
+   "dialect": "bigquery",
+   "sql": "SELECT JSON_EXTRACT_SCALAR(j, '$.a')"
+  },
+  {
+   "key": "0a38df1ade56e42f",
+   "dialect": "clickhouse",
+   "sql": "SELECT JSONExtractString(j, 'a')"
+  },
+  {
    "key": "6f1c9ffc61de153c",
    "dialect": "bigquery",
    "sql": "SELECT JSON_QUERY('{\"class\": {\"students\": []}}', '$.class')"
@@ -10041,6 +10111,11 @@
    "key": "fb344fb0d9a78711",
    "dialect": "bigquery",
    "sql": "SELECT * FROM UNNEST(x) WITH OFFSET EXCEPT DISTINCT SELECT * FROM UNNEST(y) WITH OFFSET"
+  },
+  {
+   "key": "102334be7ca267b9",
+   "dialect": "bigquery",
+   "sql": "SELECT [STRUCT((SELECT 1) AS a)]"
   },
   {
    "key": "63ad1a5d8f101d69",
@@ -10888,6 +10963,26 @@
    "sql": "APPROX_QUANTILES(DISTINCT x, 2 RESPECT NULLS)"
   },
   {
+   "key": "e5ff83705cf6bdcf",
+   "dialect": "bigquery",
+   "sql": "SELECT SUM(APPROX_QUANTILES(x, 2)[1]) OVER () FROM t"
+  },
+  {
+   "key": "7ff65de3cbec5650",
+   "dialect": "trino",
+   "sql": "SELECT SUM(APPROX_PERCENTILE(x, 0.5)) OVER () FROM t"
+  },
+  {
+   "key": "4f60258a5d00efa4",
+   "dialect": "bigquery",
+   "sql": "SELECT SUM((SELECT APPROX_QUANTILES(x, 2)[1] FROM t)) OVER () FROM u"
+  },
+  {
+   "key": "0f6f1b65a75cd14f",
+   "dialect": "trino",
+   "sql": "SELECT SUM((SELECT APPROX_PERCENTILE(x, 0.5) FROM t)) OVER () FROM u"
+  },
+  {
    "key": "99d348cb0418fbda",
    "dialect": "bigquery",
    "sql": "APPROX_QUANTILES(x, 1)"
@@ -11463,6 +11558,21 @@
    "sql": "SELECT * FROM foo ANY JOIN bla"
   },
   {
+   "key": "f92bb56276ae5b58",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo PASTE JOIN bla"
+  },
+  {
+   "key": "417a5562b37d3dc9",
+   "dialect": "clickhouse",
+   "sql": "SELECT * FROM foo AS a PASTE JOIN bla AS b PASTE JOIN baz AS c"
+  },
+  {
+   "key": "63b9968a5201b5ce",
+   "dialect": "clickhouse",
+   "sql": "SELECT paste(paste) FROM paste AS paste"
+  },
+  {
    "key": "40983e3a0121b514",
    "dialect": "clickhouse",
    "sql": "SELECT * FROM foo GLOBAL ANY JOIN bla"
@@ -11548,6 +11658,11 @@
    "sql": "VAR_POP(x)"
   },
   {
+   "key": "85603ab54764f715",
+   "dialect": "clickhouse",
+   "sql": "SELECT groupBitAnd(x) OVER (PARTITION BY y) FROM t"
+  },
+  {
    "key": "51259211efb293df",
    "dialect": "clickhouse",
    "sql": "toDayOfMonth(x)"
@@ -11556,6 +11671,56 @@
    "key": "d95b7759c2e09a5e",
    "dialect": "clickhouse",
    "sql": "toDayOfYear(x)"
+  },
+  {
+   "key": "7b607f53df0a0f0c",
+   "dialect": "clickhouse",
+   "sql": "toDayOfWeek(x)"
+  },
+  {
+   "key": "1d38efa14c5625ec",
+   "dialect": "duckdb",
+   "sql": "ISODOW(x)"
+  },
+  {
+   "key": "515addcd0c4729df",
+   "dialect": "clickhouse",
+   "sql": "toISOWeek(x)"
+  },
+  {
+   "key": "1242eba75072de94",
+   "dialect": "presto",
+   "sql": "WEEK(x)"
+  },
+  {
+   "key": "49de6b77c9914644",
+   "dialect": "duckdb",
+   "sql": "WEEKOFYEAR(x)"
+  },
+  {
+   "key": "be7e30208bb912ec",
+   "dialect": "clickhouse",
+   "sql": "toISOYear(x)"
+  },
+  {
+   "key": "b36464e4392f270d",
+   "dialect": "duckdb",
+   "sql": "EXTRACT(ISOYEAR FROM x)"
+  },
+  {
+   "key": "4a4ca78a085d65bd",
+   "dialect": "clickhouse",
+   "sql": "toDayOfWeek(x, 3)"
+  },
+  {
+   "key": "2ab11e20b0effe81",
+   "dialect": "clickhouse",
+   "sql": "toISOWeek(x, 'UTC')"
+  },
+  {
+   "key": "b7e1e124aa7e687c",
+   "dialect": "clickhouse",
+   "sql": "toISOYear(x, 'UTC')"
   },
   {
    "key": "c64ac6a011347b69",
@@ -11606,6 +11771,11 @@
    "key": "5bd86401dbbc212d",
    "dialect": "clickhouse",
    "sql": "SELECT JSONExtractString('{\"x\": {\"y\": 1}}', 'x', 'y')"
+  },
+  {
+   "key": "32143655a2313476",
+   "dialect": "clickhouse",
+   "sql": "SELECT JSONExtractRaw('{\"x\": {\"y\": 1}}', 'x', 'y')"
   },
   {
    "key": "fa668dda38882e55",
@@ -11776,6 +11946,16 @@
    "key": "87678db95babb4f9",
    "dialect": "clickhouse",
    "sql": "SELECT JSONExtractString('{\"a\": \"hello\", \"b\": [-100, 200.0, 300]}', 'a')"
+  },
+  {
+   "key": "27c6e2b930f5936e",
+   "dialect": "clickhouse",
+   "sql": "SELECT JSONExtractRaw(payload, 'amount'), JSONExtractString(payload, 'amount')"
+  },
+  {
+   "key": "c094ec16fbc8899c",
+   "dialect": "postgres",
+   "sql": "SELECT payload -> 'amount', payload ->> 'amount'"
   },
   {
    "key": "301827ceddf72669",
@@ -12148,6 +12328,21 @@
    "sql": "SELECT 'ThOmAs' ~* x FROM t"
   },
   {
+   "key": "52754b067bb1e409",
+   "dialect": "clickhouse",
+   "sql": "SELECT countMatches(s, 'a')"
+  },
+  {
+   "key": "e15340a660cbea5b",
+   "dialect": "clickhouse",
+   "sql": "SELECT countMatches(substringUTF8(s, 3), CONCAT('(?is)', 'a.b'))"
+  },
+  {
+   "key": "45e5ad1807803070",
+   "dialect": "clickhouse",
+   "sql": "SELECT countMatches(substringUTF8(s, 1), 'a')"
+  },
+  {
    "key": "f8f8c716174178d9",
    "dialect": "clickhouse",
    "sql": "SELECT '\\0'"
@@ -12156,6 +12351,36 @@
    "key": "20d905301543920c",
    "dialect": "mysql",
    "sql": "SELECT '\u0000'"
+  },
+  {
+   "key": "a56dc8cfcd7cb285",
+   "dialect": "mysql",
+   "sql": "SELECT '\\0'"
+  },
+  {
+   "key": "acec10ba81e8590d",
+   "dialect": "clickhouse",
+   "sql": "SELECT \"a\\\\\""
+  },
+  {
+   "key": "907af6cb21ca5ec0",
+   "dialect": "clickhouse",
+   "sql": "SELECT \"a\\\\\"\"b\""
+  },
+  {
+   "key": "5e8e522a802d3dca",
+   "dialect": "clickhouse",
+   "sql": "SELECT `a\\\\b`"
+  },
+  {
+   "key": "c16425dc337b8df1",
+   "dialect": "clickhouse",
+   "sql": "SELECT \"a\\\\b\""
+  },
+  {
+   "key": "d20b520f3ee7f4df",
+   "dialect": "postgres",
+   "sql": "SELECT \"a\\b\""
   },
   {
    "key": "6728909bc9f50ccd",
@@ -12418,9 +12643,14 @@
    "sql": "SELECT quantile(a, [0.5])"
   },
   {
-   "key": "9df968ae772ad1b5",
+   "key": "a4b8d9fb8e72cf66",
    "dialect": "clickhouse",
-   "sql": "SELECT isNaN(x)"
+   "sql": "SELECT isNaN(x), arrayReverse(a)"
+  },
+  {
+   "key": "8c5531ea51252a1c",
+   "dialect": "bigquery",
+   "sql": "SELECT IS_NAN(x), ARRAY_REVERSE(a)"
   },
   {
    "key": "8e30695961824a28",
@@ -12431,6 +12661,46 @@
    "key": "8a57b86d991a95c6",
    "dialect": "clickhouse",
    "sql": "SELECT isNaN(x), isNaN(x)"
+  },
+  {
+   "key": "7f2c67992770d5da",
+   "dialect": "clickhouse",
+   "sql": "SELECT isInfinite(x)"
+  },
+  {
+   "key": "eb58b9f7b343b523",
+   "dialect": "bigquery",
+   "sql": "SELECT IS_INF(x)"
+  },
+  {
+   "key": "8f607641e3343e09",
+   "dialect": "duckdb",
+   "sql": "SELECT ISINF(x)"
+  },
+  {
+   "key": "3f236322ab3cbadb",
+   "dialect": "clickhouse",
+   "sql": "SELECT POSITION(s, 'a') > 0"
+  },
+  {
+   "key": "cbfb04a57bf0aa74",
+   "dialect": "duckdb",
+   "sql": "SELECT CONTAINS(s, 'a')"
+  },
+  {
+   "key": "7e909ed9651ee427",
+   "dialect": "clickhouse",
+   "sql": "SELECT POSITION(LOWER(s), LOWER('a')) > 0"
+  },
+  {
+   "key": "a9d8be5c626b5462",
+   "dialect": "bigquery",
+   "sql": "SELECT CONTAINS_SUBSTR(s, 'a')"
+  },
+  {
+   "key": "adaf6ca1672389d3",
+   "dialect": "clickhouse",
+   "sql": "SELECT (POSITION(s, 'a') > 0) = (POSITION(t, 'b') > 0) FROM x WHERE NOT POSITION(s, 'a') > 0 AND y"
   },
   {
    "key": "bc3a273f3823db24",
@@ -12818,6 +13088,21 @@
    "sql": "SELECT []"
   },
   {
+   "key": "ecac07e9d58da561",
+   "dialect": "clickhouse",
+   "sql": "SELECT CAST(JSONExtractRaw(v, 'a') AS Nullable(String)) FROM data"
+  },
+  {
+   "key": "fb55f153cae00a0d",
+   "dialect": "postgres",
+   "sql": "SELECT CAST(v -> 'a' AS TEXT) FROM data"
+  },
+  {
+   "key": "883a99514f27ab41",
+   "dialect": "clickhouse",
+   "sql": "SELECT JSONExtractRaw(v, 'a') FROM data"
+  },
+  {
    "key": "2780144ec2be5129",
    "dialect": "clickhouse",
    "sql": "SELECT * FROM t AS a JOIN s AS b ON a.id = b.id GLOBAL ANY LEFT JOIN u AS c ON a.id = c.id"
@@ -13066,6 +13351,11 @@
    "key": "d1efa513ccba2916",
    "dialect": "clickhouse",
    "sql": "CREATE TABLE a ENGINE=Memory AS SELECT 1 AS c COMMENT 'foo'"
+  },
+  {
+   "key": "6087ef5c312d9f3a",
+   "dialect": "clickhouse",
+   "sql": "CREATE TABLE a ENGINE=Memory AS (SELECT 1 AS c) COMMENT 'foo'"
   },
   {
    "key": "4b7f632f73952151",
@@ -13598,6 +13888,11 @@
    "sql": "arrayExcept([1, 2, 3, 2, 4], [3, 5])"
   },
   {
+   "key": "9df035552ae2f18d",
+   "dialect": "clickhouse",
+   "sql": "SELECT JSONExtract(JSONExtractRaw(v, 'a'), 'Nullable(String)') FROM data"
+  },
+  {
    "key": "99887bad53a1119a",
    "dialect": "clickhouse",
    "sql": "arrayMap(x -> x + 1, arr)"
@@ -13631,6 +13926,11 @@
    "key": "a92250c48d512b6a",
    "dialect": "clickhouse",
    "sql": "SELECT col.^nested, t.col2.^nested, t.col3.^nested.twice FROM t"
+  },
+  {
+   "key": "f6b4d1bde3bac50d",
+   "dialect": "clickhouse",
+   "sql": "SELECT groupBitAndIf(x, y) FROM t"
   },
   {
    "key": "b180a29b7aee7d07",
@@ -13741,6 +14041,26 @@
    "key": "cce67c85c5204d20",
    "dialect": "clickhouse",
    "sql": "SELECT arrayMap((a, b) -> a * b, [1, 2, 3], [10, 20, 30]) AS products"
+  },
+  {
+   "key": "62d48de8643be0e4",
+   "dialect": "databricks",
+   "sql": "CREATE TABLE t (ts TIMESTAMP(9))"
+  },
+  {
+   "key": "2c5fb79851caf808",
+   "dialect": "hive",
+   "sql": "CREATE TABLE t (ts TIMESTAMP)"
+  },
+  {
+   "key": "6b3e9fc3d9220207",
+   "dialect": "spark",
+   "sql": "CREATE TABLE t (ts TIMESTAMP)"
+  },
+  {
+   "key": "b59524d74bea7ba0",
+   "dialect": "spark2",
+   "sql": "CREATE TABLE t (ts TIMESTAMP)"
   },
   {
    "key": "6717c05a741410d6",
@@ -14233,9 +14553,19 @@
    "sql": "UNIFORM(1, 10, 5)"
   },
   {
+   "key": "e9e11d02e6ae3675",
+   "dialect": "duckdb",
+   "sql": "CAST(FLOOR(1 + (ABS(HASH(5)) % 1000000) / 1000000.0 * (10 - 1 + 1)) AS BIGINT)"
+  },
+  {
    "key": "bb6d5180e5d0d838",
    "dialect": "databricks",
    "sql": "UNIFORM(1, 10)"
+  },
+  {
+   "key": "8e9d707e1680b9a6",
+   "dialect": "duckdb",
+   "sql": "CAST(FLOOR(1 + RANDOM() * (10 - 1 + 1)) AS BIGINT)"
   },
   {
    "key": "89357d060694ca3c",
@@ -17143,26 +17473,6 @@
    "sql": "SLICE(x, 1, 3)"
   },
   {
-   "key": "f3431c41c5ab2bb5",
-   "dialect": "duckdb",
-   "sql": "LIST_SORT(x)"
-  },
-  {
-   "key": "7d0199e6d15fcd4d",
-   "dialect": "hive",
-   "sql": "SORT_ARRAY(x)"
-  },
-  {
-   "key": "c71734ce9a9499f9",
-   "dialect": "presto",
-   "sql": "ARRAY_SORT(x)"
-  },
-  {
-   "key": "4d4bfe854174ad7a",
-   "dialect": "spark",
-   "sql": "SORT_ARRAY(x)"
-  },
-  {
    "key": "1dc816ce611eff69",
    "dialect": "duckdb",
    "sql": "LIST_PREPEND(x, arr)"
@@ -17348,9 +17658,9 @@
    "sql": "SELECT ARRAY_EXCEPT(ARRAY[1, 2, 3], ARRAY[2])"
   },
   {
-   "key": "82a5810caf9f7612",
+   "key": "3838dd66f0104e21",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN [1, 2, 3] IS NULL OR [2] IS NULL THEN NULL ELSE LIST_FILTER(LIST_DISTINCT([1, 2, 3]), e -> LENGTH(LIST_FILTER([2], x -> x IS NOT DISTINCT FROM e)) = 0) END"
+   "sql": "SELECT CASE WHEN [1, 2, 3] IS NULL OR [2] IS NULL THEN NULL ELSE LIST_FILTER(LIST_DISTINCT([1, 2, 3]), LAMBDA e : LENGTH(LIST_FILTER([2], LAMBDA x : x IS NOT DISTINCT FROM e)) = 0) END"
   },
   {
    "key": "ffada33549cc899b",
@@ -17438,9 +17748,9 @@
    "sql": "JSON_EXTRACT(x, '$[\\'a b\\']')"
   },
   {
-   "key": "732c371d564dcec8",
+   "key": "20670dd87a0f31aa",
    "dialect": "clickhouse",
-   "sql": "JSONExtractString(x, 'a b')"
+   "sql": "JSONExtractRaw(x, 'a b')"
   },
   {
    "key": "063bc69fa5590674",
@@ -17493,6 +17803,11 @@
    "sql": "JSON_EXTRACT(x, '$.y')"
   },
   {
+   "key": "5ce78f4b8827c620",
+   "dialect": "clickhouse",
+   "sql": "JSONExtractRaw(x, 'y')"
+  },
+  {
    "key": "634f06847e645e59",
    "dialect": "duckdb",
    "sql": "x -> 'y'"
@@ -17528,11 +17843,6 @@
    "sql": "x -> '$.y'"
   },
   {
-   "key": "0199699017ac9ceb",
-   "dialect": "clickhouse",
-   "sql": "JSONExtractString(x, 'y')"
-  },
-  {
    "key": "9fdb8e968e783933",
    "dialect": "duckdb",
    "sql": "x -> '$.y'"
@@ -17556,6 +17866,11 @@
    "key": "ba088a3ac399a09e",
    "dialect": "bigquery",
    "sql": "JSON_EXTRACT_SCALAR(x, '$.y')"
+  },
+  {
+   "key": "0199699017ac9ceb",
+   "dialect": "clickhouse",
+   "sql": "JSONExtractString(x, 'y')"
   },
   {
    "key": "45ee9e8c8b81867f",
@@ -17598,6 +17913,11 @@
    "sql": "JSON_EXTRACT(x, '$.y[0].z')"
   },
   {
+   "key": "c52706890f20b536",
+   "dialect": "clickhouse",
+   "sql": "JSONExtractRaw(x, 'y', 1, 'z')"
+  },
+  {
    "key": "ac265110ebd87181",
    "dialect": "duckdb",
    "sql": "x -> '$.y[0].z'"
@@ -17628,11 +17948,6 @@
    "sql": "x -> '$.y[0].z'"
   },
   {
-   "key": "8e89c28ccc95f04a",
-   "dialect": "clickhouse",
-   "sql": "JSONExtractString(x, 'y', 1, 'z')"
-  },
-  {
    "key": "46c065c84f86cf43",
    "dialect": "postgres",
    "sql": "JSON_EXTRACT_PATH(x, 'y', '0', 'z')"
@@ -17656,6 +17971,11 @@
    "key": "644a0bc18d427d4f",
    "dialect": "bigquery",
    "sql": "JSON_EXTRACT_SCALAR(x, '$.y[0].z')"
+  },
+  {
+   "key": "8e89c28ccc95f04a",
+   "dialect": "clickhouse",
+   "sql": "JSONExtractString(x, 'y', 1, 'z')"
   },
   {
    "key": "4963c19f859e6be6",
@@ -18993,9 +19313,9 @@
    "sql": "arrayFilter(_u -> _u <> target, the_array)"
   },
   {
-   "key": "17adc7eb68099d2e",
+   "key": "cb495e21ae0b23d9",
    "dialect": "duckdb",
-   "sql": "LIST_FILTER(the_array, _u -> _u <> target)"
+   "sql": "LIST_FILTER(the_array, LAMBDA _u : _u <> target)"
   },
   {
    "key": "32b3c3701bc10204",
@@ -19086,31 +19406,6 @@
    "key": "fc8a2eeab8bddd19",
    "dialect": "mysql",
    "sql": "SELECT * FROM t LIMIT 10"
-  },
-  {
-   "key": "230e3379a90a930f",
-   "dialect": "databricks",
-   "sql": "WITH t AS (SELECT 1 AS all) SELECT 1 FROM t LIMIT all"
-  },
-  {
-   "key": "e2156bcbefe60c37",
-   "dialect": "duckdb",
-   "sql": "WITH t AS (SELECT 1 AS all) SELECT 1 FROM t LIMIT all"
-  },
-  {
-   "key": "fdba5e932aad4664",
-   "dialect": "presto",
-   "sql": "WITH t AS (SELECT 1 AS all) SELECT 1 FROM t LIMIT all"
-  },
-  {
-   "key": "352dc551de737651",
-   "dialect": "postgres",
-   "sql": "WITH t AS (SELECT 1 AS all) SELECT 1 FROM t LIMIT all"
-  },
-  {
-   "key": "4156381068f982ea",
-   "dialect": "spark",
-   "sql": "WITH t AS (SELECT 1 AS all) SELECT 1 FROM t LIMIT all"
   },
   {
    "key": "84980c4bdb367c70",
@@ -19698,9 +19993,9 @@
    "sql": "SELECT SUM(IIF(col % 2 = 0, 1, 0)) FROM foo"
   },
   {
-   "key": "f154b072aa649263",
+   "key": "3eecf5b04d4aba51",
    "dialect": "tsql",
-   "sql": "SELECT COUNT_IF(col % 2 = 0) FROM foo"
+   "sql": "SELECT COUNT(IIF(col % 2 = 0, 1, NULL)) FROM foo"
   },
   {
    "key": "095dbc009f752acd",
@@ -19731,6 +20026,11 @@
    "key": "2d39f5785d3b7729",
    "dialect": "sqlite",
    "sql": "SELECT SUM(IIF(col % 2 = 0, 1, 0)) FILTER(WHERE col < 1000) FROM foo"
+  },
+  {
+   "key": "88e1a4dd309c261c",
+   "dialect": "tsql",
+   "sql": "SELECT COUNT(IIF(col < 1000 AND col % 2 = 0, 1, NULL)) FROM foo"
   },
   {
    "key": "6d8e51b74720fa2b",
@@ -20028,9 +20328,9 @@
    "sql": "(SIZE(arr) = 0 OR SIZE(FILTER(arr, x -> pred)) <> 0)"
   },
   {
-   "key": "1f266bd3b2ad5040",
+   "key": "99025bb0ac58f9e3",
    "dialect": "duckdb",
-   "sql": "(ARRAY_LENGTH(arr) = 0 OR ARRAY_LENGTH(LIST_FILTER(arr, x -> pred)) <> 0)"
+   "sql": "(ARRAY_LENGTH(arr) = 0 OR ARRAY_LENGTH(LIST_FILTER(arr, LAMBDA x : pred)) <> 0)"
   },
   {
    "key": "c9ee2aeb953eaa33",
@@ -20466,6 +20766,21 @@
    "key": "acc19b5a693df514",
    "dialect": "clickhouse",
    "sql": "SELECT 1 AS \"x`\""
+  },
+  {
+   "key": "3f2cbc66c5a54e07",
+   "dialect": "bigquery",
+   "sql": "SELECT SUM(IF(c = 'US', x, NULL)), COUNTIF(c > 1), COUNT(DISTINCT IF(c > 1, x, NULL)) FROM t"
+  },
+  {
+   "key": "4c24470bd50b7fd3",
+   "dialect": "tsql",
+   "sql": "SELECT SUM(IIF(c = 'US', x, NULL)), COUNT(IIF(c > 1, 1, NULL)), COUNT_BIG(DISTINCT IIF(c > 1, x, NULL)) FROM t"
+  },
+  {
+   "key": "914bdaf2c145c2ef",
+   "dialect": "bigquery",
+   "sql": "SELECT ARRAY_AGG(IF(c > 1, x, NULL) IGNORE NULLS ORDER BY y) FROM t"
   },
   {
    "key": "c4d723d516598355",
@@ -21958,6 +22273,86 @@
    "sql": "SELECT REGEXP(abc, '%foo%')"
   },
   {
+   "key": "6dab7ad36f52db57",
+   "dialect": "doris",
+   "sql": "SELECT * FROM t WHERE c MATCH_PHRASE 'word1 word2 ~3'"
+  },
+  {
+   "key": "c4cdb020b866e735",
+   "dialect": "doris",
+   "sql": "SELECT * FROM t WHERE c MATCH_PHRASE 'word1 word2 ~3+'"
+  },
+  {
+   "key": "aa886547d69bafe9",
+   "dialect": "doris",
+   "sql": "SELECT * FROM t WHERE c MATCH 'hello world' USING ANALYZER std_analyzer"
+  },
+  {
+   "key": "01363f6a597335d5",
+   "dialect": "doris",
+   "sql": "SELECT * FROM t WHERE c MATCH_ANY 'x' USING ANALYZER `kw_analyzer`"
+  },
+  {
+   "key": "74dc76a2c1b3c3e9",
+   "dialect": "doris",
+   "sql": "SELECT * FROM t WHERE c MATCH 'x' USING ANALYZER 'standard'"
+  },
+  {
+   "key": "a871df665f03bddb",
+   "dialect": "doris",
+   "sql": "SELECT * FROM t WHERE c NOT MATCH_ANY ('x') USING ANALYZER 'standard'"
+  },
+  {
+   "key": "247b1e7b85503e8c",
+   "dialect": "doris",
+   "sql": "SELECT * FROM t WHERE c match_regexp '^key_word.*'"
+  },
+  {
+   "key": "1055b4dc901fae0d",
+   "dialect": "doris",
+   "sql": "SELECT * FROM t WHERE NOT c MATCH_ANY 'x' AND d MATCH_ALL 'y' OR e = 1"
+  },
+  {
+   "key": "cd2d8b5a3f2a64f2",
+   "dialect": "doris",
+   "sql": "SELECT * FROM t WHERE c NOT MATCH_ALL 'word1 word2'"
+  },
+  {
+   "key": "8fccd398e22bc8a5",
+   "dialect": "doris",
+   "sql": "SELECT * FROM t WHERE c NOT LIKE 'x%'"
+  },
+  {
+   "key": "d1d576ce5dbd28cc",
+   "dialect": "doris",
+   "sql": "SELECT c AS match_any FROM t"
+  },
+  {
+   "key": "a8d21b94592ee06f",
+   "dialect": "doris",
+   "sql": "SELECT c match_any FROM t"
+  },
+  {
+   "key": "27d00086058b2b9e",
+   "dialect": "doris",
+   "sql": "SELECT c match_any"
+  },
+  {
+   "key": "ae8f27e7d679f68a",
+   "dialect": "doris",
+   "sql": "SELECT * FROM t WHERE c MATCH 'x'"
+  },
+  {
+   "key": "6a6cca37d1744785",
+   "dialect": "sqlite",
+   "sql": "SELECT * FROM t WHERE c MATCH 'x'"
+  },
+  {
+   "key": "22fc65b7b808bd4b",
+   "dialect": "doris",
+   "sql": "SELECT * FROM t WHERE c MATCH_ALL 'x'"
+  },
+  {
    "key": "84a2c167566676c7",
    "dialect": "doris",
    "sql": "ANALYZE TABLE tbl"
@@ -22583,6 +22978,86 @@
    "sql": "SELECT JSON_VALUE(x, '$.a' RETURNING BIGINT) FROM t"
   },
   {
+   "key": "17372f3144b92c91",
+   "dialect": "duckdb",
+   "sql": "SELECT * FROM a JOIN BY (TYPE left) b USING (id)"
+  },
+  {
+   "key": "7adddf8ccef2278a",
+   "dialect": "duckdb",
+   "sql": "SELECT * FROM a LEFT JOIN b USING (id)"
+  },
+  {
+   "key": "1733f223717a302d",
+   "dialect": "postgres",
+   "sql": "SELECT * FROM a LEFT JOIN b USING (id)"
+  },
+  {
+   "key": "97d27a055000d0db",
+   "dialect": "duckdb",
+   "sql": "SELECT a.id, __mark_join_marker FROM a JOIN BY (TYPE MARK) b ON a.id = b.id"
+  },
+  {
+   "key": "2a3de445301f11a0",
+   "dialect": "duckdb",
+   "sql": "SELECT * FROM a JOIN BY (TYPE inner) b ON a.id = b.id JOIN c ON b.id = c.id"
+  },
+  {
+   "key": "b20532ce38fa6334",
+   "dialect": "duckdb",
+   "sql": "SELECT connect, disconnect FROM t"
+  },
+  {
+   "key": "888a2a66af5d55dd",
+   "dialect": "duckdb",
+   "sql": "SELECT a.id, b.id FROM a JOIN b NEAREST 1 BY DISTANCE ABS(a.id - b.id)"
+  },
+  {
+   "key": "f2b9876a2d890f24",
+   "dialect": "duckdb",
+   "sql": "SELECT a.id, b.id FROM a JOIN b APPROX NEAREST 1 BY DISTANCE ABS(a.id - b.id)"
+  },
+  {
+   "key": "efeb8cca9be6fec0",
+   "dialect": "duckdb",
+   "sql": "SELECT a.id, b.id FROM a JOIN b NEAREST 1 BY DISTANCE ABS(a.id - b.id) JOIN c ON b.id = c.id WHERE a.id > 0 ORDER BY a.id"
+  },
+  {
+   "key": "ee785a35114151ba",
+   "dialect": "duckdb",
+   "sql": "SELECT * FROM a JOIN b NEAREST 1 BY DISTANCE ABS(a.id - b.id) JOIN c NEAREST 2 BY DISTANCE ABS(b.id - c.id)"
+  },
+  {
+   "key": "c0d09f55ca4d6da9",
+   "dialect": "duckdb",
+   "sql": "SELECT * FROM a LEFT JOIN (SELECT * FROM b WHERE id > 0) AS b NEAREST 1 BY DISTANCE ABS(a.id - b.id)"
+  },
+  {
+   "key": "d70135e92692062e",
+   "dialect": "duckdb",
+   "sql": "SELECT * FROM a nearest JOIN b approx ON nearest.id = approx.id"
+  },
+  {
+   "key": "21ce27b640ffb42f",
+   "dialect": "duckdb",
+   "sql": "SELECT * FROM a JOIN b AS \"nearest\" NEAREST 1 BY DISTANCE ABS(a.id - \"nearest\".id)"
+  },
+  {
+   "key": "50691e3fbff37e6b",
+   "dialect": "duckdb",
+   "sql": "SELECT a.id, b.id FROM a LEFT JOIN b NEAREST 1 BY DISTANCE ABS(a.id - b.id)"
+  },
+  {
+   "key": "a22c6a2e2bf53ddf",
+   "dialect": "duckdb",
+   "sql": "SELECT * FROM a JOIN b NEAREST 1 BY DISTANCE ABS(a.id - b.id)"
+  },
+  {
+   "key": "28f3010ec5bd04d1",
+   "dialect": "duckdb",
+   "sql": "SELECT NULL IS NOT NULL IS NULL"
+  },
+  {
    "key": "ed66701443f4ba1b",
    "dialect": "duckdb",
    "sql": "TRUNC(3.14159, 2)"
@@ -22591,6 +23066,16 @@
    "key": "4f0bac81a377e982",
    "dialect": "duckdb",
    "sql": "SELECT ([1,2,3])[:-:-1]"
+  },
+  {
+   "key": "bd61165130eda9f9",
+   "dialect": "duckdb",
+   "sql": "SELECT ([1,2,3,4,5])[4:-:-2]"
+  },
+  {
+   "key": "fdb6532dabf79821",
+   "dialect": "duckdb",
+   "sql": "SELECT ([1,2,3,4,5])[2:-:1]"
   },
   {
    "key": "06183e1850064841",
@@ -22743,9 +23228,24 @@
    "sql": "STRING_AGG(arr, delim)"
   },
   {
-   "key": "473aba02737ddfa5",
+   "key": "16ad4ebf02f0558b",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN delim IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(arr, x -> COALESCE(CAST(x AS TEXT), '')), delim) END"
+   "sql": "SELECT CASE WHEN delim IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(arr, LAMBDA x : COALESCE(CAST(x AS TEXT), '')), delim) END"
+  },
+  {
+   "key": "1d4ad71342eb0bf0",
+   "dialect": "duckdb",
+   "sql": "SELECT ARRAY_TO_STRING(LIST_TRANSFORM([1, 2, 3, NULL, 5], LAMBDA x : COALESCE(CAST(x AS TEXT), '*')), ',')"
+  },
+  {
+   "key": "eb9b4e45405729a6",
+   "dialect": "postgres",
+   "sql": "SELECT ARRAY_TO_STRING(ARRAY[1, 2, 3, NULL, 5], ',', '*')"
+  },
+  {
+   "key": "3e3be7ebe1f0df59",
+   "dialect": "presto",
+   "sql": "SELECT ARRAY_JOIN(ARRAY[1, 2, 3, NULL, 5], ',', '*')"
   },
   {
    "key": "d93bd3eab3097e25",
@@ -22901,6 +23401,16 @@
    "key": "e19acf021527e409",
    "dialect": "duckdb",
    "sql": "SELECT RANGE(5, 1, -1)"
+  },
+  {
+   "key": "f5ea1ffcf19b96d8",
+   "dialect": "bigquery",
+   "sql": "SELECT GENERATE_ARRAY(5, 1 + 1, -1)"
+  },
+  {
+   "key": "d293529dd5120398",
+   "dialect": "postgres",
+   "sql": "SELECT GENERATE_SERIES(5, 1 + 1, -1)"
   },
   {
    "key": "cfe496a6e7f82454",
@@ -23573,6 +24083,21 @@
    "sql": "SELECT JSON_EXTRACT(a, 'x' || 'y')"
   },
   {
+   "key": "543c6a4e093f08f1",
+   "dialect": "duckdb",
+   "sql": "SELECT a ->> ('$.' || f)"
+  },
+  {
+   "key": "9e829d26769ef35a",
+   "dialect": "databricks",
+   "sql": "SELECT GET_JSON_OBJECT(a, CONCAT('$.', f))"
+  },
+  {
+   "key": "e2e181ae832d6f1c",
+   "dialect": "duckdb",
+   "sql": "SELECT JSON_EXTRACT_STRING(a, '$.' || f)"
+  },
+  {
    "key": "441fa144a4307e95",
    "dialect": "duckdb",
    "sql": "SELECT ($$hello)'world$$)"
@@ -23728,9 +24253,9 @@
    "sql": "SELECT LIST_DISTINCT(col)"
   },
   {
-   "key": "e49cfd5fef3526e2",
+   "key": "53cf858054c3295a",
    "dialect": "duckdb",
-   "sql": "SELECT LIST_TRANSFORM(STR_SPLIT_REGEX('abc , dfg ', ','), x -> TRIM(x))"
+   "sql": "SELECT LIST_TRANSFORM(STR_SPLIT_REGEX('abc , dfg ', ','), LAMBDA x : TRIM(x))"
   },
   {
    "key": "c7eb275bd146d5e2",
@@ -23738,9 +24263,9 @@
    "sql": "SELECT TRANSFORM(SPLIT('abc , dfg ', ','), x -> TRIM(x))"
   },
   {
-   "key": "d6883b411e710556",
+   "key": "338d2f5530e15eb8",
    "dialect": "duckdb",
-   "sql": "SELECT LIST_FILTER([4, 5, 6], x -> x > 4)"
+   "sql": "SELECT LIST_FILTER([4, 5, 6], LAMBDA x : x > 4)"
   },
   {
    "key": "ba1d5ac8efe44e7a",
@@ -23753,9 +24278,9 @@
    "sql": "ARRAY_COMPACT([1, NULL, 2, NULL, 3])"
   },
   {
-   "key": "b10771312a2c27df",
+   "key": "6cadd7854726ae1a",
    "dialect": "duckdb",
-   "sql": "LIST_FILTER([1, NULL, 2, NULL, 3], _u -> NOT _u IS NULL)"
+   "sql": "LIST_FILTER([1, NULL, 2, NULL, 3], LAMBDA _u : NOT _u IS NULL)"
   },
   {
    "key": "ed627245ecf1f63f",
@@ -23763,9 +24288,9 @@
    "sql": "ARRAY_COMPACT(NULL)"
   },
   {
-   "key": "d409ed693036c349",
+   "key": "d162fb48196bc3d3",
    "dialect": "duckdb",
-   "sql": "LIST_FILTER(NULL, _u -> NOT _u IS NULL)"
+   "sql": "LIST_FILTER(NULL, LAMBDA _u : NOT _u IS NULL)"
   },
   {
    "key": "16ec0a65e92e32f4",
@@ -23773,9 +24298,9 @@
    "sql": "ARRAY_COMPACT([])"
   },
   {
-   "key": "8c648054f11dae3f",
+   "key": "a5132b35019fdc35",
    "dialect": "duckdb",
-   "sql": "LIST_FILTER([], _u -> NOT _u IS NULL)"
+   "sql": "LIST_FILTER([], LAMBDA _u : NOT _u IS NULL)"
   },
   {
    "key": "96a946eeeab9a70e",
@@ -23783,9 +24308,9 @@
    "sql": "ARRAY_COMPACT(['a', NULL, 'b', NULL, 'c'])"
   },
   {
-   "key": "dcd65493a731da0a",
+   "key": "1f11688dc72decee",
    "dialect": "duckdb",
-   "sql": "LIST_FILTER(['a', NULL, 'b', NULL, 'c'], _u -> NOT _u IS NULL)"
+   "sql": "LIST_FILTER(['a', NULL, 'b', NULL, 'c'], LAMBDA _u : NOT _u IS NULL)"
   },
   {
    "key": "1cb61fd5ccbec6ef",
@@ -23793,9 +24318,9 @@
    "sql": "ARRAY_COMPACT([[1, 2], NULL, [3, 4]])"
   },
   {
-   "key": "e992c80d4a193dac",
+   "key": "f2e78c350f909550",
    "dialect": "duckdb",
-   "sql": "LIST_FILTER([[1, 2], NULL, [3, 4]], _u -> NOT _u IS NULL)"
+   "sql": "LIST_FILTER([[1, 2], NULL, [3, 4]], LAMBDA _u : NOT _u IS NULL)"
   },
   {
    "key": "46a53ceda64d49b3",
@@ -23803,9 +24328,9 @@
    "sql": "ARRAY_CONSTRUCT_COMPACT(1, 2, 3, 4, 5)"
   },
   {
-   "key": "884a7ff9a6935bea",
+   "key": "cfc61497b2aad41a",
    "dialect": "duckdb",
-   "sql": "LIST_FILTER([1, 2, 3, 4, 5], _u -> NOT _u IS NULL)"
+   "sql": "LIST_FILTER([1, 2, 3, 4, 5], LAMBDA _u : NOT _u IS NULL)"
   },
   {
    "key": "ee1fa5017112477e",
@@ -23901,6 +24426,26 @@
    "key": "f4c9ffac6cfad465",
    "dialect": "duckdb",
    "sql": "SELECT TRY_CAST('12.3456' AS DECIMAL(10, 2))"
+  },
+  {
+   "key": "a2ef2f9f58cfd851",
+   "dialect": "mysql",
+   "sql": "VAR_POP(x)"
+  },
+  {
+   "key": "eae43f580475832e",
+   "dialect": "starrocks",
+   "sql": "VAR_POP(x)"
+  },
+  {
+   "key": "2353909c7c2ad4fa",
+   "dialect": "doris",
+   "sql": "VAR_POP(x)"
+  },
+  {
+   "key": "f0e250aab4e57e4a",
+   "dialect": "singlestore",
+   "sql": "VAR_POP(x)"
   },
   {
    "key": "7e08ff16167b00a0",
@@ -24283,31 +24828,6 @@
    "sql": "STRUCT('value1' AS key1, 42 AS key2)"
   },
   {
-   "key": "2beaff513f8eaf27",
-   "dialect": "duckdb",
-   "sql": "ARRAY_REVERSE_SORT(x)"
-  },
-  {
-   "key": "d6f738fab1418826",
-   "dialect": "presto",
-   "sql": "ARRAY_SORT(x, (a, b) -> CASE WHEN a < b THEN 1 WHEN a > b THEN -1 ELSE 0 END)"
-  },
-  {
-   "key": "d92dff313c71d810",
-   "dialect": "hive",
-   "sql": "SORT_ARRAY(x, FALSE)"
-  },
-  {
-   "key": "4dd4eee9baf4950d",
-   "dialect": "spark",
-   "sql": "SORT_ARRAY(x, FALSE)"
-  },
-  {
-   "key": "1c337941a26c6363",
-   "dialect": "duckdb",
-   "sql": "LIST_REVERSE_SORT(x)"
-  },
-  {
    "key": "def4fcc916f85fe8",
    "dialect": "duckdb",
    "sql": "SELECT LIST_SORT(x, 'ASC')"
@@ -24338,9 +24858,44 @@
    "sql": "SELECT LIST_SORT(x, 'DESC', 'NULLS LAST')"
   },
   {
+   "key": "72159e7c15dcfe97",
+   "dialect": "duckdb",
+   "sql": "SELECT LIST_SORT(x, 'desc', 'nulls first')"
+  },
+  {
+   "key": "9d8f4d2027a4689b",
+   "dialect": "duckdb",
+   "sql": "SELECT ARRAY_REVERSE_SORT(x, 'NULLS FIRST')"
+  },
+  {
+   "key": "dfc15804961682cd",
+   "dialect": "duckdb",
+   "sql": "SELECT LIST_REVERSE_SORT(x)"
+  },
+  {
    "key": "a405029ca1b90b5f",
    "dialect": "duckdb",
    "sql": "SELECT LIST_SORT(x, 'DE' || 'SC')"
+  },
+  {
+   "key": "b1ca0b80a417bddc",
+   "dialect": "duckdb",
+   "sql": "SELECT LIST_SORT(x, 'foo')"
+  },
+  {
+   "key": "0083759395de1513",
+   "dialect": "duckdb",
+   "sql": "SELECT LIST_SORT(x, \"asc\")"
+  },
+  {
+   "key": "c14cdbdf30540cba",
+   "dialect": "duckdb",
+   "sql": "SELECT ARRAY_SORT(x, 'ASC', 'bad')"
+  },
+  {
+   "key": "539f167614258667",
+   "dialect": "duckdb",
+   "sql": "LIST_SORT(x, 'DE' || 'SC')"
   },
   {
    "key": "d7b1a3625e95f113",
@@ -24608,6 +25163,26 @@
    "sql": "VARIANCE(a)"
   },
   {
+   "key": "19f4e2f6be14d7df",
+   "dialect": "mysql",
+   "sql": "VAR_SAMP(a)"
+  },
+  {
+   "key": "b9c5fa86d90df908",
+   "dialect": "starrocks",
+   "sql": "VAR_SAMP(a)"
+  },
+  {
+   "key": "6d97083431c15f12",
+   "dialect": "doris",
+   "sql": "VAR_SAMP(a)"
+  },
+  {
+   "key": "9e47e130c26ceb35",
+   "dialect": "singlestore",
+   "sql": "VAR_SAMP(a)"
+  },
+  {
    "key": "e6f5fd39a0b8c905",
    "dialect": "clickhouse",
    "sql": "varSamp(a)"
@@ -24616,6 +25191,26 @@
    "key": "a9430dd20132c5fa",
    "dialect": "duckdb",
    "sql": "STDDEV(a)"
+  },
+  {
+   "key": "1b59cdbeb5cf0fca",
+   "dialect": "mysql",
+   "sql": "STDDEV_SAMP(a)"
+  },
+  {
+   "key": "8d0e2ed7632662f0",
+   "dialect": "starrocks",
+   "sql": "STDDEV_SAMP(a)"
+  },
+  {
+   "key": "6fe94e93b6c9c771",
+   "dialect": "doris",
+   "sql": "STDDEV_SAMP(a)"
+  },
+  {
+   "key": "a93bf9ca1569ef0e",
+   "dialect": "singlestore",
+   "sql": "STDDEV_SAMP(a)"
   },
   {
    "key": "f4ff36e9f3cfd85c",
@@ -24668,9 +25263,9 @@
    "sql": "SELECT id, STRUCT_PACK(*COLUMNS('m\\d')) AS measurements FROM many_measurements"
   },
   {
-   "key": "5172420f3b0f7d3e",
+   "key": "4f8d85db646a1ea3",
    "dialect": "duckdb",
-   "sql": "SELECT COLUMNS(c -> c LIKE '%num%') FROM numbers"
+   "sql": "SELECT COLUMNS(LAMBDA c : c LIKE '%num%') FROM numbers"
   },
   {
    "key": "729c28df5790cc6f",
@@ -24756,6 +25351,26 @@
    "key": "6a66ad794af4bd14",
    "dialect": "duckdb",
    "sql": "SELECT REGEXP_MATCHES('ThOmAs', 'thomas', 'i')"
+  },
+  {
+   "key": "b4a14c8bf98d7ad0",
+   "dialect": "redshift",
+   "sql": "SELECT 'ThOmAs' ~* 'thomas'"
+  },
+  {
+   "key": "7c9ce6b8d40b7102",
+   "dialect": "duckdb",
+   "sql": "SELECT REGEXP_MATCHES(x, 'a', 'ic')"
+  },
+  {
+   "key": "89de9e74d33e2956",
+   "dialect": "postgres",
+   "sql": "SELECT x ~ 'a'"
+  },
+  {
+   "key": "d797e3abfb2d1226",
+   "dialect": "duckdb",
+   "sql": "SELECT REGEXP_MATCHES(x, 'a', '')"
   },
   {
    "key": "9da4796e58dcfbf5",
@@ -25083,6 +25698,81 @@
    "sql": "CASE WHEN foo = '' THEN 0 ELSE UNICODE(foo) END"
   },
   {
+   "key": "4a5d952ed6433424",
+   "dialect": "duckdb",
+   "sql": "SELECT ARRAY_SLICE([1, 2, 3, 4], 2, 3)"
+  },
+  {
+   "key": "0c06935738c86aeb",
+   "dialect": "spark2",
+   "sql": "SELECT SLICE(ARRAY(1, 2, 3, 4), 2, 2)"
+  },
+  {
+   "key": "fb2a762f77798c30",
+   "dialect": "spark",
+   "sql": "SELECT SLICE(ARRAY(1, 2, 3, 4), 2, 2)"
+  },
+  {
+   "key": "bd9cb92e04aac086",
+   "dialect": "databricks",
+   "sql": "SELECT SLICE(ARRAY(1, 2, 3, 4), 2, 2)"
+  },
+  {
+   "key": "1f3b036bca86097d",
+   "dialect": "presto",
+   "sql": "SELECT SLICE(ARRAY[1, 2, 3, 4], 2, 2)"
+  },
+  {
+   "key": "e91844c9779eda48",
+   "dialect": "trino",
+   "sql": "SELECT SLICE(ARRAY[1, 2, 3, 4], 2, 2)"
+  },
+  {
+   "key": "4dc97d6b85980866",
+   "dialect": "duckdb",
+   "sql": "ARRAY_SLICE(x, 0, 2)"
+  },
+  {
+   "key": "f8c5f3e236a0b013",
+   "dialect": "spark",
+   "sql": "SLICE(x, 1, 2)"
+  },
+  {
+   "key": "632c08eb2d733019",
+   "dialect": "presto",
+   "sql": "SLICE(x, 1, 2)"
+  },
+  {
+   "key": "85b114dd8b5a2f61",
+   "dialect": "duckdb",
+   "sql": "ARRAY_SLICE(x, 3, 2)"
+  },
+  {
+   "key": "1ee89b4ccc081d14",
+   "dialect": "spark",
+   "sql": "SLICE(x, 3, 0)"
+  },
+  {
+   "key": "a67d4130753c56ce",
+   "dialect": "presto",
+   "sql": "SLICE(x, 3, 0)"
+  },
+  {
+   "key": "b314edd281882d12",
+   "dialect": "duckdb",
+   "sql": "ARRAY_SLICE(CASE WHEN RANDOM() < 0.5 THEN [1] ELSE [1, 2] END, -1, 2)"
+  },
+  {
+   "key": "5ede9340d7f2db8c",
+   "dialect": "spark",
+   "sql": "SLICE(CASE WHEN RAND() < 0.5 THEN ARRAY(1) ELSE ARRAY(1, 2) END, -1, 2)"
+  },
+  {
+   "key": "f4d910b01dce92db",
+   "dialect": "presto",
+   "sql": "SLICE(CASE WHEN RAND() < 0.5 THEN ARRAY[1] ELSE ARRAY[1, 2] END, -1, 2)"
+  },
+  {
    "key": "954898dd7c91ae33",
    "dialect": "duckdb",
    "sql": "CASE WHEN [1, 2, 3] IS NULL THEN NULL ELSE LIST_CONCAT([99], [1, 2, 3]) END"
@@ -25123,19 +25813,34 @@
    "sql": "ARRAY_INSERT(ARRAY(1, 2, 3), -2, 99)"
   },
   {
-   "key": "c6765e5201dd59b9",
+   "key": "59f8603ad7bd7ea1",
    "dialect": "duckdb",
-   "sql": "CASE WHEN target IS NULL THEN NULL ELSE LIST_FILTER(the_array, _u -> _u <> target) END"
+   "sql": "CASE WHEN [1, 2, 3] IS NULL THEN NULL ELSE LIST_CONCAT([1, 2, 3], [99]) END"
   },
   {
-   "key": "0e2376bd96d60bd9",
-   "dialect": "duckdb",
-   "sql": "LIST_FILTER([1, 2, 3], _u -> _u <> 2)"
+   "key": "25026d68dad95d05",
+   "dialect": "spark",
+   "sql": "ARRAY_INSERT(ARRAY(1, 2, 3), -1, 99)"
   },
   {
-   "key": "447cda97bac3c5d3",
+   "key": "5834e05d54e2e3e5",
+   "dialect": "databricks",
+   "sql": "ARRAY_INSERT(ARRAY(1, 2, 3), -1, 99)"
+  },
+  {
+   "key": "730d60df97daad16",
    "dialect": "duckdb",
-   "sql": "CASE WHEN NULL IS NULL THEN NULL ELSE LIST_FILTER([1, 2, 3], _u -> _u <> NULL) END"
+   "sql": "CASE WHEN target IS NULL THEN NULL ELSE LIST_FILTER(the_array, LAMBDA _u : _u <> target) END"
+  },
+  {
+   "key": "c81f2f3509f923d6",
+   "dialect": "duckdb",
+   "sql": "LIST_FILTER([1, 2, 3], LAMBDA _u : _u <> 2)"
+  },
+  {
+   "key": "068066a39d29e83c",
+   "dialect": "duckdb",
+   "sql": "CASE WHEN NULL IS NULL THEN NULL ELSE LIST_FILTER([1, 2, 3], LAMBDA _u : _u <> NULL) END"
   },
   {
    "key": "6fbe3d481138bf70",
@@ -25306,6 +26011,51 @@
    "key": "31ec0be32d972c2d",
    "dialect": "duckdb",
    "sql": "SELECT INTERVAL '1' QUARTER"
+  },
+  {
+   "key": "bee3c3984a9cb99f",
+   "dialect": "duckdb",
+   "sql": "SELECT INTERVAL '1.5 DAY'"
+  },
+  {
+   "key": "6eccaf85d619c9d2",
+   "dialect": "duckdb",
+   "sql": "SELECT INTERVAL '1.5' DAY"
+  },
+  {
+   "key": "6d046b95906bafbc",
+   "dialect": "duckdb",
+   "sql": "SELECT INTERVAL '1.5' MONTH"
+  },
+  {
+   "key": "c78422bdae2c94e1",
+   "dialect": "duckdb",
+   "sql": "SELECT CAST('2024-01-01' AS TIMESTAMP) + INTERVAL '-10.75 MINUTE'"
+  },
+  {
+   "key": "51616e6bee21fc48",
+   "dialect": "postgres",
+   "sql": "SELECT CAST('2024-01-01' AS TIMESTAMP) + INTERVAL '-10.75 MINUTE'"
+  },
+  {
+   "key": "ff98a56c6a78dc6b",
+   "dialect": "duckdb",
+   "sql": "SELECT INTERVAL '1.5 SECOND'"
+  },
+  {
+   "key": "ee2f69e743384c52",
+   "dialect": "trino",
+   "sql": "SELECT INTERVAL '1.5' SECOND"
+  },
+  {
+   "key": "8b1eaf453157e7d1",
+   "dialect": "duckdb",
+   "sql": "SELECT INTERVAL '1.0 QUARTER'"
+  },
+  {
+   "key": "14b81181db4ccfa5",
+   "dialect": "postgres",
+   "sql": "SELECT INTERVAL '3 MONTH'"
   },
   {
    "key": "ef9db99ed83d7430",
@@ -25588,6 +26338,11 @@
    "sql": "SELECT * FROM tbl, tbl2 WHERE tbl.i=tbl2.i USING SAMPLE RESERVOIR(20%)"
   },
   {
+   "key": "cd9dc34fd7714de4",
+   "dialect": "duckdb",
+   "sql": "SELECT a, COUNT(*) OVER w AS c FROM tbl WHERE a > 0 GROUP BY a HAVING COUNT(*) > 0 WINDOW w AS (ORDER BY a) QUALIFY c > 0 USING SAMPLE SYSTEM (50 PERCENT) ORDER BY a LIMIT 3 OFFSET 1"
+  },
+  {
    "key": "cd0d24d870af0158",
    "dialect": "duckdb",
    "sql": "SELECT * FROM example TABLESAMPLE RESERVOIR (3 ROWS) REPEATABLE (82)"
@@ -25616,6 +26371,21 @@
    "key": "70dfcfa9c9699060",
    "dialect": "duckdb",
    "sql": "ARRAY((SELECT id FROM t))"
+  },
+  {
+   "key": "029ec563e6b0d71b",
+   "dialect": "duckdb",
+   "sql": "[(SELECT id FROM t), 2]"
+  },
+  {
+   "key": "37bc6da1ec942c2e",
+   "dialect": "duckdb",
+   "sql": "SELECT [{'a': (SELECT 1)}]"
+  },
+  {
+   "key": "82d2ce39aa7c6682",
+   "dialect": "duckdb",
+   "sql": "SELECT LIST_VALUE((SELECT 1))"
   },
   {
    "key": "8161353ce46eb8d8",
@@ -26208,6 +26978,11 @@
    "sql": "FROM (FROM t1 SELECT foo1, foo2)"
   },
   {
+   "key": "58fb011184669f21",
+   "dialect": "duckdb",
+   "sql": "FROM (FROM t1 SELECT foo1 UNION ALL SELECT foo2 FROM t2)"
+  },
+  {
    "key": "17186377ed0ef541",
    "dialect": "duckdb",
    "sql": "WITH t1 AS (FROM (FROM t2 SELECT foo1, foo2)) FROM t1"
@@ -26418,6 +27193,11 @@
    "sql": "RESET SESSION default_collation"
   },
   {
+   "key": "9bc1afa00e21cb55",
+   "dialect": "duckdb",
+   "sql": "SELECT MAP {t.k: t.v} FROM (SELECT 'a' AS k, 10 AS v) AS t"
+  },
+  {
    "key": "74204bf70581da6e",
    "dialect": "duckdb",
    "sql": "MAP {1: 'a', 2: 'b'}"
@@ -26618,14 +27398,14 @@
    "sql": "SELECT CURRENT_SCHEMAS(TRUE)"
   },
   {
-   "key": "3bd652cc4ca23025",
+   "key": "f2600b91c0d34a21",
    "dialect": "duckdb",
-   "sql": "SELECT MAP_FROM_ENTRIES(LIST_FILTER(MAP_ENTRIES(CAST({'a': 1, 'b': 2, 'c': 3} AS MAP(TEXT, DECIMAL(38, 0)))), x -> NOT x.key IN ('a', 'b')))"
+   "sql": "SELECT MAP_FROM_ENTRIES(LIST_FILTER(MAP_ENTRIES(CAST({'a': 1, 'b': 2, 'c': 3} AS MAP(TEXT, DECIMAL(38, 0)))), LAMBDA x : NOT x.key IN ('a', 'b')))"
   },
   {
-   "key": "5d5de2055a473ccd",
+   "key": "72d8ced0c990b4ee",
    "dialect": "duckdb",
-   "sql": "SELECT id, MAP_FROM_ENTRIES(LIST_FILTER(MAP_ENTRIES(attrs), x -> NOT x.key IN (del_key1, del_key2))) AS attrs_after_delete FROM demo_maps"
+   "sql": "SELECT id, MAP_FROM_ENTRIES(LIST_FILTER(MAP_ENTRIES(attrs), LAMBDA x : NOT x.key IN (del_key1, del_key2))) AS attrs_after_delete FROM demo_maps"
   },
   {
    "key": "1706522f41081860",
@@ -26678,6 +27458,16 @@
    "sql": "SELECT CAST('1' AS VARIANT)"
   },
   {
+   "key": "043c9f56f39f51a2",
+   "dialect": "duckdb",
+   "sql": "SELECT CONCAT_WS('-', 'a', 'b')"
+  },
+  {
+   "key": "936437a93eb51ac6",
+   "dialect": "duckdb",
+   "sql": "SELECT CONCAT_WS('-', ['a', NULL, 'b'])"
+  },
+  {
    "key": "6d8bd657a76160cf",
    "dialect": "duckdb",
    "sql": "WITH _data AS (SELECT [{'a': 1, 'b': 2}, {'a': 2, 'b': 3}] AS col) SELECT t.col['b'] FROM _data, UNNEST(_data.col) AS t(col) WHERE t.col['a'] = 1"
@@ -26721,6 +27511,11 @@
    "key": "f325be212f1c41d7",
    "dialect": "duckdb",
    "sql": "SELECT LIST_APPLY(RANGE(1, 4), i -> {'f1': LIST_VALUE(1, 2, 3)[i], 'f2': LIST_VALUE(1, 2, 3)[i]})"
+  },
+  {
+   "key": "6518843037292525",
+   "dialect": "duckdb",
+   "sql": "DISCONNECT"
   },
   {
    "key": "09198e4690e1b823",
@@ -27723,6 +28518,11 @@
    "sql": "HASH_SHA256(x)"
   },
   {
+   "key": "c9619030c309485e",
+   "dialect": "postgres",
+   "sql": "ENCODE(SHA256(x), 'hex')"
+  },
+  {
    "key": "8852a8a1087d73b8",
    "dialect": "presto",
    "sql": "LOWER(TO_HEX(SHA256(x)))"
@@ -28428,6 +29228,16 @@
    "sql": "CAST(x AS TIMESTAMPTZ(9)) AT TIME ZONE 'Pacific Standard Time'"
   },
   {
+   "key": "c736242710b3a385",
+   "dialect": "fabric",
+   "sql": "CAST(CAST(x AS DATETIMEOFFSET(6)) AT TIME ZONE 'Pacific Standard Time' AS DATETIME2(6))"
+  },
+  {
+   "key": "67d81f7f7fdcf5eb",
+   "dialect": "fabric",
+   "sql": "CAST(CAST(x AS DATETIMEOFFSET(3)) AT TIME ZONE 'Pacific Standard Time' AS DATETIME2(3))"
+  },
+  {
    "key": "71d153f6187c7cbc",
    "dialect": "fabric",
    "sql": "UNIX_TO_TIME(column)"
@@ -28481,6 +29291,46 @@
    "key": "b7494e9cd2801d2d",
    "dialect": "tsql",
    "sql": "CREATE TABLE t (col CHAR(MAX))"
+  },
+  {
+   "key": "94a38ba01b1e822b",
+   "dialect": "tsql",
+   "sql": "ALTER TABLE Payments ADD Stock NUMERIC(38, 0), dropid VARCHAR(500)"
+  },
+  {
+   "key": "2be0a47c6f9c9122",
+   "dialect": "hive",
+   "sql": "SELECT FALSE IS DISTINCT FROM NULL = NULL"
+  },
+  {
+   "key": "d5405a22da737dff",
+   "dialect": "hive",
+   "sql": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL"
+  },
+  {
+   "key": "f5b6523e4e065cd1",
+   "dialect": "spark",
+   "sql": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL"
+  },
+  {
+   "key": "a11dee540c7f7247",
+   "dialect": "postgres",
+   "sql": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL"
+  },
+  {
+   "key": "b254812a0329105f",
+   "dialect": "hive",
+   "sql": "SELECT FALSE IS DISTINCT FROM NULL < NULL"
+  },
+  {
+   "key": "6a8805599024e2ae",
+   "dialect": "hive",
+   "sql": "SELECT FALSE IS DISTINCT FROM (NULL < NULL)"
+  },
+  {
+   "key": "c1b864aae1b3ece6",
+   "dialect": "spark",
+   "sql": "SELECT FALSE IS DISTINCT FROM (NULL < NULL)"
   },
   {
    "key": "27e51a9b6e4ebc73",
@@ -28848,6 +29698,11 @@
    "sql": "ALTER TABLE X ADD COLUMNS (y INT, z STRING) CASCADE"
   },
   {
+   "key": "350be9782a01a8da",
+   "dialect": "hive",
+   "sql": "ALTER TABLE X REPLACE COLUMNS (y INT COMMENT 'c', z STRING) CASCADE"
+  },
+  {
    "key": "53577f86b043e151",
    "dialect": "hive",
    "sql": "CREATE EXTERNAL TABLE x (y INT) ROW FORMAT SERDE 'serde' ROW FORMAT DELIMITED FIELDS TERMINATED BY '1' WITH SERDEPROPERTIES ('input.regex'='')"
@@ -29043,6 +29898,16 @@
    "sql": "SELECT a FROM x LATERAL VIEW EXPLODE(ARRAY(y)) t AS a"
   },
   {
+   "key": "3a3a09cf24f17149",
+   "dialect": "hive",
+   "sql": "FROM x LATERAL VIEW EXPLODE(y) t AS a SELECT a"
+  },
+  {
+   "key": "4c2fa666b7f7f93b",
+   "dialect": "hive",
+   "sql": "SELECT * FROM (FROM x LATERAL VIEW EXPLODE(y) t AS a SELECT a) AS q"
+  },
+  {
    "key": "554e25c6c27af2e2",
    "dialect": "hive",
    "sql": "'\\''"
@@ -29113,9 +29978,9 @@
    "sql": "'\\\\\\\\a'"
   },
   {
-   "key": "1735eb98d499885b",
+   "key": "975b87462f0bc4da",
    "dialect": "drill",
-   "sql": "'\\\\\\\\a'"
+   "sql": "'\\\\a'"
   },
   {
    "key": "a8a67d18b659d0bc",
@@ -29778,26 +30643,6 @@
    "sql": "SELECT * FROM x.z TABLESAMPLE (10 PERCENT) AS y"
   },
   {
-   "key": "a289f96c5b708949",
-   "dialect": "hive",
-   "sql": "SELECT SORT_ARRAY(x, FALSE)"
-  },
-  {
-   "key": "c0fbb910e96f3e6d",
-   "dialect": "duckdb",
-   "sql": "SELECT ARRAY_REVERSE_SORT(x)"
-  },
-  {
-   "key": "87ddad91a941c470",
-   "dialect": "spark",
-   "sql": "SELECT SORT_ARRAY(x, FALSE)"
-  },
-  {
-   "key": "0d7523894edc29e2",
-   "dialect": "presto",
-   "sql": "SELECT ARRAY_SORT(x, (a, b) -> CASE WHEN a < b THEN 1 WHEN a > b THEN -1 ELSE 0 END)"
-  },
-  {
    "key": "8676a7370c77a7df",
    "dialect": "hive",
    "sql": "GET_JSON_OBJECT(x, '$.name')"
@@ -29978,9 +30823,9 @@
    "sql": "x DIV y"
   },
   {
-   "key": "0b96c5d49a53070d",
+   "key": "bdf897cb6f8bf990",
    "dialect": "presto",
-   "sql": "CAST(CAST(x AS DOUBLE) / y AS INTEGER)"
+   "sql": "CAST(TRUNCATE(CAST(x AS DOUBLE) / y) AS BIGINT)"
   },
   {
    "key": "b04de0c446d3b1b8",
@@ -30433,6 +31278,91 @@
    "sql": "CREATE FUNCTION my_func AS 'com.example.MyFunc' USING ARCHIVE 'hdfs://path/to/archive.zip'"
   },
   {
+   "key": "89849b128184393b",
+   "dialect": "hive",
+   "sql": "FROM x INSERT OVERWRITE TABLE a SELECT k, v"
+  },
+  {
+   "key": "92d0a4e3fe2a4026",
+   "dialect": "hive",
+   "sql": "FROM x INSERT INTO TABLE a SELECT k"
+  },
+  {
+   "key": "3212600db8c32c93",
+   "dialect": "hive",
+   "sql": "FROM x AS v INSERT OVERWRITE TABLE a PARTITION(ds = '1') SELECT v.k, v.m['c'] AS c WHERE v.os = 'ios' INSERT OVERWRITE TABLE b PARTITION(ds) SELECT v.k, v.ds WHERE v.os = 'android' INSERT INTO c SELECT v.os, COUNT(DISTINCT v.k) AS uv GROUP BY v.os"
+  },
+  {
+   "key": "859270b19c188207",
+   "dialect": "hive",
+   "sql": "FROM x INSERT OVERWRITE LOCAL DIRECTORY '/tmp/a' SELECT k INSERT OVERWRITE DIRECTORY '/tmp/b' ROW FORMAT DELIMITED FIELDS TERMINATED BY ',' SELECT v"
+  },
+  {
+   "key": "db626974b2d81efe",
+   "dialect": "hive",
+   "sql": "FROM a JOIN b ON a.k = b.k LEFT JOIN c ON a.k = c.k INSERT OVERWRITE TABLE t SELECT a.k, c.v"
+  },
+  {
+   "key": "a2f8bba434a6cce5",
+   "dialect": "hive",
+   "sql": "FROM (SELECT k, v FROM x WHERE v > 0) AS s INSERT OVERWRITE TABLE t SELECT s.k"
+  },
+  {
+   "key": "b94ef8f58dbac0ff",
+   "dialect": "hive",
+   "sql": "FROM x LATERAL VIEW EXPLODE(arr) a AS c LATERAL VIEW OUTER EXPLODE(m) b AS mk, mv INSERT OVERWRITE TABLE t SELECT c, mk"
+  },
+  {
+   "key": "7916091c79a07c98",
+   "dialect": "hive",
+   "sql": "FROM x INSERT OVERWRITE TABLE a SELECT k, COUNT(*) WHERE v > 1 GROUP BY k HAVING COUNT(*) > 2 ORDER BY k LIMIT 10 INSERT INTO b SELECT DISTINCT k DISTRIBUTE BY k SORT BY k"
+  },
+  {
+   "key": "cfe4ea531b0a0acf",
+   "dialect": "hive",
+   "sql": "WITH c AS (SELECT 1 AS k) FROM c INSERT OVERWRITE TABLE a SELECT k INSERT INTO b SELECT k"
+  },
+  {
+   "key": "5cf94bd9d8a842f0",
+   "dialect": "hive",
+   "sql": "-- a\nFROM x\n-- b\nINSERT OVERWRITE TABLE t SELECT k\n-- c\nINSERT INTO u SELECT v"
+  },
+  {
+   "key": "327b852fb0ac100b",
+   "dialect": "hive",
+   "sql": "FROM (FROM x LATERAL VIEW EXPLODE(arr) a AS c SELECT k, c) AS s INSERT INTO t SELECT s.c INSERT INTO u SELECT s.k"
+  },
+  {
+   "key": "7e2bf1b452d98635",
+   "dialect": "hive",
+   "sql": "FROM x INSERT INTO t SELECT v QUALIFY ROW_NUMBER() OVER (PARTITION BY k ORDER BY v) = 1"
+  },
+  {
+   "key": "ac50d91aac1dfecf",
+   "dialect": "databricks",
+   "sql": "FROM x INSERT INTO t SELECT v QUALIFY ROW_NUMBER() OVER (PARTITION BY k ORDER BY v) = 1"
+  },
+  {
+   "key": "49539c77533da066",
+   "dialect": "hive",
+   "sql": "FROM x INSERT OVERWRITE TABLE a SELECT k"
+  },
+  {
+   "key": "ff37365356070321",
+   "dialect": "spark2",
+   "sql": "FROM x INSERT OVERWRITE TABLE a SELECT k"
+  },
+  {
+   "key": "1f2d9b6ea1db1fa0",
+   "dialect": "spark",
+   "sql": "FROM x INSERT OVERWRITE TABLE a SELECT k"
+  },
+  {
+   "key": "c407daa4d0a82636",
+   "dialect": "databricks",
+   "sql": "FROM x INSERT OVERWRITE TABLE a SELECT k"
+  },
+  {
    "key": "506d309f486cfe12",
    "dialect": "hive",
    "sql": "TRUNC(date_col, 'MM')"
@@ -30441,6 +31371,11 @@
    "key": "7219dd84947cf3db",
    "dialect": "hive",
    "sql": "EXISTS(col, x -> x % 2 = 0)"
+  },
+  {
+   "key": "d7395c43140423bd",
+   "dialect": "hive",
+   "sql": "FROM x INSERT OVERWRITE TABLE a SELECT k INSERT INTO b SELECT v WHERE k > 0"
   },
   {
    "key": "d23c19f68f15f347",
@@ -30601,6 +31536,66 @@
    "key": "35c318fefe2a83ca",
    "dialect": "materialize",
    "sql": "SELECT MAP(SELECT 'a', 1)"
+  },
+  {
+   "key": "cf1655438a620fa1",
+   "dialect": "mysql",
+   "sql": "SELECT TRUE XOR FALSE AND FALSE"
+  },
+  {
+   "key": "5b47433c3f8788e0",
+   "dialect": "mysql",
+   "sql": "SELECT !2 + 1"
+  },
+  {
+   "key": "dc69923e0e40699b",
+   "dialect": "mysql",
+   "sql": "SELECT (NOT 2) + 1"
+  },
+  {
+   "key": "c00c474848667396",
+   "dialect": "sqlite",
+   "sql": "SELECT (NOT 2) + 1"
+  },
+  {
+   "key": "47bc9273f9a7a13f",
+   "dialect": "mysql",
+   "sql": "SELECT NOT 2 + 1"
+  },
+  {
+   "key": "f7dfd38806531065",
+   "dialect": "mysql",
+   "sql": "SELECT STDDEV_POP(x), STDDEV_POP(x), VAR_POP(x) FROM t"
+  },
+  {
+   "key": "45cd349cffe7b8ab",
+   "dialect": "mysql",
+   "sql": "SELECT STD(x), STDDEV(x), VARIANCE(x) FROM t"
+  },
+  {
+   "key": "ded4c546d26fd13f",
+   "dialect": "starrocks",
+   "sql": "SELECT STD(x), STDDEV(x), VARIANCE(x) FROM t"
+  },
+  {
+   "key": "41b7b4e25938346e",
+   "dialect": "doris",
+   "sql": "SELECT STD(x), STDDEV(x), VARIANCE(x) FROM t"
+  },
+  {
+   "key": "0cdf8d245828e7de",
+   "dialect": "singlestore",
+   "sql": "SELECT STD(x), STDDEV(x), VARIANCE(x) FROM t"
+  },
+  {
+   "key": "6e4caddf53b3f15f",
+   "dialect": "duckdb",
+   "sql": "SELECT STDDEV_POP(x), STDDEV_POP(x), VAR_POP(x) FROM t"
+  },
+  {
+   "key": "0a7d90a04df0479f",
+   "dialect": "mysql",
+   "sql": "SELECT STDDEV_POP(x), VAR_POP(x), STDDEV_SAMP(x), VAR_SAMP(x) FROM t"
   },
   {
    "key": "a3d772638662564f",
@@ -30768,6 +31763,26 @@
    "sql": "ALTER TABLE t ADD UNIQUE `i` (`c`)"
   },
   {
+   "key": "48763ae7fb4c068c",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD FOREIGN KEY fk (a) REFERENCES p (a)"
+  },
+  {
+   "key": "32dd5b6d4ab6acac",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD CONSTRAINT FOREIGN KEY fk (a) REFERENCES p (a)"
+  },
+  {
+   "key": "517f017a1a478761",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD CONSTRAINT c FOREIGN KEY fk (a) REFERENCES p (a)"
+  },
+  {
+   "key": "95b7d2cfb42255c7",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (a INT, FOREIGN KEY fk (a) REFERENCES p (a))"
+  },
+  {
    "key": "7de46154169a39aa",
    "dialect": "mysql",
    "sql": "ALTER TABLE t DROP PRIMARY KEY"
@@ -30776,6 +31791,46 @@
    "key": "8d792945f3915c6a",
    "dialect": "mysql",
    "sql": "ALTER TABLE t DROP COLUMN c, DROP PRIMARY KEY, DROP INDEX `i`"
+  },
+  {
+   "key": "a9438b91faa6595b",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t DROP KEY k"
+  },
+  {
+   "key": "2cb4bf336bb23931",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD CONSTRAINT UNIQUE uq_a (a)"
+  },
+  {
+   "key": "01fd464d0959f237",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (a INT, CONSTRAINT PRIMARY KEY (a))"
+  },
+  {
+   "key": "305bf895744e7203",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (a INT CONSTRAINT CHECK (a > 0))"
+  },
+  {
+   "key": "389491e13159716e",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD CONSTRAINT FOREIGN KEY (a) REFERENCES p (a)"
+  },
+  {
+   "key": "1b420447fdfdefe9",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (a BIGINT SIGNED, b DECIMAL(5, 2) SIGNED)"
+  },
+  {
+   "key": "c0187c10c67d4b0e",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD COLUMN a INT SIGNED NOT NULL"
+  },
+  {
+   "key": "f6c49ff6616053e3",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t DROP COLUMN a, ALGORITHM=INPLACE"
   },
   {
    "key": "b653f45626979811",
@@ -30881,6 +31936,16 @@
    "key": "5379ac74e59da881",
    "dialect": "mysql",
    "sql": "ALTER TABLE t COMMENT 'hi'"
+  },
+  {
+   "key": "eff7b804ab34d4ec",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ENGINE=InnoDB PARTITION BY LIST (a) (PARTITION p0 VALUES IN (1))"
+  },
+  {
+   "key": "ca102ce4aec6a856",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ROW_FORMAT=COMPRESSED KEY_BLOCK_SIZE=8"
   },
   {
    "key": "05bcb946d0479d74",
@@ -31153,6 +32218,21 @@
    "sql": "ALTER TABLE t ADD PRIMARY KEY (c(20))"
   },
   {
+   "key": "81882c388bc92371",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD PRIMARY KEY (a) KEY_BLOCK_SIZE=8"
+  },
+  {
+   "key": "7466d7277a012de3",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD PRIMARY KEY (a) COMMENT 'c'"
+  },
+  {
+   "key": "0a9bf352812a6989",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (a INT, PRIMARY KEY (a) USING BTREE KEY_BLOCK_SIZE = 8 COMMENT 'c')"
+  },
+  {
    "key": "33c15d49afc46cbc",
    "dialect": "mysql",
    "sql": "ALTER TABLE t ADD UNIQUE KEY u (c(20))"
@@ -31183,9 +32263,39 @@
    "sql": "ALTER TABLE test_table ALTER COLUMN test_column SET DATA TYPE LONGTEXT"
   },
   {
+   "key": "5e46cf8653a3d9fc",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (a INT) KEY_BLOCK_SIZE=8"
+  },
+  {
+   "key": "04decc8d14dd2fd8",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (a INT) ENGINE=InnoDB KEY_BLOCK_SIZE=8 MAX_ROWS=100"
+  },
+  {
    "key": "794568d151492567",
    "dialect": "mysql",
    "sql": "CREATE TABLE t (c DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP) DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC"
+  },
+  {
+   "key": "f26d0a6210f139a5",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD COLUMN c VARCHAR(25) ASCII NULL, ADD COLUMN a BINARY(16) NULL"
+  },
+  {
+   "key": "c8eee6beab15415c",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (a VARCHAR(5) UNICODE BINARY, b VARCHAR(5) BINARY ASCII)"
+  },
+  {
+   "key": "ea1d413d69b5f313",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (a INT) ENGINE=InnoDB, COMMENT='c' ROW_FORMAT=DYNAMIC"
+  },
+  {
+   "key": "907f79c4a8b183bd",
+   "dialect": "mysql",
+   "sql": "CREATE TABLE t (a INT) ENGINE=InnoDB, /* c */ ROW_FORMAT=DYNAMIC"
   },
   {
    "key": "005d17d4d30ebcaf",
@@ -31283,6 +32393,11 @@
    "sql": "ALTER TABLE t RENAME INDEX a TO b"
   },
   {
+   "key": "9182b991a20f081c",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t RENAME INDEX any TO b"
+  },
+  {
    "key": "67ce31dd7d34fb61",
    "dialect": "mysql",
    "sql": "ALTER TABLE t RENAME KEY a TO b"
@@ -31346,6 +32461,11 @@
    "key": "375a756c7fe9b784",
    "dialect": "mysql",
    "sql": "CREATE FUNCTION f () RETURNS VARCHAR LANGUAGE SQL SQL SECURITY INVOKER SELECT 'abc'"
+  },
+  {
+   "key": "7b6a9a6fde93b13d",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD COLUMN c INT SECONDARY_ENGINE_ATTRIBUTE='{}', ADD COLUMN z INT"
   },
   {
    "key": "db0d846812e569ce",
@@ -31421,6 +32541,11 @@
    "key": "d4c6a2407828aa1f",
    "dialect": "mysql",
    "sql": "ALTER TABLE t DROP b, DROP COLUMN any RESTRICT"
+  },
+  {
+   "key": "802e45ceb3ea4fca",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t DROP COLUMN charset RESTRICT"
   },
   {
    "key": "1ddc16c163087a2a",
@@ -32236,6 +33361,26 @@
    "key": "152aa9136ff49fb2",
    "dialect": "mysql",
    "sql": "CONVERT('a' USING binary)"
+  },
+  {
+   "key": "ced09540488bcc91",
+   "dialect": "mysql",
+   "sql": "SELECT CAST('ab' AS CHAR(4) CHARACTER SET utf8mb4)"
+  },
+  {
+   "key": "60bb68d21d1ff2b9",
+   "dialect": "mysql",
+   "sql": "SELECT CAST('ab' AS CHAR(4) CHARSET binary)"
+  },
+  {
+   "key": "a4ca1a05ea046b74",
+   "dialect": "mysql",
+   "sql": "SELECT CONVERT('abc', CHAR(2) CHARACTER SET latin1)"
+  },
+  {
+   "key": "b5f08db58c809eef",
+   "dialect": "mysql",
+   "sql": "SELECT CONVERT('abc', CHAR CHARACTER SET latin1)"
   },
   {
    "key": "d6c27321aedc59a6",
@@ -33503,9 +34648,84 @@
    "sql": "SELECT t1.x + t2.y AS s FROM t1 JOIN t2 ON t1.id = t2.id ORDER BY s"
   },
   {
+   "key": "9f9cfc090278d38a",
+   "dialect": "mysql",
+   "sql": "SELECT GROUP_CONCAT(v ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v) AS v FROM t"
+  },
+  {
+   "key": "912b34a9cd4195bc",
+   "dialect": "trino",
+   "sql": "SELECT ARRAY_AGG(v ORDER BY v) AS v FROM t"
+  },
+  {
+   "key": "d0b4eaf0c442c06d",
+   "dialect": "mysql",
+   "sql": "SELECT GROUP_CONCAT(v ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v SEPARATOR ',') AS v FROM t"
+  },
+  {
+   "key": "1e0aedea19b4a4b9",
+   "dialect": "trino",
+   "sql": "SELECT LISTAGG(v, ',') WITHIN GROUP (ORDER BY v) AS v FROM t"
+  },
+  {
+   "key": "7d585f83c9c4bccf",
+   "dialect": "mysql",
+   "sql": "SELECT x AS v, GROUP_CONCAT(v ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v) AS w FROM t GROUP BY x"
+  },
+  {
+   "key": "36e0f55a03723616",
+   "dialect": "trino",
+   "sql": "SELECT x AS v, ARRAY_AGG(v ORDER BY v) AS w FROM t GROUP BY x"
+  },
+  {
+   "key": "193f5d2b7f9bdb35",
+   "dialect": "mysql",
+   "sql": "WITH c AS (SELECT a AS v, b AS x FROM t UNION ALL SELECT a, b FROM u ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v LIMIT 1) SELECT x AS v FROM c"
+  },
+  {
+   "key": "4c74527ecba33d1b",
+   "dialect": "postgres",
+   "sql": "WITH c AS (SELECT a AS v, b AS x FROM t UNION ALL SELECT a, b FROM u ORDER BY v LIMIT 1) SELECT x AS v FROM c"
+  },
+  {
+   "key": "08dc72237c97b664",
+   "dialect": "mysql",
+   "sql": "SELECT a + 1 AS v FROM t UNION ALL SELECT b FROM u ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v"
+  },
+  {
+   "key": "d5ed07f656cc304b",
+   "dialect": "trino",
+   "sql": "SELECT a + 1 AS v FROM t UNION ALL SELECT b FROM u ORDER BY v"
+  },
+  {
+   "key": "ba0e5132664a87e4",
+   "dialect": "mysql",
+   "sql": "SELECT x AS v, ROW_NUMBER() OVER (ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v) AS rn FROM t"
+  },
+  {
+   "key": "3a874b91da726f62",
+   "dialect": "postgres",
+   "sql": "SELECT x AS v, ROW_NUMBER() OVER (ORDER BY v) AS rn FROM t"
+  },
+  {
    "key": "2ff56dc04a528b45",
    "dialect": "mysql",
    "sql": "SELECT foo AT TIME ZONE 'UTC'"
+  },
+  {
+   "key": "7a2907e3ed9cc008",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t FORCE"
+  },
+  {
+   "key": "1b3647e62836e787",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD COLUMN a INT, DROP b, ADD COLUMN c INT"
+  },
+  {
+   "key": "97956a18d70c5076",
+   "dialect": "mysql",
+   "sql": "DROP INDEX i ON db.t"
   },
   {
    "key": "06cc1091e9d71ef9",
@@ -33568,6 +34788,26 @@
    "sql": "TRUNC(3.14159, 2)"
   },
   {
+   "key": "f33e5f6b394386e1",
+   "dialect": "mysql",
+   "sql": "SELECT WEIGHT_STRING('ab', 0, 3, 0)"
+  },
+  {
+   "key": "21f74089e801d90f",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t DROP CHECK c"
+  },
+  {
+   "key": "0e782f65293944ac",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD FULLTEXT INDEX i (s)"
+  },
+  {
+   "key": "fa33fffe38c6ca4e",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t ADD SPATIAL INDEX i (g)"
+  },
+  {
    "key": "c794b08014ac34af",
    "dialect": "mysql",
    "sql": "ALTER TABLE t DROP COLUMN `cascade`"
@@ -33583,9 +34823,39 @@
    "sql": "ALTER TABLE t DROP COLUMN concurrently"
   },
   {
+   "key": "8b60d65d5748b63f",
+   "dialect": "mysql",
+   "sql": "ALTER TABLE t DROP COLUMN charset"
+  },
+  {
    "key": "5fe0155c0702d80e",
    "dialect": "mysql",
    "sql": "ALTER TABLE t DROP INDEX concurrently"
+  },
+  {
+   "key": "4926073712104188",
+   "dialect": "spark",
+   "sql": "SELECT * FROM sales TIMESTAMP AS OF '2026-10-10 12:00:00' TABLESAMPLE (10 PERCENT) AS s"
+  },
+  {
+   "key": "a812021b37ff0e4c",
+   "dialect": "bigquery",
+   "sql": "SELECT * FROM sales AS s FOR SYSTEM_TIME AS OF '2026-10-10 12:00:00'"
+  },
+  {
+   "key": "9c2bcdb69ddf4177",
+   "dialect": "bigquery",
+   "sql": "SELECT * FROM sales AS s FOR SYSTEM_TIME AS OF PARSE_TIMESTAMP('%F %H:%M:%E6S', '2026-10-10 12:00:00')"
+  },
+  {
+   "key": "d8cc241cf2a5df2e",
+   "dialect": "bigquery",
+   "sql": "SELECT * FROM sales AS s FOR SYSTEM_TIME AS OF '2026-10-10 12:00:00.123456'"
+  },
+  {
+   "key": "206d477e23269ac6",
+   "dialect": "spark",
+   "sql": "SELECT * FROM sales TIMESTAMP AS OF '2026-10-10 12:00:00.123456' AS s"
   },
   {
    "key": "721d4ceecfe2d8de",
@@ -33738,6 +35008,16 @@
    "sql": "CAST('2022-01-01' AS DATE)"
   },
   {
+   "key": "7dd1f94acb9a6f62",
+   "dialect": "duckdb",
+   "sql": "SELECT STRFTIME(x, '%G-%V')"
+  },
+  {
+   "key": "809fb1808970db58",
+   "dialect": "bigquery",
+   "sql": "SELECT FORMAT_DATE('%G-%V', x)"
+  },
+  {
    "key": "c4ea1733d7a65711",
    "dialect": "postgres",
    "sql": "CAST(x AS sch.udt)"
@@ -33778,9 +35058,9 @@
    "sql": "TRUNC(3.14159)"
   },
   {
-   "key": "720db17e772ced2f",
+   "key": "b378fbfe99c62702",
    "dialect": "mysql",
-   "sql": "TRUNCATE(3.14159)"
+   "sql": "TRUNCATE(3.14159, 0)"
   },
   {
    "key": "d1adaf3677cc32aa",
@@ -33801,6 +35081,106 @@
    "key": "9e90b10df9f2b346",
    "dialect": "spark",
    "sql": "CAST(3.14159 AS BIGINT)"
+  },
+  {
+   "key": "bf83220432394bfa",
+   "dialect": "postgres",
+   "sql": "SELECT a = b IS NULL FROM t"
+  },
+  {
+   "key": "547671758d4bbe35",
+   "dialect": "postgres",
+   "sql": "SELECT a = (b IS NULL) FROM t"
+  },
+  {
+   "key": "e711415df88b3356",
+   "dialect": "redshift",
+   "sql": "SELECT a = b IS NULL FROM t"
+  },
+  {
+   "key": "07a1dc528219399a",
+   "dialect": "postgres",
+   "sql": "SELECT FALSE IS DISTINCT FROM NULL = NULL"
+  },
+  {
+   "key": "6e918e2c42b8b0f8",
+   "dialect": "postgres",
+   "sql": "SELECT FALSE IS DISTINCT FROM (NULL = NULL)"
+  },
+  {
+   "key": "e3abb1f68198b6ea",
+   "dialect": "sqlite",
+   "sql": "SELECT FALSE IS DISTINCT FROM (NULL = NULL)"
+  },
+  {
+   "key": "3dbf0b738957c35d",
+   "dialect": "postgres",
+   "sql": "SELECT NULL IS NULL = FALSE"
+  },
+  {
+   "key": "d752fce6337882ef",
+   "dialect": "postgres",
+   "sql": "SELECT a = b IS NOT NULL FROM t"
+  },
+  {
+   "key": "6531ba4c6fc75541",
+   "dialect": "postgres",
+   "sql": "SELECT a = b NOTNULL FROM t"
+  },
+  {
+   "key": "7156349fccf8fe4e",
+   "dialect": "postgres",
+   "sql": "SELECT a IS NOT NULL IS NULL FROM t"
+  },
+  {
+   "key": "92e9b228cd37afa8",
+   "dialect": "postgres",
+   "sql": "SELECT a IS NULL IS NOT NULL FROM t"
+  },
+  {
+   "key": "26b956927482567a",
+   "dialect": "postgres",
+   "sql": "SELECT NULL IS NOT NULL IS FALSE"
+  },
+  {
+   "key": "cd9bba54df633b52",
+   "dialect": "postgres",
+   "sql": "CREATE TABLE t (a INT, b BOOLEAN GENERATED ALWAYS AS (a IS NULL) STORED)"
+  },
+  {
+   "key": "f0d1925f06d6178c",
+   "dialect": "postgres",
+   "sql": "CREATE TABLE t (a INT, b BOOLEAN GENERATED ALWAYS AS (a = 1 IS NULL) STORED)"
+  },
+  {
+   "key": "10335b56495aa31d",
+   "dialect": "postgres",
+   "sql": "SELECT JSON_VALUE(j, '$.a' RETURNING BIGINT) FROM t"
+  },
+  {
+   "key": "506a5f45b7ea59c2",
+   "dialect": "postgres",
+   "sql": "SELECT JSON_VALUE('\"2020-01-01T01:02:03\"', '$' RETURNING TIMESTAMP WITH TIME ZONE)"
+  },
+  {
+   "key": "eaaabb5944ba910c",
+   "dialect": "postgres",
+   "sql": "SELECT JSON_VALUE('42', '$' RETURNING BIGINT)"
+  },
+  {
+   "key": "aed090c35aed750e",
+   "dialect": "postgres",
+   "sql": "SELECT JSON_VALUE(j, p) FROM (VALUES (CAST('{\"a\":42}' AS JSONB), CAST('$.a' AS JSONPATH))) AS t(j, p)"
+  },
+  {
+   "key": "9ea8727904c1d200",
+   "dialect": "postgres",
+   "sql": "SELECT JSON_VALUE('{\"a\":42}', '$' || '.a')"
+  },
+  {
+   "key": "e5b95099847fed91",
+   "dialect": "postgres",
+   "sql": "SELECT JSON_VALUE('{\"a\":42}', CASE WHEN TRUE THEN '$.a' ELSE '$.b' END)"
   },
   {
    "key": "e000bbdd526ab3b2",
@@ -33861,6 +35241,31 @@
    "key": "4f1414cc6537f6d7",
    "dialect": "postgres",
    "sql": "SHA384(x)"
+  },
+  {
+   "key": "38c29fe76be9570d",
+   "dialect": "postgres",
+   "sql": "SELECT SHA256(x)"
+  },
+  {
+   "key": "d2abac27f3731a4b",
+   "dialect": "duckdb",
+   "sql": "SELECT UNHEX(SHA256(x))"
+  },
+  {
+   "key": "1a1514159bbca0dd",
+   "dialect": "postgres",
+   "sql": "SELECT ENCODE(SHA256(x), 'hex')"
+  },
+  {
+   "key": "415ca06330a2d3d7",
+   "dialect": "duckdb",
+   "sql": "SELECT SHA256(x)"
+  },
+  {
+   "key": "ef598f6f203ad758",
+   "dialect": "spark",
+   "sql": "SELECT SHA2(x, 256)"
   },
   {
    "key": "5f686cc8e49dec72",
@@ -34088,9 +35493,9 @@
    "sql": "COMMENT ON INDEX public.idx IS 'x'"
   },
   {
-   "key": "3ed12a7d450e902d",
+   "key": "2bb18a2a6faf1493",
    "dialect": "postgres",
-   "sql": "SELECT e'\\xDEADBEEF'"
+   "sql": "SELECT e'\\x44EADBEEF'"
   },
   {
    "key": "34959b718f6dad8c",
@@ -35663,6 +37068,16 @@
    "sql": "SELECT CAST(STRPTIME('01/01/2000', '%m/%d/%Y') AS DATE)"
   },
   {
+   "key": "7f9b4a1dfa68340c",
+   "dialect": "postgres",
+   "sql": "SELECT TO_CHAR(x, 'IYYY-IW')"
+  },
+  {
+   "key": "8f006e485cf25927",
+   "dialect": "postgres",
+   "sql": "SELECT TO_CHAR(x, 'iyyy-iw')"
+  },
+  {
    "key": "ed3bd4fc9fe7f7fb",
    "dialect": "postgres",
    "sql": "SELECT js, js IS JSON AS \"json?\", js IS JSON VALUE AS \"scalar?\", js IS JSON SCALAR AS \"scalar?\", js IS JSON OBJECT AS \"object?\", js IS JSON ARRAY AS \"array?\" FROM t"
@@ -35786,6 +37201,11 @@
    "key": "8325dfb7854ff00d",
    "dialect": "postgres",
    "sql": "SELECT * FROM foo WHERE id = ?"
+  },
+  {
+   "key": "f677b05a8dee3597",
+   "dialect": "postgres",
+   "sql": "a ^@ b"
   },
   {
    "key": "83bba7ff139ac683",
@@ -36283,6 +37703,21 @@
    "sql": "ALTER TABLE foo ADD COLUMN id BIGINT NOT NULL PRIMARY KEY DEFAULT 1, ADD CONSTRAINT fk_orders_user FOREIGN KEY (id) REFERENCES foo (id)"
   },
   {
+   "key": "7a53dc2ea571f8e7",
+   "dialect": "postgres",
+   "sql": "ALTER TABLE t ALTER COLUMN b RESTART"
+  },
+  {
+   "key": "7614def47080844b",
+   "dialect": "postgres",
+   "sql": "ALTER TABLE t ALTER COLUMN b SET STATISTICS 100"
+  },
+  {
+   "key": "e0ada5f4d38d3da7",
+   "dialect": "postgres",
+   "sql": "ALTER TABLE t ALTER COLUMN b OPTIONS (ADD x 'a')"
+  },
+  {
    "key": "039017ed20945566",
    "dialect": "postgres",
    "sql": "CREATE TABLE t (col integer ARRAY[3])"
@@ -36553,6 +37988,11 @@
    "sql": "ALTER TABLE t DROP b, DROP view CASCADE"
   },
   {
+   "key": "2de870e569d513fc",
+   "dialect": "postgres",
+   "sql": "ALTER TABLE t DROP COLUMN partitioned_by CASCADE"
+  },
+  {
    "key": "1fb0fd0b9f66735e",
    "dialect": "postgres",
    "sql": "SELECT * FROM UNNEST(ARRAY[1, 2], ARRAY['foo', 'bar', 'baz']) AS x(a, b)"
@@ -36701,6 +38141,16 @@
    "key": "99249a9c20ad3c91",
    "dialect": "postgres",
    "sql": "SELECT U&'can''t !0061' UESCAPE '!' AS label"
+  },
+  {
+   "key": "4865a59701aebc3a",
+   "dialect": "postgres",
+   "sql": "SELECT U&'d\\0061t\\0061', U&'d!+000061ta' UESCAPE '!', U&'a\\\\b', U&'\\D83D\\DE00'"
+  },
+  {
+   "key": "a66bd54b52a802d5",
+   "dialect": "duckdb",
+   "sql": "SELECT 'data', 'data', 'a\\b', '\ud83d\ude00'"
   },
   {
    "key": "6c899a03da0f6201",
@@ -36958,6 +38408,16 @@
    "sql": "WITH RECURSIVE search_graph(id, link, data, depth) AS (SELECT g.id, g.link, g.data, 1 FROM graph AS g UNION ALL SELECT g.id, g.link, g.data, sg.depth + 1 FROM graph AS g, search_graph AS sg WHERE g.id = sg.link) CYCLE id SET is_cycle USING path SELECT * FROM search_graph"
   },
   {
+   "key": "22e0d676c7a88b0d",
+   "dialect": "postgres",
+   "sql": "WITH RECURSIVE search_graph(id, link, data, depth) AS (SELECT g.id, g.link, g.data, 1 FROM graph AS g UNION ALL SELECT g.id, g.link, g.data, sg.depth + 1 FROM graph AS g, search_graph AS sg WHERE g.id = sg.link) CYCLE id SET is_cycle TO 'Y' DEFAULT 'N' USING path SELECT * FROM search_graph"
+  },
+  {
+   "key": "687d1efe3fa35c4e",
+   "dialect": "postgres",
+   "sql": "WITH RECURSIVE search_graph(id, link, data, depth) AS (SELECT g.id, g.link, g.data, 1 FROM graph AS g UNION ALL SELECT g.id, g.link, g.data, sg.depth + 1 FROM graph AS g, search_graph AS sg WHERE g.id = sg.link) SEARCH DEPTH FIRST BY id SET ordercol CYCLE id SET is_cycle USING path SELECT * FROM search_graph ORDER BY ordercol"
+  },
+  {
    "key": "239db9601ae7d93b",
    "dialect": "postgres",
    "sql": "SELECT a -> ('x' || 'y')"
@@ -37193,11 +38653,6 @@
    "sql": "ALTER TABLE t DROP COLUMN if CASCADE, DROP COLUMN b"
   },
   {
-   "key": "8f53ab4eb7298980",
-   "dialect": "clickhouse",
-   "sql": "SELECT JSONExtractString(foo, '12')"
-  },
-  {
    "key": "1d6bf5f2453a37ca",
    "dialect": "postgres",
    "sql": "1::\"int\""
@@ -37236,6 +38691,21 @@
    "key": "76f8637f28404fbc",
    "dialect": "postgres",
    "sql": "ALTER TABLE t DROP CONSTRAINT restrict"
+  },
+  {
+   "key": "c5f5cdafe3636a39",
+   "dialect": "postgres",
+   "sql": "ALTER TABLE t DROP COLUMN partitioned_by"
+  },
+  {
+   "key": "c95e7463404076ca",
+   "dialect": "presto",
+   "sql": "APPROX_PERCENTILE(x, 0.5, 0.01)"
+  },
+  {
+   "key": "e47f7c4aa6eb8802",
+   "dialect": "bigquery",
+   "sql": "APPROX_QUANTILES(x, 2)[1]"
   },
   {
    "key": "de460ea9a4dc2b62",
@@ -37521,6 +38991,11 @@
    "key": "9d956d87a54d93a3",
    "dialect": "postgres",
    "sql": "CAST(x AS TIMETZ(5))"
+  },
+  {
+   "key": "4c2ce0d2e66c00eb",
+   "dialect": "presto",
+   "sql": "CAST(x AS TIME WITH TIME ZONE)"
   },
   {
    "key": "74ceef26f88ad17b",
@@ -38228,11 +39703,6 @@
    "sql": "SELECT SHA256(x)"
   },
   {
-   "key": "d2abac27f3731a4b",
-   "dialect": "duckdb",
-   "sql": "SELECT UNHEX(SHA256(x))"
-  },
-  {
    "key": "a5a2864392853a4c",
    "dialect": "bigquery",
    "sql": "SELECT SHA256(x)"
@@ -38256,11 +39726,6 @@
    "key": "6d18e5530d82c790",
    "dialect": "presto",
    "sql": "SELECT LOWER(TO_HEX(SHA256(x)))"
-  },
-  {
-   "key": "ef598f6f203ad758",
-   "dialect": "spark",
-   "sql": "SELECT SHA2(x, 256)"
   },
   {
    "key": "3d6e0c1464ca3f6d",
@@ -38753,34 +40218,14 @@
    "sql": "SELECT ARRAY_SORT(x, (left, right) -> -1)"
   },
   {
-   "key": "c23a91ff7ac6c0c7",
-   "dialect": "duckdb",
-   "sql": "SELECT ARRAY_SORT(x)"
-  },
-  {
    "key": "8056aa3e86f908b6",
    "dialect": "presto",
    "sql": "SELECT ARRAY_SORT(x, (\"left\", \"right\") -> -1)"
   },
   {
-   "key": "3080dc78f5b24356",
-   "dialect": "hive",
-   "sql": "SELECT SORT_ARRAY(x)"
-  },
-  {
    "key": "9b32c73587434545",
    "dialect": "spark",
    "sql": "SELECT ARRAY_SORT(x, (left, right) -> -1)"
-  },
-  {
-   "key": "147ff84f0de7f5c4",
-   "dialect": "presto",
-   "sql": "SELECT ARRAY_SORT(x)"
-  },
-  {
-   "key": "0a8dd24db31819d3",
-   "dialect": "spark",
-   "sql": "SELECT ARRAY_SORT(x)"
   },
   {
    "key": "f6aeed05c2c95d5d",
@@ -41388,6 +42833,26 @@
    "sql": "SELECT TRUE XOR FALSE"
   },
   {
+   "key": "3dafe8d9e48640a2",
+   "dialect": "singlestore",
+   "sql": "SELECT ('a' RLIKE '^[\u0000-\u007f]*$')"
+  },
+  {
+   "key": "e8d1eb964632aaa0",
+   "dialect": "singlestore",
+   "sql": "SELECT ('a' RLIKE '^[\\0-\u007f]*$')"
+  },
+  {
+   "key": "cbd9b7e2c1d0c4c3",
+   "dialect": "singlestore",
+   "sql": "SELECT 1 + ('a' RLIKE '^[\\0-\u007f]*$')"
+  },
+  {
+   "key": "22d89d928bd5febe",
+   "dialect": "singlestore",
+   "sql": "SELECT NOT ('\u00e9' RLIKE '^[\\0-\u007f]*$')"
+  },
+  {
    "key": "c3a0e19b52a12c60",
    "dialect": "singlestore",
    "sql": "SELECT 'a' RLIKE 'b'"
@@ -41411,11 +42876,6 @@
    "key": "15d6efa2fe4ada00",
    "dialect": "singlestore",
    "sql": "SELECT REGEXP_SUBSTR('adog', 'O', 1, 1, 'c')"
-  },
-  {
-   "key": "3dafe8d9e48640a2",
-   "dialect": "singlestore",
-   "sql": "SELECT ('a' RLIKE '^[\u0000-\u007f]*$')"
   },
   {
    "key": "842aa618352a15f8",
@@ -42163,9 +43623,9 @@
    "sql": "SELECT (CASE WHEN 10 > 0 THEN 10 - 1 ELSE ABS(10) END) % 32768"
   },
   {
-   "key": "6e2d53316eb4f750",
+   "key": "124d66c7aa405f96",
    "dialect": "duckdb",
-   "sql": "SELECT (SELECT CASE WHEN l IS NULL OR LENGTH(l) = 0 THEN NULL WHEN LENGTH(l) <> LENGTH(LIST_FILTER(l, __v -> __v BETWEEN 0 AND 32767)) THEN NULL WHEN LENGTH(l) < 5 THEN UNHEX(PRINTF('%04X', LENGTH(l)) || h || REPEAT('00', GREATEST(0, 4 - LENGTH(l)) * 2)) ELSE UNHEX('08000000000000000000' || h) END FROM (SELECT l, COALESCE(LIST_REDUCE(LIST_TRANSFORM(l, __x -> PRINTF('%02X%02X', CAST(__x AS INT) & 255, (CAST(__x AS INT) >> 8) & 255)), (__a, __b) -> __a || __b, ''), '') AS h FROM (SELECT LIST_SORT(LIST_DISTINCT(LIST(v) FILTER(WHERE NOT v IS NULL))) AS l))) FROM t"
+   "sql": "SELECT (SELECT CASE WHEN l IS NULL OR LENGTH(l) = 0 THEN NULL WHEN LENGTH(l) <> LENGTH(LIST_FILTER(l, LAMBDA __v : __v BETWEEN 0 AND 32767)) THEN NULL WHEN LENGTH(l) < 5 THEN UNHEX(PRINTF('%04X', LENGTH(l)) || h || REPEAT('00', GREATEST(0, 4 - LENGTH(l)) * 2)) ELSE UNHEX('08000000000000000000' || h) END FROM (SELECT l, COALESCE(LIST_REDUCE(LIST_TRANSFORM(l, LAMBDA __x : PRINTF('%02X%02X', CAST(__x AS INT) & 255, (CAST(__x AS INT) >> 8) & 255)), LAMBDA __a, __b : __a || __b, ''), '') AS h FROM (SELECT LIST_SORT(LIST_DISTINCT(LIST(v) FILTER(WHERE NOT v IS NULL))) AS l))) FROM t"
   },
   {
    "key": "1fdf71f9a4faab61",
@@ -42338,14 +43798,14 @@
    "sql": "SELECT (WITH rand AS (SELECT RANDOM() AS r), weights AS (SELECT i, 1.0 / POWER(i, 2) AS w FROM RANGE(1, 100 + 1) AS t(i)), cdf AS (SELECT i, SUM(w) OVER (ORDER BY i NULLS FIRST) / SUM(w) OVER () AS p FROM weights) SELECT MIN(i) FROM cdf WHERE p >= (SELECT r FROM rand))"
   },
   {
-   "key": "e83f0b5aa4504c29",
+   "key": "b8c291e5d19eb175",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN CAST(m1 AS MAP(TEXT, INT)) IS NULL OR CAST(m2 AS MAP(TEXT, INT)) IS NULL THEN NULL ELSE MAP_FROM_ENTRIES(LIST_FILTER(LIST_TRANSFORM(LIST_DISTINCT(LIST_CONCAT(MAP_KEYS(CAST(m1 AS MAP(TEXT, INT))), MAP_KEYS(CAST(m2 AS MAP(TEXT, INT))))), __k -> STRUCT_PACK(key := __k, value := COALESCE(CAST(m2 AS MAP(TEXT, INT))[__k], CAST(m1 AS MAP(TEXT, INT))[__k]))), __x -> NOT __x.value IS NULL)) END"
+   "sql": "SELECT CASE WHEN CAST(m1 AS MAP(TEXT, INT)) IS NULL OR CAST(m2 AS MAP(TEXT, INT)) IS NULL THEN NULL ELSE MAP_FROM_ENTRIES(LIST_FILTER(LIST_TRANSFORM(LIST_DISTINCT(LIST_CONCAT(MAP_KEYS(CAST(m1 AS MAP(TEXT, INT))), MAP_KEYS(CAST(m2 AS MAP(TEXT, INT))))), LAMBDA __k : STRUCT_PACK(key := __k, value := COALESCE(CAST(m2 AS MAP(TEXT, INT))[__k], CAST(m1 AS MAP(TEXT, INT))[__k]))), LAMBDA __x : NOT __x.value IS NULL)) END"
   },
   {
-   "key": "294a858139b5bce8",
+   "key": "cf3b8d40b0b6c5b9",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN CAST(MAP() AS MAP(TEXT, INT)) IS NULL OR CAST({'a': 1} AS MAP(TEXT, INT)) IS NULL THEN NULL ELSE MAP_FROM_ENTRIES(LIST_FILTER(LIST_TRANSFORM(LIST_DISTINCT(LIST_CONCAT(MAP_KEYS(CAST(MAP() AS MAP(TEXT, INT))), MAP_KEYS(CAST({'a': 1} AS MAP(TEXT, INT))))), __k -> STRUCT_PACK(key := __k, value := COALESCE(CAST({'a': 1} AS MAP(TEXT, INT))[__k], CAST(MAP() AS MAP(TEXT, INT))[__k]))), __x -> NOT __x.value IS NULL)) END"
+   "sql": "SELECT CASE WHEN CAST(MAP() AS MAP(TEXT, INT)) IS NULL OR CAST({'a': 1} AS MAP(TEXT, INT)) IS NULL THEN NULL ELSE MAP_FROM_ENTRIES(LIST_FILTER(LIST_TRANSFORM(LIST_DISTINCT(LIST_CONCAT(MAP_KEYS(CAST(MAP() AS MAP(TEXT, INT))), MAP_KEYS(CAST({'a': 1} AS MAP(TEXT, INT))))), LAMBDA __k : STRUCT_PACK(key := __k, value := COALESCE(CAST({'a': 1} AS MAP(TEXT, INT))[__k], CAST(MAP() AS MAP(TEXT, INT))[__k]))), LAMBDA __x : NOT __x.value IS NULL)) END"
   },
   {
    "key": "c000b1a453c10fa0",
@@ -42403,9 +43863,9 @@
    "sql": "SELECT ARRAY_AGG(col) FILTER(WHERE col IS NOT NULL) FROM t"
   },
   {
-   "key": "583f7ae9b64ef6dc",
+   "key": "696173b9b80463c4",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN ARRAY_LENGTH(col) <> LIST_COUNT(col) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER(col, _u -> NOT _u IS NULL)), NULL) ELSE LIST_DISTINCT(col) END"
+   "sql": "SELECT CASE WHEN ARRAY_LENGTH(col) <> LIST_COUNT(col) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER(col, LAMBDA _u : NOT _u IS NULL)), NULL) ELSE LIST_DISTINCT(col) END"
   },
   {
    "key": "7e5b57bc6177bf1d",
@@ -42428,19 +43888,14 @@
    "sql": "SELECT LIST_SORT(x)"
   },
   {
-   "key": "e253a6b174882ee8",
+   "key": "932d543cd0d0fa30",
    "dialect": "duckdb",
-   "sql": "SELECT LIST_SORT(x, foo, 'NULLS FIRST')"
+   "sql": "SELECT CASE WHEN '$/.' = '' AND 'a$b/cg' = '' THEN NULL WHEN '$/.' = '' AND 1 = 1 THEN 'a$b/cg' WHEN '$/.' = '' THEN NULL WHEN 1 < 0 THEN NULL WHEN 'a$b/cg' IS NULL OR '$/.' IS NULL OR 1 IS NULL THEN NULL ELSE LIST_FILTER(REGEXP_SPLIT_TO_ARRAY('a$b/cg', CASE WHEN '$/.' = '' THEN '' ELSE '[' || REGEXP_REPLACE('$/.', '([\\[\\]^.\\-*+?(){}|$\\\\])', '\\\\\\1', 'g') || ']' END), LAMBDA x : NOT x = '')[1] END"
   },
   {
-   "key": "cb8a782722cf618d",
+   "key": "4482ba8adc370ed0",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN '$/.' = '' AND 'a$b/cg' = '' THEN NULL WHEN '$/.' = '' AND 1 = 1 THEN 'a$b/cg' WHEN '$/.' = '' THEN NULL WHEN 1 < 0 THEN NULL WHEN 'a$b/cg' IS NULL OR '$/.' IS NULL OR 1 IS NULL THEN NULL ELSE LIST_FILTER(REGEXP_SPLIT_TO_ARRAY('a$b/cg', CASE WHEN '$/.' = '' THEN '' ELSE '[' || REGEXP_REPLACE('$/.', '([\\[\\]^.\\-*+?(){}|$\\\\])', '\\\\\\1', 'g') || ']' END), x -> NOT x = '')[1] END"
-  },
-  {
-   "key": "149f398dbc39bb74",
-   "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN ' ' = '' AND 'ab' = '' THEN NULL WHEN ' ' = '' AND 1 = 1 THEN 'ab' WHEN ' ' = '' THEN NULL WHEN 1 < 0 THEN NULL WHEN 'ab' IS NULL OR ' ' IS NULL OR 1 IS NULL THEN NULL ELSE LIST_FILTER(REGEXP_SPLIT_TO_ARRAY('ab', CASE WHEN ' ' = '' THEN '' ELSE '[' || REGEXP_REPLACE(' ', '([\\[\\]^.\\-*+?(){}|$\\\\])', '\\\\\\1', 'g') || ']' END), x -> NOT x = '')[1] END"
+   "sql": "SELECT CASE WHEN ' ' = '' AND 'ab' = '' THEN NULL WHEN ' ' = '' AND 1 = 1 THEN 'ab' WHEN ' ' = '' THEN NULL WHEN 1 < 0 THEN NULL WHEN 'ab' IS NULL OR ' ' IS NULL OR 1 IS NULL THEN NULL ELSE LIST_FILTER(REGEXP_SPLIT_TO_ARRAY('ab', CASE WHEN ' ' = '' THEN '' ELSE '[' || REGEXP_REPLACE(' ', '([\\[\\]^.\\-*+?(){}|$\\\\])', '\\\\\\1', 'g') || ']' END), LAMBDA x : NOT x = '')[1] END"
   },
   {
    "key": "4c55498d0eb6136b",
@@ -42533,9 +43988,9 @@
    "sql": "SELECT ARRAY_INTERSECT([1, 2], [2, 3])"
   },
   {
-   "key": "727d7f7bc7c31f70",
+   "key": "52fb77b0794f8dd5",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN [1, 2] IS NULL OR [2, 3] IS NULL THEN NULL ELSE LIST_TRANSFORM(LIST_FILTER(LIST_ZIP([1, 2], GENERATE_SERIES(1, LENGTH([1, 2]))), pair -> (LENGTH(LIST_FILTER([1, 2][1:pair[2]], e -> e IS NOT DISTINCT FROM pair[1])) <= LENGTH(LIST_FILTER([2, 3], e -> e IS NOT DISTINCT FROM pair[1])))), pair -> pair[1]) END"
+   "sql": "SELECT CASE WHEN [1, 2] IS NULL OR [2, 3] IS NULL THEN NULL ELSE LIST_TRANSFORM(LIST_FILTER(LIST_ZIP([1, 2], GENERATE_SERIES(1, LENGTH([1, 2]))), LAMBDA pair : (LENGTH(LIST_FILTER([1, 2][1:pair[2]], LAMBDA e : e IS NOT DISTINCT FROM pair[1])) <= LENGTH(LIST_FILTER([2, 3], LAMBDA e : e IS NOT DISTINCT FROM pair[1])))), LAMBDA pair : pair[1]) END"
   },
   {
    "key": "2d01fbc6a67aab99",
@@ -43358,19 +44813,19 @@
    "sql": "SELECT ARRAY_JOIN(x, '')"
   },
   {
-   "key": "06a566346b7d08fd",
+   "key": "c0dccdc59cb8d2b7",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN '' IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(x, x -> COALESCE(CAST(x AS TEXT), '')), '') END"
+   "sql": "SELECT CASE WHEN '' IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(x, LAMBDA x : COALESCE(CAST(x AS TEXT), '')), '') END"
   },
   {
-   "key": "ccb1ab8915e09332",
+   "key": "b6f518b41fc5613c",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN NULL IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(x, x -> COALESCE(CAST(x AS TEXT), '')), NULL) END"
+   "sql": "SELECT CASE WHEN NULL IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM(x, LAMBDA x : COALESCE(CAST(x AS TEXT), '')), NULL) END"
   },
   {
-   "key": "97c0248b036a24f7",
+   "key": "d36e4d2157406ded",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN ',' IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM([], x -> COALESCE(CAST(x AS TEXT), '')), ',') END"
+   "sql": "SELECT CASE WHEN ',' IS NULL THEN NULL ELSE ARRAY_TO_STRING(LIST_TRANSFORM([], LAMBDA x : COALESCE(CAST(x AS TEXT), '')), ',') END"
   },
   {
    "key": "cca85609a07f9d68",
@@ -43608,9 +45063,9 @@
    "sql": "SELECT CAST(TRY_STRPTIME('04/05/2013 01:02:03', '%m/%d/%Y %H:%M:%S') AS TIMESTAMP)"
   },
   {
-   "key": "495dbe2cc25e58f0",
+   "key": "a2413b8a0e43beba",
    "dialect": "duckdb",
-   "sql": "(SELECT JSON_OBJECT('state', LIST(min_h ORDER BY seed NULLS FIRST), 'type', 'minhash', 'version', 1) FROM (SELECT seed, LIST_MIN(LIST_TRANSFORM(vals, __v -> HASH(CAST(__v AS TEXT) || CAST(seed AS TEXT)))) AS min_h FROM (SELECT LIST(col1) AS vals), RANGE(0, 4) AS t(seed)))"
+   "sql": "(SELECT JSON_OBJECT('state', LIST(min_h ORDER BY seed NULLS FIRST), 'type', 'minhash', 'version', 1) FROM (SELECT seed, LIST_MIN(LIST_TRANSFORM(vals, LAMBDA __v : HASH(CAST(__v AS TEXT) || CAST(seed AS TEXT)))) AS min_h FROM (SELECT LIST(col1) AS vals), RANGE(0, 4) AS t(seed)))"
   },
   {
    "key": "77567334891db317",
@@ -44083,14 +45538,14 @@
    "sql": "SELECT CASE WHEN x IS NULL THEN NULLIF(ARRAY_LENGTH([1, NULL, 3]) <> LIST_COUNT([1, NULL, 3]), FALSE) ELSE ARRAY_CONTAINS([1, NULL, 3], x) END"
   },
   {
-   "key": "6318144c5a16149a",
+   "key": "382789b27d3f4c04",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN ARRAY_LENGTH(['A', NULL, 'B', NULL]) <> LIST_COUNT(['A', NULL, 'B', NULL]) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER(['A', NULL, 'B', NULL], _u -> NOT _u IS NULL)), NULL) ELSE LIST_DISTINCT(['A', NULL, 'B', NULL]) END"
+   "sql": "SELECT CASE WHEN ARRAY_LENGTH(['A', NULL, 'B', NULL]) <> LIST_COUNT(['A', NULL, 'B', NULL]) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER(['A', NULL, 'B', NULL], LAMBDA _u : NOT _u IS NULL)), NULL) ELSE LIST_DISTINCT(['A', NULL, 'B', NULL]) END"
   },
   {
-   "key": "46d2d34bd4505ca7",
+   "key": "7368a14be7d2af52",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN ARRAY_LENGTH([1, 2, 2, 3, 1]) <> LIST_COUNT([1, 2, 2, 3, 1]) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER([1, 2, 2, 3, 1], _u -> NOT _u IS NULL)), NULL) ELSE LIST_DISTINCT([1, 2, 2, 3, 1]) END"
+   "sql": "SELECT CASE WHEN ARRAY_LENGTH([1, 2, 2, 3, 1]) <> LIST_COUNT([1, 2, 2, 3, 1]) THEN LIST_APPEND(LIST_DISTINCT(LIST_FILTER([1, 2, 2, 3, 1], LAMBDA _u : NOT _u IS NULL)), NULL) ELSE LIST_DISTINCT([1, 2, 2, 3, 1]) END"
   },
   {
    "key": "5419ca9fa68a88a3",
@@ -44103,19 +45558,9 @@
    "sql": "CAST(6.43 AS DOUBLE)"
   },
   {
-   "key": "8e9d707e1680b9a6",
+   "key": "d80cfcbee38d8cdf",
    "dialect": "duckdb",
-   "sql": "CAST(FLOOR(1 + RANDOM() * (10 - 1 + 1)) AS BIGINT)"
-  },
-  {
-   "key": "e9e11d02e6ae3675",
-   "dialect": "duckdb",
-   "sql": "CAST(FLOOR(1 + (ABS(HASH(5)) % 1000000) / 1000000.0 * (10 - 1 + 1)) AS BIGINT)"
-  },
-  {
-   "key": "71bb4ccf79cfab4a",
-   "dialect": "duckdb",
-   "sql": "0 + (1 * SQRT(-2 * LN(GREATEST((ABS(HASH(42)) % 1000000) / 1000000.0, 1e-10))) * COS(2 * PI() * (ABS(HASH(42 + 1)) % 1000000) / 1000000.0))"
+   "sql": "0 + (1 * SQRT(-2 * LN(GREATEST((ABS(HASH(42)) % 1000000) / 1000000.0, 1e-10))) * COS(2 * PI() * ((ABS(HASH(42 + 1)) % 1000000) / 1000000.0)))"
   },
   {
    "key": "03958eda830a3634",
@@ -44123,9 +45568,9 @@
    "sql": "10.5 + (2.5 * SQRT(-2 * LN(GREATEST(RANDOM(), 1e-10))) * COS(2 * PI() * RANDOM()))"
   },
   {
-   "key": "01b3363c0a3765f4",
+   "key": "f0614cc5a895cce2",
    "dialect": "duckdb",
-   "sql": "10.5 + (2.5 * SQRT(-2 * LN(GREATEST((ABS(HASH(5)) % 1000000) / 1000000.0, 1e-10))) * COS(2 * PI() * (ABS(HASH(5 + 1)) % 1000000) / 1000000.0))"
+   "sql": "10.5 + (2.5 * SQRT(-2 * LN(GREATEST((ABS(HASH(5)) % 1000000) / 1000000.0, 1e-10))) * COS(2 * PI() * ((ABS(HASH(5 + 1)) % 1000000) / 1000000.0)))"
   },
   {
    "key": "9491ea9c70a3aeac",
@@ -44478,14 +45923,14 @@
    "sql": "SELECT CAST(a AS SQL_VARIANT)"
   },
   {
-   "key": "0020693151bfe356",
+   "key": "b0daca37e639d649",
    "dialect": "duckdb",
-   "sql": "CASE WHEN [1, 2] IS NULL OR [3, 4] IS NULL OR [4, 5] IS NULL THEN NULL WHEN LENGTH([1, 2]) = 0 AND LENGTH([3, 4]) = 0 AND LENGTH([4, 5]) = 0 THEN [{'$1': NULL, '$2': NULL, '$3': NULL}] ELSE LIST_TRANSFORM(RANGE(0, CASE WHEN LENGTH([1, 2]) IS NULL OR LENGTH([3, 4]) IS NULL OR LENGTH([4, 5]) IS NULL THEN NULL ELSE GREATEST(LENGTH([1, 2]), LENGTH([3, 4]), LENGTH([4, 5])) END), __i -> {'$1': COALESCE([1, 2], [])[__i + 1], '$2': COALESCE([3, 4], [])[__i + 1], '$3': COALESCE([4, 5], [])[__i + 1]}) END"
+   "sql": "CASE WHEN [1, 2] IS NULL OR [3, 4] IS NULL OR [4, 5] IS NULL THEN NULL WHEN LENGTH([1, 2]) = 0 AND LENGTH([3, 4]) = 0 AND LENGTH([4, 5]) = 0 THEN [{'$1': NULL, '$2': NULL, '$3': NULL}] ELSE LIST_TRANSFORM(RANGE(0, CASE WHEN LENGTH([1, 2]) IS NULL OR LENGTH([3, 4]) IS NULL OR LENGTH([4, 5]) IS NULL THEN NULL ELSE GREATEST(LENGTH([1, 2]), LENGTH([3, 4]), LENGTH([4, 5])) END), LAMBDA __i : {'$1': COALESCE([1, 2], [])[__i + 1], '$2': COALESCE([3, 4], [])[__i + 1], '$3': COALESCE([4, 5], [])[__i + 1]}) END"
   },
   {
-   "key": "446c25961e3de892",
+   "key": "4ed5d95ba7f312af",
    "dialect": "duckdb",
-   "sql": "CASE WHEN [1, 2, 3] IS NULL THEN NULL WHEN LENGTH([1, 2, 3]) = 0 THEN [{'$1': NULL}] ELSE LIST_TRANSFORM(RANGE(0, LENGTH([1, 2, 3])), __i -> {'$1': COALESCE([1, 2, 3], [])[__i + 1]}) END"
+   "sql": "CASE WHEN [1, 2, 3] IS NULL THEN NULL WHEN LENGTH([1, 2, 3]) = 0 THEN [{'$1': NULL}] ELSE LIST_TRANSFORM(RANGE(0, LENGTH([1, 2, 3])), LAMBDA __i : {'$1': COALESCE([1, 2, 3], [])[__i + 1]}) END"
   },
   {
    "key": "750bb4bd84a06d63",
@@ -44561,6 +46006,11 @@
    "key": "7147241a84231e35",
    "dialect": "bigquery",
    "sql": "CREATE TABLE FUNCTION a() RETURNS TABLE <b INT64> AS SELECT 1"
+  },
+  {
+   "key": "04fa9716191c6e36",
+   "dialect": "redshift",
+   "sql": "SELECT t1.c1, t2.c2 FROM t1, t2 WHERE t1.c1 = t2.c2 (+)"
   },
   {
    "key": "5c9a05b0511e37de",
@@ -44723,24 +46173,24 @@
    "sql": "SELECT CASE WHEN pattern = '' THEN 0 ELSE LENGTH(REGEXP_EXTRACT_ALL(subject, pattern)) END"
   },
   {
-   "key": "61313eee92d45493",
+   "key": "2a26c048460beeae",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(subject, pattern)) < 1 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(subject, pattern)[1:1], x -> LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(subject, pattern)[1:1 - 1], x -> LENGTH(x))), 0) + 0 END"
+   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(subject, pattern)) < 1 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(subject, pattern)[1:1], LAMBDA x : LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(subject, pattern)[1:1 - 1], LAMBDA x : LENGTH(x))), 0) + 0 END"
   },
   {
-   "key": "161e3960ba56c67f",
+   "key": "ecb859e6b555ccaf",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL OR 5 IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(SUBSTRING(subject, 5), pattern)) < 1 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(SUBSTRING(subject, 5), pattern)[1:1], x -> LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(SUBSTRING(subject, 5), pattern)[1:1 - 1], x -> LENGTH(x))), 0) + 5 - 1 END"
+   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL OR 5 IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(SUBSTRING(subject, 5), pattern)) < 1 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(SUBSTRING(subject, 5), pattern)[1:1], LAMBDA x : LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(SUBSTRING(subject, 5), pattern)[1:1 - 1], LAMBDA x : LENGTH(x))), 0) + 5 - 1 END"
   },
   {
-   "key": "05e3c89bcdd2cde7",
+   "key": "952f677021733c88",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL OR 1 IS NULL OR 2 IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(subject, pattern)) < 2 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(subject, pattern)[1:2], x -> LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(subject, pattern)[1:2 - 1], x -> LENGTH(x))), 0) + 0 END"
+   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL OR 1 IS NULL OR 2 IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(subject, pattern)) < 2 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(subject, pattern)[1:2], LAMBDA x : LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(subject, pattern)[1:2 - 1], LAMBDA x : LENGTH(x))), 0) + 0 END"
   },
   {
-   "key": "ff8d2c0c7d085d61",
+   "key": "bb7fe7c5bf3b890f",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL OR 1 IS NULL OR 1 IS NULL OR 0 IS NULL OR 'im' IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(subject, '(?im)' || pattern)) < 1 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(subject, '(?im)' || pattern)[1:1], x -> LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(subject, '(?im)' || pattern)[1:1 - 1], x -> LENGTH(x))), 0) + 0 END"
+   "sql": "SELECT CASE WHEN subject IS NULL OR pattern IS NULL OR 1 IS NULL OR 1 IS NULL OR 0 IS NULL OR 'im' IS NULL THEN NULL WHEN pattern = '' THEN 0 WHEN LENGTH(REGEXP_EXTRACT_ALL(subject, '(?im)' || pattern)) < 1 THEN 0 ELSE 1 + COALESCE(LIST_SUM(LIST_TRANSFORM(STRING_SPLIT_REGEX(subject, '(?im)' || pattern)[1:1], LAMBDA x : LENGTH(x))), 0) + COALESCE(LIST_SUM(LIST_TRANSFORM(REGEXP_EXTRACT_ALL(subject, '(?im)' || pattern)[1:1 - 1], LAMBDA x : LENGTH(x))), 0) + 0 END"
   },
   {
    "key": "ebf1b31bd5631615",
@@ -45113,9 +46563,9 @@
    "sql": "SELECT FLATTEN([[]])"
   },
   {
-   "key": "c373bd0bc81907e1",
+   "key": "43744f91ae56040d",
    "dialect": "duckdb",
-   "sql": "SELECT CASE WHEN [1, 2, 3] IS NULL OR [2] IS NULL THEN NULL ELSE LIST_TRANSFORM(LIST_FILTER(LIST_ZIP([1, 2, 3], GENERATE_SERIES(1, LENGTH([1, 2, 3]))), pair -> (LENGTH(LIST_FILTER([1, 2, 3][1:pair[2]], e -> e IS NOT DISTINCT FROM pair[1])) > LENGTH(LIST_FILTER([2], e -> e IS NOT DISTINCT FROM pair[1])))), pair -> pair[1]) END"
+   "sql": "SELECT CASE WHEN [1, 2, 3] IS NULL OR [2] IS NULL THEN NULL ELSE LIST_TRANSFORM(LIST_FILTER(LIST_ZIP([1, 2, 3], GENERATE_SERIES(1, LENGTH([1, 2, 3]))), LAMBDA pair : (LENGTH(LIST_FILTER([1, 2, 3][1:pair[2]], LAMBDA e : e IS NOT DISTINCT FROM pair[1])) > LENGTH(LIST_FILTER([2], LAMBDA e : e IS NOT DISTINCT FROM pair[1])))), LAMBDA pair : pair[1]) END"
   },
   {
    "key": "73fc49fcf157d9a6",
@@ -45176,6 +46626,26 @@
    "key": "4c91f4bb0050bae6",
    "dialect": "solr",
    "sql": "a || b"
+  },
+  {
+   "key": "99704ad63098a7ee",
+   "dialect": "spark",
+   "sql": "'\\U0001F600'"
+  },
+  {
+   "key": "76092678db4c4b67",
+   "dialect": "spark",
+   "sql": "r'\\u0041\\101\\z'"
+  },
+  {
+   "key": "4db145fceeb936b4",
+   "dialect": "spark",
+   "sql": "'U0001F600'"
+  },
+  {
+   "key": "ad222e9cf74184e8",
+   "dialect": "spark2",
+   "sql": "'\\U0001F600'"
   },
   {
    "key": "91c3ef9d9c6471e9",
@@ -45416,6 +46886,11 @@
    "key": "5d52f2fc17560174",
    "dialect": "spark",
    "sql": "ALTER TABLE StudentInfo ADD COLUMNS (LastName STRING, DOB TIMESTAMP)"
+  },
+  {
+   "key": "50708ef8f9d3eaad",
+   "dialect": "spark",
+   "sql": "ALTER TABLE t ADD COLUMNS (a.b INT COMMENT 'x' AFTER c, d.e.f STRING)"
   },
   {
    "key": "85171d33b7045e4c",
@@ -45691,6 +47166,11 @@
    "key": "5cbdc7b5cb331369",
    "dialect": "spark",
    "sql": "REFRESH TABLE a.b.c"
+  },
+  {
+   "key": "d5236e151221f773",
+   "dialect": "spark",
+   "sql": "REFRESH FUNCTION db.func1"
   },
   {
    "key": "4a2679833ed6974f",
@@ -46573,11 +48053,6 @@
    "sql": "ARRAY_SORT(x, (left, right) -> -1)"
   },
   {
-   "key": "3ea0e02ae17cc5ec",
-   "dialect": "duckdb",
-   "sql": "ARRAY_SORT(x)"
-  },
-  {
    "key": "3aa36069894efa13",
    "dialect": "presto",
    "sql": "ARRAY_SORT(x, (\"left\", \"right\") -> -1)"
@@ -47043,6 +48518,16 @@
    "sql": "SELECT TRANSFORM(zip_code, name, age) USING 'cat' FROM person WHERE zip_code > 94500"
   },
   {
+   "key": "e4abc4eb8121f5c5",
+   "dialect": "spark",
+   "sql": "FROM x INSERT OVERWRITE TABLE a PARTITION(ds = '1') SELECT k WHERE v > 0 INSERT INTO b SELECT k, v"
+  },
+  {
+   "key": "e64da8ebab618363",
+   "dialect": "spark",
+   "sql": "FROM (SELECT k, v FROM x QUALIFY ROW_NUMBER() OVER (PARTITION BY k ORDER BY v) = 1) AS s INSERT INTO t SELECT s.v INSERT INTO u SELECT s.k"
+  },
+  {
    "key": "ec9295a6ff503f06",
    "dialect": "spark",
    "sql": "INSERT OVERWRITE TABLE table WITH cte AS (SELECT cola FROM other_table) SELECT cola FROM cte"
@@ -47213,6 +48698,21 @@
    "sql": "SELECT col, pos, IF(_u_2.pos_2 = _u_3.pos_3, _u_3.col_2) AS col_2, IF(_u_2.pos_2 = _u_3.pos_3, _u_3.pos_3) AS pos_3 FROM _u CROSS JOIN UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(ARRAY[2, 3])))) AS _u_2(pos_2) CROSS JOIN UNNEST(ARRAY[2, 3]) WITH ORDINALITY AS _u_3(col_2, pos_3) WHERE _u_2.pos_2 = _u_3.pos_3 OR (_u_2.pos_2 > CARDINALITY(ARRAY[2, 3]) AND _u_3.pos_3 = CARDINALITY(ARRAY[2, 3]))"
   },
   {
+   "key": "c2aa61b769238870",
+   "dialect": "spark",
+   "sql": "SELECT EXPLODE(x) AS a, (SELECT MAX(b) FROM (SELECT EXPLODE(ARRAY(1, 2)) AS b)) AS m FROM tbl"
+  },
+  {
+   "key": "a6be9b44b1f8133a",
+   "dialect": "bigquery",
+   "sql": "SELECT IF(pos = pos_2, a, NULL) AS a, (SELECT MAX(b) FROM (SELECT IF(pos = pos_2, b, NULL) AS b FROM UNNEST(GENERATE_ARRAY(0, GREATEST(ARRAY_LENGTH([1, 2])) - 1)) AS pos CROSS JOIN UNNEST([1, 2]) AS b WITH OFFSET AS pos_2 WHERE pos = pos_2 OR (pos > (ARRAY_LENGTH([1, 2]) - 1) AND pos_2 = (ARRAY_LENGTH([1, 2]) - 1)))) AS m FROM tbl CROSS JOIN UNNEST(GENERATE_ARRAY(0, GREATEST(ARRAY_LENGTH(x)) - 1)) AS pos CROSS JOIN UNNEST(x) AS a WITH OFFSET AS pos_2 WHERE pos = pos_2 OR (pos > (ARRAY_LENGTH(x) - 1) AND pos_2 = (ARRAY_LENGTH(x) - 1))"
+  },
+  {
+   "key": "141a4a323d96e5f8",
+   "dialect": "presto",
+   "sql": "SELECT IF(_u.pos = _u_2.pos_2, _u_2.a) AS a, (SELECT MAX(b) FROM (SELECT IF(_u.pos = _u_2.pos_2, _u_2.b) AS b FROM UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(ARRAY[1, 2])))) AS _u(pos) CROSS JOIN UNNEST(ARRAY[1, 2]) WITH ORDINALITY AS _u_2(b, pos_2) WHERE _u.pos = _u_2.pos_2 OR (_u.pos > CARDINALITY(ARRAY[1, 2]) AND _u_2.pos_2 = CARDINALITY(ARRAY[1, 2])))) AS m FROM tbl CROSS JOIN UNNEST(SEQUENCE(1, GREATEST(CARDINALITY(x)))) AS _u(pos) CROSS JOIN UNNEST(x) WITH ORDINALITY AS _u_2(a, pos_2) WHERE _u.pos = _u_2.pos_2 OR (_u.pos > CARDINALITY(x) AND _u_2.pos_2 = CARDINALITY(x))"
+  },
+  {
    "key": "55dded15d5fb8ef2",
    "dialect": "spark",
    "sql": "SELECT * FROM db.table1 MINUS SELECT * FROM db.table2"
@@ -47323,6 +48823,21 @@
    "sql": "SELECT ARRAY_INSERT(ARRAY('a', 'b', 'c'), 3, 'z')"
   },
   {
+   "key": "bb75551b3fcfe69a",
+   "dialect": "spark",
+   "sql": "SLICE(x, 2, 3)"
+  },
+  {
+   "key": "68d9dac6ae1abcf3",
+   "dialect": "clickhouse",
+   "sql": "arraySlice(x, 2, 3)"
+  },
+  {
+   "key": "052bf1be5dea3a61",
+   "dialect": "presto",
+   "sql": "SLICE(x, 2, 3)"
+  },
+  {
    "key": "1a302d04021fc157",
    "dialect": "spark",
    "sql": "DECLARE VAR x INT"
@@ -47401,6 +48916,51 @@
    "key": "15e0e5eec1fbfab9",
    "dialect": "spark",
    "sql": "TRUNC(date_col, 'MM')"
+  },
+  {
+   "key": "5cf8dc02b713dc06",
+   "dialect": "sqlite",
+   "sql": "SELECT 'x' LIKE 'x' NOT LIKE '1'"
+  },
+  {
+   "key": "03165eafa491f0f1",
+   "dialect": "sqlite",
+   "sql": "SELECT NULL IS NULL < FALSE IN (0)"
+  },
+  {
+   "key": "31feed6aa0be7cae",
+   "dialect": "sqlite",
+   "sql": "SELECT FALSE IS DISTINCT FROM TRUE IS DISTINCT FROM FALSE"
+  },
+  {
+   "key": "7f6321d4ee51bae8",
+   "dialect": "sqlite",
+   "sql": "SELECT (FALSE IS DISTINCT FROM TRUE) IS DISTINCT FROM FALSE"
+  },
+  {
+   "key": "3191fa56936920f3",
+   "dialect": "postgres",
+   "sql": "SELECT (FALSE IS DISTINCT FROM TRUE) IS DISTINCT FROM FALSE"
+  },
+  {
+   "key": "847eb1c681f0a9d5",
+   "dialect": "sqlite",
+   "sql": "SELECT NULL IS NULL < FALSE"
+  },
+  {
+   "key": "a964612a13bd4f3a",
+   "dialect": "sqlite",
+   "sql": "SELECT FALSE IS DISTINCT FROM NULL = NULL"
+  },
+  {
+   "key": "83c9a373be5b5e27",
+   "dialect": "sqlite",
+   "sql": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL"
+  },
+  {
+   "key": "1bfa70d75914e082",
+   "dialect": "duckdb",
+   "sql": "SELECT (FALSE IS DISTINCT FROM NULL) = NULL"
   },
   {
    "key": "612d8074e883d877",
@@ -47803,9 +49363,29 @@
    "sql": "SELECT MIN(a, b) FROM t"
   },
   {
+   "key": "9eb8794809f0b792",
+   "dialect": "duckdb",
+   "sql": "SELECT CASE WHEN a IS NULL OR b IS NULL THEN NULL ELSE LEAST(a, b) END FROM t"
+  },
+  {
+   "key": "170c13b33f554d3c",
+   "dialect": "trino",
+   "sql": "SELECT LEAST(a, b) FROM t"
+  },
+  {
    "key": "6ccf18b6d76197fb",
    "dialect": "sqlite",
    "sql": "SELECT MAX(a, b) FROM t"
+  },
+  {
+   "key": "9414d07835b319a3",
+   "dialect": "duckdb",
+   "sql": "SELECT CASE WHEN a IS NULL OR b IS NULL THEN NULL ELSE GREATEST(a, b) END FROM t"
+  },
+  {
+   "key": "5772fa3eecc1a522",
+   "dialect": "trino",
+   "sql": "SELECT GREATEST(a, b) FROM t"
   },
   {
    "key": "ca425b7fe90339fe",
@@ -48128,6 +49708,26 @@
    "sql": "SELECT a ->> b || c FROM t"
   },
   {
+   "key": "f1e425a28e890203",
+   "dialect": "sqlite",
+   "sql": "SELECT a ->> ('$.' || f)"
+  },
+  {
+   "key": "259a0812125c81dd",
+   "dialect": "spark",
+   "sql": "SELECT GET_JSON_OBJECT(a, CONCAT('$.', f))"
+  },
+  {
+   "key": "0674a088195981b5",
+   "dialect": "sqlite",
+   "sql": "SELECT a -> ('$.' || f)"
+  },
+  {
+   "key": "ba83d0f82ec251b4",
+   "dialect": "mysql",
+   "sql": "SELECT JSON_EXTRACT(a, CONCAT('$.', f))"
+  },
+  {
    "key": "e441dd1692338ca4",
    "dialect": "sqlite",
    "sql": "SELECT 2 * 3 || 4"
@@ -48258,14 +49858,19 @@
    "sql": "DATEDIFF_BIG(NANOSECOND, b, a)"
   },
   {
-   "key": "773ca2d9f27acc02",
-   "dialect": "sqlite",
-   "sql": "SELECT 0XCC"
-  },
-  {
    "key": "d2ca18bf9cf0ad57",
    "dialect": "sqlite",
    "sql": "SELECT x'CC'"
+  },
+  {
+   "key": "35b8556f0c334bc9",
+   "dialect": "duckdb",
+   "sql": "SELECT UNHEX('CC')"
+  },
+  {
+   "key": "83a381501f6a54e5",
+   "dialect": "sqlite",
+   "sql": "SELECT X'0a', 0x0a"
   },
   {
    "key": "d896861692f899d8",
@@ -48356,6 +49961,16 @@
    "key": "347a9045f0eed2ed",
    "dialect": "sqlite",
    "sql": "INSERT OR ROLLBACK INTO foo (x, y) VALUES (1, 2)"
+  },
+  {
+   "key": "3d9375531a2f085c",
+   "dialect": "sqlite",
+   "sql": "INSERT INTO foo AS f (x, y) VALUES (1, 2)"
+  },
+  {
+   "key": "4b7a28042bf0d0af",
+   "dialect": "sqlite",
+   "sql": "INSERT INTO foo AS f (x, y) VALUES (1, 2) ON CONFLICT(x) DO UPDATE SET y = f.y + 1"
   },
   {
    "key": "6c3d720e7422fe9a",
@@ -48598,6 +50213,11 @@
    "sql": "ALTER TABLE a SWAP WITH b"
   },
   {
+   "key": "a3a6dc8565a9f2a9",
+   "dialect": "starrocks",
+   "sql": "ALTER TABLE t PARTITION BY DATE_TRUNC('MONTH', dt) DISTRIBUTED BY HASH (a) BUCKETS 4"
+  },
+  {
    "key": "da361d32ab94ba17",
    "dialect": "starrocks",
    "sql": "SELECT ARRAY_AGG(a) FROM x"
@@ -48606,6 +50226,16 @@
    "key": "66114de605a1187d",
    "dialect": "starrocks",
    "sql": "SELECT ST_DISTANCE_SPHERE(10.1, 20.2, 30.3, 40.4)"
+  },
+  {
+   "key": "2a12076672a051ab",
+   "dialect": "starrocks",
+   "sql": "SELECT LIKE('xyz', 'x%')"
+  },
+  {
+   "key": "206d880b26291e30",
+   "dialect": "starrocks",
+   "sql": "SELECT TO_DAYS(dt) FROM t"
   },
   {
    "key": "d934ee64bd9e8a8a",
@@ -48798,6 +50428,46 @@
    "sql": "REFRESH EXTERNAL TABLE hudi1 PARTITION('date=2022-12-20', 'date=2022-12-21')"
   },
   {
+   "key": "8f10ef3c60fe7efc",
+   "dialect": "starrocks",
+   "sql": "REFRESH MATERIALIZED VIEW lo_mv1"
+  },
+  {
+   "key": "acce39f128df7577",
+   "dialect": "starrocks",
+   "sql": "REFRESH MATERIALIZED VIEW lo_mv1 FORCE"
+  },
+  {
+   "key": "4a1691dfd61fd440",
+   "dialect": "starrocks",
+   "sql": "REFRESH MATERIALIZED VIEW lo_mv1 WITH SYNC MODE"
+  },
+  {
+   "key": "de9a11a5b526c628",
+   "dialect": "starrocks",
+   "sql": "REFRESH MATERIALIZED VIEW lo_mv1 WITH ASYNC MODE"
+  },
+  {
+   "key": "a551ac117b067714",
+   "dialect": "starrocks",
+   "sql": "REFRESH MATERIALIZED VIEW lo_mv1 PARTITION START (\"2020-02-01\") END (\"2020-03-01\")"
+  },
+  {
+   "key": "b8ea924089e81091",
+   "dialect": "starrocks",
+   "sql": "REFRESH DICTIONARY dict_obj"
+  },
+  {
+   "key": "9fec169e05bd891e",
+   "dialect": "starrocks",
+   "sql": "REFRESH CONNECTIONS"
+  },
+  {
+   "key": "876211089b868c57",
+   "dialect": "starrocks",
+   "sql": "REFRESH CONNECTIONS FORCE"
+  },
+  {
    "key": "f6e34f891a5905b7",
    "dialect": "starrocks",
    "sql": "CREATE TABLE foo (col0 DECIMAL(9, 1), col1 DECIMAL32(9, 1), col2 DECIMAL64(18, 10), col3 DECIMAL128(38, 10)) DISTRIBUTED BY HASH (col1) BUCKETS 1"
@@ -48836,6 +50506,11 @@
    "key": "42364c50348d22b1",
    "dialect": "starrocks",
    "sql": "ALTER TABLE t1 RENAME t2"
+  },
+  {
+   "key": "d5ea16f078596380",
+   "dialect": "starrocks",
+   "sql": "ALTER TABLE t ADD COLUMN c INT TO r1, ADD COLUMN d INT"
   },
   {
    "key": "b016fd9d08d86179",
@@ -48953,6 +50628,11 @@
    "sql": "SELECT * FROM UNNEST(['John', 'Jane', 'Jim', 'Jamie'], [24, 25, 26, 27]) AS t(name, age)"
   },
   {
+   "key": "14b6f6dd40c3afc5",
+   "dialect": "starrocks",
+   "sql": "SELECT * FROM TABLE(UNNEST([1, 2], ['a', 'b'])) AS t(x, y)"
+  },
+  {
    "key": "7b3a675bc51652ee",
    "dialect": "starrocks",
    "sql": "SELECT id, t.type, t.scores FROM example_table, unnest(split(type, \";\"), scores) AS t(type,scores)"
@@ -48991,6 +50671,16 @@
    "key": "e193fe9471ddda2c",
    "dialect": "starrocks",
    "sql": "SELECT id, t.type, t.scores FROM example_table_2 CROSS JOIN LATERAL UNNEST(SPLIT(type, ';'), scores) AS t(type, scores)"
+  },
+  {
+   "key": "fe050829f5c8f951",
+   "dialect": "starrocks",
+   "sql": "SELECT * FROM (SELECT 1 AS id) AS s, UNNEST([1, 2], ['a', 'b'])"
+  },
+  {
+   "key": "1c33037a644eaf30",
+   "dialect": "starrocks",
+   "sql": "SELECT * FROM (SELECT 1 AS id) AS s, UNNEST([1, 2], ['a', 'b']) AS t"
   },
   {
    "key": "5ef2fdb3e54cbbb1",
@@ -49153,9 +50843,184 @@
    "sql": "CREATE TABLE test_table (col1 DATE) PARTITION BY RANGE (col1) (START ('2019-01-01') END ('2021-01-01') EVERY (INTERVAL 1 YEAR), START ('2021-01-01') END ('2021-05-01') EVERY (INTERVAL 1 MONTH), START ('2021-05-01') END ('2021-05-04') EVERY (INTERVAL 1 DAY))"
   },
   {
+   "key": "b959ca53090d339c",
+   "dialect": "starrocks",
+   "sql": "SELECT TIME_SLICE(dt, 5, 'minute', 'floor')"
+  },
+  {
+   "key": "9c6a40d5b63863c5",
+   "dialect": "starrocks",
+   "sql": "SELECT TIME_SLICE(dt, 5, 'minute', 'ceil')"
+  },
+  {
+   "key": "cb2f85c6d2ecc985",
+   "dialect": "starrocks",
+   "sql": "SELECT TIME_SLICE(dt, INTERVAL 5 MINUTE)"
+  },
+  {
+   "key": "65216c0b7dbcab6a",
+   "dialect": "starrocks",
+   "sql": "SELECT TIME_SLICE(dt, INTERVAL 5 MINUTE, floor)"
+  },
+  {
+   "key": "1752a92784d51278",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE t (dt DATETIME) PARTITION BY TIME_SLICE(dt, INTERVAL 7 DAY) DISTRIBUTED BY HASH (dt)"
+  },
+  {
+   "key": "515bf4b541cffca6",
+   "dialect": "starrocks",
+   "sql": "SELECT TIME_SLICE(dt, INTERVAL 5 MINUTE, CEIL)"
+  },
+  {
+   "key": "a889fb31d5511083",
+   "dialect": "duckdb",
+   "sql": "SELECT TIME_BUCKET(INTERVAL 5 MINUTE, dt) + INTERVAL 5 MINUTE"
+  },
+  {
+   "key": "9bd7403f00551e82",
+   "dialect": "starrocks",
+   "sql": "SELECT TIME_SLICE(dt, INTERVAL 1 DAY, FLOOR)"
+  },
+  {
+   "key": "e2c8c210a131d2c6",
+   "dialect": "duckdb",
+   "sql": "SELECT TIME_BUCKET(INTERVAL 1 DAY, dt)"
+  },
+  {
+   "key": "45832964dfc72788",
+   "dialect": "starrocks",
+   "sql": "SELECT DATEDIFF(CAST('2026-03-11 01:00:00' AS DATETIME), CAST('2026-03-10 23:00:00' AS DATETIME))"
+  },
+  {
+   "key": "13c86e1f592e1846",
+   "dialect": "duckdb",
+   "sql": "SELECT DATE_DIFF('DAY', CAST('2026-03-10 23:00:00' AS TIMESTAMP), CAST('2026-03-11 01:00:00' AS TIMESTAMP))"
+  },
+  {
+   "key": "13d0d4eb4cf58177",
+   "dialect": "starrocks",
+   "sql": "SELECT DATE_DIFF('DAY', CAST('2026-03-11 01:00:00' AS DATETIME), CAST('2026-03-10 23:00:00' AS DATETIME))"
+  },
+  {
+   "key": "dec51750231672e9",
+   "dialect": "starrocks",
+   "sql": "SELECT 'a#b' AS c"
+  },
+  {
+   "key": "cf0ebcecd6ed63e7",
+   "dialect": "starrocks",
+   "sql": "SELECT 1 AS `a#b`"
+  },
+  {
+   "key": "6afae7c9e9f63631",
+   "dialect": "starrocks",
+   "sql": "SELECT 1 AS a -- , 2 AS b"
+  },
+  {
+   "key": "cd14609a5ab68059",
+   "dialect": "starrocks",
+   "sql": "SELECT * FROM t1 PIVOT (SUM(c1) AS sum_c1, AVG(c2) AS avg_c2 FOR c3 IN (1, 2, 3, 4, 5))"
+  },
+  {
+   "key": "e2dc384ebef6a66a",
+   "dialect": "starrocks",
+   "sql": "SELECT * FROM t1 PIVOT(SUM(c1) FOR c3 IN (1 AS one, 2 AS two))"
+  },
+  {
+   "key": "aa0e222ea4752645",
+   "dialect": "starrocks",
+   "sql": "SELECT * FROM t1 PIVOT(SUM(c1) FOR (c2, c3) IN ((1, 1), (2, 2)))"
+  },
+  {
+   "key": "0095fd9a4feaeb04",
+   "dialect": "starrocks",
+   "sql": "SELECT * FROM t1 UNPIVOT(c FOR k IN (c1, c2))"
+  },
+  {
+   "key": "fa50a2550bf39cb4",
+   "dialect": "starrocks",
+   "sql": "SELECT admin, cancel, export, stop FROM t"
+  },
+  {
+   "key": "db4ddf98e7c6baa6",
+   "dialect": "starrocks",
+   "sql": "SELECT TRANSLATE(c, 'a', 'b'), translate FROM t"
+  },
+  {
+   "key": "cdb8c525e41885c1",
+   "dialect": "starrocks",
+   "sql": "SELECT map{1:\"apple\", 2:\"orange\", 3:\"pear\"} AS fruit"
+  },
+  {
+   "key": "0afe940ada3435bf",
+   "dialect": "starrocks",
+   "sql": "SELECT map{true:map{3.13:\"abc\"}, false:map{}} AS nest"
+  },
+  {
+   "key": "9282de848a637d1b",
+   "dialect": "starrocks",
+   "sql": "SELECT MAP{1:NULL}"
+  },
+  {
+   "key": "4993f88ae7aaeae3",
+   "dialect": "starrocks",
+   "sql": "SELECT MAP{1:2, 3:NULL}[1]"
+  },
+  {
+   "key": "0297f15afc69d4b6",
+   "dialect": "starrocks",
+   "sql": "SELECT MAP{1:MAP{2:1}, 3:NULL}[1][2]"
+  },
+  {
+   "key": "f3dbd375c02f586d",
+   "dialect": "starrocks",
+   "sql": "SELECT map, t.map, map[1] FROM t"
+  },
+  {
+   "key": "0d475b82dcb3add4",
+   "dialect": "starrocks",
+   "sql": "SELECT MAP{'a':1, 'b':2}['a'] AS x"
+  },
+  {
+   "key": "4ad6c9e1281432d7",
+   "dialect": "duckdb",
+   "sql": "SELECT MAP {'a': 1, 'b': 2}['a'] AS x"
+  },
+  {
+   "key": "67ea71e90588c33e",
+   "dialect": "starrocks",
+   "sql": "SELECT MAP{'a':1, 'b':2} AS m"
+  },
+  {
+   "key": "c73dc4c815b1f1a0",
+   "dialect": "duckdb",
+   "sql": "SELECT MAP {'a': 1, 'b': 2} AS m"
+  },
+  {
+   "key": "8519645275082b57",
+   "dialect": "starrocks",
+   "sql": "SELECT MAP{t.k:10}[1] FROM (SELECT 1 AS k) AS t CROSS JOIN (SELECT 2 AS k) AS u"
+  },
+  {
+   "key": "5b7e815dfdb11745",
+   "dialect": "starrocks",
+   "sql": "SELECT MAP{k:v}['a'] FROM (SELECT 'a' AS k, 10 AS v) AS t"
+  },
+  {
+   "key": "47ca7c196c6bd15e",
+   "dialect": "duckdb",
+   "sql": "SELECT MAP {k: v}['a'] FROM (SELECT 'a' AS k, 10 AS v) AS t"
+  },
+  {
    "key": "1b310271ead2d635",
    "dialect": "starrocks",
    "sql": "ARRAY_FLATTEN(arr)"
+  },
+  {
+   "key": "5d1f5bd2f341b226",
+   "dialect": "starrocks",
+   "sql": "REFRESH MATERIALIZED VIEW db.lo_mv1 PARTITION START ('2020-02-01') END ('2020-03-01') FORCE WITH SYNC MODE"
   },
   {
    "key": "5c6121ba472d7b1a",
@@ -49163,9 +51028,34 @@
    "sql": "SELECT id, t.col FROM tbl LATERAL VIEW EXPLODE(scores) t AS col"
   },
   {
+   "key": "754ecb735747ce3b",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE t (k1 INT, v1 HLL HLL_UNION) AGGREGATE KEY (k1) DISTRIBUTED BY HASH (k1)"
+  },
+  {
+   "key": "73a102ec6fb5391c",
+   "dialect": "starrocks",
+   "sql": "DELETE FROM t WHERE a = 1"
+  },
+  {
+   "key": "64dec1a51b7051b8",
+   "dialect": "starrocks",
+   "sql": "ALTER TABLE t ADD COLUMN c INT"
+  },
+  {
    "key": "b2c6c338693419f5",
    "dialect": "starrocks",
    "sql": "arr[1]"
+  },
+  {
+   "key": "a83b072af5559ecf",
+   "dialect": "starrocks",
+   "sql": "CREATE TABLE aggregate_tbl (site_id LARGEINT NOT NULL COMMENT 'id of site', date DATE NOT NULL COMMENT 'time of event', city_code VARCHAR(20) COMMENT 'city_code of user', pv BIGINT SUM DEFAULT '0' COMMENT 'total page views') AGGREGATE KEY (site_id, date, city_code) DISTRIBUTED BY HASH (site_id)"
+  },
+  {
+   "key": "e84b6c484c94c6bf",
+   "dialect": "starrocks",
+   "sql": "SELECT MAP{1:1, 2:2, 3:3} AS numbers"
   },
   {
    "key": "ae8cdeda09155bef",
@@ -49293,6 +51183,21 @@
    "sql": "SELECT * FROM tbl SAMPLE 0.33, .25, .1"
   },
   {
+   "key": "49ff95f73d2bc5df",
+   "dialect": "teradata",
+   "sql": "SELECT * FROM t SAMPLE 100"
+  },
+  {
+   "key": "3b0093e365ed18c5",
+   "dialect": "teradata",
+   "sql": "SELECT * FROM t SAMPLE 0.25"
+  },
+  {
+   "key": "fb3bec15b8f5be4b",
+   "dialect": "teradata",
+   "sql": "SELECT * FROM t SAMPLE 0.6, 0.25"
+  },
+  {
    "key": "42082619ab9cf1ca",
    "dialect": "teradata",
    "sql": "DATABASE tduser"
@@ -49366,6 +51271,16 @@
    "key": "bc6ab9f62d865cae",
    "dialect": "teradata",
    "sql": "LOCKING TABLE table1 FOR ACCESS SELECT * FROM table1 JOIN table2 ON table1.id = table2.id"
+  },
+  {
+   "key": "71ce31d82cef0aed",
+   "dialect": "teradata",
+   "sql": "LOCKING ROW FOR ACCESS SELECT * FROM t"
+  },
+  {
+   "key": "503b0978ff9fefa2",
+   "dialect": "duckdb",
+   "sql": "SELECT * FROM t"
   },
   {
    "key": "b89aa49c9f73051c",
@@ -49903,9 +51818,99 @@
    "sql": "SET QUERY_BAND = '' FOR SESSION"
   },
   {
+   "key": "411a8db7f90e3323",
+   "dialect": "teradata",
+   "sql": "SELECT SUM(x) OVER (PARTITION BY p ORDER BY d) FROM t"
+  },
+  {
+   "key": "e87a5c334b96b98c",
+   "dialect": "duckdb",
+   "sql": "SELECT SUM(x) OVER (PARTITION BY p ORDER BY d NULLS FIRST ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) FROM t"
+  },
+  {
+   "key": "ab61341b2b084f6a",
+   "dialect": "teradata",
+   "sql": "SELECT COUNT(*) OVER (ORDER BY d) FROM t"
+  },
+  {
+   "key": "8c7075d316bc8b4f",
+   "dialect": "teradata",
+   "sql": "SELECT SUM(x) OVER (PARTITION BY p) FROM t"
+  },
+  {
+   "key": "517eaab62a6e7652",
+   "dialect": "teradata",
+   "sql": "SELECT RANK() OVER (ORDER BY d), ROW_NUMBER() OVER (ORDER BY d), LAG(x) OVER (ORDER BY d), FIRST_VALUE(x) OVER (ORDER BY d) FROM t"
+  },
+  {
+   "key": "904965928d399a1b",
+   "dialect": "teradata",
+   "sql": "SELECT SUM(x) OVER (ORDER BY d ROWS UNBOUNDED PRECEDING) FROM t"
+  },
+  {
+   "key": "d5b9f8847c64c972",
+   "dialect": "teradata",
+   "sql": "SELECT AVG(x) OVER (ORDER BY d ROWS BETWEEN UNBOUNDED PRECEDING AND UNBOUNDED FOLLOWING) FROM t"
+  },
+  {
    "key": "6485cb9c23e7d975",
    "dialect": "teradata",
    "sql": "RENAME TABLE emp TO employee"
+  },
+  {
+   "key": "e800ff55bce19c93",
+   "dialect": "trino",
+   "sql": "DAY_OF_WEEK(x) * 2"
+  },
+  {
+   "key": "dc42885921115786",
+   "dialect": "bigquery",
+   "sql": "(MOD(EXTRACT(DAYOFWEEK FROM x) + 5, 7) + 1) * 2"
+  },
+  {
+   "key": "eb98941c83dfce57",
+   "dialect": "trino",
+   "sql": "CAST(FROM_BASE(SUBSTR(TO_HEX(MD5(CAST(CAST(col AS VARCHAR) AS VARBINARY))),1,14),16) AS DECIMAL(38, 0))"
+  },
+  {
+   "key": "bb4863d25e43234e",
+   "dialect": "bigquery",
+   "sql": "CAST(CAST(REGEXP_REPLACE(SUBSTRING(UPPER(TO_HEX(MD5(CAST(CAST(col AS STRING) AS BYTES)))), 1, 14), '^([+-]?)', '\\\\10x') AS INT64) AS BIGNUMERIC)"
+  },
+  {
+   "key": "145b8f2a30227e53",
+   "dialect": "trino",
+   "sql": "FROM_BASE('-ff', 16)"
+  },
+  {
+   "key": "37f3a4a56e223729",
+   "dialect": "bigquery",
+   "sql": "CAST(REGEXP_REPLACE('-ff', '^([+-]?)', '\\\\10x') AS INT64)"
+  },
+  {
+   "key": "a1d029c0ae7195c7",
+   "dialect": "trino",
+   "sql": "CAST(x AS DECIMAL(30, 0))"
+  },
+  {
+   "key": "b35a4e3a6932cfc2",
+   "dialect": "trino",
+   "sql": "CAST(x AS DECIMAL(29, 0))"
+  },
+  {
+   "key": "8ab278cc1020b32d",
+   "dialect": "bigquery",
+   "sql": "CAST(x AS NUMERIC)"
+  },
+  {
+   "key": "8b1b727f8d2876b7",
+   "dialect": "trino",
+   "sql": "CAST(x AS DECIMAL(20, 10))"
+  },
+  {
+   "key": "e0ac847e212321ff",
+   "dialect": "trino",
+   "sql": "CAST(x AS DECIMAL(38))"
   },
   {
    "key": "a4d69b45a8dc6e3f",
@@ -49936,6 +51941,16 @@
    "key": "7a56d14c531fc046",
    "dialect": "trino",
    "sql": "SELECT CONCAT_WS('-', CAST(NULL AS ARRAY(VARCHAR)))"
+  },
+  {
+   "key": "189b087872815e21",
+   "dialect": "trino",
+   "sql": "SELECT TIMESTAMP '2020-01-01'"
+  },
+  {
+   "key": "4ddbf63f82238cc7",
+   "dialect": "trino",
+   "sql": "SELECT DATE_ADD('MILLISECOND', 1, TIMESTAMP '2020-01-01 00:00:00')"
   },
   {
    "key": "684d29cde481af9c",
@@ -50003,6 +52018,26 @@
    "sql": "SELECT TIMESTAMP '2012-10-31 01:00 +2'"
   },
   {
+   "key": "884bbd041e97edfa",
+   "dialect": "trino",
+   "sql": "SELECT TIMESTAMP '2026-03-01 00:00:00.1234'"
+  },
+  {
+   "key": "fbe811fa60911b43",
+   "dialect": "trino",
+   "sql": "SELECT TIMESTAMP '2026-03-01 00:00:00.123456789'"
+  },
+  {
+   "key": "cfd6048af4e34490",
+   "dialect": "trino",
+   "sql": "SELECT TIMESTAMP '2026-03-01 00:00:00.1234 +02:00'"
+  },
+  {
+   "key": "1994f4d1b60f549c",
+   "dialect": "trino",
+   "sql": "SELECT TIME '01:02:03.1234'"
+  },
+  {
    "key": "076ef68562ce769d",
    "dialect": "trino",
    "sql": "SELECT TIME '01:02:03.456 -08:00'"
@@ -50018,9 +52053,9 @@
    "sql": "SELECT CAST('01:02:03.456 -08:00' AS TIMETZ)"
   },
   {
-   "key": "63be2e2fb37f24f6",
+   "key": "5d0a4ab25eed54ff",
    "dialect": "trino",
-   "sql": "SELECT CAST('01:02:03.456 -08:00' AS TIME WITH TIME ZONE)"
+   "sql": "SELECT CAST('01:02:03.456 -08:00' AS TIME(3) WITH TIME ZONE)"
   },
   {
    "key": "8a5d4d19b231e72e",
@@ -50058,9 +52093,9 @@
    "sql": "SELECT CAST('2012-10-31 01:00:00 +02:00' AS TIMESTAMPTZ)"
   },
   {
-   "key": "989d58a9c43c97e0",
+   "key": "547983430301e7d4",
    "dialect": "trino",
-   "sql": "SELECT CAST('2012-10-31 01:00:00 +02:00' AS TIMESTAMP WITH TIME ZONE)"
+   "sql": "SELECT CAST('2012-10-31 01:00:00 +02:00' AS TIMESTAMP(0) WITH TIME ZONE)"
   },
   {
    "key": "35c25aee35393155",
@@ -50688,6 +52723,16 @@
    "sql": "SELECT * FROM a..b"
   },
   {
+   "key": "4eb704f4e469ca8b",
+   "dialect": "tsql",
+   "sql": "SELECT output FROM t"
+  },
+  {
+   "key": "3847fd5584ef881d",
+   "dialect": "tsql",
+   "sql": "SELECT 1 output"
+  },
+  {
    "key": "547e4b153a55e019",
    "dialect": "tsql",
    "sql": "SELECT TOP (SELECT 1) * FROM t"
@@ -50828,9 +52873,9 @@
    "sql": "WITH t1 AS (SELECT 1 AS a), t2 AS (SELECT 1 AS a) SELECT TOP 10 a FROM t1 UNION ALL SELECT TOP 10 a FROM t2"
   },
   {
-   "key": "98b7b1d811d987bc",
+   "key": "96e65261427c4d6e",
    "dialect": "tsql",
-   "sql": "SELECT TOP 10 s.RECORDID, n.c.VALUE('(/*:FORM_ROOT/*:SOME_TAG)[1]', 'float') AS SOME_TAG_VALUE FROM source_table.dbo.source_data AS s(nolock) CROSS APPLY FormContent.nodes('/*:FORM_ROOT') AS N(C)"
+   "sql": "SELECT TOP 10 s.RECORDID, n.c.value('(/*:FORM_ROOT/*:SOME_TAG)[1]', 'float') AS SOME_TAG_VALUE FROM source_table.dbo.source_data AS s(nolock) CROSS APPLY FormContent.nodes('/*:FORM_ROOT') AS N(C)"
   },
   {
    "key": "a646f108af693514",
@@ -51583,6 +53628,21 @@
    "sql": "SELECT t1.x + t2.y AS s FROM t1 JOIN t2 ON t1.id = t2.id ORDER BY CASE WHEN t1.x + t2.y IS NULL THEN 1 ELSE 0 END, t1.x + t2.y"
   },
   {
+   "key": "4f56b858fcccb459",
+   "dialect": "tsql",
+   "sql": "SELECT STRING_AGG(v, ',') WITHIN GROUP (ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v) AS v FROM t"
+  },
+  {
+   "key": "9b8fffd2a039c390",
+   "dialect": "tsql",
+   "sql": "SELECT x AS v, STRING_AGG(v, ',') WITHIN GROUP (ORDER BY CASE WHEN v IS NULL THEN 1 ELSE 0 END, v) AS w FROM t GROUP BY x"
+  },
+  {
+   "key": "5c89c6df3f105c92",
+   "dialect": "postgres",
+   "sql": "SELECT x AS v, STRING_AGG(v, ',' ORDER BY v) AS w FROM t GROUP BY x"
+  },
+  {
    "key": "76789cb970918952",
    "dialect": "tsql",
    "sql": "SELECT col FROM t OPTION(LABEL = 'foo')"
@@ -51615,11 +53675,6 @@
   {
    "key": "f29552f34af5c79b",
    "dialect": "postgres",
-   "sql": "SELECT * FROM t"
-  },
-  {
-   "key": "503b0978ff9fefa2",
-   "dialect": "duckdb",
    "sql": "SELECT * FROM t"
   },
   {
@@ -53683,6 +55738,61 @@
    "sql": "DELETE FROM start WITH (ROWLOCK)"
   },
   {
+   "key": "f9d045e075d6a6bf",
+   "dialect": "tsql",
+   "sql": "UPDATE dbo.t (ROWLOCK) SET x = 1"
+  },
+  {
+   "key": "612835ed2d7d782a",
+   "dialect": "tsql",
+   "sql": "DELETE FROM dbo.t (ROWLOCK)"
+  },
+  {
+   "key": "cf260ed556af1b1f",
+   "dialect": "tsql",
+   "sql": "SELECT * FROM dbo.t (NOLOCK) JOIN dbo.u AS u (ROWLOCK) ON t.id = u.id"
+  },
+  {
+   "key": "d7b36f649ca68a89",
+   "dialect": "tsql",
+   "sql": "SELECT * FROM dbo.t (NOLOCK) AS s JOIN dbo.u AS u ON s.id = u.id"
+  },
+  {
+   "key": "9c232b9d794fc595",
+   "dialect": "tsql",
+   "sql": "SELECT * FROM dbo.t AS s /* alias */ (NOLOCK /* hint */)"
+  },
+  {
+   "key": "b21e1915a4b852b6",
+   "dialect": "tsql",
+   "sql": "INSERT INTO dbo.t (nolock) SELECT 1"
+  },
+  {
+   "key": "303d043187d72f44",
+   "dialect": "tsql",
+   "sql": "UPDATE s SET x = 1 FROM dbo.t AS s (ROWLOCK) JOIN dbo.u AS u ON s.id = u.id"
+  },
+  {
+   "key": "3567aa33bc0ac331",
+   "dialect": "tsql",
+   "sql": "SELECT * FROM dbo.t AS s (NOLOCK) PIVOT(SUM(x) FOR id IN ([1])) AS p"
+  },
+  {
+   "key": "04aaaea741438c06",
+   "dialect": "tsql",
+   "sql": "SELECT * FROM dbo.t (NOLOCK)"
+  },
+  {
+   "key": "b72c2f2e94055823",
+   "dialect": "tsql",
+   "sql": "SELECT * FROM dbo.t WITH (NOLOCK)"
+  },
+  {
+   "key": "bb8000b77c2d5e55",
+   "dialect": "spark",
+   "sql": "SELECT * FROM dbo.t"
+  },
+  {
    "key": "26de6f503427fac6",
    "dialect": "tsql",
    "sql": "SELECT * FROM OPENJSON(@json)"
@@ -53996,6 +56106,16 @@
    "key": "085848aebf8c7ec0",
    "dialect": "tsql",
    "sql": "GO"
+  },
+  {
+   "key": "529364a639da6139",
+   "dialect": "tsql",
+   "sql": "DROP INDEX IF EXISTS i ON dbo.t"
+  },
+  {
+   "key": "37034355e8a53199",
+   "dialect": "tsql",
+   "sql": "ALTER TABLE tbl DROP COLUMN col1, col2"
   },
   {
    "key": "175d6048a6904462",

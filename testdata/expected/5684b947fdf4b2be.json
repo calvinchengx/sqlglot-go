@@ -1,6 +1,6 @@
 {
  "dialect": "postgres",
- "rendered": "INSERT INTO newtable AS t(a, b, c) VALUES (1, 2, 3) ON CONFLICT(c) DO UPDATE SET a = t.a + 1 WHERE t.a < 1",
+ "rendered": "INSERT INTO newtable AS t (a, b, c) VALUES (1, 2, 3) ON CONFLICT(c) DO UPDATE SET a = t.a + 1 WHERE t.a < 1",
  "sql": "INSERT INTO newtable AS t(a, b, c) VALUES (1, 2, 3) ON CONFLICT(c) DO UPDATE SET a = t.a + 1 WHERE t.a < 1",
  "tokens": [
   {
@@ -342,13 +342,18 @@
    "v": false
   },
   {
-   "c": "sqlglot.expressions.query.Table",
+   "c": "sqlglot.expressions.query.Schema",
    "i": 0,
    "k": "this"
   },
   {
-   "c": "sqlglot.expressions.core.Identifier",
+   "c": "sqlglot.expressions.query.Table",
    "i": 2,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 3,
    "k": "this",
    "m": {
     "col": 20,
@@ -358,23 +363,23 @@
    }
   },
   {
-   "i": 3,
+   "i": 4,
    "k": "this",
    "v": "newtable"
   },
   {
-   "i": 3,
+   "i": 4,
    "k": "quoted",
    "v": false
   },
   {
    "c": "sqlglot.expressions.query.TableAlias",
-   "i": 2,
+   "i": 3,
    "k": "alias"
   },
   {
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 6,
+   "i": 7,
    "k": "this",
    "m": {
     "col": 25,
@@ -384,20 +389,20 @@
    }
   },
   {
-   "i": 7,
+   "i": 8,
    "k": "this",
    "v": "t"
   },
   {
-   "i": 7,
+   "i": 8,
    "k": "quoted",
    "v": false
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 6,
-   "k": "columns",
+   "i": 2,
+   "k": "expressions",
    "m": {
     "col": 27,
     "end": 26,
@@ -406,20 +411,20 @@
    }
   },
   {
-   "i": 10,
+   "i": 11,
    "k": "this",
    "v": "a"
   },
   {
-   "i": 10,
+   "i": 11,
    "k": "quoted",
    "v": false
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 6,
-   "k": "columns",
+   "i": 2,
+   "k": "expressions",
    "m": {
     "col": 30,
     "end": 29,
@@ -428,20 +433,20 @@
    }
   },
   {
-   "i": 13,
+   "i": 14,
    "k": "this",
    "v": "b"
   },
   {
-   "i": 13,
+   "i": 14,
    "k": "quoted",
    "v": false
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 6,
-   "k": "columns",
+   "i": 2,
+   "k": "expressions",
    "m": {
     "col": 33,
     "end": 32,
@@ -450,12 +455,12 @@
    }
   },
   {
-   "i": 16,
+   "i": 17,
    "k": "this",
    "v": "c"
   },
   {
-   "i": 16,
+   "i": 17,
    "k": "quoted",
    "v": false
   },
@@ -497,13 +502,13 @@
   {
    "a": true,
    "c": "sqlglot.expressions.query.Tuple",
-   "i": 25,
+   "i": 26,
    "k": "expressions"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Literal",
-   "i": 26,
+   "i": 27,
    "k": "expressions",
    "m": {
     "col": 44,
@@ -513,19 +518,19 @@
    }
   },
   {
-   "i": 27,
+   "i": 28,
    "k": "this",
    "v": "1"
   },
   {
-   "i": 27,
+   "i": 28,
    "k": "is_string",
    "v": false
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Literal",
-   "i": 26,
+   "i": 27,
    "k": "expressions",
    "m": {
     "col": 47,
@@ -535,19 +540,19 @@
    }
   },
   {
-   "i": 30,
+   "i": 31,
    "k": "this",
    "v": "2"
   },
   {
-   "i": 30,
+   "i": 31,
    "k": "is_string",
    "v": false
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Literal",
-   "i": 26,
+   "i": 27,
    "k": "expressions",
    "m": {
     "col": 50,
@@ -557,12 +562,12 @@
    }
   },
   {
-   "i": 33,
+   "i": 34,
    "k": "this",
    "v": "3"
   },
   {
-   "i": 33,
+   "i": 34,
    "k": "is_string",
    "v": false
   },
@@ -572,24 +577,24 @@
    "k": "conflict"
   },
   {
-   "i": 36,
+   "i": 37,
    "k": "duplicate",
    "v": false
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.EQ",
-   "i": 36,
+   "i": 37,
    "k": "expressions"
   },
   {
    "c": "sqlglot.expressions.core.Column",
-   "i": 38,
+   "i": 39,
    "k": "this"
   },
   {
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 39,
+   "i": 40,
    "k": "this",
    "m": {
     "col": 82,
@@ -599,28 +604,28 @@
    }
   },
   {
-   "i": 40,
+   "i": 41,
    "k": "this",
    "v": "a"
   },
   {
-   "i": 40,
+   "i": 41,
    "k": "quoted",
    "v": false
   },
   {
    "c": "sqlglot.expressions.core.Add",
-   "i": 38,
+   "i": 39,
    "k": "expression"
   },
   {
    "c": "sqlglot.expressions.core.Column",
-   "i": 43,
+   "i": 44,
    "k": "this"
   },
   {
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 44,
+   "i": 45,
    "k": "this",
    "m": {
     "col": 88,
@@ -630,18 +635,18 @@
    }
   },
   {
-   "i": 45,
+   "i": 46,
    "k": "this",
    "v": "a"
   },
   {
-   "i": 45,
+   "i": 46,
    "k": "quoted",
    "v": false
   },
   {
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 44,
+   "i": 45,
    "k": "table",
    "m": {
     "col": 86,
@@ -651,18 +656,18 @@
    }
   },
   {
-   "i": 48,
+   "i": 49,
    "k": "this",
    "v": "t"
   },
   {
-   "i": 48,
+   "i": 49,
    "k": "quoted",
    "v": false
   },
   {
    "c": "sqlglot.expressions.core.Literal",
-   "i": 43,
+   "i": 44,
    "k": "expression",
    "m": {
     "col": 92,
@@ -672,39 +677,39 @@
    }
   },
   {
-   "i": 51,
+   "i": 52,
    "k": "this",
    "v": "1"
   },
   {
-   "i": 51,
+   "i": 52,
    "k": "is_string",
    "v": false
   },
   {
    "c": "sqlglot.expressions.core.Var",
-   "i": 36,
+   "i": 37,
    "k": "action"
   },
   {
-   "i": 54,
+   "i": 55,
    "k": "this",
    "v": "DO UPDATE"
   },
   {
    "a": true,
    "c": "sqlglot.expressions.core.Ordered",
-   "i": 36,
+   "i": 37,
    "k": "conflict_keys"
   },
   {
    "c": "sqlglot.expressions.core.Column",
-   "i": 56,
+   "i": 57,
    "k": "this"
   },
   {
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 57,
+   "i": 58,
    "k": "this",
    "m": {
     "col": 65,
@@ -714,38 +719,38 @@
    }
   },
   {
-   "i": 58,
+   "i": 59,
    "k": "this",
    "v": "c"
   },
   {
-   "i": 58,
+   "i": 59,
    "k": "quoted",
    "v": false
   },
   {
-   "i": 56,
+   "i": 57,
    "k": "nulls_first",
    "v": false
   },
   {
    "c": "sqlglot.expressions.query.Where",
-   "i": 36,
+   "i": 37,
    "k": "where"
   },
   {
    "c": "sqlglot.expressions.core.LT",
-   "i": 62,
-   "k": "this"
-  },
-  {
-   "c": "sqlglot.expressions.core.Column",
    "i": 63,
    "k": "this"
   },
   {
-   "c": "sqlglot.expressions.core.Identifier",
+   "c": "sqlglot.expressions.core.Column",
    "i": 64,
+   "k": "this"
+  },
+  {
+   "c": "sqlglot.expressions.core.Identifier",
+   "i": 65,
    "k": "this",
    "m": {
     "col": 102,
@@ -755,18 +760,18 @@
    }
   },
   {
-   "i": 65,
+   "i": 66,
    "k": "this",
    "v": "a"
   },
   {
-   "i": 65,
+   "i": 66,
    "k": "quoted",
    "v": false
   },
   {
    "c": "sqlglot.expressions.core.Identifier",
-   "i": 64,
+   "i": 65,
    "k": "table",
    "m": {
     "col": 100,
@@ -776,18 +781,18 @@
    }
   },
   {
-   "i": 68,
+   "i": 69,
    "k": "this",
    "v": "t"
   },
   {
-   "i": 68,
+   "i": 69,
    "k": "quoted",
    "v": false
   },
   {
    "c": "sqlglot.expressions.core.Literal",
-   "i": 63,
+   "i": 64,
    "k": "expression",
    "m": {
     "col": 106,
@@ -797,12 +802,12 @@
    }
   },
   {
-   "i": 71,
+   "i": 72,
    "k": "this",
    "v": "1"
   },
   {
-   "i": 71,
+   "i": 72,
    "k": "is_string",
    "v": false
   },

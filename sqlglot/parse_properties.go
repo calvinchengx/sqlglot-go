@@ -1,6 +1,7 @@
 package sqlglot
 
 import (
+	"errors"
 	"sort"
 	"strings"
 )
@@ -234,6 +235,15 @@ func (p *parser) parseTableProperties() ([]*Expression, error) {
 		}
 		spec, consumed, ok := p.atProperty()
 		if !ok {
+			// Any `word = value` is a property of its own, even a word the
+			// table does not know: MySQL's KEY_BLOCK_SIZE is one
+			// (Parser._parse_property -> _parse_key_value_property).
+			if prop, found, perr := p.tryParseKeyValueProperty(); perr != nil {
+				return nil, perr
+			} else if found {
+				out = append(out, prop)
+				continue
+			}
 			return out, nil
 		}
 		for i := 0; i < consumed; i++ {
@@ -269,6 +279,17 @@ func (p *parser) parseTableProperties() ([]*Expression, error) {
 			return nil, err
 		}
 		out = append(out, prop)
+		// Properties may be written one after another with a comma between
+		// them -- `ENGINE=InnoDB, COMMENT='c' ROW_FORMAT=DYNAMIC` -- and the
+		// comma belongs to the list rather than to whatever follows it
+		// (Parser._parse_properties). A comment sitting on the comma belongs
+		// to the property it follows.
+		if p.match(TokCOMMA) && len(out) > 0 {
+			if comments := p.takeComments(); len(comments) > 0 {
+				last := out[len(out)-1]
+				last.Comments = append(last.Comments, comments...)
+			}
+		}
 	}
 }
 
@@ -1560,4 +1581,21 @@ func (p *parser) parseWrappedIdentifiers() ([]*Expression, error) {
 		return nil, p.unsupported("unclosed SORTKEY")
 	}
 	return ids, nil
+}
+
+// tryParseKeyValueProperty reads `key = value` where a property table knows no
+// word for the key, and reports false -- with the cursor put back -- where no
+// `=` follows: that is where the reference's property list ends
+// (Parser._parse_property -> _parse_key_value_property).
+func (p *parser) tryParseKeyValueProperty() (*Expression, bool, error) {
+	mark := p.index
+	prop, err := p.parseKeyValueProperty()
+	if err != nil {
+		p.index = mark
+		if errors.Is(err, ErrUnsupported) {
+			return nil, false, nil
+		}
+		return nil, false, err
+	}
+	return prop, true, nil
 }

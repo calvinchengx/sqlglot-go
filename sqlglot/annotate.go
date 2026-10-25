@@ -205,6 +205,29 @@ func annotateNode(e *Expression, dialect string) *Expression {
 		return dataType("UNKNOWN")
 	}
 
+	// A numeric-preserving math function keeps a numeric or unknown argument's
+	// type and answers INT otherwise: `FLOOR(5)` is an INT, `FLOOR(x)` an
+	// UNKNOWN (typing/__init__.py, annotate_by_numeric_arg).
+	// BigQuery's math functions answer DOUBLE for an integer or a string
+	// argument and the argument's own type otherwise
+	// (typing/bigquery.py, annotate_int_as_double).
+	if g := bigqueryDoubleMath[e.Class]; g && dialect == "bigquery" {
+		inner := annotate(childOf(e, "this"), dialect)
+		kind := typeKind(inner)
+		if integerTypeKinds[kind] || textTypeKinds[kind] {
+			return dataType("DOUBLE")
+		}
+		return inner
+	}
+	if e.Class == "Ceil" || e.Class == "Floor" {
+		inner := annotate(childOf(e, "this"), dialect)
+		kind := typeKind(inner)
+		if kind == "UNKNOWN" || numericTypeKinds[kind] {
+			return inner
+		}
+		return dataType("INT")
+	}
+
 	// A connector or a predicate is a BOOLEAN whatever its operands are --
 	// which is the part of this the simplifier most needs, and the part that
 	// needs no schema.
@@ -866,6 +889,21 @@ func AnnotateFully(e *Expression, dialect string) bool {
 		return false
 	}
 	e.Type = t
+	// A STRUCT's type is built from COPIES of its field names, and the
+	// reference stamps those too -- there they are the very nodes the struct
+	// was built from.
+	if e.Class == "Struct" {
+		if params, _ := t.Args["expressions"].([]*Expression); len(params) > 0 {
+			for _, param := range params {
+				if param == nil || param.Class != "ColumnDef" {
+					continue
+				}
+				if name, _ := param.Args["this"].(*Expression); name != nil && name.Type == nil {
+					AnnotateFully(name, dialect)
+				}
+			}
+		}
+	}
 	return complete
 }
 
@@ -1035,13 +1073,56 @@ func ApplyIndexOffset(this *Expression, items []*Expression, offset int, dialect
 	if offset == 0 || len(items) != 1 || this == nil {
 		return items, true
 	}
-	if this.Type == nil && !AnnotateFully(this, dialect) {
+	// A base whose type is KNOWN and is neither an array nor unknown is not
+	// indexed at all, and the reference stamps nothing on it: its own
+	// annotate_types runs only after that test (builders.py,
+	// apply_index_offset). `MAP{1:2}[1]` is one -- the map keeps its keys.
+	// A ToMap is the one base the reference's own annotator leaves unstamped
+	// (its `_annotate_to_map` never runs on a detached node), so it is typed
+	// here without writing anything down. Everything else is stamped before
+	// the test, which is what the reference's annotate_types does.
+	unstampedMap := false
+	if this.Class == "ToMap" || mapLiteralUnderBracket(this) {
+		// The reference walks the map's CHILDREN -- so the struct inside it
+		// is typed -- and leaves the map itself unstamped.
+		// The map's OWN type is read BEFORE the walk stamps anything: the
+		// answer is memoised, and the walk would otherwise hand back the
+		// type it just wrote on the children.
+		kind := "UNKNOWN"
+		if this.Class == "ToMap" {
+			// A map literal indexed directly is typed by what its fields
+			// hold; a SUBSCRIPT over one is not a map at all, and its type
+			// is unknown -- so the index is shifted.
+			kind = mapLiteralStructKind(this, dialect)
+		}
+		AnnotateFully(this, dialect)
+		clearBracketChainMapType(this)
+		switch kind {
+		case "UNKNOWN", "ARRAY":
+			// The map's own type stays unwritten, so the stamp below is
+			// skipped and only the INDEX is typed -- which is what the
+			// reference does once the base fails its test.
+			unstampedMap = true
+		default:
+			return items, true
+		}
+	} else if this.Type == nil {
+		if kind := typeKind(annotate(this, dialect)); kind != "UNKNOWN" && kind != "ARRAY" {
+			if !AnnotateFully(this, dialect) {
+				return nil, false
+			}
+			return items, true
+		}
+	}
+	if !unstampedMap && this.Type == nil && !AnnotateFully(this, dialect) {
 		return nil, false
 	}
-	switch typeKind(this.Type) {
-	case "UNKNOWN", "ARRAY":
-	default:
-		return items, true
+	if !unstampedMap {
+		switch typeKind(this.Type) {
+		case "UNKNOWN", "ARRAY":
+		default:
+			return items, true
+		}
 	}
 	index := items[0]
 	if index.Type == nil && !AnnotateFully(index, dialect) {
@@ -1286,4 +1367,69 @@ func annotateDuckDBAtTimeZone(e *Expression, dialect string) *Expression {
 		return dataType("TIMETZ")
 	}
 	return dataType("UNKNOWN")
+}
+
+// mapLiteralUnderBracket reports whether a node is a subscript over a map
+// LITERAL, which is the shape the reference walks without stamping the map.
+func mapLiteralUnderBracket(e *Expression) bool {
+	if e == nil || e.Class != "Bracket" {
+		return false
+	}
+	// A subscript may be applied more than once -- `MAP{...}[1][2]` -- and
+	// the map is still underneath.
+	inner, _ := e.Args["this"].(*Expression)
+	for inner != nil && inner.Class == "Bracket" {
+		inner, _ = inner.Args["this"].(*Expression)
+	}
+	return inner != nil && inner.Class == "ToMap"
+}
+
+// clearBracketChainMapType removes the type a map literal carries when it is
+// the thing a subscript indexes: the reference walks into it and stamps its
+// children, and leaves the map itself untyped.
+func clearBracketChainMapType(e *Expression) {
+	for e != nil && e.Class == "Bracket" {
+		e, _ = e.Args["this"].(*Expression)
+	}
+	if e != nil && e.Class == "ToMap" {
+		e.Type = nil
+	}
+}
+
+// mapLiteralStructKind is the kind of the STRUCT a map literal holds, which
+// is what decides whether the reference types the key read off it: a map of
+// literal keys is a MAP, and one whose keys are columns is not known at all.
+func mapLiteralStructKind(e *Expression, dialect string) string {
+	for e != nil && e.Class == "Bracket" {
+		e, _ = e.Args["this"].(*Expression)
+	}
+	if e == nil || e.Class != "ToMap" {
+		return ""
+	}
+	inner, _ := e.Args["this"].(*Expression)
+	for inner != nil && inner.Class == "Bracket" {
+		inner, _ = inner.Args["this"].(*Expression)
+	}
+	if inner == nil || inner.Class != "Struct" {
+		return ""
+	}
+	return typeKind(annotate(inner, dialect))
+}
+
+// numericTypeKinds are the types annotate_by_numeric_arg counts as numeric.
+var numericTypeKinds = map[string]bool{
+	"TINYINT": true, "SMALLINT": true, "INT": true, "BIGINT": true,
+	"MEDIUMINT": true, "UTINYINT": true, "USMALLINT": true, "UINT": true,
+	"UBIGINT": true, "INT128": true, "INT256": true, "UINT128": true,
+	"UINT256": true, "DECIMAL": true, "DECIMAL32": true, "DECIMAL64": true,
+	"DECIMAL128": true, "DECIMAL256": true, "BIGDECIMAL": true,
+	"DOUBLE": true, "FLOAT": true, "REAL": true, "UDOUBLE": true,
+	"UDECIMAL": true, "BIGINT_UNSIGNED": true,
+}
+
+// bigqueryDoubleMath are the BigQuery classes whose integer or string argument
+// is widened to DOUBLE (typing/bigquery.py).
+var bigqueryDoubleMath = map[string]bool{
+	"Avg": true, "Ceil": true, "Exp": true, "Floor": true, "Ln": true,
+	"Log": true, "Round": true, "Sqrt": true,
 }
