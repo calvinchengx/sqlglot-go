@@ -660,6 +660,19 @@ func (g *generator) writeSelect(e *Expression) string {
 		add(windowsSQL)
 		add(qualifySQL)
 	}
+	// DuckDB writes a query's USING SAMPLE here, after QUALIFY and before
+	// ORDER BY (DuckDBGenerator.AFTER_HAVING_MODIFIER_TRANSFORMS).
+	sampleBeforeOrder := false
+	if g.dialect == "duckdb" {
+		if sample := g.child(e, "sample"); sample != "" {
+			if g.tables.SelectSampleWord != "" && g.tables.TableSampleWord != "" {
+				sample = strings.Replace(sample,
+					g.tables.TableSampleWord, g.tables.SelectSampleWord, 1)
+			}
+			add(sample)
+			sampleBeforeOrder = true
+		}
+	}
 	add(g.child(e, "order"))
 
 	// A FETCH is written AFTER the offset where a LIMIT is written before it:
@@ -684,7 +697,7 @@ func (g *generator) writeSelect(e *Expression) string {
 	// A sample hanging off the QUERY rather than a table is the same node
 	// under a different word: DuckDB says USING SAMPLE here and TABLESAMPLE
 	// there. Both words are probed, and the template carries the other one.
-	if sample := g.child(e, "sample"); sample != "" {
+	if sample := g.child(e, "sample"); sample != "" && !sampleBeforeOrder {
 		if g.tables.SelectSampleWord != "" && g.tables.TableSampleWord != "" {
 			sample = strings.Replace(sample,
 				g.tables.TableSampleWord, g.tables.SelectSampleWord, 1)
