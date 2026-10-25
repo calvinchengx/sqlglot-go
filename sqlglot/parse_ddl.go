@@ -1863,6 +1863,12 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 		out = append(out, New("ColumnConstraint", Arg{"kind", computed}))
 	}
 	for {
+		// MySQL's SIGNED is the default for a numeric type and is ignored
+		// (MySQLParser._parse_column_constraint).
+		if isMySQLFamily(p.dialect) && p.atWords("SIGNED") {
+			p.advance()
+			continue
+		}
 		var kind *Expression
 		switch {
 		case p.atRisingWaveComputed():
@@ -2112,6 +2118,15 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 		case p.atWords("BINARY"):
 			p.advance()
 			kind = New("BinaryColumnConstraint")
+		// MySQL spells two character sets by a word of their own: ASCII is
+		// latin1 (not the ascii set) and UNICODE is ucs2
+		// (MySQLParser.CONSTRAINT_PARSERS).
+		case p.atWords("ASCII"):
+			p.advance()
+			kind = New("CharacterSetColumnConstraint", Arg{"this", New("Var", Arg{"this", "latin1"})})
+		case p.atWords("UNICODE"):
+			p.advance()
+			kind = New("CharacterSetColumnConstraint", Arg{"this", New("Var", Arg{"this", "ucs2"})})
 		case p.atWords("COMMENT"):
 			p.advance()
 			// Exasol writes the IS as part of the constraint:
@@ -2687,6 +2702,26 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 		// (Parser._parse_as_command).
 		return New("Command", Arg{"this", drop},
 			Arg{"expression", " " + strings.Join(words, " ")}), nil
+	case p.at(TokDROP) && isMySQLFamily(p.dialect) && p.next() != nil &&
+		strings.EqualFold(p.next().Text, "CHECK"):
+		// `ALTER TABLE t DROP CHECK c` is a DROP of a named thing on the
+		// table (MySQLParser._parse_alter_drop_action -> _parse_drop(kind="CHECK")).
+		p.advance()
+		p.advance()
+		name, err := p.parseTableName()
+		if err != nil {
+			return nil, err
+		}
+		return New("Drop",
+			Arg{"exists", false},
+			Arg{"tables", []*Expression{name}},
+			Arg{"kind", "CHECK"},
+			Arg{"temporary", false}, Arg{"materialized", false},
+			Arg{"cascade", false}, Arg{"restrict", false},
+			Arg{"constraints", false}, Arg{"purge", false},
+			Arg{"concurrently", false},
+			Arg{"sync", false}, Arg{"iceberg", false}, Arg{"force", false},
+		), nil
 	case p.at(TokDROP) && p.dialect == "mysql" && p.next() != nil &&
 		(strings.EqualFold(p.next().Text, "INDEX") || strings.EqualFold(p.next().Text, "FOREIGN KEY")):
 		p.advance()
@@ -3634,12 +3669,35 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// MySQL's KEY_BLOCK_SIZE, COMMENT and the rest after the key parts
+		// belong to the KEY, not to the table (MySQLParser._parse_primary_key).
+		if isMySQLFamily(p.dialect) {
+			indexOptions, ierr := p.parseMySQLIndexOptions()
+			if ierr != nil {
+				return nil, ierr
+			}
+			if len(indexOptions) > 0 {
+				key.Set("options", indexOptions)
+				return key, nil
+			}
+		}
 		if len(options) > 0 {
 			key.Set("options", options)
 		}
 		return key, nil
 	case p.at(TokFOREIGN_KEY):
 		p.advance()
+		// MySQL may NAME the key here, with no CONSTRAINT in front of it:
+		// `FOREIGN KEY fk (a) REFERENCES ...` (MySQLParser._parse_foreign_key).
+		var fkName *Expression
+		if isMySQLFamily(p.dialect) && p.atIdentifier() && p.next() != nil &&
+			p.next().Type == TokL_PAREN {
+			id, ierr := p.parseIdentifier()
+			if ierr != nil {
+				return nil, ierr
+			}
+			fkName = id
+		}
 		columns, err := p.parseInsertColumns()
 		if err != nil {
 			return nil, err
@@ -3703,6 +3761,10 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		}
 		if len(options) > 0 {
 			node.Set("options", options)
+		}
+		// The name is set LAST, which is where the reference sets it too.
+		if fkName != nil {
+			node.Set("this", fkName)
 		}
 		return node, nil
 	case p.atWords("UNIQUE"):

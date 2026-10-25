@@ -308,6 +308,10 @@ func init() {
 		"CommentColumnConstraint":             (*generator).writeCommentConstraint,
 		"BinaryColumnConstraint":              (*generator).writeBinaryConstraint,
 		"BitwiseNot":                          (*generator).writeBitwiseNot,
+		"Nearest":                             (*generator).writeNearest,
+		"Disconnect":                          (*generator).writeDisconnect,
+		"MultitableInserts":                   (*generator).writeMultitableInserts,
+		"Match":                               (*generator).writeMatch,
 		"CollateColumnConstraint":             (*generator).writeCollateConstraint,
 		"Insert":                              (*generator).writeInsert,
 		"Update":                              (*generator).writeUpdate,
@@ -1060,8 +1064,12 @@ func (g *generator) writeJoin(e *Expression) string {
 	if hint, ok := e.Args["hint"].(string); ok && hint != "" && len(g.tables.JoinHints) > 0 {
 		words = append(words, hint)
 	}
+	nearest := ""
+	if n, _ := e.Args["nearest"].(*Expression); n != nil {
+		nearest = g.node(n)
+	}
 	usingColumns, _ := e.Args["using"].([]*Expression)
-	if len(words) == 0 && len(usingColumns) == 0 {
+	if len(words) == 0 && len(usingColumns) == 0 && nearest == "" {
 		if _, hasOn := e.Args["on"].(*Expression); !hasOn {
 			// A comma join over an UNNEST is written as an explicit JOIN in
 			// the dialects that need one: the comma form does not bind the
@@ -1079,6 +1087,11 @@ func (g *generator) writeJoin(e *Expression) string {
 		words = append(words, this)
 	} else {
 		words = append(words, "JOIN", this)
+	}
+	// The nearest-neighbour clause stands between the table and its ON
+	// (Generator.join_sql).
+	if nearest != "" {
+		words = append(words, nearest)
 	}
 	// The ON operand is a condition, same as WHERE's, and a boolean literal
 	// there picks its condition spelling rather than its value one. Unlike
@@ -6629,7 +6642,14 @@ func (g *generator) writePrimaryKey(e *Expression) string {
 		out += written
 	}
 	// The words the key carries after it, in the order they were written.
-	if options, _ := e.Args["options"].([]string); len(options) > 0 {
+	// MySQL's are index OPTIONS (KEY_BLOCK_SIZE and friends), not words.
+	if options, _ := e.Args["options"].([]*Expression); len(options) > 0 {
+		parts := make([]string, 0, len(options))
+		for _, opt := range options {
+			parts = append(parts, g.node(opt))
+		}
+		out += " " + strings.Join(parts, " ")
+	} else if options, _ := e.Args["options"].([]string); len(options) > 0 {
 		out += " " + strings.Join(options, " ")
 	}
 	return out
@@ -6751,7 +6771,11 @@ func (g *generator) writeForeignKey(e *Expression) string {
 	if expressions != "" {
 		expressions = " (" + expressions + ")"
 	}
-	out := "FOREIGN KEY" + expressions
+	out := "FOREIGN KEY"
+	if name := g.child(e, "this"); name != "" {
+		out += " " + name
+	}
+	out += expressions
 	if ref := g.child(e, "reference"); ref != "" {
 		out += " " + ref
 	}
@@ -11799,4 +11823,39 @@ func (g *generator) byteStringBody(text string) string {
 		preferred = "'"
 	}
 	return strings.ReplaceAll(text, "'", preferred+"'")
+}
+
+// writeNearest writes DuckDB's nearest-neighbour join clause:
+// `[APPROX] NEAREST n BY DISTANCE|SIMILARITY <expr>` (Generator.nearest_sql).
+func (g *generator) writeNearest(e *Expression) string {
+	approximate := ""
+	if e.Args["approximate"] == true {
+		approximate = "APPROX "
+	}
+	metric := "DISTANCE"
+	if e.Args["similarity"] == true {
+		metric = "SIMILARITY"
+	}
+	return approximate + "NEAREST " + g.child(e, "count") + " BY " + metric + " " +
+		g.child(e, "this")
+}
+
+// writeDisconnect writes DuckDB's DISCONNECT.
+func (g *generator) writeDisconnect(*Expression) string { return "DISCONNECT" }
+
+// writeMatch writes Doris's MATCH family and, elsewhere, the plain binary.
+func (g *generator) writeMatch(e *Expression) string {
+	if g.dialect != "doris" {
+		return g.spell(e)
+	}
+	kind, _ := e.Args["kind"].(string)
+	op := "MATCH"
+	if kind != "" {
+		op = "MATCH_" + kind
+	}
+	out := g.child(e, "this") + " " + op + " " + g.child(e, "expression")
+	if analyzer := g.child(e, "analyzer"); analyzer != "" {
+		out += " USING ANALYZER " + analyzer
+	}
+	return out
 }

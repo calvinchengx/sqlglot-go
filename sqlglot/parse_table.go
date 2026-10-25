@@ -58,6 +58,27 @@ func (p *parser) parseJoin() (*Expression, error) {
 		return join, nil
 	}
 
+	// DuckDB names a join's TYPE in a parenthetical of its own -- `JOIN BY
+	// (TYPE left) b` -- which is the SIDE and KIND, read after the join is
+	// built (DuckDBParser._parse_join).
+	duckdbType := ""
+	if p.dialect == "duckdb" && p.atWords("JOIN", "BY", "(", "TYPE") {
+		p.advance() // JOIN
+		p.advance() // BY
+		p.advance() // (
+		p.advance() // TYPE
+		name := p.parseIDVarAny()
+		if name == nil {
+			return nil, p.unsupported("JOIN BY (TYPE ...) without a type")
+		}
+		duckdbType = strings.ToUpper(name.Name())
+		if !p.match(TokR_PAREN) {
+			return nil, p.unsupported("unclosed JOIN BY (TYPE ...)")
+		}
+		mark := p.index
+		_ = mark
+	}
+
 	mark := p.index
 	c := p.curr()
 	if c == nil {
@@ -154,7 +175,7 @@ func (p *parser) parseJoin() (*Expression, error) {
 	// STRAIGHT_JOIN is the word AND the join: it carries its own JOIN, so
 	// none follows it.
 	straight := kind != nil && kind.Type == TokSTRAIGHT_JOIN
-	if !p.match(TokJOIN) && !straight {
+	if duckdbType == "" && !p.match(TokJOIN) && !straight {
 		// A side or a kind with no JOIN after it is not a join at all: it
 		// belongs to what follows -- a set operation's own side and kind,
 		// `SELECT 1 INNER UNION ALL SELECT 3` -- and the reference retreats
@@ -277,6 +298,60 @@ func (p *parser) parseJoin() (*Expression, error) {
 		}
 		if k, _ := join.Args["kind"].(string); k == "ARRAY" {
 			replaceArrayJoinTables(join)
+		}
+	}
+	if p.dialect == "duckdb" {
+		if duckdbType != "" {
+			// `BY (TYPE left_outer_join)` sets the SIDE and KIND after the
+			// join is built, so they are the node's last arguments.
+			parts := strings.Split(strings.TrimSuffix(duckdbType, "_JOIN"), "_")
+			if len(parts) > 0 && (parts[0] == "LEFT" || parts[0] == "RIGHT" || parts[0] == "FULL") {
+				join.Set("side", parts[0])
+				parts = parts[1:]
+			}
+			if kind := strings.Join(parts, " "); kind != "" {
+				join.Set("kind", kind)
+			}
+		}
+		// `[APPROX] NEAREST n BY DISTANCE|SIMILARITY <expr>` follows the join
+		// (DuckDBParser._parse_join).
+		approximate, hasNearest := false, false
+		if p.atWords("APPROX", "NEAREST") {
+			p.advance()
+			p.advance()
+			approximate, hasNearest = true, true
+		} else if p.atWords("NEAREST") {
+			p.advance()
+			hasNearest = true
+		}
+		if hasNearest {
+			c := p.curr()
+			if c == nil || c.Type != TokNUMBER {
+				return nil, p.unsupported("NEAREST without a count")
+			}
+			p.advance()
+			count := New("Literal", Arg{"this", c.Text}, Arg{"is_string", false})
+			if !p.atWords("BY") {
+				return nil, p.unsupported("NEAREST without BY")
+			}
+			p.advance()
+			similarity := false
+			switch {
+			case p.atWords("DISTANCE"):
+				p.advance()
+			case p.atWords("SIMILARITY"):
+				p.advance()
+				similarity = true
+			default:
+				return nil, p.unsupported("NEAREST without DISTANCE or SIMILARITY")
+			}
+			expr, err := p.parseDisjunction()
+			if err != nil {
+				return nil, err
+			}
+			join.Set("nearest", New("Nearest",
+				Arg{"this", expr}, Arg{"count", count},
+				Arg{"approximate", approximate}, Arg{"similarity", similarity}))
 		}
 	}
 	return join, nil
@@ -1673,6 +1748,19 @@ func (p *parser) namesAFunctionCall() bool {
 }
 
 func (p *parser) parseTableAlias() (*Expression, error) {
+	// DuckDB's nearest-neighbour clause follows the table and is not an
+	// alias: `b NEAREST 1 BY ...` / `b APPROX NEAREST ...`
+	// (DuckDBParser._parse_table_alias).
+	if p.dialect == "duckdb" {
+		if p.atWords("NEAREST") {
+			if n := p.next(); n != nil && n.Type == TokNUMBER {
+				return nil, nil
+			}
+		}
+		if p.atWords("APPROX", "NEAREST") {
+			return nil, nil
+		}
+	}
 	explicit := p.match(TokALIAS)
 	if !explicit && !p.atAliasName() {
 		return nil, nil

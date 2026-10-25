@@ -305,6 +305,13 @@ func (p *parser) parseRangeFrom(this *Expression, parseIs bool) (*Expression, er
 		}
 	}
 
+	// Doris's full-text MATCH operators are ranges of their own:
+	// `c MATCH_PHRASE 'x' [USING ANALYZER a]` (DorisParser._parse_range).
+	if p.dialect == "doris" {
+		if out, handled, merr := p.parseDorisMatch(this, parseIs); handled {
+			return out, merr
+		}
+	}
 	var err error
 	for {
 		// Where IS binds below this tier it is not read here at all: the
@@ -6697,4 +6704,68 @@ func (p *parser) arrayConstructor(items []*Expression, bracketKind TokenType) *E
 		arr.Set("struct_name_inheritance", true)
 	}
 	return arr
+}
+
+// dorisMatchOperators are Doris's full-text search operators.
+var dorisMatchOperators = map[string]bool{
+	"MATCH": true, "MATCH_ALL": true, "MATCH_ANY": true, "MATCH_PHRASE": true,
+	"MATCH_PHRASE_EDGE": true, "MATCH_PHRASE_PREFIX": true, "MATCH_REGEXP": true,
+}
+
+// parseDorisMatch reads `[NOT] <MATCH-OP> <expr> [USING ANALYZER <name>]`. It
+// reports false, with the cursor where it found it, where the word is not one
+// of those operators -- an implicit alias named MATCH, for one.
+func (p *parser) parseDorisMatch(this *Expression, parseIs bool) (*Expression, bool, error) {
+	index := p.index
+	left := this
+	if left == nil {
+		var err error
+		left, err = p.parseBitwise()
+		if err != nil {
+			return nil, true, err
+		}
+	}
+	negate := p.match(TokNOT)
+	c := p.curr()
+	if c == nil || c.Type != TokVAR || !dorisMatchOperators[strings.ToUpper(c.Text)] {
+		p.index = index
+		return nil, false, nil
+	}
+	p.advance()
+	kind := ""
+	if i := strings.IndexByte(strings.ToUpper(c.Text), '_'); i >= 0 {
+		kind = strings.ToUpper(c.Text)[i+1:]
+	}
+	expr, err := p.parseBitwise()
+	if err != nil {
+		return nil, true, err
+	}
+	if expr == nil {
+		p.index = index
+		return nil, false, nil
+	}
+	var analyzer any
+	if p.atWords("USING", "ANALYZER") {
+		p.advance()
+		p.advance()
+		if lit := p.tryParseStringLiteral(); lit != nil {
+			analyzer = lit
+		} else if id := p.parseIDVarAny(); id != nil {
+			analyzer = id
+		} else {
+			return nil, true, p.unsupported("USING ANALYZER without a name")
+		}
+	}
+	args := []Arg{{"this", left}, {"expression", expr}}
+	if kind != "" {
+		args = append(args, Arg{"kind", kind})
+	}
+	if analyzer != nil {
+		args = append(args, Arg{"analyzer", analyzer})
+	}
+	node := New("Match", args...)
+	if negate {
+		node = New("Not", Arg{"this", node})
+	}
+	return node, true, nil
 }

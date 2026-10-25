@@ -391,6 +391,11 @@ func (p *parser) parseStatementBody() (*Expression, error) {
 		}
 		return New("Use", Arg{"this", table}), nil
 	}
+	// DuckDB v2 closes a connection with a statement of its own.
+	if p.dialect == "duckdb" && p.atWords("DISCONNECT") {
+		p.advance()
+		return New("Disconnect"), nil
+	}
 	if p.at(TokCREATE) {
 		return p.parseCreate()
 	}

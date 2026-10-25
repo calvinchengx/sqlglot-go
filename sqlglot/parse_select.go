@@ -90,6 +90,11 @@ func (p *parser) parseQueryBody() (*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
+		// Hive's multi-table insert: `FROM x INSERT ... SELECT ... [INSERT ...]`
+		// (Parser._parse_statement).
+		if p.at(TokINSERT) {
+			return p.parseMultitableInserts(this)
+		}
 		return p.parseSetOperations(this)
 	}
 	// A query may be WRAPPED, and every pair of parentheses is recorded:
@@ -2824,4 +2829,24 @@ func isSetOperationClass(class string) bool {
 		return true
 	}
 	return false
+}
+
+// parseMultitableInserts reads Hive's FROM-first multi-table insert: the
+// source is the FROM's own relation, and every INSERT that follows names a
+// target fed from it (Parser._parse_statement -> MultitableInserts).
+func (p *parser) parseMultitableInserts(sel *Expression) (*Expression, error) {
+	from, _ := sel.Args["from_"].(*Expression)
+	source, _ := from.Args["this"].(*Expression)
+	if source == nil {
+		return nil, p.unsupported("a multi-table insert without a source")
+	}
+	var inserts []*Expression
+	for p.at(TokINSERT) {
+		stmt, err := p.parseStatement()
+		if err != nil {
+			return nil, err
+		}
+		inserts = append(inserts, stmt)
+	}
+	return New("MultitableInserts", Arg{"expressions", inserts}, Arg{"source", source}), nil
 }
