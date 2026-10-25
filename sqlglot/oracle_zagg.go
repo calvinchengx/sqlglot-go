@@ -61,6 +61,5 @@ func spellOracleJSONArrayAgg(node *Expression) *Expression {
 	if order, _ := node.Args["order"].(*Expression); order != nil {
 		out.Set("order", order)
 	}
-	out.Set("join_mark", false)
 	return out
 }

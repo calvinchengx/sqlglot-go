@@ -19,14 +19,9 @@ func writePathColumnConstraint(g *generator, e *Expression) string {
 // oracleXMLPassing reads one value XMLTABLE passes in. Oracle stamps a
 // join mark on that value, false when the (+) mark is not there.
 func (p *parser) oracleXMLPassing() (*Expression, error) {
-	col, err := p.parseColumn()
-	if err != nil || col == nil || !p.tables.SupportsColumnJoinMarks {
-		return col, err
-	}
-	if _, set := col.Args["join_mark"]; !set {
-		col.Set("join_mark", false)
-	}
-	return col, nil
+	// The mark is stamped only where it was WRITTEN: a passing value with
+	// no `(+)` carries no join_mark at all.
+	return p.parseColumn()
 }
 
 // oracleXMLTableExpr reads a bare XMLTABLE(...) as the table function it
@@ -34,14 +29,9 @@ func (p *parser) oracleXMLPassing() (*Expression, error) {
 func (p *parser) oracleXMLTableExpr() (*Expression, error) {
 	if p.dialect == "oracle" && p.atWords("XMLTABLE") {
 		if n := p.next(); n != nil && n.Type == TokL_PAREN {
-			table, err := p.parseXMLTable()
-			if err != nil || table == nil || !p.tables.SupportsColumnJoinMarks {
-				return table, err
-			}
-			// A bare XMLTABLE is a column expression, so it carries the
-			// same join mark every other column expression does.
-			table.Set("join_mark", p.match(TokJOIN_MARKER))
-			return table, nil
+			// No join mark on the table itself: the reference stamps one on
+			// each value PASSED IN, and none here (Parser._parse_xml_table).
+			return p.parseXMLTable()
 		}
 	}
 	return p.parseTerm()
