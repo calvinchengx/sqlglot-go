@@ -641,7 +641,10 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 	// `x IS UNKNOWN` is `x IS NULL`: the reference gives UNKNOWN no node of its
 	// own after IS, it simply builds a Null. The negated form then picks up the
 	// dialect's NOT shape below, exactly as `IS NOT NULL` does.
-	if p.match(TokNULL) || p.match(TokUNKNOWN) {
+	// SQLite reads the whole right-hand side through its own comparison
+	// reader, so `IS NULL < FALSE` keeps the comparison INSIDE the predicate
+	// and the NULL is not consumed on its own (SQLiteParser._parse_is_rhs).
+	if p.dialect != "sqlite" && (p.match(TokNULL) || p.match(TokUNKNOWN)) {
 		expression = New("Null")
 	} else if p.match(TokJSON) {
 		// `x IS JSON [VALUE|SCALAR|ARRAY|OBJECT] [WITH|WITHOUT] [UNIQUE
@@ -670,7 +673,7 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 		expression = New("JSON", Arg{"this", kind}, Arg{"with_", with_}, Arg{"unique", unique})
 	} else {
 		var err error
-		expression, err = p.parseBitwise()
+		expression, err = p.parseIsRhs(false)
 		if err != nil {
 			return nil, err
 		}
@@ -695,6 +698,31 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 // parseIsRhs is the reference's _parse_is_rhs: how much of the right-hand
 // side belongs to the predicate depends on where IS binds in this dialect.
 func (p *parser) parseIsRhs(distinct bool) (*Expression, error) {
+	// SQLite puts ordering comparisons INSIDE what follows IS, where range
+	// predicates bind below it (SQLiteParser._parse_is_rhs).
+	if !distinct && p.dialect == "sqlite" {
+		this, err := p.parseBitwise()
+		if err != nil {
+			return nil, err
+		}
+		for {
+			c := p.curr()
+			if c == nil {
+				break
+			}
+			class, ok := p.tables.Comparison[c.Type]
+			if !ok {
+				break
+			}
+			p.advance()
+			right, rerr := p.parseBitwise()
+			if rerr != nil {
+				return nil, rerr
+			}
+			this = New(class, Arg{"this", this}, Arg{"expression", right})
+		}
+		return this, nil
+	}
 	if distinct {
 		switch p.tables.ISPredicatePrecedence {
 		case "LOW":
@@ -2103,6 +2131,16 @@ func (p *parser) parsePrimary() (*Expression, error) {
 		return New("UnicodeString", Arg{"this", c.Text}, Arg{"escape", escape}), nil
 	case TokHEX_STRING:
 		p.advance()
+		// SQLite tells `0x0a` from `X'0a'` by how it was WRITTEN: the first
+		// is an integer, the second a blob (SQLiteParser._parse_hex_string).
+		if p.dialect == "sqlite" {
+			if prefix := sliceRunes(p.sql, c.Start, c.Start+2); strings.EqualFold(prefix, "0x") {
+				if value, ok := sqliteHexInteger(c.Text); ok {
+					return New("Literal", Arg{"this", value}, Arg{"is_string", false}), nil
+				}
+			}
+			return New("HexString", Arg{"this", c.Text}), nil
+		}
 		// BigQuery and ClickHouse read a hex literal as an INTEGER, which
 		// records it as one (Parser.NUMERIC_PARSERS).
 		if p.dialect == "bigquery" || p.dialect == "clickhouse" {
@@ -6879,4 +6917,15 @@ func fractionalSecondDigits(text string) int {
 		}
 	}
 	return 0
+}
+
+// sqliteHexInteger reads a `0x...` literal as SQLite does: an unsigned 64-bit
+// value folded into the signed range.
+func sqliteHexInteger(text string) (string, bool) {
+	value, err := strconv.ParseUint(strings.TrimPrefix(strings.TrimPrefix(text, "0x"), "0X"), 16, 64)
+	if err != nil {
+		return "", false
+	}
+	signed := int64(value)
+	return strconv.FormatInt(signed, 10), true
 }

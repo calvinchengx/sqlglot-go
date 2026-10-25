@@ -350,7 +350,9 @@ func (p *parser) parseRecursiveWithSearch() (*Expression, error) {
 	}
 	// CYCLE marks the rows that repeat the starting one: `TO <value>` and
 	// `DEFAULT <value>` name the marks, and USING names the path column.
-	var to, defaultExpr, using *Expression
+	// TO and DEFAULT are recorded FALSE where they were not written, which
+	// is how the reference assigns them (`_match_text_seq("TO") and ...`).
+	var to, defaultExpr, using any = false, false, false
 	if p.matchWords("TO") {
 		to, err = p.parseBitwise()
 		if err != nil {
