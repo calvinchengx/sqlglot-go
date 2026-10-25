@@ -853,10 +853,8 @@ func (g *generator) namedFunction(e *Expression, spec FuncSQL) string {
 	// WRITTEN with, where the class's own writer is the fallback -- `LOG(x)`
 	// is an Ln and comes back out LOG (Generator.function_fallback_sql).
 	name := spec.Name
-	if e.originalName != "" {
-		if _, consults := g.tables.ConsultsOriginalName[e.Class]; consults {
-			name = e.originalName
-		}
+	if e.originalName != "" && consultsOriginalName(g.tables, g.dialect, e) {
+		name = e.originalName
 	}
 	return name + "(" + strings.Join(parts, ", ") + ")"
 }

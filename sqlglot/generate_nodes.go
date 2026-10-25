@@ -3798,6 +3798,16 @@ func (g *generator) writeWindow(e *Expression) string {
 	partitionItems, _ := e.Args["partition_by"].([]*Expression)
 	order := g.child(e, "order")
 	spec := g.child(e, "spec")
+	// Teradata's window aggregates span the whole partition by default, and
+	// the frame that says so is not written back
+	// (TeradataGenerator.window_sql).
+	if g.dialect == "teradata" && spec != "" && order != "" {
+		if specNode, _ := e.Args["spec"].(*Expression); specNode != nil && isTeradataDefaultFrame(specNode) {
+			if fn, _ := e.Args["this"].(*Expression); isWindowAggregate(fn) {
+				spec = ""
+			}
+		}
+	}
 	// `OVER w` names a window defined elsewhere and adds nothing of its
 	// own -- bare, with no parentheses at all. `OVER (w ORDER BY y)` names
 	// one and EXTENDS it, and needs both: the base window is the first
@@ -10374,6 +10384,32 @@ func castsToDate(e *Expression) bool {
 // whether the sampling METHOD is written, whether a bare number counts rows or
 // a percentage, and what the repeatable seed is called.
 func (g *generator) writeTableSample(e *Expression) string {
+	// Teradata writes the sample with NO parentheses and no method, and a
+	// percentage back as the fraction it was written with
+	// (TeradataGenerator.tablesample_sql).
+	if g.dialect == "teradata" {
+		size := ""
+		if percent, _ := e.Args["percent"].(*Expression); percent != nil {
+			if text, ok := literalText(percent); ok {
+				if fraction, err := strconv.ParseFloat(text, 64); err == nil {
+					scaled := fraction / 100
+					formatted := strconv.FormatFloat(scaled, 'f', -1, 64)
+					// 100 percent keeps its decimal point, or it reads back
+					// as a row count.
+					if scaled >= 1 {
+						formatted = strconv.FormatFloat(scaled, 'f', 2, 64)
+					}
+					size = formatted
+				}
+			}
+		} else {
+			size = g.child(e, "size")
+		}
+		if size == "" {
+			size = g.list(e)
+		}
+		return " SAMPLE " + size
+	}
 	sample := g.tables.TableSample
 	method := ""
 	if m := g.child(e, "method"); m != "" && sample.WithMethod {
@@ -12002,4 +12038,18 @@ func (g *generator) writeReplaceColumns(e *Expression) string {
 		}
 	}
 	return "REPLACE COLUMNS (" + strings.Join(parts, ", ") + ")"
+}
+
+// isTeradataDefaultFrame reports whether a window spec is the default frame
+// Teradata gives a window aggregate with an ORDER BY.
+func isTeradataDefaultFrame(spec *Expression) bool {
+	text := func(key string) string {
+		if v, ok := spec.Args[key].(string); ok {
+			return strings.ToUpper(v)
+		}
+		return ""
+	}
+	return text("kind") == "ROWS" && text("start") == "UNBOUNDED" &&
+		text("start_side") == "PRECEDING" && text("end") == "UNBOUNDED" &&
+		text("end_side") == "FOLLOWING"
 }

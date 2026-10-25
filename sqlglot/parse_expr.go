@@ -4148,7 +4148,7 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		if builtFn.Class == "Anonymous" {
 			return
 		}
-		if _, ok := p.tables.ConsultsOriginalName[builtFn.Class]; !ok {
+		if !consultsOriginalName(p.tables, p.dialect, builtFn) {
 			return
 		}
 		builtFn.originalName = name
@@ -6983,4 +6983,23 @@ func sqliteHexInteger(text string) (string, bool) {
 	}
 	signed := int64(value)
 	return strconv.FormatInt(signed, 10), true
+}
+
+// consultsOriginalName reports whether a dialect writes a call back with the
+// name it was WRITTEN with. Three keep it for every function
+// (Dialect.ORIGINAL_NAME_META_KEY): BigQuery, ClickHouse and Drill.
+func consultsOriginalName(tables *ParserTables, dialect string, e *Expression) bool {
+	if e == nil {
+		return false
+	}
+	if _, ok := tables.ConsultsOriginalName[e.Class]; ok {
+		return true
+	}
+	// The three that keep a call's own spelling do it for EVERY function, so
+	// there is no class list to consult -- only the dialect.
+	switch dialect {
+	case "bigquery", "clickhouse", "drill":
+		return e.Class != "Anonymous"
+	}
+	return false
 }
