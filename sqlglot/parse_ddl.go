@@ -1307,7 +1307,7 @@ func (p *parser) parseInsert() (*Expression, error) {
 			return nil, err
 		}
 	}
-	if p.curr() != nil {
+	if p.curr() != nil && !p.inMultitableInsert {
 		return nil, p.unsupported("INSERT with more than this port reads")
 	}
 

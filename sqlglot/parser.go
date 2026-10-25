@@ -84,6 +84,10 @@ type parser struct {
 	// sql is the statement as written, so a Command the reference builds by
 	// giving up can keep the exact text after the keyword.
 	sql string
+	// inMultitableInsert marks the INSERTs of Hive's FROM-first multi-table
+	// insert, where the end of one INSERT is the next INSERT rather than the
+	// end of the statement.
+	inMultitableInsert bool
 	// inAlterColumnDef marks the definition of a column an ALTER adds, where
 	// a word the constraint reader does not know ends the definition rather
 	// than failing the statement: the ALTER then reads what follows as its

@@ -2840,13 +2840,23 @@ func (p *parser) parseMultitableInserts(sel *Expression) (*Expression, error) {
 	if source == nil {
 		return nil, p.unsupported("a multi-table insert without a source")
 	}
+	// A LATERAL VIEW between the source and the INSERTs belongs to the
+	// SOURCE: `FROM x LATERAL VIEW EXPLODE(arr) a AS c INSERT ...`
+	// (Parser._parse_statement).
+	if laterals, _ := sel.Args["laterals"].([]*Expression); len(laterals) > 0 {
+		source.Set("laterals", laterals)
+	}
 	var inserts []*Expression
+	wasMultitable := p.inMultitableInsert
+	p.inMultitableInsert = true
 	for p.at(TokINSERT) {
-		stmt, err := p.parseStatement()
+		stmt, err := p.parseInsert()
 		if err != nil {
+			p.inMultitableInsert = wasMultitable
 			return nil, err
 		}
 		inserts = append(inserts, stmt)
 	}
+	p.inMultitableInsert = wasMultitable
 	return New("MultitableInserts", Arg{"expressions", inserts}, Arg{"source", source}), nil
 }

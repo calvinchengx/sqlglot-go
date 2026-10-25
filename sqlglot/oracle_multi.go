@@ -119,7 +119,7 @@ func (g *generator) writeMultitableInserts(e *Expression) string {
 		for _, item := range items {
 			parts = append(parts, g.node(item))
 		}
-		return "FROM " + g.child(e, "source") + " " + strings.Join(parts, " ")
+		return g.withPrefix(e, "FROM "+g.child(e, "source")+" "+strings.Join(parts, " "))
 	}
 	out := "INSERT " + kind
 	branches, _ := e.Args["expressions"].([]*Expression)
