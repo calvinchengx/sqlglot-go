@@ -580,3 +580,29 @@ it is a spelling change over the reference's own tree, not a re-derivation
 of what the database would actually return.
 
 **Reference:** sqlglot @ ceb5111421e9.
+
+## `simplify_parens` drops parentheses an `AT TIME ZONE` operand needs
+
+**Found by:** the execution oracle, after the port took the reference's own
+`simplify_parens` rule instead of its narrower one.
+
+`AT TIME ZONE` is not a `Condition` or a `Binary` in sqlglot's class map, so
+the second half of `simplify_parens` treats the parentheses around an
+addition under it as decoration and drops them:
+
+```
+in   SELECT (DATE_TRUNC(...) + INTERVAL '-1' DAY) AT TIME ZONE 'America/New_York'
+out  SELECT DATE_TRUNC(...) + INTERVAL '-1' DAY AT TIME ZONE 'America/New_York'
+```
+
+DuckDB binds `AT TIME ZONE` tighter than `+`, so the rewritten statement
+applies the zone to `INTERVAL '-1' DAY` instead of to the timestamp
+expression, and does not bind at all: `Binder Error: No function matches the
+given name and argument types`. The statement as written runs and returns a
+row.
+
+The port reproduces the reference here on purpose -- this is a spelling
+change over the reference's own tree. The tree keeps no `Paren`, so there is
+nothing for the generator to put back; the fix belongs upstream.
+
+**Reference:** sqlglot @ c7778cf56.

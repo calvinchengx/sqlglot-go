@@ -30,6 +30,6 @@ func (g *generator) writeSnowflakeBitNot(e *Expression) string {
 		}
 		return strings.Join([]string{"BITNOT(", g.node(operand), ")"}, "")
 	default:
-		return g.spell(e)
+		return g.writeBitwiseNot(e)
 	}
 }

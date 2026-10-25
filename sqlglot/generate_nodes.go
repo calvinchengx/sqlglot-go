@@ -306,6 +306,7 @@ func init() {
 		"AutoIncrementColumnConstraint":       (*generator).writeAutoIncrementConstraint,
 		"CommentColumnConstraint":             (*generator).writeCommentConstraint,
 		"BinaryColumnConstraint":              (*generator).writeBinaryConstraint,
+		"BitwiseNot":                          (*generator).writeBitwiseNot,
 		"CollateColumnConstraint":             (*generator).writeCollateConstraint,
 		"Insert":                              (*generator).writeInsert,
 		"Update":                              (*generator).writeUpdate,
@@ -11740,4 +11741,17 @@ func supportsGroupingSetsSuffix(dialect string) bool {
 		return true
 	}
 	return false
+}
+
+// writeBitwiseNot writes `~x`, and DuckDB parenthesises a unary MINUS under
+// it: `~(-1)`, because `~-1` is not an operator (DuckDBGenerator.bitwisenot_sql).
+func (g *generator) writeBitwiseNot(e *Expression) string {
+	this, _ := e.Args["this"].(*Expression)
+	if g.dialect == "duckdb" && this != nil && this.Class == "Neg" {
+		return "~(" + g.node(this) + ")"
+	}
+	if op, ok := g.tables.UnarySQL[e.Class]; ok {
+		return g.unary(e, op)
+	}
+	return g.spell(e)
 }
