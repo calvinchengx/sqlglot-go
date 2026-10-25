@@ -5112,6 +5112,14 @@ func (g *generator) writeAtTimeZone(e *Expression) string {
 	// place.
 	if g.dialect == "fabric" {
 		if cast := findCastToInScope(e, "TIMESTAMPTZ"); cast != nil {
+			// A parent that already casts to DATETIME2 says the same thing,
+			// and wrapping again writes it twice
+			// (FabricGenerator.attimezone_sql).
+			if parent := e.Parent; parent != nil && (parent.Class == "Cast" || parent.Class == "TryCast") {
+				if to, _ := parent.Args["to"].(*Expression); to != nil && to.Args["this"] == DataTypeKind("DATETIME2") {
+					return inner
+				}
+			}
 			to, _ := cast.Args["to"].(*Expression)
 			return "CAST(" + inner + " AS DATETIME2(" + cappedPrecisionText(to, 6) + "))"
 		}
@@ -5373,6 +5381,14 @@ func (g *generator) writeJSONKeyValue(e *Expression) string {
 //
 // The space in front is the separator, the way the reference returns it.
 func (g *generator) writePivot(e *Expression) string {
+	// StarRocks has no UNPIVOT, and no named-pivot form either: the clause
+	// is dropped and the relation written without it
+	// (StarRocksGenerator.pivot_sql -> no_pivot_sql).
+	if g.dialect == "starrocks" {
+		if unpivot, _ := e.Args["unpivot"].(bool); unpivot || e.Args["this"] != nil {
+			return ""
+		}
+	}
 	// The STATEMENT form is a different shape -- `PIVOT t ON x USING SUM(y)`,
 	// with the source under `this` -- and the template table already spells
 	// it. Only the postfix form, which hangs off a table and has no source of
