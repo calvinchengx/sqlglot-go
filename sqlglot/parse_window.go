@@ -169,6 +169,14 @@ func (p *parser) windowBody(this *Expression, over any) (*Expression, error) {
 		alias = id
 	}
 
+	// Teradata's window aggregates with an ORDER and no frame span the whole
+	// partition, and the reference records that as a default ROWS frame
+	// (TeradataParser._parse_window).
+	if p.dialect == "teradata" && order != nil && spec == nil && isWindowAggregate(this) {
+		spec = New("WindowSpec", Arg{"kind", "ROWS"}, Arg{"start", "UNBOUNDED"},
+			Arg{"start_side", "PRECEDING"}, Arg{"end", "UNBOUNDED"},
+			Arg{"end_side", "FOLLOWING"})
+	}
 	return New("Window",
 		Arg{"this", this},
 		Arg{"partition_by", partitionBy},
@@ -178,6 +186,24 @@ func (p *parser) windowBody(this *Expression, over any) (*Expression, error) {
 		Arg{"over", over},
 		Arg{"first", nil},
 	), nil
+}
+
+// nonFramedWindowFunctions are the window functions that are not aggregates:
+// their frame is the whole partition whatever the clause says
+// (TeradataParser.NON_FRAMED_WINDOW_FUNCTIONS).
+var nonFramedWindowFunctions = map[string]bool{
+	"CumeDist": true, "DenseRank": true, "FirstValue": true, "Lag": true,
+	"LastValue": true, "Lead": true, "NthValue": true, "Ntile": true,
+	"PercentRank": true, "Rank": true,
+}
+
+// isWindowAggregate reports whether the function under a window is an
+// aggregate that takes a frame.
+func isWindowAggregate(this *Expression) bool {
+	if this == nil || nonFramedWindowFunctions[this.Class] {
+		return false
+	}
+	return isA("AggFunc", this)
 }
 
 // frameKind consumes ROWS, RANGE or GROUPS and reports which, or "" if the

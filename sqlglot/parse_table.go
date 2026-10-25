@@ -1,6 +1,10 @@
 package sqlglot
 
-import "strings"
+import (
+	"math"
+	"strconv"
+	"strings"
+)
 
 // FROM and its table references.
 
@@ -1359,7 +1363,24 @@ func (p *parser) parseTableSample() (*Expression, error) {
 				break
 			}
 		}
-		return New("TableSample", Arg{"expressions", items}), nil
+		sample := New("TableSample", Arg{"expressions", items})
+		// A single number names a row COUNT or a PROPORTION: an integer is
+		// a size, a fraction a percent scaled by a hundred
+		// (TeradataParser._parse_table_sample).
+		if p.dialect == "teradata" && len(items) == 1 && items[0] != nil && items[0].Class == "Literal" {
+			text, _ := items[0].Args["this"].(string)
+			isString, _ := items[0].Args["is_string"].(bool)
+			if !isString {
+				if scaled, ok := teradataSamplePercent(text); ok {
+					sample.Set("percent", New("Literal", Arg{"this", scaled}, Arg{"is_string", false}))
+					sample.Set("expressions", []*Expression{})
+				} else {
+					sample.Set("size", items[0])
+					sample.Set("expressions", []*Expression{})
+				}
+			}
+		}
+		return sample, nil
 	}
 	// ClickHouse says `SAMPLE <expr>` with no parentheses and no method
 	// (Parser._parse_table_sample, TABLESAMPLE_REQUIRES_PARENS).
@@ -2621,4 +2642,17 @@ func tablePartsAreIdentifiers(table *Expression) bool {
 		}
 	}
 	return true
+}
+
+// teradataSamplePercent turns a fractional SAMPLE size into a percentage, and
+// reports false where the number is an integer (a row count instead).
+func teradataSamplePercent(text string) (string, bool) {
+	value, err := strconv.ParseFloat(text, 64)
+	if err != nil || value == math.Trunc(value) {
+		return "", false
+	}
+	scaled := value * 100
+	// Trim the trailing zeros the way the reference's `normalize` does.
+	formatted := strconv.FormatFloat(scaled, 'f', -1, 64)
+	return formatted, true
 }
