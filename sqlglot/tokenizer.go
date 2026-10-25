@@ -3,7 +3,6 @@ package sqlglot
 import (
 	"fmt"
 	"math/big"
-	"runtime/debug"
 	"strings"
 	"unicode"
 	"unicode/utf8"
@@ -114,30 +113,61 @@ func (t *Tokenizer) Tokenize(sql string) (toks []Token, err error) {
 // tokenizeAthena tokenizes with the combined tables, decides, and re-tokenizes
 // with the engine that would run the statement.
 func (t *Tokenizer) tokenizeAthena(sql string) ([]Token, error) {
-	combined, err := t.tokenizeRaw(sql)
-	if err != nil {
-		return nil, err
+	// The Trino half is Trino's tokenizer with one word added: Athena reads
+	// UNLOAD as a COMMAND (sqlglot/dialects/athena.py, _TrinoTokenizer).
+	trino := &Tokenizer{cfg: athenaTrinoConfig()}
+	trinoToks, trinoErr := trino.tokenizeRaw(sql)
+	if trinoErr == nil && !athenaMayBeHive(trinoToks) {
+		return trinoToks, nil
 	}
-	engine := "trino"
-	if athenaReadsAsHive(combined) {
-		engine = "hive"
-	}
-	if engine == "hive" {
-		engineTokenizer, err := NewTokenizer("hive")
-		if err != nil {
-			return nil, err
+
+	combined, combinedErr := t.tokenizeRaw(sql)
+	if combinedErr != nil {
+		// Combined rules can reject literals valid in only one engine, so
+		// the engine that CAN read them gets the statement
+		// (Athena.Tokenizer.tokenize).
+		if trinoErr == nil && !athenaReadsAsHive(trinoToks) {
+			return trinoToks, nil
 		}
-		toks, err := engineTokenizer.tokenizeRaw(sql)
-		if err != nil {
-			return nil, err
+		hiveTokenizer, herr := NewTokenizer("hive")
+		if herr == nil {
+			if hiveToks, htokErr := hiveTokenizer.tokenizeRaw(sql); htokErr == nil &&
+				athenaReadsAsHive(hiveToks) {
+				marker := Token{Type: TokHIVE_TOKEN_STREAM, Text: "", Line: 1, Col: 1}
+				return append([]Token{marker}, hiveToks...), nil
+			}
+		}
+		return nil, combinedErr
+	}
+	if athenaReadsAsHive(combined) {
+		engineTokenizer, herr := NewTokenizer("hive")
+		if herr != nil {
+			return nil, herr
+		}
+		toks, herr := engineTokenizer.tokenizeRaw(sql)
+		if herr != nil {
+			return nil, herr
 		}
 		marker := Token{Type: TokHIVE_TOKEN_STREAM, Text: "", Line: 1, Col: 1}
 		return append([]Token{marker}, toks...), nil
 	}
-	// The Trino half is Trino's tokenizer with one word added: Athena reads
-	// UNLOAD as a COMMAND (sqlglot/dialects/athena.py, _TrinoTokenizer).
-	trino := &Tokenizer{cfg: athenaTrinoConfig()}
-	return trino.tokenizeRaw(sql)
+	if trinoErr == nil {
+		return trinoToks, nil
+	}
+	return combined, nil
+}
+
+// athenaMayBeHive reports whether the statement could be one Hive would run,
+// judged by its FIRST token alone (athena.py, _may_be_hive).
+func athenaMayBeHive(tokens []Token) bool {
+	if len(tokens) == 0 {
+		return false
+	}
+	switch tokens[0].Type {
+	case TokALTER, TokCREATE, TokDESCRIBE, TokDROP, TokSHOW:
+		return true
+	}
+	return strings.EqualFold(tokens[0].Text, "MSCK")
 }
 
 // athenaTrinoConfig is Trino's tokenizer tables with Athena's one addition.
@@ -166,7 +196,7 @@ func (t *Tokenizer) tokenizeRaw(sql string) (toks []Token, err error) {
 			start := max(t.current-50, 0)
 			end := max(min(t.current+50, t.size-1), start)
 			err = &TokenError{
-				Msg:     fmt.Sprintf("Error tokenizing: %v @%s", r, debug.Stack()),
+				Msg:     fmt.Sprintf("Error tokenizing: %v", r),
 				Start:   start,
 				End:     end,
 				Snippet: string(t.sql[start:end]),

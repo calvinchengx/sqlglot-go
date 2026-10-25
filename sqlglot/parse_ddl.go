@@ -5102,6 +5102,13 @@ func (p *parser) parseGenerated() (*Expression, error) {
 // Subquery where `CREATE TABLE t AS SELECT 1` holds the Select itself, and the
 // two are different trees for what an engine runs the same way.
 func (p *parser) parseCreateBody() (*Expression, error) {
+	// Athena's CTAS may name an external function instead of a query --
+	// `AS USING EXTERNAL FUNCTION f(x VARCHAR) RETURNS VARCHAR LAMBDA 'l'
+	// SELECT f('a')` -- which the reference keeps as a Command of the rest
+	// (Parser._parse_create -> _parse_as_command).
+	if p.athenaStream && p.atWords("USING") {
+		return p.parseAsCommand(*p.curr()), nil
+	}
 	if !p.at(TokL_PAREN) {
 		start := p.index
 		query, err := p.parseQuery()

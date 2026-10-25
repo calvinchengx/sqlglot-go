@@ -84,6 +84,9 @@ type parser struct {
 	// sql is the statement as written, so a Command the reference builds by
 	// giving up can keep the exact text after the keyword.
 	sql string
+	// athenaStream marks a statement Athena hands to the Hive or Trino
+	// reader: a few of its own shapes are read only there.
+	athenaStream bool
 	// inAddColumns marks a Hive `ADD COLUMNS (...)` list, where a dotted name
 	// adds a field to a struct column rather than naming a column.
 	inAddColumns bool
@@ -646,7 +649,7 @@ func parseAthena(sql string) (*Expression, error) {
 	if !ok {
 		return nil, fmt.Errorf("sqlglot: no parser for dialect %q", engine)
 	}
-	p := &parser{tokens: toks, cfg: cfg, tables: cfg.Tables, dialect: engine, sql: sql}
+	p := &parser{tokens: toks, cfg: cfg, tables: cfg.Tables, dialect: engine, sql: sql, athenaStream: true}
 	// Athena's Trino parser reads a bare USING as a Command, which is the one
 	// statement it adds to Trino's own set
 	// (sqlglot/parsers/athena.py, AthenaTrinoParser.STATEMENT_PARSERS).
