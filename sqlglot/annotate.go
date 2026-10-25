@@ -1035,6 +1035,28 @@ func ApplyIndexOffset(this *Expression, items []*Expression, offset int, dialect
 	if offset == 0 || len(items) != 1 || this == nil {
 		return items, true
 	}
+	// A base whose type is KNOWN and is neither an array nor unknown is not
+	// indexed at all, and the reference stamps nothing on it: its own
+	// annotate_types runs only after that test (builders.py,
+	// apply_index_offset). `MAP{1:2}[1]` is one -- the map keeps its keys.
+	// A ToMap is the one base the reference's own annotator leaves unstamped
+	// (its `_annotate_to_map` never runs on a detached node), so it is typed
+	// here without writing anything down. Everything else is stamped before
+	// the test, which is what the reference's annotate_types does.
+	if this.Class == "ToMap" {
+		switch typeKind(annotate(this, dialect)) {
+		case "UNKNOWN", "ARRAY":
+		default:
+			return items, true
+		}
+	} else if this.Type == nil {
+		if kind := typeKind(annotate(this, dialect)); kind != "UNKNOWN" && kind != "ARRAY" {
+			if !AnnotateFully(this, dialect) {
+				return nil, false
+			}
+			return items, true
+		}
+	}
 	if this.Type == nil && !AnnotateFully(this, dialect) {
 		return nil, false
 	}

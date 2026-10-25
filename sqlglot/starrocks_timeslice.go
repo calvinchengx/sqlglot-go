@@ -30,7 +30,15 @@ func (p *parser) parseStarrocksTimeSlice() (*Expression, error) {
 	node := New("TimeSlice", Arg{"this", args[0]})
 	var boundary *Expression
 	if interval := args[1]; interval != nil && interval.Class == "Interval" {
-		node.Set("expression", interval.Args["this"])
+		// An amount written as a string of digits names a NUMBER
+		// (StarRocksParser._build_time_slice).
+		amount := interval.Args["this"]
+		if lit, ok := amount.(*Expression); ok {
+			if text, isLit := literalText(lit); isLit && isAllDigits(text) && isStringLiteral(lit) {
+				amount = New("Literal", Arg{"this", text}, Arg{"is_string", false})
+			}
+		}
+		node.Set("expression", amount)
 		node.Set("unit", interval.Args["unit"])
 		if len(args) > 2 {
 			boundary = args[2]
