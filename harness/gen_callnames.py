@@ -36,7 +36,6 @@ def go_set(name: str, names: list[str], indent: str = "\t\t") -> str:
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--sqlglot", required=True, type=pathlib.Path)
-    ap.add_argument("--out", default=pathlib.Path("sqlglot/callnames_gen.go"))
     a = ap.parse_args()
 
     sys.path.insert(0, str(a.sqlglot))
@@ -72,7 +71,7 @@ def main() -> int:
     out.append("}")
     out.append("")
 
-    a.out.write_text("\n".join(out))
+    print("\n".join(out))
     return 0
 
 
