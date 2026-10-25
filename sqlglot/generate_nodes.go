@@ -4616,7 +4616,15 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 		}
 		path, _ := e.Args["expression"].(*Expression)
 		if path == nil || path.Class != "JSONPath" {
-			return name + "(" + g.child(e, "this") + ", " + g.node(path) + ")"
+			// A path the reference cannot read is carried through as the
+			// ARGUMENTS it was written with, tail and all.
+			args := []string{g.child(e, "this"), g.node(path)}
+			if extras, _ := e.Args["expressions"].([]*Expression); len(extras) > 0 {
+				for _, extra := range extras {
+					args = append(args, g.node(extra))
+				}
+			}
+			return name + "(" + strings.Join(args, ", ") + ")"
 		}
 		parts, _ := path.Args["expressions"].([]*Expression)
 		args := []string{g.child(e, "this")}

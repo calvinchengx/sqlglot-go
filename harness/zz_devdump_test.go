@@ -8,13 +8,7 @@ import (
 )
 
 func TestDevDump(t *testing.T) {
-	for _, q := range []string{"OCTET_LENGTH('foo')", "SELECT struct(1 AS a)", "SELECT STRUCT(1 AS a)"} {
-		tr, err := sqlglot.ParseOne(q, "bigquery")
-		if err != nil {
-			fmt.Println("ERR", q, err)
-			continue
-		}
-		out, gerr := sqlglot.Generate(tr, "bigquery")
-		fmt.Printf("%-30s -> %s (class %s) %v\n", q, out, tr.Class, gerr)
-	}
+	tr, _ := sqlglot.ParseOne("SELECT FLOOR(5)", "presto")
+	e := tr.Args["expressions"].([]*sqlglot.Expression)[0]
+	fmt.Println(e.Class, e.Type)
 }

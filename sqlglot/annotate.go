@@ -205,6 +205,18 @@ func annotateNode(e *Expression, dialect string) *Expression {
 		return dataType("UNKNOWN")
 	}
 
+	// A numeric-preserving math function keeps a numeric or unknown argument's
+	// type and answers INT otherwise: `FLOOR(5)` is an INT, `FLOOR(x)` an
+	// UNKNOWN (typing/__init__.py, annotate_by_numeric_arg).
+	if e.Class == "Ceil" || e.Class == "Floor" {
+		inner := annotate(childOf(e, "this"), dialect)
+		kind := typeKind(inner)
+		if kind == "UNKNOWN" || numericTypeKinds[kind] {
+			return inner
+		}
+		return dataType("INT")
+	}
+
 	// A connector or a predicate is a BOOLEAN whatever its operands are --
 	// which is the part of this the simplifier most needs, and the part that
 	// needs no schema.
@@ -1438,4 +1450,15 @@ func mapLiteralStructKind(e *Expression, dialect string) string {
 		return ""
 	}
 	return typeKind(annotate(inner, dialect))
+}
+
+// numericTypeKinds are the types annotate_by_numeric_arg counts as numeric.
+var numericTypeKinds = map[string]bool{
+	"TINYINT": true, "SMALLINT": true, "INT": true, "BIGINT": true,
+	"MEDIUMINT": true, "UTINYINT": true, "USMALLINT": true, "UINT": true,
+	"UBIGINT": true, "INT128": true, "INT256": true, "UINT128": true,
+	"UINT256": true, "DECIMAL": true, "DECIMAL32": true, "DECIMAL64": true,
+	"DECIMAL128": true, "DECIMAL256": true, "BIGDECIMAL": true,
+	"DOUBLE": true, "FLOAT": true, "REAL": true, "UDOUBLE": true,
+	"UDECIMAL": true, "BIGINT_UNSIGNED": true,
 }
