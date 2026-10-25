@@ -1653,6 +1653,11 @@ func (p *parser) parseMySQLConvert(safe bool) (*Expression, error) {
 		if kind, _ := to.Args["this"].(DataTypeKind); kind == "USER-DEFINED" {
 			return nil, p.unsupported("CONVERT to a type this dialect does not have")
 		}
+		// MySQL's `CONVERT(x, CHAR(2) CHARACTER SET latin1)` keeps the
+		// length and names the set (Parser._parse_convert).
+		if to, err = p.parseCharCharset(to); err != nil {
+			return nil, err
+		}
 	default:
 		return nil, p.unsupported("CONVERT without a target")
 	}

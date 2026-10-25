@@ -2252,6 +2252,20 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 			// A `>` ends the list too: the fields of a STRUCT are column
 			// definitions, and what closes them is the angle bracket the
 			// type was opened with rather than a parenthesis.
+			//
+			// So does `word = value`, which is no column constraint in any
+			// dialect: on an ALTER it is a TABLE PROPERTY, read after the
+			// actions (`ADD COLUMN c INT SECONDARY_ENGINE_ATTRIBUTE='{}'`).
+			if p.next() != nil && p.next().Type == TokEQ {
+				return out, nil
+			}
+			// In an ALTER's own column definition a word that is no
+			// constraint ends the definition, and the ALTER reads on
+			// (Parser._parse_column_def ends wherever a constraint does not
+			// begin).
+			if p.inAlterColumnDef && isMySQLFamily(p.dialect) {
+				return out, nil
+			}
 			if p.curr() != nil && !p.at(TokCOMMA) && !p.at(TokR_PAREN) && !p.at(TokGT) {
 				return nil, p.unsupported("a column constraint this port does not read")
 			}
@@ -2411,7 +2425,20 @@ func (p *parser) parseAlter() (*Expression, error) {
 		}
 	}
 
-	var actions []*Expression
+	// MySQL and the dialects that inherit it read the table's PROPERTIES
+	// before the actions: `ALTER TABLE t AUTO_INCREMENT=5` is an Alter whose
+	// `options` hold the property and whose `actions` are empty
+	// (Parser._parse_alter, ALTER_TABLE_REQUIRES_ACTION=False).
+	actions := []*Expression{}
+	options := []*Expression{}
+	mysqlProperties := isMySQLFamily(p.dialect) && kind == "TABLE"
+	if mysqlProperties {
+		props, perr := p.parseTableProperties()
+		if perr != nil {
+			return nil, perr
+		}
+		options = props
+	}
 	if kind == "VIEW" {
 		var command *Expression
 		actions, command, err = p.parseAlterView(start)
@@ -2421,16 +2448,17 @@ func (p *parser) parseAlter() (*Expression, error) {
 		if command != nil {
 			return command, nil
 		}
-	} else {
+	} else if !mysqlProperties || p.curr() != nil {
 		actions, err = p.parseAlterActions()
 		if err != nil {
 			return nil, err
 		}
 	}
-	options, err := p.alterOptions(kind)
+	extra, err := p.alterOptions(kind)
 	if err != nil {
 		return nil, err
 	}
+	options = append(options, extra...)
 	// A constraint added NOT VALID is not checked against the rows already
 	// there. It is recorded on the statement rather than on the constraint.
 	notValid := p.atWords("NOT", "VALID")
@@ -2446,7 +2474,10 @@ func (p *parser) parseAlter() (*Expression, error) {
 	// (Parser._parse_alter) -- ClickHouse reads a MODIFY it cannot finish
 	// this way, leaving the words in place.
 	if p.curr() != nil {
-		if p.dialect == "clickhouse" {
+		// MySQL's action list ends where its grammar does, and the words
+		// left over make the statement a Command of the whole text --
+		// `ADD COLUMN c INT TO r1` is one (Parser._parse_alter).
+		if p.dialect == "clickhouse" || isMySQLFamily(p.dialect) && kind == "TABLE" {
 			return p.parseAsCommand(start), nil
 		}
 		return nil, p.unsupported("ALTER with more than this port reads")
@@ -2609,6 +2640,11 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			return nil, err
 		}
 		return New("ReplacePartition", Arg{"expression", part}, Arg{"source", source}), nil
+	case isMySQLFamily(p.dialect) && p.atWords("FORCE"):
+		// `ALTER TABLE t FORCE` rebuilds the table, and the reference keeps
+		// the word as a property ACTION (MySQLParser.ALTER_PARSERS).
+		p.advance()
+		return New("ForceProperty"), nil
 	case p.dialect == "mysql" && p.atWords("AUTO_INCREMENT"):
 		return p.parseMySQLAutoIncrementAction()
 	case p.atWords("DELETE"):
@@ -2824,7 +2860,21 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 				Arg{"sync", false}, Arg{"iceberg", false}, Arg{"force", false},
 			), nil
 		}
-		name, err := p.parseColumn()
+		// The name may be a KEYWORD the tokenizer knows -- `DROP COLUMN
+		// charset`, `DROP COLUMN partitioned_by` -- and where a column will
+		// not read one, the reference takes ANY token as the name and wraps
+		// it in a Column of its own (Parser._parse_drop, kind COLUMN).
+		var name *Expression
+		var err error
+		if p.atIdentifier() {
+			name, err = p.parseColumn()
+		} else if c := p.curr(); c != nil {
+			p.advance()
+			name = New("Column", Arg{"this",
+				New("Identifier", Arg{"this", c.Text}, Arg{"quoted", c.Type == TokIDENTIFIER})})
+		} else {
+			return nil, p.unsupported("DROP COLUMN without a name")
+		}
 		if err != nil {
 			return nil, err
 		}
@@ -3125,7 +3175,10 @@ func (p *parser) parseAddedColumn(exists bool) (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
+	wasAlterColumn := p.inAlterColumnDef
+	p.inAlterColumnDef = true
 	constraints, err := p.parseColumnConstraints()
+	p.inAlterColumnDef = wasAlterColumn
 	if err != nil {
 		return nil, err
 	}
@@ -3568,6 +3621,12 @@ func (p *parser) parseTableConstraint() (*Expression, error) {
 	}
 	if p.at(TokCONSTRAINT) {
 		p.advance()
+		// The word is consumed, but a RESERVED kind straight after it names
+		// no constraint at all: `CONSTRAINT FOREIGN KEY ...` is the unnamed
+		// one (Parser._parse_constraint, RESERVED_CONSTRAINT_KINDS).
+		if p.atReservedConstraintKind() {
+			return p.parseTableConstraintKind()
+		}
 		name, err := p.parseIdentifier()
 		if err != nil {
 			return nil, err
@@ -9434,6 +9493,20 @@ func triggerFailureIsHard(msg string) bool {
 		if strings.Contains(msg, s) {
 			return true
 		}
+	}
+	return false
+}
+
+// atReservedConstraintKind reports whether the word at the cursor is a
+// constraint kind that takes no name of its own, even after CONSTRAINT.
+func (p *parser) atReservedConstraintKind() bool {
+	switch {
+	case p.at(TokPRIMARY_KEY), p.at(TokFOREIGN_KEY):
+		return true
+	case p.atWords("CHECK"), p.atWords("UNIQUE"):
+		return true
+	case isMySQLFamily(p.dialect) && (p.atWords("FULLTEXT") || p.atWords("SPATIAL")):
+		return true
 	}
 	return false
 }

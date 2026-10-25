@@ -445,6 +445,11 @@ func (p *parser) atMySQLAlterOption() bool {
 	mark := p.index
 	p.advance()
 	_, _, isProp := p.atProperty()
+	if !isProp {
+		// A key the property table knows no word for is still an option
+		// where it is written `key = value`, as KEY_BLOCK_SIZE is.
+		_, isProp, _ = p.tryParseKeyValueProperty()
+	}
 	p.index = mark
 	return isProp
 }
@@ -463,17 +468,27 @@ func (p *parser) parseUnrecognizedAlter(start Token, kind string) (*Expression, 
 // Every other statement carries an empty list, which is what the node had
 // before those properties were read.
 func (p *parser) alterOptions(kind string) ([]*Expression, error) {
-	if kind != "TABLE" || p.dialect != "mysql" {
+	if kind != "TABLE" || !isMySQLFamily(p.dialect) {
 		return []*Expression{}, nil
 	}
-	options, err := p.parseAlterOptions()
-	if err != nil {
-		return nil, err
+	// The table's properties may also come AFTER the actions, with or
+	// without a comma in front of them: `ADD COLUMN c INT
+	// SECONDARY_ENGINE_ATTRIBUTE='{}'` is one Alter holding both
+	// (Parser._parse_alter, ALTER_TABLE_MIXED_ACTIONS).
+	var out []*Expression
+	for {
+		mark := p.index
+		if p.at(TokCOMMA) {
+			p.advance()
+		}
+		props, err := p.parseTableProperties()
+		if err != nil || len(props) == 0 {
+			p.index = mark
+			break
+		}
+		out = append(out, props...)
 	}
-	if options == nil {
-		return []*Expression{}, nil
-	}
-	return options, nil
+	return out, nil
 }
 
 func (p *parser) parseCreateDatabase(table *Expression, kind string, replace, refresh, exists bool) (*Expression, error) {

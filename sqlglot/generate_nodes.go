@@ -3044,7 +3044,17 @@ func (g *generator) dataTypeBody(e *Expression) string {
 		if name == "" {
 			return g.fail("a CHARACTER SET type with no name")
 		}
-		return "CHAR CHARACTER SET " + name
+		// The length is written back where one was given
+		// (Generator.datatype_sql).
+		char := "CHAR"
+		if params, _ := e.Args["expressions"].([]*Expression); len(params) > 0 {
+			parts := make([]string, 0, len(params))
+			for _, param := range params {
+				parts = append(parts, g.node(param))
+			}
+			char = "CHAR(" + strings.Join(parts, ", ") + ")"
+		}
+		return char + " CHARACTER SET " + name
 	}
 	// Fabric limits every temporal type but DATE to 6 digits of precision --
 	// TIME(7) writes as TIME(6), and an unparameterised one gets 6 by
@@ -7062,8 +7072,19 @@ func (g *generator) writeAlter(e *Expression) string {
 		}
 	}
 	g.inColumnList = was
-	out += " " + strings.Join(parts, ", ")
-	out += g.alterOptionText(e)
+	if len(parts) > 0 {
+		out += " " + strings.Join(parts, ", ")
+	}
+	// The options follow the actions with a comma BETWEEN them, and with no
+	// comma at all where there are no actions -- `ALTER TABLE t
+	// AUTO_INCREMENT=5` (Generator.alter_sql).
+	if optionsSQL := g.alterOptionText(e); optionsSQL != "" {
+		if len(parts) > 0 {
+			out += ", " + optionsSQL
+		} else {
+			out += " " + optionsSQL
+		}
+	}
 	// A constraint added NOT VALID is not checked against the rows already
 	// there, and the words go after everything the statement does.
 	if notValid, _ := e.Args["not_valid"].(bool); notValid {
@@ -7096,7 +7117,7 @@ func (g *generator) alterOptionText(e *Expression) string {
 	for _, opt := range options {
 		parts = append(parts, g.node(opt))
 	}
-	return ", " + strings.Join(parts, ", ")
+	return strings.Join(parts, ", ")
 }
 
 func (g *generator) writeAddConstraint(e *Expression) string {

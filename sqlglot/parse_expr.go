@@ -2694,29 +2694,10 @@ func (p *parser) parseCast(try bool) (*Expression, error) {
 	} else if to, err = p.parseCollatedDataType(); err != nil {
 		return nil, err
 	}
-	// `CAST(x AS CHAR CHARACTER SET latin1)` casts to a character set.
-	if kind, _ := to.Args["this"].(DataTypeKind); kind == "CHAR" && p.dialect == "mysql" && (p.at(TokCHARACTER_SET) || p.atWords("CHARACTER", "SET")) {
-		if p.at(TokCHARACTER_SET) {
-			p.advance()
-		} else {
-			p.advance()
-			p.advance()
-		}
-		c := p.curr()
-		if c == nil {
-			return nil, p.unsupported("CHARACTER SET without a name")
-		}
-		var name *Expression
-		switch c.Type {
-		case TokSTRING:
-			name = New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
-		case TokIDENTIFIER:
-			return nil, p.unsupported("CHARACTER SET a quoted name")
-		default:
-			name = New("Var", Arg{"this", c.Text})
-		}
-		p.advance()
-		to = New("DataType", Arg{"this", DataTypeKind("CHARACTER_SET")}, Arg{"kind", name})
+	// `CAST(x AS CHAR CHARACTER SET latin1)` casts to a character set
+	// (Parser._parse_char_charset).
+	if to, err = p.parseCharCharset(to); err != nil {
+		return nil, err
 	}
 	// `CAST(x AS STRING FORMAT 'DAY')` names the format the value is read or
 	// written with (Parser._parse_cast).
@@ -6768,4 +6749,39 @@ func (p *parser) parseDorisMatch(this *Expression, parseIs bool) (*Expression, b
 		node = New("Not", Arg{"this", node})
 	}
 	return node, true, nil
+}
+
+// parseCharCharset reads MySQL's `CHAR[(N)] CHARACTER SET name` suffix, which
+// turns the type into a CHARACTER_SET one and keeps its length
+// (Parser._parse_char_charset).
+func (p *parser) parseCharCharset(to *Expression) (*Expression, error) {
+	if to == nil || p.dialect != "mysql" {
+		return to, nil
+	}
+	if kind, _ := to.Args["this"].(DataTypeKind); kind != "CHAR" {
+		return to, nil
+	}
+	switch {
+	case p.at(TokCHARACTER_SET):
+		p.advance()
+	case p.atWords("CHARACTER", "SET"):
+		p.advance()
+		p.advance()
+	default:
+		return to, nil
+	}
+	c := p.curr()
+	if c == nil {
+		return nil, p.unsupported("CHARACTER SET without a name")
+	}
+	var name *Expression
+	if c.Type == TokSTRING {
+		name = New("Literal", Arg{"this", c.Text}, Arg{"is_string", true})
+	} else {
+		name = New("Var", Arg{"this", c.Text})
+	}
+	p.advance()
+	to.Set("this", DataTypeKind("CHARACTER_SET"))
+	to.Set("kind", name)
+	return to, nil
 }

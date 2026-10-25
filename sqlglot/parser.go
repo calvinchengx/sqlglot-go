@@ -84,6 +84,12 @@ type parser struct {
 	// sql is the statement as written, so a Command the reference builds by
 	// giving up can keep the exact text after the keyword.
 	sql string
+	// inAlterColumnDef marks the definition of a column an ALTER adds, where
+	// a word the constraint reader does not know ends the definition rather
+	// than failing the statement: the ALTER then reads what follows as its
+	// own options, or gives up and keeps the whole statement as a Command
+	// (Parser._parse_alter).
+	inAlterColumnDef bool
 	// inColumnType marks the type of a COLUMN being read, where a fixed-size
 	// array is a type in every dialect -- outside one, only the dialects that
 	// have them read `INT[3]` that way.
