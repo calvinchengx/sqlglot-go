@@ -876,9 +876,7 @@ func AnnotateFully(e *Expression, dialect string) bool {
 					continue
 				}
 				if name, _ := param.Args["this"].(*Expression); name != nil && name.Type == nil {
-					if nt := Annotate(name, dialect); nt != nil {
-						name.Type = nt
-					}
+					AnnotateFully(name, dialect)
 				}
 			}
 		}
@@ -1060,12 +1058,28 @@ func ApplyIndexOffset(this *Expression, items []*Expression, offset int, dialect
 	// (its `_annotate_to_map` never runs on a detached node), so it is typed
 	// here without writing anything down. Everything else is stamped before
 	// the test, which is what the reference's annotate_types does.
+	unstampedMap := false
 	if this.Class == "ToMap" || mapLiteralUnderBracket(this) {
 		// The reference walks the map's CHILDREN -- so the struct inside it
 		// is typed -- and leaves the map itself unstamped.
-		annotateSkippingMaps(this, dialect)
-		switch typeKind(annotate(this, dialect)) {
+		// The map's OWN type is read BEFORE the walk stamps anything: the
+		// answer is memoised, and the walk would otherwise hand back the
+		// type it just wrote on the children.
+		kind := "UNKNOWN"
+		if this.Class == "ToMap" {
+			// A map literal indexed directly is typed by what its fields
+			// hold; a SUBSCRIPT over one is not a map at all, and its type
+			// is unknown -- so the index is shifted.
+			kind = mapLiteralStructKind(this, dialect)
+		}
+		AnnotateFully(this, dialect)
+		clearBracketChainMapType(this)
+		switch kind {
 		case "UNKNOWN", "ARRAY":
+			// The map's own type stays unwritten, so the stamp below is
+			// skipped and only the INDEX is typed -- which is what the
+			// reference does once the base fails its test.
+			unstampedMap = true
 		default:
 			return items, true
 		}
@@ -1077,13 +1091,15 @@ func ApplyIndexOffset(this *Expression, items []*Expression, offset int, dialect
 			return items, true
 		}
 	}
-	if this.Type == nil && !AnnotateFully(this, dialect) {
+	if !unstampedMap && this.Type == nil && !AnnotateFully(this, dialect) {
 		return nil, false
 	}
-	switch typeKind(this.Type) {
-	case "UNKNOWN", "ARRAY":
-	default:
-		return items, true
+	if !unstampedMap {
+		switch typeKind(this.Type) {
+		case "UNKNOWN", "ARRAY":
+		default:
+			return items, true
+		}
 	}
 	index := items[0]
 	if index.Type == nil && !AnnotateFully(index, dialect) {
@@ -1369,9 +1385,7 @@ func annotateSkippingMaps(e *Expression, dialect string) bool {
 					continue
 				}
 				if name, _ := param.Args["this"].(*Expression); name != nil && name.Type == nil {
-					if nt := Annotate(name, dialect); nt != nil {
-						name.Type = nt
-					}
+					AnnotateFully(name, dialect)
 				}
 			}
 		}
@@ -1392,4 +1406,36 @@ func mapLiteralUnderBracket(e *Expression) bool {
 		inner, _ = inner.Args["this"].(*Expression)
 	}
 	return inner != nil && inner.Class == "ToMap"
+}
+
+// clearBracketChainMapType removes the type a map literal carries when it is
+// the thing a subscript indexes: the reference walks into it and stamps its
+// children, and leaves the map itself untyped.
+func clearBracketChainMapType(e *Expression) {
+	for e != nil && e.Class == "Bracket" {
+		e, _ = e.Args["this"].(*Expression)
+	}
+	if e != nil && e.Class == "ToMap" {
+		e.Type = nil
+	}
+}
+
+// mapLiteralStructKind is the kind of the STRUCT a map literal holds, which
+// is what decides whether the reference types the key read off it: a map of
+// literal keys is a MAP, and one whose keys are columns is not known at all.
+func mapLiteralStructKind(e *Expression, dialect string) string {
+	for e != nil && e.Class == "Bracket" {
+		e, _ = e.Args["this"].(*Expression)
+	}
+	if e == nil || e.Class != "ToMap" {
+		return ""
+	}
+	inner, _ := e.Args["this"].(*Expression)
+	for inner != nil && inner.Class == "Bracket" {
+		inner, _ = inner.Args["this"].(*Expression)
+	}
+	if inner == nil || inner.Class != "Struct" {
+		return ""
+	}
+	return typeKind(annotate(inner, dialect))
 }

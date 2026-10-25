@@ -6142,6 +6142,15 @@ func (p *parser) parseMapLiteral() (*Expression, error) {
 		// shows: the map's field types are known the moment a key is read
 		// off it.
 		AnnotateFully(this, p.dialect)
+		// Where the map's own type is UNKNOWN the INDEX is typed too, which
+		// is what the reference's apply_index_offset does once the base
+		// fails its test -- and only then.
+		switch typeKind(this.Type) {
+		case "UNKNOWN", "ARRAY":
+			for _, sub := range subscripts {
+				AnnotateFully(sub, p.dialect)
+			}
+		}
 		this = New("Bracket", Arg{"this", this}, Arg{"expressions", subscripts})
 	}
 	return New("ToMap", Arg{"this", this}), nil

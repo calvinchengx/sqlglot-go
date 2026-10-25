@@ -2079,10 +2079,12 @@ func (p *parser) parseUnnestWithAlias(withAlias bool) (*Expression, error) {
 		unnestIdent := func() *Expression {
 			return New("Identifier", Arg{"this", "unnest"}, Arg{"quoted", false})
 		}
+		// With several arrays every column is named `unnest`, so none is
+		// added and only the table alias is defaulted.
 		if alias == nil {
-			alias = New("TableAlias", Arg{"this", unnestIdent()},
-				Arg{"columns", []*Expression{unnestIdent()}})
-		} else if cols, _ := alias.Args["columns"].([]*Expression); len(cols) == 0 {
+			alias = New("TableAlias", Arg{"this", unnestIdent()})
+		}
+		if cols, _ := alias.Args["columns"].([]*Expression); len(cols) == 0 && len(items) == 1 {
 			alias.Set("columns", []*Expression{unnestIdent()})
 		}
 	}
