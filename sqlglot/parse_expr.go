@@ -699,8 +699,9 @@ func (p *parser) parseIs(this *Expression) (*Expression, error) {
 // side belongs to the predicate depends on where IS binds in this dialect.
 func (p *parser) parseIsRhs(distinct bool) (*Expression, error) {
 	// SQLite puts ordering comparisons INSIDE what follows IS, where range
-	// predicates bind below it (SQLiteParser._parse_is_rhs).
-	if !distinct && p.dialect == "sqlite" {
+	// predicates bind below it -- and it does so for IS DISTINCT FROM too,
+	// whose flag its own reader ignores (SQLiteParser._parse_is_rhs).
+	if p.dialect == "sqlite" {
 		this, err := p.parseBitwise()
 		if err != nil {
 			return nil, err
@@ -5688,9 +5689,20 @@ func (p *parser) quantifierHere() bool {
 	if p.atEmptyArgList() {
 		return false
 	}
-	if p.afterComparison() {
-		return true
+	// After LIKE or ILIKE the word is a quantifier whatever it holds, and the
+	// operand is read as an ordinary expression (Parser._parse_function
+	// backtracks over the parenthesis for exactly this case).
+	if p.index > 0 {
+		switch p.tokens[p.index-1].Type {
+		case TokLIKE, TokILIKE:
+			return true
+		}
 	}
+	// Otherwise the token straight after the parenthesis decides: a QUERY
+	// makes the word a quantifier and anything else a call, whether or not a
+	// comparison stands in front of it. `a = ALL ((SELECT b))` is therefore a
+	// call to a function named ALL, its argument a parenthesised subquery
+	// (Parser._parse_function, SUBQUERY_TOKENS).
 	inner := p.peekAt(2)
 	return inner != nil && (inner.Type == TokSELECT || inner.Type == TokWITH || inner.Type == TokFROM)
 }

@@ -208,6 +208,17 @@ func annotateNode(e *Expression, dialect string) *Expression {
 	// A numeric-preserving math function keeps a numeric or unknown argument's
 	// type and answers INT otherwise: `FLOOR(5)` is an INT, `FLOOR(x)` an
 	// UNKNOWN (typing/__init__.py, annotate_by_numeric_arg).
+	// BigQuery's math functions answer DOUBLE for an integer or a string
+	// argument and the argument's own type otherwise
+	// (typing/bigquery.py, annotate_int_as_double).
+	if g := bigqueryDoubleMath[e.Class]; g && dialect == "bigquery" {
+		inner := annotate(childOf(e, "this"), dialect)
+		kind := typeKind(inner)
+		if integerTypeKinds[kind] || textTypeKinds[kind] {
+			return dataType("DOUBLE")
+		}
+		return inner
+	}
 	if e.Class == "Ceil" || e.Class == "Floor" {
 		inner := annotate(childOf(e, "this"), dialect)
 		kind := typeKind(inner)
@@ -1461,4 +1472,11 @@ var numericTypeKinds = map[string]bool{
 	"DECIMAL128": true, "DECIMAL256": true, "BIGDECIMAL": true,
 	"DOUBLE": true, "FLOAT": true, "REAL": true, "UDOUBLE": true,
 	"UDECIMAL": true, "BIGINT_UNSIGNED": true,
+}
+
+// bigqueryDoubleMath are the BigQuery classes whose integer or string argument
+// is widened to DOUBLE (typing/bigquery.py).
+var bigqueryDoubleMath = map[string]bool{
+	"Avg": true, "Ceil": true, "Exp": true, "Floor": true, "Ln": true,
+	"Log": true, "Round": true, "Sqrt": true,
 }
