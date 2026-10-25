@@ -4734,10 +4734,10 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 // reads JSON_QUERY as the same node as JSON_EXTRACT, and writes back the name
 // it was given (BigQueryGenerator._json_extract_sql).
 func (g *generator) jsonExtractName(e *Expression, form string) string {
-	if e.originalName == "" {
+	if e.originalName == "" || renamedByDialect(g.dialect, e.Class) {
 		return form
 	}
-	if _, consults := g.tables.ConsultsOriginalName[e.Class]; !consults {
+	if !consultsOriginalName(g.tables, g.dialect, e) {
 		return form
 	}
 	if i := strings.Index(form, "("); i > 0 && !strings.ContainsAny(form[:i], " {") {
