@@ -1904,6 +1904,13 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 		case p.at(TokNULL):
 			p.advance()
 			kind = New("NotNullColumnConstraint", Arg{"allow_null", true})
+		case p.dialect == "starrocks" && p.atStarrocksAggregateConstraint():
+			// StarRocks names the aggregate a column is built with where
+			// another dialect names a constraint: `v1 HLL HLL_UNION`
+			// (StarRocksParser.CONSTRAINT_PARSERS).
+			word := strings.ToUpper(p.curr().Text)
+			p.advance()
+			kind = New("Var", Arg{"this", word})
 		case p.dialect == "bigquery" && p.atWords("OPTIONS"):
 			// `a STRING OPTIONS (description='x')` records the settings as a
 			// Properties node (BigQueryParser.CONSTRAINT_PARSERS,
@@ -9630,4 +9637,22 @@ func (p *parser) nextIsAColumnName() bool {
 	}
 	_, ok := p.tables.IDVarTokens[n.Type]
 	return ok
+}
+
+// starrocksAggregateConstraints are the words StarRocks reads as a column's
+// aggregate function.
+var starrocksAggregateConstraints = map[string]bool{
+	"SUM": true, "MAX": true, "MIN": true, "REPLACE": true,
+	"REPLACE_IF_NOT_NULL": true, "HLL_UNION": true,
+}
+
+// atStarrocksAggregateConstraint reports whether the cursor holds one of those
+// words, and not a call of the same name.
+func (p *parser) atStarrocksAggregateConstraint() bool {
+	c := p.curr()
+	if c == nil || !starrocksAggregateConstraints[strings.ToUpper(c.Text)] {
+		return false
+	}
+	n := p.next()
+	return n == nil || n.Type != TokL_PAREN
 }

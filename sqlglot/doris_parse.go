@@ -24,6 +24,10 @@ func (p *parser) parseDorisProperty() (prop *Expression, own bool, err error) {
 		p.advance() // DUPLICATE
 		e, err := p.parseCompositeKeyProperty("DuplicateKeyProperty")
 		return e, true, err
+	case p.dialect == "starrocks" && p.atWords("AGGREGATE"):
+		p.advance() // AGGREGATE
+		e, err := p.parseCompositeKeyProperty("AggregateKeyProperty")
+		return e, true, err
 	case p.atWords("DISTRIBUTED"):
 		e, err := p.parseDistributedProperty()
 		return e, true, err
