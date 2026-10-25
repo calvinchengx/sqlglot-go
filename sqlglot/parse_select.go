@@ -179,6 +179,10 @@ func (p *parser) parseQueryBody() (*Expression, error) {
 // else.
 func (p *parser) parseFromFirst() (*Expression, error) {
 	p.advance() // FROM
+	// A comment written before FROM belongs to the clause, and a multi-table
+	// insert carries it onto the statement itself
+	// (Parser._parse_statement, `comments=from_.comments`).
+	fromComments := p.takeComments()
 	table, err := p.parseTable()
 	if err != nil {
 		return nil, err
@@ -222,7 +226,9 @@ func (p *parser) parseFromFirst() (*Expression, error) {
 		sel.Set("distinct", New("Distinct", Arg{"on", nil}))
 	}
 	sel.Set("expressions", projections)
-	sel.Set("from_", New("From", Arg{"this", table}))
+	from := New("From", Arg{"this", table})
+	from.Comments = append(from.Comments, fromComments...)
+	sel.Set("from_", from)
 	if err := p.parseQueryModifiers(sel); err != nil {
 		return nil, err
 	}
@@ -2900,7 +2906,11 @@ func (p *parser) parseMultitableInserts(sel *Expression) (*Expression, error) {
 		inserts = append(inserts, stmt)
 	}
 	p.inMultitableInsert = wasMultitable
-	return New("MultitableInserts", Arg{"expressions", inserts}, Arg{"source", source}), nil
+	// The FROM's own leading comments belong to the statement
+	// (Parser._parse_statement, `comments=from_.comments`).
+	node := New("MultitableInserts", Arg{"expressions", inserts}, Arg{"source", source})
+	node.Comments = append(node.Comments, from.Comments...)
+	return node, nil
 }
 
 // atProjectionAlias reports whether the word at the cursor may name a
