@@ -93,8 +93,13 @@ func (g *generator) writeStarrocksTimeSlice(e *Expression) string {
 	if g.dialect != "starrocks" {
 		return g.writeSnowflakeTimeSlice(e)
 	}
-	interval := New("Interval",
-		Arg{"this", e.Args["expression"]}, Arg{"unit", e.Args["unit"]})
+	// An interval written as a bare number is a NUMBER, so the interval is
+	// written back without quotes: `INTERVAL 5 MINUTE`.
+	amount, _ := e.Args["expression"].(*Expression)
+	if text, ok := literalText(amount); ok && isAllDigits(text) && isStringLiteral(amount) {
+		amount = New("Literal", Arg{"this", text}, Arg{"is_string", false})
+	}
+	interval := New("Interval", Arg{"this", amount}, Arg{"unit", e.Args["unit"]})
 	parts := []string{g.child(e, "this"), g.node(interval)}
 	if kind, _ := e.Args["kind"].(*Expression); kind != nil {
 		word := "FLOOR"

@@ -1415,6 +1415,21 @@ func (g *generator) writeToMap(e *Expression) string {
 	if g.dialect == "materialize" && inner.Class == "Select" {
 		return "MAP(" + g.node(inner) + ")"
 	}
+	// StarRocks writes the entries tight against the braces and the colons
+	// (StarRocksGenerator.tomap_sql).
+	if g.dialect == "starrocks" && inner.Class == "Struct" {
+		items, _ := inner.Args["expressions"].([]*Expression)
+		parts := make([]string, 0, len(items))
+		for _, item := range items {
+			key, _ := item.Args["this"].(*Expression)
+			value, _ := item.Args["expression"].(*Expression)
+			if key == nil || value == nil {
+				return g.fail(e.Class + " with an entry that is not a pair")
+			}
+			parts = append(parts, g.node(key)+":"+g.node(value))
+		}
+		return "MAP{" + strings.Join(parts, ", ") + "}"
+	}
 	// A subscripted map holds a Bracket over the Struct: the entries are
 	// written inside the braces, and the subscripts after them.
 	if inner.Class == "Bracket" {
@@ -9179,6 +9194,19 @@ func isUTF8Charset(e *Expression) bool {
 func (g *generator) writeDateDiff(e *Expression) string {
 	if g.dialect == "sqlite" {
 		return g.sqliteDateDiff(e)
+	}
+	// StarRocks' DATEDIFF compares only the DATE PARTS, so the two-argument
+	// form stays as written (StarRocksGenerator.datediff_sql).
+	if g.dialect == "starrocks" && e.Args["date_part_boundary"] == true {
+		unit, _ := e.Args["unit"].(*Expression)
+		if unit == nil || strings.EqualFold(unit.Name(), "DAY") {
+			this, _ := e.Args["this"].(*Expression)
+			expression, _ := e.Args["expression"].(*Expression)
+			if this == nil || expression == nil {
+				return g.fail(e.Class + " without both dates")
+			}
+			return "DATEDIFF(" + g.node(this) + ", " + g.node(expression) + ")"
+		}
 	}
 	if g.dialect != "mysql" || e.Args["unit"] == nil {
 		return g.spell(e)

@@ -4370,6 +4370,13 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 		if p.dialect == "tsql" {
 			return p.buildDateDiff(upper, args, upper == "DATEDIFF_BIG")
 		}
+		// MySQL's DATEDIFF compares two DATE PARTS and names no unit; the
+		// probe's signature carries one because T-SQL's spelling does
+		// (MySQLParser.FUNCTIONS).
+		if isMySQLFamily(p.dialect) && upper == "DATEDIFF" && len(args) == 2 {
+			return New("DateDiff", Arg{"this", argAt(args, 0)},
+				Arg{"expression", argAt(args, 1)}, Arg{"date_part_boundary", true}), nil
+		}
 	}
 	if upper == "DATENAME" && len(p.tables.FullFormatTimeMapping) > 0 {
 		return p.buildDateName(args)
@@ -6012,7 +6019,7 @@ func (p *parser) parseMapLiteral() (*Expression, error) {
 	// `ToMap(this=self._parse_bracket())`).
 	this := New("Struct", Arg{"expressions", items})
 	var subscripts []*Expression
-	for p.at(TokL_BRACKET) {
+	for p.dialect == "duckdb" && p.at(TokL_BRACKET) {
 		p.advance()
 		part, err := p.parseBracketItems(true)
 		if err != nil {
