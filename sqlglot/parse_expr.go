@@ -3801,6 +3801,52 @@ func (p *parser) parseCase() (*Expression, error) {
 // and returns its node.
 func (p *parser) clickhouseFunctionParser(upper string) (bool, *Expression, error) {
 	switch upper {
+	case "JSONEXTRACTRAW", "JSONEXTRACTSTRING":
+		// ClickHouse's JSON extractors name the path as ARGUMENTS, one key
+		// or position each, and index from ONE
+		// (ClickHouseParser.FUNCTIONS, build_json_extract_path).
+		p.advance() // the name
+		p.advance() // the opening parenthesis
+		args, err := p.parseCallArgsCSV()
+		if err != nil {
+			return true, nil, err
+		}
+		if !p.match(TokR_PAREN) {
+			return true, nil, p.unsupported(upper + " without a closing parenthesis")
+		}
+		if len(args) == 0 {
+			return true, nil, p.unsupported(upper + " with no arguments")
+		}
+		class := "JSONExtract"
+		if upper == "JSONEXTRACTSTRING" {
+			class = "JSONExtractScalar"
+		}
+		segments := []*Expression{New("JSONPathRoot")}
+		for _, arg := range args[1:] {
+			text, isLit := literalText(arg)
+			if arg == nil || arg.Class != "Literal" {
+				// A path the reference cannot read is carried through
+				// untouched rather than guessed at.
+				node := New(class, Arg{"this", args[0]})
+				if len(args) > 1 {
+					node.Set("expression", args[1])
+				}
+				if len(args) > 2 {
+					node.Set("expressions", args[2:])
+				}
+				return true, node, nil
+			}
+			if n, ok := pythonInt(text); ok && !isStringLiteral(arg) {
+				segments = append(segments, New("JSONPathSubscript", Arg{"this", n - 1}))
+				continue
+			}
+			_ = isLit
+			segments = append(segments, New("JSONPathKey", Arg{"this", text}))
+		}
+		return true, New(class,
+			Arg{"this", args[0]},
+			Arg{"expression", New("JSONPath", Arg{"expressions", segments})},
+			Arg{"only_json_types", true}), nil
 	case "XOR", "AND", "OR":
 		p.advance()
 		p.advance() // the opening parenthesis

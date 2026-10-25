@@ -4560,6 +4560,40 @@ func (g *generator) writeJSONExtractOp(e *Expression) string {
 		}
 		return "JSON_VALUE(" + g.child(e, "this") + ", " + g.node(path) + ")"
 	}
+	// ClickHouse writes the path as ARGUMENTS of one call -- keys quoted,
+	// positions bare and counted from ONE
+	// (ClickHouseGenerator.TRANSFORMS, json_extract_segments).
+	if g.dialect == "clickhouse" && (e.Class == "JSONExtract" || e.Class == "JSONExtractScalar") {
+		name := "JSONExtractRaw"
+		if e.Class == "JSONExtractScalar" {
+			name = "JSONExtractString"
+		}
+		path, _ := e.Args["expression"].(*Expression)
+		if path == nil || path.Class != "JSONPath" {
+			return name + "(" + g.child(e, "this") + ", " + g.node(path) + ")"
+		}
+		parts, _ := path.Args["expressions"].([]*Expression)
+		args := []string{g.child(e, "this")}
+		for _, part := range parts {
+			switch part.Class {
+			case "JSONPathRoot":
+			case "JSONPathSubscript":
+				n, _ := part.Args["this"].(int)
+				args = append(args, strconv.Itoa(n+1))
+			case "JSONPathKey":
+				key, _ := part.Args["this"].(string)
+				args = append(args, "'"+strings.ReplaceAll(key, "'", "''")+"'")
+			default:
+				return g.fail(part.Class + " in a ClickHouse JSON path")
+			}
+		}
+		if extras, _ := e.Args["expressions"].([]*Expression); len(extras) > 0 {
+			for _, extra := range extras {
+				args = append(args, g.node(extra))
+			}
+		}
+		return name + "(" + strings.Join(args, ", ") + ")"
+	}
 	if twice, ok := g.tables.JSONExtractTwiceSQL[e.Class]; ok && twice != "" {
 		return g.writeJSONExtractTwice(e, twice)
 	}
