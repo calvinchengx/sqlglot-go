@@ -2182,6 +2182,24 @@ func (p *parser) parsePrimary() (*Expression, error) {
 					}
 				}
 			}
+			// Trino names the PRECISION a temporal literal carries: the
+			// number of fractional digits, or 0 where it has none
+			// (TrinoParser._parse_temporal_literal).
+			if p.dialect == "trino" {
+				switch kind.Args["this"] {
+				case DataTypeKind("TIMESTAMP"), DataTypeKind("TIMESTAMPTZ"),
+					DataTypeKind("TIME"), DataTypeKind("TIMETZ"):
+					if params, _ := kind.Args["expressions"].([]*Expression); len(params) == 0 {
+						digits := 0
+						if text, ok := inner.Args["this"].(string); ok {
+							digits = fractionalSecondDigits(text)
+						}
+						kind.Set("expressions", []*Expression{New("DataTypeParam",
+							Arg{"this", New("Literal",
+								Arg{"this", strconv.Itoa(digits)}, Arg{"is_string", false})})})
+					}
+				}
+			}
 			cast := New("Cast", Arg{"this", inner}, Arg{"to", kind})
 			cast.Type = kind
 			if p.tables.SupportsColumnJoinMarks {
@@ -6831,4 +6849,26 @@ func (p *parser) parseCharCharset(to *Expression) (*Expression, error) {
 	to.Set("this", DataTypeKind("CHARACTER_SET"))
 	to.Set("kind", name)
 	return to, nil
+}
+
+// fractionalSecondDigits counts the digits after the fractional point of a
+// time's seconds -- `01:02:03.1234` is 4 -- and 0 where there is none.
+func fractionalSecondDigits(text string) int {
+	for i := 0; i+1 < len(text); i++ {
+		if text[i] != ':' {
+			continue
+		}
+		j := i + 1
+		for j < len(text) && text[j] >= '0' && text[j] <= '9' {
+			j++
+		}
+		if j < len(text) && text[j] == '.' {
+			k := j + 1
+			for k < len(text) && text[k] >= '0' && text[k] <= '9' {
+				k++
+			}
+			return k - j - 1
+		}
+	}
+	return 0
 }
