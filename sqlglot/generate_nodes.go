@@ -3869,6 +3869,11 @@ func (g *generator) writeLambda(e *Expression) string {
 	// own, read off a rendered node; a dialect that has no spelling of its own
 	// drops the distinction and writes the arrow, which is what the empty
 	// template means.
+	// DuckDB (1.3 and later) writes EVERY lambda with the keyword and a
+	// colon, whichever spelling was read (DuckDBGenerator.lambda_sql).
+	if g.dialect == "duckdb" {
+		return "LAMBDA " + head + " : " + g.child(e, "this")
+	}
 	if colon, _ := e.Args["colon"].(bool); colon && g.tables.ColonLambdaWrite != "" {
 		out := strings.ReplaceAll(g.tables.ColonLambdaWrite, "{expressions}", head)
 		return strings.ReplaceAll(out, "{this}", g.child(e, "this"))
@@ -8835,7 +8840,9 @@ func (g *generator) writeAnalyze(e *Expression) string {
 	if statistics := g.child(e, "expression"); statistics != "" {
 		out += " " + statistics
 	}
-	if properties := g.child(e, "properties"); properties != "" {
+	// DuckDB has no spelling for the WITH (...) block on ANALYZE, so the
+	// reference drops it (its Properties node renders empty there).
+	if properties := g.child(e, "properties"); properties != "" && g.dialect != "duckdb" {
 		out += " " + properties
 	}
 	return out

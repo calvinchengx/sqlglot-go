@@ -7206,7 +7206,7 @@ func TestNamedArgument(t *testing.T) {
 			"SELECT MAKE_INTERVAL(years => 1, months => 2, days => 3)"},
 		{"SELECT UNNEST(x, max_depth => 2)", "duckdb", "SELECT UNNEST(x, max_depth => 2)"},
 		// The other arrow in the same position is still a lambda.
-		{"SELECT LIST_TRANSFORM(x, y -> y + 1)", "duckdb", "SELECT LIST_TRANSFORM(x, y -> y + 1)"},
+		{"SELECT LIST_TRANSFORM(x, y -> y + 1)", "duckdb", "SELECT LIST_TRANSFORM(x, LAMBDA y : y + 1)"},
 	} {
 		e, err := ParseOne(c.sql, c.dialect)
 		if err != nil {

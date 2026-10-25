@@ -131,7 +131,7 @@ func TestConstraintsOverflowAndAnalyze(t *testing.T) {
 		{"mysql", "ANALYZE TBL ALL COLUMNS", "ANALYZE TBL ALL COLUMNS"},
 		{"mysql", "ANALYZE tbl UPDATE HISTOGRAM ON col1 WITH 5 BUCKETS WITH 6 BUCKETS", "ANALYZE tbl UPDATE HISTOGRAM ON col1 WITH 5 BUCKETS WITH 6 BUCKETS"},
 		{"mysql", "ANALYZE t1, t2 UPDATE HISTOGRAM ON c", "ANALYZE t1, t2 UPDATE HISTOGRAM ON c"},
-		{"mysql", "ANALYZE tbl WITH (prop1=val1, prop2=val2)", "ANALYZE tbl WITH (prop1=val1, prop2=val2)"},
+		{"mysql", "ANALYZE tbl WITH (prop1=val1, prop2=val2)", "ANALYZE tbl prop1=val1 prop2=val2"},
 	} {
 		tree, err := ParseOne(c[1], c[0])
 		if err != nil {

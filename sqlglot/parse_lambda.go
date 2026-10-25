@@ -14,7 +14,8 @@ func (p *parser) atLambda() bool {
 	// DuckDB spells a lambda twice over -- `x -> x + 1` and the same thing
 	// written `LAMBDA x : x + 1`. The word is not a token of its own, so the
 	// text decides, and only where the dialect reads the form at all.
-	if p.tables.ColonLambdaRead && strings.EqualFold(c.Text, "LAMBDA") {
+	if (p.tables.ColonLambdaRead || p.dialect == "duckdb") &&
+		strings.EqualFold(c.Text, "LAMBDA") {
 		return true
 	}
 	// A NUMBER can name a lambda parameter: the reference reads `0 -> x` as a
@@ -116,7 +117,8 @@ func (p *parser) parseLambdaParamName() (*Expression, error) {
 }
 
 func (p *parser) parseLambda() (*Expression, error) {
-	if p.tables.ColonLambdaRead && strings.EqualFold(p.curr().Text, "LAMBDA") {
+	if (p.tables.ColonLambdaRead || p.dialect == "duckdb") &&
+		strings.EqualFold(p.curr().Text, "LAMBDA") {
 		return p.parseColonLambda()
 	}
 	var params []*Expression
@@ -200,7 +202,13 @@ func (p *parser) parseColonLambda() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	return New("Lambda", Arg{"this", replaced}, Arg{"expressions", params}, Arg{"colon", true}), nil
+	// DuckDB records no `colon`: it reads BOTH spellings into the same node
+	// and writes the keyword form either way (DuckDBGenerator.lambda_sql).
+	var colon any = true
+	if !p.tables.ColonLambdaRead {
+		colon = nil
+	}
+	return New("Lambda", Arg{"this", replaced}, Arg{"expressions", params}, Arg{"colon", colon}), nil
 }
 
 // bindLambdaParams rewrites Columns that name a parameter into the parameter's

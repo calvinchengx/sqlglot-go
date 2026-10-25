@@ -295,13 +295,14 @@ func TestGenerateShapes(t *testing.T) {
 			"SELECT SUBSTRING(x FROM 1 FOR 2)"},
 		{"position duckdb", "select position(a in b)", "duckdb", "SELECT STRPOS(b, a)"},
 		{"position tsql", "select position(a in b)", "tsql", "SELECT CHARINDEX(a, b)"},
+		// DuckDB writes every lambda with the keyword and a colon at 1.3 and
+		// later, whichever spelling was read (DuckDBGenerator.lambda_sql).
 		{"lambda one param", "select list_transform(a, x -> x + 1)", "duckdb",
-			"SELECT LIST_TRANSFORM(a, x -> x + 1)"},
+			"SELECT LIST_TRANSFORM(a, LAMBDA x : x + 1)"},
 		{"lambda two params", "select list_reduce(a, (x, y) -> x + y)", "duckdb",
-			"SELECT LIST_REDUCE(a, (x, y) -> x + y)"},
-		// The same lambda spelled the other way DuckDB has for it. The form
-		// is recorded on the node, so it comes back as it was written --
-		// keyword, colon, and no parentheses however many parameters.
+			"SELECT LIST_REDUCE(a, LAMBDA x, y : x + y)"},
+		// The same lambda spelled the other way DuckDB has for it. Both read
+		// into the same node, which writes the keyword form.
 		{"colon lambda one param", "select list_transform(a, lambda x : x + 1)", "duckdb",
 			"SELECT LIST_TRANSFORM(a, LAMBDA x : x + 1)"},
 		{"colon lambda two params", "select list_reduce(a, lambda x, y : x + y)", "duckdb",
@@ -491,7 +492,7 @@ func TestGenerateShapes(t *testing.T) {
 		{"an arrow after two names with no comma", "foo((a b) -> 0)", "duckdb",
 			"FOO((a AS b) -> '$[0]')"},
 		{"and a real parameter list beside them", "foo((a, b) -> 0)", "duckdb",
-			"FOO((a, b) -> 0)"},
+			"FOO(LAMBDA a, b : 0)"},
 		// A path key holding the very quote that delimits it. The reference
 		// escapes it with a backslash; without that the key ends early and
 		// the port could not read back what it had just written.
