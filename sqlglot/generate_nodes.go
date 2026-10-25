@@ -7257,11 +7257,38 @@ func (g *generator) alterOptionText(e *Expression) string {
 	if len(options) == 0 {
 		return ""
 	}
-	parts := make([]string, 0, len(options))
+	// A PARTITION option is written beside the rest with a SPACE, not a
+	// comma: `ALTER TABLE t ENGINE=InnoDB PARTITION BY LIST ...`
+	// (Generator.alter_sql, ALTER_PARTITION_OPTIONS).
+	var plain, partitions []string
 	for _, opt := range options {
-		parts = append(parts, g.node(opt))
+		if g.isAlterPartitionOption(opt) {
+			partitions = append(partitions, g.node(opt))
+			continue
+		}
+		plain = append(plain, g.node(opt))
 	}
-	return strings.Join(parts, ", ")
+	out := strings.Join(plain, ", ")
+	if len(partitions) > 0 {
+		if out != "" {
+			out += " "
+		}
+		out += strings.Join(partitions, " ")
+	}
+	return out
+}
+
+// isAlterPartitionOption reports whether an ALTER option is one of the
+// dialect's PARTITION options, which are written apart from the others
+// (Generator.ALTER_PARTITION_OPTIONS).
+func (g *generator) isAlterPartitionOption(e *Expression) bool {
+	switch e.Class {
+	case "PartitionByListProperty", "PartitionByRangeProperty":
+		return true
+	case "DistributedByProperty", "PartitionedByProperty":
+		return g.dialect == "starrocks"
+	}
+	return false
 }
 
 func (g *generator) writeAddConstraint(e *Expression) string {
