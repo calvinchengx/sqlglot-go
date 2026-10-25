@@ -1103,12 +1103,20 @@ func athenaHiveAlter(e *Expression) *Expression {
 // with a name of its OWN rather than the one it was written with -- a
 // TRANSFORM, which the reference applies before its fallback ever runs.
 func renamedByDialect(dialect, class string) bool {
-	if dialect != "clickhouse" {
-		return false
-	}
-	switch class {
-	case "CurrentDatabase", "CurrentSchemas", "CurrentUser":
-		return true
+	switch dialect {
+	case "clickhouse":
+		switch class {
+		case "CurrentDatabase", "CurrentSchemas", "CurrentUser":
+			return true
+		}
+	case "bigquery":
+		// BigQuery renames a handful through its TRANSFORMS, and those names
+		// are the dialect's own rather than the call's
+		// (BigQueryGenerator.TRANSFORMS).
+		switch class {
+		case "ByteLength":
+			return true
+		}
 	}
 	return false
 }

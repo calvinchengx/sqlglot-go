@@ -14,7 +14,7 @@ func init() {
 		if tables.ConsultsOriginalName == nil {
 			tables.ConsultsOriginalName = map[string]struct{}{}
 		}
-		for _, class := range []string{"Substring"} {
+		for _, class := range []string{"Substring", "Struct"} {
 			tables.ConsultsOriginalName[class] = struct{}{}
 		}
 	}
