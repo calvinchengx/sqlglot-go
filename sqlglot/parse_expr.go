@@ -4077,6 +4077,12 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 			return node, err
 		}
 	}
+	// DuckDB's LIST_SORT and ARRAY_REVERSE_SORT read their order and null
+	// placement as strings, which the probe's signature does not show
+	// (DuckDBParser.FUNCTIONS, _build_list_sort).
+	if p.dialect == "duckdb" && (upper == "LIST_SORT" || upper == "ARRAY_REVERSE_SORT") {
+		return p.parseDuckDBListSort(upper)
+	}
 	// StarRocks' TIME_SLICE takes a boundary word the probe's signature does
 	// not show, because the builder only sets `kind` when it is there
 	// (StarRocksParser.FUNCTIONS, _build_time_slice).

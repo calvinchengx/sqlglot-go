@@ -2,11 +2,12 @@ package sqlglot
 
 import "testing"
 
-// DuckDB writes `[:-:-1]` as a slice whose end and step are both -1. A slice
+// DuckDB writes `[:-:-1]` as a slice with no end and a step of -1; the dash
+// is written back where the end is omitted. A slice
 // with no step stays two bounds. A parse or generate error fails the row.
 func TestSliceStep(t *testing.T) {
 	cases := [][3]string{
-		{"duckdb", "SELECT ([1,2,3])[:-:-1]", "SELECT ([1, 2, 3])[:-1:-1]"},
+		{"duckdb", "SELECT ([1,2,3])[:-:-1]", "SELECT ([1, 2, 3])[:-:-1]"},
 		{"duckdb", "SELECT ([1,2,3])[:-1:-1]", "SELECT ([1, 2, 3])[:-1:-1]"},
 		{"duckdb", "SELECT x[:]", "SELECT x[:]"},
 		{"duckdb", "SELECT x[1:2]", "SELECT x[1:2]"},

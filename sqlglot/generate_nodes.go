@@ -3670,13 +3670,22 @@ func (g *generator) writeBracket(e *Expression) string {
 }
 
 func (g *generator) writeSlice(e *Expression) string {
-	out := g.child(e, "this") + ":" + g.child(e, "expression")
-	// A third bound is the step: `[:-1:-1]` walks backward. Absent, the
-	// slice stays the two-bound form it already wrote.
-	if step := g.child(e, "step"); step != "" {
-		out += ":" + step
+	step := g.child(e, "step")
+	// An omitted END is written as `-` in front of a step, because `::` is
+	// the cast operator (Generator.slice_sql).
+	end := g.child(e, "expression")
+	if end == "" && step != "" {
+		end = "-"
 	}
-	return out
+	begin := g.child(e, "this")
+	sql := end
+	if step != "" {
+		sql = end + ":" + step
+	}
+	if sql == "" {
+		return begin + ":"
+	}
+	return begin + ":" + sql
 }
 
 // writeQuantifier writes ALL or ANY before its operand. The two are spaced
