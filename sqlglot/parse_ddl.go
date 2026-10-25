@@ -1,6 +1,7 @@
 package sqlglot
 
 import (
+	"errors"
 	"slices"
 	"strings"
 	"unicode"
@@ -1114,11 +1115,30 @@ func (p *parser) parseInsert() (*Expression, error) {
 	// Only an explicit AS counts. A bare word here is the next clause --
 	// REPLACE, DEFAULT, VALUES -- and reading it as an alias would swallow it.
 	if p.at(TokALIAS) {
-		alias, err := p.parseTableAlias()
-		if err != nil {
-			return nil, err
+		// Only the NAME: a column list after it belongs to the INSERT rather
+		// than to the alias, and is read as the Schema below
+		// (Parser._parse_insert_table -> _parse_schema).
+		p.advance()
+		// A NAME, not any token: `AS SELECT` names nothing, and the words
+		// after it are the query's rather than an alias.
+		var aliasName *Expression
+		if p.atIdentifier() {
+			var aerr error
+			aliasName, aerr = p.parseIdentifier()
+			if aerr != nil {
+				return nil, aerr
+			}
+		} else if c := p.curr(); c != nil {
+			if _, ok := p.tables.IDVarTokens[c.Type]; !ok {
+				return nil, p.unsupported("INSERT AS without a name")
+			}
+			p.advance()
+			aliasName = New("Identifier", Arg{"this", c.Text}, Arg{"quoted", false})
 		}
-		table.Set("alias", alias)
+		if aliasName == nil {
+			return nil, p.unsupported("INSERT AS without a name")
+		}
+		table.Set("alias", New("TableAlias", Arg{"this", aliasName}))
 	}
 	if err := p.oracleInsertAlias(table); err != nil {
 		return nil, err
@@ -2451,6 +2471,11 @@ func (p *parser) parseAlter() (*Expression, error) {
 	} else if !mysqlProperties || p.curr() != nil {
 		actions, err = p.parseAlterActions()
 		if err != nil {
+			// An action the reference gives up on makes the whole statement
+			// a Command rather than an Alter (Parser._parse_alter).
+			if errors.Is(err, errAlterGiveUp) {
+				return p.parseAsCommand(start), nil
+			}
 			return nil, err
 		}
 	}
@@ -2759,9 +2784,15 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			Arg{"sync", false}, Arg{"iceberg", false}, Arg{"force", false},
 		), nil
 	case p.at(TokDROP) && p.dialect == "mysql" && p.next() != nil &&
-		(strings.EqualFold(p.next().Text, "INDEX") || strings.EqualFold(p.next().Text, "FOREIGN KEY")):
+		(strings.EqualFold(p.next().Text, "INDEX") || strings.EqualFold(p.next().Text, "KEY") ||
+			strings.EqualFold(p.next().Text, "FOREIGN KEY")):
 		p.advance()
 		kind := strings.ToUpper(p.curr().Text)
+		// MySQL writes an index as either word, and the reference records
+		// both as INDEX (CREATABLE_KIND_MAPPING).
+		if kind == "KEY" {
+			kind = "INDEX"
+		}
 		p.advance()
 		name, err := p.parseTableName()
 		if err != nil {
@@ -2840,9 +2871,13 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 			if !p.match(TokR_PAREN) {
 				return nil, p.unsupported("unclosed DROP COLUMNS")
 			}
+			// Only these three arguments: the reference builds this Drop with
+			// no others (Parser._parse_drop, kind COLUMNS).
 			return New("Drop",
+				Arg{"kind", "COLUMNS"},
 				Arg{"tables", []*Expression{New("Schema", Arg{"expressions", cols})}},
-				Arg{"kind", "COLUMNS"}), nil
+				Arg{"exists", exists},
+			), nil
 		}
 		if constraint {
 			name, err := p.parseTableName()
@@ -3349,8 +3384,15 @@ func (p *parser) parseAlteredColumn() (*Expression, error) {
 			p.advance()
 			p.advance()
 		}
-		if p.atWords("TYPE") {
+		sawType := p.atWords("TYPE")
+		if sawType {
 			p.advance()
+		}
+		// Postgres and its family require the word: `ALTER COLUMN b RESTART`
+		// names no type, and the reference gives the statement up rather than
+		// reading RESTART as one (ALTER_COLUMN_TYPE_REQUIRES_KEYWORD).
+		if !sawType && alterColumnTypeRequiresKeyword(p.dialect) {
+			return nil, errAlterGiveUp
 		}
 		kind, err := p.parseDataType()
 		if err != nil {
@@ -9510,3 +9552,17 @@ func (p *parser) atReservedConstraintKind() bool {
 	}
 	return false
 }
+
+// alterColumnTypeRequiresKeyword reports whether an ALTER COLUMN must say TYPE
+// before naming the new type -- Postgres and the dialects that inherit it.
+func alterColumnTypeRequiresKeyword(dialect string) bool {
+	switch dialect {
+	case "postgres", "redshift", "materialize", "risingwave":
+		return true
+	}
+	return false
+}
+
+// errAlterGiveUp reports an ALTER action the reference itself declines to
+// read, which turns the statement into a Command of its whole text.
+var errAlterGiveUp = errors.New("sqlglot-go: alter give-up")

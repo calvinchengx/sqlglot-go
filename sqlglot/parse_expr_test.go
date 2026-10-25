@@ -3168,9 +3168,9 @@ func TestInsertAndDrop(t *testing.T) {
 			"INSERT INTO x (y) OUTPUT x.a, x.b INTO l SELECT * FROM z"},
 		// Postgres names the target again so ON CONFLICT can refer to it.
 		{"an aliased target", "postgres",
-			"INSERT INTO newtable AS t(a, b, c) VALUES (1, 2, 3) " +
+			"INSERT INTO newtable AS t (a, b, c) VALUES (1, 2, 3) " +
 				"ON CONFLICT(c) DO UPDATE SET a = t.a + 1 WHERE t.a < 1",
-			"INSERT INTO newtable AS t(a, b, c) VALUES (1, 2, 3) " +
+			"INSERT INTO newtable AS t (a, b, c) VALUES (1, 2, 3) " +
 				"ON CONFLICT(c) DO UPDATE SET a = t.a + 1 WHERE t.a < 1"},
 		{"a drop", "", "DROP TABLE t", "DROP TABLE t"},
 		{"a drop if exists", "", "DROP TABLE IF EXISTS t", "DROP TABLE IF EXISTS t"},

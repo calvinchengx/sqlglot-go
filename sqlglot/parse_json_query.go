@@ -174,9 +174,14 @@ func (p *parser) parseJSONValue() (*Expression, error) {
 	if err != nil {
 		return nil, err
 	}
-	path, err = p.jsonPathArgument(path)
-	if err != nil {
-		return nil, err
+	// Postgres keeps the path EXACTLY as written, a string literal like any
+	// other; every other dialect folds it into a JSONPath
+	// (Postgres.Parser.FUNCTIONS, _parse_json_value(json_path=False)).
+	if p.dialect != "postgres" {
+		path, err = p.jsonPathArgument(path)
+		if err != nil {
+			return nil, err
+		}
 	}
 	var returning any = false
 	if p.match(TokRETURNING) {
