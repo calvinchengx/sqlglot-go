@@ -1050,6 +1050,20 @@ func (g *generator) writeJoin(e *Expression) string {
 		}
 	}
 	words := []string{}
+	duckdbTypeJoin := false
+	// DuckDB names a MARK or SINGLE join -- and a RIGHT semi/anti one -- by
+	// its own words: `JOIN BY (TYPE MARK)`
+	// (DuckDBGenerator.join_sql).
+	if g.dialect == "duckdb" {
+		kind, _ := e.Args["kind"].(string)
+		side, _ := e.Args["side"].(string)
+		if kind == "MARK" || kind == "SINGLE" ||
+			(side == "RIGHT" && (kind == "SEMI" || kind == "ANTI")) {
+			joined := strings.Trim(strings.Join([]string{side, kind}, "_"), "_")
+			words = append(words, "JOIN", "BY", "(TYPE", joined+")")
+			duckdbTypeJoin = true
+		}
+	}
 	// The METHOD comes first: NATURAL says HOW the rows are matched, and the
 	// side and kind say which of them are kept. GLOBAL, where a dialect has
 	// it, stands between the method and the side (Generator.join_sql).
@@ -1059,9 +1073,11 @@ func (g *generator) writeJoin(e *Expression) string {
 	if s, ok := e.Args["global_"].(string); ok && s != "" {
 		words = append(words, "GLOBAL")
 	}
-	for _, key := range []string{"side", "kind"} {
-		if s, ok := e.Args[key].(string); ok && s != "" {
-			words = append(words, s)
+	if !duckdbTypeJoin {
+		for _, key := range []string{"side", "kind"} {
+			if s, ok := e.Args[key].(string); ok && s != "" {
+				words = append(words, s)
+			}
 		}
 	}
 	// A hint says how the engine should do the join. A dialect that names
@@ -1088,10 +1104,14 @@ func (g *generator) writeJoin(e *Expression) string {
 			return ", " + this
 		}
 	}
-	// STRAIGHT_JOIN carries its own JOIN and takes no second one.
-	if len(words) == 1 && words[0] == "STRAIGHT_JOIN" {
+	// STRAIGHT_JOIN carries its own JOIN and takes no second one, and the
+	// `JOIN BY (TYPE ...)` form already said JOIN.
+	switch {
+	case len(words) == 1 && words[0] == "STRAIGHT_JOIN":
 		words = append(words, this)
-	} else {
+	case len(words) > 0 && words[0] == "JOIN":
+		words = append(words, this)
+	default:
 		words = append(words, "JOIN", this)
 	}
 	// The nearest-neighbour clause stands between the table and its ON
@@ -3624,10 +3644,11 @@ func (g *generator) writeArray(e *Expression) string {
 	// (dialect.py, inline_array_unless_query).
 	if e.Args["value_constructor"] != true {
 		items, _ := e.Args["expressions"].([]*Expression)
-		for _, item := range items {
-			if holdsAQuery(item) {
-				return "ARRAY(" + g.list(e) + ")"
-			}
+		// Only a SINGLE query is written as ARRAY(...): with more elements
+		// the brackets are the array and the query is one of its values
+		// (dialect.py, inline_array_unless_query).
+		if len(items) == 1 && holdsAQuery(items[0]) {
+			return "ARRAY(" + g.list(e) + ")"
 		}
 	}
 	// Redshift is the one dialect that writes `ARRAY[...]` and `ARRAY(...)`
