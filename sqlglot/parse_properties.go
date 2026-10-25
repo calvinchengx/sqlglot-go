@@ -282,8 +282,14 @@ func (p *parser) parseTableProperties() ([]*Expression, error) {
 		// Properties may be written one after another with a comma between
 		// them -- `ENGINE=InnoDB, COMMENT='c' ROW_FORMAT=DYNAMIC` -- and the
 		// comma belongs to the list rather than to whatever follows it
-		// (Parser._parse_properties).
-		p.match(TokCOMMA)
+		// (Parser._parse_properties). A comment sitting on the comma belongs
+		// to the property it follows.
+		if p.match(TokCOMMA) && len(out) > 0 {
+			if comments := p.takeComments(); len(comments) > 0 {
+				last := out[len(out)-1]
+				last.Comments = append(last.Comments, comments...)
+			}
+		}
 	}
 }
 

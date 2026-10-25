@@ -8,21 +8,16 @@ import (
 )
 
 func TestDevDump(t *testing.T) {
-	q := "CAST(CAST(x AS DATETIMEOFFSET(6)) AT TIME ZONE 'Pacific Standard Time' AS DATETIME2(6))"
-	tr, err := sqlglot.ParseOne(q, "fabric")
+	tr, err := sqlglot.ParseOne("CREATE TABLE t (a INT) ENGINE=InnoDB, /* c */ ROW_FORMAT=DYNAMIC", "mysql")
 	if err != nil {
 		fmt.Println("ERR", err)
 		return
 	}
-	var walk func(e *sqlglot.Expression, d int)
-	walk = func(e *sqlglot.Expression, d int) {
-		fmt.Printf("%*s%s\n", d*2, "", e.Class)
-		for _, k := range e.Keys {
-			switch v := e.Args[k].(type) {
-			case *sqlglot.Expression:
-				walk(v, d+1)
-			}
+	for _, n := range tr.FindAll("Properties") {
+		items := n.Args["expressions"].([]*sqlglot.Expression)
+		for _, it := range items {
+			fmt.Printf("%s comments=%q\n", it.Class, it.Comments)
 		}
 	}
-	walk(tr, 0)
+	fmt.Println("create comments:", tr.Comments)
 }
