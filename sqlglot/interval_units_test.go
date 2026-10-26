@@ -308,14 +308,30 @@ func TestIntervalUnitsAndTruncate(t *testing.T) {
 	if written < 100 {
 		t.Errorf("only %d statements were written back", written)
 	}
-	for _, c := range [][2]string{
-		{"postgres", "SELECT INTERVAL 1 QUARTER"},
-		{"presto", "SELECT INTERVAL 1 WEEK"},
+	// A unit the dialect has no spelling for. PostgreSQL writes QUARTER as
+	// months, which this port does not do, so it is refused rather than
+	// written as something else.
+	if tree, err := ParseOne("SELECT INTERVAL 1 QUARTER", "postgres"); err == nil {
+		if out, err := Generate(tree, "postgres"); err == nil {
+			t.Errorf("[postgres] a QUARTER interval was written as %s", out)
+		}
+	}
+	// Presto writes a WEEK as days, and that rewrite is one the port does:
+	// a numeric amount is multiplied out, and one that is not a number keeps
+	// its own spelling (PrestoGenerator.interval_sql).
+	for _, c := range [][3]string{
+		{"presto", "SELECT INTERVAL 1 WEEK", "SELECT (1 * INTERVAL '7' DAY)"},
+		{"presto", "SELECT INTERVAL '1' WEEK", "SELECT (1 * INTERVAL '7' DAY)"},
+		{"presto", "SELECT INTERVAL x WEEK", "SELECT (x * INTERVAL '7' DAY)"},
 	} {
-		if tree, err := ParseOne(c[1], c[0]); err == nil {
-			if out, err := Generate(tree, c[0]); err == nil {
-				t.Errorf("[%s] %s was written as %s, which the reference writes differently", c[0], c[1], out)
-			}
+		tree, err := ParseOne(c[1], c[0])
+		if err != nil {
+			t.Errorf("[%s] ParseOne(%q): %v", c[0], c[1], err)
+			continue
+		}
+		out, err := Generate(tree, c[0])
+		if err != nil || out != c[2] {
+			t.Errorf("[%s] %q wrote %q (%v), want %q", c[0], c[1], out, err, c[2])
 		}
 	}
 	for _, d := range []string{"", "redshift", "materialize", "risingwave", "fabric"} {

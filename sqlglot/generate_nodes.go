@@ -2877,6 +2877,17 @@ func (g *generator) writePlaceholder(e *Expression) string {
 	// The name is a bare string in most dialects and an IDENTIFIER in
 	// PostgreSQL, whose `%(name)s` form the reference reads that way. Handling
 	// only the string dropped every PostgreSQL name and wrote `%s`.
+	//
+	// DuckDB is the one that keeps the identifier's QUOTES: `$"my var"` is a
+	// variable whose name holds a space, and writing the name bare would
+	// leave SQL it cannot read back (DuckDBGenerator.placeholder_sql).
+	if g.dialect == "duckdb" {
+		if ident, _ := e.Args["this"].(*Expression); ident != nil && ident.Class == "Identifier" {
+			if quoted, _ := ident.Args["quoted"].(bool); quoted {
+				return "$" + g.node(ident)
+			}
+		}
+	}
 	var name string
 	switch v := e.Args["this"].(type) {
 	case string:
@@ -3981,8 +3992,13 @@ func (g *generator) writeInterval(e *Expression) string {
 				return g.fail("an INTERVAL in QUARTERs, which this dialect writes as months")
 			}
 		case "WEEK":
+			// Presto has no WEEK interval: a shift by a whole number of
+			// weeks is written as days, and anything else keeps the unit it
+			// was written with (PrestoGenerator.interval_sql).
 			if isPrestoFamily(g.dialect) {
-				return g.fail("an INTERVAL in WEEKs, which this dialect writes as days")
+				if weeks, ok := g.weeksAsDays(e); ok {
+					return weeks
+				}
 			}
 		}
 	}
@@ -4026,6 +4042,24 @@ func (g *generator) writeInterval(e *Expression) string {
 		}
 	}
 	return "INTERVAL " + quantitySQL + " " + unitSQL
+}
+
+// weeksAsDays rewrites a WEEK interval the way Presto writes it: `INTERVAL
+// '2' WEEK` is `(2 * INTERVAL '7' DAY)`. A string amount that is not a number
+// keeps its own spelling, which is what the reference does with it too.
+func (g *generator) weeksAsDays(e *Expression) (string, bool) {
+	this, _ := e.Args["this"].(*Expression)
+	if this == nil {
+		return "", false
+	}
+	if !isStringLiteral(this) {
+		return "(" + g.node(this) + " * INTERVAL '7' DAY)", true
+	}
+	text, _ := this.Args["this"].(string)
+	if _, err := strconv.ParseFloat(text, 64); err != nil {
+		return "", false
+	}
+	return "(" + text + " * INTERVAL '7' DAY)", true
 }
 
 func (g *generator) writeIntervalSpan(e *Expression) string {
@@ -6873,11 +6907,49 @@ func (g *generator) writePrimaryKeyConstraint(e *Expression) string {
 	// is absent otherwise, which is not the same as false.
 	if desc, ok := e.Args["desc"].(bool); ok {
 		if desc {
-			return out + " DESC"
+			out += " DESC"
+		} else {
+			out += " ASC"
 		}
-		return out + " ASC"
 	}
+	// An index's own vocabulary may follow the key: `PRIMARY KEY INCLUDE (a)`
+	// carries a column alongside it rather than in it
+	// (Generator.primarykeycolumnconstraint_sql).
+	if params, _ := e.Args["include"].(*Expression); params != nil {
+		if written := g.writeIndexParameters(params); written != "" {
+			if !strings.HasPrefix(written, " ") {
+				out += " "
+			}
+			out += written
+		}
+	}
+	out += g.keyConstraintOptions(e)
 	return out
+}
+
+// keyConstraintOptions writes the words a key carries after it -- `ON DELETE
+// CASCADE` and the rest. The reference stores them as strings, and some
+// writers pass nodes; both spell the same.
+func (g *generator) keyConstraintOptions(e *Expression) string {
+	switch options := e.Args["options"].(type) {
+	case []string:
+		if len(options) == 0 {
+			return ""
+		}
+		return " " + strings.Join(options, " ")
+	case []*Expression:
+		parts := make([]string, 0, len(options))
+		for _, opt := range options {
+			if written := g.node(opt); written != "" {
+				parts = append(parts, written)
+			}
+		}
+		if len(parts) == 0 {
+			return ""
+		}
+		return " " + strings.Join(parts, " ")
+	}
+	return ""
 }
 
 // writeUniqueConstraint writes UNIQUE, over a column list when it has one.
@@ -6914,20 +6986,21 @@ func (g *generator) writeUniqueConstraint(e *Expression) string {
 	if indexType, ok := e.Args["index_type"].(string); ok && indexType != "" {
 		out += " USING " + indexType
 	}
-	// Index options follow the list, each one after the other: comment,
-	// visibility, key block size and the rest
-	// (Generator.indexconstraintoption_sql).
-	if options, _ := e.Args["options"].([]*Expression); len(options) > 0 {
-		for _, opt := range options {
-			if written := g.node(opt); written != "" {
-				out += " " + written
-			}
-		}
-	}
-	// SQLite names what happens when the rule is broken, last of all.
+	// SQLite names what happens when the rule is broken.
 	if onConflict := g.child(e, "on_conflict"); onConflict != "" {
 		out += " " + onConflict
 	}
+	// An index's own vocabulary may follow the list: `UNIQUE (a) INCLUDE (b)`
+	// (Generator.uniquecolumnconstraint_sql).
+	if params, _ := e.Args["include"].(*Expression); params != nil {
+		if written := g.writeIndexParameters(params); written != "" {
+			if !strings.HasPrefix(written, " ") {
+				out += " "
+			}
+			out += written
+		}
+	}
+	out += g.keyConstraintOptions(e)
 	return out
 }
 
@@ -7290,6 +7363,21 @@ func (g *generator) writeCollateConstraint(e *Expression) string {
 
 // writeAlter writes `ALTER TABLE [IF EXISTS] <name> <actions>`.
 func (g *generator) writeAlter(e *Expression) string {
+	// T-SQL renames a table with a stored procedure rather than with ALTER:
+	// `EXEC sp_rename 'a', 'b'`. The old name is the table written as SQL,
+	// quoted as a string; the new one is its bare name
+	// (TSQLGenerator.alter_sql).
+	if g.dialect == "tsql" || g.dialect == "fabric" {
+		if actions, _ := e.Args["actions"].([]*Expression); len(actions) == 1 &&
+			actions[0] != nil && actions[0].Class == "AlterRename" {
+			target, _ := actions[0].Args["this"].(*Expression)
+			if target == nil {
+				return g.fail("AlterRename with no target")
+			}
+			return "EXEC sp_rename " + g.stringLiteral(g.child(e, "this")) + ", " +
+				g.stringLiteral(target.Name())
+		}
+	}
 	kind, _ := e.Args["kind"].(string)
 	out := "ALTER " + kind + " "
 	if exists, _ := e.Args["exists"].(bool); exists {
@@ -8596,8 +8684,16 @@ func (g *generator) writeIndexParameters(params *Expression) string {
 		}
 		out += " WITH (" + strings.Join(settings, ", ") + ")"
 	}
+	// The space it is stored in. A CREATE INDEX says `TABLESPACE x` on its
+	// own, because the statement is already about an index; anything else --
+	// an EXCLUDE constraint, a key -- needs the whole phrase
+	// (Generator.indexparameters_sql).
 	if space, _ := params.Args["tablespace"].(*Expression); space != nil {
-		out += " USING INDEX TABLESPACE " + g.node(space)
+		prefix := " USING INDEX"
+		if params.Parent != nil && params.Parent.Class == "Index" {
+			prefix = ""
+		}
+		out += prefix + " TABLESPACE " + g.node(space)
 	}
 	// Where the index is partitioned, written between the storage and the
 	// rows it covers (Generator.indexparameters_sql).
@@ -10479,10 +10575,81 @@ func isBareDateTimeType(to *Expression) bool {
 // transform for it and reaches its function fallback, which writes the name
 // and then each present argument in that order (Generator.function_fallback_sql).
 func (g *generator) writeMakeInterval(e *Expression) string {
-	if g.dialect != "bigquery" {
-		return g.spell(e)
-	}
+	// The parts are written in the CLASS's own argument order whatever order
+	// they were written in: the reference's args dict is built in arg_types
+	// order, so even its insertion-order walk sees this one.
 	keys := []string{"year", "month", "week", "day", "hour", "minute", "second"}
+	if g.dialect != "bigquery" {
+		// The others either keep the call -- PostgreSQL, the only dialect
+		// where MAKE_INTERVAL exists -- or build an INTERVAL out of it: DuckDB
+		// and Snowflake write the parts inside ONE string, joined by a space
+		// and a comma respectively, and MySQL writes one INTERVAL per part
+		// (generator.py, no_make_interval_sql; MySQLGenerator.makeinterval_sql).
+		switch g.dialect {
+		case "duckdb", "snowflake":
+			sep := " "
+			if g.dialect == "snowflake" {
+				sep = ", "
+			}
+			parts := make([]string, 0, len(keys))
+			for _, key := range keys {
+				value, _ := e.Args[key].(*Expression)
+				if value != nil && value.Class == "Kwarg" {
+					value, _ = value.Args["expression"].(*Expression)
+				}
+				if value == nil {
+					continue
+				}
+				text := g.node(value)
+				if isStringLiteral(value) {
+					text, _ = value.Args["this"].(string)
+				}
+				parts = append(parts, text+" "+key)
+			}
+			return "INTERVAL " + g.stringLiteral(strings.Join(parts, sep))
+		case "mysql":
+			parts := make([]string, 0, len(keys))
+			for _, key := range keys {
+				value, _ := e.Args[key].(*Expression)
+				if value == nil {
+					continue
+				}
+				unit := key
+				if value.Class == "Kwarg" {
+					if name := childOf(value, "this"); name != nil {
+						if mapped, ok := makeIntervalUnits[strings.ToLower(name.Name())]; ok {
+							unit = mapped
+						}
+					}
+					value, _ = value.Args["expression"].(*Expression)
+				}
+				if value == nil {
+					continue
+				}
+				parts = append(parts, "INTERVAL "+g.node(value)+" "+strings.ToUpper(unit))
+			}
+			if len(parts) == 0 {
+				return g.spell(e)
+			}
+			sep := " + "
+			if parent := e.Parent; parent != nil && parent.Class == "Sub" {
+				if inner, _ := parent.Args["expression"].(*Expression); inner == e {
+					sep = " - "
+				}
+			}
+			return strings.Join(parts, sep)
+		}
+		// Everything else keeps the CALL, with each present argument in the
+		// node's own order: that is the reference's function fallback, which
+		// PostgreSQL reaches for MAKE_INTERVAL (Generator.function_fallback_sql).
+		args := make([]string, 0, len(keys))
+		for _, key := range keys {
+			if arg, _ := e.Args[key].(*Expression); arg != nil {
+				args = append(args, g.node(arg))
+			}
+		}
+		return "MAKE_INTERVAL(" + strings.Join(args, ", ") + ")"
+	}
 	args := make([]string, 0, len(keys))
 	for _, key := range keys {
 		if arg, _ := e.Args[key].(*Expression); arg != nil {
@@ -10703,6 +10870,12 @@ func (g *generator) writeTableSample(e *Expression) string {
 	return out
 }
 
+// stringLiteral writes text as a string literal through the dialect's own
+// writer, so a quote inside it is escaped rather than ending the literal.
+func (g *generator) stringLiteral(text string) string {
+	return g.node(New("Literal", Arg{"this", text}, Arg{"is_string", true}))
+}
+
 // writeExasolTrunc writes `DATE_TRUNC('<unit>', <value>)`, where the value is
 // written WITHOUT a cast around it and a string value becomes `DATE '...'` or
 // `TIMESTAMP '...'` (ExasolGenerator._trunc_sql).
@@ -10718,7 +10891,11 @@ func (g *generator) writeExasolTrunc(e *Expression, kind string) string {
 			if kind == "TIMESTAMP" {
 				text = strings.ReplaceAll(text, "T", " ")
 			}
-			value = kind + " '" + text + "'"
+			// A string is written as a literal rather than between two
+			// quotes of our own, so a quote INSIDE it is escaped: the
+			// reference escapes the text before quoting it
+			// (ExasolGenerator._trunc_sql).
+			value = kind + " " + g.stringLiteral(text)
 		} else {
 			value = g.node(node)
 		}
@@ -10727,7 +10904,7 @@ func (g *generator) writeExasolTrunc(e *Expression, kind string) string {
 	if u, _ := e.Args["unit"].(*Expression); u != nil {
 		unit = u.Name()
 	}
-	return "DATE_TRUNC('" + unit + "', " + value + ")"
+	return "DATE_TRUNC(" + g.stringLiteral(unit) + ", " + value + ")"
 }
 
 // writeDateAdd, writeDateSub, writeDatetimeAdd and writeDatetimeSub write a
@@ -10745,6 +10922,48 @@ func (g *generator) writeDateAdd(e *Expression) string {
 		return g.drillDateArith(e, "ADD")
 	}
 	return g.writeDateArith(e, "Date", 1)
+}
+
+// sqliteDateAdd writes SQLite's `DATE(x, '<modifier>')`. The amount and the
+// unit become ONE string, because that is the only shape the function reads:
+// `DATE(d, '3 DAY')`. A unit reaches that string only where the amount is not
+// a literal -- a literal carries its own text, so `DATE(d, '2020-01-01')`
+// stays as written -- and a non-literal amount with a unit is joined to it
+// with `||` instead, since the string would otherwise have to be built at
+// parse time (SQLiteGenerator.dateadd_sql).
+func (g *generator) sqliteDateAdd(this, amount, unit *Expression) string {
+	// An INTERVAL amount carries its own unit; unwrap it so the unit is not
+	// left inside the quoted modifier string.
+	if amount.Class == "Interval" {
+		if unit == nil {
+			unit, _ = amount.Args["unit"].(*Expression)
+		}
+		amount, _ = amount.Args["this"].(*Expression)
+	}
+	amount = unnest(amount)
+	if amount == nil {
+		return g.fail("a DATE_ADD with no amount")
+	}
+	unitName := ""
+	if unit != nil {
+		unitName = strings.ToUpper(unit.Name())
+	}
+	// A LITERAL carries its own text, so it goes into the string as it stands
+	// -- `DATE(d, '1 DAY')` -- whatever kind of literal it is. Anything else
+	// is joined to the unit with `||` instead.
+	negatedNumber := amount.Class == "Neg" && isNumberLiteral(childOf(amount, "this"))
+	if unitName != "" && amount.Class != "Literal" && !negatedNumber {
+		return "DATE(" + g.node(this) + ", (" + g.node(amount) + ") || " +
+			g.stringLiteral(" "+unitName) + ")"
+	}
+	text := g.node(amount)
+	if isStringLiteral(amount) {
+		text, _ = amount.Args["this"].(string)
+	}
+	if unitName != "" {
+		text += " " + unitName
+	}
+	return "DATE(" + g.node(this) + ", " + g.stringLiteral(text) + ")"
 }
 
 // drillDateArith writes Drill's DATE_ADD / DATE_SUB over an interval: the
@@ -10998,6 +11217,13 @@ func (g *generator) writeDateArith(e *Expression, domain string, sign int) strin
 			return g.dateArithUnitFirst(this, amount, unit, "TIMESTAMPADD", nil)
 		}
 		return g.dateArithTimestampSub(this, amount, unit)
+	case "sqlite":
+		// SQLite has no DATE_ADD: a shift is DATE(x, '<modifier>'), the
+		// amount and the unit in ONE string (SQLiteGenerator.dateadd_sql).
+		if domain == "Date" && sign > 0 {
+			return g.sqliteDateAdd(this, amount, unit)
+		}
+		return g.dateArithGenericFallback(name, this, amount, unit, false)
 	case "tsql":
 		if domain == "Date" && sign > 0 {
 			return g.dateArithUnitFirst(this, amount, unit, "DATEADD", New("Var", Arg{"this", "DAY"}))

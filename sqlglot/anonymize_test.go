@@ -42,6 +42,11 @@ func TestAnonymizeEdgeCases(t *testing.T) {
 		// shape and vice versa.
 		{"SELECT 123, '123'", "SELECT 100, 'aab'", ""},
 		{"SELECT a -- secret comment\nFROM t", "SELECT a -- ...... .......\nFROM b", ""},
+		// A number written with an EXPONENT keeps the sign and the shape of
+		// the exponent, and its own digits are aliased like any other.
+		{"SELECT 1.5e-3", "SELECT 1.0e-1", ""},
+		{"SELECT 2E+5, 123", "SELECT 1E+1, 101", ""},
+		{"SELECT 1e10", "SELECT 1e10", ""},
 	} {
 		got := Anonymize(tc.sql, tc.dialect)
 		if got != tc.want {

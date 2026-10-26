@@ -478,7 +478,10 @@ func TestJSONObjectAndFetchRefusals(t *testing.T) {
 		{"a key with no value", "", "JSON_OBJECT('k')"},
 		{"a pair list that never closes", "", "JSON_OBJECT('k': 1"},
 		{"a star that never closes", "", "JSON_OBJECT(*"},
-		{"WITH UNIQUE without KEYS", "", "JSON_OBJECT('k': 1 WITH UNIQUE)"},
+		// The KEYS words END the call: a pair after them is not part of it.
+		// (`WITH UNIQUE` without KEYS is not a refusal -- the reference reads
+		// it and writes the word back.)
+		{"a pair after the KEYS words", "", "JSON_OBJECT('k': 1 WITHOUT UNIQUE KEYS, 'j': 2)"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			if _, err := ParseOne(tc.sql, tc.dialect); err == nil {
@@ -3410,13 +3413,13 @@ func TestAlterTable(t *testing.T) {
 		})
 	}
 	// T-SQL has no ALTER ... RENAME at all: the reference calls a stored
-	// procedure instead, which is a transformation this port does not do.
+	// procedure instead, and the old name is the table written as SQL.
 	e, err := ParseOne("ALTER TABLE t RENAME TO u", "tsql")
 	if err != nil {
 		t.Fatalf("ParseOne: %v", err)
 	}
-	if got, err := Generate(e, "tsql"); err == nil {
-		t.Errorf("wrote %q; T-SQL calls sp_rename", got)
+	if got, err := Generate(e, "tsql"); err != nil || got != "EXEC sp_rename 't', 'u'" {
+		t.Errorf("ALTER TABLE ... RENAME wrote %q (%v); T-SQL calls sp_rename", got, err)
 	}
 	idx, err := ParseOne("ALTER INDEX i RENAME TO j", "postgres")
 	if err != nil {
@@ -4404,7 +4407,9 @@ func TestAQuotedColonParameter(t *testing.T) {
 func TestAQuotedAtOrDollarParameter(t *testing.T) {
 	for _, tc := range []struct{ dialect, sql, want string }{
 		{"postgres", `SELECT @"x"`, `SELECT $"x"`},
-		{"duckdb", `SELECT $"foo"`, "SELECT $foo"},
+		// DuckDB keeps the QUOTES: `$"foo"` is a variable whose name was
+		// written quoted, and writing it bare would lose that.
+		{"duckdb", `SELECT $"foo"`, `SELECT $"foo"`},
 	} {
 		e, err := ParseOne(tc.sql, tc.dialect)
 		if err != nil {

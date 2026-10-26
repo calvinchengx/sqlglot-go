@@ -1995,6 +1995,22 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 				p.advance()
 				kind.Set("desc", true)
 			}
+			// PostgreSQL reads an index's own vocabulary after the key and
+			// records it even where the statement wrote none: every
+			// column-level PRIMARY KEY there carries an IndexParameters
+			// (PostgresParser._parse_primary_key).
+			if isPostgresFamily(p.dialect) {
+				include, err := p.parseIndexParameters()
+				if err != nil {
+					return nil, err
+				}
+				kind.Set("include", include)
+				opts, err := p.parseKeyConstraintOptions()
+				if err != nil {
+					return nil, err
+				}
+				kind.Set("options", opts)
+			}
 			// T-SQL says HOW the index behind the key is built, and the
 			// reference records that as a SECOND constraint beside this one
 			// rather than as anything on it.
@@ -2036,6 +2052,22 @@ func (p *parser) parseColumnConstraints() ([]*Expression, error) {
 				p.advance()
 				p.advance()
 				nulls = true
+			}
+			// PostgreSQL's own reader replaces the base one: no index_type,
+			// no ON CONFLICT, but an IndexParameters it always records and
+			// the key's own words (PostgresParser._parse_unique).
+			if isPostgresFamily(p.dialect) {
+				include, err := p.parseIndexParameters()
+				if err != nil {
+					return nil, err
+				}
+				opts, err := p.parseKeyConstraintOptions()
+				if err != nil {
+					return nil, err
+				}
+				kind = New("UniqueColumnConstraint",
+					Arg{"nulls", nulls}, Arg{"include", include}, Arg{"options", opts})
+				break
 			}
 			kind = New("UniqueColumnConstraint",
 				Arg{"nulls", nulls}, Arg{"index_type", false})
@@ -3194,17 +3226,6 @@ func (p *parser) parseAlterAction() (*Expression, error) {
 		rename := p.atWords("CHANGE")
 		p.advance()
 		return p.parseMySQLModifyColumn(rename)
-	case isMySQLFamily(p.dialect) && p.atWords("COMMENT"):
-		// MySQL's `ALTER TABLE t COMMENT [=] 'text'` restates the table
-		// comment (MySQLParser.ALTER_PARSERS).
-		p.advance()
-		p.match(TokEQ)
-		p.match(TokALIAS)
-		field, err := p.parseMySQLUnquotedField()
-		if err != nil {
-			return nil, err
-		}
-		return New("SchemaCommentProperty", Arg{"this", field}), nil
 	}
 	return nil, p.unsupported("an ALTER TABLE action this port does not read")
 }
@@ -3575,15 +3596,22 @@ func (p *parser) parseKeyConstraintOptions() ([]string, error) {
 			break
 		}
 		word := strings.ToUpper(c.Text)
+		mark := p.index
 		p.advance()
 		if len(follows) > 0 {
 			next := p.curr()
-			if next == nil {
-				return nil, p.unsupported(word + " with nothing after it")
+			second := ""
+			if next != nil {
+				second = strings.ToUpper(next.Text)
 			}
-			second := strings.ToUpper(next.Text)
-			if !slices.Contains(follows, second) {
-				return nil, p.unsupported(word + " " + second)
+			if next == nil || !slices.Contains(follows, second) {
+				// The word is not an option after all, and what follows it
+				// belongs to somebody else: `UNIQUE NOT NULL` leaves the NOT
+				// NULL to the column-constraint reader. The reference RETREATS
+				// here rather than failing (Parser._parse_var_from_options,
+				// raise_unmatched=False).
+				p.index = mark
+				break
 			}
 			p.advance()
 			word += " " + second
@@ -3943,6 +3971,11 @@ func (p *parser) parseTableConstraintKind() (*Expression, error) {
 		}
 		return node, nil
 	case p.atWords("UNIQUE"):
+		// PostgreSQL replaces the whole reader, so it comes first: its own
+		// override reads no KEY/INDEX word and no ON CONFLICT.
+		if isPostgresFamily(p.dialect) {
+			return p.parsePostgresUnique()
+		}
 		// SQLite leaves UNIQUE bare where a column constraint follows it
 		// (SQLiteParser._parse_unique).
 		if p.dialect == "sqlite" && p.next() != nil && isConstraintWord(p.next().Text) {
@@ -5206,6 +5239,64 @@ func (p *parser) parseIndexRest(replace, unique, temporary bool, kind string, cl
 	), nil
 }
 
+// isPostgresFamily are the dialects whose parser is PostgreSQL's: materialize,
+// risingwave and redshift all subclass it, so all four read a key constraint
+// the same way.
+func isPostgresFamily(dialect string) bool {
+	switch dialect {
+	case "postgres", "materialize", "risingwave", "redshift":
+		return true
+	}
+	return false
+}
+
+// parsePostgresUnique is PostgresParser._parse_unique, which replaces the
+// base reader rather than extending it: the NULLS flag, an optional name and
+// the column list, the index's own vocabulary and the key's words. There is
+// no KEY/INDEX word to match, no index_type and no ON CONFLICT.
+func (p *parser) parsePostgresUnique() (*Expression, error) {
+	p.advance() // UNIQUE
+	nulls := false
+	if p.atWords("NULLS", "NOT", "DISTINCT") {
+		p.advance()
+		p.advance()
+		p.advance()
+		nulls = true
+	}
+	// A key may be NAMED, and the name stands inside the schema the columns
+	// make -- `UNIQUE u (a)` carries `u` as the Schema's own `this`.
+	var name *Expression
+	if !p.at(TokL_PAREN) {
+		read, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		name = read
+	}
+	var this *Expression
+	if p.at(TokL_PAREN) {
+		columns, err := p.parseInsertColumns()
+		if err != nil {
+			return nil, err
+		}
+		this = New("Schema", Arg{"expressions", columns})
+		if name != nil {
+			this.Set("this", name)
+		}
+	}
+	include, err := p.parseIndexParameters()
+	if err != nil {
+		return nil, err
+	}
+	opts, err := p.parseKeyConstraintOptions()
+	if err != nil {
+		return nil, err
+	}
+	return New("UniqueColumnConstraint",
+		Arg{"nulls", nulls}, Arg{"this", this},
+		Arg{"include", include}, Arg{"options", opts}), nil
+}
+
 // parseIndexParameters reads everything that says HOW an index is built, in
 // the one order the reference reads them: the method, the columns, what is
 // carried alongside them, where they are stored, which rows they cover, and
@@ -5224,7 +5315,10 @@ func (p *parser) parseIndexParameters() (*Expression, error) {
 	var storage any = false
 	// `USING gin(...)` names the method the index is built with. The word
 	// after it is kept as a bare Var whatever it is.
-	if p.at(TokUSING) {
+	// `USING INDEX TABLESPACE x` is the STORAGE, not a method named INDEX:
+	// the reference looks ahead for those three words before it reads a
+	// method at all (Parser._parse_index_params).
+	if p.at(TokUSING) && !p.atWords("USING", "INDEX", "TABLESPACE") {
 		p.advance()
 		method := p.curr()
 		if method == nil {
@@ -5280,16 +5374,26 @@ func (p *parser) parseIndexParameters() (*Expression, error) {
 		// match itself, and an absent key is a different tree.
 		storage = read
 	}
+	// The space an index is stored in, written either as `USING INDEX
+	// TABLESPACE x` or, inside an EXCLUDE constraint, as `TABLESPACE x`. The
+	// name is an IDENTIFIER -- it may be quoted -- where it used to be read
+	// as a bare Var (Parser._parse_index_params).
 	if p.atWords("USING", "INDEX", "TABLESPACE") {
 		p.advance()
 		p.advance()
 		p.advance()
-		space := p.curr()
-		if space == nil {
-			return nil, p.unsupported("TABLESPACE without a name")
+		space, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
 		}
+		tablespace = space
+	} else if p.atWords("TABLESPACE") {
 		p.advance()
-		tablespace = New("Var", Arg{"this", space.Text})
+		space, err := p.parseIdentifier()
+		if err != nil {
+			return nil, err
+		}
+		tablespace = space
 	}
 	// A PARTIAL index covers only the rows a condition picks out.
 	if p.at(TokWHERE) {
@@ -9367,6 +9471,19 @@ func (p *parser) parseTriggerRest(replace bool, start Token, constraintTrigger b
 	if !p.match(TokEXECUTE) {
 		// The reference reads no trigger without an EXECUTE, and keeps the
 		// statement as text instead: MySQL's `BEGIN ... END` body is one.
+		return p.parseAsCommand(start), nil
+	}
+	if p.dialect == "duckdb" {
+		// DuckDB reads what follows as a STATEMENT rather than as a call, and
+		// keeps the whole trigger as text when it is not one -- `EXECUTE
+		// FUNCTION f()` is not, so it comes back exactly as it was written
+		// (DuckDBParser._parse_trigger_execute).
+		mark := p.index
+		body, berr := p.parseStatement()
+		if berr == nil && p.curr() == nil {
+			return New("TriggerExecute", Arg{"this", body}), nil
+		}
+		p.index = mark
 		return p.parseAsCommand(start), nil
 	}
 	if !p.atWords("FUNCTION") && !p.atWords("PROCEDURE") {

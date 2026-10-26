@@ -820,11 +820,19 @@ func (p *parser) parseJSONObject() (*Expression, error) {
 		p.advance()
 		args = append(args, Arg{"null_handling", word})
 	}
-	if p.atWords("WITH", "UNIQUE", "KEYS") {
+	// `WITH UNIQUE KEYS` and `WITHOUT UNIQUE KEYS` say whether a repeated key
+	// is an error, and the reference records the answer as TRUE or FALSE. The
+	// word KEYS is optional in both (Parser._parse_json_object).
+	if p.atWords("WITH", "UNIQUE") {
 		p.advance()
 		p.advance()
-		p.advance()
+		p.matchUnquotedWord("KEYS")
 		args = append(args, Arg{"unique_keys", true})
+	} else if p.atWords("WITHOUT", "UNIQUE") {
+		p.advance()
+		p.advance()
+		p.matchUnquotedWord("KEYS")
+		args = append(args, Arg{"unique_keys", false})
 	}
 	// Both are always ON the node, false where RETURNING never appeared.
 	var returnType any = false

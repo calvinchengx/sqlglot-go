@@ -3,8 +3,10 @@ package sqlglot
 import "testing"
 
 // A trigger with nothing to EXECUTE is kept as text, as the reference keeps
-// it (MySQL's BEGIN ... END bodies). DuckDB writes only a trigger's name.
-// A semicolon ends the statement, so the text after it is refused.
+// it (MySQL's BEGIN ... END bodies). DuckDB reads the body now, so its
+// EXECUTE FUNCTION form is written back in full rather than as the bare name
+// it used to write. A semicolon ends the statement, so the text after it is
+// refused.
 func TestTriggerCommands(t *testing.T) {
 	written := 0
 	for _, c := range [][3]string{
@@ -37,7 +39,7 @@ func TestTriggerCommands(t *testing.T) {
 		{"duckdb", "CREATE TRIGGER t BEFORE INSERT ON u", "CREATE TRIGGER t BEFORE INSERT ON u"},
 		{"duckdb", "CREATE OR REPLACE TRIGGER t BEFORE INSERT ON u FOR EACH ROW BEGIN SELECT 1 END", "CREATE OR REPLACE TRIGGER t BEFORE INSERT ON u FOR EACH ROW BEGIN SELECT 1 END"},
 		{"duckdb", "CREATE TRIGGER t AFTER INSERT ON u FOR EACH ROW WHEN (a > 1) BEGIN SELECT 1 END", "CREATE TRIGGER t AFTER INSERT ON u FOR EACH ROW WHEN (a > 1) BEGIN SELECT 1 END"},
-		{"duckdb", "CREATE TRIGGER t INSTEAD OF INSERT ON u FOR EACH ROW EXECUTE FUNCTION f()", "CREATE TRIGGER t"},
+		{"duckdb", "CREATE TRIGGER t INSTEAD OF INSERT ON u FOR EACH ROW EXECUTE FUNCTION f()", "CREATE TRIGGER t INSTEAD OF INSERT ON u FOR EACH ROW EXECUTE FUNCTION f()"},
 		{"duckdb", "CREATE CONSTRAINT TRIGGER t AFTER INSERT ON u FOR EACH ROW BEGIN SELECT 1 END", "CREATE CONSTRAINT TRIGGER t AFTER INSERT ON u FOR EACH ROW BEGIN SELECT 1 END"},
 		{"duckdb", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW FOLLOWS x SET a = 1", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW FOLLOWS x SET a = 1"},
 		{"duckdb", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW -- c\nBEGIN SELECT 1 END", "CREATE TRIGGER t BEFORE INSERT ON u FOR EACH ROW -- c\nBEGIN SELECT 1 END"},

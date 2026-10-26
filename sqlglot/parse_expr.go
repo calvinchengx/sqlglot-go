@@ -4432,6 +4432,14 @@ func (p *parser) parseFunction() (builtFn *Expression, err error) {
 	}
 	parenComments := p.takeComments()
 	defer func() { putComments(builtFn, parenComments) }()
+	// A `/* sqlglot.anonymous */` comment straight after a call makes the
+	// reference build an ANONYMOUS node even for a name it knows. It is an
+	// escape hatch its own tests use to pin the anonymous shape of a call
+	// whose class would otherwise be built (Parser._parse_function,
+	// SQLGLOT_ANONYMOUS).
+	if known && hasAnonymousComment(parenComments) {
+		return New("Anonymous", Arg{"this", name}, Arg{"expressions", args}), nil
+	}
 	// A named argument of one of those calls is a FIELD, not an alias: the
 	// reference turns each key-value argument into a PropertyEQ before the
 	// builder sees it, so `STRUCT(1 AS a)` and `{'a': 1}` produce the same
@@ -5157,6 +5165,12 @@ func (p *parser) buildFunction(name string, spec FuncSpec, args []*Expression) *
 		case "TRUNC":
 			return p.truncOrDateTrunc(args)
 		}
+	}
+	// PostgreSQL assigns a NAMED MAKE_INTERVAL argument to the unit it names,
+	// where the spec's own list fills the slots in order: `MAKE_INTERVAL(days
+	// => 3)` is a DAY, not a year (PostgresParser._build_make_interval).
+	if isPostgresFamily(p.dialect) && name == "MAKE_INTERVAL" {
+		return makeIntervalNamed(args)
 	}
 	node := p.buildFromSpec(name, spec.Class, spec.Args, args)
 	if spec.Annot != nil {
@@ -6562,6 +6576,14 @@ func (p *parser) parseParameter() *Expression {
 	case "Placeholder":
 		p.advance()
 		p.advance()
+		// A name written in QUOTES stays an Identifier, so the quotes
+		// survive being written back: DuckDB's `$"my var"` is a variable
+		// whose name holds a space, and a bare name could not carry it
+		// (DuckDBParser.PLACEHOLDER_PARSERS).
+		if isQuotedName(n) {
+			return New("Placeholder", Arg{"this",
+				New("Identifier", Arg{"this", n.Text}, Arg{"quoted", true})})
+		}
 		return New("Placeholder", Arg{"this", n.Text})
 	case "Parameter":
 		p.advance()
@@ -6576,6 +6598,22 @@ func (p *parser) parseParameter() *Expression {
 		return New("Parameter", Arg{"this", parameterName(n)})
 	}
 	return nil
+}
+
+// anonymousComment is the marker the reference reads after a call to force an
+// anonymous parse.
+const anonymousComment = "sqlglot.anonymous"
+
+// hasAnonymousComment reports whether one of the comments starts with the
+// marker, the way the reference checks it: leading whitespace ignored, and a
+// prefix rather than a whole match.
+func hasAnonymousComment(comments []string) bool {
+	for _, comment := range comments {
+		if strings.HasPrefix(strings.TrimLeft(comment, " \t"), anonymousComment) {
+			return true
+		}
+	}
+	return false
 }
 
 // parameterName is what a parameter's name is BUILT as: a numeric one is a

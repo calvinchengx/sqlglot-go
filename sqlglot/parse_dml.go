@@ -157,7 +157,11 @@ func (p *parser) parseAssignments() ([]*Expression, error) {
 		if err != nil {
 			return nil, err
 		}
-		if e.Class != "EQ" {
+		if e.Class != "EQ" && e.Class != "Star" {
+			// `UPDATE SET *` names every column, and the reference keeps the
+			// star as the one item rather than as an assignment: its
+			// `_parse_update_assignment` returns whatever it read when no `=`
+			// follows it.
 			return nil, p.unsupported("a SET item that is not an assignment")
 		}
 		out = append(out, e)
