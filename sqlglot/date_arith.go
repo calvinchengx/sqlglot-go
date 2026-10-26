@@ -31,10 +31,11 @@ func extractDateValue(e *Expression) (t time.Time, typeName string, ok bool) {
 	case "Cast":
 		typeName = typeKind(childOf(e, "to"))
 		switch typeName {
-		// DATETIME2 is T-SQL's own higher-precision DATETIME; the fixture
-		// needs exactly this one of the reference's wider TEMPORAL_TYPES
-		// set, so it is the one added rather than the whole set guessed at.
-		case "DATE", "DATETIME", "DATETIME2", "TIMESTAMP":
+		// DATETIME2 is T-SQL's own higher-precision DATETIME, and TIMESTAMPTZ
+		// is what BigQuery's TIMESTAMP parses to; the fixture needs exactly
+		// these of the reference's wider TEMPORAL_TYPES set, so they are the
+		// ones added rather than the whole set guessed at.
+		case "DATE", "DATETIME", "DATETIME2", "TIMESTAMP", "TIMESTAMPTZ":
 		default:
 			return time.Time{}, "", false
 		}
@@ -333,6 +334,13 @@ func foldDateAddFamily(e *Expression) *Expression {
 func foldDateResult(date time.Time, typeName string, unit string, amount int) *Expression {
 	result, ok := addCalendarInterval(date, unit, amount)
 	if !ok {
+		return nil
+	}
+	// The reference's arithmetic is Python's `datetime`, whose year runs from
+	// 1 to 9999, so a result outside that range is not a date it can write:
+	// `CAST('2020-01-01' AS DATE) - INTERVAL '2500' YEAR` is left as written
+	// rather than folded into a year Go can represent and Python cannot.
+	if result.Year() < 1 || result.Year() > 9999 {
 		return nil
 	}
 	return dateValueLiteral(result, typeName)

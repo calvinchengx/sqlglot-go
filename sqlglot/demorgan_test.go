@@ -16,8 +16,11 @@ func TestRewriteBetweenAndDeMorganEndToEnd(t *testing.T) {
 		{"the rewritten range joins an existing AND",
 			"SELECT * WHERE x BETWEEN 0 AND 5 AND y = 1",
 			"SELECT * WHERE x <= 5 AND x >= 0 AND y = 1"},
-		{"a 3-operand chain contradicts across operands the direct pair never compares",
-			"SELECT * WHERE x > 1 AND x < 2 AND x > 3", "SELECT * WHERE FALSE"},
+		// The chain is unsatisfiable, but x may be NULL, where the whole
+		// conjunction is NULL rather than FALSE -- so the reference keeps
+		// the surviving bounds and only orders them.
+		{"a 3-operand chain keeps the bounds its contradiction leaves",
+			"SELECT * WHERE x > 1 AND x < 2 AND x > 3", "SELECT * WHERE x < 2 AND x > 3"},
 		{"BETWEEN joins a tighter existing bound",
 			"SELECT * WHERE x BETWEEN 0 AND 5 AND x > 3", "SELECT * WHERE x <= 5 AND x > 3"},
 		{"a bare comparison, a flipped comparison, and BETWEEN all compare against each other",

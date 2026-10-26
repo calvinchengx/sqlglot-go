@@ -48,9 +48,16 @@ func TestSimplifyShapes(t *testing.T) {
 		{"and subtracts", "SELECT -1 - 1", "", "SELECT -2"},
 		{"and multiplies", "SELECT -2 * 3", "", "SELECT -6"},
 		{"a negative compares", "SELECT 1 WHERE -1 < 0", "", "SELECT 1"},
-		// Two comparisons of the same value decide each other.
-		{"contradictory range", "SELECT 1 WHERE x > 1 AND x < 1", "", "SELECT 1 WHERE FALSE"},
+		// Two comparisons of the same value decide each other -- but a
+		// contradiction over a COLUMN is not FALSE: the column may be NULL,
+		// where the conjunction is NULL too, so the reference keeps the
+		// predicate and only orders it (simplify.py, _simplify_comparison).
+		{"contradictory range", "SELECT 1 WHERE x > 1 AND x < 1", "",
+			"SELECT 1 WHERE x < 1 AND x > 1"},
 		{"equality against a range", "SELECT 1 WHERE x = 1 AND x >= 2", "",
+			"SELECT 1 WHERE x = 1 AND x >= 2"},
+		// Over constants there is no NULL to worry about, so it IS FALSE.
+		{"a contradiction over constants", "SELECT 1 WHERE 2 > 1 AND 2 < 1", "",
 			"SELECT 1 WHERE FALSE"},
 		{"the tighter bound wins under AND", "SELECT 1 WHERE x < 1 AND x < 2", "",
 			"SELECT 1 WHERE x < 1"},
@@ -329,12 +336,13 @@ func TestSimplifyAlwaysTrueJoin(t *testing.T) {
 			"SELECT x FROM y CROSS JOIN z"},
 		{"an explicit INNER becomes CROSS", "SELECT x FROM y INNER JOIN z ON TRUE", "",
 			"SELECT x FROM y CROSS JOIN z"},
-		{"RIGHT becomes CROSS", "SELECT x FROM y RIGHT JOIN z ON TRUE", "",
-			"SELECT x FROM y CROSS JOIN z"},
-		{"RIGHT OUTER becomes CROSS", "SELECT x FROM y RIGHT OUTER JOIN z ON TRUE", "",
-			"SELECT x FROM y CROSS JOIN z"},
-		// LEFT keeps rows that fail to match, which CROSS does not, so it is
-		// not in the set the reference rewrites.
+		// An OUTER join keeps the rows of its outer side and pads them with
+		// NULLs, which CROSS does not: `y RIGHT JOIN z ON TRUE` returns z's
+		// rows when y is empty. Only an INNER join is rewritten.
+		{"RIGHT is left alone", "SELECT x FROM y RIGHT JOIN z ON TRUE", "",
+			"SELECT x FROM y RIGHT JOIN z ON TRUE"},
+		{"RIGHT OUTER is left alone", "SELECT x FROM y RIGHT OUTER JOIN z ON TRUE", "",
+			"SELECT x FROM y RIGHT OUTER JOIN z ON TRUE"},
 		{"LEFT is left alone", "SELECT x FROM y LEFT JOIN z ON TRUE", "",
 			"SELECT x FROM y LEFT JOIN z ON TRUE"},
 		{"FULL is left alone", "SELECT x FROM y FULL JOIN z ON TRUE", "",

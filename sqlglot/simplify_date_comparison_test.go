@@ -23,9 +23,13 @@ func TestDateLiteralComparisonEndToEnd(t *testing.T) {
 			"SELECT * WHERE CAST('2023-01-01' AS DATE) < CAST('2023-01-02' AS DATE)", "SELECT *"},
 		{"LTE the other direction folds to FALSE",
 			"SELECT * WHERE CAST('2023-01-02' AS DATE) <= CAST('2023-01-01' AS DATE)", "SELECT * WHERE FALSE"},
-		{"a DATE and a DATETIME naming the same instant compare equal across the shared-operand rule",
+		// The two constants name the same instant, so the range is empty --
+		// but x may be NULL, where the conjunction is NULL rather than
+		// FALSE. The reference orders the pair and leaves the fold to a
+		// context that knows the column cannot be null.
+		{"a DATE and a DATETIME naming the same instant order against each other",
 			"SELECT * WHERE x > CAST('2023-01-01' AS DATE) AND x < CAST('2023-01-01' AS DATETIME)",
-			"SELECT * WHERE FALSE"},
+			"SELECT * WHERE x < CAST('2023-01-01' AS DATETIME) AND x > CAST('2023-01-01' AS DATE)"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			e, err := ParseOne(tc.sql, "")

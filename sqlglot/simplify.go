@@ -129,7 +129,15 @@ func simplifyNode(e, parent *Expression, dialect string) *Expression {
 		return rewriteBetween(out, parent)
 	}
 	out = simplifyConditionals(out, parent)
-	out = propagateConstants(out, parent)
+	// `propagate_constants` is deliberately NOT here. Its own comment says
+	// why it can be: "Substituting the constant is only an identity when the
+	// column can't be NULL: for a NULL x, `x = 1 AND x + 1 = 0` is NULL, not
+	// FALSE." The reference learns that from a schema through the annotator;
+	// this port has no schema, so every column it sees is nullable and the
+	// rule substitutes nothing. Carrying an unreachable rewriting pass would
+	// be worse than not having one -- `x = 5 AND y = x` is written back as
+	// `x = 5 AND x = y`, which is what the reference writes for the same
+	// input.
 	out = simplifyLiterals(out, parent)
 	out = simplifyCoalesce(out, parent, dialect)
 	out = simplifyConcat(out)
@@ -617,16 +625,58 @@ func moveDateAddAcross(e *Expression) *Expression {
 	if !ok || !isDateLiteral(right) {
 		return nil
 	}
-	column, _, _, _, ok := dateAddFamilyOf(left)
+	column, unit, amount, sub, ok := dateAddFamilyOf(left)
 	if !ok || isDateLiteral(column) {
 		return nil
 	}
 	interval := New("Interval",
 		Arg{"this", childOf(left, "expression").Copy()},
 		Arg{"unit", childOf(left, "unit").Copy()})
+	// Moving a CALENDAR interval across is only an identity where the move
+	// can be undone exactly; see isExactIntervalMove.
+	if !isExactIntervalMove(unit, amount, sub, right) {
+		return nil
+	}
 	return New(e.Class,
 		Arg{"this", column.Copy()},
 		Arg{"expression", New(op, Arg{"this", right.Copy()}, Arg{"expression", interval})})
+}
+
+// isExactIntervalMove is the reference's `_is_exact_interval_move`: moving an
+// interval across a comparison is only an identity when the move can be
+// undone exactly.
+//
+// Days and smaller units always can. Months, quarters and years CLAMP the
+// day, so `x + INTERVAL '2' MONTH = CAST('2024-02-29' AS DATE)` holds for the
+// 29th, 30th and 31st of December alike, and rewriting it as
+// `x = CAST('2023-12-29' AS DATE)` would keep one of the three. The test is
+// the reference's own: the moved value must map back onto the literal, and
+// the day after it must not -- clamping folds the last days of a longer
+// month onto the same date.
+func isExactIntervalMove(unit string, amount int, sub bool, literal *Expression) bool {
+	value, _, ok := extractDateValue(literal)
+	if !ok {
+		return false
+	}
+	if _, calendar := monthUnits[unit]; !calendar {
+		return true
+	}
+	if sub {
+		amount = -amount
+	}
+	moved, ok := addCalendarInterval(value, unit, -amount)
+	if !ok {
+		return false
+	}
+	if back, ok := addCalendarInterval(moved, unit, amount); !ok || !back.Equal(value) {
+		return false
+	}
+	next, ok := addCalendarInterval(moved, "DAY", 1)
+	if !ok {
+		return false
+	}
+	nextBack, ok := addCalendarInterval(next, unit, amount)
+	return ok && !nextBack.Equal(value)
 }
 
 // simplifyEquality is the reference's `simplify_equality`: move a constant
@@ -662,6 +712,16 @@ func simplifyEquality(e *Expression) *Expression {
 	default:
 		return e
 	}
+	// A calendar interval only moves across where the move is exact.
+	if bPredicate(b) && isIntervalLiteral(b) && b != nil {
+		if unit, amount, ok := intervalOf(b); ok {
+			sub := left.Class == "Sub" || left.Class == "DateSub" || left.Class == "DatetimeSub"
+			if !isExactIntervalMove(unit, amount, sub, right) {
+				return e
+			}
+		}
+	}
+
 	switch {
 	case !aPredicate(a) && bPredicate(b):
 		// x + 1 = 3  →  x = 3 - 1
@@ -1155,14 +1215,16 @@ func chainOperands(e *Expression, class string) []*Expression {
 }
 
 // joinKindsThatBecomeCross are the (side, kind) pairs the reference allows to
-// turn into a CROSS JOIN once their ON is always true: a plain, an explicit
-// INNER, a RIGHT, and a RIGHT OUTER. Every one of those already returns every
-// row of its left-hand side matched against every row of its right, which is
-// what CROSS means -- LEFT and FULL do not, because they also keep the rows
-// that fail to match, and there is nothing left to fail once ON is TRUE for
-// a LEFT/FULL only in the degenerate case the reference does not special-case.
+// turn into a CROSS JOIN once their ON is always true: a plain join and an
+// explicit INNER one, and nothing else.
+//
+// Only an INNER join qualifies. A cross join is empty as soon as either side
+// is empty, whereas an OUTER one keeps the rows of its outer side and pads
+// them with NULLs: `x LEFT JOIN y ON TRUE` returns x's rows when y is empty,
+// and `x RIGHT JOIN y ON TRUE` returns y's rows when x is empty, which is a
+// different answer (simplify.py, simplify_joins).
 var joinKindsThatBecomeCross = map[[2]string]bool{
-	{"", ""}: true, {"", "INNER"}: true, {"RIGHT", ""}: true, {"RIGHT", "OUTER"}: true,
+	{"", ""}: true, {"", "INNER"}: true,
 }
 
 // simplifyAlwaysTrueJoin turns a JOIN whose ON is always true into a CROSS
@@ -1699,11 +1761,15 @@ func simplifyCoalesce(e, parent *Expression, dialect string) *Expression {
 	if !isConstant(other) {
 		return e
 	}
+	// The FIRST NON-NULL constant is the fallback. A NULL is a constant but
+	// cannot stand in for one: picking it made `COALESCE(a, NULL, 1) = 1`
+	// compare against NULL, and wrote `1 = NULL` into the statement
+	// (simplify.py, simplify_coalesce).
 	args := coalesceArgs(coalesce)
 	argIndex := -1
 	var fallback *Expression
 	for i, arg := range args {
-		if isConstant(arg) {
+		if isNonnullConstant(arg) {
 			argIndex, fallback = i, arg
 			break
 		}
@@ -1896,6 +1962,7 @@ func simplifyCase(e *Expression) *Expression {
 	ifs, _ := e.Args["ifs"].([]*Expression)
 	kept := make([]*Expression, 0, len(ifs))
 	changed := false
+	truncated := false
 	for _, ifNode := range ifs {
 		cond := childOf(ifNode, "this")
 		if this != nil {
@@ -1911,7 +1978,18 @@ func simplifyCase(e *Expression) *Expression {
 			changed = true
 		}
 		if alwaysTrue(cond) {
-			return wrapParenAlways(childOf(ifNode, "true"))
+			// A branch that always matches ends the CASE: nothing after it
+			// can be reached, and it becomes the default. Only the FIRST
+			// branch is the whole answer, because nothing stands in front
+			// of it -- returning a later branch's value dropped the live
+			// branches before it (simplify.py, simplify_conditionals).
+			if len(kept) == 0 {
+				return wrapParenAlways(childOf(ifNode, "true"))
+			}
+			e.Set("default", childOf(ifNode, "true"))
+			truncated = true
+			changed = true
+			break
 		}
 		if alwaysFalse(cond) {
 			changed = true
@@ -1924,6 +2002,10 @@ func simplifyCase(e *Expression) *Expression {
 	}
 	if this != nil {
 		e.Set("this", nil)
+	}
+	if truncated {
+		e.Set("ifs", kept)
+		return e
 	}
 	if len(kept) == 0 {
 		if def := childOf(e, "default"); def != nil {
@@ -2124,6 +2206,16 @@ func simplifyComparison(left, right *Expression, or bool) *Expression {
 		return nil
 	}
 
+	// A contradiction is FALSE only where BOTH comparisons are known
+	// non-null. Over a column that may be NULL the conjunction is NULL, not
+	// FALSE: `SELECT x > 1 AND x < 1` is NULL, and
+	// `COALESCE(x > 1 AND x < 1, TRUE)` is TRUE -- so folding either to
+	// FALSE changes the answer (simplify.py, _simplify_comparison).
+	var contradiction *Expression
+	if isKnownNonnull(left) && isKnownNonnull(right) {
+		contradiction = boolLit(false)
+	}
+
 	// Both orderings, as the reference tries both permutations.
 	for _, pair := range [][2]*Expression{{left, right}, {right, left}} {
 		a, b := pair[0], pair[1]
@@ -2131,7 +2223,7 @@ func simplifyComparison(left, right *Expression, or bool) *Expression {
 		if a == right {
 			av = -cmp
 		}
-		if out := foldComparisonPair(a, b, av, or, left, right); out != nil {
+		if out := foldComparisonPair(a, b, av, or, left, right, contradiction); out != nil {
 			return out
 		}
 	}
@@ -2140,7 +2232,8 @@ func simplifyComparison(left, right *Expression, or bool) *Expression {
 
 // foldComparisonPair applies the reference's table for one ordering. `av` is
 // the sign of a's constant against b's: negative when a's is smaller.
-func foldComparisonPair(a, b *Expression, av int, or bool, left, right *Expression) *Expression {
+func foldComparisonPair(a, b *Expression, av int, or bool, left, right,
+	contradiction *Expression) *Expression {
 	switch {
 	case ltLTE[a.Class] && ltLTE[b.Class]:
 		// The tighter bound wins under AND, the looser under OR.
@@ -2160,21 +2253,21 @@ func foldComparisonPair(a, b *Expression, av int, or bool, left, right *Expressi
 	}
 	switch {
 	case a.Class == "LT" && gtGTE[b.Class] && av <= 0:
-		return boolLit(false)
+		return contradiction
 	case a.Class == "GT" && ltLTE[b.Class] && av >= 0:
-		return boolLit(false)
+		return contradiction
 	case a.Class == "EQ":
 		switch b.Class {
 		case "LT":
-			return pick(av >= 0, boolLit(false), a)
+			return pick(av >= 0, contradiction, a)
 		case "LTE":
-			return pick(av > 0, boolLit(false), a)
+			return pick(av > 0, contradiction, a)
 		case "GT":
-			return pick(av <= 0, boolLit(false), a)
+			return pick(av <= 0, contradiction, a)
 		case "GTE":
-			return pick(av < 0, boolLit(false), a)
+			return pick(av < 0, contradiction, a)
 		case "NEQ":
-			return pick(av == 0, boolLit(false), a)
+			return pick(av == 0, contradiction, a)
 		}
 	}
 	return nil
