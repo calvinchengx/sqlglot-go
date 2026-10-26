@@ -189,8 +189,8 @@ hand-edited table is a divergence the port has no logic to catch.
 `sqlglot.Simplify` is the first thing in the port that CHANGES a tree rather
 than reproducing one, and it is held to the reference's own contract —
 `testdata/simplify.json`, 616 pairs pinning what each statement becomes.
-**543 are folded exactly**; the rest the port declines to fold that far,
-which costs nothing: the statement still means what it meant.
+**616 are folded exactly** — the port's output is the reference's, string for
+string, on every pair.
 
 Every rewrite must also **survive being written down**: the port writes the
 simplified tree, reads the SQL back, and requires the same tree — up to the
