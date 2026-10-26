@@ -1,0 +1,63 @@
+{
+ "dialect": "duckdb",
+ "rendered": "SELECT INTERVAL '1 year 2 month 3 week 4 day 5 hour 6 minute 7.5 second'",
+ "sql": "SELECT INTERVAL '1 year 2 month 3 week 4 day 5 hour 6 minute 7.5 second'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 72,
+   "e": 71,
+   "l": 1,
+   "s": 16,
+   "t": "STRING",
+   "x": "1 year 2 month 3 week 4 day 5 hour 6 minute 7.5 second"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 72,
+    "end": 71,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "1 year 2 month 3 week 4 day 5 hour 6 minute 7.5 second"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

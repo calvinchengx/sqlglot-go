@@ -1,0 +1,63 @@
+{
+ "dialect": "duckdb",
+ "rendered": "SELECT INTERVAL '1 year 2 hour 30 minute'",
+ "sql": "SELECT INTERVAL '1 year 2 hour 30 minute'",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 41,
+   "e": 40,
+   "l": 1,
+   "s": 16,
+   "t": "STRING",
+   "x": "1 year 2 hour 30 minute"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 41,
+    "end": 40,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "1 year 2 hour 30 minute"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  }
+ ]
+}

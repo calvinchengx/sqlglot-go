@@ -5202,6 +5202,16 @@
   },
   {
    "dialect": "bigquery",
+   "rendered": "SELECT 1 aaaaab",
+   "sql": "SELECT 0 isnull"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT CASE WHEN TRUE THEN 1 ELSE 2 END aaaaac",
+   "sql": "SELECT CASE WHEN TRUE THEN 0 ELSE 1 END isnull"
+  },
+  {
+   "dialect": "bigquery",
    "rendered": "SELECT 'aaa' 'aab'",
    "sql": "SELECT 'foo' 'bar'"
   },
@@ -5734,6 +5744,16 @@
    "dialect": "bigquery",
    "rendered": "SELECT MAKE_INTERVAL(100, 11, 3, 13, 14, 15)",
    "sql": "SELECT MAKE_INTERVAL(100, 11, 1, 12, 30, 10)"
+  },
+  {
+   "dialect": "bigquery",
+   "rendered": "SELECT MAKE_INTERVAL(1, aab => 'aaaa aaaaaa aa ac')",
+   "sql": "SELECT MAKE_INTERVAL(1, day => '2\\'; SELECT 1; --')"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT INTERVAL 'aa aaaa aaa aaaaaa aa aa aaa'",
+   "sql": "SELECT INTERVAL '1 year 2''; SELECT 1; -- day'"
   },
   {
    "dialect": "bigquery",
@@ -12702,6 +12722,11 @@
   },
   {
    "dialect": "clickhouse",
+   "rendered": "SELECT (POSITION(a, 'b') > 3) IN (3)",
+   "sql": "SELECT (POSITION(s, 'a') > 0) IN (0)"
+  },
+  {
+   "dialect": "clickhouse",
    "rendered": "SELECT startsWith('a', 'b')",
    "sql": "SELECT startsWith('a', 'b')"
   },
@@ -15327,8 +15352,8 @@
   },
   {
    "dialect": "sqlite",
-   "rendered": "CAST(a AS DATETIME)",
-   "sql": "CAST(a AS DATETIME)"
+   "rendered": "DATETIME(a)",
+   "sql": "DATETIME(a)"
   },
   {
    "dialect": "materialize",
@@ -23007,6 +23032,21 @@
   },
   {
    "dialect": "duckdb",
+   "rendered": "SELECT $\"aa aaa\", $ab",
+   "sql": "SELECT $\"my var\", $my"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT $1, ?",
+   "sql": "SELECT $1, ?"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT $\"aa aaa\"[2]",
+   "sql": "SELECT $\"my var\"[1]"
+  },
+  {
+   "dialect": "duckdb",
    "rendered": "SELECT a.ab, c.ab FROM a JOIN c aaaaaad 5 af aaaaaaag ABS(a.ab - c.ab)",
    "sql": "SELECT a.id, b.id FROM a JOIN b NEAREST 1 BY DISTANCE ABS(a.id - b.id)"
   },
@@ -23652,6 +23692,16 @@
   },
   {
    "dialect": "duckdb",
+   "rendered": "SELECT DATE_DIFF('aaaa a aaaaaa aa aa', CAST('aaaaaaaaab' AS TIMESTAMP), CAST('aaaaaaaaac' AS TIMESTAMP))",
+   "sql": "SELECT DATE_DIFF('X'') ; SELECT 1; --', CAST('2020-01-01' AS TIMESTAMP), CAST('2025-10-12' AS TIMESTAMP))"
+  },
+  {
+   "dialect": "redshift",
+   "rendered": "SELECT DATEDIFF('aaaa a aaaaaa aa aa', 'aaaaaaaaab', 'aaaaaaaaac')",
+   "sql": "SELECT DATEDIFF('x'') ; SELECT 1; --', '2020-01-01', '2025-10-12')"
+  },
+  {
+   "dialect": "duckdb",
    "rendered": "SELECT DATE_DIFF('aaaaaa', CAST('aaaaaaaaab' AS DATE), CAST('aaaaaaaaaa aaaaaaaaaaac' AS TIMESTAMP))",
    "sql": "SELECT DATE_DIFF('SECOND', CAST('2020-01-01' AS DATE), CAST('2025-10-12 00:56:42.345' AS TIMESTAMP))"
   },
@@ -24014,6 +24064,31 @@
    "dialect": "duckdb",
    "rendered": "SELECT JSON_ARRAY('a', 'b', 'c')",
    "sql": "SELECT JSON_ARRAY('a', 'b', 'c')"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT JSON_ARRAY(1, NULL, 2)",
+   "sql": "SELECT JSON_ARRAY(1, NULL, 2)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT JSON_OBJECT('a', 2, 'c', NULL)",
+   "sql": "SELECT JSON_OBJECT('a', 1, 'b', NULL)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT JSON_OBJECT('a': 2, 'c': NULL NULL ON NULL)",
+   "sql": "SELECT JSON_OBJECT('a': 1, 'b': NULL NULL ON NULL)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT JSON_OBJECT('a', 2, 'a', 3)",
+   "sql": "SELECT JSON_OBJECT('a', 1, 'a', 2)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT JSON_OBJECT('a': 2, 'a': 3 aaaaaad UNIQUE aaae)",
+   "sql": "SELECT JSON_OBJECT('a': 1, 'a': 2 WITHOUT UNIQUE KEYS)"
   },
   {
    "dialect": "duckdb",
@@ -28387,6 +28462,11 @@
   },
   {
    "dialect": "exasol",
+   "rendered": "SELECT DATE_TRUNC('aaaa a aaaaaa aa aa', TIMESTAMP 'aaaaaaaaab')",
+   "sql": "SELECT DATE_TRUNC('D'') ; SELECT 1; --', TIMESTAMP '2020-01-01')"
+  },
+  {
+   "dialect": "exasol",
    "rendered": "SELECT quarter('aaaaaaaaaa')",
    "sql": "SELECT quarter('2016-08-31')"
   },
@@ -29624,6 +29704,11 @@
    "dialect": "spark",
    "rendered": "CREATE TABLE aaaa aaaaab AS aaaaaac aaaaaaaaaaaad ('e'='f', 'g'='h') AS SELECT 9",
    "sql": "CREATE TABLE test STORED AS PARQUET TBLPROPERTIES ('x'='1', 'Z'='2') AS SELECT 1"
+  },
+  {
+   "dialect": "hive",
+   "rendered": "CREATE TABLE a (b INT) aaaaaaaaaaaac ('aaaa a aaaaaa aa ad'='e')",
+   "sql": "CREATE TABLE t (a INT) TBLPROPERTIES ('a\\') ; SELECT 1; --'='1')"
   },
   {
    "dialect": "hive",
@@ -33631,6 +33716,11 @@
    "sql": "DAYOFWEEK(x)"
   },
   {
+   "dialect": "bigquery",
+   "rendered": "EXTRACT(aaaaaaaaa FROM CAST(b AS DATE))",
+   "sql": "EXTRACT(DAYOFWEEK FROM CAST(x AS DATE))"
+  },
+  {
    "dialect": "mysql",
    "rendered": "WEEKOFYEAR(a)",
    "sql": "WEEKOFYEAR(x)"
@@ -35622,6 +35712,16 @@
   },
   {
    "dialect": "postgres",
+   "rendered": "SELECT INTERVAL 'aaa aaaaaaa aaaaaa aa aa'",
+   "sql": "SELECT INTERVAL '1'' SECOND; SELECT 1; --'"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT INTERVAL 'aaaa aaaaaa aa aa' aab ac aaaaad",
+   "sql": "SELECT INTERVAL '1''; SELECT 1; --' DAY TO SECOND"
+  },
+  {
+   "dialect": "postgres",
    "rendered": "SELECT aaaaaaaa - INTERVAL 'ab' FROM c",
    "sql": "SELECT date_col - INTERVAL '30' FROM t"
   },
@@ -36144,6 +36244,66 @@
    "dialect": "postgres",
    "rendered": "SELECT CURRENT_TIMESTAMP - MAKE_INTERVAL(aaaaa => 2, aaaaac => 4, aaae => 6)",
    "sql": "SELECT CURRENT_TIMESTAMP - MAKE_INTERVAL(years => 1, months => 2, days => 3)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT MAKE_INTERVAL(aaaa => 2)",
+   "sql": "SELECT MAKE_INTERVAL(days => 3)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT INTERVAL 'a aaa'",
+   "sql": "SELECT INTERVAL '3 day'"
+  },
+  {
+   "dialect": "mysql",
+   "rendered": "SELECT INTERVAL 1 aab",
+   "sql": "SELECT INTERVAL 3 DAY"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT MAKE_INTERVAL(1, aaaab => 3, aaad => 14)",
+   "sql": "SELECT MAKE_INTERVAL(1, hours => 2, mins => 30)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT INTERVAL 'a aaaa a aaaa aa aaaaaa'",
+   "sql": "SELECT INTERVAL '1 year 2 hour 30 minute'"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT MAKE_INTERVAL(aaaa => 1.1, aaac => 4, aaaae => 6, aaag => 8, aaaai => 1, aaaaak => 3, aaaam => 5)",
+   "sql": "SELECT MAKE_INTERVAL(secs => 7.5, mins => 6, hours => 5, DAYS => 4, weeks => 3, months => 2, years => 1)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT INTERVAL 'aaa aaaaaa a aaaaaa a aaaa a aaa a aaaa a aaaaa a aaaa'",
+   "sql": "SELECT INTERVAL '7.5 second 6 minute 5 hour 4 day 3 week 2 month 1 year'"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT MAKE_INTERVAL(aaaaa => 2, aaaaac => 4, aaaae => 6, aaag => 8, aaaai => 1, aaak => 3, aaam => 2.3)",
+   "sql": "SELECT MAKE_INTERVAL(years => 1, months => 2, weeks => 3, DAYS => 4, hours => 5, mins => 6, secs => 7.5)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT MAKE_INTERVAL(1, 2, 3, 4, 5, 6, 1.6)",
+   "sql": "SELECT MAKE_INTERVAL(1, 2, 3, 4, 5, 6, 7.5)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT INTERVAL 'a aaaa a aaaaa a aaaa a aaa a aaaa a aaaaaa aaa aaaaaa'",
+   "sql": "SELECT INTERVAL '1 year 2 month 3 week 4 day 5 hour 6 minute 7.5 second'"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT MAKE_INTERVAL(aaaa => 2) /* ................. */",
+   "sql": "SELECT MAKE_INTERVAL(days => 3) /* sqlglot.anonymous */"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT MAKE_INTERVAL(aaaa => 2) /* ................. */",
+   "sql": "SELECT MAKE_INTERVAL(days => 3) /* sqlglot.anonymous */"
   },
   {
    "dialect": "postgres",
@@ -40029,6 +40189,11 @@
    "dialect": "presto",
    "rendered": "(1 * INTERVAL 'b' aac)",
    "sql": "(5 * INTERVAL '7' DAY)"
+  },
+  {
+   "dialect": "presto",
+   "rendered": "SELECT INTERVAL 'aa a aaaaaa aa aa' aaab",
+   "sql": "SELECT INTERVAL 'x) ; SELECT 1; --' WEEK"
   },
   {
    "dialect": "presto",
@@ -45771,6 +45936,21 @@
    "sql": "DATE_DIFF('QUARTER', CAST('2020-01-15' AS DATE), CAST('2023-06-20' AS DATE))"
   },
   {
+   "dialect": "postgres",
+   "rendered": "CAST(EXTRACT(aaaa FROM aab(DATE_TRUNC('aaaac', CAST('aaaaaaaaad' AS TIMESTAMP)), DATE_TRUNC('aaaac', CAST('aaaaaaaaae' AS TIMESTAMP)))) * 15 + EXTRACT(aaaag FROM aab(DATE_TRUNC('aaaac', CAST('aaaaaaaaad' AS TIMESTAMP)), DATE_TRUNC('aaaac', CAST('aaaaaaaaae' AS TIMESTAMP)))) AS BIGINT)",
+   "sql": "CAST(EXTRACT(year FROM AGE(DATE_TRUNC('MONTH', CAST('2026-03-01' AS TIMESTAMP)), DATE_TRUNC('MONTH', CAST('2026-01-31' AS TIMESTAMP)))) * 12 + EXTRACT(month FROM AGE(DATE_TRUNC('MONTH', CAST('2026-03-01' AS TIMESTAMP)), DATE_TRUNC('MONTH', CAST('2026-01-31' AS TIMESTAMP)))) AS BIGINT)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "CAST(EXTRACT(aaaa FROM aab(DATE_TRUNC('aaac', CAST('aaaaaaaaad' AS TIMESTAMP)), DATE_TRUNC('aaac', CAST('aaaaaaaaae' AS TIMESTAMP)))) AS BIGINT)",
+   "sql": "CAST(EXTRACT(year FROM AGE(DATE_TRUNC('YEAR', CAST('2026-01-01' AS TIMESTAMP)), DATE_TRUNC('YEAR', CAST('2025-12-31' AS TIMESTAMP)))) AS BIGINT)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "CAST(EXTRACT(aaaaa FROM DATE_TRUNC('aaab', CAST('aaaaaaaaaa aaaaaaac' AS TIMESTAMP)) - DATE_TRUNC('aaab', CAST('aaaaaaaaaa aaaaaaad' AS TIMESTAMP))) / 1004 AS BIGINT)",
+   "sql": "CAST(EXTRACT(epoch FROM DATE_TRUNC('HOUR', CAST('2026-01-01 11:01:00' AS TIMESTAMP)) - DATE_TRUNC('HOUR', CAST('2026-01-01 10:59:00' AS TIMESTAMP))) / 3600 AS BIGINT)"
+  },
+  {
    "dialect": "duckdb",
    "rendered": "aaaaaaaa(CAST('aaaaaaaaaa aaaaaaaaaaaaaaaaab' AS TIMESTAMP_NS)) - aaaaaaaa(CAST('aaaaaaaaaa aaaaaaaaaaaaaaaaac' AS TIMESTAMP_NS))",
    "sql": "EPOCH_NS(CAST('2023-01-01 10:00:00.123456789' AS TIMESTAMP_NS)) - EPOCH_NS(CAST('2023-01-01 10:00:00.000000000' AS TIMESTAMP_NS))"
@@ -46534,6 +46714,11 @@
    "dialect": "duckdb",
    "rendered": "SELECT CASE WHEN ISNAN(CORR(a, b) FILTER(WHERE c > 4) OVER (PARTITION BY e)) THEN NULL ELSE CORR(a, b) FILTER(WHERE c > 4) OVER (PARTITION BY e) END",
    "sql": "SELECT CASE WHEN ISNAN(CORR(a, b) FILTER(WHERE c > 0) OVER (PARTITION BY d)) THEN NULL ELSE CORR(a, b) FILTER(WHERE c > 0) OVER (PARTITION BY d) END"
+  },
+  {
+   "dialect": "databricks",
+   "rendered": "MERGE INTO a USING b ON a.ac = b.ac WHEN aaaaaad THEN UPDATE SET * WHEN NOT aaaaaad THEN INSERT *",
+   "sql": "MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN UPDATE SET * WHEN NOT MATCHED THEN INSERT *"
   },
   {
    "dialect": "duckdb",
@@ -49122,6 +49307,16 @@
   },
   {
    "dialect": "sqlite",
+   "rendered": "SELECT DATE_ADD(a, 'aaaa a aaaaaa aa ab')",
+   "sql": "SELECT DATE_ADD(d, '1'') ; SELECT 1; --')"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "SELECT DATE(a, 'aaaa a aaaaaa aa ab')",
+   "sql": "SELECT DATE(d, '1'') ; SELECT 1; --')"
+  },
+  {
+   "dialect": "sqlite",
    "rendered": "SELECT DATE(a, 'aa aab') FROM c",
    "sql": "SELECT DATE(d, '-1 DAY') FROM t"
   },
@@ -49239,6 +49434,11 @@
    "dialect": "sqlite",
    "rendered": "SELECT JSON_EXTRACT('aaaa aaa aaaa aaaa', 'aaab', 'aaac', 'aaad')",
    "sql": "SELECT JSON_EXTRACT('[10, 20, [30, 40]]', '$[2]', '$[0]', '$[1]')"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT aaaaaaa(JSON_EXTRACT('aaaa aaa aaaa aaab', ['aaac', 'aaad', 'aaae']))",
+   "sql": "SELECT TO_JSON(JSON_EXTRACT('[10, 20, [30, 40]]', ['$[2]', '$[0]', '$[1]']))"
   },
   {
    "dialect": "sqlite",
@@ -49877,6 +50077,26 @@
   },
   {
    "dialect": "sqlite",
+   "rendered": "CREATE TABLE a (b REAL, c FLOAT)",
+   "sql": "CREATE TABLE t (x REAL, y FLOAT)"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "CREATE TABLE a (b REAL, c REAL)",
+   "sql": "CREATE TABLE t (x REAL, y REAL)"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "CREATE TABLE a (b DOUBLE, c DOUBLE)",
+   "sql": "CREATE TABLE t (x DOUBLE, y DOUBLE)"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "CREATE TABLE a (b DOUBLE PRECISION, c DOUBLE PRECISION)",
+   "sql": "CREATE TABLE t (x DOUBLE PRECISION, y DOUBLE PRECISION)"
+  },
+  {
+   "dialect": "sqlite",
    "rendered": "CREATE TABLE aaa (aab LONGVARCHAR)",
    "sql": "CREATE TABLE foo (bar LONGVARCHAR)"
   },
@@ -50164,6 +50384,21 @@
    "dialect": "sqlite",
    "rendered": "SELECT a ->> 'aaaab' FROM c",
    "sql": "SELECT a ->> 'it''s' FROM t"
+  },
+  {
+   "dialect": "sqlite",
+   "rendered": "SELECT CAST(a AS REAL) FROM b",
+   "sql": "SELECT CAST(x AS REAL) FROM t"
+  },
+  {
+   "dialect": "duckdb",
+   "rendered": "SELECT CAST(a AS DOUBLE) FROM b",
+   "sql": "SELECT CAST(x AS DOUBLE) FROM t"
+  },
+  {
+   "dialect": "postgres",
+   "rendered": "SELECT CAST(a AS DOUBLE PRECISION) FROM b",
+   "sql": "SELECT CAST(x AS DOUBLE PRECISION) FROM t"
   },
   {
    "dialect": "sqlite",
@@ -54144,6 +54379,16 @@
    "dialect": "tsql",
    "rendered": "CREATE VIEW aaaaa WITH aaaaaaaaaaaab AS SELECT c FROM d",
    "sql": "CREATE VIEW start WITH SCHEMABINDING AS SELECT a FROM x"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "ALTER TABLE a RENAME ab [aaa aaaaaa aa ac]",
+   "sql": "ALTER TABLE a RENAME TO [x'; SELECT 1; --]"
+  },
+  {
+   "dialect": "tsql",
+   "rendered": "EXEC aaaaaaaaa 'b', 'aaaa aaaaaa aa ac'",
+   "sql": "EXEC sp_rename 'a', 'x''; SELECT 1; --'"
   },
   {
    "dialect": "tsql",
@@ -60181,5 +60426,5 @@
    "sql": "LOCALTIMESTAMP(3)"
   }
  ],
- "reference": "78b24a744adb8d5dc0eb285f067087338b60f266"
+ "reference": "feb0e08aba28a29590596bb3f5761fbaeb0e98b9"
 }

@@ -1,0 +1,112 @@
+{
+ "dialect": "postgres",
+ "rendered": "SELECT INTERVAL '1''; SELECT 1; --' DAY TO SECOND",
+ "sql": "SELECT INTERVAL '1''; SELECT 1; --' DAY TO SECOND",
+ "tokens": [
+  {
+   "c": 6,
+   "e": 5,
+   "l": 1,
+   "s": 0,
+   "t": "SELECT",
+   "x": "SELECT"
+  },
+  {
+   "c": 15,
+   "e": 14,
+   "l": 1,
+   "s": 7,
+   "t": "INTERVAL",
+   "x": "INTERVAL"
+  },
+  {
+   "c": 35,
+   "e": 34,
+   "l": 1,
+   "s": 16,
+   "t": "STRING",
+   "x": "1'; SELECT 1; --"
+  },
+  {
+   "c": 39,
+   "e": 38,
+   "l": 1,
+   "s": 36,
+   "t": "VAR",
+   "x": "DAY"
+  },
+  {
+   "c": 42,
+   "e": 41,
+   "l": 1,
+   "s": 40,
+   "t": "VAR",
+   "x": "TO"
+  },
+  {
+   "c": 49,
+   "e": 48,
+   "l": 1,
+   "s": 43,
+   "t": "VAR",
+   "x": "SECOND"
+  }
+ ],
+ "tree": [
+  {
+   "c": "sqlglot.expressions.query.Select"
+  },
+  {
+   "a": true,
+   "c": "sqlglot.expressions.datatypes.Interval",
+   "i": 0,
+   "k": "expressions"
+  },
+  {
+   "c": "sqlglot.expressions.core.Literal",
+   "i": 1,
+   "k": "this",
+   "m": {
+    "col": 35,
+    "end": 34,
+    "line": 1,
+    "start": 16
+   }
+  },
+  {
+   "i": 2,
+   "k": "this",
+   "v": "1'; SELECT 1; --"
+  },
+  {
+   "i": 2,
+   "k": "is_string",
+   "v": true
+  },
+  {
+   "c": "sqlglot.expressions.datatypes.IntervalSpan",
+   "i": 1,
+   "k": "unit"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 5,
+   "k": "this"
+  },
+  {
+   "i": 6,
+   "k": "this",
+   "v": "DAY"
+  },
+  {
+   "c": "sqlglot.expressions.core.Var",
+   "i": 5,
+   "k": "expression"
+  },
+  {
+   "i": 8,
+   "k": "this",
+   "v": "SECOND"
+  }
+ ]
+}

@@ -5,7 +5,7 @@ package sqlglot
 // extraCallNames are the function names a HAND-REGISTERED dialect knows
 // and the neutral table does not. The anonymizer consults them so a call
 // keeps the name the reference keeps.
-// reference 78b24a744adb
+// reference feb0e08aba28
 var extraCallNames = map[string]map[string]struct{}{
 	"oracle": {
 		"JSON_ARRAY":    {},

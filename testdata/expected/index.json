@@ -1,6 +1,6 @@
 {
- "reference": "78b24a744adb8d5dc0eb285f067087338b60f266",
- "count": 12036,
+ "reference": "feb0e08aba28a29590596bb3f5761fbaeb0e98b9",
+ "count": 12085,
  "statements": [
   {
    "key": "1fe3eadc98e6df2d",
@@ -5203,6 +5203,16 @@
    "sql": "CREATE TABLE t WITH (format='PARQUET') AS SELECT 1 AS a"
   },
   {
+   "key": "7296d1267b0ae9d7",
+   "dialect": "bigquery",
+   "sql": "SELECT 0 isnull"
+  },
+  {
+   "key": "1891ac92f1af6d49",
+   "dialect": "bigquery",
+   "sql": "SELECT CASE WHEN TRUE THEN 0 ELSE 1 END isnull"
+  },
+  {
    "key": "ad95ec7e8ed8c902",
    "dialect": "bigquery",
    "sql": "SELECT 'foo' 'bar'"
@@ -5736,6 +5746,16 @@
    "key": "95342f9b76416ca8",
    "dialect": "bigquery",
    "sql": "SELECT MAKE_INTERVAL(100, 11, 1, 12, 30, 10)"
+  },
+  {
+   "key": "0c75d90ec9ef3284",
+   "dialect": "bigquery",
+   "sql": "SELECT MAKE_INTERVAL(1, day => '2\\'; SELECT 1; --')"
+  },
+  {
+   "key": "18c6203b996f3522",
+   "dialect": "duckdb",
+   "sql": "SELECT INTERVAL '1 year 2''; SELECT 1; -- day'"
   },
   {
    "key": "0ae52ac99a18b9b5",
@@ -12703,6 +12723,11 @@
    "sql": "SELECT (POSITION(s, 'a') > 0) = (POSITION(t, 'b') > 0) FROM x WHERE NOT POSITION(s, 'a') > 0 AND y"
   },
   {
+   "key": "39c2b054fad52a05",
+   "dialect": "clickhouse",
+   "sql": "SELECT (POSITION(s, 'a') > 0) IN (0)"
+  },
+  {
    "key": "bc3a273f3823db24",
    "dialect": "clickhouse",
    "sql": "SELECT startsWith('a', 'b')"
@@ -15328,9 +15353,9 @@
    "sql": "CAST(a AS TIMESTAMP)"
   },
   {
-   "key": "cac32cfca6c754b7",
+   "key": "753c1abc922cfb83",
    "dialect": "sqlite",
-   "sql": "CAST(a AS DATETIME)"
+   "sql": "DATETIME(a)"
   },
   {
    "key": "ff8c218037e148b5",
@@ -23008,6 +23033,21 @@
    "sql": "SELECT connect, disconnect FROM t"
   },
   {
+   "key": "9dd148b9bcc8c707",
+   "dialect": "duckdb",
+   "sql": "SELECT $\"my var\", $my"
+  },
+  {
+   "key": "745e974fe52c45a1",
+   "dialect": "duckdb",
+   "sql": "SELECT $1, ?"
+  },
+  {
+   "key": "42a54f2aedd71ccb",
+   "dialect": "duckdb",
+   "sql": "SELECT $\"my var\"[1]"
+  },
+  {
    "key": "888a2a66af5d55dd",
    "dialect": "duckdb",
    "sql": "SELECT a.id, b.id FROM a JOIN b NEAREST 1 BY DISTANCE ABS(a.id - b.id)"
@@ -23653,6 +23693,16 @@
    "sql": "SELECT DATE_DIFF('DAY', CAST('2020-01-01' AS DATE), CAST('2025-10-12' AS DATE))"
   },
   {
+   "key": "7d575c0f3cbeaa83",
+   "dialect": "duckdb",
+   "sql": "SELECT DATE_DIFF('X'') ; SELECT 1; --', CAST('2020-01-01' AS TIMESTAMP), CAST('2025-10-12' AS TIMESTAMP))"
+  },
+  {
+   "key": "e1dcdc3f4e3c56c9",
+   "dialect": "redshift",
+   "sql": "SELECT DATEDIFF('x'') ; SELECT 1; --', '2020-01-01', '2025-10-12')"
+  },
+  {
    "key": "227dfe556ec6d649",
    "dialect": "duckdb",
    "sql": "SELECT DATE_DIFF('SECOND', CAST('2020-01-01' AS DATE), CAST('2025-10-12 00:56:42.345' AS TIMESTAMP))"
@@ -24016,6 +24066,31 @@
    "key": "12f69bea776f5d9a",
    "dialect": "duckdb",
    "sql": "SELECT JSON_ARRAY('a', 'b', 'c')"
+  },
+  {
+   "key": "070b4337b69a1410",
+   "dialect": "duckdb",
+   "sql": "SELECT JSON_ARRAY(1, NULL, 2)"
+  },
+  {
+   "key": "3bf83cf18a7c9432",
+   "dialect": "duckdb",
+   "sql": "SELECT JSON_OBJECT('a', 1, 'b', NULL)"
+  },
+  {
+   "key": "69a9fd99039fcd4e",
+   "dialect": "postgres",
+   "sql": "SELECT JSON_OBJECT('a': 1, 'b': NULL NULL ON NULL)"
+  },
+  {
+   "key": "c94f791a3f32dd4b",
+   "dialect": "duckdb",
+   "sql": "SELECT JSON_OBJECT('a', 1, 'a', 2)"
+  },
+  {
+   "key": "274e8b0fe7a299ac",
+   "dialect": "postgres",
+   "sql": "SELECT JSON_OBJECT('a': 1, 'a': 2 WITHOUT UNIQUE KEYS)"
   },
   {
    "key": "6fb4acf35a302822",
@@ -28388,6 +28463,11 @@
    "sql": "SELECT CAST(CAST(CURRENT_TIMESTAMP() AS TIMESTAMP) AT TIME ZONE 'CET' AS DATE) - 1"
   },
   {
+   "key": "1499b2cceda68b64",
+   "dialect": "exasol",
+   "sql": "SELECT DATE_TRUNC('D'') ; SELECT 1; --', TIMESTAMP '2020-01-01')"
+  },
+  {
    "key": "871ec24adfa6da7c",
    "dialect": "exasol",
    "sql": "SELECT quarter('2016-08-31')"
@@ -29626,6 +29706,11 @@
    "key": "b34f73359b59ed08",
    "dialect": "spark",
    "sql": "CREATE TABLE test STORED AS PARQUET TBLPROPERTIES ('x'='1', 'Z'='2') AS SELECT 1"
+  },
+  {
+   "key": "f12ddd12cc5c08cd",
+   "dialect": "hive",
+   "sql": "CREATE TABLE t (a INT) TBLPROPERTIES ('a\\') ; SELECT 1; --'='1')"
   },
   {
    "key": "c862c3b1a93f330e",
@@ -33633,6 +33718,11 @@
    "sql": "DAYOFWEEK(x)"
   },
   {
+   "key": "7bc0a4f03a4b02a3",
+   "dialect": "bigquery",
+   "sql": "EXTRACT(DAYOFWEEK FROM CAST(x AS DATE))"
+  },
+  {
    "key": "494c9ef21e8535ae",
    "dialect": "mysql",
    "sql": "WEEKOFYEAR(x)"
@@ -35623,6 +35713,16 @@
    "sql": "SELECT INTERVAL '0.123456789 SECOND'"
   },
   {
+   "key": "0cbb47dfb6d83340",
+   "dialect": "postgres",
+   "sql": "SELECT INTERVAL '1'' SECOND; SELECT 1; --'"
+  },
+  {
+   "key": "d532e7a5a6b73b0e",
+   "dialect": "postgres",
+   "sql": "SELECT INTERVAL '1''; SELECT 1; --' DAY TO SECOND"
+  },
+  {
    "key": "fbff52e9d003383d",
    "dialect": "postgres",
    "sql": "SELECT date_col - INTERVAL '30' FROM t"
@@ -36146,6 +36246,66 @@
    "key": "67eacf6293405537",
    "dialect": "postgres",
    "sql": "SELECT CURRENT_TIMESTAMP - MAKE_INTERVAL(years => 1, months => 2, days => 3)"
+  },
+  {
+   "key": "3c24b83c9761f10c",
+   "dialect": "postgres",
+   "sql": "SELECT MAKE_INTERVAL(days => 3)"
+  },
+  {
+   "key": "d7e695f087586893",
+   "dialect": "duckdb",
+   "sql": "SELECT INTERVAL '3 day'"
+  },
+  {
+   "key": "e5a382759ca7f733",
+   "dialect": "mysql",
+   "sql": "SELECT INTERVAL 3 DAY"
+  },
+  {
+   "key": "3f5f3378cb4f82ea",
+   "dialect": "postgres",
+   "sql": "SELECT MAKE_INTERVAL(1, hours => 2, mins => 30)"
+  },
+  {
+   "key": "ab9a1b8d8c240d1f",
+   "dialect": "duckdb",
+   "sql": "SELECT INTERVAL '1 year 2 hour 30 minute'"
+  },
+  {
+   "key": "573ca79bd2cd6f96",
+   "dialect": "postgres",
+   "sql": "SELECT MAKE_INTERVAL(secs => 7.5, mins => 6, hours => 5, DAYS => 4, weeks => 3, months => 2, years => 1)"
+  },
+  {
+   "key": "a56d0ef20896fc7b",
+   "dialect": "duckdb",
+   "sql": "SELECT INTERVAL '7.5 second 6 minute 5 hour 4 day 3 week 2 month 1 year'"
+  },
+  {
+   "key": "bbb81d9fb687dcd3",
+   "dialect": "postgres",
+   "sql": "SELECT MAKE_INTERVAL(years => 1, months => 2, weeks => 3, DAYS => 4, hours => 5, mins => 6, secs => 7.5)"
+  },
+  {
+   "key": "211d7ba68774aee2",
+   "dialect": "postgres",
+   "sql": "SELECT MAKE_INTERVAL(1, 2, 3, 4, 5, 6, 7.5)"
+  },
+  {
+   "key": "be8c4c7e1d9e5e86",
+   "dialect": "duckdb",
+   "sql": "SELECT INTERVAL '1 year 2 month 3 week 4 day 5 hour 6 minute 7.5 second'"
+  },
+  {
+   "key": "f01cbb7d14922d29",
+   "dialect": "postgres",
+   "sql": "SELECT MAKE_INTERVAL(days => 3) /* sqlglot.anonymous */"
+  },
+  {
+   "key": "dd29ba0ea655a1df",
+   "dialect": "duckdb",
+   "sql": "SELECT MAKE_INTERVAL(days => 3) /* sqlglot.anonymous */"
   },
   {
    "key": "42d4e5391d489a9a",
@@ -40031,6 +40191,11 @@
    "key": "b0c75fad7038b438",
    "dialect": "presto",
    "sql": "(5 * INTERVAL '7' DAY)"
+  },
+  {
+   "key": "6d47215f1e3f52a4",
+   "dialect": "presto",
+   "sql": "SELECT INTERVAL 'x) ; SELECT 1; --' WEEK"
   },
   {
    "key": "42b47335d6fa6670",
@@ -45773,6 +45938,21 @@
    "sql": "DATE_DIFF('QUARTER', CAST('2020-01-15' AS DATE), CAST('2023-06-20' AS DATE))"
   },
   {
+   "key": "1b91a6e57d548a79",
+   "dialect": "postgres",
+   "sql": "CAST(EXTRACT(year FROM AGE(DATE_TRUNC('MONTH', CAST('2026-03-01' AS TIMESTAMP)), DATE_TRUNC('MONTH', CAST('2026-01-31' AS TIMESTAMP)))) * 12 + EXTRACT(month FROM AGE(DATE_TRUNC('MONTH', CAST('2026-03-01' AS TIMESTAMP)), DATE_TRUNC('MONTH', CAST('2026-01-31' AS TIMESTAMP)))) AS BIGINT)"
+  },
+  {
+   "key": "1dfef624d3ff9045",
+   "dialect": "postgres",
+   "sql": "CAST(EXTRACT(year FROM AGE(DATE_TRUNC('YEAR', CAST('2026-01-01' AS TIMESTAMP)), DATE_TRUNC('YEAR', CAST('2025-12-31' AS TIMESTAMP)))) AS BIGINT)"
+  },
+  {
+   "key": "a68cd6cfb3e1af5d",
+   "dialect": "postgres",
+   "sql": "CAST(EXTRACT(epoch FROM DATE_TRUNC('HOUR', CAST('2026-01-01 11:01:00' AS TIMESTAMP)) - DATE_TRUNC('HOUR', CAST('2026-01-01 10:59:00' AS TIMESTAMP))) / 3600 AS BIGINT)"
+  },
+  {
    "key": "bf4a8a5c0cabfac1",
    "dialect": "duckdb",
    "sql": "EPOCH_NS(CAST('2023-01-01 10:00:00.123456789' AS TIMESTAMP_NS)) - EPOCH_NS(CAST('2023-01-01 10:00:00.000000000' AS TIMESTAMP_NS))"
@@ -46536,6 +46716,11 @@
    "key": "218f557128221c6c",
    "dialect": "duckdb",
    "sql": "SELECT CASE WHEN ISNAN(CORR(a, b) FILTER(WHERE c > 0) OVER (PARTITION BY d)) THEN NULL ELSE CORR(a, b) FILTER(WHERE c > 0) OVER (PARTITION BY d) END"
+  },
+  {
+   "key": "9705e458b64a3299",
+   "dialect": "databricks",
+   "sql": "MERGE INTO t USING s ON t.id = s.id WHEN MATCHED THEN UPDATE SET * WHEN NOT MATCHED THEN INSERT *"
   },
   {
    "key": "180400e980005440",
@@ -49123,6 +49308,16 @@
    "sql": "SELECT DATE_ADD(d, INTERVAL 1 DAY) FROM t"
   },
   {
+   "key": "2939d1c176073bc6",
+   "dialect": "sqlite",
+   "sql": "SELECT DATE_ADD(d, '1'') ; SELECT 1; --')"
+  },
+  {
+   "key": "d14d52456ced9a83",
+   "dialect": "sqlite",
+   "sql": "SELECT DATE(d, '1'') ; SELECT 1; --')"
+  },
+  {
    "key": "973781800183233b",
    "dialect": "sqlite",
    "sql": "SELECT DATE(d, '-1 DAY') FROM t"
@@ -49241,6 +49436,11 @@
    "key": "f1691d1259b9865a",
    "dialect": "sqlite",
    "sql": "SELECT JSON_EXTRACT('[10, 20, [30, 40]]', '$[2]', '$[0]', '$[1]')"
+  },
+  {
+   "key": "48506d08e78f2514",
+   "dialect": "duckdb",
+   "sql": "SELECT TO_JSON(JSON_EXTRACT('[10, 20, [30, 40]]', ['$[2]', '$[0]', '$[1]']))"
   },
   {
    "key": "d3e1639b64696acb",
@@ -49878,6 +50078,26 @@
    "sql": "SELECT FIRST_VALUE(Name) OVER (PARTITION BY AlbumId ORDER BY Bytes DESC) AS LargestTrack FROM tracks"
   },
   {
+   "key": "b2fa1e58e3973718",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE t (x REAL, y FLOAT)"
+  },
+  {
+   "key": "46ae7bd1513aa3da",
+   "dialect": "sqlite",
+   "sql": "CREATE TABLE t (x REAL, y REAL)"
+  },
+  {
+   "key": "7dae11e269ddfa4a",
+   "dialect": "duckdb",
+   "sql": "CREATE TABLE t (x DOUBLE, y DOUBLE)"
+  },
+  {
+   "key": "c38dc832081cf736",
+   "dialect": "postgres",
+   "sql": "CREATE TABLE t (x DOUBLE PRECISION, y DOUBLE PRECISION)"
+  },
+  {
    "key": "dea6a3eda4fd60bc",
    "dialect": "sqlite",
    "sql": "CREATE TABLE foo (bar LONGVARCHAR)"
@@ -50166,6 +50386,21 @@
    "key": "bcad244181dd6846",
    "dialect": "sqlite",
    "sql": "SELECT a ->> 'it''s' FROM t"
+  },
+  {
+   "key": "d6ce06828634773f",
+   "dialect": "sqlite",
+   "sql": "SELECT CAST(x AS REAL) FROM t"
+  },
+  {
+   "key": "06c19a57ae3fc81d",
+   "dialect": "duckdb",
+   "sql": "SELECT CAST(x AS DOUBLE) FROM t"
+  },
+  {
+   "key": "aed50cb432f0b077",
+   "dialect": "postgres",
+   "sql": "SELECT CAST(x AS DOUBLE PRECISION) FROM t"
   },
   {
    "key": "0f9482618333ac22",
@@ -54146,6 +54381,16 @@
    "key": "ec0dd6b8804f456a",
    "dialect": "tsql",
    "sql": "CREATE VIEW start WITH SCHEMABINDING AS SELECT a FROM x"
+  },
+  {
+   "key": "6bbd1439560f5b07",
+   "dialect": "tsql",
+   "sql": "ALTER TABLE a RENAME TO [x'; SELECT 1; --]"
+  },
+  {
+   "key": "5583cefb68428edb",
+   "dialect": "tsql",
+   "sql": "EXEC sp_rename 'a', 'x''; SELECT 1; --'"
   },
   {
    "key": "1c3bbe3454206bfd",
