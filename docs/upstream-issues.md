@@ -606,3 +606,29 @@ change over the reference's own tree. The tree keeps no `Paren`, so there is
 nothing for the generator to put back; the fix belongs upstream.
 
 **Reference:** sqlglot @ c7778cf56.
+
+## `ALL ((SELECT …))` does not read back as the tree that wrote it
+
+**Found by:** the port's "a rewrite must survive being written down" check,
+once the optimizer folded the last pair of sqlglot's own simplify contract.
+
+`all_sql` wraps whatever operand it is handed unless that is a `Tuple` or a
+`Paren`, so an `All` over a `Subquery` -- which is what negating an `Any`
+builds -- keeps the subquery's parentheses INSIDE the call's:
+
+```
+in   SELECT c = NOT (a <> ANY (SELECT b FROM t)) FROM t
+out  SELECT c = (a = ALL ((SELECT b FROM t))) FROM t
+```
+
+sqlglot's own parser cannot read that back: the token after the first
+parenthesis is another parenthesis, not `SELECT`, so it builds an anonymous
+call to a function named `ALL` rather than an `All` node. The reference's
+round trip is lossy on exactly this shape, and the port reproduces it because
+the differential is held to the reference's output string for string.
+
+It is the only pair in the 616-pair simplify contract whose reference output
+does not parse back to the tree it was written from. The harness counts it
+and names it rather than exempting it silently.
+
+**Reference:** sqlglot @ 78b24a744adb.

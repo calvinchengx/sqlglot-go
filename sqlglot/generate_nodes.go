@@ -3814,8 +3814,14 @@ func (g *generator) writeQuantifier(e *Expression) string {
 	// parentheses, which is why a Subquery operand is unwrapped first rather
 	// than rendered -- otherwise the query arrives already parenthesised and
 	// comes out with two pairs.
+	//
+	// ALL is the exception, and the reference's own asymmetry: its writer
+	// wraps whatever it is handed unless that is a Tuple or a Paren, so an
+	// `All` over a SUBQUERY -- which is what negating an `Any` builds --
+	// keeps the subquery's parentheses INSIDE the call's and comes out
+	// `ALL ((SELECT …))` (generator.py, all_sql against any_sql).
 	inner, key := this, e.Class+"Unwrapped"
-	if inner.Class == "Subquery" {
+	if inner.Class == "Subquery" && e.Class != "All" {
 		// A subquery arrives with its own parentheses; a bare query does not,
 		// and the reference spaces the two differently -- `ANY (SELECT 1)`
 		// against `ANY(SELECT 1)`. Both spellings are probed.
