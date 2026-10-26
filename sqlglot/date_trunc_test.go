@@ -248,15 +248,15 @@ func TestDateTruncNextFloor(t *testing.T) {
 // TestDateTruncOf covers dateTruncOf's own gates: a class it does not read
 // at all, a missing unit, and a unit outside the date-level set.
 func TestDateTruncOf(t *testing.T) {
-	if _, _, ok := dateTruncOf(New("Column")); ok {
+	if _, _, ok := dateTruncOf(New("Column"), ""); ok {
 		t.Error("dateTruncOf(a non-trunc node) should be refused")
 	}
 	missingUnit := New("DateTrunc", Arg{"this", New("Column")})
-	if _, _, ok := dateTruncOf(missingUnit); ok {
+	if _, _, ok := dateTruncOf(missingUnit, ""); ok {
 		t.Error("dateTruncOf(DateTrunc with no unit) should be refused")
 	}
 	unknownUnit := New("DateTrunc", Arg{"this", New("Column")}, Arg{"unit", New("Var", Arg{"this", "HOUR"})})
-	if _, _, ok := dateTruncOf(unknownUnit); ok {
+	if _, _, ok := dateTruncOf(unknownUnit, ""); ok {
 		t.Error("dateTruncOf(DateTrunc('hour', ...)) should be refused; not a date-level unit")
 	}
 }

@@ -21,7 +21,7 @@ var truncClasses = map[string]bool{"DateTrunc": true, "TimestampTrunc": true}
 
 // dateTruncOf reads a DATE_TRUNC/TIMESTAMP_TRUNC call's own date expression
 // and unit, declining for any unit this port does not floor.
-func dateTruncOf(e *Expression) (date *Expression, unit string, ok bool) {
+func dateTruncOf(e *Expression, dialect string) (date *Expression, unit string, ok bool) {
 	if !truncClasses[e.Class] {
 		return nil, "", false
 	}
@@ -30,19 +30,52 @@ func dateTruncOf(e *Expression) (date *Expression, unit string, ok bool) {
 	if date == nil || unitArg == nil {
 		return nil, "", false
 	}
-	unit = strings.ToUpper(unitArg.Name())
-	if !truncUnits[unit] {
+	unit, ok = truncUnit(unitArg, dialect)
+	if !ok {
 		return nil, "", false
 	}
 	return date, unit, true
 }
 
-// weekStartsMonday is the reference's own WEEK_OFFSET, read for the one
-// dialect among this port's five that differs: T-SQL (and BigQuery, which
-// this port does not speak) starts its week on Sunday; every other dialect
-// here defaults to Monday.
-func weekStartsMonday(dialect string) bool {
-	return dialect != "tsql"
+// weekStartDays is the reference's WEEK_START_DAY_TO_DOW: the ISO day number
+// each name stands for.
+var weekStartDays = map[string]int{
+	"MONDAY": 1, "TUESDAY": 2, "WEDNESDAY": 3, "THURSDAY": 4,
+	"FRIDAY": 5, "SATURDAY": 6, "SUNDAY": 7,
+}
+
+// truncUnit reads a truncation's unit, which BigQuery writes as a WeekStart
+// node naming the day the week begins on: `WEEK` is `WeekStart(SUNDAY)` and
+// `WEEK(MONDAY)` names another day. The reference folds one of those only
+// when the day it names is the dialect's OWN week start -- a WEEK(MONDAY) in
+// a dialect whose weeks start on Sunday is a different truncation, and
+// `_trunc_unit` refuses it rather than guess (simplify.py, _trunc_unit).
+func truncUnit(unitArg *Expression, dialect string) (string, bool) {
+	if unitArg.Class == "WeekStart" {
+		day := strings.ToUpper(childOf(unitArg, "this").Name())
+		// Python's `offset % 7` is never negative; Go's is, so the offset is
+		// folded back into range before the day number is taken from it.
+		if weekStartDays[day] != ((weekOffset(dialect)%7)+7)%7+1 {
+			return "", false
+		}
+		return "WEEK", true
+	}
+	unit := strings.ToUpper(unitArg.Name())
+	if !truncUnits[unit] {
+		return "", false
+	}
+	return unit, true
+}
+
+// weekOffset is the reference's own WEEK_OFFSET -- the number of days the
+// dialect's week starts BEFORE Monday. T-SQL and BigQuery start theirs on
+// Sunday (-1); every other dialect here defaults to Monday (0).
+func weekOffset(dialect string) int {
+	switch dialect {
+	case "tsql", "bigquery":
+		return -1
+	}
+	return 0
 }
 
 // dateTruncFloor rounds t DOWN to the start of the unit it belongs to --
@@ -63,10 +96,7 @@ func dateTruncFloor(t time.Time, unit string, dialect string) (time.Time, bool) 
 		// reference's) is Monday=0..Sunday=6, which every day-count below
 		// is written against.
 		mondayZero := (int(t.Weekday()) + 6) % 7
-		offset := 0
-		if !weekStartsMonday(dialect) {
-			offset = -1
-		}
+		offset := weekOffset(dialect)
 		back := ((mondayZero-offset)%7 + 7) % 7
 		return dayOnly(t).AddDate(0, 0, -back), true
 	case "DAY":
@@ -133,7 +163,7 @@ func dateTruncRange(date time.Time, unit string, dialect string) (dateRange, boo
 // a COLUMN has no literal to read and is left for foldDateTruncComparison
 // to see once its own parent asks a comparison of it.
 func foldDateTruncLiteral(e *Expression, dialect string) *Expression {
-	date, unit, ok := dateTruncOf(e)
+	date, unit, ok := dateTruncOf(e, dialect)
 	if !ok {
 		return nil
 	}
@@ -171,7 +201,7 @@ func foldDateTruncComparison(e, parent *Expression, dialect string) *Expression 
 	if left == nil || right == nil {
 		return nil
 	}
-	truncArg, unit, ok := dateTruncOf(left)
+	truncArg, unit, ok := dateTruncOf(left, dialect)
 	if !ok {
 		return nil
 	}
@@ -258,7 +288,7 @@ func foldDateTruncIn(e, parent *Expression, dialect string) *Expression {
 	if left == nil {
 		return nil
 	}
-	truncArg, unit, ok := dateTruncOf(left)
+	truncArg, unit, ok := dateTruncOf(left, dialect)
 	if !ok {
 		return nil
 	}
