@@ -7014,15 +7014,28 @@ func fractionalSecondDigits(text string) int {
 
 // sqliteHexInteger reads a `0x...` literal as SQLite does: an unsigned 64-bit
 // value folded into the signed range.
+//
+// The fold is done in unsigned arithmetic -- a sign, then a magnitude -- rather
+// than by casting the parsed value to int64. The cast is what CodeQL reports on
+// (an unsigned 64-bit value converted to a 64-bit signed one with no bound
+// check), and the only thing that makes it safe is the comparison beside it,
+// which is exactly the kind of proof a reader has to reconstruct and a scanner
+// cannot see.
 func sqliteHexInteger(text string) (string, bool) {
 	value, err := strconv.ParseUint(strings.TrimPrefix(strings.TrimPrefix(text, "0x"), "0X"), 16, 64)
 	if err != nil {
 		return "", false
 	}
-	// SQLite reads the value as a signed 64-bit two's-complement number, so
-	// the wrap is the point of the conversion.
-	signed := int64(value) //nolint:gosec // two's-complement wrap is intended
-	return strconv.FormatInt(signed, 10), true
+	// SQLite reads the value's bits as a signed 64-bit two's-complement
+	// number, so the top half of the unsigned range is negative and
+	// `0xFFFFFFFFFFFFFFFF` is -1.
+	if value < 1<<63 {
+		return strconv.FormatUint(value, 10), true
+	}
+	// Two's complement again: the magnitude of the negative value is
+	// 2^64 - value, which unsigned negation gives without ever leaving the
+	// 64 bits it was parsed into.
+	return "-" + strconv.FormatUint(-value, 10), true
 }
 
 // consultsOriginalName reports whether a dialect writes a call back with the

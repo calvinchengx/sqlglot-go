@@ -5005,6 +5005,35 @@ func TestQuotedStringClasses(t *testing.T) {
 	}
 }
 
+// SQLite reads `0x...` as an INTEGER whose bits are a signed 64-bit
+// two's-complement value, so the top half of the unsigned range is negative:
+// `0xFFFFFFFFFFFFFFFF` is -1, not 18446744073709551615. The reference says the
+// same thing, and the two boundaries are what a cast would get wrong if the
+// signed value were ever formatted from the unsigned one.
+func TestSQLiteHexIntegerWrapsAsSigned(t *testing.T) {
+	for _, tc := range []struct{ name, sql, want string }{
+		{"zero", "SELECT 0x0", "SELECT 0"},
+		{"a small value", "SELECT 0x1F", "SELECT 31"},
+		{"the top positive value", "SELECT 0x7FFFFFFFFFFFFFFF", "SELECT 9223372036854775807"},
+		{"the bottom negative value", "SELECT 0x8000000000000000", "SELECT -9223372036854775808"},
+		{"minus one", "SELECT 0xFFFFFFFFFFFFFFFF", "SELECT -1"},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			e, err := ParseOne(tc.sql, "sqlite")
+			if err != nil {
+				t.Fatalf("ParseOne(%q): %v", tc.sql, err)
+			}
+			got, err := Generate(e, "sqlite")
+			if err != nil {
+				t.Fatalf("Generate: %v", err)
+			}
+			if got != tc.want {
+				t.Errorf("got %q, want %q", got, tc.want)
+			}
+		})
+	}
+}
+
 // DuckDB lets the FROM come FIRST, with the projections after it or left out
 // entirely: `FROM t` means `SELECT * FROM t`. Every dialect here reads it, and
 // the tree is an ordinary Select -- with one difference that shows only in
