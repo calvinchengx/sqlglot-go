@@ -173,7 +173,12 @@ jobs:
       # the ImportError -- so without this the reference is not the reference,
       # it is a quieter version of it, and the generated contract silently
       # loses every date fold.
-      - run: pip install python-dateutil
+      #
+      # Hash-pinned, because "the expectations are exactly the pinned
+      # reference's" cannot hold if the reference is itself installed from
+      # whatever PyPI serves that day: python-dateutil 3.0.0 landed on
+      # 2026-10-21. The file carries the pins, the hashes and the reasoning.
+      - run: pip install --require-hashes -r harness/requirements/reference.txt
       - name: the commit NOTICE pins
         id: pin
         run: echo "ref=$(grep -oE 'commit [0-9a-f]{40}' NOTICE | head -1 | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
@@ -287,7 +292,8 @@ jobs:
       # count on its own. DuckDB 2.0 classifies differently from 1.5 -- the
       # same corpus, the same port, a different number -- so the floor was
       # measuring the engine as much as the port. Raised deliberately when
-      # the corpus or the port improves; not by a pip upgrade.
-      - run: pip install 'duckdb==1.5.5' 'psycopg[binary]'
+      # the corpus or the port improves; not by a pip upgrade. The pins and
+      # their hashes live in the requirements file, out of this file's way.
+      - run: pip install --require-hashes -r harness/requirements/execution.txt
       - name: run it through both engines and compare the rows
         run: make oracle-exec

@@ -1,0 +1,33 @@
+# What the reference needs to BE the reference, hash-pinned.
+#
+# sqlglot folds dates through dateutil's relativedelta, imported lazily and
+# behind a decorator that catches the ImportError -- so without this, the
+# "reference" is a quieter version of it and regenerating the expectations
+# silently loses every date fold. Unpinned, though, it is also whatever PyPI
+# serves that day: python-dateutil 3.0.0 landed on 2026-10-21. The job this
+# feeds exists to prove the expectations are exactly the pinned reference's,
+# and a floating dependency puts a second, unpinned input into that proof.
+#
+# The hashes below are every artifact PyPI published for the exact release, so
+# the file installs on any runner or developer platform, and
+# `pip install --require-hashes` refuses anything that is not one of them.
+# To move a version, change the pin and refresh its hashes from
+# https://pypi.org/pypi/<name>/<version>/json.
+#
+#   pip install --require-hashes -r harness/requirements/reference.txt
+
+# folds the dates; the reference imports it lazily, behind a decorator that
+# swallows the ImportError
+python-dateutil==3.0.0 \
+    --hash=sha256:3c79630202e4152c6add678446984236efe4f57e84d8e892aab0637bab82e9fd \
+    --hash=sha256:7ebcb3c29a92f3ceafe79a7a48a5c45677e9e004bbeec5742ac0bbb00560b7a2
+
+# python-dateutil's own dependency, not used by this repository directly
+six==1.17.0 \
+    --hash=sha256:4721f391ed90541fddacab5acf947aa0d3dc7d27b2e1e8eda2be8970586c3274 \
+    --hash=sha256:ff70335d468e7eb6ec65b95b99d3a2836546063f63acc5171de367e834932a81
+
+# declared by python-dateutil unconditionally, so resolution requires it
+tzdata==2026.6 \
+    --hash=sha256:0a10eec6e13ef16b627fabed9a5f2ba61a62b1c67f327305f4e7e412a70b4aec \
+    --hash=sha256:85d2cd9c09f81f0bb29db27759fc83af4f1e620efb814f8c5bf8b4cc4feece6d
