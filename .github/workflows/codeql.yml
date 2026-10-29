@@ -1,0 +1,51 @@
+# Static analysis of the Go code itself.
+#
+# The differential run proves the port agrees with sqlglot, which is a strong
+# property and not a security one: a slice index the reference also gets wrong
+# is a finding neither of them reports, because the oracle compares trees, not
+# memory safety. CodeQL asks the other question -- an out-of-range index, a nil
+# dereference, a path built from a parsed statement -- and its results land in
+# code scanning beside Scorecard's. That is the SAST half of the supply-chain
+# picture Scorecard scores and cannot supply on its own.
+#
+# Every pull request and every push to main, plus a weekly run so a query pack
+# that learned a new pattern is applied without waiting for a commit. The Go
+# build is the compilation the analyser needs, and this module has no
+# dependencies and no cgo, so `go build ./...` is the whole of it.
+name: CodeQL
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: '41 4 * * 2' # weekly, Tuesday 04:41 UTC
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  analyze:
+    name: Static analysis (Go)
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+      security-events: write # upload the findings to code scanning
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
+        with:
+          go-version-file: go.mod
+      - uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
+        with:
+          languages: go
+          build-mode: manual
+      # Manual rather than autobuild: the repository has no main package, and
+      # autobuild's heuristic for that case is one more thing between the code
+      # and the scan. `go build ./...` compiles every package the analyser
+      # needs to see, and `go vet` is already a CI step if the build breaks.
+      - name: build for the analyser
+        run: go build ./...
+      - uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
