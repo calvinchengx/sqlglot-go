@@ -177,9 +177,9 @@ def open_engines(dsn: str | None) -> tuple[list[Engine], list[str]]:
         engines.append(e)
     except ModuleNotFoundError:
         skipped.append(
-            "duckdb: not installed. `pip install -r harness/requirements/execution.txt`"
-            " (the floor was measured on 1.5.5), or run\n"
-            '          make oracle-exec PYTHON="uv run --with duckdb==1.5.5 python"'
+            "duckdb: not installed. `uv sync --only-group execution` (the floor was"
+            " measured on 1.5.5), or run\n"
+            '          make oracle-exec PYTHON="uv run --group execution python"'
         )
     if dsn:
         try:
@@ -189,7 +189,7 @@ def open_engines(dsn: str | None) -> tuple[list[Engine], list[str]]:
         except ModuleNotFoundError:
             skipped.append(
                 "postgres: psycopg not installed"
-                " (`pip install -r harness/requirements/execution.txt`)"
+                " (`uv sync --only-group execution`)"
             )
         except Exception as e:
             skipped.append("postgres: cannot connect -- " + str(e).split("\n")[0][:70])

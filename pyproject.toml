@@ -1,0 +1,41 @@
+# The Python side of the harness -- and only that. What regenerates the
+# expectations from sqlglot, and what runs the port's SQL through an engine.
+#
+# Nothing here is needed to build or test the port: `go test ./...` is a Go
+# toolchain alone, which is what lets CI prove the differential on Windows on
+# arm64, where no engine exists. The asymmetry is deliberate -- contributing to
+# the port needs Go, maintaining the oracle needs an engine -- and this file is
+# the whole of the "more".
+#
+# `uv.lock` holds the versions and the hashes. The two groups are separate
+# because the two jobs are: the job that regenerates the expectations installs
+# the reference's dates and no engine, and the job that executes the port's SQL
+# installs the engines and no date folding. Neither can pass because of
+# something the other one installed.
+[project]
+name = "sqlglot-go-harness"
+version = "0.0.0"
+description = "The Python side of the sqlglot-go harness: the reference's optional dependency, and the engines its SQL is run through"
+# Below 3.11 the reference itself answers differently -- it parses an offset
+# like `+00:00` another way -- so regenerating under an older interpreter would
+# silently rewrite statements that are already correct. `make check-python`
+# says the same thing for the Makefile's targets.
+requires-python = ">=3.11"
+
+[tool.uv]
+# The harness is scripts, not a package: nothing imports `harness`, so there is
+# no distribution to build and install into the environment.
+package = false
+
+[dependency-groups]
+# sqlglot folds dates through dateutil's relativedelta, imported lazily and
+# behind a decorator that catches the ImportError -- so without this the
+# reference is a quieter version of itself, and regenerating the expectations
+# silently loses every date fold.
+reference = ["python-dateutil==3.0.0"]
+
+# The execution floor is a COUNT of statements both engines agree on, so an
+# unpinned engine moves the floor on its own: DuckDB 2.0 classifies differently
+# from 1.5 over the same corpus and the same port. The pin is raised
+# deliberately, when the corpus or the port improves -- never by an upgrade.
+execution = ["duckdb==1.5.5", "psycopg[binary]==3.3.6"]

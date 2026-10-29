@@ -292,6 +292,7 @@ at 100% of statements. The harness proves it can fail
 (`TestTheHarnessCanTellRightFromWrong`).
 
 ```sh
+make sync       # install the harness's Python environment, from uv.lock
 make test       # the differential run
 make coverage   # both coverage numbers
 make service    # re-extract the corpus of SQL data agent service is held to
@@ -325,7 +326,11 @@ above with the file-and-line prefix stripped.
 
 The remaining targets -- `oracle`, `service`, `lint` -- regenerate the committed
 expectations and the generated tables, or lint in a container. Those need
-Python 3.11 or newer, a checkout of the pinned sqlglot, and Docker. The asymmetry is
+Python 3.11 or newer, a checkout of the pinned sqlglot, and Docker. The
+interpreter and the two things Python needs are the project's, not the
+machine's: `pyproject.toml` declares them, `uv.lock` pins them with hashes, and
+`make sync` (or `uv sync --only-group reference` / `--only-group execution`)
+installs them. The asymmetry is
 deliberate: **contributing to the port needs a Go toolchain; maintaining the
 oracle needs more.** A contributor on Windows is held to exactly the same
 differential as everyone else without installing any of it.

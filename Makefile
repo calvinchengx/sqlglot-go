@@ -1,6 +1,7 @@
 # sqlglot-go — a Go port of sqlglot, verified against the Python reference.
 #
 #   make doctor     # toolchain
+#   make sync       # install the harness's Python environment, from uv.lock
 #   make test       # unit tests + the differential run against the reference
 #   make oracle     # regenerate testdata/expected from the pinned sqlglot commit
 #   make coverage   # print per-dialect coverage against the reference
@@ -17,9 +18,11 @@
 SQLGLOT ?= $(HOME)/opensource/sqlglot
 SERVICE ?= $(HOME)/calvinchengx/emulators/data-agent-service
 GOLANGCI = golangci/golangci-lint:v2.13.1
-# Windows spells it `python`; POSIX distributions increasingly only ship
-# `python3`. Override rather than edit.
-PYTHON ?= python3
+# The harness's Python is the PROJECT's, not the machine's: pyproject.toml
+# declares what it needs and uv.lock pins it with hashes, so the numbers here
+# come from the same versions CI measured them with. `make sync` builds it.
+# Override to point at an interpreter of your own, e.g. make PYTHON=python3.11.
+PYTHON ?= .venv/bin/python
 # Where the Go side hands the execution oracle its pairs; see harness/execute.py.
 EXEC_PAIRS ?= $(shell echo $${TMPDIR:-/tmp})/sqlglot-go-exec-pairs.jsonl
 # The oracle reaches PostgreSQL through $PGDSN; `make postgres` prints one.
@@ -27,12 +30,20 @@ EXEC_PAIRS ?= $(shell echo $${TMPDIR:-/tmp})/sqlglot-go-exec-pairs.jsonl
 # other stacks is the normal case, and a wedged bind is not worth debugging.
 PGPORT ?= 55433
 
-.PHONY: help doctor check-python test oracle oracle-exec postgres postgres-stop service coverage cover gaps lint clean
+.PHONY: help sync doctor check-python test oracle oracle-exec postgres postgres-stop service coverage cover gaps lint clean
 
 help: ## Show the available targets
 	@grep -hE '^[a-z-]+:.*?## ' $(MAKEFILE_LIST) | sort | awk 'BEGIN{FS=":.*?## "}{printf "  %-12s %s\n", $$1, $$2}'
 
+sync: ## Install the harness's pinned Python environment (uv, uv.lock)
+	uv sync --all-groups
+
 check-python: ## Fail unless $(PYTHON) is new enough to reproduce the reference's output
+	@test -x $(PYTHON) || { \
+	  echo "no $(PYTHON): the harness's Python comes from pyproject.toml and"; \
+	  echo "uv.lock, not from the machine. Install uv, then:"; \
+	  echo "  make sync"; \
+	  exit 1; }
 	@$(PYTHON) -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null || { \
 	  echo "$(PYTHON) is older than 3.11, and the reference itself answers"; \
 	  echo "differently below it -- it parses an offset like +00:00 another way,"; \
@@ -43,9 +54,10 @@ check-python: ## Fail unless $(PYTHON) is new enough to reproduce the reference'
 
 doctor: ## Check the toolchain
 	@go version
-	@$(PYTHON) -c 'import sys; v=sys.version_info; print("python:", sys.version.split()[0], "(ok, 3.11 or newer)" if v >= (3, 11) else "(TOO OLD: regenerating the expectations needs 3.11 or newer)")' 2>/dev/null || echo "$(PYTHON) NOT found (only needed for make oracle and make service)"
+	@uv --version 2>/dev/null || echo "uv NOT found (needed for make sync and the harness targets: https://docs.astral.sh/uv)"
+	@$(PYTHON) -c 'import sys; v=sys.version_info; print("harness python:", sys.version.split()[0], "(ok, 3.11 or newer)" if v >= (3, 11) else "(TOO OLD: regenerating the expectations needs 3.11 or newer)")' 2>/dev/null || echo "harness python NOT found: run 'make sync' (only needed for make oracle, make oracle-exec and make service)"
 	@test -d $(SQLGLOT) && echo "reference: $(SQLGLOT) @ $$(git -C $(SQLGLOT) rev-parse --short HEAD)" || echo "reference NOT found at $(SQLGLOT) (only needed for make oracle)"
-	@$(PYTHON) -c 'import duckdb; print("duckdb:", duckdb.__version__)' 2>/dev/null || echo "duckdb NOT found (only needed for make oracle-exec)"
+	@$(PYTHON) -c 'import duckdb; print("duckdb:", duckdb.__version__)' 2>/dev/null || echo "duckdb NOT installed (only needed for make oracle-exec: uv sync --only-group execution)"
 	@echo "lint: $(GOLANGCI), in a container (make lint; needs Docker)"
 	@echo "      natively it has to read this toolchain's export data -- pin it to a"
 	@echo "      Go release it knows, or let the container pick the pair (make lint)"
