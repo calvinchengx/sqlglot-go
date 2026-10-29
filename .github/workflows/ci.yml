@@ -168,17 +168,30 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
+      # uv, pinned to the release that wrote uv.lock: a newer uv could resolve
+      # the same file differently, and the lock is the promise.
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.13.1"
+          enable-cache: true # the wheels are 20 MB apiece; the cache is the point
       # The reference's own optional dependency. Its optimizer folds dates
       # through dateutil, imported lazily and behind a decorator that catches
       # the ImportError -- so without this the reference is not the reference,
       # it is a quieter version of it, and the generated contract silently
       # loses every date fold.
       #
-      # Hash-pinned, because "the expectations are exactly the pinned
-      # reference's" cannot hold if the reference is itself installed from
-      # whatever PyPI serves that day: python-dateutil 3.0.0 landed on
-      # 2026-10-21. The file carries the pins, the hashes and the reasoning.
-      - run: pip install --require-hashes -r harness/requirements/reference.txt
+      # The pin, the hashes and the reasoning are pyproject.toml's and
+      # uv.lock's: "the expectations are exactly the pinned reference's" cannot
+      # hold if the reference is itself installed from whatever PyPI serves
+      # that day, and python-dateutil 3.0.0 landed on 2026-10-21.
+      #
+      # `--only-group reference` is what keeps the two Python jobs honest: this
+      # one has no engine installed to borrow help from, and the execution job
+      # below has no date folding.
+      - name: the harness environment, from uv.lock
+        run: |
+          uv sync --locked --only-group reference
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - name: the commit NOTICE pins
         id: pin
         run: echo "ref=$(grep -oE 'commit [0-9a-f]{40}' NOTICE | head -1 | cut -d' ' -f2)" >> "$GITHUB_OUTPUT"
@@ -287,13 +300,22 @@ jobs:
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: "3.12"
+      - uses: astral-sh/setup-uv@07a047e608db84b3d8c06cd9a7c7dcc9c355c18e # v10.3.2
+        with:
+          version: "0.13.1"
+          enable-cache: true
       # PINNED, like the reference: the execution floor is a COUNT of
       # statements both engines agree on, and an unpinned engine moves that
       # count on its own. DuckDB 2.0 classifies differently from 1.5 -- the
       # same corpus, the same port, a different number -- so the floor was
       # measuring the engine as much as the port. Raised deliberately when
-      # the corpus or the port improves; not by a pip upgrade. The pins and
-      # their hashes live in the requirements file, out of this file's way.
-      - run: pip install --require-hashes -r harness/requirements/execution.txt
+      # the corpus or the port improves; not by an upgrade. pyproject.toml
+      # carries the pins, uv.lock their hashes.
+      #
+      # `--only-group execution`: this job gets the engines and nothing else.
+      - name: the harness environment, from uv.lock
+        run: |
+          uv sync --locked --only-group execution
+          echo "$PWD/.venv/bin" >> "$GITHUB_PATH"
       - name: run it through both engines and compare the rows
         run: make oracle-exec

@@ -72,7 +72,7 @@ def main() -> int:
         raise SystemExit(
             "the reference needs python-dateutil to fold dates, and fails\n"
             "SILENTLY without it -- the contract would be missing every date\n"
-            "pair. Install it:  pip install python-dateutil"
+            "pair. Install the environment:  uv sync --only-group reference"
         ) from None
     from helpers import load_sql_fixture_pairs  # noqa: E402
     from sqlglot import parse_one  # noqa: E402
