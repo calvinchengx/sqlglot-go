@@ -25,7 +25,14 @@ jobs:
     # run was still going when the 25-minute bound cancelled it. The compile
     # is not cached on that platform either, since setup-go can key nothing in
     # a module with no go.sum.
-    timeout-minutes: 45
+    #
+    # The 45 that replaced it was reached on run 40961526120, the merge of #65:
+    # macos/arm64 finished at 44m43s, seventeen seconds inside a bound that a
+    # slower runner would have hit, on a job whose only purpose is to say
+    # "should work on macOS" is not a claim. 60 leaves room for the day the
+    # runner is slower still, and costs nothing on the four platforms that
+    # finish in minutes.
+    timeout-minutes: 60
     # The port has no dependencies and no native library, so it runs wherever
     # Go does -- but "should work on Windows" is a claim, and developers work
     # on Windows machines of both architectures. The differential run is the
@@ -72,7 +79,12 @@ jobs:
     # buys little here -- the instrumented compile that dominates it is of the
     # package every pull request changes, and this module has no third-party
     # dependencies to reuse.
-    timeout-minutes: 40
+    #
+    # 40 became 50 on run 40961526120, the merge of #65, where the same work
+    # took 27m09s: the corpus and the lint queue keep growing per dialect, and
+    # this job is a required check, so a bound it reaches stops a merge rather
+    # than reporting a slow runner.
+    timeout-minutes: 50
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
@@ -162,7 +174,13 @@ jobs:
     # again. BigQuery, the 24th named dialect and the largest corpus of them
     # all, brought the measured run to half an hour -- the probe cost is per
     # dialect, so the bound moves with the count and is widened again here.
-    timeout-minutes: 45
+    #
+    # It reached 38m43s on 2026-10-29 and 26m33s on run 40961526120, which is
+    # a 45-minute bound with six minutes left on the bad day and nineteen on
+    # the good one. 60 makes the bad day ordinary: like the coverage job above,
+    # this is a required check, so the bound is the thing that decides whether
+    # a merge waits, and it should not be.
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
