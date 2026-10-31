@@ -335,6 +335,18 @@ deliberate: **contributing to the port needs a Go toolchain; maintaining the
 oracle needs more.** A contributor on Windows is held to exactly the same
 differential as everyone else without installing any of it.
 
+## Security
+
+The parser is the whole attack surface: it reads SQL, executes none of it, and
+depends on nothing outside the Go standard library. `SECURITY.md` says what
+counts as a vulnerability here and how to report one privately -- a crash or a
+hang on something that is only a string, or a statement the port writes with a
+meaning other than the one it read.
+
+Three checks stand behind that on every push: the differential against the
+reference, CodeQL for the bugs the differential structurally cannot see (the
+reference has them too), and a short fuzz of the parser.
+
 ## License
 
 Apache 2.0. The tokenizer design, expression model, parser architecture and
